@@ -37,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIMemory)
 #endif
 
@@ -45,7 +45,7 @@ ClassImp(MGUIMemory)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIMemory::MGUIMemory(const TGWindow* Parent, const TGWindow* Main, 
+MGUIMemory::MGUIMemory(const TGWindow* Parent, const TGWindow* Main,
                        MSettingsImaging* Data)
   : MGUIDialog(Parent, Main)
 {
@@ -79,11 +79,11 @@ void MGUIMemory::Create()
   int Width = m_FontScaler*650;
 
   // We start with a name and an icon...
-  SetWindowName("Memory, accuracy, and thread management");  
+  SetWindowName("Memory, accuracy, and thread management");
 
-  AddSubTitle("Memory, accuracy, and thread management"); 
+  AddSubTitle("Memory, accuracy, and thread management");
 
-  TGLayoutHints* StandardLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 20);
+  TGLayoutHints* StandardLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 20*m_FontScaler);
 
   m_MaxRAM = new MGUIEEntryList(this, "List-mode image reconstruction is rather memory extensive. You can give here the amount of RAM, which may be used for the image slices of the response (the \"backprojections\"). If the selected amount of memory is consumed, the response calculation is stopped and the iteration process starts.");
   m_MaxRAM->Add("Maximum amout of RAM in MB for the \"backprojections\":", m_GUIData->GetRAM(), true, 64);
@@ -92,7 +92,7 @@ void MGUIMemory::Create()
   AddFrame(m_MaxRAM, StandardLayout);
 
 
-  m_Bytes = new MGUIERBList(this, "The dynamic range of the response slice corresponding to one event can be represented either in 1 byte (256 intensity steps) or in 4 bytes (float accuracy). While a 1-byte-depth results in slightly worse images and is restricted to a maximum of 65536 image bins, it allows to store roughly 4 times more events:");
+  m_Bytes = new MGUIERBList(this, "The dynamic range of the response slice corresponding to one event can be represented either in 1 byte (256 intensity steps) or in 4 bytes (float accuracy). While a 1-byte-depth results in marginally worse images, it allows to store roughly 4 times more events:");
   m_Bytes->Add("1 byte");
   m_Bytes->Add("4 byte");
   m_Bytes->SetSelected(m_GUIData->GetBytes());
@@ -119,7 +119,7 @@ void MGUIMemory::Create()
   AddFrame(m_Parsing, StandardLayout);
 
 
-  m_Threads = 
+  m_Threads =
     new MGUIEEntryList(this,
                    "Using multiple threads can speed up the image reconstruction on multi-core and/or multi-processor systems. However due to overhead and limitations (e.g. reading events from file), the performance will not scale with the number of threads. In addition, if you encounter unexpected crashes, reduce the number of threads to one.");
   m_Threads->Add("Number of threads to use: ", m_GUIData->GetNThreads(), true, 1, 64);
@@ -134,10 +134,10 @@ void MGUIMemory::Create()
 
   // and bring it to the screen.
   MapSubwindows();
-  MapWindow();  
+  MapWindow();
 
   Layout();
- 
+
   return;
 }
 
@@ -147,7 +147,7 @@ void MGUIMemory::Create()
 
 bool MGUIMemory::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_GUIData->GetRAM() != m_MaxRAM->GetAsInt(0)) m_GUIData->SetRAM(m_MaxRAM->GetAsInt(0));
   if (m_GUIData->GetBytes() != m_Bytes->GetSelected()) m_GUIData->SetBytes(m_Bytes->GetSelected());

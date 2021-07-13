@@ -21,7 +21,7 @@
 // MBPDataSparseImageOneByte.cxx
 //
 //
-// The MBPDataSparseImageOneByte class stores a backprojected image (single 
+// The MBPDataSparseImageOneByte class stores a backprojected image (single
 // event psf) as a sparse matrix.
 // This only reasonable if more than 33% of the entries are empty.
 //
@@ -42,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MBPDataSparseImageOneByte)
 #endif
 
@@ -58,10 +58,12 @@ MBPDataSparseImageOneByte::MBPDataSparseImageOneByte() : MBPData()
 
   m_Maximum = 0.0;
 
-  m_Data = 0;
-  m_Index = 0;
+  m_Data = nullptr;
+  m_IndexStart = nullptr;
+  m_IndexContinuation = nullptr;
 
   m_NEntries = 0;
+  m_IndexSize = 0;
   m_NBins = 0;
 }
 
@@ -75,7 +77,8 @@ MBPDataSparseImageOneByte::~MBPDataSparseImageOneByte()
   // Destruct an MBPDataSparseImageOneByte
 
   delete [] m_Data;
-  delete [] m_Index;
+  delete [] m_IndexStart;
+  delete [] m_IndexContinuation;
 }
 
 
@@ -93,22 +96,13 @@ bool MBPDataSparseImageOneByte::Initialize(double* Image, int* Bins, int NBins, 
   // NBinsAboveLimit:  the number bins which are kept
 
 
-  if (NBins >= 65536) {
-    cout<<"Storing images: Not more than 65536 image-pixels allowed!"<<endl
-        <<"You want "<<NBins<<" bins!"<<endl
-        <<"Please use the 4 byte response matrix!"<<endl
-        <<"This event now is incompletely sampled!"<<show;
-    NBins = 65535;
-  }
-  
   m_NBins = NBins;
   m_NEntries = NUsedBins;
 
-  m_Data = new(nothrow) unsigned char[m_NEntries];
-  m_Index = new(nothrow) unsigned short[m_NEntries];
+  m_Data = new(nothrow) uint8_t[m_NEntries];
 
   // We are out of memory
-  if (m_Data == 0 || m_Index == 0) {
+  if (m_Data == nullptr) {
     cout<<"Storing images: Out of memory"<<endl;
     return false;
   }
@@ -121,10 +115,40 @@ bool MBPDataSparseImageOneByte::Initialize(double* Image, int* Bins, int NBins, 
 
   // Then save the relative values:
   double InvMaximum = 255.0/m_Maximum;
-  for (unsigned short i = 0; i < m_NEntries; ++i) {
+
+  vector<uint32_t> IndexStart;
+  vector<uint8_t> IndexContinuation;
+
+  for (int i = 0; i < m_NEntries; ++i) {
+    //cout<<i<<": "<<Image[i]<<endl;
     m_Data[i] = (unsigned char) (InvMaximum * Image[i]);
-    m_Index[i] = Bins[i];
+    if (i == 0) {
+      IndexStart.push_back(Bins[i]);
+      IndexContinuation.push_back(0);
+    } else {
+      if (Bins[i] == Bins[i-1]+1 && IndexContinuation.back() != 255) {
+        IndexContinuation.back()++;
+      } else {
+        IndexStart.push_back(Bins[i]);
+        IndexContinuation.push_back(0);
+      }
+    }
   }
+
+  // Why do we copy? A vector can reserve much more memory than we really need...
+  m_IndexStart = new(nothrow) uint32_t[IndexStart.size()];
+  m_IndexContinuation = new(nothrow) uint8_t[IndexContinuation.size()];
+
+  // We are out of memory
+  if (m_IndexStart == nullptr || m_IndexContinuation == nullptr) {
+    cout<<"Storing images: Out of memory"<<endl;
+    return false;
+  }
+
+  std::copy(IndexStart.begin(), IndexStart.end(), m_IndexStart);
+  std::copy(IndexContinuation.begin(), IndexContinuation.end(), m_IndexContinuation);
+
+  m_IndexSize = IndexStart.size();
 
   return true;
 }
@@ -136,10 +160,16 @@ bool MBPDataSparseImageOneByte::Initialize(double* Image, int* Bins, int NBins, 
 void MBPDataSparseImageOneByte::Deconvolve(double* Expectation, double* InvYnew, int Event)
 {
   //! Perform the list-mode deconvolution - attention the InvYnew is the inverted Yi
-      
+
   double Scaler = m_Maximum / 255.0;
-  for (int bin = 0; bin < m_NEntries; ++bin) {
-    Expectation[m_Index[bin]] += Scaler * m_Data[bin] * InvYnew[Event];
+
+  int Bin = 0;
+  for (int i = 0; i < m_IndexSize; ++i) {
+    int IndexMax = m_IndexStart[i] + m_IndexContinuation[i];
+    for (int Index = m_IndexStart[i]; Index <= IndexMax; ++Index) {
+      Expectation[Index] += Scaler * m_Data[Bin] * InvYnew[Event];
+      ++Bin;
+    }
   }
 }
 
@@ -153,9 +183,19 @@ void MBPDataSparseImageOneByte::Convolve(double* Ynew, int Event, double* Image,
 
   double Sum = 0;
   double Scaler = m_Maximum / 255.0;
-  for (int bin = 0; bin < m_NEntries; ++bin) {
-    Sum += Scaler * m_Data[bin] * Image[m_Index[bin]];
+
+  int Bin = 0;
+  for (int i = 0; i < m_IndexSize; ++i) {
+    int IndexMax = m_IndexStart[i] + m_IndexContinuation[i];
+    for (int Index = m_IndexStart[i]; Index <= IndexMax; ++Index) {
+      Sum += Scaler * m_Data[Bin] * Image[Index];
+      ++Bin;
+    }
   }
+
+  //for (int bin = 0; bin < m_NEntries; ++bin) {
+  //    Sum += Scaler * m_Data[bin] * Image[m_Index[bin]];
+  //}
 
   Ynew[Event] = Sum;
 }
@@ -166,12 +206,22 @@ void MBPDataSparseImageOneByte::Convolve(double* Ynew, int Event, double* Image,
 
 void MBPDataSparseImageOneByte::Sum(double* Image, int NBins)
 {
-  // Just sum it up, i.e. add the content to the image 
-      
+  // Just sum it up, i.e. add the content to the image
+
   double Scaler = m_Maximum / 255.0;
-  for (int bin = 0; bin < m_NEntries; bin++) {
-    Image[m_Index[bin]] += Scaler * m_Data[bin];
+
+  int Bin = 0;
+  for (int i = 0; i < m_IndexSize; ++i) {
+    int IndexMax = m_IndexStart[i] + m_IndexContinuation[i];
+    for (int Index = m_IndexStart[i]; Index <= IndexMax; ++Index) {
+      Image[Index] += Scaler * m_Data[Bin];
+      ++Bin;
+    }
   }
+
+  //for (int bin = 0; bin < m_NEntries; bin++) {
+  //  Image[m_Index[bin]] += Scaler * m_Data[bin];
+  //}
 }
 
 
@@ -181,15 +231,16 @@ void MBPDataSparseImageOneByte::Sum(double* Image, int NBins)
 int MBPDataSparseImageOneByte::GetUsedBytes() const
 {
   // Return the number of bytes used by this image
-  
+
   int Bytes = 0;
 
   Bytes += MBPData::GetUsedBytes();
   Bytes += sizeof(float); // m_Maximum
-  Bytes += 2*sizeof(void*); // Pointer to m_Data & m_Index
-  Bytes += 2*sizeof(int); // m_NEntries & m_NBins
-  Bytes += m_NEntries*sizeof(unsigned char); // m_Data
-  Bytes += m_NEntries*sizeof(unsigned short); // m_Index
+  Bytes += 3*sizeof(void*); // Pointer to m_Data,  m_IndexStart & m_IndexContinuation
+  Bytes += 3*sizeof(int); // m_NEntries, m_NBins, m_IndexSize
+  Bytes += m_NEntries*sizeof(uint8_t); // m_Data
+  Bytes += m_IndexSize*sizeof(uint32_t); // m_IndexStart
+  Bytes += m_IndexSize*sizeof(uint8_t); // m_IndexContinuation
 
   return Bytes;
 }

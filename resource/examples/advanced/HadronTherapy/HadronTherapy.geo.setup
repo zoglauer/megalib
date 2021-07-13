@@ -134,7 +134,7 @@ GStrip.SensitiveVolume     GeWafer
 GStrip.StructuralPitch      0.0   0.0    0.0
 GStrip.StructuralOffset     0.0   0.0    CryoTotalHeight
 
-GStrip.Offset              0.0   0.0
+GStrip.Offset              0.2   0.2
 GStrip.StripNumber         80    80
 
 GStrip.DepthResolution 100 0.02
@@ -150,7 +150,8 @@ GStrip.NoiseThreshold 15.0
 GStrip.TriggerThreshold 40.0
 
 GStrip.GuardringEnergyResolution 100 1.5
-GStrip.GuardringTriggerThreshold    40
+GStrip.GuardringEnergyResolution 1000 1.5
+GStrip.GuardringTriggerThreshold 40
 
 GStrip.FailureRate 0.0
 

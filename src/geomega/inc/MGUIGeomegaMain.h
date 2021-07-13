@@ -56,7 +56,6 @@ class MGUIGeomegaMain : public MGUIMain
   virtual void Open();
   virtual void Launch();
   virtual void About();
-  void WriteMGeant();
   void Position();
   void PathLengths();
 
@@ -94,7 +93,7 @@ class MGUIGeomegaMain : public MGUIMain
                    c_Test }; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIGeomegaMain, 0) // main window of the Geomega GUI
 #endif

@@ -53,11 +53,11 @@ public:
   
   /// Parse the command line
   bool ParseCommandLine(int argc, char** argv);
-  /// Analyze what eveer needs to be analyzed...
+  /// Analyze whatever needs to be analyzed...
   bool Analyze();
   /// Interrupt the analysis
   void Interrupt() { m_Interrupt = true; }
-
+  
 private:
   /// True, if the analysis needs to be interrupted
   bool m_Interrupt;
@@ -98,9 +98,9 @@ bool ConvertPhantom::ParseCommandLine(int argc, char** argv)
   Usage<<"         -f:   file name (*.mhd)"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
-
+  
   string Option;
-
+  
   // Check for help
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
@@ -109,52 +109,52 @@ bool ConvertPhantom::ParseCommandLine(int argc, char** argv)
       return false;
     }
   }
-
+  
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
-
-		// First check if each option has sufficient arguments:
-		// Single argument
+    Option = argv[i];
+    
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-f") {
-			if (!((argc > i+1) && 
-            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
-		// Multiple arguments template
+      if (!((argc > i+1) && 
+        (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+        }
+    } 
+    // Multiple arguments template
     /*
-		else if (Option == "-??") {
-			if (!((argc > i+2) && 
-            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
-            (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		}
-    */
-
-		// Then fulfill the options:
+     *    else if (Option == "-??") {
+     *      if (!((argc > i+2) && 
+     *            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
+     *            (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0))){
+     *        cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
+     *        cout<<Usage.str()<<endl;
+     *        return false;
+  }
+  }
+  */
+    
+    // Then fulfill the options:
     if (Option == "-f") {
       m_FileName = argv[++i];
-			cout<<"Accepting file name: "<<m_FileName<<endl;
-		} else {
-			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+      cout<<"Accepting file name: "<<m_FileName<<endl;
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
-
+  
   // Check if the files exist:
   if (MFile::Exists(m_FileName) == false) {
     cout<<"Error: Cannot find mhd file"<<endl;
     return false;
   }
-
-
+  
+  
   return true;
 }
 
@@ -166,12 +166,12 @@ bool ConvertPhantom::ParseCommandLine(int argc, char** argv)
 bool ConvertPhantom::Analyze()
 {
   if (m_Interrupt == true) return false;
-
+  
   MParser Mhd;
   Mhd.Open(m_FileName);
-
+  
   MTokenizer* T;
-
+  
   T = Mhd.GetTokenizerAt(0);
   if (T->GetTokenAt(0) != "NDims") {
     cout<<"Error: NDims keyword not found at correct position"<<endl;
@@ -192,7 +192,7 @@ bool ConvertPhantom::Analyze()
     NBins *= Dims.back();
     cout<<"Dim "<<i+1<<": "<<Dims.back()<<endl;
   }
-    
+  
   T = Mhd.GetTokenizerAt(3);
   vector<double> Spacing;
   if (T->GetTokenAt(0) != "ElementSpacing") {
@@ -203,7 +203,7 @@ bool ConvertPhantom::Analyze()
     Spacing.push_back(T->GetTokenAtAsDouble(2 + i)/10);
     cout<<"Spacing "<<i+1<<": "<<Spacing.back()<<endl;
   }
-     
+  
   T = Mhd.GetTokenizerAt(5);
   MString RawFile;
   if (T->GetTokenAt(0) != "ElementDataFile") {
@@ -212,7 +212,7 @@ bool ConvertPhantom::Analyze()
   }
   RawFile = T->GetTokenAt(2);
   cout<<"Raw file name: "<<RawFile<<endl;
-
+  
   ifstream Raw;
   Raw.open(RawFile.Data(), ios::in | ios::binary);
   
@@ -228,7 +228,7 @@ bool ConvertPhantom::Analyze()
     cout<<"Unable to open file: "<<RawFile<<endl;
   }
   Raw.close();
-
+  
   if (Matrix.size() != NBins) {
     cout<<"Matrix size "<<Matrix.size()<<" != "<<NBins<<endl;
     return false;
@@ -244,9 +244,9 @@ bool ConvertPhantom::Analyze()
     }
     Hist->Draw();
   }
-
+  
   int VoxelCount = 0;
-
+  
   // Create Geomega geometry
   ofstream geo;
   geo.open("Phantom.geo");
@@ -260,10 +260,10 @@ bool ConvertPhantom::Analyze()
   vector<short> MaterialIDs;
   string Mat_name("");
   for (int z = 0; z < Dims[2]; ++z) {
-
+    
     bool FoundLine = false;
     for (int y = 0; y < Dims[1]; ++y) {
-
+      
       bool FoundVoxel = false;
       for (int x = 0; x < Dims[0]; ++x) {
         if (Matrix[x + y*Dims[0] + z*Dims[0]*Dims[1]] > 0) {
@@ -277,21 +277,21 @@ bool ConvertPhantom::Analyze()
             NIdentical++;
           }
           geo<<"Volume Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<endl;
-
-	  switch ( MaterialID)
-	    {
-	    case 2: Mat_name="SpineBone"; break;
-	    case 10: Mat_name="Muscle"; break;
-	    case 11: Mat_name="Muscle"; break;
-	    case 12: Mat_name="Muscle"; break;
-	    case 13: Mat_name="Air"; break;
-	    case 14: Mat_name="Muscle"; break;
-	    case 15: Mat_name="Muscle"; break;
-	    case 18: Mat_name="Muscle"; break;
-	    case 39: Mat_name="Lung"; break;
-	    default: Mat_name="Water"; break;
-	    }
-
+          
+          switch ( MaterialID)
+          {
+            case 2: Mat_name="SpineBone"; break;
+            case 10: Mat_name="Muscle"; break;
+            case 11: Mat_name="Muscle"; break;
+            case 12: Mat_name="Muscle"; break;
+            case 13: Mat_name="Air"; break;
+            case 14: Mat_name="Muscle"; break;
+            case 15: Mat_name="Muscle"; break;
+            case 18: Mat_name="Muscle"; break;
+            case 39: Mat_name="Lung"; break;
+            default: Mat_name="Water"; break;
+          }
+          
           geo<<"Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<".Material "<<Mat_name<<endl;
           bool MaterialFound = false;
           for (unsigned int m = 0; m < MaterialIDs.size(); ++m) {
@@ -310,10 +310,10 @@ bool ConvertPhantom::Analyze()
           geo<<endl;
           
           x += (NIdentical-1);
-	  VoxelCount += NIdentical-1;
+          VoxelCount += NIdentical-1;
         }
       }
-
+      
       if (FoundVoxel == true) {
         FoundLine = true;
         geo<<"Volume Phantom_Line_"<<z<<"_"<<y<<endl;
@@ -343,7 +343,7 @@ bool ConvertPhantom::Analyze()
   geo<<"Water.Density 1.0    // Attention: Density fixed to 1.0"<<endl;
   geo<<"Water.Component 16  8  1"<<endl;
   geo<<"Water.Component  1.01  1  2"<<endl<<endl;
-
+  
   geo<<"Material RibBone"<<endl;
   geo<<"RibBone"<<".Density 1.92"<<endl;
   geo<<"RibBone.ComponentByMass 1.01  1  0.034  // H"<<endl;
@@ -355,7 +355,7 @@ bool ConvertPhantom::Analyze()
   geo<<"RibBone.ComponentByMass 30.97  15  0.103  // P"<<endl;
   geo<<"RibBone.ComponentByMass 32.066  16  0.003  // S"<<endl;
   geo<<"RibBone.ComponentByMass 40.08  20  0.225  // Ca"<<endl<<endl;
-
+  
   geo<<"Material SpineBone"<<endl;
   geo<<"SpineBone"<<".Density 1.42"<<endl;
   geo<<"SpineBone.ComponentByMass 1.01  1  0.063  // H"<<endl;
@@ -369,7 +369,7 @@ bool ConvertPhantom::Analyze()
   geo<<"SpineBone.ComponentByMass 35.45  17  0.001  // Cl"<<endl;
   geo<<"SpineBone.ComponentByMass 39.098  16  0.001  // K"<<endl;
   geo<<"SpineBone.ComponentByMass 40.08  20  0.133  // Ca"<<endl<<endl;
-
+  
   geo<<"Material Muscle"<<endl;
   geo<<"Muscle"<<".Density 1.05"<<endl;
   geo<<"Muscle.ComponentByMass 1.01  1  0.102  // H"<<endl;
@@ -381,7 +381,7 @@ bool ConvertPhantom::Analyze()
   geo<<"Muscle.ComponentByMass 32.066  16  0.003  // S"<<endl;
   geo<<"Muscle.ComponentByMass 35.45  17  0.001  // Cl"<<endl;
   geo<<"Muscle.ComponentByMass 39.098  16  0.004  // K"<<endl<<endl;
-
+  
   geo<<"Material Lung"<<endl;
   geo<<"Lung"<<".Density 0.26"<<endl;
   geo<<"Lung.ComponentByMass 1.01  1  0.103  // H"<<endl;
@@ -393,7 +393,7 @@ bool ConvertPhantom::Analyze()
   geo<<"Lung.ComponentByMass 32.066  16  0.003  // S"<<endl;
   geo<<"Lung.ComponentByMass 35.45  17  0.003  // Cl"<<endl;
   geo<<"Lung.ComponentByMass 39.098  16  0.002  // K"<<endl<<endl;
-
+  
   geo<<"Material Brain"<<endl;
   geo<<"Brain"<<".Density 1.04"<<endl;
   geo<<"Brain.ComponentByMass 1.01  1  0.107  // H"<<endl;
@@ -405,7 +405,7 @@ bool ConvertPhantom::Analyze()
   geo<<"Brain.ComponentByMass 32.066  16  0.002  // S"<<endl;
   geo<<"Brain.ComponentByMass 35.45  17  0.003  // Cl"<<endl;
   geo<<"Brain.ComponentByMass 39.098  16  0.003  // K"<<endl<<endl;
-
+  
   geo<<"Material Skull"<<endl;
   geo<<"Skull"<<".Density 1.61"<<endl;
   geo<<"Skull.ComponentByMass 1.01  1  0.05  // H"<<endl;
@@ -417,14 +417,14 @@ bool ConvertPhantom::Analyze()
   geo<<"Skull.ComponentByMass 30.97  15  0.081  // P"<<endl;
   geo<<"Skull.ComponentByMass 32.066  16  0.003  // S"<<endl;
   geo<<"Skull.ComponentByMass 40.08  20  0.176  // Ca"<<endl<<endl;
-
+  
   // geo<<endl;
   
   
   geo.close();
-
+  
   cout<<"Voxel count: "<<VoxelCount<<endl;
-
+  
   return true;
 }
 
@@ -459,14 +459,14 @@ int main(int argc, char** argv)
 {
   // Catch a user interupt for graceful shutdown
   // signal(SIGINT, CatchSignal);
-
+  
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("ConvertPhantom", "a ConvertPhantom example program");
-
+  
   TApplication ConvertPhantomApp("ConvertPhantomApp", 0, 0);
-
+  
   g_Prg = new ConvertPhantom();
-
+  
   if (g_Prg->ParseCommandLine(argc, argv) == false) {
     cerr<<"Error during parsing of command line!"<<endl;
     return -1;
@@ -475,11 +475,11 @@ int main(int argc, char** argv)
     cerr<<"Error during analysis!"<<endl;
     return -2;
   } 
-
+  
   ConvertPhantomApp.Run();
-
+  
   cout<<"Program exited normally!"<<endl;
-
+  
   return 0;
 }
 

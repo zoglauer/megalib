@@ -38,7 +38,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIImageOptions)
 #endif
 
@@ -81,10 +81,10 @@ void MGUIImageOptions::Create()
 
   AddSubTitle("Choose the image drawing options"); 
 
-  TGLayoutHints* FrameLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 10);
+  TGLayoutHints* FrameLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 10*m_FontScaler);
  
-  TGLayoutHints* LeftLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 10, 0, 0);
-  TGLayoutHints* RightLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 10, 0, 0, 0);
+  TGLayoutHints* LeftLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 10*m_FontScaler, 0, 0);
+  TGLayoutHints* RightLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 10*m_FontScaler, 0, 0, 0);
 
 
   TGHorizontalFrame* PaletteFrame = new TGHorizontalFrame(this);
@@ -103,6 +103,10 @@ void MGUIImageOptions::Create()
   m_Palette->AddEntry("White Red Black", MImage::c_WhiteRedBlack);
   m_Palette->AddEntry("Andreas' thesis", MImage::c_Thesis);
   m_Palette->AddEntry("Andreas' thesis - variability at low end", MImage::c_ThesisVarAtLow);
+  m_Palette->AddEntry("Improved Rainbow", MImage::c_Rainbow);
+  m_Palette->AddEntry("Bird", MImage::c_Bird);
+  m_Palette->AddEntry("Viridis", MImage::c_Viridis);
+  m_Palette->AddEntry("Cividis", MImage::c_Cividis);
   m_Palette->Select(m_GUIData->GetImagePalette());
   m_Palette->Associate(this);
   m_Palette->SetHeight(m_FontScaler*18);
@@ -128,10 +132,9 @@ void MGUIImageOptions::Create()
   DrawModeFrame->AddFrame(m_DrawMode, RightLayout);
 
 
-  TGLayoutHints* SourceCatalogLayout = 
-    new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 10);
+  TGLayoutHints* SourceCatalogLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 10*m_FontScaler);
 
-  m_SourceCatalog = new MGUIEFileSelector(this, "Choose a source catalog for images in galactic coordinates (empty = use no catalog):", 
+  m_SourceCatalog = new MGUIEFileSelector(this, "Choose a source catalog for images in Galactic coordinates (empty = use no catalog):", 
                                           m_GUIData->GetImageSourceCatalog());
   m_SourceCatalog->SetFileType("MEGAlib source catalog", "*.scat");
   AddFrame(m_SourceCatalog, SourceCatalogLayout);
@@ -156,7 +159,7 @@ void MGUIImageOptions::Create()
 
 bool MGUIImageOptions::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_Palette->GetSelected() != m_GUIData->GetImagePalette()) {
     m_GUIData->SetImagePalette(m_Palette->GetSelected());

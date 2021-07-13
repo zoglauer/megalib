@@ -39,7 +39,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERTrackRank)
 #endif
 
@@ -107,7 +107,7 @@ bool MERTrackRank::EvaluateTracks(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERTrackRank::SortByTrackQualityFactor(MRawEventList* List)
+void MERTrackRank::SortByTrackQualityFactor(MRawEventIncarnations* List)
 {
   // Sort decreasing:
 

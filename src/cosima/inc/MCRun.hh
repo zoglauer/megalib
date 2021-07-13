@@ -21,6 +21,7 @@
 
 // Cosima:
 #include "MCSource.hh"
+#include "MCOrientation.hh"
 #include "MCIsotopeStore.hh"
 
 // Geant4:
@@ -121,14 +122,28 @@ public:
   /// Return the duration (in seconds) of this run  
   double GetDuration() const { return m_Duration; }
   /// Set the maximum number of triggers for this run
-  bool SetTriggers(const int& Triggers);
+  bool SetTriggers(const long& Triggers);
   /// Return the maximum number of triggers for this run
-  int GetTriggers() const { return m_Triggers; }
+  long GetTriggers() const { return m_Triggers; }
   /// Set the maximum number of events for this run
-  bool SetEvents(const int& Events);
+  bool SetEvents(const long& Events);
   /// Return the maximum number of events for this run
-  int GetEvents() const { return m_Events; }
-
+  long GetEvents() const { return m_Events; }
+  
+  /// Set the sky-orientation
+  bool SetSkyOrientation(const MCOrientation& Orientation) { m_SkyOrientation = Orientation; return true; }
+  /// Return the sky orientation
+  MCOrientation GetSkyOrientation() const { return m_SkyOrientation; }
+  /// Return the sky orientation as const reference
+  const MCOrientation& GetSkyOrientationReference() const { return m_SkyOrientation; }
+  
+  /// Set the detector orientation
+  bool SetDetectorOrientation(const MCOrientation& Orientation) { m_DetectorOrientation = Orientation; return true; }
+  /// Return the detector orientation
+  MCOrientation GetDetectorOrientation() const { return m_DetectorOrientation; }
+  /// Return the detector orientation as const reference
+  const MCOrientation& GetDetectorOrientationReference() const { return m_DetectorOrientation; }
+  
   /// Return the stop condition type
   int GetStopCondition() const { return m_StopCondition; }
 
@@ -171,12 +186,12 @@ public:
   /// Add a number of simulated events
   void AddSimulatedEvent() { ++m_NSimulatedEvents; }
   /// Get the number of simulated events
-  int GetNSimulatedEvents() const { return m_NSimulatedEvents; }
+  long GetNSimulatedEvents() const { return m_NSimulatedEvents; }
 
   /// Add a number of triggered events
   void AddTriggeredEvent() { ++m_NTriggeredEvents; }
   /// Get the number of triggered events
-  int GetNTriggeredEvents() const { return m_NTriggeredEvents; }
+  long GetNTriggeredEvents() const { return m_NTriggeredEvents; }
 
   /// Generate all primary particles for the primary generator action
   /// The function is only to be called by MCPrimaryGeneratorAction::GeneratePrimaries()
@@ -238,6 +253,11 @@ private:
   /// List of sources
   vector<MCSource*> m_SourceList;
 
+  /// The detector orientation
+  MCOrientation m_DetectorOrientation;
+  /// The sky orientation
+  MCOrientation m_SkyOrientation;
+  
   /// Map indicating, when we have the next emission for the source
   set<MCSource*, NextEmissionSort> m_NextEmission;
   //set<MCSource*> m_NextEmission;
@@ -247,9 +267,9 @@ private:
   /// Duration of this run in seconds
   double m_Duration;
   /// Maximum bnumber of triggered events
-  int m_Triggers;
+  long m_Triggers;
   /// Maximum number of events
-  int m_Events;
+  long m_Events;
 
   /// Type of the stop condition for this run
   int m_StopCondition;
@@ -270,16 +290,16 @@ private:
   double m_SimulatedTime;
 
   /// Number of simulated events
-  int m_NSimulatedEvents;
+  long m_NSimulatedEvents;
 
   /// Number of (pre-) triggered events
-  int m_NTriggeredEvents;
+  long m_NTriggeredEvents;
 
   /// Number of generated particles (one event can have more than one)
-  int m_NGeneratedParticles;
+  long m_NGeneratedParticles;
 
   /// Number of events which have been skipped (only required for speed optimizations)
-  unsigned int m_NSkippedEvents;
+  unsigned long m_NSkippedEvents;
 };
 
 #endif

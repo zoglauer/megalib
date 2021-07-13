@@ -3,134 +3,168 @@
 ******************************************************************************
 
 
- 
-Version 2.35/2.36
-=================
- 
-*** IMPORTANT - PLEASE READ:
-
-+ Currently all MEGAlib development efforts are geared towards analyzing
-  the COSI 2016 balloon flight which happens in the "experimental" branch
-  on github. Since this required significant changes / additions to MEGAlib,
-  the experimental branch will ultimately morph into version 3.0.
-  Meanwhile, this version ("master on github") just contains bug fixes, 
-  non-critical updates, and compatibility updates with the latest OS and
-  ROOT/Geant4 versions.
-  Default ROOT version is now 6.14, default Geant4 version is 10.2
-  
- 
-*** KNOWN ISSUES
-+ The performance of activation simulations is currently not the best...
-   
-   
-*** Critcal bug fixes
-+ Cosima: The Anger camera XYZ mode was discretized like the XY mode
-+ Geomega: Sphere: GetRandomPositionInDetector() was not really random
 
 
 
-Version 2.33/2.34
+
+Version 3.03/3.04
 =================
 
-*** IMPORTANT - PLEASE READ:
+Cosima:
++ New storage option "ia-only"
 
-+ Currently all MEGAlib development efforts are geared towards analyzing
-  the COSI 2016 balloon flight which happens in the "experimental" branch
-  on github. Since this required significant changes / additions to MEGAlib, 
-  the experimental branch will ultimately morph into version 3.0.
-  Meanwhile, this version ("master on github") just contains bug fixes, 
-  non-critical updates, and compatibility updates with the latest OS and 
-  ROOT/Geant4 versions.
-+ Default ROOT version is now 6.14, default Geant4 version is 10.2
+Long-term bugs fixed:
++ The incidence direction of the 511-keV emission was wrong
+
+
+
+Version 3.01/3.02
+=================
+
+General:
++ setup: HEASoft can now be compiled as optional package
++ setup: New script configure_macport to setup macport before compiling 
+         ROOT/Geant4/MEGAlib on macOS Catalina
++ dmegalib: New dmegalib-setup, which needs to be run before the distributed
+            analysis can be used
+
+Fretalon:
++ Changes to the API to run Melinator in a python script 
+            
+Mimrec:
++ New option in the event selector to choose the detector of the 2nd interaction
++ New tool to convert the tra file into a COSI Level 3 fits file and back
+
+Examples:
++ AllSky: How to simulate all-sky images
++ Cross-section plotter
+
+Long-term bugs fixed:
++ Sivan: There was a uncommon programatic path using clusters and discretization, 
+         which could have lead to double noising 
  
 
-*** KNOWN ISSUES
-+ The performance of activation simulations is currently not the best...
-  
-  
-*** Critcal bug fixes
-+ When simulating guard rings for voxel detectors, the Y offset was used as Z offset
-+ In hadron therapy build-up mode (but not in astrophysics activation step-1 mode) 
-  the detector time constant was not honored
-+ Report by Alexey: If Only look at combination with start in D1 was turned on, then 
-  some events were falsely rejected 
-+ The TE written to the file was sometimes calculated wrongly for tracks
 
 
-
-
-******************************************************************************
-
-
-
-
-Version 2.31/2.32
+Version 2.99/3.00
 =================
 
 *** IMPORTANT - PLEASE READ:
 
-+ Currently all MEGAlib development efforts are geared towards analyzing
-  the COSI 2016 balloon flight which happens in the "experimental" branch
-  on github. Since this required significant changes / additions to MEGAlib, 
-  the experimental branch will ultimately morph into version 3.0.
-  Meanwhile, this version ("master on github") just contains bug fixes, 
-  non-critical updates, and compatibility updates with the latest OS and 
-  ROOT/Geant4 versions.
-+ Default ROOT version is now 6.06, default Geant4 version is 10.2
++ Switch to GPL v3 license
++ Big update to revan and mimrec to allow triple-compton PET reconstruction 
+  requiring significant internal changes (v2.99.10)
++ Default ROOT version is now 6.18, default Geant4 version is 10.2
  
 
 *** KNOWN ISSUES
-+ The performance of activation simulations is currently not the best...
++ The performance of activation simulations is still not the best...
   
   
 *** Critcal bug fixes
 + Powerlaws with an index of alpha=1.0 were not simulated correctly in cosima
-+ When simulating guard rings for voxel detectors, the Y offset was used as Z offset (backport)
-+ In hadron therapy build-up mode (but not in astrophysics activation step-1 mode) 
-  the detector time constant was not honored (backport)
++ When simulating guard rings for voxel detectors, the Y offset was used as Z offset
 
 *** Significant new features & improvements:
 
 General:
-+ Setup script now has an option to keep MEGAlib un-updated 
++ Python bindings! Check out resource/examples/python for a few examples on how
+  to use MEGAlib in Python (v2.99.09)
++ Setup script now has an option to keep MEGAlib un-updated
++ Fixed many multi-threading bugs
++ Added old and new neural network interface
++ Official MEGAlib docker container 
++ Removed old Visual Studio projects since MEGAlib can now be run in a
+  container and on Linux on Windows
++ Dropped svn & cvs support in the setup script
++ Added benchmark in resource/examples/Benchmark
 
 Cosima:
 + Support for Geant4 10.2
 + Option to simulate event list (including advanced example)
 + Lightcurve simulations
++ Orientations
++ Istropic emission as short cut for FarFieldAreaSource from 4 pi (v.2.99.12)
++ StoreMinimumEnergy: Store only events which deposited at least this
+  amount of energy
++ Improved dcosima distributed simulation
++ Replaced "StoreOnlyTriggeredEvents" with "PreTriggerMode" using 3 modes:
+  Full, EveryEventWithHits & Everything
++ Updated all examples
++ In the documentation, the break energy of the Band function was 
+  accidentially called peak energy (formula was correct)
+
 
 Sivan:
 + Enabled comments (and their passing through) in the sim file ("CC" tag)
 
 Fretalon:
++ Many smaller enhancements triggered by COSI analysis
++ Detection enhancements in Melinator
 
 Geomega:
 + New option to show the surrounding sphere (ShowSurroundingsphere true)
   This will only be displayed in geomega, but does not show up in any
   other program
++ Fixed the PEEK elemental composition to 19C12H3O from 5C8H2O
++ Dropped support for Geant3/MGeant
++ Internal rewrite of the guard ring interface: 
+  - Guard rings are now their own detector type
+  - You need to give 2 energy resolution data point as in all other detectors
+  - Updated all examples accordingly
++ New trigger mode: TriggerMap. This mode allows much more complex trigger,
+  e.g. tracks in the tracker, non-vetoable triggers for long tracks, etc.
   
 Reponse:
++ New base class for all responses
++ Many improvements for COSI analysis
++ TMVA data set creation and training of machine learning codes
++ Distributed response simulation with dresponsecreator
++ TMVA mode for identifying multiple gamma-ray from single event (v2.99.10)
   
 Revan:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
++ Added TMVA Compton sequence reconstruction (e.g. boosted decision trees, neural networks)
++ Event clustering allows identifying multiple gamma-ray events
++ Significant internal changes to reconstruct multiple gamma rays from one event (v2.99.10)
 
 Mimrec:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
++ Parallelization of image deconvolution
++ New imaging response modes
++ Support for binned imaging
++ Support for PET and multi-gamma-ray events (v2.99.10)
 
 
 Realta:
 
 Spectralizer:
 
+Addons:
++ SensitivityOptimizer: The power law index input has now the same sign as
+  in cosima, it's the Gamma, i.e. the positive one (e.g. Crab has +2.19)
+
 Examples:
-+ The EventList example demonstartes the use of event list during simulation
++ The EventList example demonstrates the use of event list during simulation
   basically allowing any arbitrary beam/spectrum/polarization input
++ GRB sampling based on BATSE catalog
 
 
 ... plus many, many smaller things I already forgot about :)
 
 
+Long-term bugs fixed:
++ Cosima: AngerCamera in XYZ mode: Z axis was discretized as in XY mode 
++ Cosima: Voxel3D: The Y offset was used as Z offset during simulations
++ Cosima: In DecayMode buildup (the one used for hadron therapy, 
+  not astrophysics) the DetectorDecayConstant was ignored
++ Geomega: Sphere: The random position generation wasn't really random
++ Revan: Reported by Alexey: Some events were incorrectly rejected in the classic
+  event reconstruction approach
 
+Important regressions fixed:
++ Between 4/26/2018 & 5/15/2018 the sim file reader skipped each second event...
+  
 
 ******************************************************************************
 

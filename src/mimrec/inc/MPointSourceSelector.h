@@ -71,7 +71,7 @@ class MPointSourceSelector : MParser
   friend ostream& operator<<(ostream& os, const MPointSourceSelector& P);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPointSourceSelector, 0) // loads and/or selects pointsources out of a MPointSourceList
 #endif

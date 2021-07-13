@@ -79,7 +79,7 @@ class MUnidentifiableEvent : public MPhysicalEvent
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MUnidentifiableEvent, 1)
 #endif

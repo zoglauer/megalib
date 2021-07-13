@@ -37,9 +37,23 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
-ClassImp(MFitFunctions)
+#ifdef ___CLING___
+//ClassImp(MFitFunctions)
 #endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double Linear(double* x, double* par)
+{
+  // 0: Offset
+  // 1: Gradient
+  
+  double fitval = par[0] + par[1]*x[0];
+  
+  return fitval;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +62,7 @@ ClassImp(MFitFunctions)
 double Lorentz2(double* x, double* par)
 {
   double fitval = par[0]/(par[1]*par[1]+x[0]*x[0]);
-
+  
   return fitval;
 }
 

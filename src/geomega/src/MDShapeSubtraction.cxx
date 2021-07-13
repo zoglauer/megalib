@@ -43,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShapeSubtraction)
 #endif
 
@@ -84,6 +84,8 @@ bool MDShapeSubtraction::Set(MDShape* Minuend, MDShape* Subtrahend, MDOrientatio
   m_SubShapes[1] = Subtrahend;
   m_Orientation = Orientation;
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -92,36 +94,61 @@ bool MDShapeSubtraction::Set(MDShape* Minuend, MDShape* Subtrahend, MDOrientatio
 
 
 bool MDShapeSubtraction::Validate()
-{
-  if (m_SubShapes[0] == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
-    mout<<"No minuend given"<<endl;
-    return false;            
+{  
+  if (m_IsValidated == false) {
+    
+    if (m_SubShapes[0] == 0) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+      mout<<"No minuend given"<<endl;
+      return false;            
+    }
+    
+    if (m_SubShapes[1] == 0) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+      mout<<"No subtrahend given"<<endl;
+      return false;            
+    }  
+    
+    if (m_SubShapes[0] == m_SubShapes[1]) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+      mout<<"Minuend and subtrahend are identical"<<endl;
+      return false;            
+    }
+    
+    if (this == m_SubShapes[0]) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+      mout<<"Minuend cannot be identical with this subtraction shape"<<endl;
+      return false;            
+    }
+    
+    if (this == m_SubShapes[1]) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+      mout<<"Subtrahend cannot be identical with this subtraction shape"<<endl;
+      return false;            
+    }
+    
+    if (m_SubShapes[0]->Validate() == false) return false;  
+    if (m_SubShapes[1]->Validate() == false) return false;
+    
+    if (m_Orientation == 0) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+      mout<<"No orientation given"<<endl;
+      return false;            
+    }
+    
+    delete m_Geo;
+    cout<<"Creating Node of: "<<m_SubShapes[0]->GetName()<<" & "<<m_SubShapes[1]->GetName()<<endl;
+    TGeoSubtraction* Node = new TGeoSubtraction(m_SubShapes[0]->GetRootShape(), m_SubShapes[1]->GetRootShape(), 0, m_Orientation->GetRootMatrix());
+    m_Geo = new TGeoCompositeShape(m_Name, Node);
+    
+    // Determine an almost unique position inside this shape:
+    unsigned int Seed = gRandom->GetSeed();
+    gRandom->SetSeed(12345678);
+    m_AlmostUniquePosition = GetRandomPositionInside();
+    gRandom->SetSeed(Seed);
+    
+    m_IsValidated = true;
   }
-  if (m_SubShapes[0]->Validate() == false) return false;
-  
-  if (m_SubShapes[1] == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
-    mout<<"No subtrahend given"<<endl;
-    return false;            
-  }  
-  if (m_SubShapes[1]->Validate() == false) return false;
-  
-  if (m_Orientation == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
-    mout<<"No orientation given"<<endl;
-    return false;            
-  }
-  
-  delete m_Geo;
-  TGeoSubtraction* Node = new TGeoSubtraction(m_SubShapes[0]->GetRootShape(), m_SubShapes[1]->GetRootShape(), 0, m_Orientation->GetRootMatrix());
-  m_Geo = new TGeoCompositeShape(m_Name, Node);
-
-  // Determine an almost unique position inside this shape:
-  unsigned int Seed = gRandom->GetSeed();
-  gRandom->SetSeed(12345678);
-  m_AlmostUniquePosition = GetRandomPositionInside();
-  gRandom->SetSeed(Seed);
   
   return true;
 }
@@ -162,7 +189,9 @@ void MDShapeSubtraction::Scale(const double Factor)
   //if (m_Minuend->GetScaler() != Factor) m_Minuend->Scale(Factor);
   //if (m_Subtrahend->GetScaler() != Factor) m_Subtrahend->Scale(Factor);
   //if (m_Orientation->GetScaler() != Factor) m_Orientation->Scale(Factor);
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

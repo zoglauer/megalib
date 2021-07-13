@@ -41,7 +41,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUISignificance)
 #endif
 
@@ -87,9 +87,9 @@ void MGUISignificance::Create()
   SetWindowName("Significance map via distant test positions"); 
 
   AddSubTitle("Please enter the size of the radius around the test positions\n"
-	      "and the distance between source and test positions");
+        "and the distance between source and test positions");
 
-  m_SelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 100, 100, 2, 2);
+  m_SelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 100*m_FontScaler, 100*m_FontScaler, 2*m_FontScaler, 2*m_FontScaler);
   
   m_Radius = new MGUIEEntry(this, "Radius around source and test positions (e.g. 1/2 FWHM  of ARM) [deg]:", false, m_GUIData->GetSignificanceMapRadius(), true, 0.0, 180.0);
   AddFrame(m_Radius, m_SelectorLayout);
@@ -128,7 +128,7 @@ bool MGUISignificance::OnApply()
   m_GUIData->SetSignificanceMapRadius(m_Radius->GetAsDouble());
 
   m_OkPressed = true;
-	
+  
   return true;
 }
 

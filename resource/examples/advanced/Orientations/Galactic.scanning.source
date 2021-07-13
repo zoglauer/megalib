@@ -1,0 +1,48 @@
+# This example shows how to simulate a source (Crab) in Galactic coordinates
+
+# Max is my default COSI-like quick sim. This is the source for it
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/special/Max.geo.setup
+
+
+# Physics list
+PhysicsListEM                        LivermorePol
+PhysicsListEMActivateFluorescence    false
+
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+# The run, with the instrument moving around in Galactic coordinates, 
+# a fixed point source in Galactic coordinates, and
+# a background symmetric in local coordinates
+
+Run MyRun
+MyRun.FileName                  GalacticScan
+MyRun.NTriggers                 200000
+# The detector rotates in the Galactic coordiante system as given in the ori file.
+# There is no loop, when the time in the ori file ends, the simulation will end
+MyRun.OrientationSky            Galactic File NoLoop GalacticScan.ori
+
+# The Crab
+MyRun.Source MySource
+MySource.ParticleType               1
+# The beam is a far field point source, the direction is a dummy (needs to be 0 0)
+# and will be rotated into the position given in the orientation keywork
+MySource.Beam                       FarFieldPointSource 0 0 
+# The orientation of the source in Galactiuc coordiantes, which is fixed to Crab position
+MySource.Orientation                Galactic Fixed -05.78 184.56
+MySource.Spectrum                   Mono 511
+MySource.Flux                       0.001
+
+# A background covering the top 45-degres, fixed in local, i.e. detector coordinates.
+MyRun.Source MyBackground
+MyBackground.ParticleType       1
+MyBackground.Beam               FarFieldAreaSource 0.0 45.0 0.0 360.0
+MyBackground.Orientation        Local Fixed
+MyBackground.Spectrum           Mono 511
+MyBackground.Flux               0.01

@@ -1,5 +1,5 @@
 # Macroscopic cross section for Compton scattering
-# Derived from Geant4 version 1021
+# Derived from Geant4 version 1023
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Compton scattering cross section for Aluminium
 CE false
-HA 3494151393
+HA 789039526
 
 R1         1.000000 3.855789e-02
 R1         1.047129 4.118739e-02

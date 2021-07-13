@@ -58,7 +58,7 @@ class MGUIEviewOptions : public MGUIDialog
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEviewOptions, 0) // GUI window: ...
 #endif

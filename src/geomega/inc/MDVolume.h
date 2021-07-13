@@ -46,13 +46,10 @@ class MDVolume
 {
   // public interface:
  public:
-  MDVolume(MString Name = "", MString ShortName = "");
+  MDVolume(MString Name = "");
   virtual ~MDVolume();
 
   inline const MString& GetName() const { return m_Name; }
-
-  MString GetShortName();
-  void SetShortName(MString ShortName);
 
   void SetWorldVolume();
   bool IsWorldVolume();
@@ -90,8 +87,10 @@ class MDVolume
   void SetRotation(double x, double y, double z);
   void SetRotation(MRotation Rotation, int RotID);
   void SetRotation(MRotation Rotation);
-  void SetRotation(double theta1, double phi1, 
-                   double theta2, double phi2, 
+  //! Set the new rotation matrix via the azimuyhal and polar angle of the new coordinate system with respect to the old one.
+  //! Return false if the axes are not orthogonal
+  bool SetRotation(double theta1, double phi1,
+                   double theta2, double phi2,
                    double theta3, double phi3);
   MRotation GetRotationMatrix() const;
   MRotation GetInvRotationMatrix() const;
@@ -160,14 +159,14 @@ class MDVolume
   bool ValidateClonesHaveSameMotherVolume();
 
   //! Check if a position in this volumes mother volume is inside this volume
-  bool IsInside(MVector Pos, double Tolerance = 0);
+  bool IsInside(MVector Pos, double Tolerance = 0); // TODO: RENAME! MISLEADING --> or make at least protected
   double DistanceInsideOut(MVector Pos);
   double DistanceOutsideIn(MVector Pos);
 
   //! Create the Root geometry presentation of thhis volume and its daughters
   void CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother);
 
-  
+
   // Interface for RECURSIVE manipulation of the volume tree or data retrieval
 
   //! Return the (deepest) volume at given position - if IsRelative == true, then position is assumed to be already in this volumes coordinate system
@@ -175,10 +174,10 @@ class MDVolume
   //! Return true if the volume is part of the volume tree
   bool ContainsVolume(const MString& Name, bool IncludeTemplates=false);
   //! Find detector volume and apply (random) noise to position, energy and time
-  bool Noise(MVector& Pos, double& Energy, double& Time); 
+  bool Noise(MVector& Pos, double& Energy, double& Time);
   //! Find detector volume and apply pulse-shape correction
   bool ApplyPulseShape(double Time, MVector& Pos, double& Energy);
-  
+
   //! FILL the MDVolumeSequence object with the sequence of volumes of the deepest volume the given position is in
   //! The return value is for internal purposes only!
   bool GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence);
@@ -186,7 +185,7 @@ class MDVolume
   //! The position starts in this volume, but is translated to the world volume, and then the sequecning starts
   //! The return value is for internal purposes only!
   bool GetVolumeSequenceInverse(MVector Pos, MDVolumeSequence* Sequence);
-  
+
   //! FILL the PATH lengths in the different materials between the positions start and stop
   //! The return value is for internal purposes only (volume (cm3) of the last volume)
   double GetAbsorptionLengths(map<MDMaterial*, double>& Lengths, MVector Start, MVector Stop);
@@ -221,17 +220,7 @@ class MDVolume
   bool GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
 
 
-  // Interface 
-
-  MString GetGeant3DIM();
-  MString GetGeant3DATA();
-  MString GetGeant3();
-  MString GetGeant3Position(int& IDCounter);
-
-  MString GetMGeant();
-  MString GetMGeantPosition(int& IDCounter);
-
-  //! Recursively return a geomega setup file type string 
+  //! Recursively return a geomega setup file type string
   MString GetGeomega();
 
   MString ToString(bool Recursive = false);
@@ -257,11 +246,10 @@ class MDVolume
   // private members:
  private:
   MString m_Name;              // Name of this volume
-  MString m_ShortName;         // 4 character Geant3 name of this volume
 
-  bool m_WorldVolume;        // True if this is the world volume  
-	bool m_IsVirtual;          // True if this is a virtual volume, i.e. it does not appear in the final geometry
-	bool m_IsMany;             // True if the many flag is raised
+  bool m_WorldVolume;        // True if this is the world volume
+  bool m_IsVirtual;          // True if this is a virtual volume, i.e. it does not appear in the final geometry
+  bool m_IsMany;             // True if the many flag is raised
 
   MDVolume* m_Mother;          // Mother volume
   vector<MDVolume*> m_Daughters;      // Number of daughter volumes
@@ -306,13 +294,13 @@ class MDVolume
   int m_ID;                  // ID of this volume
   int m_RotID;               // ID of the rotation
   static int m_RotIDCounter; // Maximum distributed rotation ID
-  static int m_WrittenRotID; // Used for geant3/mmgpod writing of rotation IDs 
+  static int m_WrittenRotID; // Used for geant3/mmgpod writing of rotation IDs
   int m_SensID;              // ID of sensitive volume, if it is senitive
 
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDVolume, 0)         // a detector volume
 #endif

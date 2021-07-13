@@ -58,13 +58,6 @@ class MDShapeSubtraction : public MDShape
   MString ToString();
   //! Dump the content in geomega format
   MString GetGeomega() const { return ""; };
-  
-  // DUMMY -  Geant3/MGGPOD interface
-  MString GetGeant3DIM(MString) { merr<<"MDShapeSubtraction does not support the Geant3/MGGPOD interface"<<error; return ""; }
-  MString GetGeant3DATA(MString) { merr<<"MDShapeSubtraction does not support the Geant3/MGGPOD interface"<<error; return ""; }
-  MString GetGeant3ShapeName() { merr<<"MDShapeSubtraction does not support the Geant3/MGGPOD interface"<<error; return ""; }
-  int GetGeant3NumberOfParameters() { merr<<"MDShapeSubtraction does not support the Geant3/MGGPOD interface"<<error; return 0; }
-  MString GetMGeantDATA(MString) { merr<<"MDShapeSubtraction does not support the Geant3/MGGPOD interface"<<error; return ""; }
 
   
   
@@ -105,7 +98,7 @@ class MDShapeSubtraction : public MDShape
   //! Almost unique position
   MVector m_AlmostUniquePosition;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeSubtraction, 0) // no description
 #endif

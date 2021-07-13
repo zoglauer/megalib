@@ -78,7 +78,7 @@ class MIsotopeStore
   vector<MIsotope> m_Isotopes;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MIsotopeStore, 0) // no description
 #endif

@@ -48,8 +48,8 @@ const int MCRun::c_StopByTime = 2;
 MCRun::MCRun()
 {
   m_Duration = numeric_limits<double>::max();
-  m_Triggers = numeric_limits<int>::max();
-  m_Events = numeric_limits<int>::max();
+  m_Triggers = numeric_limits<long>::max();
+  m_Events = numeric_limits<long>::max();
   m_StopCondition = c_StopByTriggers;
 
   m_SimulatedTime = 0.0;
@@ -103,7 +103,7 @@ bool MCRun::SetDuration(const double& Duration)
 /******************************************************************************
  * Return true, if the triggers could be set correctly
  */
-bool MCRun::SetTriggers(const int& Triggers) 
+bool MCRun::SetTriggers(const long& Triggers) 
 { 
   if (Triggers > 0) {
     m_Triggers = Triggers;
@@ -118,7 +118,7 @@ bool MCRun::SetTriggers(const int& Triggers)
 /******************************************************************************
  * Return true, if the events could be set correctly
  */
-bool MCRun::SetEvents(const int& Events) 
+bool MCRun::SetEvents(const long& Events) 
 { 
   if (Events > 0) {
     m_Events = Events;
@@ -434,13 +434,13 @@ bool MCRun::CheckStopConditions()
     return true;
   }
 
-  if (m_NTriggeredEvents == numeric_limits<int>::max()) {
-    mout<<"Maximum number of triggered events ("<<numeric_limits<int>::max()<<") reached"<<endl;
+  if (m_NTriggeredEvents == numeric_limits<long>::max()) {
+    mout<<"Maximum number of triggered events ("<<numeric_limits<long>::max()<<") reached"<<endl;
     return true;
   }
 
-  if (m_NSimulatedEvents == numeric_limits<int>::max()) {
-    mout<<"Maximum number of simulated events ("<<numeric_limits<int>::max()<<") reached"<<endl;
+  if (m_NSimulatedEvents == numeric_limits<long>::max()) {
+    mout<<"Maximum number of simulated events ("<<numeric_limits<long>::max()<<") reached"<<endl;
     return true;
   }
 
@@ -528,25 +528,20 @@ bool MCRun::Initialize()
   }
 
   sort(m_SourceList.begin(), m_SourceList.end(), SourceListFluxSort);
-
-  DetermineNextEmissions();
-
-  return true;
-}
-
-
-/******************************************************************************
- * Determine the next emission for all sources
- */  
-void MCRun::DetermineNextEmissions()
-{
-  // Determine the time steps
-  // The simulation increases in small time steps
-  // In each of these steps it is checked if a photon was emitted  
-  // The minimum time step is 1/100 (Scale) of the smallest intensity:
-
-  //m_NextEmission.resize(m_SourceList.size());
-
+  
+  // Advance the time if we have orientations with defined start and stop times
+  if (m_SkyOrientation.IsOriented() && m_SkyOrientation.IsLooping() == false) {
+    if (m_SkyOrientation.GetStartTime() > m_SimulatedTime) {
+      m_SimulatedTime = m_SkyOrientation.GetStartTime();
+    }
+  }
+  if (m_DetectorOrientation.IsOriented() && m_DetectorOrientation.IsLooping() == false) {
+    if (m_DetectorOrientation.GetStartTime() > m_SimulatedTime) {
+      m_SimulatedTime = m_DetectorOrientation.GetStartTime();
+    }
+  }
+  
+  // Determine the first emissions
   for (unsigned int i = 0; i < m_SourceList.size(); ++i) {
     if (m_SourceList[i]->IsSuccessor() == false) {
       m_SourceList[i]->CalculateNextEmission(m_SimulatedTime, m_NextEmissionScale);
@@ -555,10 +550,12 @@ void MCRun::DetermineNextEmissions()
     //else {
     //  m_NextEmission[m_SourceList[i]] = -1;
     //}
-    mdebug<<"Initial emission for "<<m_SourceList[i]->GetName()<<": "<<m_SourceList[i]->GetNextEmission()<<":"<< m_NextEmission.size()<<endl;
+    //cout<<"Initial emission for "<<m_SourceList[i]->GetName()<<": "<<m_SourceList[i]->GetNextEmission()<<":"<< m_NextEmission.size()<<endl;
   }
 
-  return;
+  //cout<<"Time: "<<m_SimulatedTime<<endl;
+  
+  return true;
 }
 
 
@@ -614,24 +611,35 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
       IsBuildUpSource = true;
     }
 
-    //cout<<"Next emission Ga: "<<m_NextEmission[0]/s<<" sec --- "<<m_SimulatedTime/s<<"sec"<<endl;
+    //cout<<"Next emission: "<<NextSource->GetNextEmission()/s<<" sec --- "<<m_SimulatedTime/s<<"sec"<<endl;
 
 
     // Step 2: Check if one of the stop conditions is fulfilled
     //         Then we can stop now
     if (NextSource->GetNextEmission() == numeric_limits<double>::max()) {
-      cout<<"Stop: "<<NextSource->GetName()<<endl;
-      m_SimulatedTime = numeric_limits<double>::max();
-      // That's basically stop by time...
+      // We ran out of events here, thus we are done. 
+      // Thus just pick the event stop condition, and say it is fullfilled.
+      m_StopCondition = c_StopByEvents;
+      m_Events = m_NSimulatedEvents;
       return;
     }
 
+    if (m_SkyOrientation.IsOriented() == true && m_SkyOrientation.IsLooping() == false) {
+      if (NextSource->GetNextEmission() > m_SkyOrientation.GetStopTime()) {
+    
+        m_StopCondition = c_StopByEvents;
+        m_Events = m_NSimulatedEvents;
+        return;
+      }
+    }     
+    
     m_SimulatedTime = NextSource->GetNextEmission();
-    //cout<<"Time: "<<m_SimulatedTime/s<<"  Particle: "<<m_SourceList[MinID].GetName()<<endl;
-
+    //cout<<"Time: "<<m_SimulatedTime/s<<"  Particle: "<<NextSource->GetName()<<endl;
+    
+    
     if (CheckStopConditions() == true) {
       // If we stop by time, we can safely set the duration as the current time...
-      cout<<"Stop: "<<NextSource->GetName()<<endl;
+      //cout<<"Stop: "<<NextSource->GetName()<<endl;
       if (GetStopCondition() == MCRun::c_StopByTime) {
         m_SimulatedTime = m_Duration;
       }
@@ -644,7 +652,7 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
 
     bool HasSuccessor = false;
     do {
-//       if (m_SourceList[MinID].IsBuildUpEventList() == true) {
+//       if (m_SourceList[MinID].IsBuildUpEventList() == true) { 
 //         break;
 //       }
 
@@ -693,6 +701,14 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
 
       //cout<<"Generated particle: "<<ParticleGun->GetParticleDefinition()->GetParticleName()<<endl;
 
+      if (m_SkyOrientation.IsOriented() == true && m_SkyOrientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+        double XLat = 0.0, XLong = 0.0, ZLat = 0.0, ZLong = 0.0; 
+        
+        m_SkyOrientation.GetOrientation(m_SimulatedTime, XLat, XLong, ZLat, ZLong);
+        EventAction->SetGalacticPointing(XLat, XLong, ZLat, ZLong);
+      }
+      
+      
       EventAction->AddIA("INIT", 
                          NGeneratedParticles,
                          0,
@@ -713,6 +729,15 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
           if (m_SourceList[so]->GetName() == NextSource->GetSuccessor()) {
             NextSource = m_SourceList[so];
             HasSuccessor = true;
+            if (NextSource->GetBeamType() == MCSource::c_NearFieldReverseDirectionToPredecessor) {
+               NextSource->SetPosition(ParticleGun->GetParticlePosition().getX(), 
+                                       ParticleGun->GetParticlePosition().getY(),
+                                       ParticleGun->GetParticlePosition().getZ(),
+                                       -ParticleGun->GetParticleMomentumDirection().getX(), 
+                                       -ParticleGun->GetParticleMomentumDirection().getY(),
+                                       -ParticleGun->GetParticleMomentumDirection().getZ());
+            }
+            
             break;
           }
         }

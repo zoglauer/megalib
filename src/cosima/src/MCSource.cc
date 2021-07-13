@@ -78,8 +78,10 @@ const int MCSource::c_NearField                                    = 2;
 const int MCSource::c_FarFieldPoint                                = 1;
 const int MCSource::c_FarFieldArea                                 = 2;
 const int MCSource::c_FarFieldGaussian                             = 3;
-const int MCSource::c_FarFieldFileZenithDependent                  = 4;
-const int MCSource::c_FarFieldNormalizedEnergyBeamFluxFunction     = 5;
+const int MCSource::c_FarFieldAssymetricGaussian                   = 4;
+const int MCSource::c_FarFieldFileZenithDependent                  = 5;
+const int MCSource::c_FarFieldNormalizedEnergyBeamFluxFunction     = 6;
+const int MCSource::c_FarFieldIsotropic                            = 7;
 
 const int MCSource::c_NearFieldPoint                               = 10;
 const int MCSource::c_NearFieldRestrictedPoint                     = 11;
@@ -96,10 +98,12 @@ const int MCSource::c_NearFieldBeam1DProfile                       = 21;
 const int MCSource::c_NearFieldBeam2DProfile                       = 22;
 const int MCSource::c_NearFieldConeBeam                            = 23;
 const int MCSource::c_NearFieldConeBeamGauss                       = 24;
-const int MCSource::c_NearFieldIlluminatedDisk                     = 25;
-const int MCSource::c_NearFieldIlluminatedSquare                   = 26;
-const int MCSource::c_NearFieldVolume                              = 27;
-const int MCSource::c_NearFieldFlatMap                             = 28;
+const int MCSource::c_NearFieldFanBeam                             = 25;
+const int MCSource::c_NearFieldIlluminatedDisk                     = 26;
+const int MCSource::c_NearFieldIlluminatedSquare                   = 27;
+const int MCSource::c_NearFieldVolume                              = 28;
+const int MCSource::c_NearFieldFlatMap                             = 29;
+const int MCSource::c_NearFieldReverseDirectionToPredecessor       = 30;
 
 
 const int MCSource::c_PolarizationNone                             =  1;
@@ -242,11 +246,12 @@ void MCSource::Initialize()
   m_IsSuccessor = false;
   m_IsEventList = false;
   m_IsBuildUpEventList = false;
+  m_IsFileEventList = false;
   m_IsIsotopeCount = false;
 
   m_EventListSize = 0;
   m_IsotopeCount = 0;
-
+  
   // Intensity of this source
   m_InputFlux = c_Invalid;
   m_Flux = c_Invalid;
@@ -262,6 +267,8 @@ void MCSource::Initialize()
   m_PolarizationParam2 = c_Invalid;
   m_PolarizationParam3 = c_Invalid;
   m_PolarizationDegree = 0.0;
+  
+  m_UseFarFieldTransmissionProbability = false;
   
   m_NGeneratedParticles = 0;
   
@@ -357,6 +364,10 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
   }
 
   if (m_IsEventList == true) {
+    if (m_EventListSize < 100000 && m_IsFileEventList == true && m_EventListFile.is_open()) {
+      ContinueReadingEventList();
+    }
+    
     delete m_EventList[0];
     m_EventList.pop_front();
     m_EventListSize--;
@@ -368,9 +379,27 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
       m_Successor = "";      
     }
   }
-
+  
   ++m_NGeneratedParticles;
 
+  // If we have a far field transmission probability, we might still skip this event:
+  if (m_UseFarFieldTransmissionProbability == true) {
+    double Energy = ParticleGun->GetCurrentSource()->GetEneDist()->GetMonoEnergy()/keV;
+    G4ThreeVector Dir = -ParticleGun->GetCurrentSource()->GetAngDist()->GenerateOne();
+    double Theta = Dir.getTheta() / deg;
+    
+    double TransmissionProbability = m_FarFieldTransmissionProbability.Evaluate(Theta, Energy);
+    //mout<<"Transmission probability: "<<TransmissionProbability<<" for t="<<Theta<<" deg, E="<<Energy<<" keV"<<endl;
+    
+    if (CLHEP::RandFlat::shoot(1) > TransmissionProbability) {
+      //mout<<m_Name<<": Particle absorbed. Setting energy to zero."<<endl;
+      ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(0);
+    } else {
+      //mout<<m_Name<<": Particle transmitted."<<endl;
+    }
+  }
+  
+  
   return true;
 }
 
@@ -485,7 +514,7 @@ bool MCSource::SetStartAreaParameters(double StartAreaParam1,
   UpgradeFlux();
   // and the light curve information
   UpgradeLightCurve();
-
+  
   return true;
 }
 
@@ -504,13 +533,13 @@ bool MCSource::UpgradeStartArea()
       m_StartAreaAverageArea = 4*m_StartAreaParam1 * (m_StartAreaParam2*sin(m_PositionParam1) + m_StartAreaParam1*fabs(cos(m_PositionParam1)));
     } 
     else if (m_BeamType == c_FarFieldArea) {
-//       m_StartAreaAverageArea = 
-//         2*m_StartAreaParam1*m_StartAreaParam2*(cos(m_PositionParam1)*cos(m_PositionParam1) - cos(m_PositionParam2)*cos(m_PositionParam2)) +
-//         2*m_StartAreaParam1*m_StartAreaParam1*(cos(m_PositionParam2)*sin(m_PositionParam2) - cos(m_PositionParam1)*sin(m_PositionParam1)) +
-//         2*m_StartAreaParam1*m_StartAreaParam1*(m_PositionParam2 - m_PositionParam1); 
-//       cout<<"SA: "<<m_StartAreaAverageArea<<endl;
+      //       m_StartAreaAverageArea = 
+      //         2*m_StartAreaParam1*m_StartAreaParam2*(cos(m_PositionParam1)*cos(m_PositionParam1) - cos(m_PositionParam2)*cos(m_PositionParam2)) +
+      //         2*m_StartAreaParam1*m_StartAreaParam1*(cos(m_PositionParam2)*sin(m_PositionParam2) - cos(m_PositionParam1)*sin(m_PositionParam1)) +
+      //         2*m_StartAreaParam1*m_StartAreaParam1*(m_PositionParam2 - m_PositionParam1); 
+      //       cout<<"SA: "<<m_StartAreaAverageArea<<endl;
       
-//       m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
+      //       m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
       m_StartAreaAverageArea = 0.0;
       int i_max = 5000;
       double t1, t2, ta;
@@ -522,6 +551,26 @@ bool MCSource::UpgradeStartArea()
         m_StartAreaAverageArea += 2*c_Pi*(cos(t1)-cos(t2)) * 4*m_StartAreaParam1*(m_StartAreaParam2*sin(ta) + m_StartAreaParam1*fabs(cos(ta)));
       }
       m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
+    } 
+    else if (m_BeamType == c_FarFieldIsotropic) {
+      //       m_StartAreaAverageArea = 
+      //         2*m_StartAreaParam1*m_StartAreaParam2*(cos(m_PositionParam1)*cos(m_PositionParam1) - cos(m_PositionParam2)*cos(m_PositionParam2)) +
+      //         2*m_StartAreaParam1*m_StartAreaParam1*(cos(m_PositionParam2)*sin(m_PositionParam2) - cos(m_PositionParam1)*sin(m_PositionParam1)) +
+      //         2*m_StartAreaParam1*m_StartAreaParam1*(m_PositionParam2 - m_PositionParam1); 
+      //       cout<<"SA: "<<m_StartAreaAverageArea<<endl;
+      
+      //       m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
+      m_StartAreaAverageArea = 0.0;
+      int i_max = 5000;
+      double t1, t2, ta;
+      double t_diff = c_Pi/i_max;
+      for (int i = 0; i < i_max-1; ++i) {
+        t1 = i*t_diff;
+        t2 = t1 + t_diff;
+        ta = 0.5*(t1+t2);
+        m_StartAreaAverageArea += 2*c_Pi*(cos(t1)-cos(t2)) * 4*m_StartAreaParam1*(m_StartAreaParam2*sin(ta) + m_StartAreaParam1*fabs(cos(ta)));
+      }
+      m_StartAreaAverageArea /= 4*c_Pi;
     } 
     else if (m_BeamType == c_FarFieldFileZenithDependent) {
       double AverageArea = 0.0;
@@ -597,6 +646,9 @@ bool MCSource::UpgradeStartArea()
         return false;
       }
       cout<<"Done!"<<endl;
+    } else {
+      cout<<"Error: Forgot to handle a beam type: "<<m_BeamType<<endl;
+      return false;
     }
   }
 
@@ -685,6 +737,58 @@ string MCSource::GetSpectralTypeAsString() const
   }
   
   return Name;
+}
+
+
+/******************************************************************************
+ * Return the name of the spectrum (e.g. mono, etc.)
+ */
+string MCSource::GetSpectralAsString() const
+{
+  ostringstream Name;
+
+  switch (m_SpectralType) {
+  case c_Map:
+    Name<<"Map";
+    break;
+  case c_Monoenergetic:
+    Name<<"Mono "<<m_EnergyParam1/keV;
+    break;
+  case c_Linear:
+    Name<<"Linear "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV;
+    break;
+  case c_PowerLaw:
+    Name<<"PowerLaw "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3;
+    break;
+  case c_BrokenPowerLaw:
+    Name<<"BrokenPowerLaw "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3/keV<<" "<<m_EnergyParam4<<" "<<m_EnergyParam5;
+    break;
+  case c_Gaussian:
+    Name<<"Gaussian "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3;
+    break;
+  case c_ThermalBremsstrahlung:
+    Name<<"ThermalBremsstrahlung "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3/keV;
+    break;
+  case c_BlackBody:
+    Name<<"BlackBody "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3/keV;
+    break;
+  case c_BandFunction:
+    Name<<"BandFunction "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3<<" "<<m_EnergyParam4<<" "<<m_EnergyParam5/keV;
+    break;
+  case c_FileDifferentialFlux:
+    Name<<"FileDifferentialFlux";
+    break;
+  case c_Activation:
+    Name<<"Activation";
+    break;
+  case c_NormalizedEnergyBeamFluxFunction:
+    Name<<"NormalizedEnergyBeamFluxFunction";
+    break;
+  default:
+    break;
+  }
+  
+  return Name.str();
 }
 
 
@@ -832,15 +936,19 @@ bool MCSource::SetBeamType(const int& CoordinateSystem, const int& BeamType)
   case c_NearFieldBeam2DProfile:
   case c_NearFieldConeBeam:
   case c_NearFieldConeBeamGauss:
+  case c_NearFieldFanBeam:
   case c_NearFieldIlluminatedDisk:
   case c_NearFieldIlluminatedSquare:
   case c_NearFieldVolume:
   case c_NearFieldFlatMap:
+  case c_NearFieldReverseDirectionToPredecessor:
   case c_FarFieldPoint:
   case c_FarFieldArea:
   case c_FarFieldGaussian:
+  case c_FarFieldAssymetricGaussian:
   case c_FarFieldFileZenithDependent:
   case c_FarFieldNormalizedEnergyBeamFluxFunction:
+  case c_FarFieldIsotropic:
     m_BeamType = BeamType;
     break;
   default:
@@ -905,6 +1013,9 @@ string MCSource::GetBeamTypeAsString() const
   case c_NearFieldConeBeamGauss:
     Name = "GaussianConeBeam";
     break;
+  case c_NearFieldFanBeam:
+    Name = "FanBeam";
+    break;
   case c_NearFieldIlluminatedDisk:
     Name = "IlluminatedDisk";
     break;
@@ -917,6 +1028,9 @@ string MCSource::GetBeamTypeAsString() const
   case c_NearFieldFlatMap:
     Name = "Map";
     break;
+  case c_NearFieldReverseDirectionToPredecessor:
+    Name = "ReverseDirectionToPredecessor";
+    break;
   case c_FarFieldPoint:
     Name = "FarFieldPointSource";
     break;
@@ -926,17 +1040,123 @@ string MCSource::GetBeamTypeAsString() const
   case c_FarFieldGaussian:
     Name = "FarFieldGaussian";
     break;
+  case c_FarFieldAssymetricGaussian:
+    Name = "FarFieldAssymetricGaussian";
+    break;
   case c_FarFieldFileZenithDependent:
     Name = "FarFieldFileZenithDependent";
     break;
   case c_FarFieldNormalizedEnergyBeamFluxFunction:
     Name = "FarFieldNormalizedEnergyBeamFluxFunction";
     break;
+  case c_FarFieldIsotropic:
+    Name = "FarFieldIsotropic";
+    break;
   default:
     break;
   }
 
   return Name;
+}
+
+
+/******************************************************************************
+ * Return the name of the beam in similar format as given in the source file
+ */
+string MCSource::GetBeamAsString() const
+{
+  ostringstream Name;
+
+  switch (m_BeamType) {
+  case c_NearFieldPoint:
+    Name<<"PointSource "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm;
+    break;
+  case c_NearFieldLine:
+    Name<<"LineSource "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4/cm<<" "<<m_PositionParam5/cm<<" "<<m_PositionParam6/cm;
+    break;
+  case c_NearFieldBox:
+    Name<<"Box "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4/cm<<" "<<m_PositionParam5/cm<<" "<<m_PositionParam6/cm;
+    break;
+  case c_NearFieldDisk:
+    Name<<"Disk "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4<<" "<<m_PositionParam5<<" "<<m_PositionParam6<<" "<<m_PositionParam7/cm<<" "<<m_PositionParam8/cm<<" "<<m_PositionParam9/cm<<" "<<m_PositionParam10/deg<<" "<<m_PositionParam11/deg;
+    break;
+  case c_NearFieldSphere:
+    Name<<"Sphere "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4/cm<<" "<<m_PositionParam5/cm<<" "<<m_PositionParam6/cm;
+    break;
+  case c_NearFieldBeam:
+    Name<<"HomogeneousBeam "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4<<" "<<m_PositionParam5<<" "<<m_PositionParam6<<" "<<m_PositionParam7/cm;
+    break;
+  case c_NearFieldActivation:
+    Name<<"Activation";
+    break;
+  case c_NearFieldRestrictedPoint:
+    Name<<"RestrictedPointSource "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm;
+    break;
+  case c_NearFieldRestrictedLine:
+    Name<<"RestrictedLineSource "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4/cm<<" "<<m_PositionParam5/cm<<" "<<m_PositionParam6/cm;
+    break;
+  case c_NearFieldDiffractionPoint:
+    Name<<"DiffractionPointSource";
+    break;
+  case c_NearFieldDiffractionPointKSpace:
+    Name<<"DiffractionPointKSpace";
+    break;
+  case c_NearFieldBeam1DProfile:
+    Name<<"RadialProfileBeam";
+    break;
+  case c_NearFieldBeam2DProfile:
+    Name<<"MapProfileBeam";
+    break;
+  case c_NearFieldConeBeam:
+    Name<<"ConeBeam";
+    break;
+  case c_NearFieldConeBeamGauss:
+    Name<<"GaussianConeBeam";
+    break;
+  case c_NearFieldFanBeam:
+    Name<<"FanBeam";
+    break;
+  case c_NearFieldIlluminatedDisk:
+    Name<<"IlluminatedDisk";
+    break;
+  case c_NearFieldIlluminatedSquare:
+    Name<<"IlluminatedSquare";
+    break;
+  case c_NearFieldVolume:
+    Name<<"Volume";
+    break;
+  case c_NearFieldFlatMap:
+    Name<<"Map";
+    break;
+  case c_NearFieldReverseDirectionToPredecessor:
+    Name<<"ReverseDirectionToPredecessor";
+    break;
+  case c_FarFieldPoint:
+    Name<<"FarFieldPointSource "<<m_PositionParam1/deg<<" "<<m_PositionParam2/deg;
+    break;
+  case c_FarFieldArea:
+    Name<<"FarFieldAreaSource "<<m_PositionParam1/deg<<" "<<m_PositionParam2/deg<<" "<<m_PositionParam3/deg<<" "<<m_PositionParam4/deg;
+    break;
+  case c_FarFieldGaussian:
+    Name<<"FarFieldGaussian "<<m_PositionParam1/deg<<" "<<m_PositionParam2/deg<<" "<<m_PositionParam3/deg;
+    break;
+  case c_FarFieldAssymetricGaussian:
+    Name<<"FarFieldAssymetricGaussian "<<m_PositionParam1/deg<<" "<<m_PositionParam2/deg<<" "<<m_PositionParam3/deg<<" "<<m_PositionParam4/deg<<" "<<m_PositionParam5/deg;
+    break;
+  case c_FarFieldFileZenithDependent:
+    Name<<"FarFieldFileZenithDependent";
+    break;
+  case c_FarFieldNormalizedEnergyBeamFluxFunction:
+    Name<<"FarFieldNormalizedEnergyBeamFluxFunction";
+    break;
+  case c_FarFieldIsotropic:
+    Name<<"FarFieldIsotropic";
+    break;
+  default:
+    break;
+  }
+
+  return Name.str();
 }
 
 
@@ -973,7 +1193,10 @@ bool MCSource::SetPosition(double PositionParam1,
                            double PositionParam8, 
                            double PositionParam9, 
                            double PositionParam10, 
-                           double PositionParam11)
+                           double PositionParam11,
+                           double PositionParam12,
+                           double PositionParam13,
+                           double PositionParam14)
 {
   m_PositionParam1 = PositionParam1;
   m_PositionParam2 = PositionParam2;
@@ -986,32 +1209,55 @@ bool MCSource::SetPosition(double PositionParam1,
   m_PositionParam9 = PositionParam9;
   m_PositionParam10 = PositionParam10;
   m_PositionParam11 = PositionParam11;
+  m_PositionParam12 = PositionParam12;
+  m_PositionParam13 = PositionParam13;
+  m_PositionParam14 = PositionParam14;
 
   // Some sanity checks:
   if (m_BeamType == c_FarFieldPoint) {
     if (m_PositionParam1 < 0 || m_PositionParam1 > c_Pi) {
-      mout<<m_Name<<": Theta must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Theta must be within [0..pi]"<<endl;
       return false;
     }
   } else if (m_BeamType == c_FarFieldArea) {
     if (m_PositionParam1 < 0 || m_PositionParam1 > c_Pi) {
-      mout<<m_Name<<": Minimum theta must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Minimum theta (first parameter) must be within [0..180]"<<endl;
       return false;
     }
     if (m_PositionParam2 < 0 || m_PositionParam2 > c_Pi) {
-      mout<<m_Name<<": Maximum theta must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Maximum theta (first parameter) must be within [0..180]"<<endl;
       return false;
     }
     if (m_PositionParam2 <= m_PositionParam1) {
-      mout<<m_Name<<": Maximum theta must be larger than minimum theta"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Maximum theta (first parameter) must be larger than minimum theta"<<endl;
       return false;
     }
     if (m_PositionParam4 <= m_PositionParam3) {
-      mout<<m_Name<<": Maximum phi must be larger than minimum theta"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Maximum phi (second parameter) must be larger than minimum theta"<<endl;
       return false;
     }
   } else if (m_BeamType == c_FarFieldGaussian) {
-    // not implemented
+    if (m_PositionParam1 < 0 || m_PositionParam1 > c_Pi) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Theta must be within [0..pi]"<<endl;
+      return false;
+    }
+    if (m_PositionParam3 < 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Sigma must be larger than zero"<<endl;
+      return false;
+    }
+  } else if (m_BeamType == c_FarFieldAssymetricGaussian) {
+    if (m_PositionParam1 < 0 || m_PositionParam1 > c_Pi) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Theta must be within [0..pi]"<<endl;
+      return false;
+    }
+    if (m_PositionParam3 < 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Sigma 1 must be larger than zero"<<endl;
+      return false;
+    }
+    if (m_PositionParam4 < 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Sigma 2 must be larger than zero"<<endl;
+      return false;
+    }
   } else if (m_BeamType == c_FarFieldFileZenithDependent) {
     // nothing
   } else if (m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
@@ -1023,111 +1269,124 @@ bool MCSource::SetPosition(double PositionParam1,
   } else if (m_BeamType == c_NearFieldDiffractionPoint ||
              m_BeamType == c_NearFieldDiffractionPointKSpace) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction of the normal vector must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction of the normal vector must not be (0, 0, 0)"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldLine || m_BeamType == c_NearFieldRestrictedLine) {
     if (m_PositionParam1 == m_PositionParam4 &&
         m_PositionParam2 == m_PositionParam5 &&
         m_PositionParam3 == m_PositionParam6) {
-      mout<<m_Name<<": Position 1 must be different from position 2"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Position 1 must be different from position 2"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldBox) {
     if (m_PositionParam1 == m_PositionParam4 &&
         m_PositionParam2 == m_PositionParam5 &&
         m_PositionParam3 == m_PositionParam6) {
-      mout<<m_Name<<": Position 1 must be different from position 2"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Position 1 must be different from position 2"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldSphere) {
     if (m_PositionParam4 <= 0 || m_PositionParam5 <= 0 || m_PositionParam6 <= 0) {
-      mout<<m_Name<<": The radii must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The radii must be larger than zero"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldDisk) {
     if (m_PositionParam7 < 0) {
-      mout<<m_Name<<": Inner radius must must not be negative"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Inner radius must must not be negative"<<endl;
       return false;
     }
     if (m_PositionParam8 <= 0) {
-      mout<<m_Name<<": Outer radius must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Outer radius must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam9 <= 0) {
-      mout<<m_Name<<": Height must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Height must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam7 >= m_PositionParam8) {
-      mout<<m_Name<<": Outer radius must be larger than inner radius"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Outer radius must be larger than inner radius"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldBeam) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
       return false;
     }
     if (m_PositionParam7 <= 0) {
-      mout<<m_Name<<": The radius must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The radius must be larger than zero"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldBeam1DProfile || m_BeamType == c_NearFieldBeam2DProfile || m_BeamType == c_NearFieldFlatMap) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldConeBeam) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
       return false;
     }
     if (m_PositionParam7 <= 0) {
-      mout<<m_Name<<": The opening angle must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The opening angle must be larger than zero"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldConeBeamGauss) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
       return false;
     }
     if (m_PositionParam7 <= 0) {
-      mout<<m_Name<<": The opening angle must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The opening angle must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam8 <= 0) {
-      mout<<m_Name<<": The gaussian 1-sigma value must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The gaussian 1-sigma value must be larger than zero"<<endl;
+      return false;
+    }
+  } else if (m_BeamType == c_NearFieldFanBeam) {
+    if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The first direction must not be (0, 0, 0)"<<endl;
+      return false;
+    }
+    if (m_PositionParam7 == 0 && m_PositionParam8 == 0 && m_PositionParam9 == 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The second direction must not be (0, 0, 0)"<<endl;
+      return false;
+    }
+    if (m_PositionParam10 < 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The beam width must be zero (point beam) or positive"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldIlluminatedDisk) {
     if (m_PositionParam4 <= 0) {
-      mout<<m_Name<<": The radius of the disk must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The radius of the disk must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam5 < 0 || m_PositionParam5 > c_Pi) {
-      mout<<m_Name<<": The phi orientation of the disk must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The phi orientation of the disk must be within [0..180]"<<endl;
       return false;
     }
     if (m_PositionParam7 < 0 || m_PositionParam7 > c_Pi) {
-      mout<<m_Name<<": The phi orientation of the beam must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The phi orientation of the beam must be within [0..180]"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldIlluminatedSquare) {
     if (m_PositionParam4 <= 0) {
-      mout<<m_Name<<": The half length of the box must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The half length of the box must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam5 < 0 || m_PositionParam5 > c_Pi) {
-      mout<<m_Name<<": The phi orientation of the box must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The phi orientation of the box must be within [0..180]"<<endl;
       return false;
     }
     if (m_PositionParam7 < 0 || m_PositionParam7 > c_Pi) {
-      mout<<m_Name<<": The phi orientation of the beam must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The phi orientation of the beam must be within [0..180]"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldActivation || 
              m_BeamType == c_NearFieldVolume) {
     if (MCRunManager::GetMCRunManager()->GetDetectorConstruction()->IsValidVolume(m_Volume) == false) {
-      mout<<m_Name<<": The volume "<<m_Volume<<" does not exist in the loaded geometry!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The volume "<<m_Volume<<" does not exist in the loaded geometry!"<<endl;
       return false;      
     }
   }
@@ -1216,7 +1475,26 @@ bool MCSource::UpgradePosition()
     m_PositionTF1 = new TF1("CartesianConeBeamGauss", "exp(-(x*x)/(2.*[0]*[0])) * sin(x)", 0.0, m_PositionParam7);
     m_PositionTF1->SetParameter(0, m_PositionParam8);
   }
+  else if (m_BeamType == c_NearFieldFanBeam) {
+    G4ThreeVector Dir1(m_PositionParam4, m_PositionParam5, m_PositionParam6);
+    G4ThreeVector Dir2(m_PositionParam7, m_PositionParam8, m_PositionParam9);
+    
+    m_PositionParam11 = Dir1.angle(Dir2);
+    
+    G4ThreeVector Norm = Dir1.cross(Dir2);
+    m_PositionParam12 = Norm.x();
+    m_PositionParam13 = Norm.y();
+    m_PositionParam14 = Norm.z();
+  }
 
+  // If we have non-looping orientation, set the time to the start time
+  if (m_Orientation.IsOriented() == true) {
+    if (m_Orientation.IsLooping() == false) {
+      m_NextEmission = m_Orientation.GetStartTime();
+    }
+  }
+  
+  
   return true;
 }
 
@@ -1362,88 +1640,112 @@ bool MCSource::SetEnergy(double EnergyParam1,
   // Perform some sanity checks:
   if (m_SpectralType == c_Monoenergetic) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The energy must be larger than 0!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_Linear) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_PowerLaw) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_BrokenPowerLaw) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
     if (m_EnergyParam3 <= m_EnergyParam1 || m_EnergyParam3 > m_EnergyParam2) {
-      mout<<m_Name<<": The break energy must be within the minimum and maximum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The break energy must be within the minimum and maximum energy!"<<endl;
       return false;
     }
     if (m_EnergyParam4 <= 0) {
-      mout<<m_Name<<": The first index (alpha) must be positive!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The first index (alpha) must be positive!"<<endl;
       return false;      
     }
     if (m_EnergyParam5 <= 0) {
-      mout<<m_Name<<": The second index (alpha) must be positive!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The second index (alpha) must be positive!"<<endl;
       return false;      
     }
   } else if (m_SpectralType == c_Gaussian) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= 0) {
-      mout<<m_Name<<": The sigma must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The sigma must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam3 <= 0) {
-      mout<<m_Name<<": The cut-off must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The cut-off must be larger than 0!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_ThermalBremsstrahlung) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
     if (m_EnergyParam3 <= 0) {
-      mout<<m_Name<<": The temperature must be positive!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The temperature must be positive!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_BlackBody) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
     if (m_EnergyParam3 <= 0) {
-      mout<<m_Name<<": The temperature must be positive!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The temperature must be positive!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_BandFunction) {
+    if (m_EnergyParam1 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam2 <= m_EnergyParam1) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam3 >= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The low-energy index must be smaller than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam4 >= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The high-energy index must be smaller than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam4 >= m_EnergyParam3) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The low-energy index must be smaller than the high-energy index!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam5 <= m_EnergyParam1 || m_EnergyParam5 > m_EnergyParam2) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The peak energy must be within the minimum and maximum energy!"<<endl;
+      return false;
+    }
     // requires reimplementation
   } else if (m_SpectralType == c_FileDifferentialFlux) {
   } else if (m_SpectralType == c_Activation) {
@@ -1472,15 +1774,10 @@ bool MCSource::UpgradeEnergy()
     if (MaximumShift*m_EnergyParam3 < m_EnergyParam1) m_EnergyParam4 = BlackBody(m_EnergyParam1, m_EnergyParam3);
     if (MaximumShift*m_EnergyParam3 > m_EnergyParam2) m_EnergyParam4 = BlackBody(m_EnergyParam2, m_EnergyParam3);
   } else if (m_SpectralType == c_BandFunction) {
-    massert(m_EnergyParam1 > 0);
-    massert(m_EnergyParam2 > 0);
-    massert(m_EnergyParam1 < m_EnergyParam2);
-    massert(m_EnergyParam3 > m_EnergyParam4);
-    massert(m_EnergyParam5 > 0);
     
     // Calculate Maximum:
     m_EnergyParam6 = BandFunction(m_EnergyParam1, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
-    cout<<"Band-Max: "<<m_EnergyParam6 <<endl;
+    //cout<<"Band-Max: "<<m_EnergyParam6 <<endl;
     //m_EnergyParam6 = BandFunction(m_EnergyParam3*m_EnergyParam5, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
   }
   
@@ -1552,7 +1849,7 @@ double MCSource::GetEnergyParameter(unsigned int i)
 bool MCSource::SetFlux(const double& Flux) 
 {
   if (m_SpectralType == c_NormalizedEnergyBeamFluxFunction || m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
-    mout<<m_Name<<": The beam NormalizedEnergyBeamFluxFunction doesn't need a flux since it is already normalized!"<<endl;
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": The beam NormalizedEnergyBeamFluxFunction doesn't need a flux since it is already normalized!"<<endl;
     return false;
   }
   
@@ -1641,18 +1938,39 @@ bool MCSource::SetTotalEnergyFlux(const double& TotalEnergyFlux)
 
 
 /******************************************************************************
+ * Return true, if the far field transmission probability file could be set and read correctly
+ */
+bool MCSource::SetFarFieldTransmissionProbability(const MString& FileName)
+{
+  if (m_CoordinateSystem != c_FarField) {
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": SetFarFieldTransmissionProbability: You can only use a far field transmission probability for far field sources!"<<endl;
+    return false;
+  }
+
+  if (m_FarFieldTransmissionProbability.Set(FileName, "AP") == false) {
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": SetFarFieldTransmissionProbability: Unable to load far field transmission probability!"<<endl;
+    return false;
+  }
+  
+  m_UseFarFieldTransmissionProbability = true;
+
+  return true;
+}
+
+
+/******************************************************************************
  * Return true, if the light curve could be set correctly
  */
 bool MCSource::SetLightCurve(const MString& FileName, const bool& Repeats)
 {
   if (m_LightCurveType == c_LightCurveFile) {
     if (m_LightCurveFunction.Set(FileName, "DP") == false) {
-      mout<<m_Name<<": LightCurveFile: Unable to load light curve!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": LightCurveFile: Unable to load light curve!"<<endl;
       return false;
     }
     
     if (m_LightCurveFunction.GetSize() < 2) {
-      mout<<m_Name<<": At least two entries in the file are required!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": At least two entries in the file are required!"<<endl;
       return false;
     }
     
@@ -1663,7 +1981,7 @@ bool MCSource::SetLightCurve(const MString& FileName, const bool& Repeats)
     m_IsFluxVariable = true;
     m_IsRepeatingLightCurve = Repeats;
   } else {
-    mout<<m_Name<<": Unknown light curve type: "<<m_LightCurveType<<endl;
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": Unknown light curve type: "<<m_LightCurveType<<endl;
     return false;
   }
   
@@ -1686,6 +2004,10 @@ bool MCSource::UpgradeLightCurve()
       m_LightCurveFunction.ScaleY((m_LightCurveFunction.GetXMax() - m_LightCurveFunction.GetXMin())/m_LightCurveFunction.Integrate());
     }
     cout<<"Final light-curve integration: "<<m_LightCurveFunction.Integrate()<<endl;
+    
+    if (m_NextEmission < m_LightCurveFunction.GetXMin()) {
+      m_NextEmission = m_LightCurveFunction.GetXMin();
+    }
   }
   
   return true;
@@ -1781,25 +2103,53 @@ void MCSource::SetPolarizationDegree(const double& Degree)
   }
 }
 
+
 /******************************************************************************
  * Set entries of the event list from file
  */
-bool MCSource::AddToEventList(MString FileName)
+bool MCSource::SetEventListFromFile(MString FileName)
 {
-  const unsigned int Max = 10000000;
-
-  ifstream in;
-  in.open(FileName);
+  if (m_EventListSize > 0) {
+    mout<<m_Name<<": We already have an event list!"<<endl;
+    return false; 
+  }
   
-  if (in.is_open() == false) {
+  if (m_EventListFile.is_open()) {
+    m_EventListFile.close(); 
+  }
+  
+  m_EventListFile.open(FileName);
+  if (m_EventListFile.is_open() == false) {
     mout<<m_Name<<": Unable to open file "<<FileName<<endl;
     return false; 
   }
   
+  m_IsEventList = true;
+  m_IsFileEventList = true;
+
+  if (ContinueReadingEventList() == false) {
+    return false; 
+  }
+  
+  return true;
+}
+
+
+/******************************************************************************
+ * Set entries of the event list from file
+ */
+bool MCSource::ContinueReadingEventList()
+{
+  const unsigned int Max = 500000;
+    
+  if (m_EventListFile.is_open() == false) {
+    return true; 
+  }
+  
   MTokenizer Tokens;
   MString Line;
-  while (in.good() == true) {
-    Line.ReadLine(in);
+  while (m_EventListFile.good() == true) {
+    Line.ReadLine(m_EventListFile);
     Tokens.Analyze(Line, false);
     if (Tokens.GetNTokens() == 0) continue;
     
@@ -1808,7 +2158,7 @@ bool MCSource::AddToEventList(MString FileName)
       cout<<Tokens.GetText()<<endl;
       return false;
     }
-          
+    
     MEventListEntry* Entry = new MEventListEntry;
     Entry->m_ID = Tokens.GetTokenAtAsInt(0);
     Entry->m_IsSuccessor = Tokens.GetTokenAtAsBoolean(1);
@@ -1825,16 +2175,16 @@ bool MCSource::AddToEventList(MString FileName)
     m_EventList.push_back(Entry);
     m_EventListSize++; 
     
-    if (m_EventListSize > Max) {
-      mout<<m_Name<<": Event list is too large (exeeds "<<Max<<")."<<endl;
-      in.close();
-      return false;
+    if (m_EventListSize >= Max) {
+      break;
     }
   }
   
-  in.close();
+  if (m_EventListFile.good() == false) {
+    m_EventListFile.close();
+  }
   
-  m_IsEventList = true;
+  // cout<<"Read events from file: "<<m_EventListSize<<" events in store"<<endl;
   
   return true;
 }
@@ -1855,6 +2205,12 @@ bool MCSource::AddToEventList(double Energy,
 
   //cout<<"Size: "<<m_EventListTime.size()<<endl;
 
+  if (m_IsFileEventList == true) {
+    mout<<m_Name<<": No events can be added to an event list read from file."<<endl;
+    return false;
+  }
+  
+  
   const unsigned int Max = 10000000;
   if (m_EventListSize >= Max) {
     mout<<m_Name<<": Event list too large (exeeds "<<Max<<"). Last event eliminated (t="<<m_EventList.back()->m_Time/s<<" sec)"<<endl;
@@ -1947,7 +2303,7 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
       NextEmission = m_LightCurveFunction.FindX(m_NextEmission, dIntegral, m_IsRepeatingLightCurve);
       if (m_IsRepeatingLightCurve == false && NextEmission >= m_LightCurveFunction.GetXMax()) {
         m_IsActive = false;
-        NextEmission = numeric_limits<double>::max();
+        m_NextEmission = numeric_limits<double>::max();
         mout<<m_Name<<": light-curve data exceeded."<<endl;
         return true;
       } else {
@@ -1958,8 +2314,26 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
       mout<<m_Name<<": A flat light curve should not be handled here..."<<endl;
     }
   }
-
+  
   m_NextEmission = NextEmission + Time;
+  
+  // If we have a non-looping orientation, check if we are outside:
+  if (m_Orientation.IsOriented() == true && m_Orientation.IsLooping() == false) {
+    if (m_NextEmission > m_Orientation.GetStopTime()) {
+      mout<<m_Name<<": orientation data exceeded (next emission: "<<m_NextEmission/second<<" vs. max time: "<<m_Orientation.GetStopTime()/second<<")."<<endl;      
+      m_IsActive = false;
+      m_NextEmission = numeric_limits<double>::max();
+    }
+  }
+  
+  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+  if (Sky.IsOriented() == true && Sky.IsLooping() == false) {
+    if (m_NextEmission > Sky.GetStopTime()) {
+      mout<<m_Name<<": orientation data exceeded (next emission: "<<m_NextEmission/second<<" vs. max time: "<<m_Orientation.GetStopTime()/second<<")."<<endl;      
+      m_IsActive = false;
+      m_NextEmission = numeric_limits<double>::max();
+    }
+  }  
   
   return true;
 }
@@ -2271,19 +2645,22 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
     }
   }
 
-	if (m_CoordinateSystem == c_FarField) {
+  if (m_CoordinateSystem == c_FarField) {
     double Theta = 0.0;
     double Phi = 0.0;
     if (m_BeamType == c_FarFieldPoint || 
         m_BeamType == c_FarFieldArea ||
+        m_BeamType == c_FarFieldGaussian ||
+        m_BeamType == c_FarFieldAssymetricGaussian ||
         m_BeamType == c_FarFieldFileZenithDependent ||
-        m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
+        m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction ||
+        m_BeamType == c_FarFieldIsotropic) {
       if (m_BeamType == c_FarFieldPoint || m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
         // Fixed start direction or temporarily stored in these parameteres
         Theta = m_PositionParam1;
         Phi = m_PositionParam2;
       } else if (m_BeamType == c_FarFieldArea) {
-
+        
         // Determine start direction randomly between the theta and phi limits
         if (m_StartAreaType == c_StartAreaSphere) {
           Theta = acos(cos(m_PositionParam1) - CLHEP::RandFlat::shoot(1)*(cos(m_PositionParam1) - cos(m_PositionParam2)));
@@ -2300,15 +2677,107 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
               break;
             }
           }    
-
+          
         } else {
           mout<<m_Name<<": Unknown start area type for position generation"<<endl;
         }
-
+        
+      } else if (m_BeamType == c_FarFieldIsotropic) {
+        
+        // Determine start direction randomly between the theta and phi limits
+        if (m_StartAreaType == c_StartAreaSphere) {
+          Theta = acos(1 - CLHEP::RandFlat::shoot(1)*2);
+          Phi = CLHEP::RandFlat::shoot(1)*2*c_Pi;
+        } else if (m_StartAreaType == c_StartAreaTube) {
+          double Area = 0.0;
+          double AngleMaxArea = atan(m_StartAreaParam2/m_StartAreaParam1);
+          double MaxArea = 4*m_StartAreaParam1*(m_StartAreaParam2*sin(AngleMaxArea) + m_StartAreaParam1*fabs(cos(AngleMaxArea)));
+          while (true) {
+            Theta = acos(1 - CLHEP::RandFlat::shoot(1)*2);
+            Area = 4*m_StartAreaParam1*(m_StartAreaParam2*sin(Theta) + m_StartAreaParam1*fabs(cos(Theta)));
+            if (CLHEP::RandFlat::shoot(1) <= Area/MaxArea) {
+              Phi = 2*CLHEP::RandFlat::shoot(1);
+              break;
+            }
+          }    
+          
+        } else {
+          mout<<m_Name<<": Unknown start area type for position generation"<<endl;
+        }
+        
+      } else if (m_BeamType == c_FarFieldGaussian) {
+        // Determine a random start position in a Gaussian disk
+        // Param1: Theta
+        // Param2: Phi
+        // Param3: Sigma
+        
+        // Create Gaussian distribution around theta = 0, phi = 0
+        Phi = CLHEP::RandFlat::shoot(1)*360*deg;
+        do {
+          Theta = 5*CLHEP::RandFlat::shoot(1)*m_PositionParam3; // Sample theta with 5 sigma;
+        } while (gRandom->Rndm() > sin(Theta*m_PositionParam3)*exp(-(Theta*Theta)/(2*m_PositionParam3*m_PositionParam3))); // Copy and paste from GMega, no clue where I had it from
+        
+        // Now rotate into the correct position
+        G4ThreeVector V;
+        V.setRThetaPhi(1.0, Theta, Phi);
+        
+        G4ThreeVector Rotation;
+        Rotation.setRThetaPhi(1.0, m_PositionParam1, m_PositionParam2);
+        
+        V.rotateUz(Rotation);
+        
+        // Set the final values
+        Theta = V.theta();
+        Phi = V.phi();
+        
+      } else if (m_BeamType == c_FarFieldAssymetricGaussian) {
+        // Determine a random start position on a 2D asymetric Gaussian disk
+        // Param1: Theta
+        // Param2: Phi
+        // Param3: Sigma phi
+        // Param4: Sigma theta
+        // Param5: Rotation
+        
+        
+        // Andreas: the center is at the equation: phi = 0; theta = 90
+        double Theta_min = -3*m_PositionParam4 + c_Pi/2;
+        if (Theta_min < 0) Theta_min = 0;
+        double Theta_max = 3*m_PositionParam4 + c_Pi/2;
+        if (Theta_max > c_Pi) Theta_max = c_Pi;
+        
+        double Phi_min = -3*m_PositionParam3;
+        if (Phi_min < -c_Pi) Phi_min = -c_Pi;
+        double Phi_max = 3*m_PositionParam3;
+        if (Phi_max > c_Pi) Phi_max = c_Pi;
+        
+        do {
+          Theta = acos(cos(Theta_min) - CLHEP::RandFlat::shoot(1)*(cos(Theta_min) - cos(Theta_max)));
+          Phi = Phi_min + CLHEP::RandFlat::shoot(1)*(Phi_max - Phi_min);
+        } while (gRandom->Rndm() >= exp(-0.5*pow((Theta - c_Pi/2)/m_PositionParam4, 2) - 0.5*pow(Phi/m_PositionParam3, 2)));
+        
+        // Now rotate into the correct position
+        G4ThreeVector V;
+        V.setRThetaPhi(1.0, Theta, Phi);
+        
+        // First around the Y-axis into the origin of the spherical system
+        V.rotateY(-c_Pi/2);
+        
+        // Then around the Z-axis to rotate the disk
+        V.rotateZ(m_PositionParam5);
+        
+        // The rotate into the right position
+        G4ThreeVector Rotation;
+        Rotation.setRThetaPhi(1.0, m_PositionParam1, m_PositionParam2);
+        V.rotateUz(Rotation);
+        
+        // Set the final values
+        Theta = V.theta();
+        Phi = V.phi();
+        
       } else if (m_BeamType == c_FarFieldFileZenithDependent) {
         // Determine a random position on the sphere between 
         // theta min and theta max in the file:
-
+        
         if (m_StartAreaType == c_StartAreaSphere) {
           while (true) {
             Theta = acos(cos(m_PositionParam1) - CLHEP::RandFlat::shoot(1)*(cos(m_PositionParam1) - cos(m_PositionParam2)));
@@ -2372,17 +2841,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       
       // Translate sphere center
       m_Position += m_StartAreaPosition;
-      
-      //cout<<"Start pos: "<<Position/cm<<":"<<x/cm<<":"<<y/cm<<":"<<z/cm<<endl;
-
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
-    } 
-
-    else if  (m_BeamType == c_FarFieldGaussian) {
-      mout<<"Mode SphericalGaussian not yet implemented!"<<endl;
-      return false;
     } 
   } 
 
@@ -2395,10 +2853,9 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         m_BeamType == c_NearFieldDiffractionPoint ||
         m_BeamType == c_NearFieldDiffractionPointKSpace ||
         m_BeamType == c_NearFieldConeBeam ||
-        m_BeamType == c_NearFieldConeBeamGauss) {
+        m_BeamType == c_NearFieldConeBeamGauss ||
+        m_BeamType == c_NearFieldReverseDirectionToPredecessor) {
       m_Position.set(m_PositionParam1, m_PositionParam2, m_PositionParam3);
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
     }
 
     else if (m_BeamType == c_NearFieldLine || m_BeamType == c_NearFieldRestrictedLine) {
@@ -2408,9 +2865,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[1] = m_PositionParam2 + 
         Random*(m_PositionParam5 - m_PositionParam2);
       m_Position[2] = m_PositionParam3 + 
-        Random*(m_PositionParam6 - m_PositionParam3);
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+        Random*(m_PositionParam6 - m_PositionParam3);    
     } 
 
     else if  (m_BeamType == c_NearFieldBox) {
@@ -2419,9 +2874,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[1] = m_PositionParam2 + 
         CLHEP::RandFlat::shoot(1)*(m_PositionParam5 - m_PositionParam2);
       m_Position[2] = m_PositionParam3 + 
-        CLHEP::RandFlat::shoot(1)*(m_PositionParam6 - m_PositionParam3);
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+        CLHEP::RandFlat::shoot(1)*(m_PositionParam6 - m_PositionParam3);  
     } 
 
     else if  (m_BeamType == c_NearFieldSphere) {
@@ -2434,10 +2887,43 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
                m_Position[2]*m_Position[2]/(m_PositionParam6*m_PositionParam6) > 1);
       m_Position = G4ThreeVector(m_PositionParam1, 
                                m_PositionParam2, 
-                               m_PositionParam3) + m_Position;
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+                               m_PositionParam3) + m_Position;      
     } 
+
+    else if (m_BeamType == c_NearFieldFanBeam) {
+      
+      // Find an angle within the given angle between the given directions
+      double Angle = CLHEP::RandFlat::shoot() * m_PositionParam11;
+      
+      // Rotate the first vector around the normal vector by angle
+      m_Direction = G4ThreeVector(m_PositionParam4, m_PositionParam5, m_PositionParam6).rotate(Angle, G4ThreeVector(m_PositionParam12, m_PositionParam13, m_PositionParam14));
+      
+      // Find the start position on the start area
+      
+      // Create the circular beam
+      // First in z-y dimension
+      G4ThreeVector Temp;
+      G4double Radius = 0, Theta = 0, Phi = 0;
+
+      Phi = 2*c_Pi*CLHEP::RandFlat::shoot();
+      Radius = m_PositionParam7*sqrt(CLHEP::RandFlat::shoot());
+      Temp[0] = Radius*cos(Phi);
+      Temp[1] = Radius*sin(Phi);
+      Temp[2] = 0.0;
+      
+      // Then rotate it into dir:
+      Theta = m_Direction.theta();
+      Phi = m_Direction.phi();
+
+      m_Position[0] = (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*cos(Phi) - Temp[1]*sin(Phi);
+      m_Position[1] = (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*sin(Phi) + Temp[1]*cos(Phi);
+      m_Position[2] = -Temp[0]*sin(Theta)+Temp[2]*cos(Theta);      
+      
+      // And translate by position
+      m_Position[0] += m_PositionParam1;
+      m_Position[1] += m_PositionParam2;
+      m_Position[2] += m_PositionParam3;
+    }
 
     else if (m_BeamType == c_NearFieldBeam ||
              m_BeamType == c_NearFieldBeam1DProfile ||
@@ -2523,15 +3009,11 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[0] += m_PositionParam1;
       m_Position[1] += m_PositionParam2;
       m_Position[2] += m_PositionParam3;    
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
     } 
 
     else if (m_BeamType == c_NearFieldActivation ||
              m_BeamType == c_NearFieldVolume) {
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      m_Position = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetRandomPosition(m_Volume);
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+      m_Position = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetRandomPosition(m_Volume);   
     }
 
 
@@ -2548,9 +3030,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       double Theta = acos(1-2*CLHEP::RandFlat::shoot());
       double Phi = 2*c_Pi*CLHEP::RandFlat::shoot();
       m_Direction.setRThetaPhi(1.0, Theta, Phi);
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
-
+    
     else if (m_BeamType == c_NearFieldDiffractionPoint) {
       double Theta, Phi;
       // We cannot use m_PositionFunction2D.GetRandom() here since GetRandom assumes Cartesian coordinate system...
@@ -2580,9 +3061,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*sin(Phi) + Temp[1]*cos(Phi);
       m_Direction[2] = 
         -Temp[0]*sin(Theta)+Temp[2]*cos(Theta);
-
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
-
     }
 
     else if (m_BeamType == c_NearFieldDiffractionPointKSpace) {
@@ -2592,18 +3070,15 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Direction[0] = 0;
       m_Direction[1] = 0;
       m_Direction[2] = 1;
-
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     }
       
     else if  (m_BeamType == c_NearFieldBeam ||
               m_BeamType == c_NearFieldBeam1DProfile ||
-              m_BeamType == c_NearFieldBeam2DProfile) {
+              m_BeamType == c_NearFieldBeam2DProfile ||
+              m_BeamType == c_NearFieldReverseDirectionToPredecessor) {
       m_Direction.setX(m_PositionParam4);
       m_Direction.setY(m_PositionParam5);
       m_Direction.setZ(m_PositionParam6);
-
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
 
     else if  (m_BeamType == c_NearFieldRestrictedPoint ||
@@ -2653,9 +3128,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Direction[0] = (DirectionOnAxis[0]*cos(BeamTheta)+DirectionOnAxis[2]*sin(BeamTheta))*cos(BeamPhi) - DirectionOnAxis[1]*sin(BeamPhi);
       m_Direction[1] = (DirectionOnAxis[0]*cos(BeamTheta)+DirectionOnAxis[2]*sin(BeamTheta))*sin(BeamPhi) + DirectionOnAxis[1]*cos(BeamPhi);
       m_Direction[2] = -DirectionOnAxis[0]*sin(BeamTheta)+DirectionOnAxis[2]*cos(BeamTheta);
-
-      // Give the information to the particle gun:
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     }
 
     else if (m_BeamType == c_NearFieldIlluminatedDisk || 
@@ -2740,12 +3212,62 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
 
       // The final solution:
       m_Position += l*m_Direction;
-
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
   }
+  
+  // If there is any orientation, then rotate & translate
+  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+
+  // Not all possible orientation combinations are valid!
+  // Can can have either:
+  // A) Sky and source in Galactic coordiantes then source must be a far field source
+  // B) Sky and source in Local coordiantes 
+  // C) Sky in Galactic coordiantes and source in local coordiantes
+  
+  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
+    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientPositionAndDirection(m_NextEmission, m_Position, m_Direction);
+    }
+         
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientPositionAndDirectionInvers(m_NextEmission, m_Position, m_Direction);
+    }             
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && 
+            Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_CoordinateSystem != c_FarField) {
+      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
+      return false;        
+    }
+        
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientPositionAndDirection(m_NextEmission, m_Position, m_Direction);
+    }
+        
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientPositionAndDirectionInvers(m_NextEmission, m_Position, m_Direction);
+    }    
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
+             Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientPositionAndDirection(m_NextEmission, m_Position, m_Direction);
+    }    
+  } else {
+    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
+    return false;
+  }
+  
+  // Sanity check that the position is within the world volume
+  if (MCRunManager::GetMCRunManager()->GetDetectorConstruction()->IsInsideWorldVolume(m_Position) == false) {
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": The position "<<m_Position/cm<<" cm is outside the world volume! Please make your world volume larger or your simulations are incorrect!"<<endl;
+    return false;      
+  }
+  
+  Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
+  Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
+  Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);  
 
   return true;
 }
@@ -2770,6 +3292,7 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
   } else if (m_PolarizationType == c_PolarizationRandom) {
     m_Polarization = m_Direction.orthogonal();
     m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
+    m_Polarization = m_Polarization.unit();
   } else if (m_PolarizationType == c_PolarizationAbsolute || 
              m_PolarizationType == c_PolarizationRelativeX ||
              m_PolarizationType == c_PolarizationRelativeY ||
@@ -2787,15 +3310,18 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
           m_Polarization = m_Direction.cross(G4ThreeVector(0.0, 0.0, 1.0));
         }
         m_Polarization.rotate(m_Direction, m_PolarizationParam1);
+        m_Polarization = m_Polarization.unit();
       }
     } else {
       m_Polarization = m_Direction.orthogonal();
       m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
+      m_Polarization = m_Polarization.unit();
     }
   } else {
     merr<<m_Name<<": Unknown polarization type: "<<m_PolarizationType<<endl;
     m_Polarization = m_Direction.orthogonal();
     m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
+    m_Polarization = m_Polarization.unit();
   }
   
   if (m_PolarizationType != c_PolarizationNone) {
@@ -2806,6 +3332,52 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
     }
  
   }
+  
+  
+  // If there is any orientation, then rotate & translate
+  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+  
+  // Not all possible orientation combinations are valid!
+  // Can can have either:
+  // A) Sky and source in Galactic coordiantes then source must be a far field source
+  // B) Sky and source in Local coordiantes 
+  // C) Sky in Galactic coordiantes and source in local coordiantes
+  
+  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
+    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientDirection(m_NextEmission, m_Polarization);
+    }
+    
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientDirectionInvers(m_NextEmission, m_Polarization);
+    }             
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && 
+    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_CoordinateSystem != c_FarField) {
+      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
+      return false;        
+    }
+      
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientDirection(m_NextEmission, m_Polarization);
+    }
+      
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientDirectionInvers(m_NextEmission, m_Polarization);
+    }    
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
+    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientDirection(m_NextEmission, m_Polarization);
+    }    
+  } else {
+    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
+    return false;
+  }
+  
   
   Gun->SetParticlePolarization(m_Polarization);
 

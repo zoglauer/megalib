@@ -6,7 +6,7 @@ Version               1
 Geometry              GradedZShield.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
+PhysicsListEM                        LivermorePol
 PhysicsListEMActivateFluorescence    false
 
 # Output formats
@@ -25,7 +25,7 @@ Beam.Triggers                      1000000
 Beam.Source BeamSource
 BeamSource.ParticleType            1
 BeamSource.Beam                    HomogeneousBeam  0 0 20  0 0 -1  1.0
-BeamSource.Spectrum                Linear 1.0 2000.0
+BeamSource.Spectrum                Linear 1.0 5000.0
 BeamSource.Flux                    1.0
 
 

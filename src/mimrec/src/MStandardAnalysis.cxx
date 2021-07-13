@@ -40,7 +40,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MStandardAnalysis)
 #endif
 
@@ -88,14 +88,47 @@ bool MStandardAnalysis::Analyze()
   m_Selector.SetSourceWindow(false);
   
 
-  double FirstWindow = 0.1*m_Energy;
 
   // Collect the data
   
   int Counts = 0;
   
   // Step 1: Determine energy resolution
-  TH1D* EnergyHist = new TH1D("EnergySpectrum", "Energy spectrum", 200, m_Energy - FirstWindow, m_Energy + FirstWindow);
+
+  vector<double> Energies;
+  
+  double FirstWindow = 0.15*m_Energy;
+  m_Selector.SetFirstTotalEnergy(m_Energy - FirstWindow, m_Energy + FirstWindow);
+
+  MPhysicalEvent* Event;
+  while ((Event = EventFile.GetNextEvent()) != 0) {
+    if (m_Selector.IsQualifiedEvent(Event) == true) {
+      Energies.push_back(Event->GetEnergy());
+      ++Counts;
+    }
+    delete Event;
+  }
+  
+  
+  if (Energies.size() == 0) {
+    cout<<"Error: No data found"<<endl;
+    return false;
+  }
+  
+  double EnergyRMS = 0.0;
+  for (unsigned int a = 0; a < Energies.size(); ++a) {
+    EnergyRMS += (Energies[a] - m_Energy)*(Energies[a] - m_Energy); 
+  }
+  EnergyRMS = sqrt(EnergyRMS/Energies.size());
+  
+  
+  
+  double SecondEnergyWindow = 3*EnergyRMS;
+  
+  cout<<"RMS with Average "<<m_Energy<<": "<<EnergyRMS<<endl;
+  
+  
+  TH1D* EnergyHist = new TH1D("EnergySpectrum", "Energy spectrum", 400, m_Energy - SecondEnergyWindow, m_Energy + SecondEnergyWindow);
   EnergyHist->SetBit(kCanDelete);
   EnergyHist->SetXTitle("Energy [keV]");
   EnergyHist->SetYTitle("counts");
@@ -103,32 +136,26 @@ bool MStandardAnalysis::Analyze()
   EnergyHist->SetFillColor(8);
   EnergyHist->SetMinimum(0);
 
-  m_Selector.SetFirstTotalEnergy(m_Energy - FirstWindow, m_Energy + FirstWindow);
-
-  MPhysicalEvent* Event;
-  while ((Event = EventFile.GetNextEvent()) != 0) {
-    if (m_Selector.IsQualifiedEvent(Event) == true) {
-      EnergyHist->Fill(Event->GetEnergy());
-      ++Counts;
-    }
-    delete Event;
+  for (unsigned int a = 0; a < Energies.size(); ++a) {
+    EnergyHist->Fill(Energies[a]); 
   }
-
+  
   TCanvas* EnergyCanvas = new TCanvas();
   EnergyCanvas->cd();
   EnergyHist->SetMinimum(0);
   EnergyHist->Draw();
   EnergyCanvas->Update();
   
-  
-  
-  
-  // Analyze ARMs
+
   
   // Analyze Spectrum - Round 1
-  TF1* SingleGaussR1 = new TF1("SingleGaussR1", Gauss, m_Energy - FirstWindow, m_Energy + FirstWindow, 3);
+  
+  cout<<"Performing first spectral fit -- getting a first guess on the width..."<<endl;
+  
+  TF1* SingleGaussR1 = new TF1("SingleGaussR1", Gauss, m_Energy - 0.1*EnergyRMS, m_Energy + 0.1*EnergyRMS, 3);
   SingleGaussR1->SetParameters(1, m_Energy, 1);
-  SingleGaussR1->SetParLimits(1, 0.95*m_Energy, 1.05*m_Energy);
+  SingleGaussR1->FixParameter(1, m_Energy);
+  //SingleGaussR1->SetParLimits(1, 0.95*m_Energy, 1.05*m_Energy);
   SingleGaussR1->SetParLimits(2, 0.1, 10000);
   SingleGaussR1->SetParNames("Scaler", "Mean", "Sigma");
   SingleGaussR1->SetLineColor(2);
@@ -141,6 +168,9 @@ bool MStandardAnalysis::Analyze()
   
 
   // Analyze spectrum - Round 2
+
+  cout<<"Performing second spectral fit -- exact position and width..."<<endl;  
+  
   TF1* SingleGaussR2 = new TF1("SingleGaussR2", Gauss, 
                                 SingleGaussR1->GetParameter(1) - 1.0*SingleGaussR1->GetParameter(2), 
                                 SingleGaussR1->GetParameter(1) + 1.5*SingleGaussR1->GetParameter(2), 3);
@@ -151,7 +181,7 @@ bool MStandardAnalysis::Analyze()
   SingleGaussR2->SetParNames("Scaler", "Mean", "Sigma");
   SingleGaussR2->SetLineColor(3);
   
-  EnergyHist->Fit(SingleGaussR2, "RI");
+  EnergyHist->Fit(SingleGaussR2, "RILM");
 
   if (SingleGaussR2 != 0) SingleGaussR2->Draw("SAME");
   EnergyCanvas->Modified();
@@ -161,6 +191,7 @@ bool MStandardAnalysis::Analyze()
   double EnergySigma = SingleGaussR2->GetParameter(2);
   double EnergySigmaError = SingleGaussR2->GetParError(2);
   
+  cout<<"Mean: "<<EnergyMean<<endl;  
   
   
   // Step 2.1: Determine ARM - Round 1:

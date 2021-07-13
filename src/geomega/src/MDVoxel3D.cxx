@@ -38,12 +38,13 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MDShapeBRIK.h"
+#include "MDGuardRing.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDVoxel3D)
 #endif
 
@@ -77,13 +78,6 @@ MDVoxel3D::MDVoxel3D(MString String) : MDDetector(String)
   m_VoxelSizeX = g_IntNotDefined;
   m_VoxelSizeY = g_IntNotDefined;
   m_VoxelSizeZ = g_IntNotDefined;
-
-  m_GuardringTriggerThreshold = g_DoubleNotDefined;  // Very large
-  m_GuardringTriggerThresholdSigma = 0;
-  m_GuardringEnergyResolutionType = c_GuardringEnergyResolutionTypeUnknown;
-
-  m_HasGuardring = true;
-  m_UniqueGuardringPosition = g_VectorNotDefined;
 }
 
 
@@ -111,14 +105,10 @@ MDVoxel3D::MDVoxel3D(const MDVoxel3D& S) : MDDetector(S)
   m_VoxelSizeX = S.m_VoxelSizeX;
   m_VoxelSizeY = S.m_VoxelSizeY;
   m_VoxelSizeZ = S.m_VoxelSizeZ;
-
-  m_GuardringTriggerThreshold = S.m_GuardringTriggerThreshold;
-  m_GuardringTriggerThresholdSigma = S.m_GuardringTriggerThresholdSigma;
   
-  m_GuardringEnergyResolutionType = S.m_GuardringEnergyResolutionType;
-  m_GuardringEnergyResolution = S.m_GuardringEnergyResolution; 
-
-  m_UniqueGuardringPosition = S.m_UniqueGuardringPosition;
+  if (m_HasGuardRing == true) {
+    m_GuardRing->SetMotherDetector(this); 
+  }
 }
 
  
@@ -130,7 +120,7 @@ MDDetector* MDVoxel3D::Clone()
   // Duplicate this detector
 
   massert(this != 0);
-  return new MDVoxel3D(*this);
+  return dynamic_cast<MDDetector*>(new MDVoxel3D(*this));
 }
 
 
@@ -172,21 +162,10 @@ bool MDVoxel3D::CopyDataToNamedDetectors()
     D->m_VoxelSizeX = m_VoxelSizeX;
     D->m_VoxelSizeY = m_VoxelSizeY;
     D->m_VoxelSizeZ = m_VoxelSizeZ;
-
-    if (D->m_GuardringTriggerThreshold == g_DoubleNotDefined && 
-        m_GuardringTriggerThreshold != g_DoubleNotDefined) {
-      D->m_GuardringTriggerThreshold = m_GuardringTriggerThreshold;
-      D->m_GuardringTriggerThresholdSigma = m_GuardringTriggerThresholdSigma;
-    }
     
-    if (D->m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeUnknown && 
-        m_GuardringEnergyResolutionType != c_GuardringEnergyResolutionTypeUnknown) {
-      D->m_GuardringEnergyResolutionType = m_GuardringEnergyResolutionType; 
-      D->m_GuardringEnergyResolution = m_GuardringEnergyResolution; 
+    if (D->HasGuardRing() == true) {
+      D->m_GuardRing->SetMotherDetector(D);
     }
-    
-    D->m_HasGuardring = m_HasGuardring;
-    D->m_UniqueGuardringPosition = m_UniqueGuardringPosition;        
   }
    
   return true; 
@@ -205,79 +184,22 @@ MDVoxel3D::~MDVoxel3D()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVoxel3D::SetGuardringEnergyResolution(const double Energy, const double Resolution)
+//! Set that this detector has a guard ring
+void MDVoxel3D::HasGuardRing(bool HasGuardRing)
 {
-  // Set an energy resolution point of the guard ring
-
-  if (Energy < 0) {
-    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"Energy for energy resolution of guard ring needs to be non-negative!"<<endl;
-    return false; 
-  }
-
-  if (Resolution <= 0) {
-    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"Energy resolution of guard ring needs to be positive!"<<endl;
-    return false; 
-  }
-
-  m_GuardringEnergyResolutionType = c_GuardringEnergyResolutionTypeGauss;
-  m_GuardringEnergyResolution.Add(Energy, Resolution);
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-double MDVoxel3D::GetGuardringEnergyResolution(const double Energy) const
-{
-  // Return the enrgy resolution of the guard ring for an specific energy
-
-  if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeNone) {
-    return numeric_limits<double>::max();
-  } else if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeIdeal) {
-    return 0;
-  } else if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeGauss) {
-    return m_GuardringEnergyResolution.Evaluate(Energy);
+  if (HasGuardRing == true) {
+    if (m_HasGuardRing == false) {
+      m_HasGuardRing = true; 
+      m_GuardRing = new MDGuardRing(m_Name + "_GuardRing");
+      m_GuardRing->SetMotherDetector(this);
+    }
   } else {
-    merr<<"Unknown guard ring energy resolution type: "<<m_GuardringEnergyResolutionType<<endl;
-    return numeric_limits<double>::max()/1000;
+    if (m_HasGuardRing == true) {
+      m_HasGuardRing = false; 
+      delete m_GuardRing;
+      m_GuardRing = nullptr;
+    }
   }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MDVoxel3D::IsAboveGuardringTriggerThreshold(const double& Energy) const 
-{
-  // Is this hit above the guardring trigger threshold???
-
-  if (m_GuardringTriggerThreshold < 0.00001) return true; 
-
-  double NoisedThreshold = 
-    gRandom->Gaus(m_GuardringTriggerThreshold, m_GuardringTriggerThresholdSigma);
-
-  if (Energy > NoisedThreshold) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MDVoxel3D::NoiseGuardring(double& Energy) const
-{
-  Energy = gRandom->Gaus(Energy, GetGuardringEnergyResolution(Energy));
-  if (Energy < gRandom->Gaus(m_GuardringTriggerThreshold, m_GuardringTriggerThresholdSigma)) {
-    Energy = 0;
-  }
-  return true;
 }
 
 
@@ -401,7 +323,7 @@ MDGridPoint MDVoxel3D::GetGridPoint(const MVector& PosInDetector) const
       // We define the first voxel of the detector here, in order to be able to identify
       // the sensitive volume block of the detector 
       GridPoint.Set(xBlock*m_NVoxelsX, yBlock*m_NVoxelsY, 
-                    zBlock*m_NVoxelsZ, MDGridPoint::c_Guardring);
+                    zBlock*m_NVoxelsZ, MDGridPoint::c_GuardRing);
     }
     return GridPoint;
   }
@@ -481,8 +403,12 @@ MVector MDVoxel3D::GetPositionInDetectorVolume(const unsigned int xGrid,
   MVector Position;
 
   // Position in Wafer relative to its center:
-  if (Type == MDGridPoint::c_Guardring) {
-    Position = m_UniqueGuardringPosition;
+  if (Type == MDGridPoint::c_GuardRing) {
+    if (m_HasGuardRing == true) {
+      Position = m_GuardRing->GetUniquePosition();
+    } else {
+      merr<<"This detector has no guard ring!"<<endl;
+    }
   } else {
     Position.SetX(-m_WidthX/2 + m_OffsetX + (xGrid - xBlock*m_NVoxelsX + 0.5)*m_VoxelSizeX);
     Position.SetY(-m_WidthY/2 + m_OffsetY + (yGrid - yBlock*m_NVoxelsY + 0.5)*m_VoxelSizeY);
@@ -532,178 +458,6 @@ void MDVoxel3D::SetNVoxels(const int x, const int y, const int z)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDVoxel3D::GetUniqueGuardringPosition() const
-{
-  // Retrieve a unique position on the guard ring of one wafer relative to
-  // the wafer center, NOT the detector itself
-
-  return m_UniqueGuardringPosition;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVoxel3D::GetGeant3() const
-{
-  ostringstream out;
-
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<"      SENVOL("<<m_SVs[i]->GetSensitiveVolumeID()<<") = '"<<m_SVs[i]->GetShortName()<<"'"<<endl;
-    out<<"      SENDET("<<m_SVs[i]->GetSensitiveVolumeID()<<") = "<<m_ID<<endl;
-  }
-
-  out<<"      DETNR("<<m_ID<<") = 1"<<endl;
-  out<<"      DETTYP("<<m_ID<<") = 1"<<endl;
-  out<<"      WIDTH("<<m_ID<<",1) = "<<m_WidthX<<endl;
-  out<<"      WIDTH("<<m_ID<<",2) = "<<m_WidthY<<endl;
-  out<<"      WIDTH("<<m_ID<<",3) = "<<m_WidthZ<<endl;
-  out<<"      OFFSET("<<m_ID<<",1) = "<<m_OffsetX<<endl;
-  out<<"      OFFSET("<<m_ID<<",2) = "<<m_OffsetY<<endl;
-  out<<"      OFFSET("<<m_ID<<",3) = "<<m_OffsetZ<<endl;
-  out<<"      NSTRIP("<<m_ID<<",1) = "<<m_NVoxelsX<<endl;
-  out<<"      NSTRIP("<<m_ID<<",2) = "<<m_NVoxelsY<<endl;
-  out<<"      NSTRIP("<<m_ID<<",3) = "<<m_NVoxelsZ<<endl;
-  out<<endl;
-
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVoxel3D::GetMGeant() const
-{
-  ostringstream out;
-
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    MString Name = m_SVs[i]->GetShortName();
-    Name.ToUpper();
-    out<<"SENV "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<Name<<endl;
-    out<<"SEND "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<m_ID<<endl;
-  }
-
-  out<<"DTNR "<<m_ID<<" "<<m_Type<<endl;
-  out<<"DTTP "<<m_ID<<" 8"<<endl;
-  out<<"WIDT "<<m_ID<<" 1 "<<m_WidthX<<endl;
-  out<<"WIDT "<<m_ID<<" 2 "<<m_WidthY<<endl;
-  out<<"WIDT "<<m_ID<<" 3 "<<m_WidthZ<<endl;
-  out<<"OFFS "<<m_ID<<" 1 "<<m_OffsetX<<endl;
-  out<<"OFFS "<<m_ID<<" 2 "<<m_OffsetY<<endl;
-  out<<"OFFS "<<m_ID<<" 3 "<<m_OffsetZ<<endl;
-  out<<"SPIT "<<m_ID<<" 1 "<<m_VoxelSizeX<<endl;
-  out<<"SPIT "<<m_ID<<" 2 "<<m_VoxelSizeY<<endl;
-  out<<"SPIT "<<m_ID<<" 3 "<<m_VoxelSizeZ<<endl;
-  out<<"SLEN "<<m_ID<<" 1 "<<m_NVoxelsX*m_VoxelSizeX<<endl;
-  out<<"SLEN "<<m_ID<<" 2 "<<m_NVoxelsY*m_VoxelSizeY<<endl;
-  out<<"SLEN "<<m_ID<<" 3 "<<m_NVoxelsZ*m_VoxelSizeZ<<endl;
-  out<<"NSTP "<<m_ID<<" 1 "<<m_NVoxelsX<<endl;
-  out<<"NSTP "<<m_ID<<" 2 "<<m_NVoxelsY<<endl;
-  out<<"NSTP "<<m_ID<<" 3 "<<m_NVoxelsZ<<endl;
-  out<<"GRUP "<<m_ID<<" "<<GetUniqueGuardringPosition().X()<<" "
-     <<GetUniqueGuardringPosition().Y()<<" "
-     <<GetUniqueGuardringPosition().Z()<<endl;
-  out<<endl;
-
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVoxel3D::GetGeant3Divisions() const
-{
-  ostringstream out;
-
-  mimp<<"Divisioning false"<<show;
-
-  if (m_UseDivisions == true) {
-    out.setf(ios::fixed, ios::floatfield);
-    out.precision(4);
-
-    out<<"      CALL GSDVX('"
-       <<m_ShortNameDivisionX<<"', '"
-       <<m_SVs[0]->GetShortName()<<"', "
-       <<m_NVoxelsX<<", "
-       <<1<<", "
-       <<m_VoxelSizeX<<", "
-       <<-m_StructuralSize.X() + m_OffsetX<<", "
-       <<0<<", "
-       <<m_NVoxelsX<<")"<<endl;
-    out<<"      CALL GSDVX('"
-       <<m_ShortNameDivisionY<<"', '"
-       <<m_ShortNameDivisionX<<"', "
-       <<m_NVoxelsY<<", "
-       <<2<<", "
-       <<m_VoxelSizeY<<", "
-       <<-m_StructuralSize.Y() + m_OffsetY<<", "
-       <<0<<", "
-       <<m_NVoxelsY<<")"<<endl;
-  }
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVoxel3D::GetMGeantDivisions() const
-{
-  ostringstream out;
-
-  mimp<<"Divisioning false"<<show;
-
-  if (m_UseDivisions == true) {
-    out.setf(ios::fixed, ios::floatfield);
-    out.precision(4);
-
-    MString VolumeName = m_SVs[0]->GetShortName();
-    VolumeName.ToUpper();
-    MString ShortNameDivisionX = m_ShortNameDivisionX;
-    ShortNameDivisionX.ToUpper();
-    MString ShortNameDivisionY = m_ShortNameDivisionY;
-    ShortNameDivisionY.ToUpper();
-    MString MaterialName = m_SVs[0]->GetMaterial()->GetMGeantShortName();
-    MaterialName.ToUpper();
-
-    out<<"divx "
-       <<ShortNameDivisionX<<" "
-       <<VolumeName<<" "
-       <<m_NVoxelsX<<" "
-       <<1<<" "
-       <<m_VoxelSizeX<<" "
-       <<-m_StructuralSize.X() + m_OffsetX<<" "
-       <<MaterialName<<" "
-       <<m_NVoxelsX<<endl;
-    out<<"divx "
-       <<ShortNameDivisionY<<" "
-       <<ShortNameDivisionX<<" "
-       <<m_NVoxelsY<<" "
-       <<2<<" "
-       <<m_VoxelSizeY<<" "
-       <<-m_StructuralSize.Y() + m_OffsetY<<" "
-       <<MaterialName<<" "
-       <<m_NVoxelsY<<endl;
-  }
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDVoxel3D::GetGeomega() const
 {
   // Return all detector characteristics in Geomega-Format
@@ -714,17 +468,6 @@ MString MDVoxel3D::GetGeomega() const
   out<<GetGeomegaCommon()<<endl;
   out<<m_Name<<".Offset "<<m_OffsetX<<" "<<m_OffsetY<<" "<<m_OffsetZ<<endl;
   out<<m_Name<<".Voxels "<<m_NVoxelsX<<" "<<m_NVoxelsY<<" "<<m_NVoxelsZ<<endl;
-
-  if (m_GuardringEnergyResolution.GetNDataPoints() > 0) {
-    out<<m_Name<<".GuardringTriggerThreshold "
-       <<m_GuardringTriggerThreshold<<" "
-       <<m_GuardringTriggerThresholdSigma<<endl;
-    for (unsigned int d = 0; d < m_GuardringEnergyResolution.GetNDataPoints(); ++d) {
-      out<<m_Name<<".GuardringEnergyResolution "<<
-        m_GuardringEnergyResolution.GetDataPointX(d)<<" "<<
-        m_GuardringEnergyResolution.GetDataPointY(d)<<endl;
-    }
-  }
   
   return out.str().c_str();  
 }
@@ -847,7 +590,7 @@ bool MDVoxel3D::Validate()
 
   if (m_OffsetX < 0 || m_OffsetY < 0 ) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"All offsets have to be positive!"<<endl;
+    mout<<"All offsets have to be non negative!"<<endl;
     return false;
   }
 
@@ -886,10 +629,31 @@ bool MDVoxel3D::Validate()
     return false;
   }
 
-  m_UniqueGuardringPosition.SetXYZ(0.5*(-m_WidthX+m_OffsetX),
+  // In case we have a guard ring
+  if (m_OffsetX < 10E-7 || m_OffsetY < 10E-7) { // ignore if smaller than 1 nanometer
+    if (m_HasGuardRing == true) {
+      mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+      mout<<"You said we have a guard ring, but we don't have one!"<<endl;
+      return false;      
+    }
+  } else {
+    if (m_HasGuardRing == false) {
+      // Create the guard ring and all data correctly
+      HasGuardRing(true);
+    }
+  }  
+  
+  if (m_HasGuardRing == true) {
+    MVector UniqueGuardRingPosition;
+    UniqueGuardRingPosition.SetXYZ(0.5*(-m_WidthX+m_OffsetX),
                                    0.5*(-m_WidthY+m_OffsetY),
                                    0.5*(-m_WidthZ+m_OffsetZ));
-
+    m_GuardRing->SetUniquePosition(UniqueGuardRingPosition);
+    
+    if (m_GuardRing->Validate() == false) {
+      return false; 
+    }
+  }
   
   if (m_EnergyLossType == c_EnergyLossTypeMap) {
     if (fabs(m_EnergyLossMap.GetXMin() - (-m_StructuralSize.X()+m_OffsetX)) > 10E-7 ||
@@ -915,13 +679,6 @@ bool MDVoxel3D::Validate()
       m_EnergyLossMap.RescaleY(-m_StructuralSize.Y()+m_OffsetY, m_StructuralSize.Y()-m_OffsetY);
       m_EnergyLossMap.RescaleZ(-m_StructuralSize.Z(), m_StructuralSize.Z());
     }
-  }
-  
-  if (m_GuardringTriggerThreshold == g_DoubleNotDefined) {
-    m_GuardringTriggerThreshold = numeric_limits<double>::max()/100;
-  }
-  if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeUnknown) {
-    m_GuardringEnergyResolutionType = c_GuardringEnergyResolutionTypeNone;
   }
 
   return true;

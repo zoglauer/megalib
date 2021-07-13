@@ -150,6 +150,7 @@ G4bool MCVoxel3DSD::PostProcessHits(const G4Step* Step)
     return false;
   }
 
+  
   // Now digitize the position - calculate strips and center in z:
 
   // First take care of IAs on the boundary
@@ -180,7 +181,7 @@ G4bool MCVoxel3DSD::PostProcessHits(const G4Step* Step)
         fabs(Position.getY()) >= m_YSize ||
         fabs(Position.getZ()) >= m_ZSize) {
       merr<<"MCVoxel3DSD: Outside of sensitive material: ("
-            <<Position[0]<<", "<<Position[1]<<", "<<Position[2]<<")"<<endl;
+            <<Position[0]/cm<<", "<<Position[1]/cm<<", "<<Position[2]/cm<<")"<<endl;
       return false;
     } else {
       IsGuardringHit = true;
@@ -199,37 +200,55 @@ G4bool MCVoxel3DSD::PostProcessHits(const G4Step* Step)
     if (m_XNVoxels == 1) {
       xVoxel = 0;
     } else {
-      xVoxel = (G4int) ((Position.getX() + m_XSize - m_XOffset)/m_XVoxelSize);
+      double dVoxel = (Position.getX() + m_XSize - m_XOffset)/m_XVoxelSize;
+      if (G4int(dVoxel) > m_XNVoxels-1 && G4int(dVoxel - m_Epsilon) <= m_XNVoxels-1) {
+        dVoxel -= m_Epsilon;
+      } else if (G4int(dVoxel) < 0 && G4int(dVoxel + m_Epsilon) >= 0) {
+        dVoxel += m_Epsilon; 
+      }
+      xVoxel = (G4int) dVoxel;
     }
     
     if (m_YNVoxels == 1) {  
       yVoxel = 0;
     } else {
-      yVoxel = (G4int) ((Position.getY() + m_YSize - m_YOffset)/m_YVoxelSize);
+      double dVoxel = (Position.getY() + m_YSize - m_YOffset)/m_YVoxelSize;
+      if (G4int(dVoxel) > m_YNVoxels-1 && G4int(dVoxel - m_Epsilon) <= m_YNVoxels-1) {
+        dVoxel -= m_Epsilon;
+      } else if (G4int(dVoxel) < 0 && G4int(dVoxel + m_Epsilon) >= 0) {
+        dVoxel += m_Epsilon; 
+      }
+      yVoxel = (G4int) dVoxel;
     }
     
     if (m_ZNVoxels == 1) {  
       zVoxel = 0;
     } else {
-      zVoxel = (G4int) ((Position.getZ() + m_ZSize - m_ZOffset)/m_ZVoxelSize);
+      double dVoxel = (Position.getZ() + m_ZSize - m_ZOffset)/m_ZVoxelSize;
+      if (G4int(dVoxel) > m_ZNVoxels-1 && G4int(dVoxel - m_Epsilon) <= m_ZNVoxels-1) {
+        dVoxel -= m_Epsilon;
+      } else if (G4int(dVoxel) < 0 && G4int(dVoxel + m_Epsilon) >= 0) {
+        dVoxel += m_Epsilon; 
+      }
+      zVoxel = (G4int) dVoxel;
     }
 
     
     // Check if we have a reasonable strip:
     if (xVoxel < 0 || xVoxel > m_XNVoxels-1) {
-      merr<<"Invalid x-voxel number: "<<xVoxel<<endl
-          <<"   Position was "<<Position[0]<<", "
-          <<Position[1]<<", "<<Position[2]<<endl;
+      merr<<std::setprecision(16)<<"Invalid x-voxel number: "<<xVoxel<<endl
+          <<"   Position was "<<Position[0]/cm<<", "
+          <<Position[1]/cm<<", "<<Position[2]/cm<<endl;
     }
     if (yVoxel < 0 || yVoxel > m_YNVoxels-1) {
       merr<<"Invalid y-voxel number: "<<yVoxel<<endl
-          <<"   Position was "<<Position[0]<<", "
-          <<Position[1]<<", "<<Position[2]<<endl;
+          <<"   Position was "<<Position[0]/cm<<", "
+          <<Position[1]/cm<<", "<<Position[2]/cm<<endl;
     }
     if (zVoxel < 0 || zVoxel > m_ZNVoxels-1) {
       merr<<"Invalid z-voxel number: "<<zVoxel<<endl
-          <<"   Position was "<<Position[0]<<", "
-          <<Position[1]<<", "<<Position[2]<<endl;
+          <<"   Position was "<<Position[0]/cm<<", "
+          <<Position[1]/cm<<", "<<Position[2]/cm<<endl;
     }
 
     // Now center the positions:

@@ -56,7 +56,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIERBList)
 #endif
 
@@ -143,8 +143,7 @@ void MGUIERBList::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIERBList::ProcessMessage(long Message, long Parameter1, 
-                                   long Parameter2)
+bool MGUIERBList::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Process the messages for this application
   int i;
@@ -156,7 +155,7 @@ bool MGUIERBList::ProcessMessage(long Message, long Parameter1,
     case kCM_RADIOBUTTON:
       if (Parameter1 >= 0 && Parameter1 <= m_RBList->GetLast()) {
         m_Selected = Parameter1;
-	      for (i = 0; i <= m_RBList->GetLast(); i++) {
+        for (i = 0; i <= m_RBList->GetLast(); i++) {
           RB = (TGRadioButton *) m_RBList->At(i);
           if (RB->GetState() == kButtonDisabled) continue;
 
@@ -166,7 +165,7 @@ bool MGUIERBList::ProcessMessage(long Message, long Parameter1,
             RB->SetState(kButtonDown);
           }
         }
-	    }
+      }
       break;
 
     default:
@@ -184,7 +183,7 @@ bool MGUIERBList::ProcessMessage(long Message, long Parameter1,
 void MGUIERBList::Associate(TGWindow* Associate)
 {
   m_Associate = Associate;
-	
+  
   for (int i = 0; i < m_RBList->GetLast()+1; i++) {
     ((TGRadioButton *) (m_RBList->At(i)))->Associate(Associate);
   }
@@ -220,13 +219,13 @@ void MGUIERBList::Add(MString RBLabel, int Selected)
   // Add a Radiobutton to the GUI element
 
   TGRadioButton* RB = new TGRadioButton(this, RBLabel, m_RBList->GetLast()+1);
-	RB->Associate(this);
+  RB->Associate(this);
   if (m_Associate != 0) {
     RB->Associate(m_Associate);
   }
-	if (Selected == 1) {
-		SetSelected(m_RBList->GetLast()-1);
-	}
+  if (Selected == 1) {
+    SetSelected(m_RBList->GetLast()-1);
+  }
   RB->SetWrapLength(m_WrapLength);
   m_RBList->AddLast(RB);
 }
@@ -237,8 +236,8 @@ void MGUIERBList::Add(MString RBLabel, int Selected)
 
 void MGUIERBList::SetEnabled(bool flag)
 {
-	m_IsEnabled = flag;
-	
+  m_IsEnabled = flag;
+  
   for (int i = 0; i < m_RBList->GetLast()+1; i++) {
     if (m_IsEnabled == true) {
       if (m_Selected == i) {

@@ -54,10 +54,10 @@ using namespace std;
  */
 MCMain::MCMain()
 {
-  m_RunManager = 0;
-  m_VisManager = 0;
-  m_Session = 0;
-  m_UI = 0;
+  m_RunManager = nullptr;
+  m_VisManager = nullptr;
+  m_Session = nullptr;
+  m_UI = nullptr;
 
   m_HasMacro = false;
   m_Interactive = false;
@@ -93,12 +93,8 @@ MCMain::~MCMain()
 /******************************************************************************
  * Initialize the program
  */
-bool MCMain::Initialize(int argc, char** argv)
+bool MCMain::Initialize()
 {
-  if (ParseCommandLine(argc, argv) == false) {
-    return false;
-  }
-
   // Construct the default run manager
   m_RunManager = new MCRunManager(m_RunParameters);
 
@@ -119,11 +115,26 @@ bool MCMain::Initialize(int argc, char** argv)
   // Set geometry
   MCDetectorConstruction* DC = new MCDetectorConstruction(m_RunParameters);
   if (DC->Initialize() == false) {
-    mout<<"Unable to initalize detector"<<endl;
+    mout<<"ERROR: Unable to initalize detector"<<endl;
     return false;
   }
   m_RunManager->SetUserInitialization(DC);
 
+  
+  // The sanity checking, if we have all volumes, can only be done here:
+  for (unsigned int r = 0; r < Runs.size(); ++r) {
+    for (unsigned int s = 0; s < Runs[r].GetNSources(); ++s) {
+      MCSource* S = Runs[r].GetSource(s);
+      if (S->GetVolume() != "") {
+        if (DC->HasVolume(S->GetVolume()) == false) {
+          mout<<"ERROR: Unable to find required volume "<<S->GetVolume()<<endl;
+          return false;
+        }
+      }
+    }
+  }
+  
+  
   if (m_ConvertFileName != "") {
     MCGeometryConverter* Converter = new MCGeometryConverter();
     Converter->Convert(m_ConvertFileName.GetString());
@@ -230,7 +241,7 @@ bool MCMain::Execute()
 /******************************************************************************
  * Parse the command line
  */
-bool MCMain::ParseCommandLine(int argc, char** argv)
+unsigned int MCMain::ParseCommandLine(int argc, char** argv)
 {
   ostringstream Usage;
   Usage<<endl;
@@ -245,6 +256,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
   Usage<<"         -z:   gzip *.sim files"<<endl;
   //Usage<<"         -p:   parallel ID (used by mcosima)"<<endl;
   //Usage<<"         -f:   incarnation ID (used by mcosima)"<<endl;
+  //Usage<<"         -t:   unique tag ID (used by mcosima)"<<endl;
   Usage<<"         -v:   verbosity (0: Basic Geant, 1: Standard, 2: Debug, 3: All Geant)"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -264,13 +276,13 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
       if (!((argc > i+1) && argv[i+1][0] != '-')){
         mout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
         cout<<Usage.str()<<endl;
-        return false;
+        return 2;
       }
     } 
 
     if (Option == "-h" || Option == "--help" || Option == "?" || Option == "-?") {
       cout<<Usage.str()<<endl;
-      return false;
+      return 1;
     } else if (Option == "-v") {
       m_Verbosity = atoi(argv[++i]);
       if (m_Verbosity > 5) {
@@ -310,7 +322,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
       if (!((argc > i+1) && argv[i+1][0] != '-')){
         mout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
         cout<<Usage.str()<<endl;
-        return false;
+        return 2;
       }
     } 
 
@@ -332,7 +344,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
       m_Seed = atol(argv[++i]);
       if (m_Seed <= 0) {
         mout<<"Error: The seed must be larger than zero."<<endl;
-        return false;
+        return 2;
       }
       mout<<"Setting the seed to "<<m_Seed<<endl;
     } else if (Option == "-r") {
@@ -341,6 +353,9 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-p") {
       m_ParallelID = atoi(argv[++i]);
       mout<<"Setting the ID for parallel simulations to "<<m_ParallelID<<endl;
+    } else if (Option == "-t") {
+      // Ignore the tag, it is only used to identify the remotely started processes
+      ++i;
     } else if (Option == "-f") {
       m_IncarnationID = atoi(argv[++i]);
       mout<<"Setting the ID of the simulation file incarnation to "<<m_IncarnationID<<endl;
@@ -353,7 +368,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
     } else {
       mout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
-      return false;
+      return 2;
     }
   } // command line options
 
@@ -369,7 +384,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
 
   if (m_RunParameters.Open(m_ParameterFileName) == false) {
     mout<<"Error: Unable to parse parameter file \""<<m_ParameterFileName<<"\" correctly!"<<endl;
-    return false;
+    return 2;
   }
   
   
@@ -381,7 +396,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
   CLHEP::HepRandom::setTheSeed(m_Seed);
   gRandom->SetSeed(m_Seed);
 
-  return true;
+  return 0;
 }
 
 

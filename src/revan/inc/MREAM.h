@@ -72,7 +72,7 @@ class MREAM
   //! Total energy deposit in the drift chamber
   static const unsigned int c_DriftChamberEnergy;
   //! Total energy deposit in a guard ring
-  static const unsigned int c_GuardringHit;
+  static const unsigned int c_GuardRingHit;
   //! Direction of a charged particle as measured by a Strip3DDirectional detector
   static const unsigned int c_Directional;
   //! OD information
@@ -103,7 +103,7 @@ class MREAM
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MREAM, 0) // Root stuff...
 #endif

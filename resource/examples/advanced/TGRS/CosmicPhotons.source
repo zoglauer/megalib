@@ -6,7 +6,7 @@ Version         1
 Geometry        TGRS.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
+PhysicsListEM                        LivermorePol
 
 # Output formats
 StoreCalibrated                      true

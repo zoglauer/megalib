@@ -5,7 +5,7 @@ Geometry Activation.geo.setup
 DetectorTimeConstant 0.000005
 
 # Physics list
-PhysicsListEM                        Livermore
+PhysicsListEM                        LivermorePol
 PhysicsListHD                        qgsp-bic-hp
 PhysicsListEMActivateFluorescence    false
 DecayMode                            ActivationBuildup

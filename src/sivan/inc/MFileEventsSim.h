@@ -43,7 +43,7 @@ class MFileEventsSim : public MFileEvents
   virtual ~MFileEventsSim();
 
   //! Set the geometry
-  void SetGeometry(MDGeometryQuest* Geo) { m_Geo = Geo; }
+  void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
   
   //! The Open method has to be derived to initialize the include file:
   virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read);
@@ -81,6 +81,9 @@ class MFileEventsSim : public MFileEvents
   //! Open a file given by the "IN" keyword
   virtual bool OpenIncludeFile(const MString& Line);
 
+  //! Update the observation times using the given event
+  void UpdateObservationTimes(MSimEvent* Event);
+  
   // private methods:
  private:
 
@@ -93,12 +96,7 @@ class MFileEventsSim : public MFileEvents
   // private members:
  private:
   //! The geometry representation
-  MDGeometryQuest* m_Geo;
-
-  //! ID of NEXT event
-  long m_EventId;
-  //! True if the current event is the first event
-  bool m_IsFirstEvent;
+  MDGeometryQuest* m_Geometry;
 
   //! Number of simulated events
   long m_SimulatedEvents;
@@ -108,7 +106,7 @@ class MFileEventsSim : public MFileEvents
   //! The simulated start area of far field simualtions
   double m_SimulationStartAreaFarField;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileEventsSim, 0) // no description
 #endif

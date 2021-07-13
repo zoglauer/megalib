@@ -42,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MImage3D)
 #endif
 
@@ -50,17 +50,20 @@ ClassImp(MImage3D)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MImage3D::MImage3D()
+MImage3D::MImage3D() : MImage2D()
 {
   // default constructor
 
-  m_HistXY = 0;
-  m_HistXZ = 0;
-  m_HistYZ = 0;
+  // Initialization is mostly done in the MImage constructor
+  SetZAxis("z-Axis", 0, 1, 1);
+  
+  m_HistXY = nullptr;
+  m_HistXZ = nullptr;
+  m_HistYZ = nullptr;
 
-  m_CanvasXY = 0;
-  m_CanvasXZ = 0;
-  m_CanvasYZ = 0;
+  m_CanvasXY = nullptr;
+  m_CanvasXZ = nullptr;
+  m_CanvasYZ = nullptr;
 }
 
 
@@ -71,24 +74,24 @@ MImage3D::MImage3D(MString Title, double* IA,
                    MString xTitle, double xMin, double xMax, int xNBins, 
                    MString yTitle, double yMin, double yMax, int yNBins, 
                    MString zTitle, double zMin, double zMax, int zNBins, 
-                   int Spectrum, int DrawOption) :
+                   MString vTitle, int Spectrum, int DrawOption) :
   MImage2D(Title, IA, xTitle, xMin, xMax, xNBins,  
-           yTitle, yMin, yMax, yNBins, Spectrum, DrawOption)
+           yTitle, yMin, yMax, yNBins, vTitle, Spectrum, DrawOption)
 {
   // standard constructor
 
-	m_NEntries = xNBins*yNBins*zNBins;
+  m_NEntries = xNBins*yNBins*zNBins;
 
-	SetZAxis(zTitle, zMin, zMax, zNBins);
-	SetImageArray(IA);
+  SetZAxis(zTitle, zMin, zMax, zNBins);
+  SetImageArray(IA);
 
-  m_HistXY = 0;
-  m_HistXZ = 0;
-  m_HistYZ = 0;
+  m_HistXY = nullptr;
+  m_HistXZ = nullptr;
+  m_HistYZ = nullptr;
 
-  m_CanvasXY = 0;
-  m_CanvasXZ = 0;
-  m_CanvasYZ = 0;
+  m_CanvasXY = nullptr;
+  m_CanvasXZ = nullptr;
+  m_CanvasYZ = nullptr;
 }
 
 
@@ -113,8 +116,10 @@ MImage* MImage3D::Clone()
                  m_xTitle, m_xMin, m_xMax, m_xNBins, 
                  m_yTitle, m_yMin, m_yMax, m_yNBins, 
                  m_zTitle, m_zMin, m_zMax, m_zNBins, 
-                 m_Spectrum, m_DrawOption);
+                 m_vTitle, m_Spectrum, m_DrawOption);
 
+  I->Normalize(m_Normalize);
+    
   return I;
 }
 
@@ -191,10 +196,10 @@ void MImage3D::SetZAxis(MString zTitle, double zMin, double zMax, int zNBins)
 {
   // Set z-Axis attributes
 
-	m_zTitle = zTitle;
-	m_zMin = zMin;
-	m_zMax = zMax;
-	m_zNBins = zNBins;
+  m_zTitle = zTitle;
+  m_zMin = zMin;
+  m_zMax = zMax;
+  m_zNBins = zNBins;
 }
 
 
@@ -260,6 +265,11 @@ void MImage3D::Display(TCanvas* Canvas)
       }
     }
   }
+  
+  // Rescale to 1:
+  if (m_Normalize == true && Hist->GetMaximum() > 0) {
+    Hist->Scale(1.0/Hist->GetMaximum());
+  }
 
   Hist->Draw();
 
@@ -314,6 +324,38 @@ void MImage3D::Display(TCanvas* Canvas)
   gSystem->ProcessEvents();
 
   return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Determine the maximum and its coordiantes, the vector is filled up to the number of dimensions the histogram has
+void MImage3D::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
+{
+  MaxValue = 0;
+  double xMaxIndex = 0;
+  double yMaxIndex = 0;
+  double zMaxIndex = 0;
+  
+  for (int x = 0; x < m_xNBins; ++x) {
+    for (int y = 0; y < m_yNBins; ++y) {
+      for (int z = 0; z < m_zNBins; ++z) {
+        if (m_IA[x + y*m_xNBins + z*m_xNBins*m_yNBins] > MaxValue) {
+          MaxValue = m_IA[x + y*m_xNBins + z*m_xNBins*m_yNBins];
+          xMaxIndex = x;
+          yMaxIndex = y;
+          zMaxIndex = z;
+        }
+      }
+    }
+  }
+  
+  
+  Coordinate.clear();
+  Coordinate.push_back((xMaxIndex + 0.5) * (m_xMax-m_xMin)/m_xNBins + m_xMin);
+  Coordinate.push_back((yMaxIndex + 0.5) * (m_yMax-m_yMin)/m_yNBins + m_yMin);
+  Coordinate.push_back((zMaxIndex + 0.5) * (m_zMax-m_zMin)/m_zNBins + m_zMin);
 }
 
 

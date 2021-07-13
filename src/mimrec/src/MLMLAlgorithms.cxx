@@ -38,7 +38,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MLMLAlgorithms)
 #endif
 
@@ -64,21 +64,24 @@ MLMLAlgorithms::MLMLAlgorithms()
   m_UsedStopCriterion = c_StopAfterIterations;
   m_MaxNIterations = 10;
 
+  m_NThreads = 1;
+  m_NUsedThreads = 1;
+  
   //m_NIterations = 0;
   m_NPerformedIterations = 0;
 
   m_NBins = 0;
   m_NEvents = 0;
 
-  m_Lj = 0;
-  m_Sj = 0;
-  m_Ri = 0;
-  m_Yi = 0;
-  m_InvYi = 0;
+  m_Lj = nullptr;
+  m_Sj = nullptr;
+  m_Ri = nullptr;
+  m_Yi = nullptr;
+  m_InvYi = nullptr;
 
-  m_Sensitivity = 0;
-  m_Background = 0;
-  
+  m_Exposure = nullptr;
+  m_Background = nullptr;
+
   m_EnableGUIInteractions = true;
 }
 
@@ -104,7 +107,7 @@ MLMLAlgorithms::~MLMLAlgorithms()
 
 void MLMLAlgorithms::UseStopCriterionByIterations(unsigned int NIterations)
 {
-  //! Use the stop criterion 
+  //! Use the stop criterion
 
   m_UsedStopCriterion = c_StopAfterIterations;
   m_MaxNIterations = NIterations;
@@ -133,7 +136,7 @@ bool MLMLAlgorithms::IsStopCriterionFullfilled()
 void MLMLAlgorithms::ResetStopCriterion()
 {
   //! Reset data used by the stop criterion
-  
+
   m_NPerformedIterations = 0;
 }
 
@@ -141,12 +144,16 @@ void MLMLAlgorithms::ResetStopCriterion()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-// void MLMLAlgorithms::SetNIterations(int NIterations)
-// {
-//   // Set the number of iterations
+//! Set the number of threads
+void MLMLAlgorithms::SetNumberOfThreads(unsigned int NThreads)
+{
+  m_NThreads = NThreads;
+  if (m_NThreads == 0) {
+    m_NThreads = 1;
+  }
 
-//   m_NIterations = NIterations;
-// }
+  CalculateEventApportionment();
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -198,7 +205,7 @@ bool MLMLAlgorithms::SetResponseSlices(vector<MBPData*>& Storage, int NImageBins
   }
 
   // ... and initialize them to default values:
-  
+
   // a flat image (O.K., because the only necessary requirement is > 0)
   for (unsigned int i = 0; i < m_NBins; i++) m_Lj[i] = 1.0;
 
@@ -208,8 +215,8 @@ bool MLMLAlgorithms::SetResponseSlices(vector<MBPData*>& Storage, int NImageBins
   // no background (somewhat too ideal for COMPTEL..., but ok...)
   for (unsigned int i = 0; i < m_NEvents; i++) m_Ri[i] = 0.0;
 
-  // All events are totally within the image space (will not work for 
-  // Compton-cameras, unless the reconstructed object is not much smaller 
+  // All events are totally within the image space (will not work for
+  // Compton-cameras, unless the reconstructed object is not much smaller
   // than the image...)
   for (unsigned int i = 0; i < m_NEvents; i++) m_Yi[i] = 1.0;
   for (unsigned int i = 0; i < m_NEvents; i++) m_InvYi[i] = 1.0;
@@ -219,6 +226,11 @@ bool MLMLAlgorithms::SetResponseSlices(vector<MBPData*>& Storage, int NImageBins
   // Initial total background:
   m_BgdT = 1.0;
 
+  CalculateEventApportionment();
+
+  // Shuffle the events around
+  Shuffle();
+
   return true;
 }
 
@@ -226,17 +238,48 @@ bool MLMLAlgorithms::SetResponseSlices(vector<MBPData*>& Storage, int NImageBins
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MLMLAlgorithms::SetSensitivity(MSensitivity *Sensitivity)
+void MLMLAlgorithms::CalculateEventApportionment()
+{
+  // Split the events by used bins
+  
+  m_EventApportionment.clear();
+
+  unsigned int Split = m_Storage.size() / m_NThreads;
+
+  if (Split == 0) {
+    m_NUsedThreads = 1;
+    Split = m_Storage.size();
+  } else {
+    m_NUsedThreads = m_NThreads;
+  }
+  
+  for (unsigned int i = 0; i < m_NUsedThreads; ++i) {
+    unsigned int Start = 0;
+    if (m_EventApportionment.size() != 0) {
+      Start = m_EventApportionment.back().second + 1;
+    }
+    unsigned int Stop = Start + Split - 1;
+    if (i == m_NUsedThreads - 1) {
+      Stop = m_Storage.size() - 1;
+    }
+    m_EventApportionment.push_back(pair<unsigned int, unsigned int>(Start, Stop));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MLMLAlgorithms::SetExposure(MExposure* Exposure)
 {
   // Set the sensitivity
 
-  massert(Sensitivity != 0);
+  massert(Exposure != nullptr);
 
-  m_Sensitivity = Sensitivity;
+  m_Exposure = Exposure;
 
   if (m_Sj != 0) delete [] m_Sj;
-
-  //m_Sj = m_Sensitivity->GetSensitivity(m_BPStorage);
+  m_Sj = Exposure->GetExposure(); // Array must be deleted here
 }
 
 
@@ -247,7 +290,7 @@ void MLMLAlgorithms::SetBackground(MBackground *Background)
 {
   // Set the background model
 
-  massert(Background != 0);
+  massert(Background != nullptr);
 
   m_Background = Background;
 

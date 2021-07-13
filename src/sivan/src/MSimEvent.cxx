@@ -58,20 +58,21 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSimEvent)
 #endif
 
 
 // This number has to be increased, whenever there is a significant change
 // in any of the default output ToSimString(...) of the Sim classes 
-const int MSimEvent::s_Version = 25;
+const int MSimEvent::s_Version = 101;
 
 // Some constants indicating what to store
 const int MSimEvent::c_StoreSimulationInfoAll = 0;
 const int MSimEvent::c_StoreSimulationInfoDepositsOnly = 1;
 const int MSimEvent::c_StoreSimulationInfoInitOnly = 2;
 const int MSimEvent::c_StoreSimulationInfoNone = 3;
+const int MSimEvent::c_StoreSimulationInfoIAOnly = 4;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -342,7 +343,28 @@ void MSimEvent::SetGeometry(MDGeometryQuest* Geo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
+bool MSimEvent::ParseEvent(MString Line, int Version)
+{
+  // Parse the whole event at once
+  
+  Reset();
+  
+  vector<MString> Lines = Line.Tokenize("\n");
+  
+  for (MString L: Lines) {
+    if (ParseLine(L, Version) == false) {
+      return false; 
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSimEvent::ParseLine(MString LineBuffer, int Version)
 {
   // Analyze one line of text input...
   // Return true if all event data is available
@@ -355,7 +377,7 @@ bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
   // VT
   // TF
   // ES
-
+  
   bool Ret = true;
 
   m_Version = Version;
@@ -371,10 +393,14 @@ bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
 
   // Start Event:
   if (LineBuffer[0] == 'I' && LineBuffer[1] == 'D') {
-    if (sscanf(LineBuffer.Data(),"ID%d %d\n",&m_NEvent, &m_NStartedEvent) != 2) {
-      mout<<"Error during scanning of sim file in token ID!"<<endl;
-      mout<<"  "<<LineBuffer<<endl;
-      Ret = false;
+    if (sscanf(LineBuffer.Data(),"ID %lu %lu\n",&m_NEvent, &m_NStartedEvent) != 2) {
+      if (sscanf(LineBuffer.Data(),"ID %lu\n",&m_NEvent) != 1) {
+        mout<<"Error during scanning of sim file in token ID!"<<endl;
+        mout<<"  "<<LineBuffer<<endl;
+        Ret = false;
+      } else {
+        m_NStartedEvent = m_NEvent;
+      }
     }
     Reset();
   }
@@ -500,7 +526,13 @@ bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
       delete DR;
     }
   }
-
+  // Add the coordinate system 
+  else if ((LineBuffer[0] == 'R' && (LineBuffer[1] == 'X' || LineBuffer[1] == 'Z')) ||
+           (LineBuffer[0] == 'H' && (LineBuffer[1] == 'X' || LineBuffer[1] == 'Z')) ||
+           (LineBuffer[0] == 'G' && (LineBuffer[1] == 'X' || LineBuffer[1] == 'Z'))) {
+    MRotationInterface::ParseLine(LineBuffer);
+  }
+  
   return Ret;
 }
 
@@ -644,7 +676,7 @@ void MSimEvent::DetermineEventLocation()
 
 MVector MSimEvent::GetIPVertex()
 {
-	return GetIAAt(1)->GetPosition();
+  return GetIAAt(1)->GetPosition();
 }
 
 
@@ -653,7 +685,7 @@ MVector MSimEvent::GetIPVertex()
 
 MVector MSimEvent::GetIPElectronDir()
 {
-	return GetIAAt(1)->GetSecondaryDirection();
+  return GetIAAt(1)->GetSecondaryDirection();
 }
 
 
@@ -662,7 +694,7 @@ MVector MSimEvent::GetIPElectronDir()
 
 MVector MSimEvent::GetIPPositronDir()
 {
-	return GetIAAt(2)->GetSecondaryDirection();
+  return GetIAAt(2)->GetSecondaryDirection();
 }
 
 
@@ -671,7 +703,7 @@ MVector MSimEvent::GetIPPositronDir()
 
 double MSimEvent::GetIPElectronEnergy()
 {
-	return GetIAAt(1)->GetSecondaryEnergy();
+  return GetIAAt(1)->GetSecondaryEnergy();
 }
 
 
@@ -680,7 +712,7 @@ double MSimEvent::GetIPElectronEnergy()
 
 double MSimEvent::GetIPPositronEnergy()
 {
-	return GetIAAt(2)->GetSecondaryEnergy();
+  return GetIAAt(2)->GetSecondaryEnergy();
 }
 
 
@@ -837,10 +869,12 @@ void MSimEvent::CreateClusters()
   // Here we create clusters out of neighboring pixels which can not be 
   // resolved in a realistic reconstruction environment...
 
-  mimp<<"Call of AreNear() is suspicious..."<<show;
+  //cout<<"here"<<endl;
 
   if (m_Geometry != 0) {
 
+    //cout<<"here too"<<endl;
+    
     unsigned int i, j, k;
     MSimCluster* C = 0;
     MSimCluster* CC = 0;
@@ -865,14 +899,15 @@ void MSimEvent::CreateClusters()
         VS2 = GetHTAt(j)->GetVolumeSequence();
         //if (VS2 == 0) continue;
         if (VS2->GetDetectorVolume() == 0) continue;
+        //cout<<"  vs.  "<<GetHTAt(j)->ToString()<<" ..."<<endl;
         //cout<<VS2->ToString()<<endl;
         //cout<<"DTypes: "<<VS1->GetDetectorType()->GetName()<<"!"<<VS2->GetDetectorType()->GetName()<<endl;
 //         if (VS1->GetDetectorVolume()->GetName().CompareTo(VS2->GetDetectorVolume()->GetName()) == 0 &&
 //             GetHTAt(i)->GetDetectorType() == GetHTAt(j)->GetDetectorType()) {
         if (VS1->HasSameDetector(VS2) == true) {
-          //cout<<" ... with "<<GetHTAt(j)->ToString()<<":"<<endl;
+          //cout<<" ... same detector"<<endl;
           if (VS1->GetDetector()->AreNear(VS1->GetPositionInDetector(), MVector(0, 0, 0),
-                                          VS2->GetPositionInDetector(), MVector(0, 0, 0), 0, 3) == true) {
+                                          VS2->GetPositionInDetector(), MVector(0, 0, 0), -1, 3) == true) {
             //cout<<"Are beside!!"<<endl;
             // Ok, they have to be clustered...
 
@@ -2215,7 +2250,7 @@ int MSimEvent::GetLengthOfFirstComptonTrack()
   vector<MSimHT*> HTs;
   for (unsigned int h = 0; h < GetNHTs(); ++h) {
     if (GetHTAt(h)->IsOrigin(2) == true) {
-      if (GetHTAt(h)->GetVolumeSequence()->GetDetector()->GetDetectorType() == MDDetector::c_Strip2D) {
+      if (GetHTAt(h)->GetVolumeSequence()->GetDetector()->GetType() == MDDetector::c_Strip2D) {
         HTs.push_back(GetHTAt(h));
       }
     }
@@ -2511,6 +2546,18 @@ void MSimEvent::RemoveHT(MSimHT* HT)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MSimEvent::RemoveAllHTs()
+{
+  //! Remove all hits from the event - but do not delete them
+
+  m_HTs.clear();
+}
+  
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+  
 void MSimEvent::RemoveAllHTsBut(MSimHT* HT)
 {
   //! Remove all but the given hit from the event  
@@ -2523,6 +2570,21 @@ void MSimEvent::RemoveAllHTsBut(MSimHT* HT)
       ++I;
     }
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MSimEvent::DeleteAllHTs()
+{
+  // Delete all hits
+  
+  for (unsigned int h = 0; h < m_HTs.size(); ++h) {
+    delete m_HTs[h];
+    m_HTs[h] = nullptr;
+  }
+  m_HTs.clear();
 }
 
 
@@ -2844,12 +2906,13 @@ bool MSimEvent::Discretize(int Detector)
             Point.GetType() == MDGridPoint::c_VoxelDrift ||
             Point.GetType() == MDGridPoint::c_XYAnger ||
             Point.GetType() == MDGridPoint::c_XYZAnger) {
-          MSimHT* Hit = new MSimHT((*Iter).first,
+          MSimHT* Hit = new MSimHT(m_Geometry);
+          Hit->Set((*Iter).first,
                                    Grid.GetWorldPositionGridPointAt(p),
                                    Point.GetEnergy(),
                                    Point.GetTime(),
                                    Point.GetOrigins(),
-                                   m_Geometry);
+                   true);
           //cout<<"Hit (2): "<<Hit->GetPosition()<<endl;
 
           if (Hit->GetDetectorType() == MDDetector::c_NoDetectorType) {
@@ -2859,7 +2922,7 @@ bool MSimEvent::Discretize(int Detector)
             m_HTs.push_back(Hit); 
             DetectorEnergy += Point.GetEnergy();
           }
-        } else if (Point.GetType() == MDGridPoint::c_Guardring) {
+        } else if (Point.GetType() == MDGridPoint::c_GuardRing) {
           MSimGR* GR = new MSimGR((*Iter).first,
                                   Grid.GetWorldPositionGridPointAt(p),
                                   Point.GetEnergy(),
@@ -2912,7 +2975,7 @@ bool MSimEvent::Discretize(int Detector)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MSimEvent::GetGuardringEnergy()
+double MSimEvent::GetGuardRingEnergy()
 {
   //! Return the total energy deposit in all guard rings:
 
@@ -3094,6 +3157,8 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
       out<<endl;
     }
     
+    MRotationInterface::Stream(out);
+    
     if (WhatToStore == c_StoreSimulationInfoAll) {
       // The ED keyword (Total energy deposit in active material)
       double ED = 0.0;
@@ -3123,7 +3188,7 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
       
       // Deposits in not sensitive material - detailed
       for (unsigned int i = 0; i < GetNPMs(); ++i) {
-        out<<GetPMAt(i)->ToSimString(WhatToStore, Precision, Version);
+        out<<GetPMAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;;
       }
       
       // Comments
@@ -3134,34 +3199,39 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
 
 
     if (WhatToStore == c_StoreSimulationInfoAll ||
-        WhatToStore == c_StoreSimulationInfoInitOnly) {
+        WhatToStore == c_StoreSimulationInfoInitOnly || 
+        WhatToStore == c_StoreSimulationInfoIAOnly) {
       for (unsigned int i = 0; i < GetNIAs(); ++i) {
         if ((GetIAAt(i)->GetProcess() != "INIT" && GetIAAt(i)->GetProcess() != "ENTR" && GetIAAt(i)->GetProcess() != "EXIT") && 
             WhatToStore == c_StoreSimulationInfoInitOnly) {
           continue;
         }
-        out<<GetIAAt(i)->ToSimString(WhatToStore, Precision, Version);
+        out<<GetIAAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
       }
     }
-    for (unsigned int i = 0; i < GetNHTs(); ++i) {
-      out<<GetHTAt(i)->ToSimString(WhatToStore, Precision, Version);
-    }
-    for (unsigned int i = 0; i < GetNGRs(); ++i) {
-      out<<GetGRAt(i)->ToSimString(WhatToStore, Precision, Version);
-    }
-    map<MVector, double>::iterator Iter;
-    for (Iter = m_TotalDetectorEnergy.begin();
-         Iter != m_TotalDetectorEnergy.end(); ++Iter) {
-      mimp<<"XE only hacked!!! --- But anyway not used..."<<endl;
-      out<<"XE "<<(*Iter).first.X()<<";"<<(*Iter).first.Y()<<";"<<(*Iter).first.Z()<<";"<<(*Iter).second<<endl;
-    }
+    if (WhatToStore != c_StoreSimulationInfoIAOnly) {
+      for (unsigned int i = 0; i < GetNHTs(); ++i) {
+        out<<GetHTAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
+      }
 
-    for (unsigned int i = 0; i < GetNDRs(); ++i) {
-      out<<GetDRAt(i)->ToSimString(WhatToStore, Precision, Version);
+      for (unsigned int i = 0; i < GetNGRs(); ++i) {
+        out<<GetGRAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
+      }
+
+      map<MVector, double>::iterator Iter;
+      for (Iter = m_TotalDetectorEnergy.begin();
+           Iter != m_TotalDetectorEnergy.end(); ++Iter) {
+        mimp<<"XE only hacked!!! --- But anyway not used..."<<endl;
+        out<<"XE "<<(*Iter).first.X()<<";"<<(*Iter).first.Y()<<";"<<(*Iter).first.Z()<<";"<<(*Iter).second<<endl;
+      }
+
+      for (unsigned int i = 0; i < GetNDRs(); ++i) {
+        out<<GetDRAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
+      }
     }
   }
 
-  return out.str().c_str();
+  return out;
 }
 
 

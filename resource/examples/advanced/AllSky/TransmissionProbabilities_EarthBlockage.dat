@@ -1,0 +1,12 @@
+ IP LIN 
+
+# Theta axis in degrees: 
+XA 0.0 120.0 121.0 180.0 
+# Energy axis in keV: 
+YA 0.0 1.0E+18 
+
+AP 0 0 1.0
+AP 1 0 1.0
+AP 2 0 0.0
+AP 3 0 0.0
+

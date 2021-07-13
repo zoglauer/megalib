@@ -24,7 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MResponseMatrix.h"
+#include "MResponseMatrixOx.h"
 
 // ROOT libs:
 #include <TGraph.h>
@@ -49,7 +49,7 @@ template< class T > class greater_than : public unary_function< T, bool >
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MResponseMatrixO1 : public MResponseMatrix
+class MResponseMatrixO1 : public MResponseMatrixOx
 {
   // public interface:
  public:
@@ -58,7 +58,7 @@ class MResponseMatrixO1 : public MResponseMatrix
   MResponseMatrixO1(MString Name, vector<float> xDim);
   virtual ~MResponseMatrixO1();
 
-	void Init();
+  void Init();
 
   bool operator==(const MResponseMatrixO1& ResponseMatrixO1);  
   MResponseMatrixO1& operator+=(const MResponseMatrixO1& ResponseMatrixO1);  
@@ -96,13 +96,16 @@ class MResponseMatrixO1 : public MResponseMatrix
 
   virtual float GetMaximum() const;
   virtual float GetMinimum() const;
-  virtual float GetSum() const;
+  virtual double GetSum() const;
   virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int order) const;
 
   virtual bool Write(MString FileName, bool Stream = false);
 
   virtual void Smooth(unsigned int Times = 1);
 
+  //! Return a ROOT histogram
+  TH1* GetHistogram(bool Normalized = true);
+  //! Show as an image
   void Show(bool Normalized = true);
   TGraph* GenerateGraph();
 
@@ -118,9 +121,12 @@ class MResponseMatrixO1 : public MResponseMatrix
 
   // protected members:
  protected:
+  //! The name of the axis
   MString m_NameAxisO1;
-  vector<float> m_AxisO1;  // 
-  vector<float> m_Values;  // the values
+  //! The axis bin values
+  vector<float> m_AxisO1;
+  //! The data
+  vector<float> m_Values;
 
 
   // private members:
@@ -128,7 +134,7 @@ class MResponseMatrixO1 : public MResponseMatrix
   friend ostream& operator<<(ostream& os, const MResponseMatrixO1& R);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMatrixO1, 1) // response matrix of order 1 (linear)
 #endif

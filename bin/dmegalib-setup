@@ -1,0 +1,193 @@
+#!/bin/bash
+
+# Part of the cosima cluster
+# Check the MEGAlib version in the remote machine
+
+
+
+commandhelp() {
+  echo ""
+  echo "dmegalib-setup  --  set up the dmegalib environment";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: dmegalib-setup [options]";
+  echo ""
+  echo "Options:"
+  echo "  --help                    : Show this help"
+  echo "  --machines=USER@MACHINE:PORT,USER2@MACHINE2:PORT2 (or just MACHINE with default user simy and port 22)"
+  echo ""
+  echo "";
+  echo "Example: "
+  echo "  dmegalib-setup --machines=leda,despina,royal,carme";
+  echo "";
+}
+
+
+# Store command line as array
+CMD=( "$@" )
+MACHINESSTRING=""
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-m*=* ]]; then
+    MACHINESSTRING=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Read configuration file and extract machines
+MACHINES=($(echo "${MACHINESSTRING}" | tr ',' '\n'))
+REMOTEUSER=( )
+REMOTEHOST=( )
+REMOTEPORT=( )
+REMOTENAME=( )
+GITVERSION=( )
+
+if [ ${#MACHINES[*]} -eq 0 ]; then
+  echo "ERROR: No machines given at the command line".
+  commandhelp
+  exit 1
+fi
+
+echo " "
+echo "Checking if we alreday have a megalibssh key, if not we create one"
+if [ ! -d ~/.ssh ]; then
+  mkdir ~/.ssh
+fi
+if [ ! -f ~/.ssh/dmegalib_rsa ] || [ ! -f ~/.ssh/dmegalib_rsa.pub ]; then
+  echo " * Keys missing, generating them..."
+  ssh-keygen -t rsa -f ~/.ssh/dmegalib_rsa -q -P ""
+else
+  echo " * All keys found"
+fi
+
+
+echo " "
+echo "Setting up dmegalib on all machines..."
+for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+
+  if [[ ${MACHINES[$m]} == *@* ]] && [[ ${MACHINES[$m]} == *:* ]]; then
+    REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
+    REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
+    REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
+  else
+    REMOTEUSER[$m]="simy"
+    REMOTEHOST[$m]="${MACHINES[$m]}" 
+    REMOTEPORT[$m]="22"
+  fi
+  
+  echo ""
+  echo "Checking machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}"
+  
+  # First check if the host is reachable
+  ping -c1 -W1 -q ${REMOTEHOST[$m]} &> /dev/null
+  REACHABLE="$?"
+  if [[ ${REACHABLE} != "0" ]]; then
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NOT PINGABLE (error code: ${REACHABLE})"
+    MACHINES[$m]=""
+    continue
+  fi  
+  
+  # Copy the id
+  ssh-copy-id -i ~/.ssh/dmegalib_rsa.pub -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}
+  COPIED="$?"
+  if [[ ${COPIED} != "0" ]]; then
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: CANNOT COPY ID (error code: $COPIE})"
+    MACHINES[$m]=""
+    continue
+  fi
+ 
+  # Do a quick test if the machine is available:
+  REMOTENAME[$m]=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NOT ACCESSIBLE"
+    MACHINES[$m]=""
+    continue
+  fi  
+  
+  # Check if we have a .dcosima.cfg file, if not create a default one
+  SCRIPT=$(mktemp /tmp/dmegalib-setup-script.XXXXXXXXXX)
+cat <<EOT >> ${SCRIPT}
+#/bin/bash
+
+# Check if the MEGAlib path exits, if not create it
+CFG="\${HOME}/.dcosima.cfg"
+if [[ ! -f \${CFG} ]]; then 
+  echo "# Auto-generated .dcosima.cfg file on ${date}" >> \${CFG} 
+  echo " " >> \${CFG}
+  echo "# Number of instances to run in parallel" >> \${CFG}
+  echo "instances  \$(( \$(getconf _NPROCESSORS_ONLN)/2 ))" >> \${CFG}
+  echo " " >> \${CFG}
+  echo "# The requested nice level for started programs" >> \${CFG}
+  echo "nice 19" >> \${CFG}
+  echo "  " >> \${CFG}
+  echo "# The local directory where to store temporary data" >> \${CFG}
+  echo "directory \${HOME}/dmegalib" >> \${CFG}
+  echo " " >> \${CFG}
+  echo "# Time restriction" >> \${CFG}
+  echo "#time 17:00 7:00" >> \${CFG}
+  echo " " >> \${CFG}
+fi
+
+exit 0
+
+EOT
+  
+  CREATECFG=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} )
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: UNABLE TO CREATE REMOTE CONFIGURATION FILE"
+    MACHINES[$m]=""
+    continue
+  fi  
+
+  echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Setup successful!"
+
+done
+
+# Check if something is left
+MACHINECOUNTER=0
+for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  if [[ ${MACHINES[$m]} != "" ]]; then
+    MACHINECOUNTER=$(( MACHINECOUNTER + 1 ))
+  fi
+done
+if [[ ${MACHINECOUNTER} -eq 0 ]]; then
+  echo "ERROR: No machines found"
+  exit 1
+fi
+
+
+echo " "
+echo "Creating .dcosima.cfg configuration file"
+
+CFG="${HOME}/.dcosima.cfg"
+if [[ -f ${CFG} ]]; then rm ${CFG}; fi
+
+echo "# Auto-generated .dcosima.cfg file on $(date)" >> ${CFG} 
+echo " " >> ${CFG} 
+echo " " >> ${CFG}
+echo "# Number of instances to run in parallel" >> ${CFG}
+echo "instances $(( $(getconf _NPROCESSORS_ONLN)/2 ))" >> ${CFG}
+echo " " >> ${CFG}
+echo "# The requested nice level for started programs" >> ${CFG}
+echo "nice 19" >> ${CFG}
+echo "  " >> ${CFG}
+echo "# The local directory where to store temporary data" >> ${CFG}
+echo "directory ${HOME}/dmegalib" >> ${CFG}
+echo " " >> ${CFG}
+echo "# Time restriction" >> ${CFG}
+echo "#time 17:00 7:00" >> ${CFG}
+echo " " >> ${CFG}
+for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  if [[ ${MACHINES[$m]} != "" ]]; then
+    echo "machine ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}  3" >> ${CFG} 
+  fi
+done
+echo " " >> ${CFG}
+  
+  
+exit 0

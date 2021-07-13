@@ -61,7 +61,7 @@ class MGUISivanEventSelection : public MGUIDialog
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUISivanEventSelection, 0)
 #endif

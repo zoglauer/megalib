@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MREAM)
 #endif
 
@@ -46,7 +46,7 @@ ClassImp(MREAM)
 
 const unsigned int MREAM::c_Unknown = 0;
 const unsigned int MREAM::c_DriftChamberEnergy = 1;
-const unsigned int MREAM::c_GuardringHit = 2;
+const unsigned int MREAM::c_GuardRingHit = 2;
 const unsigned int MREAM::c_Directional = 3;
 const unsigned int MREAM::c_StartInformation = 4;
 const unsigned int MREAM::c_Min = 1;

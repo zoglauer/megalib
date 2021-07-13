@@ -142,8 +142,8 @@ MDStrip3D                  ActiveDetector
 ActiveDetector.DetectorVolume      GeWafer
 ActiveDetector.SensitiveVolume     GeWafer
 
-ActiveDetector.StructuralPitch     0.0   0.0    0.0
-ActiveDetector.StructuralOffset    0.0   0.0    CryoTotalHeight
+ActiveDetector.StructuralPitch     0.0   0.0    CryoTotalHeight
+ActiveDetector.StructuralOffset    0.0   0.0    0.0
 
 ActiveDetector.Offset              0.0   0.0
 ActiveDetector.StripNumber         40    40
@@ -205,7 +205,7 @@ ActiveDetectorTrigger.Veto false
 ActiveDetectorTrigger.TriggerByChannel true
 ActiveDetectorTrigger.Detector ActiveDetector 1
 
-Trigger GuradRingVeto
-GuradRingVeto.Veto true
-GuradRingVeto.TriggerByChannel true
-GuradRingVeto.Detector GuardRingDetector 1
+Trigger GuardRingVeto
+GuardRingVeto.Veto true
+GuardRingVeto.TriggerByChannel true
+GuardRingVeto.Detector GuardRingDetector 1

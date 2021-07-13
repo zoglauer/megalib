@@ -56,6 +56,7 @@ using namespace std;
 #include "MReadOutSequence.h"
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutDataADCValue.h"
+#include "MReadOutDataTemperature.h"
 #include "MCalibrateEnergyAssignEnergies.h"
 #include "MCalibrateEnergyDetermineModel.h"
 #include "MCalibrateEnergyFindLines.h"
@@ -71,7 +72,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MMelinator)
 #endif
 
@@ -125,6 +126,9 @@ void MMelinator::Clear()
   m_Isotopes.clear();
   
   m_SelectedDetectorID = -1;
+  
+  m_SelectedTemperatureMin = -numeric_limits<double>::max();
+  m_SelectedTemperatureMax = +numeric_limits<double>::max();
   
   m_HistogramChanged = true;
   m_HistogramCollection = -1;
@@ -180,7 +184,7 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   unsigned int InternalID = 0;
   map<unsigned int, unsigned int> IDMap; // maps external ID to internal ID
   map<unsigned int, MString> NameMap; // maps internal ID to file names
-  map<unsigned int, vector<MIsotope>> IsotopeMap; // maps internal ID to file names
+  map<unsigned int, vector<MIsotope>> IsotopeMap; // maps internal ID to isotopes
   for (unsigned int g = 0; g < GroupIDs.size(); ++g) {
     if (FileNames[g] == "") continue;
     
@@ -194,9 +198,21 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
       CurrentInternalID = (*I).second;
     }
     // Add, sort and remove duplicate isotopes
-    IsotopeMap[CurrentInternalID].insert(IsotopeMap[CurrentInternalID].end(), Isotopes[g].begin(), Isotopes[g].end());
-    sort(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end());
-    IsotopeMap[CurrentInternalID].erase(unique(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end()), IsotopeMap[CurrentInternalID].end());
+    for (unsigned int i = 0; i < Isotopes[g].size(); ++i) {
+      bool Found = false;
+      for (unsigned int e = 0; e < IsotopeMap[CurrentInternalID].size(); ++e) {
+        if (IsotopeMap[CurrentInternalID][e] == Isotopes[g][i]) {
+          Found = true; 
+        }
+      }
+      if (Found == false) {
+        IsotopeMap[CurrentInternalID].push_back(Isotopes[g][i]);
+      }
+    }
+    
+    //IsotopeMap[CurrentInternalID].insert(IsotopeMap[CurrentInternalID].end(), Isotopes[g].begin(), Isotopes[g].end());
+    //sort(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end());
+    //IsotopeMap[CurrentInternalID].erase(unique(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end()), IsotopeMap[CurrentInternalID].end());
     
     m_GroupIDs.push_back(IDMap[GroupIDs[g]]);
     MString Name = MFile::GetBaseName(FileNames[g]);
@@ -298,12 +314,16 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
       //cout<<Name<<" is running"<<endl;
     }
     
+    long Counter = 0;
     bool ThreadsAreRunning = true;
     while (ThreadsAreRunning == true) {
 
-      // Sleep for a while...
+      // Sleep for a 10 ms
       TThread::Sleep(0, 10000000);
-      //gSystem->ProcessEvents();
+      // Whenever we slept ~0.1 sec update the UI
+      if (++Counter % 10 == 0) {
+        gSystem->ProcessEvents();
+      }
       
       int Running = 0;
       ThreadsAreRunning = false;
@@ -402,12 +422,25 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
       long NewCounter = 0;
       while (Reader.ReadNext(Sequence, m_SelectedDetectorID) == true) {
         // Since we do energy calibration, exclude everything with more than the number of good hits
-        if (Sequence.HasIdenticalReadOutElementTypes() == true) {
-          if (Sequence.GetNumberOfReadOuts() > 0 && 
-            Sequence.GetNumberOfReadOuts() != Sequence.GetReadOut(0).GetReadOutElement().GetMinimumNumberOfReadOutsForGoodInteraction()) {
-            continue;
+        //if (Sequence.HasIdenticalReadOutElementTypes() == true) {
+        //  if (Sequence.GetNumberOfReadOuts() > 0 && 
+        //    Sequence.GetNumberOfReadOuts() != Sequence.GetReadOut(0).GetReadOutElement().GetMinimumNumberOfReadOutsForGoodInteraction()) {
+        //    continue;
+        //  }
+        //}
+        vector<unsigned int> ToRemove;
+        for (unsigned int d = 0; d < Sequence.GetNumberOfReadOuts(); ++d) { 
+          MReadOutDataTemperature* T = dynamic_cast<MReadOutDataTemperature*>(Sequence.GetReadOut(d).GetReadOutData().Get(MReadOutDataTemperature::m_TypeID));
+          if (T != nullptr) {
+            if (T->GetTemperature() < m_SelectedTemperatureMin || T->GetTemperature() > m_SelectedTemperatureMax) {
+              ToRemove.push_back(d);
             }
+          }
         }
+        for (unsigned int t = ToRemove.size() - 1; t < ToRemove.size(); --t) {
+          Sequence.RemoveReadOut(ToRemove[t]); 
+        }
+        
         
         Store.Add(Sequence, 0);
         
@@ -659,13 +692,13 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
 
 ////////////////////////////////////////////////////////////////////////////////
 
-    
-//! Return true if we have calibration model
-bool MMelinator::HasCalibrationModel(unsigned int Collection)
+
+//! Return true if we have an energy calibration model
+bool MMelinator::HasEnergyCalibrationModel(unsigned int Collection)
 {
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
   if (C != nullptr) {
-    return C->HasModel();
+    return C->HasEnergyModel();
   }
   return false;
 }
@@ -673,20 +706,53 @@ bool MMelinator::HasCalibrationModel(unsigned int Collection)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-    
-//! Get the calibration model of the spectra
-MCalibrationModel& MMelinator::GetCalibrationModel(unsigned int Collection)
+
+//! Get the energy calibration model of the spectra
+MCalibrationModel& MMelinator::GetEnergyCalibrationModel(unsigned int Collection)
 {
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
   if (C != nullptr) {
-    if (C->HasModel()) {
-      return C->GetModel();
+    if (C->HasEnergyModel()) {
+      return C->GetEnergyModel();
     }
   }
   
-  throw MExceptionObjectDoesNotExist("No calibration model available");  
+  throw MExceptionObjectDoesNotExist("No energy calibration model available");  
   
-  return C->GetModel();
+  return C->GetEnergyModel();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true if we have an FWHM calibration model
+bool MMelinator::HasFWHMCalibrationModel(unsigned int Collection)
+{
+  MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+  if (C != nullptr) {
+    return C->HasFWHMModel();
+  }
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the FWHM calibration model of the spectra
+MCalibrationModel& MMelinator::GetFWHMCalibrationModel(unsigned int Collection)
+{
+  MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+  if (C != nullptr) {
+    if (C->HasFWHMModel()) {
+      return C->GetFWHMModel();
+    }
+  }
+  
+  throw MExceptionObjectDoesNotExist("No FWHM calibration model available");  
+  
+  return C->GetFWHMModel();
 }
 
 
@@ -696,13 +762,15 @@ MCalibrationModel& MMelinator::GetCalibrationModel(unsigned int Collection)
 //! Get the number of calibration point in the spectra
 unsigned int MMelinator::GetNumberOfCalibrationSpectralPoints(unsigned int Collection)
 {
-  MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
-  if (C != nullptr) {
-    unsigned int Points = 0;
-    for (unsigned int g = 0; g <C->GetNumberOfReadOutDataGroups(); ++g) {
-      Points += C->GetNumberOfSpectralPoints(g);
+  if (Collection < m_CalibrationStore.GetNumberOfElements()) {
+    MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+    if (C != nullptr) {
+      unsigned int Points = 0;
+      for (unsigned int g = 0; g <C->GetNumberOfReadOutDataGroups(); ++g) {
+        Points += C->GetNumberOfSpectralPoints(g);
+      }
+      return Points;
     }
-    return Points;
   }
   
   return 0;
@@ -771,6 +839,8 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
             MCalibrationSpectralPoint P = C->GetSpectralPoint(g, p);
 
             TH1D* Spectrum = CreateSpectrum("", Coll.GetReadOutDataGroup(g), P.GetLowEdge(), P.GetHighEdge(), HistogramBinningMode, HistogramBinningModeValue);
+            
+            Spectrum->SetFillStyle(0);
             //Spectrum->SetAxisRange(P.GetLowEdge(), P.GetHighEdge());
             Spectrum->SetMaximum(1.1*Spectrum->GetMaximum());
             
@@ -817,9 +887,12 @@ double MMelinator::GetCalibrationQuality(unsigned int Collection)
 {
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
 
-  double FitValue = 0;
-  if (C != nullptr && C->HasModel() == true) {
-    FitValue = C->GetModel().GetFitQuality();
+  double FitValue = -1;
+  if (C != nullptr && C->HasEnergyModel() == true) {
+    FitValue = C->GetEnergyModel().GetFitQuality();
+    if (/*FitValue < 0 ||*/ std::isnan(FitValue) == true || std::isinf(FitValue) == true) {
+      FitValue = 100;
+    }
   }
   
   return FitValue;
@@ -831,7 +904,7 @@ double MMelinator::GetCalibrationQuality(unsigned int Collection)
 
 
 //! Draw the calibration into the Canvas for the given Collection
-void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
+void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool UseEnergy)
 {
   //Canvas.SetBit(kNoContextMenu);
   //Canvas.Range(0, 1, 0, 1);
@@ -848,8 +921,8 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
   Canvas.SetBottomMargin(0.12);
   
   
-  double MaximumEnergy = 0.0; 
-  double MaximumPeak = 0.0; 
+  double MaximumX = 0.0; 
+  double MaximumY = 0.0; 
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
   vector<MCalibrationSpectralPoint> Points; 
   TGraphErrors* Graph = new TGraphErrors();
@@ -857,9 +930,15 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     Points = C->GetUniquePoints();
     Graph->Set(Points.size());
     for (unsigned int p = 0; p < Points.size(); ++p) {
-      Graph->SetPoint(p, Points[p].GetPeak(), Points[p].GetEnergy());
-      if (Points[p].GetPeak() > MaximumPeak) MaximumPeak = Points[p].GetPeak();
-      if (Points[p].GetEnergy() > MaximumEnergy) MaximumEnergy = Points[p].GetEnergy();
+      if (UseEnergy == true) {
+        Graph->SetPoint(p, Points[p].GetPeak(), Points[p].GetEnergy());
+        if (Points[p].GetPeak() > MaximumX) MaximumX = Points[p].GetPeak();
+        if (Points[p].GetEnergy() > MaximumY) MaximumY = Points[p].GetEnergy();
+      } else {
+        Graph->SetPoint(p, Points[p].GetEnergy(), Points[p].GetEnergyFWHM());
+        if (Points[p].GetEnergy() > MaximumX) MaximumX = Points[p].GetEnergy();
+        if (Points[p].GetEnergyFWHM() > MaximumY) MaximumY = Points[p].GetEnergyFWHM();
+      }
     }
   }
   
@@ -867,22 +946,30 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
   //cout<<"Drawing graph..."<<endl;
   Graph->Sort();
   Graph->SetMinimum(0);
-  Graph->SetMaximum(1.1*MaximumEnergy);
+  Graph->SetMaximum(1.1*MaximumY);
   Graph->Draw(); // Draw in order to have all axis!
   
   Graph->SetTitle("");
 
-  Graph->GetXaxis()->SetTitle("read-out units");
+  if (UseEnergy == true) {
+    Graph->GetXaxis()->SetTitle("read-out units");
+  } else {
+    Graph->GetXaxis()->SetTitle("energy [keV]");
+  }
   // Graph->GetXaxis()->SetLabelOffset(0.0);
   Graph->GetXaxis()->SetLabelSize(0.05);
   Graph->GetXaxis()->SetTitleSize(0.06);
   Graph->GetXaxis()->SetTitleOffset(0.9);
   Graph->GetXaxis()->CenterTitle(true);
   Graph->GetXaxis()->SetMoreLogLabels(true);
-  Graph->GetXaxis()->SetLimits(0.0, 1.1*MaximumPeak);
+  Graph->GetXaxis()->SetLimits(0.0, 1.1*MaximumX);
   Graph->GetXaxis()->SetNdivisions(509, true);
   
-  Graph->GetYaxis()->SetTitle("energy [keV]");
+  if (UseEnergy == true) {
+    Graph->GetYaxis()->SetTitle("energy [keV]");
+  } else {
+    Graph->GetYaxis()->SetTitle("FWHM [keV]");
+  }
   // Graph->GetYaxis()->SetLabelOffset(0.001);
   Graph->GetYaxis()->SetLabelSize(0.05);
   Graph->GetYaxis()->SetTitleSize(0.06);
@@ -890,14 +977,14 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
   Graph->GetYaxis()->CenterTitle(true);
   Graph->GetYaxis()->SetNdivisions(509, true);
 
-  if (C != nullptr && C->HasModel() == true) {
+  if (C != nullptr && C->HasEnergyModel() == true) {
     Graph->Draw("A*");
   } else {
     Graph->Draw("A*");
   }
   
-  if (C != nullptr && C->HasModel() == true) {
-    MCalibrationModel& Model = C->GetModel();
+  if (C != nullptr && C->HasEnergyModel() == true) {
+    MCalibrationModel& Model = (UseEnergy == true) ? C->GetEnergyModel() : C->GetFWHMModel();
     Model.Draw("SAME");
 
     TGraph* Residuals = new TGraph(Points.size());
@@ -907,7 +994,12 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     double Max = -numeric_limits<double>::max();
     for (unsigned int p = 0; p < Points.size(); ++p) {
       if (Points[p].IsGood() == false) continue;
-      double Value = Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()); 
+      double Value = 0.0;
+      if (UseEnergy == true) {
+        Value = Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()); 
+      } else {
+        Value = Points[p].GetEnergyFWHM() - Model.GetFitValue(Points[p].GetEnergy()); 
+      }
       if (Value < Min) Min = Value;
       if (Value > Max) Max = Value;
       //Residuals->SetPoint(p, Points[p].GetPeak(), Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()));
@@ -923,7 +1015,11 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     for (unsigned int p = 0; p < Points.size(); ++p) {
       if (Points[p].IsGood() == false) continue;
       //cout<<Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak())<<endl;
-      Residuals->SetPoint(p, Points[p].GetPeak(), 1.1*MaximumEnergy/ResidualRange * (Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()) - Min));
+      if (UseEnergy == true) {
+        Residuals->SetPoint(p, Points[p].GetPeak(), 1.1*MaximumY/ResidualRange * (Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()) - Min));
+      } else {
+        Residuals->SetPoint(p, Points[p].GetEnergy(), 1.1*MaximumY/ResidualRange * (Points[p].GetEnergyFWHM() - Model.GetFitValue(Points[p].GetEnergy()) - Min));
+      }
     }
     
    
@@ -932,7 +1028,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     Residuals->Draw("SAME *");
     
     //TGaxis *axis = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(), gPad->GetUxmax(), gPad->GetUymax(), Min, Max, 510, "+L");
-    TGaxis *axis = new TGaxis(1.1*MaximumPeak, 0, 1.1*MaximumPeak, 1.1*MaximumEnergy/ResidualRange * (Max-Min), Min, Max, 510, "+L");
+    TGaxis *axis = new TGaxis(1.1*MaximumX, 0, 1.1*MaximumX, 1.1*MaximumY/ResidualRange * (Max-Min), Min, Max, 510, "+L");
     axis->SetLineColor(kBlue);
     axis->SetLabelColor(kBlue);
     axis->SetTitleColor(kBlue);
@@ -949,7 +1045,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     axis->Draw("SAME");
     
     if (Min < 0 && Max > 0) {
-      TLine* Zero = new TLine(0, -Min/(Max-Min) * 1.1*MaximumEnergy, 1.1*MaximumPeak, -Min/(Max-Min) * 1.1*MaximumEnergy);
+      TLine* Zero = new TLine(0, -Min/(Max-Min) * 1.1*MaximumY, 1.1*MaximumX, -Min/(Max-Min) * 1.1*MaximumY);
       Zero->SetLineColor(kBlue);
       Zero->Draw("SAME");
     }
@@ -995,6 +1091,7 @@ TH1D* MMelinator::CreateSpectrum(const MString& Title, MReadOutDataGroup& G, dou
   Histogram = Binner->GetNormalizedHistogram(Title, "read-out units", "counts / read-out unit");
   Histogram->SetBit(kCanDelete);
   Histogram->SetBit(TH1::kNoTitle); 
+  Histogram->SetFillStyle(0);
 
   delete Binner;
   
@@ -1024,6 +1121,11 @@ bool MMelinator::Calibrate(bool ShowDiagnostics)
   MGUIProgressBar ProgressBar;
   ProgressBar.SetTitles("Calibration", "Progress of calibration");
   ProgressBar.SetMinMax(0, m_Store.GetNumberOfReadOutCollections()); 
+  
+  m_TimeToFindLines = 0.0;
+  m_TimeToAssignEnergies = 0.0;
+  m_TimeToDetermineModel = 0.0;  
+  
   
   m_ThreadNextItem = 0;
   m_Threads.resize(m_NThreads);
@@ -1098,8 +1200,14 @@ bool MMelinator::Calibrate(bool ShowDiagnostics)
     }
   }
   
-  if (g_Verbosity >= c_Info) cout<<"Time spent in calibration: "<<Timer.GetElapsed()<<" sec"<<endl;
-  
+  //if (g_Verbosity >= c_Info) 
+  {
+    cout<<"Time spent in calibration: "<<Timer.GetElapsed()<<" sec"<<endl;
+    cout<<"  + Time spent to find line: "<<m_TimeToFindLines<<" sec"<<endl;
+    cout<<"  + Time spent to assign energies: "<<m_TimeToAssignEnergies<<" sec"<<endl;
+    cout<<"  + Time spent to determine model: "<<m_TimeToDetermineModel<<" sec"<<endl;
+  }
+    
   return true;
 }
 
@@ -1144,25 +1252,36 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
     
     unsigned int Verbosity = g_Verbosity;
     if (ShowDiagnostics == true) g_Verbosity = c_Info;
+
+    MTimer Timer;
+  
     
     // Step 1: find the lines
+    Timer.Reset();
     MCalibrateEnergyFindLines FindLines;
     FindLines.SetDiagnosticsMode(ShowDiagnostics);
     FindLines.SetRange(m_HistogramMin, m_HistogramMax);
+    FindLines.SetTemperatureWindow(m_SelectedTemperatureMin, m_SelectedTemperatureMax);
+    //cout<<"T1: "<<Timer.GetElapsed()<<endl;
     for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
       FindLines.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
     }
+    //cout<<"T2: "<<Timer.GetElapsed()<<endl;
     FindLines.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
     FindLines.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
+    //cout<<"T3: "<<Timer.GetElapsed()<<endl;
     
     if (FindLines.Calibrate() == false) {
       cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
       g_Verbosity = Verbosity;
       return false;
     }
+    //cout<<"T4: "<<Timer.GetElapsed()<<endl;
+    m_TimeToFindLines += Timer.GetElapsed();
     
     
     // Step 2: Assign the energies
+    Timer.Reset();
     MCalibrateEnergyAssignEnergies AssignEnergies;
     AssignEnergies.SetMode(m_CalibrationModelEnergyAssignmentMethod);
     AssignEnergies.SetDiagnosticsMode(ShowDiagnostics);
@@ -1178,9 +1297,11 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
       g_Verbosity = Verbosity;
       return false;
     }
+    m_TimeToAssignEnergies += Timer.GetElapsed();
     
     
     // Step 3: Determine model
+    Timer.Reset();
     MCalibrateEnergyDetermineModel DetermineModel;
     DetermineModel.SetDiagnosticsMode(ShowDiagnostics);
     DetermineModel.SetRange(m_HistogramMin, m_HistogramMax);
@@ -1189,7 +1310,8 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
       AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
     }
     DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
-    DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
+    DetermineModel.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel);
+    DetermineModel.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel);
     DetermineModel.SetCalibrationResult(AssignEnergies.GetCalibrationResult());
     
     if (DetermineModel.Calibrate() == false) {
@@ -1197,6 +1319,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
       g_Verbosity = Verbosity;
       return false;
     }
+    m_TimeToDetermineModel += Timer.GetElapsed();
     
     
     
@@ -1255,7 +1378,8 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
     AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
   }
   DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
-  DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
+  DetermineModel.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel);
+  DetermineModel.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel);
   DetermineModel.SetCalibrationResult(AssignEnergies.GetCalibrationResult());
   
   if (DetermineModel.Calibrate() == false) {
@@ -1286,6 +1410,16 @@ bool MMelinator::Save(MString FileName)
   
   out<<"# Energy calibration file created with Melinator"<<endl;
   out<<" "<<endl;
+  out<<"# Used files and isotopes:"<<endl;
+  for (unsigned int f = 0; f < m_CalibrationFileNames.size(); ++f) {
+    out<<"# File: \""<<m_CalibrationFileNames[f]<<"\" with isotopes: ";
+    for (unsigned int i = 0; i < m_Isotopes[f].size(); ++i) {
+      if (i != 0) out<<", ";
+      out<<m_Isotopes[f][i].ToString();
+    }
+    out<<endl;
+  }
+  out<<" "<<endl;
   out<<"TYPE ECAL"<<endl;
   out<<" "<<endl;
   //out<<"CF doublesidedstrip pointsadctokev"<<endl;
@@ -1296,9 +1430,15 @@ bool MMelinator::Save(MString FileName)
     MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))); // TF1 make problems when copying the thing --> pointer
     if (C != nullptr) {
       // Make a list of the points and store them for sorting
+      out<<endl;
+      out<<"# ROU: "<<ROE.ToParsableString(true)<<endl;
+      out<<"# "<<C->ToParsableString("peakparametrization", true)<<endl;
       out<<"CP "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("pakw", true)<<endl;
-      if (C->HasModel() == true) {
-        out<<"CM "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("model", true)<<endl;
+      if (C->HasEnergyModel() == true) {
+        out<<"CM "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("energymodel", true)<<endl;
+      }
+      if (C->HasFWHMModel() == true) {
+        out<<"CR "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("fwhmmodel", true)<<endl;
       }
     }
   }

@@ -176,7 +176,7 @@ class MFunction
   vector<double> m_Cumulative;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFunction, 0) // no description
 #endif

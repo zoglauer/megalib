@@ -28,6 +28,8 @@
 
 // Standard libs:
 #include <iostream>
+#include <csignal>
+#include <cstdlib>
 using namespace std;
 
 // ROOT libs:
@@ -45,20 +47,21 @@ using namespace std;
 
 
 MResponseManipulator* g_Prg = 0;
+int g_NInterruptCatches = 1;
 
 
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 
+//! Called when an interrupt signal is flagged
+//! All catched signals lead to a well defined exit of the program
 void CatchSignal(int a)
 {
-  // Called when an interrupt signal is flagged
-  // All catched signals lead to a well defined exit of the program
-
-  cout<<"Catched signal Ctrl-C (ID="<<a<<"):"<<endl;
-  
-  if (g_Prg != 0) {
+  if (g_Prg != 0 && g_NInterruptCatches-- > 0) {
+    cout<<"Catched signal Ctrl-C (ID="<<a<<"):"<<endl;
     g_Prg->Interrupt();
+  } else {
+    abort();
   }
 }
 
@@ -69,6 +72,9 @@ void CatchSignal(int a)
 int main(int argc, char** argv)
 {
   // Main function... the beginning...
+
+  // Catch a user interupt for graceful shutdown
+  signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("Response Manipulator");

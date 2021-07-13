@@ -1,5 +1,5 @@
 # Macroscopic cross section for Photo absorption
-# Derived from Geant4 version 1021
+# Derived from Geant4 version 1023
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Photo absorption cross section for Tin
 CE false
-HA 995483345
+HA 3094927875
 
 R1         1.000000 5.948227e+04
 R1         1.047129 5.392699e+04

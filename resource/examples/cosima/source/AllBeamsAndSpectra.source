@@ -2,21 +2,20 @@
 # This example contains all beams and spectra:
 
 
+# Global parameters
 Version         1
 Geometry        $(MEGALIB)/resource/examples/geomega/special/Spheric.geo.setup
 
 
 # Physics list
-PhysicsListEM                        Livermore
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM                        LivermorePol
+
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
+StoreSimulationInfo                  all
 
 
+# Run & source parameters
 Run SpaceSim
 SpaceSim.FileName         Everything
 SpaceSim.Time             1000.0

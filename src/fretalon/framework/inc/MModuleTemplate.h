@@ -78,7 +78,7 @@ class MModuleTemplate : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MModuleTemplate, 0) // no description
 #endif

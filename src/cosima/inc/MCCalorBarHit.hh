@@ -55,15 +55,10 @@ public:
   inline void* operator new(size_t);
   /// Special Geant4 memory deallocation
   inline void  operator delete(void*);
-  
-  /// Return the data as calibrated hit (as position and energy)
-  MSimHT* GetCalibrated();
 
   /// Set the number of ADCcounts evoked by this hit
   inline void SetADCCounts(G4double ADCCountsTop, G4double ADCCountsBottom = -1) 
   { m_ADCCountsTop = ADCCountsTop; m_ADCCountsBottom = ADCCountsBottom; }
-  /// Set the location of the hit in the world coordinate system
-  inline void SetPosition(G4ThreeVector Position){ m_Position = Position; }
   /// Set the bar number in x-direction
   inline void SetXBar(G4int XBar) { m_XBar = XBar; } 
   /// Set the bar number in y-direction
@@ -75,16 +70,11 @@ public:
   inline G4double GetADCCountsTop()     { return m_ADCCountsTop; };
   /// Return the number of ADCCounts
   inline G4double GetADCCountsBottom()     { return m_ADCCountsBottom; };
-  /// Return the position in the world coordinate system
-  inline G4ThreeVector GetPosition() { return m_Position; };
 
   /// Dump the hit
   void Print();
 
 private:
-    /// Absolute Position of the hit in the world reference frame
-  G4ThreeVector m_Position;
-
   /// x-bar of the module where the hit has happend
   G4int m_XBar;
   /// y-bar of the module where the hit has happend

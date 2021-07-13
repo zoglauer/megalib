@@ -50,7 +50,7 @@ using namespace std;
 #include "MRETrack.h"
 #include "MComptonEvent.h"
 #include "MGeometryRevan.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ const int MERCSRToFWithEnergyRecovery::c_TestStatisticsLast = 3;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERCSRToFWithEnergyRecovery)
 #endif
 
@@ -115,7 +115,7 @@ void MERCSRToFWithEnergyRecovery::ModifyEventList()
     MRERawEvent* First = m_List->GetRawEventAt(e);
 
     // To make sure everything is fine, create a new list:
-    MRawEventList* NewList = new MRawEventList();
+    MRawEventIncarnations* NewList = new MRawEventIncarnations();
     NewList->AddRawEvent(First);
 
     for (int n = 0; n < First->GetNRESEs(); ++n) {
@@ -324,9 +324,9 @@ void MERCSRToFWithEnergyRecovery::CalculateQF(vector<MRESE*>& RESEs, double& CQF
       else {
         mdebug<<"CSR-Rec (3): Kinematics ok!"<<endl;
         CQF_ER = 1; // "passed" energy test (per definition) with Chi-square = 0
-	
+  
         // The CQF_ER consists of three times the normalized cross-section
-	// VT: only two times the normalized cross sections
+        // VT: only two times the normalized cross sections
         double Ei = Eest;
         double Phi = MComptonEvent::ComputePhiViaEeEg(RESEs[0]->GetEnergy(), Ei - RESEs[0]->GetEnergy());
         CQF_ER *= MComptonEvent::GetKleinNishinaNormalized(Ei, Phi);
@@ -347,7 +347,7 @@ void MERCSRToFWithEnergyRecovery::CalculateQF(vector<MRESE*>& RESEs, double& CQF
       }
       
       //CQF_ER = c_CSRFailed;
-      //Eavg = 0.;	
+      //Eavg = 0.;  
     }
     mdebug<<"CSR-Rec (3): Final quality factor: "<<CQF_ER<<endl;
   }

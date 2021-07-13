@@ -37,7 +37,7 @@ class MGUIEFlatToolBar : public TGCompositeFrame
   MGUIEFlatToolBar(const TGWindow *Parent, unsigned int w, unsigned int h, unsigned int Options);
   virtual ~MGUIEFlatToolBar();
 
-	bool Add(const TGWindow* Associate, MString IconFile, int Id = -1, unsigned int Distance = 0, MString DistToolTip = "");
+  bool Add(const TGWindow* Associate, MString IconFile, int Id = -1, unsigned int Distance = 0, MString DistToolTip = "");
 
   // protected methods:
  protected:
@@ -54,12 +54,12 @@ class MGUIEFlatToolBar : public TGCompositeFrame
 
   // private members:
  private:
-	TObjArray* m_Pictures;
-	TObjArray* m_Buttons;
-	TObjArray* m_Layouts;
+  TObjArray* m_Pictures;
+  TObjArray* m_Buttons;
+  TObjArray* m_Layouts;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEFlatToolBar, 0) // no description
 #endif

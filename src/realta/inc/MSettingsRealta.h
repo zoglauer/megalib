@@ -148,7 +148,7 @@ class MSettingsRealta : public MSettings, public MSettingsEventSelections, publi
   //! If true add date and time to the accumulation file name
   bool m_AccumulationFileNameAddDateAndTime;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsRealta, 0) // no description
 #endif

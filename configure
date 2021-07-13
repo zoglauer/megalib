@@ -474,10 +474,18 @@ fi
 OPTIONS=""
 
 if [[ ${OPT} == normal ]]; then
-  OPTIONS+=" -O -DNDEBUG"
+  if [[ ${COMP} == gcc ]] && [[ ${DEBUG} !=  off ]]; then 
+    OPTIONS+=" -Og"
+  else
+    OPTIONS+=" -O -DNDEBUG"
+  fi
 elif  [[ $OPT == strong ]]; then
   if [[ ${COMP} == gcc ]]; then 
-    OPTIONS+=" -O3 -mtune=native -fno-strict-aliasing -DNDEBUG"
+    if [[ ${DEBUG} !=  off ]]; then 
+      OPTIONS+=" -Og"
+    else 
+      OPTIONS+=" -O3 -mtune=native -fno-strict-aliasing -DNDEBUG"
+    fi
   else 
     OPTIONS+=" -O2 -DNDEBUG"
   fi

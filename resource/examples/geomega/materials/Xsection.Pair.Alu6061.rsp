@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 1021
+# Derived from Geant4 version 1023
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for Alu6061
 CE false
-HA 982600520
+HA 2122077074
 
 R1         1.000000 5.902754e-302
 R1         1.047129 5.902754e-302

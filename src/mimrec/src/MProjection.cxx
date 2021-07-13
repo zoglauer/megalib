@@ -42,7 +42,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MProjection)
 #endif
 
@@ -50,33 +50,18 @@ ClassImp(MProjection)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-const int MProjection::c_Galactic    = 1;
-const int MProjection::c_Spheric     = 2;
-const int MProjection::c_Cartesian2D = 3;
-const int MProjection::c_Cartesian3D = 4;
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MProjection::MProjection(int CoordinateSystem)
+MProjection::MProjection(MCoordinateSystem CoordinateSystem)
 {
   // Initialize a MProjection
   
   m_CoordinateSystem = CoordinateSystem;
   
-  if (m_CoordinateSystem != c_Galactic &&
-    m_CoordinateSystem != c_Spheric &&
-    m_CoordinateSystem != c_Cartesian2D &&
-    m_CoordinateSystem != c_Cartesian3D) {
-    merr<<"Unknown coordinate system ID: "<<m_CoordinateSystem<<endl;
-    merr<<"Brace for problems..."<<show; 
-  }
-  
-  m_Event = 0;
-  m_C = 0;
-  m_P = 0;
-  m_Photo = 0;
+  m_Event = nullptr;
+  m_C = nullptr;
+  m_P = nullptr;
+  m_Photo = nullptr;
+  m_PET = nullptr;
+  m_Multi = nullptr;
 
   m_ApproximatedMaths = false;
 }
@@ -88,6 +73,8 @@ MProjection::MProjection(int CoordinateSystem)
 MProjection::~MProjection()
 {
   // Default destructor
+  
+  // We don't own any pointers, thus we do nothing.
 }
 
 
@@ -97,8 +84,17 @@ MProjection::~MProjection()
 bool MProjection::Assimilate(MPhysicalEvent* Event)
 {
   // Now we have to check which kind of data we want to backproject
+  
   massert(Event != 0);
+  
   m_Event = Event;
+  
+  // Since we do not own the old events, nullptr them!
+  m_C = nullptr;
+  m_P = nullptr;
+  m_Photo = nullptr;
+  m_PET = nullptr;
+  m_Multi = nullptr;
 
   if (Event->GetType() == MPhysicalEvent::c_Compton) {
     m_C = dynamic_cast<MComptonEvent*>(Event);
@@ -106,6 +102,10 @@ bool MProjection::Assimilate(MPhysicalEvent* Event)
     m_P = dynamic_cast<MPairEvent*>(Event);
   } else if (Event->GetType() == MPhysicalEvent::c_Photo) {
     m_Photo = dynamic_cast<MPhotoEvent*>(Event);
+  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+    m_PET = dynamic_cast<MPETEvent*>(Event);
+  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+    m_Multi = dynamic_cast<MMultiEvent*>(Event);
   } else {
     cout<<"Unhandled event type: "<<Event->GetTypeString()<<endl;
     return false;

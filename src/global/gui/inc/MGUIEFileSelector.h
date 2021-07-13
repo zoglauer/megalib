@@ -39,7 +39,7 @@ class MGUIEFileSelector : public MGUIElement
 {
   // public interface:
  public:
-  MGUIEFileSelector(const TGWindow* Parent, MString Label, MString FileName);
+  MGUIEFileSelector(const TGWindow* Parent, MString Label, MString FileName = "");
   virtual ~MGUIEFileSelector();
 
   void SetFileName(MString Name);
@@ -83,7 +83,7 @@ class MGUIEFileSelector : public MGUIElement
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEFileSelector, 0) // Basic GUI element: a label, an input field for files and a file button 
 #endif

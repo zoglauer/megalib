@@ -1,23 +1,42 @@
 #!/bin/bash
 
 
-CONFIGUREOPTIONS="--enable-readline"
 COMPILEROPTIONS=`gcc --version | head -n 1`
+
+CONFIGUREOPTIONS=" "
+
+# Comment this line in if you have trouble with readline
+# CONFIGUREOPTIONS="--enable-readline "
+
+
+
+# Check if some of the frequently used software is installed:
+type gfortran >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  type g95 >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    type g77 >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      echo "ERROR: A fortran compiler must be installed"
+      exit 1
+    fi
+  fi
+fi
 
 
 confhelp() {
   echo ""
   echo "Building HEASoft"
-  echo " " 
+  echo " "
   echo "Usage: ./build-heasoft.sh [options]";
   echo " "
   echo " "
   echo "Options:"
   echo "--tarball=[file name of HEASoft tar ball]"
-  echo "    Use this tarball instead of downloading it from the HEASoft website" 
+  echo "    Use this tarball instead of downloading it from the HEASoft website"
   echo " "
-  echo "--environment-script=[file name of new environment script]"
-  echo "    File in which the HEASoft path is stored. This is used by the MEGAlib setup script" 
+  echo "--sourcescript=[file name of new environment script]"
+  echo "    File in which the HEASoft path is stored. This is used by the MEGAlib setup script"
   echo " "
   echo "--help or -h"
   echo "    Show this help."
@@ -31,11 +50,11 @@ setuphelp() {
     echo "If you are not using the MEGAlib source script,"
     echo "then you can use the following lines to setup HEASoft: "
     echo " "
-    
+
     HEASOFTPATH=`ls -d heasoft_v${VER}/*86*`
     if [[ ${SHELL} == *csh ]]; then
       echo "You seem to use a C shell variant so, in your \$HOME/.cshrc or \$HOME/.tcshrc do:"
-      echo " " 
+      echo " "
       echo "setenv HEADAS "`pwd`"/${HEASOFTPATH}"
       echo "alias heainit \"source \$HEADAS/headas-init.csh\""
       echo " "
@@ -43,7 +62,7 @@ setuphelp() {
       echo " "
     elif [[ ${SHELL} == *ash ]]; then
       echo "You seem to use a bourne shell variant so, in your \$HOME/.bashrc or \$HOME/.login or \$HOME/.profile do:"
-      echo " " 
+      echo " "
       echo "export HEADAS="`pwd`"/${HEASOFTPATH}"
       echo "alias heainit=\"source \$HEADAS/headas-init.sh\""
       echo " "
@@ -78,7 +97,7 @@ for C in ${CMD}; do
   if [[ ${C} == *-t*=* ]]; then
     TARBALL=`echo ${C} | awk -F"=" '{ print $2 }'`
     echo "Using this tarball: ${TARBALL}"
-  elif [[ ${C} == *-e* ]]; then
+  elif [[ ${C} == *-s* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
     echo "Using this MEGALIB environment file: ${ENVFILE}"
   elif [[ ${C} == *-h* ]]; then
@@ -99,50 +118,59 @@ VER=""
 if [ "${TARBALL}" != "" ]; then
   # Use given tarball
   echo "The given HEASoft tarball is ${TARBALL}"
-  
+
   # Check if it has the correct version:
   VER=`echo ${TARBALL} | awk -Fheasoft- '{ print $2 }' | awk -Fsrc '{ print $1 }'`;
   echo "Version of HEASoft is: ${VER}"
 else
   # Download it
-  
+
   # The desired version is simply the highest version
   echo "Looking for latest HEASoft version on the HEASoft website"
-  
+
   # Now check root repository for the given version:
   #TARBALL=`curl ftp://legacy.gsfc.nasa.gov/software/lheasoft/release/ -sl | grep "^heasoft\-" | grep "[0-9]src.tar.gz$"`
-  TARBALL=$(curl https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/ -sl | grep ">heasoft-" | grep "[0-9]src.tar.gz<" | awk -F">" '{ print $3 }' | awk -F"<" '{print $1 }')
+  TARBALL=$(curl https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/ -sl | grep ">heasoft-" | grep "[0-9]src.tar.gz<" | awk -F">" '{ print $3 }' | awk -F"<" '{print $1 }' | sort | head -n 1)
   if [ "${TARBALL}" == "" ]; then
     echo "ERROR: Unable to find suitable HEASoft tar ball at the HEASoft website"
     exit 1
   fi
   echo "Using HEASoft tar ball ${TARBALL}"
-  
+
   # Check if it already exists locally
   REQUIREDOWNLOAD="true"
   if [ -f "${TARBALL}" ]; then
     # ... and has the same size
-    LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
-    SAMESIZE=`curl --head https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/${TARBALL}`
+    LOCALSIZE=$(wc -c < ${TARBALL} | tr -d ' ')
+    REMOTESIZE=$(curl -s --head https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/${TARBALL} | grep -i "Content-Length" | awk '{print $2}' | sed 's/[^0-9]*//g') 
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to determine remote tarball size"
       exit 1
     fi
-    SAMESIZE=`echo ${SAMESIZE} | grep ${LOCALSIZE}`
-    if [ "${SAMESIZE}" != "" ]; then
+    IDENTICAL=`echo ${REMOTESIZE} | grep ${LOCALSIZE}`
+    if [ "${IDENTICAL}" != "" ]; then
       REQUIREDOWNLOAD="false"
       echo "File is already present and has same size, thus no download required!"
+    else
+      echo "Remote and local file sizes are different (local: ${LOCALSIZE} vs. remote: ${REMOTESIZE}). Downloading it."
     fi
+  else
+    echo "Tarball does not exist, downloading it"
   fi
-  
+
   if [ "${REQUIREDOWNLOAD}" == "true" ]; then
+    echo "Starting the download."
+    echo "If the download fails, you can continue it via the following command and then call this script again - it will use the download file."
+    echo " "
+    echo "curl -O -C - https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/${TARBALL}"
+    echo " "
     curl -O https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/${TARBALL}
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to download the tarball from the HEASoft website!"
       exit 1
     fi
   fi
-  
+
   # Check for the version number:
   VER=`echo ${TARBALL} | awk -Fheasoft- '{ print $2 }' | awk -Fsrc '{ print $1 }'`;
   echo "Version of HEASoft is: ${VER}"
@@ -166,15 +194,15 @@ if [ -d heasoft_v${VER} ]; then
       echo "Your already have a usable HEASoft version installed!"
       if [ "${ENVFILE}" != "" ]; then
         echo "Storing the HEASoft directory in the MEGAlib source script..."
-        echo "HEASoftDIR=`pwd`" >> ${ENVFILE}
-      else 
+        echo "HEASOFTDIR=`pwd`" >> ${ENVFILE}
+      else
         cd ..
         setuphelp
       fi
       exit 0
     fi
   fi
-    
+
   echo "Old installation is either incompatible or incomplete. Removing heasoft_v${VER}"
   cd ..
   if echo "heasoft_v${VER}" | grep -E '[ "]' >/dev/null; then
@@ -191,7 +219,7 @@ fi
 
 
 echo "Unpacking..."
-tar xvfz ${TARBALL} > /dev/null
+tar xfz ${TARBALL} > /dev/null
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong unpacking the HEASoft tarball!"
   exit 1
@@ -205,27 +233,27 @@ echo "Configuring..."
 # Minimze the LD_LIBRARY_PATH to prevent problems with multiple readline's
 cd heasoft_v${VER}/BUILD_DIR
 export LD_LIBRARY_PATH=/usr/lib
-sh configure ${CONFIGUREOPTIONS} > config.out 2>&1
+sh configure ${CONFIGUREOPTIONS} > config.log 2>&1
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring HEASoft!"
-  echo "       Check the file "`pwd`"/config.out"
+  echo "       Check the file "`pwd`"/config.log"
   exit 1
 fi
 
 
 
 echo "Compiling..."
-make -j1 > build.log 2>&1 
+make -j1 > build.log 2>&1
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong while compiling HEASoft!"
   echo "       Check the file "`pwd`"/build.log"
   exit 1
 fi
-ERRORS=`grep -v "char \*\*\*" build.log | grep "\ \*\*\*\ "`
+ERRORS=$(cat build.log | grep -v "char \*\*\*" | grep -v "\_\_PRETTY\_FUNCTION\_\_\,\" \*\*\*" | grep "\ \*\*\*\ ")
 if [ "${ERRORS}" == "" ]; then
   echo "Installing ..."
-  make -j1 install > install.log 2>&1 
-  ERRORS=`grep -v "char \*\*\*" install.log | grep "\ \*\*\*\ "`
+  make -j1 install > install.log 2>&1
+  ERRORS=$(cat install.log | grep -v "char \*\*\*" | grep -v "\_\_PRETTY\_FUNCTION\_\_\,\" \*\*\*" | grep "\ \*\*\*\ ")
   if [ "${ERRORS}" != "" ]; then
     echo "ERROR: Errors occured during the installation. Check your install.log"
     echo "       Check the file "`pwd`"/install.log"
@@ -242,7 +270,7 @@ fi
 cd ../*86*/lib
 CFITSIO=`find . -name "libcfitsio.[so|a|dylib|dll]"`
 LONGCFITSIO=`find . -name "libcfitsio_*[so|a|dylib|dll]"`
-if ( [ "${CFITSIO}" == "" ] && [ "${LONGCFITSIO}" != "" ] ); then 
+if ( [ "${CFITSIO}" == "" ] && [ "${LONGCFITSIO}" != "" ] ); then
     NEWCFITSIO=`echo ${LONGCFITSIO} | awk -F'[/]|[.]|[_]' '{ print $3"."$6 }'`
     ln -s ${LONGCFITSIO} ${NEWCFITSIO}
 fi
@@ -265,7 +293,7 @@ chmod -R go+rX heasoft_v${VER}
 
 if [ "${ENVFILE}" != "" ]; then
   echo "Storing the HEASoft directory in the MEGAlib source script..."
-  echo "HEASoftDIR=`pwd`/heasoft_v${VER}" >> ${ENVFILE}
+  echo "HEASOFTDIR=`pwd`/heasoft_v${VER}" >> ${ENVFILE}
 else
   setuphelp
 fi
@@ -273,5 +301,3 @@ fi
 
 echo "Done!"
 exit 0
-
-

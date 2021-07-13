@@ -1,0 +1,419 @@
+#!/bin/bash
+
+# Part of the megalib analysis cluster
+# Run remote instances of the responsecreator
+
+
+# On exit, or if we hit ctrl-C, kill all your children
+trap CleanUp SIGTERM SIGINT 
+
+CleanUp() {
+  echo " "
+  echo " "
+  echo "Received command to shut down gracefully..."
+  echo " "
+  #P=$(jobs -p)
+  #if [[ ${P} != "" ]]; then
+  #  echo "Killing all sub-processes..."
+  #  kill ${P}
+  #fi
+  #sleep 1
+  
+  #echo "Killing all analysis tasks..."
+  #dcosima-kill -n=${LOCALDIR}
+  #echo "DONE"
+  #echo " "
+  exit 1
+}
+
+commandhelp() {
+  echo ""
+  echo "dcosima2 - remotely run cosima";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "The difference between dcosima and dcosima2 is that dcosima2 assumes to have access to a shared target directory"
+  echo "where it simulates all *.source files from the target directory exactly once"
+  echo ""
+  echo "Usage: dcosima2 [options]";
+  echo ""
+  echo "Options:"
+  echo "  --datadir=[path]: The data diretcory with all the source files"
+  echo "  --targetdir=[path]: The target directory where the sim files are created"
+  echo "  --continue: Check for not yet created sim files and just create the new ones"
+  echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
+  echo "  --zip: Compress the output files."
+  echo "  --log: Create a log file of what is started where"
+  echo "  --help: Show this help."
+  echo ""
+  echo ""
+}
+
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Default options:
+DATADIR=""
+TARGETDIR=""
+ZIP="FALSE"
+CONTINUE="FALSE"
+LOG="FALSE"
+LOGFILE=""
+LOGGING="tee"
+DELAY="10"
+CFG=~/.dcosima.cfg
+
+
+# The number of already launched runs
+LAUNCHED=0
+# The run ID
+RUNID=${RANDOM}${RANDOM}${RANDOM}
+# Here we are
+HERE=$(pwd)
+
+
+# Overwrite default options with user options:
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-d*=* ]]; then
+    DATADIR=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-t*=* ]]; then
+    TARGETDIR=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-co* ]]; then
+    CONTINUE="TRUE"
+  elif [[ ${C} == *-z* ]]; then
+    ZIP="TRUE"
+  elif [[ ${C} == *-d*=* ]]; then
+    DELAY=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-l* ]]; then
+    LOG="TRUE"
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  else
+    echo ""
+    echo "ERROR: Unknown command line option: ${C}"
+    echo "       See \"dcosima2 --help\" for a list of options"
+    exit 1
+  fi
+done
+
+
+# Provide feed back and perform error checks:
+echo ""
+echo "Chosen options:"
+
+  
+if [[ ${DATADIR} != "" ]]; then
+  if [[ ! -d ${DATADIR} ]]; then
+    echo " "
+    echo "ERROR: Data directory not found: ${DATADIR}"
+    exit 1
+  fi
+  if [[ ${DATADIR} != /* ]]; then
+    echo " "
+    echo "ERROR: Data directory must have an absolute path: ${DATADIR}"
+    exit 1
+  fi
+else
+  echo " "
+  echo "ERROR: You need to give a data directory"
+  exit 1
+fi
+echo " * Data directory: ${DATADIR}"
+
+  
+if [[ ${TARGETDIR} == "" ]]; then
+  echo " "
+  echo "ERROR: You need to give a target directory where we create the response files"
+  exit 1
+fi
+
+
+if [[ ${LOG} == "TRUE" ]]; then
+  LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
+  LOGGING="tee -a ${LOGFILE}"
+  echo " * Logging output to file: ${LOGFILE}"
+fi
+
+if [[ -f "${CFG}" ]]; then
+  echo " * Configuration file: ${CFG}"
+else 
+  echo " "
+  echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
+  exit 1  
+fi
+
+if [[ ${DELAY} -ge 10 ]]; then
+  echo " * Delay between checks for free slots: ${DELAY}"
+else 
+  DELAY="10"
+  echo " * Using minimum allowed delay between checks for free slots: ${DELAY}"
+fi
+
+
+
+# The md5 checksum of the configuration file to tell if it changed - initialize empty
+CFGMD5=""
+
+
+
+# Do a few more sanity checks
+echo " "
+echo "Performing sanity checks..." | ${LOGGING}
+
+
+
+
+
+# Now start the all the simulations runs
+echo " " | ${LOGGING}
+echo "Creating a list of all data files to use" | ${LOGGING}
+
+cd ${DATADIR}
+pwd
+
+# Find all sim and evta files except concatenation files (that's what the *inc*id* is for)
+DATAFILES=()
+for F in `find . -name "*.source"`; do
+  DATAFILES+=( "${F}" ) 
+done
+
+if [[ ${#DATAFILES[*]} -eq 0 ]]; then
+  echo " "
+  echo "No data files found! Exiting."
+  exit 0
+fi
+
+# Done
+cd ${HERE}
+
+
+# Check if we can continue:
+if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
+  #TARGETFILES=$( find ${TARGETDIR} -name "*.sim*" -printf "%f " )
+  NOTDONE=()
+  
+  for (( d=0; d<${#DATAFILES[*]}; d++ )); do
+    if [[ $(( d % 100 )) == 0 ]]; then echo "Analyzing $d/${#DATAFILES[*]}..."; fi
+    
+    OUTFILE=${DATAFILES[$d]}
+    OUTFILE=${OUTFILE/.source/.inc1.id1.sim.gz}
+
+    if [[ ! -f ${OUTFILE} ]]; then
+      NOTDONE+=( "${DATAFILES[$d]}" )
+    fi
+  done
+  
+  DATAFILES=("${NOTDONE[@]}")  
+  
+  if [[ ${#DATAFILES[@]} -eq 0 ]]; then
+    echo " "
+    echo "Everything already done!"
+    exit 0
+  fi
+fi
+
+
+echo "Data files:"
+for (( d=0; d<=$(( ${#DATAFILES[*]} -1 )); d++ )); do
+  echo " * ${DATAFILES[$d]}"
+done
+echo "--> ${#DATAFILES[*]} source files in total to simulate"
+
+
+echo " "
+echo "Starting analysis..." | ${LOGGING}
+AVAILABLE=0
+
+d=0
+while [[ $d -lt ${#DATAFILES[*]} ]]; do 
+
+  # (Re-) Read configuration file and extract machines
+  if [[ `md5sum ${CFG}` != ${CFGMD5} ]]; then
+    echo " "
+    echo "Configuration file changed -- re-reading:"
+    MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+    PRIORITIES=( `cat ${CFG} | grep "^machine" | gawk '{ print $3 }'` )
+   
+    if [[ ${#PRIORITIES[*]} < ${#MACHINES[*]} ]]; then
+      PRIORITIES=( )
+      for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+        PRIORITIES=( ${PRIORITIES[@]} "1" )
+      done
+    fi
+    
+    for (( m=0; m<=$(( ${#PRIORITIES[*]} -1 )); m++ )); do
+      if (( ${PRIORITIES[$m]} < 1 )); then
+        echo "Warning: The highest (= smallest number) allowed machine priority is 1"
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        echo "         Setting it to 1."
+        PRIORITIES[$m]=1;
+      fi
+      if (( ${PRIORITIES[$m]} > 5 )); then
+        echo "Warning: The lowest (= highest number) allowed machine priority is 5"
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        echo "         Setting it to 5."
+        PRIORITIES[$m]=5;
+      fi
+    done
+
+    REMOTEUSER=( )
+    REMOTEHOST=( )
+    REMOTEPORT=( )
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
+      REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
+      REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
+    done
+    CFGMD5=`md5sum ${CFG}`
+    
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}, priority: ${PRIORITIES[$m]} )"
+    done
+  fi
+
+  
+  # Verify the machines:
+  AVAILABLEMACHINES=0
+  echo " " 
+  echo "Verifying available machines: "
+  for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+    # Reset it in case it was deleted before:
+    MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
+    
+    # Do a quick test if the machine is availble:
+    REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+    if [ "$?" != "0" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): NOT ACCESSIBLE"
+      MACHINES[$m]=""
+      continue
+    fi  
+    
+    COMMAND=""
+    COMMAND+=". ~/.bash_local;"
+    COMMAND+="if [[ ! -x \${MEGALIB}/bin/cosima ]]; then echo \"ERROR: MEGAlib not fully installed\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \".dcosima.cfg configuration file not found.\"; exit 1; fi; "
+    COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"Failed to access remote data directory!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"Failed to create target directory\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[$d]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
+    COMMAND+="echo \"Available\"; exit 0; "
+    
+    # Check if the data directory accessible on the remote machine
+    ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
+    if [[ ${ANSWER} == "" ]]; then ANSWER="Check failed with unknown error!"; fi
+    if [[ ${ANSWER} != "Available" ]]; then     
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
+      MACHINES[$m]=""
+      continue
+    fi
+ 
+    echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
+    AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
+    
+  done
+  
+  
+  # If we have NO machines available, we quit...
+  if [ ${AVAILABLEMACHINES} -eq 0 ]; then
+    echo " "
+    echo "Unfortunately there are no machines available for simulations... Add a few more! Good bye..." | ${LOGGING}
+    exit 0;
+  fi
+  
+  
+  STARTEDALLPRIORITIES=0
+  # Loop over the machines by priority & start processes on machines with high priority first 
+  for P in `seq 1 5`; do
+    # loop over all the machines at this prioritry and start as many machine as we can
+    while true; do
+      STARTED=0
+      for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+        if [[ ${PRIORITIES[$m]} != ${P} ]]; then continue; fi
+    
+        # Exclude failed machines
+        if [[ ${MACHINES[$m]} == "" ]]; then
+          continue
+        fi
+    
+        # Prepare the launch
+        ALLOWED=$( dmegalib-allowedinstances --remote=${MACHINES[$m]} )
+        echo " "
+        echo "Preparing for next launch with priority ${P}:"
+        echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
+        if [[ ${ALLOWED} -gt 0 ]]; then
+          LAUNCHED=$(( ${LAUNCHED} + 1 ))
+          echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
+    
+          OUTFILE=${DATAFILES[$d]}
+          OUTFILE=${OUTFILE/.sim.gz/}
+          OUTFILE=${OUTFILE/.sim/}
+
+          SEED=""
+          for N in `seq 1 8`; do SEED="${SEED}$(( RANDOM%10 ))"; done
+          
+          REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; cosima -f ${STARTED} -t ${TARGETDIR} -s ${SEED} "
+          if [[ ${ZIP} == TRUE ]]; then REMOTECOMMAND+=" -z"; fi
+          REMOTECOMMAND+=" ${DATADIR}/${DATAFILES[$d]} "
+          if [[ ${LOG} == TRUE ]]; then
+            REMOTECOMMAND+=" </dev/null >${OUTFILE}.log 2>&1 &"
+          else
+            REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
+          fi
+       
+          REMOTEDATADIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
+          if [[ "$?" != "0" ]]; then
+            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch responsecreator!"
+            MACHINES[$m]=""
+            continue
+          fi        
+        
+          STARTED=1
+          STARTEDALLPRIORITIES=1
+          
+          # Swich to next data file!
+          d=$(( d + 1 ))
+        
+        fi
+      
+        if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
+      
+      done # loop over all machines at this priority once
+      
+      if [[ ${STARTED} == 0 ]]; then break; fi
+      if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
+    
+    done # loop over all machines at this priority until no more available machines are found
+    
+    if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
+    
+  done # loopover all priorities
+  
+  
+  if [[ ${STARTEDALLPRIORITIES} -eq 0 ]]; then
+    echo ""
+    echo " --> No slots available at the moment... Sleeping for ${DELAY} seconds..."
+    sleep ${DELAY}
+  else 
+    # Sleep a tiny bit to give the last instance a chance to start before we revisit the node   
+    sleep 1
+  fi
+done
+
+echo ""
+echo ""
+echo "All processes have been lauched, but it might take a while until all have finish..." | ${LOGGING}
+echo ""
+
+exit 0;

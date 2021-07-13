@@ -43,7 +43,7 @@
 
 #include "MGUIMultiInput.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIMultiInput)
 #endif
 
@@ -129,7 +129,7 @@ void MGUIMultiInput::Create()
 {
   // Create the main window
 
-	int i;
+  int i;
 
   // We start with a name and an icon...
   SetWindowName(m_Title);  
@@ -213,7 +213,7 @@ void MGUIMultiInput::Create()
     new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 
                       10, 10, 10, 8);
   AddFrame(m_ButtonFrame, m_ButtonFrameLayout);
-	  
+    
   m_CancelButton = new TGTextButton(m_ButtonFrame, "Cancel", 2); 
   m_CancelButton->Associate(this);
   m_CancelButtonLayout = 
@@ -254,7 +254,7 @@ bool MGUIMultiInput::ProcessMessage(long Message, long Parameter1,
 {
   // Process the messages for this application
 
-	int i;
+  int i;
 
   switch (GET_MSG(Message)) {
   case kC_COMMAND:

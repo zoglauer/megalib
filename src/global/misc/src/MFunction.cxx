@@ -46,7 +46,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MFunction)
 #endif
 
@@ -638,7 +638,8 @@ double MFunction::Integrate(double XMin, double XMax) const
 
   int BinMin = 0;
   if (XMin > m_X.front()) {
-    BinMin = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), XMin)) - m_X.begin() - 1;
+    // BinMin = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), XMin)) - m_X.begin() - 1;
+    BinMin = find_if(m_X.begin(), m_X.end(), bind(greater<double>(), placeholders::_1, XMin)) - m_X.begin() - 1;
 //     unsigned int upper = m_Cumulative.size();
 //     unsigned int center = 1;
 //     unsigned int lower = 0;
@@ -658,7 +659,8 @@ double MFunction::Integrate(double XMin, double XMax) const
   }
   int BinMax = m_X.size()-1;
   if (XMax < m_X.back()) {
-    BinMax = find_if(m_X.begin(), m_X.end(), bind2nd(greater_equal<double>(), XMax)) - m_X.begin();
+    //BinMax = find_if(m_X.begin(), m_X.end(), bind2nd(greater_equal<double>(), XMax)) - m_X.begin();
+    BinMax = find_if(m_X.begin(), m_X.end(), bind(greater_equal<double>(), placeholders::_1, XMax)) - m_X.begin();
 //     unsigned int upper = m_Cumulative.size();
 //     unsigned int center = 1;
 //     unsigned int lower = 0;
@@ -812,6 +814,9 @@ double MFunction::GetRandom()
 
   // Check if we have to determine the cumulative function:
   if (m_Cumulative.size() == 0) {
+    if (m_Y.size() > 5000) {
+      mout<<"MFunction: Determining the cumulative function --- this can take a very long time, especially when MEGAlib was compiled in debug mode..."<<endl;
+    }
     m_Cumulative.push_back(0);
     for (unsigned int i = 1; i < m_Y.size(); ++i) {
       m_Cumulative.push_back(m_Cumulative.back() + Integrate(m_X[i-1], m_X[i]));
@@ -859,7 +864,8 @@ double MFunction::GetRandomInterpolate(double Itot)
   // Now find the correct x-value via interpolation
 
   // Find the correct bin in m_Cumulative
-  int Bin = find_if(m_Cumulative.begin(), m_Cumulative.end(), bind2nd(greater_equal<double>(), Itot)) - m_Cumulative.begin();
+  //int Bin = find_if(m_Cumulative.begin(), m_Cumulative.end(), bind2nd(greater_equal<double>(), Itot)) - m_Cumulative.begin();
+  int Bin = find_if(m_Cumulative.begin(), m_Cumulative.end(), bind(greater_equal<double>(), placeholders::_1, Itot)) - m_Cumulative.begin();
 
 //   // Binary search:
 //   unsigned int upper = m_Cumulative.size();
@@ -988,7 +994,7 @@ double MFunction::GetRandomInterpolate(double Itot)
       
       if (m_X[Bin-1] > x || m_X[Bin] < x) {
         merr<<"This case should have never happened: "<<endl;
-        merr<<"x is outside the interval bounderies: "<<endl;
+        merr<<"x is outside the interval boundaries: "<<endl;
         merr<<"x_min: "<<m_X[Bin-1]<<" - x: "<<x<<" ("<<xs1<<", "<<xs2<<") - x_max: "<<m_X[Bin]<<endl;
         return 0.0;
       }
@@ -1142,7 +1148,8 @@ double MFunction::FindX(double XStart, double Integral, bool Cyclic)
 
   unsigned int BinStart = 0;
   if (X > m_X.front()) {
-    BinStart = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), X)) - m_X.begin() - 1;
+    //BinStart = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), X)) - m_X.begin() - 1;
+    BinStart = find_if(m_X.begin(), m_X.end(), bind(greater<double>(), placeholders::_1, X)) - m_X.begin() - 1;
   }
 
   //cout<<"x: "<<X<<" Bin start: "<<BinStart<<endl;

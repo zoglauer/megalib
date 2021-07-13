@@ -36,6 +36,7 @@
 using namespace std;
 
 // Forward declarations:
+class MDGuardRing;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,8 +87,6 @@ class MDDetector
   //! Do a conversion from string ID to int ID
   static int GetDetectorType(const MString& Type);
 
-  //! Remove this later...
-  virtual int GetDetectorType() const { return m_Type; }
 
   //! If set to true, then the noise threshold equals the trigger threshold (i.e. basically only the latter exists) and avoids
   //! that randomization is done twice!
@@ -172,7 +171,11 @@ class MDDetector
   virtual MVector GetStructuralSize() const { return m_StructuralSize; }
 
   //! Return true, if the detector has guard ring
-  virtual bool HasGuardring() const { return m_HasGuardring; }
+  virtual bool HasGuardRing() const { return m_HasGuardRing; }
+  //! Return the guard ring detector or a nullptr if we don't have any
+  MDGuardRing* GetGuardRing() { return m_GuardRing; }
+  
+  
   //! Return true, if the detector has a time resolution
   virtual bool HasTimeResolution() const;
 
@@ -203,7 +206,7 @@ class MDDetector
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const = 0;
   
   //! Noise a guard ring hit - if the detector has a guard ring
-  virtual bool NoiseGuardring(double&) const { return false; }
+  //virtual bool NoiseGuardRing(double&) const { return false; }
   
   virtual bool AreNear(const MVector& Pos1, const MVector& dPos1, 
                        const MVector& Pos2, const MVector& dPos2, 
@@ -220,11 +223,6 @@ class MDDetector
 
   virtual bool IsVeto(const MVector& Pos, const double Energy) const;
 
-  virtual MString GetGeomega() const = 0;
-  virtual MString GetGeant3() const = 0;
-  virtual MString GetMGeant() const = 0;
-  virtual MString GetGeant3Divisions() const = 0;
-  virtual MString GetMGeantDivisions() const = 0;
   virtual MString ToString() const;
 
   // The named detector interface -- this is usually only used in connection of calibrating real data, NOT for simulated data
@@ -270,7 +268,8 @@ class MDDetector
   static const int c_Strip3DDirectional;
   static const int c_AngerCamera;
   static const int c_Voxel3D;
-
+  static const int c_GuardRing;
+  
   static const int c_MinDetector;
   static const int c_MaxDetector;
 
@@ -284,7 +283,8 @@ class MDDetector
   static const MString c_Strip3DDirectionalName;
   static const MString c_AngerCameraName;
   static const MString c_Voxel3DName;
-
+  static const MString c_GuardRingName;
+  
   static const int c_EnergyResolutionTypeUnknown;
   static const int c_EnergyResolutionTypeNone;
   static const int c_EnergyResolutionTypeIdeal;
@@ -306,11 +306,7 @@ class MDDetector
   static const int c_DepthResolutionTypeIdeal;
   static const int c_DepthResolutionTypeGauss;
 
-  static const int c_GuardringEnergyResolutionTypeUnknown;
-  static const int c_GuardringEnergyResolutionTypeNone;
-  static const int c_GuardringEnergyResolutionTypeIdeal;
-  static const int c_GuardringEnergyResolutionTypeGauss;
-
+  
   // protected methods:
  protected:
   virtual bool ApplyEnergyResolution(double& Energy, const MVector& Position = c_NullVector) const;
@@ -351,7 +347,7 @@ class MDDetector
 
   //! A list of sensitive volumes
   vector<MDVolume*> m_SVs;
-  //! The detctor volume
+  //! The detector volume
   MDVolume* m_DetectorVolume;
   //! If there are multiple sensitive volumes, this is the common volume in which they are all included
   MDVolume* m_CommonVolume;
@@ -419,8 +415,10 @@ class MDDetector
   //! Spacing between the sensitive volume elements
   MVector m_StructuralPitch;    
 
-  //! True if this detector type has a guard ring:
-  bool m_HasGuardring;
+  //! True if this detector has a guard ring:
+  bool m_HasGuardRing;
+  //! The guard ring itself - nullptr if we don;t have any
+  MDGuardRing* m_GuardRing; 
 
   //! Flag indicating if the grid of trigger blocked channels is used 
   bool m_AreBlockedTriggerChannelsUsed;
@@ -449,7 +447,7 @@ class MDDetector
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDDetector, 0) // basic detector
 #endif

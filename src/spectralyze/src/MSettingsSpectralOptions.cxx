@@ -39,7 +39,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSettingsSpectralOptions)
 #endif
 
@@ -54,7 +54,7 @@ MSettingsSpectralOptions::MSettingsSpectralOptions() : MSettingsInterface()
   // Spectral analyzer
   m_SpectralSignaltoNoiseRatio = 3;
   m_SpectralPoissonLimit = 20;
-	m_SpectralIsotopeFileName = "$(MEGALIB)/resource/libraries/IsotopeLibrary_HomelandSecurity_Short.isotopes";
+  m_SpectralIsotopeFileName = "$(MEGALIB)/resource/libraries/IsotopeLibrary_HomelandSecurity_Short.isotopes";
   m_SpectralEnergyRange = 1;
 
 }
@@ -81,7 +81,7 @@ bool MSettingsSpectralOptions::WriteXml(MXmlNode* Node)
   // Spectral analyzer
   aNode = new MXmlNode(Node, "SpectralAnalyzer");
   new MXmlNode(aNode, "SpectralSignaltoNoiseRatio", m_SpectralSignaltoNoiseRatio);
-  new MXmlNode(aNode, "SpectralPoissonLimit", m_SpectralPoissonLimit);	
+  new MXmlNode(aNode, "SpectralPoissonLimit", m_SpectralPoissonLimit);  
   new MXmlNode(aNode, "SpectralIsotopeFileName", CleanPath(m_SpectralIsotopeFileName));
   new MXmlNode(aNode, "SpectralEnergyRange", m_SpectralEnergyRange);
 

@@ -50,7 +50,7 @@ using namespace std;
 #include "MRETrack.h"
 #include "MComptonEvent.h"
 #include "MGeometryRevan.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ const int MERCSREnergyRecovery::c_TestStatisticsLast = 3;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERCSREnergyRecovery)
 #endif
 
@@ -114,7 +114,7 @@ void MERCSREnergyRecovery::ModifyEventList()
     MRERawEvent* First = m_List->GetRawEventAt(e);
 
     // To make sure everything is fine, create a new list:
-    MRawEventList* NewList = new MRawEventList();
+    MRawEventIncarnations* NewList = new MRawEventIncarnations();
     NewList->AddRawEvent(First);
 
     for (int n = 0; n < First->GetNRESEs(); ++n) {
@@ -329,7 +329,7 @@ void MERCSREnergyRecovery::CalculateQF(vector<MRESE*>& RESEs, double& CQF, doubl
       }
       */
       CQF = c_CSRFailed;
-      Eavg = 0.;	
+      Eavg = 0.;  
     }
     mdebug<<"CSR-Rec (3): Final quality factor: "<<CQF<<endl;
   } 

@@ -50,6 +50,8 @@ class MXmlData
   MXmlData(const MString& Name, long Value);
   //! Constructor -- content is unsigned integer
   MXmlData(const MString& Name, unsigned int Value);
+  //! Constructor -- content is unsigned long
+  MXmlData(const MString& Name, unsigned long Value);
   //! Constructor -- content is double
   MXmlData(const MString& Name, double Value);
   //! Constructor -- content is a boolean
@@ -80,6 +82,8 @@ class MXmlData
   long GetValueAsLong() const { return atol(m_Value); }
   //! Return the value of the node as unsigned int
   unsigned int GetValueAsUnsignedInt() const { return atoi(m_Value); }
+  //! Return the value of the node as unsigned long
+  unsigned int GetValueAsUnsignedLong() const { return strtoul(m_Value, NULL, 0); }
   //! Return the value of the node as double
   double GetValueAsDouble() const { return atof(m_Value); }
   //! Return the value of the node as boolean
@@ -106,7 +110,7 @@ class MXmlData
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MXmlData, 0) // no description
 #endif

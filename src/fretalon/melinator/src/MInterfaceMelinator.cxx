@@ -55,7 +55,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MInterfaceMelinator)
 #endif
 
@@ -105,6 +105,8 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   Usage<<"             Save file name"<<endl;
   Usage<<"      -d --detector <int>:"<<endl;
   Usage<<"             Only look at this detector"<<endl;
+  Usage<<"      -t --temperature <double> <double>:"<<endl;
+  Usage<<"             Only look at this temperature window: [min...max]"<<endl;
   Usage<<"      -v --verbosity <0..5>:"<<endl;
   Usage<<"             Only look at this detector"<<endl;
   Usage<<"      -c --configuration <filename>.cfg:"<<endl;
@@ -168,6 +170,10 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--detector" || Option == "-d") {
       m_Data->SetSelectedDetectorID(atoi(argv[++i]));
       cout<<"Command-line parser: Use only this detector: "<<m_Data->GetSelectedDetectorID()<<endl;
+    } else if (Option == "--temperature" || Option == "-t") {
+      m_Data->SetMinimumTemperature(atof(argv[++i]));
+      m_Data->SetMaximumTemperature(atof(argv[++i]));
+      cout<<"Command-line parser: Use only this temperature window: ["<<m_Data->GetMinimumTemperature()<<", "<<m_Data->GetMaximumTemperature()<<"]"<<endl;
     } else if (Option == "--auto" || Option == "-a") {
       // Parse later
     }
@@ -206,7 +212,7 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   }
   if (Automatic == true) {
     m_Gui->OnSave();
-    return false;
+    Exit();
   }
   
 

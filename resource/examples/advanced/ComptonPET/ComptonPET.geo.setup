@@ -1,0 +1,124 @@
+#---------------------------------------------------------
+# Example geoemtry for Compton PET based on H3D CZT detector planes
+
+
+Name ComptoPET
+Version 1.0
+
+SurroundingSphere 25  0.0  0.0  0.0  25.0
+ShowSurroundingSphere false
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume World             
+World.Material Air
+World.Visibility 0   
+World.Shape BRIK 50. 50. 50.
+World.Mother 0
+
+
+
+//------------------------------------------------------------
+// Define Germanium strip detector:
+
+// One layer of the tracker
+// GeStripDetector is the aluminum cryostat surrounding the 
+// Ge detectors - they are called 'GeWafer' ....
+
+
+Constant hxyCZT { 16 * 0.2 / 2 }
+Constant hzCZT { 1.5 * 0.5 } 
+Constant gxyCZT 0.2
+Constant gzCZT 1.5
+Constant NxCZT 6
+Constant NyCZT 18
+Constant NzCZT 3
+
+Volume CZTModule
+CZTModule.Material Air
+CZTModule.Visibility 0
+CZTModule.Color 0
+CZTModule.Shape BOX { 0.5 * NxCZT * ( 2*hxyCZT + gxyCZT) }  { 0.5 * NyCZT * ( 2*hxyCZT + gxyCZT) } { 0.5 * NzCZT * ( 2*hzCZT + gzCZT) }
+
+Volume SingleCZT
+SingleCZT.Material CZT
+SingleCZT.Visibility 1
+SingleCZT.Color 6
+SingleCZT.Shape BOX hxyCZT hxyCZT hzCZT
+
+For X NxCZT { -0.5*(NxCZT-1) * ( 2*hxyCZT + gxyCZT ) } { 2*hxyCZT + gxyCZT }
+  For Y NyCZT { -0.5*(NyCZT-1) * ( 2*hxyCZT + gxyCZT ) } { 2*hxyCZT + gxyCZT }
+    For Z NzCZT { -0.5*(NzCZT-1) * ( 2*hzCZT + gzCZT ) } { 2*hzCZT + gzCZT }
+      SingleCZT.Copy SingleCZT_%X_%Y_%Z
+      SingleCZT_%X_%Y_%Z.Mother CZTModule
+      SingleCZT_%X_%Y_%Z.Position $X $Y $Z
+    Done
+  Done
+Done
+
+Constant RingRadius 29.0
+Constant NRingElements 8
+
+For P NRingElements 0 { 360.0 / NRingElements }
+  CZTModule.Copy CZTModule_%P
+  CZTModule_%P.Position { RingRadius * sin($P * TMath::DegToRad()) } 0.0  {  RingRadius * cos($P * TMath::DegToRad())  }
+  CZTModule_%P.Rotation 0.0  { $P }  0.0 
+  CZTModule_%P.Mother World
+Done
+
+Material PMMA
+PMMA.Density 1.18
+PMMA.ComponentByAtoms C  2
+PMMA.ComponentByAtoms O  5
+PMMA.ComponentByAtoms H  8
+
+Volume Bowl
+Bowl.Shape SPHE 0.0 2.5 0.0 180.0 0.0 360.0
+Bowl.Material PMMA
+Bowl.Visibility 1
+Bowl.Position 0.0 0.0 0.0
+Bowl.Mother World
+
+#------------------------------------------------------------
+# Detector and trigger section:
+
+
+
+MDVoxel3D                          ActiveDetector
+
+ActiveDetector.DetectorVolume      SingleCZT
+ActiveDetector.SensitiveVolume     SingleCZT
+
+ActiveDetector.Offset              0.0   0.0 0.0
+ActiveDetector.VoxelNumber         16 16 1
+
+ActiveDetector.NoiseThreshold      15
+ActiveDetector.TriggerThreshold    30
+
+ActiveDetector.EnergyResolution Gaus 10      10        1   
+ActiveDetector.EnergyResolution Gaus 20      20        1.2           
+ActiveDetector.EnergyResolution Gaus 50      50        1.5    
+ActiveDetector.EnergyResolution Gaus 100     100       1.9     
+ActiveDetector.EnergyResolution Gaus 200     200       2.4     
+ActiveDetector.EnergyResolution Gaus 500     500       3.0      
+ActiveDetector.EnergyResolution Gaus 1000    1000      3.7       
+ActiveDetector.EnergyResolution Gaus 2000    2000      4.5      
+ActiveDetector.EnergyResolution Gaus 5000    5000      5.4       
+ActiveDetector.EnergyResolution Gaus 10000   10000     6.4                     
+ActiveDetector.EnergyResolution Gaus 100000  100000    7/5         
+
+
+
+// Trigger: at least one hit in one Germanium detector  
+Trigger ActiveDetectorTrigger
+ActiveDetectorTrigger.Veto false
+ActiveDetectorTrigger.TriggerByChannel true
+ActiveDetectorTrigger.Detector ActiveDetector 1
+

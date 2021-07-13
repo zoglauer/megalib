@@ -43,7 +43,7 @@ class MGUIOptionsDecay : public MGUIDialog
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
   // private methods:
  private:
@@ -61,7 +61,7 @@ class MGUIOptionsDecay : public MGUIDialog
   TGLayoutHints* m_FileSelectorLayout;
   MGUIEFileSelector* m_FileSelector;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsDecay, 0)
 #endif

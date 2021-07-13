@@ -51,12 +51,14 @@ int main(int argc, char** argv)
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("Geomega", "geometry for MEGAlib");
 
-	TApplication* AppGeomega = new TApplication("Geomega", 0, 0);
+  TApplication* AppGeomega = new TApplication("Geomega", 0, 0);
 
   MInterfaceGeomega Geomega;
   if (Geomega.ParseCommandLine(argc, argv) == false) {
     return 1;
-  } else {
+  } 
+  
+  if (Geomega.UseUI() == true) {
     AppGeomega->Run();
   }
 

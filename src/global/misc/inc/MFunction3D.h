@@ -165,7 +165,7 @@ class MFunction3D
  private:
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFunction3D, 0) // no description
 #endif

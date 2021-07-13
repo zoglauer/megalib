@@ -59,7 +59,7 @@ class MFileEventsPev : public MFileEvents
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileEventsPev, 0) // no description
 #endif

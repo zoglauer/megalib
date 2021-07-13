@@ -37,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MMath)
 #endif
 
@@ -173,9 +173,8 @@ bool MMath::InRange(double x)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
 double MMath::AngleBetweenTwoVectors(const double& u, const double& v, const double& w, 
-				      const double& x, const double& y, const double& z)
+              const double& x, const double& y, const double& z)
 {
   // Sollte niemand verwenden!!!!!!!!!
 
@@ -189,6 +188,127 @@ double MMath::AngleBetweenTwoVectors(const double& u, const double& v, const dou
     if (Nenner < -1.0) Nenner = -1.0;
     return acos(Nenner);
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Perform a Thomson Tau test
+//! Requires at least two input value
+//! Return for each value if it is an outlier
+vector<bool> MMath::ModifiedThomsonTauTest(vector<double> Values, double Alpha, vector<bool> KnownOutliers)
+{
+  vector<bool> IsOutlier;
+  if (KnownOutliers.size() == 0) {
+    IsOutlier = vector<bool>(Values.size(), false);
+  } else {
+    IsOutlier = KnownOutliers;
+  }
+  
+  if (IsOutlier.size() != Values.size()) {
+    cout<<"ERROR in ModifiedThomsonTauTest: Value and outlier arrays dpo not have same size"<<endl;
+    return IsOutlier;
+  }
+  
+  
+  // We need at least 3 values
+  if (Values.size() < 3) {
+    cout<<"ERROR in ModifiedThomsonTauTest: Need at least 2 values"<<endl;
+    return IsOutlier;
+  }
+  
+  // Alpha need to be reasonable
+  if (Alpha <= 0 || Alpha > 0.5) {
+    cout<<"ERROR in ModifiedThomsonTauTest: Alpha should be between 0.001 and 0.5, a good value is 0.05"<<endl;
+    return IsOutlier;
+  }
+  
+  // Protection against nan and inf in Values
+  for (unsigned int i = 0; i < Values.size(); ++i) {
+    if (std::isnan(Values[i])) {
+      cout<<"ERROR in ModifiedThomsonTauTest: Value at index "<<i<<" is nan"<<endl;
+      return IsOutlier;      
+    }
+    if (std::isinf(Values[i])) {
+      cout<<"ERROR in ModifiedThomsonTauTest: Value at index "<<i<<" is inf"<<endl;
+      return IsOutlier;      
+    }
+  }
+  
+  bool OutlierFound = false;
+  unsigned int NumberOfValues = 0; 
+  do {
+    
+    // (1) Calculate mean
+    NumberOfValues = 0; 
+    double Mean = 0.0;
+    for (unsigned int i = 0; i < Values.size(); ++i) {
+      if (IsOutlier[i] == false) {
+        Mean += Values[i];
+        ++NumberOfValues;
+      }
+    }
+    Mean /= NumberOfValues;
+    
+    if (NumberOfValues < 3) return IsOutlier;
+    
+    // (2) Calculate standard deviation
+    double StdDev = 0.0;
+    for (unsigned int i = 0; i < Values.size(); ++i) {
+      if (IsOutlier[i] == false) {
+        StdDev += (Values[i] - Mean)*(Values[i] - Mean);
+      }
+    }
+    StdDev = sqrt(StdDev / (NumberOfValues - 1));
+    
+    
+    // (3) Determine the differences between the mean and the highest and the lowest value
+    unsigned int Largest = 0;
+    double DiffLargest = -numeric_limits<double>::max();
+    unsigned int Smallest = 0;
+    double DiffSmallest = numeric_limits<double>::max();
+    for (unsigned int i = 0; i < Values.size(); ++i) {
+      if (IsOutlier[i] == false) {
+        if (Values[i] > DiffLargest) {
+          DiffLargest = Values[i];
+          Largest = i;
+        }
+        if (Values[i] > DiffSmallest) {
+          DiffSmallest = Values[i];
+          Smallest = i;
+        }
+      }
+    }
+    DiffLargest = DiffLargest - Mean;
+    DiffSmallest = Mean - DiffSmallest;
+    
+    
+    // (4) Test the larger value if it is an outlier
+    double StudentTQuantile = TMath::StudentQuantile(1-Alpha/2, NumberOfValues-2); 
+    double Tau = (StudentTQuantile*(NumberOfValues-1)) / (sqrt(NumberOfValues)*sqrt(NumberOfValues - 2 + StudentTQuantile*StudentTQuantile));
+    double TauTimesStdDev = Tau * StdDev;
+    
+    //cout<<"Critical value: "<<StudentTQuantile<<" for N ="<<NumberOfValues<<"   Tau: "<<Tau<<" std dev: "<<StdDev<<endl;
+    if (DiffLargest > DiffSmallest) {
+      //cout<<DiffLargest<<":"<<TauTimesStdDev<<endl;
+      if (DiffLargest > TauTimesStdDev) {
+        OutlierFound = true;
+        IsOutlier[Largest] = true;
+      } else {
+        OutlierFound = false;
+      }
+    } else {
+      if (DiffSmallest > TauTimesStdDev) {
+        OutlierFound = true;
+        IsOutlier[Smallest] = true;
+      } else {
+        OutlierFound = false;
+      }
+    }
+  } while (OutlierFound == true && NumberOfValues > 2);
+  
+  return IsOutlier;
 }
 
 

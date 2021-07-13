@@ -24,6 +24,7 @@
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MTokenizer.h"
+#include "MFile.h"
 
 // Geant4:
 #include "G4SystemOfUnits.hh"
@@ -166,6 +167,8 @@ bool MCIsotopeStore::Save(MString FileName)
 {
   Sort();
 
+  MFile::ExpandFileName(FileName);  
+  
   ofstream out;
   out.open(FileName);
 
@@ -236,6 +239,13 @@ bool MCIsotopeStore::Save(MString FileName)
 bool MCIsotopeStore::Load(MString FileName)
 {
   Reset();
+
+  MFile::ExpandFileName(FileName);
+  if (MFile::Exists(FileName) == false) {
+    cout<<"ERROR: Unable to find file \""<<FileName<<"\""<<endl;
+    return false;
+  }
+  
 
   ifstream in;
   in.open(FileName);

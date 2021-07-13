@@ -335,8 +335,8 @@ void MCPhysicsList::SetCuts()
     Region->SetProductionCuts(Cuts);
   }
 
-//  	// The default cut is 1% of the thickness of one strip
-// 	G4double StandardCut = 0.005*mm;
+//    // The default cut is 1% of the thickness of one strip
+//   G4double StandardCut = 0.005*mm;
 //   SetCutValue(StandardCut, "gamma");
 //   SetCutValue(StandardCut, "e+");
 

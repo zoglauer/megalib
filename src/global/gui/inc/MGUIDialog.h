@@ -55,7 +55,7 @@ class MGUIDialog : public TGTransientFrame
   //! Close the window
   virtual void CloseWindow();
 
-	enum Buttons { c_Ok = BIT(0), c_Cancel = BIT(1), c_Apply  = BIT(2)};
+  enum Buttons { c_Ok = BIT(0), c_Cancel = BIT(1), c_Apply  = BIT(2)};
 
   // protected methods:
  protected:
@@ -72,14 +72,14 @@ class MGUIDialog : public TGTransientFrame
   //! Process all messages
   virtual bool ProcessMessage(long msg, long param1, long);
   //! Handle key press events
-	virtual bool HandleKey(Event_t *event);
+  virtual bool HandleKey(Event_t *event);
 
   //! Set the subtitle text
   void SetSubTitleText(MString SubTitleText) { m_SubTitleText = SubTitleText; } 
   //! Add the subtitle, etc. --- one of the subtitle function should be called during the derived Create() 
   void AddSubTitle(MString Label);
   //! Add the subtitle, etc. --- one of the subtitle function should be called during the derived Create() 
-	void AddSubTitle(const char *Format, ...);
+  void AddSubTitle(const char *Format, ...);
 
   //! Add some buttons
   void AddButtons(int Buttons = c_Ok | c_Cancel, bool Centered = true, int TopOffset = 30);
@@ -87,11 +87,11 @@ class MGUIDialog : public TGTransientFrame
   void AddOKCancelButtons() { AddButtons(c_Ok | c_Cancel); } 
 
   //! Called when the OK button is pressed
-	virtual bool OnOk();
+  virtual bool OnOk();
   //! Called when the cancel button has been pressed
-	virtual bool OnCancel();
+  virtual bool OnCancel();
   //! Called when the applyt button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
   //! Convert a number to a string in a smart way
   MString MakeSmartString(double Number);
@@ -136,9 +136,9 @@ class MGUIDialog : public TGTransientFrame
   double m_FontScaler;
 
   //! Types of Buttons which have been added
-	int m_ButtonTypes; 
+  int m_ButtonTypes; 
 
-	enum BasicButtonIDs { e_Ok = 1, e_Cancel, e_Apply };
+  enum BasicButtonIDs { e_Ok = 1, e_Cancel, e_Apply };
 
   // private members:
  private:
@@ -149,7 +149,7 @@ class MGUIDialog : public TGTransientFrame
   //! Layout for this frame
   TGLayoutHints* m_LabelFrameLayout;
   //! Graphics mode for the subtitle
-	TGGC* m_SubTitleGraphics;
+  TGGC* m_SubTitleGraphics;
   //! Layout of the subtitles
   TGLayoutHints* m_SubTitleFirstLayout;
   //! Layout of the subtitles

@@ -36,12 +36,13 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MExceptions.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MPhysicalEvent)
 #endif
 
@@ -56,13 +57,15 @@ const int MPhysicalEvent::c_Muon           =  2;
 const int MPhysicalEvent::c_Shower         =  3;
 const int MPhysicalEvent::c_Photo          =  4;
 const int MPhysicalEvent::c_Decay          =  5;
-const int MPhysicalEvent::c_Unidentifiable =  10;
+const int MPhysicalEvent::c_PET            =  6;
+const int MPhysicalEvent::c_Multi          =  7;
+const int MPhysicalEvent::c_Unidentifiable =  100;
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MPhysicalEvent::MPhysicalEvent() : m_Time(0)
+MPhysicalEvent::MPhysicalEvent() : MRotationInterface(), m_Time(0)
 {
   // default constructor
 
@@ -101,6 +104,10 @@ MString MPhysicalEvent::GetTypeString() const
     String = "Photo";
   } else if  (m_EventType == c_Decay) {
     String = "Decay";
+  } else if  (m_EventType == c_PET) {
+    String = "PET";
+  } else if  (m_EventType == c_Multi) {
+    String = "Multi";
   } else if  (m_EventType == c_Unidentifiable) {
     String = "Unidentifiable";
   } else {
@@ -114,212 +121,11 @@ MString MPhysicalEvent::GetTypeString() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MPhysicalEvent::SetGalacticPointingXAxis(const double Longitude, const double Latitude)
-{
-  // Set the X axis of the LEFT-handed galactic coordinate system:
-  // Left handedness is applied via y-axis
-
-  m_HasGalacticPointing = true;
-  m_GalacticPointingXAxis.SetMagThetaPhi(1.0, (90+Latitude)*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MPhysicalEvent::SetGalacticPointingZAxis(const double Longitude, const double Latitude)
-{
-  // Set the Z axis of the LEFT-handed galactic coordinate system:
-  // Left handedness is applied via y-axis
-
-  m_HasGalacticPointing = true;
-  m_GalacticPointingZAxis.SetMagThetaPhi(1.0, (90+Latitude)*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MPhysicalEvent::SetDetectorRotationXAxis(const MVector Rot)
-{
-  // Set the X axis of the right-handed Cartesian coordinate system:
-
-  m_HasDetectorRotation = true;
-  m_DetectorRotationXAxis = Rot;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MVector MPhysicalEvent::GetDetectorRotationXAxis() const
-{
-  // Get the X axis of the right-handed Cartesian coordinate system:
-
-  return m_DetectorRotationXAxis;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MPhysicalEvent::SetDetectorRotationZAxis(const MVector Rot)
-{
-  // Set the Z axis of the right-handed Cartesian coordinate system:
-
-  m_HasDetectorRotation = true;
-  m_DetectorRotationZAxis = Rot;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MVector MPhysicalEvent::GetDetectorRotationZAxis() const
-{
-  // Get the Z axis of the right-handed Cartesian coordinate system:
-
-  return m_DetectorRotationZAxis;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TMatrix MPhysicalEvent::GetHorizonPointingRotationMatrix() const
-{
-  // Return the rotation matrix of this event
-
-  // Verify that x and z axis are at right angle:
-  if (fabs(m_HorizonPointingXAxis.Angle(m_HorizonPointingZAxis) - c_Pi/2.0)*c_Deg > 0.1) {
-    cout<<"Event "<<m_Id<<": Horizon axes are not at right angle, but: "<<m_HorizonPointingXAxis.Angle(m_HorizonPointingZAxis)*c_Deg<<" deg"<<endl;
-  }
-
-  // First compute the y-Axis vector:
-  MVector m_HorizonPointingYAxis = m_HorizonPointingZAxis.Cross(m_HorizonPointingXAxis);
-
-  TMatrix M(3,3);
-  M(0,0) = m_HorizonPointingXAxis.X();
-  M(1,0) = m_HorizonPointingXAxis.Y();
-  M(2,0) = m_HorizonPointingXAxis.Z();
-  M(0,1) = m_HorizonPointingYAxis.X();
-  M(1,1) = m_HorizonPointingYAxis.Y();
-  M(2,1) = m_HorizonPointingYAxis.Z();
-  M(0,2) = m_HorizonPointingZAxis.X();
-  M(1,2) = m_HorizonPointingZAxis.Y();
-  M(2,2) = m_HorizonPointingZAxis.Z();
-
-  return M; 
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TMatrix MPhysicalEvent::GetDetectorRotationMatrix() const
-{
-  // Return the rotation matrix of this event
-
-  // Verify that x and z axis are at right angle:
-  if (fabs(m_DetectorRotationXAxis.Angle(m_DetectorRotationZAxis) - c_Pi/2.0)*c_Deg > 0.1) {
-    cout<<"Event "<<m_Id<<": DetectorRotation axes are not at right angle, but: "<<m_DetectorRotationXAxis.Angle(m_DetectorRotationZAxis)*c_Deg<<" deg"<<endl;
-  }
-
-
-  TMatrix M(3,3);
-  MVector m_DetectorRotationYAxis;
-
-  // First compute the y-Axis vector:
-  m_DetectorRotationYAxis = m_DetectorRotationZAxis.Cross(m_DetectorRotationXAxis);
-
-  M(0,0) = m_DetectorRotationXAxis.X();
-  M(1,0) = m_DetectorRotationXAxis.Y();
-  M(2,0) = m_DetectorRotationXAxis.Z();
-  M(0,1) = m_DetectorRotationYAxis.X();
-  M(1,1) = m_DetectorRotationYAxis.Y();
-  M(2,1) = m_DetectorRotationYAxis.Z();
-  M(0,2) = m_DetectorRotationZAxis.X();
-  M(1,2) = m_DetectorRotationZAxis.Y();
-  M(2,2) = m_DetectorRotationZAxis.Z();
-
-  return M; 
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TMatrix MPhysicalEvent::GetGalacticPointingRotationMatrix() const
-{
-  // Return the rotation matrix of this event
-
-  // Verify that x and z axis are at right angle:
-  if (fabs(m_GalacticPointingXAxis.Angle(m_GalacticPointingZAxis) - c_Pi/2.0)*c_Deg > 0.1) {
-    cout<<"Event "<<m_Id<<": GalacticPointing axes are not at right angle, but: "<<m_GalacticPointingXAxis.Angle(m_GalacticPointingZAxis)*c_Deg<<" deg"<<endl;
-  }
-
-
-  TMatrix M(3,3);
-  MVector m_GalacticPointingYAxis;
-
-  // First compute the y-Axis vector:
-  m_GalacticPointingYAxis = m_GalacticPointingZAxis.Cross(m_GalacticPointingXAxis);
-
-  // We need a minus here since the Galactic coordinate system in left-handed!!!!
-  if (m_HasGalacticPointing == true) {
-    m_GalacticPointingYAxis *= -1;
-  }
-
-  M(0,0) = m_GalacticPointingXAxis.X();
-  M(1,0) = m_GalacticPointingXAxis.Y();
-  M(2,0) = m_GalacticPointingXAxis.Z();
-  M(0,1) = m_GalacticPointingYAxis.X();
-  M(1,1) = m_GalacticPointingYAxis.Y();
-  M(2,1) = m_GalacticPointingYAxis.Z();
-  M(0,2) = m_GalacticPointingZAxis.X();
-  M(1,2) = m_GalacticPointingZAxis.Y();
-  M(2,2) = m_GalacticPointingZAxis.Z();
-
-  return M; 
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
 {
   //
 
-  if (E->HasGalacticPointing() == true) { 
-    m_GalacticPointingXAxis = E->m_GalacticPointingXAxis;
-    m_GalacticPointingZAxis = E->m_GalacticPointingZAxis;
-    m_HasGalacticPointing = true;
-  } else {
-    m_GalacticPointingXAxis = MVector(1.0, 0.0, 0.0);
-    m_GalacticPointingZAxis = MVector(0.0, 0.0, 1.0);
-    m_HasGalacticPointing = false; 
-  }
-
-  if (E->HasDetectorRotation() == true) { 
-    m_DetectorRotationXAxis = E->m_DetectorRotationXAxis;
-    m_DetectorRotationZAxis = E->m_DetectorRotationZAxis;
-    m_HasDetectorRotation = true;  
-  } else {
-    m_DetectorRotationXAxis = MVector(1.0, 0.0, 0.0);
-    m_DetectorRotationZAxis = MVector(0.0, 0.0, 1.0);
-    m_HasDetectorRotation = false; 
-  }
-
-  if (E->HasHorizonPointing() == true) { 
-    m_HorizonPointingXAxis = E->m_HorizonPointingXAxis;
-    m_HorizonPointingZAxis = E->m_HorizonPointingZAxis;
-    m_HasHorizonPointing = true; 
-  } else {
-    m_HorizonPointingXAxis = MVector(1.0, 0.0, 0.0);
-    m_HorizonPointingZAxis = MVector(0.0, 0.0, 1.0);
-    m_HasHorizonPointing = false; 
-  }
+  Set(*dynamic_cast<MRotationInterface*>(E));
   
   m_EventType = E->m_EventType;
   m_TimeWalk = E->m_TimeWalk;
@@ -354,23 +160,13 @@ MPhysicalEvent* MPhysicalEvent::Duplicate()
 
 void MPhysicalEvent::Reset()
 {
+  MRotationInterface::Reset();
+
   m_IsGoodEvent = false;
   m_AllHitsGood = true;
 
-  m_GalacticPointingXAxis = MVector(1.0, 0.0, 0.0);
-  m_GalacticPointingZAxis = MVector(0.0, 0.0, 1.0);
-  m_HasGalacticPointing = false; 
-
-  m_DetectorRotationXAxis = MVector(1.0, 0.0, 0.0);
-  m_DetectorRotationZAxis = MVector(0.0, 0.0, 1.0);
-  m_HasDetectorRotation = false; 
-  
-  m_HorizonPointingXAxis = MVector(1.0, 0.0, 0.0);
-  m_HorizonPointingZAxis = MVector(0.0, 0.0, 1.0);
-  m_HasHorizonPointing = false; 
-
   m_Time = 10000.0;
-  m_Id = 0;;
+  m_Id = 0;
   m_TimeWalk = -1;
   m_Decay = false;
   m_Bad = false;
@@ -430,22 +226,41 @@ MVector MPhysicalEvent::GetOrigin() const
   return g_VectorNotDefined;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MPhysicalEvent::GetComment(unsigned int i)
+MString MPhysicalEvent::GetComment(unsigned int i) const
 {
   //! Get the specific comment
-
+  
   if (i < m_Comments.size()) {
     return m_Comments[i]; 
   }
   
-  mout<<"Error: Index for comment out of bounds"<<endl;
+  throw MExceptionIndexOutOfBounds(0, m_Comments.size(), i);
   
   return "";
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+const MPhysicalEventHit& MPhysicalEvent::GetHit(unsigned int i) const
+{
+  //! Get the specific comment
   
+  if (i < m_Hits.size()) {
+    return m_Hits[i]; 
+  }
+  
+  throw MExceptionIndexOutOfBounds(0, m_Hits.size(), i);
+  
+  // We never reach here, thus, this should not be a problem, or just throw another exception
+  return m_Hits.front();
+}
+
   
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -472,6 +287,12 @@ bool MPhysicalEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool
     case c_Decay:
       S<<"ET DY"<<endl;
       break;
+    case c_PET:
+      S<<"ET PT"<<endl;
+      break;
+    case c_Multi:
+      S<<"ET MT"<<endl;
+      break;
     case c_Unidentifiable:
       S<<"ET UN"<<endl;
       break;
@@ -485,22 +306,9 @@ bool MPhysicalEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool
     if (m_TimeWalk != -1) {
       S<<"TW "<<m_TimeWalk<<endl;
     }
-    if (m_HasGalacticPointing == true) {
-      double phi = m_GalacticPointingXAxis.Phi()*c_Deg;
-      while (phi < 0.0) phi += 360.0;
-      S<<"GX "<<phi<<" "<<m_GalacticPointingXAxis.Theta()*c_Deg - 90<<endl;
-      phi = m_GalacticPointingZAxis.Phi()*c_Deg;
-      while (phi < 0.0) phi += 360.0;
-      S<<"GZ "<<phi<<" "<<m_GalacticPointingZAxis.Theta()*c_Deg - 90<<endl;
-    } 
-    if (m_HasDetectorRotation == true) {
-      S<<"RX "<<m_DetectorRotationXAxis.X()<<" "<<m_DetectorRotationXAxis.Y()<<" "<<m_DetectorRotationXAxis.Z()<<endl;
-      S<<"RZ "<<m_DetectorRotationZAxis.X()<<" "<<m_DetectorRotationZAxis.Y()<<" "<<m_DetectorRotationZAxis.Z()<<endl;
-    }
-    if (m_HasHorizonPointing == true) {
-      S<<"HX "<<m_HorizonPointingXAxis.Phi()*c_Deg<<" "<<90 - m_HorizonPointingXAxis.Theta()*c_Deg<<endl;
-      S<<"HZ "<<m_HorizonPointingZAxis.Phi()*c_Deg<<" "<<90 - m_HorizonPointingZAxis.Theta()*c_Deg<<endl;
-    }
+
+    MRotationInterface::Stream(S);
+
     if (m_Bad == true) {
       S<<"BD "<<m_BadString<<endl;
     }
@@ -609,6 +417,16 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
         cout<<"int MPhysicalEvent::ParseLine: Event is no Decay event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
+    } else if (Line[3] == 'P' && Line[4] == 'T') {
+      if (m_EventType != c_PET) {
+        cout<<"int MPhysicalEvent::ParseLine: Event is no PET event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        Ret = 1;
+      }
+    } else if (Line[3] == 'M' && Line[4] == 'T') {
+      if (m_EventType != c_Multi) {
+        cout<<"int MPhysicalEvent::ParseLine: Event is no Multi event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        Ret = 1;
+      }
     } else if (Line[3] == 'U' && Line[4] == 'N') {
       if (m_EventType != c_Unidentifiable) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Unidentifiable event as suggested but a "<<GetTypeString()<<"!"<<endl;
@@ -632,10 +450,11 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
     if (Fast == true) {
       m_Id = strtol(Line+3, NULL, 10);
     } else {
-      if (sscanf(Line, "ID %u", &m_Id) != 1) {
+      if (sscanf(Line, "ID %li", &m_Id) != 1) {
         Ret = 1;
       }
     }
+    MRotationInterface::m_Id = m_Id;
   } else if (Line[0] == 'T' && Line[1] == 'W') {
     if (Fast == true) {
       m_TimeWalk = strtol(Line+3, NULL, 10);
@@ -645,77 +464,17 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
       }
     }
   } else if (Line[0] == 'R' && Line[1] == 'X') {
-    if (Fast == true) {
-      char* p;
-      m_DetectorRotationXAxis[0] = strtod(Line+3, &p);
-      m_DetectorRotationXAxis[1] = strtod(p, &p);
-      m_DetectorRotationXAxis[2] = strtod(p, NULL);
-    } else {
-      if (sscanf(Line, "RX %lf %lf %lf", &m_DetectorRotationXAxis[0], &m_DetectorRotationXAxis[1], &m_DetectorRotationXAxis[2]) != 3) {
-        Ret = 1;
-      }
-    }
-    m_HasDetectorRotation = true;
+    MRotationInterface::ParseLine(Line, Fast);
   } else if (Line[0] == 'R' && Line[1] == 'Z') {
-    if (Fast == true) {
-      char* p;
-      m_DetectorRotationZAxis[0] = strtod(Line+3, &p);
-      m_DetectorRotationZAxis[1] = strtod(p, &p);
-      m_DetectorRotationZAxis[2] = strtod(p, NULL);
-    } else {
-      if (sscanf(Line, "RZ %lf %lf %lf", &m_DetectorRotationZAxis[0], &m_DetectorRotationZAxis[1], &m_DetectorRotationZAxis[2]) != 3) {
-        Ret = 1;
-      }
-    }
-    m_HasDetectorRotation = true;
+    MRotationInterface::ParseLine(Line, Fast);
   } else if (Line[0] == 'G' && Line[1] == 'X') {
-    double Longitude, Latitude;
-    if (Fast == true) {
-      char* p;
-      Longitude = strtod(Line+3, &p);
-      Latitude = strtod(p, NULL);
-    } else {
-      if (sscanf(Line, "GX %lf %lf", &Longitude, &Latitude) != 2) {
-        Ret = 1;
-      }
-    }
-    SetGalacticPointingXAxis(Longitude, Latitude);
+    MRotationInterface::ParseLine(Line, Fast);
   } else if (Line[0] == 'G' && Line[1] == 'Z') {
-    double Longitude, Latitude;
-    if (Fast == true) {
-      char* p;
-      Longitude = strtod(Line+3, &p);
-      Latitude = strtod(p, NULL);
-    } else {
-      if (sscanf(Line, "GZ %lf %lf", &Longitude, &Latitude) != 2) {
-        Ret = 1;
-      }
-    }
-    SetGalacticPointingZAxis(Longitude, Latitude);
+    MRotationInterface::ParseLine(Line, Fast);
   } else if (Line[0] == 'H' && Line[1] == 'X') {
-    double Azimuth, Elevation;
-    if (Fast == true) {
-      char* p;
-      Azimuth = strtod(Line+3, &p);
-      Elevation = strtod(p, NULL);
-    } else {
-      if (sscanf(Line, "HX %lf %lf", &Azimuth, &Elevation) != 2) {
-        Ret = 1;
-      }
-    }
-    SetHorizonPointingXAxis(Azimuth, Elevation);
+    MRotationInterface::ParseLine(Line, Fast);
   } else if (Line[0] == 'H' && Line[1] == 'Z') {
-    double Azimuth, Elevation;
-    if (Fast == true) {
-      char* p;
-      Azimuth = strtod(Line+3, &p);
-      Elevation = strtod(p, NULL);
-    } else {
-      if (sscanf(Line, "HZ %lf %lf", &Azimuth, &Elevation) != 2) {
-        Ret = 1;
-      }
-    }
-    SetHorizonPointingZAxis(Azimuth, Elevation);
+    MRotationInterface::ParseLine(Line, Fast);
   } else if (Line[0] == 'B' && Line[1] == 'D') {
     m_BadString = Line;
     m_BadString = m_BadString.Remove(0, 3);
@@ -768,6 +527,8 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
     m_Decay = true;
   } else if (Line[0] == 'S' && Line[1] == 'E') {
     Ret = -1;
+  } else if (Line[0] == 'S' && Line[1] == 'F') {
+    Ret = -1;
   } else if (Line[0] == 'E' && Line[1] == 'N') {
     Ret = -1;
   } else if (Line[0] == 'N' && Line[1] == 'F') {
@@ -777,6 +538,19 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
   }
 
   return Ret;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MPhysicalEvent::Validate() 
+{ 
+  //! Validate the event and calculate all high level data...
+  
+  MRotationInterface::Validate();
+  
+  return false; 
 }
 
 

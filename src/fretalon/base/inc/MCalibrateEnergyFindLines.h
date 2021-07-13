@@ -57,6 +57,9 @@ class MCalibrateEnergyFindLines : public MCalibrateEnergy
     m_PeakParametrizationMethodFittedPeakEnergyLossModel = EnergyLossModel; 
     m_PeakParametrizationMethodFittedPeakPeakShapeModel = PeakShapeModel; }
   
+  //! Set the selected temperature window
+  void SetTemperatureWindow(double Min, double Max) { m_TemperatureMin = Min; m_TemperatureMax = Max; }
+  
   //! Perform the calibration
   virtual bool Calibrate();
   
@@ -75,6 +78,9 @@ class MCalibrateEnergyFindLines : public MCalibrateEnergy
   
   //! Step 2: Fit the peaks in this read-out data group
   bool FitPeaks(unsigned int ROGID);
+  
+  //! Step 3: Do a final check of all peaks
+  bool CheckPeaks();
   
   // private methods:
  private:
@@ -97,7 +103,13 @@ class MCalibrateEnergyFindLines : public MCalibrateEnergy
   unsigned int m_PeakParametrizationMethodFittedPeakPeakShapeModel;
 
   
-#ifdef ___CINT___
+  //! The selected temperature window minimum
+  double m_TemperatureMin;
+  //! The selected temperature window maximum
+  double m_TemperatureMax;
+  
+  
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrateEnergyFindLines, 0) // no description
 #endif

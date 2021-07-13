@@ -64,10 +64,6 @@ class MDCalorimeter : public MDDetector
                        const double Sigma, const int Level) const;
 
   virtual MString GetGeomega() const;
-  virtual MString GetGeant3() const;
-  virtual MString GetMGeant() const;
-  virtual MString GetGeant3Divisions() const { return ""; }
-  virtual MString GetMGeantDivisions() const { return ""; }
   virtual MString ToString() const;
 
   //! Check if all input is reasonable
@@ -96,7 +92,7 @@ class MDCalorimeter : public MDDetector
   MFunction m_DepthResolutionSigma; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDCalorimeter, 0) // no description
 #endif

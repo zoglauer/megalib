@@ -35,7 +35,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIOptionsLoaderRoa)
 #endif
 
@@ -84,8 +84,8 @@ bool MGUIOptionsLoaderRoa::ProcessMessage(long Message, long Parameter1, long Pa
 {
   // Modify here if you have more buttons
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -113,11 +113,11 @@ bool MGUIOptionsLoaderRoa::ProcessMessage(long Message, long Parameter1, long Pa
 
 bool MGUIOptionsLoaderRoa::OnApply()
 {
-	// Modify this to store the data in the module!
+  // Modify this to store the data in the module!
 
   dynamic_cast<MModuleLoaderRoa*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
-	
-	return true;
+  
+  return true;
 }
 
 

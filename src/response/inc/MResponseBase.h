@@ -56,6 +56,11 @@ class MResponseBase
   //! Set the response name (used for the file name suffix)
   void SetResponseName(const MString Name);
 
+  //! Set and verify the revan configuration file name
+  bool SetRevanConfigurationFileName(const MString FileName);
+  //! Set and verify the mimrec configuration file name
+  bool SetMimrecConfigurationFileName(const MString FileName);
+
   //! Set the ID for the start event
   void SetStartEventID(const unsigned int ID) { m_StartEventID = ID; }
   //! Set the maximum number of analyzed event
@@ -83,8 +88,8 @@ class MResponseBase
 
   //! Load the geometry, return 0 on failure
   MGeometryRevan* LoadGeometry(bool ActivateNoise, double GlobalFailureRate);
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile() = 0;
+  //! Load the simulation file in revan and mimrec as well as the configuration files:
+  virtual bool OpenFiles() = 0;
 
   //! Initialize the next sivan/revan matching event for response creation
   bool InitializeNextMatchingEvent();
@@ -104,6 +109,12 @@ class MResponseBase
                               float MinBound = c_NoBound, 
                               float MaxBound = c_NoBound,
                               float Offset = 0, bool Inverted = false);
+
+  //! Create a log axis with minimum bin size threshold for the response file
+  vector<float> CreateThresholdedLogDist(float Min, float Max, int Bins, float Threshold, 
+                                         float MinBound = c_NoBound, 
+                                         float MaxBound = c_NoBound,
+                                         float Offset = 0, bool Inverted = false);
 
   //! Create a standard axis for the response file
   vector<float> CreateEquiDist(float Min, float Max, int Bins, 
@@ -129,6 +140,11 @@ class MResponseBase
   //! Name of the response
   MString m_ResponseName;
 
+  //! Revan configuration file name
+  MString m_RevanCfgFileName;
+  //! Mimrec configuration file name
+  MString m_MimrecCfgFileName;
+
   //! ID for the start event
   unsigned int m_StartEventID;
   //! Maximum number of events to be analyzed 
@@ -139,6 +155,11 @@ class MResponseBase
   bool m_Compress;
   //! The file suffix 
   MString m_Suffix;
+  
+  //! The number of simulated events
+  long m_NumberOfSimulatedEventsClosedFiles;
+  //! The number of simulated events
+  long m_NumberOfSimulatedEventsThisFile;
   
   //! Flag indicating that the only the initial IA is required
   bool m_OnlyINITRequired;
@@ -166,8 +187,10 @@ class MResponseBase
 
   //! The current sivan event
   MSimEvent* m_SiEvent;
-  //! The current revan event
+  //! The current revan event - first one if multiple
   MRERawEvent* m_ReEvent;
+  //! The current revan event list
+  vector<MRERawEvent*> m_ReEvents;
   //! The IDs of all RESEs
   map<MRESE*, vector<int> > m_Ids;
   //! The origin IDs of all RESEs
@@ -180,7 +203,7 @@ class MResponseBase
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseBase, 0) // no description
 #endif

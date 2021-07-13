@@ -82,8 +82,8 @@ class MStreamBuffer : public streambuf
 
   // private methods:
  private:
-  int	overflow(int);
-  int	sync();
+  int overflow(int);
+  int sync();
 
 
 
@@ -105,9 +105,9 @@ class MStreamBuffer : public streambuf
   MString m_Prefix;
   bool m_IsFirst;
 
-	vector<ofstream*> m_FileStream;
-	vector<MString> m_FileNames;
-	vector<bool> m_FileTimePrefix;
+  vector<ofstream*> m_FileStream;
+  vector<MString> m_FileNames;
+  vector<bool> m_FileTimePrefix;
 
   list<MString> m_Rejections;
 
@@ -116,7 +116,7 @@ class MStreamBuffer : public streambuf
   int m_GuiType;
   bool m_ShowOnce;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MStreamBuffer, 0) // no description
 #endif

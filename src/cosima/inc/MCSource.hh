@@ -28,6 +28,7 @@
 #include "TF1.h"
 
 // Cosima:
+#include "MCOrientation.hh"
 
 // MEGAlib:
 #include "MTokenizer.h"
@@ -107,19 +108,22 @@ public:
   void SetBuildUpEventList() { m_IsBuildUpEventList = true; m_IsEventList = true; }
   /// Return true if this is a build up event list
   bool IsBuildUpEventList() const { return m_IsBuildUpEventList; }
-  /// Return true if this is an event list
+  /// Return the current size of the event list -- more events could be added later or via reading from file and 
   unsigned int SizeEventList() const { return m_EventList.size(); }
-  /// Set an entry of the event list
+  /// Add an entry of the event list -- will return false if we read the event list from file
   bool AddToEventList(double Energy, G4ThreeVector Position, G4ThreeVector Direction, 
                       G4ThreeVector Polarization, double Time, 
                       G4ParticleDefinition* ParticleType, MString VolumeName);
-  /// Set entries of the event list from file
-  bool AddToEventList(MString FileName);
   /// Return the next particle type in the event list
   G4ParticleDefinition* GetEventListNextParticle() { return (m_EventListSize > 0) ? m_EventList[0]->m_ParticleDefinition : nullptr; }
   /// Return the next volume in the event list
   MString GetEventListNextVolume() { return (m_EventListSize > 0) ? m_EventList[0]->m_VolumeName : ""; }
 
+  /// Set entries of the event list from file 
+  bool SetEventListFromFile(MString FileName);
+  /// Set entries of the event list from file
+  bool ContinueReadingEventList();
+  
   
   
   /// Return true, if the coordinate system could be set correctly
@@ -188,7 +192,17 @@ public:
   /// Return the degree of polarization 1.0 == 100% polarized
   double GetPolarizationDegree() const { return m_PolarizationDegree; }
 
+  
+  /// Set the orientation
+  bool SetOrientation(const MCOrientation& Orientation) { m_Orientation = Orientation; return true; }
+  /// Return the orientation
+  MCOrientation GetOrientation() const { return m_Orientation; }
+  
+  
+  /// Return true, if the far field transmission probability file could be set and read correctly
+  bool SetFarFieldTransmissionProbability(const MString& FileName);
 
+  
   /// Return true, if the successor flag couls be set correctly
   bool SetIsSuccessor(const bool& IsSuccessorFlag) { m_IsSuccessor = IsSuccessorFlag; return true; }
   /// Return the successor flag
@@ -211,7 +225,10 @@ public:
                    double PositionParam8 = c_Invalid, 
                    double PositionParam9 = c_Invalid, 
                    double PositionParam10 = c_Invalid, 
-                   double PositionParam11 = c_Invalid);
+                   double PositionParam11 = c_Invalid,
+                   double PositionParam12 = c_Invalid,
+                   double PositionParam13 = c_Invalid,
+                   double PositionParam14 = c_Invalid);
   /// Return true, if the file containing the beam could be set correctly
   bool SetPosition(MString FileName);
   /// Return the specific position parameter 
@@ -274,8 +291,12 @@ public:
   /// Generate an inititial polarization in the particle gun
   bool GeneratePolarization(G4GeneralParticleSource* Gun);
 
-  /// Return the name of the beam (e.g. FarFieldAreaSource)
+  /// Return the beam as string
+  string GetBeamAsString() const;
+  /// Return the type of the beam (e.g. FarFieldAreaSource)
   string GetBeamTypeAsString() const;
+  /// Return the spectrum as string
+  string GetSpectralAsString() const;
   /// Return the name of the spectrum (e.g. mono, etc.)
   string GetSpectralTypeAsString() const;
   /// Return the name of the polarization type
@@ -334,13 +355,17 @@ public:
   static const int c_FarFieldPoint;
   /// Id of a area like source in spherical coordinates
   static const int c_FarFieldArea;
-  /// Id of a Gaussian like source in spherical coordinates
+  /// Id of a symmetric Gaussian-like source in spherical coordinates
   static const int c_FarFieldGaussian;
+  /// Id of a assymetric Gaussian-like source in spherical coordinates
+  static const int c_FarFieldAssymetricGaussian;
   /// Id of a beam distribution from file in form of a zenith dependent distribution
   static const int c_FarFieldFileZenithDependent;
   /// Id of a beam distribution from a combined energy-position-flux-function
   static const int c_FarFieldNormalizedEnergyBeamFluxFunction;
-
+  /// Id of an isotropic far-field beam 
+  static const int c_FarFieldIsotropic;
+  
   /// Id of a point like source in Cartesian coordinates
   static const int c_NearFieldPoint;
   /// Id of a point like source in Cartesian coordinates restricted towards the surrounding sphere
@@ -371,6 +396,8 @@ public:
   /// Id of a divergent beam (with Gaussian intensity profile) 
   /// from a point in Cartesian coordinates
   static const int c_NearFieldConeBeamGauss;
+  /// Id of a fan beam with a beam width
+  static const int c_NearFieldFanBeam;
   /// Id of a illuminated disk 
   static const int c_NearFieldIlluminatedDisk;
   /// Id of a illuminated box
@@ -382,6 +409,8 @@ public:
   /// Id of a 2D structure emitting particles in isotropically in 3D
   static const int c_NearFieldFlatMap;
 
+  /// The position is identical to the predecessor & the the momentum direction is opposite (e.g. for simulating annihilation) 
+  static const int c_NearFieldReverseDirectionToPredecessor;
   
   // --> Polarization modes
 
@@ -613,7 +642,12 @@ private:
   /// Total number of events which have not be started in history of this source (required for speed optimizations)
   int m_NEventsSkipped;
 
-
+  /// Event list file
+  ifstream m_EventListFile;
+  /// True if this is an event list read from file
+  bool m_IsFileEventList;
+  
+  
   /// True if this source is an isotope count source
   bool m_IsIsotopeCount;
   /// The current isotope count
@@ -693,6 +727,16 @@ private:
   double m_PolarizationDegree;
 
   
+  /// The orientation
+  MCOrientation m_Orientation;
+  
+  
+  /// Flag indicating we should apply the far field transmission probabilities
+  bool m_UseFarFieldTransmissionProbability;
+  /// Far field transmission probabilities
+  MFunction2D m_FarFieldTransmissionProbability;
+  
+  
   /// Number of generated particles
   long m_NGeneratedParticles;
 
@@ -718,6 +762,12 @@ private:
   double m_PositionParam10;
   /// Parameter 11 of the position 
   double m_PositionParam11;
+  /// Parameter 11 of the position 
+  double m_PositionParam12;
+  /// Parameter 11 of the position 
+  double m_PositionParam13;
+  /// Parameter 11 of the position 
+  double m_PositionParam14;
 
   /// A volume as start position
   MString m_Volume;

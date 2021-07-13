@@ -67,7 +67,7 @@ class MEventFacetsList : public TObject
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEventFacetsList, 0) // no description
 #endif

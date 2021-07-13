@@ -62,7 +62,7 @@ class MBinnerFixedCountsPerBin : public MBinner
   double m_CountsPerBin;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBinnerFixedCountsPerBin, 0) // no description
 #endif

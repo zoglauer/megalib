@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MString.h"
 #include "MTime.h"
 #include "MGTI.h"
@@ -67,7 +68,9 @@ class MEventSelector
   //! In addition the test sequence is more optimally arranged
   //! This version does not fill the event selection statistics!
   bool IsQualifiedEventFast(MPhysicalEvent* P);
-  bool IsDirectionWithinARMWindow(MVector D);
+  //! Check if the direction is within the ARM window. 
+  //! Direction is relative to the source position of this selector
+  bool IsDirectionWithinARMWindow(MVector Direction);
 
   MString ToString();
 
@@ -84,24 +87,34 @@ class MEventSelector
   void ApplyFourthTotalEnergy(MEventSelector& E) { E.SetFourthTotalEnergy(m_FourthTotalEnergyMin, m_FourthTotalEnergyMax); }
   void SetTimeWalk(double Min, double Max);
   void ApplyTimeWalk(MEventSelector& E) { E.SetTime(m_TimeWalkMin, m_TimeWalkMax); }
-  void SetExcludedDetectors(vector<MString> ExcludedDetectors);
-  void ApplyExcludedDetectors(MEventSelector& E) { E.SetExcludedDetectors(m_ExcludedDetectors); }
-
-  void SetTimeUseFile(bool TimeUseFile);
-  void ApplyTimeUseFile(MEventSelector& E) { E.SetTimeUseFile(m_TimeUseFile); }
+  void SetExcludedFirstIADetectors(vector<MString> ExcludedFirstIADetectors);
+  void ApplyExcludedFirstIADetectors(MEventSelector& E) { E.SetExcludedFirstIADetectors(m_ExcludedFirstIADetectors); }
+  void SetExcludedSecondIADetectors(vector<MString> ExcludedSecondIADetectors);
+  void ApplyExcludedSecondIADetectors(MEventSelector& E) { E.SetExcludedSecondIADetectors(m_ExcludedSecondIADetectors); }
+  
+  void SetTimeMode(unsigned int TimeMode);
+  void ApplyTimeMode(MEventSelector& E) { E.SetTimeMode(m_TimeMode); }
   void SetTime(const MTime& Min, const MTime& Max);
   void ApplyTime(MEventSelector& E) { E.SetTime(m_TimeMin, m_TimeMax); }
   void SetTimeFile(MString TimeFile);
   void ApplyTimeFile(MEventSelector& E) { E.SetTimeFile(m_TimeFile); }
   
   
-  void SetSourceWindow(bool Use, MVector SourcePosition = MVector(0, 0, 0));
-  void ApplySourceWindow(MEventSelector& E) { E.SetSourceWindow(m_UseSource, m_SourcePosition); }
+  void SetSourceWindow(bool Use) { m_UseSource = false; }
+  void SetSourceWindow(bool Use, MVector SourcePosition, MCoordinateSystem CS);
+  void ApplySourceWindow(MEventSelector& E) { E.SetSourceWindow(m_UseSource, m_SourcePosition, m_SourceCoordinateSystem); }
   void SetSourceARM(double ARMMin = 0.0, double ARMMax = 180.0);
   void ApplySourceARM(MEventSelector& E) { E.SetSourceARM(m_ARMMin, m_ARMMax); }
   void SetSourceSPD(double SPDMin = 0.0, double SPDMax = 180.0);
   void ApplySourceSPD(MEventSelector& E) { E.SetSourceSPD(m_SPDMin, m_SPDMax); }
 
+  void SetPointingSelectionType(unsigned int Type);
+  void ApplyPointingSelectionType(MEventSelector& E) { E.SetPointingSelectionType(m_PointingSelectionType); }
+  void SetPointingSelectionPointSource(double Latitude, double Longitude, double Radius);
+  void ApplyPointingSelectionPointSource(MEventSelector& E) { E.SetPointingSelectionPointSource(m_PointingSelectionPointSourceLatitude, m_PointingSelectionPointSourceLongitude, m_PointingSelectionPointSourceRadius); }
+  void SetPointingSelectionBox(double Latitude, double Longitude, double LatitudeExtent, double LongitudeExtent);
+  void ApplyPointingSelectionBox(MEventSelector& E) { E.SetPointingSelectionBox(m_PointingSelectionBoxLatitude, m_PointingSelectionBoxLongitude, m_PointingSelectionBoxLatitudeExtent, m_PointingSelectionBoxLongitudeExtent); }
+  
   void SetBeam(bool Use, MVector BeamStart, MVector BeamFocalSpot);
   void ApplyBeam(MEventSelector& E) { E.SetBeam(m_UseBeam, m_BeamStart, m_BeamFocalSpot); }
   void SetBeamRadius(double Radius);  
@@ -144,7 +157,7 @@ class MEventSelector
   void ApplyTrackQualityFactor(MEventSelector& E) { E.SetTrackQualityFactor(m_TrackQualityFactorMin, m_TrackQualityFactorMax); }
   void SetCoincidenceWindow(double Min = 0, double Max = 1);
   void ApplyCoincidenceWindow(MEventSelector& E) { E.SetCoincidenceWindow(m_CoincidenceWindowMin, m_CoincidenceWindowMax); }
-  void SetEventId(int Min = 2, int Max = 10);
+  void SetEventId(long Min = 0, long Max = numeric_limits<long>::max());
   void ApplyEventId(MEventSelector& E) { E.SetEventId(m_EventIdMin, m_EventIdMax); }
 
 
@@ -161,11 +174,19 @@ class MEventSelector
   // Photo specific:
   void UsePhotos(bool Photos = true);
   void ApplyUsePhotos(MEventSelector& E) { E.UsePhotos(m_UsePhotos); }
-
+  
   // Unidentifiable specific:
   void UseUnidentifiables(bool Unidentifiables = true);
   void ApplyUseUnidentifiables(MEventSelector& E) { E.UseUnidentifiables(m_UseUnidentifiables); }
-
+  
+  // PET specific:
+  void UsePETs(bool PETs = true);
+  void ApplyUsePETs(MEventSelector& E) { E.UsePETs(m_UsePETs); }
+  
+  // Multi specific:
+  void UseMulties(bool Multis = true);
+  void ApplyUseMulties(MEventSelector& E) { E.UseMulties(m_UseMulties); }
+  
   // All:
   void UseDecays(bool Decays = true);
   void ApplyUseDecays(MEventSelector& E) { E.UseDecays(m_UseDecays); }
@@ -200,7 +221,7 @@ class MEventSelector
   double m_FourthTotalEnergyMin;
   double m_FourthTotalEnergyMax;
 
-  bool m_TimeUseFile;
+  unsigned int m_TimeMode;
   MTime m_TimeMin;
   MTime m_TimeMax;
   MString m_TimeFile;
@@ -231,8 +252,8 @@ class MEventSelector
   double m_TrackQualityFactorMax;
   double m_CoincidenceWindowMin;
   double m_CoincidenceWindowMax;
-  unsigned int m_EventIdMin;
-  unsigned int m_EventIdMax;
+  long m_EventIdMin;
+  long m_EventIdMax;
   double m_ThetaDeviationMax;
   MEarthHorizon m_EarthHorizon;
 
@@ -245,11 +266,22 @@ class MEventSelector
   
   bool m_UseSource;
   MVector m_SourcePosition;
+  MCoordinateSystem m_SourceCoordinateSystem;
   double m_ARMMin;
   double m_ARMMax;
   double m_SPDMin;
   double m_SPDMax;
 
+  unsigned int m_PointingSelectionType;
+  double m_PointingSelectionPointSourceLatitude;
+  double m_PointingSelectionPointSourceLongitude;
+  double m_PointingSelectionPointSourceRadius;
+  double m_PointingSelectionBoxLatitude;
+  double m_PointingSelectionBoxLongitude;
+  double m_PointingSelectionBoxLatitudeExtent;
+  double m_PointingSelectionBoxLongitudeExtent;
+  
+  
   bool m_UseBeam;
   MVector m_BeamStart;
   MVector m_BeamFocalSpot;
@@ -262,51 +294,60 @@ class MEventSelector
   bool m_UseTrackedComptons;
   bool m_UseNotTrackedComptons;
   bool m_UseUnidentifiables;
-
+  bool m_UsePETs;
+  bool m_UseMulties;
+  
   bool m_UseDecays;
   bool m_UseFlaggedAsBad;
 
-  vector<MString> m_ExcludedDetectors;
-
-  int m_NAccepted;
-  int m_NRejectedIsGood;
-  int m_NRejectedStartDetector;
-  int m_NRejectedTotalEnergy;
-  int m_NRejectedTime;
-  int m_NRejectedTimeWalk;
-  int m_NRejectedElectronEnergy;
-  int m_NRejectedGammaEnergy;
-  int m_NRejectedComptonAngle;
-  int m_NRejectedFirstLeverArm;
-  int m_NRejectedLeverArm;
-  int m_NRejectedEventId;
-  int m_NRejectedTrackLength;
-  int m_NRejectedSequenceLength;
-  int m_NRejectedClusteringQualityFactor;
-  int m_NRejectedComptonQualityFactor;
-  int m_NRejectedTrackQualityFactor;
-  int m_NRejectedCoincidenceWindow;
-  int m_NRejectedEarthHorizonCut;
-  int m_NRejectedThetaDeviationMax;
-  int m_NRejectedUsePhotos;
-  int m_NRejectedUsePairs;
-  int m_NRejectedUseComptons;
-  int m_NRejectedUseMuons;
-  int m_NRejectedUseDecays;
-  int m_NRejectedUseUnidentifiables;
-  int m_NRejectedUseFlaggedAsBad;
-  int m_NRejectedUseTrackedComptons;
-  int m_NRejectedUseNotTrackedComptons;
-  int m_NRejectedOpeningAnglePair;
-  int m_NRejectedInitialEnergyDepositPair;
-  int m_NRejectedPairQualityFactor;
-  int m_NRejectedARM;
-  int m_NRejectedSPD;
-  int m_NRejectedBeam;
+  vector<MString> m_ExcludedFirstIADetectors;
+  vector<MString> m_ExcludedSecondIADetectors;
+  
+  long m_NAnalyzed;
+  long m_NAccepted;
+  long m_NRejectedIsGood;
+  long m_NRejectedFirstIADetector;
+  long m_NRejectedSecondIADetector;
+  long m_NRejectedTotalEnergy;
+  long m_NRejectedTime;
+  long m_NRejectedTimeWalk;
+  long m_NRejectedElectronEnergy;
+  long m_NRejectedGammaEnergy;
+  long m_NRejectedComptonAngle;
+  long m_NRejectedFirstLeverArm;
+  long m_NRejectedLeverArm;
+  long m_NRejectedEventId;
+  long m_NRejectedTrackLength;
+  long m_NRejectedSequenceLength;
+  long m_NRejectedClusteringQualityFactor;
+  long m_NRejectedComptonQualityFactor;
+  long m_NRejectedTrackQualityFactor;
+  long m_NRejectedCoincidenceWindow;
+  long m_NRejectedEarthHorizonCut;
+  long m_NRejectedThetaDeviationMax;
+  long m_NRejectedUsePhotos;
+  long m_NRejectedUsePairs;
+  long m_NRejectedUseComptons;
+  long m_NRejectedUseMuons;
+  long m_NRejectedUseDecays;
+  long m_NRejectedUsePETs;
+  long m_NRejectedUseMulties;
+  long m_NRejectedUseUnidentifiables;
+  long m_NRejectedUseFlaggedAsBad;
+  long m_NRejectedUseTrackedComptons;
+  long m_NRejectedUseNotTrackedComptons;
+  long m_NRejectedOpeningAnglePair;
+  long m_NRejectedInitialEnergyDepositPair;
+  long m_NRejectedPairQualityFactor;
+  long m_NRejectedPointing;
+  long m_NRejectedARM;
+  long m_NRejectedSPD;
+  long m_NRejectedBeam;
+  long m_NRejectedQuickHack;
 
   friend ostream& operator<<(ostream& os, MEventSelector& S);
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEventSelector, 0) // no description
 #endif

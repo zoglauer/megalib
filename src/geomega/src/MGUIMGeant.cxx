@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIMGeant)
 #endif
 
@@ -141,15 +141,15 @@ bool MGUIMGeant::ProcessMessage(long Message, long Parameter1,
 {
   // Process the messages for this window
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       switch (Parameter1) {
       case e_Ok:
-				Status = OnOk();
+        Status = OnOk();
         break;
         
       case e_Cancel:
@@ -157,7 +157,7 @@ bool MGUIMGeant::ProcessMessage(long Message, long Parameter1,
         break;
 
       case e_Apply:
-				Status = OnApply();
+        Status = OnApply();
         break;
         
       default:
@@ -192,7 +192,7 @@ bool MGUIMGeant::ProcessMessage(long Message, long Parameter1,
 
 bool MGUIMGeant::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
   
   if (m_StandardName->GetState() == kButtonDown) {
     m_GUIData->SetMGeantOutputMode(0);
@@ -205,7 +205,7 @@ bool MGUIMGeant::OnApply()
   m_GUIData->SetStoreVetoes(m_MEGAlibExtensionOptions->GetSelected(1));
   m_OkPressed = true;
 
-	return true;
+  return true;
 }
 
 

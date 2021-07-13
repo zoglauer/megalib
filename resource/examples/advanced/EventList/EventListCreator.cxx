@@ -65,7 +65,7 @@ class Particle
   double m_Energy; 
   
   bool Stream(ofstream& out) {
-    out<<m_ID<<" "<<m_ConcurrentWithPrevious<<" "<<m_ParticleType<<" "<<m_ParticleExcitation<<" "<<m_Time<<" "<<m_StartPosX<<" "<<m_StartPosY<<" "<<m_StartPosZ<<" "<<m_DirX<<" "<<m_DirY<<" "<<m_DirZ<<" "<<m_PolX<<" "<<m_PolY<<" "<<m_PolZ<<" "<<m_Energy<<endl;
+    out<<m_ID<<" "<<m_ConcurrentWithPrevious<<" "<<m_ParticleType<<" "<<m_ParticleExcitation<<" "<<setprecision(12)<<m_Time<<" "<<m_StartPosX<<" "<<m_StartPosY<<" "<<m_StartPosZ<<" "<<m_DirX<<" "<<m_DirY<<" "<<m_DirZ<<" "<<m_PolX<<" "<<m_PolY<<" "<<m_PolZ<<" "<<m_Energy<<endl;
     return true;
   };
 };

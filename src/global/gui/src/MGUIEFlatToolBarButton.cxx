@@ -31,6 +31,7 @@
 using namespace std;
 
 // ROOT libs:
+#include "TVirtualX.h"
 
 // MEGAlib libs:
 #include "MStreams.h"
@@ -38,7 +39,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIEFlatToolBarButton)
 #endif
 
@@ -50,7 +51,7 @@ MGUIEFlatToolBarButton::MGUIEFlatToolBarButton(const TGWindow* Parent, const TGP
   : TGPictureButton(Parent, Picture, Id)
 {
   // Construct an instance of MGUIEFlatToolBarButton
-	
+  
   m_Flat = false;
   
   gVirtualX->SelectInput(fId, numeric_limits<unsigned int>::max());
@@ -72,43 +73,43 @@ MGUIEFlatToolBarButton::~MGUIEFlatToolBarButton()
 void MGUIEFlatToolBarButton::SetFlat(const bool IsFlat)
 {
 
-	if (m_Flat != IsFlat) {
-		m_Flat = IsFlat;
+  if (m_Flat != IsFlat) {
+    m_Flat = IsFlat;
 
-		// Do not set the fOption parameter directly, to take care of boerder-width changes
-		int Options = fOptions;
+    // Do not set the fOption parameter directly, to take care of boerder-width changes
+    int Options = fOptions;
 
-		if (m_Flat == true) {
-			Options &= ~kRaisedFrame;
-			switch (fState) {
-			case kButtonEngaged:
-			case kButtonDown:
-				Options |= kDoubleBorder;
-				Options |= kSunkenFrame;
-				break;
-			case kButtonDisabled:
-			case kButtonUp:
-				Options &= ~kDoubleBorder;
-				Options &= ~kRaisedFrame;
-				break;
-			}						
-		} else {
-			Options |= kDoubleBorder;
-			switch (fState) {
-			case kButtonEngaged:
-			case kButtonDown:
-				Options &= ~kRaisedFrame;
-				Options |= kSunkenFrame;
-				break;
-			case kButtonDisabled:
-			case kButtonUp:
-				Options &= ~kSunkenFrame;
-				Options |= kRaisedFrame;
-				break;
-			}			
-		}
-		ChangeOptions(Options);
-	}
+    if (m_Flat == true) {
+      Options &= ~kRaisedFrame;
+      switch (fState) {
+      case kButtonEngaged:
+      case kButtonDown:
+        Options |= kDoubleBorder;
+        Options |= kSunkenFrame;
+        break;
+      case kButtonDisabled:
+      case kButtonUp:
+        Options &= ~kDoubleBorder;
+        Options &= ~kRaisedFrame;
+        break;
+      }           
+    } else {
+      Options |= kDoubleBorder;
+      switch (fState) {
+      case kButtonEngaged:
+      case kButtonDown:
+        Options &= ~kRaisedFrame;
+        Options |= kSunkenFrame;
+        break;
+      case kButtonDisabled:
+      case kButtonUp:
+        Options &= ~kSunkenFrame;
+        Options |= kRaisedFrame;
+        break;
+      }     
+    }
+    ChangeOptions(Options);
+  }
 }
 
 
@@ -117,7 +118,7 @@ void MGUIEFlatToolBarButton::SetFlat(const bool IsFlat)
 
 bool MGUIEFlatToolBarButton::IsFlat() const
 {
-	return m_Flat;
+  return m_Flat;
 }
 
 
@@ -126,52 +127,52 @@ bool MGUIEFlatToolBarButton::IsFlat() const
 
 void MGUIEFlatToolBarButton::SetState(EButtonState state, bool)
 {
-	// Set button state.
-	
-	bool was = !IsDown();   // true if button was off
+  // Set button state.
+  
+  bool was = !IsDown();   // true if button was off
 
-	if (state != fState) {
-		// Do not set the fOption parameter directly, to take care of boerder-width changes
-		unsigned int Options = fOptions;
-		switch (state) {
-		case kButtonEngaged:
-		case kButtonDown:
-			Options |= kSunkenFrame;
-// 			if (m_Flat == true) {
-// 				Options |= kDoubleBorder;
-// 			} else {
-				Options &= ~kRaisedFrame;
-// 			}
-			break;
-		case kButtonDisabled:
-		case kButtonUp:
-			Options &= ~kSunkenFrame;
-// 			if (m_Flat == true) {
-// 				Options &= ~kDoubleBorder;
-// 			} else {
-				Options |= kRaisedFrame;
-// 			}
-			break;
-		}
-		ChangeOptions(Options);
-		fClient->NeedRedraw(this);
-		fState = state;
-	}
+  if (state != fState) {
+    // Do not set the fOption parameter directly, to take care of boerder-width changes
+    unsigned int Options = fOptions;
+    switch (state) {
+    case kButtonEngaged:
+    case kButtonDown:
+      Options |= kSunkenFrame;
+//      if (m_Flat == true) {
+//        Options |= kDoubleBorder;
+//      } else {
+        Options &= ~kRaisedFrame;
+//      }
+      break;
+    case kButtonDisabled:
+    case kButtonUp:
+      Options &= ~kSunkenFrame;
+//      if (m_Flat == true) {
+//        Options &= ~kDoubleBorder;
+//      } else {
+        Options |= kRaisedFrame;
+//      }
+      break;
+    }
+    ChangeOptions(Options);
+    fClient->NeedRedraw(this);
+    fState = state;
+  }
 
-	bool now = !IsDown();               // true if button now is off
+  bool now = !IsDown();               // true if button now is off
 
-	// emit signals
-	if (was && !now) {
-		Pressed();                          // emit Pressed  = was off , now on
-		if (fStayDown) Clicked();           // emit Clicked
-	}
+  // emit signals
+  if (was && !now) {
+    Pressed();                          // emit Pressed  = was off , now on
+    if (fStayDown) Clicked();           // emit Clicked
+  }
 
-	if (!was && now) {
-		Released();                         // emit Released = was on , now off
-		Clicked();                          // emit Clicked
-	}
+  if (!was && now) {
+    Released();                         // emit Released = was on , now off
+    Clicked();                          // emit Clicked
+  }
 
-	if ((was != now) && IsToggleButton()) Toggled(!now); // emit Toggled  = was != now
+  if ((was != now) && IsToggleButton()) Toggled(!now); // emit Toggled  = was != now
 }
 
 
@@ -184,26 +185,26 @@ bool MGUIEFlatToolBarButton::HandleCrossing(Event_t *event)
 
   // Modified 9.6.02
   if (m_Flat && (fState == kButtonUp)) {
-		//cout<<"Flat & Up"<<endl;
+    //cout<<"Flat & Up"<<endl;
     int Options = fOptions;
-	 if (event->fType == kEnterNotify) {
-		Options |= kDoubleBorder;
-		Options |= kRaisedFrame;
-		//cout<<"Crossing: Enter"<<endl;
-	 } else if (event->fType == kLeaveNotify) {
-		Options &= ~kDoubleBorder;
-		Options &= ~kRaisedFrame;
-		//cout<<"Crossing leave!"<<endl;
-	 } else {
-		 //cout<<"Crossing !"<<endl;
-	 }
+   if (event->fType == kEnterNotify) {
+    Options |= kDoubleBorder;
+    Options |= kRaisedFrame;
+    //cout<<"Crossing: Enter"<<endl;
+   } else if (event->fType == kLeaveNotify) {
+    Options &= ~kDoubleBorder;
+    Options &= ~kRaisedFrame;
+    //cout<<"Crossing leave!"<<endl;
+   } else {
+     //cout<<"Crossing !"<<endl;
+   }
     ChangeOptions(Options);
-	 gClient->NeedRedraw(this);
+   gClient->NeedRedraw(this);
   }
 
-	TGButton::HandleCrossing(event);
+  TGButton::HandleCrossing(event);
 
-	return true;
+  return true;
 }
 
 
@@ -212,25 +213,25 @@ bool MGUIEFlatToolBarButton::HandleCrossing(Event_t *event)
 
 bool MGUIEFlatToolBarButton::HandleFocusChange(Event_t *event)
 {
-	
-	if (event->fType == kFocusOut) {
-		unsigned int Options = fOptions;
-		switch (fState) {
-		case kButtonEngaged:
-		case kButtonDown:
-			break;
-		case kButtonDisabled:
-		case kButtonUp:
-			Options &= ~kSunkenFrame;
-			Options &= ~kDoubleBorder;
-			Options &= ~kRaisedFrame;
-			break;
-		}
-		ChangeOptions(Options);
-		fClient->NeedRedraw(this);
-	}
+  
+  if (event->fType == kFocusOut) {
+    unsigned int Options = fOptions;
+    switch (fState) {
+    case kButtonEngaged:
+    case kButtonDown:
+      break;
+    case kButtonDisabled:
+    case kButtonUp:
+      Options &= ~kSunkenFrame;
+      Options &= ~kDoubleBorder;
+      Options &= ~kRaisedFrame;
+      break;
+    }
+    ChangeOptions(Options);
+    fClient->NeedRedraw(this);
+  }
 
-	return true;
+  return true;
 }
 
 

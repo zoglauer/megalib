@@ -1,10 +1,12 @@
 # Set all MEGAlib-related environment variables
 
+if [ -n "$ZSH_VERSION" ]; then emulate -L ksh; fi
+
 # Store command line
 MTMP_CMD=""
 while [[ $# -gt 0 ]] ; do
-    MTMP_CMD="${MTMP_CMD} $1"
-    shift
+  MTMP_CMD="${MTMP_CMD} $1"
+  shift
 done
 
 
@@ -52,6 +54,7 @@ for C in ${MTMP_CMD}; do
     return
   fi
 done
+
 
 # Verify path:
 if [[ "${MTMP_PREFIX}" != */ ]]; then

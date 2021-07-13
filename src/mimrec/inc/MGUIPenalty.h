@@ -96,7 +96,7 @@ class MGUIPenalty : public MGUIDialog
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIPenalty, 0)
 #endif

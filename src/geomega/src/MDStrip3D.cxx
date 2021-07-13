@@ -39,7 +39,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDStrip3D)
 #endif
 
@@ -143,13 +143,13 @@ bool MDStrip3D::CopyDataToNamedDetectors()
 
     if (D->m_TriggerThresholdDepthCorrectionSet == false && 
         m_TriggerThresholdDepthCorrectionSet == true) {
-      m_TriggerThresholdDepthCorrectionSet = true;
-      m_TriggerThresholdDepthCorrection = m_TriggerThresholdDepthCorrection;
+      D->m_TriggerThresholdDepthCorrectionSet = true;
+      D->m_TriggerThresholdDepthCorrection = m_TriggerThresholdDepthCorrection;
     }
     if (D->m_TriggerThresholdDepthCorrectionSet == false && 
         m_TriggerThresholdDepthCorrectionSet == true) {
-      m_NoiseThresholdDepthCorrectionSet = true;
-      m_NoiseThresholdDepthCorrection = m_NoiseThresholdDepthCorrection; 
+      D->m_NoiseThresholdDepthCorrectionSet = true;
+      D->m_NoiseThresholdDepthCorrection = m_NoiseThresholdDepthCorrection; 
     }
   }
 
@@ -672,78 +672,6 @@ MVector MDStrip3D::GetPositionInDetectorVolume(const unsigned int xGrid,
   Position.SetZ(PositionInGrid.Z());
 
   return Position;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDStrip3D::GetGeant3() const
-{
-  ostringstream out;
-
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<"      SENVOL("<<m_SVs[i]->GetSensitiveVolumeID()<<") = '"<<m_SVs[i]->GetShortName()<<"'"<<endl;
-    out<<"      SENDET("<<m_SVs[i]->GetSensitiveVolumeID()<<") = "<<m_ID<<endl;
-  }
-
-  out<<"      DETNR("<<m_ID<<") = 3"<<endl;
-  out<<"      DETTYP("<<m_ID<<") = 4"<<endl;
-  out<<"      WIDTH("<<m_ID<<",1) = "<<m_WidthX<<endl;
-  out<<"      WIDTH("<<m_ID<<",2) = "<<m_WidthY<<endl;
-  out<<"      OFFSET("<<m_ID<<",1) = "<<m_OffsetX<<endl;
-  out<<"      OFFSET("<<m_ID<<",2) = "<<m_OffsetY<<endl;
-  out<<"      SPITCH("<<m_ID<<",1) = "<<m_PitchX<<endl;
-  out<<"      SPITCH("<<m_ID<<",2) = "<<m_PitchX<<endl;
-  out<<"      SLENGTH("<<m_ID<<",1) = "<<m_StripLengthX<<endl;
-  out<<"      SLENGTH("<<m_ID<<",2) = "<<m_StripLengthY<<endl;
-  out<<"      NSTRIP("<<m_ID<<",1) = "<<m_NStripsX<<endl;
-  out<<"      NSTRIP("<<m_ID<<",2) = "<<m_NStripsX<<endl;
-  out<<endl;
-
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDStrip3D::GetMGeant() const
-{
-  ostringstream out;
-
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    MString Name = m_SVs[i]->GetShortName();
-    Name.ToUpper();
-    out<<"SENV "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<Name<<endl;
-    out<<"SEND "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<m_ID<<endl;
-  }
-
-  out<<"DTNR "<<m_ID<<" 3"<<endl;
-  out<<"DTTP "<<m_ID<<" 4"<<endl;
-  out<<"WIDT "<<m_ID<<" 1 "<<m_WidthX<<endl;
-  out<<"WIDT "<<m_ID<<" 2 "<<m_WidthY<<endl;
-  out<<"OFFS "<<m_ID<<" 1 "<<m_OffsetX<<endl;
-  out<<"OFFS "<<m_ID<<" 2 "<<m_OffsetY<<endl;
-  out<<"SPIT "<<m_ID<<" 1 "<<m_PitchX<<endl;
-  out<<"SPIT "<<m_ID<<" 2 "<<m_PitchX<<endl;
-  out<<"SLEN "<<m_ID<<" 1 "<<m_StripLengthX<<endl;
-  out<<"SLEN "<<m_ID<<" 2 "<<m_StripLengthY<<endl;
-  out<<"NSTP "<<m_ID<<" 1 "<<m_NStripsX<<endl;
-  out<<"NSTP "<<m_ID<<" 2 "<<m_NStripsX<<endl;
-  out<<"GRUP "<<m_ID<<" "<<0.5*(-m_WidthX+m_OffsetX)<<" "
-     <<0.5*(-m_WidthY+m_OffsetY)<<" "<<0.0<<endl;
-  out<<endl;
-
-
-  return out.str().c_str();  
 }
 
 

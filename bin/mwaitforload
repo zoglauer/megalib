@@ -1,0 +1,30 @@
+#! /bin/bash
+
+
+help() {
+  echo ""
+  echo "mwaitforload - script for MEGAlib";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Usage:";
+  echo "    mwaitforload [max short term load]";
+  echo "";
+  echo "Examples:";
+  echo "    mwait 1.5";
+  echo "";
+  echo "This script wait until the short term load is below the stated value"
+  echo "";
+}
+
+if [ $# -ne 1 ]; then
+    echo "Error: This script requires one input parameters, the maximum allowed short team system load"
+    exit -1;
+fi
+
+MAXLOAD=$1
+
+while [[ $(cat /proc/loadavg | awk -v M=${MAXLOAD} '{ if ( $1 > M ) print "TRUE"; }') == TRUE ]]; do 
+  sleep 1; 
+done;
+
+exit 0;

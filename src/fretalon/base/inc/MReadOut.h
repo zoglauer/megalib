@@ -31,7 +31,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! A single chanel read out consisting of a read-out element and its associated data
+//! A single channel read out consisting of a read-out element and its associated data
 class MReadOut
 {
   // public interface:
@@ -88,7 +88,7 @@ class MReadOut
   MReadOutData* m_ROD;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOut, 0) // no description
 #endif

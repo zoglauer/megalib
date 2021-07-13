@@ -46,7 +46,7 @@ class MTransceiver
   virtual bool Disconnect(bool WaitForDisconnection = false, double TimeOut = 60) = 0;
 
   virtual bool Send(TObject* Object) = 0;
-	virtual TObject* Receive() = 0;
+  virtual TObject* Receive() = 0;
 
   virtual void StartTransceiving() = 0;
   virtual void StopTransceiving() = 0;
@@ -71,7 +71,7 @@ class MTransceiver
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MTransceiver, 0) // no description
 #endif

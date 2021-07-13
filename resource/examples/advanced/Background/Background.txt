@@ -1,0 +1,16 @@
+# How to generate a background for a NuSTAR-like orbit
+
+# Get trapped proton/electron and cosima proton/alpha particle files from SPENVIS
+# The given ones are for NuSTAR orbit
+
+# Compile
+make
+
+# Run:
+BackgroundGenerator -e 10 1000000000 -b 100 -o 575 6 12 -tps AverageTrappedProtonsElectronAP9Average.spenvis.txt -cps CosmicProtons.spenvis.txt -cas CosmicAlphas.spenvis.txt
+
+# View:
+root -x BackgroundViewer.C
+
+# How to use it with cosima:
+Include all *.partial.source file in your cosima source file

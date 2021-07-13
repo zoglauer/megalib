@@ -43,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERCoincidence)
 #endif
 
@@ -86,7 +86,7 @@ bool MERCoincidence::SetCoincidenceWindow(double Time)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MERCoincidence::Search(MRawEventList* List, bool Clear)
+MRERawEvent* MERCoincidence::Search(MRawEventIncarnations* List, bool Clear)
 {
   // Search for coincidences
 

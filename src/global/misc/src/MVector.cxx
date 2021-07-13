@@ -31,14 +31,14 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MGlobal.h"
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MRotation.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MVector)
 #endif
 
@@ -257,6 +257,26 @@ double MVector::Angle(const MVector& V) const
   }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MVector MVector::Orthogonal() const 
+{
+  // Return an orthogonal vector by eliminating the component closest to zero to avoid large rounding errors 
+  
+  double aX = fabs(m_X);
+  double aY = fabs(m_Y);
+  double aZ = fabs(m_Z);
+  
+  if (aX < aY) {
+    return aX < aZ ? MVector(0.0, m_Z, -m_Y) : MVector(m_Y, -m_X, 0.0);
+  } else {
+    return aY < aZ ? MVector(-m_Z, 0.0, m_X) : MVector(m_Y, -m_X, 0.0);
+  }
+}
+      
+      
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -290,27 +310,28 @@ void MVector::RotateY(double Angle)
 
 void MVector::RotateReferenceFrame(const MVector& OriginalDir) 
 {
-	// Rotate to the new reference frame
-	
-	double a = OriginalDir.m_X;
-	double b = OriginalDir.m_Y;
-	double c = OriginalDir.m_Z;
-	double scalar = a*a + b*b;
+  // Rotate to the new reference frame
+  
+  double a = OriginalDir.m_X;
+  double b = OriginalDir.m_Y;
+  double c = OriginalDir.m_Z;
+  double scalar = a*a + b*b;
 
-	if (scalar != 0) {
-		scalar = sqrt(scalar);
-		double x = m_X;
-		double y = m_Y;
-		double z = m_Z;
-		m_X = (a*c*x - b*y + a*scalar*z)/scalar;
-		m_Y = (b*c*x + a*y + b*scalar*z)/scalar;
-		m_Z = (c*c*x -   x + c*scalar*z)/scalar;
-	} else if (c < 0.0) {
-		// Poles of the sphere 
-		m_X = -m_X; 
-		m_Z = -m_Z; 
-	}
+  if (scalar != 0) {
+    scalar = sqrt(scalar);
+    double x = m_X;
+    double y = m_Y;
+    double z = m_Z;
+    m_X = (a*c*x - b*y + a*scalar*z)/scalar;
+    m_Y = (b*c*x + a*y + b*scalar*z)/scalar;
+    m_Z = (c*c*x -   x + c*scalar*z)/scalar;
+  } else if (c < 0.0) {
+    // Poles of the sphere 
+    m_X = -m_X; 
+    m_Z = -m_Z; 
+  }
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -323,6 +344,18 @@ void MVector::RotateZ(double Angle)
   m_X = cos(Angle)*OldX - sin(Angle)*m_Y;
   m_Y = sin(Angle)*OldX + cos(Angle)*m_Y;
   // m_Z is untouched
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Rotate vector with axis Axis by angle Angle
+void MVector::RotateAroundVector(const MVector& Axis, double Angle)
+{
+  MRotation R;
+  R.Set(Angle, Axis);
+  (*this) = R*(*this);
 }
 
 
@@ -382,24 +415,13 @@ double operator* (const MVector& V, const MVector& W)
 {
   return V.Dot(W);
 }
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MVector operator* (const TMatrix& M, const MVector& V) 
-{
-  return MVector(M(0,0)*V.m_X + M(0,1)*V.m_Y + M(0,2)*V.m_Z,
-                 M(1,0)*V.m_X + M(1,1)*V.m_Y + M(1,2)*V.m_Z,
-                 M(2,0)*V.m_X + M(2,1)*V.m_Y + M(2,2)*V.m_Z);
-}
   
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 bool MVector::Coplanar(const MVector& A, const MVector& B, const MVector& C, 
-                       double Tolerance)
+                       double Tolerance) const
 {
   // Checks if this vector is in the plane spanned by the other three
 
@@ -441,7 +463,7 @@ bool MVector::Coplanar(const MVector& A, const MVector& B, const MVector& C,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MVector::DistanceToLine(const MVector& A, const MVector& B)
+double MVector::DistanceToLine(const MVector& A, const MVector& B) const
 {
   //! Calculate the distance of a line spanned by the given vectors with this point
 
@@ -453,7 +475,7 @@ double MVector::DistanceToLine(const MVector& A, const MVector& B)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MVector::ToString()
+MString MVector::ToString() const
 {
   //! Return a string of the content of this class
 

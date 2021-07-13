@@ -86,7 +86,7 @@ class MGUIReconstructedSpectrum : public MGUIDialog
   bool& m_OKPressed;  
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIReconstructedSpectrum, 0)
 #endif

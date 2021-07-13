@@ -43,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShapeIntersection)
 #endif
 
@@ -84,6 +84,8 @@ bool MDShapeIntersection::Set(MDShape* ShapeA, MDShape* ShapeB, MDOrientation* O
   m_SubShapes[1] = ShapeB;
   m_Orientation = Orientation;
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -93,35 +95,58 @@ bool MDShapeIntersection::Set(MDShape* ShapeA, MDShape* ShapeB, MDOrientation* O
 
 bool MDShapeIntersection::Validate()
 {
-  if (m_SubShapes[0] == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type intersection"<<endl;
-    mout<<"No first shape given"<<endl;
-    return false;            
+  if (m_IsValidated == false) {
+    if (m_SubShapes[0] == 0) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type intersection"<<endl;
+      mout<<"No first shape given"<<endl;
+      return false;            
+    }
+    
+    if (m_SubShapes[1] == 0) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type intersection"<<endl;
+      mout<<"No second shape given"<<endl;
+      return false;            
+    }  
+    
+    if (m_SubShapes[0] == m_SubShapes[1]) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type intersection"<<endl;
+      mout<<"First and second shape are identical"<<endl;
+      return false;            
+    }
+    
+    if (this == m_SubShapes[0]) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type intersection"<<endl;
+      mout<<"First shape cannot be identical with this intersection shape"<<endl;
+      return false;            
+    }
+    
+    if (this == m_SubShapes[1]) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type intersection"<<endl;
+      mout<<"Second shape cannot be identical with this intersection shape"<<endl;
+      return false;            
+    }
+    
+    if (m_SubShapes[0]->Validate() == false) return false;  
+    if (m_SubShapes[1]->Validate() == false) return false;
+    
+    if (m_Orientation == 0) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type intersection"<<endl;
+      mout<<"No orientation given"<<endl;
+      return false;            
+    }
+    
+    delete m_Geo;
+    TGeoIntersection* Node = new TGeoIntersection(m_SubShapes[0]->GetRootShape(), m_SubShapes[1]->GetRootShape(), 0, m_Orientation->GetRootMatrix());
+    m_Geo = new TGeoCompositeShape(m_Name, Node);
+    
+    // Determine an almost unique position inside this shape:
+    unsigned int Seed = gRandom->GetSeed();
+    gRandom->SetSeed(12345678);
+    m_AlmostUniquePosition = GetRandomPositionInside();
+    gRandom->SetSeed(Seed);
+    
+    m_IsValidated = true;
   }
-  if (m_SubShapes[0]->Validate() == false) return false;
-  
-  if (m_SubShapes[1] == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type intersection"<<endl;
-    mout<<"No second shape given"<<endl;
-    return false;            
-  }  
-  if (m_SubShapes[1]->Validate() == false) return false;
-  
-  if (m_Orientation == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type intersection"<<endl;
-    mout<<"No orientation given"<<endl;
-    return false;            
-  }
-  
-  delete m_Geo;
-  TGeoIntersection* Node = new TGeoIntersection(m_SubShapes[0]->GetRootShape(), m_SubShapes[1]->GetRootShape(), 0, m_Orientation->GetRootMatrix());
-  m_Geo = new TGeoCompositeShape(m_Name, Node);
-
-  // Determine an almost unique position inside this shape:
-  unsigned int Seed = gRandom->GetSeed();
-  gRandom->SetSeed(12345678);
-  m_AlmostUniquePosition = GetRandomPositionInside();
-  gRandom->SetSeed(Seed);
   
   return true;
 }
@@ -158,6 +183,8 @@ void MDShapeIntersection::Scale(const double Factor)
   // Scale this shape by Factor
 
   m_Scaler = Factor;
+  
+  m_IsValidated = false;
   
   Validate();
 }

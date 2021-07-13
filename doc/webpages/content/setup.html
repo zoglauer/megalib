@@ -1,0 +1,297 @@
+<!-- neodym-config
+Type:              Article
+MenuLevel:         1
+MenuEntry:         4
+MenuTitle:         Code & Setup
+-->
+
+
+<neodym-body>
+
+<h1>Code and Setup</h1>
+
+<h2>The source code</h2>
+
+<p>The full MEGAlib source code can be found on github at: <a href=https://github.com/zoglauer/megalib target=_blank>https://github.com/zoglauer/megalib</a></p>
+
+<p>The different versions of code can be found in the various branches on github:</p>
+<ul>
+  <li>"MEGAlib_v3.00", "MEGAlib_v2.34", etc. represent the release versions.</li>
+  <li>"master" is the development/bugfix branch of the current main version of MEGAlib (currently 3.x).</li>
+  <li>"megalib4-dev" is the development branch of the next main version of MEGAlib (currently 4.x).</li>
+</ul>
+
+<p>You can get the source code from the repository via cloning it (make sure you have git installed):</p2>
+<pre>
+$ git clone https://github.com/zoglauer/megalib MEGAlib
+</pre>
+
+Then switch to the MEGAlib directory for all further commands:
+<pre>
+$ cd MEGAlib
+</pre>
+
+
+<h2>The MEGAlib branch</h2>
+
+<p>You can find multiple MEGAlib branches on github. MEGAlib releases are named MEGAlib_v3.00, etc. The development / bugfix branch for version 3 is called master, the development branch for version 4, which contains more significant changes and is not neceessarily always in working condition, is called megalib4-dev. If you are do minor enhancements, I strongly suggest to use the master branch. Therefore, check put this branch now:</p>
+ 
+<pre>
+git checkout master
+</pre>
+
+
+<h2>Requirements to compile and run MEGAlib</h2>
+
+<p>MEGAlib requires several additional programs to run. You will usually require a certain version of ROOT and Geant4 to go with a given version of MEGAlib - usually not the very latest one. If you use the MEGAlib setup script, it will automatically download the appropriate version.</p>
+<p>In general, you require the following software components:<p>
+<ol>
+  <li>A fully functional and up-to-date Linux or Mac operating system - the "Windows System for Linux" on Windows 10 is acceptable too. The reference system (i.e. the system used to write MEGAlib) is always the latest Ubuntu LTS release.</li>
+  <li>In addition, make sure you have all required development tools installed such as a C and C++ compiler, make, cmake, git, curl, awk, etc.</li>
+  <li>MEGAlib requires <a href="http://root.cern.ch" target="_blank">ROOT</a>. If you use the default setup script it will compile its own minimal version. Make sure to take a look at the requirements page of ROOT to make sure you have installed all the necessary software required to compile ROOT: <a href="http://root.cern.ch/drupal/content/build-prerequisites" target="_blank">ROOT build prerequisites</a></li>
+  <li>MEGAlib also requires <a href="http://geant4.cern.ch" target="_blank">Geant4</a>. Again, the MEGAlib setup script will compile its own version. Alternatively you can install it by yourself.</li>
+  <li>There are a set of optional pieces of code which enhance MEGAlib, such as heasoft (for fits files), doxygen (generate source code documentation), expect (pipeline scripts for parallel processing on clusters), or convert, which are nice to have but not mandatory.</li>
+</ol>
+
+<p>The following contains instructions on how to install this additional software.</p>
+
+<h3>Additional information for Linux</h3>
+
+<p>If you use one of the major Linux flavors such as Ubuntu, Fedora, openSUSE, etc., then you can run a small script to automatically install all the required tools and libraries which are part of your distro. In the MEGAlib directory execute:</p>
+
+<pre>$ bash config/configure_packages</pre>
+
+<p>If the script finds missing packages, it will tell you how to install them.</p>
+
+
+
+<h3>Additional information for macOS</h3>
+
+<p>On a Mac you need to install four pieces of software by hand: A current version of Xcode, Xquartz, cmake, and, optionally, python3.</p>
+<ol>
+  <li>Xcode: Please install from the Mac app store. Also make sure to install the command line tools: <pre>$ xcode-select --install</pre>A common source of MEGAlib installation problems is that the Xcode command line tools have not been reinstalled after upgrading Xcode. If you are using macOS Mojave (or maybe higher), please also install the package located here: <pre>/Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14. pkg</pre></li>
+  <li>XQuartz: <a href="https://www.xquartz.org" target=_blank>https://www.xquartz.org</a> (just choose the latest *.dmg file)</li>
+  <li>cmake: <a href="https://cmake.org" target=_blank>https://cmake.org</a><br>Attention: Make sure to follow the instructions on how to install the cmake command line tools: Open the cmake app. Under "Tools" you find a line "How To Install For Command Line Use". Click and follow the instructions.</li>
+  <li>python3: Optionally, if you want to use MEGAlib's python3 bindings, you need to install python3. Unfortunately, you cannot use just any version of python, the versions installed via conda or anaconda do not work with ROOT (or better rootpy). Therefore, please install a 3.x version of python from <a href="https://python.org" target=_blank>https://python.org</a>. Even more optionally, if you want to use the experimental machine learning features, please install a python version which is compatible with the tensorflow version you want to use.</li>
+</ol>
+<p>Attention: If you have MacPorts, Fink, or Homebrew installed, those might interfere with the installation of MEGAlib, and, more likely, ROOT. If you get error messages concerning wrong versions of libraries, please use a clean bash environment to install MEGAlib (i.e. one where the MacPorts, Fink, or Homebrew library and program paths are not included/exported).</p>
+
+
+
+<h3>Additional information for Windows 10</h3>
+
+<p>On Windows 10, you have perform the follwoing steps:</p>
+<ol>
+  <li>First install the "Windows Subsystem for Linux" by <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10" target=_blank>following this guide</a>.</li>
+  <li>Then install the <a href="https://www.microsoft.com/store/apps/9nblggh4msv6" target=_blank>Ubuntu App</a> from the Windows Store.
+  <li>Afterwards, install the <a href="https://sourceforge.net/projects/xming" target=_blank>Xming X Server for Windows</a>.
+  <li>Run the Bash app, and add the following to your .bashrc:<pre>export DISPLAY=localhost:0.0</pre> and then restart your bash terminal.</li>
+  <li>Then, in the bash prompt of the Ubuntu app, install MEGAlib the same way as you would on Linux.</li>
+</ol>
+
+
+
+
+<h2>The setup script</h2>
+
+<p>When all requirements are fulfilled, it is time to run the MEGAlib setup script. The "setup.sh" bash script is capable of installing MEGAlib along with ROOT and Geant4. The script is intended to be installed by the user in their home directory. Assuming you have followed the instructions in the above section (especially did you make sure to install all the libraries ROOT needs to compile, are git and cmake present?), then installing MEGAlib should be a one-step process. In the directory, where you want to install MEGAlib, do:</p>
+<pre>$ bash setup.sh --branch=master</pre>
+<p>This will give you the latest development version. If you are interested in the latest release, simply do:</p>
+<pre>$ bash setup.sh</pre>
+<p>Please keep in mind that upon success, the setup script saves the last used options. Thus is you want to change any options, always give them at the command line to the setup script.</p>
+
+<p>The script will do the following:</p>
+<ol>
+  <li>Check if we already have a MEGAlib installation (by default it will search in the directory MEGAlib, or check if it is called from within a MEGAlib installation. If this is the case it will load the command line parameters from the previous run of the setup script. These are overwritten by the new options you give at the command line.</li>
+  <li>MEGAlib download: It will check if MEGAlib is present. If not it will download it from the repository (<a href="https://github.com/zoglauer/megalib" target=_blank>MEGAlib's git repository</a> is the default), if it is present it will update it (but it will make a backup of your src-directory, just in case). If you decided to switch from a release to a development version, it will do that.</li>
+  <li>ROOT installation: If you have given a path to an existing ROOT installation (--root option), or if it has found an old installation done via this script, it will check if this version is still up to date. If it is not up to date and you have given this ROOT version via the --root option, it will stop here. Otherwise it will download and install the latest version of ROOT compatible with this MEGAlib version.</li>
+  <li>Geant4 installation: This is exactly the same process as for ROOT.</li>
+  <li>MEGAlib: It will configure and compile MEGAlib.</li>
+  <li>Finally it will create a little script which you have to source in order to setup the environment for MEGAlib.</li>
+</ol>
+
+<p>In case something goes wrong, and you get an error message, after you fixed the problem, simply restart the setup process. In most cases there is no reason to delete already downloaded files.</p>
+
+<p>If you do <code>bash setup.sh --help</code>, then you will see a lot of options for the setup script. You can set the name and path of your MEGAlib installation (--megalib-path), you can set the directory where you want to install ROOT and Geant4 (--external-path), you can give the path to an existing ROOT (--root) or Geant4 (--geant4) installation, which you want to use instead of downloading it, you can decide if you want to have the latest release or development version (--release), and you can decide which repository you want to use (--repository, but please stick with git).</p>
+
+<p>Finally, the setup script also doubles as update script. Just call it from within your MEGAlib installation and it will update MEGAlib, and if it installed ROOT and Geant4 previously it will also update them. Unless you are actively developing MEGAlib, this is the preferred way to update your installation.</p>
+
+
+
+<h2> Setting up the ROOT / Geant4 / MEGAlib environment </h2>
+
+<p>If everything went well, the last words of the setup script were something like this (obviously the path will point to your own installation):</p>
+
+<pre><code>ATTENTION:
+
+In order to run the MEGAlib programs, you have to source the following file first:
+
+source /home/andreas/Soft/MEGAlib/bin/source-megalib.sh
+
+You can add this line into your .bashrc file (or .bash_profile on macOS),
+or execute this line everytime you want to use MEGAlib in a new terminal.</pre></code>
+
+<p>The script <code>source-megalib.sh</code> sets the environment variables for ROOT, Geant4, and MEGAlib. Ideally you should put the above line into your .bashrc file, or .bash_profile file if you use Terminal.app on macOS.</p>
+
+
+
+<h2>If something goes wrong</h2>
+
+<p>The first thing to try is to compile a current development version instead of a release version, by calling the setup script via:</p>
+
+<pre>$ bash setup.sh --branch=master</pre>
+
+<p>If this does not help, please take a look at the <a href="https://github.com/zoglauer/megalib/issues">issues page of MEGAlib on github</a>. There, all common installation errors along with their solutions have been documented. If your problem does not appear there, please enter a new issue.</p>
+
+<p>If nothing else helps, you might try to run the MEGAlib docker -- see the next main section.</p>
+
+
+<h2>Updating your installation</h2>
+
+<p>The preferred way to update MEGAlib is to run the setup script again:</p>
+
+<pre>$ bash setup.sh</pre>
+
+<p>Assuming the setup was once completed successfully, it will remember your old command line settings (release, branch, etc.). Thus, there is no need to give them all again</p>
+
+<p>In case you are 100% sure nothing major has changed with the MEGAlib setup, you can also just do the follwoing to update MEGAlib:</p>
+<pre>$ git pull; make clean; make </pre>
+
+<h2>Finally...</h2>
+
+<p>Please take also a look at the change log for the important changes between the MEGAlib versions: <a href="https://raw.github.com/zoglauer/megalib/master/doc/ChangeLog.txt">ChangeLog</a></p>
+
+<p>Feel free to let me know any issues or anything that can be improved with this setup documentation.</p>
+
+
+
+
+<h1 id="Docker">Docker</h1>
+
+<p>If the installation with the setup script fails, or it seems too complicated, or you would have to do it on too many different machines, you could consider running MEGAlib in a Docker container.</p>
+
+
+<h2>Installing Docker</h2>
+
+<p>First, go to the Docker webpage, and download and install Docker: <a href="https://www.docker.com/community-edition" target=_blank>Docker community edition</a></p>
+<p>On Linux, follow the optional post-installation steps to run docker as non-root user.</p>
+
+
+<h2>The MEGAlib docker image</h2>
+
+<p>Before you can run MEGAlib, you need a Docker image. You can either create your own MEGAlib Docker image, or download one from the public repository.
+
+
+<h3>Downloading a docker image</h3>
+
+<p>Alternatively, you can download a pre-built MEGAlib Docker image. All MEGAlib Docker images can be found on the Docker Hub: <a href="https://hub.docker.com/r/zoglauer/megalib/tags" target=_blank>Docker Hub</a></p>
+<p>To pull an image from the Docker hub, just run the following &ndash; you will have to replace "Tag" with the tag for the image you want from the above webpage.</p>
+
+<pre>docker pull zoglauer/megalib:{Tag}</pre>
+
+<p>Assuming you have gigabit internet its a fast download, otherwise ... do something else in the meantime.</p>
+
+
+<h3>Creating you own MEGAlib Docker image</h3>
+
+<p>The MEGAlib repository contains a Dockerfile to create a MEGAlib Docker image which can be used to run all MEGAlib programs on any platform. To build your own MEGAlib Docker image, just execute:</p>
+
+<pre>
+$ git pull https://github.com/zoglauer/megalib MEGAlib
+$ cd MEGAlib
+$ docker build -t megalib-master:latest - &lt; Dockerfile
+</pre>
+
+<p>This might take a while to complete...</p>
+
+
+
+<h2>Running the MEGAlib docker</h2>
+
+<p>Since you want to ultimately exchange data between the docker container and your host system, you have to designate a local directory for that. Here, I assume this directory is called /host/directory or C:/host/directory for windows. The exchange directory in the container already exists, and is called /home/mrmegalib/exchange. You always need to give the FULL path here.</p>
+
+<p>In the following we assume that the name of the Docker image is "megalib-master:latest". If you downloaded your image, it will be different, e.g. "zoglauer/megalib:3.00.00"</p>
+
+
+<h3>On Linux</h3>
+
+
+<p>On some Linux systems, due to X11 security limitations, you might have to do "xhost +" before you issue to following command to run the image:</p>
+
+<pre>$ docker run -v /host/directory:/home/mrmegalib/exchange -e DISPLAY=$DISPLAY -e USERID=`id -u ${USER}` -e GROUPID=`id -g ${USER}` -v /tmp/.X11-unix:/tmp/.X11-unix -it megalib-master:latest</pre>
+
+<p>This leaves you in a bash terminal, where you can run any MEGAlib program. If you get an error such as "DISPLAY not found", when trying to run MEGAlib programs with an user interface, then please execute "xhost +" before running docker.</p>
+
+<p>In some cases, it takes a very long time until the docker images starts. Then you have encountered a bug/inefficiency in Docker's storage driver. You can switch the storage driver to "aufs" to avoid that issue by editing the file /etc/docker/daemon.json. If the file does not yet exist, just create it. If the file is empty, add the following:</p>
+
+<pre>
+{ "storage-driver": "aufs" }
+</pre>
+
+<p>Restart Docker afterwards.</p>
+
+<pre>
+> sudo systemctl restart docker
+</pre>
+
+<h3>On Windows 10</h3>
+
+<p>Make sure you have Xming installed. Then open a power shell and type (obviously replace "YourComputerNameOrIP" with either your computer's name or IP):</p>
+
+<pre>
+> &amp; 'C:/Program Files (x86)/Xming/Xming.exe' :0 -ac -clipboard -multiwindow
+> docker run -v C:/host/directory:/home/mrmegalib/exchange -e DISPLAY=YourComputerNameOrIP:0 -it megalib-master:latest
+</pre>
+
+
+
+<h3>On a Mac</h3>
+
+<p>First, make sure the directory, you have chosen to exchange data with, is known to Docker, i.e. in the docker menu, click Preferences, and make sure it is listed under File Sharing.</p>
+
+<p>Second, make sure you have XQuartz installed: <a href="https://www.xquartz.org" target=_blank>https://www.xquartz.org</a>.</p>
+
+<p>When it is installed, open XQuartz. In the menu, go to Preferences, select the Security tab, and tick the box "Allow connections from network clients". Then exit XQuartz again.</p>
+
+<p>Then find out your IP address. There are many ways to do this. Here is one possibility to do that: </p>
+
+<pre>
+  YOURIP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{ print $2 }'); echo "Your IP: ${YOURIP}"
+</pre>
+
+<p>You need your IP to enable X11 connections via XQuartz. You do this via:</p>
+
+<pre>
+  xhost + ${YOURIP}
+</pre>
+
+<p>Then you are finally ready to launch the docker:</p>
+
+<pre>
+  docker run --rm -it -v /host/directory:/home/mrmegalib/exchange -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=${YOURIP}:0  megalib-master:latest
+</pre>
+
+
+<h2>Miscellaneous</h2>
+
+<p>Here is a useful list of docker commands:</p>
+
+<table style="width:100%">
+  <tr>
+    <td>docker images</td>
+    <td>List the available docker images</td>
+  </tr>
+  <tr>
+    <td>docker save -o MEGAlib.tar megalib-master:latest; gzip MEGAlib.tar</td>
+    <td>Save the image as a gzipped tar ball</td>
+  </tr>
+  <tr>
+    <td>docker login<br>docker tag {image ID} zoglauer/megalib:{version}<br>docker push zoglauer/megalib:{version}</td>
+    <td>Commands to push a MEGAlib Docker image to the Docker hub</td>
+  </tr>
+</table>
+
+
+
+
+</neodym-body>

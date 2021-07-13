@@ -7,9 +7,13 @@ if [ $? -eq 0 ]; then
     # echo "g++ compiler found - using it as default!";
     CONFIGUREOPTIONS="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
 fi
-CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL_DATA=ON -DGEANT4_USE_OPENGL_X11=ON -DGEANT4_INSTALL_DATA_TIMEOUT=14400 -DGEANT4_USE_SYSTEM_EXPAT=OFF -DGEANT4_BUILD_CXXSTD=c++11 -DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0"
+CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL_DATA=ON -DGEANT4_USE_OPENGL_X11=OFF -DGEANT4_INSTALL_DATA_TIMEOUT=14400 -DGEANT4_USE_SYSTEM_EXPAT=OFF -DGEANT4_BUILD_CXXSTD=c++11"
+# For compilation with ROOT 6.06 
+#CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0"
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
+# The Geant4 website from which to download the tarball
+WEBSITE="https://geant4-data.web.cern.ch/releases"
 
 # Check if some of the frequently used software is installed:
 type cmake >/dev/null 2>&1
@@ -49,19 +53,26 @@ confhelp() {
   echo "--tarball=[file name of Geant4 tarball]"
   echo "    Use this tarball instead of downloading it from the Geant4 website" 
   echo " "
-  echo "--environment-script=[file name of new environment script]"
-  echo "    File in which the Geant4 path is stored. This is used by the MEGAlib setup script" 
+  echo "--geant4version=[e.g. 10.02 (but not 10.02.p03)]"
+  echo "    Specifiy the Geant4 version (ignores MEGAlib's requested version), if empty read he requested one from the MEGAlib directory"
   echo " "
-  echo "--debug=[off/no, on/yes]"
-  echo "    Default is on."
+  echo "--sourcescript=[file name of new environment script]"
+  echo "    File in which the Geant4 path will be stored. This is used by the MEGAlib setup script" 
   echo " "
-  echo "--maxthreads=[integer >=1]"
+  echo "--debug=[off/no, on/yes - default: off]"
+  echo "    Compile with degugging options."
+  echo " "
+  echo "--keepenvironmentasis=[off/no, on/yes - default: off]"
+  echo "    By default all relevant environment paths (such as LD_LIBRRAY_PATH, CPATH) are reset to empty to avoid most libray conflicts."
+  echo "    This flag toggles this behaviour and lets you decide to keep your environment or not."
+  echo " "
+  echo "--maxthreads=[integer >=1 - default: off]"
   echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
   echo " "
-  echo "--patch=[yes or no (default no)]"
+  echo "--patch=[yes or no - default no]"
   echo "    Apply MEGAlib internal (!) Geant4 patches, if there are any."
   echo " "
-  echo "--cleanup=[off/no, on/yes (default: off)]"
+  echo "--cleanup=[off/no, on/yes - default: off]"
   echo "    Remove intermediate build files"
   echo " "
   echo "--help or -h"
@@ -89,18 +100,20 @@ done
 TARBALL=""
 ENVFILE=""
 MAXTHREADS=1024
+WANTEDVERSION=""
 PATCH="off"
 DEBUG="off"
 DEBUGSTRING=""
 DEBUGOPTIONS=""
 PATCH="off"
 CLEANUP="off"
+KEEPENVASIS="off"
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
   if [[ ${C} == *-t*=* ]]; then
     TARBALL=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-e*=* ]]; then
+  elif [[ ${C} == *-s*=* ]] || [[ ${C} == *-e*=* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
     echo "Using this MEGALIB environment file: ${ENVFILE}"
   elif [[ ${C} == *-m*=* ]]; then
@@ -111,6 +124,10 @@ for C in ${CMD}; do
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-cl*=* ]]; then
     CLEANUP=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-g*=* ]]; then
+    WANTEDVERSION=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-k* ]]; then
+    KEEPENVASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -122,6 +139,8 @@ for C in ${CMD}; do
     exit 1
   fi
 done
+
+
 
 echo ""
 echo ""
@@ -140,6 +159,7 @@ if [ "${TARBALL}" != "" ]; then
   fi
 fi
 
+
 if [ "${ENVFILE}" != "" ]; then
   if [[ ! -f "${ENVFILE}" ]]; then
     echo "ERROR: The chosen environment file cannot be found: ${ENVFILE}"
@@ -148,6 +168,7 @@ if [ "${ENVFILE}" != "" ]; then
     echo " * Using this environment file: ${ENVFILE}"    
   fi
 fi
+
 
 if [ ! -z "${MAXTHREADS##[0-9]*}" ] 2>/dev/null; then
   echo "ERROR: The maximum number of threads must be number and not ${MAXTHREADS}!"
@@ -159,6 +180,7 @@ if [ "${MAXTHREADS}" -le "0" ]; then
 else 
   echo " * Using this maximum number of threads: ${MAXTHREADS}"
 fi
+
 
 DEBUG=`echo ${DEBUG} | tr '[:upper:]' '[:lower:]'`
 if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == no ]] ); then
@@ -177,6 +199,7 @@ else
   exit 0
 fi
 
+
 PATCH=`echo ${PATCH} | tr '[:upper:]' '[:lower:]'`
 if ( [[ ${PATCH} == of* ]] || [[ ${PATCH} == n* ]] ); then
   PATCH="off"
@@ -190,6 +213,7 @@ else
   confhelp
   exit 1
 fi
+
 
 CLEANUP=`echo ${CLEANUP} | tr '[:upper:]' '[:lower:]'`
 if ( [[ ${CLEANUP} == of* ]] || [[ ${CLEANUP} == n* ]] ); then
@@ -206,6 +230,23 @@ else
 fi
 
 
+KEEPENVASIS=`echo ${KEEPENVASIS} | tr '[:upper:]' '[:lower:]'`
+if ( [[ ${KEEPENVASIS} == of* ]] || [[ ${KEEPENVASIS} == n* ]] ); then
+  KEEPENVASIS="off"
+  echo " * Clearing the environment paths LD_LIBRARY_PATH, CPATH"
+  # We cannot clean PATH, otherwise no programs can be found anymore 
+  export LD_LIBRARY_PATH=""
+  export CPATH=""
+elif ( [[ ${KEEPENVASIS} == on ]] || [[ ${KEEPENVASIS} == y* ]] ); then
+  KEEPENVASIS="on"
+  echo " * Keeping the existing environment paths as is."
+else
+  echo " "
+  echo "ERROR: Unknown option for keeping MEGAlib or not: ${KEEPENVASIS}"
+  confhelp
+  exit 1
+fi
+
 
 echo " "
 echo " " 
@@ -218,28 +259,38 @@ if [ "${TARBALL}" != "" ]; then
   
   # Check if it has the correct version:
   VER=`echo ${TARBALL} | awk -Fgeant4. '{ print $2 }' | awk -F.t '{ print $1 }'`;
+  SHORTVER=`echo ${TARBALL} | awk -Fgeant4. '{ print $2 }' | awk -F.t '{ print $1 }' | awk -F.p '{ print $1 }'`;
   echo "Version of Geant4 is: ${VER}"
   
-  bash ${MEGALIB}/config/check-geant4version.sh --good-version=${VER}
-  if [ "$?" != "0" ]; then
-    echo "ERROR: The Geant4 tarball you supplied does not contain an acceptable Geant4 version!"
-    exit 1
+  if [[ ${WANTEDVERSION} != "" ]]; then
+    if [[ ${SHORTVER} != ${WANTEDVERSION} ]]; then
+      echo "ERROR: You stated you want version ${WANTEDVERSION} but the tar ball has version ${SHORTVER}!"
+      exit 1
+    fi
+  else 
+    bash ${MEGALIB}/config/check-geant4version.sh --good-version=${VER}
+    if [ "$?" != "0" ]; then
+      echo "ERROR: The Geant4 tarball you supplied does not contain an acceptable Geant4 version!"
+      exit 1
+    fi
   fi
 else
   # Download it
   
-  # Get desired version:
-  WANTEDVERSION=`bash ${MEGALIB}/config/check-geant4version.sh --get-max`
-  if [ "$?" != "0" ]; then
-    echo "ERROR: Unable to determine required Geant4 version!"
-    exit 1
+  if [[ ${WANTEDVERSION} == "" ]]; then
+    # Get desired version:
+    WANTEDVERSION=`bash ${MEGALIB}/config/check-geant4version.sh --get-max`
+    if [ "$?" != "0" ]; then
+      echo "ERROR: Unable to determine required Geant4 version!"
+      exit 1
+    fi
   fi
   echo "Looking for Geant4 version ${WANTEDVERSION} with latest patch on the Geant4 website --- sometimes this takes a few minutes..."
   
   # Now check Geant4 repository for the given version:
   TESTTARBALL="geant4.${WANTEDVERSION}.tar.gz"
   echo "Trying to find ${TESTTARBALL}..."
-  EXISTS=`curl -s --head http://geant4-data.web.cern.ch/geant4-data/releases/${TESTTARBALL} | grep gzip`
+  EXISTS=`curl -s --head ${WEBSITE}/${TESTTARBALL} | grep gzip`
   if [ "${EXISTS}" == "" ]; then
     echo "ERROR: Unable to find suitable Geant4 tar ball at the Geant4 website"
     exit 1
@@ -248,7 +299,7 @@ else
   for s in `seq -w 01 10`; do
     TESTTARBALL="geant4.${WANTEDVERSION}.p${s}.tar.gz"
     echo "Trying to find ${TESTTARBALL}..."
-    EXISTS=`curl -s --head http://geant4-data.web.cern.ch/geant4-data/releases/${TESTTARBALL} | grep gzip`
+    EXISTS=`curl -s --head ${WEBSITE}/${TESTTARBALL} | grep gzip`
     if [ "${EXISTS}" == "" ]; then
       break
     fi
@@ -261,7 +312,7 @@ else
   if [ -f ${TARBALL} ]; then
     # ... and has the same size
     LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
-    SAMESIZE=`curl -s --head http://geant4-data.web.cern.ch/geant4-data/releases/${TARBALL}`
+    SAMESIZE=`curl -s --head ${WEBSITE}/${TARBALL}`
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to determine remote tarball size"
       exit 1
@@ -274,7 +325,12 @@ else
   fi
   
   if [ "${REQUIREDOWNLOAD}" == "true" ]; then
-    curl -O http://geant4-data.web.cern.ch/geant4-data/releases/${TARBALL}
+    echo "Starting the download."
+    echo "If the download fails, you can continue it via the following command and then call this script again - it will use the download file."
+    echo " "
+    echo "curl -O -C - ${WEBSITE}/${TARBALL}"
+    echo " "
+    curl -O ${WEBSITE}/${TARBALL}
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to download the tarball from the Geant4 website!"
       exit 1
@@ -365,9 +421,9 @@ fi
 
 echo "Unpacking..."
 if ( [[ ${TARBALL} == *.tgz ]] || [[ ${TARBALL} == *.tar.gz ]] ); then
-    tar xvfz ${TARBALL} > /dev/null
+    tar xfz ${TARBALL} > /dev/null
 elif [[ $1 == *.tar ]] ; then
-    tar xvf ${TARBALL} > /dev/null
+    tar xf ${TARBALL} > /dev/null
 else
     echo "ERROR: File has unknown suffix: $1 (known: tgz, tar.gz, tar)"
     exit 1
@@ -398,7 +454,6 @@ fi
 
 echo "Configuring ..."
 cd ${GEANT4BUILDDIR}
-export LD_LIBRARY_PATH=""
 echo "Configure command: cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${GEANT4SOURCEDIR}"
 cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${GEANT4SOURCEDIR}
 if [ "$?" != "0" ]; then
@@ -409,9 +464,9 @@ fi
 
 
 CORES=1;
-if ( `test -f /usr/sbin/sysctl` ); then
+if [[ ${OSTYPE} == darwin* ]]; then
     CORES=`sysctl -n hw.logicalcpu_max`
-elif ( `test -f /proc/cpuinfo` ); then 
+elif [[ ${OSTYPE} == linux* ]]; then 
     CORES=`grep processor /proc/cpuinfo | wc -l`
 fi
 if [ "$?" != "0" ]; then
@@ -503,4 +558,3 @@ fi
 
 echo "SUCCESS!"
 exit 0
-

@@ -51,11 +51,11 @@ class MGUIDummy : public MGUIDialog
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
 
   //! Called when the Ok button has been pressed
-	virtual bool OnOk();
+  virtual bool OnOk();
   //! Called when the Apply or Ok button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
   //! Called when the Cancel button has been pressed
-	virtual bool OnCancel();
+  virtual bool OnCancel();
 
   // private methods:
  private:
@@ -72,7 +72,7 @@ class MGUIDummy : public MGUIDialog
   MGUIData* m_Data;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIDummy, 0) // GUI window for unknown purpose ...
 #endif

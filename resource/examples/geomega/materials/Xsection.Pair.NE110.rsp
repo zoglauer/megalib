@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 1021
+# Derived from Geant4 version 1023
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for NE110
 CE false
-HA 3656419427
+HA 2222694373
 
 R1         1.000000 9.849209e-302
 R1         1.047129 9.849209e-302

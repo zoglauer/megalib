@@ -50,11 +50,10 @@ class MRotation {
   // public interface:
 public:
   //! Default constructor --- creates a unity matrix
-  MRotation() { SetIdentity(); }
+  MRotation() : m_XX(1), m_XY(0), m_XZ(0), m_YX(0), m_YY(1), m_YZ(0), m_ZX(0), m_ZY(0), m_ZZ(1) {}
   //! Constructor --- set all elements individually
-  MRotation(double XX, double YX, double ZX, double XY, double YY, double ZY, double XZ, double YZ, double ZZ) { 
-    Set(XX, YX, ZX, XY, YY, ZY, XZ, YZ, ZZ); 
-  } 
+  MRotation(double XX, double YX, double ZX, double XY, double YY, double ZY, double XZ, double YZ, double ZZ) :
+    m_XX(XX), m_XY(XY), m_XZ(XZ), m_YX(YX), m_YY(YY), m_YZ(YZ), m_ZX(ZX), m_ZY(ZY), m_ZZ(ZZ) {} 
   //! Constructor --- rotate unity matrix by an angle (in rad) along a vector
   MRotation(double Angle, const MVector& Vector) { Set(Angle, Vector); } 
   //! Copy constructor
@@ -120,6 +119,26 @@ public:
   //! Set the bottom row, right component
   void SetZZ(double ZZ) { m_ZZ = ZZ; }  
   
+  //! Return the x-Vector
+  MVector GetX() const { return MVector(m_XX, m_XY, m_XZ); }
+  //! Return the y-Vector
+  MVector GetY() const { return MVector(m_YX, m_YY, m_YZ); }
+  //! Return the z-Vector
+  MVector GetZ() const { return MVector(m_ZX, m_ZY, m_ZZ); }
+  
+  //! Return the polar angle of the x-axis in an unrotated coordiante system 
+  double GetThetaX() const;
+  //! Return the azimuthal angle of the x-axis in an unrotated coordiante system 
+  double GetPhiX() const;
+  //! Return the polar angle of the y-axis in an unrotated coordiante system 
+  double GetThetaY() const;
+  //! Return the azimuthal angle of the y-axis in an unrotated coordiante system 
+  double GetPhiY() const;
+  //! Return the polar angle of the z-axis in an unrotated coordiante system 
+  double GetThetaZ() const;
+  //! Return the azimuthal angle of the z-axis in an unrotated coordiante system 
+  double GetPhiZ() const;
+  
   //! Assignments
   MRotation& operator= (const MRotation& R) { 
     m_XX = R.m_XX; m_YX = R.m_YX; m_ZX = R.m_ZX; m_XY = R.m_XY; m_YY = R.m_YY; m_ZY = R.m_ZY; m_XZ = R.m_XZ; m_YZ = R.m_YZ; m_ZZ = R.m_ZZ; 
@@ -154,6 +173,18 @@ public:
   
   //! Perform an additional rotation by an angle around a vector
   MRotation& Rotate(const double Angle, const MVector& Vector);
+
+  //! Rotate a vector
+  void Rotate(MVector& R) {
+    double X = m_XX*R.m_X + m_YX*R.m_Y + m_ZX*R.m_Z;
+    double Y = m_XY*R.m_X + m_YY*R.m_Y + m_ZY*R.m_Z;
+    double Z = m_XZ*R.m_X + m_YZ*R.m_Y + m_ZZ*R.m_Z;
+    
+    R.m_X = X;
+    R.m_Y = Y;
+    R.m_Z = Z;
+  }
+
   
   // protected methods:
 protected:
@@ -200,6 +231,7 @@ ostream& operator<<(ostream& out, const MRotation& V);
 MVector operator* (const MRotation& L, const MVector& R);
 // Multiply with rotation matrix from right
 MRotation operator* (const MRotation& L, const MRotation& R);
+
 
 
 #endif

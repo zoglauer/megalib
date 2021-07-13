@@ -35,7 +35,8 @@ using namespace std;
 #include "MStreams.h"
 #include "MGUIERAlgorithm.h"
 #include "MGUIOptionsCoincidence.h"
-#include "MGUIOptionsClustering.h"
+#include "MGUIOptionsEventClustering.h"
+#include "MGUIOptionsHitClustering.h"
 #include "MGUIOptionsTracking.h"
 #include "MGUIOptionsCSR.h"
 #include "MGUIOptionsDecay.h"
@@ -47,7 +48,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIRevanMain)
 #endif
 
@@ -68,7 +69,7 @@ MGUIRevanMain::MGUIRevanMain(MInterfaceRevan* Interface, MSettingsRevan* Data)
 
 MGUIRevanMain::~MGUIRevanMain()
 {
-  // Standard destructor - in all normal exit cases the session have already 
+  // Standard destructor - in all normal exit cases the session have already
   // been deleted in CloseWindow
 }
 
@@ -79,20 +80,26 @@ MGUIRevanMain::~MGUIRevanMain()
 void MGUIRevanMain::Create()
 {
   // Create the main window
-  
+
   MGUIMain::Create();
 
   // We start with a name and an icon...
-  SetWindowName("Revan - Real event analyzer");  
+  SetWindowName("Revan - Real event analyzer");
 
   m_MenuReconstruction = new TGPopupMenu(fClient->GetRoot());
+  m_MenuReconstruction->AddLabel("Analysis");
+  m_MenuReconstruction->AddSeparator();
   m_MenuReconstruction->AddEntry("Start Event reconstruction", c_Start);
   m_MenuReconstruction->AddSeparator();
-  m_MenuReconstruction->AddEntry("Selection of algorithm", c_Options);
+  m_MenuReconstruction->AddLabel("Options");
+  m_MenuReconstruction->AddSeparator();
+  m_MenuReconstruction->AddEntry("Selection of general algorithms", c_Options);
+  m_MenuReconstruction->AddSeparator();
   m_MenuReconstruction->AddEntry("Coincidence options", c_OptionsCoincidence);
-  m_MenuReconstruction->AddEntry("Clustering options", c_OptionsClustering);
-  m_MenuReconstruction->AddEntry("Tracking options", c_OptionsTracking);
-  m_MenuReconstruction->AddEntry("Sequencing options", c_OptionsSequencing);
+  m_MenuReconstruction->AddEntry("Event clustering options", c_OptionsEventClustering);
+  m_MenuReconstruction->AddEntry("Hit clustering options", c_OptionsHitClustering);
+  m_MenuReconstruction->AddEntry("Electron tracking options", c_OptionsTracking);
+  m_MenuReconstruction->AddEntry("Compton sequencing options", c_OptionsSequencing);
   //m_MenuReconstruction->AddEntry("Decay options", c_OptionsDecay);
   m_MenuReconstruction->AddSeparator();
   m_MenuReconstruction->AddEntry("General event selections", c_OptionsGeneral);
@@ -119,6 +126,7 @@ void MGUIRevanMain::Create()
   m_MenuApplications->AddEntry("Energy per central track element", c_EnergyPerCentralTrackElement);
   m_MenuApplications->AddEntry("Spatial hit distribution", c_SpatialHitDistribution);
   m_MenuApplications->AddEntry("Spatial energy distribution", c_SpatialEnergyDistribution);
+  m_MenuApplications->AddEntry("Depth profile by detector", c_DepthProfileByDetector);
   // m_MenuApplications->AddEntry("CSR Test statistics", c_CSRTestStatistics);
   m_MenuApplications->AddEntry("Number of clusters", c_NClusters);
   m_MenuApplications->AddEntry("Cluster distribution by detector type before reconstruction", c_DetectorTypeClusterDistributionBefore);
@@ -140,7 +148,7 @@ void MGUIRevanMain::Create()
   // Title:
   MString TitleIcon(g_MEGAlibPath + "/resource/icons/revan/Large.xpm");
   MFile::ExpandFileName(TitleIcon);
-  
+
   m_TitlePicture = fClient->GetPicture(TitleIcon);
   if (m_TitlePicture == 0) {
     mgui<<"Can't find picture "<<TitleIcon<<"! Aborting!"<<error;
@@ -150,7 +158,7 @@ void MGUIRevanMain::Create()
   m_TitleIconLayout = new TGLayoutHints(kLHintsCenterY | kLHintsCenterX, 0, 0, 10, 10);
   AddFrame(m_TitleIcon, m_TitleIconLayout);
 
-  // The status bars  
+  // The status bars
   m_StatusBarGeo->SetContent("Active:", MFile::GetBaseName(m_Data->GetGeometryFileName()));
   m_StatusBarGeo->Create();
   AddFrame(m_StatusBarGeo, m_StatusBarLayout);
@@ -161,7 +169,7 @@ void MGUIRevanMain::Create()
 
 
   MapSubwindows();
-  MapWindow();  
+  MapWindow();
   Layout();
 
   gSystem->ProcessEvents();
@@ -181,7 +189,7 @@ void MGUIRevanMain::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1, 
+bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
                                      long Parameter2)
 {
   // Process the messages for this application
@@ -216,11 +224,15 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
       case c_OptionsCoincidence:
         new MGUIOptionsCoincidence(gClient->GetRoot(), this, m_Data);
         break;
-
-      case c_OptionsClustering:
-        new MGUIOptionsClustering(gClient->GetRoot(), this, m_Data);
+        
+      case c_OptionsEventClustering:
+        new MGUIOptionsEventClustering(gClient->GetRoot(), this, m_Data);
         break;
-
+        
+      case c_OptionsHitClustering:
+        new MGUIOptionsHitClustering(gClient->GetRoot(), this, m_Data);
+        break;
+        
       case c_OptionsSequencing:
         new MGUIOptionsCSR(gClient->GetRoot(), this, m_Data);
         break;
@@ -228,7 +240,7 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
       case c_OptionsDecay:
         new MGUIOptionsDecay(gClient->GetRoot(), this, m_Data);
         break;
-        
+
       case c_Test:
         m_Interface->Test();
         //m_Interface->InitializeEventView();
@@ -240,14 +252,14 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_Spectrum:
-        new MGUIReconstructedSpectrum(gClient->GetRoot(), this, m_Data, OKPressed);        
+        new MGUIReconstructedSpectrum(gClient->GetRoot(), this, m_Data, OKPressed);
         if (OKPressed == true) {
           m_Interface->GenerateSpectra();
         }
         break;
 
       case c_ExportSpectrum:
-        new MGUIExportSpectrum(gClient->GetRoot(), this, m_Data, OKPressed);        
+        new MGUIExportSpectrum(gClient->GetRoot(), this, m_Data, OKPressed);
         if (OKPressed == true) {
           m_Interface->ExportSpectrum();
         }
@@ -296,6 +308,10 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
         m_Interface->SpatialDistribution(true);
         break;
 
+      case c_DepthProfileByDetector:
+        m_Interface->DepthProfileByDetector();
+        break;
+
 //       case c_CSRTestStatistics:
 //         m_Interface->ShowCSRTestStatistics();
 //         break;
@@ -337,7 +353,7 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
   default:
     break;
   }
-  
+
   return true;
 }
 
@@ -387,14 +403,14 @@ void MGUIRevanMain::Open()
   Info.fFileTypes = (const char **) Types;
   Info.fIniDir = StrDup(gSystem->DirName(m_Data->GetCurrentFileName()));
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &Info);
-  
+
   delete [] Types;
-  
+
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
     m_Data->SetCurrentFileName(MString(Info.fFilename));
     UpdateConfiguration();
-  } 
+  }
   // ... or return when cancel has been pressed
   else {
     return;
@@ -433,13 +449,13 @@ void MGUIRevanMain::About()
 
 void MGUIRevanMain::Launch()
 {
-  // This method is called after pressing the MEGA-button in the 
+  // This method is called after pressing the MEGA-button in the
   // M.I.Works main GUI:
   // The reconstruction is started.
-  
+
   MString Name = m_Data->GetCurrentFileName();
 
-  if (Name.EndsWith("sim") == false && Name.EndsWith("evta") == false && 
+  if (Name.EndsWith("sim") == false && Name.EndsWith("evta") == false &&
       Name.EndsWith("sim.gz") == false && Name.EndsWith("evta.gz") == false) {
     mgui<<"The input file of Revan needs to have the suffix \"sim\", \"sim.gz\", \"evta\", or \"evta.gz\"!"<<error;
     return;

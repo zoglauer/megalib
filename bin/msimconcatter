@@ -42,6 +42,14 @@ ConcatFileName=${ConcatFileName%.}
 if [[ "${ConcatFileName}" == "" ]]; then
   ConcatFileName="Concat"
 fi 
+# If it exists, add a random number
+if [[ -f "${ConcatFileName}.sim" ]] || [[ -f "${ConcatFileName}.sim.gz" ]]; then
+ConcatFileName+="."
+  for i in `seq 1 5`; do
+    ConcatFileName+=$(( ( RANDOM % 10 )  + 1 ))
+  done
+fi
+
 # Append suffix
 ConcatFileName+=".sim"
 
@@ -95,6 +103,9 @@ echo " " >> ${ConcatFileName}
 # Zip the concatenation file if desired
 if [[ "${Zip}" == "yes" ]]; then
   gzip ${ConcatFileName}
+  ConcatFileName+=".gz"
 fi
+
+echo "Created concatenation file ${ConcatFileName}"
 
 exit 0;

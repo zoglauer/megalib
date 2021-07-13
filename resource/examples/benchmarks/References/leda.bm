@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  leda
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 18.04
+Kernel:                                    4.15.0-54-generic
+ 
+CPUModel:                                  AMD Ryzen 7 2700X Eight-Core Processor
+CPUName:                                   Ryzen 7 2700X
+CPUSockets:                                1
+CPUCoresPerSocket:                         8
+CPUThreadsPerCore:                         2
+Cores:                                     8
+Threads:                                   16
+ 
+ROOTVersion:                               6.18/00
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            2.99.11
+MEGAlibGitHash:                            6873835b66b792c3834574a6aa234800f306b7e5 2019-08-19
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      24.513
+EventsPerSecondCosimaSingle:               4079.468
+DurationCosimaMultiple:                    42.744
+EventsPerSecondCosimaMultiple:             37432.154
+ 
+# Revan
+DurationRevanSingle:                       5.116
+EventsPerSecondRevanSingle:                19546.520
+DurationRevanMultiple:                     8.870
+EventsPerSecondRevanMultiple:              180383.314
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             17.857
+EventsPerSecondResponseCreatorSingle:      5600.044
+DurationResponseCreatorMultiple:           30.015
+EventsPerSecondResponseCreatorMultiple:    53306.679
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               53.904
+EventsPerSecondMimrecImagingSingle:        1855.149
+DurationMimrecImagingMultiple:             9.133
+EventsPerSecondMimrecImagingMultiple:      10949.304
+ 

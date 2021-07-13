@@ -43,7 +43,7 @@ class MResponseCreator
   bool ParseCommandLine(int argc, char** argv);
 
   //! Interrupt the analysis
-  void Interrupt() { if (m_Creator != 0) m_Creator->Interrupt(); }
+  void Interrupt() { if (m_Creator != 0) m_Creator->Interrupt(); m_Interrupt = true; }
 
 
   // protected methods:
@@ -73,17 +73,18 @@ class MResponseCreator
   MString m_ResponseName;
 
   //! Current operation mode
-  int m_Mode;
+  unsigned int m_Mode;
   //! Only verify the reconstruction approach
   bool m_Verify;
 
   //! Event ID to start analysis with
-  int m_StartEvent;
-  //! Maximum Number of analysed events (not stop ID) 
-  int m_MaxNEvents;
-  //! Save after so many analyzed events the response file 
-  int m_SaveAfter;
-
+  unsigned long m_StartEvent;
+  //! Maximum Number of analysed events (not stop ID)
+  unsigned long m_MaxNEvents;
+  //! Save after so many analyzed events the response file
+  unsigned long m_SaveAfter;
+  
+  
   //! Name of the revan configuration file
   MString m_RevanCfgFileName;
   //! Name of the mimrec configuration file
@@ -91,25 +92,47 @@ class MResponseCreator
 
   //! Don't look at absorptions when in multiple Compton mode
   bool m_NoAbsorptions;
-  
+  //! Maximum number of interactions to look at in Compton mode
+  unsigned int m_MaxNInteractions;
+  //! TMVA methods to use (default BDTD)
+  MString m_TMVAMethodsString;
+
   //! Compress the output response files
   bool m_Compress;
 
+  //! The interrupt flag
+  bool m_Interrupt;
+  
   //! Modes
-  const static int c_ModeUnknown                   = 0;
-  const static int c_ModeTracks                    = 1;
-  const static int c_ModeComptons                  = 2;
-  const static int c_ModeComptonsLens              = 3;
-  const static int c_ModeVerify                    = 4;
-  const static int c_ModeImagingListMode           = 5;
-  const static int c_ModeImagingBinnedMode         = 6;
-  const static int c_ModeImagingCodedMask          = 7;
-  const static int c_ModeEarthHorizon              = 8;
-  const static int c_ModeFirstInteractionPosition  = 9;
-  const static int c_ModeSpectral                  = 10;
-  const static int c_ModeARM                       = 11;
+  enum MResponseModes {
+    c_ModeUnknown,
+    c_ModeTracks,
+    c_ModeComptons,
+    c_ModeComptonsEventFile,
+    c_ModeComptonsLens,
+    c_ModeComptonsNeuralNetwork,
+    c_ModeComptonsTMVA,
+    c_ModeVerify,
+    c_ModeImagingListMode,
+    c_ModeImagingBinnedMode,
+    c_ModeImagingCodedMask,
+    c_ModeEarthHorizon,
+    c_ModeFirstInteractionPosition,
+    c_ModeSpectral,
+    c_ModeARM,
+    c_ModeEfficiency,
+    c_ModeEfficiencyNearField,
+    c_ModeClusteringDSS,
+    c_ModeEventQuality,
+    c_ModeStripPairingTMVAEventFile,
+    c_ModeEventQualityTMVAEventFile,
+    c_ModeComptelDataSpace,
+    c_ModeEventClusterizerTMVAEventFile,
+    c_ModeEventClusterizerTMVA
+  };
 
-#ifdef ___CINT___
+
+#ifdef ___CLING___
  public:
   ClassDef(MResponseCreator, 0) // no description
 #endif

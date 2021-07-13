@@ -18,9 +18,10 @@ commandhelp() {
   echo "  --source=[file name]: The cosima source file name"
   echo "  --rundir=[directory name]: Unique directory where to store the files"
   echo "  --instanceid=[number]: ID of this run instance"
-  echo "  --rsynccfg=[file name]: Fil;e where to store the rsync parameters"
+  echo "  --rsynccfg=[file name]: File where to store the rsync parameters"
   echo "  --remote=[remote machine in format simy@128.32.13.12:21022]: If given check the remote machine, if not the local"
   echo "  --zip: Compress the output file"
+  echo "  --log=[log file name]: File where to dump information"
   echo "  --help: Show this help."
   echo ""
   echo "";
@@ -54,6 +55,8 @@ SOURCE=""
 RUNDIR=""
 INSTANCEID=""
 ZIP="FALSE"
+LOGFILE=""
+LOGGING="tee"
 CFG="~/.dcosima.cfg"
 
 # Overwrite default options with user options:
@@ -68,6 +71,8 @@ for C in "${CMD[@]}"; do
     RUNDIR=`echo ${C} | awk -F"=" '{ print $2 }'` 
   elif [[ ${C} == *-i*=* ]]; then
     INSTANCEID=`echo ${C} | awk -F"=" '{ print $2 }'` 
+  elif [[ ${C} == *-l*=* ]]; then
+    LOGFILE=`echo ${C} | awk -F"=" '{ print $2 }'` 
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
   elif [[ ${C} == *-h* ]]; then
@@ -77,7 +82,7 @@ for C in "${CMD[@]}"; do
   else
     echo ""
     echo "ERROR: Unknown command line option: ${C}"
-    echo "       See \"dcosima-getinstances --help\" for a list of options"
+    echo "       See \"dcosima-runinstance --help\" for a list of options"
     exit 1
   fi
 done
@@ -105,9 +110,17 @@ if [ "${RUNDIR}" != "" ]; then
   echo " * Run directory: ${RUNDIR}"
 else
   echo " "
-  echo "ERROR: You need to give an unique run ID to setup the instance"
+  echo "ERROR: You need to give an unique directory from where to launch the simulations"
   commandhelp
   exit 1
+fi
+
+
+if [ "${LOGFILE}" != "" ]; then
+  echo " * Logging output to file: ${LOGFILE}"
+  LOGGING="tee -a ${LOGFILE}" 
+else
+  LOGGING="tee"
 fi
 
 
@@ -131,64 +144,63 @@ fi
 echo " "
 
 
-
-echo "Preparing for launch ${INSTANCEID}:"
-echo " " 
+echo "Preparing to launch instance ${INSTANCEID}:" | ${LOGGING}
+echo " "
 
 
 # Check if the host is available:
-echo "* Checking if host is available..."
+echo " * Checking if host is available..."
 REMOTECOMMAND='hostname'
-HOST=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
+HOST=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
 if [ "$?" != "0" ]; then
-  echo "ERROR: Failed to access the host"
+  echo "ERROR: Failed to access the host" | ${LOGGING}
   exit 1
 fi
-echo "  --> Host ${HOST} is accessible"
+echo "   --> Host ${HOST} is accessible"
 
 
 # Check if cosima is available:
-echo "* Checking if host has cosima installed..."
-AVAILABLE=`ssh -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; type cosima > /dev/null" 2>&1`
+echo " * Checking if host has cosima installed..."
+AVAILABLE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; type cosima > /dev/null" 2>&1`
 if [ "${AVAILABLE}" != "" ]; then
-  echo "ERROR: Cosima not found!"
+  echo "ERROR: Cosima not found!" | ${LOGGING}
   exit 1
 fi
-echo "  --> Cosima found on machine"
+echo "   --> Cosima found on machine"
 
 
 # Check if we have a configuration file
-echo "* Checking if host has a dcosima configuration file"
-CONFIGFILE=`ssh -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -f ~/.dcosima.cfg ]]; then exit 1; fi; exit 0;"`
+echo " * Checking if host has a dcosima configuration file"
+CONFIGFILE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -f ~/.dcosima.cfg ]]; then exit 1; fi; exit 0;"`
 if [ "$?" != "0" ]; then
-  echo "ERROR: dcosima configuration file not found"
+  echo "ERROR: dcosima configuration file not found" | ${LOGGING}
   exit 1
 fi
-echo "  --> Cosima configuration file found"
+echo "   --> Cosima configuration file found"
 
 
 # Check if we have a global directory defined in the configuration file, if yes we will use that one
-echo "* Checking for remote global directory..."
+echo " * Checking for remote global directory..."
 REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
-MASTERDIR=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
+MASTERDIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
 if [ "$?" != "0" ]; then
-  echo "ERROR: Failed to read the remote master directory to store the simulations"
-  echo "       Make sure you have a directory in the remote .dcosima.cfg file"
+  echo "ERROR: Failed to read the remote master directory to store the simulations" | ${LOGGING}
+  echo "       Make sure you have a directory in the remote .dcosima.cfg file" | ${LOGGING}
   exit 1
 fi
 MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
 if [ "${MASTERDIR}" == "" ]; then
-  echo "ERROR: Failed to read the remote master directory to store the simulations"
-  echo "       Make sure you have a directory in the remote .dcosima.cfg file"
+  echo "ERROR: Failed to read the remote master directory to store the simulations" | ${LOGGING}
+  echo "       Make sure you have a directory in the remote .dcosima.cfg file" | ${LOGGING}
   exit 1
 fi
-echo "  --> Master directory: ${MASTERDIR}"
+echo "   --> Master directory: ${MASTERDIR}"
 
 
 # Check if we have a nice level defined in the configuration file, if yes we will use that one
-echo "* Checking for nice level..."
+echo " * Checking for nice level..."
 REMOTECOMMAND='COUNT=`grep -c ^nice ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^nice ~/.dcosima.cfg; fi;'
-NICELEVEL=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
+NICELEVEL=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to read remote nice level"
   exit 1
@@ -196,28 +208,28 @@ fi
 if [ "${NICELEVEL}" != "" ]; then
   NICELEVEL=`echo ${NICELEVEL} | awk '{ print $2 }'`
   if [[ ! ${NICELEVEL} =~ ^[0-9]+$ ]]; then 
-    echo "WARNING: Cannot parse nice level. Assuming 0.";
+    echo "WARNING: Cannot parse nice level. Assuming 0." | ${LOGGING}
     NICELEVEL="0"
   fi
 else
   NICELEVEL="0"
 fi
-echo "  --> Nice level: ${NICELEVEL}"
+echo "   --> Nice level: ${NICELEVEL}"
 
 
 # Make global directory
 echo " * Testing/making remote global directory \"${MASTERDIR}\"..." 
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -d ${MASTERDIR} ]]; then mkdir ${MASTERDIR}; fi; exit 0;"
+ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -d ${MASTERDIR} ]]; then mkdir ${MASTERDIR}; fi;"
 if [ "$?" != "0" ]; then
-  echo "ERROR: Failed to create remote global directory"
+  echo "ERROR: Failed to create remote global directory" | ${LOGGING}
   exit 1
 fi
 
 # Make special directory relative to master dir
 echo " * Making remote working directory..." 
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "cd ${MASTERDIR}; if [[ ! -d ${RUNDIR} ]]; then mkdir ${RUNDIR}; fi"
+ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "cd ${MASTERDIR}; if [[ ! -d ${RUNDIR} ]]; then mkdir ${RUNDIR}; fi"
 if [ "$?" != "0" ]; then
-  echo "ERROR: Failed to create remote working directory"
+  echo "ERROR: Failed to create remote working directory" | ${LOGGING}
   exit 1
 fi
 
@@ -229,17 +241,17 @@ mkdir ${TMPDIR}
 FILES=`dcosima-assemblefiles --s=${SOURCE} --d=${TMPDIR}`
 if [ "$?" != "0" ]; then
   rm -r ${TMPDIR}
-  echo "ERROR: Failed to assemble files"
+  echo "ERROR: Failed to assemble files" | ${LOGGING}
   exit 1
 fi
 
 
 # Copy files to remote directory
 echo " * Copying files..." 
-rsync -az -e "ssh -p ${REMOTEPORT}" /tmp/${RUNDIR} ${REMOTEUSER}@${REMOTEHOST}:${MASTERDIR}
+rsync -az -e "ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT}" /tmp/${RUNDIR} ${REMOTEUSER}@${REMOTEHOST}:${MASTERDIR}
 if [ "$?" != "0" ]; then
   rm -r ${TMPDIR}
-  echo "ERROR: Failed to copy files"
+  echo "ERROR: Failed to copy files" | ${LOGGING}
   exit 1
 fi
 rm -r ${TMPDIR}
@@ -247,16 +259,22 @@ rm -r ${TMPDIR}
 
 # Start the simulation:
 echo " * Starting simulations..."
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCE} > /dev/null 2>&1 &"
+SOURCEFILE=$( basename ${SOURCE} )
+for N in `seq 1 8`; do SEED="${SEED}$(( RANDOM%10 ))"; done
+OUT="/dev/null"
+if [[ ${LOGFILE} != "" ]]; then
+  OUT="Sim.inc${INSTANCEID}.log"
+fi
+ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -t ${RUNDIR} -v 0 -s ${SEED} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCEFILE} > ${OUT} 2>&1 &"
 if [ "$?" != "0" ]; then
-  echo "ERROR: Failed to start the simulations"
+  echo "ERROR: Failed to start the simulations" | ${LOGGING}
   exit 1
 fi
 
 
 # Appending to the dcosima-rsync configuration file
 echo " * Adding to the rsync setup file"
-NEWLINE="rsync -az -e 'ssh -p ${REMOTEPORT}' ${REMOTEUSER}@${REMOTEHOST}:${MASTERDIR}/${RUNDIR}/\* ."
+NEWLINE="rsync -az --append-verify -e 'ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT}' ${REMOTEUSER}@${REMOTEHOST}:${MASTERDIR}/${RUNDIR}/\* ."
 EXISTS=0
 if [ -f ${RUNDIR}/dcosima-rsync.cfg ]; then
   while read LINE; do
@@ -270,6 +288,6 @@ if [ "${EXISTS}" == "0" ]; then
   echo ${NEWLINE} >> ${RUNDIR}/dcosima-rsync.cfg
 fi
 
-echo " * Done launching a simulation instance on ${REMOTEHOST}"
+echo " * Done launching a simulation instance on ${REMOTEHOST}" | ${LOGGING}
 
 exit 0

@@ -92,7 +92,7 @@ class MSimCluster
   //! Volume history of theis hit
   MDVolumeSequence* m_VolumeSequence;   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSimCluster, 0) // no description
 #endif

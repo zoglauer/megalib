@@ -17,12 +17,12 @@
 
 
 // ROOT libs:
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MParser.h"
 #include "MTokenizer.h"
+#include "MString.h"
 
 // Standard libs:
 #include <vector>
@@ -48,6 +48,10 @@ class MFileResponse : public MParser
   virtual bool Open(MString FileName, unsigned int Way = 1);
   //! Return the name - available after a call to Open
   MString GetName() const { return m_Name; }
+  //! Return the number of simulated events
+  long GetSimulatedEvents() const { return m_NumberOfSimulatedEvents; }
+  //! Return the far field start area
+  double GetFarFieldStartArea() const { return m_FarFieldStartArea; }
   //! Are the values centered
   bool AreValuesCentered() const { return m_ValuesCentered; }
   //! Are the values centered
@@ -70,12 +74,16 @@ class MFileResponse : public MParser
  protected:
   //! Name of the response matrix
   MString m_Name;
+  //! The number of simulated events
+  long m_NumberOfSimulatedEvents;
+  //! The area from which the photons are started in far field
+  double m_FarFieldStartArea;
   //! Are the values stored cenetered
   bool m_ValuesCentered;
   //! The hash value
   unsigned long m_Hash;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileResponse, 0) // no description
 #endif

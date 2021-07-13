@@ -48,7 +48,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIAbout)
 #endif
 
@@ -150,7 +150,7 @@ void MGUIAbout::Create()
     m_IconFrame->AddFrame(m_Icon, m_IconLayout);
   } else {
     FontStruct_t LabelFont;
-    LabelFont = gClient->GetFontByName("-*-helvetica-bold-r-*-*-24-*-*-*-*-*-iso8859-1");	
+    LabelFont = gClient->GetFontByName("-*-helvetica-bold-r-*-*-24-*-*-*-*-*-iso8859-1"); 
     TGGC* m_Graphics = new TGGC(TGLabel::GetDefaultGC());
     m_Graphics->SetFont(gVirtualX->GetFontHandle(LabelFont));
     TGLabel* m_Title = new TGLabel(AboutFrame, new TGString(m_ProgramName), m_Graphics->GetGC(), LabelFont);

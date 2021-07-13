@@ -22,26 +22,40 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MPhysicalEvent.h"
+#include "MPhysicalEventHit.h"
 
 // Forward declarations:
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! A reconstructed Compton event
 class MComptonEvent : public MPhysicalEvent
 {
   // Public Interface:
  public:
+  //! Default constructor
   MComptonEvent();
+  //! Default destructor
   virtual ~MComptonEvent();
 
-  // Initilisations
+  // Initilizations
+  //! Copy the content of this Compton event into this one
   bool Assimilate(MComptonEvent* Compton);
+  //! Copy the content of this physical event (which nees to be castable to a MComptonEvent) into this one
   bool Assimilate(MPhysicalEvent* Event); 
+  //! Initialize 
   bool Assimilate(const MVector& C1, const MVector& C2, const MVector& De, const double Ee, const double Eg);
+  //! Initialize from a list of ORDERED physical hits
+  bool Assimilate(const vector <MPhysicalEventHit> Hits);
+  //! Initialize from a text line
   bool Assimilate(char* LineBuffer);
+  
+  //! Steam the content of this class into a file
   virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
+  //! Parse a line 
   virtual int ParseLine(const char* Line, bool Fast = false);
   //! Create a copy of this event
   virtual MPhysicalEvent* Duplicate();
@@ -51,7 +65,7 @@ class MComptonEvent : public MPhysicalEvent
 
 
   // Basic data:
-
+  
   //! Set the energy of the scattered gamma-ray
   void SetEg(const double EnergyGamma) { m_Eg = EnergyGamma; }
   //! Set the energy error of the scattered gamma-ray
@@ -139,7 +153,10 @@ class MComptonEvent : public MPhysicalEvent
   inline double TrackQualityFactor1() const { return m_TrackQualityFactor1; }
   inline double TrackQualityFactor2() const { return m_TrackQualityFactor2; }
 
-  inline double LeverArm() const { return m_LeverArm; }
+  inline double FirstLeverArm() const { return (m_C2 - m_C1).Mag(); }
+  inline double MinLeverArm() const { return (m_C2 - m_C1).Mag(); }  // Depreciated
+  inline double AnyLeverArm() const { return m_LeverArm; } // bad naming
+  inline double LeverArm() const { return AnyLeverArm(); } // bad naming
 
 
 
@@ -185,20 +202,27 @@ class MComptonEvent : public MPhysicalEvent
   MTime CoincidenceWindow() const { return m_CoincidenceWindow; }
 
 
-  //! Return the Angular Resolution Measure value for the gamma cone for the given test position
-  double GetARMGamma(const MVector& Position) const;
-  //! Return the Angular Resolution Measure value for the electron cone for the given test position
-  double GetARMElectron(const MVector& Position) const;
-  //! Return the Scatter Plane Deviation value for the given test position
-  double GetSPDElectron(const MVector& Position) const;
+  //! Return the Angular Resolution Measure value for the gamma cone for the given test position in the given coordinate system
+  double GetARMGamma(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+  //! Return the Angular Resolution Measure value for the electron cone for the given test position in the given coordinate system
+  double GetARMElectron(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+  //! Return the Scatter Plane Deviation value for the given test position in the given coordinate system
+  double GetSPDElectron(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
 
   //! Representation of the Kleine Nishina cross-section value of this events data
   double GetKleinNishina() const;
 
+  //! Return the Klein Nishina value for the given incident photon energy and Compton scatter angle 
   static double GetKleinNishina(const double Ei, const double phi);
+  //! Unknown if this is correct...
   static double GetKleinNishinaNormalized(const double Ei, const double phi); // Normalized to Max = 1
+  //! Unknown if this is correct...
   static double GetKleinNishinaNormalizedByArea(const double Ei, const double phi);
 
+  //! Return a randomly sampled Compton scatter angle using the Klein-Nishina eqaution for the given
+  //! incidence photon energy (algorithm: Butcher & Messel: Nuc Phys 20(1960), 15)
+  static double GetRandomPhi(const double Ei);
+  
   //! Return the Compton scatter angle
   double PhiUncertainty(); // const;
 
@@ -214,10 +238,18 @@ class MComptonEvent : public MPhysicalEvent
   MString ToBasicString() const;
 
   // To do: Implement all different possibilities...
+  
+  //! Calculate the recoil electron energy Ee using the total scatter angle theta in radians and the scattered gamma-ray energy Eg
   static double ComputeEeViaThetaEg(const double Theta, const double Eg);
+  //! Calculate the scattered gamma ray energy Eg using the total scatter angle theta in radians and the recoil electron energy Ee
   static double ComputeEgViaThetaEe(const double Theta, const double Ee);
+  //! Calculate the Compton scatter angle phi in radians using the recoil electron energy Ee and the scattered gamma ray energy Eg
   static double ComputePhiViaEeEg(const double Ee, const double Eg);
+  //! Calculate the cosine of the Compton scatter angle phi in radians using the recoil electron energy Ee and the scattered gamma ray energy Eg
+  static double ComputeCosPhiViaEeEg(const double Ee, const double Eg);
+  //! Calculate the recoil electron energy Ee using the Compton scatter angle phi in radians and the scattered gamma ray energy Eg
   static double ComputeEeViaPhiEg(const double Phi, const double Eg);
+  //! Calculate the recoil electron energy Ee using the Compton scatter angle phi in radians and the total energy Ei
   static double ComputeEeViaPhiEi(const double Phi, const double Ei);
 
   double CalculateThetaViaAngles() const;
@@ -248,11 +280,12 @@ class MComptonEvent : public MPhysicalEvent
 
   // protected members:
  public:
-  // basic data:
+  // Basic data:
 
   //! Energy of scattered gamma ray
-  double m_Eg;        
-  double m_dEg;       // its error
+  double m_Eg;
+  //! Uncertainty of the scattered gamma-ray energy
+  double m_dEg;
   double m_Ee;        // Energy of recoil electron
   double m_dEe;       // its error
   
@@ -265,7 +298,7 @@ class MComptonEvent : public MPhysicalEvent
   MVector m_De;        // Direction of electron path
   MVector m_dDe;       // its error
 
-  double m_ToF;       // Time of flight between first and seconf interaction
+  double m_ToF;       // Time of flight between first and second interaction
   double m_dToF;      // its error
 
   double m_ClusteringQualityFactor;    // Value of the test statistics/probability of the clustering algorithm
@@ -274,7 +307,8 @@ class MComptonEvent : public MPhysicalEvent
   double m_ComptonQualityFactor1;    // Value of the test statistics of CSR
   double m_ComptonQualityFactor2;    // Value of the test statistics of CSR
 
-  // Advance data:
+  
+  // Advanced data:
   double m_Ei;        // Energy of initial gamma-ray
   double m_dEi;       // its error
 
@@ -310,7 +344,7 @@ class MComptonEvent : public MPhysicalEvent
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MComptonEvent, 1)
 #endif

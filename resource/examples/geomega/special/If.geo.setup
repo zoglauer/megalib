@@ -1,0 +1,138 @@
+# Test geometry for if and for conditions
+
+Name IfForTest
+Version 2.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+Volume GeWafer
+GeWafer.Material Germanium
+GeWafer.Shape BOX 4.0 4.0 0.5
+GeWafer.Position 0 0 0 
+GeWafer.Mother WorldVolume
+
+
+
+Echo "Test 0 start"
+Constant Test0 0
+If { Test0 > 0 }
+   For I { Test0 } -1.0 1.0
+       Echo "Test 0 not Passed"
+   Done
+Else
+  Echo "Test 0 passed"
+EndIf
+
+
+Echo "Test A start"
+If { 1 == 2 || 2 == 2 }
+	Echo "Test A passed"
+Else
+  Echo "Test A not passed"
+Endif 
+
+
+Echo "Test B start"
+If { false }
+	Echo "Test B not Passed"
+Else
+  Echo "Test B assed"
+Endif 
+
+
+Echo "Test C start"
+If { true }
+	Echo "Test C passed"
+Else
+  Echo "Test C not Passed"
+Endif 
+
+
+Echo "Test D start"
+For I 5 0 1
+  If { $I > 3 }
+    Echo "Test D passed if > 3: $I"
+  Else
+    Echo "Test D passed if <= 3: $I"
+  EndIf
+Done
+
+
+Echo "Test E start"
+Constant TestE 0
+If { TestE > 0 }
+   For I { TestE } -1.0 1.0
+       Echo "Test E not Passed"
+   Done
+Else
+  Echo "Test E passed"
+EndIf
+
+
+#------------------------------------------------------------
+# Detector and trigger section:
+
+
+MDStrip3D                  ActiveDetector
+
+ActiveDetector.DetectorVolume      GeWafer
+ActiveDetector.SensitiveVolume     GeWafer
+
+ActiveDetector.StructuralPitch     0.0   0.0    0.0
+ActiveDetector.StructuralOffset    0.0   0.0    CryoTotalHeight
+
+ActiveDetector.Offset              1.0   1.0
+ActiveDetector.StripNumber         40    40
+
+ActiveDetector.NoiseThreshold      15
+ActiveDetector.TriggerThreshold    30
+
+ActiveDetector.DepthResolution     10  0.02
+ActiveDetector.DepthResolution     100  0.02
+ActiveDetector.DepthResolution     1000  0.02
+
+ActiveDetector.EnergyResolution Gaus 10      10        0.417   
+ActiveDetector.EnergyResolution Gaus 20      20        0.425           
+ActiveDetector.EnergyResolution Gaus 50      50        0.4375    
+ActiveDetector.EnergyResolution Gaus 100     100       0.454     
+ActiveDetector.EnergyResolution Gaus 200     200       0.492     
+ActiveDetector.EnergyResolution Gaus 500     500       0.5875      
+ActiveDetector.EnergyResolution Gaus 1000    1000      0.7217       
+ActiveDetector.EnergyResolution Gaus 2000    2000      0.9317      
+ActiveDetector.EnergyResolution Gaus 5000    5000      1.3819       
+ActiveDetector.EnergyResolution Gaus 10000   10000     1.9094                     
+ActiveDetector.EnergyResolution Gaus 100000  100000    5.907      
+   
+ActiveDetector.GuardringEnergyResolution 100 1.5
+ActiveDetector.GuardringEnergyResolution 1000 1.5
+ActiveDetector.GuardringTriggerThreshold 40
+
+
+
+// Trigger: at least one hit in one Germanium detector  
+Trigger ActiveDetectorTrigger
+ActiveDetectorTrigger.Veto false
+ActiveDetectorTrigger.TriggerByDetector true
+ActiveDetectorTrigger.Detector ActiveDetector 1
+
+Trigger Detector7_GRTrigger
+Detector7_GRTrigger.Veto true
+Detector7_GRTrigger.TriggerByDetector True
+Detector7_GRTrigger.GuardringDetector ActiveDetector 1
+
+
+

@@ -46,7 +46,7 @@ class MGUISignificance : public MGUIDialog
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // private methods:
@@ -68,7 +68,7 @@ class MGUISignificance : public MGUIDialog
 
   bool& m_OkPressed;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUISignificance, 0) // Dialogbox: Select the Significance-parameters
 #endif

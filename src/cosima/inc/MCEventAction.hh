@@ -89,12 +89,20 @@ public:
              G4ThreeVector SecondaryMomentumDirection,
              G4ThreeVector SecondaryPolarization,
              double SecondaryEnergy);
+  ///! Set the Galactic pointing 
+  void SetGalacticPointing(double XLat, double XLong, double ZLat, double ZLong);
+  ///! Set the Detector orientation 
+  void SetDetectorPointing(double XTheta, double XPhi, double ZTheta, double ZPhi);
   /// Add a passive material output information
   void AddDepositPassiveMaterial(double Energy, string MaterialName);
-
+  /// Add a comment
+  void AddComment(string Comment);
+  
   /// Interrupts the executon at the end of the next event
   void Interrupt() { m_Interrupt = true; }
-
+  /// Return if there should be an interrupt
+  bool GetInterrupt() const { return m_Interrupt; }
+  
   // protected methods:
 protected:
   /// Write the file header 
@@ -165,6 +173,10 @@ private:
   /// Assigned fixed incarnation ID of the output file(s)
   //int m_IncarnationID;
 
+  /// ID of the current event
+  long m_ID;
+  
+  
   /// The temporary store of the simulated event
   MSimEvent* m_Event;
 
@@ -174,14 +186,17 @@ private:
   unsigned int m_StoreSimulationInfoVersion;
   /// True if hits as posiiton/enrgy and not as bars/strips should be written to the file  
   G4bool m_StoreCalibrated;
-  /// True if only events with which have triggered should be stored
-  G4bool m_StoreOnlyTriggeredEvents;
   /// True if each hit in its own event
   G4bool m_StoreOneHitPerEvent;
-
+  /// The minimum energy an event must have before it is stored
+  double m_StoreMinimumEnergy;
+  
   /// Precision (number of digits after '.') for scientific storage
   int m_StoreScientificPrecision;
 
+  /// The pre-trigger mode (either store everything, only events with hits, or fully pretriggered events)
+  int m_PreTriggerMode;
+  
   /// A timer stopping the real event action time
   MTimer m_Timer;
   /// The total time spent during all event actions:

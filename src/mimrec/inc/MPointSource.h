@@ -93,6 +93,7 @@ class MPointSource
   static const unsigned int c_ExtensionPointLike;
   static const unsigned int c_ExtensionDiskLike;
 
+  static const unsigned int c_SpectrumUnknown;
   static const unsigned int c_SpectrumMono;
   static const unsigned int c_SpectrumPowerLaw;
   static const unsigned int c_SpectrumPowerLawExpCutoff;
@@ -109,6 +110,8 @@ class MPointSource
   static const unsigned int c_ObjectFSRQ;
   static const unsigned int c_ObjectSNR;
   static const unsigned int c_ObjectCloud;
+  static const unsigned int c_ObjectHMXB;
+  static const unsigned int c_ObjectLMXB;
 
   // protected methods:
  protected:
@@ -177,7 +180,7 @@ class MPointSource
 
   friend ostream& operator<<(ostream& os, const MPointSource& P);
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPointSource, 0)
 #endif

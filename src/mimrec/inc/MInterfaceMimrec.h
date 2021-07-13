@@ -77,19 +77,21 @@ class MInterfaceMimrec : public MInterface
 
   //! Perform the default image reconstruction
   void Reconstruct(bool Animate = false);
-  //! Interrupt the default image reconstrcution
-  void InterruptReconstruction();
   //! Create a significance map
   void SignificanceMap();
   
-	void ShowEventSelections();
-	void ShowEventSelectionsStepwise();
-	void ExtractEvents();
+  void ShowEventSelections();
+  void ShowEventSelectionsStepwise();
+  void ExtractEvents();
 
   void ThetaOriginDistribution();
 
+  //! The classic ARM gamma distribution
   void ARMGamma();
-  void ARMGammaVsCompton();
+  //! Distribution of ARM values of the gamma-ray vs. the Compton scatter angle
+  void ARMGammaVsComptonScatterAngle();
+  //! 2D Histogram of Phi Calculated via kinemetics vs. Phi calculated via geometry
+  void PhiKinVsPhiGeo();
   void ARMGammaVsDistance();
   void ARMGammaVsComptonProbability();
   void ARMGammaVsClusteringProbability();
@@ -108,6 +110,8 @@ class MInterfaceMimrec : public MInterface
   void ARMResponseComparison();
   void AngularResolutionPairs();
   void AngularResolutionVsQualityFactorPair();
+  //! The resolution measure for PET events
+  void ResolutionMeasurePET();
 
   void EnergySpectra();
   
@@ -119,7 +123,8 @@ class MInterfaceMimrec : public MInterface
   
   void InitialEnergyDeposit();
   void EnergyDistributionD2();
-  void TimeDistribution();
+  //! Show the light curve, i.e. distribution
+  void LightCurve();
   void CoincidenceWindowDistribution();
   void TimeWalkDistribution();
   void TimeWalkArmDistribution();
@@ -136,12 +141,19 @@ class MInterfaceMimrec : public MInterface
   void OpeningAnglePair();
   void SequenceLengths();
   void LocationOfInitialInteraction();
+  void DirectionScatteredGammaRay();
 
   // Show the pointing (z-axis) of the instrument in galactic coordinates
   void PointingInGalacticCoordinates();
 
+  // Create an orientstion file for cosima from an existing observation
+  void CreateCosimaOrientationFile();
+
   // Show the horizon zenith in spherical detector coordinates
   void HorizonInSphericalDetectorCoordinates();
+  
+  //! Create an exposure map
+  void CreateExposureMap();
   
   void SelectIds();
 
@@ -150,7 +162,12 @@ class MInterfaceMimrec : public MInterface
 
   // protected methods:
  protected:
-  bool InitializeEventloader(MString File = "");
+  //! Intialize the event loader
+  bool InitializeEventLoader(MString File = "");
+  //! Get the next event
+  MPhysicalEvent* GetNextEvent(bool Checks = false);
+  //! Finalize the event loader
+  void FinalizeEventLoader();
 
 private:
 
@@ -160,38 +177,24 @@ private:
 
   // protected members:
  protected:
-  MSettingsMimrec* m_Data;                   // All the information of the GUI
+  //! All the settings from the UI
+  MSettingsMimrec* m_Settings;
+  
+  //! The default used event file
+  MFileEventsTra* m_EventFile;
+  //! The default used event selector
+  MEventSelector* m_Selector;
 
-  double* m_Sensitivities;             // Sensitivity image
-  double** m_SingleBackprojection;      // Single backprojection
-  double* m_FirstBackprojection;       // First backprojection
-  double* m_Image;                     // Image after ML-iterations
+  //! The image reconstructor
+  MImager* m_Imager;
 
-  int m_NExecutedIterations;          // Number of performed iterations
-	int m_NEvents;
-
-	bool m_ThreadAActive;
-
-	int m_ThreadCounter;
-	int m_EventCounter;
-
-  MFileEventsTra *m_EventFile;
-  MEventSelector *m_Selector;
+  //! In automatic mode, save the canvas to this file
+  MString m_OutputFileName;
 
   // private members:
  private:
-  bool m_Interrupt;              // true: the precomputation has been interrupted
 
-  MImager *m_Imager;
-
-  MMath m_Maths;
-
-	MImage *m_IImage;
-
-	// In automatic mode, save the canvas to this file
-  MString m_OutputFileName;
-
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MInterfaceMimrec, 0) // image reconstruction management class 
 #endif

@@ -67,7 +67,7 @@ class MGUIEText : public MGUIElement
   bool m_IsItalic;                // True if text is italic
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEText, 0) // GUI window for unkown purpose ...
 #endif

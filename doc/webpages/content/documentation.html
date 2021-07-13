@@ -1,0 +1,93 @@
+<!-- neodym-config
+Type:              Article
+MenuLevel:         1
+MenuEntry:         6
+MenuTitle:         Documentation
+-->
+
+
+<neodym-body>
+
+<h1>Documentation</h1>
+
+<h2>Papers and posters</h2>
+<p>For a general overview consider reading <a href="documents/Zoglauer_MEGAlib.pdf">"MEGAlib - Medium Energy Gamma-ray Astronomy Library"</a>, or <a href="documents/2008_Zoglauer_MEGAlib_SPIE.pdf">"MEGAlib - Simulation and Data Analysis for Low-to-medium-energy Gamma-ray Telescopes"</a>. For details about the algorithms refer to  <a href="documents/Zoglauer_PhD.pdf">Andreas Zoglauer, "First Light for the Next Generation of Compton and Pair Telescopes"</a> and <a href="documents/Schopper_PhD.pdf">Florian Schopper, "Entwicklung eines Teleskops zur Abbildung von Gammastrahlung mittels Comptonstoss und Paarerzeugung"</a>. For a detailed insight into simulations with Cosima see <a href="documents/Zoglauer_Cosima.pdf">"Cosima - the Cosmic Simulator of MEGAlib"</a></p>
+<p>Moreover, you might want to take a look at the following posters: <a href="documents/MEGAlib.SPIE.Poster.pdf">"MEGAlib - Simulation and Data Analysis for Low-to-medium-energy Gamma-ray Telescopes"</a>, <a href="documents/Geomega.SanFrancisco2006.pdf">"Geomega: MEGAlib's geometry and detector description tool for Geant3, MGGPOD, and Geant4"</a> and <a href="documents/Realta.final.pdf">"Realta: MEGAlib's real-time analyzer for gamma-ray detectors"</a>.
+
+<h2>Manuals</h2>
+
+<p>For detailed installation instructions, read the <a href="https://raw.github.com/zoglauer/megalib/master/doc/Installation.pdf">installation manual</a>.
+How to build a geometry is explained in the <a href="https://raw.github.com/zoglauer/megalib/master/doc/Geomega.pdf">Geomega manual</a>.
+Simulations can be learned by reading <a href="https://raw.github.com/zoglauer/megalib/master/doc/Cosima.pdf">Cosima manual</a>.</p> 
+
+<h2>Examples</h2>
+
+<p>There are many examples in the directory MEGAlib/resource/examples, the ones in the advanced section even come with a read-me file!</p>
+
+
+
+<h2>Quick start guides</h2>
+
+<h3>A Crab-like source</h3>
+
+This example shows the data analysis path from simulation to imaging for a Crab-like source using the MEGA satellite geometry.<br/>
+
+<h4>Looking at geometries with Geomega</h4>
+
+<p>Geomega is MEGAlib's tool to manage geometries. In addition, it is used to apply detector effects (energy resolution, position resolution, thresholds, etc.) to the data. Do the following to look at a geometry, here the MEGA satellite geometry:</p>
+
+<pre>geomega -f resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup</pre>
+
+<p>In order to view the geometry, do: Analysis → View geometry. If you don’t see the geometry, check the command line for errors and correct them! In the geometry window, clicking View → View With → OpenGL gives you a nicer OpenGL view of the geometry. See the help button in the openGL window for more information,</p>
+
+
+<h4>Generation of a simulation file</h4>
+
+<p>Simulation are done with a program called cosima - the Cosmic simulator of MEGAlib. In this example we simulate a Crab-like source. For this you simply call:</p>
+
+<pre>cosima resource/examples/cosima/source/CrabOnly.source</pre>
+
+<p>... and wait until the simulation has finished. The name of the simulation file will be: CrabOnlyObservation.inc1.id1.sim</p>
+
+
+<h4>Reconstructing the data with revan</h4>
+
+<p>Revan performs the Compton event reconstruction. Start revan with the geometry and the simulation file name:</p>
+
+<pre>revan -f CrabOnlyObservation.inc1.id1.sim -g resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup</pre>
+
+<p>Now you have to select the correct reconstruction options. In Reconstruction → Selection of general algorithms, set the coincidence search to none, clustering to adjacent voxels, electron tracking to Spearman-Rank, and Compton tracking to Classic Compton Sequence reconstruction without energy recovery. In Reconstruction → Electron Tracking Options, make sure that search for Comptons is on, the numbers are set to 2, 1, 6, and in the bottom make sure that SStrip is selected. in Reconstruction → Compton Sequence Reconstruction, select "Only look at sequences with start in D1", "Use two-site events without track", "First hit has to be in 2D strip detector", and set the numbers to 0, 1000, 7. Finally in Reconstruction → General event selections, set the number to 0 to 10000, 0 to 1000, -1 to -1.</p>
+
+<p>Now you can start the reconstruction with Reconstruction → Start event reconstruction.  This creates a file called CrabOnlyObservation.inc1.id1.tra, which contains the Compton reconstructed data.
+
+
+
+<h4>Creating an image with mimrec</h4>
+
+<p>Now we want to create an image with mimrec. Start mimrec via:</p>
+
+<pre>mimrec -f CrabOnlyObservation.inc1.id1.tra -g resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup</pre>
+
+<p>Now you have to set the correct reconstruction options.</p>
+
+<p>In Selections → Event selections: Type and ID: Make sure both Compton event types are choosen. Energy: Set the first window to 900 - 10000. Scattering: Make sure to select all Compton scatter angles (0-180), 180 of maximum deviation, and that the upper energy ranges are above 10000. Lengths: Both distance to 0-100, length of Compton sequence 2-7, length of electron track: 1-100. Quality: Set all to 0..100. Earth: Choose None. Origins: Make sure nopthing is selected. Pointing: Do not use pointing. Beam: Do not select anything.</p>
+
+<p> In Selections → Coordinate System: Spherical</p>
+
+<p>In Imaging → General dimensions: Set the x-vector to 0, 0, 1 and the z-vector to 1, 0, 0 - this rotates the coordinate system so that the source will be centered. Set theta to 0, 180, 180, and phi to -180, 180, 360.</p>
+
+<p>In Imaging → Reconstruction algorithm: Set Classic EM and 20 iterations</p>
+
+<p>In Imaging → Response Type Selections: Choose the first option</p>
+
+<p>In Imaging → Response Parameter: Set the first 3 numbers to: 1.5, 60, 5. Make sure "Use absoprtion probabilities" is NOT selected.</p>
+
+<p>Now press start to create the image. A point source should appear in the center of the image.</p>
+
+
+<p>If you want to look at the spectrum click Response → Energy spectrum. Set the number of bins to 100, ignore the rest.<br/>
+
+
+
+
+</neodym-body>

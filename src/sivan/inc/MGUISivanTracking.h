@@ -54,7 +54,7 @@ class MGUISivanTracking : public MGUIDialog
   TGLayoutHints* m_RBLayout;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUISivanTracking, 0) // no description
 #endif

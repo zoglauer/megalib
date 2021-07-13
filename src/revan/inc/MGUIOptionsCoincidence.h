@@ -42,7 +42,7 @@ class MGUIOptionsCoincidence : public MGUIDialog
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
   // private methods:
  private:
@@ -60,7 +60,7 @@ class MGUIOptionsCoincidence : public MGUIDialog
   MGUIEEntry* m_Window;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsCoincidence, 0)
 #endif

@@ -41,7 +41,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MFileEventsSim)
 #endif
 
@@ -49,11 +49,11 @@ ClassImp(MFileEventsSim)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MFileEventsSim::MFileEventsSim(MDGeometryQuest* Geo) : MFileEvents()
+MFileEventsSim::MFileEventsSim(MDGeometryQuest* Geometry) : MFileEvents()
 {
   // Construct an instance of MFileEventsSim
 
-  m_Geo = Geo;
+  m_Geometry = Geometry;
   Init();
 }
 
@@ -65,7 +65,7 @@ MFileEventsSim::MFileEventsSim() : MFileEvents()
 {
   // Construct an instance of MFileEventsSim
 
-  m_Geo = 0;
+  m_Geometry = nullptr;
 
   Init();
 }
@@ -87,11 +87,7 @@ void MFileEventsSim::Init()
 {
   // Construct an instance of MFileEventsSim
 
-  m_EventId = c_NoId;
-  m_IsFirstEvent = true;
-
   m_FileType = "sim";
-
   m_SimulationStartAreaFarField = 0.0;
 }
 
@@ -103,20 +99,18 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
 {
   // Open the file
 
-  if (m_Geo == 0) {
+  if (m_Geometry == nullptr) {
     mout<<"Error while opening file "<<m_FileName<<": "<<endl;
     mout<<"No geometry present"<<endl;    
     return false;
   }
 
-  massert(m_Geo != 0);
-
   m_IncludeFileUsed = false;
-  if (m_IncludeFile != 0) {
+  if (m_IncludeFile != nullptr) {
     delete m_IncludeFile; 
   }
   m_IncludeFile = new MFileEventsSim();
-  dynamic_cast<MFileEventsSim*>(m_IncludeFile)->SetGeometry(m_Geo);
+  dynamic_cast<MFileEventsSim*>(m_IncludeFile)->SetGeometry(m_Geometry);
   m_IncludeFile->SetIsIncludeFile(true);
 
   if (MFileEvents::Open(FileName, Way) == false) {
@@ -128,21 +122,17 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
   m_HasSimulatedEvents = false;
 
   if (Way == c_Read) {
-    if (m_Geo->IsScanned() == false) {
+    if (m_Geometry->IsScanned() == false) {
       mout<<"We do not have a properly initialized geometry!"<<endl;
       return false;
     }
-    m_EventId = -1;
-    m_IsFirstEvent = true;
 
-    // Find some initial keyword:
+    // Find some initial keywords - but read at least until first SE or IN:
     MString Line;
-    unsigned int MaxAdvanceRead = 100;
     while (IsGood() == true) {
-      if (MaxAdvanceRead-- == 0) break;
-      ReadLine(Line);
+      if (ReadLine(Line) == false) break;
       
-      if (Line.BeginsWith("SimulationStartAreaFarField") == true) {
+      if (Line.BeginsWith("SimulationStartAreaFarField") == true || Line.BeginsWith("StartAreaFarField") == true) {
         MTokenizer Tokens;
         Tokens.Analyze(Line);
         if (Tokens.GetNTokens() != 2) {
@@ -152,9 +142,17 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
           m_SimulationStartAreaFarField = Tokens.GetTokenAtAsDouble(1);
           break;
         }
+      } else if (Line.BeginsWith("IN") == true) {
+        break; 
+      } else if (Line.BeginsWith("SE") == true) {
+        break; 
       }
     }
   }
+  
+  
+  // Now rewind - we need a clean slate for the GetNextEvent parser
+  MFile::Rewind();
 
   return true;
 }
@@ -214,124 +212,154 @@ long MFileEventsSim::GetSimulatedEvents()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MFileEventsSim::UpdateObservationTimes(MSimEvent* Event)
+{
+  //! Update the observation times using the given event
+  
+  // If the overall observation time has alreday been set, don't change anything
+  if (m_HasObservationTime == true) return;
+  
+  // Otherwise set everything
+  if (m_HasStartObservationTime == false) {
+    m_StartObservationTime = Event->GetTime();
+    m_HasStartObservationTime = true;
+  }
+  m_EndObservationTime = Event->GetTime();
+  m_HasEndObservationTime = true;
+  
+  // Do not set m_HasObservationTime
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
 {
-  // Return the next event... or 0 if it is the last one
-  // So remember to test for more events!
-
+  // Return the next event... or nullptr if it is the last one
+  // So remember to test for no more events!
+  
+  // Start with updating the progress, return 0 if cancel has pressed
+  if (UpdateProgress() == false) return nullptr;  
+  
+  
+  MSimEvent* SimEvent = nullptr;
+  
   if (m_IncludeFileUsed == true) {
-    MSimEvent* RE = ((MFileEventsSim*) m_IncludeFile)->GetNextEvent(Analyze);
-    if (RE == 0) {
+    SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
+    if (SimEvent == nullptr) {
+      if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
+      if (m_Canceled == true) return nullptr;
     } else {
-      return RE;
+      UpdateObservationTimes(SimEvent);
+      return SimEvent;
     }
   }
 
-  if (UpdateProgress() == false) return 0;
-
-  // Unfortunately the SE has options which need to be parsed and the event has no
-  // end event tag. This complicates the reading process as follows:
-
-  MSimEvent* Event = new MSimEvent();
-  Event->SetGeometry(m_Geo);
-  if (m_EventId != c_NoId) {
-    Event->SetID(m_EventId);
-  }
-
+  bool BeyondFirstSE = true;
+  if (GetFilePosition() == 0) BeyondFirstSE = false;
+  
   MString Line;
   while (IsGood() == true) {
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
-
+    
     if (Line[0] == 'S' && Line[1] == 'E') {
-      
-      if (sscanf(Line.Data(), "SE %ld", &m_EventId) != 1) {
-        if (sscanf(Line.Data(), "SE %ld;%*d;%*d;%*d", &m_EventId) != 1) {
-          m_EventId = c_NoId;
+      if (BeyondFirstSE == true) { // If this is not the first event...
+        if (SimEvent != nullptr) {
+          if (Analyze == true) {
+            SimEvent->Analyze();
+          }
+          UpdateObservationTimes(SimEvent);
         }
-        m_EventId = c_NoId;
-      }
-
-      if (m_IsFirstEvent == false) {
-        if (Analyze == true) {
-          Event->Analyze();
-        }
-        return Event;
+        return SimEvent;
       } else {
-        m_IsFirstEvent = false;
+        BeyondFirstSE = true;
+        SimEvent = new MSimEvent();
+        SimEvent->SetGeometry(m_Geometry);
       }
-
     } else if (Line[0] == 'N' && Line[1] == 'F') {
       if (OpenNextFile(Line) == 0) {
         mout<<"Did not find a valid continuation file..."<<endl;
-        return 0;
+        return nullptr;
       }
 
-      if (m_IsFirstEvent == false) {
+      if (SimEvent != nullptr) {
         if (Analyze == true) {
-          Event->Analyze();
+          SimEvent->Analyze();
         }
-        m_IsFirstEvent = true;
-        return Event;
-      } 
+        UpdateObservationTimes(SimEvent);
+        return SimEvent;
+      }
     } 
     // Include another file:
     else if (Line[0] == 'I' && Line[1] == 'N') {
 
       if (OpenIncludeFile(Line) == true) {
-        // We we already had an event, but its empty
-        if (m_IsFirstEvent == false && Event->GetNIAs() == 0 && Event->GetNHTs() == 0) {
-          merr<<"A file should not have events AND \"IN\" keywords! The *last* event is lost"<<show;
+        
+        if (SimEvent != nullptr) {
+          merr<<"A sim file should either contain includes IN or events and not both!"<<endl;
+          delete SimEvent;
+          SimEvent = nullptr;
         }
-        delete Event;
-        Event = ((MFileEventsSim*) m_IncludeFile)->GetNextEvent(Analyze);
-        if (Event == 0) {
+        
+        SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
+        if (SimEvent == nullptr) {
           m_IncludeFile->Close();
-          m_IncludeFileUsed = false;
-
-          // Since we always need to have an event here:
-          Event = new MSimEvent();
-          Event->SetGeometry(m_Geo);
+          m_IncludeFileUsed = false;;
         } else {
-          return Event;
+          UpdateObservationTimes(SimEvent);
+          return SimEvent;
         }
       } else {
         m_IncludeFile->Close();
         m_IncludeFileUsed = false;
-       }
+      }
     } 
     // The end of file keyword
     else if (Line[0] == 'E' && Line[1] == 'N') {
       // What ever we decide to do next, first read the footer in continue mode
       ReadFooter(true);
       
-      if (m_IsFirstEvent == false) {
+      if (SimEvent != nullptr) {
         if (Analyze == true) {
-          Event->Analyze();
+          SimEvent->Analyze();
         }
-        m_IsFirstEvent = true;
-        return Event;
-      } 
+        UpdateObservationTimes(SimEvent);
+        return SimEvent;
+      }
     } 
     // All other keyword directly related to an event
     else {
-      // Let the raw event scan the line 
-      Event->AddRawInput(Line, m_Version);
+      // Let the raw event scan the line
+      if (BeyondFirstSE == true) {
+        if (SimEvent == nullptr) {
+          SimEvent = new MSimEvent();
+          SimEvent->SetGeometry(m_Geometry);
+        }
+        SimEvent->AddRawInput(Line, m_Version);
+      }
     }
   }
 
-  // That's a dirty little trick, but currently no case exits where a sim file has neither no IAs or no HTs...
-  if (Event->GetNIAs() != 0 || Event->GetNHTs() != 0) {
-    return Event;
+  // That's a dirty little trick in case we forgot the EN in the file
+  // Works since there is currently no case where a sim file has neither no IAs or no HTs...
+  if (SimEvent != nullptr && (SimEvent->GetNIAs() != 0 || SimEvent->GetNHTs() != 0)) {
+    UpdateObservationTimes(SimEvent);
+    return SimEvent;
   }
 
   // The end of the (master) file has been reached...
   ShowProgress(false);
-  delete Event;
 
-  return 0;
+  // Final clean up
+  if (SimEvent != nullptr) {
+    delete SimEvent;
+  }
+
+  return nullptr;
 }
 
 
@@ -351,7 +379,7 @@ bool MFileEventsSim::AddText(const MString& Text)
   if (m_IsOpen == false) return false;
 
   if (m_IncludeFileUsed == true) {
-    ((MFileEventsSim*) m_IncludeFile)->AddText(Text);
+    dynamic_cast<MFileEventsSim*>(m_IncludeFile)->AddText(Text);
     if (m_IncludeFile->GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
@@ -383,7 +411,7 @@ bool MFileEventsSim::AddEvent(MSimEvent* Event)
   if (m_IsOpen == false) return false;
 
   if (m_IncludeFileUsed == true) {
-    ((MFileEventsSim*) m_IncludeFile)->AddEvent(Event);
+    dynamic_cast<MFileEventsSim*>(m_IncludeFile)->AddEvent(Event);
     if (m_IncludeFile->GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }

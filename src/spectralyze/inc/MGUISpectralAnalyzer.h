@@ -57,7 +57,7 @@ class MGUISpectralAnalyzer : public MGUIDialog
  protected:
   virtual void Create();
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // private methods:
@@ -79,10 +79,10 @@ class MGUISpectralAnalyzer : public MGUIDialog
   
   TGTab* m_MainTab;
 
-		//  MGUIEEntry* m_HistBinsSpectralyzer;
-	MGUIEEntry* m_SignaltoNoiseRatio;
-	MGUIEEntry* m_PoissonLimit;	
-//	MGUIEEntry* m_DeconvolutionLimit;
+    //  MGUIEEntry* m_HistBinsSpectralyzer;
+  MGUIEEntry* m_SignaltoNoiseRatio;
+  MGUIEEntry* m_PoissonLimit; 
+//  MGUIEEntry* m_DeconvolutionLimit;
   MGUIEFileSelector* m_IsotopeFile;
   MGUIEEntry* m_EnergyWindow;
   
@@ -91,7 +91,7 @@ class MGUISpectralAnalyzer : public MGUIDialog
   enum ButtenIds { c_TBD = 140 };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUISpectralAnalyzer, 0) // gui window for basic event selections
 #endif

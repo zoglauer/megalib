@@ -46,7 +46,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDMaterial)
 #endif
 
@@ -74,9 +74,6 @@ MDMaterial::MDMaterial()
   }
 
   m_Name = g_StringNotDefined;
-  m_ShortName = g_StringNotDefined;
-  m_OriginalMGeantShortName = g_StringNotDefined;
-  m_MGeantShortName = g_StringNotDefined;
 
   m_Density = g_DoubleNotDefined;
   m_Sensitive = g_IntNotDefined;
@@ -93,7 +90,7 @@ MDMaterial::MDMaterial()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDMaterial::MDMaterial(MString Name, MString ShortName, MString MGeantShortName)
+MDMaterial::MDMaterial(MString Name)
 {
   // default constructor
 
@@ -104,7 +101,7 @@ MDMaterial::MDMaterial(MString Name, MString ShortName, MString MGeantShortName)
     m_ID = m_IDCounter++;
   }
 
-  SetName(Name, ShortName, MGeantShortName);
+  SetName(Name);
 
   m_Density = g_DoubleNotDefined;
   m_Sensitive = g_IntNotDefined;
@@ -146,11 +143,10 @@ MDMaterial* MDMaterial::GetDummyMaterial()
   if (s_DummyMaterial == 0) {
     // We do not have to care about the name, because it can not be used from
     // within the setup file
-    s_DummyMaterial = new MDMaterial("GeomegaDummy", "GDUM", "GeomegaDummy");
+    s_DummyMaterial = new MDMaterial("GeomegaDummy");
     s_DummyMaterial->SetDensity(1E-12);
     s_DummyMaterial->SetRadiationLength(1E+12);
-    s_DummyMaterial->SetComponent(1.0, 1.0, 1.0, MDMaterialComponent::c_ByAtoms);
-    s_DummyMaterial->SetSensitivity(1);
+    s_DummyMaterial->SetComponentByAtomicWeighting("H", 1); 
     s_DummyMaterial->Validate();
   }
 
@@ -161,7 +157,7 @@ MDMaterial* MDMaterial::GetDummyMaterial()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MDMaterial::ConvertZToNumber(MString Name)
+int MDMaterial::ConvertNameToAtomicNumber(MString Name)
 {
   static const int MaxElements = 111;
   static const char* Elements[] = {"H" ,"He","Li","Be","B" ,"C" ,"N" ,"O" ,"F" ,"Ne","Na","Mg",
@@ -186,7 +182,7 @@ int MDMaterial::ConvertZToNumber(MString Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::ConvertZToString(int Z)
+MString MDMaterial::ConvertAtomicNumberToName(int Z)
 {
   static const int MaxElements = 111;
   static const char* Elements[] = {"H" ,"He","Li","Be","B" ,"C" ,"N" ,"O" ,"F" ,"Ne","Na","Mg",
@@ -212,124 +208,17 @@ MString MDMaterial::ConvertZToString(int Z)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDMaterial::SetName(MString Name, MString ShortName, MString MGeantShortName)
-{
-  // Set all names...
-
-  m_Name = Name;
-  m_ShortName = ShortName;
-  m_OriginalMGeantShortName = MGeantShortName;
-  m_MGeantShortName = "M" + MGeantShortName;
-  m_MGeantShortName.ToLower();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDMaterial::GetName() const
-{
-  // Return the name of this material
-  
-  return m_Name;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDMaterial::GetShortName() const
-{
-  // Return the name of this material
-  
-  return m_ShortName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDMaterial::GetMGeantShortName() const
-{
-  // Return the name of this material
-  
-  return m_MGeantShortName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDMaterial::GetOriginalMGeantShortName() const
-{
-  // Return the short name created by MDGeometry::CreateShortName()
-  // Only used in ShortNameExists!
-  
-  return m_OriginalMGeantShortName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDMaterial::SetDensity(double Density)
+bool MDMaterial::SetDensity(double Density)
 {
   // Set the density of this material
 
-  m_Density = Density;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDMaterial::SetRadiationLength(double RadiationLength)
-{
-  // Set the radiation length of this material
-
-  massert(RadiationLength > 0);
-
-  m_RadiationLength = RadiationLength;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDMaterial::SetComponent(MDMaterialComponent* C) 
-{
-  m_Components.push_back(C); 
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDMaterial::SetComponent(double A, double Z, 
-                              double Weight, int Type)
-{
-  // The the component data, atomic mass, number of protons number of atoms per molecule
-
-  m_Components.push_back(new MDMaterialComponent(A, Z, Weight, Type));
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MDMaterial::SetComponent(MString Name, double Weight, int Type)
-{
-  // The the component data, atomic mass, number of protons number of atoms per molecule
-
-  MDMaterialComponent* C = new MDMaterialComponent();
-  if (C->SetElement(Name) == false) {
-    delete C;
-    return false;
+  if (Density <= 0.0) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"The density must be positive: "<<Density<<endl;
+    return false;    
   }
-  C->SetWeight(Weight);
-  C->SetType(Type);
   
-  m_Components.push_back(C);
+  m_Density = Density;
   
   return true;
 }
@@ -338,24 +227,116 @@ bool MDMaterial::SetComponent(MString Name, double Weight, int Type)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDMaterial::SetSensitivity(int Sensitive)
+bool MDMaterial::SetRadiationLength(double RadiationLength)
 {
-  // 1 if this is a sensitive material
+  // Set the radiation length of this material
 
-  massert(Sensitive >= 0);
-
-  m_Sensitive = Sensitive;
+  if (RadiationLength <= 0.0) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"The radiation length must be positive: "<<RadiationLength<<endl;
+    return false;    
+  }
+  
+  m_RadiationLength = RadiationLength;
+  
+  return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MDMaterial::GetID() const
+bool MDMaterial::SetComponent(MDMaterialComponent* Component) 
 {
-  //
+  if (Component == nullptr) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"The component is not allowed to be a null pointer."<<endl;
+    return false;    
+  }
+  
+  m_Components.push_back(Component);
+  
+  return true;
+}
 
-  return m_ID;
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set a component by atomic weighting
+bool MDMaterial::SetComponentByAtomicWeighting(double AtomicWeight, int AtomicNumber, int Weighting)
+{
+  MDMaterialComponent* Component = new MDMaterialComponent();
+  if (Component->SetByAtomicWeighting(AtomicWeight, AtomicNumber, Weighting) == false) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"Unable to create the component."<<endl;    
+    delete Component;
+    return false;
+  }
+  
+  m_Components.push_back(Component);
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set a component by atomic weighting with natural composition
+bool MDMaterial::SetComponentByAtomicWeighting(MString Name, int Weighting)
+{
+  MDMaterialComponent* Component = new MDMaterialComponent();
+  if (Component->SetByAtomicWeighting(Name, Weighting) == false) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"Unable to create the component."<<endl;    
+    delete Component;
+    return false;
+  }
+  
+  m_Components.push_back(Component);
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set a component by mass weighting
+bool MDMaterial::SetComponentByMassWeighting(double AtomicWeight, int AtomicNumber, double Weighting)
+{
+  MDMaterialComponent* Component = new MDMaterialComponent();
+  if (Component->SetByMassWeighting(AtomicWeight, AtomicNumber, Weighting) == false) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"Unable to create the component."<<endl;    
+    delete Component;
+    return false;
+  }
+  
+  m_Components.push_back(Component);
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set a component by mass weighting with natural composition
+bool MDMaterial::SetComponentByMassWeighting(MString Name, double Weighting)
+{
+  MDMaterialComponent* Component = new MDMaterialComponent();
+  if (Component->SetByMassWeighting(Name, Weighting) == false) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"Unable to create the component."<<endl;    
+    delete Component;
+    return false;
+  }
+  
+  m_Components.push_back(Component);
+  
+  return true;
 }
 
 
@@ -382,7 +363,12 @@ MString MDMaterial::GetCrossSectionFileDirectory() const
 
 double MDMaterial::GetAbsorptionCoefficient(double Energy) const
 {
-  if (m_CrossSectionsPresent == false) return 0;
+  if (m_CrossSectionsPresent == false) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"No cross section present."<<endl;    
+    return 0;
+  }
+  
   return m_TotalCrossSection.GetInterpolated(Energy);
 }
 
@@ -392,7 +378,12 @@ double MDMaterial::GetAbsorptionCoefficient(double Energy) const
 
 double MDMaterial::GetComptonAbsorptionCoefficient(double Energy) const
 {
-  if (m_CrossSectionsPresent == false) return 0;
+  if (m_CrossSectionsPresent == false) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"No cross section present."<<endl;    
+    return 0;
+  }
+  
   return m_ComptonCrossSection.GetInterpolated(Energy);
 }
 
@@ -402,7 +393,12 @@ double MDMaterial::GetComptonAbsorptionCoefficient(double Energy) const
 
 double MDMaterial::GetPhotoAbsorptionCoefficient(double Energy) const
 {
-  if (m_CrossSectionsPresent == false) return 0;
+  if (m_CrossSectionsPresent == false) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"No cross section present."<<endl;    
+    return 0;
+  }
+  
   return m_PhotoCrossSection.GetInterpolated(Energy);
 }
 
@@ -412,7 +408,12 @@ double MDMaterial::GetPhotoAbsorptionCoefficient(double Energy) const
 
 double MDMaterial::GetPairAbsorptionCoefficient(double Energy) const
 {
-  if (m_CrossSectionsPresent == false) return 0;
+  if (m_CrossSectionsPresent == false) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"No cross section present."<<endl;    
+    return 0;
+  }
+  
   return m_PairCrossSection.GetInterpolated(Energy);
 }
 
@@ -422,258 +423,13 @@ double MDMaterial::GetPairAbsorptionCoefficient(double Energy) const
 
 double MDMaterial::GetRayleighAbsorptionCoefficient(double Energy) const
 {
-  if (m_CrossSectionsPresent == false) return 0;
+  if (m_CrossSectionsPresent == false) {
+    mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+    mout<<"No cross section present."<<endl;    
+    return 0;
+  }
+  
   return m_RayleighCrossSection.GetInterpolated(Energy);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDMaterial::GetGeant3DIM() const
-{
-  // Return the Geant3 dimensions
-
-  if (m_Components.size() == 1) return MString("");
-
-  ostringstream out;
-
-  //  out<<"******     Material: "<<m_Name<<endl;
-  out<<"      REAL A"<<m_ShortName<<",Z"<<m_ShortName<<",W"<<m_ShortName<<endl;
-  out<<"      DIMENSION A"<<m_ShortName<<"("<<m_Components.size()<<"),Z"
-     <<m_ShortName<<"("<<m_Components.size()<<"),W"
-     <<m_ShortName<<"("<<m_Components.size()<<")"<<endl<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDMaterial::GetGeant3DATA() const
-{
-  // Return the DATA.string for geant3
-
-  ostringstream out;
-
-  //if (m_Components->GetLast() == 0) return MString("");
-  if (m_Components.size() == 1) return MString("");
-  out.setf(ios::fixed, ios::floatfield);
-  //out.precision(2);
-  out<<"      DATA A"<<m_ShortName<<"/"<<m_Components[0]->GetA();
-  for (unsigned int i = 1; i < m_Components.size(); i++) {
-    out<<","<<m_Components[i]->GetA();
-  }
-  out<<"/"<<endl;
-      
-  out<<"      DATA Z"<<m_ShortName<<"/"<<m_Components[0]->GetZ();
-  for (unsigned int i = 1; i < m_Components.size(); i++) {
-    out<<","<<m_Components[i]->GetZ();
-  }
-  out<<"/"<<endl;
-
-  out<<"      DATA W"<<m_ShortName<<"/"<<m_Components[0]->GetWeight();
-  for (unsigned int i = 1; i < m_Components.size(); i++) {
-    out<<","<<m_Components[i]->GetWeight();
-  }
-  out<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDMaterial::GetGeant3() const
-{
-  // Return the GSMATE/GSMIXT tables
-
-  ostringstream out;
-
-  out.setf(ios::scientific, ios::floatfield);
-  //out.precision(3);
-
-  out<<endl<<"***** Material: "<<m_Name<<endl;
-  if (m_Components.size() == 1) {
-    out<<"      CALL GSMATE("<<m_ID<<",'M"<<m_ShortName<<"$',"
-       <<m_Components[0]->GetA()<<","<<m_Components[0]->GetZ()
-       <<","<<m_Density<<","<<m_RadiationLength<<",0.0,UBUF,0)"<<endl;
-  } else {
-    if (m_Components[0]->GetType() == MDMaterialComponent::c_ByAtoms) {
-      out<<"      CALL GSMIXT("<<m_ID<<",'M"<<m_ShortName<<"$',A"
-         <<m_ShortName<<",Z"<<m_ShortName<<","<<m_Density
-         <<",-"<<m_Components.size()<<",W"<<m_ShortName<<")"<<endl;
-    } else {
-      out<<"      CALL GSMIXT("<<m_ID<<",'M"<<m_ShortName<<"$',A"
-         <<m_ShortName<<",Z"<<m_ShortName<<","<<m_Density
-         <<",+"<<m_Components.size()<<",W"<<m_ShortName<<")"<<endl;
-    }
-  }
-
-  out<<"      CALL GSTMED("<<m_ID<<",'M"<<m_ShortName<<"$',"
-     <<m_ID<<","<<m_Sensitive<<",0,0.,0.,-1.E-4,-1.E-6,1.E-3,-0.,UBUF,0)"<<endl;
-  out<<"      ZMNAME("<<m_ID<<") = \""<<m_Name<<"\""<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDMaterial::GetMGeant() const
-{
-  // Fetch material data in MGEANT/MGGPOD format
-  // Guest author RMK Jan-2004
-
-  ostringstream out;
-  //out.precision(3);
-
-  // Z <= 100 is enforced by MDMaterialComponent!
-  const char* elem[] = {"H ","He","Li","Be","B ","C ","N ","O ","F ","Ne","Na","Mg",
-		  "Al","Si","P ","S ","Cl","Ar","K ","Ca","Sc","Ti","V ","Cr",
-		  "Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
-		  "Rb","Sr","Y ","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd",
-		  "In","Sn","Sb","Te","I ","Xe","Cs","Ba","La","Ce","Pr","Nd",
-		  "Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
-		  "Ta","W ","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po",
-		  "At","Rn","Fr","Ra","Ac","Th","Pa","U ","Np","Pu","Am","Cm",
-		  "Bk","Cf","Es","Fm","Md","No","Lr"};
-
-  out<<endl<<"! "<<m_Name<<endl;
-
-  MString ShortName = m_MGeantShortName;
-  ShortName.ToUpper();
-
-  // For a single-component material (MGEANT user materials start at number 17)
-  if (GetNComponents() == 1) {
-
-
-    // using geant MATE only for vacuum:
-    if (GetComponentAt(0)->GetZ() == 0 || GetComponentAt(0)->GetA() == 0) {
-      out<<"mate "<<setw(3)<<m_ID+16<<"  "<<ShortName<<"  ";
-      out<<m_Components[0]->GetA()<<"  ";
-      out<<m_Components[0]->GetZ()<<"  ";
-      out.setf(ios::scientific, ios::floatfield);
-      out<<m_Density<<"  "<<m_RadiationLength<<" "<<" 1.0  0"<<endl;
-      out.setf(ios::fmtflags(0), ios::floatfield);
-    } 
-    // using MGEANT umix to get natural isotopic abundance
-    else {
-      // This has been enforced elsewhere, but...
-      int Element = 1;
-      if (int(GetComponentAt(0)->GetZ()) < 1) {
-        mout<<"   ***  Severe warning  ***  in material "<<m_Name<<endl;
-        mout<<"Element has Z < 1:"<<GetComponentAt(0)->GetZ()<<endl;
-        Element = 1;
-      }  else if (int(GetComponentAt(0)->GetZ()) > 100) {
-        mout<<"   ***  Severe warning  ***  in material "<<m_Name<<endl;
-        mout<<"Element has Z > 100:"<<GetComponentAt(0)->GetZ()<<endl;
-        Element = 100;        
-      } else {
-        Element = int(GetComponentAt(0)->GetZ());
-      }
-
-      out<<"umix "<<setw(3)<<m_ID+16<<"  "<<ShortName<<"  "
-         <<GetNComponents()<<"  ";
-      out.setf(ios::scientific, ios::floatfield);
-      out<<m_Density<<endl;
-      out.setf(ios::fmtflags(0), ios::floatfield);
-      out<<"               "
-         <<"0.0  "<<elem[Element-1]
-         <<"  1"<<endl;
-    }
-
-
-  // For a multi-component mixture (MGEANT user materials start at number 17)
-  // Note that GeoMega only supports mixtures through specification of 
-  // the number of atoms per component (negative number of components), 
-  // not fraction by weight
-  } else {     
-
-    // using the standard MGEANT MIXT (one isotope per component)
-    //     out << "mixt " << m_ID+16 << "  MAT" << m_Name.Data() << "    "
-    // 	<< "-" << GetNComponents() << "  " << m_Density << endl;
-    //     for (unsigned int i = 0; i < GetNComponents(); i++) {
-    //       out << "                    "
-    // 	  << GetComponentAt(i)->GetA() << " "
-    // 	  << GetComponentAt(i)->GetZ() << " "
-    // 	  << GetComponentAt(i)->GetNAtoms() << endl;
-    //     }   
-    //     out << endl;
-
-    // using the MGEANT UMIX (natural isotopic abmudance)
-    if (m_Components[0]->GetType() == MDMaterialComponent::c_ByMass) {
-      out<<"umix "<<setw(3)<<m_ID+16<<"  ";
-      out<<ShortName<<"  ";
-      out<<GetNComponents()<<"  ";
-      out.setf(ios::scientific, ios::floatfield);
-      out<<m_Density<<endl;
-      out.setf(ios::fmtflags(0), ios::floatfield);
-    } else {
-      out<<"umix "<<setw(3)<<m_ID+16<<"  ";
-      out<<ShortName<<"  ";
-      out<<"-"<<GetNComponents()<<"  ";
-      out.setf(ios::scientific, ios::floatfield);
-      out<<m_Density<<endl;
-      out.setf(ios::fmtflags(0), ios::floatfield);
-    }
-    for (unsigned int i = 0; i < GetNComponents(); i++) {
-      int Element = 1;
-      if (int(GetComponentAt(i)->GetZ()) < 1) {
-        mout<<"   ***  Severe warning  ***  in material "<<m_Name<<endl;
-        mout<<"Element has Z < 1:"<<GetComponentAt(i)->GetZ()<<endl;
-        Element = 1;
-      }  else if (int(GetComponentAt(i)->GetZ()) > 100) {
-        mout<<"   ***  Severe warning  ***  in material "<<m_Name<<endl;
-        mout<<"Element has Z > 100:"<<GetComponentAt(i)->GetZ()<<endl;
-        Element = 100;        
-      } else {
-        Element = int(GetComponentAt(i)->GetZ());
-      }
-
-      out<<"               "
-          <<"0.0  "<<elem[Element-1]<<"  "
-          <<GetComponentAt(i)->GetWeight()<<endl;
-    }   
-  }
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDMaterial::GetMGeantTmed(int Sensitivity) const
-{
-  // Fetch tracking media data in MGEANT/MGGPOD format
-  // Guest author RMK Jan-2004
-
-  ostringstream out;
-
-  if (Sensitivity < 0) Sensitivity = m_Sensitive;
-
-  MString Name = m_MGeantShortName;
-  Name.ToUpper();
-
-  // Set sensitivity keyword based on sensitivity flag
-  if (Sensitivity == 1) {
-    out<<"tmed "<<setw(3)<<m_ID<<"  "<<Name<<" "<<Name<<" "
-       <<"dete"<<" 0  0.0  -1.0  -1.0  -1.0  1.0e-4  -1.0  0";
-  } else if (Sensitivity == 2) {
-    out<<"tmed "<<setw(3)<<m_ID<<"  "<<Name<<" "<<Name<<" "
-       <<"dete"<<" 0  0.0  -1.0  -1.0  -1.0  1.0e-4  -1.0  0";
-  } else {
-    out<<"tmed "<<setw(3)<<m_ID<<"  "<<Name<<" "<<Name<<" "
-       <<"pass"<<" 0  0.0  -1.0  -1.0  -1.0  1.0e-4  -1.0  0";
-  }
-
-  out << endl;
-
-  return out.str().c_str();
 }
 
 
@@ -711,43 +467,33 @@ MDMaterialComponent* MDMaterial::GetComponentAt(unsigned int i) const
     mout<<"Index ("<<i<<") out of bounds (0, "<<GetNComponents()-1<<")"<<endl;
   }
 
-  return 0;
+  return nullptr;
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MDMaterial::GetNComponents() const
+int MDMaterial::GetAtomicNumberMainComponent() const
 {
-  // Return the number of components of this material
+  // Determine the main component of this material and return its atomic number:
 
-  return m_Components.size();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDMaterial::GetZMainComponent() const
-{
-  // Determine the main component of this material and return its Z:
-
-  double Z = 0;
+  int AtomicNumber = 0;
   double Weight = 0;
   for (unsigned int i = 0; i < m_Components.size(); ++i) {
-    if (m_Components[i]->GetWeight() > Weight) {
-      Z = m_Components[i]->GetZ();
-      Weight = m_Components[i]->GetWeight();
-    } else if (m_Components[i]->GetWeight() == Weight) {
-      if (m_Components[i]->GetZ() > Z) {
-        Z = m_Components[i]->GetZ();
-        Weight = m_Components[i]->GetWeight();
+    if (m_Components[i]->GetWeightingByMass() > Weight) {
+      AtomicNumber = m_Components[i]->GetAtomicNumber();
+      Weight = m_Components[i]->GetWeightingByMass();
+    } else if (m_Components[i]->GetWeightingByMass() == Weight) {
+      if (m_Components[i]->GetAtomicNumber() > AtomicNumber) {
+        AtomicNumber = m_Components[i]->GetAtomicNumber();
+        Weight = m_Components[i]->GetWeightingByMass();
       }
     }
   }
 
-  return int(Z+0.5);
+  return AtomicNumber;
 }
 
 
@@ -793,18 +539,6 @@ bool MDMaterial::Validate()
     return false;    
   }
 
-  // It is not good to require (Geant3/MGEANT/MGGPOD) short names...
-
-  if (m_ShortName == g_StringNotDefined) {
-    mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
-    mout<<"Material has no short name (only relevant for Geant3)!!"<<endl;
-  }
-
-  if (m_MGeantShortName == g_StringNotDefined) {
-    mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
-    mout<<"Material has no MGeant/MGGPOD short name (only relevant for MGeant/MGGPOD)!!"<<endl;
-  }
-
   if (GetNComponents() == 0) {
     mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
     mout<<"Material has no components"<<endl;
@@ -836,62 +570,11 @@ bool MDMaterial::Validate()
   }
 
 
-  if (GetNComponents() == 1) {
-    // Calculate radiation length:
-    // According to: Physical Review D: Particles and fields
-
-    const double F = 1/137.036; // Fine structure constant
-    const double r = 2.81794092E-13; // cm: Classical electron radius
-    const double Na = 6.0221367E+23; // /mol: Avogadro's number
-
-    double d = m_Density;
-    double A = GetComponentAt(0)->GetA(); //
-    double Z = GetComponentAt(0)->GetZ(); //
-
-    double FZ2 = F*F*Z*Z;
-    double Fc = // Coulomb correction function
-      FZ2*(1.0/(1+FZ2) + 0.20206 - 0.0369*FZ2 + 0.0083*FZ2*FZ2 - 0.0020*FZ2*FZ2*FZ2);
-
-    double Lrad;
-    double Lradl;
-    if (Z == 1) {
-      Lrad = 5.31;
-      Lradl = 6.144;
-    } else if (Z == 2) { 
-      Lrad = 4.79;
-      Lradl = 5.621;
-    } else if (Z == 3) { 
-      Lrad = 4.74;
-      Lradl = 5.805;
-    } else if (Z == 4) { 
-      Lrad = 4.71;
-      Lradl = 5.924;
-    } else { 
-      Lrad = log(184.15/pow(Z,1.0/3.0));
-      Lradl = log(1194/pow(Z,2.0/3.0));
-    }
-
-    double Rad = 4.0*F*r*r*Na*1/A*(Z*Z*(Lrad-Fc)+Z*Lradl);
-    Rad = 1.0/(d*Rad);
-
-    if (Rad < 1000) {
-      if (m_RadiationLength == g_DoubleNotDefined) {
-        //mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
-        //mout<<"  No radiation length given!"<<endl;
-        //mout<<"  Using calculated one: "<<Rad<<endl;
-        m_RadiationLength = Rad;
-      } else if (fabs(1 - m_RadiationLength/Rad) > 0.05) {
-        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
-        mout<<"  Given radiation length ("<<m_RadiationLength
-            <<") and calculated one ("<<Rad<<") differ by more than 5%!"<<endl;
-        return false;
-      } 
-    }
-  } else {
+  if (GetNComponents() > 1) {
     // Check if all components have the same type
-    int Type = m_Components[0]->GetType();
+    MDMaterialComponentWeightingType Type = m_Components[0]->GetWeightingType();
     for (unsigned int i = 1; i < m_Components.size(); ++i) {
-      if (Type != m_Components[i]->GetType()) {
+      if (Type != m_Components[i]->GetWeightingType()) {
         mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
         mout<<"  All components have to be given either by"
             <<" fractional mass or by number of atoms"<<endl;
@@ -899,45 +582,37 @@ bool MDMaterial::Validate()
       }
     }
     
-    if (Type == MDMaterialComponent::c_ByMass) {
+    if (Type == MDMaterialComponentWeightingType::c_ByMass) {
       /// Make sure the fractional mass sums up to one
       double Sum = 0;
       for (unsigned int i = 0; i < m_Components.size(); ++i) {
-        Sum += m_Components[i]->GetWeight();
+        Sum += m_Components[i]->GetWeightingByMass();
       }
       if (Sum != 1) {
         for (unsigned int i = 0; i < m_Components.size(); ++i) {
-          m_Components[i]->SetWeight(m_Components[i]->GetWeight()/Sum);
+          m_Components[i]->SetWeightingByMass(m_Components[i]->GetWeightingByMass()/Sum);
         }     
       }
-    } else {
-      // Make sure we have integers!
-      double Tolerance = 1E-8;
-      for (unsigned int i = 0; i < m_Components.size(); ++i) {
-        if (fabs(int(m_Components[i]->GetWeight() + Tolerance) - m_Components[i]->GetWeight()) > Tolerance) {
-          mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
-          mout<<"  All components of a \"by atoms\" material"
-              <<" have to be integers!"<<endl;
-          return false;                 
-        }
-      }      
     }
   }
 
+  if (m_RadiationLength == g_DoubleNotDefined) {
+    m_RadiationLength = GetRootMedium()->GetMaterial()->GetRadLen();
+  }
 
   // Now create a hopefully unique hash of this object
   vector<double> Array;
   Array.push_back(m_Density);
   Array.push_back(m_RadiationLength);
   for (unsigned int m = 0; m < m_Components.size(); ++m) {
-    Array.push_back(m_Components[m]->GetA());
-    Array.push_back(m_Components[m]->GetZ());
-    Array.push_back(m_Components[m]->GetWeight());
-    Array.push_back(m_Components[m]->GetType());
+    Array.push_back(m_Components[m]->GetAtomicWeight());
+    Array.push_back(m_Components[m]->GetAtomicNumber());
+    Array.push_back(m_Components[m]->GetWeightingByMass());
+    Array.push_back(int(m_Components[m]->GetWeightingType()));
   }
   double* a = new double[Array.size()];
-	copy(Array.begin(), Array.end(), a);
-	m_Hash = TString::Hash(a, Array.size()*sizeof(double));
+  copy(Array.begin(), Array.end(), a);
+  m_Hash = TString::Hash(a, Array.size()*sizeof(double));
   delete [] a;
 
 
@@ -1231,8 +906,8 @@ bool MDMaterial::CopyDataToClones()
     }
     if (Clone->GetNComponents() == 0) {
       for (unsigned int i = 0; i < m_Components.size(); ++i) {
-        MDMaterialComponent* C = m_Components[i];
-        Clone->SetComponent(C->GetA(), C->GetZ(), C->GetWeight(), C->GetType());
+        MDMaterialComponent* C = new MDMaterialComponent(*m_Components[i]);
+        Clone->SetComponent(C);
       }
     }
     if (Clone->GetCrossSectionFileDirectory() == g_StringNotDefined) {
@@ -1255,11 +930,11 @@ TGeoMedium* MDMaterial::GetRootMedium()
     TGeoMixture* Material = new TGeoMixture(m_Name, m_Components.size(), m_Density);
     for (unsigned int i = 0; i < m_Components.size(); ++i) {
       MDMaterialComponent* C = m_Components[i];
-      TGeoElement* Element = new TGeoElement("E", "E", C->GetZ(), C->GetA());
-      if (C->GetType() == MDMaterialComponent::c_ByMass) {
-        Material->AddElement(Element, double(C->GetWeight()));
+      TGeoElement* Element = new TGeoElement("E", "E", C->GetAtomicNumber(), C->GetAtomicWeight());
+      if (C->GetWeightingType() == MDMaterialComponentWeightingType::c_ByMass) {
+        Material->AddElement(Element, C->GetWeightingByMass());
       } else {
-        Material->AddElement(Element, int(C->GetWeight()));      
+        Material->AddElement(Element, C->GetWeightingByAtoms());      
       }
     }
     m_GeoMedium = new TGeoMedium(m_Name, m_IDCounter, Material);

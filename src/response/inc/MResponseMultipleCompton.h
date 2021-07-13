@@ -22,7 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MResponseBase.h"
+#include "MResponseBuilder.h"
 #include "MRESE.h"
 #include "MRETrack.h"
 #include "MResponseMatrixO1.h"
@@ -38,35 +38,38 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-class MResponseMultipleCompton : public MResponseBase
+//! Create a Bayesian Compton sequenceing response 
+class MResponseMultipleCompton : public MResponseBuilder
 {
   // public interface:
  public:
+  //! Default constructor
   MResponseMultipleCompton();
+  //! Default destructor
   virtual ~MResponseMultipleCompton();
 
-  //! Set and verify the revan configuration file name
-  bool SetRevanConfigurationFileName(const MString FileName);
   //! Set whether or not absorptions should be considered
   void SetDoAbsorptions(const bool Flag = true) { m_DoAbsorptions = Flag; }
+  //! Set whether or not absorptions should be considered
+  void SetMaxNInteractions(const unsigned int MaxNInteractions) { m_MaxNInteractions = MaxNInteractions; }
+  
+  //! Initialize the response matrices and their generation
+  virtual bool Initialize();
 
-  //! Do all the response creation
-  virtual bool CreateResponse();
+  //! Analyze th events (all if in file mode, one if in event-by-event mode)
+  virtual bool Analyze();
+    
+  //! Finalize the response generation (i.e. save the data a final time )
+  virtual bool Finalize();
+
 
   // protected methods:
  protected:
-  //MResponseMultipleCompton() {};
-  //MResponseMultipleCompton(const MResponseMultipleCompton& ResponseMultipleCompton) {};
 
-  //! Create the (soon to be) pdfs  
-  virtual bool CreateMatrices();
+  //! Save the response matrices
+  virtual bool Save();
 
-  //! Store the (soon to be) pdfs  
-  virtual bool SaveMatrices();
-
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile();
+      
 
   bool IsTrackStart(MRESE& Start, MRESE& Central, double Energy);
   bool IsTrackStop(MRESE& Central, MRESE& Stop, double Energy);
@@ -92,12 +95,17 @@ class MResponseMultipleCompton : public MResponseBase
   bool IsTrackCompletelyAbsorbed(const vector<int>& Ids, double Energy);
   double GetIdealDepositedEnergy(int MinId);
 
+  //! Return the number of Compton interaction from the Sim ID with the given origin
+  unsigned int NumberOfComptonInteractions(vector<int> AllSimIds, int Origin);
+  
+  
   int GetMaterial(MRESE& RESE);
 
   double CalculateDCosPhi(MRESE& Start, MRESE& Central, MRESE& Stop, double Etot);
   double CalculateDPhiInDegree(MRESE& Start, MRESE& Central, MRESE& Stop, double Etot);
   double CalculateCosPhiE(MRESE& Central, double Etot);
   double CalculatePhiEInDegree(MRESE& Central, double Etot);
+  double CalculateCosPhiG(MRESE& Start, MRESE& Central, MRESE& Stop);
   double CalculatePhiGInDegree(MRESE& Start, MRESE& Central, MRESE& Stop);
   double CalculateCosAlphaE(MRETrack& Start, MRESE& Central, double Etot);
   double CalculateAlphaEInDegree(MRETrack& Start, MRESE& Central, double Etot);
@@ -118,14 +126,12 @@ class MResponseMultipleCompton : public MResponseBase
 
   // protected members:
  protected:
-  //! Revan configuration file name
-  MString m_RevanCfgFileName;
   //! Do or not to do absorptions
   bool m_DoAbsorptions;
   //! MaximumSequenceLength up to which absorptions are considered
-  int m_MaxAbsorptions;
+  unsigned int m_MaxAbsorptions;
   //! Maximum number of individual Compton interactions to be considered
-  int m_CSRMaxLength;
+  unsigned int m_MaxNInteractions;
 
   double m_MaxEnergyDifference;
   double m_MaxEnergyDifferencePercent;
@@ -166,7 +172,7 @@ class MResponseMultipleCompton : public MResponseBase
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMultipleCompton, 0) // no description
 #endif

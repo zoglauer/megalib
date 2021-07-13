@@ -141,7 +141,7 @@ class MGUIMultiProgressBar : public TGTransientFrame
   //! The progress timer
   MTimer m_Timer;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIMultiProgressBar, 0)
 #endif

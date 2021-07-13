@@ -82,7 +82,7 @@ class MModuleLoaderRoa : public MModule, public MModuleInterfaceFileName
   MFileReadOuts m_RoaFile;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MModuleLoaderRoa, 0) // no description
 #endif

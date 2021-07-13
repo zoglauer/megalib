@@ -59,7 +59,7 @@ class MFileDecay : public MParser
   vector<double> m_EnergyErrors;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileDecay, 0) // no description
 #endif

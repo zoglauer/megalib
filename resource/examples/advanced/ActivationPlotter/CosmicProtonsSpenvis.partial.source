@@ -1,0 +1,12 @@
+# Partial beam file for cosima
+
+# Cosmic protons using SPENVIS
+# Assumptions: 
+# * log-log extrapolation beyond upper energy limit from SPENVIS
+# * Angular distribution is flat out to the Earth-horizon 
+SpaceSim.Source CosmicProtonsSpenvis
+CosmicProtonsSpenvis.ParticleType           4
+CosmicProtonsSpenvis.Beam                   FarFieldFileZenithDependent CosmicProtonsSpenvis.beam.dat
+CosmicProtonsSpenvis.Spectrum               File CosmicProtonsSpenvis.spectrum.dat
+CosmicProtonsSpenvis.Flux                   0.0916401
+

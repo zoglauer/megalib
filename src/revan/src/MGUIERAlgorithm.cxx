@@ -37,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIERAlgorithm)
 #endif
 
@@ -45,12 +45,10 @@ ClassImp(MGUIERAlgorithm)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIERAlgorithm::MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main, 
-                                 MSettingsEventReconstruction* Data)
-  : MGUIDialog(Parent, Main)
+
+MGUIERAlgorithm::MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main, MSettingsEventReconstruction* Data) : MGUIDialog(Parent, Main)
 {
   // Construct an instance of MGUIERAlgorithm and bring it to the screen
-
   m_Data = Data;
 
   Create();
@@ -65,9 +63,11 @@ MGUIERAlgorithm::~MGUIERAlgorithm()
   // Delete an instance of MGUIERAlgorithm
 
   delete m_CoincidenceList;
-  delete m_ClusteringList;
+  delete m_EventClusteringList;
+  delete m_HitClusteringList;
   delete m_TrackingList;
   delete m_CSRList;
+  delete m_PairList;
   //delete m_DecayList;
   delete m_ListLayout;
 }
@@ -81,25 +81,42 @@ void MGUIERAlgorithm::Create()
   // Create the main window
 
   // We start with a name and an icon...
-  SetWindowName("ER algorithms");  
-  AddSubTitle("Choose the reconstruction algorithms"); 
+  SetWindowName("ER algorithms");
+  AddSubTitle("Choose the reconstruction algorithms");
 
   m_ListLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 10);
 
   m_CoincidenceList = new MGUIERBList(this, "Coincidence search", true);
-  m_CoincidenceList->Add("No coincidence or coincident hits already merged in simulation or hardware (should be default)");
+  m_CoincidenceList->Add("No coincidence or coincident hits already merged in simulation or hardware (DEFAULT)");
   m_CoincidenceList->Add("Coincidence window");
   m_CoincidenceList->SetSelected(m_Data->GetCoincidenceAlgorithm());
   m_CoincidenceList->Create();
   AddFrame(m_CoincidenceList, m_ListLayout);
-
-  m_ClusteringList = new MGUIERBList(this, "Clustering", true);
-  m_ClusteringList->Add("No clustering");
-  m_ClusteringList->Add("Clustering by Distance");
-  m_ClusteringList->Add("Clustering of adjacent voxels");
-  m_ClusteringList->SetSelected(m_Data->GetClusteringAlgorithm());
-  m_ClusteringList->Create();
-  AddFrame(m_ClusteringList, m_ListLayout);
+  
+  m_EventClusteringList = new MGUIERBList(this, "Find multiple, coincident gamma rays in one event", true);
+  m_EventClusteringList->Add("No event clustering (DEFAULT - unless you have the very rare case of pile up)");
+  m_EventClusteringList->Add("Event clustering using using interaction distances (alpha)");
+  m_EventClusteringList->Add("Event clustering using TMVA machine learning (alpha)");
+  if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoNone) {
+    m_EventClusteringList->SetSelected(0);
+  } else if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoTMVA) {
+    m_EventClusteringList->SetSelected(2);
+  } else if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoDistance) {
+    m_EventClusteringList->SetSelected(1);
+  } else {
+    m_EventClusteringList->SetSelected(0);
+  }
+  m_EventClusteringList->Create();
+  AddFrame(m_EventClusteringList, m_ListLayout);
+  
+  m_HitClusteringList = new MGUIERBList(this, "Clustering of neighboring hits", true);
+  m_HitClusteringList->Add("No clustering");
+  m_HitClusteringList->Add("Clustering by Distance");
+  m_HitClusteringList->Add("Clustering of adjacent voxels");
+  m_HitClusteringList->Add("Clustering using probability density function");
+  m_HitClusteringList->SetSelected(m_Data->GetHitClusteringAlgorithm());
+  m_HitClusteringList->Create();
+  AddFrame(m_HitClusteringList, m_ListLayout);
 
   m_TrackingList = new MGUIERBList(this, "Electron tracking", true);
   m_TrackingList->Add("No electron tracking"); // 0
@@ -132,14 +149,23 @@ void MGUIERAlgorithm::Create()
   m_TrackingList->Create();
   AddFrame(m_TrackingList, m_ListLayout);
 
+  m_PairList = new MGUIERBList(this, "Pair reconstruction", true);
+  m_PairList->Add("Default algorithm");  // 0
+  m_PairList->Add("Kalman Filter 3D (work in progress)"); // 1
+  m_PairList->Add("Kalman Filter 2D (work in progress)"); // 2
+  m_PairList->SetSelected(m_Data->GetPairAlgorithm());
+  m_PairList->Create();
+  AddFrame(m_PairList, m_ListLayout);
+
   m_CSRList = new MGUIERBList(this, "Compton tracking", true);
   m_CSRList->Add("No Compton tracking");
-  m_CSRList->Add("Compton Sequence Reconstruction without Energy Recovery (Chi-square approach via angles)");
-  m_CSRList->Add("Compton Sequence Reconstruction with Energy Recovery (Chi-square approach via energies)");
-  m_CSRList->Add("Compton Sequence Reconstruction with Time of Flight (Chi-square approach via angles and time)");
-  m_CSRList->Add("Bayesian Compton Tracking (Bayesian model selection)");
+  m_CSRList->Add("Classic Compton Sequence Reconstruction without Energy Recovery (Chi-square approach via angles)");
+  m_CSRList->Add("Classic Compton Sequence Reconstruction with Energy Recovery (Chi-square approach via energies)");
+  m_CSRList->Add("Classic Compton Sequence Reconstruction with Time of Flight (Chi-square approach via angles and time)");
+  m_CSRList->Add("Bayesian Compton-scatter pattern identification (Bayesian model selection)");
+  m_CSRList->Add("TMVA-based Compton-scatter pattern identification (MLP, DNN, Boosted decision trees, etc.)");
   if (m_Data->GetSpecialMode() == true) {
-    m_CSRList->Add("UNDER CONSTRUCTION: Compton Sequence Reconstruction with Time of Flight and Energy Recovery");
+    m_CSRList->Add("UNDER CONSTRUCTION: Classic Compton Sequence Reconstruction with Time of Flight and Energy Recovery");
   }
   m_CSRList->SetSelected(m_Data->GetCSRAlgorithm());
   m_CSRList->Create();
@@ -159,10 +185,10 @@ void MGUIERAlgorithm::Create()
 
   // and bring it to the screen.
   MapSubwindows();
-  MapWindow();  
+  MapWindow();
 
   Layout();
- 
+
   return;
 }
 
@@ -172,10 +198,20 @@ void MGUIERAlgorithm::Create()
 
 bool MGUIERAlgorithm::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_Data->SetCoincidenceAlgorithm(m_CoincidenceList->GetSelected());
-  m_Data->SetClusteringAlgorithm(m_ClusteringList->GetSelected());
+  
+  if (m_EventClusteringList->GetSelected() == 0) {
+    m_Data->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoNone);
+  } else if (m_EventClusteringList->GetSelected() == 1) {
+    m_Data->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoDistance);
+  } else if (m_EventClusteringList->GetSelected() == 2) {
+    m_Data->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoTMVA);
+  }
+    
+  m_Data->SetHitClusteringAlgorithm(m_HitClusteringList->GetSelected());
+  
   if (m_TrackingList->GetSelected() == 0) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   } else if (m_TrackingList->GetSelected() == 1) {
@@ -193,11 +229,14 @@ bool MGUIERAlgorithm::OnApply()
   } else if (m_TrackingList->GetSelected() == 7) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoBayesian);
   }
+  m_Data->SetPairAlgorithm(m_PairList->GetSelected());
   m_Data->SetCSRAlgorithm(m_CSRList->GetSelected());
+  
   //m_Data->SetDecayAlgorithm(m_DecayList->GetSelected());
+  
   m_Data->SetDecayAlgorithm(0);
 
-	return true;
+  return true;
 }
 
 

@@ -40,7 +40,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIOptionsCSR)
 #endif
 
@@ -58,9 +58,12 @@ MGUIOptionsCSR::MGUIOptionsCSR(const TGWindow* Parent, const TGWindow* Main,
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
-  m_Options = 0;
-  m_OptionsUndecided = 0;
-
+  
+  m_Options = nullptr;
+  m_OptionsUndecided = nullptr;
+  m_MaxNSingleHits = nullptr;
+  m_TMVAMethods = nullptr;
+  
   Create();
 }
 
@@ -187,8 +190,37 @@ void MGUIOptionsCSR::Create()
                                       m_Data->GetCSRMaxNHits(), true, 3);
     AddFrame(m_MaxNSingleHits, EntryLayout);
 
+  } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoTMVA) {
+    AddSubTitle("Options for TMVA-based Compton-scatter patter identification"); 
+    TGLayoutHints* TMVAFileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
+    m_TMVAFileSelector = 
+    new MGUIEFileSelector(this, "File containing the TMVA data (\".tmva\"):", 
+                          m_Data->GetCSRTMVAFileName());
+    m_TMVAFileSelector->SetFileType("TMVA steering file", "*.tmva");
+    AddFrame(m_TMVAFileSelector, TMVAFileSelectorLayout);      
+    
+    m_TMVAMethods = new MGUIERBList(this, "Choose the TMVA method (if it is not in the tmva file, you will get an error message later):");
+    vector<MERCSRTMVAMethod> Methods = m_Data->GetCSRTMVAMethods().GetAllMethods();
+    for (unsigned int m = 0; m < Methods.size(); ++m) {
+      m_TMVAMethods->Add(m_Data->GetCSRTMVAMethods().GetFullString(Methods[m]));
+      m_TMVAMethodsMap[m] = Methods[m];
+    }
+    vector<MERCSRTMVAMethod> M = m_Data->GetCSRTMVAMethods().GetUsedMethods();
+    if (M.size() > 0) {
+      for (auto I = m_TMVAMethodsMap.begin(); I != m_TMVAMethodsMap.end(); ++I) {
+        if (I->second == M[0]) {
+          m_TMVAMethods->SetSelected(I->first);
+        }
+      }
+    } else {
+      m_TMVAMethods->SetSelected(0);
+    }
+    m_TMVAMethods->Create();
+    TGLayoutHints* TMVAMethodsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20, 20, 20, 2);
+    AddFrame(m_TMVAMethods, TMVAMethodsLayout);
+
   } else {
-    AddSubTitle("You deselected Compton tracking"); 
+    AddSubTitle("You deselected Compton sequence reconstruction"); 
   }
 
   AddButtons();
@@ -199,7 +231,7 @@ void MGUIOptionsCSR::Create()
   MapWindow();  
 
   Layout();
- 
+
   return;
 }
 
@@ -227,8 +259,8 @@ bool MGUIOptionsCSR::ProcessMessage(long Message, long Parameter1, long Paramete
 
 bool MGUIOptionsCSR::OnApply()
 {
-	// The Apply button has been pressed
-  if (m_MaxNSingleHits->GetAsInt() > 8) {
+  // The Apply button has been pressed
+  if (m_MaxNSingleHits != nullptr && m_MaxNSingleHits->GetAsInt() > 8) {
     int Return = 0;
     MString Text = "A maximum number of interactions beyond 8 is rather unreasonable and consumes large amounts of memory!\n";
     Text += "Do you really want to proceed?";
@@ -273,8 +305,13 @@ bool MGUIOptionsCSR::OnApply()
   } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoBayesian) {
     m_Data->SetBayesianComptonFileName(m_BayesianFileSelector->GetFileName());
     m_Data->SetCSRMaxNHits(m_MaxNSingleHits->GetAsInt());
+  } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoTMVA) {
+    m_Data->SetCSRTMVAFileName(m_TMVAFileSelector->GetFileName());
+    MERCSRTMVAMethods M;
+    M.AddUsedMethod(m_TMVAMethodsMap[m_TMVAMethods->GetSelected()]);
+    m_Data->SetCSRTMVAMethods(M);
   }
-	return true;
+  return true;
 }
 
 

@@ -46,7 +46,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDGeometryQuest)
 #endif
 
@@ -237,7 +237,7 @@ void MDGeometryQuest::AddHit(MString Name, MVector Position, double Size, int Co
 {
   //
 
-  MDVolume* V = new MDVolume(Name, Name);
+  MDVolume* V = new MDVolume(Name);
   MDShapeSPHE* Sphere = new MDShapeSPHE(Name); // Shape is deleted with the volume...
   Sphere->Set(0.0, Size, 0.0, 180.0, 0.0, 360.0);
   Sphere->Validate();
@@ -286,7 +286,7 @@ void MDGeometryQuest::RemoveAllHits()
 
 void MDGeometryQuest::AddLink(MVector PositionA, MVector PositionB, double Size, int Color)
 {
-  MDVolume *V = new MDVolume("A Link", "Link");
+  MDVolume *V = new MDVolume("A Link");
   MDShapeTUBS* TUBS = new MDShapeTUBS("Link"); // Shape is deleted with the volume...
   TUBS->Set(0.0, Size, 0.5*(PositionB - PositionA).Mag(), 0.0, 360.0);
   TUBS->Validate();
@@ -365,18 +365,6 @@ void MDGeometryQuest::AllwaysAssumeTrigger(bool Flag)
   // Assume that each event has always triggered
 
   m_AllwaysAssumeTrigger = Flag;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MDDetector* MDGeometryQuest::GetDetector(MVector Position)
-{
-  // Return the detector which corresponds to position Pos
-
-  MDVolumeSequence S = GetVolumeSequence(Position);
-  return S.GetDetector();
 }
 
 
@@ -646,23 +634,23 @@ bool MDGeometryQuest::GetComptonIntersection(const MComptonEvent& Compton)
   // The coordinate transformation from a Compton-cone whose axis is the 
   // z-axis to the real cone:
 
-  TMatrix M(3,3);
-  M(0,0) = -Compton.Dg().Z();
-  M(1,0) =  Compton.Dg().X();
-  M(2,0) =  Compton.Dg().Y();
+  MRotation M;
+  M.SetXX(-Compton.Dg().Z());
+  M.SetYX( Compton.Dg().X());
+  M.SetZX( Compton.Dg().Y());
 
-  M(0,1) =  Compton.Dg().Y(); 
-  M(1,1) = -Compton.Dg().Z();
-  M(2,1) =  Compton.Dg().X();
+  M.SetXY( Compton.Dg().Y()); 
+  M.SetYY(-Compton.Dg().Z());
+  M.SetZY( Compton.Dg().X());
 
-  M(0,2) = -Compton.Dg().X();
-  M(1,2) = -Compton.Dg().Y();
-  M(2,2) = -Compton.Dg().Z();
-  if (M.Determinant() == 0) {
+  M.SetXZ(-Compton.Dg().X());
+  M.SetYZ(-Compton.Dg().Y());
+  M.SetZZ(-Compton.Dg().Z());
+  if (M.GetDeterminant() == 0) {
     merr<<"Unhandled event because determinant of rotation matrix is zero"<<endl;
     return false;
   }
-  M = M.Invert();
+  M = M.GetInvers();
   
   MVector Position;
   

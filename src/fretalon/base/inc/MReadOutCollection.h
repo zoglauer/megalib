@@ -37,6 +37,7 @@
 
 
 //! A collection of read-out groups belonging all to the same read-out element (i.e. channel)
+//! The data is grouped by read-out data groups (e.g. the file(s) the data originated from
 class MReadOutCollection
 {
   // public interface:
@@ -118,7 +119,7 @@ class MReadOutCollection
   vector<MReadOutDataGroup> m_ROGs;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOutCollection, 0) // no description
 #endif

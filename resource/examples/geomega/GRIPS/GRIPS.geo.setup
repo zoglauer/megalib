@@ -3,9 +3,9 @@
 
 
 Name MEGAFlexible
-Version 1.1
+Version 1.2
 
-Echo The surround sphere is NOT automatically updated!!!!!
+Echo The surrounding sphere is NOT automatically updated!
 SurroundingSphere 155.0  0.0  0.0  -65.0  155.0
 
 // Use this volume, to test the surrounding sphere:
@@ -1152,7 +1152,7 @@ ACDetectorBottom.TriggerThreshold 	50.0
 ACDetectorBottom.NoiseThresholdEqualsTriggerThreshold true
 ACDetectorBottom.FailureRate 	0.0
 
-
+BeginComment
 Trigger TSi
 TSi.Veto false
 TSi.TriggerByDetector true
@@ -1182,6 +1182,14 @@ Trigger TCsi8
 TCsi8.Veto false
 TCsi8.TriggerByDetector true
 TCsi8.Detector DCal8 1
+EndComment
+
+Trigger Combined
+Combined.Veto false
+Combined.TriggerByDetector true
+Combined.DetectorType Strip2D 1
+Combined.DetectorType Calorimeter 1
+
 
 Trigger VetoACBottom
 VetoACBottom.Veto true

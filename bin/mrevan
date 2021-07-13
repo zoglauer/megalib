@@ -6,10 +6,11 @@ help() {
   echo "(C) by Andreas Zoglauer"
   echo "";
   echo "Options:";
-  echo "    -m <threads>:   Maximum number of all threads (e.g. of all revan calls) on this machine (default: number of cores)"
+  echo "    -t <threads>:   Maximum number of all threads (e.g. of all revan calls) on this machine (default: number of cores)"
   echo "    -n <nice>:      The nice level as an integer (default: 0)"
-  echo "    -c <file name>: Revan configuration file name"
-  echo "    -f <file name>: Long list of sim files"
+  echo "    -c <file name>: Revan configuration file name (mandatory)"
+  echo "    -g <geometry file name>: Overwrites the geometry in the configuration file (optional)"
+  echo "    -f <file name>: Long list of sim/evta files - MUST BE LAST"
   echo "";
   echo "Example:";
   echo "    mrevan -c Revan.cfg -m 12 -f RunTest*.sim";
@@ -29,11 +30,12 @@ THREADS=1
 NICELEVEL=0
 CFG=""
 FILES=""
+GEOMETRY=""
 
 # Find the default number of threads
-if ( `test -f /usr/sbin/sysctl` ); then
+if [[ ${OSTYPE} == darwin* ]]; then
   THREADS=`sysctl -n hw.logicalcpu_max`
-elif ( `test -f /proc/cpuinfo` ); then 
+elif [[ ${OSTYPE} == linux* ]]; then
   THREADS=`grep processor /proc/cpuinfo | wc -l`
 fi
 
@@ -48,8 +50,8 @@ fi
 
 while [ $# -gt 0 ] ; do
   case $1 in
-  -h|--help) 
-    help; 
+  -h|--help)
+    help;
     exit 0;;
   -t)
     shift;
@@ -73,7 +75,19 @@ while [ $# -gt 0 ] ; do
       exit 0;
     fi
     CFG=$1;
-    #echo "Using ${Threads} threads";
+    #echo "Using configuration file ${CFG}";
+    ;;
+  -g)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -g needs an argument";
+      echo "       For details see mrevan --help"
+      echo " "
+      exit 0;
+    fi
+    GEOMETRY=$1;
+    #echo "Using geometry ${GEOMETRY}";
     ;;
   -n)
     shift;
@@ -115,7 +129,7 @@ then
 else
   echo " "
   echo "Error: The value behind threads must be a number";
-  echo "       For details see mcosima --help"
+  echo "       For details see mrevan --help"
   echo " "
   rm /tmp/aux
   exit 1;
@@ -128,7 +142,7 @@ then
 else
   echo " "
   echo "Error: The value behind nice must be a number";
-  echo "       For details see mcosima --help"
+  echo "       For details see mrevan --help"
   echo " "
   rm /tmp/aux
   exit 1;
@@ -143,19 +157,27 @@ if [[ ! -f ${CFG} ]]; then
 fi
 
 echo " "
-echo "Launching mcosima"
+echo "Launching mrevan"
 echo " "
-echo "Number of threads to use:  ${THREADS}" 
-echo "Nice level:                ${NICELEVEL}" 
-echo "Revan configuration file:  ${CFG}" 
-echo "Sim files:                 ${FILES}"
+echo "Number of threads to use:  ${THREADS}"
+echo "Nice level:                ${NICELEVEL}"
+if [[ ${GEOMETRY} != "" ]]; then
+  echo "Geometry:                ${GEOMETRY}"
+fi
+echo "Revan configuration file:  ${CFG}"
+echo "Sim/evta files:            ${FILES}"
 
 
 # Now run, revan RUN!
 for SIMFILE in ${FILES}; do
-  mdelay revan ${THREADS}
+  mwait -p=revan -i=${THREADS}
   echo "Launching revan for file ${SIMFILE}"
-  nohup nice -n ${NICELEVEL} revan -c ${CFG} -a -n -f ${SIMFILE} > /dev/null &
+  CMD="source ${MEGALIB}/bin/source-megalib.sh; revan -c ${CFG} -a -n -f ${SIMFILE}"
+  if [[ ${GEOMETRY} != "" ]]; then
+    CMD+=" -g ${GEOMETRY}"
+  fi
+  nohup nice -n ${NICELEVEL} bash -c "${CMD}" > /dev/null &
+  sleep 0.5
 done
 
 
@@ -164,6 +186,8 @@ echo "Waiting till all revan runs have finished..."
 wait
 
 # Create a concatenation file
-mtraconcatter ${FILES//.sim/.tra}
+NEWFILES=${FILES//.sim/.tra}
+NEWFILES=${NEWFILES//.evta/.tra}
+mtraconcatter ${NEWFILES}
 
 exit 0;

@@ -45,8 +45,8 @@ using namespace std;
 #include "MStreams.h"
 #include "MGUIProgressBar.h"
 #include "MBackprojection.h"
-#include "MBackprojectionSphere.h"
-#include "MBackprojectionCartesian.h"
+#include "MBackprojectionFarField.h"
+#include "MBackprojectionNearField.h"
 #include "MBPDataSparseImage.h"
 #include "MBPDataSparseImageOneByte.h"
 #include "MPhysicalEvent.h"
@@ -58,7 +58,7 @@ using namespace std;
 #include "MResponseGaussian.h"
 #include "MResponsePRM.h"
 #include "MResponseEnergyLeakage.h"
-#include "MSensitivity.h" 
+#include "MExposure.h" 
 #include "MImage.h"
 #include "MImage2D.h"
 #include "MImage3D.h"
@@ -72,7 +72,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MImagerExternallyManaged)
 #endif
 
@@ -80,7 +80,7 @@ ClassImp(MImagerExternallyManaged)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MImagerExternallyManaged::MImagerExternallyManaged(int CoordinateSystem) : MImager(CoordinateSystem, 1)
+MImagerExternallyManaged::MImagerExternallyManaged(MCoordinateSystem CoordinateSystem) : MImager(CoordinateSystem, 1)
 {
   m_UseGUI = true;
 }
@@ -123,104 +123,13 @@ vector<MImage*> MImagerExternallyManaged::Deconvolve(vector<MBPData*> ResponseSl
   m_EM->ResetStopCriterion();
 
   // Image display
-  MImage* Image = 0;
-  
-  // Display first backprojection for the three different coordinate systems:
-  if (m_CoordinateSystem == MProjection::c_Spheric) {
-    Image = new MImageSpheric("Image - Iteration: 0", 
-                              m_EM->GetInitialImage(),
-                              "Phi [deg]", 
-                              m_x1Min*c_Deg,
-                              m_x1Max*c_Deg, 
-                              m_x1NBins,
-                              "Theta [deg]", 
-                              m_x2Min*c_Deg, 
-                              m_x2Max*c_Deg, 
-                              m_x2NBins, 
-                              m_Palette, 
-                              m_DrawMode,
-                              m_SourceCatalog);
-  } else if (m_CoordinateSystem == MProjection::c_Galactic) {
-    Image = new MImageGalactic("Image - Iteration: 0", 
-                               m_EM->GetInitialImage(), 
-                               "Longitude [deg]", 
-                               m_x1Min*c_Deg,
-                               m_x1Max*c_Deg, 
-                               m_x1NBins,
-                               "Latitude [deg]", 
-                               m_x2Min*c_Deg-90, 
-                               m_x2Max*c_Deg-90, 
-                               m_x2NBins, 
-                               m_Palette, 
-                               m_DrawMode,
-                               m_SourceCatalog);
-  } else if (m_CoordinateSystem == MProjection::c_Cartesian2D) {
-    if (m_TwoDAxis == 0) {
-      Image = new MImage2D("Image - Iteration: 0",
-                           m_EM->GetInitialImage(),
-                           "y [cm]",
-                           m_x2Min, 
-                           m_x2Max, 
-                           m_x2NBins,
-                           "z [cm]",
-                           m_x3Min, 
-                           m_x3Max, 
-                           m_x3NBins, 
-                           m_Palette, 
-                           m_DrawMode);
-
-    } else if (m_TwoDAxis == 1) {
-      Image = new MImage2D("Image - Iteration: 0",
-                           m_EM->GetInitialImage(),
-                           "x [cm]",
-                           m_x1Min, 
-                           m_x1Max, 
-                           m_x1NBins,
-                           "z [cm]",
-                           m_x3Min, 
-                           m_x3Max, 
-                           m_x3NBins, 
-                           m_Palette, 
-                           m_DrawMode);
-      
-    } else {
-      Image = new MImage2D("Image - Iteration: 0",
-                           m_EM->GetInitialImage(),
-                           "x [cm]",
-                           m_x1Min, 
-                           m_x1Max, 
-                           m_x1NBins,
-                           "y [cm]",
-                           m_x2Min, 
-                           m_x2Max, 
-                           m_x2NBins, 
-                           m_Palette, 
-                           m_DrawMode);
-    }
-
-  } else if (m_CoordinateSystem == MProjection::c_Cartesian3D) {
-    Image = new MImage3D("Image - Iteration: 0",
-                         m_EM->GetInitialImage(),
-                         "x [cm]",
-                         m_x1Min, 
-                         m_x1Max, 
-                         m_x1NBins,
-                         "y [cm]",
-                         m_x2Min, 
-                         m_x2Max, 
-                         m_x2NBins,
-                         "z [cm]",
-                         m_x3Min, 
-                         m_x3Max, 
-                         m_x3NBins, 
-                         m_Palette, 
-                         m_DrawMode);
-  } else {
-    merr<<"Unknown coordinate system ID: "<<m_CoordinateSystem<<fatal;
-    return Images;
+  MImage* Image = CreateImage("Image - Iteration: 0", m_EM->GetInitialImage());
+  if (Image == nullptr) {
+    // Error message already displayed
+    return Images; 
   }
-
-
+  Image->Normalize(true);
+  
   // Store the images:
   Images.push_back(Image->Clone());
  
@@ -360,6 +269,87 @@ MBPData* MImagerExternallyManaged::CalculateResponseSlice(MPhysicalEvent* Event)
 
   return Data;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// Addition Christian Lang - CalculateResponseSliceLine
+//---------------------------------------------------------
+
+/*
+MBPData* MImagerExternallyManaged::CalculateResponseSliceLine(MPhysicalEvent* Event, double X1Position, double
+Y1Position, double Z1Position, double X2Position, double Y2Position, double Z2Position)
+{
+MBPData* Data = 0;
+// IsQualified is NOT reentrant --- but the only thing modified are its counters, which we do not use here...
+
+if (m_Selector.IsQualifiedEvent(Event) == true) {
+
+// Reinitialize the array keeping the events backprojection
+// Memcopy is only faster if the parallism of modern CPUs cannot be used. With gcc -O3 this is fastest:
+//for (int i = 0; i < m_NBins; ++i) BackprojectionImage[i] = 0.0;
+bool EnoughMemory = true;
+double* BackprojectionImage = new double[m_NBins];
+int* BackprojectionBins = new int[m_NBins];
+
+// Try to backproject the data and store the computed t_ij in BackprojectionImage
+
+int NUsedBins = 0;
+double Maximum = 0;
+if (m_BPs[0]->Backproject(Event, BackprojectionImage, BackprojectionBins, NUsedBins, Maximum, X1Position,
+Y1Position, Z1Position, X2Position, Y2Position, Z2Position) == true && NUsedBins > 0) {
+// It might happen that we go out of memory during imaging, catch it!
+// 1-byte-storage:
+if (m_ComputationAccuracy == 0) {
+// Test if we can store it as sparse matrix:
+if (NUsedBins < 0.33*m_NBins) {
+Data = new(nothrow) MBPDataSparseImageOneByte();
+if (Data != 0) {
+EnoughMemory = Data->Initialize(BackprojectionImage, BackprojectionBins, m_NBins, NUsedBins, Maximum);
+} else {
+EnoughMemory = false;
+}
+} else { // no sparse matrix
+Data = new(nothrow) MBPDataImageOneByte();
+if (Data != 0) {
+EnoughMemory = Data->Initialize(BackprojectionImage, BackprojectionBins, m_NBins, NUsedBins, Maximum);
+} else {
+EnoughMemory = false;
+}
+}
+}
+// 4-byte storage:
+else if (m_ComputationAccuracy == 1) {
+if (NUsedBins < 0.5*m_NBins) {
+Data = new(nothrow) MBPDataSparseImage();
+if (Data != 0) {
+EnoughMemory = Data->Initialize(BackprojectionImage, BackprojectionBins, m_NBins, NUsedBins, Maximum);
+} else {
+EnoughMemory = false;
+}
+}
+else { // no sparse matrix
+Data = new(nothrow) MBPDataImage();
+if (Data != 0) {
+EnoughMemory = Data->Initialize(BackprojectionImage, BackprojectionBins, m_NBins, NUsedBins, Maximum);
+} else {
+EnoughMemory = false;
+}
+}
+} else {
+merr<<"m_ComputationAccuracy must be 0 (1 byte storage) or 1 (4 byte storage): "<<m_ComputationAccuracy<<fatal;
+}
+}
+delete [] BackprojectionImage;
+delete [] BackprojectionBins;
+if (EnoughMemory == false) {
+cout<<"Out of memory..."<<endl;
+}
+}
+
+  return Data;
+}
+*/
 
 
 // MImagerExternallyManaged: the end...

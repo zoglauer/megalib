@@ -1,0 +1,166 @@
+#!/bin/bash
+
+# Part of the MEGAlib analysis cluster
+# Check how many tasks can be run on the machine
+
+# Return:
+# Positive number of available task slots
+
+
+commandhelp() {
+  echo ""
+  echo "dmegalib-listallinstances - check how many tasks instances can be run everywhere";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: dmegalib-listallinstances [options]";
+  echo ""
+  echo "Options:"
+  echo "  --help: Show this help."
+  echo ""
+  echo "";
+  echo "Example: "
+  echo "  dmegalib-listallinstances";
+  echo "";
+}
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+CFG=~/.dcosima.cfg
+if [ ! -f ${CFG} ]; then
+  echo "ERROR: No dmegalib configuration file present. Please run dmegalib-setup first."
+  exit 1
+fi
+
+# Read configuration file and extract machines
+MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+REMOTEUSER=( )
+REMOTEHOST=( )
+REMOTEPORT=( )
+
+#echo " "
+#echo "Remote machines setup:"
+for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
+  REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
+  REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
+  #echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"
+done
+
+
+echo " "
+echo "Gathering data... this might take a minute..." 
+echo "If it takes too long, make sure that UsePAM is set to no in /etc/ssh/sshd_config on all remote machines"
+echo " " 
+
+SSHFLAGS=" -4 -o ConnectTimeout=5 -o PreferredAuthentications=publickey "
+#SSHFLAGS=" -q  "
+
+OUTPUT=$"Instances:# Available #/# Running #/# Allowed\n"
+OUTPUT+=$" # \n"
+ALLALLOWED="0"
+ALLRUNNING="0"
+ALLPOSSIBLE="0"
+ALLMACHINES="0"
+for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  
+  # Do a quick test if the machine is available:
+  REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Unable to get host name"
+    continue
+  fi  
+  
+  # Check if .bash_local exists
+  ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .bash_local ]]; then exit 0; else exit 1; fi'
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME}: MEGAlib has never been installed"
+    MACHINES[$m]=""
+    continue
+  fi 
+
+  # Check if MEGAlib path exists
+  ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; if [[ ${MEGALIB} != "" ]]; then exit 0; else exit 1; fi'
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME}: MEGAlib has never been correctly installed"
+    MACHINES[$m]=""
+    continue
+  fi 
+
+  # Check if .dcosima.cfg path exists
+  ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .dcosima.cfg ]]; then exit 0; else exit 1; fi'
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME}: dmegalib has not been setup (no .dcosima.cfg file exists)"
+    MACHINES[$m]=""
+    continue
+  fi 
+
+  # Check if cosima is installed - cosima is the last one compiled, if cosima is there the rest should be there too
+  AVAILABLE=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
+  if [ "${AVAILABLE}" != "" ]; then
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): MEGAlib programs are not compiled"
+    continue
+  fi
+
+  # Check how many more instances are allowed
+  ALLOWED=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dmegalib-allowedinstances"`
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to get the number of allowed instances"
+    continue
+  fi
+	if (( ${ALLOWED} < 0 )); then ALLOWED=0; fi
+  ALLALLOWED=$(( ${ALLALLOWED} + ${ALLOWED} ))
+
+  # Check how many instances are running
+  RUNNING=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dmegalib-runninginstances"`
+	if [ "$?" != 0 ]; then
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to retrieve the number of running cosima instances"
+		continue
+	fi
+	ALLRUNNING=$(( ${ALLRUNNING} + ${RUNNING} ))
+
+  # Check how many instances are possible
+  REMOTECOMMAND='COUNT=`grep -c ^instances ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^instances ~/.dcosima.cfg; fi;'
+  POSSIBLE=$(ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND})
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Failed to read instances"
+    continue
+  fi
+  if [ "${POSSIBLE}" != "" ]; then
+    POSSIBLE=`echo ${POSSIBLE} | awk '{ print $2 }'`
+    if [[ ! ${POSSIBLE} =~ ^[0-9]+$ ]]; then 
+      echo "WARNING: Cannot parse remote instances level. Assuming 0.";
+      POSSIBLE="0"
+    fi
+  else
+    POSSIBLE="0"
+  fi
+  ALLPOSSIBLE=$(( ${ALLPOSSIBLE} + ${POSSIBLE} ))
+  ALLMACHINES=$(( ${ALLMACHINES} + 1 ))
+    
+  OUTPUT+=$" * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}):# ${ALLOWED} #/# ${RUNNING} #/# ${POSSIBLE}\n"
+done
+
+OUTPUT+=$" # \n"
+# Don't change this line, since it is used in dcosima-rsync in order to determine if something is still running...
+OUTPUT+=$"Total number of instances:# ${ALLALLOWED} #/# ${ALLRUNNING} #/# ${ALLPOSSIBLE}\n"
+
+echo " "
+if [ ${ALLMACHINES} -gt 0 ]; then
+  echo -e "${OUTPUT}" | column -t -s'#'
+else
+  echo "No machines available"
+fi
+echo " "
+
+exit 0

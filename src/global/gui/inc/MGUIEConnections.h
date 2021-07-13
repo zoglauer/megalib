@@ -88,7 +88,7 @@ class MGUIEConnections : public MGUIElement
   enum ButtonIDs { e_Add = 300, e_Remove };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEConnections, 0) // GUI window for unkown purpose ...
 #endif

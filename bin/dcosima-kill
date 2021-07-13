@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# Part of the cosima cluster
+# Kill ALL instances of cosima on the cluster
+
+# Return:
+# N/A
+
+
+commandhelp() {
+  echo ""
+  echo "dcosima-kill -- kill all cosima processes for the given run on the remote machines";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: dcosima-kill";
+  echo ""
+  echo "Options:"
+  echo "  --name=[run name]: Name of the run. Check with dcosima-listrunning if uncertain."
+  echo "  --help: Show this help."
+  echo ""
+  echo "";
+  echo "Example: "
+  echo "  dcosima-kill";
+  echo "";
+}
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+# Default options:
+CFG=~/.dcosima.cfg
+NAME="DCOSIMA_!!!!_IDONOTEXIST"
+
+# Overwrite default options with user options:
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-n*=* ]]; then
+    NAME=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  else
+    echo ""
+    echo "ERROR: Unknown command line option: ${C}"
+    echo "       See \"dcosima-kill --help\" for a list of options"
+    exit 1
+  fi
+done
+
+if [[ ${NAME} == "DCOSIMA_!!!!_IDONOTEXIST" ]]; then
+  echo "ERROR: You need to give a dcosima run name"
+  exit 1
+fi
+
+
+# Read configuration file and extract machines
+MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+REMOTEUSER=( )
+REMOTEHOST=( )
+REMOTEPORT=( )
+
+echo " "
+echo "Remote machines setup:"
+for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
+  REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
+  REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
+  echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"
+done
+
+# Create the install paths on all machines
+echo " "
+echo "Start stopping instances for run ${NAME}:"
+for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  echo " * Stopping all cosima instances for user ${REMOTEUSER[$m]} on ${REMOTEHOST[$m]}..."
+  REMOTECOMMAND="pkill -u ${REMOTEUSER[$m]} -f '\-t ${NAME} \-v'"
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND}
+done
+
+echo " "
+
+exit 0

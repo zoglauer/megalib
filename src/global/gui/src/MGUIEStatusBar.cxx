@@ -327,6 +327,56 @@ bool MGUIEStatusBar::SetContent(MString Field, int Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MGUIEStatusBar::SetContent(MString Field, unsigned long Value)
+{
+  // Set the content of field Field:
+  
+  // Test if the name does not already exist:
+  for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
+    if (Field == ((TObjString*) m_FieldNames->At(f))->GetString().Data()) {
+      ((TObjString*) m_FieldContentValues->At(f))->SetString((char*) MakeSmartString(Value).Data());
+      
+      if (m_IsCreated == true) {
+        ((TGLabel*) m_FieldContents->At(f))->SetText(MakeSmartString(Value));
+        Layout();       
+      }
+      
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUIEStatusBar::SetContent(MString Field, long Value)
+{
+  // Set the content of field Field:
+  
+  // Test if the name does not already exist:
+  for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
+    if (Field == ((TObjString*) m_FieldNames->At(f))->GetString().Data()) {
+      ((TObjString*) m_FieldContentValues->At(f))->SetString((char*) MakeSmartString(Value).Data());
+      
+      if (m_IsCreated == true) {
+        ((TGLabel*) m_FieldContents->At(f))->SetText(MakeSmartString(Value));
+        Layout();       
+      }
+      
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MGUIEStatusBar::SetContent(MString Field, MString Value)
 {
   // Set the content of field Field:

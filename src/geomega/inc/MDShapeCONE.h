@@ -52,11 +52,6 @@ class MDShapeCONE : public MDShape
   MVector GetSize();
 
   MString ToString();
-  MString GetGeant3DIM(MString ShortName);
-  MString GetGeant3DATA(MString ShortName);
-  MString GetGeant3ShapeName();
-  int GetGeant3NumberOfParameters();
-  MString GetMGeantDATA(MString ShortName);
   MString GetGeomega() const;
 
   double GetHalfHeight();
@@ -95,7 +90,7 @@ class MDShapeCONE : public MDShape
   double m_RmaxTop;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeCONE, 0) // no description
 #endif

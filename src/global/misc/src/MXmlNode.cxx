@@ -42,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MXmlNode)
 #endif
 
@@ -114,7 +114,20 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, long Value) : MXml
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned int Value) : MXmlData(Name, Value)
 {
   //! Constructor
+  
+  if (MotherNode != 0) {
+    MotherNode->AddNode(this);
+  }
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned long Value) : MXmlData(Name, Value)
+{
+  //! Constructor
+  
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
   }
@@ -169,10 +182,9 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, MVector Value)
 
   m_Name = Name;
   
-  ostringstream out;
-  out.precision(15);
-  out<<"<X>"<<Value.X()<<"</X><Y>"<<Value.Y()<<"</Y><Z>"<<Value.Z()<<"</Z>";
-  m_Value = out.str();
+  new MXmlNode(this, "X", Value.X());
+  new MXmlNode(this, "Y", Value.Y());
+  new MXmlNode(this, "Z", Value.Z());
   
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -191,9 +203,8 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, int ValueMin, int 
 
   m_Name = Name;
   
-  ostringstream out;
-  out<<"<Min>"<<ValueMin<<"</Min><Max>"<<ValueMax<<"</Max>";
-  m_Value = out.str();
+  new MXmlNode(this, "Min", ValueMin);
+  new MXmlNode(this, "Max", ValueMax);
   
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -212,9 +223,8 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, long ValueMin, lon
 
   m_Name = Name;
   
-  ostringstream out;
-  out<<"<Min>"<<ValueMin<<"</Min><Max>"<<ValueMax<<"</Max>";
-  m_Value = out.str();
+  new MXmlNode(this, "Min", ValueMin);
+  new MXmlNode(this, "Max", ValueMax);
   
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -233,10 +243,8 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, double ValueMin, d
 
   m_Name = Name;
   
-  ostringstream out;
-  out.precision(15);
-  out<<"<Min>"<<ValueMin<<"</Min><Max>"<<ValueMax<<"</Max>";
-  m_Value = out.str();
+  new MXmlNode(this, "Min", ValueMin);
+  new MXmlNode(this, "Max", ValueMax);
   
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -255,9 +263,8 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& Value
 
   m_Name = Name;
   
-  ostringstream out;
-  out<<"<Min>"<<ValueMin.GetLongIntsString()<<"</Min><Max>"<<ValueMax.GetLongIntsString()<<"</Max>";
-  m_Value = out.str();
+  new MXmlNode(this, "Min", ValueMin);
+  new MXmlNode(this, "Max", ValueMax);
   
   if (MotherNode != 0) {
     MotherNode->AddNode(this);

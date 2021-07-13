@@ -46,7 +46,7 @@ class MGUIMGeant : public MGUIDialog
  protected:
   virtual void Create();
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // private methods:
@@ -78,7 +78,7 @@ class MGUIMGeant : public MGUIDialog
     c_Max }; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIMGeant, 0)
 #endif

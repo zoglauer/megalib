@@ -64,7 +64,7 @@ class MInterfaceRealta : public MInterface
   MSettingsRevan *m_GUIDataRevan;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MInterfaceRealta, 0) // interface to the Realta-part of MEGAlib
 #endif

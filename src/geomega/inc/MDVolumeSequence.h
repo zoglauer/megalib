@@ -47,6 +47,9 @@ class MDVolumeSequence
   //! Default destructor
   virtual ~MDVolumeSequence();
 
+  //! Assignment operator
+  MDVolumeSequence& operator=(const MDVolumeSequence& V);
+
   //! Join two volume sequences: This is a special version for revan and should only be used there
   void Join(MDVolumeSequence VS);
   //! Empty the volume sequence
@@ -103,8 +106,10 @@ class MDVolumeSequence
   //! Return the sensitive volume or zero if there is no sensitive volume in the sequence
   MDVolume* GetSensitiveVolume() const;
 
-  //! Return true if a volume of the given name is in the sequence (make sure to consider the nameing conventions during removal of virtual volumes)
+  //! Return true if a volume of the given name is in the sequence (make sure to consider the naming conventions during removal of virtual volumes)
   bool HasVolume(MString Name) const;
+  //! Return true if the volume is in the sequence
+  bool HasVolume(MDVolume* Volume) const;
   //! Return true if both volume sequences have the same detector (if multiple volumes have the same MDDetector, it is checked if the detector is at the same position)
   bool HasSameDetector(const MDVolumeSequence& VS) const;
   //! Return true if both volume sequences have the same detector (if multiple volumes have the same MDDetector, it is checked if the detector is at the same position)
@@ -119,10 +124,16 @@ class MDVolumeSequence
   MRotation GetRotation();
 
   //! Given a position in the world volume, rotate/translate into volume Volume
-  //! It is not mandatory if the position is really inside - only the rotations/translations are executed:
+  //! It is not mandatory if the position is really inside - only the rotations/translations are executed
+  //! Return g_VectorNotDefined on error (e.g. volume does not exist)
   MVector GetPositionInVolume(const MVector& Position, MDVolume* Volume) const;
 
-  //! Dumnp the content to string
+  //! Return a unique world position of the detector volume
+  //! This position allows to distinguish different detectors even if they are clones/copies
+  //! Return g_VectorNotDefined in case of error
+  MVector GetUniqueWorldPositionOfDetector() const;
+  
+  //! Dump the content to string
   MString ToString() const;
   //! Just dump the sequence of volumes to string
   MString ToStringVolumes() const;
@@ -154,7 +165,7 @@ class MDVolumeSequence
   MDDetector* m_Detector;
   //! The named detector - zero if there is none
   MDDetector* m_NamedDetector;
-  //! The detector volume (not the sensitive volume?!)
+  //! The detector volume (not the sensitive volume!)
   MDVolume* m_DetectorVolume;
   //! The position in the detector
   MVector m_PositionInDetector;
@@ -169,7 +180,7 @@ class MDVolumeSequence
   MRotation m_RotMatrix; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDVolumeSequence, 0) // auxiliary file, which keeps info about a volumes parents, its sensitive volume and the belonging detector
 #endif

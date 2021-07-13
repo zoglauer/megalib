@@ -24,7 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MResponseMatrix.h"
+#include "MResponseMatrixOx.h"
 #include "MResponseMatrixO14.h"
 
 // Forward declarations:
@@ -33,7 +33,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MResponseMatrixO15 : public MResponseMatrix
+class MResponseMatrixO15 : public MResponseMatrixOx
 {
   // public interface:
  public:
@@ -154,7 +154,7 @@ class MResponseMatrixO15 : public MResponseMatrix
 
   virtual float GetMaximum() const;
   virtual float GetMinimum() const;
-  virtual float GetSum() const;
+  virtual double GetSum() const;
 
   virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int a1) const;
   virtual MResponseMatrixO2 GetSumMatrixO2(unsigned int a1, unsigned int a2) const;
@@ -253,7 +253,7 @@ class MResponseMatrixO15 : public MResponseMatrix
   friend ostream& operator<<(ostream& os, const MResponseMatrixO15& R);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMatrixO15, 1) // response matrix of order 15
 #endif

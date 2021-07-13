@@ -6,7 +6,7 @@ Version               1
 Geometry              DetectorEffectsEngine.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
+PhysicsListEM                        LivermorePol
 PhysicsListEMActivateFluorescence    false
 
 # Output formats

@@ -26,6 +26,7 @@
 #include "MGUIEMinMaxEntry.h"
 #include "MGUIEEntry.h"
 #include "MGUIEEntryList.h"
+#include "TGComboBox.h"
 
 // Forward declarations:
 
@@ -44,7 +45,7 @@ class MGUIImageDimensions : public MGUIDialog
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
   // private methods:
  private:
@@ -72,6 +73,8 @@ class MGUIImageDimensions : public MGUIDialog
   MGUIEMinMaxEntry* m_LongitudeDimension;
   MGUIEEntry* m_LongitudeBins;
 
+  TGComboBox* m_Projection;
+
   MGUIEMinMaxEntry* m_XDimension;
   MGUIEEntry* m_XBins;
   MGUIEMinMaxEntry* m_YDimension;
@@ -79,7 +82,7 @@ class MGUIImageDimensions : public MGUIDialog
   MGUIEMinMaxEntry* m_ZDimension;
   MGUIEEntry* m_ZBins;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIImageDimensions, 0)
 #endif

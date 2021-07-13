@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSettingsInterface)
 #endif
 
@@ -95,19 +95,28 @@ MString MSettingsInterface::CleanPath(MString Path)
 {
   //! Clean the path, i.e. exchange absolute with relative path $(MEGALIB)
   
-  MString ToBeReplaced = "$(MEGALIB)";
+  vector<MString> AllToBeReplaced;
+  AllToBeReplaced.push_back("$(MEGALIB)");
+  //AllToBeReplaced.push_back("$(Nuclearizer)");
   
-  if (ToBeReplaced == "" || ToBeReplaced == "/") return Path;
-
-  MFile::ExpandFileName(ToBeReplaced);
+  vector<MString> Additions;
+  Additions.push_back("");
+  Additions.push_back("_trunk");
+  Additions.push_back("_master");
+  Additions.push_back("_github");
+  Additions.push_back("_github_master");
+  Additions.push_back("_github_experimental");
   
-  MString ToBeReplacedTrunk = ToBeReplaced;
-  ToBeReplacedTrunk += "_trunk/";
-  ToBeReplaced += "/";
+  for (MString ToBeReplaced: AllToBeReplaced) {
+    if (ToBeReplaced == "" || ToBeReplaced == "/") return Path;
 
-  // First replace the extended version
-  Path = Path.ReplaceAll(ToBeReplacedTrunk, "$(MEGALIB)/");
-  Path = Path.ReplaceAll(ToBeReplaced, "$(MEGALIB)/");
+    MString Expanded = ToBeReplaced;
+    MFile::ExpandFileName(Expanded);
+  
+    for (MString Add: Additions) {
+      Path = Path.ReplaceAll(Expanded + Add + "/", ToBeReplaced + "/");
+    }
+  }
 
   return Path;  
 }

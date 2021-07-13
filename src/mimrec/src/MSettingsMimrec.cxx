@@ -43,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSettingsMimrec)
 #endif
 
@@ -71,6 +71,9 @@ MSettingsMimrec::MSettingsMimrec(bool AutoLoad) : MSettings("MimrecConfiguration
   m_TPDistanceTrans = 10;
   m_TPDistanceLong = 30;
 
+  // log binning for spectra
+  m_LogBinningSpectrum = false;
+  
   // Bin sizes for certain histograms:
   m_HistBinsARMGamma = 181;
   m_HistBinsARMElectron = 181;
@@ -132,6 +135,10 @@ bool MSettingsMimrec::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "Z", m_TPZ);
   new MXmlNode(aNode, "DistanceTrans", m_TPDistanceTrans);
   new MXmlNode(aNode, "DistanceLong", m_TPDistanceLong);
+
+  // Bin sizes for certain histograms
+  aNode = new MXmlNode(Node, "LogBinning");
+  new MXmlNode(aNode, "Spectrum", m_LogBinningSpectrum);
 
   // Bin sizes for certain histograms
   aNode = new MXmlNode(Node, "HistogramBins");
@@ -206,6 +213,12 @@ bool MSettingsMimrec::ReadXml(MXmlNode* Node)
     }
   }
 
+
+  if ((aNode = Node->GetNode("LogBinning")) != 0) {
+    if ((bNode = aNode->GetNode("Spectrum")) != 0) {
+      m_LogBinningSpectrum = bNode->GetValueAsBoolean();
+    }
+  }
 
   if ((aNode = Node->GetNode("HistogramBins")) != 0) {
     if ((bNode = aNode->GetNode("ARMGamma")) != 0) {

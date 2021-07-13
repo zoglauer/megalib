@@ -23,14 +23,16 @@ using namespace std;
 // ROOT libs:
 #include <TROOT.h>
 #include <TRotMatrix.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MString.h"
 #include "MTime.h"
 #include "MVector.h"
 #include "MStreams.h"
 #include "MFile.h"
+#include "MRotationInterface.h"
+#include "MPhysicalEventHit.h"
 
 // Forward declarations:
 
@@ -38,7 +40,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MPhysicalEvent
+class MPhysicalEvent : public MRotationInterface
 {
   // public interface:
  public:
@@ -57,7 +59,7 @@ class MPhysicalEvent
   virtual bool ParseDelayed(bool Fast = false);
 
   //! Validate the event and calculate all high level data...
-  virtual bool Validate() { return false; };
+  virtual bool Validate();
 
   virtual void Reset();
 
@@ -68,78 +70,12 @@ class MPhysicalEvent
   int GetEventType() const { return m_EventType; }
   //! Return the type of this event as string 
   MString GetTypeString() const;
-
-  //! Set if you wish to store the coordinates in galactic coordinates
-  void SetHasGalacticPointing(bool GalacticPointing = true) { m_HasGalacticPointing = GalacticPointing; }
-  //! Return if we have galactic coodinates
-  bool HasGalacticPointing() const { return m_HasGalacticPointing; }
-
-  //! Set the x-axis of the galactic coordinate system - input is in degrees
-  void SetGalacticPointingXAxis(const double Longitude, const double Latitude);
-  //! Set the z-axis of the galactic coordinate system - input is in degrees
-  void SetGalacticPointingZAxis(const double Longitude, const double Latitude);
-  //! Set the x-axis of the galactic coordinate system
-  void SetGalacticPointingXAxis(const MVector XAxis) { m_HasGalacticPointing = true; m_GalacticPointingXAxis = XAxis; }
-  //! Set the z-axis of the galactic coordinate system
-  void SetGalacticPointingZAxis(const MVector ZAxis) { m_HasGalacticPointing = true; m_GalacticPointingZAxis = ZAxis; }
-
-  //! Get the x-axis of the galactic coordinate system - input is in degrees
-  MVector GetGalacticPointingXAxis() const { return m_GalacticPointingXAxis; }
-  //! Get the z-axis of the galactic coordinate system - input is in degrees
-  MVector GetGalacticPointingZAxis() const { return m_GalacticPointingZAxis; }
-
-  //! Return the pointing (z-axis) - longitude component
-  double GetGalacticPointingZAxisLongitude() const { return m_GalacticPointingZAxis.Phi(); }      
-  //! Return the pointing (z-axis) - latitude component 
-  double GetGalacticPointingZAxisLatitude() const { return m_GalacticPointingZAxis.Theta() - 0.5*c_Pi; }      
-
-  //! Return the detector rotation as rotation matrix
-  TMatrix GetGalacticPointingRotationMatrix() const;
-
-
-  //! Return if we have a detector rotation
-  bool HasDetectorRotation() const { return m_HasDetectorRotation; }
-
-  //! Set the x-axis of the detector coordinate system
-  void SetDetectorRotationXAxis(const MVector Rot);
-  //! Set the z-axis of the detector coordinate system
-  void SetDetectorRotationZAxis(const MVector Rot);
-  
-  //! Get the x-axis of the detector coordinate system
-  MVector GetDetectorRotationXAxis() const;
-  //! Get the z-axis of the detector coordinate system
-  MVector GetDetectorRotationZAxis() const;
-
-  //! Return the detector rotation as rotation matrix
-  TMatrix GetDetectorRotationMatrix() const;
-
-  
-  //! Return if we have a horizon pointing
-  bool HasHorizonPointing() const { return m_HasHorizonPointing; }
-  
-  //! Set the x-axis of the horizon coordinate system - input is in degrees
-  void SetHorizonPointingXAxis(const double AzimuthNorth, const double Elevation) { m_HasHorizonPointing = true; m_HorizonPointingXAxis.SetMagThetaPhi(1.0, (90-Elevation)*c_Rad, AzimuthNorth*c_Rad); }
-  //! Set the z-axis of the horizon coordinate system - input is in degrees
-  void SetHorizonPointingZAxis(const double AzimuthNorth, const double Elevation) { m_HasHorizonPointing = true; m_HorizonPointingZAxis.SetMagThetaPhi(1.0, (90-Elevation)*c_Rad, AzimuthNorth*c_Rad); }
-  //! Set the x-axis of the horizon coordinate system
-  void SetHorizonPointingXAxis(const MVector XAxis) { m_HasHorizonPointing = true; m_HorizonPointingXAxis = XAxis; }
-  //! Set the z-axis of the horizon coordinate system
-  void SetHorizonPointingZAxis(const MVector ZAxis) { m_HasHorizonPointing = true; m_HorizonPointingZAxis = ZAxis; }
-
-  //! Get the x-axis of the horizon coordinate system
-  MVector GetHorizonPointingXAxis() const { return m_HorizonPointingXAxis; }
-  //! Get the z-axis of the horizon coordinate system
-  MVector GetHorizonPointingZAxis() const { return m_HorizonPointingZAxis; }
-  
-  //! Get the rotation of the horizon coordinate system
-  TMatrix GetHorizonPointingRotationMatrix() const;
-
   
   void SetTime(const MTime Time) { m_Time = Time; }
   MTime GetTime() const { return m_Time; }
 
-  void SetId(const unsigned int Id) { m_Id = Id; }
-  unsigned int GetId() const { return m_Id; };
+  void SetId(const long Id) { m_Id = Id; }
+  long GetId() const { return m_Id; };
 
   void SetTimeWalk(const int TimeWalk) { m_TimeWalk = TimeWalk; }
   int GetTimeWalk() const { return m_TimeWalk; }
@@ -173,9 +109,15 @@ class MPhysicalEvent
   void AddComment(MString& Comment) { m_Comments.push_back(Comment); }
   //! Get the number of comments
   unsigned int GetNComments() const { return m_Comments.size(); }
-  //! Get the specific comment
-  MString GetComment(unsigned int i);
+  //! Get the specific comment -- throws MExceptionIndexOutOfBounds otherwise
+  MString GetComment(unsigned int i) const;
   
+  //! Add a hit
+  void AddHit(const MPhysicalEventHit& Hit) { m_Hits.push_back(Hit); }
+  //! Return the number of hits
+  unsigned int GetNHits() const { return m_Hits.size(); }
+  //! Get a specific hit -- throws MExceptionIndexOutOfBounds otherwise
+  const MPhysicalEventHit& GetHit(unsigned int i) const;
   
   //! Set the OI information
   void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy; }
@@ -197,6 +139,8 @@ class MPhysicalEvent
   static const int c_Shower;
   static const int c_Photo;
   static const int c_Decay;
+  static const int c_PET;
+  static const int c_Multi;
   static const int c_Unidentifiable;
 
 
@@ -217,33 +161,15 @@ class MPhysicalEvent
   //! Type of the event 
   int m_EventType;
 
-  //! If true, a pointing in galactic coordinates is present 
-  bool m_HasGalacticPointing;
-  //! The rotation around the X axis
-  MVector m_GalacticPointingXAxis;
-  //! The rotation around the Z axis
-  MVector m_GalacticPointingZAxis;  
-  
-  //! If true, a detector rotation is present
-  bool m_HasDetectorRotation;
-  //! The rotation around the X axis
-  MVector m_DetectorRotationXAxis;
-  //! The rotation around the Z axis
-  MVector m_DetectorRotationZAxis;
-
-  //! If true, a horizon in detector coordinates is present
-  bool m_HasHorizonPointing;
-  //! Pointing of the detector in the horizon coordinate system - X axis
-  MVector m_HorizonPointingXAxis;
-  //! Pointing of the detector in the horizon coordinate system - Z axis
-  MVector m_HorizonPointingZAxis;
-
   //! The time this event occurred
   MTime m_Time;
 
   //! The event ID
-  unsigned int m_Id;
+  long m_Id;
 
+  //! The hits
+  vector<MPhysicalEventHit> m_Hits;
+  
   //! True if this event has been passed all tests..
   bool m_IsGoodEvent; 
   //! To be removed...
@@ -279,7 +205,7 @@ class MPhysicalEvent
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPhysicalEvent, 1)   // base class for compton and pair events
 #endif

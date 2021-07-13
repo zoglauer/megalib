@@ -75,7 +75,7 @@ class MXmlAttribute : public MXmlData
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MXmlAttribute, 0) // no description
 #endif

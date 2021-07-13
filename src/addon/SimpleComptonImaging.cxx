@@ -90,8 +90,6 @@ private:
  */
 SimpleComptonImaging::SimpleComptonImaging() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
-  
   m_AngularResolution = 5;
   m_Iterations = 5;
 }
@@ -134,27 +132,27 @@ bool SimpleComptonImaging::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-f" || Option == "-a" || Option == "-i") {
-			if (!((argc > i+1) && argv[i+1][0] != '-')){
-				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
-		// Multiple arguments_
-		//else if (Option == "-??") {
-		//	if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
-		//		cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
-		//		cout<<Usage.str()<<endl;
-		//		return false;
-		//	}
-		//}
+      if (!((argc > i+1) && argv[i+1][0] != '-')){
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    } 
+    // Multiple arguments_
+    //else if (Option == "-??") {
+    //  if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+    //    cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
+    //    cout<<Usage.str()<<endl;
+    //    return false;
+    //  }
+    //}
 
-		// Then fulfill the options:
+    // Then fulfill the options:
     if (Option == "-f") {
       m_FileName = argv[++i];
       cout<<"Accepting file name: "<<m_FileName<<endl;
@@ -164,11 +162,11 @@ bool SimpleComptonImaging::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-i") {
       m_Iterations = atoi(argv[++i]);
       cout<<"Accepting iterations: "<<m_Iterations<<endl;
-		} else {
-			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   if (m_FileName == "") {
@@ -297,7 +295,7 @@ bool SimpleComptonImaging::Analyze()
           if (y_mean[e] > 0) {
             Content += Backprojections[e]->GetBinContent(bx, by) / y_mean[e];
           }
-         }
+        }
         AllSky->SetBinContent(bx, by, Content * AllSky->GetBinContent(bx, by));
       }
     }
@@ -352,7 +350,7 @@ void CatchSignal(int a)
 int main(int argc, char** argv)
 {
   //void (*handler)(int);
-	//handler = CatchSignal;
+  //handler = CatchSignal;
   //(void) signal(SIGINT, CatchSignal);
 
   TApplication SimpleComptonImagingApp("SimpleComptonImagingApp", 0, 0);

@@ -41,41 +41,47 @@ class MSimHT
   // Public Interface:
  public:
   //! Simple constructor - set all values via the set commands 
-  MSimHT(MDGeometryQuest* Geo = 0);
-  //! Standard constructor, which contains all neccessary infos
-  MSimHT(const int Detector, const MVector& Position, const double Energy, 
-         const double Time, const vector<int>& Origins, MDGeometryQuest* Geo);
+  MSimHT(MDGeometryQuest* Geo = nullptr);
   //! Copy constructor
   MSimHT(const MSimHT& HT);
   //! Default destructor
   virtual ~MSimHT();
 
-  //! Set everything via one line of input
-  bool AddRawInput(MString LineBuffer, const int Version);
-
+  //! Set everything via one line of input from sim file - noising will be applied automatically if set in the geometry
+  bool AddRawInput(MString LineBuffer, int Version = 100);
+  
+  //! Set all core data - choose if you want to do noising or not
+  void Set(const int DetectorType, const MVector& Position, const double Energy, const double Time, const vector<int>& Origins, bool PerformNoising);
+  
+  //! Set all core data - choose if you want to do noising or not
+  void Set(const int DetectorType, const MVector& Position, const double Energy, const double Time, const set<int>& Origins, bool PerformNoising);
+  
   //! Return the number of the detector, where the hit took place
   int GetDetectorType() const { return m_DetectorType; };
-  //! Set the detctor type in which the hit took place
+  //! Set the detctor type in which the hit took place -- no noising will be applied and the volume sequence will not be updated
   void SetDetectorType(const int Detector) { m_DetectorType = Detector; }
 
   //! Return the location at which the hit happend
   MVector GetPosition() const { return m_Position; }
-  //! Set the location at which the hit happend  
-  void SetPosition(const MVector& Pos);
-
-  //! Set the energy deposited during this hit
-  double GetEnergy() const { return m_Energy; }
-  //! Return the energy deposited during this hit
-  void SetEnergy(const double Energy);
-
   //! Return the original location of the hit - before noising
   MVector GetOriginalPosition() const { return m_OriginalPosition; }
-  //! Return the original energy deposit - before noising
+  //! Set the location at which the hit happend -- no noising will be applied and the volume sequence will not be updated
+  void SetPosition(const MVector& Pos) { m_OriginalPosition = Pos; m_Position = Pos; }
+
+  //! Return the energy deposited during this hit
+  double GetEnergy() const { return m_Energy; }
+  //! Get the original energy deposit - before noising
   double GetOriginalEnergy() const { return m_OriginalEnergy; }
-  //! Set the time when this hit happend
-  double GetTime() const { return m_Time; }
+  //! Set the energy deposited during this hit  -- no noising will be applied and the volume sequence will not be updated
+  void SetEnergy(const double Energy) { m_OriginalEnergy = Energy; m_Energy = Energy; }
+
+  
   //! Return the time when this hit happend
-  void SetTime(const double Time) { m_Time = Time; }
+  double GetTime() const { return m_Time; }
+  //! Return the original time when this hit happend - before noising
+  double GetOriginalTime() const { return m_OriginalTime; }
+  //! Set the time when this hit happend  -- no noising will be applied and the volume sequence will not be updated
+  void SetTime(const double Time) { m_OriginalTime = Time; m_Time = Time; }
 
   //! Test if i is one of the origins of this hit
   bool IsOrigin(const int i) const;
@@ -85,7 +91,7 @@ class MSimHT
   unsigned int GetNOrigins() const;
   //! Add an origin - ignored if it already exists
   void AddOrigin(const int i);
-  //! Set all origins
+  //! Set all origins  -- no noising will be applied and the volume sequence will not be updated
   void SetOrigins(const set<int>& Origins);
   //! Return the origin with the smallest id
   int GetSmallestOrigin(const int Except = -1) const;
@@ -118,6 +124,10 @@ class MSimHT
   //! Return the associated geometry
   MDGeometryQuest* GetGeometry() { return m_Geometry; }
 
+  //! Do the actual noising of this hit
+  bool Noise(bool RecalculateVolumeSequence = true);
+  
+  
 
   // Depreciated
 
@@ -129,8 +139,6 @@ class MSimHT
 
   // protected methods:
  protected:
-  //! Do the actual noising of this hit - called by SetEnergy & SetPosition
-  bool Noise(bool RecalculateVolumeSequence = true);
 
 
   // private methods:
@@ -159,7 +167,9 @@ class MSimHT
   MVector m_OriginalPosition;  
   //! Energy deposit, before noising
   double m_OriginalEnergy;       
-
+  //! Time, before noising
+  double m_OriginalTime;       
+  
   //! Pointer to the geometry description
   MDGeometryQuest* m_Geometry;     
   //! Volume history of this hit
@@ -172,7 +182,7 @@ class MSimHT
   bool m_Added;           
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSimHT, 0)
 #endif

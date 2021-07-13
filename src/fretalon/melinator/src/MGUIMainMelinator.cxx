@@ -44,6 +44,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MGUIDefaults.h"
 #include "MFile.h"
+#include "MMath.h"
 #include "MGUIAbout.h"
 #include "MGUIGeometry.h"
 #include "MGUILoadCalibration.h"
@@ -58,7 +59,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIMainMelinator)
 #endif
 
@@ -71,8 +72,6 @@ MGUIMainMelinator::MGUIMainMelinator(MInterfaceMelinator* Interface,
   : TGMainFrame(gClient->GetRoot(), 1200, 700, kVerticalFrame),
     m_Interface(Interface), m_Settings(Settings)
 {
-  gStyle->SetPalette(1, 0);
-
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
 
@@ -86,6 +85,7 @@ MGUIMainMelinator::MGUIMainMelinator(MInterfaceMelinator* Interface,
   
   m_ActiveCollection = 0;
   m_ActiveLineFit = 0;
+  m_ActiveResultIsEnergy = true;
 }
 
 
@@ -108,7 +108,7 @@ void MGUIMainMelinator::Create()
   double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
   
   // Give it a default size
-  Resize(FontScaler*1200, 250 + FontScaler*550);
+  Resize(FontScaler*1200, 250 + FontScaler*600);
   
   // We start with a name and an icon...
   SetWindowName("Melinator");  
@@ -406,7 +406,7 @@ void MGUIMainMelinator::Create()
   TGGroupFrame* CalibrationModel = new TGGroupFrame(ControlColumn, "Calibration model options", kVerticalFrame);
   ControlColumn->AddFrame(CalibrationModel, GroupLayout);
 
-  m_CalibrationModelZeroCrossing = new TGCheckButton(CalibrationModel, "Energy assignment only: Assume the calibration crosses (0, 0)", c_CalibrationModelZeroCrossing);
+  m_CalibrationModelZeroCrossing = new TGCheckButton(CalibrationModel, "Energy assignment only: Assume the energy calibration crosses (0/0)", c_CalibrationModelZeroCrossing);
   m_CalibrationModelZeroCrossing->Associate(this);
   m_CalibrationModelZeroCrossing->SetWrapLength(FontScaler*200);
   m_CalibrationModelZeroCrossing->SetState(m_Settings->GetCalibrationModelZeroCrossing() ? kButtonDown : kButtonUp);
@@ -556,7 +556,14 @@ void MGUIMainMelinator::Create()
   m_ResultsHistogramLabel = new TGLabel(ResultsControl, "Calibration model: none");
   TGLayoutHints* ResultsLabelLayout =  new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 4+FontScaler*2, 3+FontScaler*2);
   ResultsControl->AddFrame(m_ResultsHistogramLabel, ResultsLabelLayout);
-
+  
+  m_ResultsToggleButton = new TGTextButton(ResultsControl, "Toggle", c_ResultsToggle); 
+  m_ResultsToggleButton->Associate(this);
+  m_ResultsToggleButton->SetWidth(100);
+  //m_ResultsToggleButton->SetEnabled(false);
+  m_ResultsToggleButton->SetMargins(FontScaler*5, FontScaler*5);
+  ResultsControl->AddFrame(m_ResultsToggleButton, ButtonLayout);
+  
   m_ResultsCanvas = new MGUIEReadOutUnitsCanvas(this, "ResultsCanvas", ResultsView);
   ResultsView->AddFrame(m_ResultsCanvas, CanvasLayout);
   
@@ -565,7 +572,7 @@ void MGUIMainMelinator::Create()
   // 3. Selection column
     
   
-  int SelectionColumnWidth = 125;
+  int SelectionColumnWidth = 135;
   
   
   TGLayoutHints* SelectionColumnLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandY, 10, 5, 14, 12);
@@ -573,9 +580,54 @@ void MGUIMainMelinator::Create()
   Columns->AddFrame(SelectionColumn, SelectionColumnLayout);
   
   TGLabel* MainSelectionLabel = new TGLabel(SelectionColumn, "Select a read-out element:");
-  TGLayoutHints* MainSelectionLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 0, 20, 2, 3);
+  TGLayoutHints* MainSelectionLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 0, 20, 2, 20);
   SelectionColumn->AddFrame(MainSelectionLabel, MainSelectionLabelLayout);
 
+  TGLabel* RMSLabel = new TGLabel(SelectionColumn, "Color coding in RMS of final fit:");
+  TGLayoutHints* RMSTitlelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 0, 20, 2, 5);
+  SelectionColumn->AddFrame(RMSLabel, RMSTitlelLayout);
+
+  TGHorizontalFrame* RMSFrame = new TGHorizontalFrame(SelectionColumn, SelectionColumnWidth, SelectionColumnWidth); //, kRaisedFrame);
+  TGLayoutHints* RMSFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 5, 20, 2, 20);
+  SelectionColumn->AddFrame(RMSFrame, RMSFrameLayout);
+
+  TGLayoutHints* RMSLabelLayout = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 0, 0, 0, 0);
+ 
+  TGLabel* SmallerOneLabel = new TGLabel(RMSFrame, "0-1");
+  SmallerOneLabel->SetBackgroundColor(gROOT->GetColor(kGreen+1)->GetPixel());
+  SmallerOneLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerOneLabel, RMSLabelLayout);
+
+  TGLabel* SmallerTwoLabel = new TGLabel(RMSFrame, "1-2");
+  SmallerTwoLabel->SetBackgroundColor(gROOT->GetColor(kSpring)->GetPixel());
+  SmallerTwoLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerTwoLabel, RMSLabelLayout);
+
+  TGLabel* SmallerThreeLabel = new TGLabel(RMSFrame, "2-3");
+  SmallerThreeLabel->SetBackgroundColor(gROOT->GetColor(kYellow)->GetPixel());
+  SmallerThreeLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerThreeLabel, RMSLabelLayout);
+
+  TGLabel* SmallerFourLabel = new TGLabel(RMSFrame, "3-4");
+  SmallerFourLabel->SetBackgroundColor(gROOT->GetColor(kOrange-2)->GetPixel());
+  SmallerFourLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerFourLabel, RMSLabelLayout);
+
+  TGLabel* SmallerFiveLabel = new TGLabel(RMSFrame, "4-5");
+  SmallerFiveLabel->SetBackgroundColor(gROOT->GetColor(kOrange+1)->GetPixel());
+  SmallerFiveLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerFiveLabel, RMSLabelLayout);
+
+  TGLabel* LargerFiveLabel = new TGLabel(RMSFrame, "5+");
+  LargerFiveLabel->SetBackgroundColor(gROOT->GetColor(kRed)->GetPixel());
+  LargerFiveLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(LargerFiveLabel, RMSLabelLayout);
+
+  TGLabel* BadLabel = new TGLabel(RMSFrame, "Bad");
+  BadLabel->SetBackgroundColor(gROOT->GetColor(kGray+1)->GetPixel());  
+  BadLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(BadLabel, RMSLabelLayout);
+  
   // Main view:
   TGLayoutHints* MainSelectionCanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 0, 0, 5, 5);
   m_MainSelectionCanvas = new MGUIEReadOutElementView(SelectionColumn);
@@ -600,7 +652,7 @@ void MGUIMainMelinator::Create()
 //! Create the selection GUI element
 void MGUIMainMelinator::CreateSelection()
 {
-  m_MainSelectionCanvas->Clear();
+  m_MainSelectionCanvas->ClearReadOutElements();
   
   for (unsigned int c = 0; c < m_Melinator.GetNumberOfCollections(); ++c) {
     //if (c > 10) break;
@@ -724,11 +776,15 @@ bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Param
         case c_UpdateHistogram:
           Status = OnUpdateHistogram();
           break;
-
+          
         case c_UpdatePeakHistogram:
           Status = OnUpdatePeakHistogram();
           break;
-
+          
+        case c_ResultsToggle:
+          Status = OnToggleResults();
+          break;
+          
         default:
           break;
         }
@@ -788,9 +844,9 @@ bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Param
         Status = OnSaveConfiguration();
         break;
 
-      //case c_Geometry:
-      //  Status = OnGeometry();
-      //  break;
+      case c_Geometry:
+        Status = OnGeometry();
+        break;
 
       case c_Exit:
         Status = OnExit();
@@ -874,7 +930,8 @@ bool MGUIMainMelinator::Update()
   m_Settings->SetCalibrationModelZeroCrossing(m_CalibrationModelZeroCrossing->GetState() == kButtonDown ? true : false);
   m_Settings->SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
   if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
-    m_Settings->SetCalibrationModelDeterminationMethodFittingModel(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
+    m_Settings->SetCalibrationModelDeterminationMethodFittingEnergyModel(m_CalibrationModelDeterminationMethodFittingEnergyModel->GetSelected());
+    m_Settings->SetCalibrationModelDeterminationMethodFittingFWHMModel(m_CalibrationModelDeterminationMethodFittingFWHMModel->GetSelected());
   }
   
   
@@ -1016,8 +1073,6 @@ bool MGUIMainMelinator::OnSwitchPeakParametrizationMode(unsigned int ID)
 }
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1035,32 +1090,65 @@ bool MGUIMainMelinator::OnSwitchCalibrationModelDeterminationMode(unsigned int I
     TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, FontScaler*3, 0);  
     TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsRight, FontScaler*10, 0, 2, 3);
 
-    TGHorizontalFrame* FittingModelFrame = new TGHorizontalFrame(m_CalibrationModelDeterminationOptions);
-    m_CalibrationModelDeterminationOptions->AddFrame(FittingModelFrame, TopLeftLayout);
+    TGHorizontalFrame* EnergyFittingModelFrame = new TGHorizontalFrame(m_CalibrationModelDeterminationOptions);
+    m_CalibrationModelDeterminationOptions->AddFrame(EnergyFittingModelFrame, TopLeftLayout);
 
-    TGLabel* FittingModelLabel = new TGLabel(FittingModelFrame, "Model: ");
-    FittingModelLabel->ChangeOptions(kFixedWidth);
-    FittingModelLabel->SetWidth(FontScaler*70);
-    FittingModelLabel->SetTextJustify(kTextLeft);
-    FittingModelFrame->AddFrame(FittingModelLabel, TopLeftTextLayout);
+    TGLabel* EnergyFittingModelLabel = new TGLabel(EnergyFittingModelFrame, "Energy: ");
+    EnergyFittingModelLabel->ChangeOptions(kFixedWidth);
+    EnergyFittingModelLabel->SetWidth(FontScaler*70);
+    EnergyFittingModelLabel->SetTextJustify(kTextLeft);
+    EnergyFittingModelFrame->AddFrame(EnergyFittingModelLabel, TopLeftTextLayout);
     
-    m_CalibrationModelDeterminationMethodFittingModel = new TGComboBox(FittingModelFrame, c_CalibrationModelDeterminationMethodFittingModel);
-    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1", MCalibrationModel::c_CalibrationModelPoly1);
-    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 2", MCalibrationModel::c_CalibrationModelPoly2);
-    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 3", MCalibrationModel::c_CalibrationModelPoly3);
-    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 4", MCalibrationModel::c_CalibrationModelPoly4);
-    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1 + Inv 1", MCalibrationModel::c_CalibrationModelPoly1Inv1);
-    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1 + Exp 1", MCalibrationModel::c_CalibrationModelPoly1Exp1);
-    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1 + Exp 2", MCalibrationModel::c_CalibrationModelPoly1Exp2);
-    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1 + Exp 3", MCalibrationModel::c_CalibrationModelPoly1Exp3);
-    m_CalibrationModelDeterminationMethodFittingModel->Select(m_Settings->GetCalibrationModelDeterminationMethodFittingModel());
-    m_CalibrationModelDeterminationMethodFittingModel->Associate(this);
-    m_CalibrationModelDeterminationMethodFittingModel->SetHeight(FontScaler*24);
-    //m_CalibrationModelDeterminationMethodFittingModel->SetWidth(FontScaler*130);
-    unsigned int Height = m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->GetNumberOfEntries()*m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->GetItemVsize();
-    m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->SetHeight(Height);
-    FittingModelFrame->AddFrame(m_CalibrationModelDeterminationMethodFittingModel, TopRightLayout);
-
+    m_CalibrationModelDeterminationMethodFittingEnergyModel = new TGComboBox(EnergyFittingModelFrame, c_CalibrationModelDeterminationMethodFittingEnergyModel);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 Through Zero", MCalibrationModel::c_CalibrationModelPoly1Zero);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1", MCalibrationModel::c_CalibrationModelPoly1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2", MCalibrationModel::c_CalibrationModelPoly2);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 3", MCalibrationModel::c_CalibrationModelPoly3);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 4", MCalibrationModel::c_CalibrationModelPoly4);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Inv 1 Zero", MCalibrationModel::c_CalibrationModelPoly1Inv1Zero);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Inv 1", MCalibrationModel::c_CalibrationModelPoly1Inv1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2 + Inv 1 Zero", MCalibrationModel::c_CalibrationModelPoly2Inv1Zero);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2 + Inv 1", MCalibrationModel::c_CalibrationModelPoly2Inv1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Exp 1", MCalibrationModel::c_CalibrationModelPoly1Exp1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Exp 2", MCalibrationModel::c_CalibrationModelPoly1Exp2);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Exp 3", MCalibrationModel::c_CalibrationModelPoly1Exp3);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Log 1", MCalibrationModel::c_CalibrationModelPoly1Log1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2 + Log 1", MCalibrationModel::c_CalibrationModelPoly2Log1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->Select(m_Settings->GetCalibrationModelDeterminationMethodFittingEnergyModel());
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->Associate(this);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->SetHeight(FontScaler*24);
+    //m_CalibrationModelDeterminationMethodFittingEnergyModel->SetWidth(FontScaler*130);
+    unsigned int HeightEnergy = m_CalibrationModelDeterminationMethodFittingEnergyModel->GetListBox()->GetNumberOfEntries()*m_CalibrationModelDeterminationMethodFittingEnergyModel->GetListBox()->GetItemVsize();
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->GetListBox()->SetHeight(HeightEnergy);
+    EnergyFittingModelFrame->AddFrame(m_CalibrationModelDeterminationMethodFittingEnergyModel, TopRightLayout);
+    
+    TGHorizontalFrame* FWHMFittingModelFrame = new TGHorizontalFrame(m_CalibrationModelDeterminationOptions);
+    m_CalibrationModelDeterminationOptions->AddFrame(FWHMFittingModelFrame, TopLeftLayout);
+    
+    TGLabel* FWHMFittingModelLabel = new TGLabel(FWHMFittingModelFrame, "FWHM: ");
+    FWHMFittingModelLabel->ChangeOptions(kFixedWidth);
+    FWHMFittingModelLabel->SetWidth(FontScaler*70);
+    FWHMFittingModelLabel->SetTextJustify(kTextLeft);
+    FWHMFittingModelFrame->AddFrame(FWHMFittingModelLabel, TopLeftTextLayout);
+    
+    m_CalibrationModelDeterminationMethodFittingFWHMModel = new TGComboBox(FWHMFittingModelFrame, c_CalibrationModelDeterminationMethodFittingFWHMModel);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->AddEntry("Poly 1 Through Zero", MCalibrationModel::c_CalibrationModelPoly1Zero);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->AddEntry("Poly 1", MCalibrationModel::c_CalibrationModelPoly1);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->AddEntry("Poly 2", MCalibrationModel::c_CalibrationModelPoly2);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->AddEntry("Poly 3", MCalibrationModel::c_CalibrationModelPoly3);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->AddEntry("Poly 4", MCalibrationModel::c_CalibrationModelPoly4);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->AddEntry("Poly 1 + Inv 1", MCalibrationModel::c_CalibrationModelPoly1Inv1);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->AddEntry("Poly 1 + Exp 1", MCalibrationModel::c_CalibrationModelPoly1Exp1);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->AddEntry("Poly 1 + Exp 2", MCalibrationModel::c_CalibrationModelPoly1Exp2);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->AddEntry("Poly 1 + Exp 3", MCalibrationModel::c_CalibrationModelPoly1Exp3);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->Select(m_Settings->GetCalibrationModelDeterminationMethodFittingFWHMModel());
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->Associate(this);
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->SetHeight(FontScaler*24);
+    //m_CalibrationModelDeterminationMethodFittingFWHMModel->SetWidth(FontScaler*130);
+    unsigned int HeightFWHM = m_CalibrationModelDeterminationMethodFittingFWHMModel->GetListBox()->GetNumberOfEntries()*m_CalibrationModelDeterminationMethodFittingFWHMModel->GetListBox()->GetItemVsize();
+    m_CalibrationModelDeterminationMethodFittingFWHMModel->GetListBox()->SetHeight(HeightFWHM);
+    FWHMFittingModelFrame->AddFrame(m_CalibrationModelDeterminationMethodFittingFWHMModel, TopRightLayout);
+    
   } else if (ID == MCalibrateEnergyDetermineModel::c_CalibrationModelBestFit) { 
     m_CalibrationModelDeterminationOptions->RemoveAll(); // Deletes everyting too 
   }
@@ -1179,7 +1267,8 @@ bool MGUIMainMelinator::OnLoadLast()
    
   m_Melinator.Clear();
   m_Melinator.SetSelectedDetectorID(m_Settings->GetSelectedDetectorID());
- 
+  m_Melinator.SetSelectedTemperatureWindow(m_Settings->GetMinimumTemperature(), m_Settings->GetMaximumTemperature());
+  
   MString FileName;
   MString IsotopeName;
   MIsotope Isotope;
@@ -1220,12 +1309,12 @@ bool MGUIMainMelinator::OnLoadLast()
     
   if (m_Melinator.GetNumberOfCollections() == 0) {
     mgui<<"There was no usable data on file!"<<show;
-    UpdateDisplay(g_UnsignedIntNotDefined, g_UnsignedIntNotDefined);
+    //UpdateDisplay(g_UnsignedIntNotDefined, g_UnsignedIntNotDefined, true);
     return false;
   }
   
   CreateSelection();
-  UpdateDisplay(0, 0);
+  UpdateDisplay(0, 0, true);
   
   return true;
 }
@@ -1237,9 +1326,13 @@ bool MGUIMainMelinator::OnLoadLast()
 //! Actions when the save button has been pressed
 bool MGUIMainMelinator::OnSave()
 {  
-  m_Melinator.Save(m_Settings->GetSaveAsFileName());
+  bool Return = m_Melinator.Save(m_Settings->GetSaveAsFileName());
 
-  return true;
+  if (Return == false) {
+    mgui<<"Unable to save file:"<<endl<<m_Settings->GetSaveAsFileName()<<error; 
+  }
+  
+  return Return;
 }
 
 
@@ -1290,7 +1383,7 @@ bool MGUIMainMelinator::OnSwitchCollection(unsigned int Collection)
 {
   if (Collection < m_Melinator.GetNumberOfCollections()) { 
     m_ActiveCollection = Collection;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
 
   return true;
@@ -1305,7 +1398,7 @@ bool MGUIMainMelinator::OnNext()
 {
   if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()-1) { 
     m_ActiveCollection++;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
 
   return true;
@@ -1320,7 +1413,7 @@ bool MGUIMainMelinator::OnBack()
 {
   if (m_ActiveCollection > 0) { 
     m_ActiveCollection--;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
  
   return true;
@@ -1335,7 +1428,7 @@ bool MGUIMainMelinator::OnNextFit()
 {
   if (m_ActiveLineFit < m_Melinator.GetNumberOfCalibrationSpectralPoints(m_ActiveCollection)-1) {
     m_ActiveLineFit++;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
   return true; 
 }
@@ -1349,7 +1442,7 @@ bool MGUIMainMelinator::OnPreviousFit()
 {
   if (m_ActiveLineFit > 0) { 
     m_ActiveLineFit--;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
   return true; 
 }
@@ -1381,7 +1474,7 @@ bool MGUIMainMelinator::OnToggleFit()
   // Redo fit!
   m_Melinator.ReCalibrateModel(m_ActiveCollection);
   
-  UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+  UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   
   return true; 
 }
@@ -1394,7 +1487,7 @@ bool MGUIMainMelinator::OnToggleFit()
 bool MGUIMainMelinator::OnUpdateHistogram()
 {
   if (m_Melinator.GetNumberOfCollections() > 0) {
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
   return true;
 }
@@ -1407,7 +1500,22 @@ bool MGUIMainMelinator::OnUpdateHistogram()
 bool MGUIMainMelinator::OnUpdatePeakHistogram()
 {
   if (m_Melinator.GetNumberOfCollections() > 0) {
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Update the peakhistogram with the latest settings
+bool MGUIMainMelinator::OnToggleResults()
+{
+  if (m_Melinator.GetNumberOfCollections() > 0) {
+    m_ActiveResultIsEnergy = !m_ActiveResultIsEnergy;
+    UpdateCalibration(m_ActiveCollection, m_ActiveResultIsEnergy);
   }
   
   return true;
@@ -1418,11 +1526,11 @@ bool MGUIMainMelinator::OnUpdatePeakHistogram()
 
 
 //! Update all graphs
-bool MGUIMainMelinator::UpdateDisplay(unsigned int Collection, unsigned int Line)
+bool MGUIMainMelinator::UpdateDisplay(unsigned int Collection, unsigned int Line, bool ActiveResultIsEnergy)
 {
   UpdateCollection(Collection, Line);
   UpdateLineFit(Collection, Line);
-  UpdateCalibration(Collection);
+  UpdateCalibration(Collection, ActiveResultIsEnergy);
   
   return true;
 }
@@ -1527,7 +1635,7 @@ void MGUIMainMelinator::UpdateLineFit(unsigned int Collection, unsigned int Line
     m_FitToggleButton->SetEnabled(false);
     m_FitCanvas->GetCanvas()->Clear(); 
     m_FitCanvas->GetCanvas()->Update();
-    m_FitHistogramLabel->SetText("No peak parametrizations available to display");
+    m_FitHistogramLabel->SetText("Fit display");
     Layout();
   }
 }
@@ -1537,18 +1645,31 @@ void MGUIMainMelinator::UpdateLineFit(unsigned int Collection, unsigned int Line
 
 
 //! Update the calibration
-void MGUIMainMelinator::UpdateCalibration(unsigned int Collection) 
+void MGUIMainMelinator::UpdateCalibration(unsigned int Collection, bool DrawEnergyCalibration) 
 {
-  m_Melinator.DrawCalibration(*(m_ResultsCanvas->GetCanvas()), Collection);
+  m_Melinator.DrawCalibration(*(m_ResultsCanvas->GetCanvas()), Collection, DrawEnergyCalibration);
   
-  if (m_Melinator.HasCalibrationModel(Collection) == true) {
-    MCalibrationModel& M = m_Melinator.GetCalibrationModel(Collection);
-    ostringstream Text;
-    Text<<"Calibration model: "<<M.GetName();
-    m_ResultsHistogramLabel->SetText(Text.str().c_str());
+  if (m_Melinator.HasEnergyCalibrationModel(Collection) == true && m_Melinator.HasFWHMCalibrationModel(Collection) == true) {
+
+    if (DrawEnergyCalibration == true) {
+      MCalibrationModel& M = m_Melinator.GetEnergyCalibrationModel(Collection);
+      ostringstream Text;
+      Text<<"Energy calibration model: "<<M.GetName();
+      m_ResultsHistogramLabel->SetText(Text.str().c_str());
+    } else {
+      MCalibrationModel& M = m_Melinator.GetFWHMCalibrationModel(Collection);
+      ostringstream Text;      
+      Text<<"FWHM calibration model: "<<M.GetName();
+      m_ResultsHistogramLabel->SetText(Text.str().c_str());
+    }
+
     Layout();
   } else {
-    m_ResultsHistogramLabel->SetText("Calibration model: interpolation");
+    if (DrawEnergyCalibration == true) {
+      m_ResultsHistogramLabel->SetText("Energy calibration model: interpolation");
+    } else {
+      m_ResultsHistogramLabel->SetText("FWHM calibration model: interpolation");
+    }
     Layout();
   }
   
@@ -1556,50 +1677,64 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection)
   
   // Get
   vector<double> FitQualities;
+  vector<bool> KnownOutliers;
   for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
     double FitQuality = m_Melinator.GetCalibrationQuality(i);
+    
+    if (FitQuality < 0 || FitQuality > 10) {
+      KnownOutliers.push_back(true);
+    } else {
+      KnownOutliers.push_back(false);
+    }
+    
     FitQualities.push_back(FitQuality);
   }
+
   
-  // Mean & Standard deviation:
-  double LowerCutOff = 0;
-  double UpperCutOff = 100000;
+  // RMS with outlier detection:
+  MMath M;
+  vector<bool> IsOutlier = M.ModifiedThomsonTauTest(FitQualities, 0.01, KnownOutliers);
   
-  long GoodEntries = 0;
-  double Mean = 0;
-  for (double Value:  FitQualities) {
-    if (Value > LowerCutOff && Value < UpperCutOff) {
-      Mean += Value;
-      GoodEntries++;
+  unsigned int GoodEntries = 0;
+  double RMS = 0;
+  for (unsigned int i = 0; i < FitQualities.size(); ++i) {
+    if (IsOutlier[i] == false) {
+      RMS += pow(FitQualities[i], 2);
+      GoodEntries += 1;
     }
   }
-  if (GoodEntries > 0) {
-    Mean /= GoodEntries;
+  
+  //cout<<"Good entries"<<GoodEntries<<endl;
+  if (GoodEntries == 0) {
+    // Nothing to do
+    return;
+  }
+  
+  RMS = sqrt(RMS/GoodEntries); // should be -1, but we don't want to handle the single case extra and it's close enough
     
-    double StandardDeviation = 0;
-    for (double Value:  FitQualities) {
-      if (Value > LowerCutOff && Value < UpperCutOff) {
-        StandardDeviation += pow(Value - Mean, 2);
+  // Now set the colors:
+  for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
+    if (m_Melinator.GetCalibrationQuality(i) == -1) {
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), -1);
+    } else {
+      double Quality = 0;
+      if (RMS > 0) {
+        Quality = m_Melinator.GetCalibrationQuality(i)/RMS;
       }
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), Quality);
     }
-    StandardDeviation = sqrt(StandardDeviation/GoodEntries);
-  
-    if (StandardDeviation > 0) {
-      // Now set the colors:
-      for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
-        //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<"): "<<m_Melinator.GetCalibrationQuality(i)<<"/"<<StandardDeviation<<endl;
-        m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), m_Melinator.GetCalibrationQuality(i)/StandardDeviation);
-      }
-    }
+    //cout<<m_Melinator.GetCalibrationQuality(i)<<endl;
+    //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<") (Fitquality: "<<FitQualities[i]<<" RMS:"<<RMS<<", Outlier: "<<(IsOutlier[i] ? "true" : "false")<<")"<<endl;
   }
+  
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Switch to the line near the given rou
-void MGUIMainMelinator::SwitchToLine(double ROUs)
+//! Switch to the line near the given X value
+void MGUIMainMelinator::SwitchToLine(double X)
 {
   unsigned int Lines = m_Melinator.GetNumberOfCalibrationSpectralPoints(m_ActiveCollection);
   if (Lines == 0) return;
@@ -1609,13 +1744,20 @@ void MGUIMainMelinator::SwitchToLine(double ROUs)
   
   for (unsigned int p = 0; p < Lines; ++p) {
     MCalibrationSpectralPoint& P = m_Melinator.GetCalibrationSpectralPoint(m_ActiveCollection, p);
-    if (fabs(P.GetPeak() - ROUs) < MinDistance) {
-      Closest = p;
-      MinDistance = fabs(P.GetPeak() - ROUs);
+    if (m_ActiveResultIsEnergy == true) {
+      if (fabs(P.GetPeak() - X) < MinDistance) {
+        Closest = p;
+        MinDistance = fabs(P.GetPeak() - X);
+      }
+    } else {
+      if (fabs(P.GetEnergy() - X) < MinDistance) {
+        Closest = p;
+        MinDistance = fabs(P.GetEnergy() - X);
+      }
     }
   }
   
-  UpdateDisplay(m_ActiveCollection, Closest);
+  UpdateDisplay(m_ActiveCollection, Closest, m_ActiveResultIsEnergy);
 }
 
 
@@ -1638,7 +1780,8 @@ bool MGUIMainMelinator::OnFit()
     }
     m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
     if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
-      m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel->GetSelected());
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel->GetSelected());
     }
 
     m_Melinator.Calibrate(m_ActiveCollection, false);
@@ -1668,7 +1811,8 @@ bool MGUIMainMelinator::OnFitWithDiagnostics()
     }
     m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
     if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
-      m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel->GetSelected());
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel->GetSelected());
     }
     
     m_Melinator.Calibrate(m_ActiveCollection, true);
@@ -1698,7 +1842,8 @@ bool MGUIMainMelinator::OnFitAll()
     }
     m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
     if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
-      m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel->GetSelected());
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel->GetSelected());
     }
     
     m_Melinator.Calibrate(false);
@@ -1756,8 +1901,9 @@ bool MGUIMainMelinator::OnSaveConfiguration()
   //Info.fIniDir = StrDup(gSystem->DirName(m_Settings->GetCurrentFile()));
   new TGFileDialog(gClient->GetRoot(), this, kFDSave, &Info);
   
-  // Get the filename ...
+  // Get the filename and store all the data in the settings...
   if ((char *) Info.fFilename != 0) {
+    Update();
     m_Interface->SaveConfiguration(MString(Info.fFilename));
   } 
 
@@ -1772,7 +1918,7 @@ bool MGUIMainMelinator::OnGeometry()
 {
   // Show the geometry dialog
   // Returns the geometry file name
-
+  
   MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), this, m_Settings->GetGeometryFileName());
   gClient->WaitForUnmap(Geo);
   MString Name = Geo->GetGeometryFileName();

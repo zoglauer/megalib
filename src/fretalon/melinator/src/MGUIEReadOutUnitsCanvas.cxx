@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIEReadOutUnitsCanvas)
 #endif
 
@@ -61,9 +61,9 @@ Bool_t MGUIEReadOutUnitsCanvas::HandleContainerButton(Event_t *event)
 {
   Int_t x = event->fX;
   Int_t y = event->fY;
-    
-  double HistX, HistY;
-  if (fCanvas != 0) {
+  
+  if (fCanvas != nullptr && fCanvas->GetListOfPrimitives()->First() != nullptr) {
+    double HistX, HistY;
     // Y is wrong, only X is right...
     fCanvas->PixeltoXY(x, y, HistX, HistY);
     if (fCanvas->GetLogx() == 1) HistX = pow(10, HistX);

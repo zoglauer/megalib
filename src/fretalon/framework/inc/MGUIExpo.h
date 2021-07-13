@@ -106,7 +106,7 @@ class MGUIExpo : public TGCompositeFrame
   // private members:
  private:
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIExpo, 1) // basic class for dialog windows
 #endif

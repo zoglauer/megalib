@@ -64,21 +64,19 @@ class MDGeometry
   //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
   virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
   
-  bool WriteGeant3Files();
-  bool WriteMGeantFiles(MString FilePrefix = "", bool StoreIAs = false, bool StoreVetoes = true);
   bool TestIntersections();
   void DumpInformation();
   void CalculateMasses();
-
-  //! Set whether to ignore short names (short names are required for Geant3/MGGPOD)
-  void IgnoreShortNames(bool Ignore) { m_IgnoreShortNames = Ignore; }
 
   //! This flag tells us we are within geomega, this enables a few options, which are not
   //! available in the normal library mode, e.g. view the surrounding sphere
   void LaunchedByGeomega() { m_LaunchedByGeomega = true; } 
   
-  //! Check for overlaps using the ROOT overlap checker
+  //! Check for overlaps using the ROOT overlap checker 
   bool CheckOverlaps();
+  //! Check for overlaps using the ROOT overlap checker - diagnostics is returned in the stream instead of the screen
+  bool CheckOverlaps(ostringstream& Diagnostics);
+
   //! Add a preferred visible volume --- if any is given, only those will be shown
   void AddPreferredVisibleVolume(const MString& Name) { m_PreferredVisibleVolumeNames.push_back(Name); }
   
@@ -96,7 +94,8 @@ class MDGeometry
   unsigned int GetVolumeIndex(const MString& Name);
   unsigned int GetNVolumes() const;
   MDVolume* GetWorldVolume();
-
+  vector<MDVolume*> GetVolumeList() const { return m_VolumeList; }
+  
   void SetStartVolumeName(MString StartVolume) { m_StartVolume = StartVolume; }
   MString GetStartVolumeName() { return m_StartVolume; }
 
@@ -105,12 +104,15 @@ class MDGeometry
   MDMaterial* GetMaterial(const MString& Name);
   unsigned int GetMaterialIndex(const MString& Name);
   unsigned int GetNMaterials();
-
+  vector<MDMaterial*> GetMaterialList() const { return m_MaterialList; }
+  
   void AddDetector(MDDetector* Detector);
   MDDetector* GetDetectorAt(unsigned int i);
   MDDetector* GetDetector(const MString& Name);
+  MDDetector* GetDetector(MVector Position);
   unsigned int GetDetectorIndex(const MString& Name);
   unsigned int GetNDetectors();
+  vector<MDDetector*> GetDetectorList() const { return m_DetectorList; }
 
   bool AddShape(const MString& Type, const MString& Name);
   void AddShape(MDShape* Shape);
@@ -118,13 +120,15 @@ class MDGeometry
   MDShape* GetShape(const MString& Name);
   unsigned int GetShapeIndex(const MString& Name);
   unsigned int GetNShapes();
-
+  vector<MDShape*> GetShapeList() const { return m_ShapeList; }
+  
   void AddOrientation(MDOrientation* Orientation);
   MDOrientation* GetOrientationAt(unsigned int i);
   MDOrientation* GetOrientation(const MString& Name);
   unsigned int GetOrientationIndex(const MString& Name);
   unsigned int GetNOrientations();
-
+  vector<MDOrientation*> GetOrientationList() const { return m_OrientationList; }
+  
   MDTriggerUnit* GetTriggerUnit() { return m_TriggerUnit; }
 
   void AddTrigger(MDTrigger* Trigger);
@@ -132,7 +136,8 @@ class MDGeometry
   MDTrigger* GetTrigger(const MString& Name);
   unsigned int GetTriggerIndex(const MString& Name);
   unsigned int GetNTriggers();
-
+  vector<MDTrigger*> GetTriggerList() const { return m_TriggerList; }
+  
   MDSystem* GetSystem(const MString& Name);
   MDSystem* GetSystem() { return m_System; }
   
@@ -148,13 +153,11 @@ class MDGeometry
   // Interface to all included files:
 
   void AddInclude(MString FileName);
-	bool IsIncluded(MString FileName);
+  bool IsIncluded(MString FileName);
   int GetNIncludes();
 
   void CreateNode(MDVolume *Volume);
 
-  MString CreateShortName(MString Name, unsigned int Length = 4, bool Fill = false, bool KeepKeywords = false);
-  bool ShortNameExists(MString Name);
   bool ValidName(MString Name);
   static MString MakeValidName(MString Name);
 
@@ -239,7 +242,9 @@ class MDGeometry
   vector<MString> m_ConstantList;
   //! A map of all constants and their companions
   map<MString, MString> m_ConstantMap;
-
+  //! A list of all not allowed constants
+  vector<MString> m_BlockedConstants;
+  
   //! The different detector types
   vector<int> m_NDetectorTypes; 
 
@@ -264,8 +269,6 @@ class MDGeometry
   bool m_ShowVolumes; // if false, no volumes are shown except those with a visibility higher than 1
   int m_DefaultColor; // if positive, this color is applied to all volumes
 
-  //! Ignore short names (which are only needed for Geant3/MGGPOD conversion)
-  bool m_IgnoreShortNames;
   bool m_DoSanityChecks; //
   bool m_ComplexER; //
   
@@ -300,7 +303,7 @@ class MDGeometry
   vector<int> m_LastFoundPlacements_GetRandomPositionInVolume;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDGeometry, 0) // no description
 #endif

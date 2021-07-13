@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <sstream>
+#include <iomanip>
 using namespace std;
 
 // ROOT libs:
@@ -41,9 +42,12 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIProgressBar)
 #endif
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 MGUIProgressBar::MGUIProgressBar(): MGUIDialog(gClient->GetRoot(), gClient->GetRoot(), 350, 350)
@@ -65,7 +69,8 @@ MGUIProgressBar::MGUIProgressBar(): MGUIDialog(gClient->GetRoot(), gClient->GetR
   m_UpdateFrequency = 0.001;
 
   m_IsFirstUpdate = true;
-
+  m_LastUpdate = 0.0;
+  
   m_ConfirmCancel = false;
 
   Create();
@@ -75,17 +80,15 @@ MGUIProgressBar::MGUIProgressBar(): MGUIDialog(gClient->GetRoot(), gClient->GetR
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIProgressBar::MGUIProgressBar(const TGWindow* ParentWindow, const char* Title, 
-                                 const char* SubTitle): 
-  MGUIDialog(gClient->GetRoot(), gClient->GetRoot(), 350, 350)
+MGUIProgressBar::MGUIProgressBar(MString Title, MString SubTitle): MGUIDialog(gClient->GetRoot(), gClient->GetRoot(), 350, 350)
 {
   //
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
 
-  m_Title = MString(Title);
-  m_SubTitle = MString(SubTitle);
+  m_Title = Title;
+  m_SubTitle = SubTitle;
 
   m_Cancel = false;
   m_Percentage.push_back(0);
@@ -97,8 +100,11 @@ MGUIProgressBar::MGUIProgressBar(const TGWindow* ParentWindow, const char* Title
   m_UpdateFrequency = 0.001;
 
   m_IsFirstUpdate = true;
-
+  m_LastUpdate = 0.0;
+  
   m_ConfirmCancel = false;
+
+  m_Duration = 0;
 
   Create();
 }
@@ -116,17 +122,17 @@ MGUIProgressBar::~MGUIProgressBar()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIProgressBar::SetTitles(const char* Title, const char* SubTitle)
+void MGUIProgressBar::SetTitles(MString Title, MString SubTitle)
 {
   // Set the titles
 
-  m_Title = MString(Title);
-  m_SubTitle = MString(SubTitle);
+  m_Title = Title;
+  m_SubTitle = SubTitle;
 
-  SetWindowName(m_Title);  
+  SetWindowName(m_Title);
   m_SubTitleLabel->SetText(m_SubTitle);
 
-	MapSubwindows();
+  MapSubwindows();
   MapWindow();
   Layout();
 }
@@ -156,7 +162,7 @@ void MGUIProgressBar::SetValue(double Value, unsigned int Level)
 {
   // Set the current value
   // It must be between m_Minimum and m_Maximum set via SetMinMax or as default
-  // between 
+  // between
 
   Update((Value - m_Minimum)/m_Maximum, Level);
 }
@@ -174,7 +180,7 @@ bool MGUIProgressBar::ProcessMessage(long msg, long param1, long param2)
     switch (GET_SUBMSG(msg)) {
     case kCM_BUTTON:
       switch(param1) {
-      case 1:  
+      case 1:
         OnCancel();
         break;
       default:
@@ -188,7 +194,7 @@ bool MGUIProgressBar::ProcessMessage(long msg, long param1, long param2)
   default:
     break;
   } // msg
-    
+
   return true;
 }
 
@@ -199,7 +205,7 @@ bool MGUIProgressBar::ProcessMessage(long msg, long param1, long param2)
 void MGUIProgressBar::CloseWindow()
 {
   // If somebody presses the x-button we reach this function
-  // Normally this window should be deleted, but the programmer has to take care of 
+  // Normally this window should be deleted, but the programmer has to take care of
   // the deletion of this window, it is not allowed to do this by itself.
 
   UnmapWindow();
@@ -212,7 +218,7 @@ void MGUIProgressBar::CloseWindow()
 
 void MGUIProgressBar::Create()
 {
-  SetWindowName((char *) m_Title.Data());  
+  SetWindowName(m_Title);
 
   m_TitleFrame = new TGHorizontalFrame(this, this->GetWidth(), 0, kRaisedFrame);
   m_TitleFrameLayout =  new TGLayoutHints(kLHintsExpandX | kLHintsCenterX | kLHintsTop, 10, 10, 8, 2);
@@ -220,7 +226,7 @@ void MGUIProgressBar::Create()
 
 
   // Label:
-  m_SubTitleLabel = new TGLabel(m_TitleFrame, (char *) m_SubTitle.Data());
+  m_SubTitleLabel = new TGLabel(m_TitleFrame, m_SubTitle);
   m_SubTitleLabelLayout = new TGLayoutHints(kLHintsCenterX, 0, 0, 2, 2);
   m_TitleFrame->AddFrame(m_SubTitleLabel, m_SubTitleLabelLayout);
 
@@ -233,13 +239,13 @@ void MGUIProgressBar::Create()
 
   // Frame which contains all status bars:
   m_ProgressBarFrame = new TGVerticalFrame(this, this->GetWidth() - m_FontScaler*20, m_FontScaler*100);
-  m_ProgressBarFrameLayout = 
+  m_ProgressBarFrameLayout =
     new TGLayoutHints(kLHintsExpandX | kLHintsCenterX | kLHintsExpandY | kLHintsCenterY, 10, 10, 5, 16);
   AddFrame(m_ProgressBarFrame, m_ProgressBarFrameLayout);
 
   m_Width = m_FontScaler*this->GetWidth() - m_FontScaler*22;
 
-  m_ProgressBarLayout = 
+  m_ProgressBarLayout =
     new TGLayoutHints(kLHintsExpandX | kLHintsCenterX, 0, 0, 0, 0);
 
   // Add the progress bar
@@ -247,24 +253,24 @@ void MGUIProgressBar::Create()
 
   // Cancel and OK:
   m_ButtonFrame = new TGVerticalFrame(this, this->GetWidth()-m_FontScaler*40, m_FontScaler*25, kFixedSize);
-	  
-  m_CancelButton = new TGTextButton(m_ButtonFrame, "Cancel", 1); 
+
+  m_CancelButton = new TGTextButton(m_ButtonFrame, "Cancel", 1);
   m_CancelButton->Associate(this);
-  m_CancelButtonLayout = 
+  m_CancelButtonLayout =
     new TGLayoutHints(kLHintsCenterX | kLHintsExpandX, m_FontScaler*70, m_FontScaler*70, 0, 0);
 
   m_ButtonFrame->AddFrame(m_CancelButton, m_CancelButtonLayout);
-  m_ButtonFrameLayout = 
+  m_ButtonFrameLayout =
     new TGLayoutHints(kLHintsExpandX | kLHintsCenterX | kLHintsBottom, 2, 2, 2, 2);
   AddFrame(m_ButtonFrame, m_ButtonFrameLayout);
 
-  // Let's resize and position the window, 
+  // Let's resize and position the window,
   PositionWindow(GetDefaultWidth(), GetDefaultHeight(), true); // true required for Mac
-  
+
   MapSubwindows();
-  MapWindow();  
+  MapWindow();
   Layout();
-  
+
   return;
 }
 
@@ -291,11 +297,11 @@ void MGUIProgressBar::AddProgressBar()
   m_ProgressBarFrame->MapWindow();
 
 
-  // Let's resize and position the window, 
+  // Let's resize and position the window,
   PositionWindow(GetDefaultWidth(), GetDefaultHeight(), true); // true required for Mac
 
   MapSubwindows();
-  MapWindow();  
+  MapWindow();
   Layout();
 }
 
@@ -316,6 +322,9 @@ void MGUIProgressBar::Reset()
   m_Maximum = 1;
 
   m_IsFirstUpdate = true;
+  m_LastUpdate = 0.0;
+
+  m_Duration = 0.0;
 }
 
 
@@ -325,10 +334,10 @@ void MGUIProgressBar::Reset()
 void MGUIProgressBar::ResetTimer()
 {
   // Reset the timer, in this case only tell the function that the next is the first update
-
+  
   m_IsFirstUpdate = true;
 }
- 
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -345,27 +354,53 @@ void MGUIProgressBar::Update(double Percentage, unsigned int Level)
 
   if (m_IsFirstUpdate == true) {
     m_Timer.Start();
+    m_LastUpdate = 0.0;
     m_IsFirstUpdate = false;
   }
 
-  if (Percentage >= 0 && Percentage <= 1) {
-    if (Percentage > m_Percentage[Level]+m_UpdateFrequency || Percentage < m_Percentage[Level]) {
+  double ElapsedTime = m_Timer.ElapsedTime();
 
+  // We allow time-based skips on the deepest progress levels:
+  if (Level == m_ProgressBar.size() - 1) {
+    if (m_LastUpdate > 0 && ElapsedTime - m_LastUpdate < 0.1 && Percentage < 1) {
+      return;
+    } else {
+      m_LastUpdate = ElapsedTime;
+    }
+  }
+  
+  
+  if (Percentage >= 0 && Percentage <= 1) {
+    if (Percentage > m_Percentage[Level] + m_UpdateFrequency || Percentage < m_Percentage[Level]) {
+      
       MTimer Intermediate;
 
-      m_ProgressBar[Level]->SetPosition(100.0*Percentage); 
-      m_Percentage[Level] = Percentage;
+      m_ProgressBar[Level]->SetPosition(100.0*Percentage);
+      m_Percentage[Level] = Percentage;      
       
-      char c[100];
-      if (m_Timer.ElapsedTime() < 3.0 || m_Percentage[0] == 0) { 
-        sprintf(c, "Time: estimating...");
+      MString InfoText;
+      if ((m_ProgressBar.size() == 1 && ElapsedTime < 1.0) || m_Percentage[0] == 0) {
+        InfoText = "Time: estimating...";
       } else {
-        double Time = m_Timer.ElapsedTime() / m_Percentage[0];
-        sprintf(c, "Time: %i:%02i/%i:%02i", 
-                int(m_Timer.ElapsedTime())/60, int(m_Timer.ElapsedTime())%60,
-                int(Time)/60, int(Time)%60);
+        // Update only on changes of level 0
+        if (Level == 0) {
+          m_Duration = ElapsedTime / m_Percentage[0];
+        }
+        // Expect when the time has been exceeded:
+        if (m_Duration < ElapsedTime) {
+          m_Duration = ElapsedTime;
+        }
+        ostringstream out;
+        out<<"Time: "<<int(ElapsedTime)/60<<":"<<setfill('0')<<setw(2)<<int(ElapsedTime)%60<<" / "
+           <<int(m_Duration)/60<<":"<<setfill('0')<<setw(2)<<int(m_Duration)%60;
+        
+        InfoText = out.str();
       }
-      m_InfoLabel->SetText(new TGString(c));
+      if (InfoText != m_LastInfoText) {
+        m_LastInfoText = InfoText;
+        m_InfoLabel->SetText(InfoText);
+      }
+
       
       if (m_Percentage[Level] >= 0 && m_Percentage[Level] < 0.50) {
         if (m_ColorLevel[Level] != 1) {
@@ -397,9 +432,11 @@ void MGUIProgressBar::Update(double Percentage, unsigned int Level)
           m_ColorLevel[Level] = 5;
         }
       }
-      gSystem->ProcessEvents();
+      
+      // Cannot do this since we can be in worker thread: gSystem->ProcessEvents();
+      fNeedRedraw = true;
 
-      // Allow some adjustable updating 
+      // Allow some adjustable updating if the UI is slow
       if (Intermediate.GetElapsed() > 0.1) {
         m_UpdateFrequency = 0.1*Intermediate.GetElapsed();
         if (m_UpdateFrequency > 0.02) m_UpdateFrequency = 0.02;
@@ -412,24 +449,12 @@ void MGUIProgressBar::Update(double Percentage, unsigned int Level)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIProgressBar::OnOk()
-{
-  // The Ok button/Return key has been pressed
-  // We do nothing!!!
-
-  return false;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 bool MGUIProgressBar::OnCancel()
 {
   if (m_ConfirmCancel == true) {
-    int Return; 
-    new TGMsgBox(gClient->GetRoot(), this, "Warning", 
-                 "Do you really want to cancel?", 
+    int Return;
+    new TGMsgBox(gClient->GetRoot(), this, "Warning",
+                 "Do you really want to cancel?",
                  kMBIconStop, kMBYes|kMBNo, &Return);
     if (Return == kMBYes) {
       m_Cancel = true;
@@ -441,16 +466,6 @@ bool MGUIProgressBar::OnCancel()
   return false;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MGUIProgressBar::TestCancel()
-{
-  // returns true if the Cancel-button has been pressed previously.
-
-  return m_Cancel;
-}
 
 
 // MGUIProgressBar: the end...

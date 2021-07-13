@@ -105,7 +105,7 @@ class MImageUpdate : public MImage
   TText *m_AdditionalText;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImageUpdate, 0) // an updateable image
 #endif

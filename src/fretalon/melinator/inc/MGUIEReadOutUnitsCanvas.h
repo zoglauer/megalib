@@ -61,7 +61,7 @@ class MGUIEReadOutUnitsCanvas : public TRootEmbeddedCanvas
   MGUIMainMelinator* m_UI;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEReadOutUnitsCanvas, 0) // no description
 #endif

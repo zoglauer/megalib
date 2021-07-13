@@ -90,6 +90,7 @@ using namespace std;
 #include "MDACS.h"
 #include "MDDriftChamber.h"
 #include "MDVoxel3D.h"
+#include "MDGuardRing.h"
 #include "MDAngerCamera.h"
 #include "MVector.h"
 #include "MRotation.h"
@@ -278,7 +279,7 @@ bool MCDetectorConstruction::ConstructDetectors()
   MCSD* SD = 0;
   for (unsigned int d = 0; d < m_Geometry->GetNDetectors(); ++d) {
 
-    Type = m_Geometry->GetDetectorAt(d)->GetDetectorType();
+    Type = m_Geometry->GetDetectorAt(d)->GetType();
     Name = m_Geometry->GetDetectorAt(d)->GetName() + "SD";
 
     Detector = m_Geometry->GetDetectorAt(d);
@@ -304,9 +305,11 @@ bool MCDetectorConstruction::ConstructDetectors()
                             Strip->GetPitchY()*cm);
       TwoDStripSD->SetNStrips(Strip->GetNStripsX(), 
                               Strip->GetNStripsY());
-      TwoDStripSD->SetUniqueGuardringPosition(G4ThreeVector(Strip->GetUniqueGuardringPosition().X()*cm,
-                                                            Strip->GetUniqueGuardringPosition().Y()*cm,
-                                                            Strip->GetUniqueGuardringPosition().Z()*cm));
+      if (Strip->HasGuardRing() == true) {
+        TwoDStripSD->SetUniqueGuardringPosition(G4ThreeVector(Strip->GetGuardRing()->GetUniquePosition().X()*cm,
+                                                              Strip->GetGuardRing()->GetUniquePosition().Y()*cm,
+                                                              Strip->GetGuardRing()->GetUniquePosition().Z()*cm));
+      }
 
       SDManager->AddNewDetector(TwoDStripSD);
       mdebug<<"Adding Strip detector for "<<Name<<endl;
@@ -346,9 +349,11 @@ bool MCDetectorConstruction::ConstructDetectors()
       Voxel3DSD->SetNVoxels(Voxler->GetNVoxelsX(), 
                             Voxler->GetNVoxelsY(),
                             Voxler->GetNVoxelsZ());
-      Voxel3DSD->SetUniqueGuardringPosition(G4ThreeVector(Voxler->GetUniqueGuardringPosition().X()*cm,
-                                                          Voxler->GetUniqueGuardringPosition().Y()*cm,
-                                                          Voxler->GetUniqueGuardringPosition().Z()*cm));
+      if (Voxler->HasGuardRing() == true) {
+        Voxel3DSD->SetUniqueGuardringPosition(G4ThreeVector(Voxler->GetGuardRing()->GetUniquePosition().X()*cm,
+                                                            Voxler->GetGuardRing()->GetUniquePosition().Y()*cm,
+                                                            Voxler->GetGuardRing()->GetUniquePosition().Z()*cm));
+      }
 
       SDManager->AddNewDetector(Voxel3DSD);
       mdebug<<"Adding Voxler detector for "<<Name<<endl;
@@ -513,7 +518,10 @@ bool MCDetectorConstruction::ConstructDetectors()
           }
         }
       }
-
+    }
+    
+    else if (Type == MDDetector::c_GuardRing) {
+      // This is part of the strip & voxel detectors!
     } else {
       merr<<"DetectorType not yet implemented ("
           <<Detector->GetName()<<")!"<<endl;
@@ -996,8 +1004,8 @@ bool MCDetectorConstruction::ConstructMaterials()
       ShortName<<m_Geometry->GetMaterialAt(mat)->GetName().Data()
                <<"_El"<<c+1<<endl;
 
-      double A = Component->GetA();
-      double Z = Component->GetZ();
+      double A = Component->GetAtomicWeight();
+      double Z = Component->GetAtomicNumber();
 
       if (A < 1 && Z < 1) {
         mout<<m_Geometry->GetMaterialAt(mat)->GetName().Data()<<": Probably found Geant3 vaccum: upgrading to Geant4 vacuum"<<endl; 
@@ -1017,10 +1025,10 @@ bool MCDetectorConstruction::ConstructMaterials()
         return false;
       }
       
-      if (Component->GetType() == MDMaterialComponent::c_ByAtoms) {
-        Material->AddElement(Element, TMath::Nint(Component->GetWeight()));
+      if (Component->GetWeightingType() == MDMaterialComponentWeightingType::c_ByAtoms) {
+        Material->AddElement(Element, Component->GetWeightingByAtoms());
       } else {
-        Material->AddElement(Element, double(Component->GetWeight()));
+        Material->AddElement(Element, Component->GetWeightingByMass());
       }
     }
     mdebug<<Material<<endl;
@@ -1153,11 +1161,11 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
     // If it is no copy then position it *only*
     // when it has a mother or is the root volume
     if (Volume->GetMother() !=  0 || Volume->IsWorldVolume() == true) {
- 			
+      
       Name = Volume->GetName() + "Log";
       if (Volume->IsWorldVolume() == false) {
         MotherName = Volume->GetMother()->GetName() + "Log";
-			}
+      }
 
       G4LogicalVolume* ThisLog = 0;
       G4LogicalVolume* MotherLog = 0;
@@ -1223,7 +1231,7 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
       if (PositionVolumes(Volume->GetDaughterAt(i)) == false) return false;
     }
   }
-	
+  
   return true;
 }
 
@@ -1236,6 +1244,25 @@ G4ThreeVector MCDetectorConstruction::GetRandomPosition(MString VolumeName)
   MVector V = m_Geometry->GetRandomPositionInVolume(VolumeName);
 
   return G4ThreeVector(V[0]*cm, V[1]*cm, V[2]*cm);
+}
+
+
+/******************************************************************************
+ * Return true if the volume exists:
+ */
+bool MCDetectorConstruction::HasVolume(const MString& VolumeName) const
+{
+  return (m_Geometry->GetVolume(VolumeName) == nullptr) ? false: true;
+}
+
+
+
+/******************************************************************************
+ * Return true is the position is within the world volume
+ */
+bool MCDetectorConstruction::IsInsideWorldVolume(const G4ThreeVector& Position) const
+{
+  return m_Geometry->GetWorldVolume()->IsInside(MVector(Position.getX()/cm, Position.getY()/cm, Position.getZ()/cm));  
 }
 
 

@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIBPAlgorithm)
 #endif
 
@@ -113,7 +113,7 @@ void MGUIBPAlgorithm::Create()
 
 bool MGUIBPAlgorithm::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_Data->SetBPAlgorithm(m_BPList->GetSelected());
 

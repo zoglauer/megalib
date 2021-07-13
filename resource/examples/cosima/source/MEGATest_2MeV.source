@@ -1,29 +1,24 @@
-# Example run for Cosima
-# A Crab-like source in the zenith on cosmic and albedo photon background
+# The original 2 MeV MEGA test simulation
 
 
-Version         1
-Geometry        $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup
+# Global parameters
+Version                  1
+Geometry                 $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM            LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
+StoreSimulationInfo      all
 
-
+# Run & source parameters
 Run SpaceSim
-SpaceSim.FileName         CrabObservation
-SpaceSim.Time             1000.0
-
+SpaceSim.FileName        MEGATest_2MeV
+SpaceSim.Time            1000.0
 
 SpaceSim.Source Crab
-Crab.ParticleType           1
-Crab.Beam                   FarFieldPointSource 0 0
-Crab.Spectrum               Mono 2000
-Crab.Flux                   1.0 
+Crab.ParticleType        1
+Crab.Beam                FarFieldPointSource 0 0
+Crab.Spectrum            Mono 2000
+Crab.Flux                1.0 
 

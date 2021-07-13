@@ -86,7 +86,7 @@ class MSettingsGeomega : public MSettings
   //! The special mode flag
   bool m_SpecialMode;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsGeomega, 0) // no description
 #endif

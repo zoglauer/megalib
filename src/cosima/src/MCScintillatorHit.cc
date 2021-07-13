@@ -46,7 +46,6 @@ G4Allocator<MCScintillatorHit> MCScintillatorHitAllocator;
 MCScintillatorHit::MCScintillatorHit() : MCVHit()
 {
   m_ADCCounts = 0;
-  m_Position.set(0.0, 0.0, 0.0);
   m_DetectorType = MDDetector::c_Scintillator;
 }
 
@@ -154,17 +153,6 @@ MCScintillatorHit::operator+=(const MCScintillatorHit& Hit)
   }
 
   return *this;
-}
-
-
-/******************************************************************************
- * Return a hit 
- */
-MSimHT* MCScintillatorHit::GetCalibrated()
-{
-  MSimHT* HT = MCVHit::GetCalibrated();
-  HT->SetPosition(MVector(m_Position.getX()/cm, m_Position.getY()/cm, m_Position.getZ()/cm));
-  return HT;
 }
 
 

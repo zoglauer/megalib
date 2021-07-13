@@ -73,7 +73,7 @@ class MGUIAnimation : public MGUIDialog
                    c_Backprojections };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIAnimation, 0)
 #endif

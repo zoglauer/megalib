@@ -1,0 +1,24 @@
+# Test the guard ring implementation
+
+
+# Global parameters
+Version         1
+Geometry        GuardRingsOrNot.geo.setup
+
+# Physics list
+PhysicsListEM               LivermorePol
+
+# Output formats
+StoreSimulationInfo         init-only
+
+# Run & source parameters
+Run AdvanvedUnitTest
+AdvanvedUnitTest.FileName           GuardRingsOrNot
+AdvanvedUnitTest.Events             1000000
+
+AdvanvedUnitTest.Source AUTBeam
+AUTBeam.ParticleType           1
+AUTBeam.Beam                   HomogeneousBeam 0 0 10  0 0 -1  10
+AUTBeam.Spectrum               Mono 511.0
+AUTBeam.Flux                   1.0
+

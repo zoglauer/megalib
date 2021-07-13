@@ -33,6 +33,7 @@ using namespace std;
 
 // ROOT libs:
 #include <TMath.h>
+#include <TRandom.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -43,7 +44,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MComptonEvent)
 #endif
 
@@ -51,7 +52,7 @@ ClassImp(MComptonEvent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MComptonEvent::MComptonEvent()
+MComptonEvent::MComptonEvent() : MPhysicalEvent(), m_CoincidenceWindow(0)
 {
   // standard constructor
 
@@ -268,6 +269,7 @@ MString MComptonEvent::ToString() const
 
   S<<endl;
   S<<"Compton event "<<m_Id<<":"<<endl;
+  S<<"  Time: "<<m_Time<<endl; 
   S<<"  Energy of scattered gamma-ray: "<<m_Eg<<" +- "<<m_dEg<<endl; 
   S<<"  Energy of recoil electron: "<<m_Ee<<" +- "<<m_dEe<<endl; 
   S<<"  Position of first Compton IA: "<<m_C1.X()<<", "<<m_C1.Y()<<", "<<m_C1.Z()<<endl;
@@ -376,7 +378,7 @@ double MComptonEvent::GetKleinNishinaNormalized(const double Ei, const double ph
 
   double result = GetKleinNishina(Ei, phi)/max;
   if (result > 1.0) result = 1.0;
-  if (result < 0.0) result = 0.0;		
+  if (result < 0.0) result = 0.0;   
 
   return result;
 }
@@ -418,7 +420,48 @@ double MComptonEvent::GetKleinNishinaNormalizedByArea(double Ei, double phi)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetARMGamma(const MVector& Position) const
+double MComptonEvent::GetRandomPhi(const double Ei)
+{
+  // Return a randomly sampled Compton scatter angle using the Klein-Nishina eqaution for the given
+  // incidence photon energy (algorithm: Butcher & Messel: Nuc Phys 20(1960), 15)
+  
+  double Ei_m = Ei / c_E0;
+
+  double Epsilon = 0.0;
+  double EpsilonSquare = 0.0;
+  double OneMinusCosPhi = 0.0;
+  double SinPhiSquared = 0.0;
+
+  double Epsilon0 = 1.0/(1.0 + 2.0*Ei_m);
+  double Epsilon0Square = Epsilon0*Epsilon0;
+  double Alpha1 = -log(Epsilon0);
+  double Alpha2 = 0.5*(1.0 - Epsilon0Square);
+
+  double Reject = 0.0;
+
+  do {
+    if (Alpha1/(Alpha1 + Alpha2) > gRandom->Rndm()) {
+      Epsilon = exp(-Alpha1*gRandom->Rndm());
+      EpsilonSquare = Epsilon*Epsilon; 
+    } else {
+      EpsilonSquare = Epsilon0Square + (1.0 - Epsilon0Square)*gRandom->Rndm();
+      Epsilon = sqrt(EpsilonSquare);
+    }
+
+    OneMinusCosPhi = (1.0 - Epsilon)/(Epsilon*Ei_m);
+    SinPhiSquared = OneMinusCosPhi*(2.0 - OneMinusCosPhi);
+    Reject = 1.0 - Epsilon*SinPhiSquared/(1.0 + EpsilonSquare);
+
+  } while (Reject < gRandom->Rndm());
+ 
+  return acos(1.0 - OneMinusCosPhi);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MComptonEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem& CS) 
 {
   // The ARM value for the scattered gamma-ray is the minimum angle between 
   // the gamma-cone-surface and the line connecting the cone-apex with the 
@@ -429,8 +472,8 @@ double MComptonEvent::GetARMGamma(const MVector& Position) const
 
   // Rotate/translate the position into event coordinates
   MVector RotPosition = Position;
-  if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
-  if (m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
+  if (m_HasDetectorRotation == true) RotPosition = GetDetectorInverseRotationMatrix()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
 
   return (m_C1 - m_C2).Angle(RotPosition - m_C1) - m_Phi;
 }
@@ -439,7 +482,7 @@ double MComptonEvent::GetARMGamma(const MVector& Position) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetARMElectron(const MVector& Position) const
+double MComptonEvent::GetARMElectron(const MVector& Position, const MCoordinateSystem& CS) 
 {
   // The ARM value for the recoil electron is the minimum angle between 
   // the elctron-cone-surface and the line connecting the cone-apex with the 
@@ -448,7 +491,8 @@ double MComptonEvent::GetARMElectron(const MVector& Position) const
   // Rotate the position into event coordinates
   MVector RotPosition = Position;
   if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
-  if (m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
+  
   return (-m_De).Angle(RotPosition - m_C1) - m_Epsilon;
 }
 
@@ -456,7 +500,7 @@ double MComptonEvent::GetARMElectron(const MVector& Position) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetSPDElectron(const MVector& Position) const
+double MComptonEvent::GetSPDElectron(const MVector& Position, const MCoordinateSystem& CS)
 {
   // The SPD value for the recoil electron is the minimum angle between 
   // the electron-cone-surface and the line connecting the cone-apex with the 
@@ -465,7 +509,7 @@ double MComptonEvent::GetSPDElectron(const MVector& Position) const
   // Rotate the position into event coordinates
   MVector RotPosition = Position;
   if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
-  if (m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
 
   return ((m_C1 - m_C2).Cross(RotPosition - m_C1)).Angle((m_C1 - m_C2).Cross(m_Di));
 }
@@ -525,10 +569,55 @@ bool MComptonEvent::Assimilate(MComptonEvent* Compton)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MComptonEvent::Assimilate(const vector <MPhysicalEventHit> Hits)
+{
+  // Assimilate from a list of physical hits
+  
+  Reset();
+  
+  if (Hits.size() < 2) {
+    merr<<"MComptonEvent: Error: Assimilation requires at least two hits, and not "<<Hits.size()<<endl;
+    return false; 
+  }
+  
+  for (auto H: Hits) AddHit(H);
+
+  m_C1 = m_Hits[0].GetPosition();
+  m_dC1 = m_Hits[0].GetPositionUncertainty();
+  m_C2 = m_Hits[1].GetPosition();
+  m_dC2 = m_Hits[1].GetPositionUncertainty();
+  
+  m_Ee = m_Hits[0].GetEnergy();
+  m_dEe = m_Hits[0].GetEnergyUncertainty();
+  
+  for (unsigned int h = 1; h < m_Hits.size(); ++h) {
+    m_Eg += m_Hits[h].GetEnergy();
+    m_dEg += m_Hits[h].GetEnergyUncertainty()*m_Hits[h].GetEnergyUncertainty();
+  }
+  m_dEg = sqrt(m_dEg);
+  
+  m_LeverArm = numeric_limits<double>::max();
+  for (unsigned int h = 1; h < m_Hits.size(); ++h) {
+    double L = (m_Hits[h].GetPosition() - m_Hits[h-1].GetPosition()).Mag();
+    if (L < m_LeverArm) m_LeverArm = L;
+  }
+  m_TrackInitialDeposit = m_Ee;
+  m_SequenceLength = m_Hits.size();
+
+  // this calculates auxiliary data,
+  if (Validate() == false) return false;
+   
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MComptonEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MComptonEvent::Assimilate(const MComptonEventData *ComptonEventData)
-
+  
   if (Event->GetType() == MPhysicalEvent::c_Compton) {
     return Assimilate(dynamic_cast<MComptonEvent*>(Event));
   } else {
@@ -559,7 +648,6 @@ bool MComptonEvent::Assimilate(const MVector& C1, const MVector& C2,
   
   return true;
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -636,7 +724,7 @@ bool MComptonEvent::Validate()
   // Test if the event is ok, compute the scatter angles and the 
   // compton-axis-Vector, etc.
 
-  // Sometimes the real data is so false that we are unable to compute a compton-angle: 
+  // Sometimes the real data is so false that we are unable to compute a Compton angle: 
   if (IsKinematicsOK() == false) {
     return false;
   }
@@ -749,7 +837,7 @@ double MComptonEvent::ComputeEgViaThetaEe(const double Theta, const double Ee)
 double MComptonEvent::ComputePhiViaEeEg(const double Ee, const double Eg)
 {
   double Value = 1 - c_E0*(1/Eg - 1/(Ee + Eg));
-
+  
   if (Value <= -1) {
     //cerr<<"MComptonEvent::ComputePhi: NaN ("<<Ee<<", "<<Eg<<") ---> "<<Value<<endl;
     Value = -1;
@@ -757,8 +845,17 @@ double MComptonEvent::ComputePhiViaEeEg(const double Ee, const double Eg)
     //cerr<<"MComptonEvent::ComputePhi: NaN ("<<Ee<<", "<<Eg<<") ---> "<<Value<<endl;
     Value = 1;
   }
-
+  
   return acos(Value);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MComptonEvent::ComputeCosPhiViaEeEg(const double Ee, const double Eg)
+{
+  return 1 - c_E0*(1/Eg - 1/(Ee + Eg));
 }
 
 
@@ -1049,6 +1146,19 @@ bool MComptonEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool 
     if (m_ToF != 0 || m_dToF != 0) S<<"TF "<<m_ToF<<" "<<m_dToF<<endl;
     S<<"LA "<<m_LeverArm<<endl;
     if (m_CoincidenceWindow != 0) S<<"CW "<<m_CoincidenceWindow<<endl;
+    for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+      S<<"CH "<<h
+      <<" "<<m_Hits[h].GetPosition().GetX()
+      <<" "<<m_Hits[h].GetPosition().GetY()
+      <<" "<<m_Hits[h].GetPosition().GetZ()
+      <<" "<<m_Hits[h].GetEnergy()
+      <<" "<<m_Hits[h].GetTime().GetAsDouble()
+      <<" "<<m_Hits[h].GetPositionUncertainty().GetX()
+      <<" "<<m_Hits[h].GetPositionUncertainty().GetY()
+      <<" "<<m_Hits[h].GetPositionUncertainty().GetZ()
+      <<" "<<m_Hits[h].GetEnergyUncertainty()
+      <<" "<<m_Hits[h].GetTimeUncertainty().GetAsDouble()<<endl;
+    }
     
     File.Write(S);
     File.Flush();
@@ -1116,6 +1226,48 @@ int MComptonEvent::ParseLine(const char* Line, bool Fast)
                  &m_De[0], &m_De[1], &m_De[2], &m_dDe[0], &m_dDe[1], &m_dDe[2]) != 18) {
         cout<<"Unable to parse CD of event "<<m_Id<<"!"<<endl;
         Ret = 1;
+      }
+    }
+  } else if (Line[0] == 'C' && Line[1] == 'H') {
+    if (Fast == true) {
+      char* p;
+      unsigned long Index = strtoul(Line+3, &p, 10);
+      double P0 = strtod(p, &p);
+      double P1 = strtod(p, &p);
+      double P2 = strtod(p, &p);
+      double E = strtod(p, &p);
+      double T = strtod(p, &p);
+      double dP0 = strtod(p, &p);
+      double dP1 = strtod(p, &p);
+      double dP2 = strtod(p, &p);
+      double dE = strtod(p, &p);
+      double dT = strtod(p, NULL);
+      
+      MPhysicalEventHit Hit;
+      Hit.Set(MVector(P0, P1, P2), MVector(dP0, dP1, dP2), E, dE, MTime(T), MTime(dT));
+      if (m_Hits.size() <= Index) m_Hits.resize(Index+1);
+      m_Hits[Index] = Hit;
+    } else {
+      unsigned long Index = 0;
+      double P0 = 0;
+      double P1 = 0;
+      double P2 = 0;
+      double E = 0;
+      double T = 0;
+      double dP0 = 0;
+      double dP1 = 0;
+      double dP2 = 0;
+      double dE = 0;
+      double dT = 0;
+      
+      if (sscanf(Line, "CH %lu %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Index, &P0, &P1, &P2, &E, &T, &dP0, &dP1, &dP2, &dE, &dT) != 11) {
+        mout<<"Unable to parse CH of event "<<m_Id<<"!"<<endl;
+        Ret = 1;
+      } else {
+        MPhysicalEventHit Hit;
+        Hit.Set(MVector(P0, P1, P2), MVector(dP0, dP1, dP2), E, dE, MTime(T), MTime(dT));
+        if (m_Hits.size() <= Index) m_Hits.resize(Index+1);
+        m_Hits[Index] = Hit;        
       }
     }
   } else if (Line[0] == 'P' && Line[1] == 'Q') {
@@ -1264,8 +1416,7 @@ double MComptonEvent::TA_Ee(double E2, double Alpha)
 
 double MComptonEvent::TA_E2(double Ee, double Alpha)
 {
-  return Ee*c_E0/(Ee-
-				  cos(Alpha)*sqrt(Ee*(Ee+2*c_E0)));
+  return Ee*c_E0/(Ee-cos(Alpha)*sqrt(Ee*(Ee+2*c_E0)));
 }
 
 
@@ -1294,8 +1445,8 @@ double MComptonEvent::TA_GradientE2(double Ee, double Alpha)
 
   return c_E0*c_E0*sin(Alpha)*(Ee+S*Cos)/
     (Ee*(Ee*S-3*Ee*Ee*Cos-6*Ee*Cos*c_E0+
-	 3*Cos*Cos*S*(Ee+2*c_E0) -
-	 Cos*Cos*Cos*(Ee*Ee + 4*Ee*c_E0+4*c_E0*c_E0)));
+    3*Cos*Cos*S*(Ee+2*c_E0) -
+    Cos*Cos*Cos*(Ee*Ee + 4*Ee*c_E0+4*c_E0*c_E0)));
 }
 
 

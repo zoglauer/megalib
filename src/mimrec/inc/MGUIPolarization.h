@@ -45,7 +45,7 @@ class MGUIPolarization : public MGUIDialog
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // private methods:
@@ -71,7 +71,7 @@ class MGUIPolarization : public MGUIDialog
   MGUIEEntry* m_Bins;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIPolarization, 0) // GUI window for unknown purpose ...
 #endif

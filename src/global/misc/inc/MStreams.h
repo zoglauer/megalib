@@ -72,14 +72,14 @@ public:
 
   void ShowOnce() { TThread::Lock(); m_Streams->ShowOnce(); TThread::UnLock(); }
 
-	MStreams& printf(const char* Format, ...);
+  MStreams& printf(const char* Format, ...);
 
   // private members:
  private:
   MStreamBuffer* m_Streams;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MStreams, 0) // no description
 #endif

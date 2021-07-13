@@ -22,7 +22,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MERConstruction.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MGeometryRevan.h"
 #include "MERTrack.h"
 #include "MResponseMatrixO1.h"
@@ -61,7 +61,7 @@ class MERTrackBayesian : public MERTrack
 
   virtual bool EvaluateTracks(MRERawEvent* ER);
 
-  virtual void SortByTrackQualityFactor(MRawEventList* List);
+  virtual void SortByTrackQualityFactor(MRawEventIncarnations* List);
 
   // private methods:
  private:
@@ -99,7 +99,7 @@ class MERTrackBayesian : public MERTrack
   float m_SumBadDual;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERTrackBayesian, 0) // no description
 #endif

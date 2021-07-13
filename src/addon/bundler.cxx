@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
   int procID;
   MPI_Comm_rank(MPI_COMM_WORLD, &procID);
 
-  // Get the total number of processes master + slave(s)
+  // Get the total number of processes main + secondaries
   int nproc;
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 

@@ -34,23 +34,23 @@ class MSettingsSpectralOptions : public MSettingsInterface
   MSettingsSpectralOptions();
   virtual ~MSettingsSpectralOptions();
 
-		//  void SetSpectralHistBinsSpectralyzer(int SpectralHistBinsSpectralyzer) { m_SpectralHistBinsSpectralyzer = SpectralHistBinsSpectralyzer; }
-		//	int GetSpectralHistBinsSpectralyzer() const { return m_SpectralHistBinsSpectralyzer; }
+    //  void SetSpectralHistBinsSpectralyzer(int SpectralHistBinsSpectralyzer) { m_SpectralHistBinsSpectralyzer = SpectralHistBinsSpectralyzer; }
+    //  int GetSpectralHistBinsSpectralyzer() const { return m_SpectralHistBinsSpectralyzer; }
 
   void SetSpectralSignaltoNoiseRatio(int SpectralSignaltoNoiseRatio) { m_SpectralSignaltoNoiseRatio = SpectralSignaltoNoiseRatio; }
   int GetSpectralSignaltoNoiseRatio() const { return m_SpectralSignaltoNoiseRatio; }
 
   void SetSpectralPoissonLimit(int SpectralPoissonLimit) { m_SpectralPoissonLimit = SpectralPoissonLimit; }
-	int GetSpectralPoissonLimit() const { return m_SpectralPoissonLimit; }
-	
+  int GetSpectralPoissonLimit() const { return m_SpectralPoissonLimit; }
+  
 //  void SetSpectralDeconvolutionLimit(double SpectralDeconvolutionLimit) { m_SpectralDeconvolutionLimit = SpectralDeconvolutionLimit; }
-//	double GetSpectralDeconvolutionLimit() const { return m_SpectralDeconvolutionLimit; }
+//  double GetSpectralDeconvolutionLimit() const { return m_SpectralDeconvolutionLimit; }
   
   void SetSpectralIsotopeFileName(MString SpectralIsotopeFileName) { m_SpectralIsotopeFileName = SpectralIsotopeFileName; }
-	MString GetSpectralIsotopeFileName() const { return m_SpectralIsotopeFileName; }
+  MString GetSpectralIsotopeFileName() const { return m_SpectralIsotopeFileName; }
   
   void SetSpectralEnergyRange(double SpectralEnergyRange) { m_SpectralEnergyRange = SpectralEnergyRange; }
-	double GetSpectralEnergyRange() const { return m_SpectralEnergyRange; }
+  double GetSpectralEnergyRange() const { return m_SpectralEnergyRange; }
 
 
   // protected members:
@@ -64,18 +64,18 @@ class MSettingsSpectralOptions : public MSettingsInterface
   // private members:
  private:
   
-		//  int m_SpectralHistBinsSpectralyzer;
-	int m_SpectralSignaltoNoiseRatio;
-	int m_SpectralPoissonLimit;
-//	double m_SpectralDeconvolutionLimit;
+    //  int m_SpectralHistBinsSpectralyzer;
+  int m_SpectralSignaltoNoiseRatio;
+  int m_SpectralPoissonLimit;
+//  double m_SpectralDeconvolutionLimit;
   MString m_SpectralIsotopeFileName;
   double m_SpectralEnergyRange;
 
  
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
-  ClassDef(MSettingsSpectralyzer, 0) // no description
+   ClassDef(MSettingsSpectralOptions, 0) // no description
 #endif
 
 };

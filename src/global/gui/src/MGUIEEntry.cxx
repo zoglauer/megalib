@@ -192,10 +192,11 @@ void MGUIEEntry::Init()
 {
   // Initilizations common to all constructors:
 
-  m_Input = 0;
-  m_NumberInput = 0;
+  m_TextLabel = nullptr;
+  m_Input = nullptr;
+  m_NumberInput = nullptr;
   
-  m_MessageWindow = 0;
+  m_MessageWindow = nullptr;
   m_Id = -1;
 
   m_IsEnabled = true;
@@ -228,17 +229,17 @@ void MGUIEEntry::Create()
   // Create the label and the input-field.
 
   // Label:
-  m_TextLabel = new TGLabel(this, new TGString(m_Label));
+  m_TextLabel = new TGLabel(this, m_Label);
+  m_TextLabel->SetWrapLength(m_WrapLength);
   if (m_IsEmphasized == true) {
     m_TextLabel->SetTextFont(m_EmphasizedFont);
   }    
-  m_TextLabelLayout =
-    new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsCenterY, 0, 0, 0, 0);
+  m_TextLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsCenterY, 0, 10*m_FontScaler, 0, 0);
   AddFrame(m_TextLabel, m_TextLabelLayout);
 
 
   // Input field:
-  m_InputLayout = new TGLayoutHints(kLHintsRight | kLHintsTop | kLHintsCenterY, 5, 0, 0, 0);
+  m_InputLayout = new TGLayoutHints(kLHintsRight | kLHintsTop | kLHintsCenterY, 10*m_FontScaler, 0, 0, 0);
   if (m_Limits == false) {
     m_InputBuffer = new TGTextBuffer(10);
     m_InputBuffer->AddText(0, m_Value);
@@ -269,12 +270,25 @@ void MGUIEEntry::Create()
   return;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIEEntry::SetWrapLength(int WrapLength) 
+{ 
+  // Set the wrap length of the Label
+  m_WrapLength = WrapLength; 
+  
+  if (m_TextLabel != nullptr) {
+    m_TextLabel->SetWrapLength(m_WrapLength);    
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 bool MGUIEEntry::ProcessMessage(long Message, long Parameter1, 
-                                  long Parameter2)
+                                long Parameter2)
 {
   // Process the messages for this application, mainly the scollbar moves:
   

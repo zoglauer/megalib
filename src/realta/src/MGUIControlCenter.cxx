@@ -61,7 +61,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIControlCenter)
 #endif
 
@@ -795,12 +795,12 @@ void MGUIControlCenter::StartControlLoop()
 
       // Now update the chip images:
       for (i = 0; i < ((MHouseData *) Object)->GetNChips(); i++) {
-				Int_t NChannels;
+        Int_t NChannels;
         TArrayF *TAF;
-				Float_t *FArray;
+        Float_t *FArray;
         Double_t *DArray;
 
-				NChannels = (((MHouseData *) Object)->GetChipAt(i))->GetNChannels();
+        NChannels = (((MHouseData *) Object)->GetChipAt(i))->GetNChannels();
         // Pedestal:
         FArray = (((MHouseData *) Object)->GetChipAt(i))->GetPedestal();
         DArray = new Double_t[NChannels];

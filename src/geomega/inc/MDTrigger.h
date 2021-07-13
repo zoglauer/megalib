@@ -31,62 +31,80 @@ using namespace std;
 // Forward declarations:
 class MDDetector;
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The class of trigger: Basic or Universal
+enum class MDTriggerType : int { 
+  c_Unknown = 0, c_Basic = 1, c_Universal = 2
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! The Type of trigger: VetoableTrigger, UnvetoableTrigger, Veto
+enum class MDTriggerMode : int { 
+  c_Unknown = 0, c_VetoableTrigger = 1, c_NonVetoableTrigger = 2, c_Veto = 3
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! The base class for a trigger
 class MDTrigger
 {
   // public interface:
  public:
+  //! Standard constructor for a trigger with a name
   MDTrigger(const MString& Name);
+  //! Default destructor
   virtual ~MDTrigger();
 
-  virtual MString GetName() const;
-
-  void Reset();
-
-  void SetVeto(const bool IsVetoTrigger) { m_IsVeto = IsVetoTrigger; }
-  void SetTriggerByDetector(const bool IsTriggerByDetectorFlag) { m_IsTriggerByDetector = IsTriggerByDetectorFlag; }
-  void SetTriggerByChannel(const bool IsTriggerByChannelFlag) { m_IsTriggerByDetector = !IsTriggerByChannelFlag; }
-
-  bool IsVeto() const { return m_IsVeto; }
-  bool IsTriggerByDetector() const { return m_IsTriggerByDetector; }
-  bool IsTriggerByChannel() const { return !m_IsTriggerByDetector; }
-  //! Return true, if this detector is part of this trigger, excluding vetoes and guard rings
-  bool IncludesDetectorAsPositiveTrigger(MDDetector* Detector);
-
-
-  void SetDetectorType(const int Detectortype, const unsigned int Hits);
-  void SetDetector(MDDetector* Detector, const unsigned int Hits);
+  //! Return the name of this trigger
+  MString GetName() const { return m_Name; }
   
-  void SetGuardringDetectorType(const int Detectortype, const unsigned int Hits);
-  void SetGuardringDetector(MDDetector* Detector, const unsigned int Hits);
-
-  vector<int> GetDetectorTypes() { return m_DetectorTypes; }
-  vector<MDDetector*> GetDetectors() { return m_Detectors; }
-  vector<int> GetTriggerTypes() { return m_Types; }
+  //! Return the trigger class
+  MDTriggerType GetType() const { return m_TriggerType; }
+  
+  //! Validate the trigger setup - required to be called after the setup is complete
+  virtual bool Validate() { return false; }
+  
+  //! Ignore all vetoes -- for pretriggering in the detector effects engine, usually set via the trigger unit
+  virtual void IgnoreVetoes(bool Ignore) { m_IgnoreVetoes = Ignore; }
   
   //! Return true if this trigger applies to the detector
-  bool Applies(MDDetector* D) const;
-
+  virtual bool Applies(MDDetector*) const { return false; }
+  //! Return true if this trigger is triggering (not vetoing)
+  virtual bool IsTriggering(MDDetector*) const { return false; }
+  //! Return true if this trigger is vetoing
+  virtual bool IsVetoing(MDDetector*) const { return false; }
+  
   //! Returns true if the hit could be added 
-  bool AddHit(MDVolumeSequence& VS);
+  virtual bool AddHit(MDVolumeSequence&) { return false; }
   //! Returns true if the hit could be added 
-  bool AddGuardringHit(MDVolumeSequence& VS);
+  virtual bool AddGuardRingHit(MDVolumeSequence&) { return false; }
 
-  bool HasTriggered();
-  bool HasVetoed();
+  //! Reset all added hits - it will not change the basic setup of the trigger (type, detector, required hits)
+  virtual void Reset() { }
 
-  virtual bool Validate();
+  //! Return if this one has raised a trigger
+  virtual bool HasTriggered() { return false; }
+  //! Return if this one has raised a trigger which cannot be vetoed
+  virtual bool HasNonVetoablyTriggered() { return false; }
+  //! Return if thsi one has raised a veto
+  virtual bool HasVetoed() { return false; }
 
-  virtual MString GetGeomega();
-  virtual MString GetGeant3(int i);
-  virtual MString GetMGeant(int i);
-  virtual MString ToString();
-
+  //! Return as Geomega description
+  virtual MString GetGeomega() const { return "GetGeomega must be defined in derived class"; }
+  //! Return as a string
+  virtual MString ToString() const { return "ToString must be defined in derived class"; }
+  
   static const int c_Detector;
-  static const int c_Guardring;
-
+  static const int c_GuardRing;
+  
   // protected methods:
  protected:
 
@@ -99,38 +117,22 @@ class MDTrigger
   // protected members:
  protected:
 
-
-  // private members:
- private:
   //! Name of the trigger 
   MString m_Name;
-
-  //! Detector types this trigger consists of
-  vector<int> m_DetectorTypes;
-  //! Detector this trigger consists of
-  vector<MDDetector*> m_Detectors;
-  //! The type: 0: Normal detector, 1: Guardring
-  vector<int> m_Types;
-  //! Number of hits necessary to raise the trigger
-  vector<unsigned int> m_Hits;
-
-  //! Trigger test data storage
-  vector<vector<int> > m_TriggerTest;
-  //! Volume sequences belonging to these hits...
-  vector<vector<MDVolumeSequence> > m_VolumeSequenceTest;
-
-  //! True if this is a veto trigger criteria
-  bool m_IsVeto;
-
-  //! True if the "triggers" are counted per detector instead of per channel
-  bool m_IsTriggerByDetector;
-
+  
+  //! Type of the trigger
+  MDTriggerType m_TriggerType;
+    
+  //! Ignore all vetoes
+  bool m_IgnoreVetoes;
+  
+  
   // private members:
  private:
   friend ostream& operator<<(ostream& os, const MDTrigger& T);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDTrigger, 0) // Represents a trigger condition...
 #endif

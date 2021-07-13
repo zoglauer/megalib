@@ -133,30 +133,30 @@ bool PolAnalyzer::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-p" || Option == "-u" || Option == "-g") {
-			if (!((argc > i+1) && 
+      if (!((argc > i+1) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
-		// Multiple arguments template
-		else if (Option == "-e") {
-			if (!((argc > i+2) && 
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    } 
+    // Multiple arguments template
+    else if (Option == "-e") {
+      if (!((argc > i+2) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		}
+        cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    }
 
-		// Then fulfill the options:
+    // Then fulfill the options:
     if (Option == "-p") {
       m_PolFileName = argv[++i];
       cout<<"Accepting file name with polarized data: "<<m_PolFileName<<endl;
@@ -170,11 +170,11 @@ bool PolAnalyzer::ParseCommandLine(int argc, char** argv)
       m_EnergyMin = atof(argv[++i]);
       m_EnergyMax = atof(argv[++i]);
       cout<<"Accepting energy limits: "<<m_EnergyMin<<" & " <<m_EnergyMax<<endl;
-		} else {
-			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   if (m_PolFileName == "") {

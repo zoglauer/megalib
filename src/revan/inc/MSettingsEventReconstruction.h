@@ -21,6 +21,8 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MSettingsInterface.h"
+#include "MERCSRTMVAMethods.h"
+
 
 // Forward declarations:
 
@@ -34,31 +36,52 @@ class MSettingsEventReconstruction : public MSettingsInterface
   MSettingsEventReconstruction();
   virtual ~MSettingsEventReconstruction();
 
-  
+  void SetSaveOI(bool SaveOI) { m_SaveOI = SaveOI; }
+  bool GetSaveOI() const { return m_SaveOI; }
+
   void SetNJobs(unsigned int ID) { m_NJobs = ID; }
   unsigned int GetNJobs() { return m_NJobs; }
 
   void SetCoincidenceAlgorithm(int ID) { m_CoincidenceAlgorithm = ID; }
   int GetCoincidenceAlgorithm() { return m_CoincidenceAlgorithm; }
-
-  void SetClusteringAlgorithm(int ID) { m_ClusteringAlgorithm = ID; }
-  int GetClusteringAlgorithm() { return m_ClusteringAlgorithm; }
-
+  
+  void SetEventClusteringAlgorithm(int ID) { m_EventClusteringAlgorithm = ID; }
+  int GetEventClusteringAlgorithm() { return m_EventClusteringAlgorithm; }
+  
+  void SetHitClusteringAlgorithm(int ID) { m_HitClusteringAlgorithm = ID; }
+  int GetHitClusteringAlgorithm() { return m_HitClusteringAlgorithm; }
+  
   void SetTrackingAlgorithm(int ID) { m_TrackingAlgorithm = ID; }
   int GetTrackingAlgorithm() { return m_TrackingAlgorithm; }
+
+  void SetPairAlgorithm(int ID) { m_PairAlgorithm = ID; }
+  int GetPairAlgorithm() { return m_PairAlgorithm; }
 
   void SetCSRAlgorithm(int ID) { m_CSRAlgorithm = ID; }
   int GetCSRAlgorithm() { return m_CSRAlgorithm; }
 
   void SetDecayAlgorithm(int ID) { m_DecayAlgorithm = ID; }
   int GetDecayAlgorithm() { return m_DecayAlgorithm; }
-  
+
   void SetCoincidenceWindow(double Time) {
     m_CoincidenceWindow = Time;
   }
   double GetCoincidenceWindow() {
     return m_CoincidenceWindow;
   }
+  
+  
+  
+  void SetEventClusteringDistanceCutOff(double Distance) { m_EventClusteringDistanceCutOff = Distance; }
+  double GetEventClusteringDistanceCutOff() { return m_EventClusteringDistanceCutOff; }
+  
+  void SetEventClusteringTMVAFileName(MString Name) { m_EventClusteringTMVAFileName = Name; }
+  MString GetEventClusteringTMVAFileName() { return m_EventClusteringTMVAFileName; }
+  
+  void SetEventClusteringTMVAMethods(MERCSRTMVAMethods EventClusteringTMVAMethods) { m_EventClusteringTMVAMethods = EventClusteringTMVAMethods; }
+  MERCSRTMVAMethods GetEventClusteringTMVAMethods() { return m_EventClusteringTMVAMethods; }
+  
+  
   
   void SetStandardClusterizerMinDistanceD1(double MinDistance) {
     m_StandardClusterizerMinDistanceD1 = MinDistance;
@@ -137,6 +160,13 @@ class MSettingsEventReconstruction : public MSettingsInterface
     return m_AdjacentLevel;
   }
 
+  void SetPDFClusterizerBaseFileName(MString BaseFileName) {
+    m_PDFClusterizerBaseFileName = BaseFileName;
+  }
+  MString GetPDFClusterizerBaseFileName() const {
+    return m_PDFClusterizerBaseFileName;
+  }
+
   void SetDoTracking(bool Do) { m_DoTracking = Do; }
   bool GetDoTracking() { return m_DoTracking; }
 
@@ -159,6 +189,11 @@ class MSettingsEventReconstruction : public MSettingsInterface
   void SetNLayersForVertexSearch(int Value) { m_NLayersForVertexSearch = Value; }
   int GetNLayersForVertexSearch() { return m_NLayersForVertexSearch; }
 
+  void SetHeightX0(double Value) { m_HeightX0 = Value; }
+  double GetHeightX0() { return m_HeightX0; }
+  void SetSigmaHitPos(double Value) { m_SigmaHitPos = Value; }
+  double GetSigmaHitPos() { return m_SigmaHitPos; }
+
 
   void RemoveAllElectronTrackingDetectors() { m_ElectronTrackingDetectors.clear(); }
   void AddElectronTrackingDetector(const MString& ElectronTracking) { m_ElectronTrackingDetectors.push_back(ElectronTracking); }
@@ -180,10 +215,10 @@ class MSettingsEventReconstruction : public MSettingsInterface
   bool GetGuaranteeStartD1() { return m_GuaranteeStartD1; }
   void SetRejectOneDetectorTypeOnlyEvents(bool Flag) { m_RejectOneDetectorTypeOnlyEvents = Flag; }
   bool GetRejectOneDetectorTypeOnlyEvents() { return m_RejectOneDetectorTypeOnlyEvents; }
-  
+
   void SetCSRThresholdMin(double Value) { m_CSRThresholdMin = Value; }
   double GetCSRThresholdMin() { return m_CSRThresholdMin; }
-  
+
   void SetCSRThresholdMax(double Value) { m_CSRThresholdMax = Value; }
   double GetCSRThresholdMax() { return m_CSRThresholdMax; }
 
@@ -195,7 +230,13 @@ class MSettingsEventReconstruction : public MSettingsInterface
 
   void SetBayesianComptonFileName(MString Name) { m_BayesianComptonFileName = Name; }
   MString GetBayesianComptonFileName() { return m_BayesianComptonFileName; }
-
+  
+  void SetCSRTMVAFileName(MString Name) { m_CSRTMVAFileName = Name; }
+  MString GetCSRTMVAFileName() { return m_CSRTMVAFileName; }
+  
+  void SetCSRTMVAMethods(MERCSRTMVAMethods CSRTMVAMethods) { m_CSRTMVAMethods = CSRTMVAMethods; }
+  MERCSRTMVAMethods GetCSRTMVAMethods() { return m_CSRTMVAMethods; }
+  
   void SetOriginObjectsFileName(MString Name) { m_OriginObjectsFileName = Name; }
   MString GetOriginObjectsFileName() { return m_OriginObjectsFileName; }
 
@@ -213,16 +254,16 @@ class MSettingsEventReconstruction : public MSettingsInterface
   double GetTotalEnergyMax() { return m_TotalEnergyMax; }
   void SetTotalEnergyMin(double Value) { m_TotalEnergyMin = Value; }
   double GetTotalEnergyMin() { return m_TotalEnergyMin; }
-  
+
   void SetLeverArmMax(double Value) { m_LeverArmMax = Value; }
   double GetLeverArmMax() { return m_LeverArmMax; }
   void SetLeverArmMin(double Value) { m_LeverArmMin = Value; }
   double GetLeverArmMin() { return m_LeverArmMin; }
-  
-  void SetEventIdMax(int Value) { m_EventIdMax = Value; }
-  int GetEventIdMax() { return m_EventIdMax; }
-  void SetEventIdMin(int Value) { m_EventIdMin = Value; }
-  int GetEventIdMin() { return m_EventIdMin; }
+
+  void SetEventIdMax(long Value) { m_EventIdMax = Value; }
+  long GetEventIdMax() { return m_EventIdMax; }
+  void SetEventIdMin(long Value) { m_EventIdMin = Value; }
+  long GetEventIdMin() { return m_EventIdMin; }
 
   void SetRejectAllBadEvents(bool Flag) { m_RejectAllBadEvents = Flag; }
   bool GetRejectAllBadEvents() { return m_RejectAllBadEvents; }
@@ -246,17 +287,32 @@ class MSettingsEventReconstruction : public MSettingsInterface
  protected:
   unsigned int m_NJobs;
 
+  //! Save the OI information
+  bool m_SaveOI;
+
   // Reconstruction options:
   int m_CoincidenceAlgorithm;
-  int m_ClusteringAlgorithm;
+  int m_EventClusteringAlgorithm;
+  int m_HitClusteringAlgorithm;
   int m_TrackingAlgorithm;
+  int m_PairAlgorithm;
   int m_CSRAlgorithm;
   int m_DecayAlgorithm;
 
   // Coincidence
   double m_CoincidenceWindow;
 
-  // Clusterizing:
+  // Event clustering
+  
+  //! The distance cut off
+  double m_EventClusteringDistanceCutOff;
+  
+  //! The TMVA file name
+  MString m_EventClusteringTMVAFileName;
+  //! The TMVA methods
+  MERCSRTMVAMethods m_EventClusteringTMVAMethods;
+  
+  // Hit clustering:
   double m_StandardClusterizerMinDistanceD1;
   double m_StandardClusterizerMinDistanceD2;
   double m_StandardClusterizerMinDistanceD3;
@@ -271,6 +327,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
   int m_AdjacentLevel;
   double m_AdjacentSigma;
 
+  MString m_PDFClusterizerBaseFileName;
+
   // Electron tracking:
   bool m_DoTracking;
   bool m_SearchPairs;
@@ -281,11 +339,13 @@ class MSettingsEventReconstruction : public MSettingsInterface
   int m_NTrackSequencesToKeep;
   bool m_RejectPurelyAmbiguousTrackSequences;
   int m_NLayersForVertexSearch;
+  double m_HeightX0;
+  double m_SigmaHitPos;
 
   MString m_BayesianElectronFileName;
 
   vector<MString> m_ElectronTrackingDetectors;
-  
+
   // Compton tracking:
   bool m_AssumeD1First;
   int m_ClassicUndecidedHandling;
@@ -293,13 +353,19 @@ class MSettingsEventReconstruction : public MSettingsInterface
   bool m_UseComptelTypeEvents;
   bool m_GuaranteeStartD1;
   bool m_RejectOneDetectorTypeOnlyEvents;
-  
+
   double m_CSRThresholdMin;
   double m_CSRThresholdMax;
   int m_CSRMaxNHits;
 
   MString m_BayesianComptonFileName;
-  
+
+  //! The TMVA file name
+  MString m_CSRTMVAFileName;
+  //! The TMVA methods
+
+  MERCSRTMVAMethods m_CSRTMVAMethods;
+
   MVector m_LensCenter;
   MVector m_FocalSpotCenter;
   MString m_OriginObjectsFileName;
@@ -314,8 +380,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
   double m_LeverArmMin;
   double m_LeverArmMax;
 
-  int m_EventIdMin;
-  int m_EventIdMax;
+  long m_EventIdMin;
+  long m_EventIdMax;
 
   bool m_RejectAllBadEvents;
 
@@ -324,7 +390,7 @@ class MSettingsEventReconstruction : public MSettingsInterface
   bool m_SpecialMode;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsEventReconstruction, 0) // no description
 #endif

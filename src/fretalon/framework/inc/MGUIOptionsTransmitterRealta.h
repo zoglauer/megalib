@@ -61,7 +61,7 @@ class MGUIOptionsTransmitterRealta : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
@@ -72,7 +72,7 @@ class MGUIOptionsTransmitterRealta : public MGUIOptions
   MGUIEEntry* m_HostName;
   MGUIEEntry* m_HostPort;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsTransmitterRealta, 1) // basic class for dialog windows
 #endif

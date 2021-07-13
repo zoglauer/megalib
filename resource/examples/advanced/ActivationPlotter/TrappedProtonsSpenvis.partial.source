@@ -1,0 +1,14 @@
+# Partial beam file for cosima
+
+# Trapped protons particles using SPENVIS
+# Assumptions: 
+# * The values are orbit averaged - thus do NOT simulate alongside other hadrons: 
+#   Since we are OFF during SAA passages, do a separate simulation of the trapped protons 
+#   and then just include the activations not the prompt decays for normal background calculations. 
+# * Angular distribution is assumed isotropic 
+SpaceSim.Source TrappedProtonsSpenvis
+TrappedProtonsSpenvis.ParticleType           4
+TrappedProtonsSpenvis.Beam                   FarFieldFileZenithDependent TrappedProtonsSpenvis.beam.dat
+TrappedProtonsSpenvis.Spectrum               File TrappedProtonsSpenvis.spectrum.dat
+TrappedProtonsSpenvis.Flux                   741.249
+

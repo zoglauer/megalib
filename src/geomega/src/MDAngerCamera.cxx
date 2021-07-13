@@ -40,7 +40,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDAngerCamera)
 #endif
 
@@ -48,9 +48,10 @@ ClassImp(MDAngerCamera)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-const int MDAngerCamera::c_PositionResolutionUnknown  = MDGridPoint::c_Unknown;
-const int MDAngerCamera::c_PositionResolutionXY       = MDGridPoint::c_XYAnger;
-const int MDAngerCamera::c_PositionResolutionXYZ      = MDGridPoint::c_XYZAnger;
+const int MDAngerCamera::c_PositionResolutionUnknown        = MDGridPoint::c_Unknown;
+const int MDAngerCamera::c_PositionResolutionXY             = MDGridPoint::c_XYAnger;
+const int MDAngerCamera::c_PositionResolutionXYZ            = MDGridPoint::c_XYZAnger;
+const int MDAngerCamera::c_PositionResolutionXYZIndependent = MDGridPoint::c_XYZIndependentAnger;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,6 +74,9 @@ MDAngerCamera::MDAngerCamera(const MDAngerCamera& A) : MDDetector(A)
 {
   m_PositionResolutionType = A.m_PositionResolutionType;
   m_PositionResolution = A.m_PositionResolution;
+  m_PositionResolutionX = A.m_PositionResolutionX;
+  m_PositionResolutionY = A.m_PositionResolutionY;
+  m_PositionResolutionZ = A.m_PositionResolutionZ;
 }
 
  
@@ -111,6 +115,9 @@ bool MDAngerCamera::CopyDataToNamedDetectors()
         m_PositionResolutionType != c_PositionResolutionUnknown) {
       D->m_PositionResolutionType = m_PositionResolutionType; 
       D->m_PositionResolution = m_PositionResolution; 
+      D->m_PositionResolutionX = m_PositionResolutionX; 
+      D->m_PositionResolutionY = m_PositionResolutionY; 
+      D->m_PositionResolutionZ = m_PositionResolutionZ; 
     }
   }
    
@@ -134,7 +141,7 @@ void MDAngerCamera::SetPositionResolution(const double Energy,
                                           const double Resolution)
 {
   // Set a variable position resolution
-
+  
   if (Energy < 0) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"Energy for position resolution needs to be positive!"<<endl;
@@ -145,8 +152,45 @@ void MDAngerCamera::SetPositionResolution(const double Energy,
     mout<<"Position resolution needs to be positive!"<<endl;
     return; 
   }
-
+  
   m_PositionResolution.Add(Energy, Resolution);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDAngerCamera::SetPositionResolutionXYZ(const double Energy, 
+                                             const double ResolutionX,
+                                             const double ResolutionY,
+                                             const double ResolutionZ)
+{
+  // Set a variable position resolution
+  
+  if (Energy < 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Energy for position resolution needs to be positive!"<<endl;
+    return; 
+  }
+  if (ResolutionX <= 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Position resolution X needs to be positive!"<<endl;
+    return; 
+  }
+  if (ResolutionY <= 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Position resolution Y needs to be positive!"<<endl;
+    return; 
+  }
+  if (ResolutionZ <= 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Position resolution Z needs to be positive!"<<endl;
+    return; 
+  }
+  
+  m_PositionResolutionX.Add(Energy, ResolutionX);
+  m_PositionResolutionY.Add(Energy, ResolutionY);
+  m_PositionResolutionZ.Add(Energy, ResolutionZ);
 }
 
 
@@ -158,19 +202,19 @@ void MDAngerCamera::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* 
 
   if (m_NoiseActive == false) return;
 
-	// Test for failure:
-	if (gRandom->Rndm() < m_FailureRate) {
-		Energy = 0;
-		return;
-	}
+  // Test for failure:
+  if (gRandom->Rndm() < m_FailureRate) {
+    Energy = 0;
+    return;
+  }
 
   // Noise:
   ApplyEnergyResolution(Energy);
 
-	// Overflow:
+  // Overflow:
   ApplyOverflow(Energy);
   
-	// Noise threshold:
+  // Noise threshold:
   if (ApplyNoiseThreshold(Energy) == true) {
     return;
   }
@@ -193,11 +237,19 @@ void MDAngerCamera::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* 
       NewPosition.SetXYZ(cos(Angle), sin(Angle), 0.0);
       NewPosition *= gRandom->Gaus(0.0, m_PositionResolution.Evaluate(Energy));
       NewPosition += Pos;
-    } else {
+    } else if (m_PositionResolutionType == c_PositionResolutionXYZ) {
       // Randomly determine an angle:
       NewPosition.SetMagThetaPhi(gRandom->Gaus(0.0, m_PositionResolution.Evaluate(Energy)),
                                  c_Pi*gRandom->Rndm(), 
                                  2*c_Pi*gRandom->Rndm());
+      NewPosition += Pos;
+    } else if (m_PositionResolutionType == c_PositionResolutionXYZIndependent) {
+      // X, Y & Z axes are independently measured and independent Gaussians:
+      NewPosition.SetXYZ(gRandom->Gaus(0.0, m_PositionResolutionX.Evaluate(Energy)),
+                         gRandom->Gaus(0.0, m_PositionResolutionY.Evaluate(Energy)),
+                         gRandom->Gaus(0.0, m_PositionResolutionZ.Evaluate(Energy)));
+      
+      // Add the original position
       NewPosition += Pos;
     }
   } while (Shape->IsInside(NewPosition, 1E-5) == false && Trials-- >= 0);
@@ -205,6 +257,8 @@ void MDAngerCamera::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* 
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"Couldn't find a good new (= noised) position --- not noising the position"<<endl;    
   }
+  
+  // Set as hit position
   Pos = NewPosition;
 
   // Noise the time:
@@ -231,8 +285,10 @@ vector<MDGridPoint> MDAngerCamera::Discretize(const MVector& PosInDetectorVolume
     MVector Position = PosInDetectorVolume;
     Position.SetZ(0.0);
     Points.push_back(MDGridPoint(0, 0, 0, MDGridPoint::c_XYAnger, Position, Energy, Time));
-  } else { 
+  } else if (m_PositionResolutionType == c_PositionResolutionXYZ) { 
     Points.push_back(MDGridPoint(0, 0, 0, MDGridPoint::c_XYZAnger, PosInDetectorVolume, Energy, Time));
+  } else { 
+    Points.push_back(MDGridPoint(0, 0, 0, MDGridPoint::c_XYZIndependentAnger, PosInDetectorVolume, Energy, Time));
   }
   return Points;
 }
@@ -247,8 +303,10 @@ MDGridPoint MDAngerCamera::GetGridPoint(const MVector& PosInDetectorVolume) cons
 
   if (m_PositionResolutionType == c_PositionResolutionXY) {
     return MDGridPoint(0, 0, 0, MDGridPoint::c_XYAnger);
-  } else {
+  } else if (m_PositionResolutionType == c_PositionResolutionXYZ) {
     return MDGridPoint(0, 0, 0, MDGridPoint::c_XYZAnger);
+  } else {
+    return MDGridPoint(0, 0, 0, MDGridPoint::c_XYZIndependentAnger);
   }
 }
 
@@ -266,57 +324,6 @@ MVector MDAngerCamera::GetPositionInDetectorVolume(const unsigned int xGrid,
   // Return the position in the detector volume
 
   return PositionInGrid;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDAngerCamera::GetGeant3() const
-{
-  ostringstream out;
-
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<"      SENVOL("<<m_SVs[i]->GetSensitiveVolumeID()<<") = '"<<m_SVs[i]->GetShortName()<<"'"<<endl;
-    out<<"      SENDET("<<m_SVs[i]->GetSensitiveVolumeID()<<") = "<<m_ID<<endl;
-  }
-
-  out<<"      DETNR("<<m_ID<<") = "<<m_Type<<endl;
-  if (m_PositionResolutionType == c_PositionResolutionXY) {
-    out<<"      DETTYP("<<m_ID<<") = 6"<<endl;
-  } else if (m_PositionResolutionType == c_PositionResolutionXYZ) {
-    out<<"      DETTYP("<<m_ID<<") = 7"<<endl;
-  }
-  out<<endl;
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDAngerCamera::GetMGeant() const
-{
-  ostringstream out;
-
-
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    MString Name = m_SVs[i]->GetShortName();
-    Name.ToUpper();
-    out<<"SENV "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<Name<<endl;
-    out<<"SEND "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<m_ID<<endl;
-  }
-
-  out<<"DTNR "<<m_ID<<" "<<m_Type<<endl;
-  if (m_PositionResolutionType == c_PositionResolutionXY) {
-    out<<"DTTP "<<m_ID<<" 6"<<endl;
-  } else if (m_PositionResolutionType == c_PositionResolutionXYZ) {
-    out<<"DTTP "<<m_ID<<" 7"<<endl;
-  }
-  out<<endl;
-
-  return out.str().c_str();  
 }
 
 
@@ -388,9 +395,19 @@ MVector MDAngerCamera::GetPositionResolution(const MVector& Pos, const double En
 {
   // Return the position resolution:
   
-  return MVector(1.0/sqrt(3.0)*m_PositionResolution.Evaluate(Energy), 
-                 1.0/sqrt(3.0)*m_PositionResolution.Evaluate(Energy),
-                 1.0/sqrt(3.0)*m_PositionResolution.Evaluate(Energy));
+  if (m_PositionResolutionType == c_PositionResolutionXY) {
+    return MVector(1.0/sqrt(2.0)*m_PositionResolution.Evaluate(Energy), 
+                   1.0/sqrt(2.0)*m_PositionResolution.Evaluate(Energy),
+                   m_StructuralSize[2]/sqrt(12.0));
+  } else if (m_PositionResolutionType == c_PositionResolutionXYZ) {
+    return MVector(1.0/sqrt(3.0)*m_PositionResolution.Evaluate(Energy), 
+                   1.0/sqrt(3.0)*m_PositionResolution.Evaluate(Energy),
+                   1.0/sqrt(3.0)*m_PositionResolution.Evaluate(Energy));
+  } else {
+    return MVector(m_PositionResolutionX.Evaluate(Energy), 
+                   m_PositionResolutionY.Evaluate(Energy),
+                   m_PositionResolutionZ.Evaluate(Energy));
+  }
 }
 
 

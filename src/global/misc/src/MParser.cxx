@@ -40,7 +40,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MParser)
 #endif
 
@@ -78,7 +78,7 @@ bool MParser::Open(MString FileName, unsigned int Way)
   // Open the file and do the parsing
 
   if (MFile::Open(FileName, Way) == false) {
-		mlog<<"MParser: Unable to open file \""<<FileName<<"\"."<<endl;
+    mlog<<"MParser: Unable to open file \""<<FileName<<"\"."<<endl;
     return false;
   }
 
@@ -87,7 +87,7 @@ bool MParser::Open(MString FileName, unsigned int Way)
 
     MString Line;
     while (IsGood() == true) {
-      ReadLine(Line);
+      if (ReadLine(Line) == false) break;
       AddLine(Line);
     }
  
@@ -164,14 +164,37 @@ MTokenizer* MParser::GetTokenizerAt(unsigned int LineNumber)
   }
 
   if (LineNumber >= GetNLines()) {
-    merr<<"Index out of bounds"<<endl;
+    merr<<"Index out of bounds - line number:"<<LineNumber<<" vs. # lines: "<<GetNLines()<<endl;
     return 0;
   } 
 
   return m_Lines[LineNumber];
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+
+MString MParser::GetLine(unsigned int LineNumber)
+{
+  //! READ-MODE ONLY: Return the line as text
+
+  MString Line;
+  
+  if (m_Way != c_Read) {
+    merr<<"Only valid if file is in read-mode!"<<endl;
+    massert(m_Way == c_Read);
+    return 0;
+  }
+
+  if (LineNumber >= GetNLines()) {
+    merr<<"Index out of bounds"<<endl;
+    return 0;
+  }   
+  
+  return m_Lines[LineNumber]->GetText();
+}
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -226,7 +249,7 @@ void MParser::Typo(int Line, MString Error)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MParser::TokenizeLine(MTokenizer& T)
+bool MParser::TokenizeLine(MTokenizer& T, bool Fast)
 {
   // Tokenize one line of the file
   // Return false if an error occurs
@@ -237,6 +260,9 @@ bool MParser::TokenizeLine(MTokenizer& T)
     return false;
   }
 
+  MString Line;
+  if (ReadLine(Line) == false) return false;
+  /*
   char c;
   MString Line;
   while (true) {
@@ -250,7 +276,13 @@ bool MParser::TokenizeLine(MTokenizer& T)
       break;
     }
   }
-  T.Analyse(Line);
+  */
+  
+  if (Fast == true) {
+    T.AnalyzeFast(Line);    
+  } else {
+    T.Analyze(Line);
+  }
   
   return true;
 }

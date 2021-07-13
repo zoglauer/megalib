@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  carme
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 19.10
+Kernel:                                    5.3.0-24-generic
+ 
+CPUModel:                                  AMD Ryzen 9 3900X 12-Core Processor
+CPUName:                                   Ryzen 9 3900X
+CPUSockets:                                1
+CPUCoresPerSocket:                         12
+CPUThreadsPerCore:                         2
+Cores:                                     12
+Threads:                                   24
+ 
+ROOTVersion:                               6.18/04
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            2.99.11
+MEGAlibGitHash:                            a651ad36caf865c418c6bdb67fcb1accda82d270 2019-11-27
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      18.237
+EventsPerSecondCosimaSingle:               5483.358
+DurationCosimaMultiple:                    31.474
+EventsPerSecondCosimaMultiple:             76253.415
+ 
+# Revan
+DurationRevanSingle:                       4.139
+EventsPerSecondRevanSingle:                24160.425
+DurationRevanMultiple:                     6.528
+EventsPerSecondRevanMultiple:              367647.058
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             15.112
+EventsPerSecondResponseCreatorSingle:      6617.257
+DurationResponseCreatorMultiple:           27.060
+EventsPerSecondResponseCreatorMultiple:    88691.796
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               42.445
+EventsPerSecondMimrecImagingSingle:        2355.990
+DurationMimrecImagingMultiple:             5.234
+EventsPerSecondMimrecImagingMultiple:      19105.846
+ 

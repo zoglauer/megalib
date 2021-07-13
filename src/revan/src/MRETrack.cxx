@@ -46,7 +46,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MRETrack)
 #endif
 
@@ -256,7 +256,10 @@ void MRETrack::AddRESE(MRESE *RESE)
       //merr<<"Different detector types... ok, if we have a pair event... Track: "<<m_Detector<<" new RESE:"<<RESE->GetDetector()<<show;
     }
 
-    m_Time = min(m_Time, RESE->GetTime());
+    if (m_Time <= RESE->GetTime()) { // <= to get time resolution in case we do not have any
+      m_Time = RESE->GetTime();
+      m_TimeResolution = RESE->GetTimeResolution();
+    }
   }
 
   return;
@@ -353,6 +356,25 @@ MRESE* MRETrack::GetStopPoint()
   // A startpoint must have been set previously.
 
   return m_Stop; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the volume sequence: 
+//! If it we have a start point, its the VS of the start point, other wise the VS of the first end point, otherwise the VS of the first RESE
+MDVolumeSequence* MRETrack::GetVolumeSequence()
+{
+  if (m_Start != nullptr) {
+    return m_Start->GetVolumeSequence(); 
+  } else if (GetNEndPoints() > 0) {
+    return GetEndPointAt(0)->GetVolumeSequence(); 
+  } else if (GetNRESEs() > 0) {
+    return GetRESEAt(0)->GetVolumeSequence(); 
+  } else {
+    return m_VolumeSequence; 
+  }
 }
 
 

@@ -40,7 +40,8 @@ enum class MGUIARMModes
 {
   m_ARMGamma = 1,
   m_ARMElectron = 2,
-  m_Spectrum = 3
+  m_Spectrum = 3,
+  m_PET = 4
 };
 
 
@@ -87,6 +88,10 @@ class MGUIARM : public MGUIDialog
   //! Check button indicating if we do want to use a test position in spectral mode
   TGCheckButton* m_UseTestPosition;
   const int m_UseTestPositionID = 140;
+
+  //! Check button indicating if we do want to use a logarithmic binning in spectral mode
+  TGCheckButton* m_UseLog;
+  const int m_UseLogID = 141;
   
   MGUIEEntry* m_ThetaIsX;
   MGUIEEntry* m_PhiIsY;
@@ -95,7 +100,7 @@ class MGUIARM : public MGUIDialog
   MGUIEEntry* m_Bins;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIARM, 0) // Dialogbox: Select the ARM-parameters
 #endif

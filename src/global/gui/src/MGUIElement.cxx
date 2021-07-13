@@ -43,7 +43,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIElement)
 #endif
 
@@ -59,8 +59,8 @@ MGUIElement::MGUIElement(const TGWindow* Parent, unsigned int Options) :
   m_EmphasizedFont = MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct();
   m_FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
 
-	m_IsEnabled = true;
-  m_WrapLength = 900;
+  m_IsEnabled = true;
+  m_WrapLength = 999;
 }
 
 

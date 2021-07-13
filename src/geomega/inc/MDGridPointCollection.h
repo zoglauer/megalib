@@ -106,7 +106,7 @@ class MDGridPointCollection
   //! True if we are in strip mode, false if we are in pixel mode - currently only pixel mode is supported!
   bool m_StripMode;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDGridPointCollection, 0) // no description
 #endif

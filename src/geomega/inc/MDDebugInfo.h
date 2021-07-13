@@ -22,6 +22,7 @@
 #include "MGlobal.h"
 #include "MString.h"
 #include "MStreams.h"
+#include "MTokenizer.h"
 
 // Forward declarations:
 
@@ -42,10 +43,11 @@ class MDDebugInfo
   //! Default destructor
   virtual ~MDDebugInfo();
 
+  //! Comparison operator
   MDDebugInfo& operator=(const MDDebugInfo& DebugInfo);
 
   //! Set the text
-  void SetText(const MString& Text) { m_Text = Text; }
+  void SetText(const MString& Text) { m_Text = Text; m_TokenizerWithMathsUpToDate = false; m_TokenizerWithoutMathsUpToDate = false; }
   //! Set the file name
   void SetFileName(const MString& FileName) { m_FileName = FileName; }
   //! Set the line number
@@ -65,15 +67,17 @@ class MDDebugInfo
   //! Return the line number
   int GetLine() const { return m_Line; }
   
+  //! Return the tokenizer - the flag indicates if the maths, or no-maths version is requested
+  MTokenizer& GetTokenizer(bool AllowMaths = true);
+  
   //! Prepend some text
-  void Prepend(MString Pre) { SetText(Pre + m_Text); }
+  void Prepend(MString Pre) { SetText(Pre + m_Text); m_TokenizerWithMathsUpToDate = false; m_TokenizerWithoutMathsUpToDate = false; }
 
   //! Print an error message
   void Error(MString Message) const;
 
   // protected methods:
  protected:
-
 
   // private methods:
  private:
@@ -92,7 +96,17 @@ class MDDebugInfo
   //! The original line number
   int m_Line;
 
-#ifdef ___CINT___
+  //! Something has been modified since the tokenizer have been calculated
+  bool m_TokenizerWithMathsUpToDate; 
+  //! The standard tokenizer
+  MTokenizer m_TokenizerWithMaths;
+
+  //! Something has been modified since the tokenizer have been calculated
+  bool m_TokenizerWithoutMathsUpToDate; 
+  //! The tokenizer without maths
+  MTokenizer m_TokenizerWithoutMaths;
+  
+#ifdef ___CLING___
  public:
   ClassDef(MDDebugInfo, 0) // no description
 #endif

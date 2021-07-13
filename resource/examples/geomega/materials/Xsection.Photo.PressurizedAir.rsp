@@ -1,5 +1,5 @@
 # Macroscopic cross section for Photo absorption
-# Derived from Geant4 version 1021
+# Derived from Geant4 version 1023
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Photo absorption cross section for PressurizedAir
 CE false
-HA 1785901195
+HA 3914996715
 
 R1         1.000000 8.978815e+03
 R1         1.047129 7.940110e+03

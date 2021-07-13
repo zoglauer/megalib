@@ -41,7 +41,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShapeCONS)
 #endif
 
@@ -144,6 +144,8 @@ bool MDShapeCONS::Set(double HalfHeight,
   m_PhiMin = PhiMin;
   m_PhiMax = PhiMax;
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -153,9 +155,13 @@ bool MDShapeCONS::Set(double HalfHeight,
 
 bool MDShapeCONS::Validate()
 {
-  delete m_Geo;
-  m_Geo = new TGeoConeSeg(m_HalfHeight, m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop, m_PhiMin, m_PhiMax);
-
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoConeSeg(m_HalfHeight, m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop, m_PhiMin, m_PhiMax);
+    
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -186,9 +192,11 @@ bool MDShapeCONS::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape Cons!");
+    Info.Error(MString("Unhandled descriptor in shape Cons: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
+ 
+  m_IsValidated = false;
  
   return true; 
 }
@@ -272,55 +280,6 @@ double MDShapeCONS::GetPhiMax()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeCONS::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(7)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONS::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_HalfHeight<<","<<m_RminBottom<<","<<m_RmaxBottom<<","<<m_RminTop<<","<<m_RmaxTop<<","<<m_PhiMin<<","<<m_PhiMax<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONS::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-  
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_HalfHeight<<" "<<m_RminBottom<<" "<<m_RmaxBottom<<endl;
-  out<<"           "<<m_RminTop<<" "<<m_RmaxTop<<endl;
-  out<<"           "<<m_PhiMin<<" "<<m_PhiMax<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeCONS::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -331,28 +290,6 @@ MString MDShapeCONS::GetGeomega() const
      <<m_RminTop<<" "<<m_RmaxTop<<" "<<m_PhiMin<<" "<<m_PhiMax;
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONS::GetGeant3ShapeName()
-{
-  //
-
-  return "CONS";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeCONS::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 7;
 }
 
 
@@ -390,7 +327,9 @@ void MDShapeCONS::Scale(const double Factor)
   m_RminTop *= Factor;
   m_RmaxTop *= Factor;
   m_HalfHeight *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

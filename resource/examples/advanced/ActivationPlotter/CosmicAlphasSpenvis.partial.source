@@ -1,0 +1,12 @@
+# Partial beam file for cosima
+
+# Cosmic alpha particles using SPENVIS
+# Assumptions: 
+# * log-log extrapolation beyond upper energy limit from SPENVIS
+# * Angular distribution is flat out to the Earth-horizon 
+SpaceSim.Source CosmicAlphasSpenvis
+CosmicAlphasSpenvis.ParticleType           21
+CosmicAlphasSpenvis.Beam                   FarFieldFileZenithDependent CosmicAlphasSpenvis.beam.dat
+CosmicAlphasSpenvis.Spectrum               File CosmicAlphasSpenvis.spectrum.dat
+CosmicAlphasSpenvis.Flux                   0.0144883
+

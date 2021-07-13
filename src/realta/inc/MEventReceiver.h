@@ -78,7 +78,7 @@ class MEventReceiver : public TObject
   UInt_t m_Port;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEventReceiver, 0) // no description
 #endif

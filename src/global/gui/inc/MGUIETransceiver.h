@@ -95,7 +95,7 @@ class MGUIETransceiver : public MGUIElement
   enum Type { e_Id = 500, e_Connect, e_Disconnect, e_Host, e_Port };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIETransceiver, 0) // GUI window for unkown purpose ...
 #endif

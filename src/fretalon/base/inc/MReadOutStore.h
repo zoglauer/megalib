@@ -98,7 +98,7 @@ class MReadOutStore
   //! The read-out group names
   vector<MString> m_ReadOutDataGroups;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOutStore, 0) // no description
 #endif

@@ -43,12 +43,16 @@ class MDGeometryQuest : public MDGeometry
   // public interface:
  public:
   MDGeometryQuest();
-  ~MDGeometryQuest();
+  virtual ~MDGeometryQuest();
 
   virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
 
   bool IsSensitive(MVector Pos);
-  MDVolume* GetVolume(MVector Pos); 
+  
+  using MDGeometry::GetVolume;
+  MDVolume* GetVolume(MVector Pos);
+  
+  using MDGeometry::GetMaterial;
   MDMaterial* GetMaterial(MVector Pos);
 
   bool Noise(MVector& Pos, double& Energy, double& Time);
@@ -61,7 +65,6 @@ class MDGeometryQuest : public MDGeometry
                       MVector& PRes, double& ERes, double& TRes);
 
   MDVolume* GetEmbeddingVolume(MVector Position);
-  MDDetector* GetDetector(MVector Position);
   MString GetDetectorName(MVector Position);
   bool AreInSameVoxel(MVector Pos1, MVector Pos2);
 
@@ -117,7 +120,7 @@ class MDGeometryQuest : public MDGeometry
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDGeometryQuest, 0) // no description
 #endif

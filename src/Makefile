@@ -29,6 +29,9 @@ clean_glomisc:
 clean_glogui:
 	@$(MAKE) clean_gui -C global
 
+clean_gloneuralnet:
+	@$(MAKE) clean_neuralnet -C global
+
 
 #------------------------------------------------------------------------------
 # Geomega:

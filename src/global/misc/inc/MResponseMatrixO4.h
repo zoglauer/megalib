@@ -24,7 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MResponseMatrix.h"
+#include "MResponseMatrixOx.h"
 #include "MResponseMatrixO3.h"
 
 // Forward declarations:
@@ -33,7 +33,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MResponseMatrixO4 : public MResponseMatrix
+class MResponseMatrixO4 : public MResponseMatrixOx
 {
   // public interface:
  public:
@@ -93,7 +93,7 @@ class MResponseMatrixO4 : public MResponseMatrix
 
   virtual float GetMaximum() const;
   virtual float GetMinimum() const;
-  virtual float GetSum() const;
+  virtual double GetSum() const;
 
   virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int a1) const;
   virtual MResponseMatrixO2 GetSumMatrixO2(unsigned int a1, unsigned int a2) const;
@@ -102,8 +102,14 @@ class MResponseMatrixO4 : public MResponseMatrix
   virtual MResponseMatrixO4 GetSumMatrixO4(unsigned int a1, unsigned int a2, 
                                            unsigned int a3, unsigned int a4) const;
 
+  //! Return a slice of order 1 of this matrix (x1 is from axis a1)
+  virtual MResponseMatrixO1 GetSliceInterpolated(float x1, unsigned int a1, 
+                                                 float x2, unsigned int a2,
+                                                 float x3, unsigned int a3); 
+
   virtual bool Write(MString FileName, bool Stream = false);
 
+  TH1* GetHistogram(float x1, float x2, float x3, float x4, bool Normalized = true);
   void Show(float x1, float x2, float x3, float x4, bool Normalized = true);
 
   // protected methods:
@@ -131,7 +137,7 @@ class MResponseMatrixO4 : public MResponseMatrix
   friend ostream& operator<<(ostream& os, const MResponseMatrixO4& R);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMatrixO4, 1) // response matrix of order 2 (area)
 #endif

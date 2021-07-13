@@ -48,7 +48,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseMatrixO5)
 #endif
 
@@ -57,7 +57,7 @@ ClassImp(MResponseMatrixO5)
 
 
 MResponseMatrixO5::MResponseMatrixO5() :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // default constructor
 
@@ -71,7 +71,7 @@ MResponseMatrixO5::MResponseMatrixO5() :
 MResponseMatrixO5::MResponseMatrixO5(vector<float> x1Axis, vector<float> x2Axis, 
                                      vector<float> x3Axis, vector<float> x4Axis, 
                                      vector<float> x5Axis) :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // constructor
 
@@ -86,7 +86,7 @@ MResponseMatrixO5::MResponseMatrixO5(vector<float> x1Axis, vector<float> x2Axis,
 MResponseMatrixO5::MResponseMatrixO5(MString Name, vector<float> x1Axis, 
                                      vector<float> x2Axis, vector<float> x3Axis, 
                                      vector<float> x4Axis, vector<float> x5Axis) :
-  MResponseMatrix(Name)
+  MResponseMatrixOx(Name)
 {
   // constructor
 
@@ -670,23 +670,23 @@ float MResponseMatrixO5::GetInterpolated(float x1, float x2, float x3, float x4,
     }
   } else {
     // Get Position:
- 		int Position = FindBin(m_AxisO5, x5);
+    int Position = FindBin(m_AxisO5, x5);
 
     // Take care of boundaries:
-		if (Position < 0) {
-			if (DoExtrapolate == true) {
-				Position = 0; // extrapolate below lower edge
-			} else {
-				return m_AxesO4.front().GetInterpolated(x1, x2, x3, x4, DoExtrapolate);
-			}
-		} else if (Position >= int(m_AxisO5.size()-1)) {
-			if (DoExtrapolate == true) {
-				Position = int(m_AxisO5.size()-2); // extrapolate above higher edge
-				// limits of highest bin are m_AxisO5.size()-2 and  m_AxisO5.size()-1 !!
-			} else {
-				return m_AxesO4.back().GetInterpolated(x1, x2, x3, x4, DoExtrapolate);
-			}
-		}
+    if (Position < 0) {
+      if (DoExtrapolate == true) {
+        Position = 0; // extrapolate below lower edge
+      } else {
+        return m_AxesO4.front().GetInterpolated(x1, x2, x3, x4, DoExtrapolate);
+      }
+    } else if (Position >= int(m_AxisO5.size()-1)) {
+      if (DoExtrapolate == true) {
+        Position = int(m_AxisO5.size()-2); // extrapolate above higher edge
+        // limits of highest bin are m_AxisO5.size()-2 and  m_AxisO5.size()-1 !!
+      } else {
+        return m_AxesO4.back().GetInterpolated(x1, x2, x3, x4, DoExtrapolate);
+      }
+    }
     
     // Interpolate:
     return m_AxesO4[Position].GetInterpolated(x1, x2, x3, x4, DoExtrapolate) + (x5 - m_AxisO5[Position])/
@@ -762,11 +762,11 @@ float MResponseMatrixO5::GetMinimum() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MResponseMatrixO5::GetSum() const
+double MResponseMatrixO5::GetSum() const
 {
   // Return the sum of all bins:
 
-  float Sum = 0;
+  double Sum = 0;
   for (unsigned int i = 0; i < m_AxesO4.size(); ++i) {
     Sum += m_AxesO4[i].GetSum();
   }  
@@ -910,6 +910,51 @@ MResponseMatrixO5 MResponseMatrixO5::GetSumMatrixO5(unsigned int a1,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MResponseMatrixO1 MResponseMatrixO5::GetSliceInterpolated(float x1, unsigned int order1,
+                                                          float x2, unsigned int order2,
+                                                          float x3, unsigned int order3,
+                                                          float x4, unsigned int order4)
+{
+  // Return a slice of order 1 in axis a1 of this matrix
+
+  massert(order1 >= 1 && order1 <= 5);
+  massert(order2 >= 1 && order2 <= 5);
+  massert(order3 >= 1 && order3 <= 5);
+  massert(order4 >= 1 && order4 <= 5);
+  //massert(x1 >= GetAxisContent(0, order1) && x1 <= GetAxisContent(GetAxisBins(order1)-1, order1));
+  //massert(x2 >= GetAxisContent(0, order2) && x2 <= GetAxisContent(GetAxisBins(order2)-1, order2));
+
+  unsigned int newaxis = 0;
+  vector<float> values;
+  for (unsigned int a = 1; a <= m_Order; ++a) {
+    if (a == order1) {
+      values.push_back(x1);
+    } else if (a == order2) {
+      values.push_back(x2);
+    } else if (a == order3) {
+      values.push_back(x3);
+    } else if (a == order4) {
+      values.push_back(x4);
+    } else {
+      values.push_back(0);
+      newaxis = a;
+    }
+  }
+
+  MResponseMatrixO1 M(GetAxis(newaxis));
+  
+  for (unsigned int i1 = 0; i1 < GetAxisBins(newaxis); ++i1) {
+    values[newaxis-1] = GetAxisBinCenter(i1, newaxis);
+    M.SetBinContent(i1, Get(values[0], values[1], values[2], values[3], values[4]));
+  }
+
+  return M;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MResponseMatrixO5::ReadSpecific(MFileResponse& Parser, 
                                      const MString& Type, 
                                      const int Version)
@@ -920,7 +965,7 @@ bool MResponseMatrixO5::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO5") {
-//     while (Parser.TokenizeLine(T) == true) {
+//     while (Parser.TokenizeLine(T, true) == true) {
 //       if (T.GetNTokens() == 0) continue;
 //       if (T.GetTokenAt(0) == "R2") {
 //         if (T.GetNTokens() == 4) {
@@ -943,7 +988,7 @@ bool MResponseMatrixO5::ReadSpecific(MFileResponse& Parser,
     MString x3Name;
     MString x4Name;
     MString x5Name;
-    while (Parser.TokenizeLine(T) == true) {
+    while (Parser.TokenizeLine(T, true) == true) {
       if (T.GetNTokens() == 0) continue;
       if (T.GetTokenAt(0) == "A1") {
         x1Axis = T.GetTokenAtAsFloatVector(1);
@@ -1038,12 +1083,7 @@ bool MResponseMatrixO5::Write(MString FileName, bool Stream)
   mdebug<<"Started writting file \""<<FileName<<"\" ... This way take a while ..."<<endl;
 
   ostringstream s;
-  s<<"# Response Matrix 5"<<endl;
-  s<<"Version 1"<<endl;
-  s<<endl;
-  s<<"NM "<<m_Name<<endl;
-  s<<endl;
-  s<<"CE "<<((m_ValuesCentered == true) ? "true" : "false")<<endl;
+  WriteHeader(s);
   File.Write(s);
   
   unsigned int x1, x1_max = GetAxisBins(1); 
@@ -1149,8 +1189,32 @@ bool MResponseMatrixO5::Write(MString FileName, bool Stream)
 void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4, 
                              float x5, bool Normalize)
 {
-  // Create a 3d ROOT histogram:
-  
+  TH1* Hist = GetHistogram(x1, x2, x3, x4, x5, Normalize);
+  if (Hist == nullptr) {
+    mout<<"Unable to generate histogram"<<endl;
+    return;
+  }
+    
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle(m_Name);
+  Canvas->cd();
+  if (dynamic_cast<TH2*>(Hist) != nullptr) {
+    Hist->Draw("colz");
+  } else if (dynamic_cast<TH3*>(Hist) != nullptr) {
+    Hist->Draw("box");
+  } else {
+    Hist->Draw();
+  }
+  Canvas->Update();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+TH1* MResponseMatrixO5::GetHistogram(float x1, float x2, float x3, float x4, 
+                                     float x5, bool Normalize)
+{
   vector<unsigned int> axes;
   vector<unsigned int> values;
   vector<bool> found(5, false);
@@ -1253,10 +1317,7 @@ void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4,
                                                 values[4], axes[4])*Norm);
       }
     
-      TCanvas* Canvas = new TCanvas(m_Name + "_RM5C", m_Name + "_RM5C", 0, 0, 600, 600);
-      Canvas->cd();
-      Hist->Draw();
-      Canvas->Update();
+      return Hist;
 
     } else if (NAxes == 2) {
       TH2D* Hist = 0;
@@ -1296,11 +1357,9 @@ void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4,
                                                         values[4], axes[4])*Norm);
         }
       }
-      
-      TCanvas* Canvas = new TCanvas(m_Name+"_RM5C", m_Name+"_RM5C", 0, 0, 600, 600);
-      Canvas->cd();
-      Hist->Draw("colz");
-      Canvas->Update();
+    
+      return Hist;
+
     } else if (NAxes == 3) {
       TH3D* Hist = 0;
       float* x1Bins = new float[GetAxisBins(axes[0])+1];
@@ -1351,11 +1410,8 @@ void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4,
           }
         }
       }
-
-      TCanvas* Canvas = new TCanvas(m_Name + "_RM5C", m_Name + "_RM5C", 0, 0, 600, 600);
-      Canvas->cd();
-      Hist->Draw("box");
-      Canvas->Update();
+    
+      return Hist;
 
     } else {
       merr<<"Wrong number of axis: "<<NAxes<<endl;
@@ -1364,6 +1420,8 @@ void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4,
   } else {
     mout<<"Empty response matrix of order 5"<<endl;
   }
+  
+  return nullptr;
 }
 
 

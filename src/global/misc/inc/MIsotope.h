@@ -66,7 +66,10 @@ class MIsotope
   //! Return the line branching ratio
   double GetLineBranchingRatio(unsigned int l) const;
   //! Return the line exclude flag
-  double GetLineExcludeFlag(unsigned int l) const;
+  bool GetLineExcludeFlag(unsigned int l) const;
+  //! Return the default lines (= most commonly seen), either defined by the default flag in the file, or the line with the strongest branching ratio - ignore excluded lines
+  //! Return -1 if no default line could be found
+  int GetDefaultLine() const;
   
   //! Dump a string
   virtual MString ToString() const;
@@ -97,9 +100,11 @@ class MIsotope
   vector<double> m_LineBranchingRatios;
   //! The line exclude flags
   vector<bool> m_LineExcludeFlags;
- 
+  //! The line default flags
+  vector<bool> m_LineDefaultFlags;
+  
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MIsotope, 0) // no description
 #endif

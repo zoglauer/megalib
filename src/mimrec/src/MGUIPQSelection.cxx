@@ -36,7 +36,7 @@
 
 #include "MGUIPQSelection.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIPQSelection)
 #endif
 
@@ -87,101 +87,78 @@ void MGUIPQSelection::Create()
 
 
   // ... continue with the label ...
-  m_LabelFrame = new TGVerticalFrame(this, 100, 10, kRaisedFrame);
-  m_LabelFrameLayout =
-    new TGLayoutHints(kLHintsExpandX, 10, 10, 10, 20);
+  m_LabelFrame = new TGVerticalFrame(this, 100*m_FontScaler, 10*m_FontScaler, kRaisedFrame);
+  m_LabelFrameLayout = new TGLayoutHints(kLHintsExpandX, 10*m_FontScaler, 10*m_FontScaler, 10*m_FontScaler, 20*m_FontScaler);
   AddFrame(m_LabelFrame, m_LabelFrameLayout);
 
-  m_Label1 = 
-    new TGLabel(m_LabelFrame, new TGString("Enter some point sources"));
-  m_Label1Layout =
-    new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 
-                      0, 0, 2, 0);
+  m_Label1 = new TGLabel(m_LabelFrame, new TGString("Enter some point sources"));
+  m_Label1Layout = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 0, 0, 2*m_FontScaler, 0);
   m_LabelFrame->AddFrame(m_Label1, m_Label1Layout);
 
-  m_Label2 = 
-    new TGLabel(m_LabelFrame, new TGString("which should be deleted"));
-  m_Label2Layout =
-    new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsBottom, 
-                      0, 0, 0, 2);
+  m_Label2 = new TGLabel(m_LabelFrame, new TGString("which should be deleted"));
+  m_Label2Layout = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsBottom, 0, 0, 0, 2*m_FontScaler);
   m_LabelFrame->AddFrame(m_Label2, m_Label2Layout);
 
   
   // Add/Delete buttons:
-  m_AddDeleteFrame = new TGHorizontalFrame(this, 150, 25, kFixedSize);
-  m_AddDeleteFrameLayout = 
-    new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsCenterX, 
-                      10, 10, 10, 5);
+  m_AddDeleteFrame = new TGHorizontalFrame(this, 150*m_FontScaler, 25*m_FontScaler, kFixedSize);
+  m_AddDeleteFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsCenterX, 10*m_FontScaler, 10*m_FontScaler, 10*m_FontScaler, 5*m_FontScaler);
   AddFrame(m_AddDeleteFrame, m_AddDeleteFrameLayout);
-	  
+    
   m_AddButton = new TGTextButton(m_AddDeleteFrame, "Add PQ", 1002); 
   m_AddButton->Associate(this);
-  m_AddButtonLayout = 
-    new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 10, 5, 0, 0);
+  m_AddButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 10*m_FontScaler, 5*m_FontScaler, 0, 0);
   m_AddDeleteFrame->AddFrame(m_AddButton, m_AddButtonLayout);
-	  
+    
   m_ModifyButton = new TGTextButton(m_AddDeleteFrame, "Modify PQ", 1003); 
   m_ModifyButton->Associate(this);
-  m_ModifyButtonLayout = 
-    new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 5, 5, 0, 0);
+  m_ModifyButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 5*m_FontScaler, 5*m_FontScaler, 0, 0);
   m_AddDeleteFrame->AddFrame(m_ModifyButton, m_ModifyButtonLayout);
 
   m_DeleteButton = new TGTextButton(m_AddDeleteFrame, "Delete PQ", 1004); 
   m_DeleteButton->Associate(this);
-  m_DeleteButtonLayout = 
-    new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 5, 10, 0, 0);
+  m_DeleteButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 5*m_FontScaler, 10*m_FontScaler, 0, 0);
   m_AddDeleteFrame->AddFrame(m_DeleteButton, m_DeleteButtonLayout);
 
 
   // ... add some list-boxes:
-  m_ListBoxFrame = new TGHorizontalFrame(this, 150, 175, kFixedSize);
-  m_ListBoxFrameLayout = 
-    new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsCenterX, 
-                      10, 10, 5, 10);
+  m_ListBoxFrame = new TGHorizontalFrame(this, 150*m_FontScaler, 175*m_FontScaler, kFixedSize);
+  m_ListBoxFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsCenterX, 10*m_FontScaler, 10*m_FontScaler, 5*m_FontScaler, 10*m_FontScaler);
   AddFrame(m_ListBoxFrame, m_ListBoxFrameLayout);
 
-  m_ListBoxLayout =
-    new TGLayoutHints(kLHintsExpandX | kLHintsCenterX, 10, 10, 10, 8);
+  m_ListBoxLayout = new TGLayoutHints(kLHintsExpandX | kLHintsCenterX, 10*m_FontScaler, 10*m_FontScaler, 10*m_FontScaler, 8*m_FontScaler);
   m_ListBoxLong = new TGListBox(m_ListBoxFrame, 21);
 
   m_ListBoxFrame->AddFrame(m_ListBoxLong, m_ListBoxLayout);
   m_ListBoxLong->Associate(this);
-  m_ListBoxLong->Resize(150, 172);
+  m_ListBoxLong->Resize(150*m_FontScaler, 172*m_FontScaler);
 
   m_GUIData->GetDeselectedPointSources()->Compress();
-  for (int i = 0; i < m_GUIData->GetDeselectedPointSources()->GetLast()+1; 
-       i++) {
-    m_ListBoxLong->AddEntry(((MPointSource *) 
-      (m_GUIData->GetDeselectedPointSources()->At(i)))->ToString(), 
-      m_NEntries++);
+  for (int i = 0; i < m_GUIData->GetDeselectedPointSources()->GetLast()+1; i++) {
+    m_ListBoxLong->AddEntry(((MPointSource *) (m_GUIData->GetDeselectedPointSources()->At(i)))->ToString(), m_NEntries++);
   }
  
 
   // ... add the use-PQs check-button
   m_UsePQsCB = new TGCheckButton(this, "Apply these deselections", 999);
-  m_UsePQsCBLayout = new TGLayoutHints(kLHintsLeft, 20, 0, 5, 5);
+  m_UsePQsCBLayout = new TGLayoutHints(kLHintsLeft, 20*m_FontScaler, 0*m_FontScaler, 5*m_FontScaler, 5*m_FontScaler);
   AddFrame(m_UsePQsCB, m_UsePQsCBLayout);
-  m_UsePQsCB->SetState((m_GUIData->GetApplyDeselectedPointSources() == 1) 
-                       ?  kButtonDown : kButtonUp);
+  m_UsePQsCB->SetState((m_GUIData->GetApplyDeselectedPointSources() == 1) ?  kButtonDown : kButtonUp);
 
 
   // ... and finally the Ok and Cancel-buttons
-  m_ButtonFrame = new TGHorizontalFrame(this, 150, 25, kFixedSize);
-  m_ButtonFrameLayout = 
-    new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 
-                      10, 10, 10, 8);
+  m_ButtonFrame = new TGHorizontalFrame(this, 150*m_FontScaler, 25*m_FontScaler, kFixedSize);
+  m_ButtonFrameLayout = new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10*m_FontScaler, 10*m_FontScaler, 10*m_FontScaler, 8*m_FontScaler);
   AddFrame(m_ButtonFrame, m_ButtonFrameLayout);
-	  
+    
   m_CancelButton = new TGTextButton(m_ButtonFrame, "Cancel", e_Cancel); 
   m_CancelButton->Associate(this);
-  m_CancelButtonLayout = 
-    new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 5, 0, 0);
+  m_CancelButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 5*m_FontScaler, 0, 0);
   m_ButtonFrame->AddFrame(m_CancelButton, m_CancelButtonLayout);
 
   m_OKButton = new TGTextButton(m_ButtonFrame, "Ok", e_Ok); 
   m_OKButton->Associate(this);
-  m_OKButtonLayout = 
-    new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 5, 0, 0, 0);
+  m_OKButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 5*m_FontScaler, 0, 0, 0);
   m_ButtonFrame->AddFrame(m_OKButton, m_OKButtonLayout);
 
 
@@ -205,7 +182,7 @@ bool MGUIPQSelection::ProcessMessage(long Message, long Parameter1,
 {
   // Process the messages for this application
 
-	bool Status = true;
+  bool Status = true;
 
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
@@ -216,7 +193,7 @@ bool MGUIPQSelection::ProcessMessage(long Message, long Parameter1,
     case kCM_BUTTON:
       switch (Parameter1) {
       case e_Ok:
-				Status = OnOk();
+        Status = OnOk();
         break;
         
       case e_Cancel:
@@ -224,7 +201,7 @@ bool MGUIPQSelection::ProcessMessage(long Message, long Parameter1,
         break;
 
       case e_Apply:
-				Status = OnApply();
+        Status = OnApply();
         break;
         
       case 1002: // Add
@@ -267,12 +244,12 @@ bool MGUIPQSelection::ProcessMessage(long Message, long Parameter1,
 
 bool MGUIPQSelection::OnCancel()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_GUIData->GetDeselectedPointSources()->Compress();
-	CloseWindow();
+  CloseWindow();
 
-	return true;
+  return true;
 }
 
 
@@ -281,12 +258,12 @@ bool MGUIPQSelection::OnCancel()
 
 bool MGUIPQSelection::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_GUIData->GetDeselectedPointSources()->Compress();
   m_GUIData->SetApplyDeselectedPointSources((m_UsePQsCB->GetState() == kButtonDown) ? 1 : 0);
 
-	return true;
+  return true;
 }
 
 

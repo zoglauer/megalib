@@ -37,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponse)
 #endif
 
@@ -109,9 +109,27 @@ double MResponse::GetPairResponse(const double t)
   // parameters t for untracked Comptons
   //
   // t: transversal distance (in degree) from the pair origin
-
+  
   merr<<"This function has to be overwritten in a derived class!"<<endl;
-          
+  
+  return 0.0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MResponse::GetPETResponse(const double t)
+{
+  // This class has to be overwritten
+  // 
+  // GetResponse calculates and returns the response, determined by the two 
+  // parameters t for untracked Comptons
+  //
+  // t: transversal distance (in degree) from the pair origin
+  
+  merr<<"This function has to be overwritten in a derived class!"<<endl;
+  
   return 0.0;
 }
 

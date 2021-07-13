@@ -2,22 +2,21 @@
 # This shows the usage of watched volumes - take a look at the sim file to see the ENTR & EXIT entries
 
 
+# Global parameters
 Version         1
 Geometry        $(MEGALIB)/resource/examples/geomega/special/Spheric.geo.setup
-PhysicsListEM   Livermore
 
 # Physics list
-PhysicsListEM                        Livermore
+PhysicsListEM                        LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-StoreOnlyTriggeredEvents             false
-DiscretizeHits                       true
+StoreSimulationInfo                  all
+PreTriggerMode                       Everything
 
+# The black abosrber - all particles are stoped upon entering
 BlackAbsorber                        BigSphere
 
+# Run & source parameters
 Run MySim
 MySim.FileName         BlackAbsorber
 MySim.Time             100.0

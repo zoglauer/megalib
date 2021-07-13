@@ -36,6 +36,7 @@ using namespace std;
 // MEGAlib
 #include "MGlobal.h"
 #include "MAssert.h"
+#include "MCoordinateSystem.h"
 #include "MStreams.h"
 #include "MMath.h"
 #include "MFile.h"
@@ -553,8 +554,6 @@ private:
  */
 SensitivityOptimizer::SensitivityOptimizer() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
-
   m_ModeSourceExtension = s_ModeNotDefined;
   m_ModeSpectrum = s_ModeNotDefined;
   m_ModeObservation = s_ModeNotDefined;
@@ -599,11 +598,11 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"    Input file options:"<<endl;
   Usage<<"      -p <file> <sim photons> <sim area> <theta> <phi>:  "<<endl;
-  Usage<<"                                                    Source file, inlcuding the number of simulated photons and their start area"<<endl;
-  Usage<<"      -pa <file> <sim photons> <fluence>:  "<<endl;
+  Usage<<"                                                    Mono-energetic point-source tra file, inlcuding the number of simulated photons and their start area"<<endl;
+  //Usage<<"      -pa <file> <sim photons> <fluence>:  "<<endl;
   Usage<<"                                                    Source file for extended line source sensitivity calculations, including the number of simulated photons and the fluence [ph/cm2]: flux [ph/cm2/s] x simulated observation time "<<endl;
   Usage<<"      -k <file> <sim photons> <sim area> <plaw> <plaw Emin> <plaw Emax> <theta> <phi>: "<<endl;
-  Usage<<"                                                    Source file for continuum sensitivity calculation, inlcuding the number of simulated photons and their start area and the power law index for determining the started photons per bin"<<endl;
+  Usage<<"                                                    Continuum point source, inlcuding the number of simulated photons and their start area and the power law index Gamma for determining the started photons per bin"<<endl;
   Usage<<"      -b <file> <time>:                             Background file name and measurement time"<<endl;
   Usage<<endl;
   Usage<<"    Data space options:"<<endl;
@@ -658,66 +657,91 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-c" || Option == "-g" || Option == "-m" || Option == "-n") {
-			if (!((argc > i+1) && 
+      if (!((argc > i+1) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
-				mlog<<"Error: Option \""<<argv[i][1]<<"\" needs one argument!"<<endl;
-				mlog<<Usage.str()<<endl;
-				return false;
-			}
-		} else if (Option == "--csl" || Option == "-b" || Option == "-w" || Option == "--pos") {
-			if (!((argc > i+2) && 
+        mlog<<"Error: Option \""<<argv[i][1]<<"\" needs one argument!"<<endl;
+        mlog<<Usage.str()<<endl;
+        return false;
+      }
+    } else if (Option == "--csl" || Option == "-b" || Option == "-w" || Option == "--pos") {
+      if (!((argc > i+2) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0))) {
-				mlog<<"Error: Option \""<<argv[i][1]<<"\" needs two arguments!"<<endl;
-				mlog<<Usage.str()<<endl;
-				return false;
-			}
-		} else if (Option == "--csl" || Option == "--ehc" || Option == "--phi" || Option == "--the" || 
+        mlog<<"Error: Option \""<<argv[i][1]<<"\" needs two arguments!"<<endl;
+        mlog<<Usage.str()<<endl;
+        return false;
+      }
+    } else if (Option == "--csl" || Option == "--ehc" || Option == "--phi" || Option == "--the" || 
                Option == "--cqf" || Option == "-s" || Option == "--arm" || Option == "--spd" || 
                Option == "--tqf" || Option == "--csl" || Option == "--pop" || Option == "--idp" || 
                Option == "--bra" || Option == "--bde") {
-			if (!((argc > i+3) && 
+      if (!((argc > i+3) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) && 
             (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0))) {
-				mlog<<"Error: Option \""<<argv[i][1]<<"\" needs three arguments!"<<endl;
-				mlog<<Usage.str()<<endl;
-				return false;
-			}
-		} else if (Option == "--egy" || Option == "--ehp" || Option == "-k") {
-			if (!((argc > i+4) && 
+        mlog<<"Error: Option \""<<argv[i][1]<<"\" needs three arguments!"<<endl;
+        mlog<<Usage.str()<<endl;
+        return false;
+      }
+    } else if (Option == "--egy" || Option == "--ehp") {
+      if (!((argc > i+4) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) && 
             (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) && 
             (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0))) {
-				mlog<<"Error: Option \""<<argv[i][1]<<"\" needs four arguments!"<<endl;
-				mlog<<Usage.str()<<endl;
-				return false;
-			}
-		}
+        mlog<<"Error: Option \""<<argv[i][1]<<"\" needs four arguments!"<<endl;
+        mlog<<Usage.str()<<endl;
+        return false;
+      }
+    } else if (Option == "-p") {
+      if (!((argc > i+5) && 
+            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
+            (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) && 
+            (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) && 
+            (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0) && 
+            (argv[i+5][0] != '-' || isalpha(argv[i+5][1]) == 0))) {
+        mlog<<"Error: Option \""<<argv[i][1]<<"\" needs five arguments!"<<endl;
+        mlog<<Usage.str()<<endl;
+        return false;
+      }
+    } else if (Option == "-k") {
+      if (!((argc > i+8) && 
+             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
+             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) && 
+             (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) && 
+             (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0) && 
+             (argv[i+5][0] != '-' || isalpha(argv[i+5][1]) == 0) && 
+             (argv[i+6][0] != '-' || isalpha(argv[i+6][1]) == 0) && 
+             (argv[i+7][0] != '-' || isalpha(argv[i+7][1]) == 0) && 
+              (argv[i+8][0] != '-' || isalpha(argv[i+8][1]) == 0))) {
+        mlog<<"Error: Option \""<<argv[i][1]<<"\" needs eight arguments!"<<endl;
+        mlog<<Usage.str()<<endl;
+        return false;
+      }
+    }
   }
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
     
     if (Option == "-n") {
       m_Name = argv[++i];
-			mlog<<"Accepting output file name: "<<m_Name<<endl;
+      mlog<<"Accepting output file name: "<<m_Name<<endl;
       mlog.Connect(m_Name + ".log");
     }
   }
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// Then fulfill the options:
+    // Then fulfill the options:
     if (Option == "-p") {
       if ((m_ModeSourceExtension != s_ModeNotDefined && m_ModeSourceExtension != s_ModePointSource) ||
           (m_ModeSpectrum != s_ModeNotDefined && m_ModeSpectrum != s_ModeLine)) {
@@ -737,7 +761,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       m_SourceStartArea.push_back(atof(argv[++i]));
       m_SourceTheta.push_back(atof(argv[++i]));
       m_SourcePhi.push_back(atof(argv[++i]));
-			mlog<<"Accepting source file data: "<<m_SourceFile.back()<<" "
+      mlog<<"Accepting source file data: "<<m_SourceFile.back()<<" "
           <<m_SourceStartPhotons.back()<<" "<<m_SourceStartArea.back()<<" "
           <<m_SourceTheta.back()<<" "<<m_SourcePhi.back()<<endl;
     } else if (Option == "-pa") {
@@ -757,7 +781,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_SourceStartPhotons.push_back(atoi(argv[++i]));
       m_SourceStartFluence.push_back(atof(argv[++i]));
-			mlog<<"Accepting source file data: "<<m_SourceFile.back()<<" "
+      mlog<<"Accepting source file data: "<<m_SourceFile.back()<<" "
           <<m_SourceStartPhotons.back()<<" "<<m_SourceStartFluence.back()<<endl;
     } else if (Option == "-k") {
       if ((m_ModeSourceExtension != s_ModeNotDefined && m_ModeSourceExtension != s_ModePointSource) ||
@@ -777,16 +801,19 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       m_SourceStartPhotons.push_back(atoi(argv[++i]));
       m_SourceStartArea.push_back(atof(argv[++i]));
       m_SourcePowerLaw.push_back(atof(argv[++i]));
+      if (m_SourcePowerLaw.back() < 0) {
+        mlog<<"Attention: Your power law index is negative? Are sure about this? E.g. Crab has +2.19"<<endl; 
+      }
       m_SourcePowerLawEmin.push_back(atof(argv[++i]));
       m_SourcePowerLawEmax.push_back(atof(argv[++i]));
       m_SourceTheta.push_back(atof(argv[++i]));
       m_SourcePhi.push_back(atof(argv[++i]));
       vector<int> Empty;
       m_SourceStartPhotonsContinuumSensitivityBin.push_back(Empty);
-			mlog<<"Accepting continuum source file name: "<<m_SourceFile.back()
+      mlog<<"Accepting continuum source file name: "<<m_SourceFile.back()
           <<" (start photons: "<<m_SourceStartPhotons.back()
           <<", start area: "<<m_SourceStartArea.back()
-          <<", power law: "<<m_SourcePowerLaw.back()
+          <<", power law index: "<<m_SourcePowerLaw.back()
           <<", emin:  "<<m_SourcePowerLawEmin.back()
           <<", emax:  "<<m_SourcePowerLawEmax.back()
           <<", theta: "<<m_SourceTheta.back()
@@ -798,7 +825,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         mlog<<"File \""<<m_BackgroundFiles.back()<<"\" does not exist!"<<endl; 
         return false;
       }
-			mlog<<"Accepting background file name: "<<m_BackgroundFiles.back()<<" ("<<m_BackgroundTimes.back()<<"sec)"<<endl;
+      mlog<<"Accepting background file name: "<<m_BackgroundFiles.back()<<" ("<<m_BackgroundTimes.back()<<"sec)"<<endl;
     } else if (Option == "-n") { ++i;
     } else if (Option == "-d") { if (g_Verbosity < 2) g_Verbosity = 2;
     } else if (Option == "-c") {
@@ -808,7 +835,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         mlog<<Usage.str()<<endl;
         return false;       
       }
-			mlog<<"Accepting configuration file name: "<<ConfigurationFile<<endl;
+      mlog<<"Accepting configuration file name: "<<ConfigurationFile<<endl;
     } else if (Option == "-g") {
       GeometryFile = argv[++i];
       if (MFile::Exists(GeometryFile) == false) {
@@ -816,23 +843,23 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         mlog<<Usage.str()<<endl;
         return false;       
       }
-			mlog<<"Accepting configuration file name: "<<ConfigurationFile<<endl;
+      mlog<<"Accepting configuration file name: "<<ConfigurationFile<<endl;
     } else if (Option == "--simple") {
       m_ComplexEquation = false; 
-			mlog<<"Using simple sensitivity equation"<<endl;
+      mlog<<"Using simple sensitivity equation"<<endl;
     } else if (Option == "--min-background-counts") {
       m_MinBackgroundCounts = atoi(argv[++i]); 
-			mlog<<"Using only bins where all background components have at leats "<<m_MinBackgroundCounts<<" counts"<<endl;
+      mlog<<"Using only bins where all background components have at leats "<<m_MinBackgroundCounts<<" counts"<<endl;
     } else if (Option == "-t") {
       m_ObservationTime = atof(argv[++i]); 
-			mlog<<"Accepting observation time: "<<m_ObservationTime<<endl;
+      mlog<<"Accepting observation time: "<<m_ObservationTime<<endl;
     } else if (Option == "-w") {
       m_EnergyWindowMin = atof(argv[++i]);
       m_EnergyWindowMax = atof(argv[++i]);
-			mlog<<"Accepting new energy Window: "<<m_EnergyWindowMin<<" - "<<m_EnergyWindowMax<<endl;
+      mlog<<"Accepting new energy Window: "<<m_EnergyWindowMin<<" - "<<m_EnergyWindowMax<<endl;
     } else if (Option == "-m") {
       MasterDir = argv[++i];
-			mlog<<"Accepting generation of master file"<<endl;
+      mlog<<"Accepting generation of master file"<<endl;
     } else if (Option == "--csl") {
       int minmin = atoi(argv[++i]);
       int minmax = atoi(argv[++i]);
@@ -851,7 +878,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         m_CSLMin.push_back((unsigned int) s);
         m_CSLMax.push_back((unsigned int) max);
       }
-			mlog<<"Accepting "<<m_CSLMin.size()<<" Compton sequence length intervals: ";
+      mlog<<"Accepting "<<m_CSLMin.size()<<" Compton sequence length intervals: ";
       for (unsigned int i = 0; i < m_CSLMin.size(); ++i) {
         mlog<<m_CSLMin[i]<<"-"<<m_CSLMax[i]<<"  ";
       }
@@ -874,7 +901,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         m_TSLMin.push_back((unsigned int) s);
         m_TSLMax.push_back((unsigned int) max);
       }
-			mlog<<"Accepting "<<m_TSLMin.size()<<" track sequence length intervals: ";
+      mlog<<"Accepting "<<m_TSLMin.size()<<" track sequence length intervals: ";
       for (unsigned int i = 0; i < m_TSLMin.size(); ++i) {
         mlog<<m_TSLMin[i]<<"-"<<m_TSLMax[i]<<"  ";
       }
@@ -900,7 +927,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_EHC.push_back(min);
       for (int s = 1; s < steps; ++s) m_EHC.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_EHC.size()<<" earth horizon cut steps: ";
+      mlog<<"Accepting "<<m_EHC.size()<<" earth horizon cut steps: ";
       for (unsigned int i = 0; i < m_EHC.size(); ++i) {
         mlog<<m_EHC[i]<<"  ";
       }
@@ -934,7 +961,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         return false;       
       }
 
-			mlog<<"Accepting "<<m_EHP.size()<<" earth horizon probability steps: ";
+      mlog<<"Accepting "<<m_EHP.size()<<" earth horizon probability steps: ";
       for (unsigned int i = 0; i < m_EHP.size(); ++i) {
         mlog<<m_EHP[i]<<"  ";
       }
@@ -955,7 +982,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_FDI.push_back(min);
       for (int s = 1; s < steps; ++s) m_FDI.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_FDI.size()<<" first Compton distance steps: ";
+      mlog<<"Accepting "<<m_FDI.size()<<" first Compton distance steps: ";
       for (unsigned int i = 0; i < m_FDI.size(); ++i) {
         mlog<<m_FDI[i]<<"  ";
       }
@@ -976,7 +1003,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_BRA.push_back(min);
       for (int s = 1; s < steps; ++s) m_BRA.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_BRA.size()<<" beam radii steps: ";
+      mlog<<"Accepting "<<m_BRA.size()<<" beam radii steps: ";
       for (unsigned int i = 0; i < m_BRA.size(); ++i) {
         mlog<<m_BRA[i]<<"  ";
       }
@@ -997,7 +1024,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_BDE.push_back(min);
       for (int s = 1; s < steps; ++s) m_BDE.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_BDE.size()<<" beam depth steps: ";
+      mlog<<"Accepting "<<m_BDE.size()<<" beam depth steps: ";
       for (unsigned int i = 0; i < m_BDE.size(); ++i) {
         mlog<<m_BDE[i]<<"  ";
       }
@@ -1018,7 +1045,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_Phi.push_back(min);
       for (int s = 1; s < steps; ++s) m_Phi.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_Phi.size()<<" Compton scatter angle steps: ";
+      mlog<<"Accepting "<<m_Phi.size()<<" Compton scatter angle steps: ";
       for (unsigned int i = 0; i < m_Phi.size(); ++i) {
         mlog<<m_Phi[i]<<"  ";
       }
@@ -1039,7 +1066,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_The.push_back(min);
       for (int s = 1; s < steps; ++s) m_The.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_The.size()<<" total scatter angle steps: ";
+      mlog<<"Accepting "<<m_The.size()<<" total scatter angle steps: ";
       for (unsigned int i = 0; i < m_The.size(); ++i) {
         mlog<<m_The[i]<<"  ";
       }
@@ -1060,7 +1087,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_CQF.push_back(min);
       for (int s = 1; s < steps; ++s) m_CQF.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_CQF.size()<<" Compton quality factor steps: ";
+      mlog<<"Accepting "<<m_CQF.size()<<" Compton quality factor steps: ";
       for (unsigned int i = 0; i < m_CQF.size(); ++i) {
         mlog<<m_CQF[i]<<"  ";
       }
@@ -1081,7 +1108,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_TQF.push_back(min);
       for (int s = 1; s < steps; ++s) m_TQF.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_TQF.size()<<" Track quality factor steps: ";
+      mlog<<"Accepting "<<m_TQF.size()<<" Track quality factor steps: ";
       for (unsigned int i = 0; i < m_TQF.size(); ++i) {
         mlog<<m_TQF[i]<<"  ";
       }
@@ -1102,7 +1129,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_PosTheta.push_back(min);
       for (int s = 1; s < steps; ++s) m_PosTheta.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_PosTheta.size()<<" theta position steps: ";
+      mlog<<"Accepting "<<m_PosTheta.size()<<" theta position steps: ";
       for (unsigned int i = 0; i < m_PosTheta.size(); ++i) {
         mlog<<m_PosTheta[i]<<"  ";
       }
@@ -1123,7 +1150,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_PosPhi.push_back(min);
       for (int s = 1; s < steps; ++s) m_PosPhi.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_PosPhi.size()<<" phi position steps: ";
+      mlog<<"Accepting "<<m_PosPhi.size()<<" phi position steps: ";
       for (unsigned int i = 0; i < m_PosPhi.size(); ++i) {
         mlog<<m_PosPhi[i]<<"  ";
       }
@@ -1144,7 +1171,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_ARMorRadius.push_back(min);
       for (int s = 1; s < steps; ++s) m_ARMorRadius.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_ARMorRadius.size()<<" ARM steps: ";
+      mlog<<"Accepting "<<m_ARMorRadius.size()<<" ARM steps: ";
       for (unsigned int i = 0; i < m_ARMorRadius.size(); ++i) {
         mlog<<m_ARMorRadius[i]<<"  ";
       }
@@ -1165,7 +1192,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_SPD.push_back(min);
       for (int s = 1; s < steps; ++s) m_SPD.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_SPD.size()<<" SPD steps: ";
+      mlog<<"Accepting "<<m_SPD.size()<<" SPD steps: ";
       for (unsigned int i = 0; i < m_SPD.size(); ++i) {
         mlog<<m_SPD[i]<<"  ";
       }
@@ -1186,7 +1213,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_POP.push_back(min);
       for (int s = 1; s < steps; ++s) m_POP.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_POP.size()<<" POP steps: ";
+      mlog<<"Accepting "<<m_POP.size()<<" POP steps: ";
       for (unsigned int i = 0; i < m_POP.size(); ++i) {
         mlog<<m_POP[i]<<"  ";
       }
@@ -1207,7 +1234,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_IDP.push_back(min);
       for (int s = 1; s < steps; ++s) m_IDP.push_back(min + s*(max-min)/(steps-1));
-			mlog<<"Accepting "<<m_IDP.size()<<" IDP steps: ";
+      mlog<<"Accepting "<<m_IDP.size()<<" IDP steps: ";
       for (unsigned int i = 0; i < m_IDP.size(); ++i) {
         mlog<<m_IDP[i]<<"  ";
       }
@@ -1239,7 +1266,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         m_EnergyMax.push_back(mean + min + s*(max-min)/(steps-1));
         m_EnergyMin.push_back(mean - min - s*(max-min)/(steps-1));
       }
-			mlog<<"Accepting "<<m_EnergyMin.size()<<" Energy steps: ";
+      mlog<<"Accepting "<<m_EnergyMin.size()<<" Energy steps: ";
       for (unsigned int i = 0; i < m_EnergyMax.size(); ++i) {
         mlog<<"("<<m_EnergyMin[i]<<"-"<<m_EnergyMax[i]<<")  ";
       }
@@ -1254,12 +1281,12 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
       m_EnergyMax.push_back(max);
       m_EnergyMin.push_back(min);
-			mlog<<"Accepting continuum energy interval: "<<m_EnergyMin.back()<<"-"<<m_EnergyMax.back()<<endl;
-		} else {
-			mlog<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			mlog<<Usage.str()<<endl;
-			return false;
-		}
+      mlog<<"Accepting continuum energy interval: "<<m_EnergyMin.back()<<"-"<<m_EnergyMax.back()<<endl;
+    } else {
+      mlog<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      mlog<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   if (ConfigurationFile == g_StringNotDefined) {
@@ -1316,13 +1343,13 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
   }
 
   if (m_PosTheta.size() == 0) {
-    mlog<<"You need to give at least one theta position!"<<endl;
+    mlog<<"You need to give at least one theta position using --ptheta!"<<endl;
     mlog<<Usage.str()<<endl;
     return false;
   }
 
   if (m_PosPhi.size() == 0) {
-    mlog<<"You need to give at least one phi position!"<<endl;
+    mlog<<"You need to give at least one phi position using --pphi!"<<endl;
     mlog<<Usage.str()<<endl;
     return false;
   }
@@ -1402,17 +1429,17 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
 
       // Calculate start photons per bin:
-      double Constant = m_SourceStartPhotons[x]*(m_SourcePowerLaw[x]+1)/(pow(m_SourcePowerLawEmax[x], m_SourcePowerLaw[x]+1) - 
-                                                                         pow(m_SourcePowerLawEmin[x], m_SourcePowerLaw[x]+1));
+      double Constant = m_SourceStartPhotons[x]*(-m_SourcePowerLaw[x]+1)/(pow(m_SourcePowerLawEmax[x], -m_SourcePowerLaw[x]+1) - 
+                                                                         pow(m_SourcePowerLawEmin[x], -m_SourcePowerLaw[x]+1));
       mlog<<"Constant: "<<Constant<<" of "<<m_SourceFile[x]<<endl;
       for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-        m_SourceStartPhotonsContinuumSensitivityBin[x].push_back(int(Constant/(m_SourcePowerLaw[x]+1)*(pow(m_EnergyMax[e], m_SourcePowerLaw[x]+1) - 
-                                                                                                    pow(m_EnergyMin[e], m_SourcePowerLaw[x]+1))));
+        m_SourceStartPhotonsContinuumSensitivityBin[x].push_back(int(Constant/(-m_SourcePowerLaw[x]+1)*(pow(m_EnergyMax[e], -m_SourcePowerLaw[x]+1) - 
+                                                                                                    pow(m_EnergyMin[e], -m_SourcePowerLaw[x]+1))));
         mlog<<"Continuum bin: "<<m_EnergyMin[e]<<" - "<<m_EnergyMax[e]<<": Counts: "<<m_SourceStartPhotonsContinuumSensitivityBin[x].back()<<endl;
       }
       
       mlog<<"Sanity check: min="<<m_SourcePowerLawEmin[x]<<" max="<<m_SourcePowerLawEmax[x]<<" counts="
-          <<int(Constant/(m_SourcePowerLaw[x]+1)*(pow(m_SourcePowerLawEmax[x], m_SourcePowerLaw[x]+1) - pow(m_SourcePowerLawEmin[x], m_SourcePowerLaw[x]+1)))<<endl;
+          <<int(Constant/(-m_SourcePowerLaw[x]+1)*(pow(m_SourcePowerLawEmax[x], -m_SourcePowerLaw[x]+1) - pow(m_SourcePowerLawEmin[x], -m_SourcePowerLaw[x]+1)))<<endl;
     }
   }
 
@@ -1772,7 +1799,7 @@ bool SensitivityOptimizer::Analyze()
                                   MMath::SphericToCartesean(xx, xy, xz);
                                   MVector Position(xx, xy, xz);
 
-                                  S.SetSourceWindow(true, Position);
+                                  S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
                                   S.SetSourceARM(0, m_ARMorRadius[a]);
                                   S.SetSourceSPD(0, m_SPD[s]);
                                   S.SetBeamRadius(m_BRA[b]);
@@ -1872,7 +1899,7 @@ bool SensitivityOptimizer::Analyze()
                           MMath::SphericToCartesean(xx, xy, xz);
                           MVector Position(xx, xy, xz);
                           
-                          S.SetSourceWindow(true, Position);
+                          S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
                           S.SetSourceARM(0, m_ARMorRadius[a]);
                           //S.SetSourceSPD(0, m_SPD[s]);
                           S.SetBeamRadius(m_BRA[b]);
@@ -1962,7 +1989,7 @@ bool SensitivityOptimizer::Analyze()
                           MMath::SphericToCartesean(xx, xy, xz);
                           MVector Position(xx, xy, xz);
                           
-                          S.SetSourceWindow(true, Position);
+                          S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
                           S.SetSourceARM(0, m_ARMorRadius[a]);
                           S.SetBeamRadius(m_BRA[b]);
                           S.SetBeamDepth(m_BDE[c]);
@@ -2501,7 +2528,7 @@ bool SensitivityOptimizer::Analyze()
                                 for (unsigned int f = 0; f < f_max; ++f) {
                                   //mlog<<"FDI"<<endl;
                                   UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, x, y)].TestSourceEvent(Event);
-                                  //mout<<"Found untracked Compton"<<endl;
+                                  //mout<<"Found untracked Compton: "<<UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, x, y)].GetSourceCounts()<<endl;
                                 }
                               }
                             }
@@ -2572,13 +2599,8 @@ bool SensitivityOptimizer::Analyze()
     }  // loop over all source files...
   }
 
-  cout<<OpenSelector.ToString()<<endl;
 
-
-  mlog<<"Source time: "<<TimerSource.GetElapsed()<<endl;
-  mlog<<"Source counts: "<<TimerSource.GetElapsed()<<endl;
-
-
+  
   //
   // Background:
   //
@@ -2827,6 +2849,7 @@ bool SensitivityOptimizer::Analyze()
                                       x_best_trackedcompton = 0;
                                       y_best_trackedcompton = 0;
                                     }
+                                    cout<<"Untracked: "<<UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetSensitivity()<< " vs. "<<UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetSourceCounts()<<endl;
                                     if (UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetSensitivity() < BestSensitivity_untrackedcompton && 
                                         UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetSourceCounts() > 0 &&
                                         UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetBackgroundCounts() > 0 && 

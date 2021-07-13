@@ -42,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MStreamBuffer)
 #endif
 
@@ -89,7 +89,7 @@ MStreamBuffer::~MStreamBuffer()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int	MStreamBuffer::overflow(int c)
+int MStreamBuffer::overflow(int c)
 {
   put_buffer();
   
@@ -108,7 +108,7 @@ int	MStreamBuffer::overflow(int c)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int	MStreamBuffer::sync()
+int MStreamBuffer::sync()
 {
   put_buffer();
   return 0;
@@ -127,7 +127,7 @@ void MStreamBuffer::put_char(int)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void	MStreamBuffer::put_buffer()
+void  MStreamBuffer::put_buffer()
 {
   if (pbase() != pptr()) {
     int len = (pptr() - pbase());
@@ -328,13 +328,13 @@ bool MStreamBuffer::Connect(MString FileName, bool Append, bool TimePrefix)
 
   // If append is false or we have been unable to open the because it does not exist...
   if (FileStream->is_open() == 0) {
-		FileStream->open(FileName, ios_base::out);
-		if (FileStream->is_open() == 0) {
-			cout<<"MLog::Connect: Error: Can't open file "<<FileName<<std::endl<<flush;
-			FileStream = 0;
-			return false;
-		}
-	}
+    FileStream->open(FileName, ios_base::out);
+    if (FileStream->is_open() == 0) {
+      cout<<"MLog::Connect: Error: Can't open file "<<FileName<<std::endl<<flush;
+      FileStream = 0;
+      return false;
+    }
+  }
 
   // Store the data:
   m_FileStream.push_back(FileStream);
@@ -368,7 +368,7 @@ bool MStreamBuffer::Disconnect(MString FileName)
 
   m_FileStream[pos]->close();
   m_FileStream[pos] = 0;
-	
+  
   // Now shrink the array:
   if (pos != (int) m_FileStream.size()-1) {
     m_FileStream[pos] = m_FileStream[m_FileStream.size()-1];

@@ -73,7 +73,7 @@ class MSpline
   int m_NDataPoints;
   int m_Mode;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSpline, 0) // fit some data-points with a spline-function
 #endif

@@ -54,7 +54,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERTrackGas)
 #endif
 
@@ -80,15 +80,15 @@ MERTrackGas::~MERTrackGas()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
+MRawEventIncarnations* MERTrackGas::TrackComptons(MRERawEvent* RE)
 {
   // Track Compton events
   mdebug<<"Track Compton events in gas detector..."<<endl;
 
-  mout<<"MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* ER): Under construction!"<<endl;
+  mout<<"MRawEventIncarnations* MERTrackGas::TrackComptons(MRERawEvent* ER): Under construction!"<<endl;
 
   // List of raw events - this is what TrackComptons returns
-  MRawEventList* List = new MRawEventList();
+  MRawEventIncarnations* List = new MRawEventIncarnations();
 
   // define search radius (a few mm)
   double SearchRad = 0.5; // cm - look for next track point within this radius
@@ -122,7 +122,7 @@ MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
   // main loop - look for all the tracks in the gas
   do {
     mout<<"Looking for tracks..."<<endl;
-	
+  
     // get center of gravity of non-track hits in gas
     MVector CoG(0.0, 0.0, 0.0);
     double Weight = 0;
@@ -267,14 +267,14 @@ MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
   // Some debugging for me
   /*
   for (int i = 0; i < REout->GetNRESEs(); ++i) {
-	if (REout->GetRESEAt(i)->GetType() == MRESE::c_Track) {
-		MRETrack* Track2 = (MRETrack*) REout->GetRESEAt(i);
-		for (int e = 0; e < Track2->GetNRESEs(); e++) {
-			mout<<"T "<<Track2->GetRESEAt(e)->GetDetector()<<" "<<Track2->GetRESEAt(e)->GetPosition().X()<<" "<<Track2->GetRESEAt(e)->GetPosition().Y()<<" "<<Track2->GetRESEAt(e)->GetPosition().Z()<<endl;
-		}
-	} else {
-		mout<<"H "<<REout->GetRESEAt(i)->GetDetector()<<" "<<REout->GetRESEAt(i)->GetPosition().X()<<" "<<REout->GetRESEAt(i)->GetPosition().Y()<<" "<<REout->GetRESEAt(i)->GetPosition().Z()<<endl;
-	}
+  if (REout->GetRESEAt(i)->GetType() == MRESE::c_Track) {
+    MRETrack* Track2 = (MRETrack*) REout->GetRESEAt(i);
+    for (int e = 0; e < Track2->GetNRESEs(); e++) {
+      mout<<"T "<<Track2->GetRESEAt(e)->GetDetector()<<" "<<Track2->GetRESEAt(e)->GetPosition().X()<<" "<<Track2->GetRESEAt(e)->GetPosition().Y()<<" "<<Track2->GetRESEAt(e)->GetPosition().Z()<<endl;
+    }
+  } else {
+    mout<<"H "<<REout->GetRESEAt(i)->GetDetector()<<" "<<REout->GetRESEAt(i)->GetPosition().X()<<" "<<REout->GetRESEAt(i)->GetPosition().Y()<<" "<<REout->GetRESEAt(i)->GetPosition().Z()<<endl;
+  }
   }
   */
 
@@ -301,7 +301,7 @@ bool MERTrackGas::EvaluateTracks(MRERawEvent* RE)
   }
 
   // Peter: Add you evaluations here:
-  //mout<<"MRawEventList* MERTrackGas::EvaluateTracks(MRERawEvent* ER): nyi!"<<endl;
+  //mout<<"MRawEventIncarnations* MERTrackGas::EvaluateTracks(MRERawEvent* ER): nyi!"<<endl;
   // Track evaluations should be same as always
   return MERTrack::EvaluateTracks(RE);
 

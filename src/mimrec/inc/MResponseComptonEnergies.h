@@ -54,7 +54,7 @@ class MResponseComptonEnergies : public TObject
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseComptonEnergies, 0) // Response class for a E1-E2-Phibar-Response
 #endif

@@ -51,12 +51,13 @@
 #include "MResponseMatrixO15.h"
 #include "MResponseMatrixO16.h"
 #include "MResponseMatrixO17.h"
+#include "MResponseMatrixON.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MFileResponse)
 #endif
 
@@ -71,6 +72,8 @@ MFileResponse::MFileResponse() : MParser(' ', false)
   m_ValuesCentered = true;
   m_Name = g_StringNotDefined;
   m_Hash = 0;
+  m_NumberOfSimulatedEvents = 0;
+  m_FarFieldStartArea = 0;
 }
 
 
@@ -92,7 +95,7 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
 
 
   if (MFile::Open(FileName, Way) == false) {
-		mlog<<"MFileResponse::Open: Unable to open file "<<FileName<<"."<<endl;
+    mlog<<"MFileResponse::Open: Unable to open file \""<<FileName<<"\"."<<endl;
     return false;
   }
 
@@ -112,6 +115,10 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
         m_FileType = T.GetTokenAtAsString(1);
       } else if (T.GetTokenAt(0) == "NM") {
         m_Name = T.GetTokenAfterAsString(1);
+      } else if (T.GetTokenAt(0) == "TS") {
+        m_NumberOfSimulatedEvents = T.GetTokenAtAsLong(1);
+      } else if (T.GetTokenAt(0) == "SA") {
+        m_FarFieldStartArea = T.GetTokenAtAsDouble(1);
       } else if (T.GetTokenAt(0) == "HA") {
         m_Hash = T.GetTokenAtAsUnsignedLong(1);
       } else if (T.GetTokenAt(0) == "CE") {
@@ -157,7 +164,7 @@ MResponseMatrix* MFileResponse::Read(MString FileName)
 {
   // Open the file and read it;
   
-  if (Open(FileName) == false) return 0;
+  if (Open(FileName) == false) return nullptr;
 
   // Open automatically reads the header information!
   // We only need the file type info here!
@@ -169,9 +176,14 @@ MResponseMatrix* MFileResponse::Read(MString FileName)
     return 0;
   }
 
-  MResponseMatrix* R = 0;
+  MResponseMatrix* R = nullptr;
 
-  if (m_FileType == "ResponseMatrixO1" || m_FileType == "ResponseMatrixO1Stream") {
+  if (m_FileType == "ResponseMatrixON" || m_FileType == "ResponseMatrixONSparse" || m_FileType == "ResponseMatrixONStream") {
+    MResponseMatrixON* RON = new MResponseMatrixON();
+    if (RON->Read(FileName) == true) {
+      R = RON;
+    }
+  } else if (m_FileType == "ResponseMatrixO1" || m_FileType == "ResponseMatrixO1Stream") {
     MResponseMatrixO1* RO1 = new MResponseMatrixO1();
     if (RO1->Read(FileName) == true) {
       R = RO1;

@@ -38,7 +38,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUISivanMain)
 #endif
 
@@ -89,14 +89,16 @@ void MGUISivanMain::Create()
   //m_MenuAnalysis->AddEntry("Energy loss", c_EnergyLoss);
   //m_MenuAnalysis->AddEntry("Energy per voxel", c_EnergyPerVoxel);
   m_MenuAnalysis->AddEntry("Start locations", c_StartLocations);
+  m_MenuAnalysis->AddEntry("Initial interaction statistics", c_InitialInteraction);
   m_MenuAnalysis->AddEntry("Incidence Angle", c_IncidenceAngle);
   m_MenuAnalysis->AddEntry("Incidence Energy", c_IncidenceEnergy);
   m_MenuAnalysis->AddEntry("Incidence Vs. Measured Energy", c_IncidenceVsMeasuredEnergy);
-  m_MenuAnalysis->AddEntry("Initial Compton scatter angle", c_InitialComptonScatterAngle); 
+  m_MenuAnalysis->AddEntry("Initial Compton scatter angle", c_InitialComptonScatterAngle);
+  m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("Secondary generation pattern", c_SecondaryGenerationPattern); 
   m_MenuAnalysis->AddEntry("Interaction detector sequence", c_InteractionDetectorSequence); 
   m_MenuAnalysis->AddEntry("Energy of Secondaries", c_EnergyOfSecondaries);
-  m_MenuAnalysis->AddEntry("Energy Loss By Material", c_EnergyLossByMaterial);
+  m_MenuAnalysis->AddEntry("Energy Loss By Material and Escapes", c_EnergyLossByMaterial);
   m_MenuAnalysis->AddEntry("Number of Hits per event and detector", c_Hits);
   m_MenuAnalysis->AddEntry("Statistics on ideal interactions", c_NInteractions);
   m_MenuAnalysis->AddEntry("Position of first detected interaction", c_FirstHitPosition);
@@ -259,6 +261,10 @@ bool MGUISivanMain::ProcessMessage(long Message, long Parameter1,
 
       case c_IncidenceEnergy:
         m_Interface->IncidenceEnergy();
+        break;
+
+      case c_InitialInteraction:
+        m_Interface->InitialInteraction();
         break;
 
       case c_IncidenceVsMeasuredEnergy:

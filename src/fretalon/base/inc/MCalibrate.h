@@ -64,7 +64,7 @@ class MCalibrate
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrate, 0) // no description
 #endif

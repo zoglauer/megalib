@@ -63,7 +63,7 @@ class MHitEvent : public TObject
   Int_t m_ID;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MHitEvent, 1) // no description
 #endif

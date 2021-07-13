@@ -40,8 +40,7 @@ class MGUIAssistant : public TGTransientFrame
   // public Interface
  public:
   MGUIAssistant();
-  MGUIAssistant(const TGWindow *p, const TGWindow *main, unsigned int Type = 2, unsigned int w = 320, unsigned int h = 240, 
-		  unsigned int options = kMainFrame | kVerticalFrame);
+  MGUIAssistant(const TGWindow *p, const TGWindow *main, unsigned int Type = 2, unsigned int w = 320, unsigned int h = 240, unsigned int options = kMainFrame | kVerticalFrame);
   virtual ~MGUIAssistant();
 
 
@@ -109,7 +108,7 @@ class MGUIAssistant : public TGTransientFrame
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIAssistant, 1) // basic class for dialog windows
 #endif

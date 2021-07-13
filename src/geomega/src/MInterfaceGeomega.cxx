@@ -61,7 +61,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MInterfaceGeomega)
 #endif
 
@@ -126,15 +126,6 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   Usage<<"         --create-cross-sections:"<<endl;
   Usage<<"             Create cross section files"<<endl;
   Usage<<endl;
-  Usage<<"         --create-mggpod <filename suffix>:"<<endl;
-  Usage<<"             Create mggpod files with this file name suffix"<<endl;
-  Usage<<"         --create-mggpod-noia <filename suffix>:"<<endl;
-  Usage<<"             Create mggpod files with this file name suffix without IA information"<<endl;
-  Usage<<"         --create-mggpod-default:"<<endl;
-  Usage<<"             Create mggpod files with the default file name"<<endl;
-  Usage<<"         --create-mggpod-default-noia:"<<endl;
-  Usage<<"             Create mggpod files with the default file name without IA information"<<endl;
-  Usage<<endl;
 
   // Store some options temporarily:
   MString Option;
@@ -162,15 +153,15 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;
       }
-    }		
+    }   
     // Double argument
     //     if (Option == "-c" || Option == "--calibrate") {
-    // 			if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
-    // 				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-    // 				cout<<Usage.str()<<endl;
-    // 				return false;
-    // 			}
-    // 		}
+    //      if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+    //        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+    //        cout<<Usage.str()<<endl;
+    //        return false;
+    //      }
+    //    }
 
   }
     
@@ -228,37 +219,7 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   // Now parse all high level options
   for (int i = 1; i < argc; i++) {
      Option = argv[i];
-     if (Option == "--create-mggpod-default") {
-       cout<<"Command-line parser: Creating default mggpod files "<<endl;
-       gROOT->SetBatch(true);
-       m_Data->SetMGeantOutputMode(0); 
-       m_Data->SetStoreIAs(true);
-       WriteMGeantFiles();
-       return false;
-     } else if (Option == "--create-mggpod-default-noia") {
-       cout<<"Command-line parser: Creating default mggpod files without IA information"<<endl;
-       gROOT->SetBatch(true);
-       m_Data->SetMGeantOutputMode(0);
-       m_Data->SetStoreIAs(false);
-       WriteMGeantFiles();
-       return false;
-    } else if (Option == "--create-mggpod") {
-       cout<<"Command-line parser: Creating mggpod files with suffix "<<m_Data->GetMGeantFileName()<<endl;
-       gROOT->SetBatch(true);
-       m_Data->SetMGeantOutputMode(1); 
-       m_Data->SetStoreIAs(true);
-       m_Data->SetMGeantFileName(argv[++i]);
-       WriteMGeantFiles();
-       return false;
-    } else if (Option == "--create-mggpod-noia") {
-       cout<<"Command-line parser: Creating mggpod files with suffix "<<m_Data->GetMGeantFileName()<<endl;
-       gROOT->SetBatch(true);
-       m_Data->SetMGeantOutputMode(1); 
-       m_Data->SetMGeantFileName(argv[++i]);
-       m_Data->SetStoreIAs(false);
-       WriteMGeantFiles();
-       return false;
-    } else if (Option == "--create-cross-sections") {
+    if (Option == "--create-cross-sections") {
        cout<<"Command-line parser: Creating cross section files"<<endl;
        gROOT->SetBatch(true);
        CreateCrossSections();
@@ -323,7 +284,6 @@ bool MInterfaceGeomega::SaveConfiguration(MString FileName)
 bool MInterfaceGeomega::ReadGeometry()
 {
   // We do not ignore short names here since we might generate Geant3/MGGPOD files
-  m_Geometry->IgnoreShortNames(false);
   m_Geometry->LaunchedByGeomega();
   return m_Geometry->ScanSetupFile(m_Data->GetCurrentFileName());
 }
@@ -371,32 +331,52 @@ void MInterfaceGeomega::RaytraceGeometry()
 void MInterfaceGeomega::TestIntersections()
 {
   // Test for intersections
+  
+  ostringstream Diagnostics;
+  HasIntersections(Diagnostics);
+  mout<<Diagnostics.str()<<endl;
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+  
+bool MInterfaceGeomega::HasIntersections(ostringstream& Diagnostics)
+{
+  // Test for intersections
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  
+  if (m_Geometry->IsScanned() == false || m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
-      return;
+      Diagnostics<<"   ***  Error  ***"<<endl;
+      Diagnostics<<"Unable to read diagnostics"<<endl;
+      return false;
     }
   }
+
+  mout<<endl;
+  mout<<"Overlap checking started... this might take a while depending on the complexity of the geometry..."<<endl;
   
-  mout<<endl;
-  mout<<"Overlap checking"<<endl;
-  mout<<endl;
-  mout<<"Part 1: ROOT"<<endl;
-  mout<<endl;
+  Diagnostics<<endl;
+  Diagnostics<<endl;
+  Diagnostics<<"Overlap checking result:"<<endl;
+  Diagnostics<<endl;
+  Diagnostics<<"Part 1: ROOT"<<endl;
+  Diagnostics<<endl;
   
-  bool NoOverlaps = m_Geometry->CheckOverlaps();
+  //bool NoOverlaps = m_Geometry->CheckOverlaps(Diagnostics);
+  //if (NoOverlaps == false) return false;
   
-  if (NoOverlaps == false) return;
+  m_Geometry->CheckOverlaps(Diagnostics);
   
-  mout<<endl;
-  mout<<"Part 2: Geant4"<<endl;
-  mout<<endl;
+  Diagnostics<<endl;
+  Diagnostics<<"Part 2: Geant4"<<endl;
+  Diagnostics<<endl;
   
   if (MFile::Exists(g_MEGAlibPath + "/bin/cosima") == false) {
-    mout<<"   ***  Warning  ***"<<endl;
-    mout<<"Cannot check intersections with Geant4 since cosima is not present."<<endl;
-    return;
+    Diagnostics<<"   ***  Warning  ***"<<endl;
+    Diagnostics<<"Cannot check intersections with Geant4 since cosima is not present."<<endl;
+    return false;
   }
 
   MString FileName = gSystem->TempDirectory();
@@ -405,15 +385,15 @@ void MInterfaceGeomega::TestIntersections()
   ofstream out;
   out.open(FileName);
   if (out.is_open() == false) {
-    mout<<"   ***  Error  ***"<<endl;
-    mout<<"Unable to create cosima source file for overlap check"<<endl;
-    return;
+    Diagnostics<<"   ***  Error  ***"<<endl;
+    Diagnostics<<"Unable to create cosima source file for overlap check"<<endl;
+    return false;
   }
 
   out<<"Version                     1"<<endl;
   out<<"Geometry                   "<<m_Data->GetCurrentFileName()<<endl;
   out<<"CheckForOverlaps            1000 0.0001"<<endl;
-  out<<"PhysicsListEM               Standard"<<endl;
+  out<<"PhysicsListEM               LivermorePol"<<endl;
 
   out<<"Run Minimum"<<endl;
   out<<"Minimum.FileName            DelMe"<<endl;
@@ -421,24 +401,30 @@ void MInterfaceGeomega::TestIntersections()
   
   out<<"Minimum.Source MinimumS"<<endl;
   out<<"MinimumS.ParticleType       1"<<endl;
-  out<<"MinimumS.Position           1 1 0 0 "<<endl;
-  out<<"MinimumS.SpectralType       1"<<endl;
-  out<<"MinimumS.Energy             10"<<endl;
-  out<<"MinimumS.Intensity          1"<<endl;
+  out<<"MinimumS.Beam               PointSource 0 0 0 "<<endl;
+  out<<"MinimumS.Spectrum           Mono 511"<<endl;
+  out<<"MinimumS.Flux               1.0"<<endl;
 
   out.close();
 
-  mout<<"Starting overlap search using cosima (Geant4)!"<<endl;
-
-  mout<<"-------- Cosima output start --------"<<endl;
   MString WorkingDirectory = gSystem->WorkingDirectory();
   gSystem->ChangeDirectory(gSystem->TempDirectory());
-  gSystem->Exec(MString("bash -c \"source ${MEGALIB}/bin/source-megalib.sh; cosima ") + FileName + MString(" 2>&1 | grep \"WARNING\" -A 3\""));
-  gSystem->Exec(MString("rm -f DelMe.*.sim ") + FileName);
+  auto IgnoreLevel = gErrorIgnoreLevel;
+  gErrorIgnoreLevel = kFatal;
+  TString Pipe = gSystem->GetFromPipe(MString("bash -c \"source ${MEGALIB}/bin/source-megalib.sh; cosima ") + FileName + MString(" 2>&1 | sed -n '/G4Exception-START/,/G4Exception-END/p' | sed -e '/G4Exception-/c\\ '\""));
+  //gSystem->GetFromPipe(MString("rm -f DelMe.*.sim ") + FileName);
+  gErrorIgnoreLevel = IgnoreLevel;
   gSystem->ChangeDirectory(WorkingDirectory);
-  mout<<"-------- Cosima output stop ---------"<<endl;
-  mout<<"If the above output is empty, then your geometry has no (detectable) overlaps!"<<endl;
-  mout<<"Otherwise you have to fix your geometry!"<<endl;
+  
+  if (Pipe != "") {
+    Diagnostics<<"Geant4 error summary:"<<endl;
+    Diagnostics<<Pipe<<endl;
+  } else {
+    Diagnostics<<"No extrusions or overlaps detected with Geant4"<<endl;
+  }
+  Diagnostics<<endl;
+  
+  return (Pipe == "") ? "true" : "false";
 }
 
 
@@ -492,53 +478,7 @@ void MInterfaceGeomega::DumpInformation()
     }
   }
 
-  m_Geometry->DumpInformation();	
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MInterfaceGeomega::WriteGeant3Files()
-{
-  // Translate the geometry-setup-file to Geant3
-
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
-    if (ReadGeometry() == false) {
-      return;
-    }
-  }
-
-  m_Geometry->WriteGeant3Files();    
-  mgui<<"Geant3-files written!"<<info;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MInterfaceGeomega::WriteMGeantFiles()
-{
-  // Translate the geometry-setup-file to MGeant (Geant3 variant) - RMK
-
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
-    if (ReadGeometry() == false) {
-      return;
-    }
-  }
-
-  if (m_Data->GetMGeantOutputMode() == 0) {
-    m_Geometry->WriteMGeantFiles("", m_Data->GetStoreIAs(), m_Data->GetStoreVetoes());
-  } else {
-    m_Geometry->WriteMGeantFiles(m_Data->GetMGeantFileName(), m_Data->GetStoreIAs(), m_Data->GetStoreVetoes());
-  }
-  // mgui doesn't work with batch mode!
-  mout<<"MGeant-files written!"<<endl
-      <<"Please take a look at the files,"<<endl
-      <<"because you might have to modify them"<<endl
-      <<"before you use them with MGeant/MGGPOD!"<<info;
+  m_Geometry->DumpInformation();  
 }
 
 
@@ -629,9 +569,9 @@ void MInterfaceGeomega::GetResolutions()
     double Pmin = 0;
     double Pmax = 1000;
     bool HasDepthResolution = false;
-    if (D->GetDetectorType() == MDDetector::c_Calorimeter) {
+    if (D->GetType() == MDDetector::c_Calorimeter) {
       HasDepthResolution = dynamic_cast<MDCalorimeter*>(D)->HasDepthResolution();
-    } else if (D->GetDetectorType() == MDDetector::c_Strip3D) {
+    } else if (D->GetType() == MDDetector::c_Strip3D) {
       HasDepthResolution = true;;
     }
 
@@ -716,9 +656,9 @@ void MInterfaceGeomega::GetResolutions()
     }
 
     // Depth dependent energy resolution for Strip detectors
-    if (D->GetDetectorType() == MDDetector::c_Strip3D ||
-        D->GetDetectorType() == MDDetector::c_Strip3DDirectional ||
-        D->GetDetectorType() == MDDetector::c_DriftChamber) {
+    if (D->GetType() == MDDetector::c_Strip3D ||
+        D->GetType() == MDDetector::c_Strip3DDirectional ||
+        D->GetType() == MDDetector::c_DriftChamber) {
       MDStrip3D* Strip = dynamic_cast<MDStrip3D*>(D);
       if (Strip->HasEnergyResolutionDepthCorrection() == true) {
         double FixedEnergy = 1000;

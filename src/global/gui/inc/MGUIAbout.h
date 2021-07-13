@@ -105,7 +105,7 @@ class MGUIAbout : public MGUIDialog
   //! Show the peoples tab
   bool m_ShowDisclaimerTab;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIAbout, 0) // GUI window for unkown purpose ...
 #endif

@@ -66,7 +66,7 @@ class MBinnerFixedNumberOfBins : public MBinner
   //! Should the bins be aligned at integer number
   bool m_AlignBins;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBinnerFixedNumberOfBins, 0) // no description
 #endif

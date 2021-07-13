@@ -15,7 +15,7 @@
  *
  */
 
-
+  
 // Include the header:
 #include "MCalibrationSpectrum.h"
 
@@ -27,12 +27,13 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MExceptions.h"
+#include "MCalibrateEnergyFindLines.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MCalibrationSpectrum)
 #endif
 
@@ -43,7 +44,8 @@ ClassImp(MCalibrationSpectrum)
 //! Default constructor
 MCalibrationSpectrum::MCalibrationSpectrum()
 {
-  m_Model = 0;
+  m_EnergyModel = nullptr;
+  m_FWHMModel = nullptr;
 }
 
 
@@ -53,7 +55,8 @@ MCalibrationSpectrum::MCalibrationSpectrum()
 //! Default destructor
 MCalibrationSpectrum::~MCalibrationSpectrum()
 {
-  //delete m_Model;
+  //delete m_EnergyModel;
+  //delete m_FWHMModel;
 }
 
 
@@ -64,8 +67,9 @@ MCalibrationSpectrum::~MCalibrationSpectrum()
 void MCalibrationSpectrum::Clear()
 {
   m_SpectralPoints.clear();
-  delete m_Model;
-  m_Model = 0;
+  delete m_EnergyModel;
+  delete m_FWHMModel;
+  m_EnergyModel = nullptr;
 }
 
 
@@ -78,8 +82,11 @@ MCalibrationSpectrum* MCalibrationSpectrum::Clone() const
   MCalibrationSpectrum* C = new MCalibrationSpectrum();
   C->m_IsCalibrated = m_IsCalibrated;
   C->m_SpectralPoints = m_SpectralPoints;
-  if (m_Model != 0) {
-    C->SetModel(*m_Model);
+  if (m_EnergyModel != nullptr) {
+    C->SetEnergyModel(*m_EnergyModel);
+  }
+  if (m_FWHMModel != nullptr) {
+    C->SetFWHMModel(*m_FWHMModel);
   }
   
   return C;
@@ -169,7 +176,7 @@ void MCalibrationSpectrum::RemoveAllBadSpectralPoints()
 //! Mode: model - show the model (none, poly2, poly3, poly2gauss, etc.)
 MString MCalibrationSpectrum::ToParsableString(const MString& Mode, bool WithDescriptor)
 {
-  if (Mode != "pak" && Mode != "pakw" && Mode != "model") {
+  if (Mode != "pak" && Mode != "pakw" && Mode != "energymodel" && Mode != "fwhmmodel" && Mode != "peakparametrization") {
     throw MExceptionUnknownMode(Mode);
     return "";
   }
@@ -198,14 +205,60 @@ MString MCalibrationSpectrum::ToParsableString(const MString& Mode, bool WithDes
     for (unsigned int p = 0; p < Points.size(); ++p) {
       out<<Points[p].GetPeak()<<" "<<Points[p].GetEnergy()<<" "<<Points[p].GetEnergyFWHM()<<" "; 
     }     
-  } else if (Mode == "model") {
-    if (HasModel() == true) {
-      out<<m_Model->ToParsableString(WithDescriptor); 
+  } else if (Mode == "energymodel") {
+    if (HasEnergyModel() == true) {
+      out<<m_EnergyModel->ToParsableString(WithDescriptor); 
     } else {
       out<<"none"; 
     }
+  } else if (Mode == "fwhmmodel") {
+    if (HasFWHMModel() == true) {
+      out<<m_FWHMModel->ToParsableString(WithDescriptor); 
+    } else {
+      out<<"none"; 
+    }
+  } else if (Mode == "peakparametrization") {
+    out<<"Method:";
+    if (Points.size() == 0) {
+      out<<"Unknown";
+    } else {
+      if (Points[0].HasFit() == false) { 
+        out<<"BayesianBlock";
+      } else {
+        MCalibrationFit& Fit = Points[0].GetFit();
+        out<<"FittedPeak";
+        if (Fit.GetBackgroundModel() == MCalibrationFit::c_BackgroundModelNone) {
+          out<<" BM:None";
+        } else if (Fit.GetBackgroundModel() == MCalibrationFit::c_BackgroundModelFlat) {
+          out<<" BM:Flat";
+        } else if (Fit.GetBackgroundModel() == MCalibrationFit::c_BackgroundModelLinear) {
+          out<<" BM:Linear";
+        } else {
+          out<<" BM:Unknown";
+        }
+      
+        if (Fit.GetEnergyLossModel() == MCalibrationFit::c_EnergyLossModelNone) {
+          out<<" ELM:None";
+        } else if (Fit.GetEnergyLossModel() == MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunction) {
+          out<<" ELM:GaussianConvolvedDeltaFunction";
+        } else if (Fit.GetEnergyLossModel() == MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay) {
+          out<<" ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay";
+        } else {
+          out<<" ELM:Unknown";
+        }
+      
+        if (Fit.GetPeakShapeModel() == MCalibrationFit::c_PeakShapeModelNone) {
+          out<<" PSM:None";
+        } else if (Fit.GetPeakShapeModel() == MCalibrationFit::c_PeakShapeModelGaussian) {
+          out<<" PSM:Gaussian";
+        } else if (Fit.GetPeakShapeModel() == MCalibrationFit::c_PeakShapeModelGaussLandau) {
+          out<<" PSM:GaussLandau";
+        } else {
+          out<<" PSM:Unknown";
+        }
+      }
+    }
   }
-  
   
   return out.str();
 }  
@@ -236,27 +289,27 @@ vector<MCalibrationSpectralPoint> MCalibrationSpectrum::GetUniquePoints()
 
   return Points;
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Set the calibration model
-void MCalibrationSpectrum::SetModel(MCalibrationModel& Model)
+//! Set the energy calibration model
+void MCalibrationSpectrum::SetEnergyModel(MCalibrationModel& EnergyModel)
 {
-  delete m_Model;
-  m_Model = Model.Clone();
+  delete m_EnergyModel;
+  m_EnergyModel = EnergyModel.Clone();
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Remove the model
-void MCalibrationSpectrum::RemoveModel()
+//! Remove the energy calibration model
+void MCalibrationSpectrum::RemoveEnergyModel()
 {
-  delete m_Model;
-  m_Model = 0;
+  delete m_EnergyModel;
+  m_EnergyModel = 0;
 }
 
 
@@ -265,14 +318,52 @@ void MCalibrationSpectrum::RemoveModel()
 
 //! Get the fit, if it doesn't exist throw MExceptionObjectDoesNotExist
 //! Bad design since a new fit can be set any time...
-MCalibrationModel& MCalibrationSpectrum::GetModel() 
+MCalibrationModel& MCalibrationSpectrum::GetEnergyModel() 
 { 
-  if (m_Model == 0) {
+  if (m_EnergyModel == 0) {
     throw MExceptionObjectDoesNotExist("Model does not exist!");
   }
   
-  return *m_Model; 
+  return *m_EnergyModel; 
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the FWHM calibration model
+void MCalibrationSpectrum::SetFWHMModel(MCalibrationModel& FWHMModel)
+{
+  delete m_FWHMModel;
+  m_FWHMModel = FWHMModel.Clone();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Remove the FWHM model
+void MCalibrationSpectrum::RemoveFWHMModel()
+{
+  delete m_FWHMModel;
+  m_FWHMModel = nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the fit, if it doesn't exist throw MExceptionObjectDoesNotExist
+//! Bad design since a new fit can be set any time...
+MCalibrationModel& MCalibrationSpectrum::GetFWHMModel() 
+{ 
+  if (m_FWHMModel == nullptr) {
+    throw MExceptionObjectDoesNotExist("Line-width model does not exist!");
+  }
+  
+  return *m_FWHMModel; 
+}
+
 
 // MCalibrationSpectrum.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

@@ -92,7 +92,7 @@ class MDGrid
   unsigned int m_ZNBins;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDGrid, 0) // no description
 #endif

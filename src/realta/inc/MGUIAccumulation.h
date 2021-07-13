@@ -78,7 +78,7 @@ class MGUIAccumulation : public MGUIDialog
   //! True if we want to add the date and time to the filename
   TGCheckButton* m_AddDateAndTime;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIAccumulation, 0) // GUI window: ...
 #endif

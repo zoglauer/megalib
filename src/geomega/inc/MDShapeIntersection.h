@@ -59,14 +59,6 @@ class MDShapeIntersection : public MDShape
   //! Dump the content in geomega format
   MString GetGeomega() const { return ""; };
   
-  // DUMMY -  Geant3/MGGPOD interface
-  MString GetGeant3DIM(MString) { merr<<"MDShapeIntersection does not support the Geant3/MGGPOD interface"<<error; return ""; }
-  MString GetGeant3DATA(MString) { merr<<"MDShapeIntersection does not support the Geant3/MGGPOD interface"<<error; return ""; }
-  MString GetGeant3ShapeName() { merr<<"MDShapeIntersection does not support the Geant3/MGGPOD interface"<<error; return ""; }
-  int GetGeant3NumberOfParameters() { merr<<"MDShapeIntersection does not support the Geant3/MGGPOD interface"<<error; return 0; }
-  MString GetMGeantDATA(MString) { merr<<"MDShapeIntersection does not support the Geant3/MGGPOD interface"<<error; return ""; }
-
-  
   
   //! Return the first shape
   MDShape* GetShapeA() const { return m_SubShapes[0]; }
@@ -105,7 +97,7 @@ class MDShapeIntersection : public MDShape
   //! Almost unique position
   MVector m_AlmostUniquePosition;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeIntersection, 0) // no description
 #endif

@@ -37,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUICBSelection)
 #endif
 
@@ -125,7 +125,7 @@ void MGUICBSelection::Create()
 
 
 bool MGUICBSelection::ProcessMessage(long Message, long Parameter1, 
-				       long Parameter2)
+               long Parameter2)
 {
   // Process the messages for this application
 

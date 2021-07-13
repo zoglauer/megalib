@@ -6,19 +6,12 @@ Version               1
 Geometry              $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/Satellite.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM                        LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
+StoreSimulationInfo                  all
 
-
-
-# Run 1: A homogeneous beam
-
+# Run & source parameters
 Run My2DProfileBeam
 My2DProfileBeam.FileName                      FlatMapTest
 My2DProfileBeam.Time                          100000.0

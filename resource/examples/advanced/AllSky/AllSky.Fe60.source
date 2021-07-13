@@ -1,0 +1,42 @@
+# This example shows how to simulate an all-sky map in Galactic coordinates
+
+# Max is my default COSI-like quick sim. This is the source for it
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/special/Max.geo.setup
+
+
+# Physics list
+PhysicsListEM                        LivermorePol
+PhysicsListEMActivateFluorescence    false
+
+
+# Output formats
+StoreSimulationInfo                  all
+
+
+# The run, with the instrument moving around in Galactic coordinates, 
+# a fixed point source in Galactic coordinates, and
+# a background symmetric in local coordinates
+
+Run MyRun
+MyRun.FileName                  AllSky.Fe60
+MyRun.NTriggers                 100000
+# The detector rotates in the Galactic coordiante system as given in the ori file.
+# The file is looped since we need lots of statistics... 
+MyRun.OrientationSky            Galactic File Loop GalacticScan.ori
+# For fixed pointing towards the Galactic Center do:
+# MyRun.OrientationSky            Galactic Fixed 0 0
+
+# The all-sky source
+MyRun.Source MySource
+MySource.ParticleType                         1
+# The beam is a far field map of fluxes
+# and will be rotated into the position given in the orientation keyword, in this case it will be mapped onto Galactioc coordiantes
+MySource.Beam                                 FarFieldNormalizedEnergyBeamFluxFunction  AllSky_Fe60_NormInnerGalaxyHarris_DIRBE240um.dat
+# The orientation of the source in Galactic coordiantes, the Galactic pole is up -this is the default for FarFieldNormalizedEnergyBeamFluxFunction
+MySource.Orientation                          Galactic Fixed 90 180
+MySource.Spectrum                             NormalizedEnergyBeamFluxFunction
+# We assume the satllite is in near Earth orbit and block a part of the sky, by using a step function for the transmission
+MySource.FarFieldTransmissionProbability      TransmissionProbabilities_EarthBlockage.dat
+
+

@@ -57,19 +57,19 @@ const int MCEventAction::c_InvalidCollID = -987;
 /******************************************************************************
  * Default constructor
  */
-MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, 
-                             const long Seed) : 
-  m_RunParameters(RunParameters),
-  m_Zip(Zip)
+MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, const long Seed) : 
+  m_RunParameters(RunParameters), m_Zip(Zip)
 {
   m_OutFileName = "";
 
   m_StoreSimulationInfo = RunParameters.StoreSimulationInfo();
   m_StoreSimulationInfoVersion = RunParameters.StoreSimulationInfoVersion();
   m_StoreCalibrated = RunParameters.StoreCalibrated();
-  m_StoreOnlyTriggeredEvents = RunParameters.StoreOnlyTriggeredEvents();
   m_StoreOneHitPerEvent = RunParameters.StoreOneHitPerEvent();
-
+  m_StoreMinimumEnergy = RunParameters.StoreMinimumEnergy();
+  
+  m_PreTriggerMode = RunParameters.GetPreTriggerMode();
+  
   if (RunParameters.StoreScientific() == true) {
     m_StoreScientificPrecision = RunParameters.StoreScientificPrecision();
   } else {
@@ -83,6 +83,7 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip,
 
   m_Interrupt = false;
 
+  m_ID = 0;
   m_Event = new MSimEvent();
 
   m_SaveEvents = false;
@@ -107,6 +108,7 @@ bool MCEventAction::NextRun()
 {
   Reset();
 
+  m_ID = 0;
   m_Event->SetGeometry(MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetGeometry());
 
   m_TriggerUnit = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetGeometry()->GetTriggerUnit();
@@ -211,12 +213,16 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
     if (m_RunParameters.GetCurrentRun().GetSource(so)->GetCoordinateSystem() != MCSource::c_FarField) {
       ValidStartArea = false;
     }
+    if (m_RunParameters.GetCurrentRun().GetSource(so)->GetStartAreaType() != MCSource::c_StartAreaSphere) {
+      ValidStartArea = false;
+    }
   }
+
     
   if (ValidStartArea == true) {
     Out<<"SimulationStartAreaFarField "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetStartAreaAverageArea()/cm/cm<<endl; 
   } else {
-    Out<<"# The SimulationStartAreaFarField keyword is only meaningfull if you have only far field sources using a surrounding sphere"<<endl;
+    Out<<"# The SimulationStartAreaFarField keyword is only meaningfull if you have only far field sources using a spherical start area"<<endl;
     Out<<"SimulationStartAreaFarField 0.0"<<endl;
   }
 
@@ -233,13 +239,13 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
   }
   
   if (SameBeamType == true) {
-    Out<<"BeamType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamTypeAsString()<<endl;
+    Out<<"BeamType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamAsString()<<endl;
   } else {
     Out<<"BeamType Multiple"<<endl;
   }
   
   if (SameSpectralType == true) {
-    Out<<"SpectralType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralTypeAsString()<<endl;
+    Out<<"SpectralType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralAsString()<<endl;
   } else {
     Out<<"SpectralType Multiple"<<endl;
   }
@@ -273,6 +279,8 @@ void MCEventAction::SetCollectionName(G4String Name, int Type)
     m_DriftChamberCollNames.push_back(Name);
   } else if (Type == MDDetector::c_AngerCamera) {
     m_AngerCameraCollNames.push_back(Name);
+  } else if (Type == MDDetector::c_GuardRing) {
+    // just a sub-detector
   } else {
     merr<<"Unknown detector type: "<<Type<<endl;
   }
@@ -295,11 +303,12 @@ void MCEventAction::SetRelegator(void (Relegator)(MSimEvent*))
 /******************************************************************************
  * Things to do before the start of a new event (reset last event data)
  */
-void MCEventAction::BeginOfEventAction(const G4Event* Event)
+void MCEventAction::BeginOfEventAction(const G4Event*)
 {
-  mdebug<<"Starting event "<<Event->GetEventID();
-  mdebug<< "... Please stand by..."<<endl;
-
+  ++m_ID;  
+  
+  mdebug<<"Starting event "<<m_ID<< "... Please stand by..."<<endl;
+  
   if (m_TimerStarted == false) {
     m_Timer.Start();
     m_TimerStarted = true;
@@ -357,6 +366,35 @@ void MCEventAction::AddIA(G4String ProcessID,
   m_Event->AddIA(IA);
 }
 
+/******************************************************************************
+ * Add a comment
+ */
+void MCEventAction::AddComment(string Comment)
+{
+  m_Event->AddCC(MString(Comment));
+}
+
+
+/******************************************************************************
+ * Set the Galactic pointing --- this is in degree as is does not translate well into radians (e.g. -90 lat)
+ */
+void MCEventAction::SetGalacticPointing(double XLat, double XLong, double ZLat, double ZLong)
+{
+  m_Event->SetGalacticPointingXAxis(XLong*c_Deg, XLat*c_Deg);
+  m_Event->SetGalacticPointingZAxis(ZLong*c_Deg, ZLat*c_Deg);
+}
+
+
+/******************************************************************************
+ * Set the Detector orientation --- this is in degree for congruence reasons with SetGalacticPointing
+ */
+void MCEventAction::SetDetectorPointing(double XTheta, double XPhi, double ZTheta, double ZPhi)
+{
+  m_Event->SetDetectorPointingXAxis(XPhi*c_Deg, XTheta*c_Deg);
+  m_Event->SetDetectorPointingZAxis(ZPhi*c_Deg, ZTheta*c_Deg);
+ 
+}
+
 
 /******************************************************************************
  * Add a deposit in passive material to the event data
@@ -379,7 +417,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
   
   MCRun& Run = m_RunParameters.GetCurrentRun();
 
-  // make a list of all collections:
+  // Make a list of all collections:
   G4SDManager* SDMan = G4SDManager::GetSDMpointer();
   
   vector<MC2DStripHitsCollection*> TwoDStripColl;
@@ -393,38 +431,31 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
   int ID = 0;
   for (unsigned int i = 0; i < m_2DStripCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_2DStripCollNames[i]);
-    TwoDStripColl.push_back((MC2DStripHitsCollection*) Event
-                            ->GetHCofThisEvent()->GetHC(ID));
+    TwoDStripColl.push_back((MC2DStripHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_CalorimeterCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_CalorimeterCollNames[i]);
-    CalorimeterColl.push_back((MCCalorBarHitsCollection*) Event
-                                ->GetHCofThisEvent()->GetHC(ID));
+    CalorimeterColl.push_back((MCCalorBarHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_3DStripCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_3DStripCollNames[i]);
-    ThreeDStripColl.push_back((MC2DStripHitsCollection*) Event
-                            ->GetHCofThisEvent()->GetHC(ID));
+    ThreeDStripColl.push_back((MC2DStripHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_Voxel3DCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_Voxel3DCollNames[i]);
-    Voxel3DColl.push_back((MCVoxel3DHitsCollection*) Event
-                            ->GetHCofThisEvent()->GetHC(ID));
+    Voxel3DColl.push_back((MCVoxel3DHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_ScintillatorCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_ScintillatorCollNames[i]);
-    ScintillatorColl.push_back((MCScintillatorHitsCollection*) Event
-                                 ->GetHCofThisEvent()->GetHC(ID));
+    ScintillatorColl.push_back((MCScintillatorHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_DriftChamberCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_DriftChamberCollNames[i]);
-    DriftChamberColl.push_back((MCDriftChamberHitsCollection*) Event
-                                 ->GetHCofThisEvent()->GetHC(ID));
+    DriftChamberColl.push_back((MCDriftChamberHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_AngerCameraCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_AngerCameraCollNames[i]);
-    AngerCameraColl.push_back((MCAngerCameraHitsCollection*) Event
-                              ->GetHCofThisEvent()->GetHC(ID));
+    AngerCameraColl.push_back((MCAngerCameraHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
 
 
@@ -475,7 +506,11 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     
     for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
       for (h = 0; h < TwoDStripColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
+        if ((*TwoDStripColl[i])[h]->GetIsGuardringHit() == true) {
+          m_TriggerUnit->AddGuardRingHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
+        } else {
+          m_TriggerUnit->AddHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
+        }
       }
     }
     for (unsigned int i = 0; i < CalorimeterColl.size(); ++i) {
@@ -485,12 +520,20 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     }
     for (unsigned int i = 0; i < ThreeDStripColl.size(); ++i) {
       for (h = 0; h < ThreeDStripColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
+        if ((*ThreeDStripColl[i])[h]->GetIsGuardringHit() == true) {
+          m_TriggerUnit->AddGuardRingHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
+        } else {
+          m_TriggerUnit->AddHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
+        }
       }
     }
     for (unsigned int i = 0; i < Voxel3DColl.size(); ++i) {
       for (h = 0; h < Voxel3DColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
+        if ((*Voxel3DColl[i])[h]->GetIsGuardringHit() == true) {
+          m_TriggerUnit->AddGuardRingHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
+        } else {
+          m_TriggerUnit->AddHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
+        }
       }
     }
     for (unsigned int i = 0; i < ScintillatorColl.size(); ++i) {
@@ -500,7 +543,11 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     }
     for (unsigned int i = 0; i < DriftChamberColl.size(); ++i) {
       for (h = 0; h < DriftChamberColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);
+        if ((*DriftChamberColl[i])[h]->GetIsGuardringHit() == true) {
+          m_TriggerUnit->AddGuardRingHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);          
+        } else {
+          m_TriggerUnit->AddHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);
+        }
       }
     }
     for (unsigned int i = 0; i < AngerCameraColl.size(); ++i) {
@@ -514,10 +561,26 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     }
   }
 
-
-  if (HasTriggered == false && m_StoreOnlyTriggeredEvents == true) {
-    mdebug<<"Event has not triggered!"<<endl;
+  bool StoreEvent = false;
+  if (m_PreTriggerMode == MCParameterFile::c_PreTriggerEverything) {
+    StoreEvent = true;
+  } else if (m_PreTriggerMode == MCParameterFile::c_PreTriggerEveryEventWithHits) {
+    if (SensitiveEnergy > 0) {
+      StoreEvent = true;
+    }
+  } else if (m_PreTriggerMode == MCParameterFile::c_PreTriggerFull) {
+    if (HasTriggered == true) {
+      StoreEvent = true;
+    }
   } else {
+    mout<<"ERROR: Unknown pre-trigger mode, assuming full pretrigger."<<endl;
+    if (HasTriggered == true) {
+      StoreEvent = true;
+    }
+  }
+    
+    
+  if (StoreEvent == true) {
     for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
       mdebug<<"Writing 2D strip hits..."<<endl;
       TwoDStripColl[i]->PrintAllHits();
@@ -551,7 +614,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     Run.AddTriggeredEvent();
 
     m_Event->SetID(Run.GetNTriggeredEvents());
-    m_Event->SetSimulationEventID(Event->GetEventID()+1);
+    m_Event->SetSimulationEventID(m_ID);
     m_Event->SetTime(Run.GetSimulatedTime()/s);
 
     map<string, double>::iterator Iter; 
@@ -563,9 +626,6 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
         m_Event->AddPM(PM);
       }
     }
-
-    mout<<"Storing event "<<Run.GetNTriggeredEvents()
-        <<" of "<<Event->GetEventID()+1<<" at t_obs="<<Run.GetSimulatedTime()/s<<"s ... Please stand by... "<<flush;
 
     // (b) Store the positions and energies or store Strips and counts...
     if (m_StoreCalibrated == true) {
@@ -611,8 +671,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     } else {
       mout<<"Storing uncalibrated data is no longer supported..."<<endl;
     }
-    
-    mout<<"Done"<<endl;
+
 
     if (m_StoreOneHitPerEvent == true && m_Event->GetNHTs() > 1) {
       vector<MSimEvent*> E = m_Event->CreateSingleHitEvents();
@@ -622,22 +681,26 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
           E[e]->SetID(Run.GetNTriggeredEvents());
         }
 
-        // Save and transmit know if we should do it
-        SaveEventToFile(E[e]);
-        TransmitEvent(E[e]);
-        if (m_RelegateEvents == true) {
-          m_Relegator(E[e]); 
+        if (E[e]->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
+          // Save and transmit know if we should do it
+          SaveEventToFile(E[e]);
+          TransmitEvent(E[e]);
+          if (m_RelegateEvents == true) {
+            m_Relegator(E[e]); 
+          }
         }
-
         
         delete E[e];
       }
     } else {
       // Save and transmit know if we should do it
-      SaveEventToFile(m_Event);
-      TransmitEvent(m_Event);
-      if (m_RelegateEvents == true) {
-        m_Relegator(m_Event); 
+      if (m_Event->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
+        mout<<"Storing event "<<Run.GetNTriggeredEvents()<<" of "<<m_ID<<" at t_obs="<<Run.GetSimulatedTime()/s<<"s"<<endl;
+        SaveEventToFile(m_Event);
+        TransmitEvent(m_Event);
+        if (m_RelegateEvents == true) {
+          m_Relegator(m_Event); 
+        }
       }
     }
 

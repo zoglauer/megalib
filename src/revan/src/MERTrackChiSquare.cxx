@@ -53,7 +53,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERTrackChiSquare)
 #endif
 
@@ -88,7 +88,7 @@ bool MERTrackChiSquare::EvaluateTracks(MRERawEvent* RE)
   }
 
   // Mark: Add you evaluations here:
-  mout<<"MRawEventList* MERTrackChiSquare::EvaluateTracks(MRERawEvent* ER): nyi!"<<endl;
+  mout<<"MRawEventIncarnations* MERTrackChiSquare::EvaluateTracks(MRERawEvent* ER): nyi!"<<endl;
   return MERTrack::EvaluateTracks(RE);
 
   // Store your results:

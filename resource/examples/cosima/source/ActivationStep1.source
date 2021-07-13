@@ -14,14 +14,12 @@ DetectorTimeConstant               0.000005
 
 # Physics parameters
 PhysicsListHD                      qgsp-bic-hp
-PhysicsListEM                      Livermore
+PhysicsListEM                      LivermorePol
 DecayMode                          ActivationBuildup
 
 
 # Storage parameters
-StoreCalibrated                    true
-StoreSimulationInfo                true
-DiscretizeHits                     true
+StoreSimulationInfo                all
 
 
 # Particle range cuts:

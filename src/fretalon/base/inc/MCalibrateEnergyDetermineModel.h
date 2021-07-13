@@ -42,9 +42,12 @@ class MCalibrateEnergyDetermineModel : public MCalibrateEnergy
   //! Set the calibration model determination method 
   void SetCalibrationModelDeterminationMethod(unsigned int Method) { m_CalibrationModelDeterminationMethod = Method; }
   //! Set the fitting model options for the calibration model determination method
-  void SetCalibrationModelDeterminationMethodFittingOptions(unsigned int Model) { 
-    m_CalibrationModelDeterminationMethodFittingModel = Model; }
-    
+  void SetCalibrationModelDeterminationMethodFittingEnergyOptions(unsigned int Model) { 
+    m_CalibrationModelDeterminationMethodFittingEnergyModel = Model; }
+    //! Set the fitting model options for the calibration model determination method
+    void SetCalibrationModelDeterminationMethodFittingFWHMOptions(unsigned int Model) { 
+      m_CalibrationModelDeterminationMethodFittingFWHMModel = Model; }
+      
   //! ID for a step-wise interpolated calibration model
   static const unsigned int c_CalibrationModelStepWise = 0;
   //! ID for a fitted interpolated calibration model
@@ -54,11 +57,16 @@ class MCalibrateEnergyDetermineModel : public MCalibrateEnergy
   
   //! Perform the calibration
   virtual bool Calibrate();
-
+  
   
   // protected methods:
  protected:
-  
+   //! Perform the energy calibration
+   virtual bool CalibrateEnergyModel();
+   
+   //! Perform the line width calibration
+   virtual bool CalibrateFWHMModel();
+   
   // private methods:
  private:
 
@@ -73,10 +81,12 @@ class MCalibrateEnergyDetermineModel : public MCalibrateEnergy
   //! The calibration model determination method
   unsigned int m_CalibrationModelDeterminationMethod;
   //! Fitting model of the calibration model determination method
-  unsigned int m_CalibrationModelDeterminationMethodFittingModel;
-
+  unsigned int m_CalibrationModelDeterminationMethodFittingEnergyModel;
+  //! Fitting model of the calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingFWHMModel;
   
-#ifdef ___CINT___
+  
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrateEnergyDetermineModel, 0) // no description
 #endif

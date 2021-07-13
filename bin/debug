@@ -126,7 +126,7 @@ cd ${currdir}
 if [ "${DEBUGGER}" == "gdb" ]; then
   echo "Starting gdb...";
   TMP=`mktemp /tmp/megalibdebugger.XXXXXXXX`
-  echo "catch throw" >> ${TMP}
+  #echo "catch throw" >> ${TMP}
   echo "handle SIGPIPE nostop" >> ${TMP}
   echo "run ${args}" >> ${TMP}
   gdb -x ${TMP} ${program}

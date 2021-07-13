@@ -38,7 +38,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MReadOutSequence)
 #endif
 
@@ -47,7 +47,7 @@ ClassImp(MReadOutSequence)
 
 
 //! Default constructor
-MReadOutSequence::MReadOutSequence()
+MReadOutSequence::MReadOutSequence() : m_ID(0), m_Time(0)
 {
 }
 
@@ -67,14 +67,32 @@ MReadOutSequence::~MReadOutSequence()
 //! Remove all content
 void MReadOutSequence::Clear()
 {
+  m_ID = 0;
+  m_Time = 0;
   m_ReadOuts.clear();
+  m_SimIAs.clear();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Get a specific read-outs
+//! Get a specific read out
+MReadOut& MReadOutSequence::GetReadOut(unsigned int R)
+{
+  if (R < m_ReadOuts.size()) return m_ReadOuts[R];
+  
+  throw MExceptionIndexOutOfBounds(0, m_ReadOuts.size(), R);
+  
+  // We still need a return value...
+  return m_ReadOuts[0];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get a specific read out
 const MReadOut& MReadOutSequence::GetReadOut(unsigned int R) const
 {
   if (R < m_ReadOuts.size()) return m_ReadOuts[R];
@@ -105,6 +123,20 @@ unsigned int MReadOutSequence::FindReadOut(const MReadOutElement& ROE) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Remove a read out
+void MReadOutSequence::RemoveReadOut(unsigned int i)
+{
+  if (i < m_ReadOuts.size()) {
+    vector<MReadOut>::iterator it;
+    it = m_ReadOuts.begin()+i;
+    m_ReadOuts.erase(it);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return true if all read-out elements are of the same type
 bool MReadOutSequence::HasIdenticalReadOutElementTypes() const
 {
@@ -120,6 +152,55 @@ bool MReadOutSequence::HasIdenticalReadOutElementTypes() const
   return true; 
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return simulated interaction i
+const MSimIA& MReadOutSequence::GetSimIA(unsigned int i) const
+{   
+  if (i < m_SimIAs.size()) return m_SimIAs[i];
+  
+  throw MExceptionIndexOutOfBounds(0, m_SimIAs.size(), i);
+  
+  // We still need a return value...
+  return m_SimIAs[0];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse a line - return true if the line was processed (irrelevant if successful)
+bool MReadOutSequence::Parse(MString& Line, int Version)
+{
+  if (Line.BeginsWith("TI")) {
+    m_Time.Set(Line);
+    return true;
+  }
+      
+  if (Line.BeginsWith("ID")) {
+    unsigned long ID = 0;
+    if (sscanf(Line.Data(), "ID %lu\n", &ID) == 1) {
+      m_ID = ID;
+    } else {
+      mout<<"MReadOutSequence: Error parsing ID"<<endl;
+    }
+    return true;
+  }
+   
+  if (Line.BeginsWith("IA")) {
+    MSimIA IA;
+    if (IA.AddRawInput(Line, 25) == true) {
+      m_SimIAs.push_back(IA);
+    } else {
+      mout<<"MReadOutSequence: Error during parsing IA"<<endl;
+    }
+    return true;
+  }
+
+  return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

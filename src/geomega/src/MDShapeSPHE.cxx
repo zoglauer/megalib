@@ -42,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShapeSPHE)
 #endif
 
@@ -136,6 +136,8 @@ bool MDShapeSPHE::Set(double Rmin, double Rmax,
   m_Phimin = Phimin;
   m_Phimax = Phimax;
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -170,6 +172,8 @@ bool MDShapeSPHE::Set(double Rmin, double Rmax)
   m_Phimin = 0;
   m_Phimax = 360;
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -178,10 +182,14 @@ bool MDShapeSPHE::Set(double Rmin, double Rmax)
 
 
 bool MDShapeSPHE::Validate()
-{
-  delete m_Geo;
-  m_Geo = new TGeoSphere(m_Rmin, m_Rmax, m_Thetamin, m_Thetamax, m_Phimin, m_Phimax);
-
+{  
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoSphere(m_Rmin, m_Rmax, m_Thetamin, m_Thetamax, m_Phimin, m_Phimax);
+  
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -217,10 +225,12 @@ bool MDShapeSPHE::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape Sphere!");
+    Info.Error(MString("Unhandled descriptor in shape Sphere: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
 }
 
@@ -294,55 +304,6 @@ double MDShapeSPHE::GetPhimax() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeSPHE::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(6)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeSPHE::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Rmin<<","<<m_Rmax<<","<<m_Thetamin<<","<<endl;
-  out<<"     &  "<<m_Thetamax<<","<<m_Phimin<<","<<m_Phimax<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeSPHE::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_Rmin<<" "<<m_Rmax<<" "<<m_Thetamin<<endl;
-  out<<"           "<<m_Thetamax<<" "<<m_Phimin<<" "<<m_Phimax<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeSPHE::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -352,28 +313,6 @@ MString MDShapeSPHE::GetGeomega() const
      <<m_Thetamin<<" "<<m_Thetamax<<" "<<m_Phimin<<" "<<m_Phimax;
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeSPHE::GetGeant3ShapeName()
-{
-  //
-
-  return "SPHE";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeSPHE::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 6;
 }
 
 
@@ -412,7 +351,9 @@ void MDShapeSPHE::Scale(const double Factor)
 
   m_Rmin *= Factor;
   m_Rmax *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

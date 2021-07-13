@@ -47,7 +47,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseImagingCodedMask)
 #endif
 
@@ -82,7 +82,7 @@ bool MResponseImagingCodedMask::CreateResponse()
   if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
 
-  if (OpenSimulationFile() == false) return false;
+  if (OpenFiles() == false) return false;
 
   MSettingsMimrec MimrecCfg(false);
   MimrecCfg.Read(m_MimrecCfgFileName);
@@ -107,36 +107,34 @@ bool MResponseImagingCodedMask::CreateResponse()
   
   MVector IdealOriginDir;
 
-  MRawEventList* REList = 0;
   MPhysicalEvent* Event = 0;
   MPhotoEvent* Photo = 0;
 
   int Counter = 0;
   while (InitializeNextMatchingEvent() == true) {
-    REList = m_ReReader->GetRawEventList();
-    if (REList->HasOptimumEvent() == true) {
-      Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+    MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
+    if (REList->HasOnlyOptimumEvents() == true) {
+      Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
       if (Event != 0) {
-        if (m_MimrecEventSelector.IsQualifiedEvent(Event, true) == true) {
+        if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
           if (Event->GetType() == MPhysicalEvent::c_Photo) {
             Photo = (MPhotoEvent*) Event;
 
             // First compute the y-Axis vector:
             MVector yAxis = zAxis.Cross(xAxis);
             
-            TMatrix CoordinateRotation;
-            CoordinateRotation.ResizeTo(3,3);
-            CoordinateRotation(0,0) = xAxis.X();
-            CoordinateRotation(1,0) = xAxis.Y();
-            CoordinateRotation(2,0) = xAxis.Z();
-            CoordinateRotation(0,1) = yAxis.X();
-            CoordinateRotation(1,1) = yAxis.Y();
-            CoordinateRotation(2,1) = yAxis.Z();
-            CoordinateRotation(0,2) = zAxis.X();
-            CoordinateRotation(1,2) = zAxis.Y();
-            CoordinateRotation(2,2) = zAxis.Z();
+            MRotation CoordinateRotation;
+            CoordinateRotation.SetXX(xAxis.X());
+            CoordinateRotation.SetYX(xAxis.Y());
+            CoordinateRotation.SetZX(xAxis.Z());
+            CoordinateRotation.SetXY(yAxis.X());
+            CoordinateRotation.SetYY(yAxis.Y());
+            CoordinateRotation.SetZY(yAxis.Z());
+            CoordinateRotation.SetXZ(zAxis.X());
+            CoordinateRotation.SetYZ(zAxis.Y());
+            CoordinateRotation.SetZZ(zAxis.Z());
 
-            TMatrix Rotation = Photo->GetDetectorRotationMatrix();
+            MRotation Rotation = Photo->GetDetectorRotationMatrix();
 
             // Now get the ideal origin:
             if (m_SiEvent->GetNIAs() > 0) {

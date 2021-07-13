@@ -24,6 +24,7 @@
 #include "TGStatusBar.h"
 #include "TTime.h"
 #include "TRootEmbeddedCanvas.h"
+#include <TGLabel.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -176,7 +177,7 @@ class MGUIRealtaMain : public TGMainFrame
 
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIRealtaMain, 0) // GUI window: ...
 #endif

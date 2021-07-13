@@ -26,6 +26,7 @@
 #include "MRESEList.h"
 #include "MDDetector.h"
 #include "MDVolumeSequence.h"
+#include "MPhysicalEventHit.h"
 
 // Forward declarations:
 
@@ -41,6 +42,9 @@ class MRESE
   MRESE(MVector Pos, double Energy, double Time, int Detector, 
         MVector ResPos, double ResEnergy, double ResTime);
   MRESE(MRESE* RESE);
+  
+  //! The destructor does NOT delete the included RESEs
+  //! If you want this behaviour, call DeleteAll() before calling delete
   virtual ~MRESE();
 
   static void ResetIDCounter();
@@ -123,17 +127,24 @@ class MRESE
   virtual MRESE* RemoveRESEAtAndCompress(int i);
   virtual MRESE* RemoveRESE(int ID);
   virtual MRESE* RemoveRESEAndCompress(int ID);
-
+  //! Remove all the RESEs which are part of this RESE - the array is NOT shrunk 
+  virtual void RemoveAll();
+  //! Remove all the RESEs which are part of this RESE - the array is NOT shrunk 
+  virtual void RemoveAllAndCompress();
+  
   virtual void DeleteRESE(MRESE* RESE);
   virtual void DeleteRESEAndCompress(MRESE* RESE);
   virtual void DeleteRESEAt(int i);
   virtual void DeleteRESEAtAndCompress(int i);
   virtual void DeleteRESE(int ID);
   virtual void DeleteRESEAndCompress(int ID);
+  //! delete all the RESEs which are part of this RESE
+  virtual void DeleteAll();
   virtual void CompressRESEs();
 
-  // miscellaneous
-  virtual void DeleteAll();
+  //! Shuffle the RESEs around in random order (goal: they are more or less sorted when the come from cosima, but not in real life)
+  virtual void Shuffle();
+  
 
   virtual double ComputeMinDistance(MRESE* RESE);
   virtual MVector ComputeMinDistanceVector(MRESE* RESE);
@@ -146,9 +157,13 @@ class MRESE
   //! Convert to a string in the evta file
   virtual MString ToEvtaString(const int Precision, const int Version = 1);
 
+  //! Convert to a MPhysicalEventHit
+  MPhysicalEventHit CreatePhysicalEventHit();
+  
   virtual bool IsValid();
   virtual void SetValid(bool Valid) { m_IsValid = Valid; }
 
+  
 
   static const int c_Unknown;
   static const int c_Hit;
@@ -159,11 +174,13 @@ class MRESE
 
  protected:
   virtual void RecalculateResolutions();
+  
+  //! Initialize / Reset this RESE
+  void Reset();
 
-
+  
   // private interface:
  private:
-  void Init();
   MRESEList* GetRESEList();
   MRESEList* GetLinkList();
 
@@ -217,7 +234,7 @@ class MRESE
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRESE, 0) // sub-element of an event (hit, track, cluster)
 #endif

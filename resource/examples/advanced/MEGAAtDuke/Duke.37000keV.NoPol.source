@@ -5,7 +5,7 @@ Version         1
 Geometry        $(MEGALIB)/resource/examples/geomega/simplifiedprototype/Prototype.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore-Pol
+PhysicsListEM                        LivermorePol
 PhysicsListEMActivateFluorescence    false
 
 # Output formats

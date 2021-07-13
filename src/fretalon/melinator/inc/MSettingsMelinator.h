@@ -119,21 +119,34 @@ class MSettingsMelinator : public MSettings
   unsigned int GetCalibrationModelDeterminationMethod() const { return m_CalibrationModelDeterminationMethod; }
   //! Set the calibration model determination method (number identical to what is defined in MCalibrateLines.h
   void SetCalibrationModelDeterminationMethod(unsigned int CalibrationModelDeterminationMethod) { m_CalibrationModelDeterminationMethod = CalibrationModelDeterminationMethod; }
-  //! Get the calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
-  unsigned int GetCalibrationModelDeterminationMethodFittingModel() const { return m_CalibrationModelDeterminationMethodFittingModel; } 
-  //! Set the calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
-  void SetCalibrationModelDeterminationMethodFittingModel(unsigned int Model) { m_CalibrationModelDeterminationMethodFittingModel = Model; } 
+  //! Get the energy calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  unsigned int GetCalibrationModelDeterminationMethodFittingEnergyModel() const { return m_CalibrationModelDeterminationMethodFittingEnergyModel; } 
+  //! Set the energy calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  void SetCalibrationModelDeterminationMethodFittingEnergyModel(unsigned int Model) { m_CalibrationModelDeterminationMethodFittingEnergyModel = Model; } 
+  //! Get the FWHM calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  unsigned int GetCalibrationModelDeterminationMethodFittingFWHMModel() const { return m_CalibrationModelDeterminationMethodFittingFWHMModel; } 
+  //! Set the FWHM calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  void SetCalibrationModelDeterminationMethodFittingFWHMModel(unsigned int Model) { m_CalibrationModelDeterminationMethodFittingFWHMModel = Model; } 
   
   
   //! Set the save-as file name
   void SetSaveAsFileName(const MString& SaveAsFileName) { m_SaveAsFileName = SaveAsFileName; }
   //! Get the save-as file name
   MString GetSaveAsFileName() const { return m_SaveAsFileName; }
-
+  
   //! Set the single detector to use (negative means use all)
   void SetSelectedDetectorID(int ID) { m_SelectedDetectorID = ID; }
   //! Get the single detector to use (negative means use all)
   int GetSelectedDetectorID() const { return m_SelectedDetectorID; }
+  
+  //! Set the minimum allowed detector temperature
+  void SetMinimumTemperature(double MinimumTemperature) { m_MinimumTemperature = MinimumTemperature; }
+  //! Get the minimum allowed detector temperate
+  double GetMinimumTemperature() const { return m_MinimumTemperature; }
+  //! Set the minimum allowed detector temperature
+  void SetMaximumTemperature(double MaximumTemperature) { m_MaximumTemperature = MaximumTemperature; }
+  //! Get the minimum allowed detector temperate
+  double GetMaximumTemperature() const { return m_MaximumTemperature; }
   
   
 // protected members:
@@ -183,8 +196,10 @@ class MSettingsMelinator : public MSettings
   bool m_CalibrationModelZeroCrossing;
   //! The calibration model determination method
   unsigned int m_CalibrationModelDeterminationMethod;
-  //! Fitting model of the calibration model determination method
-  unsigned int m_CalibrationModelDeterminationMethodFittingModel;
+  //! Fitting model of the energy calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingEnergyModel;
+  //! Fitting model of the FWHM calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingFWHMModel;
   
   //! Set the save as file
   MString m_SaveAsFileName;
@@ -192,8 +207,13 @@ class MSettingsMelinator : public MSettings
   //! Set the single detector to use (negative means use all)
   int m_SelectedDetectorID;
   
+  //! Set the minimum allowed detector temperature
+  double m_MinimumTemperature;
+  //! Set the maximum allowed detector temperature
+  double m_MaximumTemperature;
   
-#ifdef ___CINT___
+  
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsMelinator, 0) // no description
 #endif

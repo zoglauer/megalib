@@ -151,32 +151,32 @@ bool ExternalAnalysisPipelineExample::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-s" || Option == "-g" || Option == "-m" || Option == "-r") {
-			if (!((argc > i+1) && 
+      if (!((argc > i+1) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
-		// Multiple arguments template
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    } 
+    // Multiple arguments template
     /*
-		else if (Option == "-??") {
-			if (!((argc > i+2) && 
+    else if (Option == "-??") {
+      if (!((argc > i+2) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		}
+        cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    }
     */
 
-		// Then fulfill the options:
+    // Then fulfill the options:
     if (Option == "-s") {
       m_SimulationFileName = argv[++i];
       cout<<"Accepting simulation file name: "<<m_SimulationFileName<<endl;
@@ -189,11 +189,11 @@ bool ExternalAnalysisPipelineExample::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-m") {
       m_MimrecCfgFileName = argv[++i];
       cout<<"Accepting mimrec configuration file name: "<<m_MimrecCfgFileName<<endl;
-		} else {
-			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   return true;

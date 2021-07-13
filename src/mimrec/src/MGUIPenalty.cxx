@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIPenalty)
 #endif
 
@@ -175,7 +175,7 @@ void MGUIPenalty::Create()
     new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 
                       10, 10, 10, 8);
   AddFrame(m_ButtonFrame, m_ButtonFrameLayout);
-	  
+    
   m_CancelButton = new TGTextButton(m_ButtonFrame, "Cancel", 2); 
   m_CancelButton->Associate(this);
   m_CancelButtonLayout = 
@@ -252,10 +252,10 @@ bool MGUIPenalty::ProcessMessage(long Message, long Parameter1,
             default:
               break;
             }
-	  
+    
         case kCM_MENUSELECT:
           break;
-	  
+    
         case kCM_MENU:
           switch (Parameter1) 
 

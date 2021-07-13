@@ -33,13 +33,14 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MProjection.h"
+#include "MImage.h"
+#include "MCoordinateSystem.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIImageDimensions)
 #endif
 
@@ -83,15 +84,19 @@ void MGUIImageDimensions::Create()
   SetWindowName("Image Dimensions");  
 
 
-  TGLayoutHints* AxisLayoutFirst = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 0, 0);
-  TGLayoutHints* AxisLayoutLast = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 0, 20);
+  TGLayoutHints* AxisLayoutLabel = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 10*m_FontScaler);
+  TGLayoutHints* AxisLayoutFirst = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 5*m_FontScaler);
+  TGLayoutHints* AxisLayoutLast = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler);
 
-  TGLayoutHints* DimensionLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 0, 0);
-  TGLayoutHints* BinLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 40, 20, 0, 20);
+  TGLayoutHints* DimensionLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
+  TGLayoutHints* BinLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 40*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler);
 
 
-  if (m_GUIData->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     AddSubTitle("Please enter dimensions and the number of bins\nfor images in spherical coordinates"); 
+
+    TGLabel* AxisRotationLabel = new TGLabel(this, "Enter the coordinates of the X- and Z-axis of the new rotated, coordinate system\nin the coordinates of the default system:");
+    AddFrame(AxisRotationLabel, AxisLayoutLabel);
 
     m_XAxis = new MGUIEEntryList(this, "New X-axis vector:", MGUIEEntryList::c_SingleLine);
     m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().X(), true);
@@ -134,7 +139,7 @@ void MGUIImageDimensions::Create()
     
     m_PhiBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsPhi(), true, 1);
     AddFrame(m_PhiBins, BinLayout);
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     AddSubTitle("Please enter dimensions and the number of bins\nfor images in galactic coordinates"); 
 
     m_LatitudeDimension = new MGUIEMinMaxEntry(this,
@@ -164,8 +169,27 @@ void MGUIImageDimensions::Create()
     
     m_LongitudeBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsGalLongitude(), true, 1);
     AddFrame(m_LongitudeBins, BinLayout);
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+    
+    TGHorizontalFrame* ProjectionFrame = new TGHorizontalFrame(this);
+    TGLayoutHints* ProjectionFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler, 20*m_FontScaler);
+    AddFrame(ProjectionFrame, ProjectionFrameLayout);
+    
+    TGLabel* ProjectionLabel = new TGLabel(ProjectionFrame, "Please choose a projection:");
+    TGLayoutHints* ProjectionLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
+    ProjectionFrame->AddFrame(ProjectionLabel, ProjectionLabelLayout);
+
+    m_Projection = new TGComboBox(ProjectionFrame);
+    m_Projection->AddEntry("No Projection", static_cast<int>(MImageProjection::c_None));
+    m_Projection->AddEntry("Hammer projection", static_cast<int>(MImageProjection::c_Hammer));
+    m_Projection->Associate(this);
+    m_Projection->Select(static_cast<int>(m_GUIData->GetImageProjection()));
+    m_Projection->SetHeight(m_FontScaler*18);
+    m_Projection->SetWidth(m_FontScaler*120);
+    TGLayoutHints* ProjectionLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
+    ProjectionFrame->AddFrame(m_Projection, ProjectionLayout);
+    
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     AddSubTitle("Please enter dimensions and the number of bins\nfor images in Cartesian coordinates"); 
     m_XDimension = new MGUIEMinMaxEntry(this,
                                         MString("x-axis:"),
@@ -226,9 +250,9 @@ void MGUIImageDimensions::Create()
 
 bool MGUIImageDimensions::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
-  if (m_GUIData->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
 
     if (m_ThetaDimension->CheckRange(0.0, 180.0, 0.0, 180.0, true) == false) return false;
     if (m_PhiDimension->CheckRange(-360.0, 360.0, -360.0, 360.0, true) == false) return false;
@@ -280,7 +304,7 @@ bool MGUIImageDimensions::OnApply()
       m_GUIData->SetBinsPhi(m_PhiBins->GetAsInt());
     }
 
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
 
     if (m_LatitudeDimension->CheckRange(-90.0, 90.0, -90.0, 90.0, true) == false) return false;
     //if (m_LongitudeDimension->CheckRange(0.0, 360.0, 0.0, 360.0, true) == false) return false;
@@ -319,8 +343,13 @@ bool MGUIImageDimensions::OnApply()
     if (m_LongitudeBins->IsModified() == true) {
       m_GUIData->SetBinsGalLongitude(m_LongitudeBins->GetAsInt());
     }
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+    
+    if (m_Projection->GetSelected() != static_cast<int>(m_GUIData->GetImageProjection())) {
+      m_GUIData->SetImageProjection(static_cast<MImageProjection>(m_Projection->GetSelected()));
+    }
+    
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
 
     if (m_XDimension->CheckRange(-100000.0, 100000.0, -100000.0, 100000000.0, true) == false) return false;
     if (m_YDimension->CheckRange(-100000.0, 100000.0, -100000.0, 100000000.0, true) == false) return false;
@@ -343,7 +372,7 @@ bool MGUIImageDimensions::OnApply()
       return false;
     }
 
-    if (m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian2D) {
+    if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D) {
       if (m_XBins->GetAsInt() != 1 && m_YBins->GetAsInt() != 1 && m_ZBins->GetAsInt() != 1) {
         int Return = 0;
         MString Text = "In 2D Cartesian coordinates at least one dimension must have a bin size of 1!\n";
@@ -351,7 +380,7 @@ bool MGUIImageDimensions::OnApply()
         new TGMsgBox(gClient->GetRoot(), gClient->GetRoot(), 
                      "Warning", Text, kMBIconExclamation, kMBYes | kMBNo, &Return);
         if (Return == kMBYes) {
-          m_GUIData->SetCoordinateSystem(MProjection::c_Cartesian3D);
+          m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_Cartesian3D);
         } else {
           return false;
         }
@@ -384,7 +413,7 @@ bool MGUIImageDimensions::OnApply()
 
   
 
-	return true;
+  return true;
 }
 
 

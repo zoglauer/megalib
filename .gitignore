@@ -51,7 +51,20 @@ IsotopeFileSplitter
 depth_calibration
 depth_calibration2
 depth_scan_calibrator
-
+ChargeLossCorrection                                                                                                                                                           
+ChargeLossOffsets                                                                                                                                                              
+TimeJumpDetector                                                                                                                                                               
+VariableSourceDetector
+cellmerger
+cellviewer
+cubesplitter
+depth_calibration_cosi2016
+depth_calibration_cosi2016_v2
+depth_calibration_cosi2016_v3
+feeder
+sphereworldsimulator
+neuralnettester
+RevanAnalyzer
 
 #config directory:
 Makefile.options
@@ -87,5 +100,6 @@ External
 *.killcosimas.bash
 .DS_Store
 callgrind.*
-
+*.rsp
+*.erm
 

@@ -40,7 +40,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShapeTRD2)
 #endif
 
@@ -119,7 +119,9 @@ bool MDShapeTRD2::Set(double dx1, double dx2, double dy1, double dy2, double z)
   m_Dy1 = dy1;
   m_Dy2 = dy2;
   m_Z = z;
-
+  
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -129,9 +131,13 @@ bool MDShapeTRD2::Set(double dx1, double dx2, double dy1, double dy2, double z)
 
 bool MDShapeTRD2::Validate()
 {
-  delete m_Geo;
-  m_Geo = new TGeoTrd2(m_Dx1, m_Dx2, m_Dy1, m_Dy2, m_Z);
-
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoTrd2(m_Dx1, m_Dx2, m_Dy1, m_Dy2, m_Z);
+  
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -160,10 +166,12 @@ bool MDShapeTRD2::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape TRD2!");
+    Info.Error(MString("Unhandled descriptor in shape TRD2: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
 }
 
@@ -224,53 +232,6 @@ double MDShapeTRD2::GetZ() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeTRD2::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(5)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRD2::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Dx1<<","<<m_Dx2<<","<<m_Dy1<<","<<m_Dy2<<","<<m_Z<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRD2::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_Dx1<<" "<<m_Dx2<<" "<<m_Dy1<<" "<<m_Dy2<<" "<<m_Z<< endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeTRD2::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -279,28 +240,6 @@ MString MDShapeTRD2::GetGeomega() const
   out<<"TRD2 "<<m_Dx1<<" "<<m_Dx2<<" "<<m_Dy1<<" "<<m_Dy2<<" "<<m_Z;
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRD2::GetGeant3ShapeName()
-{
-  //
-
-  return "TRD2";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeTRD2::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 5;
 }
 
 
@@ -339,7 +278,9 @@ void MDShapeTRD2::Scale(const double Factor)
   m_Dy1 *= Factor;
   m_Dy2 *= Factor;
   m_Z *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

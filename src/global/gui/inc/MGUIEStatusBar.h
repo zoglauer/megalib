@@ -55,6 +55,8 @@ class MGUIEStatusBar : public MGUIElement
   bool SetContent(MString Field, double Value);
   bool SetContent(MString Field, int Value);
   bool SetContent(MString Field, unsigned int Value);
+  bool SetContent(MString Field, long Value);
+  bool SetContent(MString Field, unsigned long Value);
   bool SetContent(MString Field, MString Value);
 
   void Create();
@@ -99,7 +101,7 @@ class MGUIEStatusBar : public MGUIElement
   TObjArray* m_FieldContents;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEStatusBar, 0)
 #endif

@@ -1,0 +1,24 @@
+# Template for a polarized continuum point source
+
+Version                         1
+Geometry                        %%GEOMETRY%%
+
+# Physics list
+PhysicsListEM                   LivermorePol
+
+# Output formats
+StoreSimulationInfo             init-only
+
+# The run
+Run SpaceSim
+SpaceSim.FileName               PS_ContinuumPolarized_%%START%%keV_%%THETA%%deg
+SpaceSim.%%EVENTSORTRIGGERS%%   %%EVENTS%%
+
+# The polarized continuum point source
+SpaceSim.Source PS
+PS.ParticleType                 1
+PS.Beam                         FarFieldPointSource %%THETA%% 0
+PS.Spectrum                     Powerlaw %%START%% 10000000 2
+PS.Polarization                 RelativeX 1.0 30.0
+PS.Flux                         1
+

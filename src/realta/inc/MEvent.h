@@ -88,7 +88,7 @@ class MEvent : public TObject
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEvent, 0)   // base class for compton and pair events
 #endif

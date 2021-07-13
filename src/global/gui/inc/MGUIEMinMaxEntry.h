@@ -147,7 +147,7 @@ private:
   enum Type { e_Integer, e_Double };
   
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MGUIEMinMaxEntry, 0) // no description
   #endif

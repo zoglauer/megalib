@@ -47,7 +47,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERDecay)
 #endif
 
@@ -120,7 +120,7 @@ bool MERDecay::SetParameters(MString FileName,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERDecay::Analyze(MRawEventList* List)
+bool MERDecay::Analyze(MRawEventIncarnations* List)
 {
   // Analyze the raw event...
   MERConstruction::Analyze(List);

@@ -38,7 +38,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIAnimation)
 #endif
 
@@ -205,7 +205,7 @@ void MGUIAnimation::EnableRadioButton(long Parameter1)
 
 bool MGUIAnimation::OnApply()
 {
- 	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_Iterations->GetState() == kButtonDown) {
     if (m_GUIData->GetAnimationMode() != MImager::c_AnimateIterations) m_GUIData->SetAnimationMode(MImager::c_AnimateIterations);

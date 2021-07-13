@@ -101,7 +101,7 @@ class MTimer
   bool m_HasTimedOut;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MTimer, 0) // no description
 #endif

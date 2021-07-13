@@ -34,7 +34,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MProjection.h"
+#include "MCoordinateSystem.h"
 #include "MGUIEEntry.h"
 #include "MGUIDefaults.h"
 
@@ -42,7 +42,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIARM)
 #endif
 
@@ -60,6 +60,7 @@ MGUIARM::MGUIARM(const TGWindow* p, const TGWindow* main, MSettingsMimrec* Data,
   m_Mode = ID;
   m_OkPressed = false;
   
+  m_UseLog = nullptr;
   m_UseTestPosition = nullptr;  
   
   m_ThetaIsX = nullptr;
@@ -104,6 +105,9 @@ void MGUIARM::Create()
   } else if (m_Mode == MGUIARMModes::m_Spectrum) {
     SetWindowName("Energy Spectrum");  
     AddSubTitle("Choose the histogram binning and\nan optional source position with acceptance window");
+  } else if (m_Mode == MGUIARMModes::m_PET) {
+    SetWindowName("ARM of Recoil Electron");  
+    AddSubTitle("Choose the histogram binning and\nthe source position with acceptance window");
   }
 
   
@@ -113,6 +117,8 @@ void MGUIARM::Create()
   } else if (m_Mode == MGUIARMModes::m_ARMElectron) {
     m_Bins = new MGUIEEntry(this, "Number of bins in histogram:", false, m_Settings->GetHistBinsARMElectron());
   } else if (m_Mode == MGUIARMModes::m_Spectrum) {
+    m_Bins = new MGUIEEntry(this, "Number of bins in histogram:", false, m_Settings->GetHistBinsSpectrum());
+  } else if (m_Mode == MGUIARMModes::m_PET) {
     m_Bins = new MGUIEEntry(this, "Number of bins in histogram:", false, m_Settings->GetHistBinsSpectrum());
   }
   TGLayoutHints* BinsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 50*Scaler, 50*Scaler, 2*Scaler, 10*Scaler);
@@ -124,6 +130,12 @@ void MGUIARM::Create()
   // In spectral mode we have a checkbutton to choose if we want the test position
   if (m_Mode == MGUIARMModes::m_Spectrum) {
     // The two radio buttons to choose if we want to use a test position
+    m_UseLog = new TGCheckButton(this, "Use logarithmic binning", m_UseLogID);
+    m_UseLog->SetWrapLength(300*Scaler);
+    m_UseLog->Associate(this);
+    m_UseLog->SetState(m_Settings->GetLogBinningSpectrum() ? kButtonDown : kButtonUp);
+    AddFrame(m_UseLog, SelectorLayout);
+
     m_UseTestPosition = new TGCheckButton(this, "Use source position and acceptance window (only Compton and pair events will be displayed)", m_UseTestPositionID);
     m_UseTestPosition->SetWrapLength(300*Scaler);
     m_UseTestPosition->Associate(this);
@@ -140,7 +152,7 @@ void MGUIARM::Create()
     SelectorSubLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, (50+20)*Scaler, 50*Scaler, 2*Scaler, 2*Scaler);
   }
  
-  if (m_Settings->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     
     m_ThetaIsX = new MGUIEEntry(this, "Theta [deg]:", false, m_Settings->GetTPTheta());
     AddFrame(m_ThetaIsX, SelectorSubLayout);
@@ -148,7 +160,7 @@ void MGUIARM::Create()
     AddFrame(m_PhiIsY, SelectorSubLayout);
 
     
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     
     m_ThetaIsX = new MGUIEEntry(this, "Latitude [deg]:", false, m_Settings->GetTPGalLatitude());
     AddFrame(m_ThetaIsX, SelectorSubLayout);
@@ -156,8 +168,8 @@ void MGUIARM::Create()
     AddFrame(m_PhiIsY, SelectorSubLayout);
 
     
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
 
     m_ThetaIsX = new MGUIEEntry(this, "x [cm]:", false, m_Settings->GetTPX());
     AddFrame(m_ThetaIsX, SelectorSubLayout);
@@ -174,6 +186,8 @@ void MGUIARM::Create()
     m_Distance = new MGUIEEntry(this, "Acceptance radius [deg]:", false, m_Settings->GetTPDistanceLong());
   } else if (m_Mode == MGUIARMModes::m_Spectrum) {
     m_Distance = new MGUIEEntry(this, "Acceptance radius [deg]:", false, m_Settings->GetTPDistanceTrans());
+  } else if (m_Mode == MGUIARMModes::m_PET) {
+    m_Distance = new MGUIEEntry(this, "Acceptance radius [cm]:", false, m_Settings->GetTPDistanceTrans());
   } 
   AddFrame(m_Distance, SelectorSubLayout);
   
@@ -239,23 +253,27 @@ bool MGUIARM::ProcessMessage(long Message, long Parameter1,
 bool MGUIARM::OnApply()
 {
   // First test the data (m_RadiusIsZ has not to be checked!)
-  if (m_Settings->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     if (m_ThetaIsX->IsDouble(0, 180) == false || 
         m_PhiIsY->IsDouble(-360, 360) == false || 
         m_Distance->IsDouble(-180, 180) == false) {
       return false;
     }
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     if (m_ThetaIsX->IsDouble(-90, 90) == false || 
         m_PhiIsY->IsDouble(-360, 360) == false || 
         m_Distance->IsDouble(-180, 180) == false) {
       return false;
     }
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     if (m_Distance->IsDouble(-180, 180) == false) {
       return false;
     }
+  }
+  
+  if (m_UseLog != nullptr) {
+    m_Settings->SetLogBinningSpectrum(m_UseLog->GetState() == kButtonDown ? true : false);
   }
   
   if (m_UseTestPosition != nullptr) {
@@ -263,14 +281,14 @@ bool MGUIARM::OnApply()
   }
   
   // Otherwise update the data:
-  if (m_Settings->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     m_Settings->SetTPTheta(m_ThetaIsX->GetAsDouble());
     m_Settings->SetTPPhi(m_PhiIsY->GetAsDouble());
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     m_Settings->SetTPGalLatitude(m_ThetaIsX->GetAsDouble());
     m_Settings->SetTPGalLongitude(m_PhiIsY->GetAsDouble());
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     m_Settings->SetTPX(m_ThetaIsX->GetAsDouble());
     m_Settings->SetTPY(m_PhiIsY->GetAsDouble());
     m_Settings->SetTPZ(m_RadiusIsZ->GetAsDouble());
@@ -285,6 +303,9 @@ bool MGUIARM::OnApply()
   } else if (m_Mode == MGUIARMModes::m_Spectrum) {
     m_Settings->SetTPDistanceTrans(m_Distance->GetAsDouble());
     m_Settings->SetHistBinsSpetrum(m_Bins->GetAsInt());
+  } else if (m_Mode == MGUIARMModes::m_PET) {
+    m_Settings->SetTPDistanceTrans(m_Distance->GetAsDouble());
+    m_Settings->SetHistBinsARMGamma(m_Bins->GetAsInt());
   }
   
   m_OkPressed = true;

@@ -35,7 +35,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIOptionsDecay)
 #endif
 
@@ -110,13 +110,13 @@ void MGUIOptionsDecay::Create()
 
 bool MGUIOptionsDecay::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_Data->GetDecayAlgorithm() == 1) {
     m_Data->SetDecayFileName(m_FileSelector->GetFileName());
   }
 
-	return true;
+  return true;
 }
 
 

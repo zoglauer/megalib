@@ -34,7 +34,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIOptionsTemplate)
 #endif
 
@@ -68,7 +68,7 @@ void MGUIOptionsTemplate::Create()
   // Modify here
   TGLabel* Label = new TGLabel(this, "No options defined in the base class...");
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
-	AddFrame(Label, LabelLayout);
+  AddFrame(Label, LabelLayout);
 
   PostCreate();
 }
@@ -81,8 +81,8 @@ bool MGUIOptionsTemplate::ProcessMessage(long Message, long Parameter1, long Par
 {
   // Modify here if you have more buttons
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -110,9 +110,9 @@ bool MGUIOptionsTemplate::ProcessMessage(long Message, long Parameter1, long Par
 
 bool MGUIOptionsTemplate::OnApply()
 {
-	// Modify this to store the data in the module!
+  // Modify this to store the data in the module!
 
-	return true;
+  return true;
 }
 
 

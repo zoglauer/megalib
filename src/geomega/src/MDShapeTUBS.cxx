@@ -42,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShapeTUBS)
 #endif
 
@@ -122,7 +122,9 @@ bool MDShapeTUBS::Set(double Rmin, double Rmax, double HalfHeight,
   m_HalfHeight = HalfHeight;
   m_Phi1 = Phi1;
   m_Phi2 = Phi2;
-
+  
+  m_IsValidated = false;
+  
   return true;
 }
   
@@ -132,11 +134,15 @@ bool MDShapeTUBS::Set(double Rmin, double Rmax, double HalfHeight,
 
 bool MDShapeTUBS::Validate()
 {
-  delete m_Geo;
-  if (m_Phi1 == 0 && m_Phi2 == 360) {
-    m_Geo = new TGeoTube(m_Rmin, m_Rmax, m_HalfHeight);
-  } else {
-    m_Geo = new TGeoTubeSeg(m_Rmin, m_Rmax, m_HalfHeight, m_Phi1, m_Phi2);
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    if (m_Phi1 == 0 && m_Phi2 == 360) {
+      m_Geo = new TGeoTube(m_Rmin, m_Rmax, m_HalfHeight);
+    } else {
+      m_Geo = new TGeoTubeSeg(m_Rmin, m_Rmax, m_HalfHeight, m_Phi1, m_Phi2);
+    }
+  
+    m_IsValidated = true;
   }
   
   return true;
@@ -176,10 +182,12 @@ bool MDShapeTUBS::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape TUBS!");
+    Info.Error(MString("Unhandled descriptor in shape TUBS: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
 }
 
@@ -238,54 +246,6 @@ double MDShapeTUBS::GetPhi2()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeTUBS::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(5)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTUBS::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Rmin<<","<<m_Rmax<<","<<m_HalfHeight<<","<<m_Phi1<<","<<m_Phi2<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTUBS::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-  
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_Rmin<<" "<<m_Rmax<<" "<<m_HalfHeight<<endl;
-  out<<"           "<<m_Phi1<<" "<<m_Phi2<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeTUBS::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -296,27 +256,6 @@ MString MDShapeTUBS::GetGeomega() const
   return out.str().c_str();
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTUBS::GetGeant3ShapeName()
-{
-  //
-
-  return "TUBS";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeTUBS::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 5;
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -352,6 +291,8 @@ void MDShapeTUBS::Scale(const double Factor)
   m_Rmax *= Factor;
   m_HalfHeight *= Factor;
 
+  m_IsValidated = false;
+  
   Validate();
 }
 

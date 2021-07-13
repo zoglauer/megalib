@@ -1,0 +1,56 @@
+
+Include Base.geo.setup
+
+
+# The basic trigger criteria resembling as close as possible the new one
+
+#Trigger Classic
+#Classic.Veto false
+#Classic.Detector Tracker 1
+#Classic.Detector Cali 1
+
+#Trigger Classic2
+#Classic2.Veto true
+#Classic2.GuardRingDetector Tracker 1
+
+#Trigger Classic3
+#Classic3.Veto true
+#Classic3.Detector AntiTopBottom 1
+
+#Trigger Classic4
+#Classic4.Veto true
+#Classic4.Detector AntiSide 1
+
+
+# Replicating the classic trigger with the new trigger map
+
+#TriggerMap OneSiteTriggers
+#OneSiteTriggers.Map OneSiteTriggers.trig
+#TriggerMap GuardRingVeto
+#GuardRingVeto.Map GuardRingVeto.trig
+#TriggerMap ACSVeto
+#ACSVeto.Map ACSVeto.trig
+
+
+# New trigger interface
+
+TriggerMap TwoSiteTriggers
+TwoSiteTriggers.Map TwoSiteTriggers.trig
+TriggerMap PairTrigger
+PairTrigger.Map PairTrigger.trig
+TriggerMap GuardRingVeto
+GuardRingVeto.Map GuardRingVeto.trig
+TriggerMap ACSVeto
+ACSVeto.Map ACSVeto.trig
+
+
+# New - all triggers combined
+
+#TriggerMap Combined
+#Combined.Map Combined.trig
+
+
+
+
+
+

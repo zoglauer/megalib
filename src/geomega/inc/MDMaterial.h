@@ -36,44 +36,62 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a geomega material
 class MDMaterial
 {
   // public interface:
  public:
+  //! Standard constructor
   MDMaterial();
-  MDMaterial(MString Name, MString ShortName, MString MGeantShortName);
+  //! Default constructor with name
+  MDMaterial(MString Name);
+  //! Standard destructor
   virtual ~MDMaterial();
 
+  //! Return a dummy material
   static MDMaterial* GetDummyMaterial();
 
-  static int ConvertZToNumber(MString Name);
-  static MString ConvertZToString(int Z);
+  //!
+  static int ConvertNameToAtomicNumber(MString Name);
+  static MString ConvertAtomicNumberToName(int Z);
 
-  void SetName(MString Name, MString ShortName, MString MGeantShortName);
+  //! Set the name
+  void SetName(MString Name) { m_Name = Name; }
+  //! Get the name
+  MString GetName() const { return m_Name; }
 
-  virtual MString GetName() const;
-  MString GetShortName() const;
-  MString GetOriginalMGeantShortName() const;
-  MString GetMGeantShortName() const;
-
-  void SetDensity(double Density);
+  //! Set the density of the material
+  bool SetDensity(double Density);
+  //! Return the density of the material
   double GetDensity() const { return m_Density; }
 
-  void SetRadiationLength(double RadiationLength);
+  //! Set the radiation length of the material
+  bool SetRadiationLength(double RadiationLength);
+  //! Return the radiation length of the material
   double GetRadiationLength() const { return m_RadiationLength; }
 
-  void SetComponent(MDMaterialComponent* Component);
-  void SetComponent(double A, double Z, double Weigth, int Type);
-  bool SetComponent(MString Name, double Weigth, int Type);
+  //! Set the component
+  bool SetComponent(MDMaterialComponent* Component);
+  //! Set a component by atomic weighting
+  bool SetComponentByAtomicWeighting(double AtomicWeight, int AtomicNumber, int Weighting);
+  //! Set a component by atomic weighting with natural composition
+  bool SetComponentByAtomicWeighting(MString Name, int Weighting);
+  //! Set a component by mass weighting
+  bool SetComponentByMassWeighting(double AtomicWeight, int AtomicNumber, double Weighting);
+  //! Set a component by mass weighting with natural composition
+  bool SetComponentByMassWeighting(MString Name, double Weighting);
+  //! Get the component by index
+  //! Return nullptr if the index is out of bound
   MDMaterialComponent* GetComponentAt(unsigned int i) const;
-  unsigned int GetNComponents() const;
+  //! Get the number of component 
+  unsigned int GetNComponents() const { return m_Components.size(); }
 
-  void SetSensitivity(int Sensitivity);
-  double GetSensitivity() const { return m_Sensitive; }
-
+  //! Set the directory where the cross sections are stored
   void SetCrossSectionFileDirectory(MString Directory);
+  //! Return the directory where the cross sections are stored
   MString GetCrossSectionFileDirectory() const;
 
+  //! return true if we have all cross sections ready
   bool AreCrossSectionsPresent() const { return m_CrossSectionsPresent; }
 
   //! Return the total absorption coefficient (= macroscopic cross section)
@@ -90,21 +108,19 @@ class MDMaterial
   //! Return the hash of this object --- it is only availbale after a call to validate!
   unsigned long GetHash() const { return m_Hash; }
 
-  int GetID() const;
+  //! Return the unique ID of the material
+  int GetID() const { return m_ID; }
 
-  int GetZMainComponent() const;
+  // Determine the main component of this material and return its atomic number:
+  int GetAtomicNumberMainComponent() const;
 
-  MString GetGeant3DIM() const;
-  MString GetGeant3DATA() const;
-  MString GetGeant3() const;
-  MString GetMGeant() const;
-  MString GetMGeantTmed(int Sensitivity = -1) const;
   
   //! Return in Geomega compatible format
   MString GetGeomega() const;
-
+  //! Return a description of the material
   MString ToString() const; 
 
+  //! Reset the ID counter
   static void ResetIDs();
 
   //! Validate the data
@@ -113,15 +129,24 @@ class MDMaterial
   bool LoadCrossSections(bool Verbose = false);
 
   // Clone interface... identical to MDVolume, MDDetector...
+  
+  //! Add a material clone
   void AddClone(MDMaterial* Clone);
+  //! Return the number of clones
   unsigned int GetNClones() const;
+  //! Get a specific clone
   MDMaterial* GetCloneAt(unsigned int i) const;
+  //! Get the ID from a specific clone
   unsigned int GetCloneId(MDMaterial* Clone) const;
+  //! Return true if this is a clone
   bool IsClone() const;
 
+  //! Set the volume which is the template for this clone
   void SetCloneTemplate(MDMaterial* Template);
+  //! Get the volumes which is the template for this clone
   MDMaterial* GetCloneTemplate() const;
 
+  //! Copy all the common data to the clones
   bool CopyDataToClones();
 
   //! Return this class as ROOT material
@@ -140,11 +165,10 @@ class MDMaterial
 
   // private members:
  private:
+  //! The name of the material
   MString m_Name;
-  MString m_ShortName;
-  MString m_OriginalMGeantShortName;
-  MString m_MGeantShortName;
 
+  //! The unique ID of the material
   int m_ID;
   
   //! The material in ROOT notation
@@ -189,7 +213,7 @@ class MDMaterial
   MDMaterial* m_CloneTemplate; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDMaterial, 0) // material of a detector
 #endif

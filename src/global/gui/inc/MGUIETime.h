@@ -70,7 +70,7 @@ class MGUIETime : public MGUIElement
 
   enum ComboIDs { c_Hour = 1, c_Minute, c_Day, c_Month, c_Year };
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIETime, 0) // GUI window for unkown purpose ...
 #endif

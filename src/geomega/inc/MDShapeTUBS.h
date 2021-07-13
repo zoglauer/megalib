@@ -52,11 +52,6 @@ class MDShapeTUBS : public MDShape
   MVector GetSize();
 
   MString ToString();
-  MString GetGeant3DIM(MString ShortName);
-  MString GetGeant3DATA(MString ShortName);
-  MString GetGeant3ShapeName();
-  int GetGeant3NumberOfParameters();
-  MString GetMGeantDATA(MString ShortName);
   MString GetGeomega() const;
   
   double GetRmin();
@@ -98,7 +93,7 @@ class MDShapeTUBS : public MDShape
   double m_Phi2;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeTUBS, 0) // no description
 #endif

@@ -26,16 +26,19 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MRERawEvent.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
+#include "MRawEventIncarnationList.h"
 #include "MGeometryRevan.h"
 #include "MFileEventsEvta.h"
 #include "MFileEventsTra.h"
 #include "MSettingsEventReconstruction.h"
+#include "MERCSRTMVAMethods.h"
 
 // Forward declarations:
 class MDGeometryQuest;
-class MERClusterize;
 class MERCoincidence;
+class MEREventClusterizer;
+class MERHitClusterizer;
 class MERTrack;
 class MERCSR;
 class MERDecay;
@@ -43,7 +46,7 @@ class MERDecay;
 ////////////////////////////////////////////////////////////////////////////////
 
 //! How to use guide:
-//! 
+//!
 //! First create the analyzer:
 //! > MRawEventAnalyzer Analyzer;
 //! Then set the event mode (default is "Add")
@@ -61,7 +64,7 @@ class MRawEventAnalyzer
 
   //! Set all options from a settings file
   void SetSettings(MSettingsEventReconstruction* Setting);
-  
+
   //! If events are read from file set it here
   bool SetInputModeFile(MString Filename);
   //! If events are written to a file, set it with this function
@@ -69,15 +72,19 @@ class MRawEventAnalyzer
 
   //! Do not use any GUI functions
   void SetBatch(bool IsBatch) { m_IsBatch = IsBatch; }
-  
+
   //! Call this function just before the event reconstruction starts
   bool PreAnalysis();
-  
+
   //! In case the events are not read from file,
   //! add an event to the back of the temporary event store.
   //! The raw event will be deleted by this class!
-  void AddRawEvent(MRERawEvent* RE);
-  
+  bool AddRawEvent(MRERawEvent* RE);
+
+  //! In case the events are not read from file,
+  //! create the event from a string containing ALL event data
+  bool AddRawEvent(const MString& RE, bool NeedsNoising = true, int Version = 25);
+
   //! Analyze one event
   //! The event can then be retrieved via GetOptimumEvent() or GetBestTryEvent()
   //! Return codes:
@@ -86,52 +93,74 @@ class MRawEventAnalyzer
   //! c_AnalysisNoEventsInStore
   //! c_AnalysisNoEventsLeftInFile
   unsigned int AnalyzeEvent();
-  
+
+  //! Save the OI
+  void SetSaveOI(bool SaveOI);
+
   // The return codes of AnalyzeEvent()
   static const unsigned int c_AnalysisSucess;
   static const unsigned int c_AnalysisCoincidenceWindowWait;
+  static const unsigned int c_AnalysisEventClusteringFailed;
   static const unsigned int c_AnalysisNoEventsInStore;
   static const unsigned int c_AnalysisNoEventsLeftInFile;
   static const unsigned int c_AnalysisSavingEventFailed;
   static const unsigned int c_AnalysisUndefinedError;
-  
+
   //! Return the next initial raw event from file
   //! Return zero if the input mode is not file or if the ened of the file has been reached
   MRERawEvent* GetNextInitialRawEventFromFile();
 
-  
+
   // The results:
-  
+
   //! The returns the best found event
-  MRERawEvent* GetOptimumEvent();
+  vector<MRERawEvent*> GetOptimumEvents();
+  //! Return the single best event -- if we have multiple events it will just return the first one
+  MRERawEvent* GetSingleOptimumEvent();
+
   //! A best solution was not found - but we still have a best try
-  MRERawEvent* GetBestTryEvent();  
-  //! 
+  vector<MRERawEvent*> GetBestTryEvents();  
+  //! Return the single best try event, if we have multiple return just the first one
+  MRERawEvent* GetSingleBestTryEvent();  
+
+  //! Return the initial raw events - we always have one, but in the analysis it is easier when we get it in a list too
+  vector<MRERawEvent*> GetInitialRawEvents();
+  //! Return the initial raw event
   MRERawEvent* GetInitialRawEvent();
+  
   //! return a list of all possible events after the given event reconstrcution
-  MRawEventList* GetRawEventList() { return m_RawEvents; }
+  MRawEventIncarnationList* GetRawEventList() { return m_RawEvents; }
+
 
   //! Optional: Call this function at the end of the event reconstruction to gather some statistics
   bool PostAnalysis();
-  
+
   //! If multiple raw event analyzer have been started, e.g. for multi threading, the analysis statistics can be joinded with this function
   void JoinStatistics(const MRawEventAnalyzer& A);
 
-  
+
   // Interface for the basic reconstruction algorithms
- 
+  
   static const int c_CoincidenceAlgoNone;
   static const int c_CoincidenceAlgoWindow;
- 
+  
   //! Set the coincidence algorithm. One of: c_CoincidenceAlgoNone, c_CoincidenceAlgoWindow
   void SetCoincidenceAlgorithm(int ID) { m_CoincidenceAlgorithm = ID; }
   
-  static const int c_ClusteringAlgoNone;
-  static const int c_ClusteringAlgoDistance;
-  static const int c_ClusteringAlgoAdjacent;
+  static const int c_EventClusteringAlgoNone;
+  static const int c_EventClusteringAlgoTMVA;
+  static const int c_EventClusteringAlgoDistance;
+  
+  //! Set the coincidence algorithm. One of: c_EventClusteringAlgoNone, c_EventClusteringAlgoDistance, c_EventClusteringAlgoTMVA
+  void SetEventClusteringAlgorithm(int ID) { m_EventClusteringAlgorithm = ID; }
+  
+  static const int c_HitClusteringAlgoNone;
+  static const int c_HitClusteringAlgoDistance;
+  static const int c_HitClusteringAlgoAdjacent;
+  static const int c_HitClusteringAlgoPDF;
 
   //! Set the clustering algorithm: One of c_ClusteringAlgoNone, c_ClusteringAlgoDistance, c_ClusteringAlgoAdjacent;
-  void SetClusteringAlgorithm(int ID) { m_ClusteringAlgorithm = ID; }
+  void SetHitClusteringAlgorithm(int ID) { m_HitClusteringAlgorithm = ID; }
 
   static const int c_TrackingAlgoNone;
   static const int c_TrackingAlgoModifiedPearson;
@@ -142,9 +171,17 @@ class MRawEventAnalyzer
   static const int c_TrackingAlgoBayesian;
   static const int c_TrackingAlgoRank;
 
-  //! Set the electron tracking algorithm: One of c_TrackingAlgoNone, c_TrackingAlgoModifiedPearson, c_TrackingAlgoPearson, 
-  //! c_TrackingAlgoChiSquare, c_TrackingAlgoGas, c_TrackingAlgoDirectional, c_TrackingAlgoBayesian, c_TrackingAlgoRank 
+  //! Set the electron tracking algorithm: One of c_TrackingAlgoNone, c_TrackingAlgoModifiedPearson, c_TrackingAlgoPearson,
+  //! c_TrackingAlgoChiSquare, c_TrackingAlgoGas, c_TrackingAlgoDirectional, c_TrackingAlgoBayesian, c_TrackingAlgoRank
   void SetTrackingAlgorithm(int ID) { m_TrackingAlgorithm = ID; }
+
+  static const int c_PairDefault;
+  static const int c_PairKalman3D;
+  static const int c_PairKalman2D;
+
+  //! Set the pair reconstruction algorithm: One of c_PairDefault, c_PairKalman3D or c_PairKalman2D
+  void SetPairAlgorithm(int ID) { m_PairAlgorithm = ID; }
+
 
   static const int c_CSRAlgoNone;
   static const int c_CSRAlgoFoM;
@@ -152,6 +189,8 @@ class MRawEventAnalyzer
   static const int c_CSRAlgoFoMToF;
   static const int c_CSRAlgoFoMToFAndE;
   static const int c_CSRAlgoBayesian;
+
+  static const int c_CSRAlgoTMVA;
 
   //! Set the Compton photon tracking algorithm: One of c_CSRAlgoNone, c_CSRAlgoFoM, c_CSRAlgoFoME, c_CSRAlgoFoMToF, c_CSRAlgoBayesian
   void SetCSRAlgorithm(int ID) { m_CSRAlgorithm = ID; }
@@ -164,13 +203,21 @@ class MRawEventAnalyzer
 
 
   // Section: Interface to set all reconstruction options:
-
+  
   // Options coincidence:
   void SetCoincidenceWindow(double CoincidenceWindow) {
     m_CoincidenceWindow = CoincidenceWindow;
   }
 
-  // Options clusterizer:
+  // Options for event clustering
+  void SetEventClusteringDistanceCutOff(double DistanceCutOff) { m_EventClusteringDistanceCutOff = DistanceCutOff; }
+  
+  void SetEventClusteringTMVAFileName(MString FileName) { m_EventClusteringTMVAFileName = FileName; }
+  void SetEventClusteringTMVAMethods(MERCSRTMVAMethods Methods) { m_EventClusteringTMVAMethods = Methods; }
+  
+  
+  
+  // Options hit clustering:
   void SetStandardClusterizerMinDistanceD1(double MinDistance) {
     m_StandardClusterizerMinDistanceD1 = MinDistance;
   }
@@ -201,6 +248,10 @@ class MRawEventAnalyzer
   void SetAdjacentLevel(const int Value) { m_AdjacentLevel = Value; }
   void SetAdjacentSigma(const double Value) { m_AdjacentSigma = Value; }
 
+  void SetPDFClusterizer(MString BaseFileName) {
+    m_PDFClusterizerBaseFileName = BaseFileName;
+  }
+
   // Options electron tracking:
   void SetDoTracking(bool Do) { m_DoTracking = Do; if (Do == false) m_TrackingAlgorithm = c_TrackingAlgoNone; }
   void SetSearchPairTracks(bool Search) { m_SearchPairTracks = Search; }
@@ -214,14 +265,17 @@ class MRawEventAnalyzer
   void SetRejectPurelyAmbiguousTrackSequences(bool Flag) { m_RejectPurelyAmbiguousTrackSequences = Flag; }
   void SetNLayersForVertexSearch(unsigned int NLayersForVertexSearch) { m_NLayersForVertexSearch = NLayersForVertexSearch; }
   void SetElectronTrackingDetectorList(vector<MString> DetectorList) { m_ElectronTrackingDetectorList = DetectorList; }
-  
+
+  // Options Kalman Filter
+  void SetSigmaHitPos(double SigmaHitPos) { m_SigmaHitPos = SigmaHitPos; }
+
   // Option Compton tracking:
   void SetClassicUndecidedHandling(int Flag) { m_ClassicUndecidedHandling = Flag; }
   void SetAssumeD1First(bool Flag) { m_AssumeD1First = Flag; }
   void SetUseComptelTypeEvents(bool Flag) { m_UseComptelTypeEvents = Flag; }
   void SetGuaranteeStartD1(bool Flag) { m_GuaranteeStartD1 = Flag; }
   void SetRejectOneDetectorTypeOnlyEvents(bool Flag) { m_RejectOneDetectorTypeOnlyEvents = Flag; }
-  
+
   void SetCSRThresholdMin(double Value) { m_CSRThresholdMin = Value; }
   void SetCSRThresholdMax(double Value) { m_CSRThresholdMax = Value; }
 
@@ -230,6 +284,10 @@ class MRawEventAnalyzer
   void SetOriginObjectsFileName(MString Name) { m_OriginObjectsFileName = Name; }
 
   void SetBCTFileName(MString FileName) { m_BCTFileName = FileName; }
+  
+  void SetCSRTMVAFileName(MString FileName) { m_CSRTMVAFileName = FileName; }
+  void SetCSRTMVAMethods(MERCSRTMVAMethods Methods) { m_CSRTMVAMethods = Methods; }
+  
 
   void SetFocalSpotCenter(MVector FocalSpotCenter) { m_FocalSpotCenter = FocalSpotCenter; }
   void SetLensCenter(MVector LensCenter) { m_LensCenter = LensCenter; }
@@ -248,8 +306,8 @@ class MRawEventAnalyzer
 
   // Decay options
   void SetDecayFileName(MString FileName) { m_DecayFileName = FileName; }
-  void AddDecayEnergy(double Energy, double Error) { 
-    m_DecayEnergy.push_back(Energy); m_DecayEnergyError.push_back(Error); }
+
+  void AddDecayEnergy(double Energy, double Error) { m_DecayEnergy.push_back(Energy); m_DecayEnergyError.push_back(Error); }
 
 
 
@@ -278,21 +336,33 @@ class MRawEventAnalyzer
  private:
   //! The sim/evta file reader
   MFileEventsEvta* m_Reader;
+  //! Save the OI information
+  bool m_SaveOI;
+
   //! The tra file writer
   MFileEventsTra* m_PhysFile;
 
   //! Intermediate store of the events after reading
-  MRawEventList* m_EventStore;
+  MRawEventIncarnations* m_EventStore;
 
-  //! array of all "possible" events
-  MRawEventList* m_RawEvents;  
+  //! List of all events in all possible incarnations
+  MRawEventIncarnationList* m_RawEvents;  
 
-  //! Replace all those one day by their base class...
+  //! Coincidence search
   MERCoincidence* m_Coincidence;
-  MERClusterize* m_Clusterizer;
+  //! Event clustering
+  MEREventClusterizer* m_EventClusterizer;
+  //! Hit clustering
+  MERHitClusterizer* m_HitClusterizer;
+  //! Electron tracking
   MERTrack* m_Tracker;
+  //! Compton sequence reconstruction
   MERCSR* m_CSR;
+  //! Decay search
   MERDecay* m_Decay;
+  //! Provides functionality for noising simulation data
+  //! This one is independent of the one used in MFileEventsEvta
+  MERNoising* m_Noising;
 
   MString m_Filename;
   MString m_FilenameOut;
@@ -314,19 +384,28 @@ class MRawEventAnalyzer
   int m_NPairEvents;
   int m_NMuonEvents;
   int m_NDecayEvents;
+  int m_NPETEvents;
+  int m_NMultiEvents;
   int m_NUnidentifiableEvents;
 
   // Reconstruction options:
   int m_CoincidenceAlgorithm;
-  int m_ClusteringAlgorithm;
+  int m_EventClusteringAlgorithm;
+  int m_HitClusteringAlgorithm;
   int m_TrackingAlgorithm;
+  int m_PairAlgorithm;
   int m_CSRAlgorithm;
   int m_DecayAlgorithm;
 
   // Coincidence
   double m_CoincidenceWindow;
-
-  // Clusterizing
+  
+  // Event clustering
+  double m_EventClusteringDistanceCutOff;
+  MString m_EventClusteringTMVAFileName;
+  MERCSRTMVAMethods m_EventClusteringTMVAMethods;
+  
+  // Hit lustering
   double m_StandardClusterizerMinDistanceD1;
   double m_StandardClusterizerMinDistanceD2;
   double m_StandardClusterizerMinDistanceD3;
@@ -339,6 +418,8 @@ class MRawEventAnalyzer
 
   int m_AdjacentLevel;
   double m_AdjacentSigma;
+
+  MString m_PDFClusterizerBaseFileName;
 
   // Electron tracking:
   bool m_DoTracking;
@@ -355,7 +436,10 @@ class MRawEventAnalyzer
   unsigned int m_NLayersForVertexSearch;
 
   vector<MString> m_ElectronTrackingDetectorList;
-  
+
+  //Kalman Filter:
+  double m_SigmaHitPos;
+
   // Compton tracking:
   bool m_AssumeD1First;
   bool m_UseComptelTypeEvents;
@@ -363,7 +447,7 @@ class MRawEventAnalyzer
   bool m_GuaranteeStartD1;
   bool m_RejectOneDetectorTypeOnlyEvents;
   bool m_CSROnlyCreateSequences;
-  
+
   double m_CSRThresholdMin;
   double m_CSRThresholdMax;
 
@@ -372,6 +456,9 @@ class MRawEventAnalyzer
   MString m_OriginObjectsFileName;
   MString m_BCTFileName;
 
+  MString m_CSRTMVAFileName;
+  MERCSRTMVAMethods m_CSRTMVAMethods;
+  
   MVector m_LensCenter;
   MVector m_FocalSpotCenter;
 
@@ -396,14 +483,15 @@ class MRawEventAnalyzer
   MGeometryRevan* m_OriginGeometry;
 
   double m_TimeLoad;
-  double m_TimeClusterize;
+  double m_TimeEventClusterize;
+  double m_TimeHitClusterize;
   double m_TimeTrack;
   double m_TimeCSR;
   double m_TimeFinalize;
 
   bool m_IsBatch;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRawEventAnalyzer, 0) // this class manages the analysis of events
 #endif

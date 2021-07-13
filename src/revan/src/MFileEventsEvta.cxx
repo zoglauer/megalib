@@ -35,7 +35,7 @@
 #include "MAssert.h"
 #include "MREAM.h"
 #include "MREAMDriftChamberEnergy.h"
-#include "MREAMGuardringHit.h"
+#include "MREAMGuardRingHit.h"
 #include "MREAMDirectional.h"
 #include "MDDriftChamber.h"
 #include "MDStrip2D.h"
@@ -46,14 +46,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MFileEventsEvta)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const int MFileEventsEvta::c_NoId = -1;
+const long MFileEventsEvta::c_NoId = -1;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -72,6 +72,8 @@ MFileEventsEvta::MFileEventsEvta(MGeometryRevan* Geometry) : MFileEvents()
 
   m_Noising = new MERNoising();
   m_Noising->SetGeometry(m_Geometry);
+  
+  m_SaveOI = false;
 }
 
 
@@ -96,19 +98,24 @@ bool MFileEventsEvta::Open(MString FileName, unsigned int Way)
   m_IncludeFileUsed = false;
   m_IncludeFile = new MFileEventsEvta(m_Geometry);
   m_IncludeFile->SetIsIncludeFile(true);
-
+  
+  if (FileName.EndsWith("sim") == false && FileName.EndsWith("sim.gz") == false && FileName.EndsWith("evta") == false && FileName.EndsWith("evta.gz") == false) {
+    merr<<"This file is neither sim nor evta file: "<<FileName<<endl;
+    return false;    
+  }
+  
   if (FileName.EndsWith("sim") == true || FileName.EndsWith("sim.gz") == true) {
     m_IsSimulation = true;
   } else {
     m_IsSimulation = false;
   }
-
+  
   if (MFileEvents::Open(FileName, Way) == false) {
     return false;
   }
-
+  
   if (m_Geometry->IsScanned() == false) {
-    mout<<"We do not have a properly initialized geometry!"<<endl;
+    merr<<"We do not have a properly initialized geometry!"<<endl;
     return false;
   }
 
@@ -130,6 +137,28 @@ bool MFileEventsEvta::Close()
 
   return MFileEvents::Close();
 }
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MFileEventsEvta::UpdateObservationTimes(MRERawEvent* Event)
+{
+  //! Update the observation times using the given event
+  
+  // If the overall observation time has alreday been set, don't change anything
+  if (m_HasObservationTime == true) return;
+  
+  // Otherwise set everything
+  if (m_HasStartObservationTime == false) {
+    m_StartObservationTime = Event->GetTime();
+    m_HasStartObservationTime = true;
+  }
+  m_EndObservationTime = Event->GetTime();
+  m_HasEndObservationTime = true;
+  
+  // Do not set m_HasObservationTime
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -150,16 +179,19 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
   
 
   // This takes care of (SC0)
-  if (UpdateProgress() == false) return 0;
+  if (UpdateProgress() == false) return nullptr;
 
   // This takes care of (SC1)
   if (m_IncludeFileUsed == true) {
     MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
-    if (RE == 0) {
+    if (RE == nullptr) {
       m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+      if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
+      if (m_Canceled == true) return nullptr;
     } else {
+      UpdateObservationTimes(RE);
       return RE;
     }
   }
@@ -173,7 +205,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
 
   MString Line;
   while (IsGood() == true) {
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
 
     // Round 1: Take care of new files --- but do not yet read them or new events in them:
@@ -202,7 +234,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
         (Line[0] == 'I' && Line[1] == 'N') ) {
 
       if (m_IsFirstEvent == false) {
-        // First set the old event id - this is for backeard compatibility, were we did not have the ID keyword
+        // First set the old event id - this is for backward compatibility, were we did not have the ID keyword
         if (m_EventId != c_NoId) {
           Event->SetEventID(m_EventId);
         }
@@ -215,7 +247,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
       
       // Backward compatibility: The SE keyword may contain the event ID
       if (Line[0] == 'S' && Line[1] == 'E') {
-        if (sscanf(Line.Data(), "SE%i", &m_EventId) != 1) {
+        if (sscanf(Line.Data(), "SE%lu", &m_EventId) != 1) {
           m_EventId = c_NoId;
         }
       }
@@ -228,6 +260,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
         m_IsFirstEvent = false;
       } else {
         if (m_IsFirstEvent == false) {
+          UpdateObservationTimes(Event);
           return Event;
         } else {
           m_IsFirstEvent = false;
@@ -237,10 +270,11 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
 
 
     // Round 3:
-    if ((Line[0] == 'N' && Line[1] == 'F') ||
-        (Line[0] == 'S' && Line[1] == 'E') ||
-        (Line[0] == 'E' && Line[1] == 'N')) {
+    if ((Line[0] == 'S' && Line[1] == 'E')) {
       // Everything already handled!
+    } else if ((Line[0] == 'N' && Line[1] == 'F') ||
+               (Line[0] == 'E' && Line[1] == 'N')) {
+      ReadFooter(true);
     } else if (Line[0] == 'I' && Line[1] == 'N') {
       if (m_IncludeFileUsed == true) {
         MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
@@ -249,6 +283,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
           m_IncludeFile->Close();
           m_IncludeFileUsed = false;
         } else {
+          UpdateObservationTimes(RE);
           return RE;
         }
       }
@@ -257,19 +292,21 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
       // We parse the IA information (if present) and transfer the position and direction of the first hit 
       // as OI information to the event
       
-      /*
-      if (Line[0] == 'I' && Line[1] == 'A') {
-        if (Line[3] == 'I' && Line[4] == 'N' && Line[5] == 'I' && Line[6] == 'T') {
-          double x, y, z, dx, dy, dz, px, py, pz, e;
-          if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*lf;%lf;%lf;%lf;%*d;%*lf;%*lf;%*lf;%*lf;%*lf;%*lf;%*lf;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
-                     &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
-            ostringstream out;
-            out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
-            Line = out.str().c_str();
+      
+      if (m_SaveOI == true) {
+        if (Line[0] == 'I' && Line[1] == 'A') {
+          if (Line[3] == 'I' && Line[4] == 'N' && Line[5] == 'I' && Line[6] == 'T') {
+            double x, y, z, dx, dy, dz, px, py, pz, e;
+            if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+              &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+              ostringstream out;
+              out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+              Line = out.str().c_str();
+            }
           }
         }
       }
-      */
+      
 
       // All other keywords need to be handled by the current event itself
       Event->ParseLine(Line, m_Version);
@@ -283,7 +320,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
   delete Event;
   ShowProgress(false);
 
-  return 0;
+  return nullptr;
 }
 
 

@@ -24,7 +24,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MERConstruction.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MComptonEvent.h"
 #include "MGeometryRevan.h"
 
@@ -51,7 +51,7 @@ class MERCSR : public MERConstruction
                      bool CreateOnlyPermutations = false);
 
   /// Entry point to the analysis the given event list
-  virtual bool Analyze(MRawEventList* List);
+  virtual bool Analyze(MRawEventIncarnations* List);
 
   /// Return some comments about the basic settings
   virtual MString ToString(bool CoreOnly = false) const;
@@ -77,7 +77,7 @@ class MERCSR : public MERConstruction
   void LeftShift(vector<MRESE*>& RESEs, int Level);
 
   /// Return a list of all permutations of the given raw event
-  MRawEventList* CreateOnlyPermutations(MRERawEvent* RE);
+  MRawEventIncarnations* CreateOnlyPermutations(MRERawEvent* RE);
 
   /// Return the (possibly) escaped energy for this event - defaults to zero
   virtual double GetEscapedEnergy(vector<MRESE*>& RESEs);
@@ -85,6 +85,11 @@ class MERCSR : public MERConstruction
   /// Compute the position error for an angle defined by those three vectors
   double ComputePositionError(MRESE* First, MRESE* Second, MRESE* Third);
 
+  double CalculatePhotoDistance(const MVector& Start, const MVector& Stop, double Etot);
+  double CalculateComptonDistance(const MVector& Start, const MVector& Stop, double Etot);
+  double CalculateTotalDistance(const MVector& Start, const MVector& Stop, double Etot);
+  
+  
   // private methods:
  private:
 
@@ -105,7 +110,7 @@ class MERCSR : public MERConstruction
   map<double, vector<MRESE*>, less_equal<double> >::iterator m_QualityFactorsIterator;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSR, 0) // no description
 #endif

@@ -86,7 +86,7 @@ class MBinnerBayesianBlocks : public MBinner
   bool m_UseBinning;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBinnerBayesianBlocks, 0) // no description
 #endif

@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  proton
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 18.04
+Kernel:                                    4.15.0-58-generic
+ 
+CPUModel:                                  Intel(R) Core(TM) i7-3770 CPU @ 3.40GHz
+CPUName:                                   i7-3770
+CPUSockets:                                1
+CPUCoresPerSocket:                         4
+CPUThreadsPerCore:                         2
+Cores:                                     4
+Threads:                                   8
+ 
+ROOTVersion:                               6.18/00
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            2.99.11
+MEGAlibGitHash:                            6873835b66b792c3834574a6aa234800f306b7e5 2019-08-19
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      38.992
+EventsPerSecondCosimaSingle:               2564.628
+DurationCosimaMultiple:                    71.798
+EventsPerSecondCosimaMultiple:             11142.371
+ 
+# Revan
+DurationRevanSingle:                       7.761
+EventsPerSecondRevanSingle:                12884.937
+DurationRevanMultiple:                     11.521
+EventsPerSecondRevanMultiple:              69438.416
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             19.595
+EventsPerSecondResponseCreatorSingle:      5103.342
+DurationResponseCreatorMultiple:           52.726
+EventsPerSecondResponseCreatorMultiple:    15172.780
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               78.403
+EventsPerSecondMimrecImagingSingle:        1275.461
+DurationMimrecImagingMultiple:             18.808
+EventsPerSecondMimrecImagingMultiple:      5316.886
+ 

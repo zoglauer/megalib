@@ -38,7 +38,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIPolarization)
 #endif
 
@@ -87,6 +87,7 @@ void MGUIPolarization::Create()
   AddSubTitle("Analyze the polarization of an azimuthal scatter distribution"); 
 
   TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20*Scaler, 20*Scaler, 5*Scaler, 0*Scaler);
+  TGLayoutHints* CommentLayout = new TGLayoutHints(kLHintsLeft, 20*Scaler, 20*Scaler, 2*Scaler, 0*Scaler);
 
   m_PolarizationFile = 
     new MGUIEFileSelector(this,
@@ -102,11 +103,11 @@ void MGUIPolarization::Create()
   m_BackgroundFile->SetFileType("TRA", "*.tra");
   AddFrame(m_BackgroundFile, SingleLayout);
 
-	TGVerticalFrame* ButtonFrame = new TGVerticalFrame(this, 200*Scaler, 150*Scaler);
-	TGLayoutHints* ButtonFrameLayout = 
-		new TGLayoutHints(kLHintsTop | kLHintsCenterX, 
-											5*Scaler, 5*Scaler, 30*Scaler, 8*Scaler);
-	AddFrame(ButtonFrame, ButtonFrameLayout);
+  TGVerticalFrame* ButtonFrame = new TGVerticalFrame(this, 200*Scaler, 150*Scaler);
+  TGLayoutHints* ButtonFrameLayout = 
+    new TGLayoutHints(kLHintsTop | kLHintsCenterX, 
+                      5*Scaler, 5*Scaler, 30*Scaler, 8*Scaler);
+  AddFrame(ButtonFrame, ButtonFrameLayout);
   
 
   m_Theta = new MGUIEEntry(ButtonFrame, "Theta [deg]:      ", false, m_Data->GetTPTheta());
@@ -121,9 +122,18 @@ void MGUIPolarization::Create()
   m_Bins = new MGUIEEntry(ButtonFrame, "Bins:", false, m_Data->GetHistBinsPolarization());
   ButtonFrame->AddFrame(m_Bins, SingleLayout);
 
-  TGLabel* Comment = new TGLabel(this, "Remark: The zero angle of the azimuthal scatter angle distribution will be always in the direction of the given phi angle.");
-  Comment->SetWrapLength(400*Scaler);
-  AddFrame(Comment, SingleLayout);
+  TGLabel* Comment1 = new TGLabel(this, "Remarks:");
+  AddFrame(Comment1, CommentLayout);
+  TGLabel* Comment2 = new TGLabel(this, "(1) The zero angle of the azimuthal scatter angle distribution will be always in the direction of the given phi angle.");
+  AddFrame(Comment2, CommentLayout);
+  TGLabel* Comment3 = new TGLabel(this, "(2) There is no time selection on the unpolarized data, since it is assumed it is aquired at different times or via simulations.");
+  AddFrame(Comment3, CommentLayout);
+  TGLabel* Comment4 = new TGLabel(this, "(3) Uncertainty calculations do not consider low-count rate regimes");
+  AddFrame(Comment4, CommentLayout);
+
+
+  //Comment->SetWrapLength(400*Scaler);
+
   
   AddButtons();
 
@@ -146,7 +156,7 @@ void MGUIPolarization::Create()
 
 bool MGUIPolarization::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   // First test the data
   if (m_Theta->IsDouble(0, 180) == false || 
@@ -175,7 +185,7 @@ bool MGUIPolarization::OnApply()
 
   m_OkPressed = true;
 
-	return true;
+  return true;
 }
 
 

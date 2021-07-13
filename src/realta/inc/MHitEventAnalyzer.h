@@ -24,7 +24,7 @@
 
 // Forward declarations:
 class MHitEvent;
-class MRawEventList;
+class MRawEventIncarnations;
 class MPhysicalEvent;
 class MDGeometryQuest;
 class MGeometryBasic;
@@ -59,12 +59,12 @@ class MHitEventAnalyzer : public TObject
 
   // private members:
  private:
-  MRawEventList *m_RawEvents;  // array of all "possible" events
+  MRawEventIncarnations *m_RawEvents;  // array of all "possible" events
   MDGeometryQuest *m_Geometry;
   MGeometryBasic *m_Geo;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MHitEventAnalyzer, 0) // no description
 #endif

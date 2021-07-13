@@ -67,7 +67,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MRealTimeAnalyzer)
 #endif
 
@@ -860,7 +860,7 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
   RawEventAnalyzer->SetGeometry(m_CoincidenceGeometry);
   RawEventAnalyzer->SetSettings(m_Settings);
   
-  RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  RawEventAnalyzer->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   RawEventAnalyzer->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   RawEventAnalyzer->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
   RawEventAnalyzer->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
@@ -924,10 +924,10 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
         if (ReturnCode == MRawEventAnalyzer::c_AnalysisSucess) {
        
           MRERawEvent* BestRawEvent = 0;
-          if (RawEventAnalyzer->GetOptimumEvent() != 0) {
-            BestRawEvent = RawEventAnalyzer->GetOptimumEvent();
-          } else if (RawEventAnalyzer->GetBestTryEvent() != 0) {
-            BestRawEvent = RawEventAnalyzer->GetBestTryEvent();
+          if (RawEventAnalyzer->GetSingleOptimumEvent() != nullptr) {
+            BestRawEvent = RawEventAnalyzer->GetSingleOptimumEvent();
+          } else if (RawEventAnalyzer->GetSingleBestTryEvent() != 0) {
+            BestRawEvent = RawEventAnalyzer->GetSingleBestTryEvent();
           }
           if (BestRawEvent != 0) {
             // Find the event to which it belongs:
@@ -1054,7 +1054,7 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
   RawEventAnalyzer->SetGeometry(m_ReconstructionGeometry);
   RawEventAnalyzer->SetSettings(m_Settings);
   
-  RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  RawEventAnalyzer->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   
   if (RawEventAnalyzer->PreAnalysis() == false) {
     cout<<"Preanalysis failed!"<<endl;  
@@ -1113,10 +1113,10 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
       if (ReturnCode == MRawEventAnalyzer::c_AnalysisSucess) {
        
         MRERawEvent* BestRawEvent = 0;
-        if (RawEventAnalyzer->GetOptimumEvent() != 0) {
-          BestRawEvent = RawEventAnalyzer->GetOptimumEvent();
-        } else if (RawEventAnalyzer->GetBestTryEvent() != 0) {
-          BestRawEvent = RawEventAnalyzer->GetBestTryEvent();
+        if (RawEventAnalyzer->GetSingleOptimumEvent() != 0) {
+          BestRawEvent = RawEventAnalyzer->GetSingleOptimumEvent();
+        } else if (RawEventAnalyzer->GetSingleBestTryEvent() != 0) {
+          BestRawEvent = RawEventAnalyzer->GetSingleBestTryEvent();
         }
         if (BestRawEvent != 0) {
           MPhysicalEvent* P = BestRawEvent->GetPhysicalEvent();
@@ -1232,7 +1232,7 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
   Imager->SetApproximatedMaths(m_Settings->GetApproximatedMaths());
     
   // Set the dimensions of the image
-  if (m_Settings->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     Imager->SetViewport(m_Settings->GetPhiMin()*c_Rad, 
                           m_Settings->GetPhiMax()*c_Rad, 
                           m_Settings->GetBinsPhi(),
@@ -1244,7 +1244,7 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
                           1, 
                           m_Settings->GetImageRotationXAxis(), 
                           m_Settings->GetImageRotationZAxis());
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     Imager->SetViewport(m_Settings->GetGalLongitudeMin()*c_Rad, 
                           m_Settings->GetGalLongitudeMax()*c_Rad, 
                           m_Settings->GetBinsGalLongitude(),
@@ -1254,8 +1254,8 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
                           c_FarAway/10, 
                           c_FarAway, 
                           1);
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian3D){
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D){
     Imager->SetViewport(m_Settings->GetXMin(), 
                           m_Settings->GetXMax(), 
                           m_Settings->GetBinsX(),
@@ -1278,22 +1278,29 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
 
     
   // Set the response type:
-  if (m_Settings->GetResponseType() == 0) {
+  if (m_Settings->GetResponseType() == MResponseType::Gauss1D) {
     Imager->SetResponseGaussian(m_Settings->GetFitParameterComptonTransSphere(), 
                                 m_Settings->GetFitParameterComptonLongSphere(),
                                 m_Settings->GetFitParameterPair(),
+                                m_Settings->GetFitParameterPET(),
                                 m_Settings->GetGauss1DCutOff(),
                                 m_Settings->GetUseAbsorptions());
-  } else if (m_Settings->GetResponseType() == 1) {
-    Imager->SetResponseGaussianByUncertainties();
-  } else if (m_Settings->GetResponseType() == 2) {
+  } else if (m_Settings->GetResponseType() == MResponseType::GaussByUncertainties) {
+    Imager->SetResponseGaussianByUncertainties(m_Settings->GetGaussianByUncertaintiesIncrease());
+  } else if (m_Settings->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
     Imager->SetResponseEnergyLeakage(m_Settings->GetFitParameterComptonTransSphere(), 
-                                       m_Settings->GetFitParameterComptonLongSphere());
-     
-  } else if (m_Settings->GetResponseType() == 3) {
+                                     m_Settings->GetFitParameterComptonLongSphere());
+  } else if (m_Settings->GetResponseType() == MResponseType::ConeShapes) {
+    if (Imager->SetResponseConeShapes(m_Settings->GetImagingResponseConeShapesFileName()) == false) {
+      mgui<<"Cannot set cone-shapes response! Aborting imaging!"<<error;
+      delete Imager;
+      return 0;
+    }     
+    
+  } else if (m_Settings->GetResponseType() == MResponseType::PRM) {
     if (Imager->SetResponsePRM(m_Settings->GetImagingResponseComptonTransversalFileName(),
-                                 m_Settings->GetImagingResponseComptonLongitudinalFileName(),
-                                 m_Settings->GetImagingResponsePairRadialFileName()) == false) {
+                               m_Settings->GetImagingResponseComptonLongitudinalFileName(),
+                               m_Settings->GetImagingResponsePairRadialFileName()) == false) {
       mgui<<"Cannot set PRM response! Aborting imaging!"<<error;
       delete Imager;
       return 0;

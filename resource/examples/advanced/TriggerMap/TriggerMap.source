@@ -1,0 +1,36 @@
+# An example run for Cosima
+# It refers to the example on how to determine energy, angular resolution, effectiove area and efficiency in th Mimrec manual;
+
+
+# Global parameters:
+Version               1
+Geometry              TriggerMap.geo.setup
+
+# Physics list
+PhysicsListEM                        LivermorePol
+
+# Output formats
+StoreSimulationInfo                  init-only
+
+# Run parameters:
+Run TriggerMapLow
+TriggerMapLow.FileName                TriggerMapLowSource
+TriggerMapLow.Events                  1000000
+
+TriggerMapLow.Source TriggerMapLowSource
+TriggerMapLowSource.ParticleType      1
+TriggerMapLowSource.Beam              FarFieldPointSource 0 0  
+TriggerMapLowSource.Spectrum          Mono  2000.0
+TriggerMapLowSource.Flux              1.0
+
+
+Run TriggerMapHigh
+TriggerMapHigh.FileName                TriggerMapHighSource
+TriggerMapHigh.Events                  10000
+
+TriggerMapHigh.Source TriggerMapHighSource
+TriggerMapHighSource.ParticleType      1
+TriggerMapHighSource.Beam              FarFieldPointSource 0 0  
+TriggerMapHighSource.Spectrum          Mono  500000.0
+TriggerMapHighSource.Flux              1.0
+

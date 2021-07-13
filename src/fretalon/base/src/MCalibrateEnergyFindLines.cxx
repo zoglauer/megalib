@@ -30,11 +30,14 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MExceptions.h"
+#include "MTimer.h"
+#include "MMath.h"
 #include "MBinnerFixedNumberOfBins.h"
 #include "MBinnerFixedCountsPerBin.h"
 #include "MBinnerBayesianBlocks.h"
 #include "MCalibrationSpectralPoint.h"
 #include "MReadOutDataADCValue.h"
+#include "MReadOutDataTemperature.h"
 #include "MCalibrationFit.h"
 #include "MCalibrationFitGaussian.h"
 #include "MCalibrationFitGaussLandau.h"
@@ -44,7 +47,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MCalibrateEnergyFindLines)
 #endif
 
@@ -60,6 +63,9 @@ MCalibrateEnergyFindLines::MCalibrateEnergyFindLines() : MCalibrateEnergy()
   m_PeakParametrizationMethodFittedPeakBackgroundModel = MCalibrationFit::c_BackgroundModelLinear; 
   m_PeakParametrizationMethodFittedPeakEnergyLossModel = MCalibrationFit::c_EnergyLossModelNone; 
   m_PeakParametrizationMethodFittedPeakPeakShapeModel = MCalibrationFit::c_PeakShapeModelGaussian;
+  
+  m_TemperatureMin = -numeric_limits<double>::max();
+  m_TemperatureMax = +numeric_limits<double>::max();
 }
 
 
@@ -86,6 +92,11 @@ bool MCalibrateEnergyFindLines::Calibrate()
     FitPeaks(r);
   }
   
+  CheckPeaks();
+  
+  // At this point we erase all bad spectral points
+  m_Results.RemoveAllBadSpectralPoints();
+  
   return true;
 }
 
@@ -110,12 +121,20 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
   double RangeBeyondPeak = 2.5;
   //double Epsilon = 0.01;
 
+  MTimer T;
   // Step 1: Create a histogram with the correct binning:
   MBinnerBayesianBlocks Binner;
   Binner.SetMinimumBinWidth(MinimumBinWidthForBayesianBinner);
   Binner.SetMinMax(m_RangeMinimum, m_RangeMaximum);
   Binner.SetPrior(Prior);
   for (unsigned int d = 0; d < m_ROGs[ROGID]->GetNumberOfReadOutDatas(); ++d) {
+    MReadOutDataTemperature* T = dynamic_cast<MReadOutDataTemperature*>(m_ROGs[ROGID]->GetReadOutData(d).Get(MReadOutDataTemperature::m_TypeID));
+    if (T != nullptr) {
+      if (T->GetTemperature() < m_TemperatureMin || T->GetTemperature() > m_TemperatureMax) {
+        continue; 
+      }
+    }
+    
     MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID]->GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
     if (ADC != nullptr) {
       Binner.Add(ADC->GetADCValue());
@@ -123,6 +142,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
   }
   TH1D* Data = Binner.GetNormalizedHistogram(MString("Data ") + ROGID, "ADC Values", "counts / ADC value");
   Binner.Clear();
+  //cout<<"Binner: "<<T.GetElapsed()<<endl;
   
   if (Data->GetNbinsX() < 5) return true;
         
@@ -143,6 +163,8 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
                                       (Data->GetBinCenter(b)-Data->GetBinCenter(b-1))/Average);
   }
 
+  
+  
   // Step 4: Find zero passages + --> -
   bool Start = true;
   bool FirstPeak = false;
@@ -163,11 +185,13 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
         FirstPeak = false; 
       }
 
+      /*
       // Ignore the last bin: 
       if (b+1 == FirstDerivation->GetNbinsX()) {
         if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - peak is near last bin ignoring ..."<<endl;
         continue;
       }
+      */
         
       // Create a peak
       MCalibrationSpectralPoint P;
@@ -452,8 +476,9 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       m_Results.AddSpectralPoint(ROGID, P);
     }
   }
-
-       
+  //cout<<"Final: "<<T.GetElapsed()<<endl;
+  
+   
   if (m_DiagnosticsMode == true) {
     TLockGuard G(gROOTMutex);
     TCanvas* FirstDerivationCanvas = new TCanvas();
@@ -562,14 +587,14 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Good chi square: "<<Fit.GetReducedChisquare()<<" (compare to an average deviation of "<<100*Fit.GetAverageDeviation()<<"%)"<<endl;
       }
       
-      // No peaks on increasing edges
+      // No weak peaks on increasing edges
       if (Fit.Evaluate(P.GetLowEdge()) < 0.8*Fit.Evaluate(P.GetHighEdge()) &&
-          Fit.Evaluate(P.GetHighEdge()) > 3.0) {
-        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The peak sits on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is less than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<" and right has at least an 3 count average)"<<endl;  
+        Fit.Evaluate(P.GetHighEdge()) > 3.0 && Fit.Evaluate(P.GetPeak())/Fit.Evaluate(P.GetHighEdge()) < 10) {
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The peak sits on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is less than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<" and right has at least an 3 count average and the peak-to-right-edge ratio is smaller than 10)"<<endl;  
         P.IsGood(false);
         continue;
       } else {
-        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Passed: The peak sits NOT on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is more than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<" or right has less than a 3 count average)"<<endl;          
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Passed: The peak sits NOT on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is more than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<" or right has less than a 3 count average and the peak-to-right-edge ratio is not smaller than 10)"<<endl;          
       }
       
   
@@ -587,12 +612,24 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
     
   }
   
-  // Another sanity check:
-  // Calculate the median FWHM
-  // If one peak is at least 3x the average, then exclude it
-  if (g_Verbosity >= c_Info) cout<<"Sanity check: median FWHM"<<endl;
-  double MedianExclusionFactor = 2.5;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Do a final check of all peaks
+bool MCalibrateEnergyFindLines::CheckPeaks()
+{
+  // Find stuff which is off
   vector<double> FWHMes;
+  
+  // Eliminate too large peaks -- they are most likely noise of Compton edges
+  double FWHMCutOffScaler = 2.5;
+  
+  FWHMes.clear();
   for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
     for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
       if (m_Results.GetSpectralPoint(rg, sp).IsGood() == false) continue;
@@ -601,32 +638,67 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
     }
   }
   
-  if (FWHMes.size() > 1) {
-    size_t midIndex = FWHMes.size()/2;
-    if (FWHMes.size() % 2 == 0) midIndex -= 1; // If we have an even number /2 would give us the one above the median, so choose the one below the median, since we prefer smaller peaks...
-    
-    nth_element(FWHMes.begin(), FWHMes.begin() + midIndex, FWHMes.end());
-    double Median = FWHMes[midIndex]; 
-    if (g_Verbosity >= c_Info) cout<<"Median FWHM: "<<Median<<endl;
-    
+  // Find the average value of the lower 50% + 1 entries
+  if (FWHMes.size() >= 3) {
+    sort(FWHMes.begin(), FWHMes.end()); 
+  
+    double LowerAverageFWHM = 0.0;
+    for (unsigned int i = 0; i < FWHMes.size()/2 + 1; ++i) {
+      LowerAverageFWHM += FWHMes[i]; 
+    }
+    LowerAverageFWHM /= (FWHMes.size()/2 + 1);
+  
     for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
       for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
         if (m_Results.GetSpectralPoint(rg, sp).IsGood() == false) continue;
         MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(rg, sp);
-        if (P.GetFWHM() > MedianExclusionFactor*Median) {
+        if (P.GetFWHM() > FWHMCutOffScaler*LowerAverageFWHM) {
           P.IsGood(false);
-          if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: Excluding peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;
-        } else {
-          if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Passed: FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
+          if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: Excluding peak at "<<P.GetPeak()<<" with FWHM of "<<P.GetFWHM()<<" since its width is more than "<<FWHMCutOffScaler<<" times the with of the smaller 50% + 1 FWHMes ("<<LowerAverageFWHM<<")"<<endl;
         }
       }
     }
+  }
+    
+  // Another sanity check:
+  // Calculate the median FWHM
+  // If one peak is at least 3x the average, then exclude it
+  
+  
+  // Thomson Tau sanity check
+  if (g_Verbosity >= c_Info) cout<<"Sanity check: median FWHM & modified Thomson Tau outlier test"<<endl;
+  FWHMes.clear();
+  for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
+    for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
+      if (m_Results.GetSpectralPoint(rg, sp).IsGood() == false) continue;
+      MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(rg, sp);
+      FWHMes.push_back(P.GetFWHM());
+    }
+  }
+  
+  if (FWHMes.size() >= 3) {
+    // Calculate outliers via the modified thomson tau method
+    MMath M;
+    vector<bool> IsOutlier = M.ModifiedThomsonTauTest(FWHMes, 0.002);
+    
+    unsigned int Counter = 0;
+    for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
+      for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
+        if (m_Results.GetSpectralPoint(rg, sp).IsGood() == false) continue;
+        MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(rg, sp);
+        if (IsOutlier[Counter] == true) {
+          P.IsGood(false);
+          if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: Excluding peak at "<<P.GetPeak()<<" with FWHM of "<<P.GetFWHM()<<" (TS: "<<FWHMes[Counter]<<") as outlier using modified Thomson Tau test"<<endl;
+        } else {
+          if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Passed: FWHM test: Keeping peak at "<<P.GetPeak()<<" with FWHM of "<<P.GetFWHM()<<" TS: "<<FWHMes[Counter]<<")"<<endl;          
+        }
+        ++Counter;
+      }
+    }
+    
   } else {
     if (g_Verbosity >= c_Info) cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
   }
-  
-  // At this point we erase all bad spectral points
-  m_Results.RemoveAllBadSpectralPoints();
   
   
   return true;

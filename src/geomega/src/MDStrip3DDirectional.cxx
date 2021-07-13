@@ -39,7 +39,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDStrip3DDirectional)
 #endif
 
@@ -243,17 +243,6 @@ MString MDStrip3DDirectional::GetGeomega() const
   }  
   
   return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDStrip3DDirectional::GetMGeant() const
-{
-  mimp<<"This class is not yet ready for MGGPOD's MEGAlib extension (standard MGGPOD ok)!!!"<<endl;
-
-  return MDStrip3D::GetMGeant();  
 }
 
 

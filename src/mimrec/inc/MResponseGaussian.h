@@ -35,13 +35,15 @@ class MResponseGaussian : public MResponse
  public:
   MResponseGaussian(const double ComptonTransversal, 
                     const double ComptonLongitudinal, 
-                    const double PairDistance);
+                    const double PairDistance, 
+                    const double PETTransversal);
   virtual ~MResponseGaussian();
 
   //! Set the two Gaussian fit parameters 
   void SetGaussians(const double ComptonTransversal, 
                     const double ComptonLongitudinal, 
-                    const double PairDistance);
+                    const double PairDistance,
+                    const double PETTransversal);
 
   virtual double GetComptonResponse(const double t);
   virtual double GetComptonResponse(const double t, const double l);
@@ -50,11 +52,14 @@ class MResponseGaussian : public MResponse
 
   virtual double GetComptonTransversalMax();
   virtual double GetComptonTransversalMin();
-
+  
   //! Get pair response
   virtual double GetPairResponse(const double t);
   virtual double GetPairIntegral() const;
-
+  
+  //! Get PET response
+  virtual double GetPETResponse(const double t);
+  
   bool AnalyzeEvent(MPhysicalEvent* Event);
 
   // protected methods:
@@ -76,17 +81,20 @@ class MResponseGaussian : public MResponse
   double m_LongitudinalFit;         // longitudinal sigma of the cone-arc
   double m_TransversalFit;          // transversal sigma of the cone
   double m_PairFit;               
-
+  double m_PETFit;               
+  
   double m_GaussSquareSigmaLong;
   double m_GaussSquareSigmaTrans;
   double m_GaussSquareSigmaPair;
-
+  double m_GaussSquareSigmaPET;
+  
   double m_GaussFactorsLong;
   double m_GaussFactorsTrans;
   // m_GaussFactorsLong*m_GaussFactorsTrans for speeding up track calculations
   double m_GaussFactorsTransLong;
   double m_GaussFactorsPair;
-
+  double m_GaussFactorsPET;
+  
   double m_TransversalMax;
   double m_LongitudinalMax;
 
@@ -100,7 +108,7 @@ class MResponseGaussian : public MResponse
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseGaussian, 0) // no description
 #endif

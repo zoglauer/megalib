@@ -29,14 +29,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Calculate the Compton response (cone width) using the known position & energy uncertainties
 class MResponseGaussianByUncertainties : public MResponseGaussian
 {
   // public interface:
  public:
+  //! Default constructor
   MResponseGaussianByUncertainties();
+  //! Default destructor
   virtual ~MResponseGaussianByUncertainties();
 
-  bool AnalyzeEvent(MPhysicalEvent* Event);
+  //! Set a fixed increase (worsening) of the calculates cone width
+  void SetIncrease(double Increase) { m_Increase = Increase; }
+  
+  //! Set this events data
+  virtual bool AnalyzeEvent(MPhysicalEvent* Event);
 
   // protected methods:
  protected:
@@ -49,13 +56,14 @@ class MResponseGaussianByUncertainties : public MResponseGaussian
 
   // protected members:
  protected:
-
+  //! The fixed worsening of the calculated cone width
+  double m_Increase;
 
   // private members:
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseGaussianByUncertainties, 0) // no description
 #endif

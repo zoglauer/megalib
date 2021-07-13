@@ -43,12 +43,12 @@ using namespace std;
 #include "MStreams.h"
 #include "MDVolumeSequence.h"
 #include "MDDetector.h"
-#include "MProjection.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MEventSelector)
 #endif
 
@@ -65,17 +65,17 @@ MEventSelector::MEventSelector()
   m_FirstTotalEnergyMin = 0;
   m_FirstTotalEnergyMax = numeric_limits<double>::max();
   m_SecondTotalEnergyMin = 0;
-  m_SecondTotalEnergyMax = numeric_limits<double>::max();
+  m_SecondTotalEnergyMax = 0;
   m_ThirdTotalEnergyMin = 0;
-  m_ThirdTotalEnergyMax = numeric_limits<double>::max();
+  m_ThirdTotalEnergyMax = 0;
   m_FourthTotalEnergyMin = 0;
-  m_FourthTotalEnergyMax = numeric_limits<double>::max();
-  
-  m_TimeUseFile = false;
+  m_FourthTotalEnergyMax = 0;
+
+  m_TimeMode = 0;
   m_TimeMin.Set(0);
   m_TimeMax.Set(2000000000);
   m_TimeFile = "";
-  
+
   m_TimeWalkMin = -numeric_limits<double>::max();
   m_TimeWalkMax = numeric_limits<double>::max();
 
@@ -92,35 +92,45 @@ MEventSelector::MEventSelector()
   m_FirstLeverArmMin = 0; //cm
   m_FirstLeverArmMax = numeric_limits<double>::max();
 
-  m_SequenceLengthMin = 2; 
+  m_SequenceLengthMin = 2;
   m_SequenceLengthMax = numeric_limits<int>::max();
 
-  m_TrackLengthMin = 1; 
+  m_TrackLengthMin = 1;
   m_TrackLengthMax = numeric_limits<int>::max();
 
-  m_ClusteringQualityFactorMin = 0; 
+  m_ClusteringQualityFactorMin = 0;
   m_ClusteringQualityFactorMax = numeric_limits<double>::max();
 
-  m_ComptonQualityFactorMin = 0; 
+  m_ComptonQualityFactorMin = -numeric_limits<double>::max();
   m_ComptonQualityFactorMax = numeric_limits<double>::max();
 
-  m_TrackQualityFactorMin = 0; 
+  m_TrackQualityFactorMin = 0;
   m_TrackQualityFactorMax = numeric_limits<double>::max();
 
-  m_CoincidenceWindowMin = 0; 
+  m_CoincidenceWindowMin = 0;
   m_CoincidenceWindowMax = numeric_limits<double>::max();
 
   m_ThetaDeviationMax = 180;
 
-  m_EventIdMin = 0; 
-  m_EventIdMax = numeric_limits<int>::max();
+  m_EventIdMin = 0;
+  m_EventIdMax = numeric_limits<long>::max();
 
   m_UseSource = false;
   m_SourcePosition = MVector(0, 0, c_FarAway);
+  m_SourceCoordinateSystem = MCoordinateSystem::c_Spheric;
   m_ARMMin = 0.0;
   m_ARMMax = 180.0;
   m_SPDMin = 0.0;
   m_SPDMax = 180.0;
+
+  m_PointingSelectionType = 0;
+  m_PointingSelectionPointSourceLatitude = 0;
+  m_PointingSelectionPointSourceLongitude = 0;
+  m_PointingSelectionPointSourceRadius = 20;
+  m_PointingSelectionBoxLatitude = 0;
+  m_PointingSelectionBoxLongitude = 0;
+  m_PointingSelectionBoxLatitudeExtent = 5;
+  m_PointingSelectionBoxLongitudeExtent = 30;
 
   m_UseBeam = false;
   m_BeamStart = MVector(0, 0, c_FarAway);
@@ -134,7 +144,9 @@ MEventSelector::MEventSelector()
   m_UseTrackedComptons = true;
   m_UseNotTrackedComptons = true;
   m_UseUnidentifiables = true;
-
+  m_UsePETs = true;
+  m_UseMulties = true;
+  
   m_UseDecays = true;
   m_UseFlaggedAsBad = false;
 
@@ -143,7 +155,7 @@ MEventSelector::MEventSelector()
   m_InitialEnergyDepositPairMin = 0; // keV
   m_InitialEnergyDepositPairMax = numeric_limits<double>::max();
 
-  m_PairQualityFactorMin = 0; 
+  m_PairQualityFactorMin = 0;
   m_PairQualityFactorMax = numeric_limits<double>::max();
 
   Reset();
@@ -156,7 +168,7 @@ MEventSelector::MEventSelector()
 MEventSelector::MEventSelector(const MEventSelector& EventSelector)
 {
   // Default copy constructor
- 
+
   (*this) = EventSelector;
 }
 
@@ -177,8 +189,9 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   // Default assignment constructor
 
   m_Geometry = EventSelector.m_Geometry;
-  m_ExcludedDetectors = EventSelector.m_ExcludedDetectors;
-
+  m_ExcludedFirstIADetectors = EventSelector.m_ExcludedFirstIADetectors;
+  m_ExcludedSecondIADetectors = EventSelector.m_ExcludedSecondIADetectors;
+  
   m_FirstTotalEnergyMin = EventSelector.m_FirstTotalEnergyMin;               
   m_FirstTotalEnergyMax = EventSelector.m_FirstTotalEnergyMax;               
   m_SecondTotalEnergyMin = EventSelector.m_SecondTotalEnergyMin;              
@@ -188,75 +201,89 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_FourthTotalEnergyMin = EventSelector.m_FourthTotalEnergyMin;              
   m_FourthTotalEnergyMax = EventSelector.m_FourthTotalEnergyMax;              
   
-  m_TimeUseFile = EventSelector.m_TimeUseFile;
-  m_TimeMin = EventSelector.m_TimeMin;                           
+  m_TimeMode = EventSelector.m_TimeMode;
+  m_TimeMin = EventSelector.m_TimeMin;
   m_TimeMax = EventSelector.m_TimeMax;
   m_TimeFile = EventSelector.m_TimeFile;
   m_TimeGTI = EventSelector.m_TimeGTI;
-  
-  m_TimeWalkMin = EventSelector.m_TimeWalkMin;                       
-  m_TimeWalkMax = EventSelector.m_TimeWalkMax;                       
-                                                                               
-  m_ElectronEnergyMin = EventSelector.m_ElectronEnergyMin;                 
-  m_ElectronEnergyMax = EventSelector.m_ElectronEnergyMax;                 
-  m_GammaEnergyMin = EventSelector.m_GammaEnergyMin;                    
-  m_GammaEnergyMax = EventSelector.m_GammaEnergyMax;                    
-  m_ComptonAngleMin = EventSelector.m_ComptonAngleMin;                   
-  m_ComptonAngleMax = EventSelector.m_ComptonAngleMax;                   
-  m_LeverArmMin = EventSelector.m_LeverArmMin;                       
-  m_LeverArmMax = EventSelector.m_LeverArmMax;                       
-  m_FirstLeverArmMin = EventSelector.m_FirstLeverArmMin;                  
-  m_FirstLeverArmMax = EventSelector.m_FirstLeverArmMax;                  
-  m_SequenceLengthMin = EventSelector.m_SequenceLengthMin;                 
-  m_SequenceLengthMax = EventSelector.m_SequenceLengthMax;                 
-  m_TrackLengthMin = EventSelector.m_TrackLengthMin;                    
-  m_TrackLengthMax = EventSelector.m_TrackLengthMax;                    
-  m_ClusteringQualityFactorMin = EventSelector.m_ClusteringQualityFactorMin;              
-  m_ClusteringQualityFactorMax = EventSelector.m_ClusteringQualityFactorMax;              
-  m_ComptonQualityFactorMin = EventSelector.m_ComptonQualityFactorMin;              
-  m_ComptonQualityFactorMax = EventSelector.m_ComptonQualityFactorMax;              
-  m_TrackQualityFactorMin = EventSelector.m_TrackQualityFactorMin;              
-  m_TrackQualityFactorMax = EventSelector.m_TrackQualityFactorMax;              
-  m_CoincidenceWindowMin = EventSelector.m_CoincidenceWindowMin;              
-  m_CoincidenceWindowMax = EventSelector.m_CoincidenceWindowMax;              
-  m_EventIdMin = EventSelector.m_EventIdMin;                        
-  m_EventIdMax = EventSelector.m_EventIdMax;                        
-  m_ThetaDeviationMax = EventSelector.m_ThetaDeviationMax;              
+
+  m_TimeWalkMin = EventSelector.m_TimeWalkMin;
+  m_TimeWalkMax = EventSelector.m_TimeWalkMax;
+
+  m_ElectronEnergyMin = EventSelector.m_ElectronEnergyMin;
+  m_ElectronEnergyMax = EventSelector.m_ElectronEnergyMax;
+  m_GammaEnergyMin = EventSelector.m_GammaEnergyMin;
+  m_GammaEnergyMax = EventSelector.m_GammaEnergyMax;
+  m_ComptonAngleMin = EventSelector.m_ComptonAngleMin;
+  m_ComptonAngleMax = EventSelector.m_ComptonAngleMax;
+  m_LeverArmMin = EventSelector.m_LeverArmMin;
+  m_LeverArmMax = EventSelector.m_LeverArmMax;
+  m_FirstLeverArmMin = EventSelector.m_FirstLeverArmMin;
+  m_FirstLeverArmMax = EventSelector.m_FirstLeverArmMax;
+  m_SequenceLengthMin = EventSelector.m_SequenceLengthMin;
+  m_SequenceLengthMax = EventSelector.m_SequenceLengthMax;
+  m_TrackLengthMin = EventSelector.m_TrackLengthMin;
+  m_TrackLengthMax = EventSelector.m_TrackLengthMax;
+  m_ClusteringQualityFactorMin = EventSelector.m_ClusteringQualityFactorMin;
+  m_ClusteringQualityFactorMax = EventSelector.m_ClusteringQualityFactorMax;
+  m_ComptonQualityFactorMin = EventSelector.m_ComptonQualityFactorMin;
+  m_ComptonQualityFactorMax = EventSelector.m_ComptonQualityFactorMax;
+  m_TrackQualityFactorMin = EventSelector.m_TrackQualityFactorMin;
+  m_TrackQualityFactorMax = EventSelector.m_TrackQualityFactorMax;
+  m_CoincidenceWindowMin = EventSelector.m_CoincidenceWindowMin;
+  m_CoincidenceWindowMax = EventSelector.m_CoincidenceWindowMax;
+  m_EventIdMin = EventSelector.m_EventIdMin;
+  m_EventIdMax = EventSelector.m_EventIdMax;
+  m_ThetaDeviationMax = EventSelector.m_ThetaDeviationMax;
   m_EarthHorizon = EventSelector.m_EarthHorizon;
-                                                                               
-  m_InitialEnergyDepositPairMin = EventSelector.m_InitialEnergyDepositPairMin;              
-  m_InitialEnergyDepositPairMax = EventSelector.m_InitialEnergyDepositPairMax;              
-  m_OpeningAnglePairMin = EventSelector.m_OpeningAnglePairMin;               
-  m_OpeningAnglePairMax = EventSelector.m_OpeningAnglePairMax;               
-  m_PairQualityFactorMin = EventSelector.m_PairQualityFactorMin;              
-  m_PairQualityFactorMax = EventSelector.m_PairQualityFactorMax;              
-                 
+
+  m_InitialEnergyDepositPairMin = EventSelector.m_InitialEnergyDepositPairMin;
+  m_InitialEnergyDepositPairMax = EventSelector.m_InitialEnergyDepositPairMax;
+  m_OpeningAnglePairMin = EventSelector.m_OpeningAnglePairMin;
+  m_OpeningAnglePairMax = EventSelector.m_OpeningAnglePairMax;
+  m_PairQualityFactorMin = EventSelector.m_PairQualityFactorMin;
+  m_PairQualityFactorMax = EventSelector.m_PairQualityFactorMax;
+
   m_UseSource = EventSelector.m_UseSource;
   m_SourcePosition = EventSelector.m_SourcePosition;
+  m_SourceCoordinateSystem = EventSelector.m_SourceCoordinateSystem;
   m_ARMMin = EventSelector.m_ARMMin;
   m_ARMMax = EventSelector.m_ARMMax;
   m_SPDMin = EventSelector.m_SPDMin;
   m_SPDMax = EventSelector.m_SPDMax;
 
-  m_UseBeam  = EventSelector.m_UseBeam;
+  m_UseBeam = EventSelector.m_UseBeam;
   m_BeamStart = EventSelector.m_BeamStart;
   m_BeamFocalSpot = EventSelector.m_BeamFocalSpot;
   m_BeamRadius = EventSelector.m_BeamRadius;
   m_BeamDepth = EventSelector.m_BeamDepth;
-                    
+
+  m_PointingSelectionType = EventSelector.m_PointingSelectionType;
+  m_PointingSelectionPointSourceLatitude = EventSelector.m_PointingSelectionPointSourceLatitude;
+  m_PointingSelectionPointSourceLongitude = EventSelector.m_PointingSelectionPointSourceLongitude;
+  m_PointingSelectionPointSourceRadius = EventSelector.m_PointingSelectionPointSourceRadius;
+  m_PointingSelectionBoxLatitude = EventSelector.m_PointingSelectionBoxLatitude;
+  m_PointingSelectionBoxLongitude = EventSelector.m_PointingSelectionBoxLongitude;
+  m_PointingSelectionBoxLatitudeExtent = EventSelector.m_PointingSelectionBoxLatitudeExtent;
+  m_PointingSelectionBoxLongitudeExtent = EventSelector.m_PointingSelectionBoxLongitudeExtent;
+  
   m_UsePhotos = EventSelector.m_UsePhotos;                         
   m_UsePairs = EventSelector.m_UsePairs;                          
   m_UseComptons = EventSelector.m_UseComptons;                       
   m_UseTrackedComptons = EventSelector.m_UseTrackedComptons;                
   m_UseNotTrackedComptons = EventSelector.m_UseNotTrackedComptons;              
   m_UseUnidentifiables = EventSelector.m_UseUnidentifiables;              
-                                                                               
+  m_UsePETs = EventSelector.m_UsePETs;              
+  m_UseMulties = EventSelector.m_UseMulties;              
+  
   m_UseDecays = EventSelector.m_UseDecays;                         
   m_UseFlaggedAsBad = EventSelector.m_UseFlaggedAsBad;                         
 
+  m_NAnalyzed = EventSelector.m_NAnalyzed;                   
   m_NAccepted = EventSelector.m_NAccepted;                   
   m_NRejectedIsGood = EventSelector.m_NRejectedIsGood;                   
-  m_NRejectedStartDetector = EventSelector.m_NRejectedStartDetector;     
+  m_NRejectedFirstIADetector = EventSelector.m_NRejectedFirstIADetector;     
+  m_NRejectedSecondIADetector = EventSelector.m_NRejectedSecondIADetector;     
   m_NRejectedTotalEnergy = EventSelector.m_NRejectedTotalEnergy;              
   m_NRejectedTime = EventSelector.m_NRejectedTime;                     
   m_NRejectedTimeWalk = EventSelector.m_NRejectedTimeWalk;                 
@@ -279,6 +306,8 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_NRejectedUseComptons = EventSelector.m_NRejectedUseComptons;               
   m_NRejectedUseMuons = EventSelector.m_NRejectedUseMuons;                 
   m_NRejectedUseUnidentifiables = EventSelector.m_NRejectedUseUnidentifiables;              
+  m_NRejectedUsePETs = EventSelector.m_NRejectedUsePETs;              
+  m_NRejectedUseMulties = EventSelector.m_NRejectedUseMulties;              
   m_NRejectedUseDecays = EventSelector.m_NRejectedUseDecays;                
   m_NRejectedUseFlaggedAsBad = EventSelector.m_NRejectedUseFlaggedAsBad;                
   m_NRejectedUseTrackedComptons = EventSelector.m_NRejectedUseTrackedComptons;              
@@ -286,9 +315,12 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_NRejectedOpeningAnglePair = EventSelector.m_NRejectedOpeningAnglePair;              
   m_NRejectedInitialEnergyDepositPair = EventSelector.m_NRejectedInitialEnergyDepositPair;              
   m_NRejectedPairQualityFactor = EventSelector.m_NRejectedPairQualityFactor;              
+
+  m_NRejectedPointing = EventSelector.m_NRejectedPointing;
   m_NRejectedARM = EventSelector.m_NRejectedARM;
   m_NRejectedSPD = EventSelector.m_NRejectedSPD;
-  m_NRejectedBeam = EventSelector.m_NRejectedBeam;              
+  m_NRejectedBeam = EventSelector.m_NRejectedBeam;
+  m_NRejectedQuickHack = EventSelector.m_NRejectedQuickHack;
 
   return (*this);
 }
@@ -299,9 +331,11 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
 
 void MEventSelector::Reset()
 {
+  m_NAnalyzed = 0;
   m_NAccepted = 0;
   m_NRejectedIsGood = 0;
-  m_NRejectedStartDetector = 0;
+  m_NRejectedFirstIADetector = 0;
+  m_NRejectedSecondIADetector = 0;
   m_NRejectedTotalEnergy = 0;
   m_NRejectedTime = 0;
   m_NRejectedTimeWalk = 0;
@@ -324,6 +358,8 @@ void MEventSelector::Reset()
   m_NRejectedUseComptons = 0;
   m_NRejectedUseMuons = 0;
   m_NRejectedUseUnidentifiables = 0;
+  m_NRejectedUsePETs = 0;
+  m_NRejectedUseMulties = 0;
   m_NRejectedUseTrackedComptons = 0;
   m_NRejectedUseNotTrackedComptons = 0;
   m_NRejectedUseDecays = 0;
@@ -331,12 +367,14 @@ void MEventSelector::Reset()
   m_NRejectedOpeningAnglePair = 0;
   m_NRejectedInitialEnergyDepositPair = 0;
   m_NRejectedPairQualityFactor = 0;
+  m_NRejectedPointing = 0;
   m_NRejectedARM = 0;
   m_NRejectedSPD = 0;
   m_NRejectedBeam = 0;
+  m_NRejectedQuickHack = 0;
 }
 
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -348,20 +386,24 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   SetSecondTotalEnergy(S->GetSecondEnergyRangeMin(), S->GetSecondEnergyRangeMax());
   SetThirdTotalEnergy(S->GetThirdEnergyRangeMin(), S->GetThirdEnergyRangeMax());
   SetFourthTotalEnergy(S->GetFourthEnergyRangeMin(), S->GetFourthEnergyRangeMax());
-  
-  SetTimeUseFile(S->GetTimeUseFile());
+
+  SetTimeMode(S->GetTimeMode());
   SetTime(S->GetTimeRangeMin(), S->GetTimeRangeMax());
   SetTimeFile(S->GetTimeFile());
-  
+
   SetTimeWalk(S->GetTimeWalkRangeMin(), S->GetTimeWalkRangeMax());
 
-  UseUnidentifiables(S->GetEventTypeUnidentifiable());
   UsePhotos(S->GetEventTypePhoto());
-  UseDecays(S->GetEventTypeDecay());
   UsePairs(S->GetEventTypePair());
   UseComptons(S->GetEventTypeCompton());
   UseTrackedComptons(S->GetEventTypeComptonTracked());
   UseNotTrackedComptons(S->GetEventTypeComptonNotTracked());
+  UsePETs(S->GetEventTypePET());
+  UseMulties(S->GetEventTypeMulti());
+  
+  
+  UseDecays(S->GetEventTypeDecay());
+  UseUnidentifiables(S->GetEventTypeUnidentifiable());
 
   UseFlaggedAsBad(S->GetFlaggedAsBad());
 
@@ -369,8 +411,9 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   SetElectronEnergy(S->GetEnergyRangeElectronMin(), S->GetEnergyRangeElectronMax());
   SetComptonAngle(S->GetComptonAngleRangeMin(), S->GetComptonAngleRangeMax());
 
-  SetExcludedDetectors(S->GetExcludedDetectors());
-
+  SetExcludedFirstIADetectors(S->GetExcludedFirstIADetectors());
+  SetExcludedSecondIADetectors(S->GetExcludedSecondIADetectors());
+  
   // Create an earth-horizon object...
   MEarthHorizon EH;
   EH.SetEarthHorizon(S->GetEHCEarthPosition(), S->GetEHCAngle()*c_Rad);
@@ -385,31 +428,37 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   }
   SetEarthHorizonCut(EH);
 
+  SetPointingSelectionType(S->GetPointingSelectionType());
+  SetPointingSelectionPointSource(S->GetPointingPointSourceLatitude(), S->GetPointingPointSourceLongitude(), S->GetPointingPointSourceRadius());
+  SetPointingSelectionBox(S->GetPointingBoxLatitude(), S->GetPointingBoxLongitude(), S->GetPointingBoxExtentLatitude(), S->GetPointingBoxExtentLongitude());
+
+
   // Set the source:
   if (S->GetSourceUsePointSource() == true) {
     MVector Pos;
-    if (S->GetSourceCoordinates() == MProjection::c_Galactic) {
+    if (S->GetSourceCoordinates() == MCoordinateSystem::c_Galactic) {
       Pos.SetMagThetaPhi(c_FarAway, (S->GetSourceLatitude()+90)*c_Rad, S->GetSourceLongitude()*c_Rad);
-    } else if (S->GetSourceCoordinates() == MProjection::c_Spheric) {
+    } else if (S->GetSourceCoordinates() == MCoordinateSystem::c_Spheric) {
       Pos.SetMagThetaPhi(c_FarAway, S->GetSourceTheta()*c_Rad, S->GetSourcePhi()*c_Rad);
     } else {
       Pos.SetXYZ(S->GetSourceX(), S->GetSourceY(), S->GetSourceZ());
     }
-    SetSourceWindow(true, Pos);
+    SetSourceWindow(true, Pos, S->GetSourceCoordinates());
     SetSourceARM(S->GetSourceARMMin(), S->GetSourceARMMax());
     SetSourceSPD(S->GetSourceSPDMin(), S->GetSourceSPDMax());
   } else {
     SetSourceWindow(false);
   }
 
-  SetBeam(S->GetBeamUse(), 
+  SetBeam(S->GetBeamUse(),
           MVector(S->GetBeamStartX(), S->GetBeamStartY(), S->GetBeamStartZ()),
           MVector(S->GetBeamFocalSpotX(), S->GetBeamFocalSpotY(), S->GetBeamFocalSpotZ()));
   SetBeamRadius(S->GetBeamRadius());
   SetBeamDepth(S->GetBeamDepth());
-  
+
   SetThetaDeviationMax(S->GetThetaDeviationMax());
   SetInitialEnergyDepositPair(S->GetInitialEnergyDepositPairMin(), S->GetInitialEnergyDepositPairMax());
+  SetPairQualityFactor(S->GetQualityFactorPairMin(), S->GetQualityFactorPairMax());
   SetOpeningAnglePair(S->GetOpeningAnglePairMin(), S->GetOpeningAnglePairMax());
   SetDistance(S->GetDistanceRangeMin(), S->GetDistanceRangeMax());
   SetFirstDistance(S->GetFirstDistanceRangeMin(), S->GetFirstDistanceRangeMax());
@@ -428,14 +477,16 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
 bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 {
   // Check if the event fullfills all event selection criteria
-  // This is the detailed version which is output capable and stores 
+  // This is the detailed version which is output capable and stores
   // which criteria trigger on the event
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
+  m_NAnalyzed++;
+
   if (g_Verbosity > 1) DumpOutput = true;
 
-	bool Return = true;
+  bool Return = true;
 
 //   if (Event->AllHitsGood() == false) {
 //     if (DumpOutput == true) {
@@ -488,16 +539,17 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 //       //cout<<"Outside beam: "<<Pos[0]<<"!"<<Pos[1]<<"!"<<Pos[2]<<endl;
 //       Return = false;
 //     }
-//   } 
+//   }
 
   /*
   MVector GalacticCenter;
   GalacticCenter.SetMagThetaPhi(1.0, 90*c_Rad, 0*c_Rad);
   if (GalacticCenter.Angle(Event->GetGalacticPointingZAxis()) > 50*c_Rad) {
-    Return = false; 
+    m_NRejectedQuickHack++;
+    Return = false;
   }
   */
-  
+
 //   bool UseSideD2 = true;
 //   bool UseBottomD2 = true;
 //   // Second hit has to be in bottom calorimeters:
@@ -511,7 +563,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 //         Pos = ((MComptonEvent *) Event)->C2();
 //         //cout<<"Deselecting side calor: "<<Pos[0]<<"!"<<Pos[1]<<"!"<<Pos[2]<<endl;
 //         Return = false;
-//       } 
+//       }
 //    } else {
 //       if (UseBottomD2 == false) {
 //         Pos = ((MComptonEvent *) Event)->C2();
@@ -534,21 +586,38 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
   // Only start in certain detectors - needs an active geometry
   if (m_Geometry != 0) {
-    if (m_ExcludedDetectors.size() > 0) {
-      if (Event->GetType() == MPhysicalEvent::c_Compton ||
-          Event->GetType() == MPhysicalEvent::c_Pair ||
-          Event->GetType() == MPhysicalEvent::c_Photo) {
+    if (m_ExcludedFirstIADetectors.size() > 0) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton || Event->GetType() == MPhysicalEvent::c_Pair || Event->GetType() == MPhysicalEvent::c_Photo) {
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Event->GetPosition(), true, false);
         if (V.GetDetector() == 0) {
           cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
         } else {
-          for (unsigned int e = 0; e < m_ExcludedDetectors.size(); ++e) {
-            if (V.GetDetector()->GetName() == m_ExcludedDetectors[e]) {
+          for (unsigned int e = 0; e < m_ExcludedFirstIADetectors.size(); ++e) {
+            if (V.GetDetector()->GetName() == m_ExcludedFirstIADetectors[e]) {
               if (DumpOutput == true) {
-                cout<<"ID "<<Event->GetId()<<": Wrong start detector: "
-                    <<m_ExcludedDetectors[e]<<endl;
+                cout<<"ID "<<Event->GetId()<<": Wrong start detector: "<<m_ExcludedFirstIADetectors[e]<<endl;
               }
-              m_NRejectedStartDetector++;
+              m_NRejectedFirstIADetector++;
+              Return = false;
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (m_ExcludedSecondIADetectors.size() > 0) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        MComptonEvent* C = (MComptonEvent *) Event;
+        MDVolumeSequence V = m_Geometry->GetVolumeSequence(C->C2(), true, false);
+        if (V.GetDetector() == 0) {
+          cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<C->C2()<<endl;
+        } else {
+          for (unsigned int e = 0; e < m_ExcludedSecondIADetectors.size(); ++e) {
+            if (V.GetDetector()->GetName() == m_ExcludedSecondIADetectors[e]) {
+              if (DumpOutput == true) {
+                cout<<"ID "<<Event->GetId()<<": Wrong start detector: "<<m_ExcludedSecondIADetectors[e]<<endl;
+              }
+              m_NRejectedSecondIADetector++;
               Return = false;
               break;
             }
@@ -562,13 +631,13 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
 
   // First test everything common to pairs and comptons:
-  if (!(Event->Ei() >= m_FirstTotalEnergyMin && 
+  if (!(Event->Ei() >= m_FirstTotalEnergyMin &&
         Event->Ei() <= m_FirstTotalEnergyMax) &&
-      !(Event->Ei() >= m_SecondTotalEnergyMin && 
+      !(Event->Ei() >= m_SecondTotalEnergyMin &&
         Event->Ei() <= m_SecondTotalEnergyMax) &&
-      !(Event->Ei() >= m_ThirdTotalEnergyMin && 
+      !(Event->Ei() >= m_ThirdTotalEnergyMin &&
         Event->Ei() <= m_ThirdTotalEnergyMax) &&
-      !(Event->Ei() >= m_FourthTotalEnergyMin && 
+      !(Event->Ei() >= m_FourthTotalEnergyMin &&
         Event->Ei() <= m_FourthTotalEnergyMax)) {
     if (DumpOutput == true) {
       cout<<"ID "<<Event->GetId()<<": Total energy out of range: "
@@ -580,8 +649,8 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     m_NRejectedTotalEnergy++;
     Return = false;
   }
-  
-  if (m_TimeUseFile == true) {
+
+  if (m_TimeMode == 2) {
     if (m_TimeGTI.IsGood(Event->GetTime()) == false) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Time not in GTI: "<<Event->GetTime().GetString()<<endl;
@@ -589,7 +658,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       m_NRejectedTime++;
       Return = false;
     }
-  } else{
+  } else if (m_TimeMode == 1) {
     if (Event->GetTime() < m_TimeMin || Event->GetTime() > m_TimeMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Time out of range: "<<m_TimeMin<<"<"<<Event->GetTime().GetString()<<"<"<<m_TimeMax<<endl;
@@ -598,7 +667,8 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       Return = false;
     }
   }
-  if (Event->GetTimeWalk() < m_TimeWalkMin || 
+
+  if (Event->GetTimeWalk() < m_TimeWalkMin ||
       Event->GetTimeWalk() > m_TimeWalkMax) {
     if (DumpOutput == true) {
       cout<<"ID "<<Event->GetId()<<": Time-walk out of range: "
@@ -607,55 +677,92 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     m_NRejectedTimeWalk++;
     Return = false;
   }
-  if (Event->GetId() < m_EventIdMin || 
+  if (Event->GetId() < m_EventIdMin ||
       Event->GetId() > m_EventIdMax) {
     if (DumpOutput == true) {
       cout<<"ID "<<Event->GetId()<<": Not within event ID selection: "
           <<m_EventIdMin<<"<"<<Event->GetId()<<"<"<<m_EventIdMax<<"!"<<endl;
-    }      
+    }
     m_NRejectedEventId++;
     Return = false;
   }
   if (Event->IsDecay() == true && m_UseDecays == false) {
     if (DumpOutput == true) {
       cout<<"ID "<<Event->GetId()<<": Decay!"<<endl;
-    }      
+    }
     m_NRejectedUseDecays++;
     Return = false;
   }
   if (Event->IsBad() == true && m_UseFlaggedAsBad == false) {
     if (DumpOutput == true) {
       cout<<"ID "<<Event->GetId()<<": Flagged as bad!"<<endl;
-    }      
+    }
     m_NRejectedUseFlaggedAsBad++;
     Return = false;
   }
   if (m_UseBeam == true) {
     if (Event->GetType() == MPhysicalEvent::c_Photo ||
-        Event->GetType() == MPhysicalEvent::c_Compton || 
+        Event->GetType() == MPhysicalEvent::c_Compton ||
         Event->GetType() == MPhysicalEvent::c_Pair) {
       MVector Position = Event->GetPosition();
       // The same equations appear in MResponseMultipleComptonLens
       double Radius = (Position - m_BeamFocalSpot).Cross(m_BeamStart - m_BeamFocalSpot).Mag()/(m_BeamStart - m_BeamFocalSpot).Mag();
       double Depth = (Position - m_BeamFocalSpot).Dot(m_BeamFocalSpot - m_BeamStart)/(m_BeamFocalSpot - m_BeamStart).Mag();
-      
+
       if (Radius > m_BeamRadius || Depth > m_BeamDepth) {
         if (DumpOutput == true) {
           cout<<"ID "<<Event->GetId()<<": Not within beam selection: "
               <<0<<"<"<<Radius<<"<"<<m_BeamRadius<<" or "<<0<<"<"<<Depth<<"<"<<m_BeamDepth<<endl;
-        }      
+        }
         m_NRejectedBeam++;
         Return = false;
       }
     }
   }
 
+  if (m_PointingSelectionType == 1) {
+    MVector Location;
+    Location.SetMagThetaPhi(1.0, (90 + m_PointingSelectionPointSourceLatitude)*c_Rad, m_PointingSelectionPointSourceLongitude*c_Rad);
+    if (Location.Angle(Event->GetGalacticPointingZAxis()) > m_PointingSelectionPointSourceRadius*c_Rad) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Not within pointing range: Radius "<<Location.Angle(Event->GetGalacticPointingZAxis())*c_Deg<<" > "<<m_PointingSelectionPointSourceRadius<<" deg from lat/long: "<<m_PointingSelectionPointSourceLatitude<<"/"<<m_PointingSelectionPointSourceLongitude<<endl;
+      }
+      m_NRejectedPointing++;
+      Return = false;
+    }
+  } else if (m_PointingSelectionType == 2) {
+    double LatMin = m_PointingSelectionBoxLatitude - m_PointingSelectionBoxLatitudeExtent;
+    if (LatMin < -90) LatMin = -90;
+    double LatMax = m_PointingSelectionBoxLatitude + m_PointingSelectionBoxLatitudeExtent;
+    if (LatMax > 90) LatMax = 90;
+
+    double LongMin = m_PointingSelectionBoxLongitude - m_PointingSelectionBoxLongitudeExtent;
+    double LongMax = m_PointingSelectionBoxLongitude + m_PointingSelectionBoxLongitudeExtent;
+
+    double Lat = Event->GetGalacticPointingZAxis().Theta()*c_Deg - 90;
+    double Long = Event->GetGalacticPointingZAxis().Phi()*c_Deg;
+
+    // Get it into the right range:
+    while (Long < LongMin) Long += 360;
+    while (Long > LongMax) Long -= 360;
+
+    if (Lat < LatMin || Lat > LatMax || Long < LongMin || Long > LongMax) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Not within pointing range: Lat: "<<LatMin<<"<="<<Lat<<"<="<<LatMax<<" && "<<LongMin<<"<="<<Long<<"<="<<LongMax<<endl;
+      }
+      m_NRejectedPointing++;
+      Return = false;
+    }
+  }
+
+
+
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
   // Compton events:
   if (Event->GetType() == MPhysicalEvent::c_Compton) {
     MComptonEvent *C = (MComptonEvent *) Event;
-    
+
     // Deselect bottom calorimeters in MPE prototype
     //MVector Pos = C->C2();
     //if (fabs(Pos.X()) < 9.5 && fabs(Pos.Y()) < 9.5) {
@@ -686,7 +793,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->HasTrack() == false && m_UseNotTrackedComptons == false) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Unwanted not tracked Compton"<<endl;
-      }      
+      }
       m_NRejectedUseNotTrackedComptons++;
       Return = false;
     }
@@ -706,49 +813,49 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       m_NRejectedElectronEnergy++;
       Return = false;
     }
-    if (C->Phi()*c_Deg < m_ComptonAngleMin || 
+    if (C->Phi()*c_Deg < m_ComptonAngleMin ||
         C->Phi()*c_Deg > m_ComptonAngleMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Compton angle out of range: "
             <<m_ComptonAngleMin<<"<"<<C->Phi()*c_Deg<<"<"
             <<m_ComptonAngleMax<<endl;
-      }      
+      }
       m_NRejectedComptonAngle++;
       Return = false;
     }
-    if (C->LeverArm() < m_LeverArmMin || 
+    if (C->LeverArm() < m_LeverArmMin ||
         C->LeverArm() > m_LeverArmMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Not within lever arm selection: "
             <<C->LeverArm()<<" cm!"<<endl;
-      }      
+      }
       m_NRejectedLeverArm++;
       Return = false;
     }
-    if ((C->C1() - C->C2()).Mag() < m_FirstLeverArmMin || 
+    if ((C->C1() - C->C2()).Mag() < m_FirstLeverArmMin ||
         (C->C1() - C->C2()).Mag() > m_FirstLeverArmMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Not within first lever arm selection: "
             <<(C->C1() - C->C2()).Mag()<<" cm!"<<endl;
-      }      
+      }
       m_NRejectedFirstLeverArm++;
       Return = false;
     }
-    if (C->SequenceLength() < m_SequenceLengthMin || 
+    if (C->SequenceLength() < m_SequenceLengthMin ||
         C->SequenceLength() > m_SequenceLengthMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Not within Compton sequence length selection: "
             <<m_SequenceLengthMin<<" !< "<<C->SequenceLength()<<" !< "<<m_SequenceLengthMax<<" Compton interactions!"<<endl;
-      }      
+      }
       m_NRejectedSequenceLength++;
       Return = false;
     }
-    if (C->TrackLength() < m_TrackLengthMin || 
+    if (C->TrackLength() < m_TrackLengthMin ||
         C->TrackLength() > m_TrackLengthMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Not within Track sequence length selection: "
             <<m_TrackLengthMin<<" !< "<<C->TrackLength()<<" !< "<<m_TrackLengthMax<<" Compton interactions!"<<endl;
-      }      
+      }
       m_NRejectedTrackLength++;
       Return = false;
     }
@@ -757,7 +864,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Not within Clustering quality factor selection: "
             <<m_ClusteringQualityFactorMin<<"<"<<C->ClusteringQualityFactor()<<"<"<<m_ClusteringQualityFactorMax<<endl;
-      }      
+      }
       m_NRejectedClusteringQualityFactor++;
       Return = false;
     }
@@ -766,26 +873,26 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Not within Compton quality factor selection: "
             <<m_ComptonQualityFactorMin<<"<"<<C->ComptonQualityFactor1()<<"<"<<m_ComptonQualityFactorMax<<endl;
-      }      
+      }
       m_NRejectedComptonQualityFactor++;
       Return = false;
     }
-    if (C->TrackQualityFactor1() < m_TrackQualityFactorMin || 
+    if (C->TrackQualityFactor1() < m_TrackQualityFactorMin ||
         C->TrackQualityFactor1() > m_TrackQualityFactorMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Not within track quality factor selection: "
             <<m_TrackQualityFactorMin<<"<"<<C->TrackQualityFactor1()<<"<"<<m_TrackQualityFactorMax<<endl;
-      }      
+      }
       m_NRejectedTrackQualityFactor++;
       Return = false;
     }
 
-    if (C->CoincidenceWindow() < m_CoincidenceWindowMin || 
+    if (C->CoincidenceWindow() < m_CoincidenceWindowMin ||
         C->CoincidenceWindow() > m_CoincidenceWindowMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Not within coincidence window selection: "
             <<m_CoincidenceWindowMin<<"<"<<C->CoincidenceWindow()<<"<"<<m_CoincidenceWindowMax<<endl;
-      }      
+      }
       m_NRejectedCoincidenceWindow++;
       Return = false;
     }
@@ -805,7 +912,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       if (m_EarthHorizon.IsEventFromEarth(Event, DumpOutput) == true) {
         if (DumpOutput == true) {
           cout<<"ID "<<Event->GetId()<<": Not within earth horizon cut "<<endl;
-        }      
+        }
         m_NRejectedEarthHorizonCut++;
         Return = false;
       }
@@ -814,22 +921,22 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (m_UseSource == true) {
       //m_SourcePosition.SetMagThetaPhi(c_FarAway, (-5.78 + 90)*c_Rad, (184.56)*c_Rad);
 
-      if (fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
-          fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
+      if (fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) < m_ARMMin ||
+          fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) > m_ARMMax) {
         if (DumpOutput == true) {
-          cout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<": "
-              <<m_ARMMin<<" < "<<fabs(C->GetARMGamma(m_SourcePosition))*c_Deg<<" < "<<m_ARMMax<<endl;
-        }      
+          cout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<" (Coordinate system: "<<m_SourceCoordinateSystem<<"): "
+              <<m_ARMMin<<" < "<<fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg<<" < "<<m_ARMMax<<endl;
+        }
         m_NRejectedARM++;
         Return = false;
       }
       if (C->TrackLength() > 1) {
-        if (fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg < m_SPDMin || 
-            fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg > m_SPDMax) {
+        if (fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg < m_SPDMin ||
+            fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg > m_SPDMax) {
           if (DumpOutput == true) {
             cout<<"ID "<<Event->GetId()<<": Not within SPD cut around "<<m_SourcePosition<<": "
-                <<m_SPDMax<<" < "<<fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg<<" < "<<m_SPDMax<<endl;
-          }      
+                <<m_SPDMax<<" < "<<fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg<<" < "<<m_SPDMax<<endl;
+          }
           m_NRejectedSPD++;
           Return = false;
         }
@@ -848,7 +955,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       m_NRejectedUsePairs++;
       Return = false;
     }
-    if (Pair->GetOpeningAngle()*c_Deg < m_OpeningAnglePairMin || 
+    if (Pair->GetOpeningAngle()*c_Deg < m_OpeningAnglePairMin ||
         Pair->GetOpeningAngle()*c_Deg > m_OpeningAnglePairMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()
@@ -858,7 +965,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       m_NRejectedOpeningAnglePair++;
       Return = false;
     }
-    if (Pair->GetInitialEnergyDeposit() < m_InitialEnergyDepositPairMin || 
+    if (Pair->GetInitialEnergyDeposit() < m_InitialEnergyDepositPairMin ||
         Pair->GetInitialEnergyDeposit() > m_InitialEnergyDepositPairMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()
@@ -868,7 +975,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       m_NRejectedInitialEnergyDepositPair++;
       Return = false;
     }
-    if (Pair->GetTrackQualityFactor() < m_PairQualityFactorMin || 
+    if (Pair->GetTrackQualityFactor() < m_PairQualityFactorMin ||
         Pair->GetTrackQualityFactor() > m_PairQualityFactorMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()
@@ -882,18 +989,18 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       if (m_EarthHorizon.IsEventFromEarth(Event, DumpOutput) == true) {
         if (DumpOutput == true) {
           cout<<"ID "<<Event->GetId()<<": Not within earth horizon cut "<<endl;
-        }      
+        }
         m_NRejectedEarthHorizonCut++;
         Return = false;
       }
     }
     if (m_UseSource == true) {
-      if (fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
-          fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
+      if (fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) < m_ARMMin ||
+          fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) > m_ARMMax) {
         if (DumpOutput == true) {
           cout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<": "
-              <<m_ARMMin<<" < "<<fabs(Pair->GetARMGamma(m_SourcePosition))<<" < "<<m_ARMMax<<endl;
-        }      
+              <<m_ARMMin<<" < "<<fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem))<<" < "<<m_ARMMax<<endl;
+        }
         m_NRejectedARM++;
         Return = false;
       }
@@ -912,9 +1019,15 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       Return = false;
     }
   } else if (Event->GetType() == MPhysicalEvent::c_Muon) {
+    if (DumpOutput == true) {
+      cout<<"ID "<<Event->GetId()<<": Unwanted muon event!"<<endl;
+    }
     m_NRejectedUseMuons++;
     Return = false;
   } else if (Event->GetType() == MPhysicalEvent::c_Decay) {
+    if (DumpOutput == true) {
+      cout<<"ID "<<Event->GetId()<<": Unwanted decay event!"<<endl;
+    }
     m_NRejectedUseDecays++;
     Return = false;
   } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
@@ -923,6 +1036,22 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
         cout<<"ID "<<Event->GetId()<<": Unwanted unidentifiable event!"<<endl;
       }
       m_NRejectedUseUnidentifiables++;
+      Return = false;
+    }
+  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+    if (m_UsePETs == false) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Unwanted PET event!"<<endl;
+      }
+      m_NRejectedUsePETs++;
+      Return = false;
+    }
+  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+    if (m_UseMulties == false) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Unwanted multi event!"<<endl;
+      }
+      m_NRejectedUseMulties++;
       Return = false;
     }
   } else {
@@ -959,13 +1088,13 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
 
 
   // First test everything common to pairs and comptons:
-  if (!(Event->Ei() >= m_FirstTotalEnergyMin && 
+  if (!(Event->Ei() >= m_FirstTotalEnergyMin &&
         Event->Ei() <= m_FirstTotalEnergyMax) &&
-      !(Event->Ei() >= m_SecondTotalEnergyMin && 
+      !(Event->Ei() >= m_SecondTotalEnergyMin &&
         Event->Ei() <= m_SecondTotalEnergyMax) &&
-      !(Event->Ei() >= m_ThirdTotalEnergyMin && 
+      !(Event->Ei() >= m_ThirdTotalEnergyMin &&
         Event->Ei() <= m_ThirdTotalEnergyMax) &&
-      !(Event->Ei() >= m_FourthTotalEnergyMin && 
+      !(Event->Ei() >= m_FourthTotalEnergyMin &&
         Event->Ei() <= m_FourthTotalEnergyMax)) {
     return false;
   }
@@ -973,7 +1102,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
   // Compton events:
   if (Event->GetType() == MPhysicalEvent::c_Compton) {
     MComptonEvent *C = (MComptonEvent *) Event;
-    
+
 
     if (C->IsKinematicsOK() == false) {
       // no counting here!
@@ -988,7 +1117,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     if (C->HasTrack() == false && m_UseNotTrackedComptons == false) {
       return false;
     }
-    if (C->Phi()*c_Deg < m_ComptonAngleMin || 
+    if (C->Phi()*c_Deg < m_ComptonAngleMin ||
         C->Phi()*c_Deg > m_ComptonAngleMax) {
       return false;
     }
@@ -998,19 +1127,19 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     if (C->Ee() < m_ElectronEnergyMin || C->Ee() > m_ElectronEnergyMax) {
       return false;
     }
-    if (C->LeverArm() < m_LeverArmMin || 
+    if (C->LeverArm() < m_LeverArmMin ||
         C->LeverArm() > m_LeverArmMax) {
       return false;
     }
-    if ((C->C1() - C->C2()).Mag() < m_FirstLeverArmMin || 
+    if ((C->C1() - C->C2()).Mag() < m_FirstLeverArmMin ||
         (C->C1() - C->C2()).Mag() > m_FirstLeverArmMax) {
       return false;
     }
-    if (C->SequenceLength() < m_SequenceLengthMin || 
+    if (C->SequenceLength() < m_SequenceLengthMin ||
         C->SequenceLength() > m_SequenceLengthMax) {
       return false;
     }
-    if (C->TrackLength() < m_TrackLengthMin || 
+    if (C->TrackLength() < m_TrackLengthMin ||
         C->TrackLength() > m_TrackLengthMax) {
       return false;
     }
@@ -1022,12 +1151,12 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
         C->ComptonQualityFactor1() > m_ComptonQualityFactorMax) {
       return false;
     }
-    if (C->TrackQualityFactor1() < m_TrackQualityFactorMin || 
+    if (C->TrackQualityFactor1() < m_TrackQualityFactorMin ||
         C->TrackQualityFactor1() > m_TrackQualityFactorMax) {
       return false;
     }
 
-    if (C->CoincidenceWindow() < m_CoincidenceWindowMin || 
+    if (C->CoincidenceWindow() < m_CoincidenceWindowMin ||
         C->CoincidenceWindow() > m_CoincidenceWindowMax) {
       return false;
     }
@@ -1045,13 +1174,13 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     }
 
     if (m_UseSource == true) {
-      if (fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
-          fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
+      if (fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) < m_ARMMin ||
+          fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) > m_ARMMax) {
         return false;
       }
       if (C->TrackLength() > 1) {
-        if (fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg < m_SPDMin || 
-            fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg > m_SPDMax) {
+        if (fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg < m_SPDMin ||
+            fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg > m_SPDMax) {
           return false;
         }
       }
@@ -1065,15 +1194,15 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     if (m_UsePairs == false) {
       return false;
     }
-    if (Pair->GetOpeningAngle()*c_Deg < m_OpeningAnglePairMin || 
+    if (Pair->GetOpeningAngle()*c_Deg < m_OpeningAnglePairMin ||
         Pair->GetOpeningAngle()*c_Deg > m_OpeningAnglePairMax) {
       return false;
     }
-    if (Pair->GetInitialEnergyDeposit() < m_InitialEnergyDepositPairMin || 
+    if (Pair->GetInitialEnergyDeposit() < m_InitialEnergyDepositPairMin ||
         Pair->GetInitialEnergyDeposit() > m_InitialEnergyDepositPairMax) {
       return false;
     }
-    if (Pair->GetTrackQualityFactor() < m_PairQualityFactorMin || 
+    if (Pair->GetTrackQualityFactor() < m_PairQualityFactorMin ||
         Pair->GetTrackQualityFactor() > m_PairQualityFactorMax) {
       return false;
     }
@@ -1083,8 +1212,8 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
       }
     }
     if (m_UseSource == true) {
-      if (fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
-          fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
+      if (fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) < m_ARMMin ||
+          fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) > m_ARMMax) {
         return false;
       }
     }
@@ -1101,6 +1230,14 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     return false;
   } else if (Event->GetType() == MPhysicalEvent::c_Decay) {
     return false;
+  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+    if (m_UsePETs == false) {
+      return false;
+    }
+  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+    if (m_UseMulties == false) {
+      return false;
+    }
   } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
     return false;
   } else {
@@ -1108,20 +1245,23 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     return false;
   }
 
-  if (m_TimeUseFile == true) {
+
+  if (m_TimeMode == 2) {
     if (m_TimeGTI.IsGood(Event->GetTime()) == false) {
-      return false; 
+      return false;
     }
-  } else {
+  } else if (m_TimeMode == 1) {
     if (Event->GetTime() < m_TimeMin || Event->GetTime() > m_TimeMax) {
       return false;
     }
   }
-  if (Event->GetTimeWalk() < m_TimeWalkMin || 
+
+
+  if (Event->GetTimeWalk() < m_TimeWalkMin ||
       Event->GetTimeWalk() > m_TimeWalkMax) {
     return false;
   }
-  if (Event->GetId() < m_EventIdMin || 
+  if (Event->GetId() < m_EventIdMin ||
       Event->GetId() > m_EventIdMax) {
     return false;
   }
@@ -1136,31 +1276,74 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
 
   if (m_UseBeam == true) {
     if (Event->GetType() == MPhysicalEvent::c_Photo ||
-        Event->GetType() == MPhysicalEvent::c_Compton || 
+        Event->GetType() == MPhysicalEvent::c_Compton ||
         Event->GetType() == MPhysicalEvent::c_Pair) {
       MVector Position = Event->GetPosition();
       // The same equations appear in MResponseMultipleComptonLens
       double Radius = (Position - m_BeamFocalSpot).Cross(m_BeamStart - m_BeamFocalSpot).Mag()/(m_BeamStart - m_BeamFocalSpot).Mag();
       double Depth = (Position - m_BeamFocalSpot).Dot(m_BeamFocalSpot - m_BeamStart)/(m_BeamFocalSpot - m_BeamStart).Mag();
-      
+
       if (Radius > m_BeamRadius || Depth > m_BeamDepth) {
         return false;
       }
     }
   }
 
+
+  if (m_PointingSelectionType == 1) {
+    MVector Location;
+    Location.SetMagThetaPhi(1.0, (90 + m_PointingSelectionPointSourceLatitude)*c_Rad, m_PointingSelectionPointSourceLongitude*c_Rad);
+    if (Location.Angle(Event->GetGalacticPointingZAxis()) > m_PointingSelectionPointSourceRadius*c_Rad) {
+      return false;
+    }
+  } else if (m_PointingSelectionType == 2) {
+    double LatMin = m_PointingSelectionBoxLatitude - m_PointingSelectionBoxLatitudeExtent;
+    if (LatMin < -90) LatMin = -90;
+    double LatMax = m_PointingSelectionBoxLatitude + m_PointingSelectionBoxLatitudeExtent;
+    if (LatMax > 90) LatMax = 90;
+
+    double LongMin = m_PointingSelectionBoxLongitude - m_PointingSelectionBoxLongitudeExtent;
+    double LongMax = m_PointingSelectionBoxLongitude + m_PointingSelectionBoxLongitudeExtent;
+
+    double Lat = Event->GetGalacticPointingZAxis().Theta()*c_Deg - 90.0;
+    double Long = Event->GetGalacticPointingZAxis().Phi()*c_Deg;
+
+    // Get it into the right range:
+    while (Long < LongMin) Long += 360;
+    while (Long > LongMax) Long -= 360;
+
+    if (Lat < LatMin || Lat > LatMax || Long < LongMin || Long > LongMax) {
+      return false;
+    }
+  }
+
+
+
   // Only start in certain detectors - needs an active geometry
   if (m_Geometry != 0) {
-    if (m_ExcludedDetectors.size() > 0) {
-      if (Event->GetType() == MPhysicalEvent::c_Compton ||
-          Event->GetType() == MPhysicalEvent::c_Pair ||
-          Event->GetType() == MPhysicalEvent::c_Photo) {
+    if (m_ExcludedFirstIADetectors.size() > 0) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton || Event->GetType() == MPhysicalEvent::c_Pair || Event->GetType() == MPhysicalEvent::c_Photo) {
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Event->GetPosition(), true, false);
         if (V.GetDetector() == 0) {
           cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
         } else {
-          for (unsigned int e = 0; e < m_ExcludedDetectors.size(); ++e) {
-            if (V.GetDetector()->GetName() == m_ExcludedDetectors[e]) {
+          for (unsigned int e = 0; e < m_ExcludedFirstIADetectors.size(); ++e) {
+            if (V.GetDetector()->GetName() == m_ExcludedFirstIADetectors[e]) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+    if (m_ExcludedSecondIADetectors.size() > 0) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        MComptonEvent* C = (MComptonEvent*) Event;
+        MDVolumeSequence V = m_Geometry->GetVolumeSequence(C->C2(), true, false);
+        if (V.GetDetector() == 0) {
+          cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<C->C2()<<endl;
+        } else {
+          for (unsigned int e = 0; e < m_ExcludedSecondIADetectors.size(); ++e) {
+            if (V.GetDetector()->GetName() == m_ExcludedSecondIADetectors[e]) {
               return false;
             }
           }
@@ -1168,7 +1351,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
       }
     }
   }
-
+  
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
   return true;
@@ -1181,7 +1364,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
 bool MEventSelector::IsDirectionWithinARMWindow(MVector Direction)
 {
   // Just do a little test if the direction is within a selected ARM window
-  // This has nothing to do with the current event, just for testing of the 
+  // This has nothing to do with the current event, just for testing of the
   // event selection... (required by SensitivityOptimizer)
 
   if (m_UseSource == true) {
@@ -1210,21 +1393,34 @@ void MEventSelector::SetGeometry(MDGeometryQuest* Geometry)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetExcludedDetectors(vector<MString> ExcludedDetectors)
+void MEventSelector::SetExcludedFirstIADetectors(vector<MString> ExcludedFirstIADetectors)
 {
   // Set the detectors in which the events are not allowed to start:
   
-  m_ExcludedDetectors = ExcludedDetectors;
+  m_ExcludedFirstIADetectors = ExcludedFirstIADetectors;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetSourceWindow(bool Use, MVector SourcePosition)
+void MEventSelector::SetExcludedSecondIADetectors(vector<MString> ExcludedSecondIADetectors)
+{
+  // Set the detectors in which the events are not allowed to start:
+
+  
+  m_ExcludedSecondIADetectors = ExcludedSecondIADetectors;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetSourceWindow(bool Use, MVector SourcePosition, MCoordinateSystem SourceCoordinateSystem)
 {
   m_UseSource = Use;
   m_SourcePosition = SourcePosition;
+  m_SourceCoordinateSystem = SourceCoordinateSystem;
 }
 
 
@@ -1328,9 +1524,9 @@ void MEventSelector::SetFourthTotalEnergy(double Min, double Max)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetTimeUseFile(bool TimeUseFile)
+void MEventSelector::SetTimeMode(unsigned int TimeMode)
 {
-  m_TimeUseFile = TimeUseFile;
+  m_TimeMode = TimeMode;
 }
 
 
@@ -1340,9 +1536,9 @@ void MEventSelector::SetTimeUseFile(bool TimeUseFile)
 void MEventSelector::SetTimeFile(MString TimeFile)
 {
   m_TimeFile = TimeFile;
-  
+
   m_TimeGTI.Reset(true);
-  
+
   if (MFile::Exists(m_TimeFile) == true) {
     if (m_TimeGTI.Load(m_TimeFile) == false) {
       cout<<"Error: Unable to load GTI file! Using all open one!"<<endl;
@@ -1470,9 +1666,41 @@ void MEventSelector::SetEarthHorizonCut(const MEarthHorizon& EH)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetEarthHorizonCutAngle(double Angle) 
-{ 
-  m_EarthHorizon.SetEarthHorizon(MVector(0, 0, -1E20), Angle*c_Rad); 
+void MEventSelector::SetEarthHorizonCutAngle(double Angle)
+{
+  m_EarthHorizon.SetEarthHorizon(MVector(0, 0, -1E20), Angle*c_Rad);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetPointingSelectionType(unsigned int Type)
+{
+  m_PointingSelectionType = Type;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetPointingSelectionPointSource(double Latitude, double Longitude, double Radius)
+{
+  m_PointingSelectionPointSourceLatitude = Latitude;
+  m_PointingSelectionPointSourceLongitude = Longitude;
+  m_PointingSelectionPointSourceRadius = Radius;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetPointingSelectionBox(double Latitude, double Longitude, double LatitudeExtent, double LongitudeExtent)
+{
+  m_PointingSelectionBoxLatitude = Latitude;
+  m_PointingSelectionBoxLongitude = Longitude;
+  m_PointingSelectionBoxLatitudeExtent = LatitudeExtent;
+  m_PointingSelectionBoxLongitudeExtent = LongitudeExtent;
 }
 
 
@@ -1610,7 +1838,7 @@ void MEventSelector::SetCoincidenceWindow(double Min, double Max)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetEventId(int Min, int Max)
+void MEventSelector::SetEventId(long Min, long Max)
 {
   // Set the range of
 
@@ -1636,8 +1864,30 @@ void MEventSelector::UsePairs(bool Pairs)
 void MEventSelector::UsePhotos(bool Photos)
 {
   // Pass through/Neglect photos
-
+  
   m_UsePhotos = Photos;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::UsePETs(bool PETs)
+{
+  // Pass through/Neglect PET events
+  
+  m_UsePETs = PETs;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::UseMulties(bool Multies)
+{
+  // Pass through/Neglect PET events
+  
+  m_UseMulties = Multies;
 }
 
 
@@ -1683,77 +1933,50 @@ MString MEventSelector::ToString()
 
   s<<"Rejection reasons:"<<endl;
   s<<endl;
-  s<<"Not good  ......................  "
-   <<m_NRejectedIsGood<<endl;
-  s<<"Event Id .......................  "
-   <<m_NRejectedEventId<<endl;
-  s<<"Start detector .................  "
-   <<m_NRejectedStartDetector<<endl;
-  s<<"Beam  ..........................  "
-   <<m_NRejectedBeam<<endl;
-  s<<"Total energy  ..................  "
-   <<m_NRejectedTotalEnergy<<endl;
-  s<<"Time  ..........................  "
-   <<m_NRejectedTime<<endl;
-  s<<"Time walk  .....................  "
-   <<m_NRejectedTimeWalk<<endl;
-  s<<"Electron energy  ...............  "
-   <<m_NRejectedElectronEnergy<<endl;
-  s<<"Gamma energy  ..................  "
-   <<m_NRejectedGammaEnergy<<endl;
-  s<<"Compton angle  .................  "
-   <<m_NRejectedComptonAngle<<endl;
-  s<<"First Lever arm  ...............  "
-   <<m_NRejectedFirstLeverArm<<endl;
-  s<<"Any lever arm  .................  "
-   <<m_NRejectedLeverArm<<endl;
-  s<<"Length Compton sequence ........  "
-   <<m_NRejectedSequenceLength<<endl;
-  s<<"Clustering quality factor ......  "
-   <<m_NRejectedClusteringQualityFactor<<endl;
-  s<<"Compton quality factor .........  "
-   <<m_NRejectedComptonQualityFactor<<endl;
-  s<<"Track quality factor ...........  "
-   <<m_NRejectedTrackQualityFactor<<endl;
-  s<<"Coincidence window .............  "
-   <<m_NRejectedCoincidenceWindow<<endl;
-  s<<"Earth-Horizon cut ..............  "
-   <<m_NRejectedEarthHorizonCut<<endl;
-  s<<"Max. theta deviation ...........  "
-   <<m_NRejectedThetaDeviationMax<<endl;
-  s<<"Max. ARM .......................  "
-   <<m_NRejectedARM<<endl;
-  s<<"Max. SPD .......................  "
-   <<m_NRejectedSPD<<endl;
-  s<<"Length track ...................  "
-   <<m_NRejectedTrackLength<<endl;
-  s<<"Opening angle pair  ............  "
-   <<m_NRejectedOpeningAnglePair<<endl;
-  s<<"Initial energy deposit pair  ...  "
-   <<m_NRejectedInitialEnergyDepositPair<<endl;
-  s<<"Pair quality factor ............  "
-   <<m_NRejectedPairQualityFactor<<endl;
-  s<<"Use photos  ....................  "
-   <<m_NRejectedUsePhotos<<endl;
-  s<<"Use pairs  .....................  "
-   <<m_NRejectedUsePairs<<endl;
-  s<<"Use Compton  ...................  "
-   <<m_NRejectedUseComptons<<endl;
-  s<<"Use tracked Compton  ...........  "
-   <<m_NRejectedUseTrackedComptons<<endl;
-  s<<"Use not tracked Compton  .......  "
-   <<m_NRejectedUseNotTrackedComptons<<endl;
-  s<<"Use muons  .....................  "
-   <<m_NRejectedUseMuons<<endl;
-  s<<"Use unidentifiables  ...........  "
-   <<m_NRejectedUseUnidentifiables<<endl;
-  s<<"Use decays  ....................  "
-   <<m_NRejectedUseDecays<<endl;
-  s<<"Use flagged as bad  ............  "
-   <<m_NRejectedUseFlaggedAsBad<<endl;
+  s<<"Not good  ......................  "<<m_NRejectedIsGood<<endl;
+  s<<"Event Id .......................  "<<m_NRejectedEventId<<endl;
+  s<<"Detector of 1st interaction ....  "<<m_NRejectedFirstIADetector<<endl;
+  s<<"Detector of 2nd interaction ....  "<<m_NRejectedSecondIADetector<<endl;
+  s<<"Beam  ..........................  "<<m_NRejectedBeam<<endl;
+  s<<"Total energy  ..................  "<<m_NRejectedTotalEnergy<<endl;
+  s<<"Time  ..........................  "<<m_NRejectedTime<<endl;
+  s<<"Time walk  .....................  "<<m_NRejectedTimeWalk<<endl;
+  s<<"Electron energy  ...............  "<<m_NRejectedElectronEnergy<<endl;
+  s<<"Gamma energy  ..................  "<<m_NRejectedGammaEnergy<<endl;
+  s<<"Compton angle  .................  "<<m_NRejectedComptonAngle<<endl;
+  s<<"First Lever arm  ...............  "<<m_NRejectedFirstLeverArm<<endl;
+  s<<"Any lever arm  .................  "<<m_NRejectedLeverArm<<endl;
+  s<<"Length Compton sequence ........  "<<m_NRejectedSequenceLength<<endl;
+  s<<"Clustering quality factor ......  "<<m_NRejectedClusteringQualityFactor<<endl;
+  s<<"Compton quality factor .........  "<<m_NRejectedComptonQualityFactor<<endl;
+  s<<"Track quality factor ...........  "<<m_NRejectedTrackQualityFactor<<endl;
+  s<<"Coincidence window .............  "<<m_NRejectedCoincidenceWindow<<endl;
+  s<<"Earth-Horizon cut ..............  "<<m_NRejectedEarthHorizonCut<<endl;
+  s<<"Pointing .......................  "<<m_NRejectedPointing<<endl;
+  s<<"Max. theta deviation ...........  "<<m_NRejectedThetaDeviationMax<<endl;
+  s<<"Max. ARM .......................  "<<m_NRejectedARM<<endl;
+  s<<"Max. SPD .......................  "<<m_NRejectedSPD<<endl;
+  s<<"Length track ...................  "<<m_NRejectedTrackLength<<endl;
+  s<<"Opening angle pair  ............  "<<m_NRejectedOpeningAnglePair<<endl;
+  s<<"Initial energy deposit pair  ...  "<<m_NRejectedInitialEnergyDepositPair<<endl;
+  s<<"Pair quality factor ............  "<<m_NRejectedPairQualityFactor<<endl;
+  s<<"Use photos  ....................  "<<m_NRejectedUsePhotos<<endl;
+  s<<"Use pairs  .....................  "<<m_NRejectedUsePairs<<endl;
+  s<<"Use Compton  ...................  "<<m_NRejectedUseComptons<<endl;
+  s<<"Use tracked Compton  ...........  "<<m_NRejectedUseTrackedComptons<<endl;
+  s<<"Use not tracked Compton  .......  "<<m_NRejectedUseNotTrackedComptons<<endl;
+  s<<"Use muons  .....................  "<<m_NRejectedUseMuons<<endl;
+  s<<"Use PET  .......................  "<<m_NRejectedUsePETs<<endl;
+  s<<"Use multi  .....................  "<<m_NRejectedUseMulties<<endl;
+  s<<"Use unidentifiables  ...........  "<<m_NRejectedUseUnidentifiables<<endl;
+  s<<"Use decays  ....................  "<<m_NRejectedUseDecays<<endl;
+  s<<"Use flagged as bad  ............  "<<m_NRejectedUseFlaggedAsBad<<endl;
+  if (m_NRejectedQuickHack > 0) {
+    s<<"Quick hack  ....................  "<<m_NRejectedQuickHack<<endl;
+  }
   s<<endl;
-  s<<"ACCEPTED  ......................  "
-   <<m_NAccepted<<endl;
+  s<<"ACCEPTED  ......................  "<<m_NAccepted<<endl;
+  s<<"ANALYZED  ......................  "<<m_NAnalyzed<<endl;
 
   return s.str().c_str();
 }
@@ -1764,83 +1987,60 @@ MString MEventSelector::ToString()
 
 ostream& operator<<(ostream& os, MEventSelector& S)
 {
-  os<<"Use photo effect events:          "
-    <<((S.m_UsePhotos == true) ? "true" : "false")<<endl;
-  os<<"Use Compton scattering events:    "
-    <<((S.m_UseComptons == true) ? "true" : "false")<<endl;
-  os<<"Use tracked Compton:              "
-    <<((S.m_UseTrackedComptons == true) ? "true" : "false")<<endl;
-  os<<"Use not tracked Compton:          "
-    <<((S.m_UseNotTrackedComptons == true) ? "true" : "false")<<endl;
-  os<<"Use pair creation events:         "
-    <<((S.m_UsePairs == true) ? "true" : "false")<<endl;
-  os<<"Use decays:                       "
-    <<((S.m_UseDecays == true) ? "true" : "false")<<endl;
-  os<<"Use events flagged as bad:        "
-    <<((S.m_UseFlaggedAsBad == true) ? "true" : "false")<<endl;
+  os<<"Use photo effect events:          "<<((S.m_UsePhotos == true) ? "true" : "false")<<endl;
+  os<<"Use Compton scattering events:    "<<((S.m_UseComptons == true) ? "true" : "false")<<endl;
+  os<<"Use tracked Compton:              "<<((S.m_UseTrackedComptons == true) ? "true" : "false")<<endl;
+  os<<"Use not tracked Compton:          "<<((S.m_UseNotTrackedComptons == true) ? "true" : "false")<<endl;
+  os<<"Use pair creation events:         "<<((S.m_UsePairs == true) ? "true" : "false")<<endl;
+  os<<"Use PET events:                   "<<((S.m_UsePETs == true) ? "true" : "false")<<endl;
+  os<<"Use multi events:                 "<<((S.m_UseMulties == true) ? "true" : "false")<<endl;
+  os<<"Use decays:                       "<<((S.m_UseDecays == true) ? "true" : "false")<<endl;
+  os<<"Use events flagged as bad:        "<<((S.m_UseFlaggedAsBad == true) ? "true" : "false")<<endl;
 
   if (S.m_Geometry != 0) {
-    os<<"Not allowed start detectors:      ";
-    for (unsigned int e = 0; e < S.m_ExcludedDetectors.size(); ++e) {
-      os<<S.m_ExcludedDetectors[e]<<"  ";
+    os<<"Not allowed first interaction detectors:      ";
+    for (unsigned int e = 0; e < S.m_ExcludedFirstIADetectors.size(); ++e) {
+      os<<S.m_ExcludedFirstIADetectors[e]<<"  ";
+    }
+    os<<"from geometry "<<S.m_Geometry->GetName()<<endl;
+    os<<endl;
+    os<<"Not allowed second interaction detectors:      ";
+    for (unsigned int e = 0; e < S.m_ExcludedSecondIADetectors.size(); ++e) {
+      os<<S.m_ExcludedSecondIADetectors[e]<<"  ";
     }
     os<<"from geometry "<<S.m_Geometry->GetName()<<endl;
     os<<endl;
   }
 
-  os<<"Beam radius:                      "
-    <<S.m_BeamRadius<<endl;
-  os<<"Beam depth:                       "
-    <<S.m_BeamDepth<<endl;
-  os<<"First energy window:              "
-    <<S.m_FirstTotalEnergyMin<<"-"<<S.m_FirstTotalEnergyMax<<endl;
-  os<<"Second energy window:             "
-    <<S.m_SecondTotalEnergyMin<<"-"<<S.m_SecondTotalEnergyMax<<endl;
-  os<<"Time window:                      "
-    <<S.m_TimeMin<<"-"<<S.m_TimeMax<<endl;
-  os<<"Time walk window:                 "
-    <<S.m_TimeWalkMin<<"-"<<S.m_TimeWalkMax<<endl;
-  os<<"Recoil electron energy window:    "
-    <<S.m_ElectronEnergyMin<<"-"<<S.m_ElectronEnergyMax<<endl;
-  os<<"Scatter gamma-ray energy window:  "
-    <<S.m_GammaEnergyMin<<"-"<<S.m_GammaEnergyMax<<endl;
-  os<<"Compton scatter angle:            "
-    <<S.m_ComptonAngleMin<<"-"<<S.m_ComptonAngleMax<<endl;
-  os<<"Any lever arm:                    "
-    <<S.m_LeverArmMin<<"-"<<S.m_LeverArmMax<<endl;
-  os<<"First lever arm:                  "
-    <<S.m_FirstLeverArmMin<<"-"<<S.m_FirstLeverArmMax<<endl;
-  os<<"Compton squence length:           "
-    <<S.m_SequenceLengthMin<<"-"<<S.m_SequenceLengthMax<<endl;
-  os<<"First track's length:             "
-    <<S.m_TrackLengthMin<<"-"<<S.m_TrackLengthMax<<endl;
-  os<<"Clustering quality factor:        "
-    <<S.m_ClusteringQualityFactorMin<<"-"<<S.m_ClusteringQualityFactorMax<<endl;
-  os<<"Compton quality factor:           "
-    <<S.m_ComptonQualityFactorMin<<"-"<<S.m_ComptonQualityFactorMax<<endl;
-  os<<"Track quality factor:             "
-    <<S.m_TrackQualityFactorMin<<"-"<<S.m_TrackQualityFactorMax<<endl;
-  os<<"Coincidence window:               "
-    <<S.m_CoincidenceWindowMin<<"-"<<S.m_CoincidenceWindowMax<<endl;
-  os<<"Event ID:                         "
-    <<S.m_EventIdMin<<"-"<<S.m_EventIdMax<<endl;
-  os<<"Earth horizon cut:                "
-    <<S.m_EarthHorizon<<endl;
-  os<<"Max. theta deviation              "
-    <<S.m_ThetaDeviationMax<<endl;
-  os<<"Max. ARM                          "
-    <<S.m_ARMMax<<endl;
-  os<<"Max. SPD                          "
-    <<S.m_SPDMax<<endl;
-  os<<"Initial energy deposit pair:      "
-    <<S.m_InitialEnergyDepositPairMin<<"-"<<S.m_InitialEnergyDepositPairMax<<endl;
-  os<<"Opening angle pair:               "
-    <<S.m_OpeningAnglePairMin<<"-"<<S.m_OpeningAnglePairMax<<endl;
-  os<<"Pair quality factor:              "
-    <<S.m_PairQualityFactorMin<<"-"<<S.m_PairQualityFactorMax<<endl;
+  os<<"Beam radius:                      "<<S.m_BeamRadius<<endl;
+  os<<"Beam depth:                       "<<S.m_BeamDepth<<endl;
+  os<<"First energy window:              "<<S.m_FirstTotalEnergyMin<<"-"<<S.m_FirstTotalEnergyMax<<endl;
+  os<<"Second energy window:             "<<S.m_SecondTotalEnergyMin<<"-"<<S.m_SecondTotalEnergyMax<<endl;
+  os<<"Time window:                      "<<S.m_TimeMin<<"-"<<S.m_TimeMax<<endl;
+  os<<"Time walk window:                 "<<S.m_TimeWalkMin<<"-"<<S.m_TimeWalkMax<<endl;
+  os<<"Recoil electron energy window:    "<<S.m_ElectronEnergyMin<<"-"<<S.m_ElectronEnergyMax<<endl;
+  os<<"Scatter gamma-ray energy window:  "<<S.m_GammaEnergyMin<<"-"<<S.m_GammaEnergyMax<<endl;
+  os<<"Compton scatter angle:            "<<S.m_ComptonAngleMin<<"-"<<S.m_ComptonAngleMax<<endl;
+  os<<"Any lever arm:                    "<<S.m_LeverArmMin<<"-"<<S.m_LeverArmMax<<endl;
+  os<<"First lever arm:                  "<<S.m_FirstLeverArmMin<<"-"<<S.m_FirstLeverArmMax<<endl;
+  os<<"Compton squence length:           "<<S.m_SequenceLengthMin<<"-"<<S.m_SequenceLengthMax<<endl;
+  os<<"First track's length:             "<<S.m_TrackLengthMin<<"-"<<S.m_TrackLengthMax<<endl;
+  os<<"Clustering quality factor:        "<<S.m_ClusteringQualityFactorMin<<"-"<<S.m_ClusteringQualityFactorMax<<endl;
+  os<<"Compton quality factor:           "<<S.m_ComptonQualityFactorMin<<"-"<<S.m_ComptonQualityFactorMax<<endl;
+  os<<"Track quality factor:             "<<S.m_TrackQualityFactorMin<<"-"<<S.m_TrackQualityFactorMax<<endl;
+  os<<"Coincidence window:               "<<S.m_CoincidenceWindowMin<<"-"<<S.m_CoincidenceWindowMax<<endl;
+  os<<"Event ID:                         "<<S.m_EventIdMin<<"-"<<S.m_EventIdMax<<endl;
+  os<<"Earth horizon cut:                "<<S.m_EarthHorizon<<endl;
+  os<<"Max. theta deviation              "<<S.m_ThetaDeviationMax<<endl;
+  os<<"Max. ARM                          "<<S.m_ARMMax<<endl;
+  os<<"Max. SPD                          "<<S.m_SPDMax<<endl;
+  os<<"Initial energy deposit pair:      "<<S.m_InitialEnergyDepositPairMin<<"-"<<S.m_InitialEnergyDepositPairMax<<endl;
+  os<<"Opening angle pair:               "<<S.m_OpeningAnglePairMin<<"-"<<S.m_OpeningAnglePairMax<<endl;
+  os<<"Pair quality factor:              "<<S.m_PairQualityFactorMin<<"-"<<S.m_PairQualityFactorMax<<endl;
 
   return os;
 }
+
 
 // MEventSelector.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

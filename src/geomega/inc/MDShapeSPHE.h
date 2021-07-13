@@ -60,13 +60,6 @@ class MDShapeSPHE : public MDShape
   double GetPhimin() const;
   double GetPhimax() const;
 
-  // Old Geant3/MGGPOD interface
-  MString GetGeant3DIM(MString ShortName);
-  MString GetGeant3DATA(MString ShortName);
-  MString GetGeant3ShapeName();
-  int GetGeant3NumberOfParameters();
-  MString GetMGeantDATA(MString ShortName);
-
   MString ToString();
   MString GetGeomega() const;
 
@@ -104,7 +97,7 @@ class MDShapeSPHE : public MDShape
   double m_Phimax;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeSPHE, 0) // no description
 #endif

@@ -24,9 +24,12 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
+#include "MResponseType.h"
+#include "MImage.h"
 #include "MSettings.h"
 #include "MPointSource.h"
-
+#include "MExposureMode.h"
 
 // Forward declarations:
 
@@ -54,8 +57,8 @@ class MSettingsImaging : public MSettingsInterface
 
   // Menu Response selection:
 
-  int GetResponseType() const { return m_ResponseType; }
-  void SetResponseType(int ResponseType) { m_ResponseType = ResponseType; m_BackprojectionModified = true; }
+  MResponseType GetResponseType() const { return m_ResponseType; }
+  void SetResponseType(MResponseType ResponseType) { m_ResponseType = ResponseType; m_BackprojectionModified = true; }
 
 
   // Menu Fitparameter for 1D Gauss approximation:
@@ -65,17 +68,27 @@ class MSettingsImaging : public MSettingsInterface
 
   double GetFitParameterComptonTransSphere() const { return m_FitParameterComptonTransSphere; }
   void SetFitParameterComptonTransSphere(double FitParameterComptonTransSphere) { m_FitParameterComptonTransSphere = FitParameterComptonTransSphere; m_BackprojectionModified = true; }
-
+  
   double GetFitParameterPair() const { return m_FitParameterPair; }
   void SetFitParameterPair(double FitParameterPair) { m_FitParameterPair = FitParameterPair; m_BackprojectionModified = true; }
-
+  
+  double GetFitParameterPET() const { return m_FitParameterPET; }
+  void SetFitParameterPET(double FitParameterPET) { m_FitParameterPET = FitParameterPET; m_BackprojectionModified = true; }
+  
   bool GetUseAbsorptions() const { return m_UseAbsorptions; }
   void SetUseAbsorptions(bool UseAbsorptions) { m_UseAbsorptions = UseAbsorptions; m_BackprojectionModified = true; }
 
   double GetGauss1DCutOff() const { return m_Gauss1DCutOff; }
   void SetGauss1DCutOff(double Gauss1DCutOff) { m_Gauss1DCutOff = Gauss1DCutOff; m_BackprojectionModified = true; }
 
+  double GetGaussianByUncertaintiesIncrease() const { return m_GaussianByUncertaintiesIncrease; }
+  void SetGaussianByUncertaintiesIncrease(double GaussianByUncertaintiesIncrease) { m_GaussianByUncertaintiesIncrease = GaussianByUncertaintiesIncrease; m_BackprojectionModified = true; }
 
+  // Parameters for multi-D ARM shapes
+  MString GetImagingResponseConeShapesFileName() const { return m_ImagingResponseConeShapesFileName; }
+  void SetImagingResponseConeShapesFileName(MString ImagingResponseConeShapesFileName) { m_ImagingResponseConeShapesFileName = ImagingResponseConeShapesFileName; m_BackprojectionModified = true; }
+  
+  
   // Parameters for Partially-binned list-mode
   MString GetImagingResponseComptonLongitudinalFileName() const { return m_ImagingResponseComptonLongitudinalFileName; }
   void SetImagingResponseComptonLongitudinalFileName(MString ImagingResponseComptonLongitudinalFileName) { m_ImagingResponseComptonLongitudinalFileName = ImagingResponseComptonLongitudinalFileName; m_BackprojectionModified = true; }
@@ -90,8 +103,8 @@ class MSettingsImaging : public MSettingsInterface
 
   // Menu Coordinate-system
 
-  int GetCoordinateSystem() const { return m_CoordinateSystem; }
-  void SetCoordinateSystem(int CoordinateSystem) { m_CoordinateSystem = CoordinateSystem; m_BackprojectionModified = true; }
+  MCoordinateSystem GetCoordinateSystem() const { return m_CoordinateSystem; }
+  void SetCoordinateSystem(MCoordinateSystem CoordinateSystem) { m_CoordinateSystem = CoordinateSystem; m_BackprojectionModified = true; }
 
   // Menu Dimensions - spherical
   MVector GetImageRotationXAxis() const { return m_ImageRotationXAxis; }
@@ -191,7 +204,14 @@ class MSettingsImaging : public MSettingsInterface
   int GetNThreads() const { return m_NThreads; }
   void SetNThreads(int NThreads) { m_NThreads = NThreads;  m_BackprojectionModified = true; }
 
-
+  
+  // Menu exposure
+  MExposureMode GetExposureMode() const { return m_ExposureMode; }
+  void SetExposureMode(MExposureMode ExposureMode) { m_ExposureMode = ExposureMode; m_BackprojectionModified = true; }
+ 
+  MString GetExposureEfficiencyFile() const { return m_ExposureEfficiencyFile; }
+  void SetExposureEfficiencyFile(MString ExposureEfficiencyFile) { m_ExposureEfficiencyFile = ExposureEfficiencyFile; }
+  
   // Menu likelihood
 
   // Menu algorithm
@@ -229,6 +249,9 @@ class MSettingsImaging : public MSettingsInterface
 
   MString GetImageSourceCatalog() const { return m_ImageSourceCatalog; }
   void SetImageSourceCatalog(MString ImageSourceCatalog) { m_ImageSourceCatalog = ImageSourceCatalog; }
+
+  MImageProjection GetImageProjection() const { return m_ImageProjection; }
+  void SetImageProjection(MImageProjection ImageProjection) { m_ImageProjection = ImageProjection; }
  
 
   // Animation options
@@ -268,8 +291,9 @@ class MSettingsImaging : public MSettingsInterface
   // Global stuff
   bool m_StoreImages;
 
-  int m_ResponseType;
-  int m_CoordinateSystem;
+  MResponseType m_ResponseType;
+  MCoordinateSystem m_CoordinateSystem;
+  
   unsigned int m_LHAlgorithm;
   unsigned int m_OSEMSubSets;
   unsigned int m_LHStopCriteria;
@@ -279,12 +303,6 @@ class MSettingsImaging : public MSettingsInterface
   unsigned int m_NIterations;
 
   
-  MString m_ImagingResponseComptonLongitudinalFileName;
-  MString m_ImagingResponseComptonTransversalFileName;
-  MString m_ImagingResponsePairRadialFileName;
-
-
-
   // Image dimensions spherical
   MVector m_ImageRotationXAxis;
   MVector m_ImageRotationZAxis;
@@ -330,7 +348,14 @@ class MSettingsImaging : public MSettingsInterface
   int m_ImagePalette;
   //! The source catalog file name
   MString m_ImageSourceCatalog;
+  //! The image projection
+  MImageProjection m_ImageProjection;
 
+  //! The used exposure mode
+  MExposureMode m_ExposureMode;
+  //! The effificiency file from which the exposure can be calculated
+  MString m_ExposureEfficiencyFile;
+  
   
   // Animation options:
   
@@ -347,11 +372,17 @@ class MSettingsImaging : public MSettingsInterface
   double m_FitParameterComptonLongSphere;
   double m_FitParameterComptonTransSphere;
   double m_FitParameterPair;
+  double m_FitParameterPET;
   bool m_UseAbsorptions;
   double m_Gauss1DCutOff;
+  double m_GaussianByUncertaintiesIncrease;
 
-  MString m_SensitivityFile;
-  bool m_UseSensitivityFile;
+  MString m_ImagingResponseComptonLongitudinalFileName;
+  MString m_ImagingResponseComptonTransversalFileName;
+  MString m_ImagingResponsePairRadialFileName;
+
+  MString m_ImagingResponseConeShapesFileName;
+
 
   // Memory management
   int m_RAM;
@@ -368,7 +399,7 @@ class MSettingsImaging : public MSettingsInterface
   double m_SignificanceMapDistance;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsImaging, 0) // no description
 #endif

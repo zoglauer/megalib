@@ -46,7 +46,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSystem)
 #endif
 
@@ -280,40 +280,20 @@ void MSystem::BusyWait(int musec)
 
 
 #ifdef ___UNIX___
-//   double starttime, currenttime;
-//   double stoptime = (musec+1)/1000000.0;
-//   struct timeval tv;
-
-//   gettimeofday(&tv, 0);
-//   starttime = tv.tv_sec + tv.tv_usec/1000000.0; 
-//   stoptime += tv.tv_sec + tv.tv_usec/1000000.0; 
-//   currenttime = starttime;
-  
-//   do {
-//     gettimeofday(&tv, 0);
-
-// 		// Midnight protection:
-// 		if (tv.tv_sec + tv.tv_usec/1000000.0 < starttime) {
-// 			stoptime = (musec+1)/1000000.0 - currenttime + starttime; 
-// 			starttime = 0.0;
-// 		}
-// 		currenttime = tv.tv_sec + tv.tv_usec/1000000.0;
-//   } while (stoptime > currenttime)
-
-	long long currenttime = 0, stoptime;
-	struct timeval tv;
-	gettimeofday(&tv, 0);
-	stoptime = (long long)tv.tv_sec * (long long)1000000;
-    stoptime += (long long)tv.tv_usec;
-	stoptime += (long long)(musec+1);
-	while (stoptime > currenttime) {
-		gettimeofday(&tv, 0);
-		currenttime = (long long)tv.tv_sec * (long long)1000000;
-		currenttime += (long long)tv.tv_usec;
-	}
+  long long currenttime = 0, stoptime;
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+  stoptime = (long long)tv.tv_sec * (long long)1000000;
+  stoptime += (long long)tv.tv_usec;
+  stoptime += (long long)(musec+1);
+  while (stoptime > currenttime) {
+    gettimeofday(&tv, 0);
+    currenttime = (long long)tv.tv_sec * (long long)1000000;
+    currenttime += (long long)tv.tv_usec;
+  }
 #else
-	// Principially this routine should work for all POSIX compatible systems,
-	// but not tested yet (20050222 - RA)
+  // Principially this routine should work for all POSIX compatible systems,
+  // but not tested yet (20050222 - RA)
   merr<<"There is no BusyWait function implemented for this OS!"<<endl;
 #endif
 }
@@ -419,109 +399,109 @@ bool MSystem::GetProcessInfo(int ProcessID)
   // Further development:
   // Method has to return something like MProcessInfo
 
- 	ostringstream S;
-	S<<"/proc/"<<ProcessID<<"/status";
+  ostringstream S;
+  S<<"/proc/"<<ProcessID<<"/status";
 
   // Open the file - c-mode - sorry...
   FILE *PIDStatus;
-	if ((PIDStatus = fopen(S.str().c_str(), "r")) == 0) {
+  if ((PIDStatus = fopen(S.str().c_str(), "r")) == 0) {
     Warning("bool MSystem::GetProcessInfo(int ProcessID)",
             "Cannot open file \'%s\'!\n"
             "The kernel needs to be compiled with support\n"
             "for /proc filesystem enabled!", S.str().c_str());
 
-		return false;
-	}
+    return false;
+  }
 
   int Result = 0; // Storing result required by some compilers
-	Result += fscanf(PIDStatus, "%*s %*s");
-	Result += fscanf(PIDStatus, "%*s %*c %*s");
-	Result += fscanf(PIDStatus, "%*s %*d");
-	Result += fscanf(PIDStatus, "%*s %*d");
-	Result += fscanf(PIDStatus, "%*s %*d %*d %*d %*d");
-	Result += fscanf(PIDStatus, "%*s %*d %*d %*d %*d");
-	Result += fscanf(PIDStatus, "%*s %*d %*d %*d %*d");
-	Result += fscanf(PIDStatus, "%*s %*d %*s");	// VmSize
-	Result += fscanf(PIDStatus, "%*s %*d %*s");	// VmLck
-	Result += fscanf(PIDStatus, "%*s %d %*s", &m_ProcessMemory);	// VmRSS
-	Result += fscanf(PIDStatus, "%*s %*d %*s");	// VmData
-	Result += fscanf(PIDStatus, "%*s %*d %*s");	// VmStk
-	Result += fscanf(PIDStatus, "%*s %*d %*s");	// VmExe
-	Result += fscanf(PIDStatus, "%*s %*d %*s");	// VmLib
+  Result += fscanf(PIDStatus, "%*s %*s");
+  Result += fscanf(PIDStatus, "%*s %*c %*s");
+  Result += fscanf(PIDStatus, "%*s %*d");
+  Result += fscanf(PIDStatus, "%*s %*d");
+  Result += fscanf(PIDStatus, "%*s %*d %*d %*d %*d");
+  Result += fscanf(PIDStatus, "%*s %*d %*d %*d %*d");
+  Result += fscanf(PIDStatus, "%*s %*d %*d %*d %*d");
+  Result += fscanf(PIDStatus, "%*s %*d %*s"); // VmSize
+  Result += fscanf(PIDStatus, "%*s %*d %*s"); // VmLck
+  Result += fscanf(PIDStatus, "%*s %d %*s", &m_ProcessMemory);  // VmRSS
+  Result += fscanf(PIDStatus, "%*s %*d %*s"); // VmData
+  Result += fscanf(PIDStatus, "%*s %*d %*s"); // VmStk
+  Result += fscanf(PIDStatus, "%*s %*d %*s"); // VmExe
+  Result += fscanf(PIDStatus, "%*s %*d %*s"); // VmLib
   if (Result != 1) {
     merr<<"Problem scanning process memory..."<<endl;
   }
   
   m_ProcessMemory /= 1024;
 
-	fclose(PIDStatus);
+  fclose(PIDStatus);
 
 
 
   // The remainings are not needed right now
   /*
   buf.sprintf("/proc/%s/stat", (const char *)info);
-	if ((fd = fopen(buf, "r")) == 0)
-	{
-		error = true;
-		errMessage.sprintf(i18n("Cannot open %s!\n"), buf.data());
-		return (false);
-	}
+  if ((fd = fopen(buf, "r")) == 0)
+  {
+    error = true;
+    errMessage.sprintf(i18n("Cannot open %s!\n"), buf.data());
+    return (false);
+  }
 
-	fscanf(fd, "%d %*s %c %d %d %*d %d %*d %*u %*u %*u %*u %*u %d %d"
-		   "%*d %*d %*d %d %*u %*u %*d %u %u",
-		   (int*) &pid, &status, (int*) &ppid, (int*) &gid, &ttyNo,
-		   &userTime, &sysTime, &niceLevel, &vm_size, &vm_rss);
+  fscanf(fd, "%d %*s %c %d %d %*d %d %*d %*u %*u %*u %*u %*u %d %d"
+       "%*d %*d %*d %d %*u %*u %*d %u %u",
+       (int*) &pid, &status, (int*) &ppid, (int*) &gid, &ttyNo,
+       &userTime, &sysTime, &niceLevel, &vm_size, &vm_rss);
 
-	vm_rss = (vm_rss + 3) * PAGE_SIZE;
+  vm_rss = (vm_rss + 3) * PAGE_SIZE;
 
-	fclose(fd);
+  fclose(fd);
 
     buf.sprintf("/proc/%s/cmdline", (const char *)info);
-	if ((fd = fopen(buf, "r")) == 0)
-	{
-		error = true;
-		errMessage.sprintf(i18n("Cannot open %s!\n"), buf.data());
-		return (false);
-	}
-	cbuf[0] = '\0';
-	fscanf(fd, "%1023[^\n]", cbuf);
-	cbuf[1023] = '\0';
-	cmdline = cbuf;
-	fclose(fd);
+  if ((fd = fopen(buf, "r")) == 0)
+  {
+    error = true;
+    errMessage.sprintf(i18n("Cannot open %s!\n"), buf.data());
+    return (false);
+  }
+  cbuf[0] = '\0';
+  fscanf(fd, "%1023[^\n]", cbuf);
+  cbuf[1023] = '\0';
+  cmdline = cbuf;
+  fclose(fd);
 
-	switch (status)
-	{
-	case 'R':
-		statusTxt = i18n("Run");
-		break;
-	case 'S':
-		statusTxt = i18n("Sleep");
-		break;
-	case 'D': 
-		statusTxt = i18n("Disk");
-		break;
-	case 'Z':
-		statusTxt = i18n("Zombie");
-		break;
-	case 'T': 
-		statusTxt = i18n("Stop");
-		break;
-	case 'W':
-		statusTxt = i18n("Swap");
-		break;
-	default:
-		statusTxt = i18n("????");
-		break;
-	}
+  switch (status)
+  {
+  case 'R':
+    statusTxt = i18n("Run");
+    break;
+  case 'S':
+    statusTxt = i18n("Sleep");
+    break;
+  case 'D': 
+    statusTxt = i18n("Disk");
+    break;
+  case 'Z':
+    statusTxt = i18n("Zombie");
+    break;
+  case 'T': 
+    statusTxt = i18n("Stop");
+    break;
+  case 'W':
+    statusTxt = i18n("Swap");
+    break;
+  default:
+    statusTxt = i18n("????");
+    break;
+  }
 
-	// find out user name with the process uid
-	struct passwd* pwent = getpwuid(uid);
-	if (pwent)
-		userName = pwent->pw_name;
+  // find out user name with the process uid
+  struct passwd* pwent = getpwuid(uid);
+  if (pwent)
+    userName = pwent->pw_name;
   */
 
-	return true; 
+  return true; 
 }
 
 

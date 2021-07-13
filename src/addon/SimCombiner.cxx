@@ -82,7 +82,7 @@ private:
  */
 SimCombiner::SimCombiner() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
+  // Intentionally left blank
 }
 
 
@@ -91,8 +91,6 @@ SimCombiner::SimCombiner() : m_Interrupt(false)
  */
 SimCombiner::~SimCombiner()
 {
-  // Intentionally left blank
-  
   m_OutputFileName = "Combined.sim";
 }
 

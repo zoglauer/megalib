@@ -78,51 +78,51 @@ public:
   void Interrupt() { m_Interrupt = true; }
   /// True if we use the Gui
   bool UseGui() { return m_UseGui; }
-
+  
 private:
   /// True, if the analysis needs to be interrupted
   bool m_Interrupt;
-
+  
   //! The basic mode
   int m_Mode;
-
+  
   static const int c_UnknownMode = 0;
   static const int c_SimMode     = 1;
   static const int c_TraMode     = 2;
-
-
+  
+  
   vector<MString> m_BackgroundFileNames;
   vector<MString> m_BackgroundNames;
   vector<double>  m_BackgroundTimes;
   vector<int>     m_BackgroundEvents;
   vector<TH1D*>   m_BackgroundHistograms;
-
+  
   vector<MString> m_SourceFileNames;
   vector<MString> m_SourceNames;
   vector<double>  m_SourceTimes;
   vector<int>     m_SourceEvents;
   vector<TH1D*>   m_SourceHistograms;
-
+  
   MString m_ConfigurationFileName;
-
+  
   //! Prefix for the output files:
   MString m_Prefix;
   
   //! Name of the geometry file
   MString m_GeometryFileName;
-
+  
   //! Maximum time
   double m_MaximumTime;
-
+  
   //! Do the extraction
   bool m_Extract;
   MString m_ExtractionFileName;
-
+  
   int m_NBins;
   double m_Min;
   double m_Max;
   double* m_Bins;
-
+  
   //! true if we should use a GUI
   bool m_UseGui;
 };
@@ -146,13 +146,11 @@ BackgroundMixer::BackgroundMixer() : m_Interrupt(false)
   m_MaximumTime = g_DoubleNotDefined;
   MTime Time;
   m_Prefix = MString("Prefix_") + Time.GetShortString();
-
+  
   m_Extract = false;
   m_ExtractionFileName = "Extracted";
-
+  
   m_UseGui = true;
-
-  gStyle->SetPalette(1, 0);
 }
 
 
@@ -171,8 +169,8 @@ BackgroundMixer::~BackgroundMixer()
 bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
 {
   mimp<<"Maxtime is not idiot safe implemented"<<show;
-
-
+  
+  
   ostringstream Usage;
   Usage<<endl;
   Usage<<"  Usage: BackgroundMixer <options>"<<endl;
@@ -191,9 +189,9 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
   // Usage<<"         -f:   file name"<<endl;
   Usage<<"          -h:   print this help"<<endl;
   Usage<<endl;
-
+  
   string Option;
-
+  
   // Check for help
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
@@ -202,11 +200,11 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
       return false;
     }
   }
-
+  
   // Now parse the master command line options:
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
-   
+    
     if (Option == "-w") {
       m_NBins = atoi(argv[++i]);
       m_Min = atof(argv[++i]);
@@ -217,7 +215,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
       mlog<<"Accepting output file name: "<<m_Prefix<<endl;
     }
   }
-
+  
   bool IsLog = false;
   double Min = m_Min;
   double Max = m_Max;
@@ -233,10 +231,10 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
     merr<<"Minimum ("<<Min<<") must be smaller than maximum ("<<Max<<")! Using Max = Min + 1.0!"<<show;
     Max = Min+1;
   }
-
+  
   m_Bins = new double[NBins+1];
   double Dist = 0.0;
-
+  
   if (IsLog == true) {
     Min = log(Min);
     Max = log(Max);
@@ -250,36 +248,36 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
       m_Bins[i] = Min+i*Dist;
     }  
   }
-
-
+  
+  
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
-
+    
     mimp<<"Argument length verification is missing"<<show;
     // First check if each option has sufficient arguments:
     // Single argument
     if (Option == "-f") {
       if (!((argc > i+1) && 
-            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
+        (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
         mlog<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-        mlog<<Usage.str()<<endl;
-        return false;
-      }
+      mlog<<Usage.str()<<endl;
+      return false;
+        }
     } 
     // Multiple arguments template
     /*
-    else if (Option == "-??") {
-      if (!((argc > i+2) && 
-            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
-            (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0))){
-        mlog<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
-        mlog<<Usage.str()<<endl;
-        return false;
-      }
-    }
-    */
-
+     *    else if (Option == "-??") {
+     *      if (!((argc > i+2) && 
+     *            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
+     *            (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0))){
+     *        mlog<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
+     *        mlog<<Usage.str()<<endl;
+     *        return false;
+  }
+  }
+  */
+    
     // Then fulfill the options:
     if (Option == "-g") {
       m_GeometryFileName = argv[++i];
@@ -352,7 +350,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
         return false;
       }
       mlog<<"Accepting background file name and time: "
-          <<m_SourceFileNames.back()<<" "<<m_SourceTimes.back()<<"!"<<endl;
+      <<m_SourceFileNames.back()<<" "<<m_SourceTimes.back()<<"!"<<endl;
     } else if (Option == "-b" || Option == "-be") {
       m_BackgroundFileNames.push_back(argv[++i]);
       MString Name = m_BackgroundFileNames.back();
@@ -401,7 +399,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
         return false;
       }
       mlog<<"Accepting background file name and time: "
-          <<m_BackgroundFileNames.back()<<" "<<m_BackgroundTimes.back()<<"!"<<endl;
+      <<m_BackgroundFileNames.back()<<" "<<m_BackgroundTimes.back()<<"!"<<endl;
     } else if (Option == "-w") {
       i += 3;
     } else if (Option == "-n") {
@@ -415,7 +413,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
       return false;
     }
   }
-
+  
   if (m_MaximumTime != g_DoubleNotDefined) {
     for (unsigned int i = 0; i < m_BackgroundTimes.size(); ++i) {
       if (m_BackgroundTimes[i] < m_MaximumTime) {
@@ -432,25 +430,25 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
       }
     }
   }
-
+  
   if (m_BackgroundNames.size() == 0 && m_SourceNames.size() == 0) {
     mlog<<"Error: You need at least one data file..."<<endl;
     mlog<<Usage.str()<<endl;
     return false;
   }
-
+  
   if (m_GeometryFileName == g_StringNotDefined) {
     mlog<<"Error: You need to give a geometry..."<<endl;
     mlog<<Usage.str()<<endl;
     return false;    
   }
-
+  
   if (m_Mode == c_TraMode && m_ConfigurationFileName == g_StringNotDefined) {
     mlog<<"Error: You need to give a configuartion file when you are using tra files..."<<endl;
     mlog<<Usage.str()<<endl;
     return false;    
   }
-
+  
   return true;
 }
 
@@ -461,7 +459,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
 bool BackgroundMixer::Analyze()
 {
   if (m_Interrupt == true) return false;
-
+  
   if (m_Mode == c_TraMode) {
     return AnalyzeTra();
   } else {
@@ -483,7 +481,7 @@ bool SortGridByDereasingHitCount(MDGridPointCollection G1, MDGridPointCollection
 bool BackgroundMixer::AnalyzeSim()
 {
   g_NInterruptCatches = m_BackgroundFileNames.size() + m_SourceFileNames.size() + 1;
-
+  
   // Load geometry:
   MGeometryRevan* Geometry = new MGeometryRevan();
   if (Geometry->ScanSetupFile(m_GeometryFileName) == true) {
@@ -492,26 +490,26 @@ bool BackgroundMixer::AnalyzeSim()
     mlog<<"Loading of geometry "<<Geometry->GetName()<<" failed!!"<<endl;
     return false;
   }
-
+  
   // The master histogram
   TH1D* TotalTotal = new TH1D("TotalTotal", "TotalTotal", m_NBins, m_Bins);
   TotalTotal->SetXTitle("Energy [keV]");
   TotalTotal->SetYTitle("cts/keV/s");
   TotalTotal->SetLineColor(2);
-
+  
   TH1D* SourceTotal = new TH1D("SourceTotal", "SourceTotal", m_NBins, m_Bins);
   SourceTotal->SetXTitle("Energy [keV]");
   SourceTotal->SetYTitle("cts/keV/s");
   SourceTotal->SetLineColor(3);
-
+  
   TH1D* BackgroundTotal = new TH1D("BackgroundTotal", "BackgroundTotal", m_NBins, m_Bins);
   BackgroundTotal->SetXTitle("Energy [keV]");
   BackgroundTotal->SetYTitle("cts/keV/s");
   BackgroundTotal->SetLineColor(4);
-
+  
   // The source file
   for (unsigned int bf = 0; bf < m_SourceFileNames.size(); ++bf) {
-
+    
     // Open the file
     MFileEventsEvta Bkg(Geometry);
     if (Bkg.Open(m_SourceFileNames[bf]) == false) {
@@ -519,19 +517,19 @@ bool BackgroundMixer::AnalyzeSim()
       return false;
     }
     mlog<<"Analyzing file: "<<m_SourceFileNames[bf]<<endl;
-
+    
     if (m_MaximumTime != g_DoubleNotDefined) {
       if (m_SourceEvents[bf] == g_IntNotDefined) {
-      // Get the number of events we have in the file:
+        // Get the number of events we have in the file:
         m_SourceEvents[bf] = Bkg.GetNEvents(true);
         mlog<<"Total number of events on file: "<<m_SourceEvents[bf]<<endl;
         Bkg.Rewind();
       }
-
+      
       // Determine the number of events we want to read:
       m_SourceEvents[bf] = int(m_MaximumTime*m_SourceEvents[bf]/m_SourceTimes[bf]);
     }
-
+    
     // Main loop
     int counts = 0;
     MRERawEvent* Event = 0;
@@ -548,7 +546,7 @@ bool BackgroundMixer::AnalyzeSim()
         break;
       }
     }
-
+    
     // Normalize histogram
     m_SourceHistograms[bf]->SetXTitle("Energy [keV]");
     m_SourceHistograms[bf]->SetYTitle("cts/keV/s");
@@ -560,28 +558,28 @@ bool BackgroundMixer::AnalyzeSim()
     for (int b = 1; b <= m_SourceHistograms[bf]->GetXaxis()->GetNbins(); ++b) {
       m_SourceHistograms[bf]->SetBinContent(b, m_SourceHistograms[bf]->GetBinContent(b)/m_SourceHistograms[bf]->GetBinWidth(b));
     }
-
+    
     // Add to total histograms
     TotalTotal->Add(m_SourceHistograms[bf]);
     SourceTotal->Add(m_SourceHistograms[bf]);
-
+    
     // Display this component:
     TCanvas* Canvas = new TCanvas(m_SourceNames[bf] + "Canvas", m_SourceNames[bf] + " - Canvas");
     Canvas->cd();
     m_SourceHistograms[bf]->Draw();
     Canvas->Update();
   }
-
+  
   // For storing the BACKGROUD hits in grids:
   vector<vector<MDGridPointCollection> > Grids(m_BackgroundFileNames.size());
   vector<vector<TH1D*> > Hists(m_BackgroundFileNames.size());
   const unsigned int NoGrid = numeric_limits<unsigned int>::max();
-
-
-
+  
+  
+  
   // The background file
   for (unsigned int bf = 0; bf < m_BackgroundFileNames.size(); ++bf) {
-
+    
     // Open the file
     MFileEventsEvta Bkg(Geometry);
     if (Bkg.Open(m_BackgroundFileNames[bf]) == false) {
@@ -589,7 +587,7 @@ bool BackgroundMixer::AnalyzeSim()
       return false;
     }
     mlog<<"Analyzing file: "<<m_BackgroundFileNames[bf]<<endl;
-
+    
     if (m_MaximumTime != g_DoubleNotDefined) {
       if (m_BackgroundEvents[bf] == g_IntNotDefined) {
         // Get the number of events we have in the file:
@@ -597,11 +595,11 @@ bool BackgroundMixer::AnalyzeSim()
         mlog<<"Counts: "<<m_BackgroundEvents[bf]<<endl;
         Bkg.Rewind();
       }
-
+      
       // Determine the number of events we want to read:
       m_BackgroundEvents[bf] = int(m_MaximumTime*m_BackgroundEvents[bf]/m_BackgroundTimes[bf]);
     }
-
+    
     // Main loop
     int counts = 0;
     MRERawEvent* Event = 0;
@@ -609,9 +607,9 @@ bool BackgroundMixer::AnalyzeSim()
       if (++counts % 10000 == 0) mlog<<"Counts: "<<counts<<endl;
       // Add it to the summary histograms:
       m_BackgroundHistograms[bf]->Fill(Event->GetEnergy());
-
+      
       // Add it to the grids:
-
+      
       // The raw events are still unanalyzed --- so we can assume is has no hits
       for (int h = 0; h < Event->GetNRESEs(); ++h) {
         MRESE* Hit = Event->GetRESEAt(h);
@@ -620,7 +618,7 @@ bool BackgroundMixer::AnalyzeSim()
           massert(Hit->GetType() == MRESE::c_Hit);
           return false;
         }
-
+        
         // Check if we have a suitable grid:
         unsigned int CorrectGrid = NoGrid;
         for (unsigned g = 0; g < Grids[bf].size(); ++g) {
@@ -634,12 +632,12 @@ bool BackgroundMixer::AnalyzeSim()
           MDGridPointCollection Grid(*(Hit->GetVolumeSequence())); 
           Grids[bf].push_back(Grid);
           CorrectGrid = Grids[bf].size()-1;
-	  // new hist:
-	  TString Name = "Bkg_";
+          // new hist:
+          TString Name = "Bkg_";
           Name += bf;
           Name += "_";
           Name += CorrectGrid;
-  	  TH1D* BackgroundH = new TH1D(Name, Name, m_NBins, m_Bins);
+          TH1D* BackgroundH = new TH1D(Name, Name, m_NBins, m_Bins);
           BackgroundH->SetXTitle("Energy [keV]");
           BackgroundH->SetYTitle("cts/keV/s");
           BackgroundH->SetLineColor(4);
@@ -649,7 +647,7 @@ bool BackgroundMixer::AnalyzeSim()
         Grids[bf][CorrectGrid].AddUndiscretized(Hit->GetVolumeSequence()->GetPositionInDetector());
         Hists[bf][CorrectGrid]->Fill(Hit->GetEnergy());
       }
-
+      
       delete Event;
       if (m_Interrupt == true) {
         m_Interrupt = false;
@@ -660,7 +658,7 @@ bool BackgroundMixer::AnalyzeSim()
         break;
       }
     }
-
+    
     // Normalize histogram
     m_BackgroundHistograms[bf]->SetXTitle("Energy [keV]");
     m_BackgroundHistograms[bf]->SetYTitle("cts/s");
@@ -670,28 +668,28 @@ bool BackgroundMixer::AnalyzeSim()
       m_BackgroundHistograms[bf]->Scale(1.0/m_BackgroundTimes[bf]);
     }
     /*
-    for (int b = 1; b <= m_BackgroundHistograms[bf]->GetXaxis()->GetNbins(); ++b) {
-      m_BackgroundHistograms[bf]->SetBinContent(b, m_BackgroundHistograms[bf]->GetBinContent(b)/m_BackgroundHistograms[bf]->GetBinWidth(b));
-    }
-    */
+     *    for (int b = 1; b <= m_BackgroundHistograms[bf]->GetXaxis()->GetNbins(); ++b) {
+     *      m_BackgroundHistograms[bf]->SetBinContent(b, m_BackgroundHistograms[bf]->GetBinContent(b)/m_BackgroundHistograms[bf]->GetBinWidth(b));
+  }
+  */
     // Add to total histograms
     TotalTotal->Add(m_BackgroundHistograms[bf]);
     BackgroundTotal->Add(m_BackgroundHistograms[bf]);
-
+    
     // Display this component:
     TCanvas* Canvas = new TCanvas(m_BackgroundNames[bf] + "Canvas", m_BackgroundNames[bf] + " - Canvas");
     Canvas->cd();
     m_BackgroundHistograms[bf]->Draw();
     Canvas->Update();
   }
-
-
+  
+  
   // Draw a stacked histogram of *all* components
   TCanvas* TotalStackCanvas = new TCanvas();
   TotalStackCanvas->cd();
-
+  
   TLegend* leg = new TLegend(0.4, 0.6, 0.85, 0.85, NULL, "brNDC");
-
+  
   // Combine all histograms into one:
   int Color = 2;
   THStack* TotalStack = new THStack("Components", "Components");
@@ -723,14 +721,14 @@ bool BackgroundMixer::AnalyzeSim()
   TotalStack->Draw();
   leg->Draw();
   TotalStackCanvas->Update();
-
-
+  
+  
   // Draw the total Canvas
   TCanvas* TotalTotalCanvas = new TCanvas();
   TotalTotalCanvas->cd();
   TotalTotal->Draw();
   TotalTotalCanvas->Update();
-
+  
   // Draw the total Canvas
   TCanvas* TotalTotalComponentsCanvas = new TCanvas();
   TotalTotalComponentsCanvas->cd();
@@ -738,7 +736,7 @@ bool BackgroundMixer::AnalyzeSim()
   SourceTotal->Draw("SAME");
   BackgroundTotal->Draw("SAME");
   TotalTotalComponentsCanvas->Update();
-
+  
   if (m_SourceFileNames.size() > 0 && m_BackgroundFileNames.size() > 0) {
     TH1D* SB = new TH1D("SB", "Signal to background ratio", m_NBins, m_Bins);
     SB->SetXTitle("Energy [keV]");
@@ -754,11 +752,11 @@ bool BackgroundMixer::AnalyzeSim()
     SB->Draw();
     SBCanvas->Update();
   }
-
+  
   // Determine total flux:
   double Int = TotalTotal->Integral()*TotalTotal->GetBinWidth(1);
   mlog<<"Total flux in histogram: "<<Int<<"cts/sec"<<endl;
-
+  
   // Get the base file name of the tra file:
   MString AsciiOut = m_Prefix + "TotalTotal" + ".ASCIIspectrum.dat";
   
@@ -771,9 +769,9 @@ bool BackgroundMixer::AnalyzeSim()
   out.close();
   
   mlog<<"Wrote ASCII spectrum to "<<AsciiOut<<endl;
-
+  
   // Now dump some GRID specific information:
-
+  
   // Normalize the GRIDs to cts/sec:
   for (unsigned int bf = 0; bf < m_BackgroundFileNames.size(); ++bf) {
     for (unsigned int g = 0; g < Grids[bf].size(); ++g) {
@@ -786,7 +784,7 @@ bool BackgroundMixer::AnalyzeSim()
       }
     }
   }
-
+  
   // Combined the individual GRIDs:
   vector<MDGridPointCollection> CombinedGrids;
   vector<TH1D*> CombinedHists;
@@ -809,32 +807,32 @@ bool BackgroundMixer::AnalyzeSim()
       }
     }
   }  
-
+  
   /*
-  for (unsigned int h = 0; h < CombinedHists.size(); ++h) { 
-    // Get the base file name of the tra file:
-    MString AsciiOut = m_Prefix + "_" + CombinedHists[h]->GetName() + ".ASCIIspectrum.dat";
-  
-    double SanityCheck = 0.0;
+   *  for (unsigned int h = 0; h < CombinedHists.size(); ++h) { 
+   *    // Get the base file name of the tra file:
+   *    MString AsciiOut = m_Prefix + "_" + CombinedHists[h]->GetName() + ".ASCIIspectrum.dat";
+   *  
+   *    double SanityCheck = 0.0;
+   * 
+   *    ofstream out(AsciiOut, ios::out);
+   *    out<<"# VS: "<<CombinedGrids[h].GetVolumeTree()<<endl;
+   *    for (int b = 1; b <= CombinedHists[h]->GetNbinsX(); ++b) {
+   *      out<<CombinedHists[h]->GetBinCenter(b)<<" \t";
+   *      out<<CombinedHists[h]->GetBinContent(b)<<endl;
+   *      SanityCheck += CombinedHists[h]->GetBinContent(b);
+}
+out.close();
 
-    ofstream out(AsciiOut, ios::out);
-    out<<"# VS: "<<CombinedGrids[h].GetVolumeTree()<<endl;
-    for (int b = 1; b <= CombinedHists[h]->GetNbinsX(); ++b) {
-      out<<CombinedHists[h]->GetBinCenter(b)<<" \t";
-      out<<CombinedHists[h]->GetBinContent(b)<<endl;
-      SanityCheck += CombinedHists[h]->GetBinContent(b);
-    }
-    out.close();
+mlog<<"Wrote ASCII spectrum to "<<AsciiOut<<" with a total flux of "<<SanityCheck<<" cts/sec of volume "<<CombinedGrids[h].GetVolumeTree()<<endl;
+}
+*/
   
-    mlog<<"Wrote ASCII spectrum to "<<AsciiOut<<" with a total flux of "<<SanityCheck<<" cts/sec of volume "<<CombinedGrids[h].GetVolumeTree()<<endl;
-  }
-  */
-
   // Sort the grids by their number of hits
   // Sort by the number of counts
   mout<<"Started sorting grids... this might take some time..."<<endl;
   sort(CombinedGrids.begin(), CombinedGrids.end(), SortGridByDereasingHitCount);
-
+  
   mlog<<"The 20 detector with the most hits (one event can have multiple hits per detector) are: "<<endl;
   unsigned int TotalHits = 0;
   for (unsigned int g = 0; g < CombinedGrids.size(); ++g) {
@@ -845,10 +843,10 @@ bool BackgroundMixer::AnalyzeSim()
     }
   }
   mlog<<"Total hits: "<<TotalHits<<endl;
-
-
+  
+  
   //vector<MDGridPointCollection> CombinedGrids;
-
+  
   return true;
 }
 
@@ -860,29 +858,29 @@ bool BackgroundMixer::AnalyzeTra()
 {
   // Sensitivity:
   g_NInterruptCatches = m_BackgroundFileNames.size() + 1;
-
+  
   // The master histogram
   TH1D* TotalTotal = new TH1D("TotalTotal", "TotalTotal", m_NBins, m_Bins);
   TotalTotal->SetXTitle("Energy [keV]");
   TotalTotal->SetYTitle("cts/keV/s");
   TotalTotal->SetLineColor(2);
-
+  
   TH1D* SourceTotal = new TH1D("SourceTotal", "SourceTotal", m_NBins, m_Bins);
   SourceTotal->SetXTitle("Energy [keV]");
   SourceTotal->SetYTitle("cts/keV/s");
   SourceTotal->SetLineColor(3);
-
+  
   TH1D* BackgroundTotal = new TH1D("BackgroundTotal", "BackgroundTotal", m_NBins, m_Bins);
   BackgroundTotal->SetXTitle("Energy [keV]");
   BackgroundTotal->SetYTitle("cts/keV/s");
   BackgroundTotal->SetLineColor(4);
-
+  
   MEventSelector EventSelector;
-
+  
   MSettingsMimrec Data;
   Data.Read(m_ConfigurationFileName);
   EventSelector.SetSettings(&Data);
-
+  
   // Load geometry:
   MDGeometryQuest Geometry;
   if (Geometry.ScanSetupFile(m_GeometryFileName) == true) {
@@ -891,10 +889,10 @@ bool BackgroundMixer::AnalyzeTra()
     cout<<"Loading of geometry "<<Geometry.GetName()<<" failed!!"<<endl;
     return false;
   }  
-
+  
   EventSelector.SetGeometry(&Geometry);
-
-
+  
+  
   MFileEventsTra SourceTra;
   if (m_Extract == true) {
     if (SourceTra.Open(m_Prefix + m_ExtractionFileName + ".source.tra", MFile::c_Write) == false) {
@@ -909,11 +907,11 @@ bool BackgroundMixer::AnalyzeTra()
       return false;
     }
   }
-
-
+  
+  
   // The source file
   for (unsigned int bf = 0; bf < m_SourceFileNames.size(); ++bf) {
-
+    
     // Open the file
     MFileEventsTra Source;
     if (Source.Open(m_SourceFileNames[bf]) == false) {
@@ -921,7 +919,7 @@ bool BackgroundMixer::AnalyzeTra()
       return false;
     }
     mlog<<"Analyzing file: "<<m_SourceFileNames[bf]<<endl;
-
+    
     if (m_MaximumTime != g_DoubleNotDefined) {
       if (m_SourceEvents[bf] == g_IntNotDefined) {
         // Get the number of events we have in the file:
@@ -929,11 +927,11 @@ bool BackgroundMixer::AnalyzeTra()
         mlog<<"Counts: "<<m_SourceEvents[bf]<<endl;
         Source.Rewind();
       }
-
+      
       // Determine the number of events we want to read:
       m_SourceEvents[bf] = int(m_MaximumTime*m_SourceEvents[bf]/m_SourceTimes[bf]);
     }
-
+    
     // Main loop
     int counts = 0;
     MPhysicalEvent* Event = 0;
@@ -941,7 +939,7 @@ bool BackgroundMixer::AnalyzeTra()
       if (++counts % 10000 == 0) mlog<<"Counts: "<<counts<<endl;
       if (EventSelector.IsQualifiedEvent(Event) == true) {
         m_SourceHistograms[bf]->Fill(Event->Ei());
-
+        
         if (m_Extract == true) {
           if (SourceTra.AddEvent(Event) == false) {
             merr<<"Unable to add event to source extraction tra file!"<<endl;            
@@ -958,7 +956,7 @@ bool BackgroundMixer::AnalyzeTra()
         break;
       }
     }
-
+    
     // Normalize histogram
     m_SourceHistograms[bf]->SetXTitle("Energy [keV]");
     m_SourceHistograms[bf]->SetYTitle("cts/keV/s");
@@ -970,11 +968,11 @@ bool BackgroundMixer::AnalyzeTra()
     for (int b = 1; b <= m_SourceHistograms[bf]->GetXaxis()->GetNbins(); ++b) {
       m_SourceHistograms[bf]->SetBinContent(b, m_SourceHistograms[bf]->GetBinContent(b)/m_SourceHistograms[bf]->GetBinWidth(b));
     }
-
+    
     // Add to total histograms
     TotalTotal->Add(m_SourceHistograms[bf]);
     SourceTotal->Add(m_SourceHistograms[bf]);
-
+    
     // Display this component:
     TCanvas* Canvas = new TCanvas(m_SourceNames[bf] + "Canvas", m_SourceNames[bf] + " - Canvas");
     Canvas->cd();
@@ -984,7 +982,7 @@ bool BackgroundMixer::AnalyzeTra()
   
   // The background file
   for (unsigned int bf = 0; bf < m_BackgroundFileNames.size(); ++bf) {
-
+    
     // Open the file
     MFileEventsTra Bkg;
     if (Bkg.Open(m_BackgroundFileNames[bf]) == false) {
@@ -992,7 +990,7 @@ bool BackgroundMixer::AnalyzeTra()
       return false;
     }
     mlog<<"Analyzing file: "<<m_BackgroundFileNames[bf]<<endl;
-
+    
     if (m_MaximumTime != g_DoubleNotDefined) {
       if (m_BackgroundEvents[bf] == g_IntNotDefined) {
         // Get the number of events we have in the file:
@@ -1000,11 +998,11 @@ bool BackgroundMixer::AnalyzeTra()
         mlog<<"Counts: "<<m_BackgroundEvents[bf]<<endl;
         Bkg.Rewind();
       }
-
+      
       // Determine the number of events we want to read:
       m_BackgroundEvents[bf] = int(m_MaximumTime*m_BackgroundEvents[bf]/m_BackgroundTimes[bf]);
     }
-
+    
     // Main loop
     int counts = 0;
     MPhysicalEvent* Event = 0;
@@ -1012,7 +1010,7 @@ bool BackgroundMixer::AnalyzeTra()
       if (++counts % 10000 == 0) mlog<<"Counts: "<<counts<<endl;
       if (EventSelector.IsQualifiedEvent(Event) == true) {
         m_BackgroundHistograms[bf]->Fill(Event->Ei());
-
+        
         if (m_Extract == true) {
           if (BackgroundTra.AddEvent(Event) == false) {
             merr<<"Unable to add event to background extraction tra file!"<<endl;            
@@ -1029,7 +1027,7 @@ bool BackgroundMixer::AnalyzeTra()
         break;
       }
     }
-
+    
     // Normalize histogram
     m_BackgroundHistograms[bf]->SetXTitle("Energy [keV]");
     m_BackgroundHistograms[bf]->SetYTitle("cts/keV/s");
@@ -1041,25 +1039,25 @@ bool BackgroundMixer::AnalyzeTra()
     for (int b = 1; b <= m_BackgroundHistograms[bf]->GetXaxis()->GetNbins(); ++b) {
       m_BackgroundHistograms[bf]->SetBinContent(b, m_BackgroundHistograms[bf]->GetBinContent(b)/m_BackgroundHistograms[bf]->GetBinWidth(b));
     }
-
+    
     // Add to total histograms
     TotalTotal->Add(m_BackgroundHistograms[bf]);
     BackgroundTotal->Add(m_BackgroundHistograms[bf]);
-
+    
     // Display this component:
     TCanvas* Canvas = new TCanvas(m_BackgroundNames[bf] + "Canvas", m_BackgroundNames[bf] + " - Canvas");
     Canvas->cd();
     m_BackgroundHistograms[bf]->Draw();
     Canvas->Update();
   }
-
-
+  
+  
   // Draw a stacked histogram of *all* components
   TCanvas* TotalStackCanvas = new TCanvas();
   TotalStackCanvas->cd();
-
+  
   TLegend* leg = new TLegend(0.4, 0.6, 0.85, 0.85, NULL, "brNDC");
-
+  
   // Combine all histograms into one:
   int Color = 2;
   THStack* TotalStack = new THStack("Components", "Components");
@@ -1092,14 +1090,14 @@ bool BackgroundMixer::AnalyzeTra()
   leg->Draw();
   TotalStackCanvas->Update();
   TotalStackCanvas->SaveAs("Components.C");
-
+  
   // Draw the total Canvas
   TCanvas* TotalTotalCanvas = new TCanvas();
   TotalTotalCanvas->cd();
   TotalTotal->Draw();
   TotalTotalCanvas->Update();
   TotalTotalCanvas->SaveAs(m_Prefix + "TotalTotal.C");
-
+  
   // Draw the total Canvas
   TCanvas* TotalTotalComponentsCanvas = new TCanvas();
   TotalTotalComponentsCanvas->cd();
@@ -1108,7 +1106,7 @@ bool BackgroundMixer::AnalyzeTra()
   BackgroundTotal->Draw("SAME");
   TotalTotalComponentsCanvas->Update();
   TotalTotalComponentsCanvas->SaveAs(m_Prefix + "TotalTotalComponents.C");
-
+  
   if (m_SourceFileNames.size() > 0 && m_BackgroundFileNames.size() > 0) {
     TH1D* SB = new TH1D("SB", "Signal to background ratio", m_NBins, m_Bins);
     SB->SetXTitle("Energy [keV]");
@@ -1125,12 +1123,12 @@ bool BackgroundMixer::AnalyzeTra()
     SBCanvas->Update();
     SBCanvas->SaveAs(m_Prefix + "SB.C");
   }
-
-
+  
+  
   // Determine total flux:
   double Int = TotalTotal->Integral()*TotalTotal->GetBinWidth(1);
   mlog<<"Total flux: "<<Int<<"cts/sec"<<endl;
-
+  
   // Get the base file name of the tra file:
   MString AsciiOut = m_Prefix + "TotalTotal" + ".ASCIIspectrum.dat";
   ofstream out(AsciiOut, ios::out);
@@ -1142,13 +1140,13 @@ bool BackgroundMixer::AnalyzeTra()
   out.close();
   
   mlog<<"Wrote ASCII spectrum to "<<AsciiOut<<endl;
-
+  
   // Close extraction files
   if (m_Extract == true) {
     SourceTra.Close();
     BackgroundTra.Close();
   }
-
+  
   return true;
 }
 
@@ -1180,14 +1178,14 @@ int main(int argc, char** argv)
 {
   // Catch a user interupt for graceful shutdown
   signal(SIGINT, CatchSignal);
-
+  
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize();
-
+  
   TApplication BackgroundMixerApp("BackgroundMixerApp", 0, 0);
-
+  
   g_Prg = new BackgroundMixer();
-
+  
   if (g_Prg->ParseCommandLine(argc, argv) == false) {
     cerr<<"Error during parsing of command line!"<<endl;
     return -1;
@@ -1196,13 +1194,13 @@ int main(int argc, char** argv)
     cerr<<"Error during analysis!"<<endl;
     return -2;
   } 
-
+  
   if (gROOT->GetListOfCanvases()->First() != 0 && g_Prg->UseGui() == true) {
     BackgroundMixerApp.Run();
   }
-
+  
   cout<<"Program exited normally!"<<endl;
-
+  
   return 0;
 }
 

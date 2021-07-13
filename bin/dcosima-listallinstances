@@ -53,38 +53,76 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   #echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"
 done
 
+
 echo " "
-echo " "
-echo "Available instances:"
+echo "Gathering data... this might take a minute..."
+echo " " 
+
+
+OUTPUT=$"Instances:# Available #/# Running #/# Allowed\n"
+OUTPUT+=$" # \n"
 ALLALLOWED="0"
 ALLPOSSIBLE="0"
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   
   # Do a quick test if the machine is available:
-  REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NOT ACCESSIBLE"
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Unable to get host name"
     continue
   fi  
 
-  # Check if cosima is installed
-  AVAILABLE=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
+  # Check if .bash_local exists
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .bash_local ]]; then exit 0; else exit 1; fi'
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME}: MEGAlib has never been installed"
+    MACHINES[$m]=""
+    continue
+  fi 
+
+  # Check if MEGAlib path exists
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; if [[ ${MEGALIB} != "" ]]; then exit 0; else exit 1; fi'
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME}: MEGAlib has never been correctly installed"
+    MACHINES[$m]=""
+    continue
+  fi 
+
+  # Check if .dcosima.cfg path exists
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .dcosima.cfg ]]; then exit 0; else exit 1; fi'
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME}: dcosima has not been setup (no .dcosima.cfg file exists)"
+    MACHINES[$m]=""
+    continue
+  fi 
+
+  # Check if cosima is installed - cosima is the last one compiled, if cosima is there the rest should be there too
+  AVAILABLE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
   if [ "${AVAILABLE}" != "" ]; then
-    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Cosmia not installed"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): MEGAlib programs are not compiled"
     continue
   fi
 
-  # Check how many instances are allowed
-  ALLOWED=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-getinstances"`
+  # Check how many more instances are allowed
+  ALLOWED=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-allowedinstances"`
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): NOT ACCESSIBLE"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to get the number of allowed instances"
     continue
-  fi  
+  fi
+	if (( ${ALLOWED} < 0 )); then ALLOWED=0; fi
   ALLALLOWED=$(( ${ALLALLOWED} + ${ALLOWED} ))
   
+  # Check how many instances are running
+  RUNNING=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "ps -u ${REMOTEUSER[$m]} | grep '\ cosima' | wc -l | sed 's/^ *//g'"`
+	if [ "$?" != 0 ]; then
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to retrieve the number of running cosima instances"
+		continue
+	fi
+	ALLRUNNING=$(( ${ALLRUNNING} + ${RUNNING} ))
+
   # Check how many instances are possible
   REMOTECOMMAND='COUNT=`grep -c ^instances ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^instances ~/.dcosima.cfg; fi;'
-  POSSIBLE=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND})
+  POSSIBLE=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND})
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Failed to read instances"
     continue
@@ -100,10 +138,15 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
   ALLPOSSIBLE=$(( ${ALLPOSSIBLE} + ${POSSIBLE} ))
   
-  echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): ${ALLOWED} / ${POSSIBLE}"
+  OUTPUT+=$" * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}):# ${ALLOWED} #/# ${RUNNING} #/# ${POSSIBLE}\n"
 done
+
+OUTPUT+=$" # \n"
+# Don't change this line, since it is used in dcosima-rsync in order to determine if something is still running...
+OUTPUT+=$"Total number of instances:# ${ALLALLOWED} #/# ${ALLRUNNING} #/# ${ALLPOSSIBLE}\n"
+
 echo " "
-echo "Total number of instances: ${ALLALLOWED} / ${ALLPOSSIBLE}"
+echo -e "${OUTPUT}" | column -t -s'#'
 echo " "
 
 exit 0

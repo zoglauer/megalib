@@ -53,7 +53,7 @@ using namespace std;
 #include "MREHit.h"
 #include "MRESE.h"
 #include "MRESEIterator.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MPhysicalEvent.h"
 #include "MComptonEvent.h"
 #include "MMuonEvent.h"
@@ -64,16 +64,17 @@ using namespace std;
 #include "MStreams.h"
 #include "MREAM.h"
 #include "MREAMDriftChamberEnergy.h"
-#include "MREAMGuardringHit.h"
+#include "MREAMGuardRingHit.h"
 #include "MREAMDirectional.h"
 #include "MREAMStartInformation.h"
 #include "MDDetector.h"
 #include "MDDriftChamber.h"
 #include "MDStrip2D.h"
 #include "MDVoxel3D.h"
+#include "MDGuardRing.h"
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MRERawEvent)
 #endif
 
@@ -94,7 +95,7 @@ const double MRERawEvent::c_NoScore = numeric_limits<double>::max()/3; // remove
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent::MRERawEvent() : MRESE()
+MRERawEvent::MRERawEvent() : MRESE(), MRotationInterface(), m_CoincidenceWindow(0)
 {
   // Construct one MRERawEvent-object
 
@@ -105,7 +106,7 @@ MRERawEvent::MRERawEvent() : MRESE()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent::MRERawEvent(MGeometryRevan *Geo) : MRESE()
+MRERawEvent::MRERawEvent(MGeometryRevan *Geo) : MRESE(), MRotationInterface(), m_CoincidenceWindow(0)
 {
   // Construct one MRERawEvent-object
 
@@ -138,6 +139,7 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   }
 
   m_EventTime = RE->m_EventTime;
+  m_EventClock = RE->m_EventClock;
   m_EventType = RE->GetEventType();
   m_EventID = RE->GetEventID();
   m_RejectionReason = RE->m_RejectionReason;
@@ -147,30 +149,18 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
     m_GalacticPointingXAxis = RE->m_GalacticPointingXAxis;
     m_GalacticPointingZAxis = RE->m_GalacticPointingZAxis;
     m_HasGalacticPointing = true;
-  } else {
-    m_GalacticPointingXAxis = MVector(1.0, 0.0, 0.0);
-    m_GalacticPointingZAxis = MVector(0.0, 0.0, 1.0);
-    m_HasGalacticPointing = false; 
   }
 
   if (RE->m_HasDetectorRotation == true) { 
     m_DetectorRotationXAxis = RE->m_DetectorRotationXAxis;
     m_DetectorRotationZAxis = RE->m_DetectorRotationZAxis;
     m_HasDetectorRotation = true;  
-  } else {
-    m_DetectorRotationXAxis = MVector(1.0, 0.0, 0.0);
-    m_DetectorRotationZAxis = MVector(0.0, 0.0, 1.0);
-    m_HasDetectorRotation = false; 
   }
 
   if (RE->m_HasHorizonPointing == true) { 
     m_HorizonPointingXAxis = RE->m_HorizonPointingXAxis;
     m_HorizonPointingZAxis = RE->m_HorizonPointingZAxis;
     m_HasHorizonPointing = true; 
-  } else {
-    m_HorizonPointingXAxis = MVector(1.0, 0.0, 0.0);
-    m_HorizonPointingZAxis = MVector(0.0, 0.0, 1.0);
-    m_HasHorizonPointing = false; 
   }
 
 
@@ -271,6 +261,8 @@ void MRERawEvent::Init()
 {
   // Some initialisations equal for all constructors:
 
+  MRotationInterface::Reset();
+  
   m_Start = 0;
   m_Geo = 0;
   m_Event = 0;
@@ -279,7 +271,7 @@ void MRERawEvent::Init()
   m_ComptonQualityFactor1 = c_NoQualityFactor;
   m_ComptonQualityFactor2 = c_NoQualityFactor;
   m_TrackQualityFactor = c_NoQualityFactor;
-	m_PairQualityFactor = c_NoQualityFactor;
+  m_PairQualityFactor = c_NoQualityFactor;
 
   m_ElectronTrack = 0;
   m_PositronTrack = 0;
@@ -300,7 +292,8 @@ void MRERawEvent::Init()
   m_RejectionReason = c_RejectionNone;
   m_TimeWalk = -1;
   m_EventTime.Set(0);
-
+  m_EventClock.Set(0);
+  
   m_GalacticPointingXAxis = MVector(1.0, 0.0, 0.0);
   m_GalacticPointingZAxis = MVector(0.0, 0.0, 1.0);
   m_HasGalacticPointing = false; 
@@ -463,7 +456,7 @@ MString MRERawEvent::ToString(bool WithLink, int Level)
   String = MString("");
 
   // Header:
-  sprintf(Text, "Raw Event (%i) at %lf s with %d hits and %.2f+-%.2f keV, starting with (%d):\n", 
+  sprintf(Text, "Raw Event (%lu) at %lf s with %d hits and %.2f+-%.2f keV, starting with (%d):\n", 
           m_EventID, m_EventTime.GetAsSeconds(), GetNRESEs(), GetEnergy(), m_EnergyResolution, (m_Start != 0) ? m_Start->GetID() : -1);
   for (int i = 0; i < Level; i++) String += MString("   ");
   String += MString(Text);
@@ -527,6 +520,8 @@ MString MRERawEvent::ToString(bool WithLink, int Level)
 
 bool MRERawEvent::IsValid()
 {
+  if (m_IsValid == false) return false;
+  
   for (int i = 0; i < GetNRESEs(); i++) {
     if (GetRESEAt(i)->IsValid() == false) {
       return false;
@@ -614,7 +609,7 @@ int MRERawEvent::GetVertexDirection()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRERawEvent::SetEventID(unsigned int Id)
+void MRERawEvent::SetEventID(unsigned long Id)
 {
   m_EventID = Id;
 }
@@ -623,7 +618,7 @@ void MRERawEvent::SetEventID(unsigned int Id)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MRERawEvent::GetEventID()
+unsigned long MRERawEvent::GetEventID()
 {
   return m_EventID;
 }
@@ -677,73 +672,13 @@ MString MRERawEvent::GetEventTypeAsString()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRERawEvent::SetGalacticPointingXAxis(const double Longitude, const double Latitude)
-{
-  m_HasGalacticPointing = true;
-  m_GalacticPointingXAxis.SetMagThetaPhi(1.0, (90+Latitude)*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetGalacticPointingZAxis(const double Longitude, const double Latitude)
-{
-  m_HasGalacticPointing = true;
-  m_GalacticPointingZAxis.SetMagThetaPhi(1.0, (90+Latitude)*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetHorizonPointingXAxis(const double Longitude, const double Latitude)
-{
-  m_HasHorizonPointing = true;
-  m_HorizonPointingXAxis.SetMagThetaPhi(1.0, Latitude*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetHorizonPointingZAxis(const double Longitude, const double Latitude)
-{
-  m_HasHorizonPointing = true;
-  m_HorizonPointingZAxis.SetMagThetaPhi(1.0, Latitude*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetDetectorRotationXAxis(const MVector Rot)
-{
-  //
-
-  m_HasDetectorRotation = true;
-  m_DetectorRotationXAxis = Rot;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetDetectorRotationZAxis(const MVector Rot)
-{
-  //
-
-  m_HasDetectorRotation = true;
-  m_DetectorRotationZAxis = Rot;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 void MRERawEvent::SetRejectionReason(int Reason)
 {
   m_RejectionReason = Reason;
+  
+  if (m_RejectionReason != c_RejectionNone) {
+    m_IsValid = false;
+  }
 }
 
 
@@ -878,6 +813,13 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"Event starts not in D1";
     }
     break;
+  case c_RejectionNoHitsInTracker:  
+    if (Short == true) {
+      out<<"NoHitsInTracker";
+    } else {
+      out<<"Start in tracker required, but no hits in tracker";
+    }
+    break;
   case c_RejectionEventStartUndecided:
     if (Short == true) {
       out<<"EventStartUndecided";
@@ -974,6 +916,41 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"ExternalBadEventFlagRaised";
     } else {
       out<<"External bad event flag raised";
+    }
+    break;
+  case c_RejectionEventClusteringTooManyHits:
+    if (Short == true) {
+      out<<"EventClusteringTooManyHits";
+    } else {
+      out<<"Too many hits for the event clustering";
+    }
+    break;
+  case c_RejectionTooManyEventIncarnations:
+    if (Short == true) {
+      out<<"TooManyEventIncarnations";
+    } else {
+      out<<"Too many event incarnations";
+    }
+    break;
+  case c_RejectionEventClusteringUnresolvedHits:
+    if (Short == true) {
+      out<<"EventClusteringUnresolvedHits";
+    } else {
+      out<<"Unresolved hits in event clustering";
+    }
+    break;
+  case c_RejectionEventClusteringNoOrigins:
+    if (Short == true) {
+      out<<"EventClusteringNoOrigins";
+    } else {
+      out<<"No origins found during event clustering";
+    }
+    break;
+  case c_RejectionEventClusteringEnergyOutOfBounds:
+    if (Short == true) {
+      out<<"EventClusteringEnergyOutOfBounds";
+    } else {
+      out<<"The energy is outside of what the event clustering was trained for";
     }
     break;
   default:
@@ -1108,6 +1085,18 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       
       CE->SetCoincidenceWindow(m_CoincidenceWindow);
 
+      // Add as hits:
+      MRESE* Start = m_Start;
+      CE->AddHit(Start->CreatePhysicalEventHit());
+      MRESE* Middle = Start->GetLinkAt(0);
+      CE->AddHit(Middle->CreatePhysicalEventHit());
+      while (Middle->GetNLinks() > 1) {
+        MRESE* End = Middle->GetOtherLink(Start);
+        CE->AddHit(End->CreatePhysicalEventHit());
+        Start = Middle;
+        Middle = End;
+      }
+      
       m_Event = (MPhysicalEvent*) CE;
     } else if (m_EventType == c_PairEvent) {
       // We need to have two tracks:
@@ -1150,20 +1139,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
     }
   }
 
-  if (m_HasGalacticPointing == true) {
-    m_Event->SetGalacticPointingXAxis(m_GalacticPointingXAxis);
-    m_Event->SetGalacticPointingZAxis(m_GalacticPointingZAxis);
-  }
-  
-  if (m_HasDetectorRotation == true) {
-    m_Event->SetDetectorRotationXAxis(m_DetectorRotationXAxis);
-    m_Event->SetDetectorRotationZAxis(m_DetectorRotationZAxis);
-  }
-  
-  if (m_HasHorizonPointing == true) {
-    m_Event->SetHorizonPointingXAxis(m_HorizonPointingXAxis);
-    m_Event->SetHorizonPointingZAxis(m_HorizonPointingZAxis);
-  }
+  m_Event->Set(*dynamic_cast<MRotationInterface*>(this));
   
   m_Event->SetAllHitsGood(IsValid());
   m_Event->SetTime(m_EventTime);
@@ -1201,6 +1177,8 @@ MString MRERawEvent::ToEvtaString(const int Precision, const int Version)
   out<<"ID "<<m_EventID<<endl;
   out<<"TI "<<m_EventTime.GetLongIntsString()<<endl;
 
+  MRotationInterface::Stream(out);
+  
   for (int i = 0; i < GetNRESEs(); ++i) {
     out<<GetRESEAt(i)->ToEvtaString(Precision, Version);
   }
@@ -1550,11 +1528,11 @@ bool MRERawEvent::TestElectronDirection(double E1, double E2)
 //   if (GetStartPoint()->GetType() == MRESE::c_Track) {
 //     // Compute the scattered-photon-direction:
 //     GammaDir = (GetStartPoint()->GetLinkAt(0)->GetPosition() - 
-// 								GetStartPoint()->GetPosition()).Unit();
+//                GetStartPoint()->GetPosition()).Unit();
     
 //     // Compute the direction of the incoming gamma:
 //     Origin = ((-1)*(1.0/(E1+E2))*
-// 							(((MRETrack *) GetStartPoint())->GetDirection()*sqrt(E1*E1+2*E0*E1) + GammaDir*E2)).Unit();
+//              (((MRETrack *) GetStartPoint())->GetDirection()*sqrt(E1*E1+2*E0*E1) + GammaDir*E2)).Unit();
     
 //     if (Origin.Z() < 0) {
 //       mout<<"Electron test: Detector event!"<<endl;
@@ -1665,10 +1643,14 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
     if (sscanf(Line, "TW%i", &m_TimeWalk) != 1) {
       Ret = 1;
     }  
+  } else if (Line[0] == 'C' && Line[1] == 'L') {
+    if (m_EventClock.Set(Line) == false) {
+      Ret = 1;
+    }
   } else if (Line[0] == 'I' && Line[1] == 'D') {
     // Store the event ID
-    if (sscanf(Line, "ID %i %*i", &m_EventID) != 1) {
-      if (sscanf(Line, "ID %i", &m_EventID) != 1) {
+    if (sscanf(Line, "ID %lu %*u", &m_EventID) != 1) {
+      if (sscanf(Line, "ID %lu", &m_EventID) != 1) {
         Ret = 1;
       }
     }  
@@ -1772,24 +1754,16 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       if (V->GetDetector() == 0) {
         mout<<"Position of GR does not represent a detector!"<<endl; 
         Ret = 1;
-      } else if (V->GetDetector()->GetType() != MDDetector::c_DriftChamber && 
-                 V->GetDetector()->GetType() != MDDetector::c_Strip3D &&
-                 V->GetDetector()->GetType() != MDDetector::c_Strip3DDirectional &&
-                 V->GetDetector()->GetType() != MDDetector::c_Voxel3D &&
-                 V->GetDetector()->GetType() != MDDetector::c_Strip2D) {
+      } else if (V->GetDetector()->HasGuardRing() == false) {
         mout<<"Position of GR does not represent a detector with guard ring!"<<endl; 
         Ret = 1;
       } else {
-        MREAMGuardringHit* GR = new MREAMGuardringHit();
+        MREAMGuardRingHit* GR = new MREAMGuardRingHit();
         GR->SetVolumeSequence(V); // GR is responsible for the volume sequence!
         // We do NOT do any noising here!!
-        // dynamic_cast<MDStrip2D*>(V->GetDetector())->NoiseGuardringEnergy(Energy);
+        // dynamic_cast<MDStrip2D*>(V->GetDetector())->NoiseGuardRingEnergy(Energy);
         GR->SetEnergy(Energy);
-        if (V->GetDetector()->GetType() == MDDetector::c_Voxel3D) {
-          GR->SetEnergyResolution(dynamic_cast<MDVoxel3D*>(V->GetDetector())->GetGuardringEnergyResolution(Energy));
-        } else {
-          GR->SetEnergyResolution(dynamic_cast<MDStrip2D*>(V->GetDetector())->GetGuardringEnergyResolution(Energy));
-        }
+        GR->SetEnergyResolution(V->GetDetector()->GetGuardRing()->GetEnergyResolution(Energy));
         m_Measurements.push_back(GR);
       }
     } else {
@@ -1856,22 +1830,41 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       m_IsValid = false;
     }
 
-    if (GetNRESEs() > 100) {
-      mout<<"Hard coded hit limit of max. 100 hits - no longer adding hits to event "<<m_EventID<<endl;
+    if (GetNRESEs() > 10000) {
+      mout<<"Hard coded hit limit of max. 10000 hits - no longer adding hits to event "<<m_EventID<<endl;
       m_IsValid = false;
       return 2;
     }
 
-    MREHit* Hit = new MREHit(Line, Version);
+    MREHit* Hit = new MREHit();
+    if (Hit->ParseLine(Line, Version) == false) {
+      mout<<"Event "<<m_EventID<<": Unable to parse line - removing hit"<<endl;
+      mout<<Line<<endl;
+      m_IsValid = false;
+      delete Hit;
+      return 2;      
+    }
 
     // Add position and energy resolution, IF it has NOT been set during reading of the individual line:
-    if (Hit->GetEnergyResolution() == 0 && Hit->GetPositionResolution() == MVector(0, 0, 0) && Hit->GetTimeResolution() == 0) { 
+    if (Hit->HasFixedResolutions() == false) { 
       // Use the information from the geometry file:
       if (m_Geo != 0) {
         if (Hit->RetrieveResolutions(m_Geo) == false) {
-          mout<<"Event "<<m_EventID<<": Unable to determine resolutions:"<<endl;
+          mout<<"Event "<<m_EventID<<": Unable to determine resolutions - removing hit"<<endl;
           mout<<Line<<endl;
-          Ret = 1; 
+          m_IsValid = false;
+          delete Hit;
+          return 2;  
+        }
+      }
+    } else {
+      if (m_Geo != 0) {
+        if (Hit->UpdateVolumeSequence(m_Geo) == false) {
+          mout<<"Event "<<m_EventID<<": Unable to update volume sequence - removing hit"<<endl;
+          mout<<Line<<endl;
+          m_IsValid = false;
+          delete Hit;
+          return 2; // We need to return not parsed here since we most likely  changed the geometry (e.g. removed detectors) and don't want those hits
         }
       }
     }

@@ -37,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUILoadCalibration)
 #endif
 
@@ -159,7 +159,7 @@ void MGUILoadCalibration::Create()
     CalibrationFrame->AddFrame(Clear, ButtonLayout);
   }
  
-  TGLabel* Footer1 = new TGLabel(this, "Tips: Calibration files with the same group ID will be merged.  You can add additional isotopes to the file: $(MEGALIB)/resource/libraries/Calibration.isotopes");
+  TGLabel* Footer1 = new TGLabel(this, "Tips: Calibration files with the same group ID will be merged.  You can add additional isotopes to the file: $(MEGALIB)/resource/libraries/Calibration.isotopes\nIf you have multiple isotopes but just one detected line, the default line of the first listed isotope will be used. Therefore make sure your strongest isotope is listed first.");
   AddFrame(Footer1, FooterLayout);
   
   

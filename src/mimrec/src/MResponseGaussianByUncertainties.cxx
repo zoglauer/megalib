@@ -40,7 +40,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseGaussianByUncertainties)
 #endif
 
@@ -48,10 +48,12 @@ ClassImp(MResponseGaussianByUncertainties)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseGaussianByUncertainties::MResponseGaussianByUncertainties() : MResponseGaussian(1, 1, 1)
+MResponseGaussianByUncertainties::MResponseGaussianByUncertainties() : MResponseGaussian(1, 1, 1, 1)
 {
   // default constructor
 
+  m_Increase = 0.0;
+  
   // The default threshold is 2.5 sigmas:
   m_Threshold = 2.5;
 
@@ -88,12 +90,13 @@ bool MResponseGaussianByUncertainties::AnalyzeEvent(MPhysicalEvent* Event)
     
     double dPhi = dynamic_cast<MComptonEvent*>(Event)->dPhi()*c_Deg;
     //if (dPhi > 15) dPhi = 15;
+    if (dPhi < 3.0) dPhi = 3.0; // COSI HACK
     if (dPhi == 0.0) {
       cout<<"Error: This Compton event has no cone width!"<<endl;
       return false;
     }
-    dPhi += 0.25;
-    SetGaussians(dPhi, 30, 2);
+    dPhi += m_Increase;
+    SetGaussians(dPhi, 30, 2, 1);
      
     return true;
   } else if (Event->GetType() == MPhysicalEvent::c_Pair) {

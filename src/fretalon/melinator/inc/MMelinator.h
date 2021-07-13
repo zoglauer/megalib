@@ -47,13 +47,16 @@ class MMelinator
   //! Default constructor for MEGAlib's line calibrator library
   MMelinator();
   //! Default destructor
-  ~MMelinator();
+  virtual ~MMelinator();
 
   //! Clear all data
   void Clear();
-
+  
   //! Set the ID of the selected detector (use all detectors when negative)
   void SetSelectedDetectorID(int SelectedDetector) { m_SelectedDetectorID = SelectedDetector; }
+  
+  //! Set the ID of the selected detector (use all detectors when negative)
+  void SetSelectedTemperatureWindow(double Min, double Max) { m_SelectedTemperatureMin = Min; m_SelectedTemperatureMax = Max; }
   
   //! Load the calibration data containing the given isotopes and eventually merge files with identical data groups
   //! Return false if an error occurred
@@ -84,9 +87,12 @@ class MMelinator
   //! Set the calibration model determination method (number identical to what is defined in MCalibrateLines.h
   void SetCalibrationModelDeterminationMethod(unsigned int Method) { m_CalibrationModelDeterminationMethod = Method; }
   //! Set the fitting model options for the calibration model determination method
-  void SetCalibrationModelDeterminationMethodFittingOptions(unsigned int Model) { 
-    m_CalibrationModelDeterminationMethodFittingModel = Model; }
-
+  void SetCalibrationModelDeterminationMethodFittingEnergyOptions(unsigned int Model) { 
+    m_CalibrationModelDeterminationMethodFittingEnergyModel = Model; }
+  //! Set the fitting model options for the calibration model determination method
+  void SetCalibrationModelDeterminationMethodFittingFWHMOptions(unsigned int Model) { 
+    m_CalibrationModelDeterminationMethodFittingFWHMModel = Model; }
+      
   
   //! Get the number of collections in the store
   unsigned int GetNumberOfCollections() const { return m_Store.GetNumberOfReadOutCollections(); }
@@ -94,10 +100,16 @@ class MMelinator
   //! Get the number of groups in the store
   unsigned int GetNumberOfGroups() const { return m_Store.GetNumberOfReadOutDataGroups(); }
   
-  //! Return true if we have calibration model
-  bool HasCalibrationModel(unsigned int Collection);
-  //! Get the calibration model of the spectra
-  MCalibrationModel& GetCalibrationModel(unsigned int Collection);
+  //! Return true if we have an energy calibration model
+  bool HasEnergyCalibrationModel(unsigned int Collection);
+  //! Get the energy calibration model of the spectra
+  MCalibrationModel& GetEnergyCalibrationModel(unsigned int Collection);
+
+  //! Return true if we have a FWHM calibration model
+  bool HasFWHMCalibrationModel(unsigned int Collection);
+  //! Get the FWHM calibration model of the spectra
+  MCalibrationModel& GetFWHMCalibrationModel(unsigned int Collection);
+  
   //! Get the number of calibration point in the spectra
   unsigned int GetNumberOfCalibrationSpectralPoints(unsigned int Collection);
   //! Return the given spectral point
@@ -111,8 +123,8 @@ class MMelinator
   void DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned int Line, 
                    unsigned int HistogramBinningMode, double HistogramBinningModeValue);
   
-  //! Draw the calibration into the Canvas for the given Collection
-  void DrawCalibration(TCanvas& Canvas, unsigned int Collection);
+  //! Draw the calibration into the Canvas for the given Collection, toggle between energy and line width
+  void DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool UseEnergy = true);
 
   
   //! Return a non-const reference to a collection in the store
@@ -183,6 +195,11 @@ class MMelinator
   //! The selected detector ID (negative means all detectors)
   int m_SelectedDetectorID;
   
+  //! The selected temperature window minimum
+  double m_SelectedTemperatureMin;
+  //! The selected temperature window maximum
+  double m_SelectedTemperatureMax;
+  
   //! The group IDs
   vector<unsigned int> m_GroupIDs;
   //! The calibration file names
@@ -224,8 +241,10 @@ class MMelinator
   MCalibrateEnergyAssignEnergyModes m_CalibrationModelEnergyAssignmentMethod;
   //! The calibration model determination method
   unsigned int m_CalibrationModelDeterminationMethod;
-  //! Fitting model of the calibration model determination method
-  unsigned int m_CalibrationModelDeterminationMethodFittingModel;
+  //! Fitting model of the energy calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingEnergyModel;
+  //! Fitting model of the FWHM calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingFWHMModel;
   
   
   //! Number of threads
@@ -241,8 +260,18 @@ class MMelinator
   //! ID of the next item to be processed
   unsigned int m_ThreadNextItem;
 
+  // Time the key calibration steps
   
-#ifdef ___CINT___
+  //! Time in seconds to find the lines
+  double m_TimeToFindLines;
+  //! Time to assign energies
+  double m_TimeToAssignEnergies;
+  //! Time to determine model
+  double m_TimeToDetermineModel;
+  
+  
+  
+#ifdef ___CLING___
  public:
   ClassDef(MMelinator, 0) // no description
 #endif

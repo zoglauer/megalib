@@ -44,7 +44,7 @@ class MModuleReadOutAssemblyQueues
   //! Default constructor
   MModuleReadOutAssemblyQueues();
   //! Default destructor
-  ~MModuleReadOutAssemblyQueues();
+  virtual ~MModuleReadOutAssemblyQueues();
 
   //! Clear the queue
   void Clear();
@@ -104,7 +104,7 @@ class MModuleReadOutAssemblyQueues
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MModuleReadOutAssemblyQueues, 0) // no description
 #endif

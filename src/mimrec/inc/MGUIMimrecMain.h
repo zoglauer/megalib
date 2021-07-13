@@ -76,7 +76,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_Algorithm, 
                    c_Response, 
                    c_FitParameter, 
-                   c_Sensitivity, 
+                   c_Exposure, 
                    c_EventSelection,  
                    c_ShowEventSelections, 
                    c_ShowEventSelectionsStepwise, 
@@ -93,6 +93,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponseArmGamma, 
                    c_ResponseArmGammaVsCompton, 
                    c_ResponseArmGammaVsDistance, 
+                   c_ResponsePhiKinVsPhiGeo, 
                    c_ResponseSignificanceMap, 
                    c_ResponseArmGammaVsComptonProbability, 
                    c_ResponseArmGammaVsClusteringProbability, 
@@ -104,6 +105,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponseSpdElectronVsCompton, 
                    c_ResponseDualArm, 
                    c_ResponseArmComparison, 
+                   c_ResponseResolutionMeasurePET,
                    c_ResponseBackground, 
                    c_ResponseSpectrum, 
                    c_ResponseInitialEnergyDeposit, 
@@ -111,6 +113,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponsePhi, 
                    c_ResponseDistance, 
                    c_ResponseTime, 
+                   c_ResponseExposureMap, 
                    c_ResponseTimeWalk, 
                    c_ResponseCoincidenceWindow, 
                    c_ResponseAzimuthalElectronScatterAngle,
@@ -130,10 +133,12 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponseLocationOfInitialInteraction,
                    c_ResponseEarthCenterDistance,
                    c_ResponsePointingInGalacticCoordinates,
+                   c_ResponseCreateCosimaOrientationFile,
                    c_ResponseHorizonInSphericalDetectorCoordinates,
+                   c_ResponseDirectionScatteredGammaRay,
                    c_ResponseTest }; 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIMimrecMain, 0) // main window of the Mimrec GUI
 #endif

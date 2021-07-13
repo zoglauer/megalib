@@ -33,7 +33,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MBinner)
 #endif
 
@@ -94,6 +94,20 @@ void MBinner::SetMinMax(double Minimum, double Maximum, bool Adapt)
   m_Minimum = Minimum;
   m_Maximum = Maximum;
   m_Adapt = Adapt;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Add unsorted x value data
+void MBinner::AddUnsorted(vector<double> Values)
+{
+  sort(Values.begin(), Values.end());
+  
+  for (double x: Values) {
+    Add(x); 
+  }
 }
 
 

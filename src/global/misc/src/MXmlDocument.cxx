@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MXmlDocument)
 #endif
 
@@ -86,7 +86,7 @@ bool MXmlDocument::Load(MString FileName)
   } 
  
   string tmp;
-	while (getline(in, tmp)) {
+  while (getline(in, tmp)) {
     AllContent += tmp.c_str();
     AllContent += "\n";
   }

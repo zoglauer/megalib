@@ -38,11 +38,13 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MDShapeBRIK.h"
+#include "MDGuardRing.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDDetector)
 #endif
 
@@ -64,9 +66,10 @@ const int MDDetector::c_DriftChamber                = 5;
 const int MDDetector::c_Strip3DDirectional          = 6;
 const int MDDetector::c_AngerCamera                 = 7;
 const int MDDetector::c_Voxel3D                     = 8;
+const int MDDetector::c_GuardRing                   = 9;
 
 const int MDDetector::c_MinDetector                 = 1;
-const int MDDetector::c_MaxDetector                 = 8;
+const int MDDetector::c_MaxDetector                 = 9;
 
 const MString MDDetector::c_NoDetectorTypeName      = "NoDetectorType";
 const MString MDDetector::c_Strip2DName             = "Strip2D";
@@ -78,6 +81,7 @@ const MString MDDetector::c_DriftChamberName        = "DriftChamber";
 const MString MDDetector::c_Strip3DDirectionalName  = "Strip3DDirectional";
 const MString MDDetector::c_AngerCameraName         = "AngerCamera";
 const MString MDDetector::c_Voxel3DName             = "Voxel3D";
+const MString MDDetector::c_GuardRingName             = "GuardRing";
 
 const int MDDetector::c_EnergyResolutionTypeUnknown     = 0;
 const int MDDetector::c_EnergyResolutionTypeNone        = 1;
@@ -100,11 +104,12 @@ const int MDDetector::c_DepthResolutionTypeNone        = 1;
 const int MDDetector::c_DepthResolutionTypeIdeal       = 2;
 const int MDDetector::c_DepthResolutionTypeGauss       = 3;
 
-const int MDDetector::c_GuardringEnergyResolutionTypeUnknown     = 0;
-const int MDDetector::c_GuardringEnergyResolutionTypeNone        = 1;
-const int MDDetector::c_GuardringEnergyResolutionTypeIdeal       = 2;
-const int MDDetector::c_GuardringEnergyResolutionTypeGauss       = 3;
-
+/*
+const int MDDetector::c_GuardRingEnergyResolutionTypeUnknown     = 0;
+const int MDDetector::c_GuardRingEnergyResolutionTypeNone        = 1;
+const int MDDetector::c_GuardRingEnergyResolutionTypeIdeal       = 2;
+const int MDDetector::c_GuardRingEnergyResolutionTypeGauss       = 3;
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -166,7 +171,8 @@ MDDetector::MDDetector(MString Name)
   m_ShortNameDivisionY = g_StringNotDefined;
   m_ShortNameDivisionZ = g_StringNotDefined;
 
-  m_HasGuardring = false;
+  m_HasGuardRing = false;
+  m_GuardRing = nullptr;
 
   m_AreBlockedTriggerChannelsUsed = false;
 
@@ -237,7 +243,9 @@ MDDetector::MDDetector(const MDDetector& D)
   m_StructuralOffset = D.m_StructuralOffset;
   m_StructuralPitch = D.m_StructuralPitch;    
 
-  m_HasGuardring = D.m_HasGuardring;
+  m_HasGuardRing = D.m_HasGuardRing;
+  m_GuardRing = nullptr;
+  if (D.m_GuardRing != nullptr) m_GuardRing = new MDGuardRing(*D.m_GuardRing);
 
   if (D.m_PulseShape != 0) {
     m_PulseShape = new TF1(*D.m_PulseShape);
@@ -338,7 +346,14 @@ bool MDDetector::CopyDataToNamedDetectors()
     m_NamedDetectors[d]->m_StructuralOffset = m_StructuralOffset;
     m_NamedDetectors[d]->m_StructuralPitch = m_StructuralPitch;    
 
-    m_NamedDetectors[d]->m_HasGuardring = m_HasGuardring;
+    m_NamedDetectors[d]->m_HasGuardRing = m_HasGuardRing;
+    m_NamedDetectors[d]->m_GuardRing = nullptr;
+    if (m_GuardRing != nullptr) {
+      m_NamedDetectors[d]->m_GuardRing = dynamic_cast<MDGuardRing*>(m_GuardRing->Clone());
+      m_NamedDetectors[d]->m_GuardRing->SetName(m_NamedDetectors[d]->GetName() + "_GuardRing");
+      m_GuardRing->AddNamedDetector(m_NamedDetectors[d]->m_GuardRing);
+      m_NamedDetectors[d]->m_GuardRing->SetVolumeSequence(m_NamedDetectors[d]->m_VolumeSequence);
+    }
 
     if (m_PulseShape != 0) m_NamedDetectors[d]->m_PulseShape = new TF1(*m_PulseShape);
     m_NamedDetectors[d]->m_PulseShapeMin = m_PulseShapeMin;
@@ -369,6 +384,8 @@ MDDetector::~MDDetector()
   // default destructor
   
   delete m_PulseShape;
+  // NO: delete m_GuardRing;
+  // The guard rings have been added to the geometry and will be deleted there
 }
 
 
@@ -393,6 +410,8 @@ MString MDDetector::GetDetectorTypeName(const int Type)
     return c_AngerCameraName;
   } else if (Type == c_Voxel3D) {
     return c_Voxel3DName;
+  } else if (Type == c_GuardRing) {
+    return c_GuardRingName;
   } 
 
   merr<<"Unknown detector type: "<<Type<<endl;
@@ -422,6 +441,10 @@ int MDDetector::GetDetectorType(const MString& Type)
     return c_Strip3DDirectional;
   } else if (Type == c_AngerCameraName) {
     return c_AngerCamera;
+  } else if (Type == c_Voxel3DName) {
+    return c_Voxel3D;
+  } else if (Type == c_GuardRingName) {
+    return c_GuardRing;
   } 
 
   merr<<"Unknown detector type: "<<Type<<show;
@@ -443,7 +466,9 @@ bool MDDetector::IsValidDetectorType(const MString& Name)
       Name == c_Strip3DDirectionalName ||
       Name == c_ScintillatorName ||
       Name == c_DriftChamberName ||
-      Name == c_AngerCameraName) {
+      Name == c_AngerCameraName ||
+      Name == c_Voxel3DName ||
+      Name == c_GuardRingName) {
     return true;
   }
 
@@ -1256,14 +1281,14 @@ double MDDetector::GetTimeResolution(const double Energy) const
   // 
   
   if (m_TimeResolutionType == c_TimeResolutionTypeNone) {
-    return numeric_limits<double>::max()/1000;
+    return 1E15;
   } else if (m_TimeResolutionType == c_TimeResolutionTypeIdeal) {
     return 0;
   } else if (m_TimeResolutionType == c_TimeResolutionTypeGauss) {
     return m_TimeResolution.Evaluate(Energy);
   } else {
     merr<<"Unknown time resolution type: "<<m_TimeResolutionType<<endl;
-    return numeric_limits<double>::max()/1000;
+    return 1E15;
   }
 }
 
@@ -1382,7 +1407,7 @@ bool MDDetector::Validate()
 
   if (m_EnergyResolutionType == c_EnergyResolutionTypeUnknown) {
     mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
-    mout<<"No energy resolution defined --- assuming ideal"<<endl; 
+    mout<<"No energy resolution type defined --- assuming ideal"<<endl; 
     m_EnergyResolutionType = c_EnergyResolutionTypeIdeal; 
   }
   
@@ -1418,9 +1443,9 @@ bool MDDetector::Validate()
   }
   
   if (m_NoiseThresholdEqualsTriggerThreshold == true) {
-    if (m_NoiseThreshold != g_DoubleNotDefined) {
+    if (m_NoiseThreshold != g_DoubleNotDefined && m_NoiseThreshold != 0) {
       mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
-      mout<<"Ignoring noise threshold, because NoiseThresholdEqualsTriggerThreshold is set"<<endl; 
+      mout<<"Ignoring noise threshold ("<<m_NoiseThreshold<<" keV), because NoiseThresholdEqualsTriggerThreshold is set"<<endl; 
       m_NoiseThreshold = 0;
       m_NoiseThresholdSigma = 0;
     }
@@ -1727,7 +1752,7 @@ MString MDDetector::ToString() const
       out<<m_NamedDetectors[d]->GetName()<<" ";
     }
     out<<endl;
-	}
+  }
   
   return out.str().c_str();  
 }

@@ -37,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIReconstructedSpectrum)
 #endif
 
@@ -102,7 +102,8 @@ void MGUIReconstructedSpectrum::Create()
   m_Detectors = new MGUIECBList(this, "Select how the hits should be histogrammed. Attention: If you choose to look at the spectrum *after* event reconstruction then you have events spanning multiple detectors or detector types. Those will be sorted into the histogram where the start of the event is determined!");
   m_Detectors->Add("Into one spectrum for the whole setup", m_Data->GetSpectrumSortByInstrument());          
   m_Detectors->Add("Into one spectrum per detector type (e.g. combine all strip detectors)", m_Data->GetSpectrumSortByDetectorType());          
-  m_Detectors->Add("Into one spectrum per detector", m_Data->GetSpectrumSortByDetector());          
+  m_Detectors->Add("Into one spectrum per named detector (if two detectors have the same name they are combined)", m_Data->GetSpectrumSortByNamedDetector());          
+  m_Detectors->Add("Into one spectrum per detector (one spectrum for each positioned detector)", m_Data->GetSpectrumSortByDetector());          
   m_Detectors->Create();
   m_Detectors->Associate(this);
   AddFrame(m_Detectors, StandardLayout);
@@ -178,7 +179,7 @@ bool MGUIReconstructedSpectrum::OnApply()
     return false;    
   }
   
-  if (m_Detectors->IsSelected(0) == false && m_Detectors->IsSelected(1) == false && m_Detectors->IsSelected(2) == false) {
+  if (m_Detectors->IsSelected(0) == false && m_Detectors->IsSelected(1) == false && m_Detectors->IsSelected(2) == false && m_Detectors->IsSelected(3) == false) {
     mgui<<"You have choose at least one sorting option!"<<error;
     return false;    
   }
@@ -198,8 +199,9 @@ bool MGUIReconstructedSpectrum::OnApply()
   
   m_Data->SetSpectrumSortByInstrument(m_Detectors->IsSelected(0));
   m_Data->SetSpectrumSortByDetectorType(m_Detectors->IsSelected(1));
-  m_Data->SetSpectrumSortByDetector(m_Detectors->IsSelected(2));
-
+  m_Data->SetSpectrumSortByNamedDetector(m_Detectors->IsSelected(2));
+  m_Data->SetSpectrumSortByDetector(m_Detectors->IsSelected(3));
+  
   m_Data->SetSpectrumCombine(m_Combinations->IsSelected(0));
 
   m_Data->SetSpectrumOutputToScreen(m_Output->IsSelected(0));

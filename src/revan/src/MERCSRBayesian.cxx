@@ -53,7 +53,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERCSRBayesian)
 #endif
 
@@ -187,7 +187,7 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
   }
 
   unsigned int Size = Interactions.size();
-	float SizeF = float(Size);
+  float SizeF = float(Size);
 
   float Material;
   float Ratio = m_GoodBad.Get(1.5, SizeF)/m_GoodBad.Get(0.5, SizeF);
@@ -502,42 +502,6 @@ void MERCSRBayesian::VerifyEntries(float& NEntriesGood, float& NEntriesBad)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MERCSRBayesian::CalculatePhotoDistance(const MVector& Start, 
-                                              const MVector& Stop, double Etot)
-{
-  double Distance = m_Geometry->GetPhotoAbsorptionProbability(Start, Stop, Etot); 
-
-  return Distance;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-double MERCSRBayesian::CalculateComptonDistance(const MVector& Start, 
-                                                const MVector& Stop, double Etot)
-{
-  double Distance = m_Geometry->GetComptonAbsorptionProbability(Start, Stop, Etot); 
-
-  return Distance;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-double MERCSRBayesian::CalculateTotalDistance(const MVector& Start, 
-                                              const MVector& Stop, double Etot)
-{
-  double Distance = m_Geometry->GetAbsorptionProbability(Start, Stop, Etot); 
-
-  return Distance;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 double MERCSRBayesian::CalculateDCosPhi(MRESE* Start, MRESE* Central, MRESE* Stop, 
                                      double Energy)
 {
@@ -618,6 +582,23 @@ double MERCSRBayesian::CalculatePhiGInDegree(MRESE* Start, MRESE* Central,
 
   return PhiG;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MERCSRBayesian::CalculateCosPhiG(MRESE* Start, MRESE* Central, 
+                                        MRESE* Stop)
+{
+  double CosPhiG = (Central->GetPosition() - Start->GetPosition()).
+  Dot(Stop->GetPosition() - Central->GetPosition());
+  
+  CosPhiG /= (Central->GetPosition() - Start->GetPosition()).Mag();
+  CosPhiG /= (Stop->GetPosition() - Central->GetPosition()).Mag();
+  
+  return CosPhiG;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -715,7 +696,7 @@ int MERCSRBayesian::GetMaterial(MRESE* Hit)
     return 0;
   }
 
-  int ZMain = V->GetMaterial()->GetZMainComponent();
+  int ZMain = V->GetMaterial()->GetAtomicNumberMainComponent();
 
   if (ZMain == 14) { // Si
     return 1;

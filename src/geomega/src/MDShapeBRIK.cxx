@@ -41,7 +41,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShapeBRIK)
 #endif
 
@@ -96,7 +96,9 @@ bool MDShapeBRIK::Set(double x, double y, double z)
   m_Dx = x;
   m_Dy = y;
   m_Dz = z;
-
+  
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -108,10 +110,13 @@ bool MDShapeBRIK::Validate()
 {
   // Correctly initialize this shape
 
-  delete m_Geo;
-  m_Geo = new TGeoBBox(m_Dx, m_Dy, m_Dz);
-
-
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoBBox(m_Dx, m_Dy, m_Dz);
+    
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -138,80 +143,13 @@ bool MDShapeBRIK::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape Box!");
+    Info.Error(MString("Unhandled descriptor in shape Box: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
   
+  m_IsValidated = false;
+  
   return true; 
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeBRIK::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(3)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeBRIK::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Dx<<","<<m_Dy<<","<<m_Dz<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeBRIK::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_Dx<<" "<<m_Dy<<" "<<m_Dz<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeBRIK::GetGeant3ShapeName()
-{
-  //
-
-  return "BOX ";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeBRIK::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 3;
 }
 
 
@@ -287,7 +225,9 @@ void MDShapeBRIK::Scale(const double Factor)
   m_Dx *= Factor;
   m_Dy *= Factor;
   m_Dz *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 
@@ -314,8 +254,6 @@ bool MDShapeBRIK::IsInside(const MVector& Pos, const double Tolerance, const boo
 {
   // Overwrite to allow some tolerance:
 
-  //massert(Tolerance >= 0);
-
   if (PreferOutside == false) {
     if (fabs(Pos.m_Z) > m_Dz + Tolerance) {
       return false;
@@ -339,6 +277,26 @@ bool MDShapeBRIK::IsInside(const MVector& Pos, const double Tolerance, const boo
   }
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDShapeBRIK::DistanceOutsideIn(const MVector& Pos, const MVector& Dir, double Tolerance)
+{
+  // Attention: Dir needs to be a unit vector
+  
+  if (Pos.m_X > +m_Dx && Dir.m_X > 0) return 0;
+  if (Pos.m_X < -m_Dx && Dir.m_X < 0) return 0;
+  
+  if (Pos.m_Y > +m_Dy && Dir.m_Y > 0) return 0;
+  if (Pos.m_Y < -m_Dy && Dir.m_Y < 0) return 0;
+  
+  if (Pos.m_Z > +m_Dz && Dir.m_Z > 0) return 0;
+  if (Pos.m_Z < -m_Dz && Dir.m_Z < 0) return 0;
+  
+  return MDShape::DistanceOutsideIn(Pos, Dir, Tolerance);
 }
 
 

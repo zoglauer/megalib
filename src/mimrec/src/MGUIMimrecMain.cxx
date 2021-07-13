@@ -36,10 +36,12 @@
 #include "MGUIEventSelection.h"
 #include "MGUIResponseSelection.h"
 #include "MGUIResponseParameterGauss1D.h"
+#include "MGUIResponseParameterGaussianByUncertainties.h"
+#include "MGUIResponseParameterConeShapes.h"
 #include "MGUIResponseParameterPRM.h"
 #include "MGUIARM.h"
 #include "MGUISignificance.h"
-#include "MGUISensitivity.h"
+#include "MGUIExposure.h"
 #include "MGUIAnimation.h"
 #include "MGUIMemory.h"
 #include "MGUIImageDimensions.h"
@@ -53,7 +55,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIMimrecMain)
 #endif
 
@@ -126,16 +128,16 @@ void MGUIMimrecMain::Create()
   } else {
     MenuImaging->AddEntry("Create animated gif (experimental)", c_Animation);    
   }
-  //MenuImaging->AddEntry("Stop image reconstuction", c_StopReconstruction);
   MenuImaging->AddSeparator();
   MenuImaging->AddEntry("Reconstruction algorithm", c_LikelihoodAlgorithm);
   //m_Menu->AddEntry("Penalty", c_LikelihoodPenalty);
   MenuImaging->AddSeparator();
+  MenuImaging->AddEntry("Exposure settings", c_Exposure);
+  MenuImaging->AddSeparator();
   // MenuImaging->AddEntry("Backprojection algorithm", c_Algorithm);
   MenuImaging->AddEntry("Response type selection", c_Response);
   MenuImaging->AddEntry("Response parameter (for the above selected type)", c_FitParameter);
-  // MenuImaging->AddEntry("Sensitivity", c_Sensitivity);
-  //MenuImaging->DisableEntry(M_BP_SENSITIVITY);
+
   if (m_Data->GetSpecialMode() == true) {
     MenuImaging->AddSeparator();
     MenuImaging->AddLabel("Brand new, special, or not fully test");
@@ -149,33 +151,44 @@ void MGUIMimrecMain::Create()
   
   // The sub menu General
   TGPopupMenu* MenuGeneral = new TGPopupMenu(fClient->GetRoot());
+  MenuGeneral->AddLabel("General options");
+  MenuGeneral->AddSeparator();
   MenuGeneral->AddEntry("Energy spectra", c_ResponseSpectrum);
-  MenuGeneral->AddEntry("Time distribution", c_ResponseTime);
+  MenuGeneral->AddEntry("Light curve (time distribution)", c_ResponseTime);
   MenuGeneral->AddEntry("Location of initial interaction", c_ResponseLocationOfInitialInteraction);  
   MenuGeneral->AddEntry("Pointing in galactic coordinates", c_ResponsePointingInGalacticCoordinates);  
+  MenuGeneral->AddEntry("Create cosima orientation file", c_ResponseCreateCosimaOrientationFile);
+  MenuGeneral->AddEntry("Exposure map", c_ResponseExposureMap);  
   MenuGeneral->AddEntry("Horizon zenith in spherical coordinates", c_ResponseHorizonInSphericalDetectorCoordinates);  
   if (m_Data->GetSpecialMode() == true) {
     MenuGeneral->AddEntry("Time walk", c_ResponseTimeWalk);
-    MenuGeneral->AddEntry("Select Ids", c_ResponseSelectIds);
+    MenuGeneral->AddEntry("Select IDs", c_ResponseSelectIds);
   }
 
   // The sub menu ARM
   TGPopupMenu* MenuARM = new TGPopupMenu(fClient->GetRoot());
-  MenuARM->AddEntry("ARM of scattered gamma-ray", c_ResponseArmGamma);
-  MenuARM->AddEntry("SPD of recoil electron", c_ResponseSpdElectron);
+  MenuARM->AddLabel("Angular resolution measures");
+  MenuARM->AddSeparator();
+  MenuARM->AddEntry("ARM of scattered gamma ray (same as in main menu)", c_ResponseArmGamma);
+  MenuARM->AddEntry("SPD of recoil electron (same as in main menu)", c_ResponseSpdElectron);
+  MenuARM->AddSeparator();
   MenuARM->AddEntry("ARM of recoil electron", c_ResponseArmElectron);
-  MenuARM->AddEntry("ARM of scattered gamma-ray vs. Compton Scatter Angel (phi)", c_ResponseArmGammaVsCompton);
-  MenuARM->AddEntry("ARM of scattered gamma-ray vs. First interaction distance", c_ResponseArmGammaVsDistance);
+  MenuARM->AddEntry("Phi via kinematics vs. Phi via geometry", c_ResponsePhiKinVsPhiGeo);
+  MenuARM->AddEntry("ARM of scattered gamma ray vs. Compton Scatter Angel (phi)", c_ResponseArmGammaVsCompton);
+  MenuARM->AddEntry("ARM of scattered gamma ray vs. First interaction distance", c_ResponseArmGammaVsDistance);
   MenuARM->AddEntry("SPD of recoil electron vs Compton Scatter Angel (phi)", c_ResponseSpdElectronVsCompton);
   MenuARM->AddEntry("Dual ARM", c_ResponseDualArm);
   MenuARM->AddEntry("ARM-imaging-response comparison", c_ResponseArmComparison);
+  MenuARM->AddEntry("Resolution Measure PET", c_ResponseResolutionMeasurePET);
   MenuARM->Associate(this);
 
   // The sub menu quality factors:
   TGPopupMenu* MenuQuality = new TGPopupMenu(fClient->GetRoot());
+  MenuQuality->AddLabel("Quality factors");
+  MenuQuality->AddSeparator();
   MenuQuality->AddEntry("Compton Sequence Quality Factor", c_ResponseComptonQualityFactor);
   MenuQuality->AddEntry("Compton Sequence Quality Factor with ARM selection", c_ResponseComptonProbabilityWithARMSelection);
-  MenuQuality->AddEntry("ARM of scattered gamma-ray vs. Compton Quality Factor", c_ResponseArmGammaVsComptonProbability);
+  MenuQuality->AddEntry("ARM of scattered gamma ray vs. Compton Quality Factor", c_ResponseArmGammaVsComptonProbability);
   MenuQuality->AddEntry("Energy vs. Compton Quality Factor", c_ResponseEnergyVsComptonProbability);
   MenuQuality->AddEntry("Compton Sequence Length vs Compton Quality Factor", c_ResponseComptonSequenceLengthVsComptonProbability);
   MenuQuality->AddEntry("Earth center distance", c_ResponseEarthCenterDistance);
@@ -187,18 +200,23 @@ void MGUIMimrecMain::Create()
   MenuQuality->AddEntry("Clustering Quality Factor", c_ResponseClusteringQualityFactor);
   MenuQuality->AddEntry("ARM of scattered gamma-ray vs. Clustering Quality Factor", c_ResponseArmGammaVsClusteringProbability);
 
-  // The sub menu quality factors:
+  // The sub menu rest:
   TGPopupMenu* MenuDistributions = new TGPopupMenu(fClient->GetRoot());
+  MenuDistributions->AddLabel("All other distributions");
+  MenuDistributions->AddSeparator();
   MenuDistributions->AddEntry("Scatter angle distributions", c_ResponsePhi);
   MenuDistributions->AddEntry("Distance distribution", c_ResponseDistance);
   MenuDistributions->AddEntry("Compton sequence and track length", c_ResponseSequenceLengths);
   MenuDistributions->AddEntry("Coincidence window", c_ResponseCoincidenceWindow);
   MenuDistributions->AddEntry("Energy distribution Electron Photon", c_ResponseEnergyDistributionD1D2);
+  MenuDistributions->AddEntry("Direction scattered gamma ray", c_ResponseDirectionScatteredGammaRay);
   MenuDistributions->AddEntry("Azimuthal Compton scatter angle distribution", c_ResponseAzimuthalComptonScatterAngle);
   MenuDistributions->AddEntry("Azimuthal Electron scatter angle distribution", c_ResponseAzimuthalElectronScatterAngle);
 
   // The sub menu pair:
   TGPopupMenu* MenuPair = new TGPopupMenu(fClient->GetRoot());
+  MenuPair->AddLabel("Pair options");
+  MenuPair->AddSeparator();
   MenuPair->AddEntry("Angular resolution pair", c_ResponseAngularResolutionPair);
   MenuPair->AddEntry("Opening angle pair", c_ResponseOpeningAnglePair);
   MenuPair->AddEntry("Initial energy deposit", c_ResponseInitialEnergyDeposit);
@@ -206,17 +224,17 @@ void MGUIMimrecMain::Create()
 
 
   TGPopupMenu* MenuResponse = new TGPopupMenu(fClient->GetRoot());
-  MenuResponse->AddLabel("General");
+  MenuResponse->AddLabel("General for all event types");
   MenuResponse->AddSeparator();
   MenuResponse->AddEntry("Energy spectra", c_ResponseSpectrum);
-  MenuResponse->AddEntry("Time distribution", c_ResponseTime);
+  MenuResponse->AddEntry("Light curve (time distribution)", c_ResponseTime);
   MenuResponse->AddPopup("All general options", MenuGeneral);
   MenuResponse->AddSeparator();
   MenuResponse->AddEntry("Spectral analyzer", c_SpectralAnalyzer);
   MenuResponse->AddSeparator();
   MenuResponse->AddLabel("Compton specific");
   MenuResponse->AddSeparator();
-  MenuResponse->AddEntry("ARM of scattered gamma-ray", c_ResponseArmGamma);
+  MenuResponse->AddEntry("ARM of scattered gamma ray", c_ResponseArmGamma);
   MenuResponse->AddEntry("SPD of recoil electron", c_ResponseSpdElectron);
   MenuResponse->AddPopup("All ARM/SPD options", MenuARM);
   MenuResponse->AddSeparator();
@@ -321,16 +339,20 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_FitParameter:
-        if (m_Data->GetResponseType() == 0) {
+        if (m_Data->GetResponseType() == MResponseType::Gauss1D) {
           new MGUIResponseParameterGauss1D(gClient->GetRoot(), this, m_Data);
-        } else if (m_Data->GetResponseType() == 3) {
+        } else if (m_Data->GetResponseType() == MResponseType::GaussByUncertainties) {
+          new MGUIResponseParameterGaussianByUncertainties(gClient->GetRoot(), this, m_Data);
+        } else if (m_Data->GetResponseType() == MResponseType::ConeShapes) {
+          new MGUIResponseParameterConeShapes(gClient->GetRoot(), this, m_Data);
+        } else if (m_Data->GetResponseType() == MResponseType::PRM) {
           new MGUIResponseParameterPRM(gClient->GetRoot(), this, m_Data);
         }
         break;
 
-//       case c_Sensitivity:
-//         new MGUISensitivity(gClient->GetRoot(), this, m_Data);
-//         break;
+      case c_Exposure:
+        new MGUIExposure(gClient->GetRoot(), this, m_Data);
+        break;
         
       case c_EventSelection:
         new MGUIEventSelection(gClient->GetRoot(), this, m_Data, m_Interface->GetGeometry());
@@ -370,26 +392,22 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
           Launch(true);
         }
         break;
-        
-      case c_StopReconstruction:
-        m_Interface->InterruptReconstruction();
-        break;
 
       case c_ShowEventSelections:
         m_Interface->ShowEventSelections();
-				break;
+        break;
 
       case c_ShowEventSelectionsStepwise:
         m_Interface->ShowEventSelectionsStepwise();
-				break;
+        break;
 
       case c_ExtractEvents:
         m_Interface->ExtractEvents();
-				break;
+        break;
 
       case c_ThetaOriginDistribution:
         m_Interface->ThetaOriginDistribution();
-				break;
+        break;
         
       case c_SpectralAnalyzer:
         new MGUISpectralAnalyzer(gClient->GetRoot(), this, m_Data, &OKPressed);
@@ -412,6 +430,13 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         }
         break;
         
+      case c_ResponsePhiKinVsPhiGeo:
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
+        if (OKPressed == true) {
+          m_Interface->PhiKinVsPhiGeo();
+        }
+        break;
+        
       case c_ResponseArmComparison:
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
@@ -422,7 +447,7 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
       case c_ResponseArmGammaVsCompton:
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
-          m_Interface->ARMGammaVsCompton();
+          m_Interface->ARMGammaVsComptonScatterAngle();
         }
         break;
         
@@ -444,6 +469,14 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGammaVsClusteringProbability();
+        }
+        break;
+        
+        
+      case c_ResponseResolutionMeasurePET:
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_PET, OKPressed);
+        if (OKPressed == true) {
+          m_Interface->ResolutionMeasurePET();
         }
         break;
         
@@ -516,11 +549,14 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_ResponseEnergyDistributionD1D2:
-        m_Interface->EnergyDistributionElectronPhoton();
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_Spectrum, OKPressed);
+        if (OKPressed == true) {
+          m_Interface->EnergyDistributionElectronPhoton();
+        }
         break;
 
       case c_ResponseTime:
-        m_Interface->TimeDistribution();
+        m_Interface->LightCurve();
         break;
 
       case c_ResponseCoincidenceWindow:
@@ -554,7 +590,11 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
       case c_ResponseSequenceLengths:
         m_Interface->SequenceLengths();
         break;
-
+      
+      case c_ResponseDirectionScatteredGammaRay:
+        m_Interface->DirectionScatteredGammaRay();
+        break;
+        
       case c_ResponseAzimuthalComptonScatterAngle:
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
@@ -615,6 +655,14 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
 
       case c_ResponsePointingInGalacticCoordinates:
         m_Interface->PointingInGalacticCoordinates();
+        break;
+
+      case c_ResponseCreateCosimaOrientationFile:
+        m_Interface->CreateCosimaOrientationFile();
+        break;
+
+      case c_ResponseExposureMap:
+        m_Interface->CreateExposureMap();
         break;
 
       case c_ResponseHorizonInSphericalDetectorCoordinates:

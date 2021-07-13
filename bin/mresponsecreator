@@ -1,0 +1,231 @@
+#! /bin/bash
+
+
+commandhelp() {
+  echo ""
+  echo "mresponsecreator - multi-instance responsecreator (parallel runs on the same machine)";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Usage:";
+  echo "    mresponsecreator <identical to responsereator>";
+  echo "";
+  echo "Examples:";
+  echo "    mresponsecreator -g Max.geo.setup -f Response.p1.inc*.id1.sim -r Binned -m ib -c Max.revan.cfg -b Max.mimrec.cfg -z";
+  echo "    mresponsecreator -g Max.geo.setup -f TMVA_DataSets.tmva.seq*.good.root -r TMVA_v4 -m ct";
+  echo "";
+  echo "This script launches multiple instances of responsecreator."
+  echo "The number of instances is limited to the number of cores."
+  echo "--> Make sure the \"file (-f)\" option contains some kind of wild card to catch multiple input files."
+  echo "";
+}
+
+
+# Initialize
+THREADS=1;
+if [[ ${OSTYPE} == darwin* ]]; then
+  THREADS=`sysctl -n hw.logicalcpu_max`
+elif [[ ${OSTYPE} == linux* ]]; then 
+  THREADS=`grep processor /proc/cpuinfo | wc -l`
+fi
+
+
+# Check if responsecreator exists
+if (`test -f ${MEGAlib}/bin/responsecreator`); then
+  echo " "
+  echo "ERROR: The responsecreator executable does not exist. Try to (re-)compile MEGAlib."
+  echo " "
+  exit 1;
+fi
+# Check if responsemanipulator exists
+if (`test -f ${MEGAlib}/bin/responsemanipulator`); then
+  echo " "
+  echo "ERROR: The responsemanipulator executable does not exist. Try to (re-)compile MEGAlib."
+  echo " "
+  exit 1;
+fi
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help & logging
+LOGGING=false
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  elif [[ ${C} == *-l* ]]; then
+    LOGGING=true
+  fi
+done
+
+
+# Extract the files
+NEWCMD=""
+FILES=""
+NAME=""
+for (( c1=0; c1<=$(( ${#CMD[*]} -1 )); c1++ )); do
+  if [[ ${CMD[$c1]} == *-f* ]]; then
+    for (( c2=c1+1; c2<=$(( ${#CMD[*]} -1 )); c2++ )); do
+      if [[ ${CMD[$c2]} != -* ]]; then
+        FILES="${FILES} ${CMD[$c2]}"
+        c1=$c2
+      else
+        break
+      fi
+    done
+  elif [[ ${CMD[$c1]} == *-r* ]]; then
+    c1=$(( $c1 + 1 ))
+    NAME="${CMD[$c1]}"
+  else 
+    NEWCMD="${NEWCMD} ${CMD[$c1]}"
+  fi
+done
+
+echo "Running these files: ${FILES}"
+echo "Output file name: ${NAME}.idXYZ"
+echo "Standard arguments: ${NEWCMD}"
+
+# If we do TMVA training we have to do a different split 
+TMVA=false
+if [[ ${NEWCMD} == *" ct"* ]]; then
+  TMVA=true
+fi
+
+if [[ ${TMVA} == true ]]; then
+  
+  LOGGING=true
+  LINKS=""
+  SEQUENCES=""
+  LOGS=""
+  for SINGLEFILE in $(ls -r ${FILES}); do
+    mwait -p=responsecreator -i=threads -m
+    
+    GOODFILE=""
+    BADFILE=""
+    if [[ ${SINGLEFILE} == *.good.root ]]; then
+      GOODFILE=${SINGLEFILE}
+      BADFILE=${GOODFILE/.good.root/.bad.root}
+    elif [[ ${SINGLEFILE} == *.bad.root ]]; then
+      BADFILE=${SINGLEFILE}
+      GOODFILE=${BADFILE/.bad.root/.good.root}    
+    else
+      echo " "
+      echo "ERROR: Good/bad files not found."
+      echo " "
+      exit 1;
+    fi
+    
+    SEQUENCE=$(echo "${GOODFILE}" | awk -F".seq" '{ print $2 }' | awk -F".good.root" '{ print $1 }')
+    SEQUENCES+="${SEQUENCE} "
+    
+    TMPPREFIX=$(mktemp -u /tmp/mresponsecreatorlink.XXXXXXXX)
+    TMPGOODFILE=${TMPPREFIX}.${GOODFILE}
+    if [[ ${TMPGOODFILE} != /tmp/mresponsecreatorlink.* ]]; then
+      echo " "
+      echo "ERROR: Unable to find random file name for symbolic link."
+      echo " "
+      exit 1;
+    fi
+    ln -s "$(pwd)/${GOODFILE}" ${TMPGOODFILE}
+
+    TMPBADFILE=${TMPPREFIX}.${BADFILE}
+    if [[ ${TMPBADFILE} != /tmp/mresponsecreatorlink.* ]]; then
+      echo " "
+      echo "ERROR: Unable to find random file name for symbolic link."
+      echo " "
+      exit 1;
+    fi
+    ln -s "$(pwd)/${BADFILE}" ${TMPBADFILE}
+    
+    
+    LINKS+=" ${TMPGOODFILE} ${TMPBADFILE}"
+    
+    echo "Starting: responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD}"
+    if [[ ${LOGGING} == true ]]; then
+      LOG="${NAME}.seq${SEQUENCE}.log"
+      LOGS+="${LOG} "
+      nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} &> ${LOG} &
+    else 
+      nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} > /dev/null &
+    fi
+    echo "Started TMVA run for file ${SINGLEFILE}"
+
+    sleep 5    
+
+  done
+  
+  wait
+ 
+  if [[ ${LINKS} != "" ]]; then 
+    rm ${LINKS}
+  fi
+  
+  if [[ ${LOGGING} == true ]]; then
+    mv ${LOGS} ${NAME}
+  fi
+
+  # Fix the steering file
+  SEQUENCES=$(echo "${SEQUENCES}" | awk '{ for (i=NF; i>1; i--) printf("%s ", $i); print $1; }') # Just reverse it - small to large
+  SL=$(grep "^SL" ${NAME}.tmva)
+  if [[ "${SL}" != "" ]]; then 
+    sed -i "s/${SL}/SL ${SEQUENCES}/g" ${NAME}.tmva
+  fi
+  echo "${SL} vs ${SEQUENCES} vs. ${NAME}.tmva"
+  
+else
+  COUNTER=1
+  COUNTERMAX=`echo ${FILES} | wc -w`
+  for SINGLEFILE in ${FILES}; do
+    # Wait for everything being started, enough memory, and a free slot
+    if [[ ${NEWCMD} == *" cf"* ]]; then
+      mwait -p=responsecreator -i=threads
+    else
+      mwait -p=responsecreator -i=threads
+    fi
+
+    # Check if the sims have IDs we can use
+    PARALLEL=$(echo ${SINGLEFILE} | awk -F'\\.p' '{ print $2 }' | awk -F'\\.inc' '{ print $1 }')
+    INC=$(echo ${SINGLEFILE} | awk -F'\\.inc' '{ print $2 }' | awk -F'\\.id' '{ print $1 }')
+    
+    OUT="${NAME}"
+    if [[ ${PARALLEL} != "" ]]; then
+      OUT+=".p${PARALLEL}"
+    fi
+    if [[ ${INC} == "" ]]; then
+      INC=${COUNTER}
+    fi
+    OUT+=".inc${INC}"
+
+    if [[ ${LOGGING} == true ]]; then
+      LOG="${OUT}.log"
+      nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} &> ${LOG} &
+    else 
+      nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} &> /dev/null &
+    fi
+    echo "Started run ${COUNTER} out of ${COUNTERMAX} with ID ${ID}"
+
+    COUNTER=$(( ${COUNTER} + 1 ))
+  done
+fi
+
+echo "Waiting till all sub-processes have finished..."
+wait
+echo "Done"
+echo " "
+
+# No join until it is 100% parallelized
+
+#if [[ ${TMVA} == false ]]; then
+#  echo "Joining files..."
+#  echo " "
+
+#  responsemanipulator -j ${NAME}
+
+#  echo "Done"
+#  echo " "
+#fi 
+
+exit 0;
+

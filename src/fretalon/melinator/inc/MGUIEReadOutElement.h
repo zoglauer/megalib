@@ -75,7 +75,7 @@ class MGUIEReadOutElement : public TGTransientFrame
   //! The default background color
   Pixel_t m_DefaultBackgroundColor;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEReadOutElement, 0) // no description
 #endif

@@ -34,14 +34,14 @@ class MGUIERAlgorithm : public MGUIDialog
 {
   // Public Interface:
  public:
-  MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main, 
+  MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main,
                   MSettingsEventReconstruction* Data);
   virtual ~MGUIERAlgorithm();
 
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
   // private methods:
  private:
@@ -58,14 +58,16 @@ class MGUIERAlgorithm : public MGUIDialog
 
   TGLayoutHints* m_ListLayout;
   MGUIERBList* m_CoincidenceList;
-  MGUIERBList* m_ClusteringList;
+  MGUIERBList* m_EventClusteringList;
+  MGUIERBList* m_HitClusteringList;
   MGUIERBList* m_TrackingList;
   MGUIERBList* m_CSRList;
+  MGUIERBList* m_PairList;
   //MGUIERBList* m_DecayList;
- 
 
 
-#ifdef ___CINT___
+
+#ifdef ___CLING___
  public:
   ClassDef(MGUIERAlgorithm, 0)
 #endif

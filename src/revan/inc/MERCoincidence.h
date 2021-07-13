@@ -23,7 +23,7 @@
 #include "MGlobal.h"
 #include "MTime.h"
 #include "MERConstruction.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 
 // Forward declarations:
 
@@ -43,7 +43,7 @@ class MERCoincidence : public MERConstruction
   //! Set the coincidence window
   bool SetCoincidenceWindow(double Time);
   //! Search for coincidences --- return the event or zero if non found
-  MRERawEvent* Search(MRawEventList* List, bool Clear);
+  MRERawEvent* Search(MRawEventIncarnations* List, bool Clear);
 
   //! Dump some elemenatry information about the algorithm settings
   MString ToString(bool CoreOnly) const;
@@ -77,7 +77,7 @@ class MERCoincidence : public MERConstruction
   int m_NFoundCoincidences;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCoincidence, 0) // no description
 #endif

@@ -42,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIMain)
 #endif
 
@@ -59,8 +59,6 @@ MGUIMain::MGUIMain(unsigned int Width, unsigned int Height, MInterface* Interfac
   m_BaseData = Data;
 
   m_FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
-  
-  gStyle->SetPalette(1, 0);
 }
 
 
@@ -85,7 +83,7 @@ void MGUIMain::Create()
   MFile::ExpandFileName(Path);
   SetIconPixmap(Path);
 
-  // In the beginning we build the menus and define their layout, ...	
+  // In the beginning we build the menus and define their layout, ... 
   m_MenuBarItemLayoutLeft = 
     new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
   m_MenuBarItemLayoutRight = 

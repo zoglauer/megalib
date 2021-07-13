@@ -32,6 +32,11 @@ clean_gui:
 	@rm -f *~
 	@rm -f \#*
 
+clean_neuralnet:
+	@$(MAKE) clean -C neuralnet
+	@rm -f *~
+	@rm -f \#*
+
 
 #
 #----------------------------------------------------------------

@@ -50,7 +50,7 @@ class MGUIRBSelection : public MGUIDialog
 
   // protected methods:
  protected:
-	bool OnOk();
+  bool OnOk();
 
   // private methods:
  private:
@@ -76,7 +76,7 @@ class MGUIRBSelection : public MGUIDialog
   int m_LastPressedButton;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIRBSelection, 0) // GUI window for unknown purpose ...
 #endif

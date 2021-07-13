@@ -43,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSimHT)
 #endif
 
@@ -65,32 +65,6 @@ MSimHT::MSimHT(MDGeometryQuest* Geo)
 
   m_Cluster = 0;
   m_VolumeSequence = 0;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MSimHT::MSimHT(const int Detector, const MVector& Position, const double Energy, 
-               const double Time, const vector<int>& Origins, 
-               MDGeometryQuest* Geometry)
-{
-  // Correctly initialize the pointers:
-  m_VolumeSequence = 0;
-
-  // Basic data:
-  m_Geometry = Geometry; // We need this first
-
-  SetDetector(Detector);
-  SetPosition(Position);
-  SetEnergy(Energy);
-  SetTime(Time);
-  m_Origins = Origins;
-
-  // More sophisticated data:
-  m_OriginalPosition = m_Position;
-  m_OriginalEnergy = m_Energy;
-  m_Added = false;
 }
 
 
@@ -140,43 +114,114 @@ MSimHT::~MSimHT()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MSimHT::AddRawInput(MString LineBuffer, const int Version)
+void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const vector<int>& Origins, bool NeedsNoising)
+{
+  //! Set all core data
+  
+  m_DetectorType = Detector;
+  
+  m_OriginalEnergy = Energy; 
+  m_OriginalPosition = Position;
+  m_OriginalTime = Time;
+  
+  m_Origins = Origins;
+  
+  if (NeedsNoising == true) {
+    Noise();
+  } else {
+    m_Energy = Energy;
+    m_Position = Position;
+    m_Time = Time;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const set<int>& Origins, bool NeedsNoising)
+{
+  //! Set all core data
+  
+  m_DetectorType = Detector;
+  
+  m_OriginalEnergy = Energy; 
+  m_OriginalPosition = Position;
+  m_OriginalTime = Time;
+  
+  m_Origins.clear();
+  for (set<int>::const_iterator Iter = Origins.begin(); Iter != Origins.end(); ++Iter) {
+    m_Origins.push_back(*Iter);
+  }
+  
+  if (NeedsNoising == true) {
+    Noise();
+  } else {
+    m_Energy = Energy;
+    m_Position = Position;
+    m_Time = Time;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSimHT::AddRawInput(MString LineBuffer, int Version)
 {
   // Analyze one line of text input...
 
-  MString Origin(LineBuffer);
-  int i;
+  // Handle the most common MEGAlib 2.x sim / evta file versions
+  if (Version == 25 && LineBuffer.BeginsWith("HTsim ")) {
+    Version = 101;
+  } else if (Version == 21 && LineBuffer.BeginsWith("HT ")) {
+    Version = 200;
+  }
 
-  int Reads = 5;
-  if (Version == 20 || Version == 1) {
-    if (sscanf(LineBuffer.Data(), "HTsim%d;%lf;%lf;%lf;%lf\n",
-               &m_DetectorType, &m_Position[0], &m_Position[1], 
-               &m_Position[2], &m_Energy) != 5) {
-      mout<<"MSimHT: Unable to parse hit: "<<LineBuffer<<endl;
+
+  int Reads = 0;
+  if (Version == 100) { // No time
+    if (sscanf(LineBuffer.Data(), "HTsim %d;%lf;%lf;%lf;%lf",
+               &m_DetectorType, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy) != 6) {
+      mout<<"MSimHT: Unable to parse hit of version "<<Version<<": "<<LineBuffer<<endl;
       return false;
     }
     Reads = 5;
-  } else {
-    double dx,dy,dz,dE;
-    if (sscanf(LineBuffer.Data(), "HTsim %d;%lf;%lf;%lf;%lf;%lf;%*s",
-               &m_DetectorType, &m_Position[0], &m_Position[1], 
-               &m_Position[2], &m_Energy, &m_Time) != 6) {
-      if (sscanf(LineBuffer.Data(), "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;OK\n",
-                 &m_DetectorType, &m_Position[0], &m_Position[1], 
-                 &m_Position[2], &m_Energy, &dx,&dy, &dz, &dE) != 9) {
-        mout<<"MSimHT: Unable to parse hit: "<<LineBuffer<<endl;
-        return false;
-      }
+  } else if (Version == 101) { // with time 
+    if (sscanf(LineBuffer.Data(), "HTsim %d;%lf;%lf;%lf;%lf;%lf",
+               &m_DetectorType, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy, &m_Time) != 6) {
+      mout<<"MSimHT: Unable to parse hit of version "<<Version<<": "<<LineBuffer<<endl;
+      return false;
     }
     Reads = 6;
+  } else if (Version == 200) { // no time, with uncertainties
+    double dx,dy,dz,dE;
+    if (sscanf(LineBuffer.Data(), "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+               &m_DetectorType, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy, &dx, &dy, &dz, &dE) != 9) {
+      mout<<"MSimHT: Unable to parse hit of version "<<Version<<": "<<LineBuffer<<endl;
+      return false;
+    }
+    m_Time = 0;
+    Reads = 9;
+  } else if (Version == 201) {// with time & uncertainties
+    double dx, dy, dz, dE, dT;
+    if (sscanf(LineBuffer.Data(), "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+               &m_DetectorType, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy, &m_Time, &dx, &dy, &dz, &dE, &dT) != 11) {
+      mout<<"MSimHT: Unable to parse hit of version "<<Version<<": "<<LineBuffer<<endl;
+      return false;
+    }
+    Reads = 10;
+  } else {
+    merr<<"Unknown version of sim/evta file (version: "<<Version<<"), please upgrade (or use old version of MEGAlib prior to 3.0)"<<endl;
+    return false;
   }
-
   
   m_OriginalPosition = m_Position;
   m_OriginalEnergy = m_Energy;
+  m_OriginalTime = m_Time;
 
-  // Only the part with the origins should remain...
-  for (i = 0; i < Reads; i++) {
+  // Remove everything but the (variable) origin part...
+  MString Origin(LineBuffer);
+  for (int i = 0; i < Reads; ++i) {
     if (Origin.First(';') == MString::npos) {
       Origin = "";
     } else {
@@ -201,7 +246,7 @@ bool MSimHT::AddRawInput(MString LineBuffer, const int Version)
     // mout<<"MSimHT: Error during noising: "<<LineBuffer<<endl;
     return false;
   }
-
+  
   return true;
 }
 
@@ -222,7 +267,7 @@ MString MSimHT::ToString() const
     out<<m_Origins[i]<<", ";
   }
 
-  return out.str().c_str();
+  return out;
 }
 
 
@@ -269,9 +314,8 @@ MString MSimHT::ToSimString(const int WhatToStore, const int ScientificPrecision
       S<<";"<<m_Origins[o];
     }
   }
-  S<<endl;
 
-  return S.str().c_str();
+  return S;
 }
 
 
@@ -436,30 +480,6 @@ void MSimHT::OffsetOrigins(int Offset)
   }
 }
 
- 
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MSimHT::SetEnergy(const double Energy) 
-{ 
-  // Set a new energy and recalculate the noise:
-
-  m_OriginalEnergy = Energy; 
-  Noise(false);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MSimHT::SetPosition(const MVector& Pos)
-{
-  // Set a new position and recalculate the noise:
-
-  m_OriginalPosition = Pos;
-  Noise(true);
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -471,7 +491,8 @@ bool MSimHT::Noise(bool RecalculateVolumeSequence)
   // Make sure we noise not twice:
   m_Position = m_OriginalPosition;
   m_Energy = m_OriginalEnergy;
-
+  m_Time = m_OriginalTime;
+  
   //cout<<"Before: "<<m_Energy;
   if (m_Geometry != 0) {
     if (RecalculateVolumeSequence == true) {

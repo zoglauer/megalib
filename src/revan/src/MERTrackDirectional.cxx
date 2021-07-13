@@ -56,7 +56,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERTrackDirectional)
 #endif
 
@@ -82,7 +82,7 @@ MERTrackDirectional::~MERTrackDirectional()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList* MERTrackDirectional::TrackComptons(MRERawEvent* RE)
+MRawEventIncarnations* MERTrackDirectional::TrackComptons(MRERawEvent* RE)
 {
   // Track Compton events
 
@@ -92,7 +92,7 @@ MRawEventList* MERTrackDirectional::TrackComptons(MRERawEvent* RE)
   // Look for all hits with directional info - and 
 
   // List of raw events - this is what TrackComptons returns
-  MRawEventList* List = new MRawEventList();
+  MRawEventIncarnations* List = new MRawEventIncarnations();
   MRERawEvent* REdup = RE->Duplicate();
   List->AddRawEvent(REdup);
 

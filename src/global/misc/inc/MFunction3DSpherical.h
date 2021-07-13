@@ -83,7 +83,7 @@ class MFunction3DSpherical : public MFunction3D
  private:
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFunction3DSpherical, 0) // no description
 #endif

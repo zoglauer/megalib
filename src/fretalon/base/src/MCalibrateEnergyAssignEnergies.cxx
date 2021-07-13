@@ -44,7 +44,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MCalibrateEnergyAssignEnergies)
 #endif
 
@@ -224,20 +224,49 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
   if (g_Verbosity >= c_Info) cout<<endl<<"Assigning energies via linear method"<<endl;
   
   // Inventory:
-  if (g_Verbosity >= c_Info) {
-    cout<<"Current line inventory: "<<endl;
+  bool NoROGHasMoreThanOneGoodSpectralPoint = true;
+  if (g_Verbosity >= c_Info) cout<<"Current line inventory: "<<endl;
+  for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
+    unsigned int NumberOfGoodPoints = 0;
+    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
+      if (m_Results.GetSpectralPoint(r, p).IsGood() == false) {
+        if (g_Verbosity >= c_Info) cout<<"Excluded: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+      } else {
+        if (g_Verbosity >= c_Info) cout<<"Included: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+        ++NumberOfGoodPoints;
+      }
+    }
+    if (NumberOfGoodPoints > 1) {
+      NoROGHasMoreThanOneGoodSpectralPoint = false;
+    }
+  }
+
+  
+  // Special case: If we just have one point, then we choose the strongest line of the first isotope of the read-out group
+  if (NoROGHasMoreThanOneGoodSpectralPoint == true) {
     for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
       for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
-        if (m_Results.GetSpectralPoint(r, p).IsGood() == false) {
-          cout<<"Excluded: "<<m_Results.GetSpectralPoint(r, p)<<endl;
-        } else {
-          cout<<"Included: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+        if (m_Results.GetSpectralPoint(r, p).IsGood() == true) {
+          int DefaultLine = m_Isotopes[r][0].GetDefaultLine();
+          if (DefaultLine == -1) { // None found
+            m_Results.GetSpectralPoint(r, p).IsGood(false);
+            if (g_Verbosity >= c_Info) cout<<"Assign energies: Reject single line since no default isotope was found: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+            //return true;
+          } else {
+            m_Results.GetSpectralPoint(r, p).SetIsotope(m_Isotopes[r][0]);
+            m_Results.GetSpectralPoint(r, p).SetEnergy(m_Isotopes[r][0].GetLineEnergy(DefaultLine)); 
+            if (g_Verbosity >= c_Info) cout<<"Assign energies: Single peak, using default line of first isotope: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+            //return true;
+          }
         }
       }
     }
+    
+    return true;
   }
-      
-      
+  
+  
+  
   // Create a list of spectral points
   vector<SetOfMatches> SetsOfMatches;
   
@@ -296,7 +325,7 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
       if (NewSetsOfMatches.size() != 0) {
         SetsOfMatches = NewSetsOfMatches;
       } else {
-        cout<<"Error something went wrong with the latest sets of matches since we would now have less matches (old: "<<SetsOfMatches.size()<<"  new: "<<NewSetsOfMatches.size()<<") ... Excluding a ton of lines"<<endl; 
+        cout<<"Error something went wrong with the latest sets of matches since we would now have less matches (old: "<<SetsOfMatches.size()<<"  new: "<<NewSetsOfMatches.size()<<") ... Excluding some lines"<<endl; 
       }
     } else {
       for (auto SubSet: SubSetsOfMatches) {
@@ -405,7 +434,7 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
       for (unsigned int q = p+1; q < m_Results.GetNumberOfSpectralPoints(r); ++q) {
         if (m_Results.GetSpectralPoint(r, q).IsGood() == false) continue;
         if (m_Results.GetSpectralPoint(r, q).GetEnergy() == Energy) {
-          if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetEnergy()) {
+          if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetCounts()) {
             m_Results.GetSpectralPoint(r, p).IsGood(false);
             if (g_Verbosity >= c_Info) cout<<"Assign energies: Rejecting peak because it was found twice: "<<m_Results.GetSpectralPoint(r, p)<<endl;
             //FoundNotGood = true;
@@ -430,6 +459,46 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
 //! Perform the calibration
 bool MCalibrateEnergyAssignEnergies::CalibrateLinearZeroCrossing()
 { 
+  
+  // Inventory:
+  unsigned int NumberOfSpectralPoints = 0;
+  if (g_Verbosity >= c_Info) cout<<"Current line inventory: "<<endl;
+  for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
+    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
+      if (m_Results.GetSpectralPoint(r, p).IsGood() == false) {
+        if (g_Verbosity >= c_Info) cout<<"Excluded: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+      } else {
+        if (g_Verbosity >= c_Info) cout<<"Included: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+        ++NumberOfSpectralPoints;
+      }
+    }
+  }
+  
+  
+  // Special case: If we just have one point, then we choose the strongest line of the first isotope of the read-out group
+  if (NumberOfSpectralPoints == 1) {
+    for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) { // should be always 0
+      for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
+        if (m_Results.GetSpectralPoint(r, p).IsGood() == true) {
+          int DefaultLine = m_Isotopes[r][0].GetDefaultLine();
+          if (DefaultLine == -1) { // None found
+            m_Results.GetSpectralPoint(r, p).IsGood(false);
+            if (g_Verbosity >= c_Info) cout<<"Assign energies: Reject single line since no default isotope was found: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+            return true;
+          } else {
+            m_Results.GetSpectralPoint(r, p).SetIsotope(m_Isotopes[r][0]);
+            m_Results.GetSpectralPoint(r, p).SetEnergy(m_Isotopes[r][0].GetLineEnergy(DefaultLine)); 
+            if (g_Verbosity >= c_Info) cout<<"Assign energies: Single peak, using default line of first isotope: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+            return true;
+          }
+        }
+      }
+    }
+    
+    return true;
+  }
+  
+  
   vector<Match> Matches;
     
   // Create all combinations
@@ -527,7 +596,7 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinearZeroCrossing()
       for (unsigned int q = p+1; q < m_Results.GetNumberOfSpectralPoints(r); ++q) {
         if (m_Results.GetSpectralPoint(r, q).IsGood() == false) continue;
         if (m_Results.GetSpectralPoint(r, q).GetEnergy() == Energy) {
-          if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetEnergy()) {
+          if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetCounts()) {
             m_Results.GetSpectralPoint(r, p).IsGood(false);
             if (g_Verbosity >= c_Info) cout<<"Assign energies: Rejecting peak because it was found twice: "<<m_Results.GetSpectralPoint(r, p)<<endl;
             //FoundNotGood = true;

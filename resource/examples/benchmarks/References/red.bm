@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  red
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 18.04
+Kernel:                                    4.15.0-46-generic
+ 
+CPUModel:                                  Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz
+CPUName:                                   i7-4770
+CPUSockets:                                1
+CPUCoresPerSocket:                         4
+CPUThreadsPerCore:                         2
+Cores:                                     4
+Threads:                                   8
+ 
+ROOTVersion:                               6.16/00
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            2.99.11
+MEGAlibGitHash:                            6873835b66b792c3834574a6aa234800f306b7e5 2019-08-19
+MEGAlibOptimization:                       -O3 -mtune=native -fno-strict-aliasing -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      23.899
+EventsPerSecondCosimaSingle:               4184.275
+DurationCosimaMultiple:                    47.796
+EventsPerSecondCosimaMultiple:             16737.802
+ 
+# Revan
+DurationRevanSingle:                       4.897
+EventsPerSecondRevanSingle:                20420.665
+DurationRevanMultiple:                     8.550
+EventsPerSecondRevanMultiple:              93567.251
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             14.507
+EventsPerSecondResponseCreatorSingle:      6893.223
+DurationResponseCreatorMultiple:           29.855
+EventsPerSecondResponseCreatorMultiple:    26796.181
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               55.063
+EventsPerSecondMimrecImagingSingle:        1816.101
+DurationMimrecImagingMultiple:             15.226
+EventsPerSecondMimrecImagingMultiple:      6567.713
+ 

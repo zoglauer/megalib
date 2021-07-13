@@ -1,0 +1,45 @@
+# An example run for Cosima
+
+
+# Global parameters:
+Version               1
+Geometry              $(MEGALIB)/resource/examples/geomega/simplifiedprototype/Prototype.geo.setup
+
+# Physics list
+PhysicsListEM                      LivermorePol
+
+# Output formats
+StoreSimulationInfo                all
+
+# Run & source parameters
+Run Na22
+Na22.FileName                      Na22Decay
+Na22.NTriggers                     2000000
+
+Na22.Source High_Solo
+High_Solo.ParticleType             1
+High_Solo.Beam                     PointSource 0 0 10  
+High_Solo.Spectrum                 Mono 1274.5
+High_Solo.Flux                     { 0.097 * 1000000 }
+
+Na22.Source High_multi
+High_multi.ParticleType            1
+High_multi.Beam                    PointSource 0 0 10  
+High_multi.Spectrum                Mono 1274.5
+High_multi.Flux                    { 0.903 * 1000000 }
+High_multi.Successor               Pos511A_multi
+
+Na22.Source Pos511A_multi
+Pos511A_multi.ParticleType         1
+Pos511A_multi.Beam                 PointSource 0 0 10  
+Pos511A_multi.Spectrum             Mono 511
+Pos511A_multi.IsSuccessor          true
+Pos511A_multi.Successor            Pos511B_multi
+
+Na22.Source Pos511B_multi
+Pos511B_multi.ParticleType         1
+Pos511B_multi.Beam                 ReverseDirectionToPredecessor  
+Pos511B_multi.Spectrum             Mono 511
+Pos511B_multi.IsSuccessor          true
+
+

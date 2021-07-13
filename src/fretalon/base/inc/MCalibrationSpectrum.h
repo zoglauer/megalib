@@ -70,13 +70,22 @@ class MCalibrationSpectrum : public MCalibration
   vector<MCalibrationSpectralPoint> GetUniquePoints();
   
   //! Set the calibration model
-  void SetModel(MCalibrationModel& Model);
+  void SetEnergyModel(MCalibrationModel& EnergyModel);
   //! Get the calibration model, if it doesn't exist throw MExceptionObjectDoesNotExist
-  MCalibrationModel& GetModel();
+  MCalibrationModel& GetEnergyModel();
   //! Return true if we have a model
-  bool HasModel() const { if (m_Model != 0) return true; else return false; }
+  bool HasEnergyModel() const { if (m_EnergyModel != nullptr) return true; else return false; }
   //! Remove the model
-  void RemoveModel();
+  void RemoveEnergyModel();
+  
+  //! Set the line width calibration model
+  void SetFWHMModel(MCalibrationModel& FWHMModel);
+  //! Get the line width calibration model, if it doesn't exist throw MExceptionObjectDoesNotExist
+  MCalibrationModel& GetFWHMModel();
+  //! Return true if we have a line width model
+  bool HasFWHMModel() const { if (m_FWHMModel != nullptr) return true; else return false; }
+  //! Remove the line width model
+  void RemoveFWHMModel();
   
   //! Return the data as parsable string - this function is just here to satisfy the compiler...
   virtual MString ToParsableString(bool WithDescriptor = false) { return ToParsableString("pak", WithDescriptor); }
@@ -101,10 +110,14 @@ class MCalibrationSpectrum : public MCalibration
  private:
   //! The spectral points
   vector<vector<MCalibrationSpectralPoint> > m_SpectralPoints;
-  //! Their calibartion model
-  MCalibrationModel* m_Model;
+  //! Their calibration model
+  MCalibrationModel* m_EnergyModel;
+  //! Their line width calibration model
+  MCalibrationModel* m_FWHMModel;
 
-#ifdef ___CINT___
+  
+  
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrationSpectrum, 0) // no description
 #endif

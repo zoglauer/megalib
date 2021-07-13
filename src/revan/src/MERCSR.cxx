@@ -49,7 +49,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERCSR)
 #endif
 
@@ -109,7 +109,7 @@ bool MERCSR::SetParameters(MGeometryRevan* Geometry,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERCSR::Analyze(MRawEventList* List)
+bool MERCSR::Analyze(MRawEventIncarnations* List)
 {
   // Analyze the raw event...
 
@@ -121,7 +121,7 @@ bool MERCSR::Analyze(MRawEventList* List)
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; ++e) {
       MRERawEvent* RE = m_List->GetRawEventAt(e);
-      MRawEventList* NewList = CreateOnlyPermutations(RE);
+      MRawEventIncarnations* NewList = CreateOnlyPermutations(RE);
       if (NewList != 0) {
         m_List->DeleteRawEvent(RE);
         e--;
@@ -174,7 +174,7 @@ bool MERCSR::Analyze(MRawEventList* List)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
+MRawEventIncarnations* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
 {
   // Create and link all possible permutations:
   // Now we are in some programming trouble:
@@ -206,7 +206,7 @@ MRawEventList* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
   Permutations.reserve(int(TMath::Factorial(RE->GetNRESEs())));
   FindPermutations(RESEs, RESEs.size(), Permutations);
 
-  MRawEventList* List = new MRawEventList();
+  MRawEventIncarnations* List = new MRawEventIncarnations();
   for (unsigned int c = 0; c < Permutations.size(); ++c) {
     MRERawEvent* Dup = RE->Duplicate();
 
@@ -444,7 +444,6 @@ void MERCSR::LeftShift(vector<MRESE*>& RESEs, int Level)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
 int MERCSR::ComputeAllQualityFactors(MRERawEvent* RE)
 {
   // This function computes all quality factors
@@ -524,7 +523,7 @@ double MERCSR::ComputePositionError(MRESE* First, MRESE* Second, MRESE* Third)
   double dCx = Third->GetPositionResolutionX();
   double dCy = Third->GetPositionResolutionY();
   double dCz = Third->GetPositionResolutionZ();
-	
+  
   double Vx = Ax - Bx;
   double Vy = Ay - By;
   double Vz = Az - Bz;
@@ -533,14 +532,14 @@ double MERCSR::ComputePositionError(MRESE* First, MRESE* Second, MRESE* Third)
   double Uz = Bz - Cz;
   double UdotV = Ux*Vx + Uy*Vy + Uz*Vz;
   double lengthV2 = Vx*Vx + Vy*Vy + Vz*Vz;
-  double lengthU2 = Ux*Ux + Uy*Uy + Uz*Uz;	
+  double lengthU2 = Ux*Ux + Uy*Uy + Uz*Uz;  
   double lengthV = sqrt(lengthV2);
   double lengthU = sqrt(lengthU2);
-	
-  double lengthVlengthU = lengthV * lengthU;	
+  
+  double lengthVlengthU = lengthV * lengthU;  
   double lengthV3lengthU = lengthV2 * lengthVlengthU;
   double lengthVlengthU3 = lengthVlengthU * lengthU2;
-	
+  
   double DCosThetaDx1 = (Vx-Ux)/lengthVlengthU - Ux*UdotV/lengthVlengthU3+
     Vx*UdotV/lengthV3lengthU;
   double DCosThetaDx2 = Ux*UdotV/lengthVlengthU3-Vx/lengthVlengthU;
@@ -553,13 +552,13 @@ double MERCSR::ComputePositionError(MRESE* First, MRESE* Second, MRESE* Third)
     Vz*UdotV/lengthV3lengthU;
   double DCosThetaDz2 = Uz*UdotV/lengthVlengthU3-Vz/lengthVlengthU;
   double DCosThetaDz  =-Vz*UdotV/lengthV3lengthU+Uz/lengthVlengthU;
-		
+    
   double deltaF = sqrt(DCosThetaDx1*DCosThetaDx1 * dBx*dBx + DCosThetaDy1*DCosThetaDy1 * dBy*dBy + 
                        DCosThetaDz1*DCosThetaDz1 * dBz*dBz +
                        DCosThetaDx2*DCosThetaDx2 * dCx*dCx + DCosThetaDy2*DCosThetaDy2 * dCy*dCy + 
                        DCosThetaDz2*DCosThetaDz2 * dCz*dCz +
                        DCosThetaDx *DCosThetaDx  * dAx*dAx + DCosThetaDy *DCosThetaDy  * dAy*dAy + 
-                       DCosThetaDz *DCosThetaDz  * dAz*dAz);	       	       	             	
+                       DCosThetaDz *DCosThetaDz  * dAz*dAz);                                
 
   if (deltaF == 0) {
     // In case they are on a straight line the above fails (no problem since this is anyway no good Compton event):
@@ -576,6 +575,42 @@ double MERCSR::ComputePositionError(MRESE* First, MRESE* Second, MRESE* Third)
   }
 
   return deltaF;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MERCSR::CalculatePhotoDistance(const MVector& Start, 
+                                              const MVector& Stop, double Etot)
+{
+  double Distance = m_Geometry->GetPhotoAbsorptionProbability(Start, Stop, Etot); 
+  
+  return Distance;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MERCSR::CalculateComptonDistance(const MVector& Start, 
+                                                const MVector& Stop, double Etot)
+{
+  double Distance = m_Geometry->GetComptonAbsorptionProbability(Start, Stop, Etot); 
+  
+  return Distance;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MERCSR::CalculateTotalDistance(const MVector& Start, 
+                                              const MVector& Stop, double Etot)
+{
+  double Distance = m_Geometry->GetAbsorptionProbability(Start, Stop, Etot); 
+  
+  return Distance;
 }
 
 

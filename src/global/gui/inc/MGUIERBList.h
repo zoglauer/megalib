@@ -42,11 +42,11 @@ class MGUIERBList : public MGUIElement
               bool Emphasize = false, int Mode = c_MultipleLine);
   virtual ~MGUIERBList();
 
-	void SetEnabled(bool flag = true);
+  void SetEnabled(bool flag = true);
   bool IsEnabled() { return m_IsEnabled; }
 
   //! Set the wrap length of all text
-	virtual void SetWrapLength(int WrapLength);
+  virtual void SetWrapLength(int WrapLength);
 
   bool ProcessMessage(long Message, long Parameter1, long Parameter2);
   void Associate(TGWindow* Associate);
@@ -89,7 +89,7 @@ class MGUIERBList : public MGUIElement
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIERBList, 0) // Basic GUI element: a radio button list
 #endif

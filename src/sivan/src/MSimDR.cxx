@@ -29,7 +29,7 @@ using namespace std;
 // MEGAlib libs:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSimDR)
 #endif
 
@@ -123,9 +123,9 @@ MString MSimDR::ToSimString(const int WhatToStore, const int ScientificPrecision
   S<<setw(WidthDir)<<m_Direction.X()<<";";
   S<<setw(WidthDir)<<m_Direction.Y()<<";";
   S<<setw(WidthDir)<<m_Direction.Z()<<";";
-  S<<setw(WidthEnergy)<<m_Energy<<endl;
+  S<<setw(WidthEnergy)<<m_Energy;
 
-  return S.str().c_str();
+  return S;
 }
 
 

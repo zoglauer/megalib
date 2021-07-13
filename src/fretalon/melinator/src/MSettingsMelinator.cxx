@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <limits>
 using namespace std;
 
 // ROOT libs:
@@ -38,7 +39,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSettingsMelinator)
 #endif
 
@@ -70,11 +71,15 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
 
   m_CalibrationModelZeroCrossing = true;
   m_CalibrationModelDeterminationMethod = 0;
-  m_CalibrationModelDeterminationMethodFittingModel = 3;
+  m_CalibrationModelDeterminationMethodFittingEnergyModel = 3;
+  m_CalibrationModelDeterminationMethodFittingFWHMModel = 1;
   
   m_SaveAsFileName = "Out.ecal";
   
   m_SelectedDetectorID = -1;
+  
+  m_MinimumTemperature = -numeric_limits<double>::max();
+  m_MaximumTemperature = +numeric_limits<double>::max();
   
   if (AutoLoad == true) {
     Read();
@@ -159,7 +164,8 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
 
   new MXmlNode(Node, "CalibrationModelZeroCrossing", m_CalibrationModelZeroCrossing);
   new MXmlNode(Node, "CalibrationModelDeterminationMethod", m_CalibrationModelDeterminationMethod);
-  new MXmlNode(Node, "CalibrationModelDeterminationMethodFittingModel", m_CalibrationModelDeterminationMethodFittingModel);
+  new MXmlNode(Node, "CalibrationModelDeterminationMethodFittingEnergyModel", m_CalibrationModelDeterminationMethodFittingEnergyModel);
+  new MXmlNode(Node, "CalibrationModelDeterminationMethodFittingFWHMModel", m_CalibrationModelDeterminationMethodFittingFWHMModel);
   
   new MXmlNode(Node, "SaveAsFileName", m_SaveAsFileName);
   
@@ -254,8 +260,11 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("CalibrationModelDeterminationMethod")) != 0) {
     m_CalibrationModelDeterminationMethod = aNode->GetValueAsUnsignedInt();
   }
-  if ((aNode = Node->GetNode("CalibrationModelDeterminationMethodFittingModel")) != 0) {
-    m_CalibrationModelDeterminationMethodFittingModel = aNode->GetValueAsUnsignedInt();
+  if ((aNode = Node->GetNode("CalibrationModelDeterminationMethodFittingEnergyModel")) != 0) {
+    m_CalibrationModelDeterminationMethodFittingEnergyModel = aNode->GetValueAsUnsignedInt();
+  }
+  if ((aNode = Node->GetNode("CalibrationModelDeterminationMethodFittingFWHMModel")) != 0) {
+    m_CalibrationModelDeterminationMethodFittingFWHMModel = aNode->GetValueAsUnsignedInt();
   }
   
   if ((aNode = Node->GetNode("PeakHistogramBinningMode")) != 0) {

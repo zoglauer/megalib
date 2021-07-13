@@ -39,7 +39,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERConstruction)
 #endif
 
@@ -71,7 +71,7 @@ MERConstruction::~MERConstruction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERConstruction::Analyze(MRawEventList* List)
+bool MERConstruction::Analyze(MRawEventIncarnations* List)
 {
   // Analyze the raw event...
   m_List = List;

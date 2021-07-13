@@ -52,7 +52,6 @@ class MDStrip3DDirectional : public MDStrip3D
   virtual bool Validate();
 
   virtual MString GetGeomega() const;
-  virtual MString GetMGeant() const;
 
   static const int c_DirectionalResolutionTypeUnknown;
   static const int c_DirectionalResolutionTypeIdeal;
@@ -79,7 +78,7 @@ class MDStrip3DDirectional : public MDStrip3D
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDStrip3DDirectional, 0) // no description
 #endif

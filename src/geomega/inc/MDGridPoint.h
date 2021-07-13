@@ -129,7 +129,8 @@ class MDGridPoint
   static const unsigned int c_YStrip;
   static const unsigned int c_XYAnger;
   static const unsigned int c_XYZAnger;
-  static const unsigned int c_Guardring;
+  static const unsigned int c_XYZIndependentAnger;
+  static const unsigned int c_GuardRing;
   static const unsigned int c_MinType;
   static const unsigned int c_MaxType;
 
@@ -172,7 +173,7 @@ class MDGridPoint
   vector<int> m_Origins;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDGridPoint, 0)
 #endif

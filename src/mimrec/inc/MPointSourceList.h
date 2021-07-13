@@ -58,7 +58,7 @@ class MPointSourceList : public TObject
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPointSourceList, 0) // a list of class MPointSource
 #endif

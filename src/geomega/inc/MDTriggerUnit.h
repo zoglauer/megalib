@@ -17,6 +17,8 @@
 
 
 // Standard libs:
+#include <vector>
+using namespace std;
 
 // ROOT libs:
 
@@ -41,11 +43,14 @@ class MDTriggerUnit
   //! Default destructor
   virtual ~MDTriggerUnit();
 
-  //! Reset the stored event data - call befoire each new event
+  //! Reset the stored event data - call before each new event
   void Reset();
+  
+  //! Validate the trigger unit
+  bool Validate() const;
 
-  //! Set a flag indicating that vetoes are ignored
-  void IgnoreVetoes(bool IgnoreVetoesFlag) { m_IgnoreVetoes = IgnoreVetoesFlag; }
+  //! Set a flag indicating that vetoes are ignored and transfer it to all triggers
+  void IgnoreVetoes(bool IgnoreVetoesFlag);
   //! Set a flag indicating that thresholds are ignored
   void IgnoreThresholds(bool IgnoreThresholdsFlag) { m_IgnoreThresholds = IgnoreThresholdsFlag; }
 
@@ -59,19 +64,20 @@ class MDTriggerUnit
   //! Add a new hit
   bool AddHit(const double& Energy, MDVolumeSequence& VS);
   //! Add a new guard ring hit
-  bool AddGuardringHit(const MVector& Position, const double& Energy);
+  bool AddGuardRingHit(const MVector& Position, const double& Energy);
   //! Add a new guard ring hit
-  bool AddGuardringHit(const double& Energy, MDVolumeSequence& VS);
+  bool AddGuardRingHit(const double& Energy, MDVolumeSequence& VS);
 
   //! Return true if the last event has raised a trigger
   bool HasTriggered();
-  //! If the last event has raised a trigger, return its name 
-  MString GetNameTrigger();
+  //! Return a list of all the vetoes which have been raised
+  vector<MString> GetTriggerNameList();
+  
   //! Return true if the last event has raised a veto
   bool HasVetoed();
-  //! If the last event has raised a veto, return its name 
-  MString GetNameVeto();
-
+  //! Return a list of all the vetoes which have been raised
+  vector<MString> GetVetoNameList();
+  
 
   // protected methods:
  protected:
@@ -106,7 +112,7 @@ class MDTriggerUnit
  private:
   friend ostream& operator<<(ostream& os, const MDTriggerUnit& T);
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDTriggerUnit, 0) // no description
 #endif

@@ -46,10 +46,12 @@ class MRESEList
   MRESE* GetRESEContainingRESE(int ID);
   bool ContainsRESE(MRESE *RESE);
   bool ContainsRESE(int ID);
+  void SetRESEAt(int i, MRESE* R);
   void AddRESE(MRESE* RESE);
   void AddRESEFirst(MRESE* RESE);
   MRESE* RemoveRESE(MRESE* RESE);
   MRESE* RemoveRESEAt(int i);
+  //! Removes all RESE - The list is NOT compressed!
   void RemoveAllRESEs();
   void DeleteAll();
   void CompressRESEs() { Compress(); } // depreciated!
@@ -68,7 +70,7 @@ class MRESEList
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRESEList, 0) // a list of raw event sub elements 
 #endif

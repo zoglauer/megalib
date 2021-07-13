@@ -47,7 +47,6 @@ G4Allocator<MC2DStripHit> MC2DStripHitAllocator;
 MC2DStripHit::MC2DStripHit(bool Is3D) : MCVHit(), m_Is3D(Is3D)
 {
   m_ADCCounts = 0;
-  m_Position.set(0.0, 0.0, 0.0);
   m_IsGuardringHit = false;
   m_XStrip = -1;
   m_YStrip = -1;
@@ -76,11 +75,11 @@ MC2DStripHit::MC2DStripHit(const MC2DStripHit& Hit) : MCVHit()
   m_Is3D = Hit.m_Is3D;
 
   m_Energy = Hit.m_Energy;
+  m_Position = Hit.m_Position;
   m_Name = Hit.m_Name;
   m_DetectorType = Hit.m_DetectorType;
 
   m_ADCCounts = Hit.m_ADCCounts;
-  m_Position = Hit.m_Position;
   m_IsGuardringHit = Hit.m_IsGuardringHit;
   m_XStrip = Hit.m_XStrip;
   m_YStrip = Hit.m_YStrip;
@@ -103,11 +102,11 @@ const MC2DStripHit& MC2DStripHit::operator=(const MC2DStripHit& Hit)
   m_Is3D = Hit.m_Is3D;
 
   m_Energy = Hit.m_Energy;
+  m_Position = Hit.m_Position;
   m_Name = Hit.m_Name;
   m_DetectorType = Hit.m_DetectorType;
 
   m_ADCCounts = Hit.m_ADCCounts;
-  m_Position = Hit.m_Position;
   m_IsGuardringHit = Hit.m_IsGuardringHit;
   m_XStrip = Hit.m_XStrip;
   m_YStrip = Hit.m_YStrip;
@@ -196,7 +195,7 @@ const MC2DStripHit& MC2DStripHit::operator+=(const MC2DStripHit& Hit)
  */
 MSimGR* MC2DStripHit::GetGuardringCalibrated()
 {
-  if (m_IsGuardringHit == false) return 0;
+  if (m_IsGuardringHit == false) return nullptr;
 
   // Most of the stuff can be put into the base class
   MSimGR* GR = new MSimGR();
@@ -213,11 +212,9 @@ MSimGR* MC2DStripHit::GetGuardringCalibrated()
  */
 MSimHT* MC2DStripHit::GetCalibrated()
 {
-  if (m_IsGuardringHit == true) return 0;
+  if (m_IsGuardringHit == true) return nullptr;
 
-  MSimHT* HT = MCVHit::GetCalibrated();
-  HT->SetPosition(MVector(m_Position.getX()/cm, m_Position.getY()/cm, m_Position.getZ()/cm));
-  return HT;
+  return MCVHit::GetCalibrated();
 }
 
 

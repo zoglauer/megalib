@@ -37,7 +37,7 @@ class MRECluster : public MRESE
  public:
   MRECluster();
   MRECluster(MRECluster* Cluster);
-  ~MRECluster();
+  virtual ~MRECluster();
 
   double ComputeMinDistance(MRESE *RESE);
   MVector ComputeMinDistanceVector(MRESE *RESE);
@@ -56,7 +56,7 @@ class MRECluster : public MRESE
   void AddHit(MREHit *Hit);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRECluster, 0) // a cluster of hits
 #endif

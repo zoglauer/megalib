@@ -28,11 +28,11 @@ using namespace std;
 #include <TStyle.h>
 #include <TH1.h>
 #include <TCanvas.h>
-#include <MString.h>
 
 // MEGAlib
 #include "MGlobal.h"
 #include "MStreams.h"
+#include "MString.h"
 #include "MDGeometryQuest.h"
 #include "MDDetector.h"
 #include "MFileEventsSim.h"
@@ -79,7 +79,7 @@ private:
  */
 SimRewriter::SimRewriter() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
+  // Intentionally left blank
 }
 
 
@@ -173,6 +173,12 @@ bool SimRewriter::ParseCommandLine(int argc, char** argv)
     if (m_OutputFileName == "") {
       m_OutputFileName = m_FileName;
       m_OutputFileName.Replace(m_FileName.Length()-4, 4, ".mod.sim");
+      cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
+    }    
+  } else if (m_FileName.EndsWith(".sim.gz") == true) {
+    if (m_OutputFileName == "") {
+      m_OutputFileName = m_FileName;
+      m_OutputFileName.Replace(m_FileName.Length()-4, 4, ".mod.sim.gz");
       cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
     }    
   } else {

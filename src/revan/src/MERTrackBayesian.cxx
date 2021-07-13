@@ -54,7 +54,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERTrackBayesian)
 #endif
 
@@ -437,7 +437,7 @@ bool MERTrackBayesian::EvaluateTracks(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERTrackBayesian::SortByTrackQualityFactor(MRawEventList* List)
+void MERTrackBayesian::SortByTrackQualityFactor(MRawEventIncarnations* List)
 {
   // Sort decreasing:
 

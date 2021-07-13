@@ -20,10 +20,13 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MPhysicalEvent.h"
 #include "MComptonEvent.h"
 #include "MPairEvent.h"
 #include "MPhotoEvent.h"
+#include "MPETEvent.h"
+#include "MMultiEvent.h"
 
 // Forward declarations:
 
@@ -36,7 +39,7 @@ class MProjection
   // Public Interface:
  public:
   //! Default constructor
-  MProjection(int CoordinateSystem);
+  MProjection(MCoordinateSystem CoordianteSystem);
   //! Default destructor
   virtual ~MProjection();
 
@@ -46,16 +49,6 @@ class MProjection
   //! Assimilate the data of this event
   virtual bool Assimilate(MPhysicalEvent* Event);
 
-
-  // Projection coordinate systems:
-  //! ID of galactic coordinates
-  static const int c_Galactic;
-  //! ID of spheric coordinates
-  static const int c_Spheric;
-  //! ID of Cartesian coordinates 2D
-  static const int c_Cartesian2D;
-  //! ID of Cartesian coordinates 3D
-  static const int c_Cartesian3D;
 
   // protected methods:
  protected:
@@ -68,7 +61,7 @@ class MProjection
   // protected members:
  protected:
   //! The actual used coordinate system
-  int m_CoordinateSystem;
+  MCoordinateSystem m_CoordinateSystem;
    
    //! The current event
   MPhysicalEvent* m_Event;
@@ -78,7 +71,11 @@ class MProjection
   MPairEvent* m_P;
   //! For faster access: Photo event
   MPhotoEvent* m_Photo;
-
+  //! For faster access: PET event
+  MPETEvent* m_PET;
+  //! For faster access: Multi event
+  MMultiEvent* m_Multi;
+  
   //! True if we should used approxiamted maths
   bool m_ApproximatedMaths;
 
@@ -89,7 +86,7 @@ class MProjection
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MProjection, 0) // no description
 #endif

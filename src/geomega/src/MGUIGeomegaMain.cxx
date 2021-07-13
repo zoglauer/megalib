@@ -38,7 +38,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIGeomegaMain)
 #endif
 
@@ -88,9 +88,6 @@ void MGUIGeomegaMain::Create()
   m_MenuAnalysis->AddEntry("Position/volume information", c_Position);
   m_MenuAnalysis->AddEntry("Determine path lengths", c_PathLengths);
   m_MenuAnalysis->AddEntry("Check for overlaps", c_Intersect);
-  m_MenuAnalysis->AddSeparator();
-  m_MenuAnalysis->AddEntry("Create Geant3 files", c_WriteG3);
-  m_MenuAnalysis->AddEntry("Create MGeant/MGGPOD files", c_WriteMG);
 
   m_MenuAnalysis->Associate(this);
   m_MenuBar->AddPopup("Analysis", m_MenuAnalysis, m_MenuBarItemLayoutLeft);
@@ -191,14 +188,6 @@ bool MGUIGeomegaMain::ProcessMessage(long Message, long Parameter1,
         m_Interface->DumpInformation();
         break;
 
-      case c_WriteG3:
-        m_Interface->WriteGeant3Files();
-        break;
-
-      case c_WriteMG:
-        WriteMGeant();
-        break;
-
       case c_Position:
         Position();
         break;
@@ -260,22 +249,6 @@ void MGUIGeomegaMain::Open()
   }
 
   return;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MGUIGeomegaMain::WriteMGeant()
-{
-  // Write the geometry in MGeant format
-  
-  bool OkPressed = false;
-  new MGUIMGeant(gClient->GetRoot(), this, m_Data, OkPressed);
-  
-  if (OkPressed == true) {
-    m_Interface->WriteMGeantFiles();
-  }
 }
 
 

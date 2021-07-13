@@ -1,0 +1,46 @@
+Generate and simulate an atmosphere model
+=========================================
+
+Step 1: Get the model
+**************************
+
+Go to this webpage:
+> http://ccmc.gsfc.nasa.gov/modelweb/models/nrlmsise00.php
+and add the parameters of the atmosphere you want to simulate.
+
+I used the following parameters:
+
+Date: 2015, June, 13 (best Crab observation date)
+Time: Local, 12 (Crab was close to the sun, so choose the time when the sun is highest, and Crab is visible the best
+Latitude: -10
+Longitude: -107 --> 252 deg (you can only add values between 0 & 360)
+Height profile: 0, 200, 200 (i.e. 1 km bins)
+
+Create model data in ASCII form
+
+Independen variables: Height
+Calculated MSIS Model Parameters: Mark all (although we will not need all of them)
+
+Press submit, download, and save the data (I named it: Atmosphere.BestCrabDay.txt)
+
+
+Step 2: Compile all addon programs
+**********************************
+
+make
+
+
+Step 3: Create a geomega mass model
+**********************************
+
+Use the small program AtmosphereModelCreator.cxx to create a geomega mass model out of the downloaded data:
+
+AtmosphereModelCreator -f Atmosphere.BestCrabDay.txt
+
+The output is: Atmosphere.BestCrabDay.geo
+
+Fell free to look at it with geomega
+
+
+
+

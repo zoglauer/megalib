@@ -76,7 +76,7 @@ class MGUIGeometry : public MGUIDialog
   //! The geometry file name
   MString m_GeometryFileName;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIGeometry, 0)
 #endif

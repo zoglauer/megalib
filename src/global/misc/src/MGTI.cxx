@@ -25,11 +25,12 @@
 
 // MEGAlib libs:
 #include "MParser.h"
+#include "MFile.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGTI)
 #endif
 
@@ -102,6 +103,19 @@ bool MGTI::IsGood(const MTime& Time) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Add this GTI file's intervals
+void MGTI::Add(const MGTI& GTI)
+{ 
+  m_GoodStart.insert(m_GoodStart.end(), GTI.m_GoodStart.begin(), GTI.m_GoodStart.end());
+  m_GoodStop.insert(m_GoodStop.end(), GTI.m_GoodStop.begin(), GTI.m_GoodStop.end());
+  m_BadStart.insert(m_BadStart.end(), GTI.m_BadStart.begin(), GTI.m_BadStart.end());
+  m_BadStop.insert(m_BadStop.end(), GTI.m_BadStop.begin(), GTI.m_BadStop.end());
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Load the good time interval data
 bool MGTI::Load(const MString& FileName)
 {
@@ -115,8 +129,24 @@ bool MGTI::Load(const MString& FileName)
     return false;
   }
   
-  
   for (unsigned int l = 0; l < P.GetNLines(); ++l) {
+    if (P.GetTokenizerAt(l)->GetNTokens() == 1 && P.GetTokenizerAt(l)->IsTokenAt(0, "EN") == true) break;
+    
+    if (P.GetTokenizerAt(l)->IsTokenAt(0, "IN") == true && P.GetTokenizerAt(l)->GetNTokens() == 2) {
+      
+      MString Name = P.GetTokenizerAt(l)->GetTokenAtAsString(1);
+      MFile::ExpandFileName(Name, FileName);
+      
+      MGTI GTI;
+      if (GTI.Load(Name) == true) {
+        //cout<<"Added: "<<Name<<endl;
+        Add(GTI);
+      } else {
+        cout<<"Error: Unable to load GTI file: "<<Name<<endl;
+        return false;
+      }
+    }
+      
     if (P.GetTokenizerAt(l)->GetNTokens() != 3) continue;
     if (P.GetTokenizerAt(l)->IsTokenAt(0, "GT") == true) {
       m_GoodStart.push_back(P.GetTokenizerAt(l)->GetTokenAtAsTime(1));

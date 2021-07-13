@@ -35,7 +35,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIOptionsGeneral)
 #endif
 
@@ -102,7 +102,7 @@ void MGUIOptionsGeneral::Create()
                                    false,
                                    m_Data->GetEventIdMin(), 
                                    m_Data->GetEventIdMax(), 
-                                   true, -1);
+                                   true, -1l);
   AddFrame(m_EventId, m_MinMaxLayout);
   
   m_Options = new MGUIECBList(this, "Additional options:");
@@ -133,27 +133,27 @@ void MGUIOptionsGeneral::Create()
 
 bool MGUIOptionsGeneral::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_TotalEnergy->CheckRange(0.0, numeric_limits<double>::max(), 
                                 0.0, numeric_limits<double>::max(), true) == false) return false;
   if (m_LeverArm->CheckRange(0.0, numeric_limits<double>::max(), 
                              0.0, numeric_limits<double>::max(), true) == false) return false;
-  if (m_EventId->CheckRange(-1, numeric_limits<int>::max(), 
-                            -1, numeric_limits<int>::max(), false) == false) return false;
+  if (m_EventId->CheckRange(-1l, numeric_limits<long>::max(), 
+                            -1l, numeric_limits<long>::max(), false) == false) return false;
 
-	m_Data->SetTotalEnergyMin(m_TotalEnergy->GetMinValue());
-	m_Data->SetTotalEnergyMax(m_TotalEnergy->GetMaxValue());
+  m_Data->SetTotalEnergyMin(m_TotalEnergy->GetMinValue());
+  m_Data->SetTotalEnergyMax(m_TotalEnergy->GetMaxValue());
 
-	m_Data->SetLeverArmMin(m_LeverArm->GetMinValue());
-	m_Data->SetLeverArmMax(m_LeverArm->GetMaxValue());
+  m_Data->SetLeverArmMin(m_LeverArm->GetMinValue());
+  m_Data->SetLeverArmMax(m_LeverArm->GetMaxValue());
 
-	m_Data->SetEventIdMin(m_EventId->GetMinValueInt());
-	m_Data->SetEventIdMax(m_EventId->GetMaxValueInt());
+  m_Data->SetEventIdMin(m_EventId->GetMinValueInt());
+  m_Data->SetEventIdMax(m_EventId->GetMaxValueInt());
 
   m_Data->SetRejectAllBadEvents(m_Options->GetSelected(0));
 
-	return true;
+  return true;
 }
 
 

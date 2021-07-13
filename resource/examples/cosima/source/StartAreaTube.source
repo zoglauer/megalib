@@ -3,42 +3,40 @@
 # where toggling between a spherical and a tube-like start area is relevant
 
 
+# Global parameters
 Version         1
 Geometry        $(MEGALIB)/resource/examples/geomega/special/Spheric.geo.setup
 
 # Physics list
-PhysicsListEM                        Penelope
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM                                 LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
+StoreSimulationInfo                           all
 
 # The sphere has a radius of 56.41 cm, so that its projected surface area is 10000cm2
 StartArea Tube 0.0 0.0 0.0 0.0 0.0 0.0 60.0 60.0 
 #StartArea Sphere 0.0 0.0 0.0 0.0 0.0 0.0 60.0 
 
+# Run & source parameters
 Run SpaceSim
-SpaceSim.FileName         TubeTest
-SpaceSim.Time             10.0
+SpaceSim.FileName                             TubeTest
+SpaceSim.Time                                 10.0
 
 SpaceSim.Source FarFieldPointSource
-FarFieldPointSource.ParticleType        1
-FarFieldPointSource.Beam                FarFieldPointSource 124 98
-FarFieldPointSource.Spectrum            Mono 511
-FarFieldPointSource.Flux                1.0
+FarFieldPointSource.ParticleType              1
+FarFieldPointSource.Beam                      FarFieldPointSource 124 98
+FarFieldPointSource.Spectrum                  Mono 511
+FarFieldPointSource.Flux                      1.0
 
 SpaceSim.Source FarFieldAreaSource
-FarFieldAreaSource.ParticleType        1
-FarFieldAreaSource.Beam                FarFieldAreaSource 0 180.0 0.0 360.0
-FarFieldAreaSource.Spectrum            Mono 511
-FarFieldAreaSource.Flux                1.0
+FarFieldAreaSource.ParticleType               1
+FarFieldAreaSource.Beam                       FarFieldAreaSource 0 180.0 0.0 360.0
+FarFieldAreaSource.Spectrum                   Mono 511
+FarFieldAreaSource.Flux                       1.0
 
 SpaceSim.Source FarFieldFileZenithDependent
-FarFieldFileZenithDependent.ParticleType        1
-FarFieldFileZenithDependent.Beam                FarFieldFileZenithDependent AlbedoPhotonBeam.dat
-FarFieldFileZenithDependent.Spectrum            Mono 511
-FarFieldFileZenithDependent.Flux                1.0
+FarFieldFileZenithDependent.ParticleType      1
+FarFieldFileZenithDependent.Beam              FarFieldFileZenithDependent AlbedoPhotonBeam.dat
+FarFieldFileZenithDependent.Spectrum          Mono 511
+FarFieldFileZenithDependent.Flux              1.0
 

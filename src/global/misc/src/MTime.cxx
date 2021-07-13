@@ -64,7 +64,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MTime)
 #endif
 
@@ -101,22 +101,22 @@ MTime::MTime(MString String, int Format)
   switch (Format) {
   case UTC:
     Result = sscanf(String, "%02u.%02u.%04d %02u:%02u:%02u:%09u", 
-		    &Years, &Months, &Days, &Hours, &Minutes, &Seconds, &NanoSeconds);
+        &Years, &Months, &Days, &Hours, &Minutes, &Seconds, &NanoSeconds);
     if (Result != 6) Result = -1; // Means: we have an error
     break;
   case SQL:
     Result = sscanf(String, "%04d-%02u-%02u %02u:%02u:%02u", 
-		    &Years, &Months, &Days, &Hours, &Minutes, &Seconds);
+        &Years, &Months, &Days, &Hours, &Minutes, &Seconds);
     if (Result != 6) Result = -1; // Means: we have an error
     break;
   case SQLU:
     Result = sscanf(String, "%04d-%02u-%02u_%02u:%02u:%02u", 
-		    &Years, &Months, &Days, &Hours, &Minutes, &Seconds);
+        &Years, &Months, &Days, &Hours, &Minutes, &Seconds);
     if (Result != 6) Result = -1; // Means: we have an error
     break;
   case Short:
     Result = sscanf(String, "%04d%02u%02u_%02u%02u%02u", 
-		    &Years, &Months, &Days, &Hours, &Minutes, &Seconds);
+        &Years, &Months, &Days, &Hours, &Minutes, &Seconds);
     if (Result != 6) Result = -1; // Means: we have an error
     break;
   default:
@@ -127,7 +127,7 @@ MTime::MTime(MString String, int Format)
     mout<<"MTime: Unknown string format! Setting time to Epoch!"<<endl;
     Set(0, 0);
   } else {
-    Set(Years, Months, Days, Hours, Minutes, Seconds, NanoSeconds);	
+    Set(Years, Months, Days, Hours, Minutes, Seconds, NanoSeconds); 
   }
 }
 
@@ -529,7 +529,7 @@ unsigned int MTime::GetSeconds()
 {
   // Return the seconds
 
-	time_t Time = m_Seconds;
+  time_t Time = m_Seconds;
   struct tm tp;
   tp = *localtime(&Time);
 
@@ -544,8 +544,8 @@ unsigned int MTime::GetMinutes()
 {
   // Return the minutes
 
-	time_t Time = m_Seconds;
-	struct tm tp;
+  time_t Time = m_Seconds;
+  struct tm tp;
   tp = *localtime(&Time);
 
   return tp.tm_min;
@@ -559,7 +559,7 @@ unsigned int MTime::GetHours()
 {
   // Return the hours
 
-	time_t Time = m_Seconds;
+  time_t Time = m_Seconds;
   struct tm tp;
   tp = *localtime(&Time);
 
@@ -577,7 +577,7 @@ unsigned int MTime::GetDaysSinceEpoch()
 
   mimp<<"This function has not been thoroughly tested!!!"<<show;
 
-	time_t Time = m_Seconds;
+  time_t Time = m_Seconds;
   struct tm tp;
   tp = *localtime(&Time);
 
@@ -603,7 +603,7 @@ unsigned int MTime::GetDays()
 {
   // Return the day
 
-	time_t Time = m_Seconds;
+  time_t Time = m_Seconds;
   struct tm tp;
   tp = *localtime(&Time);
 
@@ -617,7 +617,7 @@ unsigned int MTime::GetMonths()
 {
   // Return the month
 
-	time_t Time = m_Seconds;
+  time_t Time = m_Seconds;
   struct tm tp;
   tp = *localtime(&Time);
 
@@ -632,7 +632,7 @@ unsigned int MTime::GetYears()
 {
   // Return the Year
 
-	time_t Time = m_Seconds;
+  time_t Time = m_Seconds;
   struct tm tp;
   tp = *localtime(&Time);
 
@@ -686,7 +686,7 @@ double MTime::GetAsJulianDay()
   // Set the julian day via Coordinated Universal Time (UTC) -
   // Does not check if days are ok!!
 
-	time_t Time = m_Seconds;
+  time_t Time = m_Seconds;
   struct tm tp;
   tp = *localtime(&Time);
 
@@ -847,6 +847,37 @@ MString MTime::GetShortString()
 
   return Text;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MTime::GetFitsDateString()
+{
+  // Return as fits date string: 31/12/94
+  
+  char Text[100];
+  sprintf(Text, "%02u/%02u/%02u", 
+          GetDays(), GetMonths(), GetYears() % 100);
+  
+  return Text;    
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MTime::GetFitsTimeString()
+{
+  // Return as fits time string: 15:45:57
+
+  char Text[100];
+  sprintf(Text, "%02u:%02u:%02u", 
+          GetHours(), GetMinutes(), GetSeconds());
+  
+  return Text;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

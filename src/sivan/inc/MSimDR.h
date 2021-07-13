@@ -83,7 +83,7 @@ class MSimDR
   double m_Energy;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSimDR, 0) // no description
 #endif

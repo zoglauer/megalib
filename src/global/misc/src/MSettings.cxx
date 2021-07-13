@@ -43,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSettings)
 #endif
 
@@ -227,5 +227,47 @@ bool MSettings::WriteXml(MXmlNode* Node)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSettings::Change(MString NewField)
+{
+  // Change one settings field
+  
+  // Parse the data
+  MString Nodes = NewField.GetSubString(0, NewField.First('='));
+  vector<MString> NodeNames = Nodes.Tokenize(".");
+  MString Value = NewField.GetSubString(NewField.First('=') + 1);
+  
+  //for (MString S: NodeNames) cout<<S<<endl;
+  //cout<<"Value: "<<Value<<endl;
+  
+  // Find the correct field
+  MXmlDocument* Master = new MXmlDocument(m_NameMasterNode);
+  WriteXml(Master);
+  
+  MXmlNode* Iter = Master;
+  for (MString S: NodeNames) {
+    MXmlNode* Node = Iter->GetNode(S);
+    if (Node == nullptr) {
+      cout<<"Error: Unable to find node "<<S<<" under node "<<Iter->GetName()<<endl;
+      return false;
+    }
+    Iter = Node;
+  }
+  
+  // Set the data
+  Iter->SetValue(Value);
+  
+  // Read everything back
+  ReadXml(Master);
+  
+  // Cleanup
+  delete Master;
+  
+  return true;
+}
+ 
+ 
 // MSettings.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

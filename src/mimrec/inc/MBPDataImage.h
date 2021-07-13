@@ -42,24 +42,27 @@ class MBPDataImage : public MBPData
   void Deconvolve(double* Expectation, double* InvYnew, int Event);
   //! Perform the list-mode convolution
   void Convolve(double* Ynew, int Event, double* Image, int NBins);
-  //! Just sum it up, i.e. add the content to the image 
+  //! Just sum it up, i.e. add the content to the image
   void Sum(double* Image, int NBins);
 
   //! Return the number of bytes used by this image
   virtual int GetUsedBytes() const;
+
+  //! Return the number of used bins
+  virtual int GetUsedBins() const { return m_NBins; }
 
   // private members:
  private:
   // Remember: If you change something you have to add it to the GetUsedBytes-function!
 
   // number of bins of image-array
-  int m_NBins;       
+  int m_NBins;
   // the image as array
-  float* m_Image;    
+  float* m_Image;
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBPDataImage, 0) // a backprojected image
 #endif

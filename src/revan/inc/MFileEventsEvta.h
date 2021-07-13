@@ -48,9 +48,13 @@ class MFileEventsEvta : public MFileEvents
   //! Get the noising ER
   MERNoising* GetERNoising() { return m_Noising; }
 
+  //! Save the OI information
+  void SaveOI(bool SaveOI = true) { m_SaveOI = SaveOI; }
 
   // protected methods:
  protected:
+  //! Update the observation times using the given event
+  void UpdateObservationTimes(MRERawEvent* Event);
   
 
   // private methods:
@@ -67,17 +71,20 @@ class MFileEventsEvta : public MFileEvents
   MGeometryRevan* m_Geometry;
   MString m_GeometryFileName;
 
-  int m_EventId;
+  long m_EventId;
   bool m_IsSimulation;
   bool m_IsFirstEvent;
 
+  //! Save the OI information
+  bool m_SaveOI;
+  
   //! The ER responsible for noising the data
   MERNoising* m_Noising;
   
-  static const int c_NoId;
+  static const long c_NoId;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileEventsEvta, 0) // no description
 #endif

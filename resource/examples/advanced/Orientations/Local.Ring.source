@@ -1,0 +1,25 @@
+# Max is my default COSI-like quick sim. This is the source for it
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/special/Max.geo.setup
+
+# Physics list
+PhysicsListEM                        LivermorePol
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  init-only
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+#
+Run SpaceSim
+SpaceSim.FileName               Ring
+SpaceSim.NTriggers              1000000
+SpaceSim.OrientationSky         Local Fixed
+
+SpaceSim.Source MySource
+MySource.ParticleType               1
+MySource.Beam                       PointSource 0 0 0
+MySource.Orientation                Local File Loop Ring.ori
+MySource.Spectrum                   Mono 511
+MySource.Flux                       10000000.0

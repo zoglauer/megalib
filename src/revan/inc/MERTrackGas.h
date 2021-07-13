@@ -46,7 +46,7 @@ class MERTrackGas : public MERTrack
   // protected methods:
  protected:
   virtual bool EvaluateTracks(MRERawEvent* ER);
-  virtual MRawEventList* TrackComptons(MRERawEvent* ER);
+  virtual MRawEventIncarnations* TrackComptons(MRERawEvent* ER);
 
   // private methods:
  private:
@@ -60,7 +60,7 @@ class MERTrackGas : public MERTrack
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERTrackGas, 0) // no description
 #endif

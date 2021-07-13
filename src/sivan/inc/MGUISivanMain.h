@@ -84,6 +84,7 @@ class MGUISivanMain : public MGUIMain
                    c_IncidenceAngle,
                    c_IncidenceEnergy,
                    c_IncidenceVsMeasuredEnergy,
+                   c_InitialInteraction,
                    c_DepositedEnergy,
                    c_InitialComptonScatterAngle,
                    c_EnergyOfSecondaries,
@@ -100,7 +101,7 @@ class MGUISivanMain : public MGUIMain
                    c_Test };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUISivanMain, 0) // main window of the Sivan GUI
 #endif

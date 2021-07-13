@@ -61,7 +61,7 @@ CMD=
 .SUFFIXES:
 .SUFFIXES: .cxx .h .o .so
 
-all: info link only
+all: info link only combine
 
 only: info glo geo spe rev siv res mim evi rea fre add cos 
 
@@ -71,6 +71,14 @@ only: info glo geo spe rev siv res mim evi rea fre add cos
 
 ROOTVERSIONOK   = $(shell bash $(CF)/configure_rootversiontest )
 GEANT4VERSIONOK = $(shell bash $(CF)/configure_geant4versiontest )
+
+
+#------------------------------------------------------------------------------
+# Combine all .o files
+
+# Attention: This is done every time, and doesn't seem to be preventable, since I do not know which headers and source files have changed
+combine: only link
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(shell cat $(LB)/AllObjects.txt) $(GLIBS) $(LIBS) -o $(LB)/libMEGAlib.so
 
 
 #------------------------------------------------------------------------------
@@ -91,7 +99,7 @@ endif
 
 global: info glo 
 
-glo: link 
+glo: link
 	$(MAKE) glo -C src
 
 clean_globalmisc:
@@ -101,12 +109,9 @@ clean_globalgui:
 	@$(MAKE) clean_glogui -C src
 
 
+
 #------------------------------------------------------------------------------
 # Addon
-
-ADDONLIBS = \
-	-lCommonGui \
-	-lCommonMisc \
 
 addon: info add
 
@@ -119,16 +124,6 @@ clean_addon:
 
 #------------------------------------------------------------------------------
 # Megalyze
-
-MEGALYZELIBS = \
-	-lMegalyzeInterface \
-	-lMegalyzeGui \
-	-lMegalyzeDaq \
-	-lMegalyzeHardware \
-	-lCommonGui \
-	-lCommonMisc \
-
-#	$(LB)/MMain.o \
 
 megaylze: info meg
 	@$(BN)/megalyze $(CMD)
@@ -146,20 +141,12 @@ clean_megalyze:
 #------------------------------------------------------------------------------
 # Fretalon and tools
 
-FRETALONLIBS = \
-	-lMelinatorGui \
-	-lMelinator \
-	-lFretalonBase \
-	-lGeomega \
-	-lCommonGui \
-	-lCommonMisc \
-
 fretalon: info fre
 
 melinator: info fre
 	@$(BN)/melinator $(CMD)
 
-fre: link glo geo
+fre: link glo geo siv
 	@$(MAKE) fre -C src
 
 clean_fretalon:
@@ -174,13 +161,6 @@ clean_fretalonframework:
 
 #------------------------------------------------------------------------------
 # Geomega
-
-GEOMEGALIBS = \
-	$(LB)/MGeomegaMain.o \
-	-lGeomegaGui \
-	-lGeomega \
-	-lCommonGui \
-	-lCommonMisc \
 
 geomega: info geo
 	@$(BN)/geomega $(CMD)
@@ -198,17 +178,6 @@ clean_geomega:
 #------------------------------------------------------------------------------
 # Eview
 
-EVIEWLIBS = \
-	$(LB)/MEviewMain.o \
-	-lEviewGui \
-	-lRevan \
-	-lRevanGui \
-	-lSpectralyze \
-	-lSpectralyzeGui \
-	-lGeomega \
-	-lCommonMisc \
-	-lCommonGui \
-
 evi: link glo rev geolib
 	@$(MAKE) evi -C src
 
@@ -221,14 +190,6 @@ clean_eview:
 
 #------------------------------------------------------------------------------
 # Spectralyzer:
-
-SPECTRALYZELIBS = \
-	$(LB)/MSpectralyzerMain.o \
-	-lSpectralyzeGui \
-	-lSpectralyze \
-	-lCommonMisc \
-	-lCommonGui \
-	-lGeomega \
 
 spectralyze: info spe
 	@$(BN)/spectralyze $(CMD)
@@ -246,16 +207,6 @@ clean_spectralyze:
 #------------------------------------------------------------------------------
 # Mimrec:
 
-MIMRECLIBS = \
-	$(LB)/MMimrecMain.o \
-	-lMimrecGui \
-	-lMimrec \
-	-lSpectralyze \
-	-lSpectralyzeGui \
-	-lCommonMisc \
-	-lCommonGui \
-	-lGeomega \
-
 mimrec: info mim
 	@$(BN)/mimrec $(CMD)
 
@@ -271,14 +222,6 @@ clean_mimrec:
 
 #------------------------------------------------------------------------------
 # Sivan:
-
-SIVANLIBS = \
-	$(LB)/MSivanMain.o \
-	-lSivanGui \
-	-lSivan \
-	-lGeomega \
-	-lCommonMisc \
-	-lCommonGui \
 
 sivan: info siv
 	@$(BN)/sivan $(CMD)
@@ -296,16 +239,6 @@ clean_sivan:
 #------------------------------------------------------------------------------
 # Revan:
 
-REVANLIBS = \
-	$(LB)/MRevanMain.o \
-	-lRevanGui \
-	-lRevan \
-	-lGeomega \
-	-lSpectralyze \
-	-lSpectralyzeGui \
-	-lCommonMisc \
-	-lCommonGui \
-
 revan: info rev
 	@$(BN)/revan $(CMD)
 
@@ -321,13 +254,6 @@ clean_revan:
 
 #------------------------------------------------------------------------------
 # Cosima:
-
-COSIMALIBS = \
-	-lCosima \
-	-lSivan \
-	-lGeomega \
-	-lCommonMisc \
-	-lCommonGui \
 
 cosima: info cos
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
@@ -347,15 +273,6 @@ clean_cosima:
 #------------------------------------------------------------------------------
 # Addon
 
-RESPONSELIBS = \
-	-lCommonMisc \
-	-lCommonGui \
-	-lGeomega \
-	-lRevan \
-	-lMimrec \
-	-lSivan \
-	-lSpectralyze \
-
 response: info res
 
 res: link glo geolib revlib sivlib spelib mimlib mim rev
@@ -367,12 +284,6 @@ clean_response:
 
 #------------------------------------------------------------------------------
 # Herty:
-
-HERTYLIBS = \
-	$(LB)/MHertyMain.o \
-	-lHertyGui \
-	-lCommonMisc \
-	-lCommonGui \
 
 herty: info her
 	@$(BN)/herty
@@ -390,20 +301,6 @@ clean_herty:
 #------------------------------------------------------------------------------
 # Realta:
 
-REALTALIBS = \
-	-lRealtaGui \
-	-lRealta \
-	-lGeomega \
-	-lSivan \
-	-lRevan \
-	-lRevanGui \
-	-lMimrec \
-	-lMimrecGui \
-	-lSpectralyze \
-	-lSpectralyzeGui \
-	-lCommonMisc \
-	-lCommonGui \
-
 realta: info rea 
 	@$(BN)/realta
 
@@ -417,12 +314,6 @@ clean_realta:
 
 #------------------------------------------------------------------------------
 # MIWorks:
-
-MIWORKSLIBS = \
-	$(LB)/MIWorksMain.o \
-	-lMiworksGui \
-	-lCommonMisc \
-	-lCommonGui \
 
 miworks: info glo miw
 	@$(BN)/miworks $(CMD)
@@ -438,12 +329,6 @@ clean_miworks:
 #------------------------------------------------------------------------------
 # BeamMonitor:
 
-BMLIBS = \
-	$(LB)/MBMMain.o \
-	-lBeamMonitor \
-	-lCommonMisc \
-	-lCommonGui \
-	-lMegalyze
 
 beammonitor: info bm
 	@$(BN)/BeamMonitor $(CMD)
@@ -458,14 +343,6 @@ clean_bm:
 
 #------------------------------------------------------------------------------
 # Calibration:
-
-CALLIBS = \
-	-lCommonMisc\
-	-lMegalyzeDaq\
-	-lMegalyzeHardware\
-	-lMegalyzeInterface\
-	-lMegalyzeGui \
-	-lCommonGui
 
 calibration: info cal
 	@$(BN)/CalibCsISingle $(CMD)
@@ -482,6 +359,7 @@ clean_cal:
 # additional options:
 
 link:
+	@rm -f $(LB)/AllObjects.txt
 	$(MAKE) -s link -C src 
 
 clean:

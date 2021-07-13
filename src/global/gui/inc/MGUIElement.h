@@ -44,16 +44,16 @@ class MGUIElement : public TGCompositeFrame
   virtual ~MGUIElement();
 
   //! True if this element is enabled
-	virtual void SetEnabled(bool Enabled = true) { m_IsEnabled = Enabled; }
+  virtual void SetEnabled(bool Enabled = true) { m_IsEnabled = Enabled; }
   //! True if this element (or parts of it) are emphasized
-	virtual void SetEmphasized(bool Emphasized = true) { m_IsEmphasized = Emphasized; } 
+  virtual void SetEmphasized(bool Emphasized = true) { m_IsEmphasized = Emphasized; } 
   //! Set the wrap length of all text
-	virtual void SetWrapLength(int WrapLength) { m_WrapLength = WrapLength; }
+  virtual void SetWrapLength(int WrapLength) { m_WrapLength = WrapLength; }
 
   //! Return true if this element is enabled
-	virtual bool IsEnabled() { return m_IsEnabled; }
+  virtual bool IsEnabled() { return m_IsEnabled; }
   //! Return true if this element (or parts of it) are emphasized
-	virtual bool IsEmphasized() { return m_IsEmphasized; } 
+  virtual bool IsEmphasized() { return m_IsEmphasized; } 
 
   // private methods:
  private:
@@ -61,7 +61,7 @@ class MGUIElement : public TGCompositeFrame
   // protected members:
  protected:
   //! True if this element is enabled
-	bool m_IsEnabled;
+  bool m_IsEnabled;
   //! True if this element (or parts of it) are emphasized
   bool m_IsEmphasized;
 
@@ -73,9 +73,9 @@ class MGUIElement : public TGCompositeFrame
   //! The wrap length of text labels:
   int m_WrapLength;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
-  ClassDef(MGUIElement, 0) // GUI window for unkown purpose ...
+  ClassDef(MGUIElement, 1) // GUI window for unkown purpose ...
 #endif
 
 };

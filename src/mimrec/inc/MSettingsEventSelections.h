@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MTime.h"
 #include "MSettings.h"
 #include "MPointSource.h"
@@ -65,10 +66,16 @@ class MSettingsEventSelections : public MSettingsInterface
 
   int GetEventTypePair() const { return m_EventTypePair; }
   void SetEventTypePair(int EventTypePair) { m_EventTypePair = EventTypePair; m_EventSelectionModified = true; }
-
+  
   int GetEventTypePhoto() const { return m_EventTypePhoto; }
   void SetEventTypePhoto(int EventTypePhoto) { m_EventTypePhoto = EventTypePhoto; m_EventSelectionModified = true; }
-
+  
+  int GetEventTypePET() const { return m_EventTypePET; }
+  void SetEventTypePET(int EventTypePET) { m_EventTypePET = EventTypePET; m_EventSelectionModified = true; }
+  
+  int GetEventTypeMulti() const { return m_EventTypeMulti; }
+  void SetEventTypeMulti(int EventTypeMulti) { m_EventTypeMulti = EventTypeMulti; m_EventSelectionModified = true; }
+  
   int GetEventTypeUnidentifiable() const { return m_EventTypeUnidentifiable; }
   void SetEventTypeUnidentifiable(int EventTypeUnidentifiable) { m_EventTypeUnidentifiable = EventTypeUnidentifiable; m_EventSelectionModified = true; }
 
@@ -77,13 +84,19 @@ class MSettingsEventSelections : public MSettingsInterface
 
   bool GetFlaggedAsBad() const { return m_FlaggedAsBad; }
   void SetFlaggedAsBad(bool FlaggedAsBad) { m_FlaggedAsBad = FlaggedAsBad; m_EventSelectionModified = true; }
-
-  void RemoveAllExcludedDetectors() { m_ExcludedDetectors.clear(); m_EventSelectionModified = true; }
-  void AddExcludedDetector(const MString& ExcludedDetector) { m_ExcludedDetectors.push_back(ExcludedDetector); m_EventSelectionModified = true; }
-  unsigned int GetNExcludedDetectors() const { return m_ExcludedDetectors.size(); }
-  MString GetExcludedDetectorAt(unsigned int d) const { if (d < m_ExcludedDetectors.size()) return m_ExcludedDetectors[d]; return ""; }
-  vector<MString> GetExcludedDetectors() const { return m_ExcludedDetectors; }
-
+  
+  void RemoveAllExcludedFirstIADetectors() { m_ExcludedFirstIADetectors.clear(); m_EventSelectionModified = true; }
+  void AddExcludedFirstIADetector(const MString& ExcludedFirstIADetector) { m_ExcludedFirstIADetectors.push_back(ExcludedFirstIADetector); m_EventSelectionModified = true; }
+  unsigned int GetNExcludedFirstIADetectors() const { return m_ExcludedFirstIADetectors.size(); }
+  MString GetExcludedFirstIADetectorAt(unsigned int d) const { if (d < m_ExcludedFirstIADetectors.size()) return m_ExcludedFirstIADetectors[d]; return ""; }
+  vector<MString> GetExcludedFirstIADetectors() const { return m_ExcludedFirstIADetectors; }
+  
+  void RemoveAllExcludedSecondIADetectors() { m_ExcludedSecondIADetectors.clear(); m_EventSelectionModified = true; }
+  void AddExcludedSecondIADetector(const MString& ExcludedSecondIADetector) { m_ExcludedSecondIADetectors.push_back(ExcludedSecondIADetector); m_EventSelectionModified = true; }
+  unsigned int GetNExcludedSecondIADetectors() const { return m_ExcludedSecondIADetectors.size(); }
+  MString GetExcludedSecondIADetectorAt(unsigned int d) const { if (d < m_ExcludedSecondIADetectors.size()) return m_ExcludedSecondIADetectors[d]; return ""; }
+  vector<MString> GetExcludedSecondIADetectors() const { return m_ExcludedSecondIADetectors; }
+  
 
   int GetSequenceLengthRangeMin() const { return m_SequenceLengthRangeMin; }
   void SetSequenceLengthRangeMin(int SequenceLengthRangeMin) { m_SequenceLengthRangeMin = SequenceLengthRangeMin; m_EventSelectionModified = true; }
@@ -163,6 +176,8 @@ class MSettingsEventSelections : public MSettingsInterface
   double GetComptonAngleRangeMax() const { return m_ComptonAngleRangeMax; }
   void SetComptonAngleRangeMax(double ComptonAngleRangeMax) { m_ComptonAngleRangeMax = ComptonAngleRangeMax; m_EventSelectionModified = true; }
 
+
+
   double GetEHCAngle() const { return m_EHCAngle; }
   void SetEHCAngle(double EHCAngle) { m_EHCAngle = EHCAngle; m_EventSelectionModified = true; }
 
@@ -181,18 +196,20 @@ class MSettingsEventSelections : public MSettingsInterface
   int GetEHCType() const { return m_EHCType; }
   void SetEHCType(int EHCType) { m_EHCType = EHCType; m_EventSelectionModified = true; }
 
+
+
   bool GetSourceUsePointSource() const { return m_SourceUsePointSource; }
   void SetSourceUsePointSource(bool SourceUsePointSource) { m_SourceUsePointSource = SourceUsePointSource; m_EventSelectionModified = true; }
 
-  int GetSourceCoordinates() const { return m_SourceCoordinates; }
-  void SetSourceCoordinates(int SourceCoordinates) { m_SourceCoordinates = SourceCoordinates; m_EventSelectionModified = true; }
-  
+  MCoordinateSystem GetSourceCoordinates() const { return m_SourceCoordinates; }
+  void SetSourceCoordinates(MCoordinateSystem SourceCoordinates) { m_SourceCoordinates = SourceCoordinates; m_EventSelectionModified = true; }
+
   double GetSourcePhi() const { return m_SourcePhi; }
   void SetSourcePhi(double SourcePhi) { m_SourcePhi = SourcePhi; m_EventSelectionModified = true; }
 
   double GetSourceTheta() const { return m_SourceTheta; }
   void SetSourceTheta(double SourceTheta) { m_SourceTheta = SourceTheta; m_EventSelectionModified = true; }
-  
+
   double GetSourceLongitude() const { return m_SourceLongitude; }
   void SetSourceLongitude(double SourceLongitude) { m_SourceLongitude = SourceLongitude; m_EventSelectionModified = true; }
 
@@ -219,10 +236,37 @@ class MSettingsEventSelections : public MSettingsInterface
 
   double GetSourceSPDMax() const { return m_SourceSPDMax; }
   void SetSourceSPDMax(double SourceSPDMax) { m_SourceSPDMax = SourceSPDMax; m_EventSelectionModified = true; }
-  
+
+
+  unsigned int GetPointingSelectionType() const {  return m_PointingSelectionType; }
+  void SetPointingSelectionType(unsigned int PointingSelectionType) { m_PointingSelectionType = PointingSelectionType; m_EventSelectionModified = true; }
+
+  double GetPointingPointSourceLongitude() const { return m_PointingPointSourceLongitude; }
+  void SetPointingPointSourceLongitude(double PointingPointSourceLongitude) { m_PointingPointSourceLongitude = PointingPointSourceLongitude; m_EventSelectionModified = true; }
+
+  double GetPointingPointSourceLatitude() const { return m_PointingPointSourceLatitude; }
+  void SetPointingPointSourceLatitude(double PointingPointSourceLatitude) { m_PointingPointSourceLatitude = PointingPointSourceLatitude; m_EventSelectionModified = true; }
+
+  double GetPointingPointSourceRadius() const { return m_PointingPointSourceRadius; }
+  void SetPointingPointSourceRadius(double PointingPointSourceRadius) { m_PointingPointSourceRadius = PointingPointSourceRadius; m_EventSelectionModified = true; }
+
+  double GetPointingBoxLongitude() const { return m_PointingBoxLongitude; }
+  void SetPointingBoxLongitude(double PointingBoxLongitude) { m_PointingBoxLongitude = PointingBoxLongitude; m_EventSelectionModified = true; }
+
+  double GetPointingBoxLatitude() const { return m_PointingBoxLatitude; }
+  void SetPointingBoxLatitude(double PointingBoxLatitude) { m_PointingBoxLatitude = PointingBoxLatitude; m_EventSelectionModified = true; }
+
+  double GetPointingBoxExtentLongitude() const { return m_PointingBoxExtentLongitude; }
+  void SetPointingBoxExtentLongitude(double PointingBoxExtentLongitude) { m_PointingBoxExtentLongitude = PointingBoxExtentLongitude; m_EventSelectionModified = true; }
+
+  double GetPointingBoxExtentLatitude() const { return m_PointingBoxExtentLatitude; }
+  void SetPointingBoxExtentLatitude(double PointingBoxExtentLatitude) { m_PointingBoxExtentLatitude = PointingBoxExtentLatitude; m_EventSelectionModified = true; }
+
+
+
   bool GetBeamUse() const { return m_BeamUse; }
   void SetBeamUse(bool BeamUse) { m_BeamUse = BeamUse; m_EventSelectionModified = true; }
-  
+
   double GetBeamStartX() const {  return m_BeamStartX; }
   void SetBeamStartX(double BeamStartX) { m_BeamStartX = BeamStartX; m_EventSelectionModified = true; }
 
@@ -240,7 +284,7 @@ class MSettingsEventSelections : public MSettingsInterface
 
   double GetBeamFocalSpotZ() const { return m_BeamFocalSpotZ; }
   void SetBeamFocalSpotZ(double BeamFocalSpotZ) { m_BeamFocalSpotZ = BeamFocalSpotZ; m_EventSelectionModified = true; }
-  
+
   double GetBeamRadius() const { return m_BeamRadius; }
   void SetBeamRadius(double BeamRadius) { m_BeamRadius = BeamRadius; m_EventSelectionModified = true; }
 
@@ -264,8 +308,8 @@ class MSettingsEventSelections : public MSettingsInterface
   double GetFirstDistanceRangeMax() { return m_FirstDistanceRangeMax; }
   void SetFirstDistanceRangeMax(double FirstDistanceRangeMax) { m_FirstDistanceRangeMax = FirstDistanceRangeMax; m_EventSelectionModified = true; }
 
-  bool GetTimeUseFile() const { return m_TimeUseFile; }
-  void SetTimeUseFile(bool TimeUseFile) { m_TimeUseFile = TimeUseFile; m_EventSelectionModified = true; }
+  unsigned int GetTimeMode() const { return m_TimeMode; }
+  void SetTimeMode(unsigned int TimeMode) { m_TimeMode = TimeMode; m_EventSelectionModified = true; }
 
   MTime GetTimeRangeMin() const { return m_TimeRangeMin; }
   void SetTimeRangeMin(MTime TimeRangeMin) { m_TimeRangeMin = TimeRangeMin; m_EventSelectionModified = true; }
@@ -275,8 +319,8 @@ class MSettingsEventSelections : public MSettingsInterface
 
   MString GetTimeFile() const { return m_TimeFile; }
   void SetTimeFile(MString TimeFile) { m_TimeFile = TimeFile; m_EventSelectionModified = true; }
-  
-  
+
+
   double GetTimeWalkRangeMin() const { return m_TimeWalkRangeMin; }
   void SetTimeWalkRangeMin(double TimeWalkRangeMin) { m_TimeWalkRangeMin = TimeWalkRangeMin; m_EventSelectionModified = true; }
 
@@ -300,6 +344,12 @@ class MSettingsEventSelections : public MSettingsInterface
 
   double GetInitialEnergyDepositPairMax() const { return m_InitialEnergyDepositPairMax; }
   void SetInitialEnergyDepositPairMax(double InitialEnergyDepositPairMax) { m_InitialEnergyDepositPairMax = InitialEnergyDepositPairMax; m_EventSelectionModified = true; }
+
+  double GetQualityFactorPairMin() const { return m_QualityFactorPairMin; }
+  void SetQualityFactorPairMin(double QualityFactorPairMin) { m_QualityFactorPairMin = QualityFactorPairMin; m_EventSelectionModified = true; }
+
+  double GetQualityFactorPairMax() const { return m_QualityFactorPairMax; }
+  void SetQualityFactorPairMax(double QualityFactorPairMax) { m_QualityFactorPairMax = QualityFactorPairMax; m_EventSelectionModified = true; }
 
 
   //! Set the special GUI mode (this is not saved to file!)
@@ -326,11 +376,11 @@ class MSettingsEventSelections : public MSettingsInterface
   long m_EventIdRangeMin;
   long m_EventIdRangeMax;
 
-  bool m_TimeUseFile;
+  unsigned int m_TimeMode;
   MTime m_TimeRangeMin;
   MTime m_TimeRangeMax;
   MString m_TimeFile;
-  
+
   int m_EventSelectorTab;
 
   int m_TrackLengthRangeMin;
@@ -389,19 +439,25 @@ class MSettingsEventSelections : public MSettingsInterface
   double m_InitialEnergyDepositPairMin;
   double m_InitialEnergyDepositPairMax;
 
+  double m_QualityFactorPairMin;
+  double m_QualityFactorPairMax;
+
   int m_EventTypeCompton;
   int m_EventTypeDoubleCompton;
   int m_EventTypeComptonNotTracked;
   int m_EventTypeComptonTracked;
   int m_EventTypePair;
   int m_EventTypePhoto;
+  int m_EventTypePET;
+  int m_EventTypeMulti;
   int m_EventTypeUnidentifiable;
   int m_EventTypeDecay;
 
   int m_FlaggedAsBad;
 
-  vector<MString> m_ExcludedDetectors;
-
+  vector<MString> m_ExcludedFirstIADetectors;
+  vector<MString> m_ExcludedSecondIADetectors;
+  
   int m_EHCType;
   double m_EHCProbability;
   MString m_EHCComptonProbabilityFileName;
@@ -410,25 +466,36 @@ class MSettingsEventSelections : public MSettingsInterface
   double m_EHCAngle;
 
   bool m_SourceUsePointSource;
-  int m_SourceCoordinates;
+  MCoordinateSystem m_SourceCoordinates;
   double m_SourcePhi;
   double m_SourceTheta;
   double m_SourceLongitude;
   double m_SourceLatitude;
   double m_SourceX;
-  double m_SourceY; 
+  double m_SourceY;
   double m_SourceZ;
   double m_SourceARMMin;
   double m_SourceARMMax;
   double m_SourceSPDMin;
   double m_SourceSPDMax;
 
+
+  unsigned int m_PointingSelectionType;
+  double m_PointingPointSourceLatitude;
+  double m_PointingPointSourceLongitude;
+  double m_PointingPointSourceRadius;
+  double m_PointingBoxLatitude;
+  double m_PointingBoxLongitude;
+  double m_PointingBoxExtentLatitude;
+  double m_PointingBoxExtentLongitude;
+
+
   bool m_BeamUse;
   double m_BeamStartX;
-  double m_BeamStartY; 
+  double m_BeamStartY;
   double m_BeamStartZ;
   double m_BeamFocalSpotX;
-  double m_BeamFocalSpotY; 
+  double m_BeamFocalSpotY;
   double m_BeamFocalSpotZ;
   double m_BeamRadius;
   double m_BeamDepth;
@@ -438,7 +505,7 @@ class MSettingsEventSelections : public MSettingsInterface
   bool m_SpecialMode;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsEventSelections, 0) // no description
 #endif

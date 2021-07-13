@@ -24,7 +24,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MERCSR.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MComptonEvent.h"
 #include "MGeometryRevan.h"
 
@@ -104,7 +104,7 @@ class MERCSRChiSquare : public MERCSR
   map<double, vector<MRESE*>, less_equal<double> >::iterator m_TestStatisticsIterator;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSRChiSquare, 0) // no description
 #endif

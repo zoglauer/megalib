@@ -46,9 +46,9 @@ class MCalibrationSpectralPoint
   //! Return whether this point is good or not
   bool IsGood() const { return m_IsGood; }
   
-  //! Set the peak
+  //! Set the peak in ADCs
   void SetPeak(double Peak) { m_Peak = Peak; }
-  //! Get the peak
+  //! Get the peak in ADCs
   double GetPeak() const { return m_Peak; }
   
   //! Set the FWHM in ADCs
@@ -56,14 +56,16 @@ class MCalibrationSpectralPoint
   //! Get the FWHM in ADCs
   double GetFWHM() const { return m_FWHM; }
 
-  //! Set the energy
+  //! Set the energy in keV
   void SetEnergy(double Energy) { m_Energy = Energy; }
-  //! Get the energy
+  //! Get the energy in keV
   double GetEnergy() const { return m_Energy; }
 
+  //! Set the FWHM in energy units (keV)
+  void SetEnergyFWHM(double EnergyFWHM) { m_EnergyFWHM = EnergyFWHM; }
   //! Get the FWHM in energy units (keV)
-  double GetEnergyFWHM() const { if (m_Peak == 0) return 0.0; else return m_FWHM/m_Peak * m_Energy; }
-
+  double GetEnergyFWHM() const { return m_EnergyFWHM; }
+  
   //! Set the number of counts
   void SetCounts(double Counts) { m_Counts = Counts; }
   //! Get the number of counts
@@ -128,14 +130,16 @@ class MCalibrationSpectralPoint
   
   //! The isotope
   MIsotope m_Isotope;
-  //! The associates energy
+  //! The associated energy
   double m_Energy;
+  //! The FWHM in energy units
+  double m_EnergyFWHM;
   
   //! Flag indicating that this point is good
   bool m_IsGood;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrationSpectralPoint, 0) // no description
 #endif

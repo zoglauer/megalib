@@ -77,7 +77,7 @@ class MGUICBSelection : public MGUIDialog
   unsigned int m_MsgID2;
   const TGWindow *m_MsgWindow;
 
-	bool m_IsMultiple;
+  bool m_IsMultiple;
   
   MGUIECBList* m_List;
   TGLayoutHints* m_ListLayout;
@@ -88,7 +88,7 @@ class MGUICBSelection : public MGUIDialog
   int m_LastPressedButton;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUICBSelection, 0) // GUI window for unkown purpose ...
 #endif

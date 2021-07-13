@@ -40,7 +40,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShapeTRD1)
 #endif
 
@@ -110,6 +110,8 @@ bool MDShapeTRD1::Set(double dx1, double dx2, double y, double z)
 
   m_Type = "TRD1";
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -118,10 +120,14 @@ bool MDShapeTRD1::Set(double dx1, double dx2, double y, double z)
 
 
 bool MDShapeTRD1::Validate()
-{
-  delete m_Geo;
-  m_Geo = new TGeoTrd1(m_Ddx1, m_Ddx2, m_Dy, m_Dz);
-
+{  
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoTrd1(m_Ddx1, m_Ddx2, m_Dy, m_Dz);
+  
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -149,10 +155,12 @@ bool MDShapeTRD1::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape TRD1!");
+    Info.Error(MString("Unhandled descriptor in shape TRD1: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
 }
 
@@ -203,54 +211,6 @@ double MDShapeTRD1::GetZ() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeTRD1::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(4)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRD1::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Ddx1<<","<<m_Ddx2<<","<<m_Dy<<","<<m_Dz<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRD1::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_Ddx1<<" "<<m_Ddx2<<" "<<m_Dy<<endl;
-  out<<"           "<<m_Dz<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeTRD1::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -259,28 +219,6 @@ MString MDShapeTRD1::GetGeomega() const
   out<<"TRD1 "<<m_Ddx1<<" "<<m_Ddx2<<" "<<m_Dy<<" "<<m_Dz;
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRD1::GetGeant3ShapeName()
-{
-  //
-
-  return "TRD1";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeTRD1::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 4;
 }
 
 
@@ -318,7 +256,9 @@ void MDShapeTRD1::Scale(const double Factor)
   m_Ddx2 *= Factor;
   m_Dy *= Factor;
   m_Dz *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

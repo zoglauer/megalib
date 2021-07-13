@@ -51,7 +51,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDVolume)
 #endif
 
@@ -59,7 +59,7 @@ ClassImp(MDVolume)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MDVolume::m_IDCounter = 1; 
+int MDVolume::m_IDCounter = 1;
 int MDVolume::m_RotIDCounter = 1;
 int MDVolume::m_WrittenRotID = 1;
 
@@ -67,7 +67,7 @@ int MDVolume::m_WrittenRotID = 1;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDVolume::MDVolume(MString Name, MString ShortName)
+MDVolume::MDVolume(MString Name)
 {
   // default constructor
 
@@ -78,21 +78,18 @@ MDVolume::MDVolume(MString Name, MString ShortName)
     m_ID = m_IDCounter++;
   }
 
-  //cout<<"Creating volume "<<Name<<" with ID"<<m_ID<<endl; 
+  //cout<<"Creating volume "<<Name<<" with ID"<<m_ID<<endl;
 
   m_RotID = 0;
   m_SensID = 0;
 
   m_Name = Name;
-  m_ShortName = ShortName;
-
-
 
   m_Mother = 0;
   m_Material = 0;
   m_Shape = 0;
   m_Position = g_VectorNotDefined;
-  
+
   m_RotMatrix.SetIdentity();
   m_InvertedRotMatrix.SetIdentity();
   m_Theta1 = 90.0;
@@ -102,7 +99,7 @@ MDVolume::MDVolume(MString Name, MString ShortName)
   m_Theta3 = 0.0;
   m_Phi3 = 0.0;
   m_IsRotated = false;
-  
+
   m_IsSensitive = false;
   m_IsVirtual = false;
   m_IsMany = false;
@@ -114,7 +111,7 @@ MDVolume::MDVolume(MString Name, MString ShortName)
   m_Visibility = g_IntNotDefined;
 
   m_Detector = 0;
-  m_IsDetectorVolume = false; 
+  m_IsDetectorVolume = false;
   m_DetectorVolume = 0;
 
   m_CloneTemplate = 0;
@@ -140,28 +137,6 @@ MDVolume::~MDVolume()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDVolume::GetShortName()
-{
-  // Return the type of this volume
-
-  return m_ShortName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDVolume::SetShortName(MString ShortName)
-{
-  // Return the type of this volume
-
-  m_ShortName = ShortName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MDMaterial* MDVolume::GetMaterial()
 {
   // Return a pointer to the material of this volume or zero if there is none
@@ -175,7 +150,7 @@ MDMaterial* MDVolume::GetMaterial()
 
 MDShape* MDVolume::GetShape()
 {
-  // Return a pointer to the shape (BRIK, SPHE) of the material or 
+  // Return a pointer to the shape (BRIK, SPHE) of the material or
   // zero if there is none
 
   return m_Shape;
@@ -244,7 +219,7 @@ int MDVolume::GetColor()
 
 int MDVolume::GetLineWidth()
 {
-  // Return the line width of this volume 
+  // Return the line width of this volume
 
   return m_LineWidth;
 }
@@ -317,7 +292,7 @@ MVector MDVolume::GetSize()
 
 MDVolume* MDVolume::GetCloneTemplate()
 {
-  // If this volume is a copy of another volume return a pointer to this volume 
+  // If this volume is a copy of another volume return a pointer to this volume
   // otherwise return 0
 
   return m_CloneTemplate;
@@ -398,7 +373,7 @@ bool MDVolume::IsCloneTemplateVolumeWritten()
 
 void MDVolume::SetCloneTemplateVolumeWritten(bool Written)
 {
-  // Set whether the clone template has already been written to the file 
+  // Set whether the clone template has already been written to the file
 
   m_CloneTemplateVolumeWritten = Written;
 }
@@ -420,7 +395,7 @@ bool MDVolume::AreCloneTemplateDaughtersWritten()
 
 void MDVolume::SetCloneTemplateDaughtersWritten(bool Written)
 {
-  // Set whether the clone template has already been written to the file 
+  // Set whether the clone template has already been written to the file
 
   m_CloneTemplateDaughtersWritten = Written;
 }
@@ -431,7 +406,7 @@ void MDVolume::SetCloneTemplateDaughtersWritten(bool Written)
 
 bool MDVolume::IsSensitive()
 {
-  // Return true if this volume is sensitive, i.e. when this volume is the 
+  // Return true if this volume is sensitive, i.e. when this volume is the
   // sensitive volume of a detector
 
   return m_IsSensitive;
@@ -445,7 +420,7 @@ void MDVolume::SetVirtual(bool Virtual)
 {
   // Degrades this volume to a virtual volume. Virtual volumes do not appear in
   // the final geometry. They do not have any volume and therefore are allowed
-  // to intersect. All volumes contained in this volume are not allowed to 
+  // to intersect. All volumes contained in this volume are not allowed to
   // intersect with any other volume in the geometry.
 
   //cout<<"Setting virtual for "<<m_Name<<" to "<<(int) Virtual<<endl;
@@ -516,7 +491,7 @@ bool MDVolume::DoAbsorptions()
 
 MDDetector* MDVolume::GetDetector()
 {
-  // Return the detector this volume belongs to or zero 
+  // Return the detector this volume belongs to or zero
 
   return m_Detector;
 }
@@ -562,10 +537,10 @@ void MDVolume::SetIsDetectorVolume(MDDetector* Detector)
 void MDVolume::SetDetectorVolume(MDVolume* Volume, MDDetector* Detector)
 {
   // If this volume represents a detector or is part a a detector,
-  // "Volume" is the volume of the detector 
-  
+  // "Volume" is the volume of the detector
+
   // cout<<"Setting det.vol. "<<Volume->GetName()<<" for "<<GetName()<<" with detector: "<<Detector->GetName()<<endl;
-  
+
   m_DetectorVolume = Volume;
   m_Detector = Detector;
 
@@ -701,12 +676,12 @@ void MDVolume::SetPosition(MVector Position)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDVolume::SetRotation(double theta1, double phi1, 
-                           double theta2, double phi2, 
+bool MDVolume::SetRotation(double theta1, double phi1, 
+                           double theta2, double phi2,
                            double theta3, double phi3)
 {
   // Set Geant3 type rotations
-  // 
+  //
   // This function only converts the rotation matrix in another format and then
   // calls another SetRotation() function which handles the rotation IDs
 
@@ -786,7 +761,10 @@ void MDVolume::SetRotation(double theta1, double phi1,
     SetRotation(Matrix);
   } else {
     mout<<"Ignoring the rotation"<<endl;
+    return false;
   }
+
+  return true;
 }
 
 
@@ -797,7 +775,7 @@ void MDVolume::SetRotation(double x, double y, double z)
 {
   // Set the rotation of this volume
   // x,y,z are the counterclockwise rotations around x, y and z in c_Deg
-  // 
+  //
   // Then call the standard SetRotation() which handles all IDs
 
   double sinx, siny, sinz, cosx, cosy, cosz;
@@ -812,12 +790,12 @@ void MDVolume::SetRotation(double x, double y, double z)
   xcolumn = MVector(1.,0.,0.);
   ycolumn = MVector(0.,1.,0.);
   zcolumn = MVector(0.,0.,1.);
-  
+
   MRotation Matrix;
   Matrix.SetXX(  cosz*cosy);
   Matrix.SetXY(- sinz*cosx + cosz*siny*sinx);
   Matrix.SetXZ(  sinz*sinx + cosz*siny*cosx);
- 
+
   Matrix.SetYX(  sinz*cosy);
   Matrix.SetYY(  cosz*cosx + sinz*siny*sinx);
   Matrix.SetYZ(- cosz*sinx + sinz*siny*cosx);
@@ -842,26 +820,26 @@ void MDVolume::SetRotation(MRotation Rotation)
   xcolumn = MVector(1.,0.,0.);
   ycolumn = MVector(0.,1.,0.);
   zcolumn = MVector(0.,0.,1.);
-  
+
   //m_InvertedRotMatrix.ResizeTo(3,3);
   //m_RotMatrix.ResizeTo(3,3);
 
   // I never figuered out, why we have to invert it here...
   m_RotMatrix = Rotation.Invert();
-  
+
   xcolumn = m_RotMatrix*xcolumn;
   ycolumn = m_RotMatrix*ycolumn;
-  zcolumn = m_RotMatrix*zcolumn; 
+  zcolumn = m_RotMatrix*zcolumn;
 
   m_Theta1 = xcolumn.Theta()*c_Deg;
   m_Phi1 = xcolumn.Phi()*c_Deg;
-  
+
   m_Theta2 = ycolumn.Theta()*c_Deg;
   m_Phi2 = ycolumn.Phi()*c_Deg;
-  
+
   m_Theta3 = zcolumn.Theta()*c_Deg;
   m_Phi3 = zcolumn.Phi()*c_Deg;
-  
+
   // Make in any case a new rotation ID, otherwise gmega is wrong for virtual volumes
   m_RotID = m_RotIDCounter++;
   m_IsRotated = true;
@@ -883,7 +861,7 @@ void MDVolume::SetRotation(MRotation RotationMatrix, int RotID)
   m_InvertedRotMatrix = RotationMatrix;
   m_InvertedRotMatrix.Invert();
   m_RotID = RotID;
-  
+
   // Calculate rotation for Geant3
   MVector xcolumn, ycolumn, zcolumn;
 
@@ -896,14 +874,14 @@ void MDVolume::SetRotation(MRotation RotationMatrix, int RotID)
 
   xcolumn = RM*xcolumn;
   ycolumn = RM*ycolumn;
-  zcolumn = RM*zcolumn; 
-  
+  zcolumn = RM*zcolumn;
+
   m_Theta1 = xcolumn.Theta()*c_Deg;
   m_Phi1 = xcolumn.Phi()*c_Deg;
-  
+
   m_Theta2 = ycolumn.Theta()*c_Deg;
   m_Phi2 = ycolumn.Phi()*c_Deg;
-  
+
   m_Theta3 = zcolumn.Theta()*c_Deg;
   m_Phi3 = zcolumn.Phi()*c_Deg;
 
@@ -926,14 +904,14 @@ bool MDVolume::SetMother(MDVolume* Mother)
 
   if (Mother != 0 && Mother->HasMother(this) == true) {
     mout<<"   ***  Error  ***  in volume "<<m_Name<<endl;
-    mout<<"The desired mother volume ("<<Mother->GetName()<<") already has this volume ("<<m_Name<<") has mother!"<<endl;    
+    mout<<"The desired mother volume ("<<Mother->GetName()<<") already has this volume ("<<m_Name<<") has mother!"<<endl;
     return false;
   }
   m_Mother = Mother;
   if (m_Mother != 0) {
     m_Mother->AddDaughter(this);
   }
-  
+
   return true;
 }
 
@@ -944,12 +922,12 @@ bool MDVolume::SetMother(MDVolume* Mother)
 bool MDVolume::HasMother(MDVolume* Mother)
 {
   //! Check if any of the mothers is "Mother"
-  
+
   if (m_Mother == 0) return false;
   if (m_Mother == Mother) return true;
   return m_Mother->HasMother(Mother);
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1032,7 +1010,7 @@ void MDVolume::AddDaughter(MDVolume* Daughter)
   }
 }
 
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1045,7 +1023,7 @@ void MDVolume::RemoveAllDaughters()
   m_Daughters.clear();
 }
 
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1069,7 +1047,7 @@ MDVolume* MDVolume::RemoveDaughter(MDVolume* Daughter)
 
 void MDVolume::AddClone(MDVolume* Clone)
 {
-  // Add the pointer to a volume which is a clone of this volume 
+  // Add the pointer to a volume which is a clone of this volume
 
   massert(this != 0);
 
@@ -1124,7 +1102,7 @@ unsigned int MDVolume::GetCloneId(MDVolume* Clone)
       return ++m_CloneTemplateId;
     }
   }
-  
+
   return numeric_limits<unsigned int>::max();
 }
 
@@ -1147,7 +1125,7 @@ void MDVolume::SetCloneTemplate(MDVolume* CloneTemplate)
 
 MDVolume* MDVolume::Clone(MString Name)
 {
-  // Create a new volume which is a clone of this volume - including all daughters 
+  // Create a new volume which is a clone of this volume - including all daughters
   // This function should only be used in combination with "RemoveVirtual Volume"!
 
   massert(this != 0);
@@ -1156,7 +1134,7 @@ MDVolume* MDVolume::Clone(MString Name)
 
   if (GetCloneTemplate() == 0) {
 
-    V = new MDVolume(Name+"_"+m_Name, m_ShortName);
+    V = new MDVolume(Name + "_" + m_Name);
     V->SetMaterial(m_Material);
     V->SetShape(m_Shape);
 
@@ -1180,7 +1158,7 @@ MDVolume* MDVolume::Clone(MString Name)
     AddClone(V);
 
   } else {
-    V = new MDVolume(Name+"_"+GetCloneTemplate()->GetName()+"["+m_Name+"]", GetCloneTemplate()->GetShortName());
+    V = new MDVolume(Name+"_"+GetCloneTemplate()->GetName()+"["+m_Name+"]");
 
     V->SetMaterial(GetCloneTemplate()->GetMaterial());
     V->SetShape(GetCloneTemplate()->GetShape());
@@ -1247,19 +1225,15 @@ bool MDVolume::CopyDataToClones()
 
   for (unsigned i = 0; i < m_Clones.size(); i++) {
     Clone = m_Clones[i];
-    
-    if (Clone->GetShortName().IsEmpty()) {
-      Clone->SetShortName(m_ShortName);
-    }
-    
+
     if (Clone->GetMaterial() == 0) {
       Clone->SetMaterial(m_Material);
     }
-    
+
     if (Clone->IsVirtual() == false) {
       Clone->SetVirtual(m_IsVirtual);
     }
-    
+
     if (Clone->IsMany() == false) {
       Clone->SetMany(m_IsMany);
     }
@@ -1310,7 +1284,7 @@ bool MDVolume::CopyDataToClones()
 
 
 ////////////////////////////////////////////////////////////////////////////////
-  
+
 
 bool MDVolume::Validate()
 {
@@ -1389,7 +1363,7 @@ bool MDVolume::Validate()
     mout<<"Which is positioned in another volume: "<<m_Mother->GetName()<<endl;
     mout<<"This is fine, but depreciated... because error prone!"<<endl;
   }
-  
+
   // Give a warning if a clone does not have a mother
   if (IsClone() == true && m_Mother == 0) {
     mout<<"   ***  Error  ***  in volume "<<m_Name<<endl;
@@ -1403,7 +1377,7 @@ bool MDVolume::Validate()
     mout<<"We have a sensitive volume without a detector!"<<endl;
     return false;
   }
-  
+
   // Test daughters
   for (unsigned int i = 0; i < GetNDaughters(); i++) {
     if (GetDaughterAt(i)->Validate() == false) return false;
@@ -1422,7 +1396,7 @@ bool MDVolume::Validate()
 bool MDVolume::ValidateClonesHaveSameMotherVolume()
 {
   // All copies must be in mothers of the some volume type
-  
+
   MString MothersCloneTemplate = g_StringNotDefined;
 
   // If this is a clone template:
@@ -1499,7 +1473,7 @@ bool MDVolume::ValidateIntersections()
       if (GetDaughterAt(d)->IsRotated() == true) {
         Point = GetDaughterAt(d)->GetInvRotationMatrix() * Point;    // rotate
       }
-      Point += GetDaughterAt(d)->GetPosition();           // translate 
+      Point += GetDaughterAt(d)->GetPosition();           // translate
 
       if (m_Shape->IsInside(Point) == false &&
           m_Shape->DistanceOutsideIn(Point, -Point) > Tolerance) {
@@ -1507,22 +1481,22 @@ bool MDVolume::ValidateIntersections()
         mout<<" Volume "<<GetDaughterAt(d)->GetName()<<" is not completely contained in "<<m_Name<<"!"<<endl;
         mout<<" Point of "<<GetDaughterAt(d)->GetName()<<": "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
         mout<<" Distance outside in (in direction of origin): "<<m_Shape->DistanceOutsideIn(Point, -Point)<<endl;
-      } 
+      }
     }
   }
-    
+
   // (2) The daughters do not intersect
   for (unsigned int d = 0; d < GetNDaughters(); d++) {
     for (unsigned int e = 0; e < GetNDaughters(); e++) {
       if (d == e) continue;
-      
+
       Surface = GetDaughterAt(e)->GetShape()->CreateSurfacePattern(5);
       if (Surface.size() == 0) {
         mdebug<<"Can't check intersections (2) for: "<<GetDaughterAt(e)->GetName()<<" - no surface points"<<endl;
         continue;
       }
 
-      
+
       //      cout<<"Shape of "<<GetDaughterAt(e)->GetName()<<endl;
       //      for (int p = 0; p < Surface->GetLast()+1; p++) {
       //        Point = *((MVector *) (Surface->At(p)));
@@ -1531,18 +1505,18 @@ bool MDVolume::ValidateIntersections()
       for (unsigned int p = 0; p < Surface.size(); ++p) {
         Point = Surface[p];
 
-        //        if (GetName().CompareTo("Part_A_5") == 0) 
+        //        if (GetName().CompareTo("Part_A_5") == 0)
         //          cout<<"Point of "<<GetDaughterAt(e)->GetName()<<"(before): "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
 
         if (GetDaughterAt(e)->IsRotated() == true) {
           Point = GetDaughterAt(e)->GetInvRotationMatrix() * Point;    // rotate
         }
-        Point += GetDaughterAt(e)->GetPosition();           // translate 
+        Point += GetDaughterAt(e)->GetPosition();           // translate
 
-        //        if (GetDaughterAt(e)->GetName().CompareTo("Part_A_5") == 0) 
+        //        if (GetDaughterAt(e)->GetName().CompareTo("Part_A_5") == 0)
         //          cout<<"Point of "<<GetDaughterAt(e)->GetName()<<"(after): "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
 
-        if (GetDaughterAt(d)->IsInside(Point) == true && 
+        if (GetDaughterAt(d)->IsInside(Point) == true &&
             GetDaughterAt(d)->DistanceInsideOut(Point) > Tolerance) {
           mout<<" *** Error *** in Volume "<<m_Name<<endl;
           mout<<" Daughter "<<GetDaughterAt(e)->GetName()<<" (Point:"<<
@@ -1562,8 +1536,8 @@ bool MDVolume::ValidateIntersections()
           mout<<" Point of "<<GetDaughterAt(e)->GetName()<<": "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
           mout<<" Distance inside out from origin: "<<GetDaughterAt(d)->DistanceInsideOut(Point)<<endl;
           //return false;
-        } 
-      }     
+        }
+      }
     }
   }
 
@@ -1583,9 +1557,9 @@ bool MDVolume::ValidateIntersections()
 
 bool MDVolume::RemoveVirtualVolumes(vector<MDVolume*>& NewVolumes)
 {
-  // Recursively remove virtual volumes 
+  // Recursively remove virtual volumes
   // (1) Links daughters to mother
-  // (2) Set new position & rotation 
+  // (2) Set new position & rotation
   // (3) Jump into all daughters
 
   massert(this != 0);
@@ -1624,7 +1598,7 @@ bool MDVolume::RemoveVirtualVolumes(vector<MDVolume*>& NewVolumes)
       //cout<<"Make "<<Volume->GetName()<<" daughter of "<<m_Mother->GetName()<<endl;
       m_Mother->AddDaughter(Volume);
       for (unsigned int c = 0; c < m_Mother->GetNClones(); ++c) {
-        //cout<<"Adding "<<Volume->GetName()<<" to "<<m_Mother->GetCloneAt(c)->GetName()<<endl; 
+        //cout<<"Adding "<<Volume->GetName()<<" to "<<m_Mother->GetCloneAt(c)->GetName()<<endl;
         m_Mother->GetCloneAt(c)->AddDaughter(Volume);
       }
       // We cannot use SetMother(), because it has some additional unwanted features:
@@ -1635,7 +1609,7 @@ bool MDVolume::RemoveVirtualVolumes(vector<MDVolume*>& NewVolumes)
 
       // Modify position:
       DaughterPosition = m_InvertedRotMatrix * DaughterPosition;    // rotate
-      DaughterPosition += m_Position;           // translate 
+      DaughterPosition += m_Position;           // translate
       Volume->SetPosition(DaughterPosition);
 
       // Modify rotation:
@@ -1652,7 +1626,7 @@ bool MDVolume::RemoveVirtualVolumes(vector<MDVolume*>& NewVolumes)
       m_Mother->GetCloneAt(c)->RemoveDaughter(this);
     }
 
-    // (c) This volume has no longer a mother ;-( 
+    // (c) This volume has no longer a mother ;-(
     m_Mother = 0;
 
   } else {
@@ -1689,7 +1663,7 @@ void MDVolume::CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother)
   TGeoVolume* Volume = new TGeoVolume(m_Name, Shape, Medium);
   //Volume->SetVisibility(true);
   Volume->SetVisContainers();
-  
+
   if (m_Color == g_IntNotDefined || m_Color <= 0) m_Color = 1;
   Volume->SetLineColor(m_Color);
   Volume->SetFillColor(m_Color);
@@ -1702,11 +1676,11 @@ void MDVolume::CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother)
   } else {
     TGeoTranslation T(m_Position[0], m_Position[1], m_Position[2]);
     TGeoRotation R(m_Name, m_Theta1, m_Phi1, m_Theta2, m_Phi2, m_Theta3, m_Phi3);
-    TGeoCombiTrans* C = new TGeoCombiTrans(T, R); // delete by ROOT 
-     
-    Mother->AddNode(Volume, 1, C); 
+    TGeoCombiTrans* C = new TGeoCombiTrans(T, R); // delete by ROOT
+
+    Mother->AddNode(Volume, 1, C);
   }
-  
+
   if (m_WorldVolume == true) {
     Volume->SetVisibility(false);
   } else {
@@ -1721,7 +1695,7 @@ void MDVolume::CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother)
   for (unsigned int i = 0; i < m_Daughters.size(); ++i) {
     m_Daughters[i]->CreateRootGeometry(Manager, Volume);
   }
-  
+
   return;
 }
 
@@ -1732,23 +1706,23 @@ void MDVolume::CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother)
 MDVolume* MDVolume::GetVolume(MVector Pos, bool IsRelative)
 {
   // Return the lowermost volume in the hierarchy Pos is inside, i.e.
-  // when Pos is inside this volume and in one of the daughters return the 
+  // when Pos is inside this volume and in one of the daughters return the
   // daughter (or the daughters daughter volume Pos is inside)
   // if it's only in thei svolume return this volume,
   // if it's not in this volume return zero
 
-  //if (m_Mother != 0) 
+  //if (m_Mother != 0)
   //cout<<"Checking: "<<m_Name<<" of "<<m_Mother->GetName()<<endl;
 
   // Pos is in the mothers coordinate system.
   // So translate and rotate the position into this volumes coordinate system
-  
+
   if (IsRelative == false) {
-    Pos -= m_Position;           // translate 
-  
+    Pos -= m_Position;           // translate
+
     if (m_IsRotated == true) {
       Pos = m_RotMatrix * Pos;    // rotate
-    } 
+    }
   }
 
   // Now check if it is inside:
@@ -1763,7 +1737,7 @@ MDVolume* MDVolume::GetVolume(MVector Pos, bool IsRelative)
   MDVolume *V = 0;
   for (i = 0; i < GetNDaughters(); i++) {
     if ((V = GetDaughterAt(i)->GetVolume(Pos, false)) != 0) {
-      return V; // Return the daughter or their daugter volume or 
+      return V; // Return the daughter or their daugter volume or
                 // the daughter volume of the daughters daughter or ...
     }
   }
@@ -1779,9 +1753,9 @@ MDVolume* MDVolume::GetVolume(MVector Pos, bool IsRelative)
 bool MDVolume::ContainsVolume(const MString& Name, bool IncludeTemplates)
 {
   // Return true if the volume is part of the volume tree
-  
+
   if (m_Name.AreIdentical(Name)) return true;
-  
+
   if (IncludeTemplates == true) {
     MString NameThis;
     if (IsClone() == true) {
@@ -1803,7 +1777,7 @@ bool MDVolume::ContainsVolume(const MString& Name, bool IncludeTemplates)
     }
   }
 
-  // We didn't find the volume 
+  // We didn't find the volume
   return false;
 }
 
@@ -1813,8 +1787,8 @@ bool MDVolume::ContainsVolume(const MString& Name, bool IncludeTemplates)
 
 bool MDVolume::IsInside(MVector Pos, double Tolerance)
 {
-  Pos -= m_Position;           // translate 
-  
+  Pos -= m_Position;           // translate
+
   if (m_IsRotated == true) {
     Pos = m_RotMatrix * Pos;    // rotate
   }
@@ -1833,8 +1807,8 @@ bool MDVolume::IsInside(MVector Pos, double Tolerance)
 
 double MDVolume::DistanceInsideOut(MVector Pos)
 {
-  Pos -= m_Position;           // translate 
-  
+  Pos -= m_Position;           // translate
+
   if (m_IsRotated == true) {
     Pos = m_RotMatrix * Pos;    // rotate
   }
@@ -1850,10 +1824,10 @@ bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
 {
   // Pos is in the mothers coordinate system.
   // So translate and rotate the position into this volumes coordinate system
-  
+
   //cout<<"Position Original: "<<m_Name<<": "<<Pos.X()<<"!"<<Pos.Y()<<"!"<<Pos.Z()<<endl;
-  Pos -= m_Position;           // translate 
-  
+  Pos -= m_Position;           // translate
+
   if (m_IsRotated == true) {
     Pos = m_RotMatrix * Pos;    // rotate
   }
@@ -1892,7 +1866,7 @@ bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
   // Ok its only inside this volume - Let's noise
   if (m_Detector != 0) {
     //cout<<"Noise in detector: "<<m_Detector->GetName()<<endl;
-    
+
     // If we have named detectors we have to find the names detector which belongs to this volume
     if (m_Detector->GetNNamedDetectors() > 0) {
       //cout<<"Noise: we have named detectors"<<endl;
@@ -1905,7 +1879,7 @@ bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
       } else {
         //cout<<"No named detector found"<<endl;
         m_Detector->Noise(Pos, Energy, Time, this);
-      } 
+      }
       delete VS;
     } else {
       //cout<<"Noise: we have NO named detectors"<<endl;
@@ -1918,7 +1892,7 @@ bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
     Pos += m_Position;
 
   } else {
-    
+
     // Rotate back:
     if (m_IsRotated == true) {
       Pos = m_InvertedRotMatrix * Pos;    // rotate
@@ -1946,8 +1920,8 @@ bool MDVolume::ApplyPulseShape(double Time, MVector& Pos, double& Energy)
   // So translate and rotate the position into this volumes coordinate system
 
   //cout<<"Position Original: "<<m_Name<<": "<<Pos.X()<<"!"<<Pos.Y()<<"!"<<Pos.Z()<<endl;
-  Pos -= m_Position;           // translate 
-  
+  Pos -= m_Position;           // translate
+
   if (m_IsRotated == true) {
     Pos = m_RotMatrix * Pos;    // rotate
   }
@@ -1988,7 +1962,7 @@ bool MDVolume::ApplyPulseShape(double Time, MVector& Pos, double& Energy)
     Pos += m_Position;
 
   } else {
-    
+
     // Rotate back:
     if (m_IsRotated == true) {
       Pos = m_InvertedRotMatrix * Pos;    // rotate
@@ -2014,7 +1988,7 @@ bool MDVolume::Scale(const double Factor)
 {
   // Scale this volume and all daughter volumes correctly
 
-  if (m_CloneTemplate != 0 && 
+  if (m_CloneTemplate != 0 &&
       m_CloneTemplate->IsCloneTemplateVolumeWritten() == false) {
     m_Shape->Scale(Factor);
     m_CloneTemplate->SetCloneTemplateVolumeWritten(true);
@@ -2028,7 +2002,7 @@ bool MDVolume::Scale(const double Factor)
   for (Daughters = m_Daughters.begin(); Daughters != m_Daughters.end(); ++Daughters) {
     (*Daughters)->SetPosition((*Daughters)->GetPosition()*Factor);
     if ((*Daughters)->Scale(Factor) == false) {
-      return false; 
+      return false;
     }
   }
 
@@ -2049,20 +2023,20 @@ MVector MDVolume::GetPositionInMotherVolume(MVector Pos)
   return Pos;
 }
 
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
 MVector MDVolume::GetPositionInWorldVolume(MVector Pos)
 {
   // Get a position in the world volume:
-  
+
   MDVolume* Mother = this;
   while (Mother->GetMother() != 0) {
     Pos = Mother->GetPositionInMotherVolume(Pos);
     Mother = Mother->GetMother();
   }
-  
+
   return Pos;
 }
 
@@ -2072,7 +2046,7 @@ MVector MDVolume::GetPositionInWorldVolume(MVector Pos)
 
 bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
 {
-  // Fills the volume sequence pointer 
+  // Fills the volume sequence pointer
   // Return true if we are inside this volume
   // Behaviour is not defined if we are inside "MANY" volumes --- but which are anyway no longer supported...
 
@@ -2081,8 +2055,8 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
 
   //mout<<"GetVSequence: Position Original: "<<m_Name<<endl;
 
-  Pos -= m_Position;           // translate 
-  
+  Pos -= m_Position;           // translate
+
   if (m_IsRotated == true) {
     Pos = m_RotMatrix * Pos;   // rotate
   }
@@ -2100,13 +2074,13 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
   for (Daughters = m_Daughters.begin(); Daughters != m_Daughters.end(); ++Daughters) {
     if ((*Daughters)->GetVolumeSequence(Pos, Sequence) == true) {
       InsideDaughter = true;
-      // If this volume can only be in one other volume, we can stop if we have found the sensitive volume 
+      // If this volume can only be in one other volume, we can stop if we have found the sensitive volume
       if ((*Daughters)->IsMany() == false) break;
-      // Otherwise, we can stop only if we have found the sensitive volume 
-      if ((*Daughters)->IsMany() == true && Sequence->GetSensitiveVolume() != 0) break; 
+      // Otherwise, we can stop only if we have found the sensitive volume
+      if ((*Daughters)->IsMany() == true && Sequence->GetSensitiveVolume() != 0) break;
     }
   }
-  
+
   // Only if this hit is not within a daughter we can set this detector as the sensitive detector
   // Otherwise it could be in a non-sensitive or also sensitive volume within this detector
   if (InsideDaughter == false) {
@@ -2134,12 +2108,12 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
     Sequence->SetDetectorVolume(this);
     //cout<<m_Name<<": Setting detector: "<<GetDetector()->GetName()<<endl;
     Sequence->SetDetector(GetDetector()); // new Sep 22 2010? Clusters in calormeter didn't work. Not sure if this breaks anything...
-  }  
+  }
 
-  // We are inside this volume, so store the information: 
+  // We are inside this volume, so store the information:
   Sequence->AddVolumeFront(this);
   Sequence->AddPositionFront(Pos);
-  
+
   // If this is the world volume, we set the detector again, to get the named detectors right
   //cout<<"Check resetting of detector: "<<endl;
   if (Sequence->GetDetector() != 0 && Sequence->GetDetector()->HasNamedDetectors() == true) {
@@ -2151,7 +2125,7 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
       //cout<<"No named detector found!"<<endl;
     }
   }
-  
+
   return true;
 }
 
@@ -2170,7 +2144,7 @@ bool MDVolume::GetVolumeSequenceInverse(MVector Pos, MDVolumeSequence* Sequence)
     merr<<"Position is outside this volume!"<<show;
     return false;
   }
-  
+
   // Get a position in the world volume:
   MDVolume* Mother = this;
   while (Mother->GetMother() != 0) {
@@ -2180,7 +2154,7 @@ bool MDVolume::GetVolumeSequenceInverse(MVector Pos, MDVolumeSequence* Sequence)
 
   Sequence->Reset();
   Mother->GetVolumeSequence(Pos, Sequence);
-  
+
   return true;
 }
 
@@ -2191,17 +2165,17 @@ bool MDVolume::GetVolumeSequenceInverse(MVector Pos, MDVolumeSequence* Sequence)
 bool MDVolume::FindOverlaps(MVector Pos, vector<MDVolume*>& OverlappingVolumes)
 {
   // Store all deepest volumes Pos is inside in OverlappingVolumes
-  // If there is only one volume in OverlappingVolumes, than of course there 
+  // If there is only one volume in OverlappingVolumes, than of course there
   // are no overlaps...
 
   // Pos is in the mothers coordinate system.
   // So translate and rotate the position into this volumes coordinate system
-  
+
   //cout<<"Checking "<<m_Name<<endl;
 
   double Tolerance = 0.000001;
 
-  Pos -= m_Position;           // translate   
+  Pos -= m_Position;           // translate
   if (m_IsRotated == true) {
     Pos = m_RotMatrix * Pos;   // rotate
   }
@@ -2217,7 +2191,7 @@ bool MDVolume::FindOverlaps(MVector Pos, vector<MDVolume*>& OverlappingVolumes)
   if (m_Daughters.size() == 0) {
     //cout<<"Inside "<<m_Name<<endl;
     OverlappingVolumes.push_back(this);
-  } else {   
+  } else {
     // check the daughters:
     bool InsideDaughter = false;
     vector<MDVolume*>::iterator Daughters;
@@ -2250,7 +2224,7 @@ double MDVolume::GetMasses(map<MDMaterial*, double>& Masses)
   for (unsigned int i = 0; i < i_max; i++) {
     Volume -= GetDaughterAt(i)->GetMasses(Masses);
   }
-  
+
   Masses[GetMaterial()] += m_Material->GetDensity()*Volume;
 
   return m_Shape->GetVolume();
@@ -2263,7 +2237,7 @@ double MDVolume::GetMasses(map<MDMaterial*, double>& Masses)
 bool MDVolume::GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& TreeDepth)
 {
   // Find the number of placements of a volume
-  
+
   // Due to the limitation, each Copy is allowed to be positions in the some
   // mother than all other copies, copies are not allowed to have different
   // daughters, its enough to find one placement, to get the complete list
@@ -2301,7 +2275,7 @@ bool MDVolume::GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& Tr
         if (GetDaughterAt(i)->IsClone()) {
           MDVolume* CloneTemplate = GetDaughterAt(i)->GetCloneTemplate();
           for (unsigned int c = 0; c < CloneTemplate->GetNClones(); ++c) {
-            if (CloneTemplate->GetCloneAt(c)->GetMother() != 0 && 
+            if (CloneTemplate->GetCloneAt(c)->GetMother() != 0 &&
                 CloneTemplate->GetCloneAt(c)->GetMother()->IsVirtual() == false) {
               NPlacements++;
             }
@@ -2334,7 +2308,7 @@ MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Place
   MVector Position = g_VectorNotDefined;
 
   TreeDepth++;
-  
+
   //cout<<m_Name<<": TreeDepth :"<<TreeDepth<<":"<<int(Placements.size())<<endl;
   if (TreeDepth == int(Placements.size()) - 1) {
     Position = m_Shape->GetRandomPositionInside();
@@ -2346,7 +2320,7 @@ MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Place
         Counter++;
         //cout<<Counter<<":"<<Placements[TreeDepth]<<endl;
         if (Counter == Placements[TreeDepth]) {
-          Position = GetDaughterAt(i)->GetRandomPositionInVolume(Volume, Placements, TreeDepth);          
+          Position = GetDaughterAt(i)->GetRandomPositionInVolume(Volume, Placements, TreeDepth);
           break;
         }
       }
@@ -2376,7 +2350,7 @@ MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Place
 
 void MDVolume::VirtualizeNonDetectorVolumes()
 {
-  // Check the list of daughters, those not containing sensitive detectors 
+  // Check the list of daughters, those not containing sensitive detectors
   // are virtualized
 
   if (ContainsDetectorVolume() == false) {
@@ -2418,7 +2392,7 @@ void MDVolume::OptimizeVolumeTree()
           MDVolume* V = m_Daughters[d];
           m_Daughters[d] = m_Daughters[e];
           m_Daughters[e] = V;
-          
+
           Indices[e] = false;
           Indices[d] = true;
 
@@ -2442,35 +2416,36 @@ void MDVolume::OptimizeVolumeTree()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDVolume::GetAbsorptionLengths(map<MDMaterial*, double>& Lengths, 
+double MDVolume::GetAbsorptionLengths(map<MDMaterial*, double>& Lengths,
                                       MVector Start, MVector Stop)
 {
   // Start and stop are in the mothers coordinate system.
   // So translate and rotate the position into this volumes coordinate system
-  
+
   if (m_DoAbsorptions == false) {
     return 0;
   }
 
   //mout<<"Testing absorption length in volume "<<m_Name<<endl;
 
-  Start -= m_Position;           // translate 
-  Stop -= m_Position;           // translate 
+  Start.Subtract(m_Position);           // translate
+  Stop.Subtract(m_Position);           // translate
   if (m_IsRotated == true) {
-    Start = m_RotMatrix * Start;    // rotate
-    Stop = m_RotMatrix * Stop;    // rotate
+    m_RotMatrix.Rotate(Start);    // rotate
+    m_RotMatrix.Rotate(Stop);    // rotate
   }
 
   double Length = 0;
   double LengthInDaughters = 0;
   const double Tolerance = 0.0000001;
 
+
   // Now check if it is inside:
   if (m_Shape->IsInside(Start, m_Tolerance) == true) {
     Length = m_Shape->DistanceInsideOut(Start, (Stop-Start).Unitize());
     //mout<<"Inside of shape: "<<m_Name<<" with length in shape: "<<Length<<endl;
     // Case A: The real distance (Stop-Start).Mag() is to short to leave it again:
-    if (Length > (Stop-Start).Mag()) { 
+    if (Length > (Stop-Start).Mag()) {
       Length = (Stop-Start).Mag();
     } else if (Length > 0) {
       // Check if we can re-enter the volume --- necessary for tubes, etc.
@@ -2481,10 +2456,10 @@ double MDVolume::GetAbsorptionLengths(map<MDMaterial*, double>& Lengths,
         MVector SecondInsideStart = OutsideStart + (LengthOutsideIn+Tolerance)*(Stop-OutsideStart).Unitize();
         double LengthSecondInsideOut = m_Shape->DistanceInsideOut(SecondInsideStart, (Stop-SecondInsideStart).Unitize());
         //mout<<"Mystart (2): "<<MyStart[0]<<"!"<<MyStart[1]<<"!"<<MyStart[2]<<" Length: "<<MyLength<<endl;
-        if (LengthSecondInsideOut > (Stop-SecondInsideStart).Mag()) { 
+        if (LengthSecondInsideOut > (Stop-SecondInsideStart).Mag()) {
           Length += (Stop-SecondInsideStart).Mag();
         } else {
-          Length += LengthSecondInsideOut;          
+          Length += LengthSecondInsideOut;
         }
       }
       //mout<<"Redetermined length in shape taking into account: re-entrable volumes: "<<Length<<endl;
@@ -2492,6 +2467,7 @@ double MDVolume::GetAbsorptionLengths(map<MDMaterial*, double>& Lengths,
     //mout<<"Total length in shape: "<<Length<<endl;
 
   } else {
+
     // We are outside the volume, determine if we can reach it:
     double LengthOutsideIn = m_Shape->DistanceOutsideIn(Start, (Stop-Start).Unitize());
 
@@ -2513,10 +2489,10 @@ double MDVolume::GetAbsorptionLengths(map<MDMaterial*, double>& Lengths,
         MVector OutsideStart = InsideStart + (InsideLength+Tolerance)*(Stop-InsideStart).Unitize();
         double LengthSecondOutsideIn = m_Shape->DistanceOutsideIn(OutsideStart, (Stop-OutsideStart).Unitize());
         //mout<<"I OutsideStart: "<<OutsideStart[0]<<"!"<<OutsideStart[1]<<"!"<<OutsideStart[2]<<"!"<<InsideLength<<endl;
-        
+
         if (LengthSecondOutsideIn > 0 && LengthSecondOutsideIn < (Stop-OutsideStart).Mag()) { // we have a path to the volume and we can reach it
           //cout<<"We can re-enter! Second length: "<<LengthSecondOutsideIn<<endl;
-        
+
           // Find a second position inside and then calculate the second length inside:
           MVector SecondInsideStart = OutsideStart + (LengthSecondOutsideIn+Tolerance)*(Stop-OutsideStart).Unitize();
           double SecondInsideLength = m_Shape->DistanceInsideOut(SecondInsideStart, (Stop-SecondInsideStart).Unitize());
@@ -2540,7 +2516,7 @@ double MDVolume::GetAbsorptionLengths(map<MDMaterial*, double>& Lengths,
     for (unsigned int i = 0; i < i_max; i++) {
       LengthInDaughters += m_Daughters[i]->GetAbsorptionLengths(Lengths, Start, Stop);
     }
-    
+
     if (Length - LengthInDaughters > 0) {
       Lengths[GetMaterial()] += (Length - LengthInDaughters);
     } else if (Length - LengthInDaughters < -Tolerance) {
@@ -2594,171 +2570,6 @@ unsigned int MDVolume::GetNSensitiveVolumes()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDVolume::GetGeant3DIM()
-{
-  // Write the Geant3 dimension information, e.g.
-  // REAL VPCB2VOL
-  // DIMENSION VPCB2VOL(3)
-
-  if (m_CloneTemplate != 0) return MString("");
-
-  ostringstream out;
-  out<<"***** Volume: "<<m_Name<<endl;
-  out<<m_Shape->GetGeant3DIM(m_ShortName)<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetGeant3DATA()
-{
-  // Write the Geant3 data information, e.g.
-  // DATA VPCB3VOL/5.2500,6.3000,0.1000/ 
-
-  if (m_CloneTemplate != 0) return MString("");
-
-  ostringstream out;
-  out<<m_Shape->GetGeant3DATA(m_ShortName);
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetGeant3()
-{
-  // Write the volume and rotation information, e.g.
-  // CALL GSVOLU('PCB2','BOX ',6,VPCB2VOL,3,IVOL(38))
-  // CALL GSROTM(8,90.0,-180.0,90.0,-90.0,0.0,0.0)
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  //out.precision(1);
-
-  // Do not write the rotation information if the clone template has already been 
-  // written and this rotations ID is identical with the master id:
-  if (m_CloneTemplate != 0 && 
-      m_CloneTemplate->IsCloneTemplateVolumeWritten() == true && 
-      m_RotID == m_CloneTemplate->GetRotationID()) {
-    // nothing
-  } else {
-    if (m_IsRotated == true && m_RotID > 0) {
-      out<<"***** Name: "<<m_Name<<endl;
-      out<<"      CALL GSROTM("<<m_RotID<<","<<m_Theta1<<","<<m_Phi1<<","
-         <<m_Theta2<<","<<m_Phi2<<","<<m_Theta3<<","<<m_Phi3<<")"<<endl;
-    }
-  }
-
-  // Write the volume information when
-  // + it is no clone  OR
-  // + it is a clone but the template has not yet been written
-  if (m_CloneTemplate == 0 ||
-      (m_CloneTemplate != 0 && m_CloneTemplate->IsCloneTemplateVolumeWritten() == false)) {
-    // Write volume information:
-    out<<"      CALL GSVOLU('"<<m_ShortName<<"','"<<m_Shape->GetGeant3ShapeName()<<"',"<<
-      m_Material->GetID()<<",V"<<m_ShortName<<"VOL,"<<
-      m_Shape->GetGeant3NumberOfParameters()<<",IVOL("<<m_ID<<"))"<<endl;
-
-    // Write possible divisions:
-    if (m_Detector != 0) {
-      out<<m_Detector->GetGeant3Divisions();
-    }
-
-    // Advance into the volume tree:
-    for (unsigned int i = 0; i < GetNDaughters(); i++) {
-      out<<GetDaughterAt(i)->GetGeant3();
-    }
-
-    if (m_CloneTemplate != 0 && m_CloneTemplate->IsCloneTemplateVolumeWritten() == false) {
-      m_CloneTemplate->SetCloneTemplateVolumeWritten(true);
-    }
-  }
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetMGeant()
-{
-  // Write the volume information in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  //out.precision(1);
-
-  // Do not write the rotation information if the clone template has already been 
-  // written and this rotations ID is identical with the master id:
-  if (m_CloneTemplate != 0 && 
-      m_CloneTemplate->IsCloneTemplateVolumeWritten() == true && 
-      m_RotID == m_CloneTemplate->GetRotationID()) {
-    // nothing
-  } else {
-    if (m_IsRotated == true && m_RotID > 0) {
-      out << endl;
-      if (m_CloneTemplate == 0) {
-        out << "! Rotation belongs to : " << m_Name << endl;
-      } else {
-        out << "! Rotation belongs to : " << m_CloneTemplate->GetName() << endl;
-      }
-      out << "rotm " << m_RotID << " " << m_Theta1 << " " << m_Phi1 << " "
-          << m_Theta2 << " " << m_Phi2 << " " << m_Theta3 << " " << m_Phi3 << endl;
-    }
-  }
-
-  // Write the volume information when
-  // + it is no clone  OR
-  // + it is a clone but the template has not yet been written
-  out.precision(3);
-  if (m_CloneTemplate == 0 ||
-      (m_CloneTemplate != 0 && m_CloneTemplate->IsCloneTemplateVolumeWritten() == false)) {
-    // Write volume information:
-    out << endl;
-    if (m_CloneTemplate == 0) {
-      out << "! Geomega volume name: " << m_Name << endl;
-    } else {
-      out << "! Geomega volume name: " << m_CloneTemplate->GetName() << endl;
-    }
-
-    MString VolumeName = m_ShortName;
-    VolumeName.ToUpper();
-    MString MaterialName = m_Material->GetMGeantShortName();
-    MaterialName.ToUpper();
-
-    out << "volu " << VolumeName << " " << m_Shape->GetGeant3ShapeName() << " "
-        << MaterialName << " " << m_Shape->GetGeant3NumberOfParameters() << endl;
-    out << m_Shape->GetMGeantDATA(m_ShortName);
-    out << "satt " << VolumeName << " SEEN " << m_Visibility << endl;
-    
-    // Write possible divisions:
-    if (m_Detector != 0 && m_IsSensitive == true) {
-      out<<m_Detector->GetMGeantDivisions();
-    }
-
-    // Advance into the volume tree:
-    for (unsigned int i = 0; i < GetNDaughters(); i++) {
-      out << GetDaughterAt(i)->GetMGeant();
-    }
-
-    if (m_CloneTemplate != 0 && m_CloneTemplate->IsCloneTemplateVolumeWritten() == false) {
-      m_CloneTemplate->SetCloneTemplateVolumeWritten(true);
-    }
-  }
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 void MDVolume::ResetCloneTemplateFlags()
 {
   // Reset all clone template written falgs:
@@ -2775,167 +2586,16 @@ void MDVolume::ResetCloneTemplateFlags()
     m_CloneTemplate->m_CloneTemplateId = 0;
   }
 
-  // Do this for all clones - shouldn't be necessary 
+  // Do this for all clones - shouldn't be necessary
   for (unsigned int i = 0; i < GetNClones(); ++i) {
-    GetCloneAt(i)->SetCloneTemplateVolumeWritten(false);      
+    GetCloneAt(i)->SetCloneTemplateVolumeWritten(false);
     GetCloneAt(i)->SetCloneTemplateDaughtersWritten(false);
   }
 
-  // ... and all daughters 
+  // ... and all daughters
   for (unsigned int i = 0; i < GetNDaughters(); i++) {
     GetDaughterAt(i)->ResetCloneTemplateFlags();
   }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetMGeantPosition(int& IDCounter)
-{
-  // Write the volume position information in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  //out.precision(3);
-
-  MDVolume* VC;
-  int ID = 0;
-  MString Name, MotherName, CopyName;
-
-  if ((VC = GetCloneTemplate()) != 0) {
-      
-    ID = GetCloneTemplate()->GetCloneId(this);
-    
-    Name = GetShortName();
-    Name.ToUpper();
-    CopyName = GetShortName();
-    CopyName.ToUpper();
-    MotherName = GetMother()->GetShortName();
-    MotherName.ToUpper();
-
-    out<<endl;
-    out<<"! Positioning "<<GetCloneTemplate()->GetName()<<" in "<<GetMother()->GetName()<<":"<<endl;
-    out<<"posi "<<CopyName<<" "<<ID<<" "<< MotherName<<" "
-       <<GetPosition().X()<<" "<<GetPosition().Y()<<" "<< GetPosition().Z()<<" " 
-       <<GetRotationID();
-    if (m_IsMany == false) {
-      out<<" ONLY"<<endl;
-    } else {
-      out<<" MANY"<<endl;
-    }
-    
-    if (GetCloneTemplate()->AreCloneTemplateDaughtersWritten() == false) {
-      for (unsigned int i = 0; i < GetNDaughters(); i++) {
-        out<<GetDaughterAt(i)->GetMGeantPosition(IDCounter);
-      }
-      GetCloneTemplate()->SetCloneTemplateDaughtersWritten(true);
-    }
-  } else {
-    // If it is no copy then position it only when it has a mother or is the root volume
-    if (GetMother() !=  0) {
-      
-      //ID = IDCounter++;
-      ID = 1;
-
-      Name = GetShortName();
-      Name.ToUpper();
-      MotherName = GetMother()->GetShortName();
-      MotherName.ToUpper();
-      
-      out<<endl;
-      out<<"! Positioning "<<m_Name<<" in "<<GetMother()->GetName()<< ":"<<endl;
-      out<<"posi "<<Name<<" "<<ID<<" "<<MotherName<<" " 
-         <<GetPosition().X()<<" "<<GetPosition().Y()<<" "<<GetPosition().Z()<<" "
-         <<GetRotationID();
-      if (m_IsMany == false) {
-        out<<" ONLY"<<endl;
-      } else {
-        out<<" MANY"<<endl;
-      }
-    }
-
-    // Do the same for all daughters:
-    for (unsigned int i = 0; i < GetNDaughters(); i++) {
-      out<<GetDaughterAt(i)->GetMGeantPosition(IDCounter);
-    }
-  }
-         
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetGeant3Position(int& IDCounter)
-{
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  //out.precision(1);
-
-  //cout<<"Looking at volume: "<<m_Name<<endl;
-  MDVolume *VC;
-  int ID;
-  MString Name, MotherName, CopyName;
-
-  if ((VC = GetCloneTemplate()) != 0) {
-      
-    //cout<<VC->GetShortName()<<"="<<VC->GetName()<<"!"<<GetMother()->GetShortName()<<"="<<GetMother()->GetName()<<endl;
-    // If the volume is a copy, then reposition the CopyOf volume:
-    ID = IDCounter++;
-    //ID = GetID();
-    
-    Name = GetShortName();
-    CopyName = GetShortName();
-    MotherName = GetMother()->GetShortName();
-    
-    out<<"      CALL GSPOS('"<<CopyName<<"',"<<ID<<",'"<<MotherName
-       <<"',"<<GetPosition().X()<<","<<GetPosition().Y()<<","
-       <<GetPosition().Z()<<","<<GetRotationID();
-    if (m_IsMany == false) {
-      out<<",'ONLY')"<<endl;
-    } else {
-      out<<",'MANY')"<<endl;
-    }
-    
-    if (GetCloneTemplate()->AreCloneTemplateDaughtersWritten() == false) {
-      for (unsigned int i = 0; i < GetNDaughters(); i++) {
-        out<<GetDaughterAt(i)->GetGeant3Position(IDCounter);
-      }
-      GetCloneTemplate()->SetCloneTemplateDaughtersWritten(true);
-    }
-  } else {
-    // If it is no copy then position it only when it has a mother or is the root volume
-    if (GetMother() !=  0) {
-      //cout<<"   is root"<<endl;
-      
-      ID = IDCounter++;
-
-      Name = GetShortName();
-      MotherName = GetMother()->GetShortName();
-      
-      out<<"      CALL GSPOS('"<<Name<<"',"<<ID<<",'"<<MotherName
-         <<"',"<<GetPosition().X()<<","<<GetPosition().Y()<<","
-         <<GetPosition().Z()<<","<<GetRotationID();
-      if (m_IsMany == false) {
-        out<<",'ONLY')"<<endl<<endl;
-      } else {
-        out<<",'MANY')"<<endl<<endl;
-      }
-    } else {
-      //cout<<"   is ignored..."<<endl;
-    }
-
-    // Do the same for all daughters:
-    for (unsigned int i = 0; i < GetNDaughters(); i++) {
-      out<<GetDaughterAt(i)->GetGeant3Position(IDCounter);
-    }
-  }
-  
-  
-
-  return out.str().c_str();
 }
 
 
@@ -3019,7 +2679,7 @@ MString MDVolume::ToStringVolumeTree(int Level)
   if (m_Detector != 0) {
     Text += " (";
     Text += m_Detector->GetName();
-    Text += ")";    
+    Text += ")";
   }
   Text += " - Vis: ";
   Text += m_Visibility;
@@ -3042,13 +2702,13 @@ MString MDVolume::ToString(bool Recursive)
 
   ostringstream out;
 
-  out<<"Volume "<<m_Name<<endl; //" ("<<m_ShortName<<")"<<endl;
-  if (m_Shape != 0) { 
+  out<<"Volume "<<m_Name<<endl;
+  if (m_Shape != 0) {
     out<<"   Shape: "<<m_Shape->ToString();
   } else {
     out<<"   Shape not defined!!"<<endl;
   }
-  if (m_Material != 0) { 
+  if (m_Material != 0) {
     out<<"   Material: "<<m_Material->GetName()<<endl;
   } else {
     out<<"   Material not defined!!"<<endl;
@@ -3091,7 +2751,7 @@ void MDVolume::ResetIDs()
 {
   //
 
-  MDVolume::m_IDCounter = 1; 
+  MDVolume::m_IDCounter = 1;
   MDVolume::m_RotIDCounter = 1;
 }
 

@@ -46,7 +46,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseMatrixO2)
 #endif
 
@@ -55,7 +55,7 @@ ClassImp(MResponseMatrixO2)
 
 
 MResponseMatrixO2::MResponseMatrixO2() :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // default constructor
 
@@ -67,7 +67,7 @@ MResponseMatrixO2::MResponseMatrixO2() :
 
 
 MResponseMatrixO2::MResponseMatrixO2(vector<float> xAxis, vector<float> yAxis) :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // constructor
 
@@ -81,7 +81,7 @@ MResponseMatrixO2::MResponseMatrixO2(vector<float> xAxis, vector<float> yAxis) :
 
 MResponseMatrixO2::MResponseMatrixO2(MString Name, vector<float> xAxis, 
                                      vector<float> yAxis) 
-  : MResponseMatrix(Name)
+  : MResponseMatrixOx(Name)
 {
   // constructor
 
@@ -637,23 +637,23 @@ float MResponseMatrixO2::GetInterpolated(float x1, float x2, bool DoExtrapolate)
     }
   } else {
     // Get Position:
- 		int Position = FindBin(m_AxisO2, x2);
+    int Position = FindBin(m_AxisO2, x2);
 
     // Take care of boundaries:
-		if (Position < 0) {
-			if (DoExtrapolate == true) {
-				Position = 0; // extrapolate below lower edge
-			} else {
-				return m_AxesO1.front().GetInterpolated(x1, DoExtrapolate);
-			}
-		} else if (Position >= int(m_AxisO2.size()-1)) {
-			if (DoExtrapolate == true) {
-				Position = int(m_AxisO2.size()-2); // extrapolate above higher edge
-				// limits of highest bin are m_AxisO2.size()-2 and  m_AxisO2.size()-1 !!
-			} else {
-				return m_AxesO1.back().GetInterpolated(x1, DoExtrapolate);
-			}
-		}
+    if (Position < 0) {
+      if (DoExtrapolate == true) {
+        Position = 0; // extrapolate below lower edge
+      } else {
+        return m_AxesO1.front().GetInterpolated(x1, DoExtrapolate);
+      }
+    } else if (Position >= int(m_AxisO2.size()-1)) {
+      if (DoExtrapolate == true) {
+        Position = int(m_AxisO2.size()-2); // extrapolate above higher edge
+        // limits of highest bin are m_AxisO2.size()-2 and  m_AxisO2.size()-1 !!
+      } else {
+        return m_AxesO1.back().GetInterpolated(x1, DoExtrapolate);
+      }
+    }
     
     // Interpolate:
     return m_AxesO1[Position].GetInterpolated(x1, DoExtrapolate) + (x2 - m_AxisO2[Position])/
@@ -728,11 +728,11 @@ float MResponseMatrixO2::GetMinimum() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MResponseMatrixO2::GetSum() const
+double MResponseMatrixO2::GetSum() const
 {
   // Return the sum of all bins:
 
-  float Sum = 0;
+  double Sum = 0;
   for (unsigned int i = 0; i < m_AxesO1.size(); ++i) {
     Sum += m_AxesO1[i].GetSum();
   }  
@@ -828,7 +828,7 @@ bool MResponseMatrixO2::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO2") {
-//     while (Parser.TokenizeLine(T) == true) {
+//     while (Parser.TokenizeLine(T, true) == true) {
 //       if (T.GetNTokens() == 0) continue;
 //       if (T.GetTokenAt(0) == "R2") {
 //         if (T.GetNTokens() == 4) {
@@ -845,7 +845,7 @@ bool MResponseMatrixO2::ReadSpecific(MFileResponse& Parser,
     vector<float> yAxis;
     MString x1Name;
     MString x2Name;
-    while (Parser.TokenizeLine(T) == true) {
+    while (Parser.TokenizeLine(T, true) == true) {
       if (T.GetNTokens() < 1) continue;
       if (T.GetTokenAt(0) == "A1") {
         xAxis = T.GetTokenAtAsFloatVector(1);
@@ -920,12 +920,7 @@ bool MResponseMatrixO2::Write(MString FileName, bool Stream)
   mdebug<<"Started writting file \""<<FileName<<"\" ... This way take a while ..."<<endl;
 
   ostringstream s;
-  s<<"# Response Matrix 2"<<endl;
-  s<<"Version 1"<<endl;
-  s<<endl;
-  s<<"NM "<<m_Name<<endl;
-  s<<endl;
-  s<<"CE "<<((m_ValuesCentered == true) ? "true" : "false")<<endl;
+  WriteHeader(s);
   File.Write(s);
   
   unsigned int x, x_max = GetAxisBins(1); 
@@ -986,7 +981,30 @@ bool MResponseMatrixO2::Write(MString FileName, bool Stream)
 
 void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
 {
-  // Create a 2d ROOT histogram:
+  TH1* Hist = GetHistogram(x1, x2, Normalize);
+  if (Hist == nullptr) {
+    mout<<"Unable to generate histogram"<<endl;
+    return;
+  }
+    
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle(m_Name);
+  Canvas->cd();
+  if (dynamic_cast<TH2*>(Hist) != nullptr) {
+    Hist->Draw("colz");
+  } else {
+    Hist->Draw();
+  }
+  Canvas->Update();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+TH1* MResponseMatrixO2::GetHistogram(float x1, float x2, bool Normalize)
+{
+  // Create a ROOT histogram:
   
   vector<unsigned int> axes;
   vector<unsigned int> values;
@@ -1045,7 +1063,7 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
     
       mout<<"Response matrix of order 2 with "<<GetAxisBins(axes[0])<<" entries:"<<endl;
       double Norm = 1;
-       for (unsigned int i1 = 0; i1 < GetAxisBins(axes[0]); ++i1) {
+      for (unsigned int i1 = 0; i1 < GetAxisBins(axes[0]); ++i1) {
         if (Normalize == true) {
           Norm = GetAxisContent(i1+1, axes[0])-GetAxisContent(i1, axes[0]);
           if (Norm != 0) {
@@ -1057,12 +1075,8 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
         Hist->SetBinContent(i1+1, GetBinContent(i1, axes[0], values[1], axes[1])*Norm);
       }
     
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM2D1C");
-      Canvas->cd();
-      Hist->Draw();
-      Canvas->Update();
-
+      return Hist;
+      
     } else if (NAxes == 2) {
       TH2D* Hist = 0;
       float* xBins = new float[GetAxisBins(axes[0])+1];
@@ -1094,11 +1108,8 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
         }
       }
       
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM2D2C");
-      Canvas->cd();
-      Hist->Draw("colz");
-      Canvas->Update();
+      return Hist;
+      
     } else {
       merr<<"Wrong number of axis: "<<NAxes<<endl;
     }
@@ -1106,6 +1117,8 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
   } else {
     mout<<"Empty response matrix of order 2"<<endl;
   }
+  
+  return nullptr;
 }
 
 
@@ -1116,7 +1129,7 @@ void MResponseMatrixO2::Smooth(unsigned int Times)
 {
   // We can only smooth the lowest 1D histograms...
 
-  if (Times > 0) {
+  if (Times > 0 && GetNBins() > 0) {
     double* Values = new double[GetAxisBins(2)];
     for (unsigned int x1 = 0; x1 < GetAxisBins(1); ++x1) {
       for (unsigned int x2 = 0; x2 < GetAxisBins(2); ++x2) {

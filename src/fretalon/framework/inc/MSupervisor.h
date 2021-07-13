@@ -28,6 +28,7 @@ using namespace std;
 
 // Forward declarations:
 class MModule;
+class MXmlDocument;
 class MGUIMainFretalon;
 class MGUIExpoCombinedViewer;
 class MGUIExpoSupervisor;
@@ -55,6 +56,9 @@ class MSupervisor
   bool Load(MString FileName = "");
   //! Save all data to a file
   bool Save(MString FileName);
+  
+  //! Change one field in the configuration file
+  bool ChangeConfiguration(MString NewField);
 
   //! Add an available module
   void AddAvailableModule(MModule* Module) { m_AvailableModules.push_back(Module); }
@@ -138,7 +142,12 @@ class MSupervisor
   //bool AnalyzeSingleThreaded();
   //! Analyze the data - multi-threaded mode
   //bool AnalyzeMultiThreaded();
- 
+   
+  //! Read the configuration data from an XML node
+  bool ReadXmlConfiguration(MXmlDocument* Node);
+  //! Create an XML node tree from the configuration
+  MXmlDocument* CreateXmlConfiguration();
+
   //! End the program (and saves the GUI data)
   void Terminate();
 
@@ -215,7 +224,7 @@ class MSupervisor
   MString m_UICoAuthors;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSupervisor, 0) // no description
 #endif

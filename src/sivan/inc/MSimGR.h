@@ -57,7 +57,7 @@ class MSimGR
   //! Retrieve the noised energy
   double GetEnergy() const { return m_Energy; }
   //! Set the (noised) energy
-  void SetEnergy(const double Energy) { m_Energy = Energy; }
+  void SetEnergy(const double Energy) { m_Energy = Energy; m_OriginalEnergy = m_Energy; }
 
   //! Return the original energy deposit - before noising
   double GetOriginalEnergy() const { return m_OriginalEnergy; }
@@ -103,7 +103,7 @@ class MSimGR
   MDVolumeSequence* m_VolumeSequence;       
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSimGR, 0) // no description
 #endif

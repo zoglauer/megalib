@@ -41,7 +41,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MTokenizer)
 #endif
 
@@ -544,6 +544,66 @@ vector<unsigned int> MTokenizer::GetTokenAtAsUnsignedIntVector(const unsigned in
     }
     return A;
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool StringsAreInQuotationMarks) const
+{
+  //! Return the token AT AND AFTER i as vector of strings --- return empty array in case of error
+  
+  vector<MString> A;
+  if (i < m_Tokens.size()) {
+    if (StringsAreInQuotationMarks == false) {
+      for (unsigned int j = i; j < m_Tokens.size(); ++j) {
+        A.push_back(GetTokenAtAsString(j));
+      }
+    } else {
+      bool Started = false;
+      for (unsigned int j = i; j < m_Tokens.size(); ++j) {
+        MString Current = GetTokenAtAsString(j);
+        if (Started == false) {
+          if (Current.BeginsWith("\"") == false) {
+            mlog<<"The string tokens are not correctly enclosed in quotation marks! You will be missing data!"<<endl;
+            mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+            A.clear();
+            return A;
+          } else {
+            if (Current.EndsWith("\"") == false) {
+              Started = true;
+            }
+            Current.RemoveAllInPlace("\"");
+            A.push_back(Current);
+          }
+        } else {
+          if (Current.EndsWith("\"") == true) {
+            Started = false;
+            Current.RemoveAllInPlace("\"");
+          }
+          A.back() += " ";
+          A.back() += Current;
+        }
+      }  
+      if (Started == true) {
+        mlog<<"The string tokens are not correctly enclosed in quotation marks! You will be missing data!"<<endl;
+        mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+        A.clear();
+        return A;
+      }
+    }
+    return A;
+  } else {
+    mlog<<"vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool StringsAreInQuotationMarks) const: "<<endl;
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+    } else {
+      mlog<<"The Tokenizer is empty!"<<endl;
+    }
+    return A;
+  }  
 }
 
 

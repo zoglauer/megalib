@@ -57,7 +57,7 @@ class MGUIOptionsTemplate : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
@@ -67,7 +67,7 @@ class MGUIOptionsTemplate : public MGUIOptions
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsTemplate, 1) // basic class for dialog windows
 #endif

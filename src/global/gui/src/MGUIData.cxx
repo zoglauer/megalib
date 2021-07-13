@@ -43,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIData)
 #endif
 
@@ -151,7 +151,7 @@ bool MGUIData::ReadDataOld(MString FileName)
         if (MFile::Exists(Str) == true) {
           m_FileHistory.push_back(Str);
         }
-      }	  
+      }   
     }
     // FileHistory:
     if (strstr(LineBuffer, "[GeometryHistory]") != NULL) {
@@ -163,7 +163,7 @@ bool MGUIData::ReadDataOld(MString FileName)
         if (MFile::Exists(Str) == true) {
           m_GeometryHistory.push_back(Str);
         }
-      }	  
+      }   
     }
   }
     

@@ -48,7 +48,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseMatrixO3)
 #endif
 
@@ -57,7 +57,7 @@ ClassImp(MResponseMatrixO3)
 
 
 MResponseMatrixO3::MResponseMatrixO3() :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // default constructor
 
@@ -70,7 +70,7 @@ MResponseMatrixO3::MResponseMatrixO3() :
 
 MResponseMatrixO3::MResponseMatrixO3(vector<float> x1Axis, vector<float> x2Axis, 
                                      vector<float> x3Axis) :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // constructor
 
@@ -84,7 +84,7 @@ MResponseMatrixO3::MResponseMatrixO3(vector<float> x1Axis, vector<float> x2Axis,
 
 MResponseMatrixO3::MResponseMatrixO3(MString Name, vector<float> x1Axis, 
                                      vector<float> x2Axis, vector<float> x3Axis) :
-  MResponseMatrix(Name)
+  MResponseMatrixOx(Name)
 {
   // constructor
 
@@ -648,23 +648,23 @@ float MResponseMatrixO3::GetInterpolated(float x1, float x2, float x3, bool DoEx
     }
   } else {
     // Get Position:
- 		int Position = FindBin(m_AxisO3, x3);
+    int Position = FindBin(m_AxisO3, x3);
 
     // Take care of boundaries:
-		if (Position < 0) {
-			if (DoExtrapolate == true) {
-				Position = 0; // extrapolate below lower edge
-			} else {
-				return m_AxesO2.front().GetInterpolated(x1, x2, DoExtrapolate);
-			}
-		} else if (Position >= int(m_AxisO3.size()-1)) {
-			if (DoExtrapolate == true) {
-				Position = int(m_AxisO3.size()-2); // extrapolate above higher edge
-				// limits of highest bin are m_AxisO3.size()-2 and  m_AxisO3.size()-1 !!
-			} else {
-				return m_AxesO2.back().GetInterpolated(x1, x2, DoExtrapolate);
-			}
-		}
+    if (Position < 0) {
+      if (DoExtrapolate == true) {
+        Position = 0; // extrapolate below lower edge
+      } else {
+        return m_AxesO2.front().GetInterpolated(x1, x2, DoExtrapolate);
+      }
+    } else if (Position >= int(m_AxisO3.size()-1)) {
+      if (DoExtrapolate == true) {
+        Position = int(m_AxisO3.size()-2); // extrapolate above higher edge
+        // limits of highest bin are m_AxisO3.size()-2 and  m_AxisO3.size()-1 !!
+      } else {
+        return m_AxesO2.back().GetInterpolated(x1, x2, DoExtrapolate);
+      }
+    }
     
     // Interpolate:
     return m_AxesO2[Position].GetInterpolated(x1, x2, DoExtrapolate) + (x3 - m_AxisO3[Position])/
@@ -740,11 +740,11 @@ float MResponseMatrixO3::GetMinimum() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MResponseMatrixO3::GetSum() const
+double MResponseMatrixO3::GetSum() const
 {
   // Return the sum of all bins:
 
-  float Sum = 0;
+  double Sum = 0;
   for (unsigned int i = 0; i < m_AxesO2.size(); ++i) {
     Sum += m_AxesO2[i].GetSum();
   }  
@@ -874,7 +874,7 @@ bool MResponseMatrixO3::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO3") {
-//     while (Parser.TokenizeLine(T) == true) {
+//     while (Parser.TokenizeLine(T, true) == true) {
 //       if (T.GetNTokens() == 0) continue;
 //       if (T.GetTokenAt(0) == "R2") {
 //         if (T.GetNTokens() == 4) {
@@ -893,7 +893,7 @@ bool MResponseMatrixO3::ReadSpecific(MFileResponse& Parser,
     MString x1Name;
     MString x2Name;
     MString x3Name;
-    while (Parser.TokenizeLine(T) == true) {
+    while (Parser.TokenizeLine(T, true) == true) {
       if (T.GetNTokens() == 0) continue;
       if (T.GetTokenAt(0) == "A1") {
         x1Axis = T.GetTokenAtAsFloatVector(1);
@@ -975,12 +975,7 @@ bool MResponseMatrixO3::Write(MString FileName, bool Stream)
   mdebug<<"Started writting file \""<<FileName<<"\" ... This way take a while ..."<<endl;
 
   ostringstream s;
-  s<<"# Response Matrix 3"<<endl;
-  s<<"Version 1"<<endl;
-  s<<endl;
-  s<<"NM "<<m_Name<<endl;
-  s<<endl;
-  s<<"CE "<<((m_ValuesCentered == true) ? "true" : "false")<<endl;
+  WriteHeader(s);
   File.Write(s);
   
   unsigned int x1, x1_max = GetAxisBins(1); 
@@ -1056,6 +1051,31 @@ bool MResponseMatrixO3::Write(MString FileName, bool Stream)
 
 void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
 {
+  TH1* Hist = GetHistogram(x1, x2, x3, Normalize);
+  if (Hist == nullptr) {
+    mout<<"Unable to generate histogram"<<endl;
+    return;
+  }
+    
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle(m_Name);
+  Canvas->cd();
+  if (dynamic_cast<TH2*>(Hist) != nullptr) {
+    Hist->Draw("colz");
+  } else if (dynamic_cast<TH3*>(Hist) != nullptr) {
+    Hist->Draw("box");
+  } else {
+    Hist->Draw();
+  }
+  Canvas->Update();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+TH1* MResponseMatrixO3::GetHistogram(float x1, float x2, float x3, bool Normalize)
+{
   // Create a ROOT histogram:
   
   vector<unsigned int> axes;
@@ -1108,8 +1128,6 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
   }
 
 
-
-
   if (GetNBins() > 0) {
 
     if (NAxes == 1) {
@@ -1141,12 +1159,7 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
                                                 values[2], axes[2])*Norm);
       }
     
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM3D1C");
-      //Canvas->SetCanvasSize(600, 600);
-      Canvas->cd();
-      Hist->Draw();
-      Canvas->Update();
+      return Hist;
 
     } else if (NAxes == 2) {
       TH2D* Hist = 0;
@@ -1185,12 +1198,8 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
         }
       }
       
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM3D2C");
-      //Canvas->SetCanvasSize(600, 600);
-      Canvas->cd();
-      Hist->Draw("colz");
-      Canvas->Update();
+      return Hist;
+      
     } else if (NAxes == 3) {
       TH3D* Hist = 0;
       float* x1Bins = new float[GetAxisBins(axes[0])+1];
@@ -1238,12 +1247,7 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
         }
       }
 
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM3D3C");
-      //Canvas->SetCanvasSize(600, 600);
-      Canvas->cd();
-      Hist->Draw("box");
-      Canvas->Update();
+      return Hist;
 
     } else {
       merr<<"Wrong number of axis: "<<NAxes<<endl;
@@ -1252,6 +1256,8 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
   } else {
     mout<<"Empty response matrix of order 3"<<endl;
   }
+  
+  return nullptr;
 }
 
 
@@ -1262,7 +1268,7 @@ void MResponseMatrixO3::Smooth(unsigned int Times)
 {
   // We can only smooth the lowest 1D histograms...
 
-  if (Times > 0) {
+  if (Times > 0 && GetNBins() > 0) {
     double* Values = new double[GetAxisBins(2)];
     for (unsigned int x1 = 0; x1 < GetAxisBins(1); ++x1) {
       for (unsigned int x2 = 0; x2 < GetAxisBins(2); ++x2) {

@@ -106,8 +106,6 @@ class MDStrip3D : public MDStrip2D
 
 
   virtual MString GetGeomega() const;
-  virtual MString GetGeant3() const;
-  virtual MString GetMGeant() const;
   virtual MString ToString() const;
 
   //! Check if all input is reasonable
@@ -163,7 +161,7 @@ class MDStrip3D : public MDStrip2D
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDStrip3D, 0) // no description
 #endif

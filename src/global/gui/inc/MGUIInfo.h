@@ -77,7 +77,7 @@ class MGUIInfo : public MGUIDialog
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIInfo, 0) // Dialogbox: Select the backprojection algorithm
 #endif

@@ -76,7 +76,8 @@ class MGUIRevanMain : public MGUIMain
     c_Options, 
     c_OptionsGeneral, 
     c_OptionsCoincidence, 
-    c_OptionsClustering, 
+    c_OptionsEventClustering, 
+    c_OptionsHitClustering, 
     c_OptionsTracking, 
     c_OptionsSequencing, 
     c_OptionsDecay, 
@@ -91,6 +92,7 @@ class MGUIRevanMain : public MGUIMain
     c_HitStatistics, 
     c_SpatialHitDistribution, 
     c_SpatialEnergyDistribution, 
+    c_DepthProfileByDetector,
     c_CSRTestStatistics,
     c_Polarization, 
     c_BeamPath,
@@ -105,7 +107,7 @@ class MGUIRevanMain : public MGUIMain
     c_Max }; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIRevanMain, 0) // main window of the Revan GUI
 #endif

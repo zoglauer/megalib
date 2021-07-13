@@ -66,7 +66,7 @@ class MGUINetwork : public MGUIDialog
   TGCheckButton *m_ConnectOnStart;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUINetwork, 0) // GUI window: ...
 #endif

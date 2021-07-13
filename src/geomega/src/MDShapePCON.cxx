@@ -40,7 +40,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShapePCON)
 #endif
 
@@ -100,6 +100,8 @@ bool MDShapePCON::Set(double Phi, double DPhi, unsigned int NSections)
   m_Rmin.resize(NSections);
   m_Rmax.resize(NSections);
 
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -110,7 +112,7 @@ bool MDShapePCON::Set(double Phi, double DPhi, unsigned int NSections)
 bool MDShapePCON::AddSection(unsigned int Section, double Z, double Rmin, double Rmax)
 {
   // Add a section 
-
+  
   if (Rmin < 0) {
     mout<<"   ***  Error  ***  in shape PCON section "<<Section<<endl;
     mout<<"rmin ("<<Rmin<<") needs to be larger or equal 0"<<endl;
@@ -131,6 +133,8 @@ bool MDShapePCON::AddSection(unsigned int Section, double Z, double Rmin, double
   m_Rmin[Section] = Rmin;
   m_Rmax[Section] = Rmax;
 
+  m_IsValidated = false;
+  
   return true;
 }
  
@@ -140,13 +144,17 @@ bool MDShapePCON::AddSection(unsigned int Section, double Z, double Rmin, double
 
 bool MDShapePCON::Validate()
 {
-  delete m_Geo;
-  m_Geo = new TGeoPcon(m_Phi, m_DPhi, m_NSections);
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoPcon(m_Phi, m_DPhi, m_NSections);
   
-  for (unsigned int i = 0; i < m_NSections; ++i) {
-    dynamic_cast<TGeoPcon*>(m_Geo)->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
+    for (unsigned int i = 0; i < m_NSections; ++i) {
+      dynamic_cast<TGeoPcon*>(m_Geo)->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
+    }
+    
+    m_IsValidated = true;
   }
-
+  
   return true;
 }
 
@@ -225,65 +233,13 @@ bool MDShapePCON::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       }
     }
   } else {
-    Info.Error("Unhandled descriptor in shape PCON!");
+    Info.Error(MString("Unhandled descriptor in shape PCON: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePCON::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL("<<3+3*m_NSections<<")"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePCON::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Phi<<","<<m_DPhi<<","<<m_NSections;
-  for (unsigned int i = 0; i < m_NSections; ++i) {
-    out<<","<<m_Z[i]<<","<<m_Rmin[i]<<","<<m_Rmax[i];
-  }
-  out<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePCON::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(6);
-
-  out<<"           "<<m_Phi<<" "<<m_DPhi<<" "<<m_NSections<<endl;
-  for (unsigned int i = 0; i < m_NSections; ++i) {
-    out<<"           "<<m_Z[i]<<" "<<m_Rmin[i]<<" "<<m_Rmax[i]<<endl;
-  }
-
-  return out.str().c_str();
 }
 
 
@@ -302,28 +258,6 @@ MString MDShapePCON::GetGeomega() const
   }
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePCON::GetGeant3ShapeName()
-{
-  //
-
-  return "PCON";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapePCON::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 3 + 3*m_NSections;
 }
 
 
@@ -442,6 +376,8 @@ void MDShapePCON::Scale(const double Factor)
     m_Z[i] *= Factor;  
   }
   
+  m_IsValidated = false;
+  
   Validate();
 }
 
@@ -453,6 +389,23 @@ MVector MDShapePCON::GetUniquePosition() const
 {
   // Return a unique position within this detectors volume
 
+  // If the volume is simple, use the center
+  bool Is360 = false;
+  if (fabs(m_DPhi - 360) < 0.000000001) Is360 = true;
+  
+  bool FilledCenter = true;
+  for (unsigned int i = 0; i < m_NSections; ++i) {
+    if (m_Rmin[i] != 0) {
+      FilledCenter = false;
+      break;
+    }
+  }
+  
+  if (Is360 == true && FilledCenter == true) {
+    return MVector(0, 0, (m_Z[m_NSections-1]+m_Z[0])/2.0);
+  }
+  
+  // Otherwise the unique position is offset
   double R = 0.25*(m_Rmax[1]+m_Rmin[1]+m_Rmax[0]+m_Rmin[0]);
   double Angle = (m_Phi+0.5*m_DPhi)*c_Rad; 
 

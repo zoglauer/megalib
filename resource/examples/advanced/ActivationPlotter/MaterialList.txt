@@ -1,0 +1,6 @@
+BGO              7.1 a Bi 4 Ge 3 O 12
+CZT              6.06 a Cd 9 Zn 1 Te 10
+CsI              4.5 a Cs 1 I 1
+Ge               5.323 a Ge 1
+Si               2.33 a Si 1
+

@@ -56,7 +56,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MRESE)
 #endif
 
@@ -90,7 +90,18 @@ MRESE::MRESE()
 {
   // default constructor
 
-  Init();
+  if (m_IDCounter == numeric_limits<int>::max()) {
+    ResetIDCounter();
+  }
+  m_ID = ++m_IDCounter;
+
+  m_VolumeSequence = nullptr;
+  m_RESEList = nullptr;
+  m_LinkList = nullptr;
+
+  m_SubElementType = MRESE::c_Unknown;
+
+  Reset();
 }
 
 
@@ -104,7 +115,18 @@ MRESE::MRESE(MVector Position, double Energy, double Time, int Detector,
   // Energy:    Energy of this RESE
   // Detector:  Number of the detector (see SetDetector(...))
 
-  Init();
+  if (m_IDCounter == numeric_limits<int>::max()) {
+    ResetIDCounter();
+  }
+  m_ID = ++m_IDCounter;
+
+  m_VolumeSequence = nullptr;
+  m_RESEList = nullptr;
+  m_LinkList = nullptr;
+
+  m_SubElementType = MRESE::c_Unknown;
+
+  Reset();
 
   SetPosition(Position);
   SetEnergy(Energy);
@@ -122,10 +144,10 @@ MRESE::MRESE(MVector Position, double Energy, double Time, int Detector,
 MRESE::MRESE(MRESE* RESE)
 {
   // Special copy-constructor:
-  // The links of the RESE can not be resolved, so the m_LinkList is unchanged, 
+  // The links of the RESE cannot be resolved, so the m_LinkList is unchanged, 
   // and must be updated in a derived class.
 
-  // Do not call Init() because we want to keep the ID of this RESE!
+  // We want to keep the ID of this RESE!
 
   m_SubElementType = RESE->m_SubElementType;   
   m_Position = RESE->m_Position;     
@@ -139,7 +161,7 @@ MRESE::MRESE(MRESE* RESE)
   m_ID = RESE->m_ID;
   m_IsValid = RESE->m_IsValid;
   m_AllowOverwrite = RESE->m_AllowOverwrite;
-	m_VolumeSequence = new MDVolumeSequence(*(RESE->m_VolumeSequence));
+  m_VolumeSequence = new MDVolumeSequence(*(RESE->m_VolumeSequence));
 
   m_RESEList = RESE->GetRESEList()->Duplicate();
   m_LinkList = new MRESEList();
@@ -166,32 +188,9 @@ MRESE::~MRESE()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRESE::DeleteAll()
-{
-  // Delete the links and RESEs of this event
-
-  massert(this != 0);
-
-  m_RESEList->DeleteAll();
-
-  //if (GetType() == MRESE::c_Track) cout<<"All track"<<endl;
-
-  //mimp<<"\"delete this\" is not good!"<<show;
-  delete this;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRESE::Init()
+void MRESE::Reset()
 {
   // Common initializations
-
-  if (m_IDCounter == numeric_limits<int>::max()) {
-    ResetIDCounter();
-  }
-  m_ID = ++m_IDCounter;
 
   m_Energy = 0;
   m_AdditionalEnergy = 0;
@@ -203,11 +202,18 @@ void MRESE::Init()
   m_PositionResolution = MVector(0.0, 0.0, 0.0);
   m_TimeResolution = 0;
 
-  m_SubElementType = MRESE::c_Unknown;
   m_Detector = MDDetector::c_NoDetectorType;
 
+  delete m_VolumeSequence;
   m_VolumeSequence = new MDVolumeSequence();
+  
+  delete m_LinkList;
   m_LinkList = new MRESEList();
+  
+  if (m_RESEList != nullptr) {
+    m_RESEList->DeleteAll();
+    delete m_RESEList;
+  }
   m_RESEList = new MRESEList();
 
   m_IsValid = true;
@@ -704,12 +710,12 @@ void MRESE::AddRESE(MRESE* RESE)
   massert(this != 0);
 
   if (RESE != 0) {
-		if (GetNRESEs() == 0) {
+    if (GetNRESEs() == 0) {
       delete m_VolumeSequence;
-			m_VolumeSequence = new MDVolumeSequence(*(RESE->GetVolumeSequence()));
-		} else {
-			m_VolumeSequence->Join(*(RESE->GetVolumeSequence()));
-		}
+      m_VolumeSequence = new MDVolumeSequence(*(RESE->GetVolumeSequence()));
+    } else {
+      m_VolumeSequence->Join(*(RESE->GetVolumeSequence()));
+    }
     m_RESEList->AddRESE(RESE);
   }
 
@@ -917,6 +923,29 @@ MRESE* MRESE::RemoveRESEAndCompress(int ID)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MRESE::RemoveAll()
+{
+  // Delete the links and RESEs of this event
+  
+  m_RESEList->RemoveAllRESEs();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRESE::RemoveAllAndCompress()
+{
+  // Delete the links and RESEs of this event
+  
+  m_RESEList->RemoveAllRESEs();
+  m_RESEList->Compress();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MRESE::DeleteRESE(MRESE* RESE)
 {
   // Delete RESE from *this* RESE. Afterwards we have an empty slot!
@@ -927,8 +956,8 @@ void MRESE::DeleteRESE(MRESE* RESE)
   RecalculateResolutions();
 
   RESE->DeleteAll();
-  //delete RESE;
-  RESE = 0;
+  delete RESE;
+  RESE = nullptr;
 }
 
 
@@ -946,7 +975,7 @@ void MRESE::DeleteRESEAt(int i)
   RecalculateResolutions();
 
   RESE->DeleteAll();
-  //delete RESE;
+  delete RESE;
 }
 
 
@@ -964,7 +993,7 @@ void MRESE::DeleteRESE(int ID)
   RecalculateResolutions();
 
   RESE->DeleteAll();
-  //delete RESE;
+  delete RESE;
 }
 
 
@@ -982,8 +1011,8 @@ void MRESE::DeleteRESEAndCompress(MRESE* RESE)
   CompressRESEs();
 
   RESE->DeleteAll();
-  //delete RESE;
-  RESE = 0;
+  delete RESE;
+  RESE = nullptr;
 }
 
 
@@ -1002,7 +1031,7 @@ void MRESE::DeleteRESEAtAndCompress(int i)
   CompressRESEs();
 
   RESE->DeleteAll();
-  //delete RESE;
+  delete RESE;
 }
 
 
@@ -1021,7 +1050,18 @@ void MRESE::DeleteRESEAndCompress(int ID)
   CompressRESEs();
 
   RESE->DeleteAll();
-  //delete RESE;
+  delete RESE;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRESE::DeleteAll()
+{
+  // Delete the links and RESEs of this event
+  
+  m_RESEList->DeleteAll();
 }
 
 
@@ -1035,6 +1075,24 @@ void MRESE::CompressRESEs()
   massert(this != 0);
 
   m_RESEList->CompressRESEs();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRESE::Shuffle()
+{
+  //! Shuffle the RESEs around...
+  
+  unsigned int size = GetNRESEs();
+  for (unsigned int i = 0; i < 2*size; ++i) {
+    unsigned int From = gRandom->Integer(size);
+    unsigned int To = gRandom->Integer(size);
+    MRESE* Temp = m_RESEList->GetRESEAt(To);
+    m_RESEList->SetRESEAt(To, m_RESEList->GetRESEAt(From));
+    m_RESEList->SetRESEAt(From, Temp);
+  }
 }
 
 
@@ -1217,6 +1275,21 @@ void MRESE::ReID()
   for (int r = 0; r < GetNRESEs(); ++r) {
     GetRESEAt(r)->ReID();
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MPhysicalEventHit MRESE::CreatePhysicalEventHit()
+{
+  //! Convert to a MPhysicalEventHit  
+  
+  MPhysicalEventHit H;
+  
+  H.Set(m_Position, m_PositionResolution, m_Energy, m_EnergyResolution, m_Time, m_TimeResolution);
+  
+  return H;
 }
 
 

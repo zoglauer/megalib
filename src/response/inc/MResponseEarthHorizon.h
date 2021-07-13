@@ -37,11 +37,6 @@ class MResponseEarthHorizon : public MResponseBase
   MResponseEarthHorizon();
   virtual ~MResponseEarthHorizon();
 
-  //! Set and verify the revan configuration file name
-  bool SetMimrecConfigurationFileName(const MString FileName);
-  //! Set and verify the revan configuration file name
-  bool SetRevanConfigurationFileName(const MString FileName);
-
   //! Do all the response creation
   virtual bool CreateResponse();
 
@@ -51,8 +46,8 @@ class MResponseEarthHorizon : public MResponseBase
   //MResponseEarthHorizon() {};
   //MResponseEarthHorizon(const MResponseEarthHorizon& ResponseEarthHorizon) {};
 
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile();
+  //! Load the simulation file in revan and mimrec as well as the configuration files:
+  virtual bool OpenFiles();
 
 
   // private methods:
@@ -66,14 +61,9 @@ class MResponseEarthHorizon : public MResponseBase
 
   // private members:
  private:
-  //! Mimrec configuration file name
-  MString m_MimrecCfgFileName;
-  //! Revan configuration file name
-  MString m_RevanCfgFileName;
 
 
-
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseEarthHorizon, 0) // no description
 #endif

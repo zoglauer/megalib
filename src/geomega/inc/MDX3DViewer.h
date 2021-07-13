@@ -59,7 +59,7 @@ class MDX3DViewer : public TViewerX3D
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDX3DViewer, 0) // no description
 #endif

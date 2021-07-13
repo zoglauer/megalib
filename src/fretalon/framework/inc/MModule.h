@@ -67,8 +67,7 @@ class MModule
   MString GetXmlTag() { return m_XmlTag; }
 
   //! Set the geometry
-  void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
-  
+  virtual void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
   
   //! Return the number of the preceeding modules
   unsigned int GetNPreceedingModuleTypes() const { return m_PreceedingModules.size(); }
@@ -168,6 +167,8 @@ class MModule
   //! Show the options GUI --- has to be overwritten!
   virtual void ShowOptionsGUI() {};
 
+  //! Create the expos - does nothing if there are no expos
+  virtual void CreateExpos() {}
   //! True if this module has associated expo GUI(s)
   bool HasExpos() { return m_Expos.size() > 0 ? true : false; }
   //! Return the associated expo GUI(s). If there are none return an empty vector
@@ -184,6 +185,8 @@ class MModule
   virtual bool IsOK() { return m_IsOK; }
   //! Return if the module has finished all possible analyses
   virtual bool IsFinished() { return m_IsFinished; }
+  //! Return if the analysis of an event is running
+  virtual bool IsAnalyzing() { return m_IsAnalyzing; }
 
   //! Return the processing time in seconds - thread safe!
   double GetProcessingTime() { return GetTimer(); } 
@@ -258,6 +261,9 @@ class MModule
   bool m_IsOK;
   //! True, if the module is finished (e.g. cannot read any more events)
   bool m_IsFinished;
+  //! True if the analysis is under way
+  bool m_IsAnalyzing;
+  
   
   //! True if the module can be paused
   bool m_AllowPausing;
@@ -297,7 +303,7 @@ class MModule
   shared_ptr<MModuleReadOutAssemblyQueues> m_Queues;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MModule, 0) // no description
 #endif

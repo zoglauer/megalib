@@ -29,7 +29,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MStreams.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSimPM)
 #endif
 
@@ -111,9 +111,9 @@ MString MSimPM::ToSimString(const int WhatToStore, const int ScientificPrecision
 
   S<<"PM "<<m_MaterialName<<" ";
   S<<setprecision(Precision);
-  S<<setw(WidthEnergy)<<m_Energy<<endl;
+  S<<setw(WidthEnergy)<<m_Energy;
 
-  return S.str().c_str();
+  return S;
 }
 
 

@@ -79,7 +79,7 @@ class MGUIEComboBox : public MGUIElement
   enum Type { e_Nothing };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEComboBox, 0) // GUI window for unkown purpose ...
 #endif

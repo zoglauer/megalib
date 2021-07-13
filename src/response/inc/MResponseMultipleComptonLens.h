@@ -36,28 +36,28 @@ class MResponseMultipleComptonLens : public MResponseMultipleCompton
 {
   // public interface:
  public:
+  //! Default constructor
   MResponseMultipleComptonLens();
+  //! Default destructor
   virtual ~MResponseMultipleComptonLens();
 
   //! The current file under investigation is from the lens
   void SetLensOrigin(bool IsLensOrigin) { m_IsLensOrigin = IsLensOrigin; }
 
-  //! Do all the response creation
-  virtual bool CreateResponse();
+  //! Initialize the response matrices and their generation
+  virtual bool Initialize();
+
+  //! Analyze th events (all if in file mode, one if in event-by-event mode)
+  virtual bool Analyze();
+    
+  //! Finalize the response generation (i.e. save the data a final time )
+  virtual bool Finalize();
 
   // protected methods:
  protected:
-  //MResponseMultipleComptonLens() {};
-  //MResponseMultipleComptonLens(const MResponseMultipleComptonLens& ResponseMultipleCompton) {};
-
-  //! Create the (soon to be) pdfs  
-  virtual bool CreateMatrices();
-
-  //! Store the (soon to be) pdfs  
-  virtual bool SaveMatrices();
-
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile();
+ 
+  //! Save the response matrices
+  virtual bool Save();
 
   double CalculateConeLensDistance(MRESE& First, MRESE& Second, double Etot);
   double CalculateRadiusFromBeamCenter(MRESE& First);
@@ -89,7 +89,7 @@ class MResponseMultipleComptonLens : public MResponseMultipleCompton
   MResponseMatrixO3 m_PdfFromLensBad;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMultipleComptonLens, 0) // no description
 #endif

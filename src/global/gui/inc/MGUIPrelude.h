@@ -81,7 +81,7 @@ class MGUIPrelude : public MGUIDialog
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIPrelude, 0)
 #endif

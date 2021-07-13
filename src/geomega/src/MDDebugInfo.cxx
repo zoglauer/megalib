@@ -39,7 +39,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDDebugInfo)
 #endif
 
@@ -47,7 +47,7 @@ ClassImp(MDDebugInfo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDDebugInfo::MDDebugInfo() : m_Text(""), m_FileName(""), m_Line(0)
+MDDebugInfo::MDDebugInfo() : m_Text(""), m_FileName(""), m_Line(0), m_TokenizerWithMathsUpToDate(false), m_TokenizerWithoutMathsUpToDate(false)
 {
   // Default constructor
 }
@@ -57,7 +57,7 @@ MDDebugInfo::MDDebugInfo() : m_Text(""), m_FileName(""), m_Line(0)
 
 
 MDDebugInfo::MDDebugInfo(const MString& Text, const MString& FileName, const int Line) :
-  m_Text(Text), m_FileName(FileName), m_Line(Line)
+  m_Text(Text), m_FileName(FileName), m_Line(Line), m_TokenizerWithMathsUpToDate(false), m_TokenizerWithoutMathsUpToDate(false)
 {
   // Standard constructor
 }
@@ -90,6 +90,8 @@ MDDebugInfo& MDDebugInfo::operator=(const MDDebugInfo& DebugInfo)
   m_Text = DebugInfo.m_Text;
   m_FileName = DebugInfo.m_FileName;
   m_Line = DebugInfo.m_Line;
+  m_TokenizerWithMathsUpToDate = false; 
+  m_TokenizerWithoutMathsUpToDate = false;  
 
   return *this;
 }
@@ -128,6 +130,9 @@ void MDDebugInfo::Replace(MString Old, MString New, bool WholeWordsOnly)
   } else {
     m_Text.ReplaceAll(Old, New);
   }
+  
+  m_TokenizerWithMathsUpToDate = false; 
+  m_TokenizerWithoutMathsUpToDate = false;  
 }
 
 
@@ -147,7 +152,33 @@ void MDDebugInfo::ReplaceFirst(MString Old, double Number)
     if ((Pos = m_Text.Index(Old, Pos)) != MString::npos) {
       m_Text.Replace(Pos, Old.Length(), New);
     }
-  } 
+  }
+  
+  m_TokenizerWithMathsUpToDate = false; 
+  m_TokenizerWithoutMathsUpToDate = false;  
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTokenizer& MDDebugInfo::GetTokenizer(bool AllowMaths)
+{
+  //! Return the tokenizer - the flag indicates if the maths, or no-maths version is requested
+ 
+  if (AllowMaths == false) {
+    if (m_TokenizerWithoutMathsUpToDate == false) {
+      m_TokenizerWithoutMaths.Analyse(m_Text, false);
+      m_TokenizerWithoutMathsUpToDate = true;
+    }
+    return m_TokenizerWithoutMaths;
+  } else {
+    if (m_TokenizerWithMathsUpToDate == false) {
+      m_TokenizerWithMaths.Analyse(m_Text, true);
+      m_TokenizerWithMathsUpToDate = true;
+    }
+    return m_TokenizerWithMaths;
+  }
 }
 
 

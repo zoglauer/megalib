@@ -45,7 +45,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MImage2D)
 #endif
 
@@ -56,9 +56,9 @@ ClassImp(MImage2D)
 MImage2D::MImage2D() : MImage()
 {
   // Constructor initialising an empty image
-  // Caution: What happens when the data-array is empty??
 
-  Init();
+  // Initialization is mostly done in the MImage constructor
+  SetYAxis("y-Axis", 0, 1, 1);
 }
 
 
@@ -68,8 +68,8 @@ MImage2D::MImage2D() : MImage()
 MImage2D::MImage2D(MString Title, double* IA, 
                    MString xTitle, double xMin, double xMax, int xNBins, 
                    MString yTitle, double yMin, double yMax, int yNBins, 
-                   int Spectrum, int DrawOption) :
-  MImage(Title, IA, xTitle, xMin, xMax, xNBins, Spectrum, DrawOption)
+                   MString vTitle, int Spectrum, int DrawOption) :
+  MImage(Title, IA, xTitle, xMin, xMax, xNBins, vTitle, Spectrum, DrawOption)
 {
   // Construct an image but do not display it, i.e. save only the data
   // 
@@ -89,8 +89,8 @@ MImage2D::MImage2D(MString Title, double* IA,
 
   m_NEntries = xNBins*yNBins;
 
-	SetYAxis(yTitle, yMin, yMax, yNBins);
-	SetImageArray(IA);
+  SetYAxis(yTitle, yMin, yMax, yNBins);
+  SetImageArray(IA);
 }
 
 
@@ -110,11 +110,13 @@ MImage* MImage2D::Clone()
 {
   //! Clone this image
 
-  MImage* I = 
+  MImage2D* I = 
     new MImage2D(m_Title, m_IA, 
                  m_xTitle, m_xMin, m_xMax, m_xNBins, 
                  m_yTitle, m_yMin, m_yMax, m_yNBins, 
-                 m_Spectrum, m_DrawOption);
+                 m_vTitle, m_Spectrum, m_DrawOption);
+
+  I->Normalize(m_Normalize);
 
   return I;
 }
@@ -170,17 +172,17 @@ void MImage2D::SetYAxis(MString yTitle, double yMin, double yMax, int yNBins)
 {
   // Set the data of the y-axis
 
-	m_yTitle = yTitle;
-	m_yMin = yMin;
-	m_yMax = yMax;
-	m_yNBins = yNBins;
+  m_yTitle = yTitle;
+  m_yMin = yMin;
+  m_yMax = yMax;
+  m_yNBins = yNBins;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImage2D::Display(TCanvas *Canvas)
+void MImage2D::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
 
@@ -212,6 +214,7 @@ void MImage2D::Display(TCanvas *Canvas)
     //Hist->SetDirectory(0);
     Hist->SetXTitle(m_xTitle);
     Hist->SetYTitle(m_yTitle);
+    Hist->SetZTitle(m_vTitle);
     Hist->SetFillColor(0);
 
     Hist->SetTitleOffset(1.2f, "X");
@@ -249,7 +252,12 @@ void MImage2D::Display(TCanvas *Canvas)
       }
     }
   }
-
+  
+  // Rescale to 1:
+  if (m_Normalize == true && Hist->GetMaximum() > 0) {
+    Hist->Scale(1.0/Hist->GetMaximum());
+  }
+  
   Hist->Draw(m_DrawOptionString);
 
   return;
@@ -258,53 +266,80 @@ void MImage2D::Display(TCanvas *Canvas)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+//! Determine the maximum and its coordiantes, the vector is filled up to the number of dimensions the histogram has
+void MImage2D::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
+{
+  MaxValue = 0;
+  double xMaxIndex = 0;
+  double yMaxIndex = 0;
+  
+  for (int x = 0; x < m_xNBins; ++x) {
+    for (int y = 0; y < m_yNBins; ++y) {
+      if (m_IA[x + y * m_xNBins] > MaxValue) {
+        MaxValue = m_IA[x + y * m_xNBins];
+        xMaxIndex = x;
+        yMaxIndex = y;
+      }
+    }
+  }
+  
+  
+  Coordinate.clear();
+  Coordinate.push_back((xMaxIndex + 0.5) * (m_xMax-m_xMin)/m_xNBins + m_xMin);
+  Coordinate.push_back((yMaxIndex + 0.5) * (m_yMax-m_yMin)/m_yNBins + m_yMin);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 /*
 void MImage2D::ExportFits()
 {
-	fitsfile *fptr;
-	
-	int status;
-	long exposure;
+  fitsfile *fptr;
+  
+  int status;
+  long exposure;
 
-	long naxis = 2;
-	long naxes[2];
-	naxes[0] = m_xNBins;
-	naxes[1] = m_yNBins;
-
-
-	status = 0;
-	fits_create_file(&fptr, "!testfile.fits", &status);
-	cout<<"1. "<<endl;
-	fits_report_error(stderr, status);
+  long naxis = 2;
+  long naxes[2];
+  naxes[0] = m_xNBins;
+  naxes[1] = m_yNBins;
 
 
-	fits_create_img(fptr, DOUBLE_IMG, naxis, naxes, &status);
-	cout<<"2. "<<endl;
-	fits_report_error(stderr, status);
+  status = 0;
+  fits_create_file(&fptr, "!testfile.fits", &status);
+  cout<<"1. "<<endl;
+  fits_report_error(stderr, status);
 
-	exposure = 1500;
 
-	fits_update_key(fptr, TLONG, m_Title, &exposure, "more text", &status);
-	cout<<"3. "<<endl;
-	fits_report_error(stderr, status);
+  fits_create_img(fptr, DOUBLE_IMG, naxis, naxes, &status);
+  cout<<"2. "<<endl;
+  fits_report_error(stderr, status);
 
-	double Image[m_NEntries];
+  exposure = 1500;
 
-	for (int i = 0; i < m_yNBins; i++)
+  fits_update_key(fptr, TLONG, m_Title, &exposure, "more text", &status);
+  cout<<"3. "<<endl;
+  fits_report_error(stderr, status);
+
+  double Image[m_NEntries];
+
+  for (int i = 0; i < m_yNBins; i++)
     for (int j = 0; j < m_xNBins; j++) {
-			Image[j + i*m_yNBins] = m_IA[j + (m_yNBins - i -1) * m_yNBins];
-		}
+      Image[j + i*m_yNBins] = m_IA[j + (m_yNBins - i -1) * m_yNBins];
+    }
 
-	fits_write_img(fptr, TDOUBLE, 1, m_NEntries, Image, &status);
-	cout<<"4. "<<endl;
-	fits_report_error(stderr, status);
+  fits_write_img(fptr, TDOUBLE, 1, m_NEntries, Image, &status);
+  cout<<"4. "<<endl;
+  fits_report_error(stderr, status);
 
-	fits_close_file(fptr, &status);
-	cout<<"5. "<<endl;
-	fits_report_error(stderr, status);
-	
-	fits_report_error(stderr, status);
-	cout<<status<<endl;
+  fits_close_file(fptr, &status);
+  cout<<"5. "<<endl;
+  fits_report_error(stderr, status);
+  
+  fits_report_error(stderr, status);
+  cout<<status<<endl;
 }
 */
 

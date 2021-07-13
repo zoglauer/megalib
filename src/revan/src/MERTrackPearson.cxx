@@ -39,7 +39,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERTrackPearson)
 #endif
 
@@ -103,7 +103,7 @@ bool MERTrackPearson::EvaluateTracks(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERTrackPearson::SortByTrackQualityFactor(MRawEventList* List)
+void MERTrackPearson::SortByTrackQualityFactor(MRawEventIncarnations* List)
 {
   // Sort decreasing:
 

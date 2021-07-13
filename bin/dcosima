@@ -7,8 +7,31 @@
 # Positive: number of available simulation slots
 
 # On exit, or if we hit ctrl-C, kill all your children
-trap "trap - SIGTERM && kill -- -$$" SIGTERM SIGINT EXIT 
+trap CleanUp SIGTERM SIGINT 
 
+CleanUp() {
+  echo " "
+  echo " "
+  echo "Received command to shut down gracefully..."
+  echo " "
+  P=$(jobs -p)
+  if [[ ${P} != "" ]]; then
+    echo "Killing all sub-processes..."
+    kill ${P}
+  fi
+  sleep 1
+  
+  echo "Killing all simulations..."
+  dcosima-kill -n=${LOCALDIR}
+  echo "Doing a final rsync..."
+  echo "Here: $(pwd)"
+  dcosima-rsync -i=0 -d=${HERE}/${LOCALDIR} -s=0
+  echo "Cleaning up remote directories..."
+  dcosima-clean -n=${LOCALDIR}
+  echo "DONE"
+  echo " "
+  exit 1
+}
 
 commandhelp() {
   echo ""
@@ -18,17 +41,25 @@ commandhelp() {
   echo "Usage: dcosima [options]";
   echo ""
   echo "Options:"
+  echo "  --name=[name]: The name of the run, which will also be the prefix for the output directory"
   echo "  --instances=[number]: The number of instances to use"
   echo "  --source=[filename]: The source file"
-  echo "  --prefix=[name]: A name (prefix) prepended to the output directory"
+  echo "  --continue=[name]: Continue a simulation run with the given name (ignores --source & --prefix)"
+  echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
   echo "  --zip: Compress the output files."
+  echo "  --log: Create a log file of what is started where"
   echo "  --help: Show this help."
   echo ""
+  echo "Comments"
+  echo "  After the simulations have started, a file called \"dcosima-run.cfg\" can be found in the output directory."
+  echo "  The file contains the number of instances and the delay."
+  echo "  dcosima will recognize if these values are modified and use the new values."
   echo "";
   echo "Example: "
-  echo "  dcosima --source=Crab.source";
+  echo "  dcosima -s=Crab.source -i=10 -p=CrabSim -z";
   echo "";
 }
+
 
 
 # Store command line as array
@@ -46,10 +77,24 @@ done
 
 # Default options:
 SOURCE=""
+SOURCEFILENAME=""
 INSTANCES="1"
-PREFIX="Run"
+PREFIX=""
 ZIP="FALSE"
+CONTINUE=""
+LOG="FALSE"
+LOGFILE=""
+LOGGING="tee"
+DELAY="10"
 CFG=~/.dcosima.cfg
+
+
+# The number of already launched runs
+LAUNCHED=0
+# The run ID
+RUNID=${RANDOM}${RANDOM}${RANDOM}
+# Here we are
+HERE=$(pwd)
 
 
 # Overwrite default options with user options:
@@ -58,10 +103,16 @@ for C in "${CMD[@]}"; do
     SOURCE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-i*=* ]]; then
     INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-p*=* ]]; then
+  elif [[ ${C} == *-n*=* ]] || [[ ${C} == *-p*=* ]]; then
     PREFIX=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-c*=* ]]; then
+    CONTINUE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
+  elif [[ ${C} == *-d* ]]; then
+    DELAY=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-l* ]]; then
+    LOG="TRUE"
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -80,7 +131,70 @@ echo ""
 echo "Chosen options:"
 
 
-if [ "${SOURCE}" != "" ]; then
+
+if [[ ${CONTINUE} != "" ]]; then
+  if [[ -d ${CONTINUE} ]]; then
+    echo " * Continuing simulation into directory: ${SOURCE}"
+    # We have to determine the prefix, the RUNID, source, and the number of already lauched files
+    PREFIX=`echo ${CONTINUE} | awk -F"_ID" ' { print $1 }'`
+    if [[ ${PREFIX} == "" ]]; then
+      echo " "
+      echo "ERROR: I am not sure the run-continuation directory is a dcosima directory, since I was unable to find the run prefix"
+      commandhelp
+      exit 1
+    fi
+    
+    LOGFILE="${PREFIX}.log"
+    
+    RUNID=`echo ${CONTINUE} | awk -F"_ID" ' { print $2 }'`
+    if [[ ${RUNID} == "" ]]; then
+      echo " "
+      echo "ERROR: I am not sure the run-continuation directory is a dcosima directory, since I was unable to find the run ID"
+      commandhelp
+      exit 1
+    fi
+    
+    HERE=`pwd`
+    cd ${CONTINUE}
+    
+    if [[ -f ${LOGFILE} ]]; then
+      LOG="TRUE"
+    fi
+    
+    SOURCEFILENAME=`ls *.source`
+    if [[ $( echo ${SOURCEFILENAME} | wc -l ) !=  1 ]]; then
+      echo " "
+      echo "ERROR: I did not find exactly one source file: ${SOURCEFILENAME}"
+      commandhelp
+      exit 1      
+    fi
+    SOURCE="${CONTINUE}/${SOURCEFILENAME}"
+    
+    echo "   Looking for simulation file with highest ID... this might take a while.."
+    LAUNCHED=$(ls *.p1.inc*.id1.sim* | awk -v FS="(inc|.id)" '{print $2}' | sort -n | tail -1)
+    if [[ ${LAUNCHED} == "" ]]; then
+      echo " "
+      echo "ERROR: Did not find any simulation files"
+      commandhelp
+      exit 1          
+    fi
+    echo "   Continuing simulation with ID $(( LAUNCHED + 1 )).."
+    
+    if [[ $( ls *p1.inc*.id1.sim.gz ) != "" ]]; then 
+      ZIP="TRUE"
+    fi
+    
+    cd ${HERE}
+    
+  else 
+    echo " "
+    echo "ERROR: No simulation found with the directory ${CONTINUE} which I could continue"
+    commandhelp
+    exit 1  
+  fi
+fi
+  
+if [[ ${SOURCE} != "" ]]; then
   echo " * Source file: ${SOURCE}"
 else
   echo " "
@@ -88,17 +202,39 @@ else
   commandhelp
   exit 1
 fi
+# Check if the source file is really a source file
+NUMBEROFRUNS=`cat ${SOURCE} | grep "^Run " | wc -l`
+if [[ ${NUMBEROFRUNS} == 0 ]]; then
+  echo " "
+  echo "ERROR: No runs found in the sim file ${SOURCE}"
+  commandhelp
+  exit 1
+fi
+# Get just the file name
+SOURCEFILENAME=$(basename ${SOURCE})
 
-if [ "${PREFIX}" != "" ]; then
-  echo " * Prefix to the output directory: ${PREFIX}"
+if [[ ${PREFIX} != "" ]]; then
+  echo " * Name of this run and prefix to the output directory: ${PREFIX}"
 else
   echo " "
-  echo "ERROR: You need to give a prefix to the output directory"
+  echo "ERROR: You should give a unique name to this run."
   commandhelp
   exit 1
 fi
 
-if [ ${INSTANCES} -gt 0 ]; then
+# Make the local directory where we store the data - need to make it here since we need to write the log file in there
+LOCALDIR="${PREFIX}_ID${RUNID}"
+if [[ ${CONTINUE} == "" ]]; then
+  mkdir ${LOCALDIR}
+fi
+
+if [[ ${LOG} == "TRUE" ]]; then
+  LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
+  LOGGING="tee -a ${LOGFILE}"
+  echo " * Logging output to file: ${LOGFILE}"
+fi
+
+if [[ ${INSTANCES} -gt 0 ]]; then
   echo " * Simulations instances: ${INSTANCES}"
 else
   echo " "
@@ -107,7 +243,7 @@ else
   exit 1
 fi
 
-if [ -f "${CFG}" ]; then
+if [[ -f "${CFG}" ]]; then
   echo " * Configuration file: ${CFG}"
 else 
   echo " "
@@ -116,28 +252,196 @@ else
   exit 1  
 fi
 
+if [[ ${DELAY} -ge 10 ]]; then
+  echo " * Delay between checks for free slots: ${DELAY}"
+else 
+  DELAY="10"
+  echo " * Using minimum allowed delay between checks for free slots: ${DELAY}"
+fi
+
 # The md5 checksum of the configuration file to tell if it changed - initialize empty
 CFGMD5=""
 
-echo " "
-echo "Starting runs:"
-LAUNCHED=0
-AVAILABLE=0
-RUNID=${RANDOM}${RANDOM}${RANDOM}
 
-# Make the local directory where we store the data
-LOCALDIR="${PREFIX}_ID${RUNID}"
-mkdir ${LOCALDIR}
+
+# Do a few more sanity checks
+echo " "
+echo "Performing sanity checks, including a 15 seconds test simulation..." | ${LOGGING}
+
+# (1) Just one Run?
+RUNS=$(cat ${SOURCE} | grep "^Run" | wc -l)
+if [[ ${RUNS} -ne 1 ]]; then
+  echo " "
+  echo "ERROR: The source file must contain exactly one run and not ${RUNS}" | ${LOGGING}
+  exit 1
+fi
+
+# (2) Can we assemble all files?
+TMPDIR=$(mktemp -d /tmp/dcosima_tmp_dir.XXXXXXXXXX)
+ASSEMBLERESULT=$(dcosima-assemblefiles -s=${SOURCE} -d=${TMPDIR})
+if [ "$?" != "0" ]; then
+  rm -r ${TMPDIR}
+  echo " "
+  echo "ERROR: Failed to assemble files" | ${LOGGING}
+  echo "Output from dcosima-assemblefiles which contains the eror message: " | ${LOGGING}
+  echo "${ASSEMBLERESULT}" | ${LOGGING}
+  exit 1
+fi
+
+
+# (2) Do we have eactly one source file
+SOURCEFILE=$(ls ${TMPDIR}/*.source | grep -v .partial.)
+if [[ $(ls ${TMPDIR}/*.source | grep -v .partial. | wc -l) != "1" ]]; then
+  rm -r ${TMPDIR}
+  echo " "
+  echo "ERROR: We do not have exactly one source file: ${SOURCEFILE}" | ${LOGGING}
+  exit 1
+fi
+
+# (3) Can we start the simulation?
+cd ${TMPDIR}
+OUT=$(timeout 15s cosima ${SOURCEFILENAME})
+ERROR=$(echo ${OUT} | grep "Error")
+if [[ ${ERROR} != "" ]]; then
+  echo " "
+  echo "ERROR: Unable to perform a cosima test run. Error message:" | ${LOGGING}
+  echo " " 
+  echo "${OUT}" | ${LOGGING}
+  
+  rm -r ${TMPDIR}
+  
+  exit 1
+fi
+rm -r ${TMPDIR}
+
+# Done
+cd ${HERE}
+
+
+# Now start the all the simulations runs
+
+echo " "
+echo "Starting runs..." | ${LOGGING}
+AVAILABLE=0
+
 
 # preparation for rsync instance launch
 RSYNCCFG=${LOCALDIR}/dcosima-rsync.cfg
 RSYNCSTARTED="FALSE"
+
+# Save the run configuration data
+RUNCFG=${LOCALDIR}/dcosima-run.cfg
+echo "# Maximum number of instances to start - set to zero if no new ones should be created" > ${RUNCFG}
+echo "instances    ${INSTANCES}" >> ${RUNCFG}
+echo "# The delay between launches - set to a smaller number for higher priority (minimum: 5)" >> ${RUNCFG}
+echo "delay        ${DELAY}" >> ${RUNCFG}
+RUNCFGMD5=$(md5sum ${RUNCFG})
+
+
+# Create the script to verify the machine
+VERIFYSCRIPT=$(mktemp /tmp/dcosima-verify-script.XXXXXXXXXX)
+cat <<EOT >> ${VERIFYSCRIPT}
+#/bin/bash
+
+# For testing
+#uname -a
+#sleep 10
+#echo "DMEGALIBERROR 1"
+#exit 1
+
+
+# Check if the main bash script exists
+if [[ ! -f ~/.bash_local ]]; then 
+  echo "   The remote machine has not been set up"
+  exit 1
+fi
+. ~/.bash_local
+
+# Check if cosima exists
+type cosima > /dev/null 2>&1
+if [ "\$?" != "0" ]; then
+  echo "   cosima is not found or not executable"
+  exit 2
+fi
+
+# Check if .dcosima.cfg exists
+if [[ ! -f ~/.dcosima.cfg ]]; then
+  echo "   No remote dcosima configuration file found"
+  exit 3
+fi
+
+# Check if we have a master directory
+COUNT=\$( grep -c ^directory ~/.dcosima.cfg ) 
+if [ \${COUNT} -eq 1 ]; then 
+  MASTERDIR=\$( grep ^directory ~/.dcosima.cfg | awk '{ print \$2 }' ) 
+else
+  echo "   No master directory in the remote dcosima configuration file"
+  exit 4
+fi
+
+# Create the master directory if it does not exist
+if [[ ! -d \${MASTERDIR} ]]; then 
+  mkdir \${MASTERDIR};
+  if [[ "$?" != "0" ]]; then
+    echo "   Unable to create master directory"
+    exit 5
+  fi
+fi
+
+# Check for enough disk space
+cd \${MASTERDIR}
+REQUIREDDISKSPACE=50
+DISKSPACE=\$( df -k . -P -T -BG | tail -n 1 | awk '{ print \$5 }' | sed 's/.$//' )
+if (( \${DISKSPACE} < \${REQUIREDDISKSPACE} )); then
+  echo "   Not enough free disk space available (free: \${DISKSPACE} GB, required: \${REQUIREDDISKSPACE} GB)"
+  exit 6
+fi
+
+echo "SUCCESS"
+exit 0
+
+EOT
+
 
 # Launch the runs
 while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
 
   echo " " 
 
+  # (Re-) Read the run configuration file to check for changes in delay and instances
+  if [[ `md5sum ${RUNCFG}` != ${RUNCFGMD5} ]]; then
+    echo " "
+    echo "Re-reading the run configuration file..."
+    NEWINSTANCES=$(cat ${RUNCFG} | grep "^instances" | gawk '{ print $2 }' )
+    NEWDELAY=$(cat ${RUNCFG} | grep "^delay" | gawk '{ print $2 }' )
+    
+    if [[ ${INSTANCES} != ${NEWINSTANCES} ]]; then
+      INSTANCES=${NEWINSTANCES}
+      echo " "
+      echo "Instance change: Running up to ${INSTANCES} instances"
+      if [[ ${LAUNCHED} -ge ${INSTANCES} ]]; then
+        # Exit main loop
+        break;
+      fi
+    fi
+    
+    if [[ ${DELAY} != ${NEWDELAY} ]]; then
+      if [[ ${NEWDELAY} -ge 5 ]]; then
+        DELAY=${NEWDELAY}
+        echo " "
+        echo "Delay change: Setting a new delay of ${DELAY}"     
+      else 
+        echo " "
+        echo "ERROR: The delay between runs must be at least 5 seconds and not ${NEWDELAY}"
+        echo "       Keeping the original delay"
+      fi
+    fi
+    
+    # Redo the md5sum calculation and store it
+    RUNCFGMD5=`md5sum ${RUNCFG}`
+  fi
+    
+    
   # (Re-) Read configuration file and extract machines
   if [[ `md5sum ${CFG}` != ${CFGMD5} ]]; then
     echo " "
@@ -154,14 +458,16 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     
     for (( m=0; m<=$(( ${#PRIORITIES[*]} -1 )); m++ )); do
       if (( ${PRIORITIES[$m]} < 1 )); then
-        echo "Error: The highest (= smallest number) allowed machine priority is 1"
-        echo "       Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
-        exit 1
+        echo "Warning: The highest (= smallest number) allowed machine priority is 1"
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        echo "         Setting it to 1."
+        PRIORITIES[$m]=1;
       fi
       if (( ${PRIORITIES[$m]} > 5 )); then
-        echo "Error: The lowest (= highest number) allowed machine priority is 5"
-        echo "       Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
-        exit 1
+        echo "Warning: The lowest (= highest number) allowed machine priority is 5"
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        echo "         Setting it to 5."
+        PRIORITIES[$m]=5;
       fi
     done
 
@@ -186,55 +492,41 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   echo " " 
   echo "Verifying available machines: "
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  
+    # Reset it in case it was deleted before:
+    MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
+    
     # Do a quick test if the machine is availble:
-    REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+    REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
     if [ "$?" != "0" ]; then
       echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): NOT ACCESSIBLE"
       MACHINES[$m]=""
       continue
     fi  
-      
-    # Check that cosima is installed
-    AVAILABLE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
-    if [ "${AVAILABLE}" != "" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Cosima not found!"
-      MACHINES[$m]=""
-      continue
-    fi
- 
-    # Check if we have a configuration file
-    CONFIGFILE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -f ~/.dcosima.cfg ]]; then echo "NO"; else echo "YES"; fi;"`
-    if [ "$?" != "0" ] || [ ${CONFIGFILE} != "YES" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): No dcosima configuration file found! Add one with at least the keywords instances and directory!"
-      MACHINES[$m]=""
-      continue
-    fi
-  
-    # Check if we have a master directory
-    REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
-    REMOTEMASTERDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
-    if [ "$?" != "0" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to read master directory!"
-      MACHINES[$m]=""
-      continue
-    fi
-    REMOTEMASTERDIR=`echo ${REMOTEMASTERDIR} | awk '{ print $2 }'`
-    if [ "${REMOTEMASTERDIR}" == "" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to read master directory!"
-      MACHINES[$m]=""
-      continue
-    fi
     
-    echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"  
-    AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
+    #ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${VERIFYSCRIPT} > /tmp/dcosim-${REMOTENAME[$m]}.log 2>&1
+    VERIFY=$( ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${VERIFYSCRIPT} | grep -v '^$' )
+    #RETURNCODE="$?"
+    #VERIFY=`cat /tmp/dcosim-${REMOTENAME[$m]}.log`
+    #echo "return code: ${RETURNCODE}"
+    
+    if echo "${VERIFY}" | grep -q "SUCCESS"; then
+      echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"  
+      AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
+    else 
+      echo " * Unable to use remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}: "
+      echo "${VERIFY}"
+      MACHINES[$m]=""
+      continue
+    fi
+
+
     
   done
   
   # If we have NO machines available, we quit...
   if [ ${AVAILABLEMACHINES} -eq 0 ]; then
     echo " "
-    echo "Unfortunately there are no machines available for simulations... Add a few more! Good bye..."
+    echo "Unfortunately there are no machines available for simulations... Add a few more! Good bye..." | ${LOGGING}
     exit 0;
   fi
   
@@ -251,14 +543,14 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       fi
     
       # Prepare the launch
-      ALLOWED=`dcosima-getinstances --remote=${MACHINES[$m]}`
+      ALLOWED=`dmegalib-allowedinstances --remote=${MACHINES[$m]}`
       echo " "
-      echo "Preparing for next launch:"
+      echo "Preparing for next launch with priority ${P}:"
       echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
       if [[ ${ALLOWED} -gt 0 ]]; then
         LAUNCHED=$(( ${LAUNCHED} + 1 ))
-        echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}"
-        dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi`
+        echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
+        dcosima-runinstance --source=${SOURCEFILENAME} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi` `if [[ ${LOG} == TRUE ]]; then echo "--log=${LOGFILE}"; fi`
         STARTED=1
       fi
       if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
@@ -273,8 +565,8 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   
   if [[ ${STARTED} -eq 0 ]]; then
     echo ""
-    echo " --> No simulation slots available at the moment... Sleeping for a while..."
-    sleep 10
+    echo " --> No simulation slots available at the moment... Sleeping for ${DELAY} seconds..."
+    sleep ${DELAY}
   else 
     # Sleep a bit to give the last instance a chance to start before we revisit the node   
     sleep 1
@@ -290,109 +582,119 @@ done
 # Finish the rsync setup file:
 echo "DONE" >> ${RSYNCCFG}
 
-echo " * All processes lauched"
+# Remove the temporary file:
+rm ${VERIFYSCRIPT}
+
+
+echo " * All expected processes have lauched" | ${LOGGING}
 echo ""
 
-echo "Create a concatenation file"
-Base=`cat ${SOURCE} | grep -E "\.FileName|\.Filename|\.filename" | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`;
 
-# Switch to the directory where all the data lands:
-cd ${LOCALDIR}
+if [[ ${LAUNCHED} -gt 0 ]]; then
+  echo "Create a concatenation file" | ${LOGGING}
+  Base=`cat ${SOURCE} | grep -m 1 -E "\.FileName|\.Filename|\.filename" | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`;
 
-echo "Creating concatenation file for simulation \"${Base}\""
-ConcatFileName="${Base}.p1.sim" 
+  # Switch to the directory where all the data lands:
+  cd ${LOCALDIR}
 
-FirstFileName="${Base}.p1.inc1.id1.sim"
-if [ "${ZIP}" == "TRUE" ]; then
-  FirstFileName="${FirstFileName}.gz"
-fi 
+  echo "Creating concatenation file for simulation \"${Base}\"" | ${LOGGING}
+  ConcatFileName="${Base}.p1.sim"
+  rm -f "${Base}.p1.sim*"
 
-
-# Wait until the first such file is created
-while ( test ! -f ${FirstFileName} ); do
-  sleep 1
-  echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..."
-done
+  FirstFileName="${Base}.p1.inc1.id1.sim"
+  if [ "${ZIP}" == "TRUE" ]; then
+    FirstFileName="${FirstFileName}.gz"
+  fi 
 
 
-# Wait until the header is written and then dump the first 100 lines
-if [ ${ZIP} == "TRUE" ]; then
-  while [ `gunzip -c ${FirstFileName} 2> /dev/null | wc -l | awk -F" " '{ print $1 }'` -le 100 ]; do
-    # Remark: 2> /dev/null suppresses a "unexpected end of file" error message since the file is obviously not yet closed
-    sleep 1;
-    echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
+  # Wait until the first such file is created
+  while ( test ! -f ${FirstFileName} ); do
+    sleep 1
+    echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..." | ${LOGGING}
   done
-  gunzip -c ${FirstFileName} 2> /dev/null | head -n 100 > /tmp/mcosima.head
-else
-  while [ `wc -l ${FirstFileName} | awk -F" " '{ print $1 }'` -le 100 ]; do
-    sleep 20;
-    echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
+
+  TMPFILE=`mktemp /tmp/dcosima.XXXXXXXXXX`
+
+  # Wait until the header is written and then dump the first 100 lines
+  if [ ${ZIP} == "TRUE" ]; then
+    while [ `gunzip -c ${FirstFileName} 2> /dev/null | wc -l | awk -F" " '{ print $1 }'` -le 100 ]; do
+      # Remark: 2> /dev/null suppresses a "unexpected end of file" error message since the file is obviously not yet closed
+      sleep 1;
+      echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..." | ${LOGGING}
+    done
+    gunzip -c ${FirstFileName} 2> /dev/null | head -n 100 > ${TMPFILE}
+  else
+    while [ `wc -l ${FirstFileName} | awk -F" " '{ print $1 }'` -le 100 ]; do
+      sleep 20;
+      echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..." | ${LOGGING}
+    done
+    head -n 100 ${FirstFileName} > ${TMPFILE}
+  fi
+
+
+  # Create a concatenation file
+  echo "Generating concatenation file..." | ${LOGGING}
+  echo "# Concatenation file generated by mcosima" >> ${ConcatFileName}
+
+
+  while read LINE
+  do
+    # Keep all information but: #, Seed, TB
+    FIRST=${LINE%% *}
+    if [ "${FIRST}" == "SE" ]; then
+      break
+    fi
+    if ( [ "${FIRST}" != "#" ] && [ "${FIRST}" != "Seed" ] && [ "${FIRST}" != "TB" ] ); then
+      echo "${LINE}" >> ${ConcatFileName}
+    fi
+  done < ${TMPFILE}
+  rm ${TMPFILE}
+
+  echo " " >> ${ConcatFileName}
+    
+  for (( i=1; i <= ${INSTANCES}; i+=1 )); do
+    echo "IN ${Base}.p1.inc${i}.id1.sim" >> ${ConcatFileName}
   done
-  head -n 100 ${FirstFileName} > /tmp/mcosima.head
-fi
-
-
-# Create a concatenation file
-echo "Generating concatenation file..."
-echo "# Concatenation file generated by mcosima" >> ${ConcatFileName}
-
-
-while read LINE
-do
-  # Keep all information but: #, Seed, TB
-  FIRST=${LINE%% *}
-  if [ "${FIRST}" == "SE" ]; then
-    break
-  fi
-  if ( [ "${FIRST}" != "#" ] && [ "${FIRST}" != "Seed" ] && [ "${FIRST}" != "TB" ] ); then
-    echo "${LINE}" >> ${ConcatFileName}
-  fi
-done < /tmp/mcosima.head
-rm /tmp/mcosima.head
-
-echo " " >> ${ConcatFileName}
     
-for (( i=1; i <= ${INSTANCES}; i+=1 )); do
-  echo "IN ${Base}.p1.inc${i}.id1.sim" >> ${ConcatFileName}
-done
-    
-echo "EN" >> ${ConcatFileName}
-echo " " >> ${ConcatFileName}
+  echo "EN" >> ${ConcatFileName}
+  echo " " >> ${ConcatFileName}
 
-# Zip the concatenation file if desired
-if [[ "${ZIP}" == "TRUE" ]]; then
-  gzip ${ConcatFileName}
-  ConcatFileName="${ConcatFileName}.gz"
+  # Zip the concatenation file if desired
+  if [[ "${ZIP}" == "TRUE" ]]; then
+    gzip -f ${ConcatFileName}
+    ConcatFileName="${ConcatFileName}.gz"
+  fi
+
+  cd ..
+  echo "Created concatenation file \"${ConcatFileName}\"" | ${LOGGING}
 fi
-
-echo "Created concatenation file \"${ConcatFileName}\""
-
-
+  
+  
 echo " "
-echo "Waiting for rsync processes to finish..."
+echo "Waiting for rsync processes to finish..." | ${LOGGING}
 wait ${RSYNCPID}
 
-echo "All processes have finied and all data has been synced. Now deleting the remote data..."
+echo "All processes have finied and all data has been synced. Now deleting the remote data..." | ${LOGGING}
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  echo " * Deleting ${REMOTEMASTERDIR}/${LOCALDIR} on ${REMOTEHOST[$m]}"
 
   REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
-  REMOTEMASTERDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+  REMOTEMASTERDIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
-    echo "ERROR: Failed to read remote master directory"
+    echo "ERROR: Failed to read remote master directory" | ${LOGGING}
     continue
   fi
   REMOTEMASTERDIR=`echo ${REMOTEMASTERDIR} | awk '{ print $2 }'`
   if [ "${REMOTEMASTERDIR}" == "" ]; then
-    echo "ERROR: No remote master directory -- cannot delete anything!"
+    echo "ERROR: No remote master directory -- cannot delete anything!" | ${LOGGING}
     continue
   fi
  
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "rm -rf ${REMOTEMASTERDIR}/${LOCALDIR};"
+  echo " * Deleting ${REMOTEMASTERDIR}/${LOCALDIR} on ${REMOTEHOST[$m]}" | ${LOGGING}
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "rm -rf ${REMOTEMASTERDIR}/${LOCALDIR};"
 done
 
-echo " " 
-echo "The simulations have finished!"
-echo " "
+echo " " | ${LOGGING}
+echo "The simulations have finished!" | ${LOGGING}
+echo " " | ${LOGGING}
 
 exit 0;

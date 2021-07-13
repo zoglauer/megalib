@@ -41,7 +41,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseBase)
 #endif
 
@@ -81,6 +81,9 @@ MResponseBase::MResponseBase()
  
   m_SiGeometry = 0;
   m_ReGeometry = 0;
+
+  m_NumberOfSimulatedEventsClosedFiles = 0;
+  m_NumberOfSimulatedEventsThisFile = 0;
 
   m_Interrupt = false;
   
@@ -151,6 +154,40 @@ void MResponseBase::SetResponseName(const MString Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MResponseBase::SetRevanConfigurationFileName(const MString FileName)
+{
+  // Set and verify the simulation file name
+
+  if (MFile::Exists(FileName) == false) {
+    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
+    return false;
+  }
+  m_RevanCfgFileName = FileName;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseBase::SetMimrecConfigurationFileName(const MString FileName)
+{
+  // Set and verify the simulation file name
+
+  if (MFile::Exists(FileName) == false) {
+    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
+    return false;
+  }
+  m_MimrecCfgFileName = FileName;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MGeometryRevan* MResponseBase::LoadGeometry(bool ActivateNoise, double GlobalFailureRate)
 {
   MGeometryRevan* ReGeometry = new MGeometryRevan();
@@ -197,7 +234,8 @@ bool MResponseBase::InitializeNextMatchingEvent()
 
       // delete m_ReEvent; // automatically deleted!
       m_ReEvent = 0;
-
+      m_ReEvents.clear();
+      
       // Load/Analyze
       ERReturnCode = m_ReReader->AnalyzeEvent();
       if (ERReturnCode == MRawEventAnalyzer::c_AnalysisNoEventsLeftInFile) {
@@ -207,11 +245,15 @@ bool MResponseBase::InitializeNextMatchingEvent()
         break;
       }
 
-      if (m_ReReader->GetRawEventList() != 0) {
-        if (m_ReReader->GetRawEventList()->GetNRawEvents() > 0) {
-          m_ReEvent = m_ReReader->GetRawEventList()->GetRawEventAt(0);
+      if (m_ReReader->GetRawEventList() != nullptr) {
+        MRawEventIncarnationList* REIL = m_ReReader->GetRawEventList();
+        for (unsigned int i = 0; i < REIL->Size(); ++i) {
+          if (REIL->Get(i)->GetNRawEvents() > 0) {
+            m_ReEvents.push_back(REIL->Get(i)->GetRawEventAt(0)); // why not the optimum event?
+          }
         }
       }
+      if (m_ReEvents.size() > 0) m_ReEvent = m_ReEvents[0];
 
       // Decide future:
       if (m_ReEvent != 0 && m_ReEvent->GetEventType() != MRERawEvent::c_PairEvent) {
@@ -248,7 +290,7 @@ bool MResponseBase::InitializeNextMatchingEvent()
             m_SivanLevel++; 
           }
           m_SivanEventID = m_SiEvent->GetID();
-          TryNextEvent = false;	  
+          TryNextEvent = false;   
           //mout<<"Response: Sivan found good event (Id="<<m_SiEvent->GetID()<<")!"<<endl;
         } else {
           // Ignore this event...
@@ -281,6 +323,15 @@ bool MResponseBase::InitializeNextMatchingEvent()
     }
   }
   
+  if (MoreEvents == true) {
+    if (m_SiEvent->GetSimulationEventID() < m_NumberOfSimulatedEventsThisFile) {
+      m_NumberOfSimulatedEventsClosedFiles = m_SiReader->GetSimulatedEvents();
+    }
+    m_NumberOfSimulatedEventsThisFile = m_SiEvent->GetSimulationEventID();
+  } else {
+    m_NumberOfSimulatedEventsClosedFiles = m_SiReader->GetSimulatedEvents();
+    m_NumberOfSimulatedEventsThisFile = 0;
+  }
   //mout<<"Response: Match Sivan ID="<<m_SivanEventID<<"  Revan ID="<<m_RevanEventID<<endl;
   
   return MoreEvents;  
@@ -303,12 +354,9 @@ bool MResponseBase::SanityCheckSimulations()
       " check your geometry, because noising was deactivated!"<<endl;
     return false;
   }
-
-  MRawEventList* REList = m_ReReader->GetRawEventList();
-
-  int r_max = REList->GetNRawEvents();
-  for (int r = 0; r < r_max; ++r) {
-    MRERawEvent* RE = REList->GetRawEventAt(r);
+  
+  for (auto RE: m_ReEvents) {  
+    
     if (RE->GetVertex() != 0) continue;
 
     if (int(m_SiEvent->GetNHTs()) < RE->GetNRESEs()) {
@@ -533,6 +581,58 @@ vector<float> MResponseBase::CreateLogDist(float Min, float Max, int Bins,
 
   for (int i = 0; i < Bins+1; ++i) {
     Axis.push_back(exp(Min+i*Dist));
+  }
+
+  if (MaxBound != c_NoBound) {
+    Axis.push_back(MaxBound);
+  }
+
+  if (Inverted == true) {
+    vector<float> Temp = Axis;
+    for (unsigned int i = 1; i < Temp.size()-1; ++i) {
+      Axis[i] = Axis[i-1] + (Temp[Temp.size()-i]-Temp[Temp.size()-i-1]);
+    }
+  }
+
+  for (unsigned int i = 0; i < Axis.size(); ++i) {
+    Axis[i] += Offset;
+  }
+
+  return Axis;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<float> MResponseBase::CreateThresholdedLogDist(float Min, float Max, int Bins, float Threshold, 
+                                                      float MinBound, float MaxBound,
+                                                      float Offset, bool Inverted)
+{
+  // Create axis with bins in logaritmic distance
+
+  vector<float> Axis;
+
+  if (MinBound != c_NoBound) {
+    Axis.push_back(MinBound);
+  }
+
+  if (Min <= 0) {
+    merr<<"Minimum has to be positive, setting it to 1"<<endl;
+    Min = 1;
+  }
+  
+  if (Threshold >= (Max - Min)/Bins) {
+    merr<<"Threshold has to be smaller than: (Max - Min)/NBins. Setting it to this value -> bins will be equally spaced instead of logarithmically spaced."<<endl;
+    Threshold = (Max - Min)/Bins;
+  }
+  
+  Min = log(Min);
+  Max = log(Max - Bins*Threshold);
+  float Dist = (Max-Min)/(Bins);
+
+  for (int i = 0; i < Bins+1; ++i) {
+    Axis.push_back(exp(Min+i*Dist) + i*Threshold);
   }
 
   if (MaxBound != c_NoBound) {

@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSettingsEventReconstruction)
 #endif
 
@@ -48,8 +48,10 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
 {
   // General algorithm selection
   m_CoincidenceAlgorithm = 0;
-  m_ClusteringAlgorithm = 2;
+  m_EventClusteringAlgorithm = 0;
+  m_HitClusteringAlgorithm = 1;
   m_TrackingAlgorithm = 0;
+  m_PairAlgorithm = 0;
   m_CSRAlgorithm = 1;
   m_DecayAlgorithm = 0;
 
@@ -71,6 +73,8 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_AdjacentLevel = 2;
   m_AdjacentSigma = -1;
 
+  m_PDFClusterizerBaseFileName = "";
+
   // Electron tracking
   m_DoTracking = true;
   m_SearchPairs = true;
@@ -83,17 +87,21 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_NLayersForVertexSearch = 6;
 
   m_ElectronTrackingDetectors.clear();
-  
+
+  // Kalman Filter
+  m_SigmaHitPos = 0.00693;
+  m_HeightX0 = 0.005336179;
+
   // Compton tracking
   m_RejectOneDetectorTypeOnlyEvents = false;
   m_GuaranteeStartD1 = false;
   m_UseComptelTypeEvents = true;
 
-  m_ClassicUndecidedHandling = 0; 
+  m_ClassicUndecidedHandling = 0;
 
   m_AssumeD1First = false;
   m_AssumeTrackTopBottom = false;
-  
+
   m_CSRThresholdMin = 0;
   m_CSRThresholdMax = 1000;
 
@@ -106,7 +114,15 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_DecayFileName = "";
   m_BayesianComptonFileName = "";
   m_BayesianElectronFileName = "";
-
+  
+  m_CSRTMVAFileName = "";
+  m_CSRTMVAMethods.SetUsedMethods("BDTD");
+  
+  m_EventClusteringDistanceCutOff = 1000;
+  
+  m_EventClusteringTMVAFileName = "";
+  m_EventClusteringTMVAMethods.SetUsedMethods("BDTD");
+  
   // General options:
   m_TotalEnergyMin = 0;
   m_TotalEnergyMax = 1000000;
@@ -120,7 +136,7 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_RejectAllBadEvents = true;
 
   m_NJobs = 1;
-  
+  m_SaveOI = false;
 
   m_SpecialMode = false;
 }
@@ -140,14 +156,21 @@ MSettingsEventReconstruction::~MSettingsEventReconstruction()
 bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
 {
   new MXmlNode(Node, "NJobs", m_NJobs);
+  // Not stored! new MXmlNode(Node, "SaveOI", m_SaveOI);
 
   new MXmlNode(Node, "CoincidenceAlgorithm", m_CoincidenceAlgorithm);
-  new MXmlNode(Node, "ClusteringAlgorithm", m_ClusteringAlgorithm);
+  new MXmlNode(Node, "EventClusteringAlgorithm", m_EventClusteringAlgorithm);
+  new MXmlNode(Node, "HitClusteringAlgorithm", m_HitClusteringAlgorithm);
   new MXmlNode(Node, "TrackingAlgorithm", m_TrackingAlgorithm);
+  new MXmlNode(Node, "PairAlgorithm", m_PairAlgorithm);
   new MXmlNode(Node, "CSRAlgorithm", m_CSRAlgorithm);
   new MXmlNode(Node, "DecayAlgorithm", m_DecayAlgorithm);
   new MXmlNode(Node, "CoincidenceWindow", m_CoincidenceWindow);
-
+  
+  new MXmlNode(Node, "EventClusteringDistanceCutOff", m_EventClusteringDistanceCutOff);
+  new MXmlNode(Node, "EventClusteringTMVAMethods", m_EventClusteringTMVAMethods.GetUsedMethodsString());
+  new MXmlNode(Node, "EventClusteringTMVAFile", CleanPath(m_EventClusteringTMVAFileName));
+  
   new MXmlNode(Node, "StandardClusterizerMinDistanceD1", m_StandardClusterizerMinDistanceD1);
   new MXmlNode(Node, "StandardClusterizerMinDistanceD2", m_StandardClusterizerMinDistanceD2);
   new MXmlNode(Node, "StandardClusterizerMinDistanceD3", m_StandardClusterizerMinDistanceD3);
@@ -159,6 +182,7 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "StandardClusterizerCenterIsReference", m_StandardClusterizerCenterIsReference);
   new MXmlNode(Node, "AdjacentSigma", m_AdjacentSigma);
   new MXmlNode(Node, "AdjacentLevel", m_AdjacentLevel);
+  new MXmlNode(Node, "PDFClusterizerBaseFileName", m_PDFClusterizerBaseFileName);
 
   new MXmlNode(Node, "DoTracking", m_DoTracking);
   new MXmlNode(Node, "SearchPairs", m_SearchPairs);
@@ -168,13 +192,15 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "NTrackSequencesToKeep", m_NTrackSequencesToKeep);
   new MXmlNode(Node, "RejectPurelyAmbiguousTrackSequences", m_RejectPurelyAmbiguousTrackSequences);
   new MXmlNode(Node, "NLayersForVertexSearch", m_NLayersForVertexSearch);
-  
+  new MXmlNode(Node, "SigmaHitPos", m_SigmaHitPos);
+  new MXmlNode(Node, "HeightX0", m_HeightX0);
+
   MXmlNode* aNode = new MXmlNode(Node, "ElectronTrackingDetectors");
   for (unsigned int i = 0; i < m_ElectronTrackingDetectors.size(); ++i) {
     new MXmlNode(aNode, "ElectronTrackingDetector",  m_ElectronTrackingDetectors[i]);
   }
 
-  
+
   new MXmlNode(Node, "AssumeD1First", m_AssumeD1First);
   new MXmlNode(Node, "ClassicUndecidedHandling", m_ClassicUndecidedHandling);
   new MXmlNode(Node, "AssumeTrackTopBottom", m_AssumeTrackTopBottom);
@@ -188,9 +214,13 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "FocalSpotCenter", m_FocalSpotCenter);
   new MXmlNode(Node, "OriginObjectsFile", CleanPath(m_OriginObjectsFileName));
   new MXmlNode(Node, "DecayFile", CleanPath(m_DecayFileName));
+
   new MXmlNode(Node, "BayesianComptonFile", CleanPath(m_BayesianComptonFileName));
   new MXmlNode(Node, "BayesianElectronFile", CleanPath(m_BayesianElectronFileName));
-
+  
+  new MXmlNode(Node, "CSRTMVAFile", CleanPath(m_CSRTMVAFileName));
+  new MXmlNode(Node, "CSRTMVAMethods", m_CSRTMVAMethods.GetUsedMethodsString());
+  
   new MXmlNode(Node, "TotalEnergy", m_TotalEnergyMin, m_TotalEnergyMax);
   new MXmlNode(Node, "LeverArm", m_LeverArmMin, m_LeverArmMax);
   new MXmlNode(Node, "EventId", m_EventIdMin, m_EventIdMax);
@@ -204,21 +234,35 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
 
 
 bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
-{  
+{
   MXmlNode* aNode = 0;
   MXmlNode* bNode = 0;
 
   if ((aNode = Node->GetNode("NJobs")) != 0) {
     m_NJobs = aNode->GetValueAsUnsignedInt();
   }
-  if ((aNode = Node->GetNode("ClusteringAlgorithm")) != 0) {
-    m_ClusteringAlgorithm = aNode->GetValueAsInt();
+  /* No reading!
+  if ((aNode = Node->GetNode("SaveOI")) != 0) {
+    m_Save = aNode->GetValueAsBoolean();
   }
+  */
   if ((aNode = Node->GetNode("CoincidenceAlgorithm")) != 0) {
     m_CoincidenceAlgorithm = aNode->GetValueAsInt();
   }
+  if ((aNode = Node->GetNode("EventClusteringAlgorithm")) != 0) {
+    m_EventClusteringAlgorithm = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("HitClusteringAlgorithm")) != 0) {
+    m_HitClusteringAlgorithm = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("ClusteringAlgorithm")) != 0) {  // TODO: Delete in 2020
+    m_HitClusteringAlgorithm = aNode->GetValueAsInt();
+  }
   if ((aNode = Node->GetNode("TrackingAlgorithm")) != 0) {
     m_TrackingAlgorithm = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("PairAlgorithm")) != 0) {
+    m_PairAlgorithm = aNode->GetValueAsInt();
   }
   if ((aNode = Node->GetNode("CSRAlgorithm")) != 0) {
     m_CSRAlgorithm = aNode->GetValueAsInt();
@@ -229,6 +273,20 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("CoincidenceWindow")) != 0) {
     m_CoincidenceWindow = aNode->GetValueAsDouble();
   }
+  
+  if ((aNode = Node->GetNode("EventClusteringDistanceCutOff")) != 0) {
+    m_EventClusteringDistanceCutOff = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("EventClusteringTMVAFile")) != 0) {
+    m_EventClusteringTMVAFileName = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("EventClusteringTMVAMethods")) != 0) {
+    MString Methods = aNode->GetValueAsString();
+    m_EventClusteringTMVAMethods.ResetUsedMethods();
+    m_EventClusteringTMVAMethods.SetUsedMethods(Methods);
+  }
+  
+  
   if ((aNode = Node->GetNode("StandardClusterizerMinDistanceD1")) != 0) {
     m_StandardClusterizerMinDistanceD1 = aNode->GetValueAsDouble();
   }
@@ -262,6 +320,9 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("AdjacentLevel")) != 0) {
     m_AdjacentLevel = aNode->GetValueAsInt();
   }
+  if ((aNode = Node->GetNode("PDFClusterizerBaseFileName")) != 0) {
+    m_PDFClusterizerBaseFileName = aNode->GetValueAsString();
+  }
   if ((aNode = Node->GetNode("DoTracking")) != 0) {
     m_DoTracking = aNode->GetValueAsBoolean();
   }
@@ -285,6 +346,12 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("NLayersForVertexSearch")) != 0) {
     m_NLayersForVertexSearch = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("SigmaHitPos")) != 0) {
+    m_SigmaHitPos = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("HeightX0")) != 0) {
+    m_HeightX0 = aNode->GetValueAsDouble();
   }
   if ((aNode = Node->GetNode("ElectronTrackingDetectors")) != 0) {
     m_ElectronTrackingDetectors.clear();
@@ -337,6 +404,14 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("BayesianElectronFile")) != 0) {
     m_BayesianElectronFileName = aNode->GetValueAsString();
   }
+  if ((aNode = Node->GetNode("CSRTMVAFile")) != 0) {
+    m_CSRTMVAFileName = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CSRTMVAMethods")) != 0) {
+    MString Methods = aNode->GetValueAsString();
+    m_CSRTMVAMethods.ResetUsedMethods();
+    m_CSRTMVAMethods.SetUsedMethods(Methods);
+  }
   if ((aNode = Node->GetNode("TotalEnergy")) != 0) {
     m_TotalEnergyMin = aNode->GetMinValueAsDouble();
     m_TotalEnergyMax = aNode->GetMaxValueAsDouble();
@@ -346,8 +421,8 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
     m_LeverArmMax = aNode->GetMaxValueAsDouble();
   }
   if ((aNode = Node->GetNode("EventId")) != 0) {
-    m_EventIdMin = aNode->GetMinValueAsInt();
-    m_EventIdMax = aNode->GetMaxValueAsInt();
+    m_EventIdMin = aNode->GetMinValueAsLong();
+    m_EventIdMax = aNode->GetMaxValueAsLong();
   }
   if ((aNode = Node->GetNode("RejectAllBadEvents")) != 0) {
     m_RejectAllBadEvents = aNode->GetValueAsBoolean();
@@ -355,7 +430,7 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
 
   return true;
 }
-  
+
 
 // MSettingsEventReconstruction.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

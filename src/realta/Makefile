@@ -9,78 +9,165 @@
 
 
 #----------------------------------------------------------------
-# Definitions:
+# Base definitions:
 #
 
-PRG = $(BN)/realta
+PROGRAM1 = realta
+MAIN1  = MRealtaMain
 
-MOBJS = $(LB)/MRealtaMain.o
+PROGRAM2 = eventtransmitter
+MAIN2 = MEventTransmitter
 
-LOBJS = $(LB)/MSettingsRealta.o \
-	$(LB)/MRealTimeAnalyzer.o \
-	$(LB)/MRealTimeEvent.o \
+LIBRARY = Realta
 
-GOBJS = $(LB)/MGUIRealtaMain.o \
-	$(LB)/MGUINetwork.o \
-	$(LB)/MGUIAccumulation.o \
+FILES = MSettingsRealta \
+	MRealTimeAnalyzer \
+	MRealTimeEvent \
 
-PRGT	= $(BN)/eventtransmitter 
-MOBJT	= $(LB)/MEventTransmitter.o 
+LIBRARY_UI = RealtaGui
 
-OBJS = $(MOBJS) $(LOBJS) $(GOBJS) $(MOBJT) 
+FILES_UI = \
+	MGUIRealtaMain \
+	MGUINetwork \
+	MGUIAccumulation \
 
-SGOBJ = $(LB)/libRealtaGui.$(DLL)
-SLOBJ = $(LB)/libRealta.$(DLL)
+LIBRARIES = \
+	-lGeomega \
+	-lSivan \
+	-lRevan \
+	-lRevanGui \
+	-lMimrec \
+	-lMimrecGui \
+	-lSpectralyze \
+	-lSpectralyzeGui \
+	-lCommonMisc \
+	-lCommonGui \
+
+
+#----------------------------------------------------------------
+# Derived definitions:
+#
+
+OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+
+DICTIONARYNAME=$(LIBRARY)_Dictionary
+DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
+LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM=lib$(LIBRARY)_rdict.pcm
+
+
+OBJECTS_UI=$(patsubst %, $(LB)/%.o, $(FILES_UI))
+HEADERS_UI=$(patsubst %, inc/%.h, $(FILES_UI))
+SHAREDLIB_UI=$(LB)/lib$(LIBRARY_UI).$(DLL)
+
+DICTIONARYNAME_UI=$(LIBRARY_UI)_Dictionary
+DICTIONARY_UI=$(LB)/$(DICTIONARYNAME_UI).cxx
+DICTIONARYOBJECT_UI=$(LB)/$(DICTIONARYNAME_UI).o
+LINKDEF_UI=$(LB)/$(DICTIONARYNAME_UI)_LinkDef.h
+ROOTMAP_UI=$(LB)/lib$(LIBRARY_UI).rootmap
+ROOTPCM_UI=lib$(LIBRARY_UI)_rdict.pcm
+
+
+OBJECT_MAIN1=$(patsubst %, $(LB)/%.o, $(MAIN1))
+EXECUTABLE1=$(BN)/$(PROGRAM1)
+
+OBJECT_MAIN2=$(patsubst %, $(LB)/%.o, $(MAIN2))
+EXECUTABLE2=$(BN)/$(PROGRAM2)
 
 
 #----------------------------------------------------------------
 # Commands:
 #
 
-all: $(PRG) $(PRGT)
+all: $(EXECUTABLE1) $(EXECUTABLE2)
 
-lib: $(SLOBJ)
+lib: $(SHAREDLIB) 
 
 link:
-		@$(LINK) $(shell pwd)/inc/*.h $(IN)
-		@rm -f $(IN)/LinkDef.h
+	@$(LINK) $(shell pwd)/inc/*.h $(IN)
+	@echo "$(OBJECTS) $(DICTIONARYOBJECT) $(OBJECTS_UI) $(DICTIONARYOBJECT_UI)" >> $(LB)/AllObjects.txt
 
 clean:
-		@rm -f src/*~
-		@rm -f src/\#*
-		@rm -f inc/*~
-		@rm -f inc/\#*
-		@rm -f *~
-		@rm -f \#*
-		@rm -f $(PRG) $(PRGT)
-		@rm -f $(MOBJS) $(GOBJS) $(LOBJS) $(SGOBJ) $(SLOBJ)
+	@rm -f src/*~
+	@rm -f src/\#*
+	@rm -f inc/*~
+	@rm -f inc/\#*
+	@rm -f *~
+	@rm -f \#*
+	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
+	@rm -f $(OBJECTS_UI) $(SHAREDLIB_UI) $(DICTIONARY_UI) $(DICTIONARYOBJECT_UI) $(LINKDEF_UI) $(ROOTMAP_UI) $(LB)/$(ROOTPCM_UI)
+	@rm -f $(OBJECTS_MAIN1) $(EXECUTABLE1)
+	@rm -f $(OBJECTS_MAIN2) $(EXECUTABLE2)
 
+	
 #----------------------------------------------------------------
 # Dependencies:
 #
 
-$(SLOBJ): $(LOBJS)
-	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SLOBJ)
+$(DICTIONARY): $(HEADERS)
+	@echo "Generating $(DICTIONARYNAME)_LinkDef.h ..."
+	@$(BN)/generatelinkdef -o $(LINKDEF) -i $(HEADERS)
+	@echo "Generating dictionary $(DICTIONARYNAME).cxx..."
+	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
+	@mv $(ROOTPCM) $(LB)
 
-$(SGOBJ): $(GOBJS) $(LOBJS)
-	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(GOBJS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SGOBJ)
+$(SHAREDLIB): $(DICTIONARYOBJECT) $(OBJECTS)
+	@echo "Linking lib$(LIBRARY) ..."
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(DICTIONARYOBJECT) $(OBJECTS) $(GLIBS) $(LIBS) -o $(SHAREDLIB)
 
-$(MOBJS) $(GOBJS) $(LOBJS) $(MOBJT): $(LB)/%.o: src/%.cxx inc/%.h
+$(OBJECTS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(PRG): $(MOBJS) $(SGOBJ) $(SLOBJ)
-	@echo "Linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(MOBJS) $(REALTALIBS) $(GLIBS) $(LIBS) -o $(PRG)
+$(DICTIONARYOBJECT): $(DICTIONARY)
+	@echo "Compiling dictionary ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(PRGT): $(MOBJT) $(SGOBJ) $(SLOBJ)
-	@echo "Linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(MOBJT) $(REALTALIBS) $(GLIBS) $(LIBS) -o $(PRGT)
 
+
+$(DICTIONARY_UI): $(HEADERS_UI)
+	@echo "Generating $(DICTIONARYNAME_UI)_LinkDef.h ..."
+	@$(BN)/generatelinkdef -o $(LINKDEF_UI) -i $(HEADERS_UI)
+	@echo "Generating dictionary $(DICTIONARYNAME_UI).cxx..."
+	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP_UI) -s lib$(LIBRARY_UI) -c $^ $(LINKDEF_UI)
+	@mv $(ROOTPCM_UI) $(LB)
+
+$(SHAREDLIB_UI): $(DICTIONARYOBJECT_UI) $(OBJECTS_UI)
+	@echo "Linking lib$(LIBRARY_UI) ..."
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(DICTIONARYOBJECT_UI) $(OBJECTS_UI) $(GLIBS) $(LIBS) -o $(SHAREDLIB_UI)
+
+$(OBJECTS_UI): $(LB)/%.o: src/%.cxx inc/%.h
+	@echo "Compiling $(subst src/,,$<) ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(DICTIONARYOBJECT_UI): $(DICTIONARY_UI)
+	@echo "Compiling dictionary ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+
+
+$(OBJECT_MAIN1): $(LB)/%.o: src/%.cxx inc/%.h
+	@echo "Compiling $(subst src/,,$<) ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(EXECUTABLE1): $(SHAREDLIB_UI) $(SHAREDLIB) $(OBJECT_MAIN1)
+	@echo "Linking $(subst $(BN)/,,$@) ..."
+	@$(LD) $(LDFLAGS) $(OBJECT_MAIN1) $(SHAREDLIB_UI) $(SHAREDLIB) $(LIBRARIES) $(GLIBS) $(LIBS) -o $(EXECUTABLE1)
+
+
+
+$(OBJECT_MAIN2): $(LB)/%.o: src/%.cxx inc/%.h
+	@echo "Compiling $(subst src/,,$<) ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(EXECUTABLE2): $(SHAREDLIB_UI) $(SHAREDLIB) $(OBJECT_MAIN2)
+	@echo "Linking $(subst $(BN)/,,$@) ..."
+	@$(LD) $(LDFLAGS) $(OBJECT_MAIN2) $(SHAREDLIB_UI) $(SHAREDLIB) $(LIBRARIES) $(GLIBS) $(LIBS) -o $(EXECUTABLE2)
+
+	
 #
 #----------------------------------------------------------------
-
-
-

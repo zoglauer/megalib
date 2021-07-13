@@ -89,7 +89,7 @@ class MMuonEvent : public MPhysicalEvent
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MMuonEvent, 1)
 #endif

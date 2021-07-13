@@ -58,11 +58,6 @@ class MDShape
   //! Return the representation as ROOT shape
   TGeoShape* GetRootShape() { return m_Geo; }
 
-  virtual MString GetGeant3DIM(MString ShortName) = 0;
-  virtual MString GetGeant3DATA(MString ShortName) = 0;
-  virtual MString GetGeant3ShapeName() = 0;
-  virtual int GetGeant3NumberOfParameters() = 0;
-  virtual MString GetMGeantDATA(MString ShortName) = 0;
   virtual MString GetGeomega() const = 0;
   virtual MString GetType();
 
@@ -122,11 +117,14 @@ class MDShape
   //! If this shape consists of other shapes, they are stored here
   vector<MDShape*> m_SubShapes;
   
+  //! True if it has been validated
+  bool m_IsValidated;
+  
   // private members:
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShape, 0) // virtual base class for all shapes
 #endif

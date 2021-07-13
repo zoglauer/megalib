@@ -28,9 +28,10 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MDDetector.h"
+#include "MDGuardRing.h"
 #include "MStreams.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSimGR)
 #endif
 
@@ -45,6 +46,7 @@ MSimGR::MSimGR(MDGeometryQuest* Geo)
   m_DetectorType = MDDetector::c_NoDetectorType;
   m_Position = g_VectorNotDefined;
   m_Energy = 0;
+  m_OriginalEnergy = m_Energy;
   m_VolumeSequence = 0;
   m_Geometry = Geo;
 }
@@ -67,6 +69,8 @@ MSimGR::MSimGR(const int DetectorType, const MVector& Position, const double Ene
       mout<<"Error: This guard ring hit at "<<m_Position<<" has no corresponding sensitive volume!"<<endl;
     }
   }
+  
+  m_OriginalEnergy = m_Energy;
 }
 
 
@@ -99,8 +103,10 @@ bool MSimGR::AddRawInput(MString LineBuffer, const int Version)
     }
   }
 
-  if (Noise(true) == false) return false;
+  m_OriginalEnergy = m_Energy; 
   
+  if (Noise(true) == false) return false;
+
   return true;
 }
 
@@ -141,9 +147,8 @@ MString MSimGR::ToSimString(const int WhatToStore, const int ScientificPrecision
   S<<setw(WidthPos)<<m_Position[1]<<";";
   S<<setw(WidthPos)<<m_Position[2]<<";";
   S<<setw(WidthEnergy)<<m_Energy;
-  S<<endl;
 
-  return S.str().c_str();
+  return S;
 }
 
 
@@ -157,7 +162,7 @@ bool MSimGR::Noise(bool RecalculateVolumeSequence)
   // Make sure we noise not twice:
   m_Energy = m_OriginalEnergy;
 
-  //cout<<"Before: "<<m_Energy;
+  //cout<<"Before: "<<m_Energy<<" --> ";
   if (m_Geometry != 0) {
     if (RecalculateVolumeSequence == true) {
       delete m_VolumeSequence;
@@ -174,8 +179,13 @@ bool MSimGR::Noise(bool RecalculateVolumeSequence)
       }
     }
     if (m_Geometry->GetActivateNoising() == true) {
-      if (m_VolumeSequence->GetDetector()->NoiseGuardring(m_Energy) == false) {
-        merr<<"Error: Unable to noise guard ring energy!"<<show;
+      if (m_VolumeSequence->GetDetector()->HasGuardRing() == true) {
+        double DummyTime = 0.0;
+        m_VolumeSequence->GetDetector()->GetGuardRing()->Noise(m_Position, m_Energy, DummyTime, nullptr);
+      } else {
+        mout<<"The detector of this guard ring hit at "<<m_Position<<" has no guard ring detector!"<<endl;
+        mout<<"  --> It will not show up in the later analysis!"<<endl;
+        return false;  
       }
 
       if (m_Energy <= 0.0) return false; // Below trigger threshold of guard ring

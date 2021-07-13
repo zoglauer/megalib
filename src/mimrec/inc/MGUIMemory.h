@@ -76,7 +76,7 @@ class MGUIMemory : public MGUIDialog
   MGUIEEntryList* m_Threads;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIMemory, 0)
 #endif

@@ -54,11 +54,6 @@ class MDShapeGTRA : public MDShape
   MVector GetSize();
 
   MString ToString();
-  MString GetGeant3DIM(MString ShortName);
-  MString GetGeant3DATA(MString ShortName);
-  MString GetGeant3ShapeName();
-  int GetGeant3NumberOfParameters();
-  MString GetMGeantDATA(MString ShortName);
   MString GetGeomega() const;
 
   double GetVolume();
@@ -98,7 +93,7 @@ class MDShapeGTRA : public MDShape
   double m_Alpha2;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeGTRA, 0) // no description
 #endif

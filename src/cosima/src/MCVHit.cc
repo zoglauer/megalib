@@ -40,6 +40,7 @@ using namespace std;
 MCVHit::MCVHit()
 {
   m_Energy = 0;
+  m_Position.set(0.0, 0.0, 0.0);
   m_Time = 0;
   m_Name = "Unknown";
   m_DetectorType = MDDetector::c_NoDetectorType;
@@ -95,10 +96,7 @@ void MCVHit::AddVolumeHistory(string Name)
 MSimHT* MCVHit::GetCalibrated()
 {
   MSimHT* HT = new MSimHT();
-  HT->SetDetectorType(m_DetectorType);
-  HT->SetEnergy(m_Energy/keV);
-  HT->SetTime(m_Time/s);
-  HT->SetOrigins(m_Origins);
+  HT->Set(m_DetectorType, MVector(m_Position.getX()/cm, m_Position.getY()/cm, m_Position.getZ()/cm), m_Energy/keV, m_Time/s, m_Origins, false);
   return HT;
 }
 

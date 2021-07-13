@@ -20,6 +20,8 @@
 #include "MCalibrationModel.h"
 
 // Standard libs:
+#include <cmath>
+using namespace std;
 
 // ROOT libs:
 #include "TMath.h"
@@ -35,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MCalibrationModel)
 #endif
 
@@ -44,7 +46,7 @@ ClassImp(MCalibrationModel)
 
 
 //! Default constructor
-MCalibrationModel::MCalibrationModel() : m_Fit(0), m_IsFitUpToDate(false), m_Keyword("none"),   m_FitQuality(numeric_limits<double>::max()/1000)
+MCalibrationModel::MCalibrationModel() : m_Type(MCalibrationModelType::c_Energy), m_Fit(nullptr), m_IsFitUpToDate(false), m_Keyword("none"),   m_FitQuality(numeric_limits<double>::max()/1000)
 {
 }
 
@@ -56,7 +58,7 @@ MCalibrationModel::MCalibrationModel() : m_Fit(0), m_IsFitUpToDate(false), m_Key
 MCalibrationModel::MCalibrationModel(const MCalibrationModel& Fit)
 {
   // We don't care about double initilization, so:
-  m_Fit = 0;
+  m_Fit = nullptr;
   *this = Fit;
 }
 
@@ -77,14 +79,16 @@ MCalibrationModel::~MCalibrationModel()
 //! The assignment operator
 MCalibrationModel& MCalibrationModel::operator= (const MCalibrationModel& CalibrationModel)
 {
+  m_Type = CalibrationModel.m_Type;
+  
   delete m_Fit;
-  if (CalibrationModel.m_Fit != 0) {
+  if (CalibrationModel.m_Fit != nullptr) {
     m_Fit = new TF1(*CalibrationModel.m_Fit);
     for (int i = 0; i < CalibrationModel.m_Fit->GetNpar(); ++i) {
       m_Fit->SetParameter(i, CalibrationModel.m_Fit->GetParameter(i));
     }
   } else {
-    m_Fit = 0;
+    m_Fit = nullptr;
   }
     
   m_IsFitUpToDate = CalibrationModel.m_IsFitUpToDate;
@@ -150,18 +154,35 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   ROOT::Fit::BinData TheData;
   TheData.Initialize(Points.size(), 1, ROOT::Fit::BinData::kValueError);
   for (unsigned int p = 0; p < Points.size(); ++p) {
-    TheData.Add(Points[p].GetPeak(), Points[p].GetEnergy(), Points[p].GetEnergyFWHM()/2.35);
+    double FWHM = Points[p].GetEnergyFWHM();
+    // If we do not yet have a FWHM use a dummy linear calibration through zero
+    if (FWHM == 0.0) {
+      FWHM = Points[p].GetFWHM() * Points[p].GetEnergy() / Points[p].GetPeak();
+    }
+    if (m_Type == MCalibrationModelType::c_LineWidth) {
+      if (fabs(Points[p].GetEnergy() - 511) < 0.1) continue; // Always exclude any 511 line, since it is larger than usual (positron range)
+      TheData.Add(Points[p].GetEnergy(), FWHM, 0.1*FWHM); // Arbitrary width...
+    } else {
+      TheData.Add(Points[p].GetPeak(), Points[p].GetEnergy(), FWHM/2.35);
+    }
   }
 
   ROOT::Fit::Fitter TheFitter; 
-  TheFitter.Config().SetMinimizer("Minuit2");
-  if (g_Verbosity >= c_Info) TheFitter.Config().MinimizerOptions().SetPrintLevel(1);
+  TheFitter.Config().SetMinimizer("Minuit2", "Migrad");
+  if (g_Verbosity >= c_Info) TheFitter.Config().MinimizerOptions().SetPrintLevel(2);
   
   TheFitter.SetFunction(*this);
   InitializeFitParameters(TheFitter);
   
   // Fit
+  if (g_Verbosity >= c_Info) cout<<"Round 1 of line fitting started"<<endl;
   bool ReturnCode = TheFitter.Fit(TheData);
+  ROOT::Fit::FitResult& TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter.Result());
+
+  if (std::isnan(TheFitResult.Edm()) == true) {
+    ReturnCode = false; 
+  }
+  
   if (ReturnCode == true) {
     if (TheFitter.CalculateHessErrors() == false) {
       if (TheFitter.CalculateMinosErrors() == false) {
@@ -169,10 +190,87 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
         ReturnCode = false;
       }
     }
+    if (ReturnCode == true) {
+      if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 1."<<endl;
+      TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter.Result()); 
+    }
+  } else {
+    if (g_Verbosity >= c_Info) cout<<"Unable to fit calibration model in round 1."<<endl;
+  }
+
+  // Round 2
+  if (ReturnCode == false) {
+    // Try a different fitting approach 
+    
+    if (g_Verbosity >= c_Info) cout<<"Round 2 of line fitting started"<<endl;
+    ROOT::Fit::Fitter TheFitter2; 
+    TheFitter2.Config().SetMinimizer("Minuit2", "Minimize");
+    if (g_Verbosity >= c_Info) TheFitter2.Config().MinimizerOptions().SetPrintLevel(2);
+    
+    TheFitter2.SetFunction(*this);
+    InitializeFitParameters(TheFitter2);
+
+    ReturnCode = TheFitter2.LikelihoodFit(TheData);
+    TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter2.Result());
+    
+    if (std::isnan(TheFitResult.Edm()) == true) {
+      ReturnCode = false; 
+    }
+    
+    if (ReturnCode == true) {
+      if (TheFitter2.CalculateHessErrors() == false) {
+        if (TheFitter2.CalculateMinosErrors() == false) {
+          cout<<"Unable to calculate either Minos or Hess error!"<<endl;
+          ReturnCode = false;
+        }
+      }
+      if (ReturnCode == true) {
+        TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter2.Result()); 
+        if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 2."<<endl;
+      }
+    } else {
+      if (g_Verbosity >= c_Info) cout<<"Unable to fit calibration model in round 2."<<endl;
+      //return false;
+    }
   }
   
-  // Prepare the results
-  const ROOT::Fit::FitResult& TheFitResult = TheFitter.Result(); 
+
+  // Round 3
+  if (ReturnCode == false) {
+    // Try a different fitting approach 
+    
+    if (g_Verbosity >= c_Info) cout<<"Round 3 of line fitting started"<<endl;
+    ROOT::Fit::Fitter TheFitter3; 
+    TheFitter3.Config().SetMinimizer("Fumili");
+    if (g_Verbosity >= c_Info) TheFitter3.Config().MinimizerOptions().SetPrintLevel(2);
+    
+    TheFitter3.SetFunction(*this);
+    InitializeFitParameters(TheFitter3);
+
+    ReturnCode = TheFitter3.LikelihoodFit(TheData);
+    TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter3.Result());
+    
+    if (std::isnan(TheFitResult.Edm()) == true) {
+      ReturnCode = false; 
+    }
+    
+    if (ReturnCode == true) {
+      if (TheFitter3.CalculateHessErrors() == false) {
+        if (TheFitter3.CalculateMinosErrors() == false) {
+          cout<<"Unable to calculate either Minos or Hess error!"<<endl;
+          ReturnCode = false;
+        }
+      }
+      if (ReturnCode == true) {
+        TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter3.Result()); 
+        if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 3."<<endl;
+      }
+    } else {
+      if (g_Verbosity >= c_Info) cout<<"Unable to fit calibration model in round 3."<<endl;
+      //return false;
+    }
+  }
+  
   if (TheFitResult.IsEmpty()) ReturnCode = false;  
   
   if (ReturnCode == true) {
@@ -195,7 +293,11 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
       m_Fit->SetParErrors( &(TheFitResult.Errors().front()) );
     }
 
-    m_FitQuality = m_Fit->GetChisquare()/m_Fit->GetNDF(); // Used to determine the quality of fit, thus critically important    
+    if (m_Fit->GetNDF() > 0) {
+      m_FitQuality = m_Fit->GetChisquare()/m_Fit->GetNDF(); // Used to determine the quality of fit, thus critically important    
+    } else {
+      m_FitQuality = 0; 
+    }
   }  
   
   return m_FitQuality;

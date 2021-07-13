@@ -67,7 +67,7 @@ class MModuleInterfaceFileName
 
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MModuleInterfaceFileName, 0) // no description
 #endif

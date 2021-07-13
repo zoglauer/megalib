@@ -1,0 +1,19 @@
+# Assembly file for the photon simulation
+
+Include Setup.source
+
+# Physics list
+PhysicsListEM                      LivermorePol
+
+# The simulation run
+Run SpaceSim
+SpaceSim.FileName         PhotonicBackground
+SpaceSim.Triggers         1000000
+
+Include CosmicPhotonsGruber.partial.source
+Include AnnihilationLineHarris.partial.source
+Include AlbedoPhotonsAjelloMizuno.partial.source
+
+
+
+

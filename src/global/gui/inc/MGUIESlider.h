@@ -84,7 +84,7 @@ class MGUIESlider : public MGUIElement
   TGLayoutHints* m_MaxLabelLayout;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIESlider, 0) // a slider GUI element
 #endif

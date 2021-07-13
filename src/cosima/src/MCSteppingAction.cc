@@ -117,7 +117,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("PenConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
   m_KnownProcess.push_back("LowEnConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
   m_KnownProcess.push_back("LowEnPolarizConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
-
+  m_KnownProcess.push_back("muPairProd"); m_KnownProcessID.push_back(c_ProcessIDPair);
+  
   m_KnownProcess.push_back("annihil"); m_KnownProcessID.push_back(c_ProcessIDAnnihilation);
   m_KnownProcess.push_back("PenAnnih"); m_KnownProcessID.push_back(c_ProcessIDAnnihilation);
   
@@ -125,6 +126,7 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("hBrems"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
   m_KnownProcess.push_back("PenelopeBrem"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
   m_KnownProcess.push_back("LowEnBrem"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
+  m_KnownProcess.push_back("muBrems"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
   
   m_KnownProcess.push_back("Rayl"); m_KnownProcessID.push_back(c_ProcessIDRayleigh);
   m_KnownProcess.push_back("PenRayleigh"); m_KnownProcessID.push_back(c_ProcessIDRayleigh);
@@ -268,6 +270,12 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       Track->SetTrackStatus(fStopAndKill);
       return;
     }
+  }
+  
+  if (Track->GetCurrentStepNumber() > 10000000) {
+    merr<<"Geant4 hick-up: The event seems to be stuck 10,000,000 steps! Aborting track!"<<endl;
+    Track->SetTrackStatus(fStopAndKill);
+    return;
   }
 
   // Prepare the IA interactions:
@@ -916,6 +924,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           MCRunManager::GetMCRunManager()->GetCurrentRun().AddIsotope(Nucleus, Hist);
 
           //mout<<"Storing isotope: "<<Nucleus->GetParticleName()<<endl;
+          
+          EventAction->AddComment("Storing isotope: " + Nucleus->GetParticleName());
         }
         
         if (Keep == true) {
@@ -1005,6 +1015,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                                                                                  Track->GetDefinition(),
                                                                                  Name);
           //cout<<"Global time: "<<Step->GetPostStepPoint()->GetGlobalTime()/second<<"sec"<<endl;
+          
+          EventAction->AddComment("Future decay: " + Track->GetDefinition()->GetParticleName() + " at t=" + to_string(GlobalTime/second) + " sec");
         }
       }
     } else if (ProcessID == c_ProcessIDIonization && m_StoreIonization == true) {
@@ -1126,7 +1138,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
     } else {
       if (ProcessID == c_ProcessIDUncovered) {
         merr<<"Uncovered process: "<<ProcessName<<" - please inform the lead developers of this problem."<<endl
-            <<"-> Your simulations are ok - you only might miss an IA line in the sim file."<<show;
+            <<"-> Your simulations are completely OK - you only might miss an IA line in the sim file."<<show;
       }
 
   
@@ -1284,7 +1296,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              G4ThreeVector(0.0, 0.0, 0.0),
                              G4ThreeVector(0.0, 0.0, 0.0), 
                              0.0);
-	
+  
           Track->SetTrackStatus(fStopAndKill);
 
         }
@@ -1568,7 +1580,7 @@ int MCSteppingAction::GetParticleType(G4String Name)
         sA += Start[i];
       }
     }
-    int Z = MDMaterial::ConvertZToNumber(sZ);
+    int Z = MDMaterial::ConvertNameToAtomicNumber(sZ);
     int A = atoi(sA);
     
     if (Z > 0 && Z < 120 && A > 0 && A < 1000) {

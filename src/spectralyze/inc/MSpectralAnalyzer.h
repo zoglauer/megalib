@@ -93,14 +93,14 @@ class MSpectralAnalyzer
   
   // Interface to peak finding
   //! number of bins in histogram
-	//  void SetHistBinsSpectralyzer(double HistBinsSpectralyzer) {m_HistBinsSpectralyzer = HistBinsSpectralyzer; }
-	//! signal to noise ratio limit
-	void SetSignaltoNoiseRatio(int SignaltoNoiseRatio) { m_SignaltoNoiseRatio = SignaltoNoiseRatio; }
-	//! Poisson limit on integrated peak counts
-	void SetPoissonLimit(int PoissonLimit) {m_PoissonLimit = PoissonLimit; }
+  //  void SetHistBinsSpectralyzer(double HistBinsSpectralyzer) {m_HistBinsSpectralyzer = HistBinsSpectralyzer; }
+  //! signal to noise ratio limit
+  void SetSignaltoNoiseRatio(int SignaltoNoiseRatio) { m_SignaltoNoiseRatio = SignaltoNoiseRatio; }
+  //! Poisson limit on integrated peak counts
+  void SetPoissonLimit(int PoissonLimit) {m_PoissonLimit = PoissonLimit; }
 
-	//! Deconvolve peaks above specified sigma value
-	//	void SetDeconvolutionLimit(double DeconvolutionLimit) {m_DeconvolutionLimit = DeconvolutionLimit; }
+  //! Deconvolve peaks above specified sigma value
+  //  void SetDeconvolutionLimit(double DeconvolutionLimit) {m_DeconvolutionLimit = DeconvolutionLimit; }
   
   // Interface to isotope identification  
   //! Name of candidate isotope
@@ -155,15 +155,15 @@ class MSpectralAnalyzer
   bool m_IsBatch;
   
   // Peak finder options:
-	
-	//! SNR
-	int m_SignaltoNoiseRatio;
-	//! Poisson Limit
-	int m_PoissonLimit;
-	
-	//! deconvolve peaks woth sigma > deconvolution limit
-	//	double m_DeconvolutionLimit;
-	
+  
+  //! SNR
+  int m_SignaltoNoiseRatio;
+  //! Poisson Limit
+  int m_PoissonLimit;
+  
+  //! deconvolve peaks woth sigma > deconvolution limit
+  //  double m_DeconvolutionLimit;
+  
   //! Short explanation
   MString m_IsotopeFileName;
   //! # (in sigma) away from found peak for acceptable isotope energy match
@@ -181,7 +181,7 @@ class MSpectralAnalyzer
   vector<MQualifiedIsotope*> m_ComparisonIsotopes;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSpectralAnalyzer, 0) // no description
 #endif

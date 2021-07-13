@@ -48,7 +48,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseMatrixO11)
 #endif
 
@@ -57,7 +57,7 @@ ClassImp(MResponseMatrixO11)
 
 
 MResponseMatrixO11::MResponseMatrixO11() :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // default constructor
 
@@ -74,7 +74,7 @@ MResponseMatrixO11::MResponseMatrixO11(vector<float> x1Axis, vector<float> x2Axi
                                        vector<float> x7Axis, vector<float> x8Axis, 
                                        vector<float> x9Axis, vector<float> x10Axis, 
                                        vector<float> x11Axis) :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // constructor
 
@@ -94,7 +94,7 @@ MResponseMatrixO11::MResponseMatrixO11(MString Name,
                                        vector<float> x7Axis, vector<float> x8Axis,
                                        vector<float> x9Axis, vector<float> x10Axis, 
                                        vector<float> x11Axis) :
-  MResponseMatrix(Name)
+  MResponseMatrixOx(Name)
 {
   // constructor
 
@@ -744,23 +744,23 @@ float MResponseMatrixO11::GetInterpolated(float x1, float x2, float x3, float x4
     }
   } else {
     // Get Position:
- 		int Position = FindBin(m_AxisO11, x11);
+    int Position = FindBin(m_AxisO11, x11);
 
     // Take care of boundaries:
-		if (Position < 0) {
-			if (DoExtrapolate == true) {
-				Position = 0; // extrapolate below lower edge
-			} else {
-				return m_AxesO10.front().GetInterpolated(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, DoExtrapolate);
-			}
-		} else if (Position >= int(m_AxisO11.size()-1)) {
-			if (DoExtrapolate == true) {
-				Position = int(m_AxisO11.size()-2); // extrapolate above higher edge
-				// limits of highest bin are m_AxisO11.size()-2 and  m_AxisO11.size()-1 !!
-			} else {
-				return m_AxesO10.back().GetInterpolated(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, DoExtrapolate);
-			}
-		}
+    if (Position < 0) {
+      if (DoExtrapolate == true) {
+        Position = 0; // extrapolate below lower edge
+      } else {
+        return m_AxesO10.front().GetInterpolated(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, DoExtrapolate);
+      }
+    } else if (Position >= int(m_AxisO11.size()-1)) {
+      if (DoExtrapolate == true) {
+        Position = int(m_AxisO11.size()-2); // extrapolate above higher edge
+        // limits of highest bin are m_AxisO11.size()-2 and  m_AxisO11.size()-1 !!
+      } else {
+        return m_AxesO10.back().GetInterpolated(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, DoExtrapolate);
+      }
+    }
     
     // Interpolate:
     return m_AxesO10[Position].GetInterpolated(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, DoExtrapolate) + (x11 - m_AxisO11[Position])/
@@ -839,11 +839,11 @@ float MResponseMatrixO11::GetMinimum() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MResponseMatrixO11::GetSum() const
+double MResponseMatrixO11::GetSum() const
 {
   // Return the sum of all bins:
 
-  float Sum = 0;
+  double Sum = 0;
   for (unsigned int i = 0; i < m_AxesO10.size(); ++i) {
     Sum += m_AxesO10[i].GetSum();
   }  
@@ -1204,7 +1204,7 @@ bool MResponseMatrixO11::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO11") {
-//     while (Parser.TokenizeLine(T) == true) {
+//     while (Parser.TokenizeLine(T, true) == true) {
 //       if (T.GetNTokens() == 0) continue;
 //       if (T.GetTokenAt(0) == "R2") {
 //         if (T.GetNTokens() == 4) {
@@ -1239,7 +1239,7 @@ bool MResponseMatrixO11::ReadSpecific(MFileResponse& Parser,
     MString x9Name;
     MString x10Name;
     MString x11Name;
-    while (Parser.TokenizeLine(T) == true) {
+    while (Parser.TokenizeLine(T, true) == true) {
       if (T.GetNTokens() == 0) continue;
       if (T.GetTokenAt(0) == "A1") {
         x1Axis = T.GetTokenAtAsFloatVector(1);
@@ -1380,12 +1380,7 @@ bool MResponseMatrixO11::Write(MString FileName, bool Stream)
   mdebug<<"Started writting file \""<<FileName<<"\" ... This way take a while ..."<<endl;
 
   ostringstream s;
-  s<<"# Response Matrix 11"<<endl;
-  s<<"Version 1"<<endl;
-  s<<endl;
-  s<<"NM "<<m_Name<<endl;
-  s<<endl;
-  s<<"CE "<<((m_ValuesCentered == true) ? "true" : "false")<<endl;
+  WriteHeader(s);
   File.Write(s);
   
   unsigned int x1, x1_max = GetAxisBins(1); 

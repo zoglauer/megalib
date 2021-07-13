@@ -47,7 +47,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIMainFretalon)
 #endif
 
@@ -59,8 +59,6 @@ MGUIMainFretalon::MGUIMainFretalon(MSupervisor* Supervisor)
   : TGMainFrame(gClient->GetRoot(), 350, 300, kVerticalFrame),
     m_Supervisor(Supervisor)
 {
-  gStyle->SetPalette(1, 0);
-
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
 
@@ -196,7 +194,7 @@ void MGUIMainFretalon::Create()
   // Start & Exit buttons
   // Frame around the buttons:
   TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
-  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 20*FontScaler, 20*FontScaler, 20*FontScaler, 10*FontScaler);
+  TGLayoutHints* ButtonFrameLayout =  new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 20*FontScaler, 20*FontScaler, 20*FontScaler, 10*FontScaler);
   AddFrame(ButtonFrame, ButtonFrameLayout);
   
   // The buttons itself

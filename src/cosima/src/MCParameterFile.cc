@@ -16,6 +16,10 @@
  */
 
 
+// Standard library
+#include<limits>
+using namespace std;
+
 // Cosima:
 #include "MCParameterFile.hh"
 #include "MCPhysicsList.hh"
@@ -40,6 +44,9 @@ const int MCParameterFile::c_DecayModeBuildUp                 = 2;
 const int MCParameterFile::c_DecayModeActivationBuildUp       = 3;
 const int MCParameterFile::c_DecayModeActivationDelayedDecay  = 4;
 
+const int MCParameterFile::c_PreTriggerEverything             = 0;
+const int MCParameterFile::c_PreTriggerEveryEventWithHits     = 1;
+const int MCParameterFile::c_PreTriggerFull                   = 2;
 
 /******************************************************************************
  * Default constructor - the parsing of the file takes place in Parse()
@@ -49,14 +56,15 @@ MCParameterFile::MCParameterFile() : MParser(' ', true),
                                      m_PhysicsListEM(MCPhysicsList::c_EMLivermore), 
                                      m_PhysicsListHD(MCPhysicsList::c_HDNone), 
                                      m_DecayMode(c_DecayModeIgnore),
+                                     m_PreTriggerMode(c_PreTriggerFull),
                                      m_StoreCalibrated(true), 
                                      m_StoreScientific(false),
                                      m_StoreScientificPrecision(5),
                                      m_StoreSimulationInfo(MSimEvent::c_StoreSimulationInfoAll),
                                      m_StoreSimulationInfoVersion(MSimEvent::GetOutputVersion()),
                                      m_StoreSimulationInfoIonization(false),
-                                     m_StoreOnlyTriggeredEvents(true),
                                      m_StoreOneHitPerEvent(false),
+                                     m_StoreMinimumEnergy(-numeric_limits<double>::max()),
                                      m_DiscretizeHits(true),
                                      m_CheckForOverlaps(false),
                                      m_OverlapCheckResolution(1000),
@@ -356,6 +364,8 @@ bool MCParameterFile::Parse()
           m_StoreSimulationInfo = MSimEvent::c_StoreSimulationInfoInitOnly;
         } else if (Type == "no" || Type == "none" || Type == "false") {
           m_StoreSimulationInfo = MSimEvent::c_StoreSimulationInfoNone;
+        } else if (Type == "ia" || Type == "ia-only"){
+           m_StoreSimulationInfo = MSimEvent::c_StoreSimulationInfoIAOnly; 
         } else {
           Typo(i, "Cannot parse token StoreSimulationInfo"
                " Unknown package string (Usage: e.g. \"StoreSimulationInfo all\"");
@@ -408,12 +418,38 @@ bool MCParameterFile::Parse()
       }
     } else if (T->IsTokenAt(0, "StoreOnlyEventsWithEnergyLoss", true) == true ||
                T->IsTokenAt(0, "StoreOnlyTriggeredEvents", true) == true) {
+      mout<<"Info: "<<T->GetTokenAt(0)<<" is deprecated. Please use PreTriggerMode"<<endl;
       if (T->GetNTokens() == 2) {
-        m_StoreOnlyTriggeredEvents = T->GetTokenAtAsBoolean(1);
-        mdebug<<"Storing only triggered events: "<<((m_StoreOnlyTriggeredEvents == true) ? "true" : "false")<<endl;
+        if (T->GetTokenAtAsBoolean(1) == true) {
+          m_PreTriggerMode = c_PreTriggerFull;
+          mdebug<<"Storing only triggered events"<<endl;
+        } else {
+          m_PreTriggerMode = c_PreTriggerEverything;          
+          mdebug<<"Storing all events independent of any trigger"<<endl;
+        }
       } else {
         Typo(i, "Cannot parse token StoreOnlyTriggeredEvents correctly:"
              " Number of tokens is not correct!");
+        return false;
+      }
+    } else if (T->IsTokenAt(0, "PreTriggerMode", true) == true) {
+      if (T->GetNTokens() == 2) {
+        MString Mode = T->GetTokenAtAsString(1);
+        Mode.ToLower();
+        if (Mode == "everything") {
+          m_PreTriggerMode = c_PreTriggerEverything;          
+          mdebug<<"Storing all events independent of any trigger"<<endl;
+        } else if  (Mode == "full") {
+          m_PreTriggerMode = c_PreTriggerFull;
+          mdebug<<"Storing only triggered events"<<endl;
+        } else if (Mode == "everyeventwithhits") {
+          m_PreTriggerMode = c_PreTriggerEveryEventWithHits;  
+        } else {
+          Typo(i, "Cannot parse token PreTriggerMode correctly: Unknown PreTriggerMode mode!");
+          return false;
+        }
+      } else {
+        Typo(i, "Cannot parse token PreTriggerMode correctly: Number of tokens is not correct!");
         return false;
       }
     } else if (T->IsTokenAt(0, "StoreOneHitPerEvent", true) == true) {
@@ -423,6 +459,15 @@ bool MCParameterFile::Parse()
       } else {
         Typo(i, "Cannot parse token StoreOneHitPerEvent:"
              " Number of tokens is not correct!");
+        return false;
+      }
+    } else if (T->IsTokenAt(0, "StoreMinimumEnergy", true) == true) {
+      if (T->GetNTokens() == 2) {
+        m_StoreMinimumEnergy = T->GetTokenAtAsDouble(1);
+        mdebug<<"Storing only events with at least this amount of energy: "<<m_StoreMinimumEnergy<<endl;
+      } else {
+        Typo(i, "Cannot parse token StoreMinimimumEnergy:"
+        " Number of tokens is not correct!");
         return false;
       }
     } else if (T->IsTokenAt(0, "DiscretizeHits", true) == true) {
@@ -467,14 +512,14 @@ bool MCParameterFile::Parse()
         if (T->GetNTokens() == 10) {
           StartAreaType = MCSource::c_StartAreaTube;
           StartAreaParameters.clear();
-          StartAreaParameters.push_back(T->GetTokenAtAsDouble(2)*cm);
+          StartAreaParameters.push_back(T->GetTokenAtAsDouble(2)*cm);  // Position
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(3)*cm);
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(4)*cm);
-          StartAreaParameters.push_back(T->GetTokenAtAsDouble(5));
+          StartAreaParameters.push_back(T->GetTokenAtAsDouble(5));  // Direction
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(6));
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(7));
-          StartAreaParameters.push_back(T->GetTokenAtAsDouble(8)*cm);
-          StartAreaParameters.push_back(T->GetTokenAtAsDouble(9)*cm);
+          StartAreaParameters.push_back(T->GetTokenAtAsDouble(8)*cm); // Radius 
+          StartAreaParameters.push_back(T->GetTokenAtAsDouble(9)*cm); // Full height
         } else {
           Typo(i, "Cannot parse token StartArea Tube correctly:"
                " Number of tokens is not correct!");
@@ -556,7 +601,7 @@ bool MCParameterFile::Parse()
   }
 
 
-  // Step 2bi: Primary Run parameters
+  // Step 2bi: Primary Activator parameters
   MCActivator* Activator = 0;
 
   for (i = 0; i < GetNLines(); ++i) {
@@ -566,6 +611,7 @@ bool MCParameterFile::Parse()
       if (T->IsTokenAt(1, "IsotopeProductionFile", true) == true) {
         if (T->GetNTokens() >= 3) {
           MString FileName = T->GetTokenAfterAsString(2);
+          MFile::ExpandFileName(FileName);
           MFile::ApplyPath(FileName, m_FileName);
           if (MFile::Exists(FileName) == true) {
             if (Activator->AddCountsFile(FileName) == true) {
@@ -739,17 +785,18 @@ bool MCParameterFile::Parse()
                  T->IsTokenAt(1, "NTriggers", true) == true) {
         if (T->GetNTokens() >= 3) {
           // ToDo: Check if source already exists:
-          if (Run->SetTriggers(T->GetTokenAtAsInt(2)) == true) {
-            mdebug<<"Setting number of triggers "
-                  <<T->GetTokenAtAsInt(2)<<" for run "<<Run->GetName()<<endl;
+          if (T->GetTokenAtAsString(2).Is<unsigned long>() == false) {
+            Typo(i, "Cannot parse token Triggers correctly: Number not a positive (long) integer.");
+            return false;             
+          }  
+          if (Run->SetTriggers(T->GetTokenAtAsLong(2)) == true) {
+            mdebug<<"Setting number of triggers to "<<T->GetTokenAtAsLong(2)<<" for run "<<Run->GetName()<<endl;
           } else {
-            Typo(i, "Cannot parse token Triggers correctly:"
-                 " Number not positive?");
+            Typo(i, "Cannot parse token Triggers correctly: Number not a positive (long) integer or you used floating point notation?");
             return false;             
           }
         } else {
-          Typo(i, "Cannot parse token Triggers correctly:"
-               " Number of tokens is not correct!");
+          Typo(i, "Cannot parse token Triggers correctly: Number of tokens is not correct!");
           return false;
         }
       } else if (T->IsTokenAt(1, "Events", true) == true ||
@@ -758,17 +805,18 @@ bool MCParameterFile::Parse()
                  T->IsTokenAt(1, "NEvents", true) == true) {
         if (T->GetNTokens() >= 3) {
           // ToDo: Check if source already exists:
-          if (Run->SetEvents(T->GetTokenAtAsInt(2)) == true) {
-            mdebug<<"Setting number of events "
-                  <<T->GetTokenAtAsInt(2)<<" for run "<<Run->GetName()<<endl;
+          if (T->GetTokenAtAsString(2).Is<unsigned long>() == false) {
+            Typo(i, "Cannot parse token Events correctly: Number not a positive (long) integer.");
+            return false;             
+          }  
+          if (Run->SetEvents(T->GetTokenAtAsLong(2)) == true) {
+            mdebug<<"Setting number of events to "<<T->GetTokenAtAsLong(2)<<" for run "<<Run->GetName()<<endl;
           } else {
-            Typo(i, "Cannot parse token Events correctly:"
-                 " Number not positive?");
+            Typo(i, "Cannot parse token Events correctly: Number not a positive (long) integer or you used floating point notation?");
             return false;             
           }
         } else {
-          Typo(i, "Cannot parse token Events correctly:"
-               " Number of tokens is not correct!");
+          Typo(i, "Cannot parse token Events correctly: Number of tokens is not correct!");
           return false;
         }
       } else if (T->IsTokenAt(1, "IsotopeProductionFile", true) == true) {
@@ -780,6 +828,50 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
+      } else if (T->IsTokenAt(1, "OrientationSky", true) == true) {
+        if (T->GetNTokens() >= 4) {
+          MCOrientation O;
+          if (O.Parse(*T) == false) {
+            Typo(i, "Cannot parse token \"OrientationSky\" correctly");
+            return false;
+          }          
+          // The sky can only be rotated if in Galactic coordinates
+          if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic && O.IsOriented() == true) {
+            Typo(i, "\"OrientationSky\" can only have an orientation in Galactic coordinates!");
+            return false;            
+          }
+          Run->SetSkyOrientation(O);
+          
+        } else {
+          Typo(i, "Cannot parse token \"OrientationSky\" correctly: Number of tokens is not correct!");
+          return false;
+        }
+      } else if (T->IsTokenAt(1, "OrientationDetector", true) == true) {
+        if (T->GetNTokens() >= 4) {
+          MCOrientation O;
+          if (O.Parse(*T) == false) {
+            Typo(i, "Cannot parse token \"OrientationDetector\" correctly");
+            return false;
+          }
+          if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Local || O.IsOriented() == true) {
+            Typo(i, "\"OrientationDetector\" for the time being the detector cannot be oriented (leave at Local Fixed)!");
+            return false;            
+          }
+          Run->SetDetectorOrientation(O);
+        } else {
+          Typo(i, "Cannot parse token \"OrientationDetector\" correctly: Number of tokens is not correct!");
+          return false;
+        }
+      } else if (T->IsTokenAt(1, "Beam", true) == true) {
+        Typo(i, "A run doesn't have a beam only a source does");
+      } else if (T->IsTokenAt(1, "Spectrum", true) == true) {
+        Typo(i, "A run doesn't have a spectrum only a source does");
+      } else if (T->IsTokenAt(1, "Flux", true) == true) {
+        Typo(i, "A run doesn't have a flux only a source does");
+      } else if (T->IsTokenAt(1, "Particle", true) == true || 
+                 T->IsTokenAt(1, "ParticleType", true) == true || 
+                 T->IsTokenAt(1, "ParticleID", true) == true) {
+        Typo(i, "A run doesn't have a particle only a source does");
       }
     } // is run
   } // Step 2
@@ -866,7 +958,7 @@ bool MCParameterFile::Parse()
     if ((Source = GetSource(T->GetTokenAt(0))) != 0) {
       if (T->IsTokenAt(1, "EventList", true) == true) {
         if (T->GetNTokens() == 3) {
-          if (Source->AddToEventList(T->GetTokenAtAsString(2)) == false) {
+          if (Source->SetEventListFromFile(T->GetTokenAtAsString(2)) == false) {
             Typo(i, "Unable to add event list!");
             return false;
           }
@@ -917,7 +1009,10 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "Spectrum", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "Spectrum", true) == true) {
         if (T->GetNTokens() >= 3) {
           // Begin different spectra
           MString Type = T->GetTokenAtAsString(2);
@@ -1067,7 +1162,7 @@ bool MCParameterFile::Parse()
               return false;
             }
           } 
-          else if (Type == "bandfunction" || Type == "bf") {
+          else if (Type == "bandfunction" || Type == "bf" || Type == "band") {
             if (T->GetNTokens() == 8) {
               Source->SetSpectralType(MCSource::c_BandFunction);
               if (Source->SetEnergy(T->GetTokenAtAsDouble(3)*keV, 
@@ -1096,6 +1191,7 @@ bool MCParameterFile::Parse()
             if (T->GetNTokens() >= 4) {
               Source->SetSpectralType(MCSource::c_FileDifferentialFlux);
               MString FileName = T->GetTokenAfterAsString(3);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token Spectrum - file correctly:"
@@ -1136,8 +1232,11 @@ bool MCParameterFile::Parse()
                " Number of tokens must be larger than 3!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "Beam", true) == true) {
-        if (T->GetNTokens() > 3) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "Beam", true) == true) {
+        if (T->GetNTokens() >= 3) {
           MString Type = T->GetTokenAtAsString(2);
           Type.ToLower();
           if (Type == "farfieldpointsource" || Type == "farfieldpoint" || Type == "ffps") {
@@ -1168,19 +1267,64 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg,
                                       T->GetTokenAtAsDouble(6)*deg) == true) {
-                mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)
-                      <<"/"<<T->GetTokenAtAsDouble(4)
-                      <<"/"<<T->GetTokenAtAsDouble(5)
-                      <<"/"<<T->GetTokenAtAsDouble(6)
-                      <<" for source "<<Source->GetName()<<endl;
+                mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)<<"/"<<T->GetTokenAtAsDouble(4)<<"/"<<T->GetTokenAtAsDouble(5)<<"/"<<T->GetTokenAtAsDouble(6)<<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Cannot parse token \"Beam - far field area source\" correctly:"
-                     " Content not reasonable");
+                Typo(i, "Cannot parse token \"Beam - far field area source\" correctly: Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Cannot parse token \"Beam - far field area source\" correctly:"
-                   " Number of tokens is not correct (!= 8)!");
+              Typo(i, "Cannot parse token \"Beam - far field area source\" correctly: Number of tokens is not correct (!= 7)!");
+              return false;
+            }
+          } 
+          else if (Type == "farfieldisotropic" || Type == "isotropic") {
+            if (T->GetNTokens() == 3) {
+              Source->SetBeamType(MCSource::c_FarField,
+                                  MCSource::c_FarFieldIsotropic);
+              // Nothing else needed
+            } else {
+              Typo(i, "Cannot parse token \"Beam - far field isotropic\" correctly: Number of tokens is not correct (!= 3)!");
+              return false;
+            }
+          } 
+          else if (Type == "farfieldgaussian" || Type == "ffg") {
+            if (T->GetNTokens() == 6) {
+              Source->SetBeamType(MCSource::c_FarField,
+                                  MCSource::c_FarFieldGaussian);
+              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
+                                      T->GetTokenAtAsDouble(4)*deg,
+                                      T->GetTokenAtAsDouble(5)*deg) == true) {
+                mdebug<<"Setting far field gaussian position theta="<<T->GetTokenAtAsDouble(3)
+                      <<", phi="<<T->GetTokenAtAsDouble(4)<<", sigma="<<T->GetTokenAtAsDouble(5)
+                      <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token \"Beam - far field gaussian\" correctly: Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token \"Beam - far field gaussian\" correctly: Number of tokens is not correct!");
+              return false;
+            }
+          } 
+          else if (Type == "farfieldassymetricgaussian" || Type == "farfieldassymgauss" || Type == "ffag") {
+            if (T->GetNTokens() == 8) {
+              Source->SetBeamType(MCSource::c_FarField,
+                                  MCSource::c_FarFieldAssymetricGaussian);
+              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
+                                      T->GetTokenAtAsDouble(4)*deg,
+                                      T->GetTokenAtAsDouble(5)*deg,
+                                      T->GetTokenAtAsDouble(6)*deg,
+                                      T->GetTokenAtAsDouble(7)*deg) == true) {
+                mdebug<<"Setting far field gaussian position theta="<<T->GetTokenAtAsDouble(3)
+                      <<", phi="<<T->GetTokenAtAsDouble(4)<<", sigma1="<<T->GetTokenAtAsDouble(5)
+                      <<", simga2="<<T->GetTokenAtAsDouble(6)<<", rotation="<<T->GetTokenAtAsDouble(6)
+                      <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token \"Beam - far field assymetric gaussian\" correctly: Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token \"Beam - far field assymetric gaussian\" correctly: Number of tokens is not correct!");
               return false;
             }
           } 
@@ -1189,6 +1333,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_FarField,
                                   MCSource::c_FarFieldFileZenithDependent);
               MString FileName = T->GetTokenAfterAsString(3);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
@@ -1212,10 +1357,12 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_FarField,
                                   MCSource::c_FarFieldNormalizedEnergyBeamFluxFunction);
               MString FileName = T->GetTokenAfterAsString(3);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - far field normalized energy beam flux function\" correctly:"
                      " File not found!");
+                cout<<"File name was: "<<FileName<<endl;
                 return false;
               }
               if (Source->SetNormalizedEnergyBeamFluxFunction(FileName) == false) {
@@ -1459,6 +1606,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldBeam1DProfile);
               MString FileName = T->GetTokenAfterAsString(9);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - radial profile beam\" correctly:"
@@ -1499,6 +1647,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldBeam2DProfile);
               MString FileName = T->GetTokenAfterAsString(9);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - map profile beam\" correctly:"
@@ -1529,6 +1678,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldBeam2DProfile);
               MString FileName = T->GetTokenAfterAsString(10);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - map profile beam\" correctly:"
@@ -1567,6 +1717,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldDiffractionPoint);
               MString FileName = T->GetTokenAfterAsString(10);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - diffraction point source\" correctly:"
@@ -1605,6 +1756,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldDiffractionPointKSpace);
               MString FileName = T->GetTokenAfterAsString(10);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - diffraction point source k space\" correctly:"
@@ -1680,13 +1832,15 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(8),
                                       T->GetTokenAtAsDouble(9)*deg,
                                       T->GetTokenAtAsDouble(10)*deg) == true) {
-                mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)
+                mdebug<<"Setting position "
+                      <<T->GetTokenAtAsDouble(3)
                       <<"/"<<T->GetTokenAtAsDouble(4)
                       <<"/"<<T->GetTokenAtAsDouble(5)
                       <<"/"<<T->GetTokenAtAsDouble(6)
                       <<"/"<<T->GetTokenAtAsDouble(7)
                       <<"/"<<T->GetTokenAtAsDouble(8)
                       <<"/"<<T->GetTokenAtAsDouble(9)
+                      <<"/"<<T->GetTokenAtAsDouble(10)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
                 Typo(i, "Cannot parse token \"Beam - gaussian cone beam\" correctly:"
@@ -1696,6 +1850,44 @@ bool MCParameterFile::Parse()
             } else {
               Typo(i, "Cannot parse token \"Beam - gaussian cone beam\" correctly:"
                    " Number of tokens is not correct (!= 11)!");
+              return false;
+            }
+          }  
+          else if (Type == "fanbeam" || Type == "fb") {
+            if (T->GetNTokens() == 13) {
+              Source->SetBeamType(MCSource::c_NearField,
+                                  MCSource::c_NearFieldFanBeam);
+              // Pos, Dir1, Dir2, Radius
+              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
+                                      T->GetTokenAtAsDouble(4)*cm,
+                                      T->GetTokenAtAsDouble(5)*cm,
+                                      T->GetTokenAtAsDouble(6),
+                                      T->GetTokenAtAsDouble(7),
+                                      T->GetTokenAtAsDouble(8),
+                                      T->GetTokenAtAsDouble(9),
+                                      T->GetTokenAtAsDouble(10),
+                                      T->GetTokenAtAsDouble(11),
+                                      T->GetTokenAtAsDouble(12)*cm) == true) {
+                mdebug<<"Setting position (pos, dir1, dir2, radius) "
+                      <<T->GetTokenAtAsDouble(3)
+                      <<"/"<<T->GetTokenAtAsDouble(4)
+                      <<"/"<<T->GetTokenAtAsDouble(5)
+                      <<"/"<<T->GetTokenAtAsDouble(6)
+                      <<"/"<<T->GetTokenAtAsDouble(7)
+                      <<"/"<<T->GetTokenAtAsDouble(8)
+                      <<"/"<<T->GetTokenAtAsDouble(9)
+                      <<"/"<<T->GetTokenAtAsDouble(10)
+                      <<"/"<<T->GetTokenAtAsDouble(11)
+                      <<"/"<<T->GetTokenAtAsDouble(12)
+                      <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token \"Beam - fan beam\" correctly:"
+                     " Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token \"Beam - fan beam\" correctly:"
+                   " Number of tokens is not correct (!= 13)!");
               return false;
             }
           }  
@@ -1768,6 +1960,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldFlatMap);
               MString FileName = T->GetTokenAfterAsString(10);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"flat map\" correctly:"
@@ -1804,6 +1997,10 @@ bool MCParameterFile::Parse()
           else if (Type == "activation" || Type == "act") {
             /// Only internally used!
           }
+          else if (Type == "reversedirectiontopredecessor") {
+            Source->SetBeamType(MCSource::c_NearField,
+                                MCSource::c_NearFieldReverseDirectionToPredecessor);
+          }
           else if (Type == "volume" || Type == "vol") {
             if (T->GetNTokens() == 4) {
               Source->SetBeamType(MCSource::c_NearField,
@@ -1828,10 +2025,13 @@ bool MCParameterFile::Parse()
           }
         } else {
           Typo(i, "Cannot parse token \"Beam\" correctly:"
-               " Number of tokens must be larger than 3!");
+               " Number of tokens must be larger or equal 3!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "ParticleType", true) == true) {
+      }
+      
+      
+      else if (T->IsTokenAt(1, "ParticleType", true) == true || T->IsTokenAt(1, "Particle", true) == true || T->IsTokenAt(1, "ParticleID", true) == true) {
         if (T->GetNTokens() == 3) {
           if (Source->SetParticleType(T->GetTokenAtAsInt(2)) == true) {
             mdebug<<"Setting particle type "<<Source->GetParticleType()
@@ -1846,7 +2046,10 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "Polarization", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "Polarization", true) == true) {
         if (T->GetNTokens() >= 3) {
           MString Type = T->GetTokenAtAsString(2);
           Type.ToLower();
@@ -1919,7 +2122,10 @@ bool MCParameterFile::Parse()
           Typo(i, "Cannot parse token Polarization correctly: Number of tokens is too small!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "Successor", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "Successor", true) == true) {
         if (T->GetNTokens() == 3) {
           if (Source->SetSuccessor(T->GetTokenAtAsString(2)) == true) {
             if (GetSource(T->GetTokenAtAsString(2)) != 0) {
@@ -1938,7 +2144,10 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "IsSuccessor", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "IsSuccessor", true) == true) {
         if (T->GetNTokens() == 3) {
           if (Source->SetIsSuccessor(T->GetTokenAtAsBoolean(2)) == true) {
             mdebug<<"Setting is successor "<<Source->IsSuccessor()
@@ -1952,7 +2161,10 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "LightCurve", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "LightCurve", true) == true) {
         if (T->GetNTokens() > 3) {
           MString Type = T->GetTokenAtAsString(2);
           Type.ToLower();
@@ -1987,7 +2199,23 @@ bool MCParameterFile::Parse()
           Typo(i, "Cannot parse token LightCurve - file correctly: Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "TotalEnergyFlux", true) == true) {
+      } 
+      
+      else if (T->IsTokenAt(1, "Orientation", true) == true) {
+        if (T->GetNTokens() >= 4) {
+          MCOrientation O;
+          if (O.Parse(*T) == false) {
+            Typo(i, "Cannot parse token \"Orientation\" correctly");
+            return false;
+          }
+          Source->SetOrientation(O);
+        } else {
+          Typo(i, "Cannot parse token \"Orientation\" correctly: Number of tokens is not correct!");
+          return false;
+        }
+      }
+      
+      else if (T->IsTokenAt(1, "TotalEnergyFlux", true) == true) {
         if (T->GetNTokens() == 3) {
           if (Source->SetTotalEnergyFlux(T->GetTokenAtAsDouble(2)*keV/cm/cm) == true) {
             mdebug<<"Setting total energy flux "<<T->GetTokenAtAsDouble(2)
@@ -2006,6 +2234,7 @@ bool MCParameterFile::Parse()
       } else if (T->IsTokenAt(1, "Energy", true) == true) {
       } else if (T->IsTokenAt(1, "Intensity", true) == true) {
       } else if (T->IsTokenAt(1, "Flux", true) == true) {
+      } else if (T->IsTokenAt(1, "FarFieldTransmissionProbability", true) == true) {
       } else if (T->IsTokenAt(1, "EventList", true) == true) {
       } else {      
         Typo(i, MString("Unknown keyword: ") + T->GetTokenAt(1));
@@ -2283,7 +2512,7 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(7),
                                       T->GetTokenAtAsDouble(8),
                                       T->GetTokenAtAsDouble(9),
-		                      T->GetTokenAtAsDouble(10)*deg) == true) {
+                                      T->GetTokenAtAsDouble(10)*deg) == true) {
                 mdebug<<"Setting position "<<T->GetTokenAtAsDouble(4)
                       <<"/"<<T->GetTokenAtAsDouble(5)
                       <<"/"<<T->GetTokenAtAsDouble(6)
@@ -2543,6 +2772,21 @@ bool MCParameterFile::Parse()
           return false;
         }
       } // token
+      
+      else if (T->IsTokenAt(1, "FarFieldTransmissionProbability", true)) {
+        if (T->GetNTokens() == 3) {
+
+          if (Source->SetFarFieldTransmissionProbability(T->GetTokenAtAsString(2)) == true) {
+            mdebug<<"Setting far field transmission probability: "<<T->GetTokenAtAsString(2)<<endl;
+          } else {
+            Typo(i, "Cannot parse token FarFieldTransmissionProbability correctly");
+            return false;
+          }
+        } else {
+          Typo(i, "Cannot parse token FarFieldTransmissionProbability correctly: Number of tokens is not correct!");
+          return false;
+        }
+      }
     } // is source
   } // Step 6
 
@@ -2573,6 +2817,26 @@ bool MCParameterFile::Parse()
       }
     }
   }
+  
+  // If the source beam is of type: c_NearFieldReverseDirectionToPredecessor then make sure we have a predecessor
+  for (unsigned int r = 0; r < m_RunList.size(); ++r) {
+    vector<MCSource*>& Sources = m_RunList[r].GetSourceList();
+    for (unsigned int so = 0; so < Sources.size(); ++so) {
+      if (Sources[so]->GetBeamType() == MCSource::c_NearFieldReverseDirectionToPredecessor) {
+        bool Found = false;
+        for (unsigned int so2 = 0; so2 < Sources.size(); ++so2) {
+          if (Sources[so]->GetName() == Sources[so2]->GetSuccessor()) {
+            Found = true;
+            break;
+          }
+        }
+        if (Found == false) {
+          mout<<"The source "<<Sources[so]->GetName()<<" has a beam of type "<<Sources[so]->GetBeamTypeAsString()<<", but the source is not the successor of any other source!"<<endl;
+          return false;
+        }
+      }
+    }
+  }
 
   // Check if each region has a volume and a cut:
   for (unsigned int r = 0; r < m_RegionList.size(); ++r) {
@@ -2597,14 +2861,17 @@ bool MCParameterFile::Parse()
       vector<MCSource*>& Sources = m_RunList[r].GetSourceList();
       for (unsigned int so = 0; so < Sources.size(); ++so) {
         Sources[so]->SetStartAreaType(StartAreaType);
-        Sources[so]->SetStartAreaParameters(StartAreaParameters[0],
+        if (Sources[so]->SetStartAreaParameters(StartAreaParameters[0],
                                            StartAreaParameters[1],
                                            StartAreaParameters[2],
                                            StartAreaParameters[3],
                                            StartAreaParameters[4],
                                            StartAreaParameters[5],
                                            StartAreaParameters[6],
-                                           StartAreaParameters[7]);
+                                           StartAreaParameters[7]) == false) {
+          mout<<"The start area was not parsable!"<<endl;
+          return false;
+        }
       }
     }
   }
@@ -2646,6 +2913,11 @@ bool MCParameterFile::Parse()
 
 
   // Give the detector time constant to the activator
+  for (unsigned int r = 0; r < m_ActivatorList.size(); ++r) {
+    m_ActivatorList[r].SetHalfLifeCutOff(m_DetectorTimeConstant);
+  }
+  
+  // Check if all the volumes in the activators exist:
   for (unsigned int r = 0; r < m_ActivatorList.size(); ++r) {
     m_ActivatorList[r].SetHalfLifeCutOff(m_DetectorTimeConstant);
   }

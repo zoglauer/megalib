@@ -1,0 +1,12 @@
+# Partial beam file for cosima
+
+# Albedo proton spectrum upward and downward component combined and averaged determinined after Mizuno 2004
+# Assumptions: 
+# * Equatorial low-earth orbit 
+# * Angular distribution is isotropic 
+SpaceSim.Source AlbedoProtonMizuno
+AlbedoProtonMizuno.ParticleType           4
+AlbedoProtonMizuno.Beam                   FarFieldFileZenithDependent AlbedoProtonMizuno.beam.dat
+AlbedoProtonMizuno.Spectrum               File AlbedoProtonMizuno.spectrum.dat
+AlbedoProtonMizuno.Flux                   0.159307
+

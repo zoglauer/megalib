@@ -39,7 +39,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIEFlatToolBar)
 #endif
 
@@ -48,14 +48,14 @@ ClassImp(MGUIEFlatToolBar)
 
 
 MGUIEFlatToolBar::MGUIEFlatToolBar(const TGWindow* Parent, unsigned int Width, 
-																	 unsigned int Height, unsigned int Options) :
-	TGCompositeFrame(Parent, Width, Height, Options)
+                                   unsigned int Height, unsigned int Options) :
+  TGCompositeFrame(Parent, Width, Height, Options)
 {
   // Construct an instance of MGUIEFlatToolBar
 
-	m_Pictures = new TObjArray();
-	m_Buttons = new TObjArray();
-	m_Layouts = new TObjArray();
+  m_Pictures = new TObjArray();
+  m_Buttons = new TObjArray();
+  m_Layouts = new TObjArray();
 }
 
 
@@ -72,9 +72,9 @@ MGUIEFlatToolBar::~MGUIEFlatToolBar()
     m_Layouts->Delete();
   }
 
-	delete m_Pictures;
-	delete m_Buttons;
-	delete m_Layouts;
+  delete m_Pictures;
+  delete m_Buttons;
+  delete m_Layouts;
 }
 
 
@@ -83,27 +83,27 @@ MGUIEFlatToolBar::~MGUIEFlatToolBar()
 
 bool MGUIEFlatToolBar::Add(const TGWindow* Associate, MString IconFile, int Id, unsigned int Distance, MString ToolTip)
 {
-	// Add a button to the tool bar
+  // Add a button to the tool bar
 
-	MFile::ExpandFileName(IconFile);
+  MFile::ExpandFileName(IconFile);
 
-	TGPicture* Picture = (TGPicture*) fClient->GetPicture(IconFile);
-	if (Picture == 0) {
-		Error("bool MGUIEFlatToolBar::Add",
-					"Picture \"%s\" not found!", IconFile.Data());
-		return false;
-	}
-	MGUIEFlatToolBarButton* Button = new MGUIEFlatToolBarButton(this, Picture, Id);
-	Button->SetFlat(true);
-	Button->Associate(Associate);
-	TGLayoutHints* Layout = new TGLayoutHints(kLHintsTop | kLHintsLeft, Distance, 0, 0, 0);
-	AddFrame(Button, Layout);
+  TGPicture* Picture = (TGPicture*) fClient->GetPicture(IconFile);
+  if (Picture == 0) {
+    Error("bool MGUIEFlatToolBar::Add",
+          "Picture \"%s\" not found!", IconFile.Data());
+    return false;
+  }
+  MGUIEFlatToolBarButton* Button = new MGUIEFlatToolBarButton(this, Picture, Id);
+  Button->SetFlat(true);
+  Button->Associate(Associate);
+  TGLayoutHints* Layout = new TGLayoutHints(kLHintsTop | kLHintsLeft, Distance, 0, 0, 0);
+  AddFrame(Button, Layout);
 
-	m_Pictures->AddLast(Picture);
-	m_Buttons->AddLast(Button);
-	m_Layouts->AddLast(Layout);
+  m_Pictures->AddLast(Picture);
+  m_Buttons->AddLast(Button);
+  m_Layouts->AddLast(Layout);
 
-	return true;
+  return true;
 }
 
 // MGUIEFlatToolBar.cxx: the end...

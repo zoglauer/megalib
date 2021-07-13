@@ -19,12 +19,12 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 # Compiler & linker options:
 CXX           = icc
-CXXFLAGS      = $(OPT) -fPIC -wd1572 -wd1125 -wd654 -wd191 -wd1224 -wd1476 -wd913 -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___LINUX___
+CXXFLAGS      = $(OPT) -fPIC -wd1572 -wd1125 -wd654 -wd191 -wd1224 -wd1476 -wd913 -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___LINUX___ -D___CLING___
 DEFINES       = -UHARDWARE
 LD            = icc
 LDFLAGS       = $(OPT) -D___LINUX___
 SOFLAGS       = -shared  
-LIBS          = $(ROOTLIBS) -lpthread -lThread -lMinuit -lGeom -lSpectrum
+LIBS          = $(ROOTLIBS) -lpthread -lThread -lMinuit -lGeom -lSpectrum -lTMVA
 GLIBS         = $(ROOTGLIBS) 
 DEPFLAGS      = -M
 

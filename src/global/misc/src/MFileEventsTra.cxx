@@ -1,5 +1,5 @@
 /*
- * MFileEventsTra.cxx 
+ * MFileEventsTra.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -38,12 +38,15 @@
 #include "MPairEvent.h"
 #include "MPhotoEvent.h"
 #include "MMuonEvent.h"
+#include "MPETEvent.h"
+#include "MMultiEvent.h"
 #include "MUnidentifiableEvent.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MFileEventsTra)
 #endif
 
@@ -76,13 +79,11 @@ MFileEventsTra::MFileEventsTra() : MFileEvents()
   m_StopThread = false;
   m_Thread = 0;
 
-  m_AutomaticProgressUpdates = true;
-  
   m_Version = 1;
-  
+
   m_NDataSets = 0;
   m_DataSets.clear();
-  
+
   // This seems to be a good number for the avaerage analysis as of 2009 on a E5420 quad core
   m_MinimumNDataSets = 100;
   // This seems to be a good maximum number for the avaerage analysis as of 2009 on a E5420 quad core
@@ -98,6 +99,7 @@ MFileEventsTra::~MFileEventsTra()
 {
   // Delete this instance of MFileEventsTra
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -133,8 +135,10 @@ bool MFileEventsTra::Open(MString FileName, unsigned int Way)
   // Derived open which initializes the include file
 
   m_IncludeFileUsed = false;
-  m_IncludeFile = new MFileEventsTra();
-  m_IncludeFile->SetIsIncludeFile(true);
+  MFileEventsTra* I = new MFileEventsTra();
+  I->SetIsIncludeFile(true);
+  I->SetFastFileParsing(m_Fast);
+  m_IncludeFile = dynamic_cast<MFileEvents*>(I);
 
   m_MoreEvents = true;
 
@@ -250,17 +254,16 @@ MPhysicalEvent* MFileEventsTra::GetNextEvent()
 {
   // Return the next event from the list, wait if non is present...
 
-  if (m_AutomaticProgressUpdates == true) {
-    if (UpdateProgress() == false) {
-      return 0;
-    }
+  if (UpdateProgress() == false) {
+    return nullptr;
   }
-  
+
+
   if (m_Threaded == false) {
     return ReadNextEvent();
   } else {
     // As long as we have still events on file or in the storage, try to get it
-      
+
     // Due to a complex locking mechanism - we need an endless while loop...
     // (If you think, you don't need this loop, you forgot, how threads work.)
     while (true) {
@@ -293,8 +296,19 @@ MPhysicalEvent* MFileEventsTra::GetNextEvent()
           m_DataSets.pop_front();
           m_NDataSets--;
           TThread::UnLock();
+
+          // update the end of the observation time
+          if (m_HasObservationTime == false) {
+            if (m_HasStartObservationTime == false) {
+              m_StartObservationTime = P->GetTime();
+              m_HasStartObservationTime = true;
+            }
+            m_EndObservationTime = P->GetTime();
+            m_HasEndObservationTime = true;
+          }
+
           return P;
-        } 
+        }
       }
       // We exit when there are no more events left
       if (m_MoreEvents == false && m_NDataSets == 0) {
@@ -305,7 +319,7 @@ MPhysicalEvent* MFileEventsTra::GetNextEvent()
 
     } // while (true)
   }
-  
+
   // No more events left or user abort...
   return 0;
 }
@@ -319,15 +333,20 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
   // Return the next event... or 0 if it is the last one
   // So remember to test for more events!
 
-  MPhysicalEvent* Phys = 0;
+  MPhysicalEvent* Phys = nullptr;
 
   if (m_IncludeFileUsed == true) {
     Phys = ((MFileEventsTra*) m_IncludeFile)->GetNextEvent();
-    if (Phys != 0) {
+    if (Phys != nullptr) {
       return Phys;
     } else {
+      if (m_IncludeFile->IsCanceled() == true) {
+        m_Canceled = true;
+      }
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
+
+      if (m_Canceled == true) return nullptr;
     }
   }
 
@@ -336,9 +355,9 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
   // Read until we reach a CO or PA or <to be continued>
   MString Line;
   while (IsGood() == true) {
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
-    
+
     if (Line[0] == 'E' && Line[1] == 'T') {
       if (Line.Length() < 5) {
         cout<<"Error reading event type"<<endl;
@@ -369,6 +388,18 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
         m_EventType = MPhysicalEvent::c_Muon;
         Phys = (MPhysicalEvent*) P;
         break;
+      } else  if (Line[3] == 'P' && Line[4] == 'T') {
+        MPETEvent* P = new MPETEvent();
+        P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
+        m_EventType = MPhysicalEvent::c_Muon;
+        Phys = (MPhysicalEvent*) P;
+        break;
+      } else  if (Line[3] == 'M' && Line[4] == 'T') {
+        MMultiEvent* P = new MMultiEvent();
+        P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
+        m_EventType = MPhysicalEvent::c_Muon;
+        Phys = (MPhysicalEvent*) P;
+        break;
       } else  if (Line[3] == 'U' && Line[4] == 'N') {
         MUnidentifiableEvent* P = new MUnidentifiableEvent();
         P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
@@ -379,7 +410,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
         cout<<"Unknown event"<<endl;
         m_EventType = MPhysicalEvent::c_Unknown;
         break;
-      }     
+      }
     } else if (Line[0] == 'N' && Line[1] == 'F') {
 
       if (OpenNextFile(Line) == 0) {
@@ -403,6 +434,11 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
     }
   }
 
+  // If this is the case, we have reached the end of the file
+  if (Phys == nullptr) {
+    ReadFooter(true);
+  }
+
   return Phys;
 }
 
@@ -412,7 +448,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
 
 bool MFileEventsTra::AddText(const MString& Text)
 {
-  
+
   if (m_Way == c_Read) {
     merr<<"Only valid if file is in write-mode!"<<endl;
     massert(m_Way != c_Read);
@@ -451,7 +487,7 @@ bool MFileEventsTra::AddEvent(MPhysicalEvent* Tra)
     massert(m_Way != c_Read);
     return false;
   }
-  
+
   if (m_IsOpen == false) return false;
 
   if (m_IncludeFileUsed == true) {

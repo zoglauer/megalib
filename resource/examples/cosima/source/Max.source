@@ -1,25 +1,23 @@
 # Max is my default COSI-like quick sim. This is the source for it
-Version         1
-Geometry        $(MEGALIB)/resource/examples/geomega/special/Max.geo.setup
+
+# Global parameters
+Version                   1
+Geometry                  $(MEGALIB)/resource/examples/geomega/special/Max.geo.setup
 
 # Physics list
-PhysicsListEM                        LivermorePol
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM             LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
+StoreSimulationInfo       all
 
-
+# Run & source parameters
 Run SpaceSim
 SpaceSim.FileName         Max
 SpaceSim.NTriggers        1000000
 
 SpaceSim.Source Maxi
-Maxi.ParticleType           1
-Maxi.Beam                   FarFieldPointSource 0 0
-Maxi.Spectrum               Mono 511
-Maxi.Flux                   1.0
+Maxi.ParticleType         1
+Maxi.Beam                 FarFieldPointSource 0 0
+Maxi.Spectrum             Mono 511
+Maxi.Flux                 1.0
 

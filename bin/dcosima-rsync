@@ -7,6 +7,7 @@
 # Positive: number of available simulation slots
 
 
+# Show help
 commandhelp() {
   echo ""
   echo "dcosima-rsync - rsync all files back";
@@ -16,13 +17,42 @@ commandhelp() {
   echo ""
   echo "Options:"
   echo "  --directory=[directory name]: The directory where to store the data"
-  echo "  --instances=[number]: The number of running indstances, i.e. the number of expected instances"
+  echo "  --instances=[number]: The number of total expected sim files (may be larger than the instances)"
+  echo "  --sleep=[seconds]: Sleep time between rsync loops (default: 20 seconds, max: 1000 seconds)"
   echo "  --help: Show this help."
   echo ""
   echo "";
   echo "Example: "
   echo "  dcosima-rsync --dir=Run_ID87236489726";
   echo "";
+}
+
+
+# Sync all data
+sync() {
+  # Parse the configuration file
+  RSYNCS=( )
+  while read LINE; do
+    #echo "Line: ${LINE}"
+    RSYNCS[${#RSYNCS[*]}]=${LINE}
+  done < dcosima-rsync.cfg
+
+  #echo "Found the following rsyncs: ${RSYNCS[@]}"
+
+  # Download all data
+  for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
+    #echo "psync: Checking ${RSYNCS[$m]}"
+    if [[ ${RSYNCS[$m]} == rsync* ]]; then
+      # Wait until we have no more than 6 of our rsync processes running, otherwise our system might be slowed down too much
+      mwait -p="rsync -az --append-verify" -i=4
+      echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
+      eval ${RSYNCS[$m]}
+    elif [[ ${RSYNCS[$m]} == DONE ]]; then
+      break
+    else 
+      echo "ERROR: Unknown rsync command: ${RSYNCS[$m]}"
+    fi  
+  done  
 }
 
 
@@ -42,6 +72,7 @@ done
 # Default options:
 DIRECTORY=""
 INSTANCES=0
+SLEEP=20
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
@@ -51,6 +82,8 @@ for C in "${CMD[@]}"; do
     #DIRECTORY=$(readlink -f ${DIRECTORY})
   elif [[ ${C} == *-i*=* ]]; then
     INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-s*=* ]]; then
+    SLEEP=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -75,12 +108,12 @@ if [ "${DIRECTORY}" == "" ]; then
 fi
 if [[ ! -d ${DIRECTORY} ]]; then 
   echo " "
-  echo "ERROR: The directory must exist"
+  echo "ERROR: The directory (\"${DIRECTORY}\") must exist"
   exit 1
 fi
 echo " * Directory: ${DIRECTORY}"
 
-if [ ${INSTANCES} -gt 0 ]; then
+if [ ${INSTANCES} -ge 0 ]; then
   echo " * Simulations instances: ${INSTANCES}"
 else
   echo " "
@@ -89,101 +122,77 @@ else
   exit 1
 fi
 
+if [ ${SLEEP} -lt 0 ]; then
+  SLEEP=0
+fi
+if [ ${SLEEP} -gt 1000 ]; then
+  SLEEP=1000
+fi
+echo " * Sleep time between rsync loops: ${SLEEP}"
+
+
 cd ${DIRECTORY}
 
-INITIALWAIT=0
 MAXINITIALWAIT=300
 
-LASTWAIT=0
+STARTLASTWAIT=${SECONDS}
 MAXLASTWAIT=120
 
 
 echo ""
 echo "Starting..."
 
-while true; do
-  # Sleep .....
-  echo "dcosima-rsync: Waiting for 20 seconds for more data to be simulated..." 
-  sleep 20
-  INITIALWAIT=$((INITIALWAIT + 20))
-  LASTWAIT=$((LASTWAIT + 20))
   
+# Cases to consider:
+# A) Everything normal --> Wait until all expected sim files are there & nothing is running any more
+# B) No free slot -- nothing got started yet --> Wait until all expected sim files are there & nothing is running any more
+# C) Extremely short simulations -- running instances will always be 0 --> Wait until all expected sim files are there & nothing is running any more
+# D) Long time before first events and thus sim file show up --> Wait until all expected sim files are there & nothing is running any more
+# E) Faulty simulation -- nothing will ever get simulated --> dcosima should do a test sim...
+# F) dcosima got aborted and we never get all sims --> dcosima must do a kill all, a last rsync, and a final clean
+# G) More than one sim file per cosima run --> dcosima must set the correct number of sim files 
+
+
+KEEPGOING=true
+while ${KEEPGOING}; do
+
+  # Sleep .....
+  echo "dcosima-rsync: Waiting for ${SLEEP} seconds for more data to be simulated..." 
+  sleep ${SLEEP}
+  
+  # Check if we have a configuration file
   if [ ! -f dcosima-rsync.cfg ]; then
     echo "ERROR: we must have a dcosima-rsync.cfg file. Make sure it exists before you start dcosima-rsync! Terminating!"
     exit 
   fi
-  
-  # Parse the configuration file
-  RSYNCS=( )
-  while read LINE; do
-    #echo "Line: ${LINE}"
-    RSYNCS[${#RSYNCS[*]}]=${LINE}
-  done < dcosima-rsync.cfg
-
-  #echo "Found the following rsyncs: ${RSYNCS[@]}"
-
-  # Download data
-  MODIFIED=0
-  ALLINCLUDED=0
-  SUM=0
-  NEWSUM=0
-  SIMFILECOUNT=`ls -1 *.p*.inc*.id*.sim* 2>/dev/null | wc -l`
-  if [ ${SIMFILECOUNT} != 0 ]; then
-    SUM=`du -cb *.p*.inc*.id*.sim* | tail -n 1 | awk '{ print $1 }'`
-  fi
-  for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
-    #echo "psync: Checking ${RSYNCS[$m]}"
-    if [[ ${RSYNCS[$m]} == rsync* ]]; then
-      echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
-      eval ${RSYNCS[$m]}
-    elif [[ ${RSYNCS[$m]} == DONE ]]; then
-      ALLINCLUDED=1
-      break
-    else 
-      echo "ERROR: Unknown rsync command: ${RSYNCS[$m]}"
-    fi  
-  done  
-
-  SIMFILECOUNT=`ls -1 *.p*.inc*.id*.sim* 2>/dev/null | wc -l`
-  if [ ${SIMFILECOUNT} != 0 ]; then
-    NEWSUM=`du -cb *.p*.inc*.id*.sim* | tail -n 1 | awk '{ print $1 }'`
-  fi
-  
-  if [ "${NEWSUM}" == "0" ]; then
-    if [ "${INITIALWAIT}" -ge "${MAXINITIALWAIT}" ]; then
-      echo "dcosima-rsync: Did not get any data for ${INITIALWAIT} seconds! Terminating!"
-      MODIFIED=0
-    else
-      echo "dcosima-rsync: Did not yet get any data (already waiting ${INITIALWAIT} seconds)... waiting longer..."
-      MODIFIED=1
-    fi
-  else 
-    if [ "${NEWSUM}" != "${SUM}" ]; then
-      echo "dcosima-rsync: Downloaded more data (file size before: ${SUM} Bytes and after: ${NEWSUM} Bytes)"
-      MODIFIED=1
-      LASTWAIT=0
-    elif [ "${NEWSUM}" == "${SUM}" ]; then
-      echo "dcosima-rsync: No new data since ${LASTWAIT} seconds..."
-      if [ "${LASTWAIT}" -ge "${MAXLASTWAIT}" ]; then
-        echo "dcosima-rsync: No more new data since ${LASTWAIT} seconds! Assuming we are done!"
-        MODIFIED=0
-      else
-        if [ "${SIMFILECOUNT}" == "${INSTANCES}" ]; then
-          echo "dcosima-rsync: Waiting for the last file to finish..."
-        else
-          echo "dcosima-rsync: Waiting for more data (${SIMFILECOUNT} of ${INSTANCES} sim files are here)..."
-        fi
-        MODIFIED=1
-      fi
-    fi
-  fi
-  
-  if [ ${MODIFIED} -eq 0 ] && [ ${ALLINCLUDED} -eq 1 ]; then
-    break;
-  fi
     
-done
+  # Check how many instances are running
+  RUNNING=$(dcosima-listrunning | grep ${DIRECTORY} | awk '{ print $3 }');
+  if [[ ${RUNNING} == "" ]]; then RUNNING=0; fi
+  
+  # Do the sync
+  sync
+  
+  # If nothing was running before check if it is now
+  if [ ${RUNNING} -eq 0 ]; then
+    RUNNING=$(dcosima-listrunning | grep ${DIRECTORY} | awk '{ print $3 }');
+    if [[ ${RUNNING} == "" ]]; then RUNNING=0; fi
+  fi
+  
+  # Check how many instances have started, i.e. how many sim files we have 
+  SIMFILECOUNT=`ls -U -1 *.p*.inc*.id*.sim* 2>/dev/null | wc -l`
 
+  # If we have all files and nothing is running any more (before and after), we are done, but do one last rsync to make sure nothing finished between our rsyncs:
+  if [ ${SIMFILECOUNT} -ge ${INSTANCES} ] && [ ${RUNNING} -eq 0 ]; then
+    echo "dcosima-rsync: All expected sim files present and no more instances running. Doing a final sync."
+    sync
+    echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
+    KEEPGOING=false
+  else
+    echo "dcosima-rsync: Expecting more data later: Sim files present: ${SIMFILECOUNT}/${INSTANCES}. Running instances: ${RUNNING}"    
+  fi
+done
+  
 chown ${USER}:${USER} *
 
 echo "dcosima-rsync: All rsync processes have finished! Done!"

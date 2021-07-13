@@ -41,7 +41,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDACS)
 #endif
 
@@ -189,52 +189,6 @@ MVector MDACS::GetPositionInDetectorVolume(const unsigned int xGrid,
   // 
 
   return Volume->GetShape()->GetUniquePosition();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDACS::GetGeant3() const
-{
-  ostringstream out;
-
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<"      SENVOL("<<m_SVs[i]->GetSensitiveVolumeID()<<") = '"<<m_SVs[i]->GetShortName()<<"'"<<endl;
-    out<<"      SENDET("<<m_SVs[i]->GetSensitiveVolumeID()<<") = "<<m_ID<<endl;
-  }
-
-  out<<"      DETNR("<<m_ID<<") = "<<4<<endl;
-  out<<"      DETTYP("<<m_ID<<") = 5"<<endl;
-  out<<endl;
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDACS::GetMGeant() const
-{
-  ostringstream out;
-
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    MString Name = m_SVs[i]->GetShortName();
-    Name.ToUpper();
-    out<<"SENV "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<Name<<endl;
-    out<<"SEND "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<m_ID<<endl;
-    out<<"SEUP "<<m_SVs[i]->GetSensitiveVolumeID()<<" "
-       <<m_SVs[i]->GetShape()->GetUniquePosition().GetX()<<" "
-       <<m_SVs[i]->GetShape()->GetUniquePosition().GetY()<<" "
-       <<m_SVs[i]->GetShape()->GetUniquePosition().GetZ()<<endl;
-  }
-
-  out<<"DTNR "<<m_ID<<" "<<4<<endl;
-  out<<"DTTP "<<m_ID<<" 5"<<endl;
-  out<<endl;
-
-  return out.str().c_str();  
 }
 
 

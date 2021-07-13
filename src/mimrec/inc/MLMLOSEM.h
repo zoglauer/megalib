@@ -38,13 +38,22 @@ class MLMLOSEM : public MLMLClassicEM
   virtual ~MLMLOSEM();
 
   //! Set the number of subsets:
-  void SetNSubSets(unsigned int NSubSets) { m_NSubSets = NSubSets; if (m_NSubSets < 1) m_NSubSets = 1; }
+  void SetNSubSets(unsigned int NSubSets);
 
   //! performs one iteration of the algorithm
   virtual bool DoOneIteration();
 
   // protected methods:
  protected:
+  //! Shuffle the events around - does notthing here, but in ordered subsets algorithm
+  virtual void Shuffle();
+  //! Determine the apportionment of the events for the threads
+  virtual void CalculateEventApportionment();
+  //! Entry point for the convolution thread
+  virtual void ConvolveThreadEntry(unsigned int ThreadID, unsigned int Start, unsigned int Stop);
+  //! Entry point for the deconvolution thread
+  virtual void DeconvolveThreadEntry(unsigned int ThreadID, unsigned int Start, unsigned int Stop);
+
 
   // private methods:
  private:
@@ -53,17 +62,19 @@ class MLMLOSEM : public MLMLClassicEM
 
   // protected members:
  protected:
-  //! The number of subsets
-  unsigned int m_NSubSets;
+  //! The number of Set subsets
+  unsigned int m_NSetSubSets;
+  //! The number of Set subsets
+  unsigned int m_NUsedSubSets;
 
 
   // private members:
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
-  ClassDef(MLMLOSEM, 0) // my "classic" OS-EM 
+  ClassDef(MLMLOSEM, 0) // my "classic" OS-EM
 #endif
 
 };

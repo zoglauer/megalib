@@ -1,0 +1,49 @@
+<!-- neodym-config
+Type:              BlogEntry
+Date:              2018-06-06
+-->
+
+
+<neodym-blog-title>
+Python bindings
+</neodym-blog-title>
+
+<neodym-blog-summary>
+The latest version of MEGAlib on the experimental branch now comes with full Python bindings. 
+</neodym-blog-summary>
+
+
+<neodym-blog-body>
+<p>After realizing that, nowadays, all the undergraduates only know Python as programming languages, it was time to create MEGAlib Python bindings. Admittedly, they are not actual self-created Python bindings, but just the automatically generated Python bindings which come with full integration of MEGAlib in ROOT. As consequence, you get them by just importing ROOT and loading the MEGAlib library:</p>
+<pre><code>
+import ROOT as M
+
+# Load MEGAlib into ROOT
+M.gSystem.Load("$(MEGALIB)/lib/libMEGAlib.so")
+
+# Initialize MEGAlib
+G = M.MGlobal()
+G.Initialize()
+
+# We are good to go ...
+
+GeometryName = "$(MEGALIB)/resource/examples/geomega/special/Max.geo.setup"
+FileName = "Test.inc1.id1.tra"
+
+# Load geometry:
+Geometry = M.MDGeometryQuest()
+if Geometry.ScanSetupFile(M.MString(GeometryName)) == True:
+&nbsp;&nbsp;&nbsp;&nbsp;print("Geometry " + GeometryName + " loaded!")
+else:
+&nbsp;&nbsp;&nbsp;&nbsp;print("Unable to load geometry " + GeometryName + " - Aborting!")
+&nbsp;&nbsp;&nbsp;&nbsp;quit()
+</code></pre>
+
+<p>Anyway, lots of fun using MEGAlib with python!</p>
+
+<br>
+
+<p>And a little disclaimer:<br>Obviously I cannot test everything in python, thus if you encounter any issues, just let me know.</p>
+
+</neodym-blog-body>
+

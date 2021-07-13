@@ -52,7 +52,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MBackprojection)
 #endif
 
@@ -60,7 +60,7 @@ ClassImp(MBackprojection)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MBackprojection::MBackprojection(int CoordinateSystem) : MProjection(CoordinateSystem)
+MBackprojection::MBackprojection(MCoordinateSystem CoordinateSystem) : MProjection(CoordinateSystem)
 {
   // Initialize one MBackprojection-object. This is the base class for all other
   // Backprojection classes, and provides some elemetary data:
@@ -73,8 +73,9 @@ MBackprojection::MBackprojection(int CoordinateSystem) : MProjection(CoordinateS
   // reconstruction - due to performance reasons, the correct setting is NOT,
   // not tested!
 
-  m_Response = 0;
-  m_Geometry = 0;
+  m_Response = nullptr;
+  m_Efficiency = nullptr;
+  m_Geometry = nullptr;
   m_UseAbsorptions = false;
 }
 
@@ -87,42 +88,9 @@ MBackprojection::~MBackprojection()
   // standard destructor
 
   delete m_Response;
+  // geometry and efficiency do not get deleted...
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MBackprojection::SetViewportDimensions(double x1Min, double x1Max, int x1NBins, 
-                                            double x2Min, double x2Max, int x2NBins,
-                                            double x3Min, double x3Max, int x3NBins,
-                                            MVector xAxis, MVector zAxis)
-{
-  // Set the dimensions of the viewport (minimum and maximum x and y-values, 
-  // number of bins)
-
-  m_x1Min = x1Min;
-  m_x1Max = x1Max;
-  m_x1NBins = x1NBins;
-  m_x2Min = x2Min;
-  m_x2Max = x2Max;
-  m_x2NBins = x2NBins;
-  m_x3Min = x3Min;
-  m_x3Max = x3Max;
-  m_x3NBins = x3NBins;
-
-  m_x1IntervalLength = (m_x1Max - m_x1Min)/m_x1NBins;
-  m_x2IntervalLength = (m_x2Max - m_x2Min)/m_x2NBins;
-  m_x3IntervalLength = (m_x3Max - m_x3Min)/m_x3NBins;
-
-  //cout<<"x:"<<m_x1Min*grad<<"!"<<m_x1Max*grad<<"!"<<m_x1NBins<<endl;
-  //cout<<"y:"<<m_x2Min*grad<<"!"<<m_x2Max*grad<<"!"<<m_x2NBins<<endl;
-  //cout<<"ILengths: "<<m_x1IntervalLength*grad<<"!"<<m_x2IntervalLength*grad<<"!"<<m_x1Min*grad<<endl;
-
-  m_NImageBins = m_x1NBins*m_x2NBins*m_x3NBins;
-
-  return;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -148,7 +116,7 @@ void MBackprojection::Rotate(double &x, double &y, double &z)
     P = m_Event->GetDetectorRotationMatrix() * P;
   }
   // Apply the galactic pointing rotation to the event if we have galactic coordinates
-  if (m_Event->HasGalacticPointing() == true && m_CoordinateSystem == c_Galactic) {
+  if (m_Event->HasGalacticPointing() == true && m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
     P = m_Event->GetGalacticPointingRotationMatrix() * P;
   }
     
@@ -176,7 +144,6 @@ bool MBackprojection::Assimilate(MPhysicalEvent* Event)
 
   return true;
 }
-
 
 
 // MBackprojection: the end...

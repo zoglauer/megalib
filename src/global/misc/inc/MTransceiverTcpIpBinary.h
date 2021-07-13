@@ -54,7 +54,7 @@ class MTransceiverTcpIpBinary
   //! Standard constructor given a name, host name, and port:
   MTransceiverTcpIpBinary(MString Name = "A TCP/IP transceiver in binary mode", MString HostName = "localhost", unsigned int Port = 9090);
   //! Default desctructor
-  ~MTransceiverTcpIpBinary();
+  virtual ~MTransceiverTcpIpBinary();
 
   //! Set the name of the transceiver
   void SetName(MString Name) { m_Name = Name; }
@@ -223,7 +223,7 @@ class MTransceiverTcpIpBinary
   bool m_IsServer;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MTransceiverTcpIpBinary, 0) // no description
 #endif

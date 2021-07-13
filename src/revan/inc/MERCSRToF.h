@@ -26,7 +26,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MERConstruction.h"
 #include "MERCSR.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MComptonEvent.h"
 #include "MVector.h"
 #include "MREAMDriftChamberEnergy.h"
@@ -72,7 +72,7 @@ class MERCSRToF : public MERCSR
   // private members:
  private:
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSRToF, 0) // no description
 #endif

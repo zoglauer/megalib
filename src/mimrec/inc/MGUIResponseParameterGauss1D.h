@@ -39,8 +39,7 @@ class MGUIResponseParameterGauss1D : public MGUIDialog
   // Public Interface:
  public:
   //! DEfault constructor
-  MGUIResponseParameterGauss1D(const TGWindow* Parent, const TGWindow* Main, 
-                               MSettingsImaging* Data);
+  MGUIResponseParameterGauss1D(const TGWindow* Parent, const TGWindow* Main, MSettingsImaging* Data);
   //! Default destructor
   virtual ~MGUIResponseParameterGauss1D();
 
@@ -75,7 +74,7 @@ class MGUIResponseParameterGauss1D : public MGUIDialog
   static const int c_AbsorptionId = 50;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIResponseParameterGauss1D, 0)
 #endif

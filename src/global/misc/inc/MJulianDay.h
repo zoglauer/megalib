@@ -18,10 +18,10 @@
 
 // ROOT libs:
 #include <TROOT.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MString.h"
 
 // Forward declarations:
 
@@ -29,7 +29,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MJulianDay : public TObject
+class MJulianDay 
 {
   // public interface:
  public:
@@ -72,7 +72,7 @@ class MJulianDay : public TObject
 
   MString GetUTCString();
 
-	static void BusyWait(int Microseconds);
+  static void BusyWait(int Microseconds);
 
 
   // protected methods:
@@ -102,7 +102,7 @@ class MJulianDay : public TObject
   double m_Day;
   double m_Fraction;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MJulianDay, 1) // Representation of Julian Day as two doubles (days, and fraction of the day)
 #endif

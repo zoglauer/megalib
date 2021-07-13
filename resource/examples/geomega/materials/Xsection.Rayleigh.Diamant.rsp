@@ -1,5 +1,5 @@
 # Macroscopic cross section for Rayleigh scattering
-# Derived from Geant4 version 1021
+# Derived from Geant4 version 1023
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Rayleigh scattering cross section for Diamant
 CE false
-HA 1467481022
+HA 3013636097
 
 R1         1.000000 4.322324e+00
 R1         1.047129 4.260373e+00

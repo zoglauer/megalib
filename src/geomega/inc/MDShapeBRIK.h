@@ -53,15 +53,11 @@ class MDShapeBRIK : public MDShape
 
   virtual bool IsInside(const MVector& Pos, const double Tolerance = 0, const bool PreferOutside = false);
 
+  virtual double DistanceOutsideIn(const MVector& Pos, const MVector& Dir, double Tolerance = 0);
+  
+  
   MString ToString();
   MString GetGeomega() const;
-
-  // Old Geant3/MGGPOD interface
-  MString GetGeant3DIM(MString ShortName);
-  MString GetGeant3DATA(MString ShortName);
-  MString GetGeant3ShapeName();
-  int GetGeant3NumberOfParameters();
-  MString GetMGeantDATA(MString ShortName);
 
 
   double GetSizeX();
@@ -99,7 +95,7 @@ class MDShapeBRIK : public MDShape
   double m_Dz;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeBRIK, 0) // no description
 #endif

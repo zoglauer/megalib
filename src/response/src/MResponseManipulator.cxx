@@ -52,8 +52,10 @@ using namespace std;
 #include "MGlobal.h"
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MTimer.h"
 #include "MFileResponse.h"
 #include "MResponseMatrix.h"
+#include "MResponseMatrixON.h"
 #include "MResponseMatrixO1.h"
 #include "MResponseMatrixO2.h"
 #include "MResponseMatrixO3.h"
@@ -80,6 +82,7 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
 {
   // Intentionally left blanck
 
+  m_Statistics = false;
   m_Append = false;
   m_Show = false;
   m_Divide = false;
@@ -107,7 +110,7 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
 //   Stops[Number-1] = 1.0;
 //   for (unsigned int i = 1; i < Number-1; ++i) {
 //     double Value = (0.3*Red[i]+0.58*Green[i]+0.11*Blue[i]-Min)/(Max-Min);
-//     Stops[i] = Value; 
+//     Stops[i] = Value;
 //   }
 
 //   gStyle->CreateGradientColorTable(Number, Stops, Red, Green, Blue, 1000);
@@ -122,7 +125,7 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
   gStyle->SetTitleOffset(1.3, "X");
   gStyle->SetTitleOffset(1.6, "Y");
   //gStyle->SetTitleOffset(1.2*gStyle->GetTitleOffset("Z"), "Z");
-  
+
   gStyle->SetPadLeftMargin(0.16);
   gStyle->SetPadBottomMargin(0.15);
   gStyle->SetPadRightMargin(0.14);
@@ -174,7 +177,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
-  string Option;
+  MString Option;
 
   // Check for help
   for (int i = 1; i < argc; i++) {
@@ -187,30 +190,30 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-f" || Option == "-a" || Option  == "-j" || Option == "-s") {
-			if (!((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs an argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
-		// Two arguments:
-		else if (Option == "-d" || Option == "-r") {
-			if (!((argc > i+2) && 
-            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
+      if (!((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
+        cout<<"Error: Option "<<argv[i][1]<<" needs an argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    }
+    // Two arguments:
+    else if (Option == "-d" || Option == "-r") {
+      if (!((argc > i+2) &&
+            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) &&
             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
+        cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
     }
     // Multiple arguments:
-// 		else if (Option == "-v") {
-// 			if (!((argc > i+10) && 
+//    else if (Option == "-v") {
+//      if (!((argc > i+10) &&
 //             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) &&
 //             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) &&
 //             (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) &&
@@ -224,61 +227,57 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
 //             (argv[i+11][0] != '-' || isalpha(argv[i+11][1]) == 0) &&
 //             (argv[i+12][0] != '-' || isalpha(argv[i+12][1]) == 0) &&
 //             (argv[i+13][0] != '-' || isalpha(argv[i+13][1]) == 0))){
-// 				cout<<"Error: Option "<<argv[i][1]<<" needs ten arguments!"<<endl;
-// 				cout<<Usage.str()<<endl;
-// 				return false;
-// 			}
-// 		}
+//        cout<<"Error: Option "<<argv[i][1]<<" needs ten arguments!"<<endl;
+//        cout<<Usage.str()<<endl;
+//        return false;
+//      }
+//    }
 
-		// Then fulfill the options:
+    // Then fulfill the options:
     if (Option == "-f") {
       m_FileName = argv[++i];
-			cout<<"Accepting file name: "<<m_FileName<<endl;
+      cout<<"Accepting file name: "<<m_FileName<<endl;
     } else if (Option == "-a") {
       m_AppendFileNames.push_back(argv[++i]);
       m_Append = true;
-			cout<<"Accepting file name for appending: "<<m_AppendFileNames.back()<<endl;
+      cout<<"Accepting file name for appending: "<<m_AppendFileNames.back()<<endl;
     } else if (Option == "-d") {
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Divide = true;
-			cout<<"Accepting file name for dividing: "
-          <<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
+      cout<<"Accepting file name for dividing: "<<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
     } else if (Option == "-r") {
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Ratio = true;
-			cout<<"Accepting file name for ratio: "
-          <<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
+      cout<<"Accepting file name for ratio: "<<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
     } else if (Option == "-p") {
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Probability = true;
-			cout<<"Accepting file name for probability: "
-          <<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
+      cout<<"Accepting file names for probability operation: "<<m_DividendFileName<<" / ("<<m_DividendFileName<<" + "<<m_DivisorFileName<<")"<<endl;
     } else if (Option == "-j") {
       m_Prefix = argv[++i];
       m_Join = true;
-			cout<<"Accepting file prefix for join: "
-          <<m_Prefix<<endl;
+      cout<<"Accepting file prefix for join: "<<m_Prefix<<endl;
     } else if (Option == "-s") {
       m_FileName = argv[++i];
       m_Statistics = true;
-			cout<<"Accepting show statistics for "<<m_FileName<<endl;
+      cout<<"Accepting show statistics for "<<m_FileName<<endl;
     } else if (Option == "-m") {
       m_NSmooths = atoi(argv[++i]);
-			cout<<"Accepting to smooth view "<<m_NSmooths<<" times"<<endl;
+      cout<<"Accepting to smooth view "<<m_NSmooths<<" times"<<endl;
     } else if (Option == "-n") {
       m_Normalized = true;
-			cout<<"Accepting view normalized "<<endl;
+      cout<<"Accepting view normalized "<<endl;
     } else if (Option == "-z") {
       m_Zero = true;
-			cout<<"Accepting view zeroed "<<endl;
+      cout<<"Accepting view zeroed "<<endl;
     } else if (Option == "-v") {
       m_FileName = argv[++i];
-      string next;
+      MString next;
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -286,9 +285,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x1 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x1 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x1 = MResponseMatrix::c_ShowZ;
-      else                  m_x1 = atof(next.c_str());
+      else                  m_x1 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -296,9 +295,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x2 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x2 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x2 = MResponseMatrix::c_ShowZ;
-      else                  m_x2 = atof(next.c_str());
+      else                  m_x2 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -306,9 +305,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x3 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x3 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x3 = MResponseMatrix::c_ShowZ;
-      else                  m_x3 = atof(next.c_str());
+      else                  m_x3 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -316,9 +315,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x4 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x4 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x4 = MResponseMatrix::c_ShowZ;
-      else                  m_x4 = atof(next.c_str());
+      else                  m_x4 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -326,9 +325,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x5 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x5 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x5 = MResponseMatrix::c_ShowZ;
-      else                  m_x5 = atof(next.c_str());
+      else                  m_x5 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -336,9 +335,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x6 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x6 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x6 = MResponseMatrix::c_ShowZ;
-      else                  m_x6 = atof(next.c_str());
+      else                  m_x6 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -346,9 +345,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x7 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x7 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x7 = MResponseMatrix::c_ShowZ;
-      else                  m_x7 = atof(next.c_str());
+      else                  m_x7 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -356,9 +355,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x8 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x8 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x8 = MResponseMatrix::c_ShowZ;
-      else                  m_x8 = atof(next.c_str());
+      else                  m_x8 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -366,9 +365,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x9 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x9 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x9 = MResponseMatrix::c_ShowZ;
-      else                  m_x9 = atof(next.c_str());
+      else                  m_x9 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -376,9 +375,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x10 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x10 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x10 = MResponseMatrix::c_ShowZ;
-      else                  m_x10 = atof(next.c_str());
+      else                  m_x10 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -386,9 +385,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x11 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x11 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x11 = MResponseMatrix::c_ShowZ;
-      else                  m_x11 = atof(next.c_str());
+      else                  m_x11 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -396,9 +395,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x12 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x12 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x12 = MResponseMatrix::c_ShowZ;
-      else                  m_x12 = atof(next.c_str());
+      else                  m_x12 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -406,9 +405,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x13 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x13 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x13 = MResponseMatrix::c_ShowZ;
-      else                  m_x13 = atof(next.c_str());
+      else                  m_x13 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -416,9 +415,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x14 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x14 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x14 = MResponseMatrix::c_ShowZ;
-      else                  m_x14 = atof(next.c_str());
+      else                  m_x14 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -426,10 +425,10 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x15 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x15 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x15 = MResponseMatrix::c_ShowZ;
-      else                  m_x15 = atof(next.c_str());
+      else                  m_x15 = next.ToDouble();
 
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -437,10 +436,10 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x16 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x16 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x16 = MResponseMatrix::c_ShowZ;
-      else                  m_x16 = atof(next.c_str());
+      else                  m_x16 = next.ToDouble();
 
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -448,7 +447,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x17 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x17 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x17 = MResponseMatrix::c_ShowZ;
-      else                  m_x17 = atof(next.c_str());
+      else                  m_x17 = next.ToDouble();
 
       m_Show = true;
 
@@ -456,49 +455,53 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
           <<m_x3<<", "<<m_x4<<", "<<m_x5<<", "<<m_x6<<", "<<m_x7<<", "
           <<m_x8<<", "<<m_x9<<", "<<m_x10<<", "<<m_x11<<", "<<m_x12<<", "
           <<m_x13<<", "<<m_x14<<", "<<m_x15<<", "<<m_x16<<", "<<m_x17<<endl;
-		} else {
-			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   if (m_Append == true || m_Show == true || m_Statistics == true) {
     if (m_FileName == "") {
       cout<<"Error: No file name given!"<<endl;
       cout<<Usage.str()<<endl;
-      return false;  
+      return false;
     }
   }
-  if (m_Append == false && m_Show == false && m_Statistics == false && 
-      m_Divide == false && m_Ratio == false && m_Join == false) {
-    cout<<"Error: You must either append or divide or show a file or the statistics!"<<endl;
+  if (m_Append == false && m_Show == false && m_Statistics == false &&
+      m_Divide == false && m_Ratio == false && m_Join == false && m_Probability == false) {
+    cout<<"Error: You must either append or join or divide or show a file or the statistics or create the ratio or propability function!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
 
   // Check if files exist:
   if (m_Show == true || m_Append == true || m_Statistics == true) {
-    if (MFile::FileExists(m_FileName.c_str()) == false) {
+    if (MFile::FileExists(m_FileName) == false) {
       cout<<"Error: File \""<<m_FileName<<"\" does not exist!"<<endl;
       return false;
     }
   }
   for (unsigned int f = 0; f < m_AppendFileNames.size(); ++f) {
-    if (MFile::FileExists(m_AppendFileNames[f].c_str()) == false) {
+    if (MFile::FileExists(m_AppendFileNames[f]) == false) {
       cout<<"Error: File \""<<m_AppendFileNames[f]<<"\" does not exist!"<<endl;
       return false;
     }
   }
   if (m_Divide == true || m_Ratio == true || m_Probability == true) {
-    if (MFile::FileExists(m_DividendFileName.c_str()) == false) {
+    if (MFile::FileExists(m_DividendFileName) == false) {
       cout<<"Error: File \""<<m_DividendFileName<<"\" does not exist!"<<endl;
       return false;
     }
-    if (MFile::FileExists(m_DivisorFileName.c_str()) == false) {
+    if (MFile::FileExists(m_DivisorFileName) == false) {
       cout<<"Error: File \""<<m_DivisorFileName<<"\" does not exist!"<<endl;
       return false;
-    }    
+    }
+  }
+
+  if (m_Prefix.EndsWith(".") == true) {
+    m_Prefix.RemoveLastInPlace(1);
   }
 
   return true;
@@ -530,13 +533,19 @@ bool MResponseManipulator::Analyze()
 bool MResponseManipulator::Append()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName.c_str());
-  if (R == 0) return false;
+  MResponseMatrix* R = File.Read(m_FileName);
+  if (R == nullptr) {
+    merr<<"Error: Unable to read first response file \""<<m_FileName<<"\" - aborting..."<<endl;
+    return false;
+  }
 
   for (unsigned int f = 0; f < m_AppendFileNames.size(); ++f) {
     MFileResponse AppendFile;
-    MResponseMatrix* RAppend = AppendFile.Read(m_AppendFileNames[f].c_str());
-    if (RAppend == 0) return false;
+    MResponseMatrix* RAppend = AppendFile.Read(m_AppendFileNames[f]);
+    if (RAppend == nullptr) {
+      merr<<"Error: Unable to read response file \""<<m_AppendFileNames[f]<<"\" - aborting..."<<endl;
+      return false;
+    }
 
     mout<<"Appending: "<<m_AppendFileNames[f]<<endl;
 
@@ -544,65 +553,65 @@ bool MResponseManipulator::Append()
       mout<<"Cannot append file, because they are of different order!"<<endl;
     } else {
       if (R->GetOrder() == 1) {
-        *dynamic_cast<MResponseMatrixO1*>(R) += 
+        *dynamic_cast<MResponseMatrixO1*>(R) +=
           *dynamic_cast<MResponseMatrixO1*>(RAppend);
       } else if (R->GetOrder() == 2) {
-        *dynamic_cast<MResponseMatrixO2*>(R) += 
+        *dynamic_cast<MResponseMatrixO2*>(R) +=
           *dynamic_cast<MResponseMatrixO2*>(RAppend);
       } else if (R->GetOrder() == 3) {
-        *dynamic_cast<MResponseMatrixO3*>(R) += 
+        *dynamic_cast<MResponseMatrixO3*>(R) +=
           *dynamic_cast<MResponseMatrixO3*>(RAppend);
       } else if (R->GetOrder() == 4) {
-        *dynamic_cast<MResponseMatrixO4*>(R) += 
+        *dynamic_cast<MResponseMatrixO4*>(R) +=
           *dynamic_cast<MResponseMatrixO4*>(RAppend);
       } else if (R->GetOrder() == 5) {
-        *dynamic_cast<MResponseMatrixO5*>(R) += 
+        *dynamic_cast<MResponseMatrixO5*>(R) +=
           *dynamic_cast<MResponseMatrixO5*>(RAppend);
       } else if (R->GetOrder() == 6) {
-        *dynamic_cast<MResponseMatrixO6*>(R) += 
+        *dynamic_cast<MResponseMatrixO6*>(R) +=
           *dynamic_cast<MResponseMatrixO6*>(RAppend);
       } else if (R->GetOrder() == 7) {
-        *dynamic_cast<MResponseMatrixO7*>(R) += 
+        *dynamic_cast<MResponseMatrixO7*>(R) +=
           *dynamic_cast<MResponseMatrixO7*>(RAppend);
       } else if (R->GetOrder() == 8) {
-        *dynamic_cast<MResponseMatrixO8*>(R) += 
+        *dynamic_cast<MResponseMatrixO8*>(R) +=
           *dynamic_cast<MResponseMatrixO8*>(RAppend);
       } else if (R->GetOrder() == 9) {
-        *dynamic_cast<MResponseMatrixO9*>(R) += 
+        *dynamic_cast<MResponseMatrixO9*>(R) +=
           *dynamic_cast<MResponseMatrixO9*>(RAppend);
       } else if (R->GetOrder() == 10) {
-        *dynamic_cast<MResponseMatrixO10*>(R) += 
+        *dynamic_cast<MResponseMatrixO10*>(R) +=
           *dynamic_cast<MResponseMatrixO10*>(RAppend);
       } else if (R->GetOrder() == 11) {
-        *dynamic_cast<MResponseMatrixO11*>(R) += 
+        *dynamic_cast<MResponseMatrixO11*>(R) +=
           *dynamic_cast<MResponseMatrixO11*>(RAppend);
       } else if (R->GetOrder() == 12) {
-        *dynamic_cast<MResponseMatrixO12*>(R) += 
+        *dynamic_cast<MResponseMatrixO12*>(R) +=
           *dynamic_cast<MResponseMatrixO12*>(RAppend);
       } else if (R->GetOrder() == 13) {
-        *dynamic_cast<MResponseMatrixO13*>(R) += 
+        *dynamic_cast<MResponseMatrixO13*>(R) +=
           *dynamic_cast<MResponseMatrixO13*>(RAppend);
       } else if (R->GetOrder() == 14) {
-        *dynamic_cast<MResponseMatrixO14*>(R) += 
+        *dynamic_cast<MResponseMatrixO14*>(R) +=
           *dynamic_cast<MResponseMatrixO14*>(RAppend);
       } else if (R->GetOrder() == 15) {
-        *dynamic_cast<MResponseMatrixO15*>(R) += 
+        *dynamic_cast<MResponseMatrixO15*>(R) +=
           *dynamic_cast<MResponseMatrixO15*>(RAppend);
       } else if (R->GetOrder() == 16) {
-        *dynamic_cast<MResponseMatrixO16*>(R) += 
+        *dynamic_cast<MResponseMatrixO16*>(R) +=
           *dynamic_cast<MResponseMatrixO16*>(RAppend);
       } else if (R->GetOrder() == 17) {
-        *dynamic_cast<MResponseMatrixO17*>(R) += 
+        *dynamic_cast<MResponseMatrixO17*>(R) +=
           *dynamic_cast<MResponseMatrixO17*>(RAppend);
       } else {
-        merr<<"Unsupported matrix order: "<<R->GetOrder()<<endl; 
+        merr<<"Unsupported matrix order: "<<R->GetOrder()<<endl;
       }
     }
 
     delete RAppend;
   }
 
-  R->Write((m_FileName + ".new").c_str(), true);
+  R->Write((m_FileName + ".new"), true);
   delete R;
 
   return true;
@@ -610,10 +619,11 @@ bool MResponseManipulator::Append()
 
 
 /******************************************************************************
- * Find Files:
+ * Find and join *.rsp files:
  */
-bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
+bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
 {
+  // Get all files
   TSystemDirectory D(".", gSystem->pwd());
   TList* Files = D.GetListOfFiles();
   if (Files == 0) {
@@ -621,96 +631,216 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
     return false;
   }
 
-  MFileResponse File;
-  MResponseMatrix* First = 0;
-  MResponseMatrix* Append = 0;
-  bool AnyZipped = false;
+
+  // Sort them
+  cout<<"Sorting files..."<<endl;
+  unsigned int Added = 0;
+  vector<vector<MString>> SortedFiles(Types.size(), vector<MString>());
   for (int i = 0; i <= Files->LastIndex(); ++i) {
     MString Name = Files->At(i)->GetName();
-    cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Type<<"\" (+ .gz)... ";
-    if (Name.BeginsWith(Prefix) == true && (Name.EndsWith(Type) == true || Name.EndsWith(Type + ".gz") == true)) {
-      cout<<"ok"<<endl;
-      if (Name.EndsWith(".gz") == true) {
-        AnyZipped = true;
+    if (Name.BeginsWith(Prefix) == false) continue;
+    for (unsigned int t = 0; t < Types.size(); ++t) {
+      // cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Type<<"\" (+ .gz)... ";
+      if ((Name.EndsWith(Types[t]) == true || Name.EndsWith(Types[t] + ".gz") == true) && Name != Prefix + Types[t] && Name != Prefix + Types[t] + ".gz") {
+        SortedFiles[t].push_back(Name);
+        ++Added;
       }
-      if (First == 0) {
-        First = File.Read(Name);
-        massert(First != 0);
-      } else {
-        Append = File.Read(Name);
-        massert(Append != 0);
-        if (First->GetOrder() != Append->GetOrder()) {
-          mout<<"Cannot append file, because they are of different order!"<<endl;
-        } else {
-          if (First->GetOrder() == 1) {
-            *dynamic_cast<MResponseMatrixO1*>(First) += 
-              *dynamic_cast<MResponseMatrixO1*>(Append);
-          } else if (First->GetOrder() == 2) {
-            *dynamic_cast<MResponseMatrixO2*>(First) += 
-              *dynamic_cast<MResponseMatrixO2*>(Append);
-          } else if (First->GetOrder() == 3) {
-            *dynamic_cast<MResponseMatrixO3*>(First) += 
-              *dynamic_cast<MResponseMatrixO3*>(Append);
-          } else if (First->GetOrder() == 4) {
-            *dynamic_cast<MResponseMatrixO4*>(First) += 
-              *dynamic_cast<MResponseMatrixO4*>(Append);
-          } else if (First->GetOrder() == 5) {
-            *dynamic_cast<MResponseMatrixO5*>(First) += 
-              *dynamic_cast<MResponseMatrixO5*>(Append);
-          } else if (First->GetOrder() == 6) {
-            *dynamic_cast<MResponseMatrixO6*>(First) += 
-              *dynamic_cast<MResponseMatrixO6*>(Append);
-          } else if (First->GetOrder() == 7) {
-            *dynamic_cast<MResponseMatrixO7*>(First) += 
-              *dynamic_cast<MResponseMatrixO7*>(Append);
-          } else if (First->GetOrder() == 8) {
-            *dynamic_cast<MResponseMatrixO8*>(First) += 
-              *dynamic_cast<MResponseMatrixO8*>(Append);
-          } else if (First->GetOrder() == 9) {
-            *dynamic_cast<MResponseMatrixO9*>(First) += 
-              *dynamic_cast<MResponseMatrixO9*>(Append);
-          } else if (First->GetOrder() == 10) {
-            *dynamic_cast<MResponseMatrixO10*>(First) += 
-              *dynamic_cast<MResponseMatrixO10*>(Append);
-          } else if (First->GetOrder() == 11) {
-            *dynamic_cast<MResponseMatrixO11*>(First) += 
-              *dynamic_cast<MResponseMatrixO11*>(Append);
-          } else if (First->GetOrder() == 12) {
-            *dynamic_cast<MResponseMatrixO12*>(First) += 
-              *dynamic_cast<MResponseMatrixO12*>(Append);
-          } else if (First->GetOrder() == 13) {
-            *dynamic_cast<MResponseMatrixO13*>(First) += 
-              *dynamic_cast<MResponseMatrixO13*>(Append);
-          } else if (First->GetOrder() == 14) {
-            *dynamic_cast<MResponseMatrixO14*>(First) += 
-              *dynamic_cast<MResponseMatrixO14*>(Append);
-          } else if (First->GetOrder() == 15) {
-            *dynamic_cast<MResponseMatrixO15*>(First) += 
-              *dynamic_cast<MResponseMatrixO15*>(Append);
-          } else if (First->GetOrder() == 16) {
-            *dynamic_cast<MResponseMatrixO16*>(First) += 
-              *dynamic_cast<MResponseMatrixO16*>(Append);
-          } else if (First->GetOrder() == 17) {
-            *dynamic_cast<MResponseMatrixO17*>(First) += 
-              *dynamic_cast<MResponseMatrixO17*>(Append);
-          } else {
-            merr<<"Unsupported matrix order: "<<First->GetOrder()<<endl; 
-          }
-        }
-        delete Append;
-      }
-    } else {
-      cout<<"not ok"<<endl;
     }
   }
+  if (Added > 0) {
+    cout<<"Considering "<<Added<<" files..."<<endl;
+  } else {
+    cout<<"No files found to join..."<<endl;
+    return false;
+  }
 
-  if (First != 0) {
-    MString NewName = Prefix + Type;
+
+  // Append them
+  for (unsigned int t = 0; t < SortedFiles.size(); ++t) {
+    if (SortedFiles[t].size() == 0) {
+      cout<<"No files of type "<<Types[t]<<endl;
+      continue;
+    }
+
+    bool AnyZipped = false;
+    if (SortedFiles[t][0].EndsWith(".gz") == true) {
+      AnyZipped = true;
+    }
+    MFileResponse File;
+    MResponseMatrix* First = File.Read(SortedFiles[t][0]);
+    if (First == nullptr) {
+      merr<<"Error: Unable to read first response file \""<<SortedFiles[t][0]<<"\" - aborting..."<<endl;
+      break;
+    }
+    if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
+      mout<<"Converting the response to non-sparse"<<endl;
+      dynamic_cast<MResponseMatrixON*>(First)->SwitchToNonSparse();
+    }
+    
+    for (unsigned int f = 1; f < SortedFiles[t].size(); ++f) {
+      if (m_Interrupt == true) break;
+
+      MResponseMatrix* Append = File.Read(SortedFiles[t][f]);
+      if (Append == nullptr) {
+        merr<<"Error: Unable to read response file \""<<SortedFiles[t][f]<<"\" - skipping it..."<<endl;
+        continue;
+      }
+
+      if (First->GetOrder() != Append->GetOrder()) {
+        mout<<"Cannot append file, because they are of different order!"<<endl;
+      } else {
+        mout<<"Appending file "<<f<<"/"<<SortedFiles[t].size()<<": "<<SortedFiles[t][f]<<endl;
+        if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
+          MTimer AppendTimer;
+          *dynamic_cast<MResponseMatrixON*>(First) += *dynamic_cast<MResponseMatrixON*>(Append);
+          mout<<" --> Done in "<<AppendTimer.GetElapsed()<<" seconds"<<endl;
+        } else if (First->GetOrder() == 1) {
+          *dynamic_cast<MResponseMatrixO1*>(First) +=
+          *dynamic_cast<MResponseMatrixO1*>(Append);
+        } else if (First->GetOrder() == 2) {
+          *dynamic_cast<MResponseMatrixO2*>(First) +=
+          *dynamic_cast<MResponseMatrixO2*>(Append);
+        } else if (First->GetOrder() == 3) {
+          *dynamic_cast<MResponseMatrixO3*>(First) +=
+          *dynamic_cast<MResponseMatrixO3*>(Append);
+        } else if (First->GetOrder() == 4) {
+          *dynamic_cast<MResponseMatrixO4*>(First) +=
+          *dynamic_cast<MResponseMatrixO4*>(Append);
+        } else if (First->GetOrder() == 5) {
+          *dynamic_cast<MResponseMatrixO5*>(First) +=
+          *dynamic_cast<MResponseMatrixO5*>(Append);
+        } else if (First->GetOrder() == 6) {
+          *dynamic_cast<MResponseMatrixO6*>(First) +=
+          *dynamic_cast<MResponseMatrixO6*>(Append);
+        } else if (First->GetOrder() == 7) {
+          *dynamic_cast<MResponseMatrixO7*>(First) +=
+          *dynamic_cast<MResponseMatrixO7*>(Append);
+        } else if (First->GetOrder() == 8) {
+          *dynamic_cast<MResponseMatrixO8*>(First) +=
+          *dynamic_cast<MResponseMatrixO8*>(Append);
+        } else if (First->GetOrder() == 9) {
+          *dynamic_cast<MResponseMatrixO9*>(First) +=
+          *dynamic_cast<MResponseMatrixO9*>(Append);
+        } else if (First->GetOrder() == 10) {
+          *dynamic_cast<MResponseMatrixO10*>(First) +=
+          *dynamic_cast<MResponseMatrixO10*>(Append);
+        } else if (First->GetOrder() == 11) {
+          *dynamic_cast<MResponseMatrixO11*>(First) +=
+          *dynamic_cast<MResponseMatrixO11*>(Append);
+        } else if (First->GetOrder() == 12) {
+          *dynamic_cast<MResponseMatrixO12*>(First) +=
+          *dynamic_cast<MResponseMatrixO12*>(Append);
+        } else if (First->GetOrder() == 13) {
+          *dynamic_cast<MResponseMatrixO13*>(First) +=
+          *dynamic_cast<MResponseMatrixO13*>(Append);
+        } else if (First->GetOrder() == 14) {
+          *dynamic_cast<MResponseMatrixO14*>(First) +=
+          *dynamic_cast<MResponseMatrixO14*>(Append);
+        } else if (First->GetOrder() == 15) {
+          *dynamic_cast<MResponseMatrixO15*>(First) +=
+          *dynamic_cast<MResponseMatrixO15*>(Append);
+        } else if (First->GetOrder() == 16) {
+          *dynamic_cast<MResponseMatrixO16*>(First) +=
+          *dynamic_cast<MResponseMatrixO16*>(Append);
+        } else if (First->GetOrder() == 17) {
+          *dynamic_cast<MResponseMatrixO17*>(First) +=
+          *dynamic_cast<MResponseMatrixO17*>(Append);
+        } else {
+          merr<<"Unsupported matrix order: "<<First->GetOrder()<<endl;
+        }
+        
+        // Add up the simulated events
+        First->SetSimulatedEvents(First->GetSimulatedEvents() + Append->GetSimulatedEvents());
+      }
+            
+      delete Append;
+
+    }
+
+    MString NewName = Prefix + Types[t];
     if (AnyZipped == true) NewName += ".gz";
+    if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
+      mout<<"Converting the response back to sparse"<<endl;
+      dynamic_cast<MResponseMatrixON*>(First)->SwitchToSparse();
+    }
     First->Write(NewName, true);
     delete First;
+  }
+
+  return true;
+}
+
+
+/******************************************************************************
+ * Find and join *.rsp files:
+ */
+bool MResponseManipulator::JoinROOTFiles(MString Prefix, vector<MString> Types)
+{
+  // Get all files
+  TSystemDirectory D(".", gSystem->pwd());
+  TList* Files = D.GetListOfFiles();
+  if (Files == 0) {
+    mout<<"Can't get files!"<<endl;
+    return false;
+  }
+
+  // Sort them
+  //cout<<"Sorting files..."<<endl;
+  unsigned int Added = 0;
+  vector<vector<MString>> SortedFiles(Types.size(), vector<MString>());
+  for (int i = 0; i <= Files->LastIndex(); ++i) {
+    MString Name = Files->At(i)->GetName();
+    if (Name.BeginsWith(Prefix) == false) continue;
+    for (unsigned int t = 0; t < Types.size(); ++t) {
+      //cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Types[t]<<"\" (+ .gz)... "<<endl;
+      if (Name.EndsWith(Types[t]) == true && Name != Prefix + Types[t]) {
+        SortedFiles[t].push_back(Name);
+        //cout<<"yes"<<endl;
+        ++Added;
+      }
+    }
+  }
+  if (Added > 0) {
+    cout<<"Considering "<<Added<<" files..."<<endl;
   } else {
-    mout<<"No File has been opened!"<<endl;
+    cout<<"No files found to join..."<<endl;
+    return false;
+  }
+  
+  // Limit the file size to one file above 10 GB...
+  size_t MaxROOTFileSize = 10000000000;
+  for (unsigned int t = 0; t < SortedFiles.size(); ++t) {
+    size_t Size = 0;
+    for (unsigned int f = 0; f < SortedFiles[t].size(); ++f) {
+      ifstream in(SortedFiles[t][f], ifstream::ate | ifstream::binary);
+      Size += in.tellg();
+      if (Size > MaxROOTFileSize) {
+        mout<<"Info: Only adding the first "<<f+1<<" files of type "<<Types[t]<<", since we already reached the maximum file size ("<<MaxROOTFileSize<<")"<<endl;
+        SortedFiles[t].resize(f);
+        break;
+      }
+    }
+  }
+  
+  // Append them
+  for (unsigned int t = 0; t < SortedFiles.size(); ++t) {
+    if (SortedFiles[t].size() == 0) {
+      cout<<"No files of type "<<Types[t]<<endl;
+      continue;
+    }
+
+    // Remove a potentially existing output file:
+    if (MFile::Exists(Prefix + Types[t]) == true) {
+      MFile::Remove(Prefix + Types[t]);
+    }
+
+    MString Command = "hadd " + Prefix + Types[t] + " ";
+    for (unsigned int f = 0; f < SortedFiles[t].size(); ++f) {
+      Command += SortedFiles[t][f];
+      Command += " ";
+    }
+    
+    gSystem->Exec(Command);
   }
 
   return true;
@@ -722,30 +852,107 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
  */
 bool MResponseManipulator::Join()
 {
-  FindFiles(m_Prefix, ".mc.goodbad.rsp");
-  FindFiles(m_Prefix, ".mc.dual.good.rsp");
-  FindFiles(m_Prefix, ".mc.dual.bad.rsp");
-  FindFiles(m_Prefix, ".mc.start.good.rsp");
-  FindFiles(m_Prefix, ".mc.start.bad.rsp");
-  FindFiles(m_Prefix, ".mc.track.good.rsp");
-  FindFiles(m_Prefix, ".mc.track.bad.rsp");
-  FindFiles(m_Prefix, ".mc.compton.good.rsp");
-  FindFiles(m_Prefix, ".mc.compton.bad.rsp");
-  FindFiles(m_Prefix, ".mc.comptondistance.good.rsp");
-  FindFiles(m_Prefix, ".mc.comptondistance.bad.rsp");
-  FindFiles(m_Prefix, ".mc.photodistance.good.rsp");
-  FindFiles(m_Prefix, ".mc.photodistance.bad.rsp");
+  vector<MString> Types;
 
-  FindFiles(m_Prefix, ".t.goodbad.rsp");
-  FindFiles(m_Prefix, ".t.central.good.rsp");
-  FindFiles(m_Prefix, ".t.central.bad.rsp");
-  FindFiles(m_Prefix, ".t.start.good.rsp");
-  FindFiles(m_Prefix, ".t.start.bad.rsp");
-  FindFiles(m_Prefix, ".t.stop.good.rsp");
-  FindFiles(m_Prefix, ".t.stop.bad.rsp");
-  FindFiles(m_Prefix, ".t.dual.good.rsp");
-  FindFiles(m_Prefix, ".t.dual.bad.rsp");
+  Types.push_back(".mc.goodbad.rsp");
+  Types.push_back(".mc.dual.good.rsp");
+  Types.push_back(".mc.dual.bad.rsp");
+  Types.push_back(".mc.start.good.rsp");
+  Types.push_back(".mc.start.bad.rsp");
+  Types.push_back(".mc.track.good.rsp");
+  Types.push_back(".mc.track.bad.rsp");
+  Types.push_back(".mc.compton.good.rsp");
+  Types.push_back(".mc.compton.bad.rsp");
+  Types.push_back(".mc.comptondistance.good.rsp");
+  Types.push_back(".mc.comptondistance.bad.rsp");
+  Types.push_back(".mc.photodistance.good.rsp");
+  Types.push_back(".mc.photodistance.bad.rsp");
+
+  Types.push_back(".t.goodbad.rsp");
+  Types.push_back(".t.central.good.rsp");
+  Types.push_back(".t.central.bad.rsp");
+  Types.push_back(".t.start.good.rsp");
+  Types.push_back(".t.start.bad.rsp");
+  Types.push_back(".t.stop.good.rsp");
+  Types.push_back(".t.stop.bad.rsp");
+  Types.push_back(".t.dual.good.rsp");
+  Types.push_back(".t.dual.bad.rsp");
+
+  Types.push_back(".quality.good.rsp");
+  Types.push_back(".quality.bad.rsp");
+
+  Types.push_back(".dualseparable.yes.rsp");
+  Types.push_back(".dualseparable.no.rsp");
+  Types.push_back(".allseparable.yes.rsp");
+  Types.push_back(".allseparable.no.rsp");
+
+  Types.push_back(".energy.beforeeventreconstruction.rsp");
+  Types.push_back(".energy.beforeeventreconstruction.rsp");
+  Types.push_back(".energy.mimrecunselected.rsp");
+  Types.push_back(".energy.mimrecselected.rsp");
+  Types.push_back(".energy.armcut.rsp");
+  Types.push_back(".energy.armcutoriginrestricted.rsp");
+  Types.push_back(".energy.ratio.beforeeventreconstruction.rsp");
+  Types.push_back(".energy.ratio.mimrecunselected.rsp");
+  Types.push_back(".energy.ratio.mimrecselected.rsp");
+
+  Types.push_back(".arm.allenergies.rsp");
+  Types.push_back(".arm.photopeak.rsp");
+
+  Types.push_back(".efficiency.90y.rsp");
+  Types.push_back(".efficiency.90z.90y.rsp");
+  Types.push_back(".efficiency.detector.rsp");
+  Types.push_back(".efficiencynearfield.rsp");
+
+  Types.push_back(".binnedimaging.imagingresponse.rsp");
+  Types.push_back(".binnedimaging.exposure.rsp");
+  Types.push_back(".binnedimaging.energyresponse.rsp");
   
+  Types.push_back(".imagingarm.allenergies.rsp");
+  Types.push_back(".imagingarm.photopeak.rsp");
+ 
+  Types.push_back(".compteldataspace.rsp");
+ 
+  JoinRSPFiles(m_Prefix, Types);
+  
+  
+  vector<MString> RootTypes;
+  
+  RootTypes.push_back(".tmva.seq2.good.root");
+  RootTypes.push_back(".tmva.seq2.bad.root");
+  RootTypes.push_back(".tmva.seq3.good.root");
+  RootTypes.push_back(".tmva.seq3.bad.root");
+  RootTypes.push_back(".tmva.seq4.good.root");
+  RootTypes.push_back(".tmva.seq4.bad.root");
+  RootTypes.push_back(".tmva.seq5.good.root");
+  RootTypes.push_back(".tmva.seq5.bad.root");
+  RootTypes.push_back(".tmva.seq6.good.root");
+  RootTypes.push_back(".tmva.seq6.bad.root");
+  RootTypes.push_back(".tmva.seq7.good.root");
+  RootTypes.push_back(".tmva.seq7.bad.root");
+  RootTypes.push_back(".tmva.seq8.good.root");
+  RootTypes.push_back(".tmva.seq8.bad.root");
+  RootTypes.push_back(".tmva.seq9.good.root");
+  RootTypes.push_back(".tmva.seq9.bad.root");
+
+  RootTypes.push_back(".seq2.quality.root");
+  RootTypes.push_back(".seq3.quality.root");
+  RootTypes.push_back(".seq4.quality.root");
+  RootTypes.push_back(".seq5.quality.root");
+  RootTypes.push_back(".seq6.quality.root");
+  RootTypes.push_back(".seq7.quality.root");
+  RootTypes.push_back(".seq8.quality.root");
+  RootTypes.push_back(".seq9.quality.root");
+
+  for (int x = 1; x < 10; ++x) {
+    for (int y = 1; y < 10; ++y) {
+      RootTypes.push_back(MString(".x") + x + ".y" + y + ".strippairing.root");
+    }
+  }
+
+  JoinROOTFiles(m_Prefix, RootTypes);
+
+
   return true;
 }
 
@@ -756,12 +963,12 @@ bool MResponseManipulator::Join()
 bool MResponseManipulator::Divide()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName.c_str());
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
   if (Zahler == 0) {
     mout<<"Unable to open Dividend"<<endl;
     return false;
   }
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName.c_str());
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
   if (Nenner == 0) {
     mout<<"Unable to open Dividor"<<endl;
     return false;
@@ -769,63 +976,66 @@ bool MResponseManipulator::Divide()
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
     mout<<"Cannot append file, because they are of different order!"<<endl;
   } else {
-    if (Zahler->GetOrder() == 1) {
-      *dynamic_cast<MResponseMatrixO1*>(Zahler) /= 
+    if (dynamic_cast<MResponseMatrixON*>(Zahler) != nullptr) {
+      *dynamic_cast<MResponseMatrixON*>(Zahler) /=
+        *dynamic_cast<MResponseMatrixON*>(Nenner);
+    } else if (Zahler->GetOrder() == 1) {
+      *dynamic_cast<MResponseMatrixO1*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO1*>(Nenner);
     } else if (Zahler->GetOrder() == 2) {
-      *dynamic_cast<MResponseMatrixO2*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO2*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO2*>(Nenner);
     } else if (Zahler->GetOrder() == 3) {
-      *dynamic_cast<MResponseMatrixO3*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO3*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO3*>(Nenner);
     } else if (Zahler->GetOrder() == 4) {
-      *dynamic_cast<MResponseMatrixO4*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO4*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO4*>(Nenner);
     } else if (Zahler->GetOrder() == 5) {
-      *dynamic_cast<MResponseMatrixO5*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO5*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO5*>(Nenner);
     } else if (Zahler->GetOrder() == 6) {
-      *dynamic_cast<MResponseMatrixO6*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO6*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO6*>(Nenner);
     } else if (Zahler->GetOrder() == 7) {
-      *dynamic_cast<MResponseMatrixO7*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO7*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO7*>(Nenner);
     } else if (Zahler->GetOrder() == 8) {
-      *dynamic_cast<MResponseMatrixO8*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO8*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO8*>(Nenner);
     } else if (Zahler->GetOrder() == 9) {
-      *dynamic_cast<MResponseMatrixO9*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO9*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO9*>(Nenner);
     } else if (Zahler->GetOrder() == 10) {
-      *dynamic_cast<MResponseMatrixO10*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO10*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO10*>(Nenner);
     } else if (Zahler->GetOrder() == 11) {
-      *dynamic_cast<MResponseMatrixO11*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO11*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO11*>(Nenner);
     } else if (Zahler->GetOrder() == 12) {
-      *dynamic_cast<MResponseMatrixO12*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO12*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO12*>(Nenner);
     } else if (Zahler->GetOrder() == 13) {
-      *dynamic_cast<MResponseMatrixO13*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO13*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO13*>(Nenner);
     } else if (Zahler->GetOrder() == 14) {
-      *dynamic_cast<MResponseMatrixO14*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO14*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO14*>(Nenner);
     } else if (Zahler->GetOrder() == 15) {
-      *dynamic_cast<MResponseMatrixO15*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO15*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO15*>(Nenner);
     } else if (Zahler->GetOrder() == 16) {
-      *dynamic_cast<MResponseMatrixO16*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO16*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO16*>(Nenner);
     } else if (Zahler->GetOrder() == 17) {
-      *dynamic_cast<MResponseMatrixO17*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO17*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO17*>(Nenner);
     } else {
-        merr<<"Unsupported matrix order: "<<Zahler->GetOrder()<<endl; 
+        merr<<"Unsupported matrix order: "<<Zahler->GetOrder()<<endl;
     }
   }
 
-  Zahler->Write(m_FileName.c_str(), true);
+  Zahler->Write(m_FileName, true);
   delete Zahler;
   delete Nenner;
 
@@ -839,9 +1049,9 @@ bool MResponseManipulator::Divide()
 bool MResponseManipulator::Ratio()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName.c_str());
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
   if (Zahler == 0) return false;
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName.c_str());
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
   if (Nenner == 0) return false;
 
   float SumZahler = Zahler->GetSum();
@@ -850,87 +1060,89 @@ bool MResponseManipulator::Ratio()
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
     mout<<"Cannot append file, because they are of different order!"<<endl;
   } else {
-    if (Zahler->GetOrder() == 1) {
-      *dynamic_cast<MResponseMatrixO1*>(Zahler) /= 
+    if (dynamic_cast<MResponseMatrixON*>(Zahler) != nullptr) {
+      *dynamic_cast<MResponseMatrixON*>(Zahler) /=
+        *dynamic_cast<MResponseMatrixON*>(Nenner);
+      *dynamic_cast<MResponseMatrixO1*>(Zahler) *= SumNenner/SumZahler;
+    } else if (Zahler->GetOrder() == 1) {
+      *dynamic_cast<MResponseMatrixO1*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO1*>(Nenner);
       *dynamic_cast<MResponseMatrixO1*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 2) {
-      *dynamic_cast<MResponseMatrixO2*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO2*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO2*>(Nenner);
       *dynamic_cast<MResponseMatrixO2*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 3) {
-      *dynamic_cast<MResponseMatrixO3*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO3*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO3*>(Nenner);
       *dynamic_cast<MResponseMatrixO3*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 4) {
-      *dynamic_cast<MResponseMatrixO4*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO4*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO4*>(Nenner);
       *dynamic_cast<MResponseMatrixO4*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 5) {
-      *dynamic_cast<MResponseMatrixO5*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO5*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO5*>(Nenner);
       *dynamic_cast<MResponseMatrixO5*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 6) {
-      *dynamic_cast<MResponseMatrixO6*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO6*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO6*>(Nenner);
       *dynamic_cast<MResponseMatrixO6*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 7) {
-      *dynamic_cast<MResponseMatrixO7*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO7*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO7*>(Nenner);
       *dynamic_cast<MResponseMatrixO7*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 8) {
-      *dynamic_cast<MResponseMatrixO8*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO8*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO8*>(Nenner);
       *dynamic_cast<MResponseMatrixO8*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 9) {
-      *dynamic_cast<MResponseMatrixO9*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO9*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO9*>(Nenner);
       *dynamic_cast<MResponseMatrixO9*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 10) {
-      *dynamic_cast<MResponseMatrixO10*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO10*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO10*>(Nenner);
       *dynamic_cast<MResponseMatrixO10*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 11) {
-      *dynamic_cast<MResponseMatrixO11*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO11*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO11*>(Nenner);
       *dynamic_cast<MResponseMatrixO11*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 12) {
-      *dynamic_cast<MResponseMatrixO12*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO12*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO12*>(Nenner);
       *dynamic_cast<MResponseMatrixO12*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 13) {
-      *dynamic_cast<MResponseMatrixO13*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO13*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO13*>(Nenner);
       *dynamic_cast<MResponseMatrixO13*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 14) {
-      *dynamic_cast<MResponseMatrixO14*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO14*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO14*>(Nenner);
       *dynamic_cast<MResponseMatrixO14*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 15) {
-      *dynamic_cast<MResponseMatrixO15*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO15*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO15*>(Nenner);
       *dynamic_cast<MResponseMatrixO15*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 16) {
-      *dynamic_cast<MResponseMatrixO16*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO16*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO16*>(Nenner);
       *dynamic_cast<MResponseMatrixO16*>(Zahler) *= SumNenner/SumZahler;
     } else if (Zahler->GetOrder() == 17) {
-      *dynamic_cast<MResponseMatrixO17*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO17*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO17*>(Nenner);
       *dynamic_cast<MResponseMatrixO17*>(Zahler) *= SumNenner/SumZahler;
     } else {
-        merr<<"Unsupported matrix order: "<<Zahler->GetOrder()<<endl; 
+        merr<<"Unsupported matrix order: "<<Zahler->GetOrder()<<endl;
     }
   }
 
-  Zahler->Write(m_FileName.c_str(), true);
+  Zahler->Write(m_FileName, true);
   delete Zahler;
   delete Nenner;
 
   return true;
 }
-
-
 
 
 /******************************************************************************
@@ -939,105 +1151,111 @@ bool MResponseManipulator::Ratio()
 bool MResponseManipulator::Probability()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName.c_str());
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
   if (Zahler == 0) return false;
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName.c_str());
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
   if (Nenner == 0) return false;
 
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
-    mout<<"Cannot append file, because they are of different order!"<<endl;
+    mout<<"Cannot calculate the probability, because the response files are of different order!"<<endl;
   } else {
-    if (Zahler->GetOrder() == 1) {
-      *dynamic_cast<MResponseMatrixO1*>(Nenner) += 
+    if (dynamic_cast<MResponseMatrixON*>(Zahler) != nullptr) {
+      *dynamic_cast<MResponseMatrixON*>(Nenner) +=
+        *dynamic_cast<MResponseMatrixON*>(Zahler);
+      *dynamic_cast<MResponseMatrixON*>(Zahler) /=
+        *dynamic_cast<MResponseMatrixON*>(Nenner);
+    } else if (Zahler->GetOrder() == 1) {
+      *dynamic_cast<MResponseMatrixO1*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO1*>(Zahler);
-      *dynamic_cast<MResponseMatrixO1*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO1*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO1*>(Nenner);
     } else if (Zahler->GetOrder() == 2) {
-      *dynamic_cast<MResponseMatrixO2*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO2*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO2*>(Zahler);
-      *dynamic_cast<MResponseMatrixO2*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO2*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO2*>(Nenner);
     } else if (Zahler->GetOrder() == 3) {
-      *dynamic_cast<MResponseMatrixO3*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO3*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO3*>(Zahler);
-      *dynamic_cast<MResponseMatrixO3*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO3*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO3*>(Nenner);
     } else if (Zahler->GetOrder() == 4) {
-      *dynamic_cast<MResponseMatrixO4*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO4*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO4*>(Zahler);
-      *dynamic_cast<MResponseMatrixO4*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO4*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO4*>(Nenner);
     } else if (Zahler->GetOrder() == 5) {
-      *dynamic_cast<MResponseMatrixO5*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO5*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO5*>(Zahler);
-      *dynamic_cast<MResponseMatrixO5*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO5*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO5*>(Nenner);
     } else if (Zahler->GetOrder() == 6) {
-      *dynamic_cast<MResponseMatrixO6*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO6*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO6*>(Zahler);
-      *dynamic_cast<MResponseMatrixO6*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO6*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO6*>(Nenner);
     } else if (Zahler->GetOrder() == 7) {
-      *dynamic_cast<MResponseMatrixO7*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO7*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO7*>(Zahler);
-      *dynamic_cast<MResponseMatrixO7*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO7*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO7*>(Nenner);
     } else if (Zahler->GetOrder() == 8) {
-      *dynamic_cast<MResponseMatrixO8*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO8*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO8*>(Zahler);
-      *dynamic_cast<MResponseMatrixO8*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO8*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO8*>(Nenner);
     } else if (Zahler->GetOrder() == 9) {
-      *dynamic_cast<MResponseMatrixO9*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO9*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO9*>(Zahler);
-      *dynamic_cast<MResponseMatrixO9*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO9*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO9*>(Nenner);
     } else if (Zahler->GetOrder() == 10) {
-      *dynamic_cast<MResponseMatrixO10*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO10*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO10*>(Zahler);
-      *dynamic_cast<MResponseMatrixO10*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO10*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO10*>(Nenner);
     } else if (Zahler->GetOrder() == 11) {
-      *dynamic_cast<MResponseMatrixO11*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO11*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO11*>(Zahler);
-      *dynamic_cast<MResponseMatrixO11*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO11*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO11*>(Nenner);
     } else if (Zahler->GetOrder() == 12) {
-      *dynamic_cast<MResponseMatrixO12*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO12*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO12*>(Zahler);
-      *dynamic_cast<MResponseMatrixO12*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO12*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO12*>(Nenner);
     } else if (Zahler->GetOrder() == 13) {
-      *dynamic_cast<MResponseMatrixO13*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO13*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO13*>(Zahler);
-      *dynamic_cast<MResponseMatrixO13*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO13*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO13*>(Nenner);
     } else if (Zahler->GetOrder() == 14) {
-      *dynamic_cast<MResponseMatrixO14*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO14*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO14*>(Zahler);
-      *dynamic_cast<MResponseMatrixO14*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO14*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO14*>(Nenner);
     } else if (Zahler->GetOrder() == 15) {
-      *dynamic_cast<MResponseMatrixO15*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO15*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO15*>(Zahler);
-      *dynamic_cast<MResponseMatrixO15*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO15*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO15*>(Nenner);
     } else if (Zahler->GetOrder() == 16) {
-      *dynamic_cast<MResponseMatrixO16*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO16*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO16*>(Zahler);
-      *dynamic_cast<MResponseMatrixO16*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO16*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO16*>(Nenner);
     } else if (Zahler->GetOrder() == 17) {
-      *dynamic_cast<MResponseMatrixO17*>(Nenner) += 
+      *dynamic_cast<MResponseMatrixO17*>(Nenner) +=
         *dynamic_cast<MResponseMatrixO17*>(Zahler);
-      *dynamic_cast<MResponseMatrixO17*>(Zahler) /= 
+      *dynamic_cast<MResponseMatrixO17*>(Zahler) /=
         *dynamic_cast<MResponseMatrixO17*>(Nenner);
     } else {
-        merr<<"Unsupported matrix order: "<<Zahler->GetOrder()<<endl; 
+        merr<<"Unsupported matrix order: "<<Zahler->GetOrder()<<endl;
     }
   }
 
-  Zahler->Write(m_FileName.c_str(), true);
+  if (m_FileName == "") m_FileName = "Probability.rsp";
+  Zahler->Write(m_FileName, true);
   delete Zahler;
   delete Nenner;
 
@@ -1051,25 +1269,11 @@ bool MResponseManipulator::Probability()
 bool MResponseManipulator::Statistics()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName.c_str());
- 
-  cout<<"Statistics of response matrix \""<<m_FileName
-      <<"\" of order "<<R->GetOrder()<<":"<<endl;
-  cout<<endl;
-  cout<<"NBins:   "<<R->GetNBins()<<endl;
-  cout<<"Maximum: "<<R->GetMaximum()<<endl;
-  cout<<"Minimum: "<<R->GetMinimum()<<endl;
-  cout<<"Sum:     "<<R->GetSum()<<endl;
-  cout<<"Avg:     "<<R->GetSum()/R->GetNBins()<<endl;
-  cout<<endl;
-  cout<<"Axis:"<<endl;
-  for (unsigned int i = 1; i <= R->GetOrder(); ++i) {
-    cout<<"  x"<<i<<":  "<<R->GetAxisName(i)<<" (from "<<R->GetAxisContent(0, i)
-        <<" to "<<R->GetAxisContent(R->GetAxisBins(i), i)
-        <<" in "<<R->GetAxisBins(i)<<" bins)"<<endl;
-  }
-
+  MResponseMatrix* R = File.Read(m_FileName);
+  if (R == nullptr) return false;
+  cout<<R->GetStatistics()<<endl;
   delete R;
+
   return true;
 }
 
@@ -1079,17 +1283,24 @@ bool MResponseManipulator::Statistics()
  */
 bool MResponseManipulator::Show()
 {
-  string OtherFile(m_FileName);
-  if (OtherFile.rfind("bad.rsp") != string::npos) {
-    OtherFile.replace(OtherFile.rfind("bad.rsp"), 7, "good.rsp");
-  } else if (OtherFile.rfind("good.rsp") != string::npos){
-    OtherFile.replace(OtherFile.rfind("good.rsp"), 8, "bad.rsp");
+  MString OtherFile(m_FileName);
+  if (OtherFile.Contains("bad.rsp") == true) {
+    OtherFile.ReplaceAllInPlace("bad.rsp", "good.rsp");
+  } else if (OtherFile.Contains("good.rsp") == true) {
+    OtherFile.ReplaceAllInPlace("good.rsp", "bad.rsp");
   }
 
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName.c_str());
-  
-  if (R->GetOrder() == 1) {
+  MResponseMatrix* R = File.Read(m_FileName);
+
+  if (R == nullptr) return false;
+
+  if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+    dynamic_cast<MResponseMatrixON*>(R)->Smooth(m_NSmooths);
+    vector<float> Axes = { m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_x11, m_x12, m_x13, m_x14, m_x15, m_x16, m_x17 };
+    Axes.resize(R->GetOrder());
+    dynamic_cast<MResponseMatrixON*>(R)->ShowSlice(Axes, m_Normalized);
+  } else if (R->GetOrder() == 1) {
     dynamic_cast<MResponseMatrixO1*>(R)->Smooth(m_NSmooths);
     dynamic_cast<MResponseMatrixO1*>(R)->Show(m_Normalized);
   } else if (R->GetOrder() == 2) {
@@ -1141,16 +1352,23 @@ bool MResponseManipulator::Show()
     //dynamic_cast<MResponseMatrixO17*>(R)->Smooth(m_NSmooths);
     dynamic_cast<MResponseMatrixO17*>(R)->Show(m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_x11, m_x12, m_x13, m_x14, m_x15, m_x16, m_x17, m_Normalized);
   } else {
-    merr<<"Unsupported matrix order: "<<R->GetOrder()<<endl; 
+    merr<<"Unsupported matrix order: "<<R->GetOrder()<<endl;
   }
   delete R;
 
   cout<<"Other:"<<OtherFile<<endl;
-  if (OtherFile != m_FileName && MFile::FileExists(OtherFile.c_str())) {
+  if (OtherFile != m_FileName && MFile::FileExists(OtherFile)) {
     MFileResponse File;
-    MResponseMatrix* R = File.Read(OtherFile.c_str());
+    MResponseMatrix* R = File.Read(OtherFile);
 
-    if (R->GetOrder() == 1) {
+    if (R == nullptr) return false;
+
+    if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+      dynamic_cast<MResponseMatrixON*>(R)->Smooth(m_NSmooths);
+      vector<float> Axes = { m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_x11, m_x12, m_x13, m_x14, m_x15, m_x16, m_x17 };
+      Axes.resize(R->GetOrder());
+      dynamic_cast<MResponseMatrixON*>(R)->ShowSlice(Axes, m_Normalized);
+    } else if (R->GetOrder() == 1) {
       dynamic_cast<MResponseMatrixO1*>(R)->Smooth(m_NSmooths);
       dynamic_cast<MResponseMatrixO1*>(R)->Show(m_Normalized);
     } else if (R->GetOrder() == 2) {
@@ -1181,7 +1399,7 @@ bool MResponseManipulator::Show()
       //dynamic_cast<MResponseMatrixO10*>(R)->Smooth(m_NSmooths);
       dynamic_cast<MResponseMatrixO10*>(R)->Show(m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_Normalized);
     } else if (R->GetOrder() == 11) {
-      ///dynamic_cast<MResponseMatrixO11*>(R)->Smooth(m_NSmooths);
+      //dynamic_cast<MResponseMatrixO11*>(R)->Smooth(m_NSmooths);
       dynamic_cast<MResponseMatrixO11*>(R)->Show(m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_x11, m_Normalized);
     } else if (R->GetOrder() == 12) {
       //dynamic_cast<MResponseMatrixO12*>(R)->Smooth(m_NSmooths);
@@ -1202,17 +1420,15 @@ bool MResponseManipulator::Show()
       //dynamic_cast<MResponseMatrixO17*>(R)->Smooth(m_NSmooths);
       dynamic_cast<MResponseMatrixO17*>(R)->Show(m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_x11, m_x12, m_x13, m_x14, m_x15, m_x16, m_x17, m_Normalized);
     } else {
-      merr<<"Unsupported matrix order: "<<R->GetOrder()<<endl; 
+      merr<<"Unsupported matrix order: "<<R->GetOrder()<<endl;
     }
     delete R;
   }
-
-
 
   return true;
 }
 
 
 /*
- * Cosima: the end...
+ * MResponseManipulator: the end...
  ******************************************************************************/

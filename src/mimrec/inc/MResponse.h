@@ -61,7 +61,10 @@ class MResponse
   //! Integral of the response
   virtual double GetPairIntegral() const;
  
-
+  
+  //! Get PET response
+  virtual double GetPETResponse(const double t);
+  
 
   // protected methods:
  protected:
@@ -85,7 +88,7 @@ class MResponse
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponse, 0) // basic response class
 #endif

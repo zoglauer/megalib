@@ -60,7 +60,7 @@ class MGUIEDummy : public MGUIElement
   enum Type { e_Nothing };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEDummy, 0) // GUI window for unkown purpose ...
 #endif

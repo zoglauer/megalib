@@ -40,7 +40,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseGaussian)
 #endif
 
@@ -50,11 +50,12 @@ ClassImp(MResponseGaussian)
 
 MResponseGaussian::MResponseGaussian(const double ComptonTransversal, 
                                      const double ComptonLongitudinal, 
-                                     const double PairDistance)
+                                     const double PairDistance, 
+                                     const double PETTransversal)
 {
   // default constructor
 
-  SetGaussians(ComptonTransversal, ComptonLongitudinal, PairDistance);
+  SetGaussians(ComptonTransversal, ComptonLongitudinal, PairDistance, PETTransversal);
 
   // The default threshold is 2.5 sigmas:
   m_Threshold = 2.5;
@@ -83,20 +84,24 @@ MResponseGaussian::~MResponseGaussian()
 
 void MResponseGaussian::SetGaussians(const double Transversal,
                                      const double Longitudinal, 
-                                     const double Pair)
+                                     const double Pair, 
+                                     const double PETTransversal)
 {
   m_LongitudinalFit = Longitudinal*c_Rad;
   m_TransversalFit = Transversal*c_Rad;
   m_PairFit = Pair*c_Rad;
-
+  m_PETFit = PETTransversal;
+  
   m_GaussSquareSigmaLong = -0.5/(m_LongitudinalFit*m_LongitudinalFit);
   m_GaussSquareSigmaTrans = -0.5/(m_TransversalFit*m_TransversalFit);
   m_GaussSquareSigmaPair = -0.5/(m_PairFit*m_PairFit);
-
+  m_GaussSquareSigmaPET = -0.5/(m_PETFit*m_PETFit);
+  
   m_GaussFactorsLong = 1.0/(m_LongitudinalFit*sqrt(2*c_Pi));
   m_GaussFactorsTrans = 1.0/(m_TransversalFit*sqrt(2*c_Pi));
   m_GaussFactorsTransLong = m_GaussFactorsTrans*m_GaussFactorsLong;
   m_GaussFactorsPair = 1.0/(m_PairFit*sqrt(2*c_Pi));
+  m_GaussFactorsPET = 1.0/(m_PETFit*sqrt(2*c_Pi));
 }
 
 
@@ -217,8 +222,20 @@ double MResponseGaussian::GetComptonIntegral(const double Radius) const
 double MResponseGaussian::GetPairResponse(const double t)
 {
   // Get pair response, t is the distance to the reconstructed origin
+  
+  return m_GaussFactorsPair * exp(m_GaussSquareSigmaPair*t*t);
+}
 
- return m_GaussFactorsPair * exp(m_GaussSquareSigmaPair*t*t);
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MResponseGaussian::GetPETResponse(const double t)
+{
+  // Return the PET response, t is the distance to the reconstructed line
+  
+  return m_GaussFactorsPET * exp(m_GaussSquareSigmaPET*t*t);
 }
 
 
@@ -250,6 +267,8 @@ bool MResponseGaussian::AnalyzeEvent(MPhysicalEvent* Event)
     return true;
   } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
     return true;
+  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+    return true;
   }
 
   return false;
@@ -270,11 +289,11 @@ float MResponseGaussian::GaussExp(float x) {
   //if (x < 0.0f) abort(); // That's hard but this is highly optimized code for the caluclation of a gaussian...
 
 //   // Take care of negative values --- useless since we have the cut-off
-// 	bool IsNegative = false;
-// 	if (x < 0.0f) {
-// 		IsNegative = true;
-// 		x = -x;
-// 	}
+//  bool IsNegative = false;
+//  if (x < 0.0f) {
+//    IsNegative = true;
+//    x = -x;
+//  }
 
   // Cut-off at x == 10.4:
   if (x >= 10.4f) return 0.0f;
@@ -289,17 +308,17 @@ float MResponseGaussian::GaussExp(float x) {
   }
 
   // Now x is in the range for Abramowitz: 
-	x = 1 - x*(0.9998684f - x*(0.4982926f - x*(0.1595332f - x*(0.0293641f))));
+  x = 1 - x*(0.9998684f - x*(0.4982926f - x*(0.1595332f - x*(0.0293641f))));
 
   // Now unscale
-	while (Scaler != 0) {
-		--Scaler;
-		x = x*x;
-	}
+  while (Scaler != 0) {
+    --Scaler;
+    x = x*x;
+  }
 
-// 	if (IsNegative == true) {
-// 		return 1.0f / x;
-// 	}
+//  if (IsNegative == true) {
+//    return 1.0f / x;
+//  }
 
   return x;
 }

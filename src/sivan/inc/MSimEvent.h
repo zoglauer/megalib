@@ -35,6 +35,7 @@ using namespace std;
 #include "MPhysicalEvent.h"
 #include "MVector.h"
 #include "MStreams.h"
+#include "MRotationInterface.h"
 
 // Forward declarations:
 
@@ -42,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MSimEvent
+class MSimEvent : public MRotationInterface
 {
   // public interface:
  public:
@@ -68,14 +69,14 @@ class MSimEvent
   void Reset();
 
   //! Set the event ID
-  void SetID(const int ID) { m_NEvent = ID; }
+  void SetID(const long ID) { m_NEvent = ID; }
   //! Get the event ID
-  int GetID() const { return m_NEvent; }
+  long GetID() const { return m_NEvent; }
 
   //! Set the simulation event ID of this event, i.e. the started number of events
-  void SetSimulationEventID(int ID) { m_NStartedEvent = ID; }
+  void SetSimulationEventID(long ID) { m_NStartedEvent = ID; }
   //! Get the simulation event ID of this event, i.e. the started number of events  
-  int GetSimulationEventID() const { return m_NStartedEvent; }
+  long GetSimulationEventID() const { return m_NStartedEvent; }
 
   //! Set the time of the event
   void SetTime(const MTime Time) { m_Time = Time; }
@@ -84,8 +85,14 @@ class MSimEvent
 
   //! Add the content of the given event to this one
   bool Add(const MSimEvent& Event);
-  //! Add a line from a sim file to this event
-  bool AddRawInput(MString LineBuffer, int Version = 1);
+  
+  //! Parse a single line from a sim file to this event
+  bool ParseLine(MString Line, int Version = 1);
+  bool AddRawInput(MString Line, int Version = 1) { return ParseLine(Line, Version); }
+  
+  //! Parse a full (i.e. multi-line) event from a sim file to this event
+  bool ParseEvent(MString Line, int Version = 1);  
+  
   //! Add an interaction to this event
   bool AddIA(const MSimIA& IA);
   //! Add an interaction to this event --- the event will delete this IA!
@@ -109,6 +116,10 @@ class MSimEvent
   void RemoveHT(MSimHT* HT);
   //! Remove all but the given hit from the event - the HT's are not deleted!
   void RemoveAllHTsBut(MSimHT* HT);
+  //! Remove all hits from the event - the HT's are not deleted!
+  void RemoveAllHTs();
+  //! Delete all HTs
+  void DeleteAllHTs();
 
   //! Add a directional information
   bool AddDR(const MSimDR& DR);
@@ -158,7 +169,9 @@ class MSimEvent
   /// Flag indicating only INIT simulation info is stored
   static const int c_StoreSimulationInfoInitOnly; 
   /// Flag indicating NO simulation info is stored
-  static const int c_StoreSimulationInfoNone; 
+  static const int c_StoreSimulationInfoNone;
+  /// Flag indicating only IA info is stored
+  static const int c_StoreSimulationInfoIAOnly;
 
   //! Convert the content to string
   MString ToString();
@@ -292,7 +305,7 @@ class MSimEvent
   double GetAverageEnergyDeposit(int Detector);
   
   //! Return the total energy deposited in all guard rings
-  double GetGuardringEnergy();
+  double GetGuardRingEnergy();
 
   //! Return the number of ignored hits (below threshold, no detector)
   int GetNIgnoredHTs() const { return m_NIgnoredHTs; }
@@ -308,14 +321,14 @@ class MSimEvent
 
   // Depreciated:
 
-  void SetEventNumber(int EventNumber) { mdep<<"Please use: SetID"<<show; m_NEvent = EventNumber; }
-  int GetEventNumber() { mdep<<"Please use: GetID"<<show; return m_NEvent; }
+  void SetEventNumber(long EventNumber) { mdep<<"Please use: SetID"<<show; m_NEvent = EventNumber; }
+  long GetEventNumber() { mdep<<"Please use: GetID"<<show; return m_NEvent; }
 
-  void SetId(const int Id) { mdep<<"Please use: SetID"<<show; m_NEvent = Id; }
-  int GetId() const { mdep<<"Please use: GetID"<<show; return m_NEvent; }
+  void SetId(const long Id) { mdep<<"Please use: SetID"<<show; m_NEvent = Id; }
+  long GetId() const { mdep<<"Please use: GetID"<<show; return m_NEvent; }
 
-  void SetStartedEventNumber(int EventNumber) { mdep<<"Please use: SetSimulationEventID"<<show; SetSimulationEventID(EventNumber); } ;
-  int GetStartedEventNumber() { mdep<<"Please use: GetSimulationEventID"<<show; return GetSimulationEventID(); };
+  void SetStartedEventNumber(long EventNumber) { mdep<<"Please use: SetSimulationEventID"<<show; SetSimulationEventID(EventNumber); } ;
+  long GetStartedEventNumber() { mdep<<"Please use: GetSimulationEventID"<<show; return GetSimulationEventID(); };
 
 
   // public constants
@@ -363,9 +376,9 @@ class MSimEvent
   vector<MString> m_CCs;   
 
   //! Event ID
-  unsigned int m_NEvent;
+  unsigned long m_NEvent;
   //! Number of simulated events up to this event ID
-  unsigned int m_NStartedEvent;    
+  unsigned long m_NStartedEvent;    
 
   // Special measurements: 
   //! Time of the (start) of the event
@@ -403,8 +416,9 @@ class MSimEvent
   //! Number of ignored hits (energy below threshold, no detector)
   int m_NIgnoredHTs;
 
-
-#ifdef ___CINT___
+  
+  
+#ifdef ___CLING___
  public:
   ClassDef(MSimEvent, 0)    // representation of a simulated event
 #endif

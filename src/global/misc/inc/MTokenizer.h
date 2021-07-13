@@ -112,6 +112,9 @@ class MTokenizer
   vector<float> GetTokenAtAsFloatVector(const unsigned int i) const;
   //! Return the token AT AND AFTER i as vector of ints --- return empty array in case of error
   vector<int> GetTokenAtAsIntVector(const unsigned int i) const;
+  //! Return the token AT AND AFTER i as vector of strings --- return empty array in case of error
+  //! The boolean indicates that the strings are enclosed in quotation marks
+  vector<MString> GetTokenAtAsStringVector(const unsigned int i, bool StringsAreInQuotationMarks = false) const;
   //! Return the token AT AND AFTER i as vector of ints --- return empty array in case of error
   vector<unsigned int> GetTokenAtAsUnsignedIntVector(const unsigned int i) const;
 
@@ -156,7 +159,7 @@ class MTokenizer
   //! Return whether the first token was composed e.g. "Sphere.Source"
   bool m_Composited;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MTokenizer, 0) // no description
 #endif

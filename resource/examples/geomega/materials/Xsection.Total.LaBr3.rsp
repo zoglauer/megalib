@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 1021
+# Derived from Geant4 version 1023
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for LaBr3
 CE false
-HA 3110235667
+HA 2284409394
 
 R1         1.000000 2.647260e+04
 R1         1.047129 2.386347e+04

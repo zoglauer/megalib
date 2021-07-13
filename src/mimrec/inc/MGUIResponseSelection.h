@@ -24,24 +24,28 @@
 #include "MGUIDialog.h"
 #include "MSettingsImaging.h"
 #include "MGUIERBList.h"
+#include "MResponseType.h"
 
 // Forward declarations:
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//! Default UI to select the response type
 class MGUIResponseSelection : public MGUIDialog
 {
   // Public Interface:
  public:
-  MGUIResponseSelection(const TGWindow* Parent, const TGWindow* Main, 
-                        MSettingsImaging* Data = 0);
+  //! Standard constructor
+  MGUIResponseSelection(const TGWindow* Parent, const TGWindow* Main, MSettingsImaging* Data = 0);
+  //! Default destructor
   virtual ~MGUIResponseSelection();
 
   // protected methods:
  protected:
+  //! Create the UI
   virtual void Create();
+  //! Apply the set data 
   virtual bool OnApply();
 
   // private methods:
@@ -55,13 +59,13 @@ class MGUIResponseSelection : public MGUIDialog
 
   // private members:
  private:
-  MSettingsImaging* m_GUIData;
-
-  TGLayoutHints* m_ResponseChoiceLayout;
+  //! The settings store
+  MSettingsImaging* m_Settings;
+  //! A radiobutton list of the different response choices
   MGUIERBList* m_ResponseChoice;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIResponseSelection, 0)
 #endif

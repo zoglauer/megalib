@@ -47,8 +47,8 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseCreator* g_Prg = 0;
-int g_NInterrupts = 0;
+MResponseCreator* g_Prg = nullptr;
+unsigned int g_NInterrupts = 0;
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -59,9 +59,10 @@ void CatchSignal(int a)
   // Called when an interrupt signal is flagged
   // All catched signals lead to a well defined exit of the program
  
-  cout<<"Catched signal Ctrl-C (ID="<<a<<"):"<<endl;
+  cout<<"Catched signal Ctrl-C (ID="<<a<<")"<<endl;
   
-  if (g_Prg != 0 and g_NInterrupts < 1) {
+  if (g_Prg != nullptr && g_NInterrupts == 0) {
+    cout<<"Press Ctrl-C again for an immediate abort!"<<endl;
     g_NInterrupts++;
     g_Prg->Interrupt();
   } else {
@@ -83,7 +84,7 @@ int main(int argc, char** argv)
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("Response Creator", "a universal response generator for MEGAlib");
 
-	MResponseCreator* g_Prg = new MResponseCreator();
+  g_Prg = new MResponseCreator();
   if (g_Prg->ParseCommandLine(argc, argv) == false) {
     return 0;
   } 

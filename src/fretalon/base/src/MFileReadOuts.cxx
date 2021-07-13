@@ -46,7 +46,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MFileReadOuts)
 #endif
 
@@ -122,7 +122,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   while (IsGood() == true) {
     
     if (++Lines >= MaxLines) break;
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     
     if (FoundUF == false) {
       if (Line.BeginsWith("UF") == true) {
@@ -158,6 +158,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   MFile::Rewind();
   
   if (ReadOutElementFormat == "" || ReadOutDataFormat == "") {
+    cout<<"Error in file: "<<m_FileName<<":"<<endl;
     cout<<"No read-out element type / data format found in the file!"<<endl;
     Close();
     return false;
@@ -165,6 +166,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   
   // Create the read-out elements and data to fill
   if ((m_ROE = MFretalonRegistry::Instance().GetReadOutElement(ReadOutElementFormat)) == 0) {
+    cout<<"Error in file: "<<m_FileName<<":"<<endl;
     cout<<"No read-out element of type \""<<ReadOutElementFormat<<"\" is registered!"<<endl;
     Close();
     return false;
@@ -172,11 +174,14 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   
   // Assemble the ROD
   vector<MString> RODNames;
+  int Underscore = ReadOutDataFormat.Tokenize("_").size();
   int Minus = ReadOutDataFormat.Tokenize("-").size();
   int With = ReadOutDataFormat.Tokenize("with").size();
-  if (Minus > With) {
+  if (Minus > 1 && Underscore == 1 && With == 1) {
     RODNames = ReadOutDataFormat.Tokenize("-");
-  } else if (Minus < With) {
+  } else if (Minus == 1 && Underscore > 1 && With == 1) {
+    RODNames = ReadOutDataFormat.Tokenize("_");
+  } else if (Minus == 1 && Underscore == 1 && With > 1) {
     RODNames = ReadOutDataFormat.Tokenize("with");
   } else {
     RODNames.push_back(ReadOutDataFormat); 
@@ -186,6 +191,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   for (auto Name: RODNames) {
     MReadOutData* ROD = MFretalonRegistry::Instance().GetReadOutData(Name);
     if (ROD == 0) {
+      cout<<"Error in file: "<<m_FileName<<":"<<endl;
       cout<<"No read-out data of type "<<Name<<" is registered!"<<endl;
       return false;
     }
@@ -277,10 +283,10 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
   
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
   while (IsGood() == true) {
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
           
-    // Case 1: The event is completed.  Check to see if we're at the following "SE".
+    // Part 1: The event is completed.  Check to see if we're at the following "SE".
     if ((Line[0] == 'S' && Line[1] == 'E') ||
         (Line[0] == 'I' && Line[1] == 'N')) {
       // If the event is empty, then we ignore it and prepare for the next event:
@@ -300,36 +306,9 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
         return !Error;
       }
     } // SE
-      
-    // Case 2: Parse other keywords in the event
-    if (Line[0] == 'I' && Line[1] == 'D') {
-      unsigned long ID = 0;
-      if (sscanf(Line.Data(), "ID %lu\n", &ID) == 1) {
-        ROS.SetID(ID);
-      } else {
-        Error = true;
-      }
-    } else if (Line[0] == 'T' && Line[1] == 'I') {
-      MTime T(0);
-      if (T.Set(Line.Data()) == true) {
-        ROS.SetTime(T);
-      } else {
-        Error = true;
-      }
-    } else if (Line[0] == 'U' && Line[1] == 'H') {
-      T.AnalyzeFast(Line);
-      
-      m_ROE->Parse(T, 1);
-      m_ROD->Parse(T, 1 + m_ROE->GetNumberOfParsableElements());
-      
-      //cout<<"Combined: "<<m_ROD->ToString()<<" vs. "<<m_ROD->GetCombinedType()<<endl;
-      
-      if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) m_ROE->GetDetectorID() == SelectedDetectorID)) {
-        MReadOut RO(*m_ROE, *m_ROD);
-        ROS.AddReadOut(RO);
-        //cout<<"Added: "<<RO.ToString()<<endl;
-      }
-    } else if (Line[0] == 'I' && Line[1] == 'N') {
+    
+    // Part 2: Handle IN
+    if (Line[0] == 'I' && Line[1] == 'N') {
 
       if (OpenIncludeFile(Line) == true) {
         //mout<<"Switched to new include file: "<<m_IncludeFile->GetFileName()<<endl;
@@ -347,8 +326,30 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
         mgui<<"Your current file contains a \"IN\" -- include file -- directive."<<endl
             <<"However, the file could not be found or read: "<<m_IncludeFile->GetFileName()<<show;
       }
+      
+      continue;
+    }
+      
+    // Part 3: Handle UH - this can only be done here.
+    if (Line[0] == 'U' && Line[1] == 'H') {
+      T.AnalyzeFast(Line);
+      
+      m_ROE->Parse(T, 1);
+      m_ROD->Parse(T, 1 + m_ROE->GetNumberOfParsableElements());
+      
+      // cout<<"Combined: "<<m_ROD->ToString()<<" vs. "<<m_ROD->GetCombinedType()<<endl;
+      
+      if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) m_ROE->GetDetectorID() == SelectedDetectorID)) {
+        MReadOut RO(*m_ROE, *m_ROD);
+        ROS.AddReadOut(RO);
+        //cout<<"Added: "<<RO.ToString()<<endl;
+      }
+      continue;
     }
     
+    // Part 4: All the rest is handled in the MReadOutSequence and its derived class MReadOutAssembly
+    ROS.Parse(Line);
+     
   } // End of while(m_File.good() == true)
   
   // Done reading.  No more new events.

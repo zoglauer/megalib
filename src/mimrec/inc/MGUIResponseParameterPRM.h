@@ -41,7 +41,7 @@ class MGUIResponseParameterPRM : public MGUIDialog
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
@@ -59,7 +59,7 @@ class MGUIResponseParameterPRM : public MGUIDialog
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIResponseParameterPRM, 0)
 #endif

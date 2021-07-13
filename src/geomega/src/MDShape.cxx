@@ -49,7 +49,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MDShape)
 #endif
 
@@ -66,7 +66,8 @@ const double MDShape::c_NoIntersection = -947957.243756;
 MDShape::MDShape(const MString& Name)
 {
   m_Name = Name;
-  m_Geo = 0;
+  m_Geo = nullptr;
+  m_IsValidated = false;
 }
 
 
@@ -180,11 +181,11 @@ double MDShape::DistanceOutsideIn(const MVector& Pos, const MVector& Dir, double
 bool MDShape::IsInside(const MVector& Pos, const double Tolerance, const bool PreferOutside)
 {
   massert(m_Geo != 0);
-
-  double* point = new double[3];
-  point[0] = Pos[0];
-  point[1] = Pos[1];
-  point[2] = Pos[2];
+  
+  Double_t point[3];
+  point[0] = Pos.m_X;
+  point[1] = Pos.m_Y;
+  point[2] = Pos.m_Z;
 
   bool Inside = m_Geo->Contains(point);
 
@@ -200,8 +201,6 @@ bool MDShape::IsInside(const MVector& Pos, const double Tolerance, const bool Pr
       }
     }
   }
-  
-  delete [] point;
 
   return Inside;
 }

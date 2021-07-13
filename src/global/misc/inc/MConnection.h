@@ -28,7 +28,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MConnection : public TObject
+class MConnection 
 {
   // public members:
  public:
@@ -80,7 +80,7 @@ class MConnection : public TObject
   MString m_StopTransceiverName;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MConnection, 0) // no description
 #endif

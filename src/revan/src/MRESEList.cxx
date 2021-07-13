@@ -47,7 +47,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MRESEList)
 #endif
 
@@ -141,11 +141,10 @@ void MRESEList::DeleteAll()
 
   //m_RESEList->Delete();
 
-  for (vector<MRESE*>::iterator Iter = m_RESEList.begin(); 
-       Iter != m_RESEList.end(); ++Iter) {
+  for (vector<MRESE*>::iterator Iter = m_RESEList.begin(); Iter != m_RESEList.end(); ++Iter) {
     if ((*Iter) != 0) {
       (*Iter)->DeleteAll();
-      // delete GetRESEAt(i);
+      delete (*Iter);
     }
   }
 }
@@ -308,6 +307,21 @@ void MRESEList::AddRESEFirst(MRESE* RESE)
   massert(RESE != 0);
 
   m_RESEList.insert(m_RESEList.begin(), RESE);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRESEList::SetRESEAt(int i, MRESE* RESE)
+{
+  // Set a RESE to the specified position
+  
+  massert(this != 0);
+  massert(RESE != 0);
+  massert(int(m_RESEList.size()) > i);
+  
+  m_RESEList[i] = RESE;
 }
 
 

@@ -35,7 +35,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIRBSelection)
 #endif
 
@@ -94,8 +94,8 @@ void MGUIRBSelection::Create()
 
 
   // and bring it to the screen.
-	PositionWindow(GetDefaultWidth(), GetDefaultHeight(), false);
-	MapSubwindows();
+  PositionWindow(GetDefaultWidth(), GetDefaultHeight(), false);
+  MapSubwindows();
   MapWindow();  
 
   Layout();
@@ -175,14 +175,14 @@ bool MGUIRBSelection::IsOKPressed()
 
 bool MGUIRBSelection::OnOk()
 {
-	//
+  //
 
-	if (m_MsgWindow != 0) {
-		SendMessage(m_MsgWindow, m_MsgID1, m_MsgID2, GetSelected());
-	}
-	CloseWindow();
-	
-	return true;
+  if (m_MsgWindow != 0) {
+    SendMessage(m_MsgWindow, m_MsgID1, m_MsgID2, GetSelected());
+  }
+  CloseWindow();
+  
+  return true;
 }
 
 

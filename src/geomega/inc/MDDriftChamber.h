@@ -63,8 +63,6 @@ class MDDriftChamber : public MDStrip3D
 
 
   virtual MString GetGeomega() const;
-  virtual MString GetGeant3() const;
-  virtual MString GetMGeant() const;
   virtual MString ToString() const;
 
   //! Check if all input is reasonable
@@ -106,7 +104,7 @@ class MDDriftChamber : public MDStrip3D
   //! measured by the light
   MFunction m_LightEnergyResolution; 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDDriftChamber, 0) // no description
 #endif

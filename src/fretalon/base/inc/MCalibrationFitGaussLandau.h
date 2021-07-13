@@ -86,7 +86,7 @@ class MCalibrationFitGaussLandau : public MCalibrationFitGaussian
    
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrationFitGaussLandau, 0) // no description
 #endif

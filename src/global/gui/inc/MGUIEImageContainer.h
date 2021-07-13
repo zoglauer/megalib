@@ -97,7 +97,7 @@ class MGUIEImageContainer : public MGUIElement
   static int m_CanvasCounter;      // special ID of the displayed canvas
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEImageContainer, 0) // no description
 #endif

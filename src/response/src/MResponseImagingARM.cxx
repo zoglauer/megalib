@@ -35,14 +35,12 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
-#include "MSettingsRevan.h"
-#include "MSettingsMimrec.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseImagingARM)
 #endif
 
@@ -50,156 +48,238 @@ ClassImp(MResponseImagingARM)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default constructor
 MResponseImagingARM::MResponseImagingARM()
 {
-  // Construct an instance of MResponseImagingARM
+  m_ResponseNameSuffix = "imagingarm";
+  m_OnlyINITRequired = true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default destructor
 MResponseImagingARM::~MResponseImagingARM()
 {
-  // Delete this instance of MResponseImagingARM
+  // Nothing to delete
 }
 
-
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseImagingARM::SetMimrecConfigurationFileName(const MString FileName)
-{
-  // Set and verify the simulation file name
+//! Initialize the response matrices and their generation
+bool MResponseImagingARM::Initialize() 
+{ 
+  // Initialize next matching event, save if necessary
+  if (MResponseBuilder::Initialize() == false) return false;
 
-  if (MFile::Exists(FileName) == false) {
-    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
-    return false;
-  }
-  m_MimrecCfgFileName = FileName;
+  vector<float> PhiDiffAxis;
 
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseImagingARM::SetRevanConfigurationFileName(const MString FileName)
-{
-  // Set and verify the simulation file name
-
-  if (MFile::Exists(FileName) == false) {
-    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
-    return false;
-  }
-  m_RevanCfgFileName = FileName;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseImagingARM::OpenSimulationFile()
-{
-  // Load the simulation file --- has to be called after the geometry is loaded
-
-  m_ReReader = new MRawEventAnalyzer();
-  m_ReReader->SetGeometry(m_ReGeometry);
-  if (m_ReReader->SetInputModeFile(m_SimulationFileName) == false) return false;
-
-  MSettingsRevan RevanCfg(false);
-  RevanCfg.Read(m_RevanCfgFileName);
-  m_ReReader->SetSettings(&RevanCfg);
-
-  MSettingsMimrec MimrecCfg(false);
-  MimrecCfg.Read(m_MimrecCfgFileName);
-  m_MimrecEventSelector.SetSettings(&MimrecCfg);
-
-  if (m_ReReader->PreAnalysis() == false) return false;
-
-  m_SiReader = new MFileEventsSim(m_SiGeometry);
-  if (m_SiReader->Open(m_SimulationFileName) == false) return false;
-
-  return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseImagingARM::CreateResponse()
-{
-  // Create the multiple Compton response
-
-  if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
-  if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
-
-  if (OpenSimulationFile() == false) return false;
-
-  cout<<"Generating imaging pdf"<<endl;
-
-  vector<float> AxisPhiDiff;
-
+  /*
   vector<float> Axis; // = CreateLogDist(0.1, 180, 20);
-  for (float x = 0.25; x < 9.9; x += 0.25) Axis.push_back(x);
-  for (float x = 10; x < 19.9; x += 0.5) Axis.push_back(x);
-  for (float x = 20; x <= 179.9; x += 1) Axis.push_back(x);
+  for (float x = 0.25; x < 7.9; x += 0.25) Axis.push_back(x);
+  for (float x = 8.0; x < 14.9; x += 0.5) Axis.push_back(x);
+  for (float x = 15.0; x <= 29.9; x += 1) Axis.push_back(x);
+  for (float x = 30.0; x <= 89.9; x += 2) Axis.push_back(x);
+  for (float x = 90.0; x <= 179.9; x += 3) Axis.push_back(x);
   Axis.push_back(180.0);
 
   // Add Inverted:
   for (unsigned int b = Axis.size()-1; b < Axis.size(); --b) {
-    AxisPhiDiff.push_back(-Axis[b]);
+    PhiDiffAxis.push_back(-Axis[b]);
   }
-  AxisPhiDiff.push_back(0);
+  PhiDiffAxis.push_back(0);
   for (unsigned int b = 0; b < Axis.size(); ++b) {
-    AxisPhiDiff.push_back(Axis[b]);
+    PhiDiffAxis.push_back(Axis[b]);
   }
+  */
 
-  MResponseMatrixO1 Phi("ARM", AxisPhiDiff);
-  Phi.SetAxisNames("#phi_{meas} - #phi_{real} [deg]");
-
-
-  double PhiDiff;
-  MVector IdealOrigin;
-
-  MRawEventList* REList = 0;
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* Compton = 0;
+  double PhiMin = 0.3;
+  double PhiNBins = 80;
   
-  int Counter = 0;
-  while (InitializeNextMatchingEvent() == true) {
-    REList = m_ReReader->GetRawEventList();
+  PhiNBins /= 2;
+  
+  double PhiStart = 0.5*PhiMin;
+  double PhiStop = 180;
+  
+  double PhiDistance = (PhiStop - PhiStart) - PhiMin*PhiNBins;
+  
+  double lPhiStart = log(PhiStart);
+  double lPhiEnd = log(PhiStart + PhiDistance);
+  double lPhiDist = (lPhiEnd - lPhiStart) / PhiNBins;
+  
+  for (unsigned int b = PhiNBins; b <= PhiNBins; --b) {
+    PhiDiffAxis.push_back(-exp(lPhiStart + b*lPhiDist) - b*PhiMin);
+  }
+  for (unsigned int b = 0; b <= PhiNBins; ++b) {
+    PhiDiffAxis.push_back(exp(lPhiStart + b*lPhiDist) + b*PhiMin);
+  }
+  
+  
+  vector<float> EnergyAxis = CreateThresholdedLogDist(100, 10000, 10, 25);
 
-    if (REList->HasOptimumEvent() == true) {
-      Event = REList->GetOptimumEvent()->GetPhysicalEvent();
-      if (Event != 0) {
-        if (m_MimrecEventSelector.IsQualifiedEvent(Event, true) == true) {
-          if (Event->GetType() == MPhysicalEvent::c_Compton) {
-            Compton = (MComptonEvent*) Event;
+  vector<float> PhiAxis = CreateEquiDist(0, 180, 9);
+  
+  vector<float> DistanceAxis;
+  DistanceAxis.push_back(0);
+  DistanceAxis.push_back(0.19);
+  DistanceAxis.push_back(0.39);
+  DistanceAxis.push_back(0.69);
+  DistanceAxis.push_back(0.99);
+  DistanceAxis.push_back(1.49);
+  DistanceAxis.push_back(1.99);
+  DistanceAxis.push_back(2.99);
+  DistanceAxis.push_back(4.99);
+  DistanceAxis.push_back(7.99);
+  DistanceAxis.push_back(19.99);
+  DistanceAxis.push_back(99.99);
+  
+  vector<float> InteractionsAxis;
+  InteractionsAxis.push_back(1.5);
+  InteractionsAxis.push_back(2.5);
+  InteractionsAxis.push_back(9.5);
+  
+  m_Arm.SetName("Angular resolution (all energies)");
+  m_Arm.SetAxis(PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
+  m_Arm.SetAxisNames("ARM #phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "Number of interactions: 2 or 3+ site events");
+  if (m_SiReader != nullptr) {
+    m_Arm.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }   
+  
+  m_ArmPhotoPeak.SetName("Angular resolution (photo peak)");
+  m_ArmPhotoPeak.SetAxis(PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
+  m_ArmPhotoPeak.SetAxisNames("ARM #phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "Number of interactions: 2 or 3+ site events");
+  if (m_SiReader != nullptr) {
+    m_ArmPhotoPeak.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }   
+  
+  vector<float> AxisEpsilonDiff = CreateEquiDist(0, 180, 36);
+  vector<float> AxisEpsilonReal = CreateEquiDist(0, 180, 1);
+  vector<float> AxisEe = CreateLogDist(100, 20000, 20);
+  
+  m_Spd.SetName("Shape along cone for tracked events");
+  m_Spd.SetAxis(AxisEpsilonDiff, AxisEpsilonReal, AxisEe);
+  m_Spd.SetAxisNames("SPD #epsilon_{meas} - #epsilon_{real} [deg]", "Measure electron scatter angle [deg]", "Measured electron energy [keV]");
+  
+  m_SpdPhotoPeak.SetName("Shape along cone for tracked events (photo peak)");
+  m_SpdPhotoPeak.SetAxis(AxisEpsilonDiff, AxisEpsilonReal, AxisEe);
+  m_SpdPhotoPeak.SetAxisNames("SPD #epsilon_{meas} - #epsilon_{real} [deg]", "Measure electron scatter angle [deg]", "Measured electron energy [keV]");
+  
 
-            if (Compton->IsKinematicsOK() == false) continue;
+  
+  m_NMatchedEvents = 0;
+  m_NOptimumEvents = 0;
+  m_NQualifiedComptonEvents = 0;
+  m_NPhotoPeakEvents = 0;
+  
+  m_NQualifiedComptonEventsWithTrack = 0;
+  m_NPhotoPeakEventsWithTrack = 0;
+  
+  return true;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Analyze the current event
+bool MResponseImagingARM::Analyze() 
+{ 
+  // Initlize next matching event, save if necessary
+  if (MResponseBuilder::Analyze() == false) return false;
+  
+  ++m_NMatchedEvents;
+  
+  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
+  
+  if (REList->HasOnlyOptimumEvents() == true) {
+    MRERawEvent* RE = REList->GetOptimumEvents()[0];
+    MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
+    if (Event != 0) {
+      ++m_NOptimumEvents;
+      if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
+        if (Event->GetType() == MPhysicalEvent::c_Compton) {
+          MComptonEvent* Compton = (MComptonEvent*) Event;
+          
+          if (Compton->IsKinematicsOK() == false) return true;
+          ++m_NQualifiedComptonEvents;
+          
+          // Now get the ideal origin:
+          if (m_SiEvent->GetNIAs() > 0) {
+            MVector IdealOrigin = m_SiEvent->GetIAAt(0)->GetPosition();
             
-            // Now get the ideal origin:
-            if (m_SiEvent->GetNIAs() > 0) {
-              IdealOrigin = m_SiEvent->GetIAAt(0)->GetPosition();
-
-              // Phi response:
-              PhiDiff = Compton->GetARMGamma(IdealOrigin)*c_Deg;
-              Phi.Add(PhiDiff);
-           }
+            // Phi response:
+            double PhiDiff = Compton->GetARMGamma(IdealOrigin)*c_Deg;
+            
+            //
+            m_Arm.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
+            
+            double IdealEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+            
+            if (IdealEnergy >= RE->GetEnergy() - 3*RE->GetEnergyResolution() &&
+              IdealEnergy <= RE->GetEnergy() + 3*RE->GetEnergyResolution()) {
+              ++m_NPhotoPeakEvents;
+              m_ArmPhotoPeak.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
+            }
+            
+            if (Compton->HasTrack() == true) {
+              double EpsilonDiff = Compton->GetSPDElectron(IdealOrigin)*c_Deg;
+              m_Spd.Add(EpsilonDiff, Compton->Epsilon()*c_Deg, Compton->Ee());
+              m_NQualifiedComptonEventsWithTrack++;
+              if (IdealEnergy >= RE->GetEnergy() - 3*RE->GetEnergyResolution() &&
+                IdealEnergy <= RE->GetEnergy() + 3*RE->GetEnergyResolution()) {
+                ++m_NPhotoPeakEventsWithTrack;
+                m_SpdPhotoPeak.Add(EpsilonDiff, Compton->Epsilon()*c_Deg, Compton->Ee());
+              }
+            }
           }
         }
-      }    
-    }
-    if (++Counter % m_SaveAfter == 0) {
-      Phi.Write(m_ResponseName + ".phi" + m_Suffix, true);
-    }
-  }  
+      }
+    }    
+  }
+  
+  return true;
+}
 
-  Phi.Write(m_ResponseName + ".phi" + m_Suffix, true);
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Finalize the response generation (i.e. save the data a final time )
+bool MResponseImagingARM::Finalize() 
+{ 
+  cout<<"Statistics: "<<endl;
+  cout<<"# matched events:            "<<m_NMatchedEvents<<endl;
+  cout<<"# optimum events:            "<<m_NOptimumEvents<<endl;
+  cout<<"# qualified Compton events:  "<<m_NQualifiedComptonEvents<<endl;
+  cout<<"# photo peak events:         "<<m_NPhotoPeakEvents<<endl;
+
+  return MResponseBuilder::Finalize(); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Save the responses
+bool MResponseImagingARM::Save()
+{
+  MResponseBuilder::Save(); 
+  
+  m_Arm.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_Arm.Write(GetFilePrefix() + ".allenergies" + m_Suffix, true);
+  
+  m_ArmPhotoPeak.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_ArmPhotoPeak.Write(GetFilePrefix() + ".photopeak" + m_Suffix, true);
+  
+  m_Spd.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_Spd.Write(GetFilePrefix() + ".spd.allenergies" + m_Suffix, true);
+  
+  m_SpdPhotoPeak.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_SpdPhotoPeak.Write(GetFilePrefix() + "spd.photopeak" + m_Suffix, true);
+  
   return true;
 }
 
