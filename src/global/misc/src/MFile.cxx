@@ -69,6 +69,7 @@ MFile::MFile()
   m_Progress = nullptr;
   m_ZipFile = 0;
   m_IsOpen = false;
+  m_IsBinary = false;
   m_ReadLineBufferLength = 0;
 
   // The following are also set in Reset() but required for the Close() in there
@@ -118,6 +119,8 @@ void MFile::Reset()
 
   m_IsOpen = false;
 
+  m_IsBinary = false;
+  
   // m_Progress = 0; // Already managed by initial close!
   m_ProgressLevel = 0;
   m_OwnProgress = true;
@@ -339,7 +342,7 @@ void MFile::ExpandFileName(MString& FileName, const MString& WorkingDir)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFile::Open(MString FileName, unsigned int Way)
+bool MFile::Open(MString FileName, unsigned int Way, bool IsBinary)
 {
   // Open the file in different modes
 
@@ -384,7 +387,7 @@ bool MFile::Open(MString FileName, unsigned int Way)
     if (Way == c_Read) {
       m_ZipFile = gzopen(m_FileName, "rb");
     } else {
-      m_ZipFile = gzopen(m_FileName, "wb4"); // Compression level 4 seems to be the best balance between speed and compression for MEGAlib files on Ubuntu 14.04
+      m_ZipFile = gzopen(m_FileName, "wb9"); // Maxmimum compression level is OK, since it is negligible compared to data analysis
     }
     if (m_ZipFile == NULL) {
       mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
@@ -394,9 +397,9 @@ bool MFile::Open(MString FileName, unsigned int Way)
   } else {
     m_File.clear();
     if (Way == c_Read) {
-      m_File.open(m_FileName, ios_base::in);
+      m_File.open(m_FileName, ios_base::in|ios_base::binary);
     } else {
-      m_File.open(m_FileName, ios_base::out);
+      m_File.open(m_FileName, ios_base::out|ios_base::binary);
     }
     if (m_File.is_open() == false) {
       mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
@@ -408,7 +411,8 @@ bool MFile::Open(MString FileName, unsigned int Way)
   // We are open now
   m_IsOpen = true;
   m_Way = Way;
-
+  m_IsBinary = IsBinary;
+  
   m_FileMutex.UnLock();
 
   return true;
@@ -710,6 +714,26 @@ void MFile::Write(const char c)
   m_FileMutex.UnLock();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write binary
+void MFile::Write(MBinaryStore& Store)
+{
+  m_FileMutex.Lock();
+  
+  for (unsigned int c = 0; c < Store.GetArraySize(); ++c) {
+   if (m_WasZipped == true) {
+      gzputc(m_ZipFile, Store.GetArrayValue(c));
+    } else {
+      uint8_t ui = Store.GetArrayValue(c);
+      m_File.write(reinterpret_cast<char*>(&ui), 1);
+    }
+  }
+  
+  m_FileMutex.UnLock();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -893,6 +917,43 @@ bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
     }
   } else {
     m_File.getline(String, Size, Delimeter);
+  }
+
+  m_FileMutex.UnLock();
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFile::Read(MBinaryStore& Store, unsigned int CharactersToRead)
+{
+  //! Read CharactersToRead (or until end of file)  - returns false if before the read IsGood() would return false
+
+  m_FileMutex.Lock();
+
+  if (IsGoodNoLock() == false) {
+    m_FileMutex.UnLock();
+    return false;
+  }
+
+  //! Read one line
+  if (m_WasZipped == true) {
+    for (unsigned int i = 0; i < CharactersToRead; ++i) {
+      int c = gzgetc(m_ZipFile);
+      if (c == -1) {
+        m_FileMutex.UnLock();
+        return true;
+      }
+      Store.AddUInt8((uint8_t) c);
+    }
+  } else {
+    char* Buffer = new char[CharactersToRead];
+    m_File.read(Buffer, CharactersToRead);
+    Store.AddChars(Buffer, m_File.gcount());
+    delete [] Buffer;
   }
 
   m_FileMutex.UnLock();

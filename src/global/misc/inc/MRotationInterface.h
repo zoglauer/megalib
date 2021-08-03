@@ -24,6 +24,7 @@
 #include "MGlobal.h"
 #include "MVector.h"
 #include "MRotation.h"
+#include "MBinaryStore.h"
 
 // Forward declarations:
 
@@ -60,6 +61,11 @@ class MRotationInterface
   //! Reading has to be done in the derived class
   void Stream(ostringstream& S);
 
+  //! Retrieve the *key* content from binary
+  bool ParseBinary(MBinaryStore& Out, const bool HasGalacticPointing, const bool HasDetectorRotation, const bool HasHorizonPointing, const int BinaryPrecision = 32, const int Version = 25);
+  //! Convert the *key* content to binary
+  bool ToBinary(MBinaryStore& Out, const int BinaryPrecision = 32, const int Version = 25);
+  
   //! Set if you wish to store the coordinates in galactic coordinates
   void SetHasGalacticPointing(bool GalacticPointing = true) { m_HasGalacticPointing = GalacticPointing; }
   //! Return if we have galactic coodinates

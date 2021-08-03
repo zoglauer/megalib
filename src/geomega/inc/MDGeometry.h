@@ -113,7 +113,8 @@ class MDGeometry
   unsigned int GetDetectorIndex(const MString& Name);
   unsigned int GetNDetectors();
   vector<MDDetector*> GetDetectorList() const { return m_DetectorList; }
-
+  int GetDetectorType(const MVector& Position);
+  
   bool AddShape(const MString& Type, const MString& Name);
   void AddShape(MDShape* Shape);
   MDShape* GetShapeAt(unsigned int i);

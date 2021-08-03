@@ -23,6 +23,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MBinaryStore.h"
 
 // Standard libs:
 #include <fstream>
@@ -50,7 +51,7 @@ class MFile
   virtual void Reset();
 
   //! Open the file for reading or writing
-  virtual bool Open(MString FileName, unsigned int Way = c_Read);
+  virtual bool Open(MString FileName, unsigned int Way = c_Read, bool IsBinary = false);
   //! Close the file
   virtual bool Close();
   //! Rewind the file
@@ -63,6 +64,10 @@ class MFile
   //! Clear all flags
   virtual void Clear();
 
+  //! Return true if the file is binary
+  virtual bool IsBinary() { return m_IsBinary; }
+  
+  
   //! Return the file length on disk
   virtual streampos GetFileLength(bool Redetermine = false);
   //! Return the file length as if the file were uncompressed
@@ -95,6 +100,9 @@ class MFile
   virtual void Write(const double d);
   //! Write some text
   virtual void Write(const char c);
+  //! Write binary
+  virtual void Write(MBinaryStore& Store);
+  
   //! Flush all written text
   virtual void Flush();
 
@@ -109,6 +117,9 @@ class MFile
   //! Read one line the C way - returns false if before the read IsGood() would return false
   virtual bool ReadLine(char* String, streamsize Size, char Delimeter);
 
+  //! Read CharactersToRead (or until end of file)  - returns false if before the read IsGood() would return false
+  virtual bool Read(MBinaryStore& Store, unsigned int CharactersToRead);
+  
   //! Set the file name - this does not open any file and you have to give the file name when you call Open()
   void SetFileName(MString FileName) { m_FileName = FileName; }
   //! Get the file name
@@ -202,6 +213,9 @@ class MFile
   //! The Mode: read or write
   unsigned int m_Way;
 
+  //! Is this a binary file
+  bool m_IsBinary;
+  
   //! The Progress bar
   MGUIProgressBar* m_Progress;
   //! Files might be deeply nested - show a progressbar for every nesting

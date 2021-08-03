@@ -32,6 +32,7 @@
 #include "MSimEvent.h"
 #include "MSimIA.h"
 #include "MTime.h"
+#include "MBinaryStore.h"
 #include "MDGeometry.h"
 
 // Geant4:
@@ -45,6 +46,7 @@
 #include <string>
 #include <cstdlib>
 #include <ctime>
+#include <iomanip>
 using namespace std;
 
 // Root:
@@ -62,6 +64,7 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, con
 {
   m_OutFileName = "";
 
+  m_StoreBinary = RunParameters.StoreBinary();
   m_StoreSimulationInfo = RunParameters.StoreSimulationInfo();
   m_StoreSimulationInfoVersion = RunParameters.StoreSimulationInfoVersion();
   m_StoreCalibrated = RunParameters.StoreCalibrated();
@@ -133,16 +136,20 @@ bool MCEventAction::NextRun()
 
     ostringstream FileName;
     if (m_ParallelID == 0) {
-      FileName<<BaseName<<".inc"<<m_Incarnation<<".id1.sim";
+      FileName<<BaseName<<".inc"<<m_Incarnation<<".id1";
     } else {
-      FileName<<BaseName<<".p"<<m_ParallelID<<".inc"<<m_Incarnation<<".id1.sim";
+      FileName<<BaseName<<".p"<<m_ParallelID<<".inc"<<m_Incarnation<<".id1";
     }
+    if (m_StoreBinary == true) {
+      FileName<<".bin"; 
+    }
+    FileName<<".sim";
     if (m_Zip == true) {
       FileName<<".gz";
     }
     m_OutFileName = FileName.str().c_str();
 
-    m_OutFile.Open(m_OutFileName, MFile::c_Write);
+    m_OutFile.Open(m_OutFileName, MFile::c_Write, m_StoreBinary);
 
     if (m_OutFile.IsOpen() == false) {
       mout<<"Can't open file!"<<endl;
@@ -255,7 +262,10 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
   
   Out<<endl;
   Out<<"TB "<<SimulationStartTime<<endl; 
-  Out<<endl; 
+  Out<<endl;
+  if (m_StoreBinary == true) {
+    Out<<"STARTBINARYSTREAM"<<endl; 
+  }
 
   m_OutFile.Write(Out);
   
@@ -763,7 +773,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
           Out<<endl; 
           Out<<"EN"<<endl; 
           Out<<endl; 
-          Out<<"TE "<<Run.GetSimulatedTime()/s<<endl; 
+          Out<<"TE "<<setprecision(6)<<Run.GetSimulatedTime()/s<<endl; 
           Out<<"TS "<<Run.GetNSimulatedEvents()<<endl; 
           m_OutFile.Write(Out);
           m_OutFile.Close();
@@ -789,11 +799,22 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
 
   if (m_Interrupt == true || Run.CheckStopConditions() == true) {
     if (m_SaveEvents == true) {
-      ostringstream Out;
+      if (m_StoreBinary == true) {
+        MBinaryStore S;
+        S.AddString("EN", 2);
+        m_OutFile.Write(S);
+        ostringstream O;   
+        O<<endl<<"ENDBINARYSTREAM"<<endl;
+        m_OutFile.Write(O);
+      } else {
+        ostringstream O;        
+        O<<"EN"<<endl;
+        m_OutFile.Write(O);
+      }
+
+      ostringstream Out;        
       Out<<endl; 
-      Out<<"EN"<<endl; 
-      Out<<endl; 
-      Out<<"TE "<<Run.GetSimulatedTime()/s<<endl; 
+      Out<<"TE "<<fixed<<setprecision(6)<<Run.GetSimulatedTime()/s<<endl; 
       Out<<"TS "<<Run.GetNSimulatedEvents()<<endl;
       m_OutFile.Write(Out);
       m_OutFile.Close();
@@ -819,7 +840,13 @@ bool MCEventAction::SaveEventToFile(MSimEvent* Event)
 {
   if (m_SaveEvents == true) {
     if (m_OutFile.IsOpen() == false) return false;
-    m_OutFile.Write(Event->ToSimString(m_StoreSimulationInfo, m_StoreScientificPrecision, m_StoreSimulationInfoVersion));
+    if (m_StoreBinary == true) {
+      MBinaryStore Store;
+      Event->ToBinary(Store, m_StoreSimulationInfo, true, m_StoreSimulationInfoVersion);
+      m_OutFile.Write(Store);
+    } else {
+      m_OutFile.Write(Event->ToSimString(m_StoreSimulationInfo, m_StoreScientificPrecision, m_StoreSimulationInfoVersion));
+    }
   }
   
   return true;

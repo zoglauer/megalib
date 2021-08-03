@@ -24,6 +24,7 @@
 #include "MFileEvents.h"
 #include "MSimEvent.h"
 #include "MDGeometryQuest.h"
+#include "MBinaryStore.h"
 
 // Forward declarations:
 
@@ -46,7 +47,7 @@ class MFileEventsSim : public MFileEvents
   void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
   
   //! The Open method has to be derived to initialize the include file:
-  virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read);
+  virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read, bool IsBinary = false);
 
   //! Return the next event
   MSimEvent* GetNextEvent(bool Analyze = true);
@@ -74,6 +75,12 @@ class MFileEventsSim : public MFileEvents
  protected:
   //! Perform initializations
   void Init();
+  
+  //! Return the next event in binary mode
+  MSimEvent* GetNextEventBinary(bool Analyze = true);
+  //! Return the next event in ASCII mode
+  MSimEvent* GetNextEventASCII(bool Analyze = true);
+  
   
   //! Parse the special information at the end of file -- add your special parsing in there
   virtual bool ParseFooter(const MString& Line);
@@ -106,6 +113,9 @@ class MFileEventsSim : public MFileEvents
   //! The simulated start area of far field simualtions
   double m_SimulationStartAreaFarField;
 
+  //! The binary stire
+  MBinaryStore m_BinaryStore;
+  
 #ifdef ___CLING___
  public:
   ClassDef(MFileEventsSim, 0) // no description

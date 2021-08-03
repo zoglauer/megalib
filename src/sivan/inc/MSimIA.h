@@ -26,6 +26,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MVector.h"
 #include "MStreams.h"
+#include "MBinaryStore.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -44,6 +45,12 @@ class MSimIA
   //! Parse a text line to fill this event
   bool AddRawInput(MString LineBuffer, int Version = 0);
 
+  //! Convert the *key* content to binary
+  bool ParseBinary(MBinaryStore& Out, const bool HasTime, const bool IsSingleINIT, const int OriginIDPrecision = 32, const int BinaryPrecision = 32, const int Version = 25);
+  //! Convert the content to binary
+  bool ToBinary(MBinaryStore& Out, const bool HasTime, const bool IsSingleINIT, const int WhatToStore = 1, const int OriginIDPrecision = 32, const int BinaryPrecision = 32, const int Version = 25);
+  
+  
   //! Set the interaction process as 4 character string, e.g. "COMP"
   void SetProcess(const MString& Process) { m_Process = Process; }
   //! Get the interaction process as 4 character string, e.g. "COMP"
@@ -119,7 +126,8 @@ class MSimIA
   MString ToSimString(const int WhatToStore = 1, const int Precision = 0, const int Version = 25) const;
   //! Get the content of the class as a descriptive string
   MString ToString() const;
-
+  
+  
   //! Add a simple offset to all hit origins - needed when concatenating sim events
   void OffsetOrigins(int Offset);
 

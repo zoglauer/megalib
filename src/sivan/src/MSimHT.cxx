@@ -274,6 +274,93 @@ MString MSimHT::ToString() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MSimHT::ParseBinary(MBinaryStore& Store, const bool HasOrigins, const bool HasTime, const int OriginIDPrecision, const int BinaryPrecision, const int Version)
+{
+  //! Convert the content to binary
+  
+  //Reset();
+  
+  //m_DetectorType = Store.GetUInt8();
+  if (BinaryPrecision == 32) {
+    m_Position = Store.GetVectorFloat();
+    m_Energy = Store.GetFloat();
+    if (HasTime == true) {
+      m_Time = Store.GetFloat();
+    }
+  } else {
+    m_Position = Store.GetVectorDouble();
+    m_Energy = Store.GetDouble();
+    if (HasTime == true) {
+      m_Time = Store.GetDouble();
+    } 
+  }
+  
+  if (HasOrigins == true) {
+    if (OriginIDPrecision == 8) {
+      uint8_t NOrigins = Store.GetUInt8();
+      for (uint8_t i = 0; i < NOrigins; ++i) {
+        m_Origins.push_back(Store.GetUInt8());
+      }
+    } else if (OriginIDPrecision == 16) {
+      uint16_t NOrigins = Store.GetUInt16();
+      for (uint16_t i = 0; i < NOrigins; ++i) {
+        m_Origins.push_back(Store.GetUInt16());
+      }
+    } else {
+      uint32_t NOrigins = Store.GetUInt32();
+      for (uint32_t i = 0; i < NOrigins; ++i) {
+        m_Origins.push_back(Store.GetUInt32());
+      }
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSimHT::ToBinary(MBinaryStore& Out, const bool StoreOrigins, const bool StoreTime, const int WhatToStore, const int OriginIDPrecision, const int BinaryPrecision, const int Version) {
+  //! Convert the content to binary
+  
+  //Out.AddUInt8(m_DetectorType);
+  if (BinaryPrecision == 32) {
+    Out.AddVectorFloat(m_Position);
+    Out.AddFloat(m_Energy);
+    if (StoreTime == true) Out.AddFloat((float) m_Time);
+  } else {
+    Out.AddVectorDouble(m_Position);
+    Out.AddDouble(m_Energy);
+    if (StoreTime == true) Out.AddDouble(m_Time);
+  }
+  
+  if (StoreOrigins == true) {
+    if (OriginIDPrecision == 8) {
+      Out.AddUInt8(m_Origins.size());
+      for (unsigned int o = 0; o < m_Origins.size(); ++o) {
+        Out.AddUInt8(m_Origins[o]);
+      }
+    } else if (OriginIDPrecision == 16) {
+      Out.AddUInt16(m_Origins.size());
+      for (unsigned int o = 0; o < m_Origins.size(); ++o) {
+        Out.AddUInt16(m_Origins[o]);
+      }
+    } else {
+      Out.AddUInt32(m_Origins.size());
+      for (unsigned int o = 0; o < m_Origins.size(); ++o) {
+        Out.AddUInt32(m_Origins[o]);
+      }
+    } 
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MString MSimHT::ToSimString(const int WhatToStore, const int ScientificPrecision, const int Version) const
 {
   // Convert this SimEvent to the original *.sim file format...

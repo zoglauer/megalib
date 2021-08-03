@@ -12,10 +12,13 @@ Version 3.03/3.04
 
 General:
 + Default ROOT is 6.22
++ options to store sim files in binary format
 
 Cosima:
 + New storage option "ia-only"
 + New storage option "maximumenergyloss"
++ Option to store files in binary format
+
 
 Long-term bugs fixed:
 + The incidence direction of the 511-keV emission was wrong

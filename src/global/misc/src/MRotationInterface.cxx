@@ -185,7 +185,123 @@ int MRotationInterface::ParseLine(const char* Line, bool Fast)
   return Ret;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Stream to a file
+//! Reading has to be done in the derived class 
+bool MRotationInterface::ParseBinary(MBinaryStore& Out, const bool HasGalacticPointing, const bool HasDetectorRotation, const bool HasHorizonPointing, const int BinaryPrecision, const int Version)
+{
+  Reset();
   
+  if (HasGalacticPointing == true) {
+    double Long = 0.0;
+    double Lat = 0.0;
+    if (BinaryPrecision == 32) {
+      Long = Out.GetFloat();
+      Lat = Out.GetFloat();
+    } else {
+      Long = Out.GetFloat();
+      Lat = Out.GetFloat();
+    }
+    SetGalacticPointingXAxis(Long, Lat);
+    if (BinaryPrecision == 32) {
+      Long = Out.GetFloat();
+      Lat = Out.GetFloat();
+    } else {
+      Long = Out.GetFloat();
+      Lat = Out.GetFloat();
+    }
+    SetGalacticPointingZAxis(Long, Lat);
+    
+    m_HasGalacticPointing = true;
+  } 
+  
+  if (HasDetectorRotation == true) {
+    m_HasDetectorRotation = true;
+    if (BinaryPrecision == 32) {
+      m_DetectorRotationXAxis = Out.GetVectorFloat();
+      m_DetectorRotationZAxis = Out.GetVectorFloat();
+    } else {
+      m_DetectorRotationXAxis = Out.GetVectorDouble();
+      m_DetectorRotationZAxis = Out.GetVectorDouble();
+    }
+  }
+  
+  if (HasHorizonPointing == true) {
+    double Long = 0.0;
+    double Lat = 0.0;
+    if (BinaryPrecision == 32) {
+      Long = Out.GetFloat();
+      Lat = Out.GetFloat();
+    } else {
+      Long = Out.GetFloat();
+      Lat = Out.GetFloat();
+    }
+    SetHorizonPointingXAxis(Long, Lat);
+    if (BinaryPrecision == 32) {
+      Long = Out.GetFloat();
+      Lat = Out.GetFloat();
+    } else {
+      Long = Out.GetFloat();
+      Lat = Out.GetFloat();
+    }
+    SetHorizonPointingZAxis(Long, Lat);
+    
+    m_HasHorizonPointing = true;
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Stream to a file
+//! Reading has to be done in the derived class 
+bool MRotationInterface::ToBinary(MBinaryStore& Out, const int BinaryPrecision, const int Version)
+{
+  if (m_HasGalacticPointing == true) {
+    double phi = m_GalacticPointingXAxis.Phi()*c_Deg;
+    while (phi < 0.0) phi += 360.0;
+    if (BinaryPrecision == 32) {
+      Out.AddFloats(phi, m_GalacticPointingXAxis.Theta()*c_Deg - 90);
+    } else {
+      Out.AddDoubles(phi, m_GalacticPointingXAxis.Theta()*c_Deg - 90);
+    }
+    phi = m_GalacticPointingZAxis.Phi()*c_Deg;
+    while (phi < 0.0) phi += 360.0;
+    if (BinaryPrecision == 32) {
+      Out.AddFloats(phi, m_GalacticPointingZAxis.Theta()*c_Deg - 90);
+    } else {
+      Out.AddDoubles(phi, m_GalacticPointingZAxis.Theta()*c_Deg - 90);
+    }
+  } 
+  if (m_HasDetectorRotation == true) {
+    if (BinaryPrecision == 32) {
+      Out.AddVectorFloat(m_DetectorRotationXAxis);
+      Out.AddVectorFloat(m_DetectorRotationZAxis);
+    } else {
+      Out.AddVectorDouble(m_DetectorRotationXAxis);
+      Out.AddVectorDouble(m_DetectorRotationZAxis);
+    }
+  }
+  if (m_HasHorizonPointing == true) {
+    if (BinaryPrecision == 32) {
+      Out.AddFloats(m_HorizonPointingXAxis.Phi()*c_Deg, 90 - m_HorizonPointingXAxis.Theta()*c_Deg);
+      Out.AddFloats(m_HorizonPointingZAxis.Phi()*c_Deg, 90 - m_HorizonPointingZAxis.Theta()*c_Deg);
+    } else {
+      Out.AddDoubles(m_HorizonPointingXAxis.Phi()*c_Deg, 90 - m_HorizonPointingXAxis.Theta()*c_Deg);
+      Out.AddDoubles(m_HorizonPointingZAxis.Phi()*c_Deg, 90 - m_HorizonPointingZAxis.Theta()*c_Deg);
+    }
+  }
+  
+  return true;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
