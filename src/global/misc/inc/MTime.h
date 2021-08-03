@@ -75,6 +75,11 @@ class MTime
 
   // Access the fields:
   
+  //! Get the internal seconds
+  long int GetInternalSeconds() const { return m_Seconds; }
+  //! Get the internal nanoseconds
+  long int GetInternalNanoSeconds() const { return m_NanoSeconds; }
+  
   //! Get the nanoseconds in the time
   unsigned int GetNanoSeconds();
   //! Get the seconds in the time
