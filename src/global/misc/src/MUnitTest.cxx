@@ -40,6 +40,9 @@ ClassImp(MUnitTest)
 //! Default constructor
 MUnitTest::MUnitTest()
 {
+  m_NumberOfPassedTests = 0;
+  m_NumberOfFailedTests = 0;
+  
 }
 
 
@@ -55,44 +58,10 @@ MUnitTest::~MUnitTest()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MUnitTest::Evaluate(vector<double> Output, vector<double> Truth, MString NameOfTest)
+void MUnitTest::Summarize()
 {
-  if (Output != Truth) {
-    cout<<endl;
-    cout<<"FAILED: "<<NameOfTest<<endl;
-    cout<<"        Expected: ";
-    for (auto v: Truth) cout<<v<<" "; 
-    cout<<endl;
-    cout<<"        Received: ";
-    for (auto v: Output) cout<<v<<" "; 
-    cout<<endl;
-    
-    return false;
-  }
-  
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MUnitTest::Evaluate(vector<bool> Output, vector<bool> Truth, MString NameOfTest)
-{
-  if (Output != Truth) {
-    cout<<endl;
-    cout<<"FAILED: "<<NameOfTest<<endl;
-    cout<<"        Expected: ";
-    for (auto v: Truth) cout<<v<<" "; 
-    cout<<endl;
-    cout<<"        Received: ";
-    for (auto v: Output) cout<<v<<" "; 
-    cout<<endl;
-    
-    return false;
-  }
-  
-  return true;
+  cout<<"Passed tests: "<<m_NumberOfPassedTests<<endl;
+  cout<<"Failed tests: "<<m_NumberOfFailedTests<<endl;
 }
 
 

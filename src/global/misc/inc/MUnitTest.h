@@ -42,12 +42,30 @@ class MUnitTest
   //! Default destuctor 
   virtual ~MUnitTest();
   
-  //!
-  bool Evaluate(vector<double> Output, vector<double> Truth, MString NameOfTest); 
+  //! Evaluate the success of this test run
+  template <typename T1, typename T2> bool Evaluate(MString Function, T1 Input, MString Description, T2 Output, T2 Truth)
+  {
+    if (Output != Truth) {
+      cout<<endl;
+      cout<<"FAILED: "<<Function<<"  <-- "<<Input<<endl;
+      cout<<"   Description: "<<Description<<endl;
+      cout<<"   Expected:    "<<Truth<<endl;
+      cout<<"   Output:      "<<Output<<endl;
+      cout<<endl;
+      
+      ++m_NumberOfFailedTests;
+      return false;
+    }
+    
+    ++ m_NumberOfPassedTests;
+    return true;
+  }
   
-  //!
-  bool Evaluate(vector<bool> Output, vector<bool> Truth, MString NameOfTest); 
+  //! Run the unit test
+  virtual bool Run() = 0;
   
+  //! Summarize the test run
+  void Summarize();
   
   // protected methods:
  protected:
@@ -63,7 +81,10 @@ class MUnitTest
 
   // private members:
  private:
-
+   //! Passed tests
+   unsigned int m_NumberOfPassedTests;
+   //! Failed tests
+   unsigned int m_NumberOfFailedTests;
 
 
 #ifdef ___CLING___
