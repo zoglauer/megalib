@@ -58,6 +58,7 @@ MCParameterFile::MCParameterFile() : MParser(' ', true),
                                      m_DecayMode(c_DecayModeIgnore),
                                      m_PreTriggerMode(c_PreTriggerFull),
                                      m_StoreCalibrated(true), 
+                                     m_StoreBinary(false),
                                      m_StoreScientific(false),
                                      m_StoreScientificPrecision(5),
                                      m_StoreSimulationInfo(MSimEvent::c_StoreSimulationInfoAll),
@@ -402,8 +403,25 @@ bool MCParameterFile::Parse()
              " Number of tokens is not correct!");
         return false;
       }
-    } else if (T->IsTokenAt(0, "StoreScientific", true) == true ||
-               T->IsTokenAt(0, "StoreSimulationInfoScientific", true) == true) {
+    } else if (T->IsTokenAt(0, "FileFormat", true) == true) {
+      if (T->GetNTokens() == 2) {
+        MString Mode = T->GetTokenAtAsString(1);
+        Mode.ToLower();
+        if (Mode == "binary" || Mode == "b" || Mode == "bin") {
+          m_StoreBinary = true;
+          mdebug<<"Storing simulation info in binary mode"<<endl;
+        } else if (Mode == "text" || Mode == "t" || Mode == "plaintext" || Mode == "ascii") {
+          m_StoreBinary = false;
+          mdebug<<"Storing simulation info in plaintext mode"<<endl;
+        } else {
+          Typo(i, "Cannot parse token FileFormat correctly: The mode needs to be text or binary!");
+          return false;
+        }        
+      } else {
+        Typo(i, "Cannot parse token FileFormat correctly: Number of tokens is not correct!");
+        return false;
+      }
+    } else if (T->IsTokenAt(0, "StoreTextScientific", true) == true || T->IsTokenAt(0, "StoreScientific", true) == true || T->IsTokenAt(0, "StoreSimulationInfoScientific", true) == true) {
       if (T->GetNTokens() == 3) {
         m_StoreScientific = T->GetTokenAtAsBoolean(1);
         m_StoreScientificPrecision = T->GetTokenAtAsInt(2);
@@ -413,8 +431,7 @@ bool MCParameterFile::Parse()
         }
         mdebug<<"Storing simulation info in scientific format: "<<((m_StoreScientific == true) ? "true" : "false")<<endl;
       } else {
-        Typo(i, "Cannot parse token StoreSimulationInfoScientific correctly:"
-             " Number of tokens is not correct!");
+        Typo(i, "Cannot parse token StoreTextScientific correctly: Number of tokens is not correct!");
         return false;
       }
     } else if (T->IsTokenAt(0, "StoreOnlyEventsWithEnergyLoss", true) == true ||

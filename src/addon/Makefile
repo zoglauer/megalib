@@ -23,6 +23,7 @@ PRGSX = \
 	$(BN)/SimAnalyzer \
 	$(BN)/SimRewriter \
 	$(BN)/SimCombiner \
+	$(BN)/SimBinaryConverter \
 	$(BN)/SimRandomCoincidence \
 	$(BN)/TraAnalyzer \
 	$(BN)/DecayAnalyzer \

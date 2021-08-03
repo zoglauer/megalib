@@ -187,6 +187,8 @@ private:
   /// The temporary store of the simulated event
   MSimEvent* m_Event;
 
+  /// Determines if we store the data in binary format
+  bool m_StoreBinary;
   /// Determines how much detail shall be stored in the simulations file
   unsigned int m_StoreSimulationInfo;
   /// Determines in which version the output file shall be stored

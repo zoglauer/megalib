@@ -29,6 +29,7 @@ using namespace std;
 #include "MDGeometryQuest.h"
 #include "MDVolumeSequence.h"
 #include "MSimCluster.h"
+#include "MBinaryStore.h"
 
 // Forward declarations:
 
@@ -49,6 +50,12 @@ class MSimHT
 
   //! Set everything via one line of input from sim file - noising will be applied automatically if set in the geometry
   bool AddRawInput(MString LineBuffer, int Version = 100);
+
+  //! Convert the *key* content to binary
+  bool ParseBinary(MBinaryStore& Out, const bool StoreOrigins, const bool StoreTime, const int OriginIDPrecision = 32, const int BinaryPrecision = 32, const int Version = 25);
+  //! Convert the *key* content to binary
+  bool ToBinary(MBinaryStore& Out, const bool StoreOrigins, const bool StoreTime, const int WhatToStore = 1, const int OriginIDPrecision = 32, const int BinaryPrecision = 32, const int Version = 25);
+  
   
   //! Set all core data - choose if you want to do noising or not
   void Set(const int DetectorType, const MVector& Position, const double Energy, const double Time, const vector<unsigned int>& Origins, bool PerformNoising);
@@ -115,7 +122,7 @@ class MSimHT
   MString ToString() const;
   //! Return this hit as sim file capable string
   MString ToSimString(const int WhatToStore = 1, const int Precision = 0, const int Version = 25) const;
-
+  
   //! Set a flag that this hit has been added to something
   void SetAddFlag(const bool Flag = true) { m_Added = Flag; }
   //! Return the flag whether this has been added to something 

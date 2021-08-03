@@ -3138,6 +3138,378 @@ MString MSimEvent::ToString()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MSimEvent::ParseBinary(MBinaryStore& Store, int Version)
+{
+  //! Parse an event from a binary stream
+  
+  Reset();
+  
+  // Check if we start with the sync flag
+  MString SyncFlag = Store.GetString(2);
+  if (SyncFlag != "SE") {
+    merr<<"Binary parsing: Sync flag not found"<<endl;
+    return false; 
+  }
+  uint32_t OptionsInt = Store.GetUInt32(); // fix for 32
+  MSimBinaryOptions Options(OptionsInt);
+  
+  // Store ID flags
+  if (Options.GetEventIDPrecision() == 32) {
+    m_NEvent = Store.GetUInt32(); 
+    m_NStartedEvent = Store.GetUInt32();
+  } else {
+    m_NEvent = Store.GetUInt64(); 
+    m_NStartedEvent = Store.GetUInt64();
+  }
+  
+  if (Options.GetTimePrecision() == 64)  {
+    m_Time = Store.GetTimeUInt64();
+  } else {
+    m_Time = Store.GetTime();
+  }
+  
+  //
+  if (Options.HasVeto() == true) {
+    return true;
+  }
+
+  //
+  MRotationInterface::ParseBinary(Store, Options.HasGalacticPointing(), Options.HasDetectorRotation(), Options.HasHorizonPointing(), Options.GetBinaryPrecision(), Version);
+  
+  if (Options.HasIAs() == true) {
+    if (Options.HasOnlySingleINIT() == true) {
+      MSimIA* IA = new MSimIA();
+      IA->ParseBinary(Store, Options.HasTime(), true, Options.GetOriginIDPrecision(), Options.GetBinaryPrecision(), Version);
+      m_IAs.push_back(IA);
+    } else {
+      uint32_t NIAs = 0;
+      if (Options.GetOriginIDPrecision() == 8) {
+        NIAs = Store.GetUInt8();
+      } else if (Options.GetOriginIDPrecision() == 16) {
+        NIAs = Store.GetUInt16();
+      } else  {
+        NIAs = Store.GetUInt32();
+      } 
+      for (uint32_t i = 0; i < NIAs; ++i) {
+        MSimIA* IA = new MSimIA();
+        IA->ParseBinary(Store, Options.HasTime(), false, Options.GetOriginIDPrecision(), Options.GetBinaryPrecision(), Version);
+        IA->SetID(i+1);
+        IA->SetDetectorType(m_Geometry->GetDetectorType(IA->GetPosition()));
+        m_IAs.push_back(IA);
+      }
+    }
+  }
+  
+  if (Options.HasHTs() == true) {
+    uint32_t NHTs = 0;
+    if (Options.GetOriginIDPrecision() == 8) {
+      NHTs = Store.GetUInt8();
+    } else if (Options.GetOriginIDPrecision() == 16) {
+      NHTs = Store.GetUInt16();
+    } else  {
+      NHTs = Store.GetUInt32();
+    } 
+    for (uint32_t i = 0; i < NHTs; ++i) {
+      MSimHT* HT = new MSimHT();
+      HT->ParseBinary(Store, Options.HasOrigins(), Options.HasTime(), Options.GetOriginIDPrecision(), Options.GetBinaryPrecision(), Version);
+      HT->SetDetectorType(m_Geometry->GetDetectorType(HT->GetPosition()));
+      m_HTs.push_back(HT);
+    }
+  }
+    
+  if (Options.HasGRs() == true) {
+    uint32_t NGRs = 0;
+    if (Options.GetOriginIDPrecision() == 8) {
+      NGRs = Store.GetUInt8();
+    } else if (Options.GetOriginIDPrecision() == 16) {
+      NGRs = Store.GetUInt16();
+    } else  {
+      NGRs = Store.GetUInt32();
+    } 
+    for (uint32_t i = 0; i < NGRs; ++i) {
+      MSimGR* GR = new MSimGR();
+      GR->ParseBinary(Store, Options.GetBinaryPrecision(), Version);
+      GR->SetDetectorType(m_Geometry->GetDetectorType(GR->GetPosition()));
+      m_GRs.push_back(GR);
+    }
+  }
+    
+  if (Options.HasXEs() == true) {
+    uint32_t NXEs = 0;
+    if (Options.GetOriginIDPrecision() == 8) {
+      NXEs = Store.GetUInt8();
+    } else if (Options.GetOriginIDPrecision() == 16) {
+      NXEs = Store.GetUInt16();
+    } else  {
+      NXEs = Store.GetUInt32();
+    } 
+    for (uint32_t i = 0; i < NXEs; ++i) {
+      if (Options.GetBinaryPrecision() == 32) {
+        MVector Pos = Store.GetVectorFloat();
+        double Energy = Store.GetFloat();
+        m_TotalDetectorEnergy[Pos] += Energy;
+      } else {
+        MVector Pos = Store.GetVectorDouble();
+        double Energy = Store.GetDouble();
+        m_TotalDetectorEnergy[Pos] += Energy;
+      }
+    }
+  }
+    
+  if (Options.HasDRs() == true) {
+    uint32_t NDRs = 0;
+    if (Options.GetOriginIDPrecision() == 8) {
+      NDRs = Store.GetUInt8();
+    } else if (Options.GetOriginIDPrecision() == 16) {
+      NDRs = Store.GetUInt16();
+    } else  {
+      NDRs = Store.GetUInt32();
+    } 
+    for (uint32_t i = 0; i < NDRs; ++i) {
+      MSimDR* DR = new MSimDR();
+      DR->ParseBinary(Store, Options.GetBinaryPrecision(), Version);
+      m_DRs.push_back(DR);
+    }
+  }
+  
+  // Do some upgrades
+  
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSimEvent::ToBinary(MBinaryStore& Out, const int WhatToStore, const bool Use32Bit, const int Version)
+{
+  // Put together the options flag
+  MSimBinaryOptions Options;
+  
+  if (Use32Bit == true) {
+    Options.SetUse32BitBinaryPrecision(); 
+  }
+  
+  if ((uint64_t) m_Time.GetInternalSeconds() >= numeric_limits<uint64_t>::max()/1000000000) {
+    Options.SetUse96BitTimePrecision(); 
+  } else {
+    Options.SetUse64BitTimePrecision(); 
+  }
+  
+  unsigned int NIAs = 0;
+  unsigned int NHTs = 0;
+  unsigned int NGRs = 0;
+  unsigned int NXEs = 0;
+  unsigned int NDRs = 0;
+  
+  if (m_Veto == true) {
+    Options.SetHasVeto();
+  } else {
+    if (m_BDs.size() > 0) {
+      Options.SetHasBadFlags();
+    }
+    
+    if (HasGalacticPointing() == true) {
+      Options.SetHasGalacticPointing();
+    }
+    if (HasDetectorRotation() == true) {
+      Options.SetHasDetectorRotation();
+    }
+    if (HasHorizonPointing() == true) {
+      Options.SetHasHorizonPointing();
+    }
+    
+    if (WhatToStore == c_StoreSimulationInfoAll || WhatToStore == c_StoreSimulationInfoInitOnly || WhatToStore == c_StoreSimulationInfoIAOnly) {
+      for (unsigned int i = 0; i < GetNIAs(); ++i) {
+        if ((GetIAAt(i)->GetProcess() != "INIT" && GetIAAt(i)->GetProcess() != "ENTR" && GetIAAt(i)->GetProcess() != "EXIT") && WhatToStore == c_StoreSimulationInfoInitOnly) {
+            continue;
+        }
+        ++NIAs;
+      }
+    }
+    if (WhatToStore != c_StoreSimulationInfoIAOnly) {
+      for (unsigned int i = 0; i < GetNHTs(); ++i) {
+        ++NHTs;
+        if (GetHTAt(i)->GetTime() != 0) {
+          Options.SetHasTime();
+        }
+        if (WhatToStore != c_StoreSimulationInfoInitOnly) {
+          for (unsigned int o = 0; o < GetHTAt(i)->GetNOrigins(); ++o) {
+            if (GetHTAt(i)->GetOriginAt(o) > 0) {
+              Options.SetHasOrigins(); 
+            }
+          }
+        }
+      }
+        
+      for (unsigned int i = 0; i < GetNGRs(); ++i) {
+        ++NGRs;
+      }
+        
+      for (auto Iter = m_TotalDetectorEnergy.begin(); Iter != m_TotalDetectorEnergy.end(); ++Iter) {
+        ++NXEs;
+      }
+             
+      for (unsigned int i = 0; i < GetNDRs(); ++i) {
+        ++NDRs;
+      }
+    }
+    if (NIAs > 0) {
+      Options.SetHasIAs(); 
+    }
+    if (NHTs > 0) {
+      Options.SetHasHTs(); 
+    }
+    if (NGRs > 0) {
+      Options.SetHasGRs(); 
+    }
+    if (NXEs > 0) {
+      Options.SetHasXEs(); 
+    }
+    if (NDRs > 0) {
+      Options.SetHasDRs(); 
+    }
+    
+    if (NIAs == 1 && m_IAs[0]->GetProcess() == "INIT" && m_IAs[0]->GetDetectorType() == 0) {
+      Options.SetHasOnlySingleINIT();
+    }
+      
+    
+    if (NIAs < numeric_limits<uint8_t>::max() && (NHTs + NGRs + NXEs + NDRs) < numeric_limits<uint8_t>::max()) {
+      Options.SetUse8BitOriginIDPrecision(); 
+    } else if (NIAs < numeric_limits<uint16_t>::max() && (NHTs + NGRs + NXEs + NDRs) < numeric_limits<uint16_t>::max()) {
+      Options.SetUse16BitOriginIDPrecision(); 
+    } else if (NIAs < numeric_limits<uint32_t>::max() && (NHTs + NGRs + NXEs + NDRs) < numeric_limits<uint32_t>::max()) {
+      Options.SetUse32BitOriginIDPrecision(); 
+    } else {
+      cout<<"ERROR: Unable to store event binary, due to too man IAs ("<<NIAs<<") or HTs ("<<NHTs + NGRs + NXEs + NDRs<<")  > "<<numeric_limits<uint32_t>::max()<<endl;
+      return false;
+    }
+    
+    if (m_NEvent < numeric_limits<uint32_t>::max() && m_NStartedEvent < numeric_limits<uint32_t>::max()) {
+      Options.SetUse32BitEventIDPrecision(); 
+    } else if (m_NEvent < numeric_limits<uint64_t>::max() && m_NStartedEvent < numeric_limits<uint64_t>::max()) {
+      Options.SetUse64BitEventIDPrecision(); 
+    } else {
+      cout<<"ERROR: Unable to store event binary, due to too man events ("<<m_NEvent<<") or started events ("<<m_NStartedEvent<<") > "<<numeric_limits<uint64_t>::max()<<endl;
+      return false;
+    }
+    
+  }
+  
+  // Store sync flag
+  Out.AddChar('S'); Out.AddChar('E'); // to be replaced with something unique
+  // Store the options
+  Out.AddUInt32(Options.Get32Bit());
+  // Store ID flags
+  if (Options.GetEventIDPrecision() == 32) {
+    Out.AddUInt32(m_NEvent); 
+    Out.AddUInt32(m_NStartedEvent);
+  } else {
+    Out.AddUInt64(m_NEvent); 
+    Out.AddUInt64(m_NStartedEvent);
+  }
+  // Time
+  if (Options.GetTimePrecision() == 64)  {
+    Out.AddTimeUInt64(m_Time);
+  } else {
+    Out.AddTime(m_Time);
+  }
+  //
+  if (Options.HasVeto() == true) return true;
+  //
+  MRotationInterface::ToBinary(Out, Options.GetBinaryPrecision(), Version);
+
+  if (Options.HasIAs() == true) {  
+    if (WhatToStore == c_StoreSimulationInfoAll || WhatToStore == c_StoreSimulationInfoInitOnly || WhatToStore == c_StoreSimulationInfoIAOnly) {
+      if (Options.HasOnlySingleINIT() == true) {
+        GetIAAt(0)->ToBinary(Out, Options.HasTime(), true, WhatToStore, Options.GetOriginIDPrecision(), Options.GetBinaryPrecision(), Version);
+      } else {
+        if (Options.GetOriginIDPrecision() == 8) {
+          Out.AddUInt8(NIAs);
+        } else if (Options.GetOriginIDPrecision() == 16) {
+          Out.AddUInt16(NIAs);
+        } else {
+          Out.AddUInt32(NIAs);
+        }
+        for (unsigned int i = 0; i < GetNIAs(); ++i) {
+          if ((GetIAAt(i)->GetProcess() != "INIT" && GetIAAt(i)->GetProcess() != "ENTR" && GetIAAt(i)->GetProcess() != "EXIT") && WhatToStore == c_StoreSimulationInfoInitOnly) {
+            continue;
+          }
+          GetIAAt(i)->ToBinary(Out, Options.HasTime(), false, WhatToStore, Options.GetOriginIDPrecision(), Options.GetBinaryPrecision(), Version);
+        }
+      }
+    }
+  }
+  
+  if (WhatToStore != c_StoreSimulationInfoIAOnly) {
+    if (Options.HasHTs() == true) {
+      if (Options.GetOriginIDPrecision() == 8) {
+        Out.AddUInt8(NHTs);
+      } else if (Options.GetOriginIDPrecision() == 16) {
+        Out.AddUInt16(NHTs);
+      } else {
+        Out.AddUInt32(NHTs);
+      }
+      for (unsigned int i = 0; i < GetNHTs(); ++i) {
+        GetHTAt(i)->ToBinary(Out, Options.HasOrigins(), Options.HasTime(), WhatToStore, Options.GetOriginIDPrecision(),Options.GetBinaryPrecision(), Version);
+      }
+    }
+    
+    if (Options.HasGRs() == true) {
+      if (Options.GetOriginIDPrecision() == 8) {
+        Out.AddUInt8(NGRs);
+      } else if (Options.GetOriginIDPrecision() == 16) {
+        Out.AddUInt16(NGRs);
+      } else {
+        Out.AddUInt32(NGRs);
+      }
+      for (unsigned int i = 0; i < GetNGRs(); ++i) {
+        GetGRAt(i)->ToBinary(Out, WhatToStore, Options.GetBinaryPrecision(), Version);
+      }
+    }
+    
+    if (Options.HasXEs() == true) {
+      if (Options.GetOriginIDPrecision() == 8) {
+        Out.AddUInt8(NXEs);
+      } else if (Options.GetOriginIDPrecision() == 16) {
+        Out.AddUInt16(NXEs);
+      } else {
+        Out.AddUInt32(NXEs);
+      }
+      for (auto Iter = m_TotalDetectorEnergy.begin(); Iter != m_TotalDetectorEnergy.end(); ++Iter) {
+        if (Options.GetBinaryPrecision() == 32) {
+          Out.AddVectorFloat((*Iter).first);
+          Out.AddFloat((*Iter).second);          
+        } else {
+          Out.AddVectorDouble((*Iter).first);
+          Out.AddDouble((*Iter).second);          
+        }
+      }
+    }
+
+    if (Options.HasDRs() == true) {
+      if (Options.GetOriginIDPrecision() == 8) {
+        Out.AddUInt8(NDRs);
+      } else if (Options.GetOriginIDPrecision() == 16) {
+        Out.AddUInt16(NDRs);
+      } else {
+        Out.AddUInt32(NDRs);
+      }
+      for (unsigned int i = 0; i < GetNDRs(); ++i) {
+        GetDRAt(i)->ToBinary(Out, WhatToStore, Options.GetBinaryPrecision(), Version);
+      }
+    }
+  }
+    
+  return true;  
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+  
 MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const int Version)
 {
   // Convert this SimEvent to the original *.sim file format...

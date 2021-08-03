@@ -4593,6 +4593,18 @@ MDDetector* MDGeometry::GetDetector(MVector Position)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+int MDGeometry::GetDetectorType(const MVector& Position)
+{
+  MDDetector* D = GetDetector(Position);
+  
+  if (D == nullptr) return 0;
+  return D->GetType();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 unsigned int MDGeometry::GetDetectorIndex(const MString& Name)
 {
   // Return the index of material with name Name or g_UnsignedIntNotDefined if it does not exist

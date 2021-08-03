@@ -100,6 +100,8 @@ public:
   /// Return the hadron simulation package 
   int GetPhysicsListHD() const { return m_PhysicsListHD; }
 
+  /// Return if the data shall be stored in binary format
+  bool StoreBinary() const { return m_StoreBinary; }
   /// Return the simulation info storage flag
   int StoreSimulationInfo() const { return m_StoreSimulationInfo; }
   /// Return the simulation info version flag
@@ -212,6 +214,8 @@ private:
   
   /// True, if the output should be in calibrated format (positions, keV)
   bool m_StoreCalibrated;
+  /// True, if the output should be stored in binary format
+  bool m_StoreBinary;
   /// True, if simulation info shall be store in scientific format x.yzE-uv or in fixed format x.yz
   bool m_StoreScientific;
   /// Return the precision (number of digits after '.') in which the data shall be stored 

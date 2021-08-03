@@ -25,6 +25,7 @@
 #include "MVector.h"
 #include "MDGeometryQuest.h"
 #include "MDVolumeSequence.h"
+#include "MBinaryStore.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -44,6 +45,10 @@ class MSimGR
   //! Parse one line of the sim file 
   bool AddRawInput(MString LineBuffer, const int Version);
 
+  //! Parse the data from a binary stream
+  bool ParseBinary(MBinaryStore& Store, const int BinaryPrecision = 32, const int Version = 25);
+  
+  
   //! Return the number of the detector, where the hit took place
   int GetDetectorType() const { return m_DetectorType; };
   //! Set the detctor type in which the hit took place
@@ -69,7 +74,9 @@ class MSimGR
 
   //! Return the content as a string for the sim file
   MString ToSimString(const int WhatToStore = 1, const int Precision = 0, const int Version = 25) const;
-
+  //! Convert the *key* content to binary
+  bool ToBinary(MBinaryStore& Out, const int WhatToStore = 1, const int BinaryPrecision = 32, const int Version = 25);
+  
   // protected methods:
  protected:
   //! Do the actual noising of this hit - called by SetEnergy & SetPosition

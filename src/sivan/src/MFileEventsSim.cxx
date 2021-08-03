@@ -95,7 +95,7 @@ void MFileEventsSim::Init()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFileEventsSim::Open(MString FileName, unsigned int Way)
+bool MFileEventsSim::Open(MString FileName, unsigned int Way, bool IsBinary)
 {
   // Open the file
 
@@ -113,7 +113,7 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
   dynamic_cast<MFileEventsSim*>(m_IncludeFile)->SetGeometry(m_Geometry);
   m_IncludeFile->SetIsIncludeFile(true);
 
-  if (MFileEvents::Open(FileName, Way) == false) {
+  if (MFileEvents::Open(FileName, Way, IsBinary) == false) {
     return false;
   }
   
@@ -131,7 +131,7 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
     MString Line;
     while (IsGood() == true) {
       if (ReadLine(Line) == false) break;
-      
+
       if (Line.BeginsWith("SimulationStartAreaFarField") == true || Line.BeginsWith("StartAreaFarField") == true) {
         MTokenizer Tokens;
         Tokens.Analyze(Line);
@@ -140,11 +140,13 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
           mout<<"Unable to read SimulationStartAreaFarField"<<endl;              
         } else {
           m_SimulationStartAreaFarField = Tokens.GetTokenAtAsDouble(1);
-          break;
         }
       } else if (Line.BeginsWith("IN") == true) {
         break; 
       } else if (Line.BeginsWith("SE") == true) {
+        break; 
+      } else if (Line.BeginsWith("STARTBINARYSTREAM") == true) {
+        m_IsBinary = true;
         break; 
       }
     }
@@ -236,6 +238,19 @@ void MFileEventsSim::UpdateObservationTimes(MSimEvent* Event)
 
 MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
 {
+  if (m_IsBinary == true) {
+    return GetNextEventBinary(Analyze);
+  } else {
+    return GetNextEventASCII(Analyze);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MSimEvent* MFileEventsSim::GetNextEventBinary(bool Analyze)
+{
   // Return the next event... or nullptr if it is the last one
   // So remember to test for no more events!
   
@@ -258,6 +273,143 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
     }
   }
 
+  if (GetFilePosition() == 0) {
+  
+    MString Line;
+    while (IsGood() == true) {
+      if (ReadLine(Line) == false) break;
+      if (Line == "STARTBINARYSTREAM") {
+        break;
+      }
+      // Include another file:
+      else if (Line[0] == 'I' && Line[1] == 'N') {
+
+        if (OpenIncludeFile(Line) == true) {
+        
+          if (SimEvent != nullptr) {
+            merr<<"A sim file should either contain includes IN or events and not both!"<<endl;
+            delete SimEvent;
+            SimEvent = nullptr;
+          }
+        
+          SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
+          if (SimEvent == nullptr) {
+            m_IncludeFile->Close();
+            m_IncludeFileUsed = false;;
+          } else {
+            UpdateObservationTimes(SimEvent);
+            return SimEvent;
+          }
+        } else {
+          m_IncludeFile->Close();
+          m_IncludeFileUsed = false;
+        }
+      } 
+    }
+  }
+
+ 
+  // Max size of the binary store
+  const unsigned long MaxFill = 500000;
+  
+  // We are in the binary file stream, let's make sure we have at least 1 MB in the data store
+  if (IsGood()) {
+    if (m_BinaryStore.GetArraySizeUnread() < 0.8*MaxFill) {
+      m_BinaryStore.Truncate();
+      Read(m_BinaryStore, MaxFill - m_BinaryStore.GetArraySize());
+    }
+  }
+
+  if (m_BinaryStore.GetArraySizeUnread() >= 2) {
+    MString Flag = m_BinaryStore.GetString(2);
+    m_BinaryStore.ProgressPosition(-2);
+    if (Flag != "SE" && Flag != "EN") {
+      cout<<"ERROR: File parsing error. Expected SE or EN, but got: "<<Flag<<". Progressing to next sync flag"<<endl;
+      while (Flag != "SE" && Flag != "EN") {
+        m_BinaryStore.ProgressPosition(+1);
+        Flag = m_BinaryStore.GetString(2);
+        m_BinaryStore.ProgressPosition(-2);
+        
+        if (m_BinaryStore.GetArraySizeUnread() < 0.8*MaxFill) {
+          m_BinaryStore.Truncate();
+          Read(m_BinaryStore, MaxFill - m_BinaryStore.GetArraySize());
+        }
+      }
+      cout<<"INFO: Recovered. Found flag: "<<Flag<<endl;
+    }
+    
+    
+    if (Flag == "SE") {
+      if (SimEvent == nullptr) {
+        SimEvent = new MSimEvent();
+        SimEvent->SetGeometry(m_Geometry);
+      }
+      
+      try {
+        if (SimEvent->ParseBinary(m_BinaryStore) == false) {
+          delete SimEvent;
+          SimEvent = nullptr;
+        }
+      } catch (...) {
+        cout<<"ERROR: Unable to read a binary event!"<<endl;
+        if (SimEvent != nullptr) {
+          delete SimEvent;
+          SimEvent = nullptr;
+        }
+      }
+      
+      // That's a dirty little trick in case we forgot the EN in the file
+      // Works since there is currently no case where a sim file has neither no IAs or no HTs...
+      if (SimEvent != nullptr && (SimEvent->GetNIAs() != 0 || SimEvent->GetNHTs() != 0)) {
+        UpdateObservationTimes(SimEvent);
+        return SimEvent;
+      }
+    } else if (Flag == "EN") {
+      ReadFooter(true);
+    }
+  }
+  
+  
+
+  // The end of the (master) file has been reached...
+  ShowProgress(false);
+
+  // Final clean up
+  if (SimEvent != nullptr) {
+    delete SimEvent;
+  }
+
+  return nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
+{
+  // Return the next event... or nullptr if it is the last one
+  // So remember to test for no more events!
+  
+  // Start with updating the progress, return 0 if cancel has pressed
+  if (UpdateProgress() == false) return nullptr;  
+  
+  
+  MSimEvent* SimEvent = nullptr;
+  
+  if (m_IncludeFileUsed == true) {
+    SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
+    if (SimEvent == nullptr) {
+      if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
+      m_IncludeFile->Close();
+      m_IncludeFileUsed = false;
+      if (m_Canceled == true) return nullptr;
+    } else {
+      UpdateObservationTimes(SimEvent);
+      return SimEvent;
+    }
+  }
+  
   bool BeyondFirstSE = true;
   if (GetFilePosition() == 0) BeyondFirstSE = false;
   
@@ -285,7 +437,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
         mout<<"Did not find a valid continuation file..."<<endl;
         return nullptr;
       }
-
+      
       if (SimEvent != nullptr) {
         if (Analyze == true) {
           SimEvent->Analyze();
@@ -296,7 +448,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
     } 
     // Include another file:
     else if (Line[0] == 'I' && Line[1] == 'N') {
-
+      
       if (OpenIncludeFile(Line) == true) {
         
         if (SimEvent != nullptr) {
@@ -343,22 +495,22 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
       }
     }
   }
-
+  
   // That's a dirty little trick in case we forgot the EN in the file
   // Works since there is currently no case where a sim file has neither no IAs or no HTs...
   if (SimEvent != nullptr && (SimEvent->GetNIAs() != 0 || SimEvent->GetNHTs() != 0)) {
     UpdateObservationTimes(SimEvent);
     return SimEvent;
   }
-
+  
   // The end of the (master) file has been reached...
   ShowProgress(false);
-
+  
   // Final clean up
   if (SimEvent != nullptr) {
     delete SimEvent;
   }
-
+  
   return nullptr;
 }
 
@@ -416,8 +568,14 @@ bool MFileEventsSim::AddEvent(MSimEvent* Event)
       return CreateIncludeFile();
     }
   } else {
-    Write(Event->ToSimString(MSimEvent::c_StoreSimulationInfoAll, 0));
-    Flush();
+    if (m_IsBinary == true) {
+      MBinaryStore Store;
+      Event->ToBinary(Store, MSimEvent::c_StoreSimulationInfoAll, true, 25);
+      Write(Store);
+    } else {
+      Write(Event->ToSimString(MSimEvent::c_StoreSimulationInfoAll, 0));
+      Flush();
+    }
     if (m_IsIncludeFile == false && GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
@@ -456,7 +614,14 @@ bool MFileEventsSim::CloseEventList()
   }
 
   ostringstream out;
-  out<<"EN"<<endl;
+  if (m_IsBinary == true) {
+    MBinaryStore S;
+    S.AddString("EN", 2);
+    Write(S);
+    out<<endl<<"ENDBINARYSTREAM"<<endl;
+  } else {
+    out<<"EN"<<endl;
+  }
   out<<endl;
   out<<"TE "<<m_ObservationTime<<endl;
   out<<"TS "<<m_SimulatedEvents<<endl;
