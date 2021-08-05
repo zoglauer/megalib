@@ -382,7 +382,7 @@ void MCEventAction::AddIA(G4String ProcessID,
   m_Event->AddIA(IA);
   
   if (ProcessID == "ESCP") {
-    AddEnergyLoss(NewKin/keV);
+    AddEnergyLoss(NewKin);
   }
 }
 
@@ -443,7 +443,8 @@ void MCEventAction::AddEnergyLoss(double Energy)
 /******************************************************************************
  * Abort the current event
  */
-void MCEventAction::AbortEvent(){
+void MCEventAction::AbortEvent()
+{
   const_cast<G4Event*>(G4RunManager::GetRunManager()->GetCurrentEvent())->SetEventAborted();
   m_IsAborted = true;
 }
