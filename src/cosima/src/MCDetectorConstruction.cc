@@ -559,7 +559,9 @@ bool MCDetectorConstruction::ConstructDetectors()
 
     SD->SetHasTimeResolution(Detector->HasTimeResolution());
     
-    if (m_Geometry->GetTriggerUnit()->IsNeverTriggering(Detector) == true) {
+    MDDetector* CheckTrigger = Detector;
+    if (Detector->IsNamedDetector() == true) CheckTrigger = Detector->GetNamedAfterDetector();
+    if (m_Geometry->GetTriggerUnit()->IsNeverTriggering(CheckTrigger) == true) {
       SD->SetIsNeverTriggering(true); 
     }
     
