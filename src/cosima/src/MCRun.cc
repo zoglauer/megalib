@@ -68,6 +68,7 @@ MCRun::MCRun()
   m_IncarnationID = 0;  
   m_IsIncarnationIDFixed = false;
   m_Zip = false;
+  m_StoreBinary = false;
   
   m_TcpIpHostName = "";
   m_TcpIpPort = 9090;
@@ -338,6 +339,9 @@ void MCRun::CheckIncarnationID()
           FileName<<m_FileName<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
         } else {
           FileName<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
+        }
+        if (m_StoreBinary == true) {
+          FileName<<".bin"; 
         }
         mdebug<<"Checking (loop 1): "<<FileName.str().c_str()<<"[sim,sim.gz,sim.zip] ...";
         if (MFile::FileExists((FileName.str() + "sim").c_str()) ||

@@ -101,6 +101,7 @@ bool MCMain::Initialize()
   vector<MCRun>& Runs = m_RunManager->GetRuns();
   for (unsigned int r = 0; r < Runs.size(); ++r) {
     Runs[r].SetZip(m_Zip);
+    Runs[r].SetStoreBinary(m_RunParameters.StoreBinary());
     Runs[r].SetIncarnationID(m_IncarnationID);
     Runs[r].SetParallelID(m_ParallelID);
     Runs[r].CheckIncarnationID();

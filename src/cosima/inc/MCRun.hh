@@ -90,12 +90,17 @@ public:
   bool SetFileName(const MString& FileName) { m_FileName = FileName; /* CheckIncarnationID(); */ return true; }
   /// Returns the name of the underlaying file (empty string if there is none, i.e. no saving of the file is wished)
   MString GetFileName() const { return m_FileName; }
-
+  
   /// Set if we want to zip the file - call CheckIncarnation() afterwards
   bool SetZip(const bool Zip) { m_Zip = Zip; return true; }
   /// Return if we want to zip the file
   bool GetZip() const { return m_Zip; }
-
+  
+  /// Set if we want to store the data in binary format
+  bool SetStoreBinary(const bool StoreBinary) { m_StoreBinary = StoreBinary; return true; }
+  /// Return if we want to store the data in binary format
+  bool GetStoreBinary() const { return m_StoreBinary; }
+  
   /// Check the incarnation this run --- will obviously only give final results if ParallelID and FileName are set!
   void CheckIncarnationID();
 
@@ -237,6 +242,9 @@ private:
 
   /// Do we want to zip the output files
   bool m_Zip;
+  
+  /// Do we wnat to store the data in binary format
+  bool m_StoreBinary;
   
   /// If multiple simulations are started in parallel, this is the ID 
   int m_ParallelID;
