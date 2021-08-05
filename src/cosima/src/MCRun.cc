@@ -327,7 +327,7 @@ void MCRun::CheckIncarnationID()
     const int MaxCheckedId = 100;
     bool NoFilesFound = false;
     bool FileExists = true;
-
+    
     mdebug<<"Incarnation check:"<<endl;
     do {
       // Incarnation check:
@@ -382,10 +382,15 @@ void MCRun::CheckIncarnationID()
   // Immediately create a dummy file, since it can take a long time until we create the real one:
   ostringstream Name;
   if (m_ParallelID == 0) {
-    Name<<m_FileName<<".inc"<<m_IncarnationID<<".id1.sim";
+    Name<<m_FileName<<".inc"<<m_IncarnationID<<".id1";
   } else {
-    Name<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id1.sim";
+    Name<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id1";
   }
+  if (m_StoreBinary == true) {
+    cout<<"Create binary sim file"<<endl;
+    Name<<".bin"; 
+  }
+  Name<<".sim";
   if (m_Zip == true) {
     Name<<".gz"; 
   }
