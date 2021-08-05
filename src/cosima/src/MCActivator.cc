@@ -234,7 +234,7 @@ bool MCActivator::CalculateEquilibriumRates()
     for (unsigned int i = 0; i < m_Rates.GetNIDs(v); ++i) {
       cout<<"Start: ID: "<<m_Rates.GetID(v, i)<<"  #Ex: "<<m_Rates.GetNExcitations(v, i)<<endl;      
 
-      if (m_Rates.GetID(v, i) == 72154 || m_Rates.GetID(v, i) == 71154 || m_Rates.GetID(v, i) == 70154 || m_Rates.GetID(v, i) == 73158) {
+      if (m_Rates.GetID(v, i) == 72154 || m_Rates.GetID(v, i) == 71154 || m_Rates.GetID(v, i) == 70154 || m_Rates.GetID(v, i) == 73158 || m_Rates.GetID(v, i) == 74158) {
         cout<<"Warning: This element sends Geant4 in an infinite loop -- skipping!"<<endl;
         continue;
       }
