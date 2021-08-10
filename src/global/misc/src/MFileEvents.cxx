@@ -115,7 +115,8 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     bool FoundMEGAlibVersion = false;
     bool FoundTB = false;
     bool FoundIN = false;
-
+    bool FoundBinaryStream = false;
+    
     m_HasStartObservationTime = false;
     m_HasEndObservationTime = false;
 
@@ -208,6 +209,12 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
         if (Line.BeginsWith("IN") == true) {
           ++m_NIncludeFiles;
           ++MaxLines;
+        }
+      }
+      if (FoundBinaryStream == false) {
+        if (Line.BeginsWith("STARTBINARYSTREAM") == true) {
+          m_IsBinary = true;
+          FoundBinaryStream = true;
         }
       }
     }

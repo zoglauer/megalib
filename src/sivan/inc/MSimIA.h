@@ -90,12 +90,17 @@ class MSimIA
   void SetMotherDirection(const MVector& Dir) { m_MotherParticleDirection = Dir; }
   //! Get the NEW direction od the mother particle
   MVector GetMotherDirection() const { return m_MotherParticleDirection; }
-
+  
   //! Set the NEW polarization of the mother particle
   void SetMotherPolarisation(const MVector& Pol) { m_MotherParticlePolarisation = Pol; }
   //! Get the NEW polarization of the mother particle
   MVector GetMotherPolarisation() const { return m_MotherParticlePolarisation; }
-
+  
+  //! Set the NEW polarization of the mother particle
+  void SetMotherPolarization(const MVector& Pol) { m_MotherParticlePolarisation = Pol; }
+  //! Get the NEW polarization of the mother particle
+  MVector GetMotherPolarization() const { return m_MotherParticlePolarisation; }
+  
   //! Set the NEW energy of the mother particle
   void SetMotherEnergy(const double E) { m_MotherParticleEnergy = E; }
   //! Get the NEW energy of the mother particle
@@ -110,12 +115,17 @@ class MSimIA
   void SetSecondaryDirection(const MVector& Dir) { m_SecondaryParticleDirection = Dir; }
   //! Get the direction of the generated particle
   MVector GetSecondaryDirection() const { return m_SecondaryParticleDirection; }
-
+  
   //! Set the polarization of the generated particle
   void SetSecondaryPolarisation(const MVector& Pol) { m_SecondaryParticlePolarisation = Pol; }
   //! Get the polarization of the generated particle
   MVector GetSecondaryPolarisation() const { return m_SecondaryParticlePolarisation; }
 
+  //! Set the polarization of the generated particle
+  void SetSecondaryPolarization(const MVector& Pol) { m_SecondaryParticlePolarisation = Pol; }
+  //! Get the polarization of the generated particle
+  MVector GetSecondaryPolarization() const { return m_SecondaryParticlePolarisation; }
+  
   //! Set the kinetic energy of the generated particle
   void SetSecondaryEnergy(const double Energy) { m_SecondaryParticleEnergy = Energy; }
   //! Get the kinetic energy of the generated particle

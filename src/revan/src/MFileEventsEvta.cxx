@@ -42,6 +42,11 @@
 #include "MDStrip3D.h"
 #include "MDVoxel3D.h"
 #include "MDStrip3DDirectional.h"
+#include "MDGuardRing.h"
+#include "MBinaryStore.h"
+#include "MSimEvent.h"
+#include "MSimHT.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -69,7 +74,8 @@ MFileEventsEvta::MFileEventsEvta(MGeometryRevan* Geometry) : MFileEvents()
 
   m_EventId = -1;
   m_IsFirstEvent = true;
-
+  m_ReachedBinarySection = false;
+  
   m_Noising = new MERNoising();
   m_Noising->SetGeometry(m_Geometry);
   
@@ -91,7 +97,7 @@ MFileEventsEvta::~MFileEventsEvta()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFileEventsEvta::Open(MString FileName, unsigned int Way)
+bool MFileEventsEvta::Open(MString FileName, unsigned int Way, bool IsBinary)
 {
   // Open the file, check if the type is correct
 
@@ -110,7 +116,7 @@ bool MFileEventsEvta::Open(MString FileName, unsigned int Way)
     m_IsSimulation = false;
   }
   
-  if (MFileEvents::Open(FileName, Way) == false) {
+  if (MFileEvents::Open(FileName, Way, IsBinary) == false) {
     return false;
   }
   
@@ -121,7 +127,8 @@ bool MFileEventsEvta::Open(MString FileName, unsigned int Way)
 
   m_EventId = -1;
   m_IsFirstEvent = true;
-
+  m_ReachedBinarySection = false;
+  
   m_Noising->PreAnalysis();
 
   return true;
@@ -165,6 +172,19 @@ void MFileEventsEvta::UpdateObservationTimes(MRERawEvent* Event)
 
 
 MRERawEvent* MFileEventsEvta::GetNextEvent()
+{
+  if (m_IsBinary == true) {
+    return GetNextEventBinary();
+  } else {
+    return GetNextEventASCII();
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MRERawEvent* MFileEventsEvta::GetNextEventASCII()
 {
   // Return the next event... or 0 if it is the last one
   // So remember to test for more events!
@@ -321,6 +341,193 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
   ShowProgress(false);
 
   return nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MRERawEvent* MFileEventsEvta::GetNextEventBinary()
+{
+  // Return the next event... or 0 if it is the last one
+  // So remember to test for more events!
+  
+  massert(m_IsOpen == true);
+  
+  // The general reading plan:
+  // We have to consider several special cases:
+  // (SC0) If the user has pressed cancel, we stop any reading
+  // (SC1) If there is an active INclude-file we have to get the event from this file
+  //       If there are no more events in the include file, we continue reading this file  
+  
+  
+  // This takes care of (SC0)
+  if (UpdateProgress() == false) return nullptr;
+  
+  // This takes care of (SC1)
+  if (m_IncludeFileUsed == true) {
+    MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+    if (RE == nullptr) {
+      m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+      if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
+      m_IncludeFile->Close();
+      m_IncludeFileUsed = false;
+      if (m_Canceled == true) return nullptr;
+    } else {
+      UpdateObservationTimes(RE);
+      return RE;
+    }
+  }
+  
+  // The standard loop:
+  
+  
+  // Create a new MRERawEvent...
+  MRESE::ResetIDCounter();
+  MRERawEvent* Event = nullptr;
+  
+  
+  if (m_ReachedBinarySection == false) {
+    
+    MString Line;
+    while (IsGood() == true) {
+      if (ReadLine(Line) == false) break;
+      if (Line == "STARTBINARYSTREAM") {
+        m_ReachedBinarySection = true;
+        break;
+      }
+      // Include another file:
+      else if (Line[0] == 'I' && Line[1] == 'N') {
+        
+        if (OpenIncludeFile(Line) == true) {
+          
+          Event = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+          if (Event == nullptr) {
+            m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+            m_IncludeFile->Close();
+            m_IncludeFileUsed = false;
+            break;
+          } else {
+            UpdateObservationTimes(Event);
+            return Event;
+          }
+        } else {
+          m_IncludeFile->Close();
+          m_IncludeFileUsed = false;
+        }
+      } 
+    }
+  }
+  
+  
+  
+  // Max size of the binary store
+  const unsigned long MaxFill = 500000;
+  
+  // We are in the binary file stream, let's make sure we have at least 1 MB in the data store
+  if (IsGood()) {
+    if (m_BinaryStore.GetArraySizeUnread() < 0.8*MaxFill) {
+      m_BinaryStore.Truncate();
+      Read(m_BinaryStore, MaxFill - m_BinaryStore.GetArraySize());
+    }
+  }
+  
+  while (m_BinaryStore.GetArraySizeUnread() >= 2) {
+    MString Flag = m_BinaryStore.GetString(2);
+    m_BinaryStore.ProgressPosition(-2);
+    if (Flag != "SE" && Flag != "EN") {
+      cout<<"ERROR: File parsing error. Expected SE or EN, but got: "<<Flag<<". Progressing to next sync flag"<<endl;
+      while (Flag != "SE" && Flag != "EN") {
+        m_BinaryStore.ProgressPosition(+1);
+        Flag = m_BinaryStore.GetString(2);
+        m_BinaryStore.ProgressPosition(-2);
+        
+        if (m_BinaryStore.GetArraySizeUnread() < 0.8*MaxFill) {
+          m_BinaryStore.Truncate();
+          Read(m_BinaryStore, MaxFill - m_BinaryStore.GetArraySize());
+        }
+      }
+      cout<<"INFO: Recovered. Found flag: "<<Flag<<endl;
+    }
+    
+    
+    if (Flag == "SE") {
+      MSimEvent* SimEvent = new MSimEvent();
+      SimEvent->SetGeometry(m_Geometry);
+      
+      try {
+        if (SimEvent->ParseBinary(m_BinaryStore) == false) {
+          delete SimEvent;
+          SimEvent = nullptr;
+        }
+      } catch (...) {
+        cout<<"ERROR: Unable to read a binary event!"<<endl;
+        if (SimEvent != nullptr) {
+          delete SimEvent;
+          SimEvent = nullptr;
+        }
+      }
+      
+      
+      if (SimEvent != nullptr) {
+        MRESE::ResetIDCounter();
+        Event = new MRERawEvent(m_Geometry);
+        Event->SetEventID(SimEvent->GetID());
+        Event->SetEventTime(SimEvent->GetTime());
+        for (unsigned int h = 0; h < SimEvent->GetNHTs(); ++h) {
+          MREHit* Hit = new MREHit();
+          Hit->SetDetector(SimEvent->GetHTAt(h)->GetDetectorType());
+          Hit->SetPosition(SimEvent->GetHTAt(h)->GetPosition());
+          Hit->SetEnergy(SimEvent->GetHTAt(h)->GetEnergy());
+          Hit->SetTime(SimEvent->GetHTAt(h)->GetTime());
+          Hit->RetrieveResolutions(m_Geometry);
+          Event->AddRESE(Hit);
+        }
+        for (unsigned int h = 0; h < SimEvent->GetNGRs(); ++h) {
+          MDVolumeSequence* V = m_Geometry->GetVolumeSequencePointer(SimEvent->GetGRAt(h)->GetPosition(), true, true);
+          
+          MREAMGuardRingHit* GR = new MREAMGuardRingHit();
+          GR->SetVolumeSequence(V);
+          GR->SetEnergy(SimEvent->GetGRAt(h)->GetEnergy());
+          GR->SetEnergyResolution(V->GetDetector()->GetGuardRing()->GetEnergyResolution(SimEvent->GetGRAt(h)->GetEnergy()));
+          Event->AddREAM(GR);
+        }
+        if (m_SaveOI == true && SimEvent->GetNIAs() > 0) {
+          Event->SetOriginInformation(SimEvent->GetIAAt(0)->GetPosition(), SimEvent->GetIAAt(0)->GetSecondaryDirection(), SimEvent->GetIAAt(0)->GetSecondaryPolarization(), SimEvent->GetIAAt(0)->GetSecondaryEnergy());
+        }
+        
+        delete SimEvent;
+        SimEvent = nullptr;
+        
+        // If this is simulation, then noise all hits:
+        if (m_IsSimulation == true && m_Geometry != nullptr) {
+          m_Noising->Analyze(Event);
+        } // Is simulation
+        
+        if (Event->GetNRESEs() == 0) {
+          delete Event;
+          Event = nullptr;
+          MRESE::ResetIDCounter();
+        } else {
+          UpdateObservationTimes(Event);
+          return Event;
+        }
+      }
+      
+    } else if (Flag == "EN") {
+      ReadFooter(true);
+      break;
+    }
+  }
+  
+  // We are done --- no more new events
+  m_EventId = -1;
+  m_IsFirstEvent = true;
+  
+  delete Event;
+  ShowProgress(false);
+  
+  return nullptr;  
 }
 
 
