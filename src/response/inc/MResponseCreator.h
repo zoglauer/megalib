@@ -116,6 +116,7 @@ class MResponseCreator
     c_ModeImagingListMode,
     c_ModeImagingBinnedMode,
     c_ModeImagingCodedMask,
+    c_ModePolarizationBinnedMode,
     c_ModeEarthHorizon,
     c_ModeFirstInteractionPosition,
     c_ModeSpectral,

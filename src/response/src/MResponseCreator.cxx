@@ -51,6 +51,7 @@ using namespace std;
 #include "MResponseImagingEfficiencyNearField.h"
 #include "MResponseImagingBinnedMode.h"
 #include "MResponseImagingCodedMask.h"
+#include "MResponsePolarizationBinnedMode.h"
 #include "MResponseEarthHorizon.h"
 #include "MResponseTracking.h"
 #include "MResponseEventQuality.h"
@@ -165,6 +166,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<MResponseImagingBinnedMode::Options()<<endl;
   Usage<<"      il : list-mode imaging"<<endl;
   Usage<<"      ic : coded mask imaging"<<endl;
+  Usage<<"      pb : "<<MResponsePolarizationBinnedMode::Description()<<endl;
+  Usage<<MResponsePolarizationBinnedMode::Options()<<endl;
   Usage<<"      ef : efficiency far field (e.g. astrophysics)"<<endl;
   Usage<<"      en : efficiency near field (e.g. medical)"<<endl;
   Usage<<"      e  : earth horizon"<<endl;
@@ -284,6 +287,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       } else if (SubOption == "ic") {
         m_Mode = c_ModeImagingCodedMask;
         cout<<"Choosing coded mask maging mode"<<endl;
+      } else if (SubOption == "pb") {
+        m_Mode = c_ModePolarizationBinnedMode;
+        cout<<"Choosing binned polarization mode"<<endl;
       } else if (SubOption == "e") {
         m_Mode = c_ModeEarthHorizon;
         cout<<"Choosing Earth Horizon mode"<<endl;
@@ -822,6 +828,38 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
 
     Response.CreateResponse();
+
+  } else if (m_Mode == c_ModePolarizationBinnedMode) {
+    
+    if (m_RevanCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No revan configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+    if (m_MimrecCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No mimrec configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+    
+    MResponsePolarizationBinnedMode Response;
+    
+    Response.SetDataFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+    
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+    
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+    Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
+    
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true && m_Interrupt == false);
+    if (Response.Finalize() == false) return false;
+    
   } else if (m_Mode == c_ModeEarthHorizon) {
 
     if (m_MimrecCfgFileName == g_StringNotDefined) {
