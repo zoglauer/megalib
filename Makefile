@@ -178,7 +178,7 @@ clean_geomega:
 #------------------------------------------------------------------------------
 # Eview
 
-evi: link glo rev geolib
+evi: link glo rev siv geolib
 	@$(MAKE) evi -C src
 
 eview: info evi
@@ -242,10 +242,10 @@ clean_sivan:
 revan: info rev
 	@$(BN)/revan $(CMD)
 
-revlib: link glo geolib spelib
+revlib: link glo geolib spelib sivlib
 	@$(MAKE) revlib -C src
 
-rev: link glo spe geolib spelib
+rev: link glo spe geolib spelib sivlib
 	@$(MAKE) rev -C src
 
 clean_revan:

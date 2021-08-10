@@ -33,9 +33,9 @@ FILES_UI = \
 
 LIBRARIES = \
 	-lGeomega \
-	-lSivan \
 	-lRevan \
 	-lRevanGui \
+	-lSivan \
 	-lMimrec \
 	-lMimrecGui \
 	-lSpectralyze \
