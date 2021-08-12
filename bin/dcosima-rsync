@@ -193,7 +193,7 @@ while ${KEEPGOING}; do
   fi
 done
   
-chown ${USER}:${USER} *
+chown ${USER}:${USER} .
 
 echo "dcosima-rsync: All rsync processes have finished! Done!"
 
