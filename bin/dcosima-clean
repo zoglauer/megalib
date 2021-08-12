@@ -97,7 +97,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
  
   
   # Let's first retrieve a list of all directories
-  REMOTECOMMAND='cd $(grep ^directory ~/.dcosima.cfg | tr -s " " | cut -d " " -f2); ls -dtr */;'
+  REMOTECOMMAND='cd $(grep ^directory ~/.dcosima.cfg | tr -s " " | cut -d " " -f2); find . -mindepth 1 -maxdepth 1 -type d | sed "s|^\./||";'
   DIRECTORIES=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
     echo "ERROR: Unable to retrieve the directories!"
