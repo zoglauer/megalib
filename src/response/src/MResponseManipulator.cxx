@@ -908,6 +908,8 @@ bool MResponseManipulator::Join()
   Types.push_back(".binnedimaging.exposure.rsp");
   Types.push_back(".binnedimaging.energyresponse.rsp");
   
+  Types.push_back(".binnedpolarization.11D.rsp");
+
   Types.push_back(".imagingarm.allenergies.rsp");
   Types.push_back(".imagingarm.photopeak.rsp");
  
