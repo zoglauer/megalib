@@ -457,7 +457,7 @@ bool MResponseImagingBinnedMode::Analyze()
     Tau = De.Phi()*c_Deg;
     while (Tau < -180) Tau += 360.0;
     while (Tau > +180) Tau -= 360.0;
-    Sigma = Dg.Theta()*c_Deg;
+    Sigma = De.Theta()*c_Deg;
   } else {
     Tau = 179.99;
     Sigma = 179.99;
