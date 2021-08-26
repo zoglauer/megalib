@@ -5549,8 +5549,11 @@ bool MDGeometry::CreateCrossSectionFiles()
 
   // (1) Create a mimium cosima file:
   MString FileName = gSystem->TempDirectory();
-  FileName += "/DelMe.source";
-
+  FileName += "/MEGAlib_CrossSections_";
+  FileName += gRandom->Integer(900000000)+100000000;
+  FileName += gRandom->Integer(900000000)+100000000;
+  FileName += ".source";
+  
   ofstream out;
   out.open(FileName);
   if (out.is_open() == false) {
