@@ -8,7 +8,7 @@
 IsDebianClone=0
 IsRedhatClone=0
 IsOpenSuseClone=0
-
+IsArchClone=0
 
 if [ -f /etc/os-release ]; then
   OS=`cat /etc/os-release | grep "^ID_LIKE\=" | awk -F= '{ print $2 }'`
@@ -26,6 +26,11 @@ if [ -f /etc/os-release ]; then
     IsOpenSuseClone=1
   elif [[ ${OS} == scientific* ]] || [[ ${OS} == *fedora* ]] ; then
     IsRedhatClone=1
+  elif [[ ${OS} == arch ]] ; then
+    IsArchClone=1
+  else
+    echo "Unknown operating system: ${OS}"
+    exit 1
   fi
 fi
 
@@ -313,6 +318,48 @@ if [[ ${IsRedhatClone} -eq 1 ]]; then
   fi
 
 fi
+
+
+# Arch Clones
+
+if [[ ${IsArchClone} -eq 1 ]]; then
+
+  REQUIRED="git gawk make gcc gcc-fortran gdb valgrind binutils libx11 libxpm libxft libxext openssl pcre glu glew ftgl  fftw graphviz avahi libldap python3 tk python-virtualenv libxml2 krb5 gsl cmake libxmu curl doxygen blas lapack expect dos2unix ncurses boost "
+
+  if [[ "${REQUIRED}" == "" ]]; then exit 0; fi
+
+  # Check if each of the packages exists:
+  for PACKAGE in ${REQUIRED}; do
+    # Check if the file is installed
+    #echo "Testing: ${PACKAGE}"
+    STATUS=$(pacman -Ss ${PACKAGE} >& /dev/null)
+    if [[ $? == 1 ]]; then
+      # Check if it exists at all:
+      echo "Does not exist: ${PACKAGE}"
+    else
+      STATUS=$(pacman -Qi ${PACKAGE} >& /dev/null)
+      if [[ $? == 1 ]]; then
+        # Check if it exists at all:
+        echo "Not installed: ${PACKAGE}"
+        TOBEINSTALLED="${TOBEINSTALLED} ${PACKAGE}"
+      fi
+    fi
+  done
+
+
+  if [[ "${TOBEINSTALLED}" != "" ]]; then
+    echo " "
+    echo "Do the following to install all required packages:"
+    echo "sudo pacman -S ${TOBEINSTALLED}"
+    echo " "
+    exit 1;
+  else
+    echo "All required packages seem to be already installed!"
+    exit 0
+  fi
+
+fi
+
 
 
 exit 0
