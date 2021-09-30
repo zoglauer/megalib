@@ -50,9 +50,14 @@ class MSimCluster
   //! Return the volume sequence of this hit
   MDVolumeSequence* GetVolumeSequence();
 
+  //! Get the number of hits
   unsigned int GetNHTs();
+  //! Get a speciifc hit
   MSimHT* GetHTAt(unsigned int i);
+  //! Add a hit
   bool AddHT(MSimHT* HT);
+  //! Return if this hit is part of the cluster (pointer comparison only)
+  bool HasHT(MSimHT* HT);
 
   // Convert the content to a hit
   MSimHT* CreateHT();
