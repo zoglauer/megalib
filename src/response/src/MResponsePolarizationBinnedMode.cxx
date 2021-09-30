@@ -53,7 +53,7 @@ ClassImp(MResponsePolarizationBinnedMode)
 //! Default constructor
 MResponsePolarizationBinnedMode::MResponsePolarizationBinnedMode() : m_PolarizationResponse(true)
 {
-  m_ResponseNameSuffix = "binnedimaging";
+  m_ResponseNameSuffix = "binnedpolarization";
   m_OnlyINITRequired = true;
   
   m_AngleBinWidth = 5; // deg
@@ -65,7 +65,7 @@ MResponsePolarizationBinnedMode::MResponsePolarizationBinnedMode() : m_Polarizat
   m_DistanceNBins = 1;
   m_DistanceMinimum = 0; // cm
   m_DistanceMaximum = 1000; // cm
-  m_PolarizationAngleNBins = 18; //deg
+  m_PolarizationAngleNBins = 19; //deg
   
   m_UseAtmosphericAbsorption = false;
   m_AtmosphericAbsorptionFileName = "";
@@ -346,7 +346,7 @@ bool MResponsePolarizationBinnedMode::Initialize()
   AxisDistance.SetLinear(m_DistanceNBins, m_DistanceMinimum, m_DistanceMaximum);
   
   MResponseMatrixAxis AxisPolarizationAngle("Polarization Angle [deg]");
-  AxisDistance.SetLinear(m_PolarizationAngleNBins, 0, 180);
+  AxisPolarizationAngle.SetLinear(m_PolarizationAngleNBins, 0, 180);
   
   
   
@@ -362,6 +362,7 @@ bool MResponsePolarizationBinnedMode::Initialize()
   if (m_SiReader != nullptr) {
     m_PolarizationResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }   
+
 
   if (m_UseAtmosphericAbsorption == true) {
     if (m_AtmosphericAbsorption.Read(m_AtmosphericAbsorptionFileName) == false) {
@@ -467,14 +468,27 @@ bool MResponsePolarizationBinnedMode::Analyze()
   MVector IdealPolDir = m_SiEvent->GetIAAt(0)->GetSecondaryPolarisation();
   IdealPolDir = Rotation*IdealPolDir;
   
-  MVector RotatedPolDir = IdealPolDir;
-  RotatedPolDir.RotateReferenceFrame(IdealOriginDir);
-  cout<<"Rotated pol dir :"<<RotatedPolDir<<endl;
-  double PolarizationAngle = RotatedPolDir.Angle(MVector(1, 0, 0));
+  MVector PolAngleReferenceDir = IdealOriginDir;
+  if (IdealOriginDir[0] == 0 && IdealOriginDir[1] == 0) {
+    PolAngleReferenceDir.SetXYZ(1.0, 0.0, 0.0);
+  } else {
+    PolAngleReferenceDir[2] = 0;
+    PolAngleReferenceDir.Unitize();
+
+    MVector RotationAxis = PolAngleReferenceDir.Cross(IdealOriginDir);
+    double RotationAngle = IdealOriginDir.Angle(MVector(0, 0, 1));
+  
+    PolAngleReferenceDir.RotateAroundVector(RotationAxis, RotationAngle);
+  }
+  
+  // https://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors
+  double PolarizationAngle = atan2(PolAngleReferenceDir.Dot(IdealPolDir), IdealOriginDir.Dot(PolAngleReferenceDir.Cross(IdealPolDir)))*c_Deg;
+  while (PolarizationAngle < 0) PolarizationAngle += 180.0;
+  while (PolarizationAngle > 180) PolarizationAngle -= 180.0;
   
   // And fill the matrices
   m_PolarizationResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, PolarizationAngle, EnergyMeasured, Phi, Psi, Chi, Sigma, Tau, Distance } );
-            
+
   //cout<<"Added: "<<Event->GetId()<<":"<<Phi<<":"<<Psi<<":"<<Chi<<endl;
   
   return true;
@@ -500,7 +514,7 @@ bool MResponsePolarizationBinnedMode::Save()
   MResponseBuilder::Save(); 
   
   m_PolarizationResponse.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_PolarizationResponse.Write(GetFilePrefix() + ".polarizationresponse" + m_Suffix, true);
+  m_PolarizationResponse.Write(GetFilePrefix() + ".11D" + m_Suffix, true);
   
   return true;
 }
