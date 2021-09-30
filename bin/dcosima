@@ -593,15 +593,22 @@ echo ""
 if [[ ${LAUNCHED} -gt 0 ]]; then
   echo "Create a concatenation file" | ${LOGGING}
   Base=`cat ${SOURCE} | grep -m 1 -E "\.FileName|\.Filename|\.filename" | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`;
+  Binary=`cat ${SOURCE} | grep -m 1 -E "^FileFormat|^Fileformat|^fileformat" | awk -F"FileFormat|.Fileformat|.fileformat" '{ print $2 }'  | tr '[:upper:]' '[:lower:]'`
+
+  if [[ ${Binary} == b* ]]; then
+    Binary=".bin"
+  else
+    Binary=""
+  fi
 
   # Switch to the directory where all the data lands:
   cd ${LOCALDIR}
 
   echo "Creating concatenation file for simulation \"${Base}\"" | ${LOGGING}
-  ConcatFileName="${Base}.p1.sim"
-  rm -f "${Base}.p1.sim*"
+  ConcatFileName="${Base}.p1${Binary}.sim"
+  rm -f "${Base}.p1${Binary}.sim*"
 
-  FirstFileName="${Base}.p1.inc1.id1.sim"
+  FirstFileName="${Base}.p1.inc1.id1${Binary}.sim"
   if [ "${ZIP}" == "TRUE" ]; then
     FirstFileName="${FirstFileName}.gz"
   fi 
