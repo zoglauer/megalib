@@ -236,7 +236,7 @@ bool MCParameterFile::Parse()
         return false;
       }
     } else if (T->IsTokenAt(0, "Package", true) == true) {
-      mout<<"The keyword \"Package\" is depreciated.";
+      mout<<"The keyword \"Package\" is deprecated.";
       mout<<"Please use \"PhysicsListEM\" instead to distinguish between various physics lists."<<endl;
       if (T->GetNTokens() == 2) {
         m_PhysicsListEM = T->GetTokenAtAsInt(1);
@@ -265,7 +265,7 @@ bool MCParameterFile::Parse()
         } else if (Type == "livermore-pol" || Type == "livermorepol") {
           m_PhysicsListEM = MCPhysicsList::c_EMLivermorePolarized;
         } else if (Type == "livermore-g4lecs") {
-          mout<<"Depreciated: The G4LECS package is outdated since Geant4 9.2 and superseeded by the default Livermore physics list."<<endl;
+          mout<<"Deprecated: The G4LECS package is outdated since Geant4 9.2 and superseeded by the default Livermore physics list."<<endl;
           mout<<"             Therefore the livermore-g4lecs option does no longer exist."<<endl;
           mout<<"             Using the default Livermore physics list (which includes Doppler-broadening)."<<endl;
           m_PhysicsListEM = MCPhysicsList::c_EMLivermore;
@@ -311,7 +311,7 @@ bool MCParameterFile::Parse()
       }
     } else if (T->IsTokenAt(0, "ActivateFluorescence", true) == true || 
                T->IsTokenAt(0, "PhysicsListEMActivateFluorescence", true) == true) {
-      mout<<"Depreciated: Fluorescence is activated by default where possible."<<endl;
+      mout<<"Deprecated: Fluorescence is activated by default where possible."<<endl;
     } else if (T->IsTokenAt(0, "DecayMode", true) == true) {
       if (T->GetNTokens() == 2) {
         MString Mode = T->GetTokenAtAsString(1);
@@ -964,7 +964,7 @@ bool MCParameterFile::Parse()
         }
       }
       else if (T->IsTokenAt(1, "Trigger", true) == true) {
-        mout<<"Depreciated: The Trigger keyword is no longer used."<<endl;
+        mout<<"Deprecated: The Trigger keyword is no longer used."<<endl;
         mout<<"             Instead the trigger criteria in the geometry file are used as pre-trigger criteria."<<endl;
         mout<<"             This means vetoes are ignored and the thresholds are set to zero."<<endl;
       }
@@ -1014,8 +1014,8 @@ bool MCParameterFile::Parse()
       
       //cout<<"Checking run: "<<Run->GetName()<<endl;
       if (T->IsTokenAt(1, "SpectralType", true) == true) {
-        mout<<"Depreciated: SpectralType"<<endl
-            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are depreciated!"<<endl
+        mout<<"Deprecated: SpectralType"<<endl
+            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are deprecated!"<<endl
             <<"  Please use \"Spectrum\" and \"Beam\" instead."<<endl
             <<"  Consult the manual for further information."<<show;
 
@@ -1665,7 +1665,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "mapprofilebeam" || Type == "profiledbeam" || Type == "mpb" || Type == "pb") {
             if (T->GetNTokens() == 10) {
-              mout<<"Warning: Using the MapProfileBeam without rotation around z-axis is depreciated"<<endl;
+              mout<<"Warning: Using the MapProfileBeam without rotation around z-axis is deprecated"<<endl;
               mout<<"         Please update your source file according to the documentation"<<endl;
               
 
@@ -2079,7 +2079,7 @@ bool MCParameterFile::Parse()
           MString Type = T->GetTokenAtAsString(2);
           Type.ToLower();
           if (Type == "true" || Type == "false" || Type == "1" || Type == "0") {
-            mout<<"Depreciated: Polarization"<<endl
+            mout<<"Deprecated: Polarization"<<endl
               <<"  You are using the old polarization format. Please update to the new format."<<endl
               <<"  Consult the manual for further information."<<show;
             if (Type == "true" || Type == "1") {
@@ -2268,7 +2268,7 @@ bool MCParameterFile::Parse()
     } // is source
   } // Step 4
 
-  // --> begin depreciated
+  // --> begin deprecated
   // Step 5: Secondary Source parameters
   for (i = 0; i < GetNLines(); ++i) {
     MTokenizer* T = GetTokenizerAt(i);
@@ -2277,8 +2277,8 @@ bool MCParameterFile::Parse()
     if ((Source = GetSource(T->GetTokenAt(0))) != 0) {
       // Position:
       if (T->IsTokenAt(1, "Position", true) == true) {
-        mout<<"Depreciated: Position"<<endl
-            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are depreciated!"<<endl
+        mout<<"Deprecated: Position"<<endl
+            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are deprecated!"<<endl
             <<"  Please use \"Spectrum\" and \"Beam\" instead."<<endl
             <<"  Consult the manual for further information."<<show;
 
@@ -2598,8 +2598,8 @@ bool MCParameterFile::Parse()
       } 
       //
       else if (T->IsTokenAt(1, "Energy", true) == true) {
-        mout<<"Depreciated: Energy"<<endl
-            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are depreciated!"<<endl
+        mout<<"Deprecated: Energy"<<endl
+            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are deprecated!"<<endl
             <<"  Please use \"Spectrum\" and \"Beam\" instead."<<endl
             <<"  Consult the manual for further information."<<show;
 
@@ -2764,7 +2764,7 @@ bool MCParameterFile::Parse()
       } // token
     } // is source
   } // Step 5
-  // --> end depreciated
+  // --> end deprecated
 
 
   // Step 6: Tertiary Source parameters

@@ -154,7 +154,7 @@ class MFile
   //! Return true if the file exists and if it is readable
   static bool Exists(MString FileName);
   //! Return true if the file exists
-  static bool FileExists(const char* FileName); // depreciated
+  static bool FileExists(const char* FileName); // deprecated
   //! Return true if the file was removed successfully
   static bool Remove(MString FileName);
   //! Check if a program exists

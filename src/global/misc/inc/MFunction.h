@@ -70,7 +70,7 @@ class MFunction
 
   //! Evaluate the data for a specific x value 
   double Evaluate(double x) const; 
-  double Eval(double x) const; // depreciated
+  double Eval(double x) const; // deprecated
 
   //! Integrate all the data from min to max
   double Integrate() const;

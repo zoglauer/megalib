@@ -303,7 +303,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   int Stage = 0;
   MTimer Timer;
   double TimeLimit = 0;
-  bool FoundDepreciated = false;
+  bool FoundDeprecated = false;
 
   // First clean the geometry ...
   Reset();
@@ -381,7 +381,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"Please update to the new path now!"<<endl;
         mout<<"Change: resource/geometries To: resource/examples/geomega "<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
       }
 
       MString FileName = Tokenizer.GetTokenAt(1);
@@ -1582,7 +1582,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                  Tokenizer.IsTokenAt(1, "ComponentByAtoms") == true) {
         if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
           Typo("Line must contain two strings and 3 doubles,"
-               " e.g. \"Alu.ComponentByAtoms 27.0 13.0 1.0  --> but this is depreciated\""
+               " e.g. \"Alu.ComponentByAtoms 27.0 13.0 1.0  --> but this is deprecated\""
                " or three string and one double\""
                " e.g. \"Alu.ComponentByAtoms Al 1.0\"");
           return false;
@@ -1604,7 +1604,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       } else if (Tokenizer.IsTokenAt(1, "ComponentByMass") == true) {
        if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
           Typo("Line must contain two strings and 3 doubles,"
-               " e.g. \"Alu.ComponentByMass 27.0 13.0 1.0  --> but this is depreciated\""
+               " e.g. \"Alu.ComponentByMass 27.0 13.0 1.0  --> but this is deprecated\""
                " or three string and one double\""
                " e.g. \"Alu.ComponentByMass Al 1.0\"");
           return false;
@@ -1773,7 +1773,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             <<" "<<Tokenizer.GetTokenAtAsInt(3)<<endl;
         mout<<"Using the above..."<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
 
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain two strings and 2 integer, e.g. \"D1D2Trigger.DetectorType 1 2\"");
@@ -2335,7 +2335,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"All cross section files have fixed file names, and can be found in the directory given by"<<endl;
         mout<<"the keyword CrossSectionFilesDirectory or in \"auxiliary\" as default"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
       } else if (Tokenizer.IsTokenAt(1, "Orientation") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain three strings,"
@@ -2555,7 +2555,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           mout<<"The \"EnergyResolution\" keyword format has changed. Please see the geomega manual."<<endl;
           mout<<"Using a Gaussian resolution in compatibility mode."<<endl;
           mout<<endl;
-          //FoundDepreciated = true;
+          //FoundDeprecated = true;
           D->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           if (Tokenizer.GetNTokens() == 4) {
             D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
@@ -2703,7 +2703,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"StructuralSize\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (Tokenizer.GetNTokens() != 5) {
         //           Typo("Line must contain one string and 3 doubles,"
         //                " e.g. \"Wafer.StructuralSize 0.0235, 3.008, 0.5\"");
@@ -2750,7 +2750,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"Width\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_DriftChamber &&
         //             D->GetType() != MDDetector::c_Strip3D) {
@@ -2767,7 +2767,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"Pitch\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_Strip3D &&
         //             D->GetType() != MDDetector::c_DriftChamber) {
@@ -2864,7 +2864,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"StripLength\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_Strip3D &&
         //             D->GetType() != MDDetector::c_DriftChamber) {
@@ -2883,7 +2883,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"Orientation\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_Strip3D &&
         //             D->GetType() != MDDetector::c_DriftChamber) {
@@ -2980,7 +2980,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"For all detectors, the z-axis is by default the depth-noised axis"<<endl;
         mout<<"For the depth resolution, use the \"DepthResolution\" keyword"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
       }
       else if (Tokenizer.IsTokenAt(1, "DepthResolution") == true ||
                Tokenizer.IsTokenAt(1, "DepthResolutionAt") == true) {
@@ -3904,8 +3904,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mout<<"It contains "<<GetNVolumes()<<" volumes"<<endl;
   }
 
-  if (FoundDepreciated == true) {
-    mgui<<"Your geometry contains depreciated information (see console output for details)."<<endl;
+  if (FoundDeprecated == true) {
+    mgui<<"Your geometry contains deprecated information (see console output for details)."<<endl;
     mgui<<"Please update it now to the latest conventions!"<<show;
   }
 

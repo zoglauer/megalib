@@ -1355,7 +1355,7 @@ bool MDVolume::Validate()
     mout<<"   ***  Soft warning  ***  in volume "<<m_Name<<endl;
     mout<<"You have a clone template (volume to which you apply the .Copy operator)"<<endl;
     mout<<"Which is positioned in another volume: "<<m_Mother->GetName()<<endl;
-    mout<<"This is fine, but depreciated... because error prone!"<<endl;
+    mout<<"This is fine, but deprecated... because error prone!"<<endl;
   }
 
   // Give a warning if a clone does not have a mother
