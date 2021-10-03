@@ -540,7 +540,7 @@ MTime MBinaryStore::GetTime()
   int64_t Seconds = GetInt64();
   int64_t NanoSeconds = GetInt32(); 
   
-  return MTime(Seconds, NanoSeconds);
+  return MTime((long int) Seconds, (long int) NanoSeconds);
 }
 
 
@@ -574,7 +574,7 @@ MTime MBinaryStore::GetTimeUInt64()
   
   int64_t NanoSeconds = GetInt64(); 
   
-  return MTime(NanoSeconds / 1000000000, NanoSeconds % 1000000000);
+  return MTime((long int) (NanoSeconds / 1000000000), (long int) (NanoSeconds % 1000000000));
 }
 
 
