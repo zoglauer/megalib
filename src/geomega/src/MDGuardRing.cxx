@@ -84,7 +84,6 @@ MDDetector* MDGuardRing::Clone()
 {
   // Duplicate this detector
 
-  massert(this != 0);
   return new MDGuardRing(*this);
 }
 

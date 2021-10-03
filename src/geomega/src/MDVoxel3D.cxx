@@ -119,7 +119,6 @@ MDDetector* MDVoxel3D::Clone()
 {
   // Duplicate this detector
 
-  massert(this != 0);
   return dynamic_cast<MDDetector*>(new MDVoxel3D(*this));
 }
 
