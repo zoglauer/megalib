@@ -998,8 +998,6 @@ void MDVolume::AddDaughter(MDVolume* Daughter)
 {
   // Add a daughter volume, i.e. a volume placed within this volume
 
-  massert(this != 0);
-
   // If daughter (pointer) already exists -- do not add it
   if (find(m_Daughters.begin(), m_Daughters.end(), Daughter) == m_Daughters.end()) {
     m_Daughters.push_back(Daughter);
@@ -1018,8 +1016,6 @@ void MDVolume::RemoveAllDaughters()
 {
   // Remove a all daughters
 
-  massert(this != 0);
-
   m_Daughters.clear();
 }
 
@@ -1030,8 +1026,6 @@ void MDVolume::RemoveAllDaughters()
 MDVolume* MDVolume::RemoveDaughter(MDVolume* Daughter)
 {
   // Remove a daughter AND remove the daughters mother volume
-
-  massert(this != 0);
 
   vector<MDVolume*>::iterator Iter = find(m_Daughters.begin(), m_Daughters.end(), Daughter);
   if (Iter != m_Daughters.end()) {
@@ -1049,8 +1043,6 @@ void MDVolume::AddClone(MDVolume* Clone)
 {
   // Add the pointer to a volume which is a clone of this volume
 
-  massert(this != 0);
-
   m_Clones.push_back(Clone);
   Clone->SetCloneTemplate(this);
 }
@@ -1063,8 +1055,6 @@ unsigned int MDVolume::GetNClones() const
 {
   // return the number clones of this volume
 
-  massert(this != 0);
-
   return m_Clones.size();
 }
 
@@ -1075,8 +1065,6 @@ MDVolume* MDVolume::GetCloneAt(unsigned int i)
 {
   // Return the clone at position i
 
-  massert(this != 0);
-
   if (i < GetNClones()) {
     return m_Clones[i];
   } else {
@@ -1084,7 +1072,7 @@ MDVolume* MDVolume::GetCloneAt(unsigned int i)
           "Index (%d) out of bounds (%d, %d)", i, 0, GetNClones()-1);
   }
 
-  return 0;
+  return nullptr;
 }
 
 
@@ -1094,8 +1082,6 @@ MDVolume* MDVolume::GetCloneAt(unsigned int i)
 unsigned int MDVolume::GetCloneId(MDVolume* Clone)
 {
   // Get the ID of the clone
-
-  massert(this != 0);
 
   for (unsigned int i = 0; i < m_Clones.size(); ++i) {
     if (Clone == m_Clones[i]) {
@@ -1114,8 +1100,6 @@ void MDVolume::SetCloneTemplate(MDVolume* CloneTemplate)
 {
   // This volume is a clone of volume CloneTemplate
 
-  massert(this != 0);
-
   m_CloneTemplate = CloneTemplate;
 }
 
@@ -1127,8 +1111,6 @@ MDVolume* MDVolume::Clone(MString Name)
 {
   // Create a new volume which is a clone of this volume - including all daughters
   // This function should only be used in combination with "RemoveVirtual Volume"!
-
-  massert(this != 0);
 
   MDVolume* V;
 
@@ -1561,8 +1543,6 @@ bool MDVolume::RemoveVirtualVolumes(vector<MDVolume*>& NewVolumes)
   // (1) Links daughters to mother
   // (2) Set new position & rotation
   // (3) Jump into all daughters
-
-  massert(this != 0);
 
   //cout<<"RVV: Looking at: "<<m_Name<<endl;
 
