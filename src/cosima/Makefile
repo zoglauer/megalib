@@ -17,7 +17,7 @@ CPP_FILES  := $(wildcard src/*.cc)
 CPP_FILES  := $(filter-out $(CPP_MAIN),$(CPP_FILES))
 OBJ_FILES  := $(addprefix $(LB)/,$(notdir $(CPP_FILES:.cc=.o)))
 SOBJ       := $(LB)/libCosima.$(DLL)
-G4_CFLAGS  := $(shell geant4-config --cflags) -DG4VIS_USE -Wno-deprecated-copy
+G4_CFLAGS  := $(shell geant4-config --cflags) -DG4VIS_USE -Wno-deprecated-copy -Wno-overloaded-virtual
 G4_CFLAGS  := $(filter-out -Wshadow, $(G4_CFLAGS))
 G4_CFLAGS  := $(filter-out -Woverloaded-virtual, $(G4_CFLAGS))
 G4_LIBS    := $(shell geant4-config --libs) -Wl,-rpath,$(shell geant4-config --prefix)/lib
@@ -64,6 +64,3 @@ $(LB)/%.o: src/%.cc inc/%.hh
 
 #
 #----------------------------------------------------------------
-
-
-
