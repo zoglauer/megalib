@@ -137,9 +137,9 @@ extern MStreams mgui;
 
 extern MStreams __mdep;
 #ifdef ___WINDOWS___
-#define mdep { ostringstream __oss; __oss<<"Depreciated function in file "<<__FILE__<<" before line "<<__LINE__<<":"; __mdep.SetHeader(__oss.str().c_str()); }  { ostringstream __oss; __oss<<__FILE__<<" "<<__LINE__; __mdep.SetRejection(__oss.str().c_str()); } __mdep.SetPrefix("  "); if (g_Verbosity >= 1) __mdep
+#define mdep { ostringstream __oss; __oss<<"=Deprecated function in file "<<__FILE__<<" before line "<<__LINE__<<":"; __mdep.SetHeader(__oss.str().c_str()); }  { ostringstream __oss; __oss<<__FILE__<<" "<<__LINE__; __mdep.SetRejection(__oss.str().c_str()); } __mdep.SetPrefix("  "); if (g_Verbosity >= 1) __mdep
 #else
-#define mdep { ostringstream __oss; __oss<<"Depreciated use of function \""<<__func__<<"\" in file "<<__FILE__<<" before line "<<__LINE__<<":"; __mdep.SetHeader(__oss.str()); }  { ostringstream __oss; __oss<<__func__<<" "<<__FILE__<<" "<<__LINE__; __mdep.SetRejection(__oss.str()); } __mdep.SetPrefix("  "); if (g_Verbosity >= 1) __mdep
+#define mdep { ostringstream __oss; __oss<<"Deprecated use of function \""<<__func__<<"\" in file "<<__FILE__<<" before line "<<__LINE__<<":"; __mdep.SetHeader(__oss.str()); }  { ostringstream __oss; __oss<<__func__<<" "<<__FILE__<<" "<<__LINE__; __mdep.SetRejection(__oss.str()); } __mdep.SetPrefix("  "); if (g_Verbosity >= 1) __mdep
 #endif
 
 extern MStreams __mimp;

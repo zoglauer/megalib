@@ -327,7 +327,7 @@ class MSimEvent : public MRotationInterface
   vector<MSimEvent*> CreateSingleHitEvents();
 
 
-  // Depreciated:
+  // Deprecated:
 
   void SetEventNumber(long EventNumber) { mdep<<"Please use: SetID"<<show; m_NEvent = EventNumber; }
   long GetEventNumber() { mdep<<"Please use: GetID"<<show; return m_NEvent; }

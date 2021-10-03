@@ -136,7 +136,7 @@ class MSimHT
   
   
 
-  // Depreciated
+  // Deprecated
 
   //! Return the number of the detector, where the hit took place
   int GetDetector() const { return m_DetectorType; };

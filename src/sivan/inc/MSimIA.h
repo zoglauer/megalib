@@ -145,7 +145,8 @@ class MSimIA
   void SetParentNucleus(const int ParentNucleus) { m_ParentNucleus = ParentNucleus; }
   int GetParentNucleus() const { return m_ParentNucleus; }
 
-  // All the depreciated function names
+  
+  // All the deprecated function names
 
   void SetType(const MString& Type) { mdep<<"Please use: SetProcess"<<show; m_Process = Type; }
   MString GetType() const { mdep<<"Please use: GetProcess"<<show; return m_Process; }

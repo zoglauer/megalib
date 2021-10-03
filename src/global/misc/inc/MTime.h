@@ -35,13 +35,13 @@ class MTime
  public:
   //! Default constructor, set the time to NOW
   MTime();
-  //! Extracts the time from a string -- depreciated! -- don't use since there vis no error catching done! 
+  //! Extracts the time from a string -- deprecated! -- don't use since there vis no error catching done! 
   explicit MTime(MString SQLString, int Format);
   //! Set the time as two long integers -- the time is counted since Epoch
   MTime(long int LinuxTime, long int NanoSeconds = 0);
   //! Set the time as two intergers -- the time is counted since Epoch
   MTime(int LinuxTime, int NanoSeconds = 0);
-  //! Set the time as two unsigned intergers -- the time is counted since Epoch
+  //! Set the time as two unsigned integers -- the time is counted since Epoch
   MTime(unsigned int LinuxTime, unsigned int NanoSeconds = 0);
   //! Set the time elements (years, days, etc) individually
   MTime(unsigned int m_Year, unsigned int m_Month, unsigned int m_Day, unsigned int m_Hour = 0, 
