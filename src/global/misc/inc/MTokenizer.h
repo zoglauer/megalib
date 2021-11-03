@@ -125,7 +125,9 @@ class MTokenizer
 
   //! Return a diagnostics string of the data content
   MString ToString();
-
+  //! Return a compact version of the tokenized content
+  MString ToCompactString();
+  
 
   // protected methods:
  protected:
