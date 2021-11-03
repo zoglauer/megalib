@@ -25,9 +25,10 @@ Cosima:
 + New storage option "maximumenergyloss"
 + Option to store files in binary format
 
-
 Long-term bugs fixed:
 + The incidence direction of the 511-keV emission was wrong
+
+Long list of minor bugs fixed.
 
 
 
