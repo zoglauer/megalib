@@ -946,7 +946,7 @@ bool MTokenizer::EvaluateMaths(MString& Token)
 MString MTokenizer::ToString()
 {
   ostringstream out;
-
+  
   if (m_Tokens.size() > 0) {
     out<<"Tokenizer content ("<<m_Tokens.size()<<" Tokens):"<<endl;
     for (unsigned int i = 0; i < m_Tokens.size(); i++) {
@@ -955,8 +955,28 @@ MString MTokenizer::ToString()
   } else {
     out<<"Tokenizer empty!"<<endl;
   }
+  
+  return MString(out.str());
+}
 
-  return out.str().c_str();
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MTokenizer::ToCompactString()
+{
+  if (m_Tokens.size() == 0) {
+    return MString("");
+  } else if (m_Tokens.size() == 1) {
+    return GetTokenAt(0);
+  } else {
+    ostringstream out;
+    for (unsigned int i = 0; i < m_Tokens.size()-1; i++) {
+      out<<GetTokenAt(i)<<" | ";
+    }
+    out<<GetTokenAt(m_Tokens.size()-1);
+    return MString(out.str());
+  }  
 }
 
 

@@ -34,6 +34,7 @@
 #include <iomanip>
 #include <cctype>
 #include <cmath>
+#include <iterator>
 using namespace std;
 
 // ROOT libs:
@@ -300,6 +301,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   //  mout<<"Loading geometry file: "<<FileName<<endl;
   //}
 
+  bool DebugParsing = false;
+  
   int Stage = 0;
   MTimer Timer;
   double TimeLimit = 0;
@@ -356,7 +359,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Since the geometry-file can include other geometry files,
   // we have to store the whole file in memory
 
-  vector<MDDebugInfo> FileContent;
+  list<MDDebugInfo> FileContent;
   if (AddFile(m_FileName, FileContent) == false) {
     mout<<"   *** Error reading included files. Aborting!"<<endl;
     return false;
@@ -365,12 +368,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Now scan the data and search for "Include" files and add them
   // to the original stored file content
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
-    if (Tokenizer.GetNTokens() == 0) continue;
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
+    if (Tokenizer.GetNTokens() == 0) {
+      continue;
+    }
+    
     if (Tokenizer.IsTokenAt(0, "Include") == true) {
 
       // Test for old material path
@@ -393,17 +398,19 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         return false;
       }
 
-      vector<MDDebugInfo> AddFileContent;
+      list<MDDebugInfo> AddFileContent;
       if (AddFile(FileName, AddFileContent) == false) {
         mout<<"   *** Error reading file "<<FileName<<endl;
         Typo("File IO error");
         return false;
       }
 
-      for (unsigned int j = 0; j < AddFileContent.size(); ++j) {
-        //FileContent.push_back(AddFileContent[j]);
-        FileContent.insert(FileContent.begin() + (i+1) + j, AddFileContent[j]);
+      (*ContentIter).SetText("");
+      auto BackToStartIter = ContentIter;
+      for (auto AddIter = AddFileContent.begin(); AddIter != AddFileContent.end(); ++AddIter) {
+        ContentIter = FileContent.insert(next(ContentIter), (*AddIter));
       }
+      ContentIter = BackToStartIter;
     }
   }
 
@@ -411,36 +418,45 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mgui<<"File is \""<<m_FileName<<"\" empty or binary!"<<error;
     return false;
   }
-
+  
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (reading of file(s)) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file reading *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
 
 
   // Find lines which are continued in a second line by the "\\" keyword
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Of course the real token is "\\"
     if (Tokenizer.IsTokenAt(Tokenizer.GetNTokens()-1, "\\\\") == true) {
       //cout<<"Found \\\\: "<<Tokenizer.ToString()<<endl;
       // Prepend this text to the next line
-      if (FileContent.size() > i+1) {
+      if (next(ContentIter, 1) != FileContent.end()) {
         //cout<<"Next: "<<FileContent[i+1].GetText()<<endl;
         MString Prepend = "";
         for (unsigned int t = 0; t < Tokenizer.GetNTokens()-1; ++t) {
           Prepend += Tokenizer.GetTokenAt(t);
           Prepend += " ";
         }
-        FileContent[i+1].Prepend(Prepend);
-        FileContent[i].SetText("");
-        //cout<<"Prepended: "<< FileContent[i+1].GetText()<<endl;
+        (*(next(ContentIter, 1))).Prepend(Prepend);
+        (*ContentIter).SetText("");
       }
     }
   }
@@ -450,10 +466,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Find constants
   //
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Constants
@@ -541,10 +557,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   // Do the final replace:
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     MString Init = Tokenizer.GetTokenAt(0);
@@ -577,21 +593,31 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     for (map<MString, MString>::iterator Iter = m_ConstantMap.begin();
          Iter != m_ConstantMap.end(); ++Iter) {
-      FileContent[i].Replace((*Iter).first, (*Iter).second, true);
+      (*ContentIter).Replace((*Iter).first, (*Iter).second, true);
     }
   }
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (evaluating constants) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+    mout<<"Stage "<<Stage<<" (evaluating constants and maths) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating constants and maths *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
 
   // Check for Vectors FIRST since those are used in ForVector loops...
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     if (Tokenizer.IsTokenAt(0, "Vector") == true) {
@@ -612,10 +638,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       continue;
     }
   }
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     if ((Vector = GetVector(Tokenizer.GetTokenAt(0))) != 0) {
@@ -660,24 +687,34 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating vectors) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating vectors *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
   // Check for "For"-loops as well as the special "ForVector"-loop
   int ForDepth = 0;
   int CurrentDepth = 0;
-  vector<MDDebugInfo>::iterator Iter;
-  for (Iter = FileContent.begin();
-       Iter != FileContent.end();
-       /* ++Iter erase */) {
-    m_DebugInfo = (*Iter);
-    MTokenizer& Tokenizer = (*Iter).GetTokenizer(false);
+  
+  
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); /* ++ContentIter erase */) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
 
     if (Tokenizer.GetNTokens() == 0) {
-      ++Iter;
+      ++ContentIter;
       continue;
     }
 
-    if (Tokenizer.IsTokenAt(0, "For") == true) {
+    // For
+    auto BackToStartIter = ContentIter;
+    if (Tokenizer.IsTokenAt(0, "For") == true || Tokenizer.IsTokenAt(0, "for") == true) {
       MTokenizer& TokenizerMaths = m_DebugInfo.GetTokenizer(true); // redo for math's evaluation just here
 
       CurrentDepth = ForDepth;
@@ -688,46 +725,44 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
 
       MString Index = TokenizerMaths.GetTokenAt(1);
-      unsigned int Loops = TokenizerMaths.GetTokenAtAsUnsignedInt(2);
-      if (Loops == 0 || TokenizerMaths.GetTokenAtAsDouble(2) <= 0 || std::isnan(TokenizerMaths.GetTokenAtAsDouble(2))) { // std:: is required
-        mout<<"Warning: Loop number in for loop must be a positive integer "<<TokenizerMaths.GetTokenAtAsDouble(2)<<endl;
-        Loops = 0;
-        //Typo("Loop number in for loop must be a positive integer");
-        //return false;
+      if (TokenizerMaths.GetTokenAtAsInt(2) < 0 || TokenizerMaths.GetTokenAtAsInt(2) != TokenizerMaths.GetTokenAtAsDouble(2) || std::isnan(TokenizerMaths.GetTokenAtAsDouble(2))) { // std:: is required
+        Typo("Loop number in for loop must be a positive integer");
+        return false;
       }
+      unsigned int Loops = TokenizerMaths.GetTokenAtAsUnsignedInt(2);
       double Start = TokenizerMaths.GetTokenAtAsDouble(3);
       double Step = TokenizerMaths.GetTokenAtAsDouble(4);
 
-      // Remove for line
-      Iter = FileContent.erase(Iter++);
+      // Erase the for line
+      (*ContentIter).SetText("");
 
       // Store content of for loop:
-      vector<MDDebugInfo> ForLoopContent;
-      for (; Iter != FileContent.end(); /* ++Iter erase */) {
-        m_DebugInfo = (*Iter);
-        MTokenizer& TokenizerFor = (*Iter).GetTokenizer(false);
+      list<MDDebugInfo> ForLoopContent;
+      for (; ContentIter != FileContent.end(); /* ++ContentIter erase */) {
+        m_DebugInfo = (*ContentIter);
+        MTokenizer& TokenizerFor = (*ContentIter).GetTokenizer(false);
 
         if (TokenizerFor.GetNTokens() == 0) {
-          Iter++;
+          ContentIter++;
           continue;
         }
-        if (TokenizerFor.IsTokenAt(0, "For") == true) {
+        if (TokenizerFor.IsTokenAt(0, "For") == true || TokenizerFor.IsTokenAt(0, "for") == true) {
           ForDepth++;
         }
-        if (TokenizerFor.IsTokenAt(0, "Done") == true) {
+        if (TokenizerFor.IsTokenAt(0, "Done") == true || TokenizerFor.IsTokenAt(0, "done") == true) {
           ForDepth--;
           if (ForDepth == CurrentDepth) {
-            Iter = FileContent.erase(Iter++);
+            (*ContentIter).SetText("");
             break;
           }
         }
 
         ForLoopContent.push_back(m_DebugInfo);
-        Iter = FileContent.erase(Iter++);
+        (*ContentIter).SetText("");
       }
 
       // Add new content at the same place:
-      vector<MDDebugInfo>::iterator LastIter = Iter;
+      list<MDDebugInfo>::iterator LastIter = ContentIter;
       int Position = 0;
       for (unsigned int l = 1; l <= Loops; ++l) {
         MString LoopString;
@@ -736,7 +771,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         ValueString += (Start + (l-1)*Step);
 
 
-        vector<MDDebugInfo>::iterator ForIter;
+        list<MDDebugInfo>::iterator ForIter;
         for (ForIter = ForLoopContent.begin();
              ForIter != ForLoopContent.end();
              ++ForIter) {
@@ -744,15 +779,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           m_DebugInfo.Replace(MString("%") + Index, LoopString);
           m_DebugInfo.Replace(MString("$") + Index, ValueString);
 
-          LastIter = FileContent.insert(LastIter, m_DebugInfo);
-          LastIter++;
+          LastIter = FileContent.insert(next(LastIter), m_DebugInfo);
           Position++;
         }
       }
-      Iter = LastIter - Position;
+      ContentIter = BackToStartIter; // Multiple fors -- have to go back where we started
+            
       continue;
     }
 
+    // ForVector
+    BackToStartIter = ContentIter;
     if (Tokenizer.IsTokenAt(0, "ForVector") == true) {
 
       // Take care of nesting
@@ -777,17 +814,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       MString ZIndex = Tokenizer.GetTokenAt(4);
       MString VIndex = Tokenizer.GetTokenAt(5);
 
-      // Remove for line
-      Iter = FileContent.erase(Iter++);
-
+      // Erase the for line
+      (*ContentIter).SetText("");
+      
       // Store content of ForVector loop:
-      vector<MDDebugInfo> ForLoopContent;
-      for (; Iter != FileContent.end(); /* ++Iter erase */) {
-        m_DebugInfo = (*Iter);
+      list<MDDebugInfo> ForLoopContent;
+      for (; ContentIter != FileContent.end(); /* ++ContentIter erase */) {
+        m_DebugInfo = (*ContentIter);
         MTokenizer& TokenizerFor = m_DebugInfo.GetTokenizer(false);
 
         if (TokenizerFor.GetNTokens() == 0) {
-          Iter++;
+          ContentIter++;
           continue;
         }
         if (TokenizerFor.IsTokenAt(0, "ForVector") == true) {
@@ -796,19 +833,21 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (TokenizerFor.IsTokenAt(0, "DoneVector") == true) {
           ForDepth--;
           if (ForDepth == CurrentDepth) {
-            Iter = FileContent.erase(Iter++);
+            (*ContentIter).SetText("");
             break;
           }
         }
 
         ForLoopContent.push_back(m_DebugInfo);
-        Iter = FileContent.erase(Iter++);
+        (*ContentIter).SetText("");
       }
 
       // Add new content at the same place:
-      vector<MDDebugInfo>::iterator LastIter = Iter;
+      list<MDDebugInfo>::iterator LastIter = ContentIter;
       int Position = 0;
       for (unsigned int l = 1; l <= Vector->GetSize(); ++l) {
+        //cout<<"Vector loc: "<<l<<endl;
+        
         MString LoopString;
         LoopString += l;
         MString XValueString;
@@ -820,7 +859,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         MString ValueString;
         ValueString += Vector->GetValue(l-1);
 
-        vector<MDDebugInfo>::iterator ForIter;
+        list<MDDebugInfo>::iterator ForIter;
         for (ForIter = ForLoopContent.begin();
              ForIter != ForLoopContent.end();
              ++ForIter) {
@@ -834,53 +873,71 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           m_DebugInfo.Replace(MString("%") + VIndex, LoopString);
           m_DebugInfo.Replace(MString("$") + VIndex, ValueString);
 
-          LastIter = FileContent.insert(LastIter, m_DebugInfo);
-          LastIter++;
+          LastIter = FileContent.insert(next(LastIter), m_DebugInfo);
           Position++;
         }
       }
-      Iter = LastIter - Position;
+      ContentIter = BackToStartIter;
       continue;
     }
-    ++Iter;
+    ++ContentIter;
   }
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating for loops) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating for loops *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
 
   // Find random numbers
   TRandom3 R;
   R.SetSeed(11031879); // Do never modify!!!!
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    while (FileContent[i].Contains("RandomDouble") == true) {
-      //cout<<"Before: "<<FileContent[i].GetText()<<endl;
-      FileContent[i].ReplaceFirst("RandomDouble", R.Rndm());
-      //cout<<"after: "<<FileContent[i].GetText()<<endl;
+  
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    while ((*ContentIter).Contains("RandomDouble") == true) {
+      //cout<<"Before: "<<(*ContentIter).GetText()<<endl;
+      (*ContentIter).ReplaceFirst("RandomDouble", R.Rndm());
+      //cout<<"after: "<<(*ContentIter).GetText()<<endl;
     }
   }
 
-//   // All constants and for loops are expanded, let's print some text ;-)
-//   for (unsigned int i = 0; i < FileContent.size(); i++) {
-//     cout<<FileContent[i].GetText()<<endl;
-//   }
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating random numbers) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
-
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating random numbers *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
+  
+  
   // Check for "If"-clauses
   int IfDepth = 0;
+  int ElseDepth = 0;
   int CurrentIfDepth = 0;
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  bool InsideElse = false;
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() == 0) {
       continue;
     }
@@ -891,53 +948,91 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       CurrentIfDepth = IfDepth;
       IfDepth++;
 
-
+      // Take care of else
+      InsideElse = false;
+      
       if (Tokenizer.GetNTokens() != 2) {
         Typo("The If-line must contain two entries, the last one must be math, e.g. \"If { 1 == 2 } or If { $Value > 0 } \"");
         return false;
       }
 
       // Retrieve data:
-      bool Bool = Tokenizer.GetTokenAtAsBoolean(1);
+      bool IfStatement = Tokenizer.GetTokenAtAsBoolean(1);
 
       // Clear the if line
-      FileContent[i].SetText("");
+      //cout<<"Erasing (if): "<<(*ContentIter).GetText()<<endl;
+      (*ContentIter).SetText("");
 
       // Forward its endif:
-      for (unsigned int j = i+1; j < FileContent.size(); ++j) {
-        MTokenizer& TokenizerIf = FileContent[j].GetTokenizer(false);
+      for (auto NewContentIter = next(ContentIter, 1); NewContentIter != FileContent.end(); ++NewContentIter) {
+        MTokenizer& TokenizerIf = (*NewContentIter).GetTokenizer(false);
         if (TokenizerIf.GetNTokens() == 0) {
           continue;
         }
-        if (TokenizerIf.IsTokenAt(0, "If") == true) {
+        if (TokenizerIf.IsTokenAt(0, "If") == true || TokenizerIf.IsTokenAt(0, "if") == true) {
           IfDepth++;
         }
-        if (TokenizerIf.IsTokenAt(0, "EndIf") == true) {
+        if (TokenizerIf.IsTokenAt(0, "Else") == true || TokenizerIf.IsTokenAt(0, "else") == true) {
+          InsideElse = true;
+          ElseDepth++;
+          if (IfDepth == CurrentIfDepth && IfDepth == ElseDepth) {
+            //cout<<"Erasing (else): "<<(*NewContentIter).GetText()<<endl;
+            (*NewContentIter).SetText("");
+          }
+        }
+        if (TokenizerIf.IsTokenAt(0, "EndIf") == true || TokenizerIf.IsTokenAt(0, "Endif") == true || TokenizerIf.IsTokenAt(0, "endif") == true) {
           IfDepth--;
           if (IfDepth == CurrentIfDepth) {
-            FileContent[j].SetText("");
+            //cout<<"Erasing (endif): "<<(*NewContentIter).GetText()<<endl;
+            (*NewContentIter).SetText("");
             break;
           }
         }
-        if (Bool == false) {
-          FileContent[j].SetText("");
+        if (IfStatement == false && InsideElse == false) {
+          //cout<<"Erasing (if is false): "<<(*NewContentIter).GetText()<<endl;
+          (*NewContentIter).SetText("");
+        }
+        if (IfStatement == true && InsideElse == true) {
+          //cout<<"Erasing (else is false): "<<(*NewContentIter).GetText()<<endl;
+          (*NewContentIter).SetText("");
         }
       }
+      // ContentIter is not changed since we stay at the same level to all subsequent if's
     } // Is if
   } // global loop
 
-
+  // Clean empty lines:
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ) {
+    if ((*ContentIter).GetText() == "") {
+      ContentIter = FileContent.erase(ContentIter);
+    } else {
+      ++ContentIter;
+    }
+  }
+  
+  
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating if clauses + initial maths evaluation) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating if clauses *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
+  
+  
   // All constants and for loops are expanded, let's print some text ;-)
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     if (Tokenizer.IsTokenAt(0, "Print") == true ||
@@ -962,10 +1057,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Find the master keyword, volumes, material, detectors
   //
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Let's scan for first order keywords:
@@ -1471,10 +1566,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   //
   //
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() < 3) continue;
 
 
@@ -1553,10 +1648,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Third loop:
   // Fill the volumes, materials with life...
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() < 2) continue;
 
     // Now the first token is some kind of name, so we have to find the
@@ -2414,10 +2509,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Fourth loop:
   // Fill the detector not before everything else is done!
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() < 2) continue;
 
     // Check for detectors:
@@ -3502,10 +3597,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // A final loop over the data checks for the detector keyword "Assign"
   // We need a final volume tree, thus this is really the final loop
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() < 2) continue;
 
     // Check for detectors:
@@ -3749,10 +3844,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // Special detector loop for blocked channels:
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() < 2) continue;
 
     // Check for detectors:
@@ -3916,7 +4011,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometry::AddFile(MString FileName, vector<MDDebugInfo>& FileContent)
+bool MDGeometry::AddFile(MString FileName, list<MDDebugInfo>& FileContent)
 {
 
   FileContent.clear();

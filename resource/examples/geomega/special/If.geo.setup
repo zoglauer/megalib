@@ -5,7 +5,10 @@ Version 2.0
 
 SurroundingSphere 10  0.0  0.0  0.0  10.0
 
-Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+Material Vacuum
+Vacuum.Density 1E-12
+Vacuum.Component H 1
+
 
 
 
@@ -20,7 +23,7 @@ WorldVolume.Shape BRIK 5000. 5000. 5000.
 WorldVolume.Mother 0
 
 Volume GeWafer
-GeWafer.Material Germanium
+GeWafer.Material Vacuum
 GeWafer.Shape BOX 4.0 4.0 0.5
 GeWafer.Position 0 0 0 
 GeWafer.Mother WorldVolume
@@ -31,43 +34,50 @@ Echo "Test 0 start"
 Constant Test0 0
 If { Test0 > 0 }
    For I { Test0 } -1.0 1.0
-       Echo "Test 0 not Passed"
+       Echo "Test 0: Not Passed"
    Done
 Else
-  Echo "Test 0 passed"
+  Echo "Test 0: Passed"
 EndIf
 
 
-Echo "Test A start"
+Echo "Test A1 start"
 If { 1 == 2 || 2 == 2 }
-	Echo "Test A passed"
+  Echo "Test A1: Passed"
 Else
-  Echo "Test A not passed"
+  Echo "Test A1: Not passed"
+Endif 
+
+Echo "Test A2 start"
+If { 1 == 2 && 2 == 2 }
+  Echo "Test A2: NOT passed"
+Else
+  Echo "Test A2: Passed"
 Endif 
 
 
 Echo "Test B start"
 If { false }
-	Echo "Test B not Passed"
+  Echo "Test B: NOT Passed"
 Else
-  Echo "Test B assed"
+  Echo "Test B: Passed"
 Endif 
 
 
 Echo "Test C start"
 If { true }
-	Echo "Test C passed"
+  Echo "Test C: Passed"
 Else
-  Echo "Test C not Passed"
+  Echo "Test C: Not passed"
 Endif 
 
 
 Echo "Test D start"
 For I 5 0 1
   If { $I > 3 }
-    Echo "Test D passed if > 3: $I"
+    Echo "Test D: Passed if $I > 3"
   Else
-    Echo "Test D passed if <= 3: $I"
+    Echo "Test D: Passed if $I <= 3"
   EndIf
 Done
 
@@ -76,11 +86,38 @@ Echo "Test E start"
 Constant TestE 0
 If { TestE > 0 }
    For I { TestE } -1.0 1.0
-       Echo "Test E not Passed"
+       Echo "Test E: NOT passed"
    Done
 Else
-  Echo "Test E passed"
+  Echo "Test E: Passed"
 EndIf
+
+
+Echo "Test F start"
+Constant TestF 2
+If { TestF > 0 }
+   For I { TestF } -1.0 1.0
+     For J { TestF } -1.0 1.0
+       Echo "Test F: Passed at I=$I J=$J"
+     Done
+   Done
+Else
+  Echo "Test F: NOT passed"
+EndIf
+
+
+Echo "Test G start"
+Constant TestGMax 1
+For X 2 0 1
+  For Y 2 0 1
+    Echo "Test G: Testing X = $X and Y = $Y"
+    If { $X < TestGMax && $Y < TestGMax }
+      Echo "Test G: Passed if $X < TestGMax && $Y < TestGMax"
+    Else
+      Echo "Test G: Passed if $X >= TestGMax || $Y >= TestGMax"
+    EndIf
+  Done
+Done
 
 
 #------------------------------------------------------------

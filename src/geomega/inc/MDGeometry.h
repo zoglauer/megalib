@@ -194,7 +194,7 @@ class MDGeometry
 
   // protected methods:
  protected:
-  bool AddFile(MString Filename, vector<MDDebugInfo>& DebugInfos);
+  bool AddFile(MString Filename, list<MDDebugInfo>& DebugInfos);
 
   MString WFS(MString Text);
   void ReplaceWholeWords(MString& Text, const MString& OldWord, const MString& NewWord);
@@ -202,7 +202,9 @@ class MDGeometry
   
   // private methods:
  private:
-
+   
+   
+   
 
   // protected members:
  protected:
