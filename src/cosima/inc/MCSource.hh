@@ -365,6 +365,8 @@ public:
   static const int c_FarFieldNormalizedEnergyBeamFluxFunction;
   /// Id of an isotropic far-field beam 
   static const int c_FarFieldIsotropic;
+  /// Id of an far-field disk 
+  static const int c_FarFieldDisk;
   
   /// Id of a point like source in Cartesian coordinates
   static const int c_NearFieldPoint;
