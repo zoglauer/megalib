@@ -82,6 +82,7 @@ const int MCSource::c_FarFieldAssymetricGaussian                   = 4;
 const int MCSource::c_FarFieldFileZenithDependent                  = 5;
 const int MCSource::c_FarFieldNormalizedEnergyBeamFluxFunction     = 6;
 const int MCSource::c_FarFieldIsotropic                            = 7;
+const int MCSource::c_FarFieldDisk                                 = 8;
 
 const int MCSource::c_NearFieldPoint                               = 10;
 const int MCSource::c_NearFieldRestrictedPoint                     = 11;
@@ -949,6 +950,7 @@ bool MCSource::SetBeamType(const int& CoordinateSystem, const int& BeamType)
   case c_FarFieldFileZenithDependent:
   case c_FarFieldNormalizedEnergyBeamFluxFunction:
   case c_FarFieldIsotropic:
+  case c_FarFieldDisk:
     m_BeamType = BeamType;
     break;
   default:
@@ -1052,6 +1054,9 @@ string MCSource::GetBeamTypeAsString() const
   case c_FarFieldIsotropic:
     Name = "FarFieldIsotropic";
     break;
+  case c_FarFieldDisk:
+    Name = "FarFieldDisk";
+    break;
   default:
     break;
   }
@@ -1152,6 +1157,9 @@ string MCSource::GetBeamAsString() const
   case c_FarFieldIsotropic:
     Name<<"FarFieldIsotropic";
     break;
+  case c_FarFieldDisk:
+    Name<<"FarFieldDisk";
+    break;
   default:
     break;
   }
@@ -1243,6 +1251,15 @@ bool MCSource::SetPosition(double PositionParam1,
     }
     if (m_PositionParam3 < 0) {
       mout<<"  ***  ERROR  ***   "<<m_Name<<": Sigma must be larger than zero"<<endl;
+      return false;
+    }
+  } else if (m_BeamType == c_FarFieldDisk) {
+    if (m_PositionParam1 < 0 || m_PositionParam1 > c_Pi) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Theta must be within [0..pi]"<<endl;
+      return false;
+    }
+    if (m_PositionParam3 < 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Radius must be larger than zero"<<endl;
       return false;
     }
   } else if (m_BeamType == c_FarFieldAssymetricGaussian) {
@@ -2651,6 +2668,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
     if (m_BeamType == c_FarFieldPoint || 
         m_BeamType == c_FarFieldArea ||
         m_BeamType == c_FarFieldGaussian ||
+        m_BeamType == c_FarFieldDisk ||
         m_BeamType == c_FarFieldAssymetricGaussian ||
         m_BeamType == c_FarFieldFileZenithDependent ||
         m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction ||
@@ -2706,17 +2724,43 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         }
         
       } else if (m_BeamType == c_FarFieldGaussian) {
-        // Determine a random start position in a Gaussian disk
+        // Determine a random start position in a flat disk
         // Param1: Theta
         // Param2: Phi
-        // Param3: Sigma
+        // Param3: radius
         
-        // Create Gaussian distribution around theta = 0, phi = 0
+        // Create disk distribution around zenith
         Phi = CLHEP::RandFlat::shoot(1)*360*deg;
         do {
           Theta = 5*CLHEP::RandFlat::shoot(1)*m_PositionParam3; // Sample theta with 5 sigma;
         } while (gRandom->Rndm() > sin(Theta*m_PositionParam3)*exp(-(Theta*Theta)/(2*m_PositionParam3*m_PositionParam3))); // Copy and paste from GMega, no clue where I had it from
         
+        // Now rotate into the correct position
+        G4ThreeVector V;
+        V.setRThetaPhi(1.0, Theta, Phi);
+        
+        G4ThreeVector Rotation;
+        Rotation.setRThetaPhi(1.0, m_PositionParam1, m_PositionParam2);
+        
+        V.rotateUz(Rotation);
+        
+        // Set the final values
+        Theta = V.theta();
+        Phi = V.phi();
+        
+      } else if (m_BeamType == c_FarFieldDisk) {
+        // Determine a random start position in a Gaussian disk
+        // Param1: Theta
+        // Param2: Phi
+        // Param3: Sigma
+        
+        if (m_StartAreaType == c_StartAreaSphere) {
+          Theta = acos(1 - CLHEP::RandFlat::shoot(1)*(1 - cos(m_PositionParam3)));
+          Phi = CLHEP::RandFlat::shoot(1)*360*deg;
+        } else {
+          mout<<m_Name<<": Unknown start area type for position generation"<<endl;
+        }
+         
         // Now rotate into the correct position
         G4ThreeVector V;
         V.setRThetaPhi(1.0, Theta, Phi);
