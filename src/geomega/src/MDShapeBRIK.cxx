@@ -106,6 +106,17 @@ bool MDShapeBRIK::Set(double x, double y, double z)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDShapeBRIK::Set(TGeoBBox* Box)
+{
+  //! Set the shape data form its ROOT volume
+
+  return Set(Box->GetDX(), Box->GetDY(), Box->GetDZ());
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MDShapeBRIK::Validate()
 {
   // Correctly initialize this shape
@@ -161,8 +172,8 @@ MString MDShapeBRIK::GetGeomega() const
   // Return the Geomega representation 
 
   ostringstream out;
-
-  out<<"BRIK "<<m_Dx<<" "<<m_Dy<<" "<<m_Dz;
+  out<<"Shape BOX "<<m_Name<<endl;
+  out<<m_Name<<".Parameters "<<m_Dx<<" "<<m_Dy<<" "<<m_Dz<<endl;
 
   return out.str().c_str();
 }

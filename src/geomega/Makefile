@@ -61,6 +61,7 @@ FILES = MSettingsGeomega \
 	MDGridPoint \
 	MDGridPointCollection \
 	MDOrientation \
+	MDGDMLImport \
 
 LIBRARY_UI = GeomegaGui
 

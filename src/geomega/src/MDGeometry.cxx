@@ -83,6 +83,7 @@ using namespace std;
 #include "MDTrigger.h"
 #include "MDTriggerBasic.h"
 #include "MDTriggerMap.h"
+#include "MDGDMLImport.h"
 #include "MTimer.h"
 #include "MString.h"
 
@@ -375,7 +376,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
     
     if (Tokenizer.IsTokenAt(0, "Include") == true) {
-
+      
       // Test for old material path
       if (Tokenizer.GetTokenAt(1).EndsWith("resource/geometries/materials/Materials.geo") == true) {
         mout<<" *** Deprectiated *** "<<endl;
@@ -386,23 +387,23 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<endl;
         FoundDeprecated = true;
       }
-
+      
       MString FileName = Tokenizer.GetTokenAt(1);
       MFile::ExpandFileName(FileName, m_FileName);
-
+      
       if (MFile::Exists(FileName) == false) {
         mout<<"   *** Error finding file "<<FileName<<endl;
         Typo("File IO error");
         return false;
       }
-
+      
       list<MDDebugInfo> AddFileContent;
       if (AddFile(FileName, AddFileContent) == false) {
         mout<<"   *** Error reading file "<<FileName<<endl;
         Typo("File IO error");
         return false;
       }
-
+      
       (*ContentIter).SetText("");
       auto BackToStartIter = ContentIter;
       for (auto AddIter = AddFileContent.begin(); AddIter != AddFileContent.end(); ++AddIter) {
@@ -410,6 +411,43 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       ContentIter = BackToStartIter;
     }
+    
+    if (Tokenizer.IsTokenAt(0, "Import") == true) {
+      
+      if (Tokenizer.GetNTokens() != 3) {
+        Typo("Line must contain three entries, e.g. \"Import GDML MyGDML.gdml\"");
+        return false;
+      }
+      
+      if (Tokenizer.IsTokenAt(1, "GDML") == true) {
+        MString FileName = Tokenizer.GetTokenAt(2);
+        MFile::ExpandFileName(FileName, m_FileName);
+      
+        if (MFile::Exists(FileName) == false) {
+          mout<<"   *** Error finding file "<<FileName<<endl;
+          Typo("File IO error");
+          return false;
+        }
+      
+        list<MDDebugInfo> AddFileContent;
+        if (ImportGDML(FileName, AddFileContent) == false) {
+          mout<<"   *** Error reading file "<<FileName<<endl;
+          Typo("File IO error");
+          return false;
+        }
+      
+        (*ContentIter).SetText("");
+        auto BackToStartIter = ContentIter;
+        for (auto AddIter = AddFileContent.begin(); AddIter != AddFileContent.end(); ++AddIter) {
+          ContentIter = FileContent.insert(next(ContentIter), (*AddIter));
+        }
+        ContentIter = BackToStartIter;
+      } else {
+        mout<<"   *** Error unknown import file type "<<Tokenizer.GetTokenAt(1)<<endl;
+        Typo("Import error");
+      }
+    }
+    
   }
 
   if (FileContent.size() == 0) {
@@ -4094,6 +4132,98 @@ bool MDGeometry::AddFile(MString FileName, list<MDDebugInfo>& FileContent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDGeometry::ImportGDML(MString FileName, list<MDDebugInfo>& FileContent)
+{
+  
+  FileContent.clear();
+  
+  MFile::ExpandFileName(FileName);
+  
+  // First edit the file name:
+  if (gSystem->IsAbsoluteFileName(FileName) == false) {
+    FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
+  }
+  
+  if (gSystem->AccessPathName(FileName) == 1) {
+    mout<<"   ***  Error  ***  "<<endl;
+    mout<<"Imported file \""<<FileName<<"\" does not exist."<<endl;
+    return false;
+  }
+  
+  if (IsIncluded(FileName) == true) {
+    return true;
+  }
+  
+  MDGDMLImport Importer;
+  if (Importer.Parse(FileName) == true) {
+    MString Text = Importer.GetAsGeomega();
+    
+  }
+  
+  
+  /*
+  int LineCounter = 0;
+  int LineLength = 10000;
+  char* LineBuffer = new char[LineLength];
+  
+  ifstream FileStream;
+  FileStream.open(FileName);
+  
+  if (FileStream.is_open() == 0) {
+    mout<<"   ***  Error  ***  "<<endl;
+    mout<<"Can't open file "<<FileName<<endl;
+    delete [] LineBuffer;
+    return false;
+  }
+  
+  int Comment = 0;
+  MTokenizer Tokenizer;
+  MDDebugInfo Info;
+  while (FileStream.getline(LineBuffer, LineLength, '\n')) {
+    Info = MDDebugInfo(LineBuffer, FileName, LineCounter++);
+    Tokenizer.Analyse(Info.GetText(), false);
+    if (Tokenizer.GetNTokens() >=1 && Tokenizer.GetTokenAt(0) == "Exit") {
+      mout<<"Found \"Exit\" in file "<<FileName<<endl;
+      break;
+    }
+    if (Tokenizer.GetNTokens() >= 1 && Tokenizer.GetTokenAt(0) == "EndComment") {
+      //mout<<"Found \"EndComment\" in file "<<FileName<<endl;
+      Comment--;
+      if (Comment < 0) {
+        mout<<"   ***  Error  ***  "<<endl;
+        mout<<"Found \"EndComment\" without \"BeginComment\" in file "<<FileName<<endl;
+        FileContent.clear();
+        delete [] LineBuffer;
+        return false;
+      }
+      continue;
+    }
+    if (Tokenizer.GetNTokens() >= 1 && Tokenizer.GetTokenAt(0) == "BeginComment") {
+      //mout<<"Found \"BeginComment\" in file "<<FileName<<endl;
+      Comment++;
+      continue;
+    }
+    if (Comment == 0) {
+      FileContent.push_back(Info);
+    }
+  }
+  // Add an empty line, just in case the file didn't end with a new line
+  FileContent.push_back(MDDebugInfo(" ", FileName, LineCounter++));
+  
+  AddInclude(FileName);
+  
+  delete [] LineBuffer;
+  
+  FileStream.close();
+  */
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MDGeometry::Typo(MString Typo)
 {
   // Print an error message
@@ -4244,32 +4374,6 @@ bool MDGeometry::AreCrossSectionsPresent()
       return false;
     }
   }
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MDGeometry::TestIntersections()
-{
-  // Test for intersections
-  // Attention: Not all can be found!
-
-  cout<<"Testing intersections!"<<endl;
-
-  if (IsScanned() == false) {
-    Error("bool MDGeometry::TestIntersections()",
-          "You have to scan the geometry file first!");
-    return false;
-  }
-
-  if (m_WorldVolume->ValidateIntersections() == false) {
-    return false;
-  }
-
-  cout<<"Testing intersections finished!"<<endl;
 
   return true;
 }
