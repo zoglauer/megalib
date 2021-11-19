@@ -49,8 +49,8 @@ class MDVolume
   MDVolume(MString Name = "");
   virtual ~MDVolume();
 
-  inline const MString& GetName() const { return m_Name; }
-
+  inline const MString& GetName() const { return m_Name; }  
+  
   void SetWorldVolume();
   bool IsWorldVolume();
 
@@ -154,16 +154,20 @@ class MDVolume
 
   bool CopyDataToClones();
   bool Validate();
-  bool ValidateIntersections();
   //! This is a special validation: All clones must have the some mother volumes for activation simulations
   //! It has been separated out, because some (non-simulation) optimizations are allowed to break this rule
   bool ValidateClonesHaveSameMotherVolume();
 
-  //! Check if a position in this volumes mother volume is inside this volume
-  bool IsInside(MVector Pos, double Tolerance = 0); // TODO: RENAME! MISLEADING --> or make at least protected
-  double DistanceInsideOut(MVector Pos);
-  double DistanceOutsideIn(MVector Pos);
-
+  //! Check if a position in this volumes mother volume is inside this volume not excluding daughter volumes
+  bool IsMotherPositionInside(MVector Pos, double Tolerance = 0); 
+  //! Check if a position in this volumes mother volume is inside this volume but not inside any daughter volumes
+  bool IsMotherPositionExclusivelyInside(MVector Pos, double Tolerance = 0); 
+  //! Check if a position is inside this volume not excluding daughter volumes
+  bool IsInternalPositionInside(MVector Pos, double Tolerance = 0); 
+  //! Check if a position is inside this volume but not inside any daughter volumes
+  bool IsInternalPositionExclusivelyInside(MVector Pos, double Tolerance = 0); 
+  
+  
   //! Create the Root geometry presentation of thhis volume and its daughters
   void CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother);
 
@@ -217,6 +221,8 @@ class MDVolume
 
   //! Returns a random position in any of the volumes defined by Volume
   MVector GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
+  //! Returns a random position in this volume excluding daugther volumes - or g_VectorNotDefined if it cannot find any.
+  MVector GetRandomPositionExclusivelyInside();
   //! Find the number of placements of a volume
   bool GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
 

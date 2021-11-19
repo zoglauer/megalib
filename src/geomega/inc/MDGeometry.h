@@ -65,7 +65,6 @@ class MDGeometry
   //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
   virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
   
-  bool TestIntersections();
   void DumpInformation();
   void CalculateMasses();
 
@@ -194,8 +193,12 @@ class MDGeometry
 
   // protected methods:
  protected:
+  //! Add an "Include"-ed file
   bool AddFile(MString Filename, list<MDDebugInfo>& DebugInfos);
-
+  //! Import a GDML file
+  bool ImportGDML(MString Filename, list<MDDebugInfo>& DebugInfos);
+  
+  
   MString WFS(MString Text);
   void ReplaceWholeWords(MString& Text, const MString& OldWord, const MString& NewWord);
   bool ContainsReplacableConstant(const MString& Text, const MString& Constant);

@@ -447,22 +447,31 @@ bool MCDetectorConstruction::ConstructDetectors()
       MCScintillatorSD* S = new MCScintillatorSD(Name.Data());
       SD = S;
       SDManager->AddNewDetector(S);
-      mout<<"Adding szintillator for "<<Name<<endl;
+      mout<<"Adding scintillator for "<<Name<<endl;
      
       S->SetCommonVolumeName(Detector->GetCommonVolume()->GetName().Data());
 
       MVector UniquePositionInCommon(0.0, 0.0, 0.0);
 
       // Get the name of the sensitive volumes and set its SD:
-      for (unsigned int sv = 0; 
-           sv < Detector->GetNSensitiveVolumes(); ++sv) {
+      for (unsigned int sv = 0; sv < Detector->GetNSensitiveVolumes(); ++sv) {
         MString SenName = Detector->GetSensitiveVolume(sv)->GetName() + "Log";
         MVector Pos = Detector->GetSensitiveVolume(sv)->GetShape()->GetUniquePosition();
+      
         // The position of the hits is the unique position in the first volume
         if (sv == 0) {
+          // First check if the unique position is in this first detector:
+          MDVolume* V = Detector->GetSensitiveVolume(sv);
+          if (V->IsInternalPositionExclusivelyInside(Pos) == false) {
+            Pos = V->GetRandomPositionExclusivelyInside();
+            if (Pos == g_VectorNotDefined) {
+              merr<<"Unable to find unique position in detector"<<endl;
+              return false;
+            }
+          }
+          
           S->SetUniquePosition(SenName.Data(), G4ThreeVector(Pos[0]*cm, Pos[1]*cm, Pos[2]*cm));
           // Get the position in the common volume:
-          MDVolume* V = Detector->GetSensitiveVolume(sv);
           while (V != 0 && V != Detector->GetCommonVolume()) {
             UniquePositionInCommon = V->GetPositionInMotherVolume(UniquePositionInCommon);
             V = V->GetMother();
@@ -484,6 +493,8 @@ bool MCDetectorConstruction::ConstructDetectors()
           }
           S->SetUniquePosition(SenName.Data(), G4ThreeVector(NewPos[0]*cm, NewPos[1]*cm, NewPos[2]*cm));
         }
+        
+        
         G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
         for (unsigned vs = 0; vs < SS->size(); ++vs) {
           if (SenName == SS->at(vs)->GetName().c_str()) {
@@ -492,6 +503,7 @@ bool MCDetectorConstruction::ConstructDetectors()
           }
         }
       }
+      
     }
 
     else if (Type == MDDetector::c_AngerCamera) {
@@ -1263,13 +1275,12 @@ bool MCDetectorConstruction::HasVolume(const MString& VolumeName) const
 }
 
 
-
 /******************************************************************************
  * Return true is the position is within the world volume
  */
 bool MCDetectorConstruction::IsInsideWorldVolume(const G4ThreeVector& Position) const
 {
-  return m_Geometry->GetWorldVolume()->IsInside(MVector(Position.getX()/cm, Position.getY()/cm, Position.getZ()/cm));  
+  return m_Geometry->GetWorldVolume()->IsMotherPositionInside(MVector(Position.getX()/cm, Position.getY()/cm, Position.getZ()/cm));  
 }
 
 

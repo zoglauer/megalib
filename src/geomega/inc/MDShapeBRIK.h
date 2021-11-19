@@ -39,10 +39,13 @@ class MDShapeBRIK : public MDShape
   MDShapeBRIK(const MString& Name);
   //! Default destructor
   virtual ~MDShapeBRIK();
-
+  
   //! Set the shape data
   bool Set(double x, double y, double z);
-
+  
+  //! Set the shape data form its ROOT volume
+  bool Set(TGeoBBox* V);
+  
   //! Validate the data and create the shape 
   bool Validate();  
   
