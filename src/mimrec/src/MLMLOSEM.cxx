@@ -30,6 +30,7 @@
 #include <limits>
 #include <algorithm>
 #include <chrono>
+#include <random>
 #include <thread>
 using namespace std;
 
@@ -88,7 +89,8 @@ void MLMLOSEM::SetNSubSets(unsigned int NSubSets)
 //! Randomly shuffle the events
 void MLMLOSEM::Shuffle()
 {
-  random_shuffle(m_Storage.begin(), m_Storage.end());
+  unsigned seed = chrono::steady_clock::now().time_since_epoch().count();
+  shuffle(m_Storage.begin(), m_Storage.end(), default_random_engine(seed));
 }
 
 
