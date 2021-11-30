@@ -32,15 +32,16 @@ if Writer.Open(M.MString("Test.selected.tra"), M.MFile.c_Write) == False:
   print("Unable to open file " + FileName + ". Aborting!")
   quit()
 
-
+# Open a setting file
 Settings = M.MSettingsMimrec()
 Settings.Read("Test.mimrec.cfg")
 
+# and populate the event selector with it
 Selector = M.MEventSelector()
 Selector.SetSettings(Settings)
 
 
-
+# Parse the tra file and all events passing the event selector are stored in the new file
 while True: 
   Event = Reader.GetNextEvent()
   if not Event:
@@ -50,6 +51,7 @@ while True:
   if Selector.IsQualifiedEventFast(Event) == True:
     Writer.AddEvent(Event);
     
+# Close the tra file writer
 Writer.Close();
   
 print("Done")
