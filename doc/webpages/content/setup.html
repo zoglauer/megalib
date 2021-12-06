@@ -69,6 +69,20 @@ git checkout master
 
 <p>Please choose <b>one</b> of the paths below to install the required tools for MEGAlib:</p>
 
+<h4>Using MacPorts (preferred)</h4>
+
+<p>Attention: If you have also Fink,or Homebrew installed, those might interfere with the installation of MEGAlib, and, more likely, ROOT. If you get error messages concerning wrong versions of libraries, please use a clean bash environment to install MEGAlib (i.e. one where the MacPorts, Fink, or Homebrew library and program paths are not included/exported).</p>
+
+<p>On a Mac you need to install two pieces of software by hand: A current version of Xcode, and MacPorts.</p>
+<ol>
+  <li>Xcode: Please install from the Mac app store. Also make sure to install the command line tools: <pre>$ xcode-select --install</pre>A common source of MEGAlib installation problems is that the Xcode command line tools have not been reinstalled after upgrading Xcode. If you are using macOS Mojave (or maybe higher), please also install the package located here: <pre>/Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14. pkg</pre></li>
+  <li>MacPorts: <a href="https://cmake.org" target=_blank>https://cmake.org</a><br> (just choose the latest *.dmg file for your version of macOS)</li>
+</ol>
+
+<p>Now run the following setup script in a <b>new terminal</b>. It will require sudo priviledges. Please take a look at the source code if you are cautious. In the MEGAlib directory execute:</p>
+
+<pre>$ bash config/configure_macports</pre>
+
 
 <h4> Without MacPorts or HomeBrew</h4>
 
@@ -81,25 +95,6 @@ git checkout master
   <li>cmake: <a href="https://cmake.org" target=_blank>https://cmake.org</a><br>Attention: Make sure to follow the instructions on how to install the cmake command line tools: Open the cmake app. Under "Tools" you find a line "How To Install For Command Line Use". Click and follow the instructions.</li>
   <li>python3: Optionally, if you want to use MEGAlib's python3 bindings, you need to install python3. Unfortunately, you cannot use just any version of python, the versions installed via conda or anaconda do not work with ROOT (or better rootpy). Therefore, please install a 3.x version of python from <a href="https://python.org" target=_blank>https://python.org</a>. Even more optionally, if you want to use the experimental machine learning features, please install a python version which is compatible with the tensorflow version you want to use.</li>
 </ol>
-
-
-<h4>Using MacPorts</h4>
-
-<p>Attention: If you have also Fink,or Homebrew installed, those might interfere with the installation of MEGAlib, and, more likely, ROOT. If you get error messages concerning wrong versions of libraries, please use a clean bash environment to install MEGAlib (i.e. one where the MacPorts, Fink, or Homebrew library and program paths are not included/exported).</p>
-
-<p>On a Mac you need to install four pieces of software by hand: A current version of Xcode, Xquartz, MacPorts.</p>
-<ol>
-  <li>Xcode: Please install from the Mac app store. Also make sure to install the command line tools: <pre>$ xcode-select --install</pre>A common source of MEGAlib installation problems is that the Xcode command line tools have not been reinstalled after upgrading Xcode. If you are using macOS Mojave (or maybe higher), please also install the package located here: <pre>/Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14. pkg</pre></li>
-  <li>XQuartz: <a href="https://www.xquartz.org" target=_blank>https://www.xquartz.org</a> (just choose the latest *.dmg file)</li>
-  <li>MacPorts: <a href="https://cmake.org" target=_blank>https://cmake.org</a><br> (just choose the latest *.dmg file for your version of macOS)</li>
-</ol>
-
-<p>Now run the setup script in a <b>new terminal</b>. It will require sudo priviledges. Please take a look at the source code if you are cautious. In the MEGAlib directory execute:</p>
-
-<pre>$ bash config/configure_macports</pre>
-
-
-
 
 
 <h3>Additional information for Windows 10</h3>
