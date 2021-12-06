@@ -6,6 +6,11 @@ TOOLS_GEANT4="cmake pkgconfig zlib"
 
 TOOLS_MEGALIB="doxygen cfitsio"
 
+echo "This script will install the following programs/libraries:"
+echo "${TOOLS_ROOT} ${TOOLS_GEANT4} ${TOOLSMEGALIB}"
+echo " "
+echo "This will require sudo priviledges. Feel free to take a look at the source code if you are cautious."
+
 for TOOL in ${TOOLS_ROOT} ${TOOLS_GEANT4} ${TOOLSMEGALIB}; do
   sudo port -N install ${TOOL}
 done
@@ -15,4 +20,3 @@ sudo port select --set python3 python38
 
 
 exit 1
-
