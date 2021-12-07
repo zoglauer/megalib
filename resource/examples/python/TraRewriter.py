@@ -46,10 +46,12 @@ while True:
   Event = Reader.GetNextEvent()
   if not Event:
     break
-  M.SetOwnership(Event, True)
 
   if Selector.IsQualifiedEventFast(Event) == True:
     Writer.AddEvent(Event);
+  
+  M.SetOwnership(Event, True)
+
     
 # Close the tra file writer
 Writer.Close();
