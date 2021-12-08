@@ -980,7 +980,11 @@ echo "In order to run the MEGAlib programs, you have to source the following fil
 echo " "
 echo "source ${MEGALIBDIR}/bin/source-megalib.sh"
 echo " "
-echo "You can add this line into your .bashrc file (or .bash_profile on macOS),"
+if [[ ${SHELL} == *zsh* ]]; then
+  echo "You can add this line to your ~/.zprofile file,"
+else
+  echo "You can add this line to your ~/.bashrc file (or ~/.bash_profile on macOS),"
+fi
 echo "or execute this line everytime you want to use MEGAlib."
 echo " "
 
