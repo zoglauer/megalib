@@ -15,6 +15,7 @@ commandhelp() {
   echo "  --program=[name]: The main program to wait for"
   #echo "  --auxprogram=[name]: Other programs to wait for"
   echo "  --memory: Make sure we have enough free memory, if more than one instance is running"
+  echo "  --quiet: No text output"
   echo ""
   echo "Examples:"
   echo "    mwait -p=cosima -i=cores"
@@ -31,6 +32,7 @@ LOAD="10000"
 PROGAM=""
 AUXPROGRAMS=()
 MEMORY=false
+QUIET=false
 
 # Store command line as array
 CMD=( "$@" )
@@ -56,6 +58,8 @@ for C in "${CMD[@]}"; do
     AUXPROGRAMS+=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-m* ]]; then
     MEMORY=true
+  elif [[ ${C} == *-q* ]]; then
+    QUIET=true
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -124,7 +128,9 @@ while [[ ${WAIT} == true ]]; do
   
   if [ ${RUNNINGTHREADS} -ge ${MAXTHREADS} ]; then
     WAIT=true
-    echo "Waiting for a free slot: Running ${RUNNINGTHREADS} of ${MAXTHREADS} allowed instances of ${PROGRAM}"
+    if [[ ${QUIET} == false ]]; then
+      echo "Waiting for a free slot: Running ${RUNNINGTHREADS} of ${MAXTHREADS} allowed instances of ${PROGRAM}"
+    fi
     sleep 5
     continue
   fi
@@ -149,7 +155,9 @@ while [[ ${WAIT} == true ]]; do
       done
       if [[ ${TOTALMEMORY} -gt ${LASTTOTALMEMORY} ]]; then
         if [ ${LASTTOTALMEMORY} -gt 0 ]; then
-          echo "Waiting till all programs (n=${RUNNINGTHREADS}) reach memory saturation (now: ${TOTALMEMORY}), last: ${LASTTOTALMEMORY} )..."
+          if [[ ${QUIET} == false ]]; then
+            echo "Waiting till all programs (n=${RUNNINGTHREADS}) reach memory saturation (now: ${TOTALMEMORY}), last: ${LASTTOTALMEMORY} )..."
+          fi
         fi
         sleep 1
       else
@@ -166,7 +174,9 @@ while [[ ${WAIT} == true ]]; do
     
     if [ ${AVAILABLEMEMORY} -lt ${REQUIREDMEMORY} ]; then
       WAIT=true
-      echo "Waiting until we have enough free memory (required: ${REQUIREDMEMORY}, available: ${AVAILABLEMEMORY})..."
+      if [[ ${QUIET} == false ]]; then
+        echo "Waiting until we have enough free memory (required: ${REQUIREDMEMORY}, available: ${AVAILABLEMEMORY})..."
+      fi
       sleep 5
       continue
     fi
@@ -182,7 +192,9 @@ while [[ ${WAIT} == true ]]; do
   
   if [[ $(echo "${CURRENTLOAD} > ${MAXLOAD}" | bc -l) -eq 1 ]]; then
     WAIT=true
-    echo "Waiting until the system load falls below the threshold (threshold: ${MAXLOAD}, current:  ${CURRENTLOAD})..."
+    if [[ ${QUIET} == false ]]; then
+      echo "Waiting until the system load falls below the threshold (threshold: ${MAXLOAD}, current:  ${CURRENTLOAD})..."
+    fi
     sleep 5
     continue  
   fi
