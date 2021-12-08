@@ -47,7 +47,7 @@ sync() {
       # Wait until we have no more than x of our rsync processes running, otherwise our system might be slowed down too much
       mwait -p="rsync -az --append-verify" -i=${PARALLEL}
       echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
-      eval ${RSYNCS[$m]} &
+      eval ${RSYNCS[$m]} 
     elif [[ ${RSYNCS[$m]} == DONE ]]; then
       break
     else 
@@ -73,7 +73,7 @@ delete() {
     RSYNCS[$m]=${RSYNCS[$m]/--append-verify/--remove-source-files --existing}
   done
 
-  echo "Found the following rsyncs: ${RSYNCS[@]}"
+  #echo "Found the following rsyncs: ${RSYNCS[@]}"
 
   # Download all data
   for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
@@ -81,7 +81,7 @@ delete() {
       # Wait until we have no more than x of our rsync processes running, otherwise our system might be slowed down too much
       mwait -p="rsync -az --remove-source-files" -i=${PARALLEL}
       echo "dcosima-rsync: Deleting: ${RSYNCS[$m]}"
-      eval ${RSYNCS[$m]} &
+      eval ${RSYNCS[$m]} 
     elif [[ ${RSYNCS[$m]} == DONE ]]; then
       break
     else 
