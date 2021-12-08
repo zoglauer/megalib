@@ -45,9 +45,10 @@ sync() {
     #echo "psync: Checking ${RSYNCS[$m]}"
     if [[ ${RSYNCS[$m]} == rsync* ]]; then
       # Wait until we have no more than x of our rsync processes running, otherwise our system might be slowed down too much
-      mwait -p="rsync -az --append-verify" -i=${PARALLEL}
+      mwait -q -p="rsync -az --append-verify" -i=$((${PARALLEL} + ${PARALLEL}))
       echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
-      eval ${RSYNCS[$m]} 
+      eval ${RSYNCS[$m]} &
+      sleep 1
     elif [[ ${RSYNCS[$m]} == DONE ]]; then
       break
     else 
@@ -75,13 +76,14 @@ delete() {
 
   #echo "Found the following rsyncs: ${RSYNCS[@]}"
 
-  # Download all data
+  # Delete all existing data
   for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
     if [[ ${RSYNCS[$m]} == rsync* ]]; then
       # Wait until we have no more than x of our rsync processes running, otherwise our system might be slowed down too much
-      mwait -p="rsync -az --remove-source-files" -i=${PARALLEL}
+      mwait -q -p="rsync -az --remove-source-files" -i=$((${PARALLEL} + ${PARALLEL}))
       echo "dcosima-rsync: Deleting: ${RSYNCS[$m]}"
-      eval ${RSYNCS[$m]} 
+      eval ${RSYNCS[$m]} &
+      sleep 1
     elif [[ ${RSYNCS[$m]} == DONE ]]; then
       break
     else 
@@ -111,7 +113,7 @@ done
 DIRECTORY=""
 INSTANCES=0
 SLEEP=20
-PARALLEL=2
+PARALLEL=3
 
 
 # Overwrite default options with user options:
@@ -189,7 +191,7 @@ MAXINITIALWAIT=300
 STARTLASTWAIT=${SECONDS}
 MAXLASTWAIT=120
 
-WAITDELETE=180
+WAITDELETE=600
 LASTDELETE=$(( $(date +%s) - ${WAITDELETE} - 1 ))  # We always want to start with a delete in case we restart and have accumulated a alot
 
 
