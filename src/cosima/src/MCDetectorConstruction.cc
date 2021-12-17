@@ -469,13 +469,17 @@ bool MCDetectorConstruction::ConstructDetectors()
               return false;
             }
           }
+          mdebug<<"Unique Position internal: "<<Pos<<endl;
           
           S->SetUniquePosition(SenName.Data(), G4ThreeVector(Pos[0]*cm, Pos[1]*cm, Pos[2]*cm));
+          UniquePositionInCommon = Pos;
           // Get the position in the common volume:
           while (V != 0 && V != Detector->GetCommonVolume()) {
             UniquePositionInCommon = V->GetPositionInMotherVolume(UniquePositionInCommon);
+            mdebug<<"Pos in mother: "<<UniquePositionInCommon<<": mother: M"<<(V->GetMother() != nullptr ? V->GetMother()->GetName() : "WV")<<endl;
             V = V->GetMother();
           }
+          mdebug<<"Unique Position world: "<<UniquePositionInCommon<<endl;
         } else {
           // Build a volume tree:
           vector<MDVolume* > Vs;

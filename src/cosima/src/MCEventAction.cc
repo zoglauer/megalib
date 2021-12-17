@@ -647,11 +647,11 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
         ScintillatorColl[i]->PrintAllHits();
       }
       for (unsigned int i = 0; i < DriftChamberColl.size(); ++i) {
-        mdebug<<"Writing scintillator hits..."<<endl;
+        mdebug<<"Writing drift chamber hits..."<<endl;
         DriftChamberColl[i]->PrintAllHits();
       }
       for (unsigned int i = 0; i < AngerCameraColl.size(); ++i) {
-        mdebug<<"Writing voxel 3D hits..."<<endl;
+        mdebug<<"Writing anger camera hits..."<<endl;
         AngerCameraColl[i]->PrintAllHits();
       }
     
