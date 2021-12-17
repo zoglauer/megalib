@@ -189,9 +189,8 @@ G4bool MCScintillatorSD::PostProcessHits(const G4Step* Step)
   H->SetEnergy(Energy);
   H->SetADCCounts(Energy/keV);
   H->SetPosition(Position);
-  H->SetDetectorName(Hist->GetVolume(Hist->GetHistoryDepth()-1)->GetName());
-  H->AddOrigin(((MCTrackInformation*) 
-                  (Step->GetTrack()->GetUserInformation()))->GetId());
+  H->SetDetectorName(DetectorName);
+  H->AddOrigin(((MCTrackInformation*) (Step->GetTrack()->GetUserInformation()))->GetId());
   if (m_HasTimeResolution == true) {
     H->SetTime(Step->GetTrack()->GetGlobalTime());
   }
