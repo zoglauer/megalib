@@ -892,7 +892,7 @@ if [[ ${HEASOFTPATH} != off ]]; then
     if [ "${RESULT}" != "0" ]; then
       if [ "${RESULT}" == "127" ]; then
         echo " "
-        echo "ERROR: Cannot find build-geant4.sh. Either your MEGAlib version is too old or corrupt..."
+        echo "ERROR: Cannot find build-heosoft.sh. Either your MEGAlib version is too old or corrupt..."
         exit 1
       else
         echo " "
