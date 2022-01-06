@@ -194,7 +194,7 @@ if [ "${MTMP_HEADASPATH}" != "${MTMP_NODEFAULT}" ]; then
   
   MTMP_HEADASFOUND=false
   MTMP_CFITSIOFOUND=false
-  for i in `ls -d ${MTMP_HEADASPATH}/*86*`; do
+  for i in `ls -d ${MTMP_HEADASPATH}`; do
     if ( test -f ${i}/headas-init.sh ); then 
       export HEADAS=${i}
       alias heainit=". ${HEADAS}/headas-init.sh"
