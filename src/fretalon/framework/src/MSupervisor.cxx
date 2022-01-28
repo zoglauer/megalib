@@ -731,7 +731,7 @@ bool MSupervisor::LaunchUI()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MSupervisor::Analyze()
+bool MSupervisor::Analyze(bool TestRun)
 {
   if (m_IsAnalysisRunning == true) return false;
   m_IsAnalysisRunning = true;
@@ -740,7 +740,11 @@ bool MSupervisor::Analyze()
   Save(m_ConfigurationFileName);
 
   m_SoftInterrupt = false;
-  m_HardInterrupt = false;
+  if (TestRun == true) {
+    m_HardInterrupt = true;
+  } else {
+    m_HardInterrupt = false;
+  }
   
   // Start a global timer:
   MTimer Timer;
@@ -1071,6 +1075,10 @@ bool MSupervisor::Analyze()
   
   m_IsAnalysisRunning = false;
 
+  if (TestRun == true) {
+    cout<<">>> TEST RUN SUCCESSFUL <<<"<<endl;
+  }
+  
   if (m_Terminate == true) Terminate();
   
   return true;
