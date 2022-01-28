@@ -100,7 +100,9 @@ class MSupervisor
   bool LaunchUI();
   
   //! Analyze the data - single-threaded or multi-threaded mode
-  bool Analyze();
+  //! If the TestRun flag is set, everything will be initialized but no actual analysis will be performed
+  //! It returns the tag ">>> TEST RUN SUCCESSFUL <<<" if the test was successful
+  bool Analyze(bool TestRun = false);
   //! Return true if the analysis is running
   bool IsAnalysisisRunning() const { return m_IsAnalysisRunning; }
   
