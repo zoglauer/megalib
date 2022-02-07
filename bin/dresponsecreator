@@ -407,7 +407,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     OUTFILE=${OUTFILE/.evta.gz/}
     OUTFILE=${OUTFILE/.evta/}
     COMMAND=""
-    COMMAND+=". .bash_local; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -r ${OUTFILE} -m ${MODE}"
+    COMMAND+=". .bash_local; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -r /tmp/${OUTFILE} -m ${MODE}"
     if [[ ${OPTIONS} != "" ]]; then COMMAND+=" -o ${OPTIONS}"; fi
     if [[ ${SAVE} != "" ]]; then COMMAND+=" -s ${SAVE}"; fi
     if [[ ${REVANCFG} != "" ]]; then COMMAND+=" -c ${REVANCFG}"; fi

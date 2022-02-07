@@ -926,6 +926,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
   if (m_TestRun == true) {
     cout<<">>> TEST RUN SUCCESSFUL <<<"<<endl;
+  } else {
+    cout<<">>> TEST RUN FAILED <<<"<<endl;
   }
 
   return true;
