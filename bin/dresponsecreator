@@ -413,6 +413,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     if [[ ${REVANCFG} != "" ]]; then COMMAND+=" -c ${REVANCFG}"; fi
     if [[ ${MIMRECCFG} != "" ]]; then COMMAND+=" -b ${MIMRECCFG}"; fi
     if [[ ${ZIP} == TRUE ]]; then COMMAND+=" -z"; fi
+    COMMAND+=" --test"
     ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${COMMAND} )
     if [[ "$?" != "0" ]]; then
       echo " * Remote machine: ${MACHINES[$m]}: Failed to launch responsecreator!" | ${LOGGING}
