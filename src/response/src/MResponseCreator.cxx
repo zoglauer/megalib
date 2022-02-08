@@ -378,9 +378,6 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  // In case of a test run we set our interupt to true immideately
-  m_Interrupt = true;
-
 
   // Launch the different response generators:
   if (m_Mode == c_ModeClusteringDSS) {
@@ -926,8 +923,6 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
   if (m_TestRun == true) {
     cout<<">>> TEST RUN SUCCESSFUL <<<"<<endl;
-  } else {
-    cout<<">>> TEST RUN FAILED <<<"<<endl;
   }
 
   return true;
