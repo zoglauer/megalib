@@ -378,7 +378,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \".dcosima.cfg configuration file not found.\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"Failed to access remote data directory!\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"Failed to create target directory\"; exit 1; fi; "
-    COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[$d]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[0]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[0]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ${GEOMETRY} ]] || [[ ! -r ${GEOMETRY} ]] ; then echo \"Geometry file not found or not readable!\"; exit 1; fi; "
     if [[ ${MIMRECCFG} != "" ]]; then
       COMMAND+="if [[ ! -f ${MIMRECCFG} ]] || [[ ! -r ${MIMRECCFG} ]]; then echo \"Mimrec configuration file not found or not readable!\"; exit 1; fi; "
