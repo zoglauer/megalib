@@ -107,6 +107,20 @@ const double c_FarAway = 1E20; // cm
 const double c_LargestEnergy = 0.999*numeric_limits<float>::max();
 const MVector c_NullVector(0.0, 0.0, 0.0);
 
+const double c_TeV = 1000000000;
+const double c_GeV =    1000000;
+const double c_MeV =       1000;
+const double c_keV =          1;
+const double c_eV  =          0.001;
+
+const double c_km =      100000;
+const double c_m  =         100;
+const double c_cm =           1;
+const double c_mm =           0.1;
+const double c_um =           0.0001;
+const double c_nm =           0.0000001;             
+
+
 TMutex* g_Mutex = 0;
 Long_t g_MainThreadID = 0;
 

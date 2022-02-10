@@ -144,6 +144,21 @@ extern const double c_FarAway;        // Radius for conversion from spherical to
 extern const double c_LargestEnergy;  //
 extern const MVector c_NullVector;
 
+// Physics conversion constants
+extern const double c_TeV;
+extern const double c_GeV;
+extern const double c_MeV;
+extern const double c_keV;
+extern const double c_eV;
+
+extern const double c_km;
+extern const double c_m;
+extern const double c_cm;
+extern const double c_mm;
+extern const double c_um;
+extern const double c_nm;
+
+
 // A dummy class which takes care of initializations
 class MGlobal
 {
