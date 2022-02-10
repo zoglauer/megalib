@@ -78,6 +78,7 @@ class MGUISivanMain : public MGUIMain
                    c_InteractionsPerVoxel,
                    c_EnergyPerNucleus,
                    c_IsotopeGeneration,
+                   c_ActivationPerIncidenceEnergy,
                    c_EnergyPerVoxel, 
                    c_ComptonEnergyEscape, 
                    c_StartLocations,
