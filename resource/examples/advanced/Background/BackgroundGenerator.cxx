@@ -1754,7 +1754,7 @@ bool BackgroundGenerator::GenerateCosmicElectronsMizuno()
   
   vector<double> Angle;
   for (unsigned int b = 0; b < m_AngleBins.size(); ++b) {
-    if (m_AngleBins[b] >= m_HorizonAngle) {
+    if (m_AngleBins[b] <= m_HorizonAngle) {
       Angle.push_back(1.0);
     } else {
       Angle.push_back(0.0);
@@ -1837,7 +1837,7 @@ bool BackgroundGenerator::GenerateCosmicPositronsMizuno()
   
   vector<double> Angle;
   for (unsigned int b = 0; b < m_AngleBins.size(); ++b) {
-    if (m_AngleBins[b] >= m_HorizonAngle) {
+    if (m_AngleBins[b] <= m_HorizonAngle) {
       Angle.push_back(1.0);
     } else {
       Angle.push_back(0.0);
