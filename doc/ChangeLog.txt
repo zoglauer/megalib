@@ -20,7 +20,8 @@ Cosima:
 + Option to store files in binary format
 
 Long-term bugs fixed:
-+ The incidence direction of the 511-keV emission was wrong
++ Background generator: The incidence direction of the 511-keV (3.04.00), cosmic electron 
+  and positron emission (3.04.01) was wrong
 
 Long list of minor bugs fixed.
 
