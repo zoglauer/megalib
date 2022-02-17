@@ -199,8 +199,12 @@ public:
   // Section 6: Additional high-level functions
 
   //! Checks if this vector is in the plane spanned by the other three vectors
+  //! TODO: Change to AreCoplanar(...)
   bool Coplanar(const MVector& A, const MVector& B, const MVector& C, double Tolerance = 1E-6) const;
 
+  //! Check if the vectors are orthogonal with a tolerance
+  bool IsOrthogonal(const MVector& Vector, double Tolerance = 1E-6) const;
+  
   //! Calculate the distance of a line spanned by the given vectors with this point
   double DistanceToLine(const MVector& A, const MVector& B) const;
   
