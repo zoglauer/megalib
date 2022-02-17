@@ -274,15 +274,18 @@ bool MGUIImageDimensions::OnApply()
       return false;
     }
     
-    if (m_XAxis->IsModified() == true) {
-      MVector XAxis(m_XAxis->GetAsDouble(0), m_XAxis->GetAsDouble(1), m_XAxis->GetAsDouble(2));
-      XAxis.Unitize();
-      m_GUIData->SetImageRotationXAxis(XAxis);
+    MVector XAxis(m_XAxis->GetAsDouble(0), m_XAxis->GetAsDouble(1), m_XAxis->GetAsDouble(2));
+    XAxis.Unitize();
+    MVector ZAxis(m_ZAxis->GetAsDouble(0), m_ZAxis->GetAsDouble(1), m_ZAxis->GetAsDouble(2));
+    ZAxis.Unitize();
+    
+    if (XAxis.IsOrthogonal(ZAxis) == false) {
+      mgui<<"The image rotation vectors must be orthogonal."<<error;
+      return false;
     }
-
-    if (m_ZAxis->IsModified() == true) {
-      MVector ZAxis(m_ZAxis->GetAsDouble(0), m_ZAxis->GetAsDouble(1), m_ZAxis->GetAsDouble(2));
-      ZAxis.Unitize();
+    
+    if (m_XAxis->IsModified() == true || m_ZAxis->IsModified() == true) {
+      m_GUIData->SetImageRotationXAxis(XAxis);
       m_GUIData->SetImageRotationZAxis(ZAxis);
     }
 

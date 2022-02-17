@@ -197,7 +197,6 @@ bool MImager::SetSettings(MSettingsMimrec* Settings)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
 bool MImager::SetImagingSettings(MSettingsImaging* Settings)
 {
   //! Set only the imaging settings
@@ -231,6 +230,13 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
 
   // Set the dimensions of the image
   if (Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+    MVector XAxis = Settings->GetImageRotationXAxis();
+    MVector ZAxis = Settings->GetImageRotationZAxis();
+    if (XAxis.IsOrthogonal(ZAxis) == false) {
+      merr<<"The image rotation axes are not orthogonal! Aborting imaging!"<<show;
+      return false;
+    }
+    
     SetViewport(Settings->GetPhiMin()*c_Rad,
                 Settings->GetPhiMax()*c_Rad,
                 Settings->GetBinsPhi(),

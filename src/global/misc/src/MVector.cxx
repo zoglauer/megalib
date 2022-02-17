@@ -463,6 +463,21 @@ bool MVector::Coplanar(const MVector& A, const MVector& B, const MVector& C,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Check if the vectors are orthogonal with a tolerance
+bool MVector::IsOrthogonal(const MVector& Vector, double Tolerance) const
+{
+  double Angle = this->Angle(Vector);
+  if (fabs(Angle - c_Pi/2.0) > Tolerance) {
+    return false; 
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 double MVector::DistanceToLine(const MVector& A, const MVector& B) const
 {
   //! Calculate the distance of a line spanned by the given vectors with this point
