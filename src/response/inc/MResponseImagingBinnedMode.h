@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Create a binned-mode imaging reponse
 class MResponseImagingBinnedMode : public MResponseBuilder
 {
   // public interface:
