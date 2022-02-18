@@ -172,7 +172,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      pb : "<<MResponsePolarizationBinnedMode::Description()<<endl;
   Usage<<MResponsePolarizationBinnedMode::Options()<<endl;
   Usage<<"      ef : efficiency far field (e.g. astrophysics)"<<endl;
-  Usage<<"      en : efficiency near field (e.g. medical)"<<endl;
+  Usage<<"      en : "<<MResponseImagingEfficiencyNearField::Description()<<endl;
+  Usage<<MResponseImagingEfficiencyNearField::Options()<<endl;
   Usage<<"      e  : earth horizon"<<endl;
   Usage<<"      f  : first interaction position"<<endl;
   Usage<<"      q  : event quality"<<endl;
@@ -655,7 +656,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
 
-
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
     while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
