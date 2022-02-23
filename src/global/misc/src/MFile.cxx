@@ -317,14 +317,14 @@ MString MFile::GetDirectoryName(const MString& Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MFile::ExpandFileName(MString& FileName, const MString& WorkingDir)
+bool MFile::ExpandFileName(MString& FileName, const MString& WorkingDir)
 {
   // Just in case: Expand file name:
 
   // We have to switch to TString...
   TString Name(FileName.Data());
-  gSystem->ExpandPathName(Name);
-  gSystem->ExpandPathName(Name);
+  if (gSystem->ExpandPathName(Name) == true) return false; // ExpandPathName returns true in case of error
+  if (gSystem->ExpandPathName(Name) == true) return false;
   FileName = Name;
 
   // On Unix system we start always with a "/", on windows we have a : before the first "/" or "\"
@@ -336,6 +336,7 @@ void MFile::ExpandFileName(MString& FileName, const MString& WorkingDir)
       FileName = GetDirectoryName(WorkingDir) + "/" + FileName;
     }
   }
+  return true;
 }
 
 
