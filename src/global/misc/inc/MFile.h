@@ -162,7 +162,7 @@ class MFile
   //! Sets the path of "Path" as new path to "FileName" IF FileName has a relative path
   static bool ApplyPath(MString& FileName, const MString& Path);
   //! Expand a file name e.g. $MEGALIB/src to /home/andreas/Software/MEGAlib/src
-  static void ExpandFileName(MString& FileName, const MString& WorkingDir = "");
+  static bool ExpandFileName(MString& FileName, const MString& WorkingDir = "");
   //! Make RelFileName relative to AbsFileName
   //! Relative: /home/andreas/Test/MyFile.tra
   //! Absolute: /home/andreas/MasterTest.tra

@@ -324,8 +324,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mout<<"   *** Error: No geometry file name given"<<endl;
     return false;
   }
-  MFile::ExpandFileName(m_FileName);
 
+  if (MFile::ExpandFileName(m_FileName) == false) {
+    mgui<<"Unable to expand file name: \""<<m_FileName<<"\""<<error;
+    return false;
+  }
+  
   if (gSystem->IsAbsoluteFileName(m_FileName) == false) {
     m_FileName = gSystem->WorkingDirectory() + MString("/") + m_FileName;
   }
@@ -391,7 +395,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       
       MString FileName = Tokenizer.GetTokenAt(1);
-      MFile::ExpandFileName(FileName, m_FileName);
+      if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+        Typo("Unable to expand file name");
+        return false;
+      }
       
       if (MFile::Exists(FileName) == false) {
         mout<<"   *** Error finding file "<<FileName<<endl;
@@ -423,7 +430,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       
       if (Tokenizer.IsTokenAt(1, "GDML") == true) {
         MString FileName = Tokenizer.GetTokenAt(2);
-        MFile::ExpandFileName(FileName, m_FileName);
+        if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+          mout<<"   *** Error expanding file "<<FileName<<endl;
+          Typo("Unable to expand file name");
+          return false;
+        }
       
         if (MFile::Exists(FileName) == false) {
           mout<<"   *** Error finding file "<<FileName<<endl;
@@ -1289,13 +1300,19 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       // We have to use TString
       MString Name = Tokenizer.GetTokenAtAsString(1).Data();
-      MFile::ExpandFileName(Name);
+      if (MFile::ExpandFileName(Name) == false) {
+        Typo("Unable to expand file name");
+        return false;
+      }
 
       if (gSystem->IsAbsoluteFileName(Name) == false) {
         Name.Prepend("/");
         Name.Prepend(MFile::GetDirectoryName(m_FileName));
 
-        MFile::ExpandFileName(Name);
+        if (MFile::ExpandFileName(Name) == false) {
+          Typo("Unable to expand file name");
+          return false;
+        }
       }
 
       m_CrossSectionFileDirectory = Name;
@@ -2063,8 +2080,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (T->GetType() == MDTriggerType::c_Universal) {
           MString FileName = Tokenizer.GetTokenAtAsString(2);
 
-          MFile::ExpandFileName(FileName, m_FileName);
-
+          if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+            Typo("Unable to expand file name");
+            return false;
+          }
+      
           if (gSystem->AccessPathName(FileName) == 1) {
             Typo("The file does not exist!");
             return false;
@@ -2660,7 +2680,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         MString FileName = Tokenizer.GetTokenAt(2);
-        MFile::ExpandFileName(FileName, m_FileName);
+        if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+          Typo("Unable to expand file name");
+          return false;
+        }
         if (MFile::Exists(FileName) == false) {
           Typo("File does not exist.");
           return false;
@@ -2793,7 +2816,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         MString FileName = Tokenizer.GetTokenAtAsString(2);
-        MFile::ExpandFileName(FileName, m_FileName);
+        if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+          Typo("Unable to expand file name");
+          return false;
+        }
         MFunction Calibration;
         if (Calibration.Set(FileName, "DP") == false) {
           Typo("Unable to read file");
@@ -4054,7 +4080,10 @@ bool MDGeometry::AddFile(MString FileName, list<MDDebugInfo>& FileContent)
 
   FileContent.clear();
 
-  MFile::ExpandFileName(FileName);
+  if (MFile::ExpandFileName(FileName) == false) {
+    Typo("Unable to expand file name");
+    return false;
+  }
 
   // First edit the file name:
   if (gSystem->IsAbsoluteFileName(FileName) == false) {
@@ -4139,7 +4168,10 @@ bool MDGeometry::ImportGDML(MString FileName, list<MDDebugInfo>& FileContent)
   
   FileContent.clear();
   
-  MFile::ExpandFileName(FileName);
+  if (MFile::ExpandFileName(FileName) == false) {
+    Typo("Unable to expand file name");
+    return false;
+  }
   
   // First edit the file name:
   if (gSystem->IsAbsoluteFileName(FileName) == false) {
