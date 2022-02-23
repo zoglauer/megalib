@@ -570,6 +570,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (ContainsConstant == false) {
           MString Constant = (*Iter1).second;
+          if ( MTokenizer::CheckMaths(Constant) == false) {
+            mout<<"   *** Error ***"<<endl;
+            mout<<"Maths in constant cannot be evaluated: "<<(*Iter1).first<<" "<<Constant<<endl;
+            return false;
+          }
           MTokenizer::EvaluateMaths(Constant);
           (*Iter1).second = Constant;
         }
@@ -645,6 +650,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       (*ContentIter).Replace((*Iter).first, (*Iter).second, true);
     }
   }
+
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
@@ -976,7 +982,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
   
-  
+    
+  // Do a final maths check:
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
+    if (Tokenizer.CheckAllMaths() == false) {
+      Typo("Cannot parse maths -- typo or unsupported maths function.");
+      return false;
+    }
+  }
   
   // Check for "If"-clauses
   int IfDepth = 0;
