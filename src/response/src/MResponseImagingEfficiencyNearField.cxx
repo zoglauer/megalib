@@ -53,7 +53,7 @@ ClassImp(MResponseImagingEfficiencyNearField)
 //! Default constructor
 MResponseImagingEfficiencyNearField::MResponseImagingEfficiencyNearField()
 {
-  m_ResponseNameSuffix = "efficiencynearfield";
+  m_ResponseNameSuffix = "listmoderesponsenearfield";
   
   m_XMin = -10*c_cm;
   m_XMax = 10*c_cm;

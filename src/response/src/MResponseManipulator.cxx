@@ -902,7 +902,10 @@ bool MResponseManipulator::Join()
   Types.push_back(".efficiency.90y.rsp");
   Types.push_back(".efficiency.90z.90y.rsp");
   Types.push_back(".efficiency.detector.rsp");
-  Types.push_back(".efficiencynearfield.rsp");
+  
+  Types.push_back(".listmoderesponsenearfield.emittedxdetectedanywhere.rsp");
+  Types.push_back(".listmoderesponsenearfield.emittedxdetectedy.rsp");
+  Types.push_back(".listmoderesponsenearfield.detectedyscatteredcds.rsp");
 
   Types.push_back(".binnedimaging.imagingresponse.rsp");
   Types.push_back(".binnedimaging.exposure.rsp");
