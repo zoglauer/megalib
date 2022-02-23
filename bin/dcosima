@@ -283,7 +283,7 @@ if [ "$?" != "0" ]; then
   rm -r ${TMPDIR}
   echo " "
   echo "ERROR: Failed to assemble files" | ${LOGGING}
-  echo "Output from dcosima-assemblefiles which contains the eror message: " | ${LOGGING}
+  echo "Output from dcosima-assemblefiles which contains the error message: " | ${LOGGING}
   echo "${ASSEMBLERESULT}" | ${LOGGING}
   exit 1
 fi
