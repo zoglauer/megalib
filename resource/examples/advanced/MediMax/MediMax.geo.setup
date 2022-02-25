@@ -1,0 +1,255 @@
+#---------------------------------------------------------
+# Very simple Germanium ACT - similar to NCT 
+
+
+Name MediMax
+Version 1.0
+
+SurroundingSphere 30  0.0  0.0  0.0  30.0
+
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+
+//------------------------------------------------------------
+// Define Germanium strip detector:
+
+// One layer of the tracker
+// GeStripDetector is the aluminum cryostat surrounding the 
+// Ge detectors - they are called 'GeWafer' ....
+
+Constant DetectorHalfWidth  4.0
+Constant DetectorHalfHeight 0.75
+Constant GuardRingSize      0.3
+Constant IngotRadius        { 2* 2.54}
+
+Constant CryoThickness  0.1
+Constant CryoOffset     0.5
+
+Constant CryoTotalHeight { 2*(DetectorHalfHeight + CryoOffset + CryoThickness ) } 
+
+Volume GeStripDetector           
+GeStripDetector.Material Aluminium
+GeStripDetector.Visibility 1
+GeStripDetector.Color 2
+GeStripDetector.Shape BRIK  { DetectorHalfWidth + CryoOffset + CryoThickness }  { DetectorHalfWidth + CryoOffset  + CryoThickness }  { DetectorHalfHeight + CryoOffset  + CryoThickness } 
+
+Volume CryoInnerHull 
+CryoInnerHull.Material Vacuum 
+CryoInnerHull.Visibility 1
+CryoInnerHull.Shape BRIK  { DetectorHalfWidth + CryoOffset }  { DetectorHalfWidth + CryoOffset }  { DetectorHalfHeight + CryoOffset } 
+
+
+# Create the whole wafer
+Shape BRIK WaferOuterBox
+WaferOuterBox.Parameters DetectorHalfWidth  DetectorHalfWidth  DetectorHalfHeight
+
+Shape TUBE WaferCutDisk
+WaferCutDisk.Parameters 0.0 IngotRadius DetectorHalfHeight
+
+Shape Intersection WholeWafer
+WholeWafer.Parameters WaferOuterBox WaferCutDisk
+
+# Create the active wafer
+Shape BRIK ActiveWaferOuterBox
+ActiveWaferOuterBox.Parameters { DetectorHalfWidth - GuardRingSize }  { DetectorHalfWidth - GuardRingSize }  DetectorHalfHeight
+
+Shape TUBE ActiveWaferCutDisk
+ActiveWaferCutDisk.Parameters 0.0 { IngotRadius - GuardRingSize } DetectorHalfHeight
+
+Shape Intersection ActiveWafer
+ActiveWafer.Parameters ActiveWaferOuterBox ActiveWaferCutDisk
+
+# Create the guard ring
+Shape Subtraction GuardRing_AlmostThere
+GuardRing_AlmostThere.Parameters WholeWafer ActiveWafer
+
+# A little trick, to get the Strip detector to work: we have to do another intersection, so that the first volume is a box:
+Shape Intersection GuardRing
+GuardRing.Parameters WaferOuterBox GuardRing_AlmostThere
+
+
+Volume GeWafer
+GeWafer.Material Germanium
+GeWafer.Visibility 1
+GeWafer.Color 6
+GeWafer.Shape ActiveWafer
+GeWafer.Position  0.0 0.0 0.0
+GeWafer.Mother CryoInnerHull
+
+Volume GeWaferGuardRing
+GeWaferGuardRing.Material Germanium
+GeWaferGuardRing.Visibility 1
+GeWaferGuardRing.Color 3
+GeWaferGuardRing.Shape GuardRing
+GeWaferGuardRing.Position  0.0 0.0 0.0
+GeWaferGuardRing.Mother CryoInnerHull
+
+CryoInnerHull.Copy Cryo
+Cryo.Position 0.0 0.0 0.0
+Cryo.Mother GeStripDetector
+
+
+
+// Line-Up some Ge-Detector 
+GeStripDetector.Copy GeE1N001
+GeE1N001.Position  0.0  0.0  {  3*CryoTotalHeight } 
+GeE1N001.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N002
+GeE1N002.Position  0.0  0.0  {  4*CryoTotalHeight } 
+GeE1N002.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N003
+GeE1N003.Position  0.0  0.0  {  5*CryoTotalHeight } 
+GeE1N003.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N004
+GeE1N004.Position  0.0  0.0  {  6*CryoTotalHeight } 
+GeE1N004.Mother WorldVolume
+
+
+GeStripDetector.Copy GeE1N011
+GeE1N011.Position  0.0  0.0  {  -3*CryoTotalHeight } 
+GeE1N011.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N012
+GeE1N012.Position  0.0  0.0  {  -4*CryoTotalHeight } 
+GeE1N012.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N013
+GeE1N013.Position  0.0  0.0  {  -5*CryoTotalHeight } 
+GeE1N013.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N014
+GeE1N014.Position  0.0  0.0  {  -6*CryoTotalHeight } 
+GeE1N014.Mother WorldVolume
+
+
+
+// Line-Up some Ge-Detector 
+GeStripDetector.Copy GeE1N101
+GeE1N101.Position {  3*CryoTotalHeight }  0.0  0.0  
+GeE1N101.Rotation 0 90 0
+GeE1N101.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N102
+GeE1N102.Position  {  4*CryoTotalHeight }  0.0  0.0  
+GeE1N102.Rotation 0 90 0
+GeE1N102.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N103
+GeE1N103.Position   {  5*CryoTotalHeight }  0.0  0.0  
+GeE1N103.Rotation 0 90 0
+GeE1N103.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N104
+GeE1N104.Position  {  6*CryoTotalHeight }  0.0  0.0  
+GeE1N104.Rotation 0 90 0
+GeE1N104.Mother WorldVolume
+
+
+GeStripDetector.Copy GeE1N111
+GeE1N111.Position  {  -3*CryoTotalHeight }  0.0  0.0  
+GeE1N111.Rotation 0 90 0
+GeE1N111.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N112
+GeE1N112.Position  {  -4*CryoTotalHeight }  0.0  0.0  
+GeE1N112.Rotation 0 90 0
+GeE1N112.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N113
+GeE1N113.Position  {  -5*CryoTotalHeight }  0.0  0.0  
+GeE1N113.Rotation 0 90 0
+GeE1N113.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N114
+GeE1N114.Position  {  -6*CryoTotalHeight }  0.0  0.0  
+GeE1N114.Rotation 0 90 0
+GeE1N114.Mother WorldVolume
+
+
+
+
+
+#------------------------------------------------------------
+# Detector and trigger section:
+
+
+MDStrip3D                  ActiveDetector
+
+ActiveDetector.DetectorVolume      GeWafer
+ActiveDetector.SensitiveVolume     GeWafer
+
+ActiveDetector.StructuralPitch     0.0   0.0    CryoTotalHeight
+ActiveDetector.StructuralOffset    0.0   0.0    0.0
+
+ActiveDetector.Offset              0.0   0.0
+ActiveDetector.StripNumber         40    40
+
+ActiveDetector.NoiseThreshold      15
+ActiveDetector.TriggerThreshold    30
+
+ActiveDetector.DepthResolution     10  0.02
+ActiveDetector.DepthResolution     100  0.02
+ActiveDetector.DepthResolution     1000  0.02
+
+ActiveDetector.EnergyResolution Gaus 10      10        0.417   
+ActiveDetector.EnergyResolution Gaus 20      20        0.425           
+ActiveDetector.EnergyResolution Gaus 50      50        0.4375    
+ActiveDetector.EnergyResolution Gaus 100     100       0.454     
+ActiveDetector.EnergyResolution Gaus 200     200       0.492     
+ActiveDetector.EnergyResolution Gaus 500     500       0.5875      
+ActiveDetector.EnergyResolution Gaus 1000    1000      0.7217       
+ActiveDetector.EnergyResolution Gaus 2000    2000      0.9317      
+ActiveDetector.EnergyResolution Gaus 5000    5000      1.3819       
+ActiveDetector.EnergyResolution Gaus 10000   10000     1.9094                     
+ActiveDetector.EnergyResolution Gaus 100000  100000    5.907         
+
+ActiveDetector.FailureRate 0.0
+
+Simple GuardRingDetector
+
+GuardRingDetector.DetectorVolume      GeWaferGuardRing
+GuardRingDetector.SensitiveVolume     GeWaferGuardRing
+
+GuardRingDetector.TriggerThreshold      40
+GuardRingDetector.NoiseThresholdEqualsTriggerThreshold true
+
+GuardRingDetector.EnergyResolution Gaus 10      10        3   
+GuardRingDetector.EnergyResolution Gaus 20      20        3           
+GuardRingDetector.EnergyResolution Gaus 50      50        3    
+GuardRingDetector.EnergyResolution Gaus 100     100       3     
+GuardRingDetector.EnergyResolution Gaus 200     200       3     
+GuardRingDetector.EnergyResolution Gaus 500     500       3      
+GuardRingDetector.EnergyResolution Gaus 1000    1000      3       
+GuardRingDetector.EnergyResolution Gaus 2000    2000      3      
+GuardRingDetector.EnergyResolution Gaus 5000    5000      3       
+
+
+
+// Trigger: at least one hit in one Germanium detector  
+Trigger ActiveDetectorTrigger
+ActiveDetectorTrigger.Veto false
+ActiveDetectorTrigger.TriggerByChannel true
+ActiveDetectorTrigger.Detector ActiveDetector 1
+
+Trigger GuardRingVeto
+GuardRingVeto.Veto true
+GuardRingVeto.TriggerByChannel true
+GuardRingVeto.Detector GuardRingDetector 1
