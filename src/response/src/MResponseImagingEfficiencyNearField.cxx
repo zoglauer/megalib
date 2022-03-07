@@ -54,6 +54,7 @@ ClassImp(MResponseImagingEfficiencyNearField)
 MResponseImagingEfficiencyNearField::MResponseImagingEfficiencyNearField()
 {
   m_ResponseNameSuffix = "listmoderesponsenearfield";
+  m_OnlyINITRequired = true;
   
   m_XMin = -10*c_cm;
   m_XMax = 10*c_cm;
