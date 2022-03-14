@@ -120,6 +120,8 @@ void MFile::Reset()
   m_IsOpen = false;
 
   m_IsBinary = false;
+
+  m_CompressionLevel = 9;
   
   // m_Progress = 0; // Already managed by initial close!
   m_ProgressLevel = 0;
@@ -167,6 +169,19 @@ int MFile::GetVersion() const
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MFile::SetCompressionLevel(unsigned int CompressionLevel)
+{
+  //! Set the compression level
+
+  m_CompressionLevel = CompressionLevel;
+  if (m_CompressionLevel < 1) m_CompressionLevel = 1;
+  if (m_CompressionLevel > 9) m_CompressionLevel = 9;
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -388,7 +403,7 @@ bool MFile::Open(MString FileName, unsigned int Way, bool IsBinary)
     if (Way == c_Read) {
       m_ZipFile = gzopen(m_FileName, "rb");
     } else {
-      m_ZipFile = gzopen(m_FileName, "wb9"); // Maxmimum compression level is OK, since it is negligible compared to data analysis
+      m_ZipFile = gzopen(m_FileName, MString("wb") + m_CompressionLevel); // Maxmimum compression level is OK, since it is negligible compared to data analysis
     }
     if (m_ZipFile == NULL) {
       mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
