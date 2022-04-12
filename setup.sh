@@ -559,7 +559,7 @@ if [ -d $MEGALIBPATH ]; then
 
     if [ "${BRANCH}" == "" ]; then
 
-      BRANCH=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
+      BRANCH=`git ls-remote --heads https://github.com/zoglauer/megalib.git | grep -v alpha | grep -v beta | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
       if [ "${CurrentBranch}" != "${Branch}" ]; then
         echo "Switching to latest release version of MEGAlib from the git repository..."
         git checkout ${BRANCH}
@@ -621,7 +621,7 @@ else
   if [[ ${BRANCH} == "" ]]; then
     if [ "${RELEASE}" == "rel" ]; then
       echo "Switching to latest release version of MEGAlib from the git repository..."
-      Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
+      Branch=`git ls-remote --heads https://github.com/zoglauer/megalib.git | grep -v alpha | grep -v beta | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
       if ( [ "$?" != "0" ] || [ "${Branch}" == "" ] ); then
         echo " "
         echo "ERROR: Unable to find the latest release branch"
