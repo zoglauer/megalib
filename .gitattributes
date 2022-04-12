@@ -1,0 +1,2 @@
+# Apply override to all files in the directory - GitHub thinks they are GSML
+resource/examples/geomega/** linguist-vendored
