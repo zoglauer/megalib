@@ -1312,7 +1312,7 @@ bool MCParameterFile::Parse()
               return false;
             }
           } 
-          else if (Type == "farfieldgaussian" || Type == "ffg") {
+          else if (Type == "farfielddisk" || Type == "ffd") {
             if (T->GetNTokens() == 6) {
               Source->SetBeamType(MCSource::c_FarField,
                                   MCSource::c_FarFieldGaussian);
@@ -1320,8 +1320,27 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg) == true) {
                 mdebug<<"Setting far field gaussian position theta="<<T->GetTokenAtAsDouble(3)
-                      <<", phi="<<T->GetTokenAtAsDouble(4)<<", sigma="<<T->GetTokenAtAsDouble(5)
-                      <<" for source "<<Source->GetName()<<endl;
+                <<", phi="<<T->GetTokenAtAsDouble(4)<<", radius="<<T->GetTokenAtAsDouble(5)
+                <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token \"Beam - far field disk\" correctly: Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token \"Beam - far field disk\" correctly: Number of tokens is not correct!");
+              return false;
+            }
+          } 
+          else if (Type == "farfieldgaussian" || Type == "ffg") {
+            if (T->GetNTokens() == 6) {
+              Source->SetBeamType(MCSource::c_FarField,
+                                  MCSource::c_FarFieldGaussian);
+              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
+                T->GetTokenAtAsDouble(4)*deg,
+                                      T->GetTokenAtAsDouble(5)*deg) == true) {
+                mdebug<<"Setting far field gaussian position theta="<<T->GetTokenAtAsDouble(3)
+                <<", phi="<<T->GetTokenAtAsDouble(4)<<", sigma="<<T->GetTokenAtAsDouble(5)
+                <<" for source "<<Source->GetName()<<endl;
               } else {
                 Typo(i, "Cannot parse token \"Beam - far field gaussian\" correctly: Content not reasonable");
                 return false;

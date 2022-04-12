@@ -67,6 +67,8 @@ class MFile
   //! Return true if the file is binary
   virtual bool IsBinary() { return m_IsBinary; }
   
+  //! Set the compression level
+  virtual void SetCompressionLevel(unsigned int CompressionLevel = 6);
   
   //! Return the file length on disk
   virtual streampos GetFileLength(bool Redetermine = false);
@@ -162,7 +164,7 @@ class MFile
   //! Sets the path of "Path" as new path to "FileName" IF FileName has a relative path
   static bool ApplyPath(MString& FileName, const MString& Path);
   //! Expand a file name e.g. $MEGALIB/src to /home/andreas/Software/MEGAlib/src
-  static void ExpandFileName(MString& FileName, const MString& WorkingDir = "");
+  static bool ExpandFileName(MString& FileName, const MString& WorkingDir = "");
   //! Make RelFileName relative to AbsFileName
   //! Relative: /home/andreas/Test/MyFile.tra
   //! Absolute: /home/andreas/MasterTest.tra
@@ -267,7 +269,10 @@ class MFile
   //! The length of the frquently used read-line buffer
   unsigned long m_ReadLineBufferLength;
 
-
+  //! Compression level (gzip: 1..9)
+  unsigned int m_CompressionLevel;
+  
+  
 #ifdef ___CLING___
  public:
   ClassDef(MFile, 0) // no description

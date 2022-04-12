@@ -903,6 +903,96 @@ bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MTokenizer::CheckAllMaths()
+{
+  //! Check all tokens if the maths is OK
+
+  for (unsigned int t = 0; t < GetNTokens(); ++t) {
+    if (CheckMaths(m_Tokens[t]) == false) {
+      return false; 
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MTokenizer::CheckMaths(const MString& Token) 
+{
+  //! Check all tokens if the maths is OK
+  
+  if (Token.BeginsWith("{") && Token.EndsWith("}")) {
+    // Remove all maths content
+    MString T = Token;
+    T.ToLowerInPlace();
+    T.RemoveInPlace(0, 1);
+    T.RemoveLastInPlace(1);
+    T.RemoveAllInPlace(" ");
+    T.RemoveAllInPlace("1");
+    T.RemoveAllInPlace("2");
+    T.RemoveAllInPlace("3");
+    T.RemoveAllInPlace("4");
+    T.RemoveAllInPlace("5");
+    T.RemoveAllInPlace("6");
+    T.RemoveAllInPlace("7");
+    T.RemoveAllInPlace("8");
+    T.RemoveAllInPlace("9");
+    T.RemoveAllInPlace("0");
+    T.RemoveAllInPlace("+");
+    T.RemoveAllInPlace("-");
+    T.RemoveAllInPlace("/");
+    T.RemoveAllInPlace("*");
+    T.RemoveAllInPlace("(");
+    T.RemoveAllInPlace(")");
+    T.RemoveAllInPlace("{");
+    T.RemoveAllInPlace("}");
+    T.RemoveAllInPlace(".");
+    T.RemoveAllInPlace(",");
+    T.RemoveAllInPlace(">");
+    T.RemoveAllInPlace("<");
+    T.RemoveAllInPlace("=");
+    T.RemoveAllInPlace("|");
+    T.RemoveAllInPlace("&");
+    T.RemoveAllInPlace("tmath::");
+    T.RemoveAllInPlace("sin");
+    T.RemoveAllInPlace("asin");
+    T.RemoveAllInPlace("cos");
+    T.RemoveAllInPlace("acos");
+    T.RemoveAllInPlace("tan");
+    T.RemoveAllInPlace("atan");
+    T.RemoveAllInPlace("sqrt");
+    T.RemoveAllInPlace("log");
+    T.RemoveAllInPlace("ln");
+    T.RemoveAllInPlace("exp");
+    T.RemoveAllInPlace("power");
+    T.RemoveAllInPlace("pow");
+    T.RemoveAllInPlace("radtodeg");
+    T.RemoveAllInPlace("degtorad");
+    T.RemoveAllInPlace("ceil");
+    T.RemoveAllInPlace("pi");
+    T.RemoveAllInPlace("max");
+    T.RemoveAllInPlace("min");
+    T.RemoveAllInPlace("sign");
+    T.RemoveAllInPlace("false");
+    T.RemoveAllInPlace("true");
+    T.RemoveAllInPlace("e");
+        
+    if (T != "") {
+      cout<<"MTokenizer::CheckMaths: Unidentifiable maths object: "<<T<<endl;
+      return false;
+    }
+  }
+  
+  return true;
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MTokenizer::IsMaths(const MString& Token)
 {
   // Test if Token is a math expression
@@ -946,7 +1036,7 @@ bool MTokenizer::EvaluateMaths(MString& Token)
 MString MTokenizer::ToString()
 {
   ostringstream out;
-
+  
   if (m_Tokens.size() > 0) {
     out<<"Tokenizer content ("<<m_Tokens.size()<<" Tokens):"<<endl;
     for (unsigned int i = 0; i < m_Tokens.size(); i++) {
@@ -955,8 +1045,28 @@ MString MTokenizer::ToString()
   } else {
     out<<"Tokenizer empty!"<<endl;
   }
+  
+  return MString(out.str());
+}
 
-  return out.str().c_str();
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MTokenizer::ToCompactString()
+{
+  if (m_Tokens.size() == 0) {
+    return MString("");
+  } else if (m_Tokens.size() == 1) {
+    return GetTokenAt(0);
+  } else {
+    ostringstream out;
+    for (unsigned int i = 0; i < m_Tokens.size()-1; i++) {
+      out<<GetTokenAt(i)<<" | ";
+    }
+    out<<GetTokenAt(m_Tokens.size()-1);
+    return MString(out.str());
+  }  
 }
 
 

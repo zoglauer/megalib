@@ -7,6 +7,15 @@
 
 
 
+Version 3.99/4.00
+=================
+
+Geomega:
++ Speed ups reading large files
++ Fixed if-statement evaluations
+
+
+
 Version 3.03/3.04
 =================
 

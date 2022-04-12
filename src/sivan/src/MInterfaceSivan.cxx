@@ -6283,5 +6283,132 @@ void MInterfaceSivan::IsotopeGeneration()
 }
   
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MInterfaceSivan::ActivationPerIncidenceEnergy()
+{
+  // Histogram parameters
+  int NBins = 60;
+  double MinEnergy = 0;
+  double MaxEnergy = 300000/c_MeV;
+
+
+  // Open the simulation file:
+  MFileEventsSim EventFile(m_Geometry);
+  if (EventFile.Open(m_Data->GetCurrentFileName()) == false) {
+    mgui<<"Unable to open file"<<error;
+    return;
+  }
+  EventFile.ShowProgress();
+
+  
+  // Create the history of particle energies creating new isotopes
+  map<int, vector<double>> IsotopeCountByEnergy;
+  map<int, vector<double>> StartCountByEnergy;
+  MSimEvent* Event = nullptr;
+  while ((Event = EventFile.GetNextEvent(false)) != 0) {
+    if (Event->GetNIAs() > 0) {
+      int StartParticleID = Event->GetIAAt(0)->GetSecondaryParticleID(); 
+      double StartParticleEnergy = Event->GetIAAt(0)->GetSecondaryEnergy();
+      StartCountByEnergy[StartParticleID].push_back(StartParticleEnergy);
+      
+      for (unsigned int i = 1; i < Event->GetNIAs(); ++i) {
+        int SecondaryParticleID = Event->GetIAAt(i)->GetSecondaryParticleID(); 
+        if (Event->GetIAAt(i)->GetProcess() != "DECA" && SecondaryParticleID > 1000) {
+          IsotopeCountByEnergy[StartParticleID].push_back(StartParticleEnergy); 
+        }
+      }
+    }
+    delete Event;
+  }
+  
+  // Now create the histograms
+  for (auto I = IsotopeCountByEnergy.begin(); I != IsotopeCountByEnergy.end(); ++I) {
+    int MotherParticleID = (*I).first;
+  
+    MString Title = "";
+    if (MotherParticleID == 4) {
+      Title += "Protons";
+    } else if (MotherParticleID == 6) {
+      Title += "Neutrons";
+    } else if (MotherParticleID == 1) {
+      Title += "Photons";
+    } else if (MotherParticleID == 18) {
+      Title += "Deuterons";
+    } else if (MotherParticleID == 19) {
+      Title += "Tritiums";
+    } else if (MotherParticleID == 20) {
+      Title += "He-3's";
+    } else if (MotherParticleID == 21) {
+      Title += "alphas";
+    } else {
+      Title += "Particle with ID ";
+      Title += MotherParticleID;
+    }
+  
+    TH1D* Started = new TH1D("", Title + ": Simulated particles", NBins, MinEnergy, MaxEnergy);
+    Started->SetXTitle("Energy [MeV]");
+    Started->SetYTitle("incident particles");
+    
+    for (auto E: StartCountByEnergy[(*I).first]) { 
+      Started->Fill(E/c_MeV, 1);
+    }
+
+    TH1D* Activations = new TH1D("", Title + ": Activations Per Energy Bin", NBins, MinEnergy, MaxEnergy);
+    Activations->SetXTitle("Energy [MeV]");
+    Activations->SetYTitle("activations/simulated particle/MeV");
+    
+    TH1D* ActivationsPerIncidenceParticle = new TH1D("", Title + ": Activations Per Simulated particle Per Energy Bin", NBins, MinEnergy, MaxEnergy);
+    ActivationsPerIncidenceParticle->SetXTitle("Energy [MeV]");
+    ActivationsPerIncidenceParticle->SetYTitle("activations/simulated particle/MeV");
+  
+    for (auto E: (*I).second) { 
+      ActivationsPerIncidenceParticle->Fill(E/c_MeV, 1);
+      Activations->Fill(E/c_MeV, 1);
+    }
+    
+    for (int bx = 1; bx <= Activations->GetNbinsX(); ++bx) {
+      double A = ActivationsPerIncidenceParticle->GetBinContent(bx);
+      double S = Started->GetBinContent(bx);
+      double W = ActivationsPerIncidenceParticle->GetBinWidth(bx);      
+      Activations->SetBinContent(bx, A/W);
+      Activations->SetBinError(bx, sqrt(A)/Activations->GetBinWidth(bx));
+      if (Started->GetBinContent(bx) > 0) {
+        ActivationsPerIncidenceParticle->SetBinContent(bx, A/S/W);
+        ActivationsPerIncidenceParticle->SetBinError(bx, sqrt((A*(A+S))/S/S/S)/W);
+      } else {
+        ActivationsPerIncidenceParticle->SetBinContent(bx, 0);
+        ActivationsPerIncidenceParticle->SetBinError(bx, 0);
+      }
+    }
+    
+    // Now draw:
+    TCanvas* StartedCanvas = new TCanvas();
+    StartedCanvas->cd();
+    Started->Draw();
+    StartedCanvas->Update(); 
+    
+    TCanvas* ActivationsCanvas = new TCanvas();
+    ActivationsCanvas->cd();
+    Activations->Draw();
+    ActivationsCanvas->Update(); 
+    
+    TCanvas* ActivationsPerIncidenceParticleCanvas = new TCanvas();
+    ActivationsPerIncidenceParticleCanvas->cd();
+    ActivationsPerIncidenceParticle->Draw();
+    ActivationsPerIncidenceParticleCanvas->Update(); 
+  }    
+  
+  cout<<endl;
+  cout<<"Caveats for activation per incidence energy plots:"<<endl;
+  cout<<"* The simulation must be done with StoreSimulationInfo all & StoreOnlyTriggeredEvents false"<<endl;
+  cout<<"* One of the normalizations is per simulated particle - some of them will not hit the detector at all"<<endl;
+  cout<<endl;
+  
+  return;
+}
+
+
 // MInterfaceSivan: the end...
 ////////////////////////////////////////////////////////////////////////////////

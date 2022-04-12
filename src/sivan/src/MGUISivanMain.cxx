@@ -111,6 +111,7 @@ void MGUISivanMain::Create()
   m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("Newly generated isotopes distribution", c_IsotopeGeneration);
   m_MenuAnalysis->AddEntry("Energy distribution by decayed isotope", c_EnergyPerNucleus);
+  m_MenuAnalysis->AddEntry("Activation per incidence energy", c_ActivationPerIncidenceEnergy);
   // m_MenuAnalysis->AddEntry("Charge sharing between voxels...", c_ChargeSharing);
   m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("Doppler broadening", c_DopplerARM);
@@ -322,7 +323,11 @@ bool MGUISivanMain::ProcessMessage(long Message, long Parameter1,
       case c_IsotopeGeneration:
         m_Interface->IsotopeGeneration();
         break;
-        
+
+      case c_ActivationPerIncidenceEnergy:
+        m_Interface->ActivationPerIncidenceEnergy();
+        break;
+      
       default:
         break;
       }

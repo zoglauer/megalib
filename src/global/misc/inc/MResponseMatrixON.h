@@ -20,6 +20,7 @@
 #include <iostream>
 #include <vector>
 #include <functional>
+#include <mutex>
 using namespace std;
 
 // MEGAlib libs:
@@ -217,6 +218,9 @@ class MResponseMatrixON : public MResponseMatrix
   //! Can throw: MExceptionValueOutOfBounds, MExceptionNeverReachThatLineOfCode
   MResponseMatrixAxis* GetAxisByOrder(unsigned int Order);
   
+  //! The thread entry point for parallelized sparse file reading
+  void SparseReadThreadEntry(unsigned int ThreadID, unsigned int Start, unsigned int Stop);
+
   
   // protected members:
  protected:
@@ -240,7 +244,19 @@ class MResponseMatrixON : public MResponseMatrix
   //! Axis values in sparse mode
   vector<unsigned long> m_BinsSparse;
 
-  
+  //! Indicator if the threads are running
+  vector<bool> m_ThreadRunning;
+  //! Thread parameter mutex
+  mutex m_ThreadMutex;
+  //! The lines to parse in parallel
+  vector<MString> m_ThreadLines;
+  //! Is the line data good
+  vector<bool> m_ThreadGoodData;
+  //! The temporarily stored extracted bin ID of the line
+  vector<unsigned long> m_ThreadBins;
+  //! The temporarily stored extracted value
+  vector<float> m_ThreadValues;
+
   // private members:
  private:
   friend ostream& operator<<(ostream& os, const MResponseMatrixON& R);

@@ -310,7 +310,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
         mlog<<Usage.str()<<endl;
         return false;       
       }
-      if (Name.EndsWith(".sim") == true) {
+      if (Name.EndsWith(".sim") == true || Name.EndsWith(".sim.gz") == true) {
         if (m_Mode == c_SimMode) {
           // Everything fine
         } else if (m_Mode == c_TraMode) {
@@ -321,7 +321,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
           m_Mode = c_SimMode;
         }
       }
-      if (Name.EndsWith(".tra") == true) {
+      if (Name.EndsWith(".tra") == true || Name.EndsWith(".tra.gz") == true) {
         if (m_Mode == c_TraMode) {
           // Everything fine
         } else if (m_Mode == c_SimMode) {

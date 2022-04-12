@@ -18,6 +18,7 @@ commandhelp() {
   echo "Options:"
   echo "  --directory=[directory name]: The directory where to store the data"
   echo "  --instances=[number]: The number of total expected sim files (may be larger than the instances)"
+  echo "  --parallel=[number]: The maximum number of parallel rsync's (default: 2)"
   echo "  --sleep=[seconds]: Sleep time between rsync loops (default: 20 seconds, max: 1000 seconds)"
   echo "  --help: Show this help."
   echo ""
@@ -43,17 +44,56 @@ sync() {
   for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
     #echo "psync: Checking ${RSYNCS[$m]}"
     if [[ ${RSYNCS[$m]} == rsync* ]]; then
-      # Wait until we have no more than 6 of our rsync processes running, otherwise our system might be slowed down too much
-      mwait -p="rsync -az --append-verify" -i=4
+      # Wait until we have no more than x of our rsync processes running, otherwise our system might be slowed down too much
+      mwait -q -p="rsync -az --append-verify" -i=$((${PARALLEL} + ${PARALLEL}))
       echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
-      eval ${RSYNCS[$m]}
+      eval ${RSYNCS[$m]} &
+      sleep 1
     elif [[ ${RSYNCS[$m]} == DONE ]]; then
       break
     else 
       echo "ERROR: Unknown rsync command: ${RSYNCS[$m]}"
     fi  
-  done  
+  done
+  
+  wait
 }
+
+# Delete sync'ed data
+delete() {
+  # Parse the configuration file
+  RSYNCS=( )
+  while read LINE; do
+    #echo "Line: ${LINE}"
+    RSYNCS[${#RSYNCS[*]}]=${LINE}
+  done < dcosima-rsync.cfg
+
+
+  # Replace "--append-verify" with "--remove-source-files --existing"
+  for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
+    RSYNCS[$m]=${RSYNCS[$m]/--append-verify/--remove-source-files --existing}
+  done
+
+  #echo "Found the following rsyncs: ${RSYNCS[@]}"
+
+  # Delete all existing data
+  for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
+    if [[ ${RSYNCS[$m]} == rsync* ]]; then
+      # Wait until we have no more than x of our rsync processes running, otherwise our system might be slowed down too much
+      mwait -q -p="rsync -az --remove-source-files" -i=$((${PARALLEL} + ${PARALLEL}))
+      echo "dcosima-rsync: Deleting: ${RSYNCS[$m]}"
+      eval ${RSYNCS[$m]} &
+      sleep 1
+    elif [[ ${RSYNCS[$m]} == DONE ]]; then
+      break
+    else 
+      echo "ERROR: Unknown rsync command: ${RSYNCS[$m]}"
+    fi  
+  done
+  
+  wait
+}
+
 
 
 # Store command line as array
@@ -73,6 +113,8 @@ done
 DIRECTORY=""
 INSTANCES=0
 SLEEP=20
+PARALLEL=3
+
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
@@ -82,6 +124,8 @@ for C in "${CMD[@]}"; do
     #DIRECTORY=$(readlink -f ${DIRECTORY})
   elif [[ ${C} == *-i*=* ]]; then
     INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-s*=* ]]; then
+    PARALLEL=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-s*=* ]]; then
     SLEEP=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
@@ -117,7 +161,16 @@ if [ ${INSTANCES} -ge 0 ]; then
   echo " * Simulations instances: ${INSTANCES}"
 else
   echo " "
-  echo "ERROR: You need to set a positive number of instances!"
+  echo "ERROR: You need to set a positive number of instances and not ${INSTANCES}!"
+  commandhelp
+  exit 1
+fi
+
+if [ ${PARALLEL} -ge 1 ]; then
+  echo " * Parallel rsync instances: ${PARALLEL}"
+else
+  echo " "
+  echo "ERROR: You need at least 1 parallel instance and not ${PARALLEL}!"
   commandhelp
   exit 1
 fi
@@ -138,6 +191,9 @@ MAXINITIALWAIT=300
 STARTLASTWAIT=${SECONDS}
 MAXLASTWAIT=120
 
+WAITDELETE=600
+LASTDELETE=$(( $(date +%s) - ${WAITDELETE} - 1 ))  # We always want to start with a delete in case we restart and have accumulated a alot
+
 
 echo ""
 echo "Starting..."
@@ -151,6 +207,7 @@ echo "Starting..."
 # E) Faulty simulation -- nothing will ever get simulated --> dcosima should do a test sim...
 # F) dcosima got aborted and we never get all sims --> dcosima must do a kill all, a last rsync, and a final clean
 # G) More than one sim file per cosima run --> dcosima must set the correct number of sim files 
+# H) We need to significantly wait between deletes to wait for slow simulations 
 
 
 KEEPGOING=true
@@ -170,6 +227,12 @@ while ${KEEPGOING}; do
   RUNNING=$(dcosima-listrunning | grep ${DIRECTORY} | awk '{ print $3 }');
   if [[ ${RUNNING} == "" ]]; then RUNNING=0; fi
   
+  # Check for delete
+  if (( $(date +%s) > $(( ${LASTDELETE} + ${WAITDELETE} )) )); then
+    delete
+    LASTDELETE=$(date +%s)
+  fi
+   
   # Do the sync
   sync
   

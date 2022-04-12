@@ -120,6 +120,8 @@ void MFile::Reset()
   m_IsOpen = false;
 
   m_IsBinary = false;
+
+  m_CompressionLevel = 9;
   
   // m_Progress = 0; // Already managed by initial close!
   m_ProgressLevel = 0;
@@ -167,6 +169,19 @@ int MFile::GetVersion() const
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MFile::SetCompressionLevel(unsigned int CompressionLevel)
+{
+  //! Set the compression level
+
+  m_CompressionLevel = CompressionLevel;
+  if (m_CompressionLevel < 1) m_CompressionLevel = 1;
+  if (m_CompressionLevel > 9) m_CompressionLevel = 9;
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -317,14 +332,14 @@ MString MFile::GetDirectoryName(const MString& Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MFile::ExpandFileName(MString& FileName, const MString& WorkingDir)
+bool MFile::ExpandFileName(MString& FileName, const MString& WorkingDir)
 {
   // Just in case: Expand file name:
 
   // We have to switch to TString...
   TString Name(FileName.Data());
-  gSystem->ExpandPathName(Name);
-  gSystem->ExpandPathName(Name);
+  if (gSystem->ExpandPathName(Name) == true) return false; // ExpandPathName returns true in case of error
+  if (gSystem->ExpandPathName(Name) == true) return false;
   FileName = Name;
 
   // On Unix system we start always with a "/", on windows we have a : before the first "/" or "\"
@@ -336,6 +351,7 @@ void MFile::ExpandFileName(MString& FileName, const MString& WorkingDir)
       FileName = GetDirectoryName(WorkingDir) + "/" + FileName;
     }
   }
+  return true;
 }
 
 
@@ -387,7 +403,7 @@ bool MFile::Open(MString FileName, unsigned int Way, bool IsBinary)
     if (Way == c_Read) {
       m_ZipFile = gzopen(m_FileName, "rb");
     } else {
-      m_ZipFile = gzopen(m_FileName, "wb9"); // Maxmimum compression level is OK, since it is negligible compared to data analysis
+      m_ZipFile = gzopen(m_FileName, MString("wb") + m_CompressionLevel); // Maxmimum compression level is OK, since it is negligible compared to data analysis
     }
     if (m_ZipFile == NULL) {
       mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;

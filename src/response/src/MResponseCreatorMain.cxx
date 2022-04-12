@@ -86,7 +86,7 @@ int main(int argc, char** argv)
 
   g_Prg = new MResponseCreator();
   if (g_Prg->ParseCommandLine(argc, argv) == false) {
-    return 0;
+    return 1;
   } 
 
   return 0;
