@@ -7,6 +7,21 @@
 
 
 
+Version 3.05/3.06
+=================
+
+This is the last version of MEGAlib v3.
+Only critical bug fixes and compatibility fixes will be included.
+
+Master from now on contains the alpha version for MEGAlib v4. 
+
+General:
++ Default ROOT is 6.24
++ Compatibility with Apple M1
++ Compatibility with Ubuntu 22.04
+
+
+
 Version 3.03/3.04
 =================
 
