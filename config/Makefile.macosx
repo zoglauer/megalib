@@ -33,6 +33,7 @@ LINK          = ln -s -f
 
 # Modifications for MacPorts on Monterey
 ifneq ($(wildcard /opt/local/lib/libgcc),)
-LDFLAGS      += -L/opt/local/lib/libgcc
+LDFLAGS      += -L/opt/local/lib -L/opt/local/lib/libgcc
+CXXFLAGS     += -I/opt/local/include
 endif
 
