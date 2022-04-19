@@ -78,7 +78,7 @@ clean:
 $(FITS): $(BN)/%: %.cxx
 ifeq "$(strip $(HEASOFTINSTALLED))" "0"
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	$(LD) $(LDFLAGS) $(CXXFLAGS) $(DEFINES) $< $(MLIBS) -lcfitsio -lm $(GLIBS) $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(CXXFLAGS) $(HEACFLAGS) $(DEFINES) $< $(MLIBS) -lcfitsio -lm $(GLIBS) $(LIBS) $(HEALIBS) -o $@
 endif
 
 $(MPI): $(BN)/%: %.cxx

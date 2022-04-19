@@ -29,3 +29,12 @@ GLIBS         = $(ROOTGLIBS)
 DEPFLAGS      = -MM
 
 LINK          = ln -s -f
+
+# HEASoft
+HEACFLAGS     = 
+HEALIBS       =
+ifneq ("$(wildcard $(LHEASOFT)/include/cfitsio.h)", "")
+	HEACFLAGS += -I$(LHEASOFT)/include
+	HEALIBS += -L$(LHEASOFT)/lib 
+endif
+

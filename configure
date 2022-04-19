@@ -340,9 +340,10 @@ else
   fi; 
 fi
 
-# Check for path to HEAsoft
+
+# Check for path to cfitsio library
 echo ""
-echo "(d) HEAsoft (optional)"
+echo "(d) cfitsio library (optional)"
 echo ""
 
 FitsIOFound=1
@@ -350,7 +351,12 @@ locate libcfitsio &> /dev/null
 if [[ "$?" == "0" ]]; then
   echo "Found cfitsio";
   FitsIOFound=0
-else
+elif [[ ${LHEASOFT} != "" ]] && ( [[ -f ${LHEASOFT}/lib/libcfitsio.a ]] || [[ -f ${LHEASOFT}/lib/libcfitsio.so ]] ); then 
+  echo "Found cfitsio library";
+  FitsIOFound=0  
+fi
+
+if [ ${FitsIOFound} == 1 ]; then
   echo "cfitsio not found"
   echo ""
   echo "-> cfitsio is only required if you want to read / write fits files.";
