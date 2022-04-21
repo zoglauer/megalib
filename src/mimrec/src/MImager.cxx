@@ -474,10 +474,11 @@ bool MImager::SetExposureEfficiencyFile(MString FileName)
 {
   // Set the exposure mode efficiency file
 
-  if (m_Exposure->SetEfficiencyFile(FileName) == false) return false;
+  MEfficiency* E = new MEfficiency();
+  if (E->Load(FileName) == false) return false;
 
   for (unsigned int t = 0; t < m_NThreads; ++t) {
-    m_BPs[t]->SetEfficiency(m_Exposure->GetEfficiency());
+    m_BPs[t]->SetEfficiency(E);
   }
 
   return true;
@@ -831,6 +832,20 @@ bool MImager::Analyze(bool CalculateResponse)
 {
   // Do the imaging
 
+  // Hack load efficiency:
+  MEfficiency* Efficiency = new MEfficiency();
+  Efficiency->Load("/volumes/mobius/users/andreas/MediMax/MediMax_ID20998783616038/MediMaxResponse.listmoderesponsenearfield.emittedxdetectedy.rsp.gz");
+  cout<<"A"<<endl;
+  for (unsigned int t = 0; t < m_NThreads; ++t) {
+    m_BPs[t]->SetEfficiency(Efficiency);
+  }
+  cout<<"B"<<endl;
+  //m_Exposure = new MExposure();
+  cout<<"C"<<endl;
+  m_Exposure->Load("/volumes/mobius/users/andreas/MediMax/MediMax_ID20998783616038/MediMaxResponse.listmoderesponsenearfield.emittedxdetectedanywhere.rsp.gz");
+  cout<<"D"<<endl;
+
+  
   if (m_AnimationMode == c_AnimateBackprojections) {
     CalculateResponse = true;
   }

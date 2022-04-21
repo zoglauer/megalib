@@ -25,7 +25,7 @@
 #include "MString.h"
 #include "MRotation.h"
 #include "MResponseMatrixO2.h"
-#include "MResponseMatrixO4.h"
+#include "MResponseMatrixON.h"
 
 // Forward declarations:
 
@@ -55,7 +55,7 @@ class MEfficiency
 
   //! Get the data in near field coordinates
   //! If no efficiency file has been loaded, return 1
-  double GetNearField(double x, double y, double z, bool Interpolate = true);
+  double GetNearField(double x, double y, double z, double x_fc, double y_fc, double z_fc, bool Interpolate = true);
 
 
   // protected methods:
@@ -89,7 +89,7 @@ class MEfficiency
   MRotation m_EfficiencyRotation;
 
   //! The efficiency in near field coordinates
-  MResponseMatrixO4 m_EfficiencyNearField;
+  MResponseMatrixON m_EfficiencyNearField;
 
   //! The simulation start area for mode: CalculateFromEfficiency
   double m_EfficiencyStartArea;

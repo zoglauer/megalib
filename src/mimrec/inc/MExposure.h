@@ -26,6 +26,7 @@
 #include "MExposureMode.h"
 #include "MResponseMatrixO2.h"
 #include "MResponseMatrixO4.h"
+#include "MResponseMatrixON.h"
 #include "MPhysicalEvent.h"
 
 // Forward declarations:
@@ -34,6 +35,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Exposure entails the probability that an event emitted in the given 
+//! viewport bin is detected anywhere
 class MExposure : public MViewPort
 {
   // public interface:
@@ -46,11 +49,8 @@ class MExposure : public MViewPort
   //! Get the current exposure mode
   MExposureMode GetMode() { return m_Mode; }
 
-  //! Set the efficiency file and switch to that mode
-  bool SetEfficiencyFile(MString EfficiencyFile);
-
-  //! Return the efficiency - might be nullptr if not-existent/loaded
-  MEfficiency* GetEfficiency() { return m_Efficiency; }
+  //! Set the exposure file and switch to that mode
+  bool Load(MString EfficiencyFile);
 
   //! Set the viewport / image dimensions
   virtual bool SetDimensions(double xMin, double xMax, unsigned int xNBins,
@@ -74,6 +74,12 @@ class MExposure : public MViewPort
   //! The value is just the largest difference between the axis vectors
   double DistanceMetric(const MRotation& A, const MRotation& B);
 
+  //! Load the near-field file
+  bool LoadNearField(MString EfficiencyFile);
+  //! Load the far-field file
+  bool LoadFarField(MString EfficiencyFile);
+  
+  
   // private methods:
  private:
 
@@ -87,6 +93,12 @@ class MExposure : public MViewPort
  private:
   //! The exposure mode
   MExposureMode m_Mode;
+
+  //! Flag indicating that the efficiency file has been loaded succesfully
+  bool m_IsLoaded;
+
+  //! Flag indicating that the loaded file is far-field od near-field
+  bool m_IsFarField;
 
   //! The exposure image
   double* m_Exposure;
@@ -111,6 +123,8 @@ class MExposure : public MViewPort
 
   // Mode: Calculated by efficiency
 
+  MResponseMatrixON m_ExposureNearField;
+  
   //! The efficiency
   MEfficiency* m_Efficiency;
 

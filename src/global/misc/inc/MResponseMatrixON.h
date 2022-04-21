@@ -134,17 +134,29 @@ class MResponseMatrixON : public MResponseMatrix
   //! Find the bin and set the value
   //! Throws exception MExceptionTestFailed
   void Set(vector<double> AxisValues, float Value = 1);
+    
+  //! Add to the content of a specific bin -- directly without error checks
+  //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
+  void Add(unsigned long Bin, float Value = 1);
+  //! Add a collection of bin values
+  void Add(vector<unsigned long> Bins, vector<float> Values);
   //! Find the bin and add the value
   //! Throws exception MExceptionTestFailed
   void Add(vector<unsigned long> AxisValues, float Value = 1);
   //! Find the bin and add the value
   //! Throws exception MExceptionTestFailed
   void Add(vector<double> AxisValues, float Value = 1);
-  //! Add to the content of a specific bin -- directly without error checks
+
+  //! Multiply with the content of a specific bin -- directly without error checks
   //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
-  void Add(unsigned long Bin, float Value = 1);
-  //! Add a collection of bin values
-  void Add(vector<unsigned long> Bins, vector<float> Values);
+  void Multiply(unsigned long Bin, float Value = 1);
+  //! Find the bin and multiply with the value
+  //! Throws exception MExceptionTestFailed
+  void Multiply(vector<unsigned long> AxisValues, float Value = 1);
+  //! Find the bin and multiply with the value
+  //! Throws exception MExceptionTestFailed
+  void Multiply(vector<double> AxisValues, float Value = 1);
+
   
   // Specific for sparse
   

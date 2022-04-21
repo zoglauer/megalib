@@ -6224,7 +6224,7 @@ void MInterfaceMimrec::CreateExposureMap()
   if (InitializeEventLoader() == false) return;
   
   MExposure Exposure;
-  if (Exposure.SetEfficiencyFile(m_Settings->GetExposureEfficiencyFile()) == false) {
+  if (Exposure.Load(m_Settings->GetExposureEfficiencyFile()) == false) {
     mgui<<"ERROR: Unable to load exposure efficiency file: \""<<m_Settings->GetExposureEfficiencyFile()<<"\""<<show;
     return;    
   }

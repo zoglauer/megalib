@@ -24,6 +24,8 @@
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MStreams.h"
+#include "MTimer.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,12 +66,12 @@ bool MEfficiency::Load(MString EfficiencyFile)
       EfficiencyFile.EndsWith(".efficiency.90y.rsp.gz") == true) {
     return LoadFarField(EfficiencyFile);
   }
-  else if (EfficiencyFile.EndsWith(".efficiencynearfield.rsp") == true ||
-      EfficiencyFile.EndsWith(".efficiencynearfield.rsp.gz") == true) {
+  else if (EfficiencyFile.EndsWith(".emittedxdetectedy.rsp") == true ||
+      EfficiencyFile.EndsWith(".emittedxdetectedy.rsp.gz") == true) {
     return LoadNearField(EfficiencyFile);
   }
 
-  cout<<"Error: File is not of type .efficiency. or of type .efficiencyfarfield.: \""<<EfficiencyFile<<"\""<<endl;
+  cout<<"Error: File is not of type .efficiency. or of type .emittedxdetectedy.: \""<<EfficiencyFile<<"\""<<endl;
   return false;
 }
 
@@ -118,6 +120,8 @@ bool MEfficiency::LoadFarField(MString EfficiencyFile)
 //! Set the efficiency file and switch to that mode
 bool MEfficiency::LoadNearField(MString EfficiencyFile)
 {
+  mout<<"Loading the efficiency file .. that may take a while..."<<endl;
+    
   m_IsLoaded = false;
 
   m_EfficiencyNearField.Read(EfficiencyFile);
@@ -126,35 +130,98 @@ bool MEfficiency::LoadNearField(MString EfficiencyFile)
   m_EfficiencyStartArea = m_EfficiencyNearField.GetFarFieldStartArea();
   m_EfficiencySimulatedEvents = m_EfficiencyNearField.GetSimulatedEvents();
 
+  MTimer Timer;
+  m_EfficiencyNearField.SwitchToNonSparse();
+  mout<<"Switching to non-sparse matrix done in "<<Timer.GetElapsed()<<" sec "<<endl;
+  
   // Normalize
+  mout<<"Normalizing the efficiency file .. that may take a while..."<<endl;
+  Timer.Reset();
 
   // The full area:
   double FullArea =
-    (m_EfficiencyNearField.GetAxisLowEdge(0, 1) - m_EfficiencyNearField.GetAxisHighEdge(m_EfficiencyNearField.GetAxisBins(1) - 1, 1)) *
-    (m_EfficiencyNearField.GetAxisLowEdge(0, 2) - m_EfficiencyNearField.GetAxisHighEdge(m_EfficiencyNearField.GetAxisBins(2) - 1, 2)) *
-    (m_EfficiencyNearField.GetAxisLowEdge(0, 3) - m_EfficiencyNearField.GetAxisHighEdge(m_EfficiencyNearField.GetAxisBins(3) - 1, 3));
+    (m_EfficiencyNearField.GetAxis(0).GetMinima()[0] - m_EfficiencyNearField.GetAxis(0).GetMaxima()[0]) *
+    (m_EfficiencyNearField.GetAxis(1).GetMinima()[0] - m_EfficiencyNearField.GetAxis(1).GetMaxima()[0]) *
+    (m_EfficiencyNearField.GetAxis(2).GetMinima()[0] - m_EfficiencyNearField.GetAxis(2).GetMaxima()[0]);
 
-  for (unsigned int x = 0; x < m_EfficiencyNearField.GetAxisBins(1); ++x) {
-    for (unsigned int y = 0; y < m_EfficiencyNearField.GetAxisBins(2); ++y) {
-      for (unsigned int z = 0; z < m_EfficiencyNearField.GetAxisBins(3); ++z) {
-
+    
+  vector<double> xAxisEdges = m_EfficiencyNearField.GetAxis(0).Get1DBinEdges();
+  vector<double> yAxisEdges = m_EfficiencyNearField.GetAxis(1).Get1DBinEdges();
+  vector<double> zAxisEdges = m_EfficiencyNearField.GetAxis(2).Get1DBinEdges();
+  vector<double> EAxisEdges = m_EfficiencyNearField.GetAxis(3).Get1DBinEdges();
+    
+  vector<double> x2AxisEdges = m_EfficiencyNearField.GetAxis(4).Get1DBinEdges();
+  vector<double> y2AxisEdges = m_EfficiencyNearField.GetAxis(5).Get1DBinEdges();
+  vector<double> z2AxisEdges = m_EfficiencyNearField.GetAxis(6).Get1DBinEdges();
+  vector<double> E2AxisEdges = m_EfficiencyNearField.GetAxis(7).Get1DBinEdges();
+  
+  unsigned long xBins = m_EfficiencyNearField.GetAxis(0).GetNumberOfBins();
+  unsigned long yBins = m_EfficiencyNearField.GetAxis(1).GetNumberOfBins();
+  unsigned long zBins = m_EfficiencyNearField.GetAxis(2).GetNumberOfBins();
+  unsigned long EBins = m_EfficiencyNearField.GetAxis(3).GetNumberOfBins();
+  unsigned long x2Bins = m_EfficiencyNearField.GetAxis(4).GetNumberOfBins();
+  unsigned long y2Bins = m_EfficiencyNearField.GetAxis(5).GetNumberOfBins();
+  unsigned long z2Bins = m_EfficiencyNearField.GetAxis(6).GetNumberOfBins();
+  unsigned long E2Bins = m_EfficiencyNearField.GetAxis(7).GetNumberOfBins();
+  
+  unsigned long M1 = 1;
+  unsigned long M2 = M1*xBins;
+  unsigned long M3 = M2*yBins;
+  unsigned long M4 = M3*zBins;
+  unsigned long M5 = M4*EBins;
+  unsigned long M6 = M5*x2Bins;
+  unsigned long M7 = M6*y2Bins;
+  unsigned long M8 = M7*z2Bins;
+  
+  for (unsigned int x = 0; x < xBins; ++x) {
+    cout<<"x:"<<x<<endl;
+    unsigned long B1 = M1*x;
+    for (unsigned int y = 0; y < yBins; ++y) {
+      //cout<<"y:"<<y<<endl;
+      unsigned long B2 = B1 + M2*y;
+      for (unsigned int z = 0; z < zBins; ++z) {
+        //cout<<"z:"<<z<<endl;
+        unsigned long B3 = B2 + M3*z;
+        
         double Area =
-          (m_EfficiencyNearField.GetAxisLowEdge(x, 1) - m_EfficiencyNearField.GetAxisHighEdge(x, 1)) *
-          (m_EfficiencyNearField.GetAxisLowEdge(y, 2) - m_EfficiencyNearField.GetAxisHighEdge(y, 2)) *
-          (m_EfficiencyNearField.GetAxisLowEdge(z, 3) - m_EfficiencyNearField.GetAxisHighEdge(z, 3));
+          (xAxisEdges[x+1] - xAxisEdges[x]) *
+          (yAxisEdges[y+1] - yAxisEdges[y]) *
+          (zAxisEdges[z+1] - zAxisEdges[z]);
 
         // (2) Calculate the effective area
         long StartedPhotons = m_EfficiencySimulatedEvents * Area / FullArea;
-
-        m_EfficiencyNearField.SetBinContent(x, y, z, 0, m_EfficiencyNearField.GetBinContent(x, y, z, 0) / StartedPhotons);
+ 
+        double Normalizer = 1.0 / StartedPhotons;
+        
+        for (unsigned int e = 0; e < EBins; ++e) {
+          unsigned long B4 = B3 + M4*e;
+          for (unsigned int x2 = 0; x2 < x2Bins; ++x2) {
+            unsigned long B5 = B4 + M5*x2;
+            for (unsigned int y2 = 0; y2 < y2Bins; ++y2) {
+              unsigned long B6 = B5 + M6*y2;
+              for (unsigned int z2 = 0; z2 < z2Bins; ++z2) {
+                unsigned long B7 = B6 + M7*z2;
+                for (unsigned int e2 = 0; e2 < E2Bins; ++e2) {
+                  unsigned long B8 = B7 + M8*e2;
+                  m_EfficiencyNearField.Multiply(B8, Normalizer);
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
+
+  
+  
   //m_EfficiencyNearField.Show(MResponseMatrix::c_ShowX, 0, MResponseMatrix::c_ShowY, 511);
   //m_EfficiencyNearField.Show(MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY, 10, 511);
 
   m_IsLoaded = true;
   m_IsFarField = false;
+
+  mout<<"Normalizig the efficiency file .. DONE... after "<<Timer.GetElapsed()<<" sec"<<endl;
 
   return true;
 }
@@ -197,7 +264,7 @@ double MEfficiency::Get(double Theta, double Phi, bool Interpolate)
 
 
 //! Get the efficiency - theta and phi are in detector coordinates
-double MEfficiency::GetNearField(double x, double y, double z, bool Interpolate)
+double MEfficiency::GetNearField(double x, double y, double z, double x_fc, double y_fc, double z_fc, bool Interpolate)
 {
   if (m_IsLoaded == false) return 1;
   if (m_IsFarField == true) return 1;
@@ -206,9 +273,9 @@ double MEfficiency::GetNearField(double x, double y, double z, bool Interpolate)
   // Get the efficiency value
   double EfficiencyValue = 1;
   if (Interpolate == true) {
-    EfficiencyValue = m_EfficiencyNearField.GetInterpolated(x, y, z, 1000);
+    EfficiencyValue = m_EfficiencyNearField.GetInterpolated(vector<double>{ x, y, z, 511, x_fc, y_fc, z_fc, 511 });
   } else {
-    EfficiencyValue = m_EfficiencyNearField.Get(x, y, z, 1000);
+    EfficiencyValue = m_EfficiencyNearField.Get(vector<double>{ x, y, z, 511, x_fc, y_fc, z_fc, 511 });
   }
 
   if (std::isnan(EfficiencyValue)) {

@@ -127,20 +127,90 @@ double* MExposure::GetExposure()
 
 
 //! Set the efficiency file and switch to that mode
-bool MExposure::SetEfficiencyFile(MString EfficiencyFile)
+bool MExposure::Load(MString ExposureFile)
 {
-  delete m_Efficiency;
-  m_Efficiency = new MEfficiency();
-  if (m_Efficiency->Load(EfficiencyFile) == false) return false;
-
-  if (m_Efficiency->IsFarField() == true) {
+  if (ExposureFile.EndsWith(".efficiency.90y.rsp") == true ||
+      ExposureFile.EndsWith(".efficiency.90y.rsp.gz") == true) {
     m_Mode = MExposureMode::CalculateFromEfficiencyFarFieldMoving;
-  } else {
-    m_Mode = MExposureMode::CalculateFromEfficiencyNearFieldStatic;
+    return LoadFarField(ExposureFile);
   }
+  else if (ExposureFile.EndsWith(".emittedxdetectedanywhere.rsp") == true ||
+      ExposureFile.EndsWith(".emittedxdetectedanywhere.rsp.gz") == true) {
+    m_Mode = MExposureMode::CalculateFromEfficiencyNearFieldStatic;
+    return LoadNearField(ExposureFile);
+  }
+
+  cout<<"Error: File is not of type .efficiency. or of type .emittedxdetectedanywhere.: \""<<ExposureFile<<"\""<<endl;
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the efficiency file and switch to that mode
+bool MExposure::LoadFarField(MString ExposureFile)
+{
+  m_IsLoaded = false;
+  m_IsFarField = true;
+
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the efficiency file and switch to that mode
+bool MExposure::LoadNearField(MString ExposureFile)
+{
+  m_IsLoaded = false;
+
+  m_ExposureNearField.Read(ExposureFile);
+
+  //double StartArea = m_ExposureNearField.GetFarFieldStartArea();
+  long SimulatedEvents = m_ExposureNearField.GetSimulatedEvents();
+
+  // Normalize
+
+  // The full area:
+  double FullArea =
+    (m_ExposureNearField.GetAxis(0).GetMinima()[0] - m_ExposureNearField.GetAxis(0).GetMaxima()[0]) *
+    (m_ExposureNearField.GetAxis(1).GetMinima()[0] - m_ExposureNearField.GetAxis(1).GetMaxima()[0]) *
+    (m_ExposureNearField.GetAxis(2).GetMinima()[0] - m_ExposureNearField.GetAxis(2).GetMaxima()[0]);
+
+    
+  vector<double> xAxisEdges = m_ExposureNearField.GetAxis(0).Get1DBinEdges();
+  vector<double> yAxisEdges = m_ExposureNearField.GetAxis(1).Get1DBinEdges();
+  vector<double> zAxisEdges = m_ExposureNearField.GetAxis(2).Get1DBinEdges();
+  vector<double> EAxisEdges = m_ExposureNearField.GetAxis(3).Get1DBinEdges();
+
+    
+  for (unsigned int x = 0; x < xAxisEdges.size()-1; ++x) {
+    for (unsigned int y = 0; y < yAxisEdges.size()-1; ++y) {
+      for (unsigned int z = 0; z < zAxisEdges.size()-1; ++z) {
+
+        double Area = (xAxisEdges[x+1] - xAxisEdges[x]) * (yAxisEdges[y+1] - yAxisEdges[y]) * (zAxisEdges[z+1] - zAxisEdges[z]);
+
+        // (2) Calculate the effective area
+        long StartedPhotons = SimulatedEvents * Area / FullArea;
+  
+        
+        for (unsigned int e = 0; e < EAxisEdges.size()-1; ++e) {
+          m_ExposureNearField.Set(vector<unsigned long>{x, y, z, e}, m_ExposureNearField.Get(vector<unsigned long>{x, y, z, e}) / StartedPhotons);
+        }
+      }
+    }
+  }
+  //m_EfficiencyNearField.Show(MResponseMatrix::c_ShowX, 0, MResponseMatrix::c_ShowY, 511);
+  //m_EfficiencyNearField.Show(MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY, 10, 511);
+
+  m_IsLoaded = true;
+  m_IsFarField = false;
 
   return true;
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -246,10 +316,11 @@ bool MExposure::ApplyExposure()
           index = x1 + x2*m_x1NBins + x3*m_x1NBins*m_x2NBins;
 
           // Rotate the bin center vectors into detector coordinates
+          cout<<"Index: "<<index<<":"<<m_NImageBins<<endl;
           MVector D = /*Inv*/m_BinCenterVectorsNearField[index];
 
           // Get the efficiency value
-          double EfficiencyValue = m_Efficiency->GetNearField(D.X(), D.Y(), D.Z());
+          double EfficiencyValue = m_ExposureNearField.Get(vector<double>{D.X(), D.Y(), D.Z(), 511});
 
           if (std::isnan(EfficiencyValue)) {
             cout<<"NaN!"<<endl;

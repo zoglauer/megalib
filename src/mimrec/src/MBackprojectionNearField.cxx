@@ -378,21 +378,21 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
     InnerSum = 0.0;
     for (int i = 0; i < NUsedBins; ++i) {
       int xBin = Bins[i] % m_x1NBins;
-      int yBin = ((Bins[i] - xBin) / m_x1NBins) % m_x1NBins;
+      int yBin = ((Bins[i] - xBin) / m_x1NBins) % m_x2NBins;
       int zBin = (Bins[i] - xBin - m_x1NBins*yBin) / (m_x1NBins*m_x2NBins);
 
       double x = m_x1BinCenter[xBin];
-      double y = m_x1BinCenter[yBin];
-      double z = m_x1BinCenter[zBin];
+      double y = m_x2BinCenter[yBin];
+      double z = m_x3BinCenter[zBin];
 
       //RotateImagingSystemDetectorSystem(x, y, z);
       MVector D(x, y, z);
 
       double Efficiency = 0.0;
       if (m_ApproximatedMaths == false) {
-        Efficiency = m_Efficiency->GetNearField(x, y, z);
+        Efficiency = m_Efficiency->GetNearField(x, y, z, xCC, yCC, zCC);
       } else {
-        Efficiency = m_Efficiency->GetNearField(x, y, z);
+        Efficiency = m_Efficiency->GetNearField(x, y, z, xCC, yCC, zCC);
       }
       Image[i] *= Efficiency;
       InnerSum += Image[i];

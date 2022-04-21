@@ -737,8 +737,10 @@ void MResponseMatrixON::Set(unsigned long Bin, float Value)
     if (IterBins != m_BinsSparse.cend() && *IterBins == Bin) {
       (*IterValues) = Value;
     } else {
-      m_BinsSparse.insert(IterBins, Bin);
-      m_ValuesSparse.insert(IterValues, Value);
+      if (Value != 0) { // no need to insert 0's
+        m_BinsSparse.insert(IterBins, Bin);
+        m_ValuesSparse.insert(IterValues, Value);
+      }
     }
   }
 }
@@ -825,6 +827,75 @@ void MResponseMatrixON::Add(vector<unsigned long> Bins, vector<float> Values)
   
   for (unsigned int e = 0; e < Bins.size(); ++e) {
     Add(Bins[e], Values[e]);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseMatrixON::Multiply(vector<unsigned long> X, float Value)
+{
+  // Multiply a value to the bin closest to x, y
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
+  if (InRange(X) == false) {
+    return;
+  }
+  
+  unsigned long Bin = FindBin(X);
+
+  Multiply(Bin, Value);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseMatrixON::Multiply(vector<double> X, float Value)
+{
+  // Multiply a value to the bin closest to x, y
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
+  if (InRange(X) == false) {
+    return;
+  }
+  
+  unsigned long Bin = FindBin(X);
+
+  Multiply(Bin, Value);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Multiply with the content of a specific bin -- directly without error checks
+//! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
+void MResponseMatrixON::Multiply(unsigned long Bin, float Value) 
+{ 
+  if (m_IsSparse == false) {
+    m_Values[Bin] *= Value;
+  } else {
+    // Find the position in the sparse array which is greater or equal to Bin
+    auto IterBins = lower_bound(m_BinsSparse.begin(), m_BinsSparse.end(), Bin);
+    // Find the same position in the values vector
+    auto IterValues = m_ValuesSparse.begin();
+    advance(IterValues, distance(m_BinsSparse.begin(), IterBins));
+    
+    // If we have already an entry add, otherwise insert another entry sorted.
+    if (IterBins != m_BinsSparse.cend() && *IterBins == Bin) {
+      (*IterValues) += Value;
+    } else {
+      m_BinsSparse.insert(IterBins, Bin);
+      m_ValuesSparse.insert(IterValues, 0);
+    }
   }
 }
 
@@ -929,7 +1000,7 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
     return 0;
   }
 
-  mout<<"Interpolation not implemented!"<<endl;
+  mimp<<"Interpolation not implemented!"<<endl;
 
   return Get(FindBin(X));
 
