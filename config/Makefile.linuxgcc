@@ -36,5 +36,8 @@ HEALIBS       =
 ifneq ("$(wildcard $(LHEASOFT)/include/cfitsio.h)", "")
 	HEACFLAGS += -I$(LHEASOFT)/include
 	HEALIBS += -L$(LHEASOFT)/lib 
+else ifeq ("$(shell pkg-config --exists cfitsio 1>&2 2> /dev/null; echo $$?)", "0")
+        HEACFLAGS += $(shell pkg-config --cflags cfitsio)
+        HEALIBS += $(shell pkg-config --libs cfitsio)
 endif
 
