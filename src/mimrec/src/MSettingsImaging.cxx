@@ -76,8 +76,8 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_ThetaMax = 180;
   m_PhiMin = -180;
   m_PhiMax = 180;
-  m_BinsTheta = 40;
-  m_BinsPhi = 80;
+  m_BinsTheta = 90;
+  m_BinsPhi = 180;
 
   // Dimensions galactic
   m_GalLatitudeMin = 80;
@@ -100,7 +100,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
 
   // Image drawing options
   m_ImageDrawMode = 0;
-  m_ImagePalette = 0;
+  m_ImagePalette = 12; // Viridis
   m_ImageSourceCatalog = "";
   m_ImageProjection = MImageProjection::c_None;
 

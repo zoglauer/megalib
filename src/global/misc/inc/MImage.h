@@ -53,7 +53,7 @@ class MImage
   //! Standard constructor
   MImage(MString Title, double* IA, 
          MString xTitle, double xMin, double xMax, int xNBins,
-         MString vTitle = "", int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
+         MString vTitle = "", int Spectrum = c_Viridis, int DrawOption = c_COLCONT4Z);
   //! Standard destructor
   virtual ~MImage();
 

@@ -35,7 +35,7 @@ class MImage2DUpdate : public MImage2D
   MImage2DUpdate(MString Title, double *IA, int NEntries, 
                  MString xTitle, double xMin, double xMax, int xNBins, 
                  MString yTitle, double yMin, double yMax, int yNBins, 
-                 int Spectrum = c_Incendescent, int DrawOption = c_COLCONT4Z);
+                 int Spectrum = c_Viridis, int DrawOption = c_COLCONT4Z);
   virtual ~MImage2DUpdate();
 
   //! Clone this image
