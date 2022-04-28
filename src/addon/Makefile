@@ -40,7 +40,8 @@ PRGSX = \
 FITS = \
 	$(BN)/TraFitsConverter \
 	$(BN)/ConvertMGGPOD \
-
+	$(BN)/ResponseToXSPEC \
+	
 MPI = $(BN)/bundler
 
 
