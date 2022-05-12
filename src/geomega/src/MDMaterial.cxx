@@ -80,6 +80,7 @@ MDMaterial::MDMaterial()
   m_RadiationLength = g_DoubleNotDefined;
 
   m_CrossSectionsPresent = false;
+  m_DefaultCrossSectionFileDirectory = g_StringNotDefined;
   m_CrossSectionFileDirectory = g_StringNotDefined;
 
   m_Hash = 0;
@@ -343,6 +344,24 @@ bool MDMaterial::SetComponentByMassWeighting(MString Name, double Weighting)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MDMaterial::SetDefaultCrossSectionFileDirectory(MString Directory)
+{
+  m_DefaultCrossSectionFileDirectory = Directory;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDMaterial::GetDefaultCrossSectionFileDirectory() const
+{
+  return m_DefaultCrossSectionFileDirectory;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MDMaterial::SetCrossSectionFileDirectory(MString Directory)
 {
   m_CrossSectionFileDirectory = Directory;
@@ -565,6 +584,10 @@ bool MDMaterial::Validate()
     }
   }
 
+  if (m_DefaultCrossSectionFileDirectory == g_StringNotDefined) {
+    m_DefaultCrossSectionFileDirectory = g_MEGAlibPath + "/resource/geometries/materials";
+  }
+
   if (m_CrossSectionFileDirectory == g_StringNotDefined) {
     m_CrossSectionFileDirectory = g_MEGAlibPath + "/resource/geometries/materials";
   }
@@ -650,13 +673,19 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
 
   m_CrossSectionsPresent = true;
 
+  MString TotalAbsDefault = m_DefaultCrossSectionFileDirectory + "/Xsection.Total." + m_Name + ".rsp";
+  MString PhotoAbsDefault = m_DefaultCrossSectionFileDirectory + "/Xsection.Photo." + m_Name + ".rsp";
+  MString ComptonAbsDefault = m_DefaultCrossSectionFileDirectory + "/Xsection.Compton." + m_Name + ".rsp";
+  MString PairAbsDefault = m_DefaultCrossSectionFileDirectory + "/Xsection.Pair." + m_Name + ".rsp";
+  MString RayleighAbsDefault = m_DefaultCrossSectionFileDirectory + "/Xsection.Rayleigh." + m_Name + ".rsp";
+
   MString TotalAbs = m_CrossSectionFileDirectory + "/Xsection.Total." + m_Name + ".rsp";
   MString PhotoAbs = m_CrossSectionFileDirectory + "/Xsection.Photo." + m_Name + ".rsp";
   MString ComptonAbs = m_CrossSectionFileDirectory + "/Xsection.Compton." + m_Name + ".rsp";
   MString PairAbs = m_CrossSectionFileDirectory + "/Xsection.Pair." + m_Name + ".rsp";
   MString RayleighAbs = m_CrossSectionFileDirectory + "/Xsection.Rayleigh." + m_Name + ".rsp";
-
-  if (MFile::FileExists(TotalAbs) == false) {
+  
+  if (MFile::FileExists(TotalAbs) == false && MFile::FileExists(TotalAbsDefault) == false) {
     if (Verbose == true) {
       mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
       mout<<"Can't find cross section file "<<TotalAbs<<endl;
@@ -666,14 +695,7 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
     }
     m_CrossSectionsPresent = false;
   } else {
-    if (m_TotalCrossSection.Read(TotalAbs) == false) {
-      if (Verbose == true) {
-        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
-        mout<<"Can't open cross section file "<<TotalAbs<<endl;
-      }
-      m_CrossSectionsPresent = false;
-      return false;
-    } else {
+    if ((MFile::FileExists(TotalAbs) == true && m_TotalCrossSection.Read(TotalAbs) == true) || (MFile::FileExists(TotalAbsDefault) == true && m_TotalCrossSection.Read(TotalAbsDefault) == true)) {
       if (m_TotalCrossSection.GetHash() != m_Hash) {
         if (Verbose == true) {
           mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
@@ -685,10 +707,17 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
         m_CrossSectionsPresent = false;
         m_TotalCrossSection.Init();
       }
+    } else {
+      if (Verbose == true) {
+        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+        mout<<"Can't open cross section file "<<TotalAbs<<endl;
+      }
+      m_CrossSectionsPresent = false;
+      return false;
     }
   }
 
-  if (MFile::FileExists(PhotoAbs) == false) {
+  if (MFile::FileExists(PhotoAbs) == false && MFile::FileExists(PhotoAbsDefault) == false) {
     if (Verbose == true) {
       mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
       mout<<"Can't find cross section file "<<PhotoAbs<<endl;
@@ -698,14 +727,7 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
     }
     m_CrossSectionsPresent = false;
   } else {
-    if (m_PhotoCrossSection.Read(PhotoAbs) == false) {
-      if (Verbose == true) {
-        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
-        mout<<"Can't open cross section file "<<PhotoAbs<<endl;
-      }
-      m_CrossSectionsPresent = false;
-      return false;
-    } else {
+    if ((MFile::FileExists(PhotoAbs) == true && m_PhotoCrossSection.Read(PhotoAbs) == true) || (MFile::FileExists(PhotoAbsDefault) == true && m_PhotoCrossSection.Read(PhotoAbsDefault) == true)) {
       if (m_PhotoCrossSection.GetHash() != m_Hash) {
         if (Verbose == true) {
           mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
@@ -717,10 +739,17 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
         m_CrossSectionsPresent = false;
         m_PhotoCrossSection.Init();
       }
+    } else {
+      if (Verbose == true) {
+        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+        mout<<"Can't open cross section file "<<PhotoAbs<<endl;
+      }
+      m_CrossSectionsPresent = false;
+      return false;
     }
   }
 
-  if (MFile::FileExists(ComptonAbs) == false) {
+  if (MFile::FileExists(ComptonAbs) == false && MFile::FileExists(ComptonAbsDefault) == false) {
     if (Verbose == true) {
       mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
       mout<<"Can't find cross section file "<<ComptonAbs<<endl;
@@ -730,14 +759,7 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
     }
     m_CrossSectionsPresent = false;
   } else {
-    if (m_ComptonCrossSection.Read(ComptonAbs) == false) {
-      if (Verbose == true) {
-        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
-        mout<<"Can't open cross section file "<<ComptonAbs<<endl;
-      }
-      m_CrossSectionsPresent = false;
-      return false;
-    } else {
+    if ((MFile::FileExists(ComptonAbs) == true && m_ComptonCrossSection.Read(ComptonAbs) == true) || (MFile::FileExists(ComptonAbsDefault) == true && m_ComptonCrossSection.Read(ComptonAbsDefault) == true)) {
       if (m_ComptonCrossSection.GetHash() != m_Hash) {
         if (Verbose == true) {
           mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
@@ -749,10 +771,17 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
         m_CrossSectionsPresent = false;
         m_ComptonCrossSection.Init();
       }
+    } else {
+      if (Verbose == true) {
+        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+        mout<<"Can't open cross section file "<<ComptonAbs<<endl;
+      }
+      m_CrossSectionsPresent = false;
+      return false;
     }
   }
 
-  if (MFile::FileExists(PairAbs) == false) {
+  if (MFile::FileExists(PairAbs) == false && MFile::FileExists(PairAbsDefault) == false) {
     if (Verbose == true) {
       mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
       mout<<"Can't find cross section file "<<PairAbs<<endl;
@@ -762,14 +791,7 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
     }
     m_CrossSectionsPresent = false;
   } else {
-    if (m_PairCrossSection.Read(PairAbs) == false) {
-      if (Verbose == true) {
-        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
-        mout<<"Can't open cross section file "<<PairAbs<<endl;
-      }
-      m_CrossSectionsPresent = false;
-      return false;
-    } else {
+    if ((MFile::FileExists(PairAbs) == true && m_PairCrossSection.Read(PairAbs) == true) || (MFile::FileExists(PairAbsDefault) == true && m_PairCrossSection.Read(PairAbsDefault) == true)) {
       if (m_PairCrossSection.GetHash() != m_Hash) {
         if (Verbose == true) {
           mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
@@ -781,10 +803,17 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
         m_CrossSectionsPresent = false;
         m_PairCrossSection.Init();
       }
+    } else {
+      if (Verbose == true) {
+        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+        mout<<"Can't open cross section file "<<PairAbs<<endl;
+      }
+      m_CrossSectionsPresent = false;
+      return false;
     }
   }
 
-  if (MFile::FileExists(RayleighAbs) == false) {
+  if (MFile::FileExists(RayleighAbs) == false && MFile::FileExists(RayleighAbsDefault) == false) {
     if (Verbose == true) {
       mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
       mout<<"Can't find cross section file "<<RayleighAbs<<endl;
@@ -794,14 +823,7 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
     }
     m_CrossSectionsPresent = false;
   } else {
-    if (m_RayleighCrossSection.Read(RayleighAbs) == false) {
-      if (Verbose == true) {
-        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
-        mout<<"Can't open cross section file "<<RayleighAbs<<endl;
-      }
-      m_CrossSectionsPresent = false;
-      return false;
-    } else {
+    if ((MFile::FileExists(RayleighAbs) == true && m_RayleighCrossSection.Read(RayleighAbs) == true) || (MFile::FileExists(RayleighAbsDefault) == true && m_RayleighCrossSection.Read(RayleighAbsDefault) == true)) {
       if (m_RayleighCrossSection.GetHash() != m_Hash) {
         if (Verbose == true) {
           mout<<"   ***  Warning  ***  in material "<<m_Name<<endl;
@@ -813,6 +835,13 @@ bool MDMaterial::LoadCrossSections(bool Verbose)
         m_CrossSectionsPresent = false;
         m_RayleighCrossSection.Init();
       }
+    } else {
+      if (Verbose == true) {
+        mout<<"   ***  Error  ***  in material "<<m_Name<<endl;
+        mout<<"Can't open cross section file "<<RayleighAbs<<endl;
+      }
+      m_CrossSectionsPresent = false;
+      return false;
     }
   }
     

@@ -284,8 +284,10 @@ class MDGeometry
   TCanvas* m_GeoView;
   TGeoManager* m_Geometry;
 
-  //! Director where all cross sections are stored
+  //! Directory where all extra/new/changed cross sections are stored
   MString m_CrossSectionFileDirectory;
+  //! Directory where all default cross sections are stored
+  MString m_DefaultCrossSectionFileDirectory;
 
   //! When a hit is outside an active detector (rounding errors etc), use this tolerance to look for
   //! the detector:
