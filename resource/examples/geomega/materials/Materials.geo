@@ -2,7 +2,7 @@
 // In alphabetical order!
 
 
-AbsorptionFileDirectory $(MEGALIB)/resource/examples/geomega/materials
+//AbsorptionFileDirectory $(MEGALIB)/resource/examples/geomega/materials
 
 // Values of ACSPaper are not correct !!!
 // I suppose the density could be about 1.0, but this is not for sure!!!

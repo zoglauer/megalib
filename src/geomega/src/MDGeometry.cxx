@@ -266,7 +266,9 @@ void MDGeometry::Reset()
 
   m_DetectorSearchTolerance = 0.000001;
 
-  m_CrossSectionFileDirectory = g_MEGAlibPath + "/resource/geometries/materials";
+  m_DefaultCrossSectionFileDirectory = g_MEGAlibPath + "/resource/examples/geomega/materials";
+  // This one will be overwritten when we have the file name of the mass model
+  m_CrossSectionFileDirectory = g_MEGAlibPath + "/resource/examples/geomega/materials";
 
   MDVolume::ResetIDs();
   MDDetector::ResetIDs();
@@ -340,8 +342,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   m_CrossSectionFileDirectory = MFile::GetDirectoryName(m_FileName);
-  m_CrossSectionFileDirectory += "/absorptions";
-
+  m_CrossSectionFileDirectory += "/cross-sections";
 
   if (g_Verbosity >= c_Info) {
     mout<<"Started scanning of geometry... This may take a while..."<<endl;
@@ -1308,9 +1309,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // General absorption file directory
     else if (Tokenizer.IsTokenAt(0, "AbsorptionFileDirectory") == true ||
-             Tokenizer.IsTokenAt(0, "CrossSectionFilesDirectory") == true) {
+             Tokenizer.IsTokenAt(0, "CrossSectionFilesDirectory") == true ||
+             Tokenizer.IsTokenAt(0, "CrossSectionPath") == true) {
       if (Tokenizer.GetNTokens() != 2) {
-        Typo("Line must contain two values: CrossSectionFilesDirectory auxiliary");
+        Typo("Line must contain two values: CrossSectionPath auxiliary");
         return false;
       }
 
@@ -1326,7 +1328,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         Name.Prepend(MFile::GetDirectoryName(m_FileName));
 
         if (MFile::ExpandFileName(Name) == false) {
-          Typo("Unable to expand file name");
+          Typo("Unable to expand cross-section path to absolute path");
           return false;
         }
       }
@@ -3959,6 +3961,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // Material sanity checks
   for (unsigned int i = 0; i < GetNMaterials(); i++) {
+    m_MaterialList[i]->SetDefaultCrossSectionFileDirectory(m_DefaultCrossSectionFileDirectory);
     m_MaterialList[i]->SetCrossSectionFileDirectory(m_CrossSectionFileDirectory);
     if (m_MaterialList[i]->Validate() == false) {
       IsValid = false;
@@ -5838,7 +5841,7 @@ bool MDGeometry::CreateCrossSectionFiles()
   }
   if (Success == false) {
     mout<<"   ***  Warning  ***"<<endl;
-    mout<<"Cannot load create cross section files correctly."<<endl;
+    mout<<"Cannot load created cross section files correctly."<<endl;
     mout<<"Please read the above error output for a possible fix..."<<endl;
     return false;
   }
