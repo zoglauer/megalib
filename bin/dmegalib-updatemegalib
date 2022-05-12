@@ -15,7 +15,7 @@ commandhelp() {
   echo "Usage: dmegalib-updatemegalib [options]";
   echo ""
   echo "Options:"
-  echo "  --branch=name             : Use the given MEGAlib git branch (default it master)"
+  echo "  --branch=name             : Use the given MEGAlib git branch (default it main)"
   echo "  --machine=user@host:port  : Only update this machine, if not given use the ones in .dmegalib.cfg"
   echo "  --help                    : Show this help"
   echo ""
@@ -32,7 +32,7 @@ commandhelp() {
 # Store command line as array
 CMD=( "$@" )
 SINGLEMACHINE=""
-BRANCH="master"
+BRANCH="main"
 
 # Check for help
 for C in "${CMD[@]}"; do
