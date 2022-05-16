@@ -16,9 +16,8 @@ MenuTitle:         Code & Setup
 
 <p>The different versions of code can be found in the various branches on github:</p>
 <ul>
-  <li>"MEGAlib_v3.00", "MEGAlib_v2.34", etc. represent the release versions.</li>
-  <li>"master" is the development/bugfix branch of the current main version of MEGAlib (currently 3.x).</li>
-  <li>"megalib4-dev" is the development branch of the next main version of MEGAlib (currently 4.x).</li>
+  <li>"MEGAlib_v3.06", "MEGAlib_v2.34", etc. represent the release versions.</li>
+  <li>"main" is the development/bugfix branch of the current main version of MEGAlib (currently 4.x).</li>
 </ul>
 
 <p>You can get the source code from the repository via cloning it (make sure you have git installed):</p2>
@@ -34,10 +33,10 @@ $ cd MEGAlib
 
 <h2>The MEGAlib branch</h2>
 
-<p>You can find multiple MEGAlib branches on github. MEGAlib releases are named MEGAlib_v3.00, etc. The development / bugfix branch for version 3 is called master, the development branch for version 4, which contains more significant changes and is not neceessarily always in working condition, is called megalib4-dev. If you are do minor enhancements, I strongly suggest to use the master branch. Therefore, check put this branch now:</p>
+<p>You can find multiple MEGAlib branches on github. MEGAlib releases are named MEGAlib_v3.00, etc. The development / bugfix branch for version 3 is called main, the development branch for version 4, which contains more significant changes and is not neceessarily always in working condition, is called megalib4-dev. If you are do minor enhancements, I strongly suggest to use the main branch. Therefore, check put this branch now:</p>
 
 <pre>
-git checkout master
+git checkout main
 </pre>
 
 
@@ -97,13 +96,13 @@ git checkout master
 </ol>
 
 
-<h3>Additional information for Windows 10</h3>
+<h3>Additional information for Windows 10/11</h3>
 
-<p>On Windows 10, you have perform the follwoing steps:</p>
+<p>On Windows 10/11, you have perform the follwoing steps:</p>
 <ol>
-  <li>First install the "Windows Subsystem for Linux" by <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10" target=_blank>following this guide</a>.</li>
+  <li>First install the "Windows Subsystem for Linux" (WSL) by <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10" target=_blank>following this guide</a>.</li>
   <li>Then install the <a href="https://www.microsoft.com/store/apps/9nblggh4msv6" target=_blank>Ubuntu App</a> from the Windows Store.
-  <li>Afterwards, install the <a href="https://sourceforge.net/projects/xming" target=_blank>Xming X Server for Windows</a>.
+  <li>Afterwards, if you don't have WSL2, install the <a href="https://sourceforge.net/projects/xming" target=_blank>Xming X Server for Windows</a>.
   <li>Run the Bash app, and add the following to your .bashrc:<pre>export DISPLAY=localhost:0.0</pre> and then restart your bash terminal.</li>
   <li>Then, in the bash prompt of the Ubuntu app, install MEGAlib the same way as you would on Linux.</li>
 </ol>
@@ -114,7 +113,7 @@ git checkout master
 <h2>The setup script</h2>
 
 <p>When all requirements are fulfilled, it is time to run the MEGAlib setup script. The "setup.sh" bash script is capable of installing MEGAlib along with ROOT and Geant4. The script is intended to be installed by the user in their home directory. Assuming you have followed the instructions in the above section (especially did you make sure to install all the libraries ROOT needs to compile, are git and cmake present?), then installing MEGAlib should be a one-step process. In the directory, where you want to install MEGAlib, do:</p>
-<pre>$ bash setup.sh --branch=master</pre>
+<pre>$ bash setup.sh --branch=main</pre>
 <p>This will give you the latest development version. If you are interested in the latest release, simply do:</p>
 <pre>$ bash setup.sh</pre>
 <p>Please keep in mind that upon success, the setup script saves the last used options. Thus is you want to change any options, always give them at the command line to the setup script.</p>
@@ -158,7 +157,7 @@ or execute this line everytime you want to use MEGAlib in a new terminal.</pre><
 
 <p>The first thing to try is to compile a current development version instead of a release version, by calling the setup script via:</p>
 
-<pre>$ bash setup.sh --branch=master</pre>
+<pre>$ bash setup.sh --branch=main</pre>
 
 <p>If this does not help, please take a look at the <a href="https://github.com/zoglauer/megalib/issues">issues page of MEGAlib on github</a>. There, all common installation errors along with their solutions have been documented. If your problem does not appear there, please enter a new issue.</p>
 
@@ -192,7 +191,7 @@ or execute this line everytime you want to use MEGAlib in a new terminal.</pre><
 
 <h2>Finally...</h2>
 
-<p>Please take also a look at the change log for the important changes between the MEGAlib versions: <a href="https://raw.github.com/zoglauer/megalib/master/doc/ChangeLog.txt">ChangeLog</a></p>
+<p>Please take also a look at the change log for the important changes between the MEGAlib versions: <a href="https://raw.github.com/zoglauer/megalib/main/doc/ChangeLog.txt">ChangeLog</a></p>
 
 <p>Feel free to let me know any issues or anything that can be improved with this setup documentation.</p>
 
