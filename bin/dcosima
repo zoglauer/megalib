@@ -388,13 +388,20 @@ if [[ ! -d \${MASTERDIR} ]]; then
   fi
 fi
 
+# Check for write access
+if [[ ! -w \${MASTERDIR} ]]; then 
+  echo "   No write access to master directory"
+  exit 6 
+fi
+
+
 # Check for enough disk space
 cd \${MASTERDIR}
 REQUIREDDISKSPACE=50
 DISKSPACE=\$( df -k . -P -T -BG | tail -n 1 | awk '{ print \$5 }' | sed 's/.$//' )
 if (( \${DISKSPACE} < \${REQUIREDDISKSPACE} )); then
   echo "   Not enough free disk space available (free: \${DISKSPACE} GB, required: \${REQUIREDDISKSPACE} GB)"
-  exit 6
+  exit 7
 fi
 
 echo "SUCCESS"
