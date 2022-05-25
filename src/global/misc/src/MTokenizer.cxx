@@ -957,12 +957,12 @@ bool MTokenizer::CheckMaths(const MString& Token)
     T.RemoveAllInPlace("|");
     T.RemoveAllInPlace("&");
     T.RemoveAllInPlace("tmath::");
-    T.RemoveAllInPlace("sin");
     T.RemoveAllInPlace("asin");
-    T.RemoveAllInPlace("cos");
+    T.RemoveAllInPlace("sin");
     T.RemoveAllInPlace("acos");
-    T.RemoveAllInPlace("tan");
+    T.RemoveAllInPlace("cos");
     T.RemoveAllInPlace("atan");
+    T.RemoveAllInPlace("tan");
     T.RemoveAllInPlace("sqrt");
     T.RemoveAllInPlace("log");
     T.RemoveAllInPlace("ln");
