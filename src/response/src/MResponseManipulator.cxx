@@ -624,20 +624,22 @@ bool MResponseManipulator::Append()
 bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
 {
   // Get all files
+  cout<<"Retrieving files..."<<endl;
   TSystemDirectory D(".", gSystem->pwd());
   TList* Files = D.GetListOfFiles();
   if (Files == 0) {
-    mout<<"Can't get files!"<<endl;
+    mout<<"ERROR: Did not find or couldn't get any files!"<<endl;
     return false;
   }
 
 
   // Sort them
-  cout<<"Sorting files..."<<endl;
+  cout<<"Sorting and eliminating not matching files (current total: "<<Files->LastIndex()<<" files)"<<endl;
   unsigned int Added = 0;
   vector<vector<MString>> SortedFiles(Types.size(), vector<MString>());
-  for (int i = 0; i <= Files->LastIndex(); ++i) {
-    MString Name = Files->At(i)->GetName();
+  
+  for (const auto&& Object: *Files) {
+    MString Name = Object->GetName();
     if (Name.BeginsWith(Prefix) == false) continue;
     for (unsigned int t = 0; t < Types.size(); ++t) {
       // cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Type<<"\" (+ .gz)... ";
@@ -658,10 +660,11 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
   // Append them
   for (unsigned int t = 0; t < SortedFiles.size(); ++t) {
     if (SortedFiles[t].size() == 0) {
-      cout<<"No files of type "<<Types[t]<<endl;
+      //cout<<"No files of type "<<Types[t]<<endl;
       continue;
     }
-
+    cout<<"Processing file type "<<Types[t]<<endl;
+    
     bool AnyZipped = false;
     if (SortedFiles[t][0].EndsWith(".gz") == true) {
       AnyZipped = true;
@@ -689,7 +692,7 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
       if (First->GetOrder() != Append->GetOrder()) {
         mout<<"Cannot append file, because they are of different order!"<<endl;
       } else {
-        mout<<"Appending file "<<f<<"/"<<SortedFiles[t].size()<<": "<<SortedFiles[t][f]<<endl;
+        mout<<"Appending file "<<f<<"/"<<SortedFiles[t].size()-1<<": "<<SortedFiles[t][f]<<endl;
         if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
           MTimer AppendTimer;
           *dynamic_cast<MResponseMatrixON*>(First) += *dynamic_cast<MResponseMatrixON*>(Append);
@@ -772,7 +775,7 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
 
 
 /******************************************************************************
- * Find and join *.rsp files:
+ * Find and join *.root files:
  */
 bool MResponseManipulator::JoinROOTFiles(MString Prefix, vector<MString> Types)
 {
@@ -785,11 +788,11 @@ bool MResponseManipulator::JoinROOTFiles(MString Prefix, vector<MString> Types)
   }
 
   // Sort them
-  //cout<<"Sorting files..."<<endl;
+  cout<<"Sorting and eliminating not matching files (current total: "<<Files->LastIndex()<<" files)"<<endl;
   unsigned int Added = 0;
   vector<vector<MString>> SortedFiles(Types.size(), vector<MString>());
-  for (int i = 0; i <= Files->LastIndex(); ++i) {
-    MString Name = Files->At(i)->GetName();
+  for (const auto&& Object: *Files) {
+    MString Name = Object->GetName();
     if (Name.BeginsWith(Prefix) == false) continue;
     for (unsigned int t = 0; t < Types.size(); ++t) {
       //cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Types[t]<<"\" (+ .gz)... "<<endl;
