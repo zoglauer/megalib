@@ -101,8 +101,6 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"  Usage: Geomega <options>"<<endl;
   Usage<<endl;
-  Usage<<"      -d --debug:"<<endl;
-  Usage<<"             Use debug mode"<<endl;
   Usage<<"      -f --filename <filename> or"<<endl;
   Usage<<"      -g --geometry <filename>:"<<endl;
   Usage<<"             Use this file as geometry-file"<<endl;
@@ -110,6 +108,9 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   Usage<<"             Use this file as parameter file."<<endl;
   Usage<<"             All other given infromations such as -f and -g overwrite information in the configuration file."<<endl;
   Usage<<"             If no configuration file is give ~/.geomega.cfg is used"<<endl;
+  Usage<<"      -a --auto:"<<endl;
+  Usage<<"             Automatically show the geometry upon start"<<endl;
+  Usage<<endl;
   Usage<<"      -s --startvolume <name>:"<<endl;
   Usage<<"             Use this volume as world volume"<<endl;
   Usage<<"             (If this volume exists as several"<<endl;
@@ -118,6 +119,9 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   Usage<<"                      values anymore !!!!!"<<endl;
   Usage<<"      -r --reveal <name>:"<<endl;
   Usage<<"             Only show this volume and all other volumes given with this option"<<endl;
+  Usage<<endl;
+  Usage<<"      -d --debug:"<<endl;
+  Usage<<"             Use debug mode"<<endl;
   Usage<<"      -v --verbosity <integer>:"<<endl;
   Usage<<"             The higher the integer, the higher the verbosity..."<<endl;
   Usage<<"      -h --help:"<<endl;
@@ -216,15 +220,15 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   }
 
 
-  // Now parse all high level options
+  // Now parse all batch-mode options
   for (int i = 1; i < argc; i++) {
-     Option = argv[i];
+    Option = argv[i];
     if (Option == "--create-cross-sections") {
-       cout<<"Command-line parser: Creating cross section files"<<endl;
-       gROOT->SetBatch(true);
-       CreateCrossSections();
-       return false;
-     }
+      cout<<"Command-line parser: Creating cross section files"<<endl;
+      gROOT->SetBatch(true);
+      CreateCrossSections();
+      return false;
+    }
   }
 
   if (m_UseGui == true) {
@@ -237,6 +241,16 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   // Show change log / license if changed:
   MPrelude P;
   if (P.Play() == false) return false; // license was not accepted
+  
+  // Now parse all high-level options
+  for (int i = 1; i < argc; i++) {
+    Option = argv[i];
+    if (Option == "--auto" || Option == "-a") {
+      cout<<"Command-line parser: View geometry"<<endl;
+      ViewGeometry();
+    }
+  }
+
   
   return true;
 }
