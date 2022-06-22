@@ -259,6 +259,33 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MInterfaceGeomega::ReloadRequired() 
+{
+  //! Return true if we need to (re-) load the geometry
+
+  if (m_Geometry->IsScanned() == false) {
+    return true;
+  }
+  if (m_Geometry->RequiresReload() == true) {
+    return true;
+  }
+
+  MString GeometryFilename = m_Geometry->GetFileName();
+  MFile::ExpandFileName(GeometryFilename);
+  
+  MString SettingsFilename = m_Data->GetCurrentFileName();
+  MFile::ExpandFileName(SettingsFilename);
+
+  if (GeometryFilename != SettingsFilename) {
+    return true;
+  }
+
+  return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MInterfaceGeomega::LoadConfiguration(MString FileName)
 {  
   // Load the configuration file
@@ -310,8 +337,7 @@ void MInterfaceGeomega::ViewGeometry()
 {
   // Create a display of the geometry
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  if (ReloadRequired() == true) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -328,8 +354,7 @@ void MInterfaceGeomega::RaytraceGeometry()
 {
   // Create a display of the geometry
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  if (ReloadRequired() == true) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -360,7 +385,7 @@ bool MInterfaceGeomega::HasIntersections(ostringstream& Diagnostics)
   // Test for intersections
 
   
-  if (m_Geometry->IsScanned() == false || m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  if (ReloadRequired() == true) {
     if (ReadGeometry() == false) {
       Diagnostics<<"   ***  Error  ***"<<endl;
       Diagnostics<<"Unable to read diagnostics"<<endl;
@@ -449,8 +474,7 @@ void MInterfaceGeomega::CalculateMasses()
 {
   // Calculate the mass of the geometry
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  if (ReloadRequired() == true) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -467,9 +491,8 @@ void MInterfaceGeomega::CreateCrossSections()
 {
   // Calculate the mass of the geometry
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
-    if (ReadGeometry() == false) {
+  if (ReloadRequired() == true) {
+   if (ReadGeometry() == false) {
       return;
     }
   }
@@ -485,8 +508,7 @@ void MInterfaceGeomega::DumpInformation()
 {
   // Dump information about the geometry
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  if (ReloadRequired() == true) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -503,8 +525,7 @@ void MInterfaceGeomega::FindVolume(MVector Pos)
 {
   // Find the volume sequence for position Pos
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  if (ReloadRequired() == true) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -537,8 +558,7 @@ void MInterfaceGeomega::GetPathLengths(const MVector& Start, const MVector& Stop
 {
   // Find the volume sequence for position Pos
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  if (ReloadRequired() == true) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -559,8 +579,7 @@ void MInterfaceGeomega::GetResolutions()
 {
   // Return the resolutions of all detectors:
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  if (ReloadRequired() == true) {
     if (ReadGeometry() == false) {
       return;
     }

@@ -48,6 +48,7 @@ using namespace std;
 #include <TMath.h>
 #include <TGeoOverlap.h>
 #include <TObjArray.h>
+#include <TMD5.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -227,6 +228,7 @@ void MDGeometry::Reset()
   // m_StartVolume = ""; // This is a start option of geomega, so do not reset!
 
   m_IncludeList.clear();
+  m_IncludeListHashes.clear();
 
   if (m_GeoView != 0) {
     if (gROOT->FindObject("MainCanvasGeomega") != 0) {
@@ -5311,10 +5313,19 @@ unsigned int MDGeometry::GetNVectors()
 
 void MDGeometry::AddInclude(MString FileName)
 {
-  // Add the name of an included file
+  // Add the name of an included file and its md5 hash
 
   if (IsIncluded(FileName) == false) {
     m_IncludeList.push_back(FileName);
+    
+    TMD5* MD5 = TMD5::FileChecksum(FileName);
+    if (MD5 == nullptr) {
+      cout<<" *** ERROR: Unable to calculate checksum for file "<<FileName<<endl;
+      m_IncludeListHashes.push_back("");
+    } else {
+      m_IncludeListHashes.push_back(MD5->AsString());
+    }
+    delete MD5;
   }
 }
 
@@ -5346,6 +5357,37 @@ int MDGeometry::GetNIncludes()
   return m_IncludeList.size();
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDGeometry::RequiresReload()
+{
+  // Return true if the geometry needs to be reloaded since files have changed
+  
+  if (m_IncludeList.size() != m_IncludeListHashes.size()) {
+    cout<<" *** ERROR: The number of stored hashes differs from the number of included files"<<endl;
+    return true;
+  }
+  
+  for (unsigned int i = 0; i < m_IncludeList.size(); ++i) {
+    TMD5* MD5 = TMD5::FileChecksum(m_IncludeList[i]);
+    MString Hash = "";
+    if (MD5 == nullptr) {
+      cout<<" *** ERROR: Unable to calculate checksum for file "<<m_IncludeList[i]<<endl;
+    } else {
+      Hash = MD5->AsString();
+    }
+    delete MD5;
+
+    if (Hash != m_IncludeListHashes[i]) {
+      cout<<"Info: File "<<m_IncludeList[i]<<" changed. Reload required!"<<endl;
+      return true;
+    }
+  }
+  
+  return false;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
