@@ -43,6 +43,9 @@ class MImageSpheric : public MImage2D
   //! Standard destructor
   virtual ~MImageSpheric();
 
+  //! Set the image projection
+  void SetProjection(MImageProjection Projection) { m_Projection = Projection; }
+
   //! Clone this image
   virtual MImage* Clone();
 
@@ -54,10 +57,18 @@ class MImageSpheric : public MImage2D
  
   // protected methods:
  protected:
+  //! Display unprojected
+  void DisplayProjectionNone();
+  //! Display with Hammer projection
+  void DisplayProjectionHammer();
 
 
   // private methods:
  private:
+  //! Convert lat and long (in rad) to x & y in the Hammer histogram
+  void HammerConv(double Long, double Lat, double CentralMeridian, double& xHammer, double& yHammer);
+  //! Convert x & y in the Hammer histogram to lat and long (in rad)
+  bool HammerInvConv(double xHammer, double yHammer, double CentralMeridian, double& Long, double& Lat);
 
 
 
@@ -66,6 +77,9 @@ class MImageSpheric : public MImage2D
 
   // private members:
  private:
+  //! The projection
+  MImageProjection m_Projection;
+
   //! The new y axis
   TGaxis* m_YAxis;
 
