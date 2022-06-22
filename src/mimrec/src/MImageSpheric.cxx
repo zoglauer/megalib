@@ -36,7 +36,7 @@ using namespace std;
 #include "TMarker.h"
 #include "TGaxis.h"
 #include "TLatex.h"
-#include "TPolyLine.h"
+#include "TLine.h"
 
 // MEGAlib libs:
 #include "MStreams.h"
@@ -496,41 +496,27 @@ void MImageSpheric::DisplayProjectionHammer()
 
     // (C) Draw longitude grid lines
     for (double Long: xSteps) {
-      // Go in one degree steps
-      vector<double> xPoly;
-      vector<double> yPoly;
-
-      double L = Long;
-
-      for (double Lat = yMin; Lat <= yMax; Lat += 0.01*(yMax-yMin)) {
-        HammerConv(L*c_Rad, Lat*c_Rad, CentralMeridian, x, y);
-        xPoly.push_back(x*c_Deg);
-        yPoly.push_back(y*c_Deg);
+      for (double Lat = yMin; Lat <= yMax; Lat += 0.015*min(yMax-yMin, xMax-xMin)) {
+        HammerConv(Long*c_Rad, Lat*c_Rad, CentralMeridian, x, y);
+        
+        // We need mini-lines here for good PS/PDF printing
+        TLine* P = new TLine(x*c_Deg, y*c_Deg, (x+0.0000001)*c_Deg, y*c_Deg);
+        P->SetLineColor(DefaultTextColor);
+        P->Draw();
       }
-      
-      TPolyLine* P = new TPolyLine(xPoly.size(), &xPoly[0], &yPoly[0], "C");
-      P->SetLineStyle(3);
-      P->SetLineColor(DefaultTextColor);
-      P->Draw();
     }
 
 
     // (D) Draw latitude grid lines
     for (double Lat: ySteps) {
-      // Go in one degree steps
-      vector<double> xPoly;
-      vector<double> yPoly;
-
-      for (double Long = xMin; Long <= xMax; Long += 0.01*(xMax-xMin)) {
+      for (double Long = xMin; Long <= xMax; Long += 0.015*min(yMax-yMin, xMax-xMin)) {
         HammerConv(Long*c_Rad, Lat*c_Rad, CentralMeridian, x, y);
-        xPoly.push_back(x*c_Deg);
-        yPoly.push_back(y*c_Deg);
+        
+        // We need mini-lines here for good PS/PDF printing
+        TLine* P = new TLine(x*c_Deg, y*c_Deg, (x+0.0000001)*c_Deg, y*c_Deg);
+        P->SetLineColor(DefaultTextColor);
+        P->Draw();
       }
-
-      TPolyLine* P = new TPolyLine(xPoly.size(), &xPoly[0], &yPoly[0], "C");
-      P->SetLineStyle(3);
-      P->SetLineColor(DefaultTextColor);
-      P->Draw();
     }
 
 

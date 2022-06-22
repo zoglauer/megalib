@@ -198,6 +198,10 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   gStyle->SetPalette(55, 0);
   //gStyle->SetPalette(kBird);
 
+  // Thinner, rounded lines for printed PS/EPS/PDF - changing this will screw up printed MImage*'s
+  gStyle->SetLineScalePS(1); 
+  gStyle->SetCapLinePS(1);
+
   // Ignore ROOT messages up to kInfo
   gErrorIgnoreLevel = kWarning;
   // For testing: abort on all errors, or warnings, or ...
