@@ -65,8 +65,14 @@ class MDGeometry
   //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
   virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
   
+  //! Dump the geometry in readable format to the screen 
   void DumpInformation();
+  
+  //! Calculate the total mass of the geometry
   void CalculateMasses();
+
+  //! Return true if the geometry needs to be reloaded since files have changed
+  bool RequiresReload();
 
   //! This flag tells us we are within geomega, this enables a few options, which are not
   //! available in the normal library mode, e.g. view the surrounding sphere
@@ -262,7 +268,9 @@ class MDGeometry
   vector<int> m_NDetectorTypes; 
 
   //! A list of all already included files
-  vector<MString> m_IncludeList;     
+  vector<MString> m_IncludeList; 
+  //! A list of hashes of the included files
+  vector<MString> m_IncludeListHashes;
 
   //! Name of the geometry
   MString m_Name;
