@@ -495,12 +495,14 @@ void MImageSpheric::DisplayProjectionHammer()
 
 
     // (C) Draw longitude grid lines
+    double StepSize = 0.015*min(yMax-yMin, xMax-xMin);
+    double LineLength = 0.00002*min(yMax-yMin, xMax-xMin);
     for (double Long: xSteps) {
-      for (double Lat = yMin; Lat <= yMax; Lat += 0.015*min(yMax-yMin, xMax-xMin)) {
+      for (double Lat = yMin; Lat <= yMax; Lat += StepSize) {
         HammerConv(Long*c_Rad, Lat*c_Rad, CentralMeridian, x, y);
         
         // We need mini-lines here for good PS/PDF printing
-        TLine* P = new TLine(x*c_Deg, y*c_Deg, (x+0.0000001)*c_Deg, y*c_Deg);
+        TLine* P = new TLine(x*c_Deg, y*c_Deg, x*c_Deg, (y+LineLength)*c_Deg);
         P->SetLineColor(DefaultTextColor);
         P->Draw();
       }
@@ -508,12 +510,14 @@ void MImageSpheric::DisplayProjectionHammer()
 
 
     // (D) Draw latitude grid lines
+    StepSize = 0.015*min(yMax-yMin, xMax-xMin);
+    LineLength = 0.00002*min(yMax-yMin, xMax-xMin);
     for (double Lat: ySteps) {
-      for (double Long = xMin; Long <= xMax; Long += 0.015*min(yMax-yMin, xMax-xMin)) {
+      for (double Long = xMin; Long <= xMax; Long += StepSize) {
         HammerConv(Long*c_Rad, Lat*c_Rad, CentralMeridian, x, y);
         
         // We need mini-lines here for good PS/PDF printing
-        TLine* P = new TLine(x*c_Deg, y*c_Deg, (x+0.0000001)*c_Deg, y*c_Deg);
+        TLine* P = new TLine(x*c_Deg, y*c_Deg, (x+LineLength)*c_Deg, y*c_Deg);
         P->SetLineColor(DefaultTextColor);
         P->Draw();
       }
