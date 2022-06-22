@@ -78,6 +78,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_PhiMax = 180;
   m_BinsTheta = 90;
   m_BinsPhi = 180;
+  m_SphericalProjection = MImageProjection::c_None;
 
   // Dimensions galactic
   m_GalLatitudeMin = 80;
@@ -86,6 +87,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_GalLongitudeMax = 190;
   m_BinsGalLatitude = 40;
   m_BinsGalLongitude = 40;
+  m_GalProjection = MImageProjection::c_None;
 
   // Dimensions Cartesean
   m_XMin = -5;
@@ -102,7 +104,6 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_ImageDrawMode = 0;
   m_ImagePalette = 12; // Viridis
   m_ImageSourceCatalog = "";
-  m_ImageProjection = MImageProjection::c_None;
 
   // Animation options
   m_AnimationMode = 1;
@@ -219,12 +220,14 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "SphericalThetaBins", m_BinsTheta);
   new MXmlNode(aNode, "SphericalPhi", m_PhiMin, m_PhiMax);
   new MXmlNode(aNode, "SphericalPhiBins", m_BinsPhi);
+  new MXmlNode(aNode, "SphericalProjection", static_cast<int>(m_SphericalProjection));
 
   // Menu Dimensions - Galactic
   new MXmlNode(aNode, "GalacticLatitude", m_GalLatitudeMin, m_GalLatitudeMax);
   new MXmlNode(aNode, "GalacticLatitudeBins", m_BinsGalLatitude);
   new MXmlNode(aNode, "GalacticLongitude", m_GalLongitudeMin, m_GalLongitudeMax);
   new MXmlNode(aNode, "GalacticLongitudeBins", m_BinsGalLongitude);
+  new MXmlNode(aNode, "GalacticProjection", static_cast<int>(m_GalProjection));
 
   // Menu Dimensions - Cartesean
   new MXmlNode(aNode, "CartesianX", m_XMin, m_XMax);
@@ -239,7 +242,6 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "ImageDrawMode", m_ImageDrawMode);
   new MXmlNode(aNode, "ImagePalette", m_ImagePalette);
   new MXmlNode(aNode, "ImageSourceCatalog", CleanPath(m_ImageSourceCatalog));
-  new MXmlNode(aNode, "ImageProjection", static_cast<int>(m_ImageProjection));
 
   // Menu Image animation options
   aNode = new MXmlNode(Node, "AnimationOptions");
@@ -374,6 +376,11 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
     if ((bNode = aNode->GetNode("SphericalPhiBins")) != 0) {
       m_BinsPhi = bNode->GetValueAsInt();
     }
+    if ((bNode = aNode->GetNode("SphericalProjection")) != 0) {
+      m_SphericalProjection = static_cast<MImageProjection>(bNode->GetValueAsInt());
+    }
+
+    
     if ((bNode = aNode->GetNode("GalacticLatitude")) != 0) {
       m_GalLatitudeMin = bNode->GetMinValueAsDouble();
       m_GalLatitudeMax = bNode->GetMaxValueAsDouble();
@@ -388,6 +395,11 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
     if ((bNode = aNode->GetNode("GalacticLongitudeBins")) != 0) {
       m_BinsGalLongitude = bNode->GetValueAsInt();
     }
+    if ((bNode = aNode->GetNode("GalacticProjection")) != 0) {
+      m_GalProjection = static_cast<MImageProjection>(bNode->GetValueAsInt());
+    }
+
+    
     if ((bNode = aNode->GetNode("CartesianX")) != 0) {
       m_XMin = bNode->GetMinValueAsDouble();
       m_XMax = bNode->GetMaxValueAsDouble();
@@ -422,8 +434,9 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
     if ((bNode = aNode->GetNode("ImageSourceCatalog")) != 0) {
       m_ImageSourceCatalog = bNode->GetValueAsString();
     }
-    if ((bNode = aNode->GetNode("ImageProjection")) != 0) {
-      m_ImageProjection = static_cast<MImageProjection>(bNode->GetValueAsInt());
+    if ((bNode = aNode->GetNode("ImageProjection")) != 0) { // Deprecated: old naming
+      m_GalProjection = static_cast<MImageProjection>(bNode->GetValueAsInt());
+      m_SphericalProjection = static_cast<MImageProjection>(bNode->GetValueAsInt());
     }
   }
 
