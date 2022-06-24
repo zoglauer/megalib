@@ -3,8 +3,8 @@
 HostName:                                  leda
  
 OSFlavour:                                 ubuntu
-OSVersion:                                 18.04
-Kernel:                                    4.15.0-54-generic
+OSVersion:                                 20.04
+Kernel:                                    5.4.0-121-generic
  
 CPUModel:                                  AMD Ryzen 7 2700X Eight-Core Processor
 CPUName:                                   Ryzen 7 2700X
@@ -14,34 +14,34 @@ CPUThreadsPerCore:                         2
 Cores:                                     8
 Threads:                                   16
  
-ROOTVersion:                               6.18/00
+ROOTVersion:                               6.24/06
 Geant4Version:                             10.2.3
  
-MEGAlibVersion:                            2.99.11
-MEGAlibGitHash:                            6873835b66b792c3834574a6aa234800f306b7e5 2019-08-19
-MEGAlibOptimization:                       -O -DNDEBUG
+MEGAlibVersion:                            3.99.01
+MEGAlibGitHash:                            0ae4df94ad7b8c608ab77dca63b120d27f1f9e36 2022-06-24
+MEGAlibOptimization:                       -O3 -mtune=native -fno-strict-aliasing -DNDEBUG
  
 # Cosima
-DurationCosimaSingle:                      24.513
-EventsPerSecondCosimaSingle:               4079.468
-DurationCosimaMultiple:                    42.744
-EventsPerSecondCosimaMultiple:             37432.154
+DurationCosimaSingle:                      27.495
+EventsPerSecondCosimaSingle:               3637.024
+DurationCosimaMultiple:                    47.356
+EventsPerSecondCosimaMultiple:             33786.637
  
 # Revan
-DurationRevanSingle:                       5.116
-EventsPerSecondRevanSingle:                19546.520
-DurationRevanMultiple:                     8.870
-EventsPerSecondRevanMultiple:              180383.314
+DurationRevanSingle:                       5.549
+EventsPerSecondRevanSingle:                18021.265
+DurationRevanMultiple:                     9.263
+EventsPerSecondRevanMultiple:              172730.216
  
 # ResponseCreator
-DurationResponseCreatorSingle:             17.857
-EventsPerSecondResponseCreatorSingle:      5600.044
-DurationResponseCreatorMultiple:           30.015
-EventsPerSecondResponseCreatorMultiple:    53306.679
+DurationResponseCreatorSingle:             15.675
+EventsPerSecondResponseCreatorSingle:      6379.585
+DurationResponseCreatorMultiple:           26.919
+EventsPerSecondResponseCreatorMultiple:    59437.571
  
 # MimrecImaging
-DurationMimrecImagingSingle:               53.904
-EventsPerSecondMimrecImagingSingle:        1855.149
-DurationMimrecImagingMultiple:             9.133
-EventsPerSecondMimrecImagingMultiple:      10949.304
+DurationMimrecImagingSingle:               45.858
+EventsPerSecondMimrecImagingSingle:        2180.644
+DurationMimrecImagingMultiple:             7.715
+EventsPerSecondMimrecImagingMultiple:      12961.762
  
