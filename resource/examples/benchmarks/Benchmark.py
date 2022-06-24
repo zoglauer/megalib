@@ -194,6 +194,10 @@ OSVersions = [x for _,x in sorted(zip(RunMulti, OSVersions))]
 RunSingle = [x for _,x in sorted(zip(RunMulti, RunSingle))]
 RunMulti = [x for _,x in sorted(zip(RunMulti, RunMulti))]
       
+# Some beautification
+CPUNames = [ s.replace("Ryzen Threadripper", "Threadripper") for s in CPUNames ]
+
+
 
 print(IsGood)
 print(Reference)
