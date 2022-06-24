@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  sinope
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 20.04
+Kernel:                                    5.13.0-51-generic
+ 
+CPUModel:                                  AMD Ryzen 9 5950X 16-Core Processor
+CPUName:                                   Ryzen 9 5950X
+CPUSockets:                                1
+CPUCoresPerSocket:                         16
+CPUThreadsPerCore:                         2
+Cores:                                     16
+Threads:                                   32
+ 
+ROOTVersion:                               6.24/06
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            3.99.01
+MEGAlibGitHash:                            0db061e61a68ac86364dbbdbb713bfcfecb90db0 2022-06-22
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      19.403
+EventsPerSecondCosimaSingle:               5153.842
+DurationCosimaMultiple:                    34.954
+EventsPerSecondCosimaMultiple:             91548.892
+ 
+# Revan
+DurationRevanSingle:                       3.844
+EventsPerSecondRevanSingle:                26014.568
+DurationRevanMultiple:                     7.258
+EventsPerSecondRevanMultiple:              440892.807
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             10.843
+EventsPerSecondResponseCreatorSingle:      9222.539
+DurationResponseCreatorMultiple:           22.652
+EventsPerSecondResponseCreatorMultiple:    141267.879
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               .455
+EventsPerSecondMimrecImagingSingle:        219780.219
+DurationMimrecImagingMultiple:             .311
+EventsPerSecondMimrecImagingMultiple:      321543.408
+ 
