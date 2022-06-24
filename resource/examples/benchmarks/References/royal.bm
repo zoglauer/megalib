@@ -3,45 +3,45 @@
 HostName:                                  royal
  
 OSFlavour:                                 ubuntu
-OSVersion:                                 18.04
-Kernel:                                    4.15.0-45-generic
+OSVersion:                                 20.04
+Kernel:                                    5.4.0-121-generic
  
-CPUModel:                                  Intel(R) Core(TM) i7-5820K CPU @ 3.30GHz
-CPUName:                                   i7-5820K
+CPUModel:                                  Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz
+CPUName:                                   E5-2630 v4
 CPUSockets:                                1
-CPUCoresPerSocket:                         6
+CPUCoresPerSocket:                         10
 CPUThreadsPerCore:                         2
-Cores:                                     6
-Threads:                                   12
+Cores:                                     10
+Threads:                                   20
  
-ROOTVersion:                               6.14/08
+ROOTVersion:                               6.24/06
 Geant4Version:                             10.2.3
  
-MEGAlibVersion:                            2.99.11
-MEGAlibGitHash:                            6873835b66b792c3834574a6aa234800f306b7e5 2019-08-19
+MEGAlibVersion:                            3.99.01
+MEGAlibGitHash:                            514f673e05fce94fd64c731b3176d1b711a22fe3 2022-06-24
 MEGAlibOptimization:                       -O3 -mtune=native -fno-strict-aliasing -DNDEBUG
  
 # Cosima
-DurationCosimaSingle:                      28.799
-EventsPerSecondCosimaSingle:               3472.342
-DurationCosimaMultiple:                    54.018
-EventsPerSecondCosimaMultiple:             22214.817
+DurationCosimaSingle:                      36.310
+EventsPerSecondCosimaSingle:               2754.062
+DurationCosimaMultiple:                    77.324
+EventsPerSecondCosimaMultiple:             25865.190
  
 # Revan
-DurationRevanSingle:                       5.837
-EventsPerSecondRevanSingle:                17132.088
-DurationRevanMultiple:                     9.985
-EventsPerSecondRevanMultiple:              120180.270
+DurationRevanSingle:                       7.663
+EventsPerSecondRevanSingle:                13049.719
+DurationRevanMultiple:                     15.013
+EventsPerSecondRevanMultiple:              133217.877
  
 # ResponseCreator
-DurationResponseCreatorSingle:             15.785
-EventsPerSecondResponseCreatorSingle:      6335.128
-DurationResponseCreatorMultiple:           34.051
-EventsPerSecondResponseCreatorMultiple:    35241.255
+DurationResponseCreatorSingle:             19.726
+EventsPerSecondResponseCreatorSingle:      5069.451
+DurationResponseCreatorMultiple:           47.670
+EventsPerSecondResponseCreatorMultiple:    41955.108
  
 # MimrecImaging
-DurationMimrecImagingSingle:               59.708
-EventsPerSecondMimrecImagingSingle:        1674.817
-DurationMimrecImagingMultiple:             12.752
-EventsPerSecondMimrecImagingMultiple:      7841.907
+DurationMimrecImagingSingle:               62.071
+EventsPerSecondMimrecImagingSingle:        1611.058
+DurationMimrecImagingMultiple:             10.834
+EventsPerSecondMimrecImagingMultiple:      9230.201
  
