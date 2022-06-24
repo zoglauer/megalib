@@ -238,6 +238,29 @@ void MDGeometry::Reset()
     }
     m_GeoView = 0;
   }
+  
+  m_ViewValid = false;
+  
+  m_ViewPositionX = 0;
+  m_ViewPositionY = 0;
+
+  m_ViewPositionShiftX = 0;
+  m_ViewPositionShiftY = 0;
+  
+  m_ViewSizeX = 0;
+  m_ViewSizeY = 0;
+  
+  m_ViewRangeMin.resize(3);
+  fill(m_ViewRangeMin.begin(), m_ViewRangeMin.end(), 0);
+  m_ViewRangeMax.resize(3);
+  fill(m_ViewRangeMax.begin(), m_ViewRangeMax.end(), 0);
+  m_ViewRotationPhi = 0;
+  m_ViewRotationTheta = 0;
+  m_ViewRotationPsi = 0;
+
+  m_ViewDistanceCOPtoCOV = 0;
+  m_ViewDistanceCOPtoPL = 0;
+
 
   m_Name = "";
 
@@ -4351,7 +4374,7 @@ bool MDGeometry::NameExists(MString Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
+bool MDGeometry::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
 {
   // The geometry must have been loaded previously
   // You cannot display 2 geometries at once!
@@ -4363,11 +4386,13 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   }
 
   // Start by deleting the old windows:
-  if (m_GeoView != 0) {
-    if (gROOT->FindObject("MainCanvasGeomega") != 0) {
+  if (m_GeoView != nullptr) {
+    if (gROOT->FindObject("MainCanvasGeomega") != nullptr) {
       delete m_GeoView;
     }
-    m_GeoView = 0;
+    m_GeoView = nullptr;
+  } else {
+    RestoreView = false;
   }
 
   //mdebug<<"NVolumes: "<<m_WorldVolume->GetNVisibleVolumes()<<endl;
@@ -4381,10 +4406,23 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   MTimer Timer;
   double TimerLimit = 5;
 
-  if (Canvas == 0) {
-    m_GeoView = new TCanvas("MainCanvasGeomega","MainCanvasGeomega",800,800);
+  if (Canvas == nullptr) {
+    if (RestoreView == true && m_ViewValid == true) {
+      m_GeoView = new TCanvas("MainCanvasGeomega", "Geomega geometry display", m_ViewPositionX - m_ViewPositionShiftX, m_ViewPositionY - m_ViewPositionShiftY, m_ViewSizeX, m_ViewSizeY);
+      //m_GeoView->SetWindowPosition(m_ViewPositionX, m_ViewPositionY);
+      //m_GeoView->SetWindowSize(m_ViewSizeX, m_ViewSizeY);
+    } else {
+      int RefPos = 100;
+      m_GeoView = new TCanvas("MainCanvasGeomega", "Geomega geometry display", RefPos, RefPos, 700, 700);
+      m_ViewPositionShiftX = m_GeoView->GetWindowTopX() - RefPos;
+      m_ViewPositionShiftY = m_GeoView->GetWindowTopY() - RefPos;
+    }
   } else {
     Canvas->cd();
+    if (RestoreView == true && m_ViewValid == true) {
+      Canvas->SetWindowPosition(m_ViewPositionX, m_ViewPositionY);
+      Canvas->SetWindowSize(m_ViewSizeX, m_ViewSizeY);
+    }
   }
 
 
@@ -4409,13 +4447,66 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   }
   m_Geometry->SetCurrentNavigator(0); // current is the first navigator?
 
+  if (RestoreView == true && m_ViewValid == true) {
+    TView* View = m_GeoView->GetView();
+    View->SetRange(&m_ViewRangeMin[0], &m_ViewRangeMax[0]);
+    
+    int Reply = 0;
+    View->SetView(m_ViewRotationTheta, m_ViewRotationPhi, m_ViewRotationPsi, Reply);
+    
+    View->SetDview(m_ViewDistanceCOPtoCOV);
+    View->SetDproj(m_ViewDistanceCOPtoPL);
+    
+    if (m_ViewPerspective == true) {
+      View->SetPerspective();
+    } else {
+      View->SetParallel();
+    }
+    View->AdjustScales();
+  }
+
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimerLimit) {
     mout<<"Geometry drawn within "<<Timer.ElapsedTime()<<" seconds."<<endl;
   }
 
   return true;
 }
+ 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDGeometry::StoreViewParameters()
+{ 
+  //! Store the view parameters (zoom, rotation, etc.)
+ 
+  // Assume we do not have valid parameters if we cannot store everything
+  m_ViewValid = false;
+ 
+  if (m_GeoView == nullptr) {
+    return;
+  }
+ 
+  TView* View = m_GeoView->GetView();
+  if (View == nullptr) {
+    return;
+  }  
+  
+  m_GeoView->GetCanvasPar(m_ViewPositionX, m_ViewPositionY, m_ViewSizeX, m_ViewSizeY);
+  
+  View->GetRange(&m_ViewRangeMin[0], &m_ViewRangeMax[0]);
+  
+  m_ViewRotationPhi = View->GetLatitude();
+  m_ViewRotationTheta = View->GetLongitude();
+  m_ViewRotationPsi = View->GetPsi();
+  
+  m_ViewDistanceCOPtoCOV = View->GetDview();
+  m_ViewDistanceCOPtoPL = View->GetDproj();
+  
+  m_ViewPerspective = View->IsPerspective();
+  m_ViewValid = true;
+}
+ 
 
 ////////////////////////////////////////////////////////////////////////////////
 
