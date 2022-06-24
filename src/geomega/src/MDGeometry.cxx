@@ -335,6 +335,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   MTimer Timer;
   double TimeLimit = 0;
   bool FoundDeprecated = false;
+  bool FoundSurroundingSphere = false;
 
   // First clean the geometry ...
   Reset();
@@ -1209,6 +1210,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // Surrounding sphere
     else if (Tokenizer.IsTokenAt(0, "SurroundingSphere") == true) {
+      if (FoundSurroundingSphere == true) {
+        Typo("You have multiple surrounding spheres defined in your code. The ones read later overwrite the original one. This is too error prone to be allowed.");
+        return false;
+      }
+
       if (Tokenizer.GetNTokens() != 6) {
         Typo("Line must contain five values: Radius, xPos, yPos, zPos of sphere center, Distance to sphere center");
         return false;
@@ -1224,6 +1230,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         Typo("Limitation: Concerning your surrounding sphere: The sphere radius must equal the distance to the sphere for the time being. Sorry.");
         return false;
       }
+
+      FoundSurroundingSphere = true;
 
       continue;
     }
