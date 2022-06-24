@@ -337,13 +337,15 @@ void MInterfaceGeomega::ViewGeometry()
 {
   // Create a display of the geometry
 
+  m_Geometry->StoreViewParameters();
+
   if (ReloadRequired() == true) {
     if (ReadGeometry() == false) {
       return;
     }
   }
   
-  m_Geometry->DrawGeometry(nullptr, "ogle");
+  m_Geometry->DrawGeometry(nullptr, true, "ogle");
 }
 
 

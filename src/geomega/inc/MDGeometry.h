@@ -62,7 +62,7 @@ class MDGeometry
   
   //! Draws the geometry
   //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
-  virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
+  virtual bool DrawGeometry(TCanvas* Canvas = nullptr, bool RestoreView = false, MString Mode = "ogle");
   
   //! Dump the geometry in readable format to the screen 
   void DumpInformation();
@@ -84,6 +84,10 @@ class MDGeometry
 
   //! Add a preferred visible volume --- if any is given, only those will be shown
   void AddPreferredVisibleVolume(const MString& Name) { m_PreferredVisibleVolumeNames.push_back(Name); }
+  
+  //! Store the view parameters (zoom, rotation, etc.)
+  void StoreViewParameters();
+  
   
   MString GetFileName();
   MString GetName();
@@ -317,6 +321,47 @@ class MDGeometry
   MDVolume* m_LastFoundVolume_GetRandomPositionInVolume;
   //! The last found placements in GetRandomPositionInVolume
   vector<int> m_LastFoundPlacements_GetRandomPositionInVolume;
+  
+  
+  // The stored view parameters
+  
+  //! True if the view parameters have been correctly set
+  bool m_ViewValid;
+  
+  //! Canvas position x coordinate
+  int m_ViewPositionX;
+  //! Canvas position y coordinate
+  int m_ViewPositionY;
+  
+  //! A shift from the ROOT returned x position due to window decorators:
+  int m_ViewPositionShiftX;
+  //! A shift from the ROOT returned x position due to window decorators:
+  int m_ViewPositionShiftY;
+  
+  //! Canvas size x coordinate
+  unsigned int m_ViewSizeX;
+  //! Canvas size y coordinate
+  unsigned int m_ViewSizeY;
+  
+  //! Minimum view range
+  vector<double> m_ViewRangeMin;
+  //! Maximum view range
+  vector<double> m_ViewRangeMax;
+  
+  //! Rotation phi angle
+  double m_ViewRotationPhi;
+  //! Rotation theta angle
+  double m_ViewRotationTheta;
+  //! Rotation psi angle
+  double m_ViewRotationPsi;
+  
+  //! Distance from COP to COV
+  double m_ViewDistanceCOPtoCOV;
+  //! Distance from COP to projection plane
+  double m_ViewDistanceCOPtoPL;
+  
+  //! True if the view is perspective
+  bool m_ViewPerspective;
   
   
 #ifdef ___CLING___
