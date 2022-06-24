@@ -1,10 +1,10 @@
 # Benchmark summary file
  
-HostName:                                  red
+HostName:                                  cosi-ccu
  
 OSFlavour:                                 ubuntu
-OSVersion:                                 18.04
-Kernel:                                    4.15.0-46-generic
+OSVersion:                                 20.04
+Kernel:                                    5.4.0-120-generic
  
 CPUModel:                                  Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz
 CPUName:                                   i7-4770
@@ -14,34 +14,34 @@ CPUThreadsPerCore:                         2
 Cores:                                     4
 Threads:                                   8
  
-ROOTVersion:                               6.16/00
+ROOTVersion:                               6.24/06
 Geant4Version:                             10.2.3
  
-MEGAlibVersion:                            2.99.11
-MEGAlibGitHash:                            6873835b66b792c3834574a6aa234800f306b7e5 2019-08-19
-MEGAlibOptimization:                       -O3 -mtune=native -fno-strict-aliasing -DNDEBUG
+MEGAlibVersion:                            3.99.01
+MEGAlibGitHash:                            d62e90669a77bfb0784546a15b9a79fac3ae5f31 2022-06-22
+MEGAlibOptimization:                       -O -DNDEBUG
  
 # Cosima
-DurationCosimaSingle:                      23.899
-EventsPerSecondCosimaSingle:               4184.275
-DurationCosimaMultiple:                    47.796
-EventsPerSecondCosimaMultiple:             16737.802
+DurationCosimaSingle:                      29.606
+EventsPerSecondCosimaSingle:               3377.693
+DurationCosimaMultiple:                    54.726
+EventsPerSecondCosimaMultiple:             14618.280
  
 # Revan
-DurationRevanSingle:                       4.897
-EventsPerSecondRevanSingle:                20420.665
-DurationRevanMultiple:                     8.550
-EventsPerSecondRevanMultiple:              93567.251
+DurationRevanSingle:                       6.216
+EventsPerSecondRevanSingle:                16087.516
+DurationRevanMultiple:                     10.886
+EventsPerSecondRevanMultiple:              73488.884
  
 # ResponseCreator
-DurationResponseCreatorSingle:             14.507
-EventsPerSecondResponseCreatorSingle:      6893.223
-DurationResponseCreatorMultiple:           29.855
-EventsPerSecondResponseCreatorMultiple:    26796.181
+DurationResponseCreatorSingle:             16.497
+EventsPerSecondResponseCreatorSingle:      6061.708
+DurationResponseCreatorMultiple:           35.978
+EventsPerSecondResponseCreatorMultiple:    22235.810
  
 # MimrecImaging
-DurationMimrecImagingSingle:               55.063
-EventsPerSecondMimrecImagingSingle:        1816.101
-DurationMimrecImagingMultiple:             15.226
-EventsPerSecondMimrecImagingMultiple:      6567.713
+DurationMimrecImagingSingle:               .554
+EventsPerSecondMimrecImagingSingle:        180505.415
+DurationMimrecImagingMultiple:             .462
+EventsPerSecondMimrecImagingMultiple:      216450.216
  
