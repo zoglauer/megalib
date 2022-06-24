@@ -70,6 +70,9 @@ class MDDebugInfo
   //! Return the tokenizer - the flag indicates if the maths, or no-maths version is requested
   MTokenizer& GetTokenizer(bool AllowMaths = true);
   
+  //! Return true is the tokenizer is valid
+  bool IsTokenizerValid() { return m_IsTokenizerValid; }
+  
   //! Prepend some text
   void Prepend(MString Pre) { SetText(Pre + m_Text); m_TokenizerWithMathsUpToDate = false; m_TokenizerWithoutMathsUpToDate = false; }
 
@@ -105,6 +108,9 @@ class MDDebugInfo
   bool m_TokenizerWithoutMathsUpToDate; 
   //! The tokenizer without maths
   MTokenizer m_TokenizerWithoutMaths;
+  
+  //! True if all tokenizers are valid
+  bool m_IsTokenizerValid;
   
 #ifdef ___CLING___
  public:

@@ -1027,7 +1027,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
-    
+    if ((*ContentIter).IsTokenizerValid() == false) {
+      Typo("Parsing of the line failed.");
+      return false;
+    }
+   
     if (Tokenizer.GetNTokens() == 0) {
       continue;
     }
@@ -1122,7 +1126,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
-    
+    if ((*ContentIter).IsTokenizerValid() == false) {
+      Typo("Parsing of the line failed.");
+      return false;
+    }
+        
     if (Tokenizer.GetNTokens() == 0) continue;
 
     if (Tokenizer.IsTokenAt(0, "Print") == true ||
@@ -1150,7 +1158,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
-    
+    if ((*ContentIter).IsTokenizerValid() == false) {
+      Typo("Parsing of the line failed.");
+      return false;
+    }
+       
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Let's scan for first order keywords:

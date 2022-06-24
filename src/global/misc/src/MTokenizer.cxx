@@ -28,9 +28,11 @@
 
 // Standard libs:
 #include <iomanip>
+using namespace std;
 
 // ROOT libs:
 #include "TFormula.h"
+#include "TMath.h"
 #include "MString.h"
 
 // MEGAlib libs:
@@ -851,7 +853,7 @@ bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
     } else if (TokenLength > 0 && pToken[0] == '{' && pToken[TokenLength-1] == '}') {
       if (AllowMaths == true) {
         if (EvaluateMaths(Token) == false) {
-          merr<<"Unable to scan math token \""<<Token<<"\"correctly!"<<endl;
+          merr<<"Unable to scan math token \""<<Token<<"\"correctly! It might contain text or evaluate to nan or inf."<<endl;
           return false;
         }
       }
@@ -1022,8 +1024,12 @@ bool MTokenizer::EvaluateMaths(MString& Token)
   if (Formula.Compile(Token) != 0) {
     return false;
   } else {
+    double Content = Formula.Eval(0.0);
+    if (TMath::IsNaN(Content) || !TMath::Finite(Content)) {
+      return false;
+    }
     ostringstream out;
-    out<<scientific<<setprecision(16)<<Formula.Eval(0.0);
+    out<<scientific<<setprecision(16)<<Content;
     Token = out.str().c_str();
     return true;
   }
