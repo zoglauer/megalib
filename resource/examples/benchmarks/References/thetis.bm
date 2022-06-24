@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  thetis
+ 
+OSFlavour:                                 macOS
+OSVersion:                                 12.4
+Kernel:                                    21.5.0
+ 
+CPUModel:                                  Apple M1 Pro
+CPUName:                                   Apple M1 Pro
+CPUSockets:                                1
+CPUCoresPerSocket:                         10
+CPUThreadsPerCore:                         1
+Cores:                                     10
+Threads:                                   10
+ 
+ROOTVersion:                               6.24/06
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            3.99.01
+MEGAlibGitHash:                            1340d2a0a69755b5abcffc39c5bed7e250467fa2 2022-06-23
+MEGAlibOptimization:                       -O3 -mtune=native -fno-strict-aliasing -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      17.429
+EventsPerSecondCosimaSingle:               5737.563
+DurationCosimaMultiple:                    20.856
+EventsPerSecondCosimaMultiple:             47947.832
+ 
+# Revan
+DurationRevanSingle:                       3.893
+EventsPerSecondRevanSingle:                25687.130
+DurationRevanMultiple:                     4.440
+EventsPerSecondRevanMultiple:              225225.225
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             9.366
+EventsPerSecondResponseCreatorSingle:      10676.916
+DurationResponseCreatorMultiple:           13.849
+EventsPerSecondResponseCreatorMultiple:    72207.379
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               37.812
+EventsPerSecondMimrecImagingSingle:        2644.663
+DurationMimrecImagingMultiple:             7.279
+EventsPerSecondMimrecImagingMultiple:      13738.150
+ 
