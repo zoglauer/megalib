@@ -23,6 +23,7 @@ PRGSX = \
 	$(BN)/SimAnalyzer \
 	$(BN)/SimRewriter \
 	$(BN)/SimCombiner \
+	$(BN)/SimBinaryConverter \
 	$(BN)/SimRandomCoincidence \
 	$(BN)/TraAnalyzer \
 	$(BN)/DecayAnalyzer \
@@ -39,7 +40,8 @@ PRGSX = \
 FITS = \
 	$(BN)/TraFitsConverter \
 	$(BN)/ConvertMGGPOD \
-
+	$(BN)/ResponseToXSPEC \
+	
 MPI = $(BN)/bundler
 
 
@@ -77,7 +79,7 @@ clean:
 $(FITS): $(BN)/%: %.cxx
 ifeq "$(strip $(HEASOFTINSTALLED))" "0"
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	$(LD) $(LDFLAGS) $(CXXFLAGS) $(DEFINES) -I$(LHEASOFT)/include $< $(MLIBS) -lcfitsio -lm $(GLIBS) $(LIBS) -L$(LHEASOFT)/lib -o $@
+	$(LD) $(LDFLAGS) $(CXXFLAGS) $(HEACFLAGS) $(DEFINES) $< $(MLIBS) -lcfitsio -lm $(GLIBS) $(LIBS) $(HEALIBS) -o $@
 endif
 
 $(MPI): $(BN)/%: %.cxx

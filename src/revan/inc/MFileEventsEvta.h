@@ -26,6 +26,7 @@ using namespace std;
 #include "MRERawEvent.h"
 #include "MGeometryRevan.h"
 #include "MERNoising.h"
+#include "MBinaryStore.h"
 
 // Forward declarations:
 
@@ -40,11 +41,13 @@ class MFileEventsEvta : public MFileEvents
   MFileEventsEvta(MGeometryRevan* Geo);
   virtual ~MFileEventsEvta();
 
-  virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read);
+  virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read, bool IsBinary = false);
   virtual bool Close();
 
   MRERawEvent* GetNextEvent();
-
+  MRERawEvent* GetNextEventASCII();
+  MRERawEvent* GetNextEventBinary();
+  
   //! Get the noising ER
   MERNoising* GetERNoising() { return m_Noising; }
 
@@ -75,6 +78,11 @@ class MFileEventsEvta : public MFileEvents
   bool m_IsSimulation;
   bool m_IsFirstEvent;
 
+  //! Reached the binary section in binary files
+  bool m_ReachedBinarySection;
+  //! Store for the temporary binary data
+  MBinaryStore m_BinaryStore;
+  
   //! Save the OI information
   bool m_SaveOI;
   

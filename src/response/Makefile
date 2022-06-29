@@ -41,6 +41,7 @@ FILES = MResponseCreator \
 	MResponseImagingEfficiencyNearField \
 	MResponseImagingBinnedMode \
 	MResponseImagingCodedMask \
+	MResponsePolarizationBinnedMode \
 	MResponseEarthHorizon \
 	MResponseEventQuality \
 	MResponseEventQualityTMVAEventFile \

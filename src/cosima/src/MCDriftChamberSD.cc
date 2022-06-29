@@ -21,6 +21,7 @@
 #include "MCDriftChamberHit.hh"
 #include "MCDetectorConstruction.hh"
 #include "MCTrackInformation.hh"
+#include "MCEventAction.hh"
 
 // MEGAlib:
 #include "MGlobal.h"
@@ -37,6 +38,7 @@
 #include "G4ios.hh"
 #include "G4ThreeVector.hh"
 #include "Randomize.hh"
+#include "G4EventManager.hh"
 
 
 /******************************************************************************
@@ -113,7 +115,11 @@ G4bool MCDriftChamberSD::PostProcessHits(const G4Step* Step)
   }
 
   if (Energy == 0.0) return false;
-
+  
+  if (m_IsNeverTriggering == true) {
+    dynamic_cast<MCEventAction *>(G4EventManager::GetEventManager()->GetUserEventAction())->AddEnergyLoss(Energy);
+  }
+  
   G4String DetectorName;
   G4ThreeVector DetectorPosition;
   

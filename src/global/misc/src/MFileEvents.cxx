@@ -98,11 +98,11 @@ MFileEvents::~MFileEvents()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFileEvents::Open(MString FileName, unsigned int Way)
+bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
 {
   // Open the file and read some basic data common to all MEGAlib event files
 
-  if (MFile::Open(FileName, Way) == false) {
+  if (MFile::Open(FileName, Way, IsBinary) == false) {
     return false;
   }
 
@@ -115,7 +115,8 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
     bool FoundMEGAlibVersion = false;
     bool FoundTB = false;
     bool FoundIN = false;
-
+    bool FoundBinaryStream = false;
+    
     m_HasStartObservationTime = false;
     m_HasEndObservationTime = false;
 
@@ -210,6 +211,12 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
           ++MaxLines;
         }
       }
+      if (FoundBinaryStream == false) {
+        if (Line.BeginsWith("STARTBINARYSTREAM") == true) {
+          m_IsBinary = true;
+          FoundBinaryStream = true;
+        }
+      }
     }
   }
 
@@ -232,7 +239,7 @@ bool MFileEvents::ReadFooter(bool Continue)
   // Read the footer of the file
 
   streampos Position = GetUncompressedFilePosition();
-
+  
   if (Continue == false) {
     MFile::Rewind(!m_IsIncludeFile);
     if (GetUncompressedFileLength() > (streampos) 100000) {
@@ -246,6 +253,7 @@ bool MFileEvents::ReadFooter(bool Continue)
     if (ReadLine(Line) == false) {
       break;
     }
+
     NLinesRead++;
     if (Line.Length() < 2) continue;
 
@@ -258,6 +266,7 @@ bool MFileEvents::ReadFooter(bool Continue)
     Seek(Position);
   }
 
+    
   return true;
 }
 
@@ -384,6 +393,9 @@ bool MFileEvents::WriteHeader()
   Header<<"Date      "<<Now.GetSQLString()<<endl;
   Header<<"MEGAlib   "<<g_VersionString<<endl;
   Header<<endl;
+  if (m_IsBinary == true) {
+    Header<<"STARTBINARYSTREAM"<<endl; 
+  }
   Write(Header);
 
   return true;

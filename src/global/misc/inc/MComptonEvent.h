@@ -154,7 +154,7 @@ class MComptonEvent : public MPhysicalEvent
   inline double TrackQualityFactor2() const { return m_TrackQualityFactor2; }
 
   inline double FirstLeverArm() const { return (m_C2 - m_C1).Mag(); }
-  inline double MinLeverArm() const { return (m_C2 - m_C1).Mag(); }  // Depreciated
+  inline double MinLeverArm() const { return (m_C2 - m_C1).Mag(); }  // Deprecated
   inline double AnyLeverArm() const { return m_LeverArm; } // bad naming
   inline double LeverArm() const { return AnyLeverArm(); } // bad naming
 
@@ -212,6 +212,8 @@ class MComptonEvent : public MPhysicalEvent
   //! Representation of the Kleine Nishina cross-section value of this events data
   double GetKleinNishina() const;
 
+  //! Return the (differential) Klein Nishina value for the given incident photon energy and Compton scatter angle 
+  static double GetDifferentalKleinNishina(const double Ei, const double phi);
   //! Return the Klein Nishina value for the given incident photon energy and Compton scatter angle 
   static double GetKleinNishina(const double Ei, const double phi);
   //! Unknown if this is correct...

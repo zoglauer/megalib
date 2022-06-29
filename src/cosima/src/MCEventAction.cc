@@ -32,6 +32,7 @@
 #include "MSimEvent.h"
 #include "MSimIA.h"
 #include "MTime.h"
+#include "MBinaryStore.h"
 #include "MDGeometry.h"
 
 // Geant4:
@@ -45,6 +46,7 @@
 #include <string>
 #include <cstdlib>
 #include <ctime>
+#include <iomanip>
 using namespace std;
 
 // Root:
@@ -62,11 +64,13 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, con
 {
   m_OutFileName = "";
 
+  m_StoreBinary = RunParameters.StoreBinary();
   m_StoreSimulationInfo = RunParameters.StoreSimulationInfo();
   m_StoreSimulationInfoVersion = RunParameters.StoreSimulationInfoVersion();
   m_StoreCalibrated = RunParameters.StoreCalibrated();
   m_StoreOneHitPerEvent = RunParameters.StoreOneHitPerEvent();
   m_StoreMinimumEnergy = RunParameters.StoreMinimumEnergy();
+  m_StoreMaximumEnergyLoss = RunParameters.StoreMaximumEnergyLoss();
   
   m_PreTriggerMode = RunParameters.GetPreTriggerMode();
   
@@ -85,6 +89,8 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, con
 
   m_ID = 0;
   m_Event = new MSimEvent();
+  
+  m_LostEnergy = 0.0;
 
   m_SaveEvents = false;
   m_TransmitEvents = false;
@@ -130,16 +136,20 @@ bool MCEventAction::NextRun()
 
     ostringstream FileName;
     if (m_ParallelID == 0) {
-      FileName<<BaseName<<".inc"<<m_Incarnation<<".id1.sim";
+      FileName<<BaseName<<".inc"<<m_Incarnation<<".id1";
     } else {
-      FileName<<BaseName<<".p"<<m_ParallelID<<".inc"<<m_Incarnation<<".id1.sim";
+      FileName<<BaseName<<".p"<<m_ParallelID<<".inc"<<m_Incarnation<<".id1";
     }
+    if (m_StoreBinary == true) {
+      FileName<<".bin"; 
+    }
+    FileName<<".sim";
     if (m_Zip == true) {
       FileName<<".gz";
     }
     m_OutFileName = FileName.str().c_str();
 
-    m_OutFile.Open(m_OutFileName, MFile::c_Write);
+    m_OutFile.Open(m_OutFileName, MFile::c_Write, m_StoreBinary);
 
     if (m_OutFile.IsOpen() == false) {
       mout<<"Can't open file!"<<endl;
@@ -252,7 +262,10 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
   
   Out<<endl;
   Out<<"TB "<<SimulationStartTime<<endl; 
-  Out<<endl; 
+  Out<<endl;
+  if (m_StoreBinary == true) {
+    Out<<"STARTBINARYSTREAM"<<endl; 
+  }
 
   m_OutFile.Write(Out);
   
@@ -323,6 +336,9 @@ void MCEventAction::Reset()
 {
   m_PassiveMaterialMap.clear();
 
+  m_LostEnergy = 0;
+  m_IsAborted = false;
+  
   // Deletes all passed pointers!
   m_Event->Reset();
 }
@@ -364,6 +380,10 @@ void MCEventAction::AddIA(G4String ProcessID,
 
   // The event takes over and deletes the IA
   m_Event->AddIA(IA);
+  
+  if (ProcessID == "ESCP") {
+    AddEnergyLoss(NewKin);
+  }
 }
 
 /******************************************************************************
@@ -402,10 +422,34 @@ void MCEventAction::SetDetectorPointing(double XTheta, double XPhi, double ZThet
 void MCEventAction::AddDepositPassiveMaterial(double Energy, 
                                               string MaterialName)
 {
+  AddEnergyLoss(Energy);
+  
   m_PassiveMaterialMap[MaterialName] += Energy;
 }
 
 
+/******************************************************************************
+ * Add an energy loss
+ */
+void MCEventAction::AddEnergyLoss(double Energy)
+{
+  m_LostEnergy += Energy;
+  if (m_LostEnergy > m_StoreMaximumEnergyLoss) {
+    AbortEvent();
+  }
+}
+
+
+/******************************************************************************
+ * Abort the current event
+ */
+void MCEventAction::AbortEvent()
+{
+  const_cast<G4Event*>(G4RunManager::GetRunManager()->GetCurrentEvent())->SetEventAborted();
+  m_IsAborted = true;
+}
+  
+  
 /******************************************************************************
  * Test for trigger and store all events
  */
@@ -417,336 +461,338 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
   
   MCRun& Run = m_RunParameters.GetCurrentRun();
 
-  // Make a list of all collections:
-  G4SDManager* SDMan = G4SDManager::GetSDMpointer();
+  if (m_IsAborted == false) {
+    // Make a list of all collections:
+    G4SDManager* SDMan = G4SDManager::GetSDMpointer();
   
-  vector<MC2DStripHitsCollection*> TwoDStripColl;
-  vector<MCCalorBarHitsCollection*> CalorimeterColl;
-  vector<MC2DStripHitsCollection*> ThreeDStripColl;
-  vector<MCVoxel3DHitsCollection*> Voxel3DColl;
-  vector<MCScintillatorHitsCollection*> ScintillatorColl;
-  vector<MCDriftChamberHitsCollection*> DriftChamberColl;
-  vector<MCAngerCameraHitsCollection*> AngerCameraColl;
-
-  int ID = 0;
-  for (unsigned int i = 0; i < m_2DStripCollNames.size(); ++i) {
-    ID = SDMan->GetCollectionID(m_2DStripCollNames[i]);
-    TwoDStripColl.push_back((MC2DStripHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
-  }
-  for (unsigned int i = 0; i < m_CalorimeterCollNames.size(); ++i) {
-    ID = SDMan->GetCollectionID(m_CalorimeterCollNames[i]);
-    CalorimeterColl.push_back((MCCalorBarHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
-  }
-  for (unsigned int i = 0; i < m_3DStripCollNames.size(); ++i) {
-    ID = SDMan->GetCollectionID(m_3DStripCollNames[i]);
-    ThreeDStripColl.push_back((MC2DStripHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
-  }
-  for (unsigned int i = 0; i < m_Voxel3DCollNames.size(); ++i) {
-    ID = SDMan->GetCollectionID(m_Voxel3DCollNames[i]);
-    Voxel3DColl.push_back((MCVoxel3DHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
-  }
-  for (unsigned int i = 0; i < m_ScintillatorCollNames.size(); ++i) {
-    ID = SDMan->GetCollectionID(m_ScintillatorCollNames[i]);
-    ScintillatorColl.push_back((MCScintillatorHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
-  }
-  for (unsigned int i = 0; i < m_DriftChamberCollNames.size(); ++i) {
-    ID = SDMan->GetCollectionID(m_DriftChamberCollNames[i]);
-    DriftChamberColl.push_back((MCDriftChamberHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
-  }
-  for (unsigned int i = 0; i < m_AngerCameraCollNames.size(); ++i) {
-    ID = SDMan->GetCollectionID(m_AngerCameraCollNames[i]);
-    AngerCameraColl.push_back((MCAngerCameraHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
-  }
-
-
-  // Sum up the total energy deposit in sensitive detectors:
-  double SensitiveEnergy = 0;
-  for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
-    for (h = 0; h < TwoDStripColl[i]->entries(); ++h) {
-      SensitiveEnergy += (*TwoDStripColl[i])[h]->GetEnergy();
-    }
-  }
-  for (unsigned int i = 0; i < CalorimeterColl.size(); ++i) {
-    for (h = 0; h < CalorimeterColl[i]->entries(); ++h) {
-      SensitiveEnergy += (*CalorimeterColl[i])[h]->GetEnergy();
-    }
-  }
-  for (unsigned int i = 0; i < ThreeDStripColl.size(); ++i) {
-    for (h = 0; h < ThreeDStripColl[i]->entries(); ++h) {
-      SensitiveEnergy += (*ThreeDStripColl[i])[h]->GetEnergy();
-    }
-  }
-  for (unsigned int i = 0; i < Voxel3DColl.size(); ++i) {
-    for (h = 0; h < Voxel3DColl[i]->entries(); ++h) {
-      SensitiveEnergy += (*Voxel3DColl[i])[h]->GetEnergy();
-    }
-  }
-  for (unsigned int i = 0; i < ScintillatorColl.size(); ++i) {
-    for (h = 0; h < ScintillatorColl[i]->entries(); ++h) {
-      SensitiveEnergy += (*ScintillatorColl[i])[h]->GetEnergy();
-    }
-  }
-  for (unsigned int i = 0; i < DriftChamberColl.size(); ++i) {
-    for (h = 0; h < DriftChamberColl[i]->entries(); ++h) {
-      SensitiveEnergy += (*DriftChamberColl[i])[h]->GetEnergy();
-    }
-  }
-  for (unsigned int i = 0; i < AngerCameraColl.size(); ++i) {
-    for (h = 0; h < AngerCameraColl[i]->entries(); ++h) {
-      SensitiveEnergy += (*AngerCameraColl[i])[h]->GetEnergy();
-    }
-  }
-
-  mdebug<<"Energy deposits in sensitive material: "<<SensitiveEnergy<<endl;
-
-  // Section: test the trigger conditions:
-  bool HasTriggered = false;
-  if (m_TriggerUnit != 0) {
-    m_TriggerUnit->Reset();
+    vector<MC2DStripHitsCollection*> TwoDStripColl;
+    vector<MCCalorBarHitsCollection*> CalorimeterColl;
+    vector<MC2DStripHitsCollection*> ThreeDStripColl;
+    vector<MCVoxel3DHitsCollection*> Voxel3DColl;
+    vector<MCScintillatorHitsCollection*> ScintillatorColl;
+    vector<MCDriftChamberHitsCollection*> DriftChamberColl;
+    vector<MCAngerCameraHitsCollection*> AngerCameraColl;
     
+    int ID = 0;
+    for (unsigned int i = 0; i < m_2DStripCollNames.size(); ++i) {
+      ID = SDMan->GetCollectionID(m_2DStripCollNames[i]);
+      TwoDStripColl.push_back((MC2DStripHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
+    }
+    for (unsigned int i = 0; i < m_CalorimeterCollNames.size(); ++i) {
+      ID = SDMan->GetCollectionID(m_CalorimeterCollNames[i]);
+      CalorimeterColl.push_back((MCCalorBarHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
+    }
+    for (unsigned int i = 0; i < m_3DStripCollNames.size(); ++i) {
+      ID = SDMan->GetCollectionID(m_3DStripCollNames[i]);
+      ThreeDStripColl.push_back((MC2DStripHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
+    }
+    for (unsigned int i = 0; i < m_Voxel3DCollNames.size(); ++i) {
+      ID = SDMan->GetCollectionID(m_Voxel3DCollNames[i]);
+      Voxel3DColl.push_back((MCVoxel3DHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
+    }
+    for (unsigned int i = 0; i < m_ScintillatorCollNames.size(); ++i) {
+      ID = SDMan->GetCollectionID(m_ScintillatorCollNames[i]);
+      ScintillatorColl.push_back((MCScintillatorHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
+    }
+    for (unsigned int i = 0; i < m_DriftChamberCollNames.size(); ++i) {
+      ID = SDMan->GetCollectionID(m_DriftChamberCollNames[i]);
+      DriftChamberColl.push_back((MCDriftChamberHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
+    }
+    for (unsigned int i = 0; i < m_AngerCameraCollNames.size(); ++i) {
+      ID = SDMan->GetCollectionID(m_AngerCameraCollNames[i]);
+      AngerCameraColl.push_back((MCAngerCameraHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
+    }
+    
+    
+    // Sum up the total energy deposit in sensitive detectors:
+    double SensitiveEnergy = 0;
     for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
       for (h = 0; h < TwoDStripColl[i]->entries(); ++h) {
-        if ((*TwoDStripColl[i])[h]->GetIsGuardringHit() == true) {
-          m_TriggerUnit->AddGuardRingHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
-        } else {
-          m_TriggerUnit->AddHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
-        }
+        SensitiveEnergy += (*TwoDStripColl[i])[h]->GetEnergy();
       }
     }
     for (unsigned int i = 0; i < CalorimeterColl.size(); ++i) {
       for (h = 0; h < CalorimeterColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*CalorimeterColl[i])[h]->GetPosition().getX(), (*CalorimeterColl[i])[h]->GetPosition().getY(), (*CalorimeterColl[i])[h]->GetPosition().getZ())/cm, (*CalorimeterColl[i])[h]->GetEnergy()/keV);
+        SensitiveEnergy += (*CalorimeterColl[i])[h]->GetEnergy();
       }
     }
     for (unsigned int i = 0; i < ThreeDStripColl.size(); ++i) {
       for (h = 0; h < ThreeDStripColl[i]->entries(); ++h) {
-        if ((*ThreeDStripColl[i])[h]->GetIsGuardringHit() == true) {
-          m_TriggerUnit->AddGuardRingHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
-        } else {
-          m_TriggerUnit->AddHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
-        }
+        SensitiveEnergy += (*ThreeDStripColl[i])[h]->GetEnergy();
       }
     }
     for (unsigned int i = 0; i < Voxel3DColl.size(); ++i) {
       for (h = 0; h < Voxel3DColl[i]->entries(); ++h) {
-        if ((*Voxel3DColl[i])[h]->GetIsGuardringHit() == true) {
-          m_TriggerUnit->AddGuardRingHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
-        } else {
-          m_TriggerUnit->AddHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
-        }
+        SensitiveEnergy += (*Voxel3DColl[i])[h]->GetEnergy();
       }
     }
     for (unsigned int i = 0; i < ScintillatorColl.size(); ++i) {
       for (h = 0; h < ScintillatorColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*ScintillatorColl[i])[h]->GetPosition().getX(), (*ScintillatorColl[i])[h]->GetPosition().getY(), (*ScintillatorColl[i])[h]->GetPosition().getZ())/cm, (*ScintillatorColl[i])[h]->GetEnergy()/keV);
+        SensitiveEnergy += (*ScintillatorColl[i])[h]->GetEnergy();
       }
     }
     for (unsigned int i = 0; i < DriftChamberColl.size(); ++i) {
       for (h = 0; h < DriftChamberColl[i]->entries(); ++h) {
-        if ((*DriftChamberColl[i])[h]->GetIsGuardringHit() == true) {
-          m_TriggerUnit->AddGuardRingHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);          
-        } else {
-          m_TriggerUnit->AddHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);
-        }
+        SensitiveEnergy += (*DriftChamberColl[i])[h]->GetEnergy();
       }
     }
     for (unsigned int i = 0; i < AngerCameraColl.size(); ++i) {
       for (h = 0; h < AngerCameraColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*AngerCameraColl[i])[h]->GetPosition().getX(), (*AngerCameraColl[i])[h]->GetPosition().getY(), (*AngerCameraColl[i])[h]->GetPosition().getZ())/cm, (*AngerCameraColl[i])[h]->GetEnergy()/keV);
+        SensitiveEnergy += (*AngerCameraColl[i])[h]->GetEnergy();
       }
     }
-
-    if (m_TriggerUnit->HasTriggered() == true) {
-      HasTriggered = true;
-    }
-  }
-
-  bool StoreEvent = false;
-  if (m_PreTriggerMode == MCParameterFile::c_PreTriggerEverything) {
-    StoreEvent = true;
-  } else if (m_PreTriggerMode == MCParameterFile::c_PreTriggerEveryEventWithHits) {
-    if (SensitiveEnergy > 0) {
-      StoreEvent = true;
-    }
-  } else if (m_PreTriggerMode == MCParameterFile::c_PreTriggerFull) {
-    if (HasTriggered == true) {
-      StoreEvent = true;
-    }
-  } else {
-    mout<<"ERROR: Unknown pre-trigger mode, assuming full pretrigger."<<endl;
-    if (HasTriggered == true) {
-      StoreEvent = true;
-    }
-  }
     
+    mdebug<<"Energy deposits in sensitive material: "<<SensitiveEnergy<<endl;
     
-  if (StoreEvent == true) {
-    for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
-      mdebug<<"Writing 2D strip hits..."<<endl;
-      TwoDStripColl[i]->PrintAllHits();
-    }
-    for (unsigned int i = 0; i < CalorimeterColl.size(); ++i) {
-      mdebug<<"Writing calorimeter hits..."<<endl;
-      CalorimeterColl[i]->PrintAllHits();
-    }
-    for (unsigned int i = 0; i < ThreeDStripColl.size(); ++i) {
-      mdebug<<"Writing 3D strip hits..."<<endl;
-      ThreeDStripColl[i]->PrintAllHits();
-    }
-    for (unsigned int i = 0; i < Voxel3DColl.size(); ++i) {
-      mdebug<<"Writing voxel 3D hits..."<<endl;
-      Voxel3DColl[i]->PrintAllHits();
-    }
-    for (unsigned int i = 0; i < ScintillatorColl.size(); ++i) {
-      mdebug<<"Writing scintillator hits..."<<endl;
-      ScintillatorColl[i]->PrintAllHits();
-    }
-    for (unsigned int i = 0; i < DriftChamberColl.size(); ++i) {
-      mdebug<<"Writing scintillator hits..."<<endl;
-      DriftChamberColl[i]->PrintAllHits();
-    }
-    for (unsigned int i = 0; i < AngerCameraColl.size(); ++i) {
-      mdebug<<"Writing voxel 3D hits..."<<endl;
-      AngerCameraColl[i]->PrintAllHits();
-    }
-
-    // Section: Store events:
-    Run.AddTriggeredEvent();
-
-    m_Event->SetID(Run.GetNTriggeredEvents());
-    m_Event->SetSimulationEventID(m_ID);
-    m_Event->SetTime(Run.GetSimulatedTime()/s);
-
-    map<string, double>::iterator Iter; 
-    for (Iter = m_PassiveMaterialMap.begin(); 
-         Iter != m_PassiveMaterialMap.end(); 
-         ++Iter) {
-      if (Iter->second > 1*eV) {
-        MSimPM* PM = new MSimPM(Iter->first, Iter->second/keV);
-        m_Event->AddPM(PM);
-      }
-    }
-
-    // (b) Store the positions and energies or store Strips and counts...
-    if (m_StoreCalibrated == true) {
+    // Section: test the trigger conditions:
+    bool HasTriggered = false;
+    if (m_TriggerUnit != 0) {
+      m_TriggerUnit->Reset();
+      
       for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
         for (h = 0; h < TwoDStripColl[i]->entries(); ++h) {
-          m_Event->AddGR((*TwoDStripColl[i])[h]->GetGuardringCalibrated());
-          m_Event->AddHT((*TwoDStripColl[i])[h]->GetCalibrated());
+          if ((*TwoDStripColl[i])[h]->GetIsGuardringHit() == true) {
+            m_TriggerUnit->AddGuardRingHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
+          } else {
+            m_TriggerUnit->AddHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
+          }
         }
       }
       for (unsigned int i = 0; i < CalorimeterColl.size(); ++i) {
         for (h = 0; h < CalorimeterColl[i]->entries(); ++h) {
-          m_Event->AddHT((*CalorimeterColl[i])[h]->GetCalibrated());
+          m_TriggerUnit->AddHit(MVector((*CalorimeterColl[i])[h]->GetPosition().getX(), (*CalorimeterColl[i])[h]->GetPosition().getY(), (*CalorimeterColl[i])[h]->GetPosition().getZ())/cm, (*CalorimeterColl[i])[h]->GetEnergy()/keV);
         }
       }
       for (unsigned int i = 0; i < ThreeDStripColl.size(); ++i) {
         for (h = 0; h < ThreeDStripColl[i]->entries(); ++h) {
-          m_Event->AddGR((*ThreeDStripColl[i])[h]->GetGuardringCalibrated());
-          m_Event->AddHT((*ThreeDStripColl[i])[h]->GetCalibrated());
+          if ((*ThreeDStripColl[i])[h]->GetIsGuardringHit() == true) {
+            m_TriggerUnit->AddGuardRingHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
+          } else {
+            m_TriggerUnit->AddHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
+          }
         }
       }
       for (unsigned int i = 0; i < Voxel3DColl.size(); ++i) {
         for (h = 0; h < Voxel3DColl[i]->entries(); ++h) {
-          m_Event->AddGR((*Voxel3DColl[i])[h]->GetGuardringCalibrated());
-          m_Event->AddHT((*Voxel3DColl[i])[h]->GetCalibrated());
+          if ((*Voxel3DColl[i])[h]->GetIsGuardringHit() == true) {
+            m_TriggerUnit->AddGuardRingHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
+          } else {
+            m_TriggerUnit->AddHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
+          }
         }
       }
       for (unsigned int i = 0; i < ScintillatorColl.size(); ++i) {
         for (h = 0; h < ScintillatorColl[i]->entries(); ++h) {
-          m_Event->AddHT((*ScintillatorColl[i])[h]->GetCalibrated());
+          m_TriggerUnit->AddHit(MVector((*ScintillatorColl[i])[h]->GetPosition().getX(), (*ScintillatorColl[i])[h]->GetPosition().getY(), (*ScintillatorColl[i])[h]->GetPosition().getZ())/cm, (*ScintillatorColl[i])[h]->GetEnergy()/keV);
         }
       }
       for (unsigned int i = 0; i < DriftChamberColl.size(); ++i) {
         for (h = 0; h < DriftChamberColl[i]->entries(); ++h) {
-          m_Event->AddGR((*DriftChamberColl[i])[h]->GetGuardringCalibrated());
-          m_Event->AddHT((*DriftChamberColl[i])[h]->GetCalibrated());
+          if ((*DriftChamberColl[i])[h]->GetIsGuardringHit() == true) {
+            m_TriggerUnit->AddGuardRingHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);          
+          } else {
+            m_TriggerUnit->AddHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);
+          }
         }
       }
       for (unsigned int i = 0; i < AngerCameraColl.size(); ++i) {
         for (h = 0; h < AngerCameraColl[i]->entries(); ++h) {
-          m_Event->AddHT((*AngerCameraColl[i])[h]->GetCalibrated());
+          m_TriggerUnit->AddHit(MVector((*AngerCameraColl[i])[h]->GetPosition().getX(), (*AngerCameraColl[i])[h]->GetPosition().getY(), (*AngerCameraColl[i])[h]->GetPosition().getZ())/cm, (*AngerCameraColl[i])[h]->GetEnergy()/keV);
         }
       }
-    } else {
-      mout<<"Storing uncalibrated data is no longer supported..."<<endl;
+    
+      if (m_TriggerUnit->HasTriggered() == true) {
+        HasTriggered = true;
+      }
     }
-
-
-    if (m_StoreOneHitPerEvent == true && m_Event->GetNHTs() > 1) {
-      vector<MSimEvent*> E = m_Event->CreateSingleHitEvents();
-      for (unsigned int e = 0; e < E.size(); ++e) {
-        if (e > 0) {
-          Run.AddTriggeredEvent();
-          E[e]->SetID(Run.GetNTriggeredEvents());
+    
+    bool StoreEvent = false;
+    if (m_PreTriggerMode == MCParameterFile::c_PreTriggerEverything) {
+      StoreEvent = true;
+    } else if (m_PreTriggerMode == MCParameterFile::c_PreTriggerEveryEventWithHits) {
+      if (SensitiveEnergy > 0) {
+        StoreEvent = true;
+      }
+    } else if (m_PreTriggerMode == MCParameterFile::c_PreTriggerFull) {
+      if (HasTriggered == true) {
+        StoreEvent = true;
+      }
+    } else {
+      mout<<"ERROR: Unknown pre-trigger mode, assuming full pretrigger."<<endl;
+      if (HasTriggered == true) {
+        StoreEvent = true;
+      }
+    }
+      
+      
+    if (StoreEvent == true) {
+      for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
+        mdebug<<"Writing 2D strip hits..."<<endl;
+        TwoDStripColl[i]->PrintAllHits();
+      }
+      for (unsigned int i = 0; i < CalorimeterColl.size(); ++i) {
+        mdebug<<"Writing calorimeter hits..."<<endl;
+        CalorimeterColl[i]->PrintAllHits();
+      }
+      for (unsigned int i = 0; i < ThreeDStripColl.size(); ++i) {
+        mdebug<<"Writing 3D strip hits..."<<endl;
+        ThreeDStripColl[i]->PrintAllHits();
+      }
+      for (unsigned int i = 0; i < Voxel3DColl.size(); ++i) {
+        mdebug<<"Writing voxel 3D hits..."<<endl;
+        Voxel3DColl[i]->PrintAllHits();
+      }
+      for (unsigned int i = 0; i < ScintillatorColl.size(); ++i) {
+        mdebug<<"Writing scintillator hits..."<<endl;
+        ScintillatorColl[i]->PrintAllHits();
+      }
+      for (unsigned int i = 0; i < DriftChamberColl.size(); ++i) {
+        mdebug<<"Writing drift chamber hits..."<<endl;
+        DriftChamberColl[i]->PrintAllHits();
+      }
+      for (unsigned int i = 0; i < AngerCameraColl.size(); ++i) {
+        mdebug<<"Writing anger camera hits..."<<endl;
+        AngerCameraColl[i]->PrintAllHits();
+      }
+    
+      // Section: Store events:
+      Run.AddTriggeredEvent();
+    
+      m_Event->SetID(Run.GetNTriggeredEvents());
+      m_Event->SetSimulationEventID(m_ID);
+      m_Event->SetTime(Run.GetSimulatedTime()/s);
+    
+      map<string, double>::iterator Iter; 
+      for (Iter = m_PassiveMaterialMap.begin(); 
+           Iter != m_PassiveMaterialMap.end(); 
+           ++Iter) {
+        if (Iter->second > 1*eV) {
+          MSimPM* PM = new MSimPM(Iter->first, Iter->second/keV);
+          m_Event->AddPM(PM);
         }
-
-        if (E[e]->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
-          // Save and transmit know if we should do it
-          SaveEventToFile(E[e]);
-          TransmitEvent(E[e]);
-          if (m_RelegateEvents == true) {
-            m_Relegator(E[e]); 
+      }
+    
+      // (b) Store the positions and energies or store Strips and counts...
+      if (m_StoreCalibrated == true) {
+        for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
+          for (h = 0; h < TwoDStripColl[i]->entries(); ++h) {
+            m_Event->AddGR((*TwoDStripColl[i])[h]->GetGuardringCalibrated());
+            m_Event->AddHT((*TwoDStripColl[i])[h]->GetCalibrated());
           }
         }
+        for (unsigned int i = 0; i < CalorimeterColl.size(); ++i) {
+          for (h = 0; h < CalorimeterColl[i]->entries(); ++h) {
+            m_Event->AddHT((*CalorimeterColl[i])[h]->GetCalibrated());
+          }
+        }
+        for (unsigned int i = 0; i < ThreeDStripColl.size(); ++i) {
+          for (h = 0; h < ThreeDStripColl[i]->entries(); ++h) {
+            m_Event->AddGR((*ThreeDStripColl[i])[h]->GetGuardringCalibrated());
+            m_Event->AddHT((*ThreeDStripColl[i])[h]->GetCalibrated());
+          }
+        }
+        for (unsigned int i = 0; i < Voxel3DColl.size(); ++i) {
+          for (h = 0; h < Voxel3DColl[i]->entries(); ++h) {
+            m_Event->AddGR((*Voxel3DColl[i])[h]->GetGuardringCalibrated());
+            m_Event->AddHT((*Voxel3DColl[i])[h]->GetCalibrated());
+          }
+        }
+        for (unsigned int i = 0; i < ScintillatorColl.size(); ++i) {
+          for (h = 0; h < ScintillatorColl[i]->entries(); ++h) {
+            m_Event->AddHT((*ScintillatorColl[i])[h]->GetCalibrated());
+          }
+        }
+        for (unsigned int i = 0; i < DriftChamberColl.size(); ++i) {
+          for (h = 0; h < DriftChamberColl[i]->entries(); ++h) {
+            m_Event->AddGR((*DriftChamberColl[i])[h]->GetGuardringCalibrated());
+            m_Event->AddHT((*DriftChamberColl[i])[h]->GetCalibrated());
+          }
+        }
+        for (unsigned int i = 0; i < AngerCameraColl.size(); ++i) {
+          for (h = 0; h < AngerCameraColl[i]->entries(); ++h) {
+            m_Event->AddHT((*AngerCameraColl[i])[h]->GetCalibrated());
+          }
+        }
+      } else {
+        mout<<"Storing uncalibrated data is no longer supported..."<<endl;
+      }
+    
+    
+      if (m_StoreOneHitPerEvent == true && m_Event->GetNHTs() > 1) {
+        vector<MSimEvent*> E = m_Event->CreateSingleHitEvents();
+        for (unsigned int e = 0; e < E.size(); ++e) {
+          if (e > 0) {
+            Run.AddTriggeredEvent();
+            E[e]->SetID(Run.GetNTriggeredEvents());
+          }
+    
+          if (E[e]->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
+            // Save and transmit know if we should do it
+            SaveEventToFile(E[e]);
+            TransmitEvent(E[e]);
+            if (m_RelegateEvents == true) {
+              m_Relegator(E[e]); 
+            }
+          }
+          
+          delete E[e];
+        }
+      } else {
+        // Save and transmit know if we should do it
+        if (m_Event->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
+          mout<<"Storing event "<<Run.GetNTriggeredEvents()<<" of "<<m_ID<<" at t_obs="<<Run.GetSimulatedTime()/s<<"s"<<endl;
+          SaveEventToFile(m_Event);
+          TransmitEvent(m_Event);
+          if (m_RelegateEvents == true) {
+            m_Relegator(m_Event); 
+          }
+        }
+      }
+    
+      // Check if we are reaching the maximum file size: 
+      if (m_SaveEvents == true) {
+        streampos Length = m_OutFile.GetFileLength();
+        if (Length > m_OutFile.GetMaxFileLength()) {
+          mout<<"Current file length ("<<Length
+              <<") exceeds maximum (safe) file length ("<<m_OutFile.GetMaxFileLength()<<")!"<<endl;
+    
+          ostringstream FileName;
+          if (m_ParallelID == 0) {
+            FileName<<Run.GetFileName()<<".inc"<<m_Incarnation<<".id"<<(++m_FileNumber)<<".sim";
+          } else {
+            FileName<<Run.GetFileName()<<".p"<<m_ParallelID<<".inc"<<m_Incarnation<<".id"<<(++m_FileNumber)<<".sim";
+          }
+          if (m_Zip == true) {
+            FileName<<".gz";
+          }
+    
+          mout<<"Opening new file: "<<FileName.str().c_str()<<endl;
         
-        delete E[e];
-      }
-    } else {
-      // Save and transmit know if we should do it
-      if (m_Event->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
-        mout<<"Storing event "<<Run.GetNTriggeredEvents()<<" of "<<m_ID<<" at t_obs="<<Run.GetSimulatedTime()/s<<"s"<<endl;
-        SaveEventToFile(m_Event);
-        TransmitEvent(m_Event);
-        if (m_RelegateEvents == true) {
-          m_Relegator(m_Event); 
+          ostringstream Out;
+          Out<<endl; 
+          Out<<"NF "<<FileName.str()<<endl;
+          Out<<endl; 
+          Out<<"EN"<<endl; 
+          Out<<endl; 
+          Out<<"TE "<<setprecision(6)<<Run.GetSimulatedTime()/s<<endl; 
+          Out<<"TS "<<Run.GetNSimulatedEvents()<<endl; 
+          m_OutFile.Write(Out);
+          m_OutFile.Close();
+    
+          m_OutFile.Open(FileName.str(), MFile::c_Write);
+          m_OutFileName = FileName.str().c_str();
+        
+          if (m_OutFile.IsOpen() == false) {
+            mout<<"Can't open file!"<<endl;
+          }
+    
+          m_OutFile.Write("# Continued file...\n");
+          WriteFileHeader(Run.GetSimulatedTime()/s);
         }
-      }
-    }
-
-    // Check if we are reaching the maximum file size: 
-    if (m_SaveEvents == true) {
-      streampos Length = m_OutFile.GetFileLength();
-      if (Length > m_OutFile.GetMaxFileLength()) {
-        mout<<"Current file length ("<<Length
-            <<") exceeds maximum (safe) file length ("<<m_OutFile.GetMaxFileLength()<<")!"<<endl;
-
-        ostringstream FileName;
-        if (m_ParallelID == 0) {
-          FileName<<Run.GetFileName()<<".inc"<<m_Incarnation<<".id"<<(++m_FileNumber)<<".sim";
-        } else {
-          FileName<<Run.GetFileName()<<".p"<<m_ParallelID<<".inc"<<m_Incarnation<<".id"<<(++m_FileNumber)<<".sim";
-        }
-        if (m_Zip == true) {
-          FileName<<".gz";
-        }
-
-        mout<<"Opening new file: "<<FileName.str().c_str()<<endl;
-      
-        ostringstream Out;
-        Out<<endl; 
-        Out<<"NF "<<FileName.str()<<endl;
-        Out<<endl; 
-        Out<<"EN"<<endl; 
-        Out<<endl; 
-        Out<<"TE "<<Run.GetSimulatedTime()/s<<endl; 
-        Out<<"TS "<<Run.GetNSimulatedEvents()<<endl; 
-        m_OutFile.Write(Out);
-        m_OutFile.Close();
-
-        m_OutFile.Open(FileName.str(), MFile::c_Write);
-        m_OutFileName = FileName.str().c_str();
-      
-        if (m_OutFile.IsOpen() == false) {
-          mout<<"Can't open file!"<<endl;
-        }
-
-        m_OutFile.Write("# Continued file...\n");
-        WriteFileHeader(Run.GetSimulatedTime()/s);
       }
     }
   }
-
+  
   Reset();
 
   m_TotalTime += m_Timer.ElapsedTime();
@@ -754,11 +800,22 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
 
   if (m_Interrupt == true || Run.CheckStopConditions() == true) {
     if (m_SaveEvents == true) {
-      ostringstream Out;
+      if (m_StoreBinary == true) {
+        MBinaryStore S;
+        S.AddString("EN", 2);
+        m_OutFile.Write(S);
+        ostringstream O;   
+        O<<endl<<"ENDBINARYSTREAM"<<endl;
+        m_OutFile.Write(O);
+      } else {
+        ostringstream O;        
+        O<<"EN"<<endl;
+        m_OutFile.Write(O);
+      }
+
+      ostringstream Out;        
       Out<<endl; 
-      Out<<"EN"<<endl; 
-      Out<<endl; 
-      Out<<"TE "<<Run.GetSimulatedTime()/s<<endl; 
+      Out<<"TE "<<fixed<<setprecision(6)<<Run.GetSimulatedTime()/s<<endl; 
       Out<<"TS "<<Run.GetNSimulatedEvents()<<endl;
       m_OutFile.Write(Out);
       m_OutFile.Close();
@@ -784,7 +841,13 @@ bool MCEventAction::SaveEventToFile(MSimEvent* Event)
 {
   if (m_SaveEvents == true) {
     if (m_OutFile.IsOpen() == false) return false;
-    m_OutFile.Write(Event->ToSimString(m_StoreSimulationInfo, m_StoreScientificPrecision, m_StoreSimulationInfoVersion));
+    if (m_StoreBinary == true) {
+      MBinaryStore Store;
+      Event->ToBinary(Store, m_StoreSimulationInfo, true, m_StoreSimulationInfoVersion);
+      m_OutFile.Write(Store);
+    } else {
+      m_OutFile.Write(Event->ToSimString(m_StoreSimulationInfo, m_StoreScientificPrecision, m_StoreSimulationInfoVersion));
+    }
   }
   
   return true;

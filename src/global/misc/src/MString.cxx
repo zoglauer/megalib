@@ -134,6 +134,18 @@ vector<MString> MString::Tokenize(const MString& Delimeter, bool IgnoreEmpty)  c
   return T; 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the string between two strings
+MString MString::Extract(MString Before, MString After)
+{
+  size_t PosBefore = Index(Before) + Before.Length();
+  size_t PosAfter = Index(After, PosBefore);
+  
+  return GetSubString(PosBefore, PosAfter-PosBefore);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

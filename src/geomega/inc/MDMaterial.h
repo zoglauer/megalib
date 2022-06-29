@@ -86,9 +86,14 @@ class MDMaterial
   //! Get the number of component 
   unsigned int GetNComponents() const { return m_Components.size(); }
 
-  //! Set the directory where the cross sections are stored
+  //! Set the directory where the default cross sections are stored
+  void SetDefaultCrossSectionFileDirectory(MString Directory);
+  //! Return the directory where the default cross sections are stored
+  MString GetDefaultCrossSectionFileDirectory() const;
+
+  //! Set the directory where the new/extra/updated cross sections are stored
   void SetCrossSectionFileDirectory(MString Directory);
-  //! Return the directory where the cross sections are stored
+  //! Return the directory where the new/extra/updated cross sections are stored
   MString GetCrossSectionFileDirectory() const;
 
   //! return true if we have all cross sections ready
@@ -184,6 +189,9 @@ class MDMaterial
 
   static int m_IDCounter;
 
+  //! Location of the default cross sections stored in MEGAlib
+  MString m_DefaultCrossSectionFileDirectory;
+  //! Locaton of new/updated cross sections
   MString m_CrossSectionFileDirectory;
 
   //! True if all macroscopic cross section have been read in correctly

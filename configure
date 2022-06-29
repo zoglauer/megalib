@@ -340,45 +340,31 @@ else
   fi; 
 fi
 
-# Check for path to HEAsoft
+
+# Check for path to cfitsio library
 echo ""
-echo "(d) HEAsoft (optional)"
+echo "(d) cfitsio library (optional)"
 echo ""
 
-HEAsoftFound=1
-
-HEADir=""
-if ( [ "$HEADAS" != "" ] && [ -d $HEADAS ] ); then
-  HEADir="$HEADAS"
-elif ( [ "$HEASOFT" != "" ] && [ -d $HEASOFT ] ); then
-  HEADir=$HEASOFT
+FitsIOFound=1
+if [[ ${LHEASOFT} != "" ]] && ( [[ -f ${LHEASOFT}/lib/libcfitsio.a ]] || [[ -f ${LHEASOFT}/lib/libcfitsio.so ]] ); then 
+  echo "Found cfitsio library in ${LHEASOFT}/lib";
+  FitsIOFound=0  
+else
+  locate libcfitsio &> /dev/null
+  if [[ "$?" == "0" ]]; then
+    echo "Found exiting cfitsio in a system path";
+    FitsIOFound=0
+  fi
 fi
 
-if ( [ "${HEADir}" != "" ] ); then
-  if ( [ -f ${HEADir}/lib/libcfitsio.a ] || [ -f ${HEADir}/lib/libcfitsio.so ] ); then 
-    echo "Found HEAsoft: $HEADir";
-    HEAsoftFound=0
-  else
-    echo "HEAsoft directory found, but there is no libcfitsio.[so or dylib] library in $HEADir/lib!"
-    HEAVersionedLib=`ls $HEADir/lib/libcfitsio_*.*`
-    if ( [ "$HEAVersionedLib" != "" ] ); then
-      echo "However I found a libcfitsio with a version number: $HEAVersionedLib"
-      echo "If you want to use HEAsoft please make a link, e.g., on Linux in the directory of the library do:" 
-      echo "sudo ln -s libcfitsio_X.XX.so licfitsio.so"
-    fi
-    echo ""
-    echo "-> HEAsoft is only required if you want to do simulations with MGGPOD and convert the fits files via ConvertMGGPOD.";
-    echo "   This is very rarely the case. Thus you might just ignore that message."
-    echo "   If you reinstall HEAsoft later, please re-run configure and recompile";
-    HEAsoftFound=1
-  fi
-else 
-  echo "HEAsoft installation not found!";
+if [ ${FitsIOFound} == 1 ]; then
+  echo "cfitsio not found"
   echo ""
-  echo "-> HEAsoft is only required if you want to do simulations with MGGPOD and convert the fits files via ConvertMGGPOD.";
+  echo "-> cfitsio is only required if you want to read / write fits files.";
   echo "   This is very rarely the case. Thus you might just ignore that message."
-  echo "   If you reinstall HEAsoft later, please re-run configure and recompile";
-  HEAsoftFound=1
+  echo "   If you reinstall cfitsio later, please re-run configure and recompile";
+  FitsIOFound=1
 fi
 
 
@@ -529,7 +515,7 @@ echo "# " >> config/Makefile.options
 echo "# Important: Don't modify this sections by yourself " >> config/Makefile.options
 echo " " >> config/Makefile.options
 echo "GEANT4INSTALLED  = ${Geant4Found}" >> config/Makefile.options
-echo "HEASOFTINSTALLED = ${HEAsoftFound}" >> config/Makefile.options
+echo "HEASOFTINSTALLED = ${FitsIOFound}" >> config/Makefile.options
 echo "MPIINSTALLED = ${MPIFound}" >> config/Makefile.options
 echo " " >> config/Makefile.options
 

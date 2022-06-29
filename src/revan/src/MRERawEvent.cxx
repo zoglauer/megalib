@@ -34,7 +34,7 @@
 
 
 // Include the header:
-#include "MDDetector.h"
+#include "MRERawEvent.h"
 
 // Standard libs:
 #include <limits>
@@ -47,7 +47,7 @@ using namespace std;
 
 // MEGALib libs:
 #include "MAssert.h"
-#include "MRERawEvent.h"
+#include "MDDetector.h"
 #include "MRETrack.h"
 #include "MRECluster.h"
 #include "MREHit.h"
@@ -439,6 +439,22 @@ double MRERawEvent::GetEnergy()
   Energy += m_AdditionalEnergy;
 
   return Energy;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set origin information
+void MRERawEvent::SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy)
+{
+  MREAMStartInformation* OI = new MREAMStartInformation();
+  OI->SetPosition(Position);
+  OI->SetDirection(Direction);
+  OI->SetPolarization(Polarization);
+  OI->SetEnergy(Energy);
+  
+  m_Measurements.push_back(OI);
 }
 
 
@@ -1112,8 +1128,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       Pair->SetEnergyPositron(m_PositronTrack->GetEnergy());
       Pair->SetInitialEnergyDeposit(m_Vertex->GetEnergy());
       Pair->SetTrackQualityFactor(0.5*((MRETrack *) m_ElectronTrack)->GetQualityFactor() + 
-                                  0.5*((MRETrack *) m_ElectronTrack)->GetQualityFactor());
-      mimp<<"Pair track quality factors are not implemneted uniformly!!"<<endl;
+                                  0.5*((MRETrack *) m_PositronTrack)->GetQualityFactor());
 
       m_Event = (MPhysicalEvent*) Pair;
     } else if (m_EventType == c_PhotoEvent) {

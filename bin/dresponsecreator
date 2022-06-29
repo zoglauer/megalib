@@ -40,6 +40,7 @@ commandhelp() {
   echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
   echo "  --zip: Compress the output files."
   echo "  --log: Create a log file of what is started where"
+  echo "  --test: Just perfrom a test run"
   echo "  --help: Show this help."
   echo ""
   echo "Response creator specific options (calling responsecreator --help)"
@@ -85,6 +86,7 @@ LOGGING="tee"
 DELAY="10"
 NICE="19"
 CFG=~/.dcosima.cfg
+TESTRUN="FALSE"
 
 # Response creator specific options
 GEOMETRY=""
@@ -108,7 +110,7 @@ HERE=$(pwd)
 for C in "${CMD[@]}"; do
   if [[ ${C} == *-d*=* ]]; then
     DATADIR=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-t*=* ]]; then
+  elif [[ ${C} == *-ta*=* ]]; then
     TARGETDIR=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-co* ]]; then
     CONTINUE="TRUE"
@@ -118,6 +120,8 @@ for C in "${CMD[@]}"; do
     DELAY=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-l* ]]; then
     LOG="TRUE"
+  elif [[ ${C} == *-te* ]]; then
+    TESTRUN="TRUE"
   elif [[ ${C} == *-g*=* ]]; then
     GEOMETRY=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-f*=* ]]; then
@@ -168,6 +172,12 @@ else
   echo "ERROR: You need to give a data directory"
   exit 1
 fi
+# Check if we have read access
+if [ ! -r ${DATADIR} ]; then
+  echo " "
+  echo "ERROR: You need to have read access to the data directory: ${DATADIR}"
+  exit 1
+fi
 echo " * Data directory: ${DATADIR}"
 
   
@@ -183,7 +193,12 @@ if [[ ${GEOMETRY} == "" ]]; then
   echo "ERROR: You need to give a geometry file"
   exit 1
 fi
-
+# Check if we have read and write access
+if [ ! -r ${TARGETDIR} ] || [ ! -w ${TARGETDIR} ]; then
+  echo " "
+  echo "ERROR: You need to have read and write access to the target directory: ${TARGETDIR}"
+  exit 1
+fi
 
 if [[ ${LOG} == "TRUE" ]]; then
   LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
@@ -191,13 +206,17 @@ if [[ ${LOG} == "TRUE" ]]; then
   echo " * Logging output to file: ${LOGFILE}"
 fi
 
-if [[ -f "${CFG}" ]]; then
-  echo " * Configuration file: ${CFG}"
-else 
+if [ ! -f "${CFG}" ]; then
   echo " "
   echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
   exit 1  
 fi
+if [ ! -r "${CFG}" ]; then
+  echo " "
+  echo "ERROR: You need to have read access to the configuration file!"
+  exit 1  
+fi
+echo " * Configuration file: ${CFG}"
 
 if [[ ${DELAY} -ge 10 ]]; then
   echo " * Delay between checks for free slots: ${DELAY}"
@@ -252,7 +271,7 @@ if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
   NOTDONE=()
   
   for (( d=0; d<${#DATAFILES[*]}; d++ )); do
-    if [[ $(( d % 100 )) == 0 ]]; then echo "Analyzing $d/${#DATAFILES[*]}..."; fi
+    if [[ $(( d % 100 )) == 0 ]]; then echo "Analyzing $d/${#DATAFILES[*]}..." | ${LOGGING}; fi
     
     OUTFILE=${DATAFILES[$d]}
     OUTFILE=${OUTFILE/.sim.gz/}
@@ -269,17 +288,17 @@ if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
   
   if [[ ${#DATAFILES[@]} -eq 0 ]]; then
     echo " "
-    echo "Everything already done!"
+    echo "Everything already done!" | ${LOGGING}
     exit 0
   fi
 fi
 
 
-echo "Data files:"
+echo "Data files:" | ${LOGGING}
 for (( d=0; d<=$(( ${#DATAFILES[*]} -1 )); d++ )); do
-  echo " * ${DATAFILES[$d]}"
+  echo " * ${DATAFILES[$d]}" | ${LOGGING}
 done
-echo "--> ${#DATAFILES[*]} data files total."
+echo "--> ${#DATAFILES[*]} data files total." | ${LOGGING}
 
 
 echo " "
@@ -305,15 +324,15 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     
     for (( m=0; m<=$(( ${#PRIORITIES[*]} -1 )); m++ )); do
       if (( ${PRIORITIES[$m]} < 1 )); then
-        echo "Warning: The highest (= smallest number) allowed machine priority is 1"
-        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
-        echo "         Setting it to 1."
+        echo "Warning: The highest (= smallest number) allowed machine priority is 1" | ${LOGGING}
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}" | ${LOGGING}
+        echo "         Setting it to 1." | ${LOGGING}
         PRIORITIES[$m]=1;
       fi
       if (( ${PRIORITIES[$m]} > 5 )); then
-        echo "Warning: The lowest (= highest number) allowed machine priority is 5"
-        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
-        echo "         Setting it to 5."
+        echo "Warning: The lowest (= highest number) allowed machine priority is 5" | ${LOGGING}
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}" | ${LOGGING}
+        echo "         Setting it to 5." | ${LOGGING}
         PRIORITIES[$m]=5;
       fi
     done
@@ -329,15 +348,16 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     CFGMD5=`md5sum ${CFG}`
     
     for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}, priority: ${PRIORITIES[$m]} )"
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}, priority: ${PRIORITIES[$m]} )" | ${LOGGING}
     done
   fi
 
   
   # Verify the machines:
   AVAILABLEMACHINES=0
+  MACHINEERRORS="FALSE"
   echo " " 
-  echo "Verifying available machines: "
+  echo "Verifying available machines: " | ${LOGGING}
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     # Reset it in case it was deleted before:
     MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
@@ -345,18 +365,20 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     # Do a quick test if the machine is availble:
     REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
     if [ "$?" != "0" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): NOT ACCESSIBLE"
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): NOT ACCESSIBLE" | ${LOGGING}
       MACHINES[$m]=""
+      MACHINEERRORS="TRUE"
       continue
     fi  
     
+    # Check if all data is accessible:
     COMMAND=""
     COMMAND+=". ~/.bash_local;"
     COMMAND+="if [[ ! -x \${MEGALIB}/bin/responsecreator ]]; then echo \"ERROR: MEGAlib not fully installed\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \".dcosima.cfg configuration file not found.\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"Failed to access remote data directory!\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"Failed to create target directory\"; exit 1; fi; "
-    COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[$d]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[0]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[0]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ${GEOMETRY} ]] || [[ ! -r ${GEOMETRY} ]] ; then echo \"Geometry file not found or not readable!\"; exit 1; fi; "
     if [[ ${MIMRECCFG} != "" ]]; then
       COMMAND+="if [[ ! -f ${MIMRECCFG} ]] || [[ ! -r ${MIMRECCFG} ]]; then echo \"Mimrec configuration file not found or not readable!\"; exit 1; fi; "
@@ -370,16 +392,61 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
     if [[ ${ANSWER} == "" ]]; then ANSWER="Check failed with unknown error!"; fi
     if [[ ${ANSWER} != "Available" ]]; then     
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}" | ${LOGGING}
       MACHINES[$m]=""
+      MACHINEERRORS="TRUE"
       continue
     fi
  
-    echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
-    AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
+    echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}" | ${LOGGING}
     
+    # Check if responsecreator starts up:
+    OUTFILE=${DATAFILES[0]}
+    OUTFILE=${OUTFILE/.sim.gz/}
+    OUTFILE=${OUTFILE/.sim/}
+    OUTFILE=${OUTFILE/.evta.gz/}
+    OUTFILE=${OUTFILE/.evta/}
+    COMMAND=""
+    COMMAND+=". .bash_local; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -r /tmp/${OUTFILE} -m ${MODE}"
+    if [[ ${OPTIONS} != "" ]]; then COMMAND+=" -o ${OPTIONS}"; fi
+    if [[ ${SAVE} != "" ]]; then COMMAND+=" -s ${SAVE}"; fi
+    if [[ ${REVANCFG} != "" ]]; then COMMAND+=" -c ${REVANCFG}"; fi
+    if [[ ${MIMRECCFG} != "" ]]; then COMMAND+=" -b ${MIMRECCFG}"; fi
+    if [[ ${ZIP} == TRUE ]]; then COMMAND+=" -z"; fi
+    COMMAND+=" --test"
+    ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${COMMAND} )
+    if [[ "$?" != "0" ]]; then
+      echo " * Remote machine: ${MACHINES[$m]}: Failed to launch responsecreator!" | ${LOGGING}
+      MACHINES[$m]=""
+      MACHINEERRORS="TRUE"
+      continue
+    fi
+    if [[ ${ANSWER} != *TEST*RUN*SUCCESSFUL* ]]; then     
+      echo " * Remote machine: ${MACHINES[$m]}: responsecreator run failed" | ${LOGGING}
+      echo "" | ${LOGGING}
+      echo "---- ERROR MESSAGE ----" | ${LOGGING}
+      echo "${ANSWER}" | ${LOGGING}
+      echo "-----------------------" | ${LOGGING}
+      echo "" | ${LOGGING}
+      MACHINES[$m]=""
+      MACHINEERRORS="TRUE"
+      continue
+    else
+      echo " * Remote machine: ${MACHINES[$m]}: responsecreator OK" | ${LOGGING}
+    fi    
+
+    AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))    
   done
   
+  if [[ ${TESTRUN} == "TRUE" ]]; then
+    if [[ ${MACHINEERRORS} == "FALSE" ]]; then
+      echo ">>> TEST RUN SUCCESSFUL <<<"
+      exit 0
+    else
+      echo ">>> TEST RUN FAILED <<<"
+      exit 1
+    fi
+  fi  
   
   # If we have NO machines available, we quit...
   if [ ${AVAILABLEMACHINES} -eq 0 ]; then
@@ -406,8 +473,8 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
         # Prepare the launch
         ALLOWED=$( dmegalib-allowedinstances --remote=${MACHINES[$m]} )
         echo " "
-        echo "Preparing for next launch with priority ${P}:"
-        echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
+        echo "Preparing for next launch with priority ${P}:" | ${LOGGING}
+        echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}" | ${LOGGING}
         if [[ ${ALLOWED} -gt 0 ]]; then
           LAUNCHED=$(( ${LAUNCHED} + 1 ))
           echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
@@ -430,9 +497,9 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
             REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
           fi
        
-          REMOTEDATADIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
+          ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
           if [[ "$?" != "0" ]]; then
-            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch responsecreator!"
+            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch responsecreator!" | ${LOGGING}
             MACHINES[$m]=""
             continue
           fi        
@@ -461,7 +528,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
   
   if [[ ${STARTEDALLPRIORITIES} -eq 0 ]]; then
     echo ""
-    echo " --> No analysis slots available at the moment... Sleeping for a while..."
+    echo " --> No analysis slots available at the moment... Sleeping for a while..." | ${LOGGING}
     sleep ${DELAY}
   else 
     # Sleep a tiny bit to give the last instance a chance to start before we revisit the node   

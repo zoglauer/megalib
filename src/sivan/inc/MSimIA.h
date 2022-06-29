@@ -26,6 +26,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MVector.h"
 #include "MStreams.h"
+#include "MBinaryStore.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -44,6 +45,12 @@ class MSimIA
   //! Parse a text line to fill this event
   bool AddRawInput(MString LineBuffer, int Version = 0);
 
+  //! Convert the *key* content to binary
+  bool ParseBinary(MBinaryStore& Out, const bool HasTime, const bool IsSingleINIT, const int OriginIDPrecision = 32, const int BinaryPrecision = 32, const int Version = 25);
+  //! Convert the content to binary
+  bool ToBinary(MBinaryStore& Out, const bool HasTime, const bool IsSingleINIT, const int WhatToStore = 1, const int OriginIDPrecision = 32, const int BinaryPrecision = 32, const int Version = 25);
+  
+  
   //! Set the interaction process as 4 character string, e.g. "COMP"
   void SetProcess(const MString& Process) { m_Process = Process; }
   //! Get the interaction process as 4 character string, e.g. "COMP"
@@ -83,12 +90,17 @@ class MSimIA
   void SetMotherDirection(const MVector& Dir) { m_MotherParticleDirection = Dir; }
   //! Get the NEW direction od the mother particle
   MVector GetMotherDirection() const { return m_MotherParticleDirection; }
-
+  
   //! Set the NEW polarization of the mother particle
   void SetMotherPolarisation(const MVector& Pol) { m_MotherParticlePolarisation = Pol; }
   //! Get the NEW polarization of the mother particle
   MVector GetMotherPolarisation() const { return m_MotherParticlePolarisation; }
-
+  
+  //! Set the NEW polarization of the mother particle
+  void SetMotherPolarization(const MVector& Pol) { m_MotherParticlePolarisation = Pol; }
+  //! Get the NEW polarization of the mother particle
+  MVector GetMotherPolarization() const { return m_MotherParticlePolarisation; }
+  
   //! Set the NEW energy of the mother particle
   void SetMotherEnergy(const double E) { m_MotherParticleEnergy = E; }
   //! Get the NEW energy of the mother particle
@@ -103,12 +115,17 @@ class MSimIA
   void SetSecondaryDirection(const MVector& Dir) { m_SecondaryParticleDirection = Dir; }
   //! Get the direction of the generated particle
   MVector GetSecondaryDirection() const { return m_SecondaryParticleDirection; }
-
+  
   //! Set the polarization of the generated particle
   void SetSecondaryPolarisation(const MVector& Pol) { m_SecondaryParticlePolarisation = Pol; }
   //! Get the polarization of the generated particle
   MVector GetSecondaryPolarisation() const { return m_SecondaryParticlePolarisation; }
 
+  //! Set the polarization of the generated particle
+  void SetSecondaryPolarization(const MVector& Pol) { m_SecondaryParticlePolarisation = Pol; }
+  //! Get the polarization of the generated particle
+  MVector GetSecondaryPolarization() const { return m_SecondaryParticlePolarisation; }
+  
   //! Set the kinetic energy of the generated particle
   void SetSecondaryEnergy(const double Energy) { m_SecondaryParticleEnergy = Energy; }
   //! Get the kinetic energy of the generated particle
@@ -119,7 +136,8 @@ class MSimIA
   MString ToSimString(const int WhatToStore = 1, const int Precision = 0, const int Version = 25) const;
   //! Get the content of the class as a descriptive string
   MString ToString() const;
-
+  
+  
   //! Add a simple offset to all hit origins - needed when concatenating sim events
   void OffsetOrigins(int Offset);
 
@@ -127,7 +145,8 @@ class MSimIA
   void SetParentNucleus(const int ParentNucleus) { m_ParentNucleus = ParentNucleus; }
   int GetParentNucleus() const { return m_ParentNucleus; }
 
-  // All the depreciated function names
+  
+  // All the deprecated function names
 
   void SetType(const MString& Type) { mdep<<"Please use: SetProcess"<<show; m_Process = Type; }
   MString GetType() const { mdep<<"Please use: GetProcess"<<show; return m_Process; }

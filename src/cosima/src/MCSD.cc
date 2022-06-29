@@ -44,6 +44,7 @@ MCSD::MCSD(G4String Name) : G4VSensitiveDetector(Name),
                             m_DiscretizeHits(true),
                             m_UseEnergyLoss(false),
                             m_HasTimeResolution(false),
+                            m_IsNeverTriggering(false),
                             m_Epsilon(1E-10)
 {
   // Intentionally left blank

@@ -91,10 +91,12 @@ class MInterfaceSivan : public MInterface
   void HitsPerEnergy();
   void InteractionsPerVoxel();
   
-  //! Shows stacked spectra, one per isotope generating the enrgy deposits
+  //! Shows stacked spectra, one per isotope generating the energy deposits
   void EnergyPerNucleus();
   //! Shows a 2D histogram of the produced isotopes
   void IsotopeGeneration();
+  //! Shows how many new isotopes are generates as a function of energy
+  void ActivationPerIncidenceEnergy();
   
   //! Shows a table of initial interaction vs detector type
   void InitialInteraction();

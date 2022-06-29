@@ -5013,7 +5013,7 @@ void MInterfaceMimrec::LightCurve()
 
   TCanvas* CanvasOptimized = new TCanvas("TimeOptimized", "Light curve", 800, 600);
   CanvasOptimized->cd();
-  HistOptimized->Draw();
+  HistOptimized->Draw("HIST");
   CanvasOptimized->Update();
 
   /*

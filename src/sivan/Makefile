@@ -27,6 +27,7 @@ FILES = MSettingsSivan \
 	MSimPM \
 	MSimEvent \
 	MSimEventLoader \
+	MSimBinaryOptions \
 	MFileEventsSim \
 
 LIBRARY_UI = SivanGui

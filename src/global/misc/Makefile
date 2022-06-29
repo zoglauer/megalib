@@ -19,6 +19,7 @@ FILES = MGlobal \
 	MCoordinateSystem \
 	MExceptions \
 	MAtmosphericAbsorption \
+	MBinaryStore \
 	MResponseMatrix \
 	MResponseMatrixOx \
 	MResponseMatrixO1 \

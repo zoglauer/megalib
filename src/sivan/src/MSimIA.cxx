@@ -289,6 +289,170 @@ MString MSimIA::ToSimString(const int WhatToStore, const int ScientificPrecision
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MSimIA::ParseBinary(MBinaryStore& Store, const bool HasTime, const bool IsSingleINIT, const int OriginIDPrecision, const int BinaryPrecision, const int Version)
+{
+  //! Convert the content from binary
+  
+  if (IsSingleINIT == false) {
+    m_Process = Store.GetString(4);
+    if (OriginIDPrecision == 8) {
+      //m_ID = Store.GetUInt8();
+      m_OriginID = Store.GetUInt8();
+    } else if (OriginIDPrecision == 16) {
+      //m_ID = Store.GetUInt16();
+      m_OriginID = Store.GetUInt16();
+    } else {
+      //m_ID = Store.GetUInt32();
+      m_OriginID = Store.GetUInt32();
+    }
+    //m_DetectorType = Store.GetUInt8();
+  } else {
+    m_Process = "INIT";
+    m_ID = 1;
+    m_OriginID = 0;
+    m_DetectorType = 0;
+  }
+  
+  if (HasTime == true) {
+    if (BinaryPrecision == 32) {  
+      m_Time = Store.GetFloat();
+    } else {
+      m_Time = Store.GetDouble();
+    }
+  }
+  
+  if (BinaryPrecision == 32) {  
+    m_Position = Store.GetVectorFloat();
+  } else {
+    m_Position = Store.GetVectorDouble();
+  }
+  
+  if (m_Process != "INIT" && m_Process != "PAIR" && m_Process != "PHOT") {
+    m_MotherParticleID = Store.GetUInt8();
+    if (BinaryPrecision == 32) {  
+      m_MotherParticleDirection = Store.GetNormalizedVectorInt16();
+      if (m_MotherParticleID == 1) {
+        m_MotherParticlePolarisation = Store.GetNormalizedVectorInt16();
+      }
+      m_MotherParticleEnergy = Store.GetFloat();
+    } else {
+      m_MotherParticleDirection = Store.GetVectorDouble();
+      if (m_MotherParticleID == 1) {
+        m_MotherParticlePolarisation = Store.GetVectorDouble();
+      }
+      m_MotherParticleEnergy = Store.GetDouble();
+    }
+  } else {
+    m_MotherParticleID = 0;
+    if (m_Process == "PAIR" || m_Process == "PHOT") m_MotherParticleID = 1;
+  }
+  
+  if (m_Process != "RAYL" && m_Process != "ESCP") {
+    m_SecondaryParticleID = Store.GetUInt8();
+    if (BinaryPrecision == 32) {  
+      m_SecondaryParticleDirection = Store.GetNormalizedVectorInt16();
+      if (m_SecondaryParticleID == 1) {
+        m_SecondaryParticlePolarisation = Store.GetNormalizedVectorInt16();
+      }
+      m_SecondaryParticleEnergy = Store.GetFloat();
+    } else {
+      m_SecondaryParticleDirection = Store.GetVectorDouble();
+      if (m_SecondaryParticleID == 1) {
+        m_SecondaryParticlePolarisation = Store.GetVectorDouble();
+      }
+      m_SecondaryParticleEnergy = Store.GetDouble();
+    }
+  } else {
+    m_SecondaryParticleID = 0;
+  }
+  
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Convert the content to binary
+bool MSimIA::ToBinary(MBinaryStore& Out, const bool HasTime, const bool IsSingleINIT, const int WhatToStore, const int OriginIDPrecision, const int BinaryPrecision, const int Version)
+{
+  if (IsSingleINIT == false) {
+    Out.AddString(m_Process, 4);
+    if (OriginIDPrecision == 8) {
+      //Out.AddUInt8(m_ID);
+      Out.AddUInt8(m_OriginID);
+    } else if (OriginIDPrecision == 16) {
+      //Out.AddUInt16(m_ID);
+      Out.AddUInt16(m_OriginID);
+    } else {
+      //Out.AddUInt32(m_ID);
+      Out.AddUInt32(m_OriginID);
+    } 
+    //Out.AddUInt8(m_DetectorType);
+  }
+  
+  if (HasTime == true) {
+    if (BinaryPrecision == 32) {  
+      Out.AddFloat(m_Time);
+    } else {
+      Out.AddDouble(m_Time);
+    }
+  }
+  
+  if (BinaryPrecision == 32) {  
+    Out.AddVectorFloat(m_Position);
+  } else {
+    Out.AddVectorDouble(m_Position);
+  }
+  
+  if (m_Process != "INIT" && m_Process != "PAIR" && m_Process != "PHOT") {
+    if (m_MotherParticleID >= numeric_limits<uint8_t>::max()-1) {
+      Out.AddUInt8(numeric_limits<uint8_t>::max());
+    } else {
+      Out.AddUInt8(m_MotherParticleID);
+    }
+    if (BinaryPrecision == 32) {  
+      Out.AddNormalizedVectorInt16(m_MotherParticleDirection);
+      if (m_MotherParticleID == 1) {
+        Out.AddNormalizedVectorInt16(m_MotherParticlePolarisation);
+      }
+      Out.AddFloat(m_MotherParticleEnergy);
+    } else {
+      Out.AddVectorDouble(m_MotherParticleDirection);
+      if (m_MotherParticleID == 1) {
+        Out.AddVectorDouble(m_MotherParticlePolarisation);
+      }
+      Out.AddDouble(m_MotherParticleEnergy);
+    }
+  }
+  
+  if (m_Process != "RAYL" && m_Process != "ESCP") {
+    if (m_SecondaryParticleID >= numeric_limits<uint8_t>::max()-1) {
+      Out.AddUInt8(numeric_limits<uint8_t>::max());
+    } else {
+      Out.AddUInt8(m_SecondaryParticleID);
+    }
+    if (BinaryPrecision == 32) {  
+      Out.AddNormalizedVectorInt16(m_SecondaryParticleDirection);
+      if (m_SecondaryParticleID == 1) {
+        Out.AddNormalizedVectorInt16(m_SecondaryParticlePolarisation);
+      }
+      Out.AddFloat(m_SecondaryParticleEnergy);
+    } else {
+      Out.AddVectorDouble(m_SecondaryParticleDirection);
+      if (m_SecondaryParticleID == 1) {
+        Out.AddVectorDouble(m_SecondaryParticlePolarisation);
+      }
+      Out.AddDouble(m_SecondaryParticleEnergy);
+    }
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MSimIA::OffsetOrigins(int Offset)
 {
   m_ID += Offset;

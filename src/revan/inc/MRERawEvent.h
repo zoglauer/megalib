@@ -76,10 +76,15 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! Set the clock time  (relative internal detector time) of the event 
   void SetEventClock(MTime Clock) { m_EventClock = Clock; }
   
-  
+  //! Return the event type
   int GetEventType();
+  //! Set the event type
   void SetEventType(int Type);
+  //! Get the event type as string
   MString GetEventTypeAsString();
+  
+  //! Set origin information
+  void SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy);
   
   
   //! Return the complete energy of this event
@@ -204,10 +209,14 @@ class MRERawEvent : public MRESE, public MRotationInterface
   // Interface to the additional measurements - 
   // hopefully much more intelligent than the old RESE interface...
 
+  // TODO: Remove the iterator stuff since adding breaks it
+  
   //! Return the number of available additional measurements
   unsigned int GetNREAMs() const;
   //! Return the REAM at position a
   MREAM* GetREAMAt(unsigned int a);
+  //! Add a REAM at the end - this class becomes the owner - this invalidates the iterators
+  void AddREAM(MREAM* REAM) { m_Measurements.push_back(REAM); }
   //! Start iterator for REAM container
   vector<MREAM*>::iterator GetREAMBegin() { return m_Measurements.begin(); }
   //! End iterator for REAM container

@@ -58,13 +58,15 @@ MCParameterFile::MCParameterFile() : MParser(' ', true),
                                      m_DecayMode(c_DecayModeIgnore),
                                      m_PreTriggerMode(c_PreTriggerFull),
                                      m_StoreCalibrated(true), 
+                                     m_StoreBinary(false),
                                      m_StoreScientific(false),
                                      m_StoreScientificPrecision(5),
                                      m_StoreSimulationInfo(MSimEvent::c_StoreSimulationInfoAll),
                                      m_StoreSimulationInfoVersion(MSimEvent::GetOutputVersion()),
                                      m_StoreSimulationInfoIonization(false),
                                      m_StoreOneHitPerEvent(false),
-                                     m_StoreMinimumEnergy(-numeric_limits<double>::max()),
+                                     m_StoreMinimumEnergy(-1E+40*keV),
+                                     m_StoreMaximumEnergyLoss(1E+40*keV),
                                      m_DiscretizeHits(true),
                                      m_CheckForOverlaps(false),
                                      m_OverlapCheckResolution(1000),
@@ -234,7 +236,7 @@ bool MCParameterFile::Parse()
         return false;
       }
     } else if (T->IsTokenAt(0, "Package", true) == true) {
-      mout<<"The keyword \"Package\" is depreciated.";
+      mout<<"The keyword \"Package\" is deprecated.";
       mout<<"Please use \"PhysicsListEM\" instead to distinguish between various physics lists."<<endl;
       if (T->GetNTokens() == 2) {
         m_PhysicsListEM = T->GetTokenAtAsInt(1);
@@ -263,7 +265,7 @@ bool MCParameterFile::Parse()
         } else if (Type == "livermore-pol" || Type == "livermorepol") {
           m_PhysicsListEM = MCPhysicsList::c_EMLivermorePolarized;
         } else if (Type == "livermore-g4lecs") {
-          mout<<"Depreciated: The G4LECS package is outdated since Geant4 9.2 and superseeded by the default Livermore physics list."<<endl;
+          mout<<"Deprecated: The G4LECS package is outdated since Geant4 9.2 and superseeded by the default Livermore physics list."<<endl;
           mout<<"             Therefore the livermore-g4lecs option does no longer exist."<<endl;
           mout<<"             Using the default Livermore physics list (which includes Doppler-broadening)."<<endl;
           m_PhysicsListEM = MCPhysicsList::c_EMLivermore;
@@ -309,7 +311,7 @@ bool MCParameterFile::Parse()
       }
     } else if (T->IsTokenAt(0, "ActivateFluorescence", true) == true || 
                T->IsTokenAt(0, "PhysicsListEMActivateFluorescence", true) == true) {
-      mout<<"Depreciated: Fluorescence is activated by default where possible."<<endl;
+      mout<<"Deprecated: Fluorescence is activated by default where possible."<<endl;
     } else if (T->IsTokenAt(0, "DecayMode", true) == true) {
       if (T->GetNTokens() == 2) {
         MString Mode = T->GetTokenAtAsString(1);
@@ -401,8 +403,25 @@ bool MCParameterFile::Parse()
              " Number of tokens is not correct!");
         return false;
       }
-    } else if (T->IsTokenAt(0, "StoreScientific", true) == true ||
-               T->IsTokenAt(0, "StoreSimulationInfoScientific", true) == true) {
+    } else if (T->IsTokenAt(0, "FileFormat", true) == true) {
+      if (T->GetNTokens() == 2) {
+        MString Mode = T->GetTokenAtAsString(1);
+        Mode.ToLower();
+        if (Mode == "binary" || Mode == "b" || Mode == "bin") {
+          m_StoreBinary = true;
+          mdebug<<"Storing simulation info in binary mode"<<endl;
+        } else if (Mode == "text" || Mode == "t" || Mode == "plaintext" || Mode == "ascii") {
+          m_StoreBinary = false;
+          mdebug<<"Storing simulation info in plaintext mode"<<endl;
+        } else {
+          Typo(i, "Cannot parse token FileFormat correctly: The mode needs to be text or binary!");
+          return false;
+        }        
+      } else {
+        Typo(i, "Cannot parse token FileFormat correctly: Number of tokens is not correct!");
+        return false;
+      }
+    } else if (T->IsTokenAt(0, "StoreTextScientific", true) == true || T->IsTokenAt(0, "StoreScientific", true) == true || T->IsTokenAt(0, "StoreSimulationInfoScientific", true) == true) {
       if (T->GetNTokens() == 3) {
         m_StoreScientific = T->GetTokenAtAsBoolean(1);
         m_StoreScientificPrecision = T->GetTokenAtAsInt(2);
@@ -412,8 +431,7 @@ bool MCParameterFile::Parse()
         }
         mdebug<<"Storing simulation info in scientific format: "<<((m_StoreScientific == true) ? "true" : "false")<<endl;
       } else {
-        Typo(i, "Cannot parse token StoreSimulationInfoScientific correctly:"
-             " Number of tokens is not correct!");
+        Typo(i, "Cannot parse token StoreTextScientific correctly: Number of tokens is not correct!");
         return false;
       }
     } else if (T->IsTokenAt(0, "StoreOnlyEventsWithEnergyLoss", true) == true ||
@@ -463,11 +481,18 @@ bool MCParameterFile::Parse()
       }
     } else if (T->IsTokenAt(0, "StoreMinimumEnergy", true) == true) {
       if (T->GetNTokens() == 2) {
-        m_StoreMinimumEnergy = T->GetTokenAtAsDouble(1);
+        m_StoreMinimumEnergy = T->GetTokenAtAsDouble(1)*keV;
         mdebug<<"Storing only events with at least this amount of energy: "<<m_StoreMinimumEnergy<<endl;
       } else {
-        Typo(i, "Cannot parse token StoreMinimimumEnergy:"
-        " Number of tokens is not correct!");
+        Typo(i, "Cannot parse token StoreMinimimumEnergy: Number of tokens is not correct!");
+        return false;
+      }
+    } else if (T->IsTokenAt(0, "StoreMaximumEnergyLoss", true) == true) {
+      if (T->GetNTokens() == 2) {
+        m_StoreMaximumEnergyLoss = T->GetTokenAtAsDouble(1)*keV;
+        mdebug<<"Storing only events which have less than that energy loss in passive materials or veto detectors: "<<m_StoreMaximumEnergyLoss<<endl;
+      } else {
+        Typo(i, "Cannot parse token StoreMaximumEnergyLoss: Number of tokens is not correct!");
         return false;
       }
     } else if (T->IsTokenAt(0, "DiscretizeHits", true) == true) {
@@ -939,7 +964,7 @@ bool MCParameterFile::Parse()
         }
       }
       else if (T->IsTokenAt(1, "Trigger", true) == true) {
-        mout<<"Depreciated: The Trigger keyword is no longer used."<<endl;
+        mout<<"Deprecated: The Trigger keyword is no longer used."<<endl;
         mout<<"             Instead the trigger criteria in the geometry file are used as pre-trigger criteria."<<endl;
         mout<<"             This means vetoes are ignored and the thresholds are set to zero."<<endl;
       }
@@ -989,8 +1014,8 @@ bool MCParameterFile::Parse()
       
       //cout<<"Checking run: "<<Run->GetName()<<endl;
       if (T->IsTokenAt(1, "SpectralType", true) == true) {
-        mout<<"Depreciated: SpectralType"<<endl
-            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are depreciated!"<<endl
+        mout<<"Deprecated: SpectralType"<<endl
+            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are deprecated!"<<endl
             <<"  Please use \"Spectrum\" and \"Beam\" instead."<<endl
             <<"  Consult the manual for further information."<<show;
 
@@ -1287,7 +1312,7 @@ bool MCParameterFile::Parse()
               return false;
             }
           } 
-          else if (Type == "farfieldgaussian" || Type == "ffg") {
+          else if (Type == "farfielddisk" || Type == "ffd") {
             if (T->GetNTokens() == 6) {
               Source->SetBeamType(MCSource::c_FarField,
                                   MCSource::c_FarFieldGaussian);
@@ -1295,8 +1320,27 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg) == true) {
                 mdebug<<"Setting far field gaussian position theta="<<T->GetTokenAtAsDouble(3)
-                      <<", phi="<<T->GetTokenAtAsDouble(4)<<", sigma="<<T->GetTokenAtAsDouble(5)
-                      <<" for source "<<Source->GetName()<<endl;
+                <<", phi="<<T->GetTokenAtAsDouble(4)<<", radius="<<T->GetTokenAtAsDouble(5)
+                <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token \"Beam - far field disk\" correctly: Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token \"Beam - far field disk\" correctly: Number of tokens is not correct!");
+              return false;
+            }
+          } 
+          else if (Type == "farfieldgaussian" || Type == "ffg") {
+            if (T->GetNTokens() == 6) {
+              Source->SetBeamType(MCSource::c_FarField,
+                                  MCSource::c_FarFieldGaussian);
+              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
+                T->GetTokenAtAsDouble(4)*deg,
+                                      T->GetTokenAtAsDouble(5)*deg) == true) {
+                mdebug<<"Setting far field gaussian position theta="<<T->GetTokenAtAsDouble(3)
+                <<", phi="<<T->GetTokenAtAsDouble(4)<<", sigma="<<T->GetTokenAtAsDouble(5)
+                <<" for source "<<Source->GetName()<<endl;
               } else {
                 Typo(i, "Cannot parse token \"Beam - far field gaussian\" correctly: Content not reasonable");
                 return false;
@@ -1640,7 +1684,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "mapprofilebeam" || Type == "profiledbeam" || Type == "mpb" || Type == "pb") {
             if (T->GetNTokens() == 10) {
-              mout<<"Warning: Using the MapProfileBeam without rotation around z-axis is depreciated"<<endl;
+              mout<<"Warning: Using the MapProfileBeam without rotation around z-axis is deprecated"<<endl;
               mout<<"         Please update your source file according to the documentation"<<endl;
               
 
@@ -2054,7 +2098,7 @@ bool MCParameterFile::Parse()
           MString Type = T->GetTokenAtAsString(2);
           Type.ToLower();
           if (Type == "true" || Type == "false" || Type == "1" || Type == "0") {
-            mout<<"Depreciated: Polarization"<<endl
+            mout<<"Deprecated: Polarization"<<endl
               <<"  You are using the old polarization format. Please update to the new format."<<endl
               <<"  Consult the manual for further information."<<show;
             if (Type == "true" || Type == "1") {
@@ -2243,7 +2287,7 @@ bool MCParameterFile::Parse()
     } // is source
   } // Step 4
 
-  // --> begin depreciated
+  // --> begin deprecated
   // Step 5: Secondary Source parameters
   for (i = 0; i < GetNLines(); ++i) {
     MTokenizer* T = GetTokenizerAt(i);
@@ -2252,8 +2296,8 @@ bool MCParameterFile::Parse()
     if ((Source = GetSource(T->GetTokenAt(0))) != 0) {
       // Position:
       if (T->IsTokenAt(1, "Position", true) == true) {
-        mout<<"Depreciated: Position"<<endl
-            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are depreciated!"<<endl
+        mout<<"Deprecated: Position"<<endl
+            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are deprecated!"<<endl
             <<"  Please use \"Spectrum\" and \"Beam\" instead."<<endl
             <<"  Consult the manual for further information."<<show;
 
@@ -2573,8 +2617,8 @@ bool MCParameterFile::Parse()
       } 
       //
       else if (T->IsTokenAt(1, "Energy", true) == true) {
-        mout<<"Depreciated: Energy"<<endl
-            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are depreciated!"<<endl
+        mout<<"Deprecated: Energy"<<endl
+            <<"  The keywords \"SpectralType\", \"Energy\", and \"Position\" are deprecated!"<<endl
             <<"  Please use \"Spectrum\" and \"Beam\" instead."<<endl
             <<"  Consult the manual for further information."<<show;
 
@@ -2739,7 +2783,7 @@ bool MCParameterFile::Parse()
       } // token
     } // is source
   } // Step 5
-  // --> end depreciated
+  // --> end deprecated
 
 
   // Step 6: Tertiary Source parameters

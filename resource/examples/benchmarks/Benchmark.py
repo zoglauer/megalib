@@ -194,6 +194,10 @@ OSVersions = [x for _,x in sorted(zip(RunMulti, OSVersions))]
 RunSingle = [x for _,x in sorted(zip(RunMulti, RunSingle))]
 RunMulti = [x for _,x in sorted(zip(RunMulti, RunMulti))]
       
+# Some beautification
+CPUNames = [ s.replace("Ryzen Threadripper", "Threadripper") for s in CPUNames ]
+
+
 
 print(IsGood)
 print(Reference)
@@ -214,10 +218,12 @@ for f in range(0, len(FileNames)):
   else:
     Labels.append("{}\n{}\n{} {}\n{}".format(HostNames[f], CPUNames[f], OSNames[f], OSVersions[f], Reference[f]))
 
-matplotlib.rcParams.update({'font.size': 18})
-#matplotlib.rcParams.update({'font.size': 16})
-matplotlib.rcParams.update({'axes.titlesize': 30})
-matplotlib.rcParams.update({'axes.labelsize': 24})
+FontScaler = 0.5
+
+matplotlib.rcParams.update({'font.size': FontScaler*18})
+matplotlib.rcParams.update({'axes.titlesize': FontScaler*30})
+matplotlib.rcParams.update({'axes.labelsize': FontScaler*24})
+matplotlib.rcParams.update({'figure.figsize': [12.0, 6.0]})
 
 x = np.arange(len(Labels))  # the label locations
 width = 0.35  # the width of the bars
@@ -253,7 +259,6 @@ def autolabel(rects):
 autolabel(rects1)
 autolabel(rects2)
 
-fig.set_size_inches(28, 14)
 fig.tight_layout()
 
 plt.grid(True, axis='y')

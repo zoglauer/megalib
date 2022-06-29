@@ -28,9 +28,11 @@
 
 // Standard libs:
 #include <iomanip>
+using namespace std;
 
 // ROOT libs:
 #include "TFormula.h"
+#include "TMath.h"
 #include "MString.h"
 
 // MEGAlib libs:
@@ -851,7 +853,7 @@ bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
     } else if (TokenLength > 0 && pToken[0] == '{' && pToken[TokenLength-1] == '}') {
       if (AllowMaths == true) {
         if (EvaluateMaths(Token) == false) {
-          merr<<"Unable to scan math token \""<<Token<<"\"correctly!"<<endl;
+          merr<<"Unable to scan math token \""<<Token<<"\"correctly! It might contain text or evaluate to nan or inf."<<endl;
           return false;
         }
       }
@@ -903,6 +905,96 @@ bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MTokenizer::CheckAllMaths()
+{
+  //! Check all tokens if the maths is OK
+
+  for (unsigned int t = 0; t < GetNTokens(); ++t) {
+    if (CheckMaths(m_Tokens[t]) == false) {
+      return false; 
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MTokenizer::CheckMaths(const MString& Token) 
+{
+  //! Check all tokens if the maths is OK
+  
+  if (Token.BeginsWith("{") && Token.EndsWith("}")) {
+    // Remove all maths content
+    MString T = Token;
+    T.ToLowerInPlace();
+    T.RemoveInPlace(0, 1);
+    T.RemoveLastInPlace(1);
+    T.RemoveAllInPlace(" ");
+    T.RemoveAllInPlace("1");
+    T.RemoveAllInPlace("2");
+    T.RemoveAllInPlace("3");
+    T.RemoveAllInPlace("4");
+    T.RemoveAllInPlace("5");
+    T.RemoveAllInPlace("6");
+    T.RemoveAllInPlace("7");
+    T.RemoveAllInPlace("8");
+    T.RemoveAllInPlace("9");
+    T.RemoveAllInPlace("0");
+    T.RemoveAllInPlace("+");
+    T.RemoveAllInPlace("-");
+    T.RemoveAllInPlace("/");
+    T.RemoveAllInPlace("*");
+    T.RemoveAllInPlace("(");
+    T.RemoveAllInPlace(")");
+    T.RemoveAllInPlace("{");
+    T.RemoveAllInPlace("}");
+    T.RemoveAllInPlace(".");
+    T.RemoveAllInPlace(",");
+    T.RemoveAllInPlace(">");
+    T.RemoveAllInPlace("<");
+    T.RemoveAllInPlace("=");
+    T.RemoveAllInPlace("|");
+    T.RemoveAllInPlace("&");
+    T.RemoveAllInPlace("tmath::");
+    T.RemoveAllInPlace("asin");
+    T.RemoveAllInPlace("sin");
+    T.RemoveAllInPlace("acos");
+    T.RemoveAllInPlace("cos");
+    T.RemoveAllInPlace("atan");
+    T.RemoveAllInPlace("tan");
+    T.RemoveAllInPlace("sqrt");
+    T.RemoveAllInPlace("log");
+    T.RemoveAllInPlace("ln");
+    T.RemoveAllInPlace("exp");
+    T.RemoveAllInPlace("power");
+    T.RemoveAllInPlace("pow");
+    T.RemoveAllInPlace("radtodeg");
+    T.RemoveAllInPlace("degtorad");
+    T.RemoveAllInPlace("ceil");
+    T.RemoveAllInPlace("pi");
+    T.RemoveAllInPlace("max");
+    T.RemoveAllInPlace("min");
+    T.RemoveAllInPlace("sign");
+    T.RemoveAllInPlace("false");
+    T.RemoveAllInPlace("true");
+    T.RemoveAllInPlace("e");
+        
+    if (T != "") {
+      cout<<"MTokenizer::CheckMaths: Unidentifiable maths object: "<<T<<endl;
+      return false;
+    }
+  }
+  
+  return true;
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MTokenizer::IsMaths(const MString& Token)
 {
   // Test if Token is a math expression
@@ -932,8 +1024,12 @@ bool MTokenizer::EvaluateMaths(MString& Token)
   if (Formula.Compile(Token) != 0) {
     return false;
   } else {
+    double Content = Formula.Eval(0.0);
+    if (TMath::IsNaN(Content) || !TMath::Finite(Content)) {
+      return false;
+    }
     ostringstream out;
-    out<<scientific<<setprecision(16)<<Formula.Eval(0.0);
+    out<<scientific<<setprecision(16)<<Content;
     Token = out.str().c_str();
     return true;
   }
@@ -946,7 +1042,7 @@ bool MTokenizer::EvaluateMaths(MString& Token)
 MString MTokenizer::ToString()
 {
   ostringstream out;
-
+  
   if (m_Tokens.size() > 0) {
     out<<"Tokenizer content ("<<m_Tokens.size()<<" Tokens):"<<endl;
     for (unsigned int i = 0; i < m_Tokens.size(); i++) {
@@ -955,8 +1051,28 @@ MString MTokenizer::ToString()
   } else {
     out<<"Tokenizer empty!"<<endl;
   }
+  
+  return MString(out.str());
+}
 
-  return out.str().c_str();
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MTokenizer::ToCompactString()
+{
+  if (m_Tokens.size() == 0) {
+    return MString("");
+  } else if (m_Tokens.size() == 1) {
+    return GetTokenAt(0);
+  } else {
+    ostringstream out;
+    for (unsigned int i = 0; i < m_Tokens.size()-1; i++) {
+      out<<GetTokenAt(i)<<" | ";
+    }
+    out<<GetTokenAt(m_Tokens.size()-1);
+    return MString(out.str());
+  }  
 }
 
 

@@ -48,7 +48,10 @@ class MDTriggerUnit
   
   //! Validate the trigger unit
   bool Validate() const;
-
+  
+  //! Return true if this detector is never triggering
+  bool IsNeverTriggering(MDDetector* D) const;
+  
   //! Set a flag indicating that vetoes are ignored and transfer it to all triggers
   void IgnoreVetoes(bool IgnoreVetoesFlag);
   //! Set a flag indicating that thresholds are ignored

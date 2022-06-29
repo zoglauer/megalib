@@ -25,6 +25,7 @@ FILES = MGUIEviewMain \
 LIBRARIES = \
 	-lRevan \
 	-lRevanGui \
+	-lSivan \
 	-lSpectralyze \
 	-lSpectralyzeGui \
 	-lGeomega \

@@ -131,6 +131,8 @@ class MSettingsImaging : public MSettingsInterface
   int GetBinsPhi() const { return m_BinsPhi; }
   void SetBinsPhi(int BinsPhi) { m_BinsPhi = BinsPhi; m_BackprojectionModified = true; }
 
+  MImageProjection GetSphericalProjection() const { return m_SphericalProjection; }
+  void SetSphericalProjection(MImageProjection SphericalProjection) { m_SphericalProjection = SphericalProjection; }
 
 
   // Menu Dimensions - galactic
@@ -151,6 +153,9 @@ class MSettingsImaging : public MSettingsInterface
 
   int GetBinsGalLongitude() const { return m_BinsGalLongitude; }
   void SetBinsGalLongitude(int BinsGalLongitude) { m_BinsGalLongitude = BinsGalLongitude; m_BackprojectionModified = true; }
+
+  MImageProjection GetGalProjection() const { return m_GalProjection; }
+  void SetGalProjection(MImageProjection GalProjection) { m_GalProjection = GalProjection; }
 
 
   // Menu Dimensions - Cartesean
@@ -249,9 +254,6 @@ class MSettingsImaging : public MSettingsInterface
 
   MString GetImageSourceCatalog() const { return m_ImageSourceCatalog; }
   void SetImageSourceCatalog(MString ImageSourceCatalog) { m_ImageSourceCatalog = ImageSourceCatalog; }
-
-  MImageProjection GetImageProjection() const { return m_ImageProjection; }
-  void SetImageProjection(MImageProjection ImageProjection) { m_ImageProjection = ImageProjection; }
  
 
   // Animation options
@@ -315,6 +317,8 @@ class MSettingsImaging : public MSettingsInterface
 
   int m_BinsTheta;
   int m_BinsPhi;
+  
+  MImageProjection m_SphericalProjection;
 
   // Image dimensions galactic
   double m_GalLatitudeMin;
@@ -325,6 +329,9 @@ class MSettingsImaging : public MSettingsInterface
 
   int m_BinsGalLatitude;
   int m_BinsGalLongitude;
+
+  MImageProjection m_GalProjection;
+
 
   // Image dimensions Cartesean
   double m_XMin;
@@ -348,8 +355,7 @@ class MSettingsImaging : public MSettingsInterface
   int m_ImagePalette;
   //! The source catalog file name
   MString m_ImageSourceCatalog;
-  //! The image projection
-  MImageProjection m_ImageProjection;
+
 
   //! The used exposure mode
   MExposureMode m_ExposureMode;

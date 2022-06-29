@@ -795,17 +795,17 @@ bool MBackprojectionFarField::BackprojectionPhoto(double* Image, int* Bins, int&
 
 
   double Energy = m_Photo->GetEnergy();
-  Energy = 50;
+  //Energy = 50;
 
   MVector Position = m_Photo->GetPosition();
-  double Radius = sqrt(Position[0]*Position[0] + Position[1]*Position[1]);
-  double Angle = 0.0;
-  if (Position[0] >= 0) Angle = asin(Position[1]/Radius);
-  if (Position[0] < 0) Angle = -asin(Position[1]/Radius) + c_Pi;
+  //double Radius = sqrt(Position[0]*Position[0] + Position[1]*Position[1]);
+  //double Angle = 0.0;
+  //if (Position[0] >= 0) Angle = asin(Position[1]/Radius);
+  //if (Position[0] < 0) Angle = -asin(Position[1]/Radius) + c_Pi;
   
-  Radius += 0.5;
-  Position[0] = Radius*cos(Angle);
-  Position[1] = Radius*sin(Angle);
+  //Radius += 0.5;
+  //Position[0] = Radius*cos(Angle);
+  //Position[1] = Radius*sin(Angle);
 
 //   Position[0] += gRandom->Rndm()-0.5;
 //   Position[1] += gRandom->Rndm()-0.5;

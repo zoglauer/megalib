@@ -998,8 +998,6 @@ void MDVolume::AddDaughter(MDVolume* Daughter)
 {
   // Add a daughter volume, i.e. a volume placed within this volume
 
-  massert(this != 0);
-
   // If daughter (pointer) already exists -- do not add it
   if (find(m_Daughters.begin(), m_Daughters.end(), Daughter) == m_Daughters.end()) {
     m_Daughters.push_back(Daughter);
@@ -1018,8 +1016,6 @@ void MDVolume::RemoveAllDaughters()
 {
   // Remove a all daughters
 
-  massert(this != 0);
-
   m_Daughters.clear();
 }
 
@@ -1030,8 +1026,6 @@ void MDVolume::RemoveAllDaughters()
 MDVolume* MDVolume::RemoveDaughter(MDVolume* Daughter)
 {
   // Remove a daughter AND remove the daughters mother volume
-
-  massert(this != 0);
 
   vector<MDVolume*>::iterator Iter = find(m_Daughters.begin(), m_Daughters.end(), Daughter);
   if (Iter != m_Daughters.end()) {
@@ -1049,8 +1043,6 @@ void MDVolume::AddClone(MDVolume* Clone)
 {
   // Add the pointer to a volume which is a clone of this volume
 
-  massert(this != 0);
-
   m_Clones.push_back(Clone);
   Clone->SetCloneTemplate(this);
 }
@@ -1063,8 +1055,6 @@ unsigned int MDVolume::GetNClones() const
 {
   // return the number clones of this volume
 
-  massert(this != 0);
-
   return m_Clones.size();
 }
 
@@ -1075,8 +1065,6 @@ MDVolume* MDVolume::GetCloneAt(unsigned int i)
 {
   // Return the clone at position i
 
-  massert(this != 0);
-
   if (i < GetNClones()) {
     return m_Clones[i];
   } else {
@@ -1084,7 +1072,7 @@ MDVolume* MDVolume::GetCloneAt(unsigned int i)
           "Index (%d) out of bounds (%d, %d)", i, 0, GetNClones()-1);
   }
 
-  return 0;
+  return nullptr;
 }
 
 
@@ -1094,8 +1082,6 @@ MDVolume* MDVolume::GetCloneAt(unsigned int i)
 unsigned int MDVolume::GetCloneId(MDVolume* Clone)
 {
   // Get the ID of the clone
-
-  massert(this != 0);
 
   for (unsigned int i = 0; i < m_Clones.size(); ++i) {
     if (Clone == m_Clones[i]) {
@@ -1114,8 +1100,6 @@ void MDVolume::SetCloneTemplate(MDVolume* CloneTemplate)
 {
   // This volume is a clone of volume CloneTemplate
 
-  massert(this != 0);
-
   m_CloneTemplate = CloneTemplate;
 }
 
@@ -1127,8 +1111,6 @@ MDVolume* MDVolume::Clone(MString Name)
 {
   // Create a new volume which is a clone of this volume - including all daughters
   // This function should only be used in combination with "RemoveVirtual Volume"!
-
-  massert(this != 0);
 
   MDVolume* V;
 
@@ -1361,7 +1343,7 @@ bool MDVolume::Validate()
     mout<<"   ***  Soft warning  ***  in volume "<<m_Name<<endl;
     mout<<"You have a clone template (volume to which you apply the .Copy operator)"<<endl;
     mout<<"Which is positioned in another volume: "<<m_Mother->GetName()<<endl;
-    mout<<"This is fine, but depreciated... because error prone!"<<endl;
+    mout<<"This is fine, but deprecated... because error prone!"<<endl;
   }
 
   // Give a warning if a clone does not have a mother
@@ -1447,122 +1429,12 @@ bool MDVolume::ValidateClonesHaveSameMotherVolume()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolume::ValidateIntersections()
-{
-  // Test if
-  // (1) All daughters are contained in this volume
-  // (2) The daughters do not intersect
-
-  const double Tolerance = 1E-6;
-
-  vector<MVector> Surface;
-  MVector Point;
-
-  // (1) All daughters are contained in this volume
-  for (unsigned int d = 0; d < GetNDaughters(); d++) {
-    Surface = GetDaughterAt(d)->GetShape()->CreateSurfacePattern(5);
-    if (Surface.size() == 0) {
-      mdebug<<"Can't check intersections (1) for: "<<GetDaughterAt(d)->GetName()<<" - no surface points"<<endl;
-      continue;
-    }
-
-    for (unsigned int p = 0; p < Surface.size(); ++p) {
-      Point = Surface[p];
-
-      // Modify position:
-      if (GetDaughterAt(d)->IsRotated() == true) {
-        Point = GetDaughterAt(d)->GetInvRotationMatrix() * Point;    // rotate
-      }
-      Point += GetDaughterAt(d)->GetPosition();           // translate
-
-      if (m_Shape->IsInside(Point) == false &&
-          m_Shape->DistanceOutsideIn(Point, -Point) > Tolerance) {
-        mout<<" *** Error *** "<<endl;
-        mout<<" Volume "<<GetDaughterAt(d)->GetName()<<" is not completely contained in "<<m_Name<<"!"<<endl;
-        mout<<" Point of "<<GetDaughterAt(d)->GetName()<<": "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
-        mout<<" Distance outside in (in direction of origin): "<<m_Shape->DistanceOutsideIn(Point, -Point)<<endl;
-      }
-    }
-  }
-
-  // (2) The daughters do not intersect
-  for (unsigned int d = 0; d < GetNDaughters(); d++) {
-    for (unsigned int e = 0; e < GetNDaughters(); e++) {
-      if (d == e) continue;
-
-      Surface = GetDaughterAt(e)->GetShape()->CreateSurfacePattern(5);
-      if (Surface.size() == 0) {
-        mdebug<<"Can't check intersections (2) for: "<<GetDaughterAt(e)->GetName()<<" - no surface points"<<endl;
-        continue;
-      }
-
-
-      //      cout<<"Shape of "<<GetDaughterAt(e)->GetName()<<endl;
-      //      for (int p = 0; p < Surface->GetLast()+1; p++) {
-      //        Point = *((MVector *) (Surface->At(p)));
-      //      }
-
-      for (unsigned int p = 0; p < Surface.size(); ++p) {
-        Point = Surface[p];
-
-        //        if (GetName().CompareTo("Part_A_5") == 0)
-        //          cout<<"Point of "<<GetDaughterAt(e)->GetName()<<"(before): "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
-
-        if (GetDaughterAt(e)->IsRotated() == true) {
-          Point = GetDaughterAt(e)->GetInvRotationMatrix() * Point;    // rotate
-        }
-        Point += GetDaughterAt(e)->GetPosition();           // translate
-
-        //        if (GetDaughterAt(e)->GetName().CompareTo("Part_A_5") == 0)
-        //          cout<<"Point of "<<GetDaughterAt(e)->GetName()<<"(after): "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
-
-        if (GetDaughterAt(d)->IsInside(Point) == true &&
-            GetDaughterAt(d)->DistanceInsideOut(Point) > Tolerance) {
-          mout<<" *** Error *** in Volume "<<m_Name<<endl;
-          mout<<" Daughter "<<GetDaughterAt(e)->GetName()<<" (Point:"<<
-            GetDaughterAt(e)->GetPosition()[0]<<", "<<
-            GetDaughterAt(e)->GetPosition()[1]<<", "<<
-            GetDaughterAt(e)->GetPosition()[2]<<"  Size:"<<
-            GetDaughterAt(e)->GetSize()[0]<<", "<<
-            GetDaughterAt(e)->GetSize()[1]<<", "<<
-            GetDaughterAt(e)->GetSize()[2]<<
-            ") intersects with daughter "<<GetDaughterAt(d)->GetName()<<" (Point:"<<
-            GetDaughterAt(d)->GetPosition()[0]<<", "<<
-            GetDaughterAt(d)->GetPosition()[1]<<", "<<
-            GetDaughterAt(d)->GetPosition()[2]<<"  Size:"<<
-            GetDaughterAt(d)->GetSize()[0]<<", "<<
-            GetDaughterAt(d)->GetSize()[1]<<", "<<
-            GetDaughterAt(d)->GetSize()[2]<<")!"<<endl;
-          mout<<" Point of "<<GetDaughterAt(e)->GetName()<<": "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
-          mout<<" Distance inside out from origin: "<<GetDaughterAt(d)->DistanceInsideOut(Point)<<endl;
-          //return false;
-        }
-      }
-    }
-  }
-
-
-  for (unsigned int d = 0; d < GetNDaughters(); d++) {
-    if (GetDaughterAt(d)->ValidateIntersections() == false) {
-      //return false;
-    }
-  }
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 bool MDVolume::RemoveVirtualVolumes(vector<MDVolume*>& NewVolumes)
 {
   // Recursively remove virtual volumes
   // (1) Links daughters to mother
   // (2) Set new position & rotation
   // (3) Jump into all daughters
-
-  massert(this != 0);
 
   //cout<<"RVV: Looking at: "<<m_Name<<endl;
 
@@ -1785,19 +1657,19 @@ bool MDVolume::ContainsVolume(const MString& Name, bool IncludeTemplates)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolume::IsInside(MVector Pos, double Tolerance)
+bool MDVolume::IsMotherPositionInside(MVector Pos, double Tolerance)
 {
   Pos -= m_Position;           // translate
-
+  
   if (m_IsRotated == true) {
     Pos = m_RotMatrix * Pos;    // rotate
   }
-
+  
   // Now check if it is inside:
   if (m_Shape->IsInside(Pos, Tolerance) == false) {
     return false;
   }
-
+  
   return true;
 }
 
@@ -1805,6 +1677,68 @@ bool MDVolume::IsInside(MVector Pos, double Tolerance)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDVolume::IsMotherPositionExclusivelyInside(MVector Pos, double Tolerance)
+{
+  Pos -= m_Position;           // translate
+  
+  if (m_IsRotated == true) {
+    Pos = m_RotMatrix * Pos;    // rotate
+  }
+  
+  // Now check if it is inside:
+  if (m_Shape->IsInside(Pos, Tolerance) == false) {
+    return false;
+  }
+  
+  // Now check that it is not in any of the daughter volumes
+  for (unsigned int d = 0; d < GetNDaughters(); ++d) {
+    if (GetDaughterAt(d)->IsMotherPositionInside(Pos) == true) { // No tolerance -- we don't want to put a border case into the dughter
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDVolume::IsInternalPositionInside(MVector Pos, double Tolerance)
+{
+  // Now check if it is inside:
+  if (m_Shape->IsInside(Pos, Tolerance) == false) {
+    return false;
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDVolume::IsInternalPositionExclusivelyInside(MVector Pos, double Tolerance)
+{
+  // Now check if it is inside:
+  if (m_Shape->IsInside(Pos, Tolerance) == false) {
+    return false;
+  }
+  
+  // Now check that it is not in any of the daughter volumes
+  for (unsigned int d = 0; d < GetNDaughters(); ++d) {
+    if (GetDaughterAt(d)->IsMotherPositionInside(Pos) == true) { // No tolerance -- we don't want to put a border case into the dughter
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+/*
 double MDVolume::DistanceInsideOut(MVector Pos)
 {
   Pos -= m_Position;           // translate
@@ -1815,7 +1749,7 @@ double MDVolume::DistanceInsideOut(MVector Pos)
 
   return m_Shape->DistanceInsideOut(Pos, Pos);
 }
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2296,6 +2230,26 @@ bool MDVolume::GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& Tr
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+MVector MDVolume::GetRandomPositionExclusivelyInside()
+{
+  //! Returns a random position in this volume excluding daugther volumes
+
+  int Counter = 100;
+  MVector Position;
+  do {
+    Position = m_Shape->GetRandomPositionInside();
+    if (--Counter == 0) {
+      return g_VectorNotDefined; 
+    }
+  } while (IsInternalPositionExclusivelyInside(Position) == false);
+  
+  return Position;
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 

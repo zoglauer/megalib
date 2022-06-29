@@ -323,7 +323,7 @@ double MComptonEvent::GetKleinNishina() const
 double MComptonEvent::GetKleinNishina(const double Ei, const double phi)
 {
   // Return the value of the Klein-Nishina function
-
+  
   if (Ei <= 0) {
     merr<<"Ei = "<<Ei<<" > 0 not fullfilled!"<<endl;
     return 0;
@@ -332,13 +332,38 @@ double MComptonEvent::GetKleinNishina(const double Ei, const double phi)
     merr<<"0 < phi="<<phi<<" < pi not fullfilled!"<<endl;
     return 0;
   }
-
+  
   static const double Radius = 2.8E-15; // m
-
+  
   const double sinphi = sin(phi);
   const double Eg = -c_E0*Ei/(cos(phi)*Ei-Ei-c_E0);
-
+  
   return 0.5*Radius*Radius*Eg*Eg/Ei/Ei*(Eg/Ei+Ei/Eg-sinphi*sinphi)*sinphi; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MComptonEvent::GetDifferentalKleinNishina(const double Ei, const double phi)
+{
+  // Return the value of the Klein-Nishina function
+  
+  if (Ei <= 0) {
+    merr<<"Ei = "<<Ei<<" > 0 not fullfilled!"<<endl;
+    return 0;
+  }
+  if (phi < 0 || phi > TMath::Pi()) {
+    merr<<"0 < phi="<<phi<<" < pi not fullfilled!"<<endl;
+    return 0;
+  }
+  
+  static const double Radius = 2.8E-15; // m
+  
+  const double sinphi = sin(phi);
+  const double Eg = -c_E0*Ei/(cos(phi)*Ei-Ei-c_E0);
+  
+  return 0.5*Radius*Radius*Eg*Eg/Ei/Ei*(Eg/Ei+Ei/Eg-sinphi*sinphi); 
 }
 
 

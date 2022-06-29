@@ -1,12 +1,30 @@
 #!/bin/bash
 
-TOOLS_ROOT="cmake OpenBLAS davix expat giflib git gl2ps gmp graphviz gsl jpeg libgcc libpng libxml2 lz4 lzma openssl pcre py38-gnureadline py38-jupyter py38-metakernel py38-numpy python38 tbb tiff vdt xrootd xxhashlib xz"
-
+TOOLS_GENERAL="glances"
+TOOLS_PYTHON="py38-gnureadline py38-jupyter py38-metakernel py38-numpy python38"
+TOOLS_ROOT="cmake OpenBLAS davix expat giflib git gl2ps gmp graphviz gsl jpeg libgcc libpng libxml2 lz4 lzma openssl pcre tbb tiff vdt xrootd xxhashlib xz"
 TOOLS_GEANT4="cmake pkgconfig zlib"
+TOOLS_MEGALIB="doxygen imagemagick cfitsio openmpi"
 
-TOOLS_MEGALIB="doxygen cfitsio"
+# Not working tools:
+TOOLS_NOTWORKING="valgrind-macos-devel gcc11"
 
-for TOOL in ${TOOLS_ROOT} ${TOOLS_GEANT4} ${TOOLSMEGALIB}; do
+
+echo "This script will install the following programs/libraries:"
+echo "${TOOLS_GENERAL} ${TOOLS_ROOT} ${TOOLS_GEANT4} ${TOOLS_MEGALIB} ${TOOLS_PYTHON}"
+
+
+PORTSBACKUP="ListOfInstalledPortsBeforeMEGAlib.$(date +'%Y%m%d%H%M%S').txt"
+
+echo " "
+echo "Saving a list of currently installed ports - just in case you need to roll back" 
+
+port -qv installed > ${PORTSBACKUP}
+
+echo " "
+echo "Starting installation. This will require sudo priviledges. Feel free to take a look at the source code if you are cautious."
+
+for TOOL in ${TOOLS_GENERAL} ${TOOLS_ROOT} ${TOOLS_GEANT4} ${TOOLS_MEGALIB} ${TOOLS_PYTHON}; do
   sudo port -N install ${TOOL}
 done
 
@@ -15,4 +33,3 @@ sudo port select --set python3 python38
 
 
 exit 1
-

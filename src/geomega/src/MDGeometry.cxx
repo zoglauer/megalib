@@ -34,6 +34,7 @@
 #include <iomanip>
 #include <cctype>
 #include <cmath>
+#include <iterator>
 using namespace std;
 
 // ROOT libs:
@@ -47,6 +48,7 @@ using namespace std;
 #include <TMath.h>
 #include <TGeoOverlap.h>
 #include <TObjArray.h>
+#include <TMD5.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -82,6 +84,7 @@ using namespace std;
 #include "MDTrigger.h"
 #include "MDTriggerBasic.h"
 #include "MDTriggerMap.h"
+#include "MDGDMLImport.h"
 #include "MTimer.h"
 #include "MString.h"
 
@@ -225,6 +228,7 @@ void MDGeometry::Reset()
   // m_StartVolume = ""; // This is a start option of geomega, so do not reset!
 
   m_IncludeList.clear();
+  m_IncludeListHashes.clear();
 
   if (m_GeoView != 0) {
     if (gROOT->FindObject("MainCanvasGeomega") != 0) {
@@ -232,6 +236,29 @@ void MDGeometry::Reset()
     }
     m_GeoView = 0;
   }
+  
+  m_ViewValid = false;
+  
+  m_ViewPositionX = 0;
+  m_ViewPositionY = 0;
+
+  m_ViewPositionShiftX = 0;
+  m_ViewPositionShiftY = 0;
+  
+  m_ViewSizeX = 0;
+  m_ViewSizeY = 0;
+  
+  m_ViewRangeMin.resize(3);
+  fill(m_ViewRangeMin.begin(), m_ViewRangeMin.end(), 0);
+  m_ViewRangeMax.resize(3);
+  fill(m_ViewRangeMax.begin(), m_ViewRangeMax.end(), 0);
+  m_ViewRotationPhi = 0;
+  m_ViewRotationTheta = 0;
+  m_ViewRotationPsi = 0;
+
+  m_ViewDistanceCOPtoCOV = 0;
+  m_ViewDistanceCOPtoPL = 0;
+
 
   m_Name = "";
 
@@ -262,7 +289,9 @@ void MDGeometry::Reset()
 
   m_DetectorSearchTolerance = 0.000001;
 
-  m_CrossSectionFileDirectory = g_MEGAlibPath + "/resource/geometries/materials";
+  m_DefaultCrossSectionFileDirectory = g_MEGAlibPath + "/resource/examples/geomega/materials";
+  // This one will be overwritten when we have the file name of the mass model
+  m_CrossSectionFileDirectory = g_MEGAlibPath + "/resource/examples/geomega/materials";
 
   MDVolume::ResetIDs();
   MDDetector::ResetIDs();
@@ -298,10 +327,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   //  mout<<"Loading geometry file: "<<FileName<<endl;
   //}
 
+  bool DebugParsing = false;
+  
   int Stage = 0;
   MTimer Timer;
   double TimeLimit = 0;
-  bool FoundDepreciated = false;
+  bool FoundDeprecated = false;
+  bool FoundSurroundingSphere = false;
 
   // First clean the geometry ...
   Reset();
@@ -318,8 +350,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mout<<"   *** Error: No geometry file name given"<<endl;
     return false;
   }
-  MFile::ExpandFileName(m_FileName);
 
+  if (MFile::ExpandFileName(m_FileName) == false) {
+    mgui<<"Unable to expand file name: \""<<m_FileName<<"\""<<error;
+    return false;
+  }
+  
   if (gSystem->IsAbsoluteFileName(m_FileName) == false) {
     m_FileName = gSystem->WorkingDirectory() + MString("/") + m_FileName;
   }
@@ -330,8 +366,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   m_CrossSectionFileDirectory = MFile::GetDirectoryName(m_FileName);
-  m_CrossSectionFileDirectory += "/absorptions";
-
+  m_CrossSectionFileDirectory += "/cross-sections";
 
   if (g_Verbosity >= c_Info) {
     mout<<"Started scanning of geometry... This may take a while..."<<endl;
@@ -354,7 +389,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Since the geometry-file can include other geometry files,
   // we have to store the whole file in memory
 
-  vector<MDDebugInfo> FileContent;
+  list<MDDebugInfo> FileContent;
   if (AddFile(m_FileName, FileContent) == false) {
     mout<<"   *** Error reading included files. Aborting!"<<endl;
     return false;
@@ -363,14 +398,16 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Now scan the data and search for "Include" files and add them
   // to the original stored file content
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
-    if (Tokenizer.GetNTokens() == 0) continue;
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
+    if (Tokenizer.GetNTokens() == 0) {
+      continue;
+    }
+    
     if (Tokenizer.IsTokenAt(0, "Include") == true) {
-
+      
       // Test for old material path
       if (Tokenizer.GetTokenAt(1).EndsWith("resource/geometries/materials/Materials.geo") == true) {
         mout<<" *** Deprectiated *** "<<endl;
@@ -379,66 +416,121 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"Please update to the new path now!"<<endl;
         mout<<"Change: resource/geometries To: resource/examples/geomega "<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
       }
-
+      
       MString FileName = Tokenizer.GetTokenAt(1);
-      MFile::ExpandFileName(FileName, m_FileName);
-
+      if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+        Typo("Unable to expand file name");
+        return false;
+      }
+      
       if (MFile::Exists(FileName) == false) {
         mout<<"   *** Error finding file "<<FileName<<endl;
         Typo("File IO error");
         return false;
       }
-
-      vector<MDDebugInfo> AddFileContent;
+      
+      list<MDDebugInfo> AddFileContent;
       if (AddFile(FileName, AddFileContent) == false) {
         mout<<"   *** Error reading file "<<FileName<<endl;
         Typo("File IO error");
         return false;
       }
-
-      for (unsigned int j = 0; j < AddFileContent.size(); ++j) {
-        //FileContent.push_back(AddFileContent[j]);
-        FileContent.insert(FileContent.begin() + (i+1) + j, AddFileContent[j]);
+      
+      (*ContentIter).SetText("");
+      auto BackToStartIter = ContentIter;
+      for (auto AddIter = AddFileContent.begin(); AddIter != AddFileContent.end(); ++AddIter) {
+        ContentIter = FileContent.insert(next(ContentIter), (*AddIter));
+      }
+      ContentIter = BackToStartIter;
+    }
+    
+    if (Tokenizer.IsTokenAt(0, "Import") == true) {
+      
+      if (Tokenizer.GetNTokens() != 3) {
+        Typo("Line must contain three entries, e.g. \"Import GDML MyGDML.gdml\"");
+        return false;
+      }
+      
+      if (Tokenizer.IsTokenAt(1, "GDML") == true) {
+        MString FileName = Tokenizer.GetTokenAt(2);
+        if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+          mout<<"   *** Error expanding file "<<FileName<<endl;
+          Typo("Unable to expand file name");
+          return false;
+        }
+      
+        if (MFile::Exists(FileName) == false) {
+          mout<<"   *** Error finding file "<<FileName<<endl;
+          Typo("File IO error");
+          return false;
+        }
+      
+        list<MDDebugInfo> AddFileContent;
+        if (ImportGDML(FileName, AddFileContent) == false) {
+          mout<<"   *** Error reading file "<<FileName<<endl;
+          Typo("File IO error");
+          return false;
+        }
+      
+        (*ContentIter).SetText("");
+        auto BackToStartIter = ContentIter;
+        for (auto AddIter = AddFileContent.begin(); AddIter != AddFileContent.end(); ++AddIter) {
+          ContentIter = FileContent.insert(next(ContentIter), (*AddIter));
+        }
+        ContentIter = BackToStartIter;
+      } else {
+        mout<<"   *** Error unknown import file type "<<Tokenizer.GetTokenAt(1)<<endl;
+        Typo("Import error");
       }
     }
+    
   }
 
   if (FileContent.size() == 0) {
     mgui<<"File is \""<<m_FileName<<"\" empty or binary!"<<error;
     return false;
   }
-
+  
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (reading of file(s)) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file reading *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
 
 
   // Find lines which are continued in a second line by the "\\" keyword
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Of course the real token is "\\"
     if (Tokenizer.IsTokenAt(Tokenizer.GetNTokens()-1, "\\\\") == true) {
       //cout<<"Found \\\\: "<<Tokenizer.ToString()<<endl;
       // Prepend this text to the next line
-      if (FileContent.size() > i+1) {
+      if (next(ContentIter, 1) != FileContent.end()) {
         //cout<<"Next: "<<FileContent[i+1].GetText()<<endl;
         MString Prepend = "";
         for (unsigned int t = 0; t < Tokenizer.GetNTokens()-1; ++t) {
           Prepend += Tokenizer.GetTokenAt(t);
           Prepend += " ";
         }
-        FileContent[i+1].Prepend(Prepend);
-        FileContent[i].SetText("");
-        //cout<<"Prepended: "<< FileContent[i+1].GetText()<<endl;
+        (*(next(ContentIter, 1))).Prepend(Prepend);
+        (*ContentIter).SetText("");
       }
     }
   }
@@ -448,10 +540,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Find constants
   //
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Constants
@@ -503,6 +595,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (ContainsConstant == false) {
           MString Constant = (*Iter1).second;
+          if ( MTokenizer::CheckMaths(Constant) == false) {
+            mout<<"   *** Error ***"<<endl;
+            mout<<"Maths in constant cannot be evaluated: "<<(*Iter1).first<<" "<<Constant<<endl;
+            return false;
+          }
           MTokenizer::EvaluateMaths(Constant);
           (*Iter1).second = Constant;
         }
@@ -539,10 +636,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   // Do the final replace:
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     MString Init = Tokenizer.GetTokenAt(0);
@@ -575,21 +672,32 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     for (map<MString, MString>::iterator Iter = m_ConstantMap.begin();
          Iter != m_ConstantMap.end(); ++Iter) {
-      FileContent[i].Replace((*Iter).first, (*Iter).second, true);
+      (*ContentIter).Replace((*Iter).first, (*Iter).second, true);
     }
   }
 
+
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (evaluating constants) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+    mout<<"Stage "<<Stage<<" (evaluating constants and maths) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating constants and maths *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
 
   // Check for Vectors FIRST since those are used in ForVector loops...
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     if (Tokenizer.IsTokenAt(0, "Vector") == true) {
@@ -610,10 +718,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       continue;
     }
   }
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-
+  
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() == 0) continue;
 
     if ((Vector = GetVector(Tokenizer.GetTokenAt(0))) != 0) {
@@ -658,24 +767,34 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating vectors) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating vectors *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
   // Check for "For"-loops as well as the special "ForVector"-loop
   int ForDepth = 0;
   int CurrentDepth = 0;
-  vector<MDDebugInfo>::iterator Iter;
-  for (Iter = FileContent.begin();
-       Iter != FileContent.end();
-       /* ++Iter erase */) {
-    m_DebugInfo = (*Iter);
-    MTokenizer& Tokenizer = (*Iter).GetTokenizer(false);
+  
+  
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); /* ++ContentIter erase */) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
 
     if (Tokenizer.GetNTokens() == 0) {
-      ++Iter;
+      ++ContentIter;
       continue;
     }
 
-    if (Tokenizer.IsTokenAt(0, "For") == true) {
+    // For
+    auto BackToStartIter = ContentIter;
+    if (Tokenizer.IsTokenAt(0, "For") == true || Tokenizer.IsTokenAt(0, "for") == true) {
       MTokenizer& TokenizerMaths = m_DebugInfo.GetTokenizer(true); // redo for math's evaluation just here
 
       CurrentDepth = ForDepth;
@@ -686,46 +805,44 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
 
       MString Index = TokenizerMaths.GetTokenAt(1);
-      unsigned int Loops = TokenizerMaths.GetTokenAtAsUnsignedInt(2);
-      if (Loops == 0 || TokenizerMaths.GetTokenAtAsDouble(2) <= 0 || std::isnan(TokenizerMaths.GetTokenAtAsDouble(2))) { // std:: is required
-        mout<<"Warning: Loop number in for loop must be a positive integer "<<TokenizerMaths.GetTokenAtAsDouble(2)<<endl;
-        Loops = 0;
-        //Typo("Loop number in for loop must be a positive integer");
-        //return false;
+      if (TokenizerMaths.GetTokenAtAsInt(2) < 0 || TokenizerMaths.GetTokenAtAsInt(2) != TokenizerMaths.GetTokenAtAsDouble(2) || std::isnan(TokenizerMaths.GetTokenAtAsDouble(2))) { // std:: is required
+        Typo("Loop number in for loop must be a positive integer");
+        return false;
       }
+      unsigned int Loops = TokenizerMaths.GetTokenAtAsUnsignedInt(2);
       double Start = TokenizerMaths.GetTokenAtAsDouble(3);
       double Step = TokenizerMaths.GetTokenAtAsDouble(4);
 
-      // Remove for line
-      Iter = FileContent.erase(Iter++);
+      // Erase the for line
+      (*ContentIter).SetText("");
 
       // Store content of for loop:
-      vector<MDDebugInfo> ForLoopContent;
-      for (; Iter != FileContent.end(); /* ++Iter erase */) {
-        m_DebugInfo = (*Iter);
-        MTokenizer& TokenizerFor = (*Iter).GetTokenizer(false);
+      list<MDDebugInfo> ForLoopContent;
+      for (; ContentIter != FileContent.end(); /* ++ContentIter erase */) {
+        m_DebugInfo = (*ContentIter);
+        MTokenizer& TokenizerFor = (*ContentIter).GetTokenizer(false);
 
         if (TokenizerFor.GetNTokens() == 0) {
-          Iter++;
+          ContentIter++;
           continue;
         }
-        if (TokenizerFor.IsTokenAt(0, "For") == true) {
+        if (TokenizerFor.IsTokenAt(0, "For") == true || TokenizerFor.IsTokenAt(0, "for") == true) {
           ForDepth++;
         }
-        if (TokenizerFor.IsTokenAt(0, "Done") == true) {
+        if (TokenizerFor.IsTokenAt(0, "Done") == true || TokenizerFor.IsTokenAt(0, "done") == true) {
           ForDepth--;
           if (ForDepth == CurrentDepth) {
-            Iter = FileContent.erase(Iter++);
+            (*ContentIter).SetText("");
             break;
           }
         }
 
         ForLoopContent.push_back(m_DebugInfo);
-        Iter = FileContent.erase(Iter++);
+        (*ContentIter).SetText("");
       }
 
       // Add new content at the same place:
-      vector<MDDebugInfo>::iterator LastIter = Iter;
+      list<MDDebugInfo>::iterator LastIter = ContentIter;
       int Position = 0;
       for (unsigned int l = 1; l <= Loops; ++l) {
         MString LoopString;
@@ -734,7 +851,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         ValueString += (Start + (l-1)*Step);
 
 
-        vector<MDDebugInfo>::iterator ForIter;
+        list<MDDebugInfo>::iterator ForIter;
         for (ForIter = ForLoopContent.begin();
              ForIter != ForLoopContent.end();
              ++ForIter) {
@@ -742,15 +859,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           m_DebugInfo.Replace(MString("%") + Index, LoopString);
           m_DebugInfo.Replace(MString("$") + Index, ValueString);
 
-          LastIter = FileContent.insert(LastIter, m_DebugInfo);
-          LastIter++;
+          LastIter = FileContent.insert(next(LastIter), m_DebugInfo);
           Position++;
         }
       }
-      Iter = LastIter - Position;
+      ContentIter = BackToStartIter; // Multiple fors -- have to go back where we started
+            
       continue;
     }
 
+    // ForVector
+    BackToStartIter = ContentIter;
     if (Tokenizer.IsTokenAt(0, "ForVector") == true) {
 
       // Take care of nesting
@@ -775,17 +894,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       MString ZIndex = Tokenizer.GetTokenAt(4);
       MString VIndex = Tokenizer.GetTokenAt(5);
 
-      // Remove for line
-      Iter = FileContent.erase(Iter++);
-
+      // Erase the for line
+      (*ContentIter).SetText("");
+      
       // Store content of ForVector loop:
-      vector<MDDebugInfo> ForLoopContent;
-      for (; Iter != FileContent.end(); /* ++Iter erase */) {
-        m_DebugInfo = (*Iter);
+      list<MDDebugInfo> ForLoopContent;
+      for (; ContentIter != FileContent.end(); /* ++ContentIter erase */) {
+        m_DebugInfo = (*ContentIter);
         MTokenizer& TokenizerFor = m_DebugInfo.GetTokenizer(false);
 
         if (TokenizerFor.GetNTokens() == 0) {
-          Iter++;
+          ContentIter++;
           continue;
         }
         if (TokenizerFor.IsTokenAt(0, "ForVector") == true) {
@@ -794,19 +913,21 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (TokenizerFor.IsTokenAt(0, "DoneVector") == true) {
           ForDepth--;
           if (ForDepth == CurrentDepth) {
-            Iter = FileContent.erase(Iter++);
+            (*ContentIter).SetText("");
             break;
           }
         }
 
         ForLoopContent.push_back(m_DebugInfo);
-        Iter = FileContent.erase(Iter++);
+        (*ContentIter).SetText("");
       }
 
       // Add new content at the same place:
-      vector<MDDebugInfo>::iterator LastIter = Iter;
+      list<MDDebugInfo>::iterator LastIter = ContentIter;
       int Position = 0;
       for (unsigned int l = 1; l <= Vector->GetSize(); ++l) {
+        //cout<<"Vector loc: "<<l<<endl;
+        
         MString LoopString;
         LoopString += l;
         MString XValueString;
@@ -818,7 +939,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         MString ValueString;
         ValueString += Vector->GetValue(l-1);
 
-        vector<MDDebugInfo>::iterator ForIter;
+        list<MDDebugInfo>::iterator ForIter;
         for (ForIter = ForLoopContent.begin();
              ForIter != ForLoopContent.end();
              ++ForIter) {
@@ -832,53 +953,85 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           m_DebugInfo.Replace(MString("%") + VIndex, LoopString);
           m_DebugInfo.Replace(MString("$") + VIndex, ValueString);
 
-          LastIter = FileContent.insert(LastIter, m_DebugInfo);
-          LastIter++;
+          LastIter = FileContent.insert(next(LastIter), m_DebugInfo);
           Position++;
         }
       }
-      Iter = LastIter - Position;
+      ContentIter = BackToStartIter;
       continue;
     }
-    ++Iter;
+    ++ContentIter;
   }
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating for loops) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating for loops *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
 
   // Find random numbers
   TRandom3 R;
   R.SetSeed(11031879); // Do never modify!!!!
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    while (FileContent[i].Contains("RandomDouble") == true) {
-      //cout<<"Before: "<<FileContent[i].GetText()<<endl;
-      FileContent[i].ReplaceFirst("RandomDouble", R.Rndm());
-      //cout<<"after: "<<FileContent[i].GetText()<<endl;
+  
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    while ((*ContentIter).Contains("RandomDouble") == true) {
+      //cout<<"Before: "<<(*ContentIter).GetText()<<endl;
+      (*ContentIter).ReplaceFirst("RandomDouble", R.Rndm());
+      //cout<<"after: "<<(*ContentIter).GetText()<<endl;
     }
   }
 
-//   // All constants and for loops are expanded, let's print some text ;-)
-//   for (unsigned int i = 0; i < FileContent.size(); i++) {
-//     cout<<FileContent[i].GetText()<<endl;
-//   }
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating random numbers) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
-
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating random numbers *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
+    
+  // Do a final maths check:
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
+    if (Tokenizer.CheckAllMaths() == false) {
+      Typo("Cannot parse maths -- typo or unsupported maths function.");
+      return false;
+    }
+  }
+  
   // Check for "If"-clauses
   int IfDepth = 0;
+  int ElseDepth = 0;
   int CurrentIfDepth = 0;
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  bool InsideElse = false;
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    if ((*ContentIter).IsTokenizerValid() == false) {
+      Typo("Parsing of the line failed.");
+      return false;
+    }
+   
     if (Tokenizer.GetNTokens() == 0) {
       continue;
     }
@@ -889,53 +1042,95 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       CurrentIfDepth = IfDepth;
       IfDepth++;
 
-
+      // Take care of else
+      InsideElse = false;
+      
       if (Tokenizer.GetNTokens() != 2) {
         Typo("The If-line must contain two entries, the last one must be math, e.g. \"If { 1 == 2 } or If { $Value > 0 } \"");
         return false;
       }
 
       // Retrieve data:
-      bool Bool = Tokenizer.GetTokenAtAsBoolean(1);
+      bool IfStatement = Tokenizer.GetTokenAtAsBoolean(1);
 
       // Clear the if line
-      FileContent[i].SetText("");
+      //cout<<"Erasing (if): "<<(*ContentIter).GetText()<<endl;
+      (*ContentIter).SetText("");
 
       // Forward its endif:
-      for (unsigned int j = i+1; j < FileContent.size(); ++j) {
-        MTokenizer& TokenizerIf = FileContent[j].GetTokenizer(false);
+      for (auto NewContentIter = next(ContentIter, 1); NewContentIter != FileContent.end(); ++NewContentIter) {
+        MTokenizer& TokenizerIf = (*NewContentIter).GetTokenizer(false);
         if (TokenizerIf.GetNTokens() == 0) {
           continue;
         }
-        if (TokenizerIf.IsTokenAt(0, "If") == true) {
+        if (TokenizerIf.IsTokenAt(0, "If") == true || TokenizerIf.IsTokenAt(0, "if") == true) {
           IfDepth++;
         }
-        if (TokenizerIf.IsTokenAt(0, "EndIf") == true) {
+        if (TokenizerIf.IsTokenAt(0, "Else") == true || TokenizerIf.IsTokenAt(0, "else") == true) {
+          InsideElse = true;
+          ElseDepth++;
+          if (IfDepth == CurrentIfDepth && IfDepth == ElseDepth) {
+            //cout<<"Erasing (else): "<<(*NewContentIter).GetText()<<endl;
+            (*NewContentIter).SetText("");
+          }
+        }
+        if (TokenizerIf.IsTokenAt(0, "EndIf") == true || TokenizerIf.IsTokenAt(0, "Endif") == true || TokenizerIf.IsTokenAt(0, "endif") == true) {
           IfDepth--;
           if (IfDepth == CurrentIfDepth) {
-            FileContent[j].SetText("");
+            //cout<<"Erasing (endif): "<<(*NewContentIter).GetText()<<endl;
+            (*NewContentIter).SetText("");
             break;
           }
         }
-        if (Bool == false) {
-          FileContent[j].SetText("");
+        if (IfStatement == false && InsideElse == false) {
+          //cout<<"Erasing (if is false): "<<(*NewContentIter).GetText()<<endl;
+          (*NewContentIter).SetText("");
+        }
+        if (IfStatement == true && InsideElse == true) {
+          //cout<<"Erasing (else is false): "<<(*NewContentIter).GetText()<<endl;
+          (*NewContentIter).SetText("");
         }
       }
+      // ContentIter is not changed since we stay at the same level to all subsequent if's
     } // Is if
   } // global loop
 
-
+  // Clean empty lines:
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ) {
+    if ((*ContentIter).GetText() == "") {
+      ContentIter = FileContent.erase(ContentIter);
+    } else {
+      ++ContentIter;
+    }
+  }
+  
+  
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating if clauses + initial maths evaluation) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
-
-
+  
+  if (DebugParsing == true) {
+    cout<<endl<<endl<<endl<<endl;
+    cout<<"***** After file evaluating if clauses *****"<<endl;
+    cout<<endl<<endl;
+    for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+      MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+      cout<<Tokenizer.ToCompactString()<<endl;
+    }
+  }
+  
+  
+  
   // All constants and for loops are expanded, let's print some text ;-)
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    if ((*ContentIter).IsTokenizerValid() == false) {
+      Typo("Parsing of the line failed.");
+      return false;
+    }
+        
     if (Tokenizer.GetNTokens() == 0) continue;
 
     if (Tokenizer.IsTokenAt(0, "Print") == true ||
@@ -960,10 +1155,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Find the master keyword, volumes, material, detectors
   //
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    if ((*ContentIter).IsTokenizerValid() == false) {
+      Typo("Parsing of the line failed.");
+      return false;
+    }
+       
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Let's scan for first order keywords:
@@ -1021,6 +1220,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // Surrounding sphere
     else if (Tokenizer.IsTokenAt(0, "SurroundingSphere") == true) {
+      if (FoundSurroundingSphere == true) {
+        Typo("You have multiple surrounding spheres defined in your code. The ones read later overwrite the original one. This is too error prone to be allowed.");
+        return false;
+      }
+
       if (Tokenizer.GetNTokens() != 6) {
         Typo("Line must contain five values: Radius, xPos, yPos, zPos of sphere center, Distance to sphere center");
         return false;
@@ -1036,6 +1240,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         Typo("Limitation: Concerning your surrounding sphere: The sphere radius must equal the distance to the sphere for the time being. Sorry.");
         return false;
       }
+
+      FoundSurroundingSphere = true;
 
       continue;
     }
@@ -1146,21 +1352,28 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // General absorption file directory
     else if (Tokenizer.IsTokenAt(0, "AbsorptionFileDirectory") == true ||
-             Tokenizer.IsTokenAt(0, "CrossSectionFilesDirectory") == true) {
+             Tokenizer.IsTokenAt(0, "CrossSectionFilesDirectory") == true ||
+             Tokenizer.IsTokenAt(0, "CrossSectionPath") == true) {
       if (Tokenizer.GetNTokens() != 2) {
-        Typo("Line must contain two values: CrossSectionFilesDirectory auxiliary");
+        Typo("Line must contain two values: CrossSectionPath auxiliary");
         return false;
       }
 
       // We have to use TString
       MString Name = Tokenizer.GetTokenAtAsString(1).Data();
-      MFile::ExpandFileName(Name);
+      if (MFile::ExpandFileName(Name) == false) {
+        Typo("Unable to expand file name");
+        return false;
+      }
 
       if (gSystem->IsAbsoluteFileName(Name) == false) {
         Name.Prepend("/");
         Name.Prepend(MFile::GetDirectoryName(m_FileName));
 
-        MFile::ExpandFileName(Name);
+        if (MFile::ExpandFileName(Name) == false) {
+          Typo("Unable to expand cross-section path to absolute path");
+          return false;
+        }
       }
 
       m_CrossSectionFileDirectory = Name;
@@ -1469,10 +1682,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   //
   //
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() < 3) continue;
 
 
@@ -1551,10 +1764,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Third loop:
   // Fill the volumes, materials with life...
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() < 2) continue;
 
     // Now the first token is some kind of name, so we have to find the
@@ -1580,7 +1793,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                  Tokenizer.IsTokenAt(1, "ComponentByAtoms") == true) {
         if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
           Typo("Line must contain two strings and 3 doubles,"
-               " e.g. \"Alu.ComponentByAtoms 27.0 13.0 1.0  --> but this is depreciated\""
+               " e.g. \"Alu.ComponentByAtoms 27.0 13.0 1.0  --> but this is deprecated\""
                " or three string and one double\""
                " e.g. \"Alu.ComponentByAtoms Al 1.0\"");
           return false;
@@ -1602,7 +1815,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       } else if (Tokenizer.IsTokenAt(1, "ComponentByMass") == true) {
        if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
           Typo("Line must contain two strings and 3 doubles,"
-               " e.g. \"Alu.ComponentByMass 27.0 13.0 1.0  --> but this is depreciated\""
+               " e.g. \"Alu.ComponentByMass 27.0 13.0 1.0  --> but this is deprecated\""
                " or three string and one double\""
                " e.g. \"Alu.ComponentByMass Al 1.0\"");
           return false;
@@ -1771,7 +1984,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             <<" "<<Tokenizer.GetTokenAtAsInt(3)<<endl;
         mout<<"Using the above..."<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
 
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain two strings and 2 integer, e.g. \"D1D2Trigger.DetectorType 1 2\"");
@@ -1928,8 +2141,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (T->GetType() == MDTriggerType::c_Universal) {
           MString FileName = Tokenizer.GetTokenAtAsString(2);
 
-          MFile::ExpandFileName(FileName, m_FileName);
-
+          if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+            Typo("Unable to expand file name");
+            return false;
+          }
+      
           if (gSystem->AccessPathName(FileName) == 1) {
             Typo("The file does not exist!");
             return false;
@@ -2333,7 +2549,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"All cross section files have fixed file names, and can be found in the directory given by"<<endl;
         mout<<"the keyword CrossSectionFilesDirectory or in \"auxiliary\" as default"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
       } else if (Tokenizer.IsTokenAt(1, "Orientation") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain three strings,"
@@ -2412,10 +2628,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Fourth loop:
   // Fill the detector not before everything else is done!
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() < 2) continue;
 
     // Check for detectors:
@@ -2525,7 +2741,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         MString FileName = Tokenizer.GetTokenAt(2);
-        MFile::ExpandFileName(FileName, m_FileName);
+        if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+          Typo("Unable to expand file name");
+          return false;
+        }
         if (MFile::Exists(FileName) == false) {
           Typo("File does not exist.");
           return false;
@@ -2553,7 +2772,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           mout<<"The \"EnergyResolution\" keyword format has changed. Please see the geomega manual."<<endl;
           mout<<"Using a Gaussian resolution in compatibility mode."<<endl;
           mout<<endl;
-          //FoundDepreciated = true;
+          //FoundDeprecated = true;
           D->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           if (Tokenizer.GetNTokens() == 4) {
             D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
@@ -2658,7 +2877,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         MString FileName = Tokenizer.GetTokenAtAsString(2);
-        MFile::ExpandFileName(FileName, m_FileName);
+        if (MFile::ExpandFileName(FileName, m_FileName) == false) {
+          Typo("Unable to expand file name");
+          return false;
+        }
         MFunction Calibration;
         if (Calibration.Set(FileName, "DP") == false) {
           Typo("Unable to read file");
@@ -2701,7 +2923,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"StructuralSize\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (Tokenizer.GetNTokens() != 5) {
         //           Typo("Line must contain one string and 3 doubles,"
         //                " e.g. \"Wafer.StructuralSize 0.0235, 3.008, 0.5\"");
@@ -2748,7 +2970,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"Width\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_DriftChamber &&
         //             D->GetType() != MDDetector::c_Strip3D) {
@@ -2765,7 +2987,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"Pitch\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_Strip3D &&
         //             D->GetType() != MDDetector::c_DriftChamber) {
@@ -2862,7 +3084,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"StripLength\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_Strip3D &&
         //             D->GetType() != MDDetector::c_DriftChamber) {
@@ -2881,7 +3103,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<" *** Deprectiated *** "<<endl;
         mout<<"The \"Orientation\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
         //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_Strip3D &&
         //             D->GetType() != MDDetector::c_DriftChamber) {
@@ -2978,7 +3200,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"For all detectors, the z-axis is by default the depth-noised axis"<<endl;
         mout<<"For the depth resolution, use the \"DepthResolution\" keyword"<<endl;
         mout<<endl;
-        FoundDepreciated = true;
+        FoundDeprecated = true;
       }
       else if (Tokenizer.IsTokenAt(1, "DepthResolution") == true ||
                Tokenizer.IsTokenAt(1, "DepthResolutionAt") == true) {
@@ -3500,10 +3722,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // A final loop over the data checks for the detector keyword "Assign"
   // We need a final volume tree, thus this is really the final loop
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    
     if (Tokenizer.GetNTokens() < 2) continue;
 
     // Check for detectors:
@@ -3747,10 +3969,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // Special detector loop for blocked channels:
 
-  for (unsigned int i = 0; i < FileContent.size(); i++) {
-    m_DebugInfo = FileContent[i];
-    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
-
+  for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
+    m_DebugInfo = (*ContentIter);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
+    
     if (Tokenizer.GetNTokens() < 2) continue;
 
     // Check for detectors:
@@ -3782,6 +4004,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // Material sanity checks
   for (unsigned int i = 0; i < GetNMaterials(); i++) {
+    m_MaterialList[i]->SetDefaultCrossSectionFileDirectory(m_DefaultCrossSectionFileDirectory);
     m_MaterialList[i]->SetCrossSectionFileDirectory(m_CrossSectionFileDirectory);
     if (m_MaterialList[i]->Validate() == false) {
       IsValid = false;
@@ -3902,8 +4125,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mout<<"It contains "<<GetNVolumes()<<" volumes"<<endl;
   }
 
-  if (FoundDepreciated == true) {
-    mgui<<"Your geometry contains depreciated information (see console output for details)."<<endl;
+  if (FoundDeprecated == true) {
+    mgui<<"Your geometry contains deprecated information (see console output for details)."<<endl;
     mgui<<"Please update it now to the latest conventions!"<<show;
   }
 
@@ -3914,12 +4137,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometry::AddFile(MString FileName, vector<MDDebugInfo>& FileContent)
+bool MDGeometry::AddFile(MString FileName, list<MDDebugInfo>& FileContent)
 {
 
   FileContent.clear();
 
-  MFile::ExpandFileName(FileName);
+  if (MFile::ExpandFileName(FileName) == false) {
+    Typo("Unable to expand file name");
+    return false;
+  }
 
   // First edit the file name:
   if (gSystem->IsAbsoluteFileName(FileName) == false) {
@@ -3999,6 +4225,101 @@ bool MDGeometry::AddFile(MString FileName, vector<MDDebugInfo>& FileContent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDGeometry::ImportGDML(MString FileName, list<MDDebugInfo>& FileContent)
+{
+  
+  FileContent.clear();
+  
+  if (MFile::ExpandFileName(FileName) == false) {
+    Typo("Unable to expand file name");
+    return false;
+  }
+  
+  // First edit the file name:
+  if (gSystem->IsAbsoluteFileName(FileName) == false) {
+    FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
+  }
+  
+  if (gSystem->AccessPathName(FileName) == 1) {
+    mout<<"   ***  Error  ***  "<<endl;
+    mout<<"Imported file \""<<FileName<<"\" does not exist."<<endl;
+    return false;
+  }
+  
+  if (IsIncluded(FileName) == true) {
+    return true;
+  }
+  
+  MDGDMLImport Importer;
+  if (Importer.Parse(FileName) == true) {
+    MString Text = Importer.GetAsGeomega();
+    
+  }
+  
+  
+  /*
+  int LineCounter = 0;
+  int LineLength = 10000;
+  char* LineBuffer = new char[LineLength];
+  
+  ifstream FileStream;
+  FileStream.open(FileName);
+  
+  if (FileStream.is_open() == 0) {
+    mout<<"   ***  Error  ***  "<<endl;
+    mout<<"Can't open file "<<FileName<<endl;
+    delete [] LineBuffer;
+    return false;
+  }
+  
+  int Comment = 0;
+  MTokenizer Tokenizer;
+  MDDebugInfo Info;
+  while (FileStream.getline(LineBuffer, LineLength, '\n')) {
+    Info = MDDebugInfo(LineBuffer, FileName, LineCounter++);
+    Tokenizer.Analyse(Info.GetText(), false);
+    if (Tokenizer.GetNTokens() >=1 && Tokenizer.GetTokenAt(0) == "Exit") {
+      mout<<"Found \"Exit\" in file "<<FileName<<endl;
+      break;
+    }
+    if (Tokenizer.GetNTokens() >= 1 && Tokenizer.GetTokenAt(0) == "EndComment") {
+      //mout<<"Found \"EndComment\" in file "<<FileName<<endl;
+      Comment--;
+      if (Comment < 0) {
+        mout<<"   ***  Error  ***  "<<endl;
+        mout<<"Found \"EndComment\" without \"BeginComment\" in file "<<FileName<<endl;
+        FileContent.clear();
+        delete [] LineBuffer;
+        return false;
+      }
+      continue;
+    }
+    if (Tokenizer.GetNTokens() >= 1 && Tokenizer.GetTokenAt(0) == "BeginComment") {
+      //mout<<"Found \"BeginComment\" in file "<<FileName<<endl;
+      Comment++;
+      continue;
+    }
+    if (Comment == 0) {
+      FileContent.push_back(Info);
+    }
+  }
+  // Add an empty line, just in case the file didn't end with a new line
+  FileContent.push_back(MDDebugInfo(" ", FileName, LineCounter++));
+  
+  AddInclude(FileName);
+  
+  delete [] LineBuffer;
+  
+  FileStream.close();
+  */
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MDGeometry::Typo(MString Typo)
 {
   // Print an error message
@@ -4071,7 +4392,7 @@ bool MDGeometry::NameExists(MString Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
+bool MDGeometry::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
 {
   // The geometry must have been loaded previously
   // You cannot display 2 geometries at once!
@@ -4083,11 +4404,13 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   }
 
   // Start by deleting the old windows:
-  if (m_GeoView != 0) {
-    if (gROOT->FindObject("MainCanvasGeomega") != 0) {
+  if (m_GeoView != nullptr) {
+    if (gROOT->FindObject("MainCanvasGeomega") != nullptr) {
       delete m_GeoView;
     }
-    m_GeoView = 0;
+    m_GeoView = nullptr;
+  } else {
+    RestoreView = false;
   }
 
   //mdebug<<"NVolumes: "<<m_WorldVolume->GetNVisibleVolumes()<<endl;
@@ -4101,10 +4424,23 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   MTimer Timer;
   double TimerLimit = 5;
 
-  if (Canvas == 0) {
-    m_GeoView = new TCanvas("MainCanvasGeomega","MainCanvasGeomega",800,800);
+  if (Canvas == nullptr) {
+    if (RestoreView == true && m_ViewValid == true) {
+      m_GeoView = new TCanvas("MainCanvasGeomega", "Geomega geometry display", m_ViewPositionX - m_ViewPositionShiftX, m_ViewPositionY - m_ViewPositionShiftY, m_ViewSizeX, m_ViewSizeY);
+      //m_GeoView->SetWindowPosition(m_ViewPositionX, m_ViewPositionY);
+      //m_GeoView->SetWindowSize(m_ViewSizeX, m_ViewSizeY);
+    } else {
+      int RefPos = 100;
+      m_GeoView = new TCanvas("MainCanvasGeomega", "Geomega geometry display", RefPos, RefPos, 700, 700);
+      m_ViewPositionShiftX = m_GeoView->GetWindowTopX() - RefPos;
+      m_ViewPositionShiftY = m_GeoView->GetWindowTopY() - RefPos;
+    }
   } else {
     Canvas->cd();
+    if (RestoreView == true && m_ViewValid == true) {
+      Canvas->SetWindowPosition(m_ViewPositionX, m_ViewPositionY);
+      Canvas->SetWindowSize(m_ViewSizeX, m_ViewSizeY);
+    }
   }
 
 
@@ -4129,13 +4465,66 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   }
   m_Geometry->SetCurrentNavigator(0); // current is the first navigator?
 
+  if (RestoreView == true && m_ViewValid == true) {
+    TView* View = m_GeoView->GetView();
+    View->SetRange(&m_ViewRangeMin[0], &m_ViewRangeMax[0]);
+    
+    int Reply = 0;
+    View->SetView(m_ViewRotationTheta, m_ViewRotationPhi, m_ViewRotationPsi, Reply);
+    
+    View->SetDview(m_ViewDistanceCOPtoCOV);
+    View->SetDproj(m_ViewDistanceCOPtoPL);
+    
+    if (m_ViewPerspective == true) {
+      View->SetPerspective();
+    } else {
+      View->SetParallel();
+    }
+    View->AdjustScales();
+  }
+
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimerLimit) {
     mout<<"Geometry drawn within "<<Timer.ElapsedTime()<<" seconds."<<endl;
   }
 
   return true;
 }
+ 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDGeometry::StoreViewParameters()
+{ 
+  //! Store the view parameters (zoom, rotation, etc.)
+ 
+  // Assume we do not have valid parameters if we cannot store everything
+  m_ViewValid = false;
+ 
+  if (m_GeoView == nullptr) {
+    return;
+  }
+ 
+  TView* View = m_GeoView->GetView();
+  if (View == nullptr) {
+    return;
+  }  
+  
+  m_GeoView->GetCanvasPar(m_ViewPositionX, m_ViewPositionY, m_ViewSizeX, m_ViewSizeY);
+  
+  View->GetRange(&m_ViewRangeMin[0], &m_ViewRangeMax[0]);
+  
+  m_ViewRotationPhi = View->GetLatitude();
+  m_ViewRotationTheta = View->GetLongitude();
+  m_ViewRotationPsi = View->GetPsi();
+  
+  m_ViewDistanceCOPtoCOV = View->GetDview();
+  m_ViewDistanceCOPtoPL = View->GetDproj();
+  
+  m_ViewPerspective = View->IsPerspective();
+  m_ViewValid = true;
+}
+ 
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -4149,32 +4538,6 @@ bool MDGeometry::AreCrossSectionsPresent()
       return false;
     }
   }
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MDGeometry::TestIntersections()
-{
-  // Test for intersections
-  // Attention: Not all can be found!
-
-  cout<<"Testing intersections!"<<endl;
-
-  if (IsScanned() == false) {
-    Error("bool MDGeometry::TestIntersections()",
-          "You have to scan the geometry file first!");
-    return false;
-  }
-
-  if (m_WorldVolume->ValidateIntersections() == false) {
-    return false;
-  }
-
-  cout<<"Testing intersections finished!"<<endl;
 
   return true;
 }
@@ -4585,6 +4948,18 @@ MDDetector* MDGeometry::GetDetector(MVector Position)
 
   MDVolumeSequence S = GetVolumeSequence(Position);
   return S.GetDetector();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int MDGeometry::GetDetectorType(const MVector& Position)
+{
+  MDDetector* D = GetDetector(Position);
+  
+  if (D == nullptr) return 0;
+  return D->GetType();
 }
 
 
@@ -5049,10 +5424,19 @@ unsigned int MDGeometry::GetNVectors()
 
 void MDGeometry::AddInclude(MString FileName)
 {
-  // Add the name of an included file
+  // Add the name of an included file and its md5 hash
 
   if (IsIncluded(FileName) == false) {
     m_IncludeList.push_back(FileName);
+    
+    TMD5* MD5 = TMD5::FileChecksum(FileName);
+    if (MD5 == nullptr) {
+      cout<<" *** ERROR: Unable to calculate checksum for file "<<FileName<<endl;
+      m_IncludeListHashes.push_back("");
+    } else {
+      m_IncludeListHashes.push_back(MD5->AsString());
+    }
+    delete MD5;
   }
 }
 
@@ -5084,6 +5468,37 @@ int MDGeometry::GetNIncludes()
   return m_IncludeList.size();
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDGeometry::RequiresReload()
+{
+  // Return true if the geometry needs to be reloaded since files have changed
+  
+  if (m_IncludeList.size() != m_IncludeListHashes.size()) {
+    cout<<" *** ERROR: The number of stored hashes differs from the number of included files"<<endl;
+    return true;
+  }
+  
+  for (unsigned int i = 0; i < m_IncludeList.size(); ++i) {
+    TMD5* MD5 = TMD5::FileChecksum(m_IncludeList[i]);
+    MString Hash = "";
+    if (MD5 == nullptr) {
+      cout<<" *** ERROR: Unable to calculate checksum for file "<<m_IncludeList[i]<<endl;
+    } else {
+      Hash = MD5->AsString();
+    }
+    delete MD5;
+
+    if (Hash != m_IncludeListHashes[i]) {
+      cout<<"Info: File "<<m_IncludeList[i]<<" changed. Reload required!"<<endl;
+      return true;
+    }
+  }
+  
+  return false;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -5537,8 +5952,11 @@ bool MDGeometry::CreateCrossSectionFiles()
 
   // (1) Create a mimium cosima file:
   MString FileName = gSystem->TempDirectory();
-  FileName += "/DelMe.source";
-
+  FileName += "/MEGAlib_CrossSections_";
+  FileName += gRandom->Integer(900000000)+100000000;
+  FileName += gRandom->Integer(900000000)+100000000;
+  FileName += ".source";
+  
   ofstream out;
   out.open(FileName);
   if (out.is_open() == false) {
@@ -5574,7 +5992,7 @@ bool MDGeometry::CreateCrossSectionFiles()
   }
   if (Success == false) {
     mout<<"   ***  Warning  ***"<<endl;
-    mout<<"Cannot load create cross section files correctly."<<endl;
+    mout<<"Cannot load created cross section files correctly."<<endl;
     mout<<"Please read the above error output for a possible fix..."<<endl;
     return false;
   }

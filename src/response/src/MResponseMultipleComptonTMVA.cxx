@@ -176,12 +176,12 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
   
   // This requires a special split
   vector<MString> SplitRaw = Options.Tokenize(":");
-  cout<<endl;
-  // Basic sanity check and to lower for all options
-  for (unsigned int i = 0; i < SplitRaw.size(); ++i) {
-    cout<<SplitRaw[i]<<endl;
-  }
-  cout<<endl;
+  //cout<<endl;
+  //// Basic sanity check and to lower for all options
+  //for (unsigned int i = 0; i < SplitRaw.size(); ++i) {
+  //  cout<<SplitRaw[i]<<endl;
+  //}
+  //cout<<endl;
 
   vector<MString> Split1;
   bool IsOpen = false;
@@ -208,10 +208,10 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
   }
   
   // Basic sanity check and to lower for all options
-  for (unsigned int i = 0; i < Split1.size(); ++i) {
-    cout<<Split1[i]<<endl;
-  }
-  cout<<endl;
+  //for (unsigned int i = 0; i < Split1.size(); ++i) {
+  //  cout<<Split1[i]<<endl;
+  //}
+  //cout<<endl;
   
   vector<vector<MString>> Split2;
   for (MString S: Split1) {
@@ -233,7 +233,7 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
     for (unsigned int j = 0; j < Split2[i].size(); ++j) {
       Split2[i][j].RemoveAllInPlace("[");
       Split2[i][j].RemoveAllInPlace("]");
-      cout<<Split2[i][j]<<endl;
+      //cout<<Split2[i][j]<<endl;
     }
   }
   

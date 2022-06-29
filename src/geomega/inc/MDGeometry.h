@@ -62,11 +62,16 @@ class MDGeometry
   
   //! Draws the geometry
   //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
-  virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
+  virtual bool DrawGeometry(TCanvas* Canvas = nullptr, bool RestoreView = false, MString Mode = "ogle");
   
-  bool TestIntersections();
+  //! Dump the geometry in readable format to the screen 
   void DumpInformation();
+  
+  //! Calculate the total mass of the geometry
   void CalculateMasses();
+
+  //! Return true if the geometry needs to be reloaded since files have changed
+  bool RequiresReload();
 
   //! This flag tells us we are within geomega, this enables a few options, which are not
   //! available in the normal library mode, e.g. view the surrounding sphere
@@ -79,6 +84,10 @@ class MDGeometry
 
   //! Add a preferred visible volume --- if any is given, only those will be shown
   void AddPreferredVisibleVolume(const MString& Name) { m_PreferredVisibleVolumeNames.push_back(Name); }
+  
+  //! Store the view parameters (zoom, rotation, etc.)
+  void StoreViewParameters();
+  
   
   MString GetFileName();
   MString GetName();
@@ -113,7 +122,8 @@ class MDGeometry
   unsigned int GetDetectorIndex(const MString& Name);
   unsigned int GetNDetectors();
   vector<MDDetector*> GetDetectorList() const { return m_DetectorList; }
-
+  int GetDetectorType(const MVector& Position);
+  
   bool AddShape(const MString& Type, const MString& Name);
   void AddShape(MDShape* Shape);
   MDShape* GetShapeAt(unsigned int i);
@@ -189,15 +199,21 @@ class MDGeometry
 
   // protected methods:
  protected:
-  bool AddFile(MString Filename, vector<MDDebugInfo>& DebugInfos);
-
+  //! Add an "Include"-ed file
+  bool AddFile(MString Filename, list<MDDebugInfo>& DebugInfos);
+  //! Import a GDML file
+  bool ImportGDML(MString Filename, list<MDDebugInfo>& DebugInfos);
+  
+  
   MString WFS(MString Text);
   void ReplaceWholeWords(MString& Text, const MString& OldWord, const MString& NewWord);
   bool ContainsReplacableConstant(const MString& Text, const MString& Constant);
   
   // private methods:
  private:
-
+   
+   
+   
 
   // protected members:
  protected:
@@ -249,7 +265,9 @@ class MDGeometry
   vector<int> m_NDetectorTypes; 
 
   //! A list of all already included files
-  vector<MString> m_IncludeList;     
+  vector<MString> m_IncludeList; 
+  //! A list of hashes of the included files
+  vector<MString> m_IncludeListHashes;
 
   //! Name of the geometry
   MString m_Name;
@@ -278,8 +296,10 @@ class MDGeometry
   TCanvas* m_GeoView;
   TGeoManager* m_Geometry;
 
-  //! Director where all cross sections are stored
+  //! Directory where all extra/new/changed cross sections are stored
   MString m_CrossSectionFileDirectory;
+  //! Directory where all default cross sections are stored
+  MString m_DefaultCrossSectionFileDirectory;
 
   //! When a hit is outside an active detector (rounding errors etc), use this tolerance to look for
   //! the detector:
@@ -301,6 +321,47 @@ class MDGeometry
   MDVolume* m_LastFoundVolume_GetRandomPositionInVolume;
   //! The last found placements in GetRandomPositionInVolume
   vector<int> m_LastFoundPlacements_GetRandomPositionInVolume;
+  
+  
+  // The stored view parameters
+  
+  //! True if the view parameters have been correctly set
+  bool m_ViewValid;
+  
+  //! Canvas position x coordinate
+  int m_ViewPositionX;
+  //! Canvas position y coordinate
+  int m_ViewPositionY;
+  
+  //! A shift from the ROOT returned x position due to window decorators:
+  int m_ViewPositionShiftX;
+  //! A shift from the ROOT returned x position due to window decorators:
+  int m_ViewPositionShiftY;
+  
+  //! Canvas size x coordinate
+  unsigned int m_ViewSizeX;
+  //! Canvas size y coordinate
+  unsigned int m_ViewSizeY;
+  
+  //! Minimum view range
+  vector<double> m_ViewRangeMin;
+  //! Maximum view range
+  vector<double> m_ViewRangeMax;
+  
+  //! Rotation phi angle
+  double m_ViewRotationPhi;
+  //! Rotation theta angle
+  double m_ViewRotationTheta;
+  //! Rotation psi angle
+  double m_ViewRotationPsi;
+  
+  //! Distance from COP to COV
+  double m_ViewDistanceCOPtoCOV;
+  //! Distance from COP to projection plane
+  double m_ViewDistanceCOPtoPL;
+  
+  //! True if the view is perspective
+  bool m_ViewPerspective;
   
   
 #ifdef ___CLING___

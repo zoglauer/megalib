@@ -100,6 +100,9 @@ class MResponseCreator
   //! Compress the output response files
   bool m_Compress;
 
+  //! Perform a test run without actual anlyzing data
+  bool m_TestRun;
+
   //! The interrupt flag
   bool m_Interrupt;
   
@@ -116,6 +119,7 @@ class MResponseCreator
     c_ModeImagingListMode,
     c_ModeImagingBinnedMode,
     c_ModeImagingCodedMask,
+    c_ModePolarizationBinnedMode,
     c_ModeEarthHorizon,
     c_ModeFirstInteractionPosition,
     c_ModeSpectral,

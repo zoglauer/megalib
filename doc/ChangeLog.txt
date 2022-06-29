@@ -7,14 +7,39 @@
 
 
 
+Version 3.99/4.00
+=================
+
+General:
++ Default ROOT version is 6.22
++ Updates for Aplle M1 and Ubuntu 6.22
+
+Geomega:
++ Speed ups reading large files
++ Fixed if-statement evaluations
+
+Mimrec:
+Chenges for near-filed imaging
+
+
+
 Version 3.03/3.04
 =================
 
+General:
++ Default ROOT is 6.22
++ options to store sim files in binary format
+
 Cosima:
 + New storage option "ia-only"
++ New storage option "maximumenergyloss"
++ Option to store files in binary format
 
 Long-term bugs fixed:
-+ The incidence direction of the 511-keV emission was wrong
++ Background generator: The incidence direction of the 511-keV (3.04.00), cosmic electron 
+  and positron emission (3.04.01) was wrong
+
+Long list of minor bugs fixed.
 
 
 

@@ -168,7 +168,7 @@ OSTYPE=$(uname -s)
 OPT="normal"
 DEBUG="off"
 UPDATES="off"
-PATCH="on"
+PATCH="off"
 CLEANUP="off"
 BRANCH=""
 
@@ -559,7 +559,7 @@ if [ -d $MEGALIBPATH ]; then
 
     if [ "${BRANCH}" == "" ]; then
 
-      BRANCH=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
+      BRANCH=`git ls-remote --heads https://github.com/zoglauer/megalib.git | grep -v alpha | grep -v beta | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
       if [ "${CurrentBranch}" != "${Branch}" ]; then
         echo "Switching to latest release version of MEGAlib from the git repository..."
         git checkout ${BRANCH}
@@ -621,7 +621,7 @@ else
   if [[ ${BRANCH} == "" ]]; then
     if [ "${RELEASE}" == "rel" ]; then
       echo "Switching to latest release version of MEGAlib from the git repository..."
-      Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
+      Branch=`git ls-remote --heads https://github.com/zoglauer/megalib.git | grep -v alpha | grep -v beta | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
       if ( [ "$?" != "0" ] || [ "${Branch}" == "" ] ); then
         echo " "
         echo "ERROR: Unable to find the latest release branch"
@@ -892,7 +892,7 @@ if [[ ${HEASOFTPATH} != off ]]; then
     if [ "${RESULT}" != "0" ]; then
       if [ "${RESULT}" == "127" ]; then
         echo " "
-        echo "ERROR: Cannot find build-geant4.sh. Either your MEGAlib version is too old or corrupt..."
+        echo "ERROR: Cannot find build-heosoft.sh. Either your MEGAlib version is too old or corrupt..."
         exit 1
       else
         echo " "
@@ -980,7 +980,11 @@ echo "In order to run the MEGAlib programs, you have to source the following fil
 echo " "
 echo "source ${MEGALIBDIR}/bin/source-megalib.sh"
 echo " "
-echo "You can add this line into your .bashrc file (or .bash_profile on macOS),"
+if [[ ${SHELL} == *zsh* ]]; then
+  echo "You can add this line to your ~/.zprofile file,"
+else
+  echo "You can add this line to your ~/.bashrc file (or ~/.bash_profile on macOS),"
+fi
 echo "or execute this line everytime you want to use MEGAlib."
 echo " "
 

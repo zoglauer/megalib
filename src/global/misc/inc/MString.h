@@ -111,6 +111,9 @@ class MString
   //! Return a substring starting at start with the remaining length of the string
   MString GetSubString(size_t Start) const { if (Start >= Length()) return ""; return m_String.substr(Start, m_String.size() - Start); }
 
+  //! Return the string between two strings
+  MString Extract(MString Before, MString After);
+  
   //! Get position of last character or string::npos if none is found
   size_t Last(char c) const { return m_String.find_last_of(c); }
   //! Get position of last character or string::npos if none is found

@@ -51,6 +51,7 @@ using namespace std;
 #include "MResponseImagingEfficiencyNearField.h"
 #include "MResponseImagingBinnedMode.h"
 #include "MResponseImagingCodedMask.h"
+#include "MResponsePolarizationBinnedMode.h"
 #include "MResponseEarthHorizon.h"
 #include "MResponseTracking.h"
 #include "MResponseEventQuality.h"
@@ -103,6 +104,8 @@ MResponseCreator::MResponseCreator()
 
   m_Compress = false;
   
+  m_TestRun = false;
+  
   m_Interrupt = false;
 }
 
@@ -140,6 +143,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -b  --mimrec-config   file     use this mimrec configuration file instead of defaults for the imaging response"<<endl;
   Usage<<"      -s  --save            int      save after this amount of entries"<<endl;
   Usage<<"      -z                             gzip the generated files"<<endl;
+  Usage<<"          --test                     Perform a test run"<<endl;
   Usage<<"          --verbosity       int      Verbosity level"<<endl;
   Usage<<"      -h  --help                     print this help"<<endl;
   Usage<<endl;
@@ -165,8 +169,11 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<MResponseImagingBinnedMode::Options()<<endl;
   Usage<<"      il : list-mode imaging"<<endl;
   Usage<<"      ic : coded mask imaging"<<endl;
+  Usage<<"      pb : "<<MResponsePolarizationBinnedMode::Description()<<endl;
+  Usage<<MResponsePolarizationBinnedMode::Options()<<endl;
   Usage<<"      ef : efficiency far field (e.g. astrophysics)"<<endl;
-  Usage<<"      en : efficiency near field (e.g. medical)"<<endl;
+  Usage<<"      en : "<<MResponseImagingEfficiencyNearField::Description()<<endl;
+  Usage<<MResponseImagingEfficiencyNearField::Options()<<endl;
   Usage<<"      e  : earth horizon"<<endl;
   Usage<<"      f  : first interaction position"<<endl;
   Usage<<"      q  : event quality"<<endl;
@@ -284,6 +291,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       } else if (SubOption == "ic") {
         m_Mode = c_ModeImagingCodedMask;
         cout<<"Choosing coded mask maging mode"<<endl;
+      } else if (SubOption == "pb") {
+        m_Mode = c_ModePolarizationBinnedMode;
+        cout<<"Choosing binned polarization mode"<<endl;
       } else if (SubOption == "e") {
         m_Mode = c_ModeEarthHorizon;
         cout<<"Choosing Earth Horizon mode"<<endl;
@@ -336,6 +346,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       g_Verbosity = atoi(argv[++i]);
       if (g_Verbosity < 0) g_Verbosity = c_Quiet;
       cout<<"Setting verbosity to "<<g_Verbosity<<endl;
+    } else if (Option == "--test") {
+      m_TestRun = true;
+      cout<<"Performing a test run"<<endl;
     } else if (Option == "-l" || Option == "--log" ) {
       // Ignored - only used by mresponsecreator
     } else {
@@ -366,6 +379,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
+
   // Launch the different response generators:
   if (m_Mode == c_ModeClusteringDSS) {
 
@@ -381,7 +395,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeComptons) {
@@ -407,7 +421,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetDoAbsorptions(!m_NoAbsorptions);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeEventClusterizerTMVAEventFile) {
@@ -432,7 +446,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeEventClusterizerTMVA) {
@@ -449,7 +463,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeComptonsEventFile) {
@@ -476,7 +490,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeComptonsTMVA) {
@@ -499,7 +513,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeComptonsLens) {
@@ -525,7 +539,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetDoAbsorptions(!m_NoAbsorptions);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
 
@@ -550,7 +564,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeSpectral) {
@@ -569,7 +583,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeARM) {
@@ -594,7 +608,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeEfficiency) {
@@ -619,7 +633,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeEfficiencyNearField) {
@@ -642,9 +656,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
 
-
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeEventQuality) {
@@ -668,7 +682,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeEventQualityTMVAEventFile) {
@@ -695,7 +709,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeStripPairingTMVAEventFile) {
@@ -720,7 +734,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeImagingListMode) {
@@ -797,7 +811,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeImagingCodedMask) {
@@ -822,6 +836,38 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
 
     Response.CreateResponse();
+
+  } else if (m_Mode == c_ModePolarizationBinnedMode) {
+    
+    if (m_RevanCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No revan configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+    if (m_MimrecCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No mimrec configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+    
+    MResponsePolarizationBinnedMode Response;
+    
+    Response.SetDataFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+    
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+    
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+    Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
+    
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
+    if (Response.Initialize() == false) return false;
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
+    
   } else if (m_Mode == c_ModeEarthHorizon) {
 
     if (m_MimrecCfgFileName == g_StringNotDefined) {
@@ -844,6 +890,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
 
     Response.CreateResponse();
+    
   } else if (m_Mode == c_ModeComptelDataSpace) {    
      if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
@@ -871,15 +918,13 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true && m_Interrupt == false);
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
-   if (m_MimrecCfgFileName == g_StringNotDefined) {
-      cout<<"Error: No mimrec configuration file name given!"<<endl;
-      cout<<Usage.str()<<endl;
-      return false;
-    }
   }
 
+  if (m_TestRun == true) {
+    cout<<">>> TEST RUN SUCCESSFUL <<<"<<endl;
+  }
 
   return true;
 }

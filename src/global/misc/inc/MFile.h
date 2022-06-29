@@ -23,6 +23,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MBinaryStore.h"
 
 // Standard libs:
 #include <fstream>
@@ -50,7 +51,7 @@ class MFile
   virtual void Reset();
 
   //! Open the file for reading or writing
-  virtual bool Open(MString FileName, unsigned int Way = c_Read);
+  virtual bool Open(MString FileName, unsigned int Way = c_Read, bool IsBinary = false);
   //! Close the file
   virtual bool Close();
   //! Rewind the file
@@ -63,6 +64,12 @@ class MFile
   //! Clear all flags
   virtual void Clear();
 
+  //! Return true if the file is binary
+  virtual bool IsBinary() { return m_IsBinary; }
+  
+  //! Set the compression level
+  virtual void SetCompressionLevel(unsigned int CompressionLevel = 6);
+  
   //! Return the file length on disk
   virtual streampos GetFileLength(bool Redetermine = false);
   //! Return the file length as if the file were uncompressed
@@ -95,6 +102,9 @@ class MFile
   virtual void Write(const double d);
   //! Write some text
   virtual void Write(const char c);
+  //! Write binary
+  virtual void Write(MBinaryStore& Store);
+  
   //! Flush all written text
   virtual void Flush();
 
@@ -109,6 +119,9 @@ class MFile
   //! Read one line the C way - returns false if before the read IsGood() would return false
   virtual bool ReadLine(char* String, streamsize Size, char Delimeter);
 
+  //! Read CharactersToRead (or until end of file)  - returns false if before the read IsGood() would return false
+  virtual bool Read(MBinaryStore& Store, unsigned int CharactersToRead);
+  
   //! Set the file name - this does not open any file and you have to give the file name when you call Open()
   void SetFileName(MString FileName) { m_FileName = FileName; }
   //! Get the file name
@@ -143,7 +156,7 @@ class MFile
   //! Return true if the file exists and if it is readable
   static bool Exists(MString FileName);
   //! Return true if the file exists
-  static bool FileExists(const char* FileName); // depreciated
+  static bool FileExists(const char* FileName); // deprecated
   //! Return true if the file was removed successfully
   static bool Remove(MString FileName);
   //! Check if a program exists
@@ -151,7 +164,7 @@ class MFile
   //! Sets the path of "Path" as new path to "FileName" IF FileName has a relative path
   static bool ApplyPath(MString& FileName, const MString& Path);
   //! Expand a file name e.g. $MEGALIB/src to /home/andreas/Software/MEGAlib/src
-  static void ExpandFileName(MString& FileName, const MString& WorkingDir = "");
+  static bool ExpandFileName(MString& FileName, const MString& WorkingDir = "");
   //! Make RelFileName relative to AbsFileName
   //! Relative: /home/andreas/Test/MyFile.tra
   //! Absolute: /home/andreas/MasterTest.tra
@@ -202,6 +215,9 @@ class MFile
   //! The Mode: read or write
   unsigned int m_Way;
 
+  //! Is this a binary file
+  bool m_IsBinary;
+  
   //! The Progress bar
   MGUIProgressBar* m_Progress;
   //! Files might be deeply nested - show a progressbar for every nesting
@@ -253,7 +269,10 @@ class MFile
   //! The length of the frquently used read-line buffer
   unsigned long m_ReadLineBufferLength;
 
-
+  //! Compression level (gzip: 1..9)
+  unsigned int m_CompressionLevel;
+  
+  
 #ifdef ___CLING___
  public:
   ClassDef(MFile, 0) // no description

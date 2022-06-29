@@ -67,6 +67,9 @@ class MTokenizer
   //! Same as Analyse
   bool Analyse(MString Text, const bool AllowMaths = true) { return Analyze(Text, AllowMaths); }
 
+  //! Check all tokens if the maths is OK
+  bool CheckAllMaths();
+  
   //! Return a copy of the original text
   MString GetText() const;
 
@@ -122,10 +125,14 @@ class MTokenizer
   static bool EvaluateMaths(MString& Token);
   //! Check if the string contains a math environment "{ ... }"
   static bool IsMaths(const MString& Token);
+  //! Check if the maths is correct
+  static bool CheckMaths(const MString& Token);
 
   //! Return a diagnostics string of the data content
   MString ToString();
-
+  //! Return a compact version of the tokenized content
+  MString ToCompactString();
+  
 
   // protected methods:
  protected:

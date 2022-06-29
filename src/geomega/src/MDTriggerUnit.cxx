@@ -172,6 +172,22 @@ void MDTriggerUnit::IgnoreVetoes(bool IgnoreVetoesFlag)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return true if this detector is never triggering
+bool MDTriggerUnit::IsNeverTriggering(MDDetector* D) const
+{
+  for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+    if (m_Geometry->GetTriggerAt(t)->IsTriggering(D) == true) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MDTriggerUnit::AddHit(const MVector& Position, 
                            const double& Energy)
 {

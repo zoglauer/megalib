@@ -51,7 +51,7 @@ MSimEventLoader::MSimEventLoader()
 {
   // default constructor
 
-  cout<<"Remark: This event loader is depreciated, since it is less capable than the new one!"<<endl;
+  cout<<"Remark: This event loader is deprecated, since it is less capable than the new one!"<<endl;
   
   Init();
 }

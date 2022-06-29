@@ -1754,7 +1754,7 @@ bool BackgroundGenerator::GenerateCosmicElectronsMizuno()
   
   vector<double> Angle;
   for (unsigned int b = 0; b < m_AngleBins.size(); ++b) {
-    if (m_AngleBins[b] >= m_HorizonAngle) {
+    if (m_AngleBins[b] <= m_HorizonAngle) {
       Angle.push_back(1.0);
     } else {
       Angle.push_back(0.0);
@@ -1837,7 +1837,7 @@ bool BackgroundGenerator::GenerateCosmicPositronsMizuno()
   
   vector<double> Angle;
   for (unsigned int b = 0; b < m_AngleBins.size(); ++b) {
-    if (m_AngleBins[b] >= m_HorizonAngle) {
+    if (m_AngleBins[b] <= m_HorizonAngle) {
       Angle.push_back(1.0);
     } else {
       Angle.push_back(0.0);
@@ -2720,7 +2720,7 @@ bool BackgroundGenerator::WriteSummaryFiles()
   tbout<<"# The activation calculation for one year const irradiation"<<endl;
   tbout<<"Activator A"<<endl;
   tbout<<"A.ActivationMode          ConstantIrradiation  31556736"<<endl;
-  tbout<<"A.ActivationFile          TrapopedHadronicBackgroundActivation.dat"<<endl;
+  tbout<<"A.ActivationFile          TrappedHadronicBackgroundActivation.dat"<<endl;
   tbout<<endl;
   tbout<<"# Now generate a source file with all the TrappedHadronicBackgroundIsotopes.* files, via"<<endl;
   tbout<<"# User > for i in `ls TrappedHadronicBackgroundIsotopes.p1.inc*.dat`; do echo \"A.IsotopeProductionFile $i\" >> TrappedHadronicBackgroundIsotopes.source; done"<<endl;

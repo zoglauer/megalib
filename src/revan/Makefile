@@ -86,6 +86,7 @@ FILES_UI = \
 	MGUIReconstructedSpectrum \
 
 LIBRARIES = \
+	-lSivan \
 	-lGeomega \
 	-lSpectralyze \
 	-lSpectralyzeGui \

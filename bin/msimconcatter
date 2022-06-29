@@ -102,7 +102,7 @@ echo " " >> ${ConcatFileName}
 
 # Zip the concatenation file if desired
 if [[ "${Zip}" == "yes" ]]; then
-  gzip ${ConcatFileName}
+  gzip -f ${ConcatFileName}
   ConcatFileName+=".gz"
 fi
 

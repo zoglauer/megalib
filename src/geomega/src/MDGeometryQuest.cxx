@@ -331,7 +331,7 @@ void MDGeometryQuest::RemoveAllLinks()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometryQuest::DrawGeometry(TCanvas* Canvas, MString Mode)
+bool MDGeometryQuest::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
 {
   // Draw the geometry with X3D
   // The geometry must have been loaded previously
@@ -342,7 +342,7 @@ bool MDGeometryQuest::DrawGeometry(TCanvas* Canvas, MString Mode)
     return false;
   }
 
-  return MDGeometry::DrawGeometry(Canvas, Mode);
+  return MDGeometry::DrawGeometry(Canvas, RestoreView, Mode);
 }
 
 

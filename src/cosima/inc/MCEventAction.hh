@@ -67,6 +67,11 @@ public:
   /// Prepare for next run: Open the output file and reset
   bool NextRun();
 
+  /// Abort the current event
+  void AbortEvent();
+  /// Test if the evnt has been aborted
+  bool IsAborted() const { return m_IsAborted; }
+
   /// Things to do before the start of a new event (reset last event data) 
   void BeginOfEventAction(const G4Event* Event);
   /// Test for trigger and store all events
@@ -97,6 +102,8 @@ public:
   void AddDepositPassiveMaterial(double Energy, string MaterialName);
   /// Add a comment
   void AddComment(string Comment);
+  /// Add an energy loss
+  void AddEnergyLoss(double Energy);
   
   /// Interrupts the executon at the end of the next event
   void Interrupt() { m_Interrupt = true; }
@@ -180,6 +187,8 @@ private:
   /// The temporary store of the simulated event
   MSimEvent* m_Event;
 
+  /// Determines if we store the data in binary format
+  bool m_StoreBinary;
   /// Determines how much detail shall be stored in the simulations file
   unsigned int m_StoreSimulationInfo;
   /// Determines in which version the output file shall be stored
@@ -190,6 +199,8 @@ private:
   G4bool m_StoreOneHitPerEvent;
   /// The minimum energy an event must have before it is stored
   double m_StoreMinimumEnergy;
+  /// The maximum lost energy allowed
+  double m_StoreMaximumEnergyLoss;
   
   /// Precision (number of digits after '.') for scientific storage
   int m_StoreScientificPrecision;
@@ -207,6 +218,11 @@ private:
   /// Map of passive material name and deposited energy
   map<string, double> m_PassiveMaterialMap; 
 
+  /// The lost energy (escapes or passive material)
+  double m_LostEnergy;
+  /// True if this event has been aborted
+  bool m_IsAborted;
+  
   /// True, if the run should be terminated at the end of this event
   bool m_Interrupt;
   /// True, if the sim file should be zip after its generation

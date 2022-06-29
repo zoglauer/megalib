@@ -253,6 +253,11 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
  
   double Time = Step->GetPostStepPoint()->GetGlobalTime()/second;
 
+  if (EventAction->IsAborted() == true) {
+    Track->SetTrackStatus(fKillTrackAndSecondaries);
+    return;
+  }
+  
   // Quick sanity check to prevent some Geant4 hick-ups:
   if (std::isnan(Track->GetPosition().getX())) {
     merr<<"Geant4 hick-up: Detected NaN! Aborting track!"<<endl;
@@ -1165,24 +1170,24 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
   // Check if the particle escapes the world volume:
   if (Track->GetNextVolume() == 0) {
 
-    if (m_StoreSimulationInfo == true) {
+    m_InteractionId++;
 
-      m_InteractionId++;
-
-      EventAction->AddIA("ESCP",
-                         m_InteractionId,
-                         ((MCTrackInformation*) Track->GetUserInformation())->GetOriginId(),
-                         GetDetectorId(Step->GetPreStepPoint()),
-                         Time,
-                         Track->GetPosition(),
-                         GetParticleType(Track->GetDefinition()),
-                         Track->GetMomentumDirection(),
-                         Track->GetPolarization(),
-                         Track->GetKineticEnergy(),
-                         0,
-                         G4ThreeVector(0.0, 0.0, 0.0),
-                         G4ThreeVector(0.0, 0.0, 0.0), 
-                         0.0);
+    EventAction->AddIA("ESCP",
+                       m_InteractionId,
+                       ((MCTrackInformation*) Track->GetUserInformation())->GetOriginId(),
+                       GetDetectorId(Step->GetPreStepPoint()),
+                       Time,
+                       Track->GetPosition(),
+                       GetParticleType(Track->GetDefinition()),
+                       Track->GetMomentumDirection(),
+                       Track->GetPolarization(),
+                       Track->GetKineticEnergy(),
+                       0,
+                       G4ThreeVector(0.0, 0.0, 0.0),
+                       G4ThreeVector(0.0, 0.0, 0.0), 
+                       0.0);
+    if (EventAction->IsAborted() == true) {
+      Track->SetTrackStatus(fKillTrackAndSecondaries);
     }
   } else {
     //cout<<Track->GetNextVolume()->GetName()<<endl;
@@ -1336,8 +1341,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
     if (TrackInfo->IsDigitized() == true) {
       TrackInfo->SetDigitized(false);
     } else {
-      EventAction->AddDepositPassiveMaterial(Step->GetTotalEnergyDeposit(), 
-                                             Track->GetVolume()->GetLogicalVolume()->GetMaterial()->GetName());
+      if (Step->GetTotalEnergyDeposit() > 0) {
+        EventAction->AddDepositPassiveMaterial(Step->GetTotalEnergyDeposit(), 
+                                               Track->GetVolume()->GetLogicalVolume()->GetMaterial()->GetName());
+        if (EventAction->IsAborted() == true) {
+          Track->SetTrackStatus(fKillTrackAndSecondaries);
+        }
+      }
     }
   }
 

@@ -197,7 +197,6 @@ bool MImager::SetSettings(MSettingsMimrec* Settings)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
 bool MImager::SetImagingSettings(MSettingsImaging* Settings)
 {
   //! Set only the imaging settings
@@ -231,6 +230,13 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
 
   // Set the dimensions of the image
   if (Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+    MVector XAxis = Settings->GetImageRotationXAxis();
+    MVector ZAxis = Settings->GetImageRotationZAxis();
+    if (XAxis.IsOrthogonal(ZAxis) == false) {
+      merr<<"The image rotation axes are not orthogonal! Aborting imaging!"<<show;
+      return false;
+    }
+    
     SetViewport(Settings->GetPhiMin()*c_Rad,
                 Settings->GetPhiMax()*c_Rad,
                 Settings->GetBinsPhi(),
@@ -242,6 +248,7 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
                 1,
                 Settings->GetImageRotationXAxis(),
                 Settings->GetImageRotationZAxis());
+    SetProjection(Settings->GetSphericalProjection());
   } else if (Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     SetViewport(Settings->GetGalLongitudeMin()*c_Rad,
                 Settings->GetGalLongitudeMax()*c_Rad,
@@ -252,6 +259,7 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
                 c_FarAway/10,
                 c_FarAway,
                 1);
+    SetProjection(Settings->GetGalProjection());
   } else if (Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
              Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D){
     SetViewport(Settings->GetXMin(),
@@ -272,7 +280,6 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
   SetDrawMode(Settings->GetImageDrawMode());
   SetPalette(Settings->GetImagePalette());
   SetSourceCatalog(Settings->GetImageSourceCatalog());
-  SetProjection(Settings->GetImageProjection());
 
   // No animation by default
   SetAnimationMode(MImager::c_AnimateNothing);
@@ -731,6 +738,7 @@ MImage* MImager::CreateImage(MString Title, double* Data)
                               "Intensity [a.u.]",
                               m_Palette,
                               m_DrawMode);
+    dynamic_cast<MImageSpheric*>(Image)->SetProjection(m_Projection);
   } else if (m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
     Image = new MImageGalactic(Title,
                                Data,

@@ -33,6 +33,8 @@
 #include <algorithm>
 #include <limits>
 #include <numeric>
+#include <thread>
+//#include <execution>
 using namespace std;
 
 // ROOT libs:
@@ -1317,16 +1319,107 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
         m_ValuesSparse.clear();
         m_BinsSparse.clear();
         
-        while (Parser.TokenizeLine(T, true) == true) {
-          if (T.GetNTokens() != m_Axes.size() + 2) continue;
-          if (T.GetTokenAt(0) == "RD") {
-            vector<unsigned long> Bins(m_Axes.size(), 0);
-            for (unsigned int b = 1; b < m_Axes.size() + 1; ++b) {
-              Bins[b-1] = T.GetTokenAtAsUnsignedInt(b);
+        // Keep this for debugging parallel mode
+        bool Parallel = true;
+        
+        if (Parallel == false) {
+          while (Parser.TokenizeLine(T, true) == true) {
+            if (T.GetNTokens() != m_Axes.size() + 2) continue;
+            if (T.GetTokenAt(0) == "RD") {
+              vector<unsigned long> Bins(m_Axes.size(), 0);
+              for (unsigned int b = 1; b < m_Axes.size() + 1; ++b) {
+                Bins[b-1] = T.GetTokenAtAsUnsignedInt(b);
+              }
+              // For debugging the fully mode:
+              // Set(Bins, T.GetTokenAtAsFloat(m_Axes.size() + 1));
+              // Comment rest out if commenting the above in
+              
+              if (InRange(Bins) == false) {
+                continue;
+              }
+              
+              m_BinsSparse.push_back(FindBin(Bins));
+              m_ValuesSparse.push_back(T.GetTokenAtAsFloat(m_Axes.size() + 1));
             }
-            Set(Bins, T.GetTokenAtAsFloat(m_Axes.size() + 1));
           }
-        }
+        } else {
+          // Read all lines
+          m_ThreadLines.clear();
+          MString Line;
+          while (Parser.ReadLine(Line) == true) {
+            m_ThreadLines.push_back(Line);
+          }
+          
+          // Create temporary data storage
+          m_ThreadGoodData.clear();
+          m_ThreadGoodData.resize(m_ThreadLines.size(), false);
+          m_ThreadBins.clear();
+          m_ThreadBins.resize(m_ThreadLines.size(), 0);
+          m_ThreadValues.clear();
+          m_ThreadValues.resize(m_ThreadLines.size(), 0);
+          
+          
+          // Multi-threaded part:
+          unsigned int NThreads = thread::hardware_concurrency();
+          unsigned int NUsedThreads = 1;
+          
+          unsigned int Split = m_ThreadLines.size() / NThreads;
+
+          if (Split == 0) {
+            NUsedThreads = 1;
+            Split = m_ThreadLines.size();
+          } else {
+            NUsedThreads = NThreads;
+          }
+          
+          vector<pair<unsigned int, unsigned int>> LineApportionment;
+          
+          for (unsigned int i = 0; i < NUsedThreads; ++i) {
+            unsigned int Start = 0;
+            if (LineApportionment.size() != 0) {
+              Start = LineApportionment.back().second + 1;
+            }
+            unsigned int Stop = Start + Split - 1;
+            if (i == NUsedThreads - 1) {
+              Stop = m_ThreadLines.size() - 1;
+            }
+            LineApportionment.push_back(pair<unsigned int, unsigned int>(Start, Stop));
+          }
+                  
+          
+          vector<thread> Threads(NUsedThreads);
+          m_ThreadRunning.resize(NUsedThreads, true);
+          for (unsigned int t = 0; t < NUsedThreads; ++t) {
+            m_ThreadRunning[t] = true;
+            Threads[t] = thread(&MResponseMatrixON::SparseReadThreadEntry, this, t, LineApportionment[t].first, LineApportionment[t].second);
+          }
+          while (true) {
+            bool Finished = true;
+            for (unsigned int t = 0; t < NUsedThreads; ++t) {
+              if (m_ThreadRunning[t] == true) {
+                Finished = false;
+                break;
+              }
+            }
+            if (Finished == false) {
+              this_thread::sleep_for(chrono::milliseconds(1));
+            } else {
+              for (unsigned int t = 0; t < NUsedThreads; ++t) {
+                Threads[t].join();
+              }
+              break;
+            }
+          }
+          // Now merge the data - if the file has been created with this class it is guaranteed to be in the correct sequence.
+          m_BinsSparse.reserve(m_ThreadBins.size());
+          m_ValuesSparse.reserve(m_ThreadValues.size());
+          for (unsigned int i = 0; i < m_ThreadGoodData.size(); ++i) {
+            if (m_ThreadGoodData[i] == true) {
+              m_BinsSparse.push_back(m_ThreadBins[i]);
+              m_ValuesSparse.push_back(m_ThreadValues[i]);
+            }
+          }
+        } // Multi-treaded read
       } // Stream or no stream
     } // Axis/Type loop
   } // main loop
@@ -1338,7 +1431,44 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
 
   cout<<"Time spent reading response: "<<Timer.GetElapsed()<<" seconds"<<endl;
 
+  // Debugging: Save it
+  //MTimer WriteTimer;
+  //Write("DeleteMe.rsp.gz");
+  //cout<<"Time to write: "<<WriteTimer.GetElapsed()<<" seconds"<<endl;
+  
   return Ok;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseMatrixON::SparseReadThreadEntry(unsigned int ThreadID, unsigned int Start, unsigned int Stop)
+{
+  for (unsigned int i = Start; i <= Stop; ++i) {
+    MTokenizer T;
+    T.AnalyzeFast(m_ThreadLines[i]);
+
+    if (T.GetNTokens() != m_Axes.size() + 2) continue;
+    if (T.GetTokenAt(0) == "RD") {
+      vector<unsigned long> Bins(m_Axes.size(), 0);
+      for (unsigned int b = 1; b < m_Axes.size() + 1; ++b) {
+        Bins[b-1] = T.GetTokenAtAsUnsignedInt(b);
+      }
+
+      if (InRange(Bins) == false) {
+        continue;
+      }
+
+      m_ThreadGoodData[i] = true;
+      m_ThreadBins[i] = FindBin(Bins);
+      m_ThreadValues[i] = T.GetTokenAtAsFloat(m_Axes.size() + 1);
+    }
+  }   
+
+  m_ThreadMutex.lock();
+  m_ThreadRunning[ThreadID] = false;
+  m_ThreadMutex.unlock();
 }
 
 
@@ -1351,6 +1481,7 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
 
 
   MFileResponse File;
+  File.SetCompressionLevel(5); // 5: best performance to compression ratio for sparse matrices
   if (File.Open(FileName, MFile::c_Write) == false) return false;
 
   MTimer Timer;
@@ -1422,16 +1553,50 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
     s<<"Type ResponseMatrixONSparse"<<endl;
     s<<endl;
     
-    for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) {
-      vector<unsigned long> Bins = FindBins(m_BinsSparse[i]);
-      s<<"RD ";
-      for (unsigned long b = 0; b < Bins.size(); ++b) {
-        s<<Bins[b]<<" ";
+    bool IsParallel = false;
+
+    if (IsParallel == false) {
+      for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) {
+        vector<unsigned long> Bins = FindBins(m_BinsSparse[i]);
+        s<<"RD ";
+        for (unsigned long b = 0; b < Bins.size(); ++b) {
+          s<<Bins[b]<<" ";
+        }
+        s<<m_ValuesSparse[i]<<endl;;
+        File.Write(s);
       }
-      s<<m_ValuesSparse[i]<<endl;;
-      File.Write(s);
-    }
-  }
+    } else {
+      /*
+      unsigned int ParallelIndices = 1000;
+      vector<MString> Strings(ParallelIndices);
+
+      std::vector<int> Indices(ParallelIndices);
+      std::generate(std::execution::par, Indices.begin(), Indices.end(), [n = 0] () mutable { return n++; });
+
+      unsigned long Index = 0;
+      do {
+        if (Index + ParallelIndices >= m_BinsSparse.size()) {
+          Indices.resize(m_BinsSparse.size() - Index);
+          Strings.resize(m_BinsSparse.size() - Index);
+        }
+        std::for_each(std::execution::par, Indices.begin(), Indices.end(), [&](int i) {
+          vector<unsigned long> Bins = FindBins(m_BinsSparse[i+Index]);
+          ostringstream s;
+          s<<"RD ";
+          for (unsigned long b = 0; b < Bins.size(); ++b) {
+            s<<Bins[b]<<" ";
+          }
+          s<<m_ValuesSparse[i+Index]<<endl;
+          Strings[i+Index] = s.str();
+        });
+        
+        for (auto S: Strings) {
+          File.Write(S);
+        }
+      }
+      */
+    } // is parallel
+  } // is parse
 
   File.Close();
 

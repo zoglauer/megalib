@@ -272,13 +272,18 @@ void MImageGalactic::Display(TCanvas* Canvas)
 
   int xSize = 1400;
   int ySize = 700;
-  if (m_xNBins > m_yNBins) {
-    ySize = int(900.0/m_xNBins*m_yNBins);
-    if (ySize < 0.25*xSize) ySize = 700;
+  
+  double xImageSize = (m_xMax-m_xMin);
+  double yImageSize = (m_yMax-m_yMin);
+  
+  if (xImageSize > yImageSize) {
+    ySize = int(xSize/xImageSize*yImageSize);
+    if (ySize < 0.15*xSize) ySize = 0.15*xSize;
   } else {
-    xSize = int(700.0/m_yNBins*m_xNBins);
-    if (xSize < 0.25*ySize) xSize = 900;
+    xSize = int(ySize/yImageSize*xImageSize);
+    if (xSize < 0.15*ySize) xSize = 0.15*ySize;
   }
+  
   m_Canvas->SetWindowSize(xSize, ySize);
   
   if (m_Projection == MImageProjection::c_None) {
@@ -437,10 +442,8 @@ void MImageGalactic::DisplayProjectionHammer()
 {
   // Display the image in a canvas
 
-  cout<<"Hammer"<<endl;
-  
   Color_t DefaultTextColor = kWhite;
-  if (m_Spectrum == c_Viridis || m_Spectrum == c_Bird || m_Spectrum == c_Cividis) {
+  if (m_Spectrum == c_Bird || m_Spectrum == c_Cividis) {
     DefaultTextColor = kBlack; 
   }
   
@@ -565,7 +568,6 @@ void MImageGalactic::DisplayProjectionHammer()
 
       double L = m_xMin+m_xMax - Long;
 
-      cout<<m_yMin<<":"<<m_yMax<<endl;
       for (double Lat = m_yMin; Lat <= m_yMax; Lat += 0.01*(m_yMax-m_yMin)) {
         HammerConv(L*c_Rad, Lat*c_Rad, CentralMeridian, x, y);
         xPoly.push_back(x*c_Deg);
@@ -630,7 +632,7 @@ void MImageGalactic::DisplayProjectionHammer()
     }
 
 
-    // (E) Draw longitude grid axis labels
+    // (F) Draw longitude grid axis labels
     double LatPosition = 0.0;
     // Determine ideal longitude first:
     if (fabs(ySteps.front()) < fabs(ySteps.back())) {
@@ -652,7 +654,7 @@ void MImageGalactic::DisplayProjectionHammer()
       LatPosition += ySep/2.0;
     }
 
-
+    // (G) Draw latitude grid axis labels
     for (unsigned int l = 0; l < xSteps.size(); ++l) {
 
       if (l == 0 && xSteps[l] - m_xMin < 0.3*xSep) continue;
@@ -678,32 +680,29 @@ void MImageGalactic::DisplayProjectionHammer()
       T->Draw();
     }
 
-  }
+    TLatex* GalLong = new TLatex(0.5*(m_xMin+m_xMax), m_yMin - 0.05*(m_yMax-m_yMin), "Galactic longitude [deg]");
+    GalLong->SetTextFont(42);
+    GalLong->SetTextColor(kBlack);
+    GalLong->SetTextAlign(22);
+    GalLong->SetTextSize(0.04);
+    GalLong->Draw();
   
-  TLatex* GalLong = new TLatex(0, -108, "Galactic Longitude [deg]");
-  GalLong->SetTextFont(42);
-  GalLong->SetTextColor(kBlack);
-  GalLong->SetTextAlign(22);
-  GalLong->SetTextSize(0.04);
-  GalLong->Draw();
+    TLatex* GalLat = new TLatex(m_xMin - 0.025*(m_xMax-m_xMin), 0.5*(m_yMin+m_yMax), "Galactic latitude [deg]");
+    GalLat->SetTextFont(42);
+    GalLat->SetTextColor(kBlack);
+    GalLat->SetTextAlign(22);
+    GalLat->SetTextSize(0.04);
+    GalLat->SetTextAngle(90);
+    GalLat->Draw();
   
-  
-  TLatex* GalLat = new TLatex(-200, 0, "Galactic Latitude [deg]");
-  GalLat->SetTextFont(42);
-  GalLat->SetTextColor(kBlack);
-  GalLat->SetTextAlign(22);
-  GalLat->SetTextSize(0.04);
-  GalLat->SetTextAngle(90);
-  GalLat->Draw();
-  
-  TLatex* Value = new TLatex(240, 0, m_vTitle);
-  Value->SetTextFont(42);
-  Value->SetTextColor(kBlack);
-  Value->SetTextAlign(22);
-  Value->SetTextSize(0.04);
-  Value->SetTextAngle(90);
-  Value->Draw();
-  
+    TLatex* Value = new TLatex(m_xMax + 0.175*(m_xMax-m_xMin), 0.5*(m_yMin+m_yMax), m_vTitle);
+    Value->SetTextFont(42);
+    Value->SetTextColor(kBlack);
+    Value->SetTextAlign(22);
+    Value->SetTextSize(0.04);
+    Value->SetTextAngle(90);
+    Value->Draw();
+  }  
   
   
   AddNamedSources();

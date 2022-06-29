@@ -290,10 +290,10 @@ cd ..
 chown -R ${USER}:${GROUP} heasoft_v${VER}
 chmod -R go+rX heasoft_v${VER}
 
-
 if [ "${ENVFILE}" != "" ]; then
   echo "Storing the HEASoft directory in the MEGAlib source script..."
-  echo "HEASOFTDIR=`pwd`/heasoft_v${VER}" >> ${ENVFILE}
+  DIR=$(find `pwd`/heasoft_v${VER} -name "ftversion" | grep -v "heatools" | awk '{ print substr( $0, 1, length($0)-14) }')
+  echo "HEASOFTDIR=${DIR}" >> ${ENVFILE}
 else
   setuphelp
 fi

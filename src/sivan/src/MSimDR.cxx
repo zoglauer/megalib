@@ -87,6 +87,48 @@ bool MSimDR::AddRawInput(MString LineBuffer, const int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MSimDR::ParseBinary(MBinaryStore& Store, const int BinaryPrecision, const int Version)
+{
+  //! Parse the data from a binary stream
+  
+  if (BinaryPrecision == 32) {
+    m_Position = Store.GetVectorFloat();
+    m_Direction = Store.GetVectorFloat();
+    m_Energy = Store.GetFloat();
+  } else {
+    m_Position = Store.GetVectorDouble();
+    m_Direction = Store.GetVectorDouble();
+    m_Energy = Store.GetDouble();
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSimDR::ToBinary(MBinaryStore& Out, const int WhatToStore, const int BinaryPrecision, const int Version)
+{
+  //! Convert the content to binary
+  
+  if (BinaryPrecision == 32) {
+    Out.AddVectorFloat(m_Position);
+    Out.AddVectorFloat(m_Direction);
+    Out.AddFloat( m_Energy);
+  } else {
+    Out.AddVectorDouble(m_Position);
+    Out.AddVectorDouble(m_Direction);
+    Out.AddDouble(m_Energy);
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MString MSimDR::ToSimString(const int WhatToStore, const int ScientificPrecision, const int Version) const
 {
   // Convert this SimEvent to the original *.sim file format...

@@ -45,7 +45,7 @@ class MDGeometryQuest : public MDGeometry
   MDGeometryQuest();
   virtual ~MDGeometryQuest();
 
-  virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
+  virtual bool DrawGeometry(TCanvas* Canvas = nullptr, bool RestoreView = false, MString Mode = "ogle");
 
   bool IsSensitive(MVector Pos);
   

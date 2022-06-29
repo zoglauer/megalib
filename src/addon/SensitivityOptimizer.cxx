@@ -57,8 +57,9 @@ class SensitivityPoint
 {
 public:
   //! Default constructor
-  SensitivityPoint() : 
-    m_ObservationTime(1000000.0), 
+  SensitivityPoint() :
+    m_ObservationTime(1000000.0),
+    m_SigmaLevel(3.0),
     m_SourceStartAreaPerPhotons(1.0), 
     m_SourceCounts(0), 
     m_EnergyWindowScaler(1.0) {};
@@ -71,7 +72,8 @@ public:
   const SensitivityPoint& operator=(const SensitivityPoint& S) {
     m_EventSelector = S.m_EventSelector;
     m_ObservationTime = S.m_ObservationTime;
-    
+    m_SigmaLevel = S.m_SigmaLevel;
+
     m_SourceStartAreaPerPhotons = S.m_SourceStartAreaPerPhotons;
     m_SourceCounts = S.m_SourceCounts;
     
@@ -104,8 +106,13 @@ public:
 
 
   //! Set the observation time
-  void SetObservationTime(double ObservationTime) { 
+  void SetObservationTime(double ObservationTime) {
     m_ObservationTime = ObservationTime;
+  }
+    
+  //! Set the detection treshold in sigma
+  void SetSigmaLevel(double SigmaLevel) {
+    m_SigmaLevel = SigmaLevel;
   }
 
   //! Set the start area
@@ -233,8 +240,9 @@ public:
 
   //! 
   double GetSensitivity() {
-    double Sigma = 3.0;
 
+    double Sigma = m_SigmaLevel;
+      
     if (m_ObservationTime <= 0) {
       merr<<"No observation time"<<endl;
       return 0;
@@ -273,7 +281,8 @@ public:
 
   //! 
   double GetSensitivityUncertainty() {
-    double Sigma = 3.0;
+
+    double Sigma = m_SigmaLevel;
 
     if (m_ObservationTime <= 0) {
       merr<<"No observation time"<<endl;
@@ -327,6 +336,7 @@ public:
 private:
   MEventSelector m_EventSelector;
   double m_ObservationTime;
+  double m_SigmaLevel;
 
   double m_SourceStartAreaPerPhotons;
   int m_SourceCounts;
@@ -355,6 +365,7 @@ ostream& operator<<(ostream& os, SensitivityPoint& S)
   os<<"*********************************"<<endl;
   os<<endl;
   os<<S.m_EventSelector<<endl;
+  os<<"Detection threshold: " << S.m_SigmaLevel << " sigma" << endl;
   os<<"Source counts: "<<S.m_SourceCounts<<" cts"<<endl;
   if (S.m_SourceCounts < 1000) {
     os<<endl;
@@ -507,6 +518,8 @@ private:
 
   //!
   double m_ObservationTime;
+    
+  double m_SigmaLevel;
 
   vector<unsigned int> m_CSLMin;
   vector<unsigned int> m_CSLMax;
@@ -567,6 +580,8 @@ SensitivityOptimizer::SensitivityOptimizer() : m_Interrupt(false)
   m_EnergyWindowMax = -1;
 
   m_ObservationTime = 1000000;
+  
+  m_SigmaLevel = 3.0;
 
   m_MinBackgroundCounts = 0;
 }
@@ -630,7 +645,8 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"      Special:"<<endl;
   Usage<<"      -w <min> <max>:                               Use a larger energy window for collection of background events (in keV)"<<endl;
-  Usage<<"      --min-background-counts:                    Only use bins where all background components contain data"<<endl;
+  Usage<<"      --min-background-counts:                      Only use bins where all background components contain data"<<endl;
+  Usage<<"      -s <threshold>:                               Detection threshold in sigma. Default: 3.0"<<endl;
   Usage<<endl;
   Usage<<endl;
   Usage<<"    What does e.g. \"--arm <min> <max> <steps>\" mean?"<<endl;
@@ -661,7 +677,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
 
     // First check if each option has sufficient arguments:
     // Single argument
-    if (Option == "-c" || Option == "-g" || Option == "-m" || Option == "-n") {
+    if (Option == "-c" || Option == "-g" || Option == "-m" || Option == "-n" || Option == "-s") {
       if (!((argc > i+1) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
         mlog<<"Error: Option \""<<argv[i][1]<<"\" needs one argument!"<<endl;
@@ -851,8 +867,11 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       m_MinBackgroundCounts = atoi(argv[++i]); 
       mlog<<"Using only bins where all background components have at leats "<<m_MinBackgroundCounts<<" counts"<<endl;
     } else if (Option == "-t") {
-      m_ObservationTime = atof(argv[++i]); 
+      m_ObservationTime = atof(argv[++i]);
       mlog<<"Accepting observation time: "<<m_ObservationTime<<endl;
+    } else if (Option == "-s") {
+      m_SigmaLevel = atof(argv[++i]);
+      mlog<<"Accepting detection threshold: "<<m_SigmaLevel<<endl;
     } else if (Option == "-w") {
       m_EnergyWindowMin = atof(argv[++i]);
       m_EnergyWindowMax = atof(argv[++i]);
@@ -1689,6 +1708,7 @@ bool SensitivityOptimizer::Analyze()
             //cout<<"y: "<<y<<":"<<y_max<<endl;
 
             Photo_Final[GetPhotoIndex(c, b, e, x, y)].SetObservationTime(m_ObservationTime);
+            Photo_Final[GetPhotoIndex(c, b, e, x, y)].SetSigmaLevel(m_SigmaLevel);
             if (m_ModeSourceExtension == s_ModePointSource) {
               SourceIndex = FindSourceIndex(x, y);
               if (m_ModeSpectrum == s_ModeContinuum) {
@@ -1765,6 +1785,7 @@ bool SensitivityOptimizer::Analyze()
                                 for (unsigned int y = 0; y < y_max; ++y) {
                                   //cout<<"y: "<<y<<":"<<y_max<<endl;
                                   TrackedCompton_Final[GetTrackedComptonIndex(c, b, q, k, r, h, e, p, t, s, a, u, l, f, x, y)].SetObservationTime(m_ObservationTime);
+                                  TrackedCompton_Final[GetTrackedComptonIndex(c, b, q, k, r, h, e, p, t, s, a, u, l, f, x, y)].SetSigmaLevel(m_SigmaLevel);
                                   if (m_ModeSourceExtension == s_ModePointSource) {
                                     SourceIndex = FindSourceIndex(x, y);
                                     if (m_ModeSpectrum == s_ModeContinuum) {
@@ -1865,6 +1886,7 @@ bool SensitivityOptimizer::Analyze()
                         for (unsigned int y = 0; y < y_max; ++y) {
                           //cout<<"y: "<<y<<":"<<y_max<<endl;
                           UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, x, y)].SetObservationTime(m_ObservationTime);
+                          UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, x, y)].SetSigmaLevel(m_SigmaLevel);
                           if (m_ModeSourceExtension == s_ModePointSource) {
                             SourceIndex = FindSourceIndex(x, y);
                             if (m_ModeSpectrum == s_ModeContinuum) {
@@ -1962,6 +1984,7 @@ bool SensitivityOptimizer::Analyze()
                         for (unsigned int y = 0; y < y_max; ++y) {
                           //cout<<"y: "<<y<<":"<<y_max<<endl;
                           Pair_Final[GetPairIndex(d, o, c, b, k, r, h, e, a, u, x, y)].SetObservationTime(m_ObservationTime);
+                          Pair_Final[GetPairIndex(d, o, c, b, k, r, h, e, a, u, x, y)].SetSigmaLevel(m_SigmaLevel);
                           if (m_ModeSourceExtension == s_ModePointSource) {
                             SourceIndex = FindSourceIndex(x, y);
                             if (m_ModeSpectrum == s_ModeContinuum) {

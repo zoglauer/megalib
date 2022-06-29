@@ -36,6 +36,8 @@ using namespace std;
 #include "MVector.h"
 #include "MStreams.h"
 #include "MRotationInterface.h"
+#include "MBinaryStore.h"
+#include "MSimBinaryOptions.h"
 
 // Forward declarations:
 
@@ -92,6 +94,9 @@ class MSimEvent : public MRotationInterface
   
   //! Parse a full (i.e. multi-line) event from a sim file to this event
   bool ParseEvent(MString Line, int Version = 1);  
+  
+  //! Parse an event from a binary stream
+  bool ParseBinary(MBinaryStore& Store, int Version = 25);  
   
   //! Add an interaction to this event
   bool AddIA(const MSimIA& IA);
@@ -180,7 +185,10 @@ class MSimEvent : public MRotationInterface
   //! Precision represents the number of digits to use, and
   //! Version is the version of the simulation output file
   MString ToSimString(const int WhatToStore = c_StoreSimulationInfoAll, const int Precision = 5, const int Version = 25);
-
+  //! Convert the *key* content to binary
+  bool ToBinary(MBinaryStore& Out, const int WhatToStore = c_StoreSimulationInfoAll, const bool UseFloat = false, const int Version = 25);
+  
+  
 
   //
   // The OLD/ANTIQUE analysis interface:
@@ -319,7 +327,7 @@ class MSimEvent : public MRotationInterface
   vector<MSimEvent*> CreateSingleHitEvents();
 
 
-  // Depreciated:
+  // Deprecated:
 
   void SetEventNumber(long EventNumber) { mdep<<"Please use: SetID"<<show; m_NEvent = EventNumber; }
   long GetEventNumber() { mdep<<"Please use: GetID"<<show; return m_NEvent; }

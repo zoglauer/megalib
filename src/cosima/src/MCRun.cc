@@ -68,6 +68,7 @@ MCRun::MCRun()
   m_IncarnationID = 0;  
   m_IsIncarnationIDFixed = false;
   m_Zip = false;
+  m_StoreBinary = false;
   
   m_TcpIpHostName = "";
   m_TcpIpPort = 9090;
@@ -326,7 +327,7 @@ void MCRun::CheckIncarnationID()
     const int MaxCheckedId = 100;
     bool NoFilesFound = false;
     bool FileExists = true;
-
+    
     mdebug<<"Incarnation check:"<<endl;
     do {
       // Incarnation check:
@@ -338,6 +339,9 @@ void MCRun::CheckIncarnationID()
           FileName<<m_FileName<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
         } else {
           FileName<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
+        }
+        if (m_StoreBinary == true) {
+          FileName<<".bin"; 
         }
         mdebug<<"Checking (loop 1): "<<FileName.str().c_str()<<"[sim,sim.gz,sim.zip] ...";
         if (MFile::FileExists((FileName.str() + "sim").c_str()) ||
@@ -378,10 +382,15 @@ void MCRun::CheckIncarnationID()
   // Immediately create a dummy file, since it can take a long time until we create the real one:
   ostringstream Name;
   if (m_ParallelID == 0) {
-    Name<<m_FileName<<".inc"<<m_IncarnationID<<".id1.sim";
+    Name<<m_FileName<<".inc"<<m_IncarnationID<<".id1";
   } else {
-    Name<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id1.sim";
+    Name<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id1";
   }
+  if (m_StoreBinary == true) {
+    cout<<"Create binary sim file"<<endl;
+    Name<<".bin"; 
+  }
+  Name<<".sim";
   if (m_Zip == true) {
     Name<<".gz"; 
   }

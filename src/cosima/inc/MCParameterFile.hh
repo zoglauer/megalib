@@ -100,6 +100,8 @@ public:
   /// Return the hadron simulation package 
   int GetPhysicsListHD() const { return m_PhysicsListHD; }
 
+  /// Return if the data shall be stored in binary format
+  bool StoreBinary() const { return m_StoreBinary; }
   /// Return the simulation info storage flag
   int StoreSimulationInfo() const { return m_StoreSimulationInfo; }
   /// Return the simulation info version flag
@@ -114,8 +116,10 @@ public:
   bool StoreCalibrated() const { return m_StoreCalibrated; }
   /// Return true, if each hit is stored in an own event
   bool StoreOneHitPerEvent() const { return m_StoreOneHitPerEvent; }
-  /// Return the minimum amount of energy an event must deposit before it is stored (default: -numeric_limits<double>::max())
+  /// Return the minimum amount of energy an event must deposit before it is stored (default: -1E+40*keV)
   double StoreMinimumEnergy() const { return m_StoreMinimumEnergy; }
+  /// Return the maximum energy loss an event can have before it is discarded (default: 1E+40*keV)
+  double StoreMaximumEnergyLoss() const { return m_StoreMaximumEnergyLoss; }
   /// Return true, if the hits should be discretized
   bool DiscretizeHits() const { return m_DiscretizeHits; }
   /// Return the watched volumes list
@@ -210,6 +214,8 @@ private:
   
   /// True, if the output should be in calibrated format (positions, keV)
   bool m_StoreCalibrated;
+  /// True, if the output should be stored in binary format
+  bool m_StoreBinary;
   /// True, if simulation info shall be store in scientific format x.yzE-uv or in fixed format x.yz
   bool m_StoreScientific;
   /// Return the precision (number of digits after '.') in which the data shall be stored 
@@ -223,8 +229,10 @@ private:
 
   /// True if each hit is stored in its own event
   bool m_StoreOneHitPerEvent;
-  /// An event must at least deposit this amount of energy to be stored (default: -numeric_limits<double>::max())
+  /// An event must at least deposit this amount of energy to be stored (default: -1E+40*keV)
   double m_StoreMinimumEnergy;
+  /// The maximum energy loss an event can have before it is discarded (default: 1E+40*keV)
+  double m_StoreMaximumEnergyLoss;
   /// True, if hits should be discretized in the volume voxels
   bool m_DiscretizeHits;
   /// List of watched volumes to store enter & exit information

@@ -180,7 +180,23 @@ bool MSimCluster::AddHT(MSimHT* HT)
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+
+bool MSimCluster::HasHT(MSimHT* HT)
+{
+  //! Return if this hit is part of the cluster (pointer comparison only)
+  
+  for (unsigned int h = 0; h < m_HTList.size(); ++h) {
+    if (HT == m_HTList[h]) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 

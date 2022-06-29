@@ -283,7 +283,7 @@ if [ "$?" != "0" ]; then
   rm -r ${TMPDIR}
   echo " "
   echo "ERROR: Failed to assemble files" | ${LOGGING}
-  echo "Output from dcosima-assemblefiles which contains the eror message: " | ${LOGGING}
+  echo "Output from dcosima-assemblefiles which contains the error message: " | ${LOGGING}
   echo "${ASSEMBLERESULT}" | ${LOGGING}
   exit 1
 fi
@@ -388,13 +388,20 @@ if [[ ! -d \${MASTERDIR} ]]; then
   fi
 fi
 
+# Check for write access
+if [[ ! -w \${MASTERDIR} ]]; then 
+  echo "   No write access to master directory"
+  exit 6 
+fi
+
+
 # Check for enough disk space
 cd \${MASTERDIR}
 REQUIREDDISKSPACE=50
 DISKSPACE=\$( df -k . -P -T -BG | tail -n 1 | awk '{ print \$5 }' | sed 's/.$//' )
 if (( \${DISKSPACE} < \${REQUIREDDISKSPACE} )); then
   echo "   Not enough free disk space available (free: \${DISKSPACE} GB, required: \${REQUIREDDISKSPACE} GB)"
-  exit 6
+  exit 7
 fi
 
 echo "SUCCESS"
@@ -593,15 +600,22 @@ echo ""
 if [[ ${LAUNCHED} -gt 0 ]]; then
   echo "Create a concatenation file" | ${LOGGING}
   Base=`cat ${SOURCE} | grep -m 1 -E "\.FileName|\.Filename|\.filename" | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`;
+  Binary=`cat ${SOURCE} | grep -m 1 -E "^FileFormat|^Fileformat|^fileformat" | awk -F"FileFormat|.Fileformat|.fileformat" '{ print $2 }'  | tr '[:upper:]' '[:lower:]'`
+
+  if [[ ${Binary} == b* ]]; then
+    Binary=".bin"
+  else
+    Binary=""
+  fi
 
   # Switch to the directory where all the data lands:
   cd ${LOCALDIR}
 
   echo "Creating concatenation file for simulation \"${Base}\"" | ${LOGGING}
-  ConcatFileName="${Base}.p1.sim"
-  rm -f "${Base}.p1.sim*"
+  ConcatFileName="${Base}.p1${Binary}.sim"
+  rm -f "${Base}.p1${Binary}.sim*"
 
-  FirstFileName="${Base}.p1.inc1.id1.sim"
+  FirstFileName="${Base}.p1.inc1.id1${Binary}.sim"
   if [ "${ZIP}" == "TRUE" ]; then
     FirstFileName="${FirstFileName}.gz"
   fi 

@@ -97,7 +97,8 @@ class MInterfaceGeomega : public MInterface
   
   // protected methods:
  protected:
- 
+  //! Return true if we need to (re-) load the geometry
+  bool ReloadRequired();
 
   // private methods:
  private:

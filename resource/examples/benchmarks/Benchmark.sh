@@ -3,7 +3,7 @@
 checkload() {
   Load1Limit="0.9"
   while true; do
-    Load1=$( uptime | awk -F: '{ print $NF }' | awk -F" " -F"," '{ print $1 }')
+    Load1=$( uptime | awk -F: '{ print $NF }' | sed 's/,/ /g' | awk '{ print $1 }' )
     if (( $(echo "${Load1} > ${Load1Limit}" | bc -l) )); then
       echo "Load 1 (${Load1}) above limit for benchmark (${Load1Limit})."
       echo "Please close down all programs using lots of load, such as your browser, mail client, virtual box, etc."

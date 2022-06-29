@@ -54,7 +54,7 @@ class MRESEList
   //! Removes all RESE - The list is NOT compressed!
   void RemoveAllRESEs();
   void DeleteAll();
-  void CompressRESEs() { Compress(); } // depreciated!
+  void CompressRESEs() { Compress(); } // deprecated!
   void Compress();
 
   //! Shuffle the RESE's randomly around
