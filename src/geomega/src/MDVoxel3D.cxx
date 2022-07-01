@@ -38,6 +38,8 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MDShapeBRIK.h"
+#include "MDShapeSubtraction.h"
+#include "MDShapeIntersection.h"
 #include "MDGuardRing.h"
 
 
@@ -555,31 +557,48 @@ bool MDVoxel3D::Validate()
     return false;
   }
 
-  if (m_DetectorVolume->GetShape()->GetType() != "BRIK") {
+  // The detector volume and the sensitive volume need to be boxes OR
+  // The first volume of an intersection or subtraction must be a box
+  
+  MDShapeBRIK* DetectorShape = nullptr;
+  if (m_DetectorVolume->GetShape()->GetType() == "BRIK") {
+    DetectorShape = dynamic_cast<MDShapeBRIK*>(m_DetectorVolume->GetShape());
+  } else if (m_DetectorVolume->GetShape()->GetType() == "Subtraction" && dynamic_cast<MDShapeSubtraction*>(m_DetectorVolume->GetShape())->GetMinuend()->GetType() == "BRIK") {
+    DetectorShape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeSubtraction*>(m_DetectorVolume->GetShape())->GetMinuend());
+  } else if (m_DetectorVolume->GetShape()->GetType() == "Intersection" && dynamic_cast<MDShapeIntersection*>(m_DetectorVolume->GetShape())->GetShapeA()->GetType() == "BRIK") {
+    DetectorShape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeIntersection*>(m_DetectorVolume->GetShape())->GetShapeA());
+  }
+    
+  if (DetectorShape == nullptr) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"The detector volume has to be a box!"<<endl;
+    mout<<"The detector shape has to be a box (or an subtraction or intersection, where the first volume is a box)!"<<endl;
     return false;
   }
-  m_StructuralDimension = 
-    dynamic_cast<MDShapeBRIK*>(m_DetectorVolume->GetShape())->GetSize();
-
+  m_StructuralDimension = DetectorShape->GetSize();
   mdebug<<"Structural dimension: "<<m_StructuralDimension<<endl;
 
+  
   if (m_SVs.size() != 1) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"You need exactly one sensitive volume!"<<endl;
     return false;
   }
-  if (m_SVs[0]->GetShape()->GetType() != "BRIK") {
+  MDShapeBRIK* SensitiveShape = nullptr;
+  if (m_SVs[0]->GetShape()->GetType() == "BRIK") {
+    SensitiveShape = dynamic_cast<MDShapeBRIK*>(m_SVs[0]->GetShape());
+  } else if (m_SVs[0]->GetShape()->GetType() == "Subtraction" && dynamic_cast<MDShapeSubtraction*>(m_SVs[0]->GetShape())->GetMinuend()->GetType() == "BRIK") {
+    SensitiveShape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeSubtraction*>(m_SVs[0]->GetShape())->GetMinuend());
+  } else if (m_SVs[0]->GetShape()->GetType() == "Intersection" && dynamic_cast<MDShapeIntersection*>(m_SVs[0]->GetShape())->GetShapeA()->GetType() == "BRIK") {
+    SensitiveShape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeIntersection*>(m_SVs[0]->GetShape())->GetShapeA());    
+  }
+  if (SensitiveShape == nullptr) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"The sensitive volume has to be a box!"<<endl;
+    mout<<"The shape of the sensitive volume has to be a box (or an subtraction or intersection, where the first volume is a box)!"<<endl;
     return false;
   }
-  m_StructuralSize = 
-    dynamic_cast<MDShapeBRIK*>(m_SVs[0]->GetShape())->GetSize();
+  m_StructuralSize = SensitiveShape->GetSize();
 
   mdebug<<"Structural size: "<<m_StructuralSize<<endl;
-
 
   if (m_OffsetX == g_DoubleNotDefined || m_OffsetY == g_DoubleNotDefined) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
