@@ -1693,7 +1693,10 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection, bool DrawEner
   
   // RMS with outlier detection:
   MMath M;
-  vector<bool> IsOutlier = M.ModifiedThomsonTauTest(FitQualities, 0.01, KnownOutliers);
+  vector<bool> IsOutlier = KnownOutliers;
+  if (FitQualities.size() >= 3) {
+    IsOutlier = M.ModifiedThomsonTauTest(FitQualities, 0.01, KnownOutliers);
+  }
   
   unsigned int GoodEntries = 0;
   double RMS = 0;

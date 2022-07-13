@@ -676,6 +676,7 @@ bool MCalibrateEnergyFindLines::CheckPeaks()
     }
   }
   
+  /*
   if (FWHMes.size() >= 3) {
     // Calculate outliers via the modified thomson tau method
     MMath M;
@@ -699,7 +700,7 @@ bool MCalibrateEnergyFindLines::CheckPeaks()
   } else {
     if (g_Verbosity >= c_Info) cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
   }
-  
+  */
   
   return true;
 }

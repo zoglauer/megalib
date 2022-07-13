@@ -673,7 +673,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
         Names += ", ";
       }
     }
-    Legend->AddEntry(m_Histograms[h], Names);
+    Legend->AddEntry(m_Histograms[h], Names, "l");
   }
   Legend->Draw("SAME");
   
@@ -850,7 +850,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
             Spectrum->GetXaxis()->SetTitleOffset(0.9);
             Spectrum->GetXaxis()->CenterTitle(true);
             Spectrum->GetXaxis()->SetMoreLogLabels(true);
-            Spectrum->GetXaxis()->SetNdivisions(509, true);
+            Spectrum->GetXaxis()->SetNdivisions(506, true);
     
             //Spectrum->GetYaxis()->SetLabelOffset(0.001);
             Spectrum->GetYaxis()->SetLabelSize(0.05);
