@@ -267,7 +267,7 @@ cd ${HERE}
 
 # Check if we can continue:
 if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
-  TARGETFILES=$( ls -1 ${TARGETDIR}/*.rsp )
+  TARGETFILES=$( ls -1 ${TARGETDIR}/*.rsp* )
   NOTDONE=()
   
   for (( d=0; d<${#DATAFILES[*]}; d++ )); do
