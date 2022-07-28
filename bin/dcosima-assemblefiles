@@ -111,9 +111,7 @@ while true; do
   for (( m=0; m<=$(( ${#TOCHECK[*]} -1 )); m++ )); do
     if [ "${TOCHECK[$m]}" != "" ]; then
       eval F="${TOCHECK[$m]}"
-      #echo "First ${F}"
       F=$(echo "${F}" | dos2unix)
-      #echo "Second ${F}"
       F=$(echo "${F}" | sed 's/\t/ /g')
 
       TOCHECK[$m]="${F}"
@@ -189,9 +187,11 @@ while true; do
           continue;
         fi
         
-        ORIGINALS=( ${ORIGINALS[@]} ${ORIG} ) 
-        REPLACEMENTS=( ${REPLACEMENTS[@]} `basename ${N}` )
-        
+        if [[ ${ORIG} != $(basename ${N}) ]]; then 
+          ORIGINALS=( ${ORIGINALS[@]} ${ORIG} ) 
+          REPLACEMENTS=( ${REPLACEMENTS[@]} `basename ${N}` )
+        fi
+
         NEWONES="${NEWONES} ${N}"        
       done
     fi
@@ -212,11 +212,12 @@ for F in ${FILELIST}; do
 done
 
 # Sanitize the files
+#echo "Final sanitize"
 for F in `ls`; do
+  #echo "File: ${F}"
   for (( m=0; m<=$(( ${#ORIGINALS[*]} -1 )); m++ )); do
-    mv ${F} ${F}~
-    sed "s|${ORIGINALS[$m]}|${REPLACEMENTS[$m]}|g" ${F}~ > ${F}
-    rm ${F}~
+    #echo "${ORIGINALS[$m]} --> ${REPLACEMENTS[$m]}"
+    sed -i "s|${ORIGINALS[$m]}|${REPLACEMENTS[$m]}|g" ${F}
   done
 done
 
