@@ -18,7 +18,7 @@ commandhelp() {
   echo ""
   echo "";
   echo "Example: "
-  echo "  dmegalib-setup --machines=leda,despina,royal,carme";
+  echo "  dmegalib-setup --machines=thebe,despina,carpo,sinope,carme,royal,leda,elara,cosi-ccu";
   echo "";
 }
 
