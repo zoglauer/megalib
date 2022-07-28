@@ -20,6 +20,7 @@ commandhelp() {
   echo "  --instances=[number]: The number of total expected sim files (may be larger than the instances)"
   echo "  --parallel=[number]: The maximum number of parallel rsync's (default: 2)"
   echo "  --sleep=[seconds]: Sleep time between rsync loops (default: 20 seconds, max: 1000 seconds)"
+  echo "  --log: Log debug output"
   echo "  --help: Show this help."
   echo ""
   echo "";
@@ -46,13 +47,9 @@ sync() {
     if [[ ${RSYNCS[$m]} == rsync* ]]; then
       # Wait until we have no more than x of our rsync processes running, otherwise our system might be slowed down too much
       mwait -q -p="rsync -az --append-verify" -i=$((${PARALLEL} + ${PARALLEL}))
-      echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
+      echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"| ${LOGGING}
       eval ${RSYNCS[$m]} &
       sleep 1
-    elif [[ ${RSYNCS[$m]} == DONE ]]; then
-      break
-    else 
-      echo "ERROR: Unknown rsync command: ${RSYNCS[$m]}"
     fi  
   done
   
@@ -68,30 +65,29 @@ delete() {
     RSYNCS[${#RSYNCS[*]}]=${LINE}
   done < dcosima-rsync.cfg
 
-
-  # Replace "--append-verify" with "--remove-source-files --existing"
+  # Download all data
   for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
-    RSYNCS[$m]=${RSYNCS[$m]/--append-verify/--remove-source-files --existing}
-  done
-
-  #echo "Found the following rsyncs: ${RSYNCS[@]}"
-
-  # Delete all existing data
-  for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
+    #echo "psync: Checking ${RSYNCS[$m]}"
     if [[ ${RSYNCS[$m]} == rsync* ]]; then
+      # Get a list of all sim files which are not written to, i.e. which are closed and done
+      SSH=$(echo "${RSYNCS[$m]}" | awk -F\' '{print $2}')
+      MACHINE=$(echo "${RSYNCS[$m]}" | awk -F\' '{print $3}' | awk -F\: '{print $1}')
+      DIR=$(echo "${RSYNCS[$m]}" | awk -F\' '{print $3}' | awk -F\: '{print $2}' | rev | cut -c5- | rev)
+      CLOSEDSIMFILES=$(${SSH} ${MACHINE} "cd ${DIR}; find -maxdepth 1 -type f | sort | while read myfile ; do fuser -s \$myfile || echo \$myfile | grep -F '.sim' | cut -c3- ; done" | paste -sd " " -)
+      echo "dcosima-rsync: Closed sim files to delete: ${CLOSEDSIMFILES}" | ${LOGGING}
       # Wait until we have no more than x of our rsync processes running, otherwise our system might be slowed down too much
-      mwait -q -p="rsync -az --remove-source-files" -i=$((${PARALLEL} + ${PARALLEL}))
-      echo "dcosima-rsync: Deleting: ${RSYNCS[$m]}"
-      eval ${RSYNCS[$m]} &
+      echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}" | ${LOGGING}
+      eval ${RSYNCS[$m]} 
       sleep 1
-    elif [[ ${RSYNCS[$m]} == DONE ]]; then
-      break
-    else 
-      echo "ERROR: Unknown rsync command: ${RSYNCS[$m]}"
-    fi  
+      # Deleting sim files
+      if [[ ${CLOSEDSIMFILES} != "" ]]; then
+        ${SSH} ${MACHINE} "cd ${DIR}; rm ${CLOSEDSIMFILES}"
+        echo "dcosima-rsync: Delete files: ${CLOSEDSIMFILES}" | ${LOGGING}
+      else
+        echo "dcosima-rsync: No files to delete" | ${LOGGING}
+      fi
+    fi
   done
-  
-  wait
 }
 
 
@@ -114,7 +110,9 @@ DIRECTORY=""
 INSTANCES=0
 SLEEP=20
 PARALLEL=3
-
+LOG="FALSE"
+LOGFILE=""
+LOGGING="tee"
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
@@ -124,10 +122,12 @@ for C in "${CMD[@]}"; do
     #DIRECTORY=$(readlink -f ${DIRECTORY})
   elif [[ ${C} == *-i*=* ]]; then
     INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-s*=* ]]; then
+  elif [[ ${C} == *-p*=* ]]; then
     PARALLEL=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-s*=* ]]; then
     SLEEP=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-l* ]]; then
+    LOG="TRUE"
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -183,6 +183,13 @@ if [ ${SLEEP} -gt 1000 ]; then
 fi
 echo " * Sleep time between rsync loops: ${SLEEP}"
 
+if [[ ${LOG} == "TRUE" ]]; then
+  LOGFILE="Sync.log"
+  LOGGING="tee -a ${LOGFILE}"
+  echo " * Logging output to file: ${LOGFILE}"
+fi
+
+
 
 cd ${DIRECTORY}
 
@@ -195,8 +202,8 @@ WAITDELETE=600
 LASTDELETE=$(( $(date +%s) - ${WAITDELETE} - 1 ))  # We always want to start with a delete in case we restart and have accumulated a alot
 
 
-echo ""
-echo "Starting..."
+echo "" | ${LOGGING}
+echo "Starting..." | ${LOGGING}
 
   
 # Cases to consider:
@@ -214,12 +221,12 @@ KEEPGOING=true
 while ${KEEPGOING}; do
 
   # Sleep .....
-  echo "dcosima-rsync: Waiting for ${SLEEP} seconds for more data to be simulated..." 
+  echo "dcosima-rsync: Waiting for ${SLEEP} seconds for more data to be simulated..." | ${LOGGING} 
   sleep ${SLEEP}
   
   # Check if we have a configuration file
   if [ ! -f dcosima-rsync.cfg ]; then
-    echo "ERROR: we must have a dcosima-rsync.cfg file. Make sure it exists before you start dcosima-rsync! Terminating!"
+    echo "ERROR: we must have a dcosima-rsync.cfg file. Make sure it exists before you start dcosima-rsync! Terminating!" | ${LOGGING}
     exit 
   fi
     
@@ -227,7 +234,7 @@ while ${KEEPGOING}; do
   RUNNING=$(dcosima-listrunning | grep ${DIRECTORY} | awk '{ print $3 }');
   if [[ ${RUNNING} == "" ]]; then RUNNING=0; fi
   
-  # Check for delete
+  # Check for delete (delete is not parallel, thus we do not do it always)
   if (( $(date +%s) > $(( ${LASTDELETE} + ${WAITDELETE} )) )); then
     delete
     LASTDELETE=$(date +%s)
@@ -247,18 +254,18 @@ while ${KEEPGOING}; do
 
   # If we have all files and nothing is running any more (before and after), we are done, but do one last rsync to make sure nothing finished between our rsyncs:
   if [ ${SIMFILECOUNT} -ge ${INSTANCES} ] && [ ${RUNNING} -eq 0 ]; then
-    echo "dcosima-rsync: All expected sim files present and no more instances running. Doing a final sync."
+    echo "dcosima-rsync: All expected sim files present and no more instances running. Doing a final sync." | ${LOGGING}
     sync
-    echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
+    echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}" | ${LOGGING}
     KEEPGOING=false
   else
-    echo "dcosima-rsync: Expecting more data later: Sim files present: ${SIMFILECOUNT}/${INSTANCES}. Running instances: ${RUNNING}"    
+    echo "dcosima-rsync: Expecting more data later: Sim files present: ${SIMFILECOUNT}/${INSTANCES}. Running instances: ${RUNNING}" | ${LOGGING}    
   fi
 done
   
 chown ${USER}:${USER} .
 
-echo "dcosima-rsync: All rsync processes have finished! Done!"
+echo "dcosima-rsync: All rsync processes have finished! Done!" | ${LOGGING}
 
 
 exit 0;
