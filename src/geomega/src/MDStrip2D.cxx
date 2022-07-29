@@ -575,7 +575,7 @@ bool MDStrip2D::Validate()
   // The detector volume and the sensitive volume need to be boxes OR
   // The first volume of an intersection or subtraction must be a box
   
-  MDShapeBRIK* DetectorShape = 0;
+  MDShapeBRIK* DetectorShape = nullptr;
   if (m_DetectorVolume->GetShape()->GetType() == "BRIK") {
     DetectorShape = dynamic_cast<MDShapeBRIK*>(m_DetectorVolume->GetShape());
   } else if (m_DetectorVolume->GetShape()->GetType() == "Subtraction" && dynamic_cast<MDShapeSubtraction*>(m_DetectorVolume->GetShape())->GetMinuend()->GetType() == "BRIK") {
@@ -584,7 +584,7 @@ bool MDStrip2D::Validate()
     DetectorShape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeIntersection*>(m_DetectorVolume->GetShape())->GetShapeA());
   }
     
-  if (DetectorShape == 0) {
+  if (DetectorShape == nullptr) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"The detector shape has to be a box (or an subtraction or intersection, where the first volume is a box)!"<<endl;
     return false;
@@ -598,7 +598,7 @@ bool MDStrip2D::Validate()
     mout<<"You need exactly one sensitive volume!"<<endl;
     return false;
   }
-  MDShapeBRIK* SensitiveShape = 0;
+  MDShapeBRIK* SensitiveShape = nullptr;
   if (m_SVs[0]->GetShape()->GetType() == "BRIK") {
     SensitiveShape = dynamic_cast<MDShapeBRIK*>(m_SVs[0]->GetShape());
   } else if (m_SVs[0]->GetShape()->GetType() == "Subtraction" && dynamic_cast<MDShapeSubtraction*>(m_SVs[0]->GetShape())->GetMinuend()->GetType() == "BRIK") {
@@ -606,7 +606,7 @@ bool MDStrip2D::Validate()
   } else if (m_SVs[0]->GetShape()->GetType() == "Intersection" && dynamic_cast<MDShapeIntersection*>(m_SVs[0]->GetShape())->GetShapeA()->GetType() == "BRIK") {
     SensitiveShape = dynamic_cast<MDShapeBRIK*>(dynamic_cast<MDShapeIntersection*>(m_SVs[0]->GetShape())->GetShapeA());    
   }
-  if (SensitiveShape == 0) {
+  if (SensitiveShape == nullptr) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"The shape of the sensitive volume has to be a box (or an subtraction or intersection, where the first volume is a box)!"<<endl;
     return false;

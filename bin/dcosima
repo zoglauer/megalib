@@ -327,6 +327,9 @@ AVAILABLE=0
 
 # preparation for rsync instance launch
 RSYNCCFG=${LOCALDIR}/dcosima-rsync.cfg
+if [ -f ${RSYNCCFG} ]; then
+  rm ${RSYNCCFG}
+fi
 RSYNCSTARTED="FALSE"
 
 # Save the run configuration data
@@ -579,7 +582,11 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     sleep 1
     # If we have not yet launched the rsync process, do it now
     if [ "${RSYNCSTARTED}" == "FALSE" ]; then
-      dcosima-rsync --dir=${LOCALDIR} --instances=${INSTANCES} &
+      ADDLOG=""
+      if [[ ${LOG} == "TRUE" ]]; then
+        ADDLOG="--log"
+      fi
+      dcosima-rsync --dir=${LOCALDIR} --instances=${INSTANCES} ${ADDLOG} &
       RSYNCPID=$!
       RSYNCSTARTED="TRUE"
     fi
@@ -707,6 +714,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "rm -rf ${REMOTEMASTERDIR}/${LOCALDIR};"
 done
 
+wait
 echo " " | ${LOGGING}
 echo "The simulations have finished!" | ${LOGGING}
 echo " " | ${LOGGING}
