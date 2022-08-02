@@ -177,7 +177,7 @@ for SIMFILE in ${FILES}; do
     CMD+=" -g ${GEOMETRY}"
   fi
   nohup nice -n ${NICELEVEL} bash -c "${CMD}" > /dev/null &
-  sleep 0.5
+  sleep 1
 done
 
 
