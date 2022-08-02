@@ -63,7 +63,7 @@ ClassImp(MResponseMatrixON)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsParse)
+MResponseMatrixON::MResponseMatrixON(bool IsSparse) : MResponseMatrix(), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsSparse)
 {
   // default constructor
 }
@@ -72,10 +72,34 @@ MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_Number
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsParse) : MResponseMatrix(Name), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsParse)
+MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsSparse) : MResponseMatrix(Name), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsSparse)
 {
   // extended constructor
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMatrixON::MResponseMatrixON(const MResponseMatrixON& M)
+{
+  // copy constructor
+  
+  m_NumberOfBins = M.m_NumberOfBins;
+  m_Axes = M.m_Axes;
+  m_NumberOfAxes = M.m_NumberOfAxes;
+  m_IsSparse = M.m_IsSparse;
+  m_Values = M.m_Values;
+  m_ValuesSparse = M.m_ValuesSparse;
+  m_BinsSparse = M.m_BinsSparse;
+  m_ThreadRunning = M.m_ThreadRunning;
+  // That's the culprit preventing a default copy constructor - do not copy: m_ThreadMutex = M.m_ThreadMutex;
+  m_ThreadLines = M.m_ThreadLines;
+  m_ThreadGoodData = M.m_ThreadGoodData;
+  m_ThreadBins = M.m_ThreadBins;
+  m_ThreadValues = M.m_ThreadValues;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -272,6 +296,33 @@ bool MResponseMatrixON::operator==(const MResponseMatrixON& R)
   }
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMatrixON& MResponseMatrixON::operator=(const MResponseMatrixON& M)
+{
+  // Assignment operator
+  
+  if (this != &M) { // no self-assignments
+    m_NumberOfBins = M.m_NumberOfBins;
+    m_Axes = M.m_Axes;
+    m_NumberOfAxes = M.m_NumberOfAxes;
+    m_IsSparse = M.m_IsSparse;
+    m_Values = M.m_Values;
+    m_ValuesSparse = M.m_ValuesSparse;
+    m_BinsSparse = M.m_BinsSparse;
+    m_ThreadRunning = M.m_ThreadRunning;
+    // That's the culprit preventing a default copy constructor - do not copy: m_ThreadMutex = M.m_ThreadMutex;
+    m_ThreadLines = M.m_ThreadLines;
+    m_ThreadGoodData = M.m_ThreadGoodData;
+    m_ThreadBins = M.m_ThreadBins;
+    m_ThreadValues = M.m_ThreadValues;
+  }
+  
+  return *this;
 }
 
 
@@ -489,6 +540,47 @@ MResponseMatrixON& MResponseMatrixON::operator/=(const float& Value)
   }
   
   return *this;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMatrixON MResponseMatrixON::Collapse(vector<unsigned int> RemainingAxisIndices)
+{ 
+  //! Collapse some of the axes, the given axes remain in the response matrix
+
+  // Create the new matrix:
+  MResponseMatrixON New(m_Name);
+  for (unsigned int a = 0; a < RemainingAxisIndices.size(); ++a) {
+    if (RemainingAxisIndices[a] >= GetNumberOfAxes()) {
+	    throw MExceptionIndexOutOfBounds(0, GetNumberOfAxes(), RemainingAxisIndices[a]);
+	    return New;
+    }
+    New.AddAxis(GetAxis(RemainingAxisIndices[a]));
+  }
+  
+  // Loop over all bins
+  vector<unsigned long> NewBin(RemainingAxisIndices.size());
+  if (m_IsSparse == true) {
+    for (unsigned long b = 0; b < m_BinsSparse.size(); ++b) {
+	  vector<unsigned long> Bin = FindBins(m_BinsSparse[b]);
+	  for (unsigned int rbin = 0; rbin < RemainingAxisIndices.size(); ++rbin) {
+        NewBin[rbin] = Bin[RemainingAxisIndices[rbin]];
+	  }
+	  New.Add(NewBin, m_ValuesSparse[b]);
+	}
+  } else {
+    for (unsigned long b = 0; b < m_NumberOfBins; ++b) {
+	  vector<unsigned long> Bin = FindBins(b);
+	  for (unsigned int rbin = 0; rbin < RemainingAxisIndices.size(); ++rbin) {
+        NewBin[rbin] = Bin[RemainingAxisIndices[rbin]];
+	  }
+	  New.Add(NewBin, m_Values[b]);
+	}
+  }
+  
+  return New;
 }
 
 
