@@ -417,6 +417,11 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${COMMAND} )
     if [[ "$?" != "0" ]]; then
       echo " * Remote machine: ${MACHINES[$m]}: Failed to launch responsecreator!" | ${LOGGING}
+      echo "" | ${LOGGING}
+      echo "---- ERROR MESSAGE ----" | ${LOGGING}
+      echo "${ANSWER}" | ${LOGGING}
+      echo "-----------------------" | ${LOGGING}
+      echo "" | ${LOGGING}
       MACHINES[$m]=""
       MACHINEERRORS="TRUE"
       continue
