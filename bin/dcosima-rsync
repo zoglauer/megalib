@@ -253,11 +253,23 @@ while ${KEEPGOING}; do
   SIMFILECOUNT=`ls -U -1 *.p*.inc*.id*.sim* 2>/dev/null | wc -l`
 
   # If we have all files and nothing is running any more (before and after), we are done, but do one last rsync to make sure nothing finished between our rsyncs:
-  if [ ${SIMFILECOUNT} -ge ${INSTANCES} ] && [ ${RUNNING} -eq 0 ]; then
-    echo "dcosima-rsync: All expected sim files present and no more instances running. Doing a final sync." | ${LOGGING}
-    sync
-    echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}" | ${LOGGING}
-    KEEPGOING=false
+  if [ ${RUNNING} -eq 0 ]; then
+    if [ ${SIMFILECOUNT} -ge ${INSTANCES} ]; then
+      echo "dcosima-rsync: All expected sim files present and no instances are running. Doing a final sync." | ${LOGGING}
+      sync
+      echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}" | ${LOGGING}
+      KEEPGOING=false
+    else
+      # If the last one is there we assume we had a crash and stop, otherwise continue
+      if [ $(ls -U -1 *.p*.inc${INSTANCES}.id*.sim* 2>/dev/null | wc -l) -eq 1 ]; then
+        echo "dcosima-rsync: Some sim files are missing, but the last sim file is present and no instances are running. Doing a final sync." | ${LOGGING}
+        sync
+        echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}" | ${LOGGING}
+        KEEPGOING=false
+      else
+        echo "dcosima-rsync: Expecting more data later: Sim files present: ${SIMFILECOUNT}/${INSTANCES}. Running instances: ${RUNNING}" | ${LOGGING}
+      fi 
+    fi
   else
     echo "dcosima-rsync: Expecting more data later: Sim files present: ${SIMFILECOUNT}/${INSTANCES}. Running instances: ${RUNNING}" | ${LOGGING}    
   fi
@@ -269,3 +281,4 @@ echo "dcosima-rsync: All rsync processes have finished! Done!" | ${LOGGING}
 
 
 exit 0;
+
