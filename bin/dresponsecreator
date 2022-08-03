@@ -267,7 +267,7 @@ cd ${HERE}
 
 # Check if we can continue:
 if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
-  TARGETFILES=$( ls -1 ${TARGETDIR}/*.rsp* )
+  TARGETFILES=$( find . -printf " %f" -name "*.rsp*" )
   NOTDONE=()
   
   for (( d=0; d<${#DATAFILES[*]}; d++ )); do
@@ -279,11 +279,13 @@ if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
     OUTFILE=${OUTFILE/.evta.gz/}
     OUTFILE=${OUTFILE/.evta/}
 
-    if [[ ! ${TARGETFILES} =~ ${OUTFILE} ]]; then
+    if [[ ${TARGETFILES} !=  *"${OUTFILE}"* ]]; then
       NOTDONE+=( "${DATAFILES[$d]}" )
     fi
   done
-  
+ 
+  echo "Need to run ${#NOTDONE[*]} out of ${#DATAFILES[*]}"
+
   DATAFILES=("${NOTDONE[@]}")  
   
   if [[ ${#DATAFILES[@]} -eq 0 ]]; then
