@@ -189,7 +189,11 @@ private:
   unsigned long m_NEvents;
   //! Resonse slices for each event
   vector<MResponseMatrixON> m_EventResponseSlices;
-  
+ 
+  //! The maximum number of events
+  unsigned long m_MaximumNumberOfEvents;
+
+
   //! A file name for the galactic rotations
   MString m_ResponseGalacticFileName;
   //! The complete response
@@ -248,7 +252,9 @@ BinnedComptonImaging::BinnedComptonImaging() : m_Interrupt(false)
   m_DeconvolutionAlgorithm = 1;
   m_UseBackgroundModel = false;  
   m_JustBuildBackgroundModel = false;
-  
+ 
+  m_MaximumNumberOfEvents = numeric_limits<unsigned long>::max();
+
   m_WriteFiles = false;
   
   m_LongitudeShift = -180;
@@ -285,6 +291,7 @@ bool BinnedComptonImaging::ParseCommandLine(int argc, char** argv)
   Usage<<"         -cb:  create background model"<<endl;
   Usage<<"         -w:   write files"<<endl;
   Usage<<"         -p:   output prefix"<<endl;
+  Usage<<"         -m:   <long> maximum number of events"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -344,6 +351,9 @@ bool BinnedComptonImaging::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-i") {
       m_Iterations = atoi(argv[++i]);
       cout<<"Accepting iterations: "<<m_Iterations<<endl;
+    } else if (Option == "-m") {
+      m_MaximumNumberOfEvents = atoi(argv[++i]);
+      cout<<"Accepting maximum number of events: "<<m_MaximumNumberOfEvents<<endl;
     } else if (Option == "-a") {
       MString Algo(argv[++i]);
       Algo.ToLowerInPlace();
@@ -437,6 +447,7 @@ bool BinnedComptonImaging::BuildBackgroundModel()
   MPhysicalEvent* Event = 0;
   MComptonEvent* ComptonEvent = 0;
   
+  unsigned long EventCounter = 0;
   while ((Event = EventFile->GetNextEvent()) != 0) {
     
     if (EventSelector.IsQualifiedEventFast(Event) == false) {
@@ -453,17 +464,22 @@ bool BinnedComptonImaging::BuildBackgroundModel()
       De = -ComptonEvent->De(); // Invert!
       Distance = ComptonEvent->FirstLeverArm();
       
-      if (Phi < 0 || Phi > 60) continue;
+      //if (Phi < 0 || Phi > 60) continue;
       
       Chi = Dg.Phi()*c_Deg;
       while (Chi < 0) Chi += 360.0;
       while (Chi > 360) Chi -= 360.0;
       Psi = Dg.Theta()*c_Deg;
       
-      Model.Add(vector<double>{Ei, Phi, Psi, Chi, 0.0, 0.0, Distance}, 1);
+      vector<double> DataLocal = {Ei, Phi, Psi, Chi, 0.0, 0.0, Distance};
+      if (Model.InRange(DataLocal) == false) continue;
+      Model.Add(DataLocal, 1);
+
+      ++EventCounter;
     } // if Compton
     
     delete Event;
+    if (EventCounter >= m_MaximumNumberOfEvents) break;
   }
   
   delete EventFile;
@@ -840,7 +856,7 @@ bool BinnedComptonImaging::PrepareDataSpace()
       Distance = ComptonEvent->FirstLeverArm();
       
       // Limit for the time being
-      if (Phi < 0 || Phi > 60) continue;
+      //if (Phi < 0 || Phi > 60) continue;
 
       Chi = Dg.Phi()*c_Deg;
       while (Chi < 0) Chi += 360.0;
@@ -848,6 +864,7 @@ bool BinnedComptonImaging::PrepareDataSpace()
       Psi = Dg.Theta()*c_Deg;
 
       vector<double> DataLocal = {Ei, Phi, Psi, Chi, 0.0, 0.0, Distance};
+      if (m_Data.InRange(DataLocal) == false) continue;
       unsigned int DBinLocal = m_Data.FindBin(DataLocal);
       
       MRotation R = ComptonEvent->GetGalacticPointingRotationMatrix();
@@ -877,14 +894,9 @@ bool BinnedComptonImaging::PrepareDataSpace()
     m_ObservationTime = Event->GetTime().GetAsSeconds();
     
     delete Event;
-    
-    /*
-    if (m_NEvents == 5000) {
-      cout<<"STOP after 5000 events"<<endl;
-      break;
-    }
-    */
+    if (m_NEvents >= m_MaximumNumberOfEvents) break;
   }
+
   EventFile->ShowProgress(false);
   EventFile->Close();
 
@@ -1125,14 +1137,14 @@ bool BinnedComptonImaging::CreateGalacticResponse()
     RotateResponseInParallel(0, PointingBinsX, PointingBinsZ);
   } else {
     
-    Split += 1; // so that the last thread does not get an excess of pointings
+    //Split += 1; // so that the last thread does not get an excess of pointings
     
     vector<thread> Threads(std::thread::hardware_concurrency());
     m_ThreadRunning.resize(Threads.size(), true);
     for (unsigned int t = 0; t < Threads.size(); ++t) {
       m_ThreadRunning[t] = true;
-      cout<<PointingBinsX.begin() + t*Split<<":"<<(t == Threads.size() - 1) ? PointingBinsX.end() : PointingBinsX.begin() + (t+1)*Split<<":"<<PointingBinsX.size()<<endl;
-      cout<<PointingBinsY.begin() + t*Split<<":"<<(t == Threads.size() - 1) ? PointingBinsY.end() : PointingBinsY.begin() + (t+1)*Split<<":"<<PointingBinsY.size()<<endl;
+      //cout<<"X: "<<t*Split<<":"<<((t == Threads.size() - 1) ? PointingBinsX.end() : PointingBinsX.begin() + (t+1)*Split)<<":"<<PointingBinsX.size()<<endl;
+      //cout<<"Z: "<<t*Split<<":"<<((t == Threads.size() - 1) ? PointingBinsZ.end() : PointingBinsZ.begin() + (t+1)*Split)<<":"<<PointingBinsZ.size()<<endl;
       vector<unsigned int> X(PointingBinsX.begin() + t*Split, (t == Threads.size() - 1) ? PointingBinsX.end() : PointingBinsX.begin() + (t+1)*Split);
       vector<unsigned int> Z(PointingBinsZ.begin() + t*Split, (t == Threads.size() - 1) ? PointingBinsZ.end() : PointingBinsZ.begin() + (t+1)*Split);
       Threads[t] = thread(&BinnedComptonImaging::RotateResponseInParallel, this, t, X, Z);
@@ -1981,13 +1993,16 @@ bool BinnedComptonImaging::Reconstruct()
  */
 bool BinnedComptonImaging::ShowImageGalacticCoordinates(MResponseMatrixON Image, MString Title, MString zAxis, bool Save, MString SaveTitle)
 {
-  vector<double> ImageData(Image.GetAxis(1).GetNumberOfBins());
-  for (unsigned int ib = 0; ib < m_IBins; ++ib) {
-    ImageData[ib] = Image.Get(ib);
+  vector<double> ImageData(m_InitialDirectionBins);
+  vector<unsigned long> Bins(2);
+  Bins[0] = m_InitialEnergyBins / 2;
+  for (unsigned int ib = 0; ib < m_InitialDirectionBins; ++ib) {
+    Bins[1] = ib;
+    ImageData[ib] = Image.Get(Bins);
   }
   
   MImageGalactic* G = new MImageGalactic();
-  G->SetTitle(Title);
+  G->SetTitle(Title + " for central energy bin");
   G->SetXAxisTitle("Galactic Longitude [deg]");
   G->SetYAxisTitle("Galactic Latitude [deg]");
   G->SetValueAxisTitle(zAxis);
