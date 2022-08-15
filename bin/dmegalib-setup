@@ -109,15 +109,18 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     continue
   fi  
   
-  # Check if we have a .dcosima.cfg file, if not create a default one
+  # Check if we have a .dmegalib.cfg file, if not create a default one
   SCRIPT=$(mktemp /tmp/dmegalib-setup-script.XXXXXXXXXX)
 cat <<EOT >> ${SCRIPT}
 #/bin/bash
 
-# Check if the MEGAlib path exits, if not create it
-CFG="\${HOME}/.dcosima.cfg"
+# Check if the dmegalib configuration exits, if not create it
+CFG="\${HOME}/.dmegalib.cfg"
+if [[ -f \${HOME}/.dcosima.cfg ]]; then
+  mv \${HOME}/.dcosima.cfg \${CFG}
+fi
 if [[ ! -f \${CFG} ]]; then 
-  echo "# Auto-generated .dcosima.cfg file on ${date}" >> \${CFG} 
+  echo "# Auto-generated .dmegalib.cfg file on \$(date)" >> \${CFG} 
   echo " " >> \${CFG}
   echo "# Number of instances to run in parallel" >> \${CFG}
   echo "instances  \$(( \$(getconf _NPROCESSORS_ONLN)/2 ))" >> \${CFG}
@@ -131,6 +134,16 @@ if [[ ! -f \${CFG} ]]; then
   echo "# Time restriction" >> \${CFG}
   echo "#time 17:00 7:00" >> \${CFG}
   echo " " >> \${CFG}
+fi
+
+# Check if the dmegalib .bashrc file exits, if not create it
+BASHRC="\${HOME}/.dmegalib.bashrc"
+if [[ ! -f \${BASHRC} ]]; then
+  echo "# Auto-generated .dmegalib.bashrc file on \$(date)" >> \${BASHRC} 
+  echo " " >> \${BASHRC}
+  echo "# Everything should be readable" >> \${BASHRC}
+  echo "umask 022" >> \${BASHRC}
+  echo " " >> \${BASHRC}
 fi
 
 exit 0
@@ -162,12 +175,12 @@ fi
 
 
 echo " "
-echo "Creating .dcosima.cfg configuration file"
+echo "Creating a new local .dmegalib.cfg configuration file"
 
-CFG="${HOME}/.dcosima.cfg"
+CFG="${HOME}/.dmegalib.cfg"
 if [[ -f ${CFG} ]]; then rm ${CFG}; fi
 
-echo "# Auto-generated .dcosima.cfg file on $(date)" >> ${CFG} 
+echo "# Auto-generated .dmegalib.cfg file on $(date)" >> ${CFG} 
 echo " " >> ${CFG} 
 echo " " >> ${CFG}
 echo "# Number of instances to run in parallel" >> ${CFG}

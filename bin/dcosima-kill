@@ -38,7 +38,7 @@ for C in "${CMD[@]}"; do
 done
 
 # Default options:
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 NAME="DCOSIMA_!!!!_IDONOTEXIST"
 
 # Overwrite default options with user options:
