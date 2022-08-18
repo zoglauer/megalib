@@ -472,7 +472,10 @@ bool BinnedComptonImaging::BuildBackgroundModel()
       Psi = Dg.Theta()*c_Deg;
       
       vector<double> DataLocal = {Ei, Phi, Psi, Chi, 0.0, 0.0, Distance};
-      if (Model.InRange(DataLocal) == false) continue;
+      if (Model.InRange(DataLocal) == false) {
+        delete Event;
+        continue;
+      }
       Model.Add(DataLocal, 1);
 
       ++EventCounter;
@@ -839,12 +842,12 @@ bool BinnedComptonImaging::PrepareDataSpace()
       delete Event;
       continue;
     }
+   
     
     //! Set the pointing
     m_Pointing.Add(vector<double>{ 90 + Event->GetGalacticPointingXAxisLatitude()*c_Deg, Event->GetGalacticPointingXAxisLongitude()*c_Deg, 90 + Event->GetGalacticPointingZAxisLatitude()*c_Deg, Event->GetGalacticPointingZAxisLongitude()*c_Deg } );
     m_PointingZ.Add(vector<double>{ 90 + Event->GetGalacticPointingZAxisLatitude()*c_Deg, Event->GetGalacticPointingZAxisLongitude()*c_Deg } );
 
-    
     // Add Comptons to the data base
     if (Event->GetType() == MPhysicalEvent::c_Compton) {
       ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
@@ -864,7 +867,10 @@ bool BinnedComptonImaging::PrepareDataSpace()
       Psi = Dg.Theta()*c_Deg;
 
       vector<double> DataLocal = {Ei, Phi, Psi, Chi, 0.0, 0.0, Distance};
-      if (m_Data.InRange(DataLocal) == false) continue;
+      if (m_Data.InRange(DataLocal) == false) {
+        delete Event;
+        continue;
+      }
       unsigned int DBinLocal = m_Data.FindBin(DataLocal);
       
       MRotation R = ComptonEvent->GetGalacticPointingRotationMatrix();
@@ -884,13 +890,14 @@ bool BinnedComptonImaging::PrepareDataSpace()
       
       MRotation IR = ComptonEvent->GetGalacticPointingInverseRotationMatrix();
       
-      m_EventResponseSlices.push_back(CreateResponseSliceGalactic(DBinLocal, ComptonEvent->GetGalacticPointingInverseRotationMatrix()));
+      //m_EventResponseSlices.push_back(CreateResponseSliceGalactic(DBinLocal, ComptonEvent->GetGalacticPointingInverseRotationMatrix()));
       
       ++m_NEvents;
       
       if (m_NEvents > 0 && m_NEvents % 500 == 0) cout<<"Processed "<<m_NEvents<<" events"<<endl;
     } // if Compton
     
+
     m_ObservationTime = Event->GetTime().GetAsSeconds();
     
     delete Event;
@@ -1438,9 +1445,17 @@ bool BinnedComptonImaging::ReconstructRL()
   MTimer T;
   
   for (unsigned int ib = 0; ib < m_IBins; ++ib) {
+    /*
     float Content = 0.0;
     for (unsigned long e = 0; e < m_NEvents; ++e) {
       Content += m_EventResponseSlices[e].Get(ib);
+    }
+    Image.Set(ib, Content);
+    */
+ 
+    float Content = 0.0;
+    for (unsigned long db = 0; db < m_DBins; ++db) {
+      Content += m_ResponseGalactic.Get(ib + m_IBins*db) * m_Data.Get(db);
     }
     Image.Set(ib, Content);
   }
@@ -1487,7 +1502,8 @@ bool BinnedComptonImaging::ReconstructRL()
   Mean.AddAxis(m_ResponseGalactic.GetAxis(4)); // direction scattered gamma ray  
   Mean.AddAxis(m_ResponseGalactic.GetAxis(5)); // direction recoil electron 
   Mean.AddAxis(m_ResponseGalactic.GetAxis(6)); // distance  
-  
+ 
+  cout<<"Performing "<<m_Iterations<<" iterations"<<endl;
   for (unsigned int i = 0; i < m_Iterations; ++i) {
     cout<<endl<<"Iteration: "<<i+1<<" - convolve"<<endl;
     
@@ -1560,6 +1576,8 @@ bool BinnedComptonImaging::ReconstructRL()
     
     if (m_Interrupt == true) break;
   }  
+
+  cout<<"Finished RL imaging"<<endl;
 
   return true;
 }
