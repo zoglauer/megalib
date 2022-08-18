@@ -675,7 +675,7 @@ vector<unsigned long> MResponseMatrixON::FindBins(vector<double> X) const
       if (m_Axes[a]->InRange(X[Xbin]) == true) {
         Bins.push_back(m_Axes[a]->GetAxisBin(X[Xbin]));
       } else {
-        cout<<m_Name<<": Axis: "<<m_Axes[a]->GetNames()[0]<<endl;
+        cout<<m_Name<<": Axis: "<<m_Axes[a]->GetNames()[0]<<" (xbin="<<Xbin<<"/"<<X.size()<<")"<<endl;
         throw MExceptionValueOutOfBounds(X[Xbin]);
       }
     } else if (Dimension == 2) {
