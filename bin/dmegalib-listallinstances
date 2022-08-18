@@ -36,7 +36,7 @@ for C in "${CMD[@]}"; do
   fi
 done
 
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 if [ ! -f ${CFG} ]; then
   echo "ERROR: No dmegalib configuration file present. Please run dmegalib-setup first."
   exit 1
@@ -81,8 +81,8 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     continue
   fi  
   
-  # Check if .bash_local exists
-  ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .bash_local ]]; then exit 0; else exit 1; fi'
+  # Check if .dmegalib.bashrc exists
+  ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .dmegalib.bashrc ]]; then exit 0; else exit 1; fi'
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME}: MEGAlib has never been installed"
     MACHINES[$m]=""
@@ -90,30 +90,30 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi 
 
   # Check if MEGAlib path exists
-  ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; if [[ ${MEGALIB} != "" ]]; then exit 0; else exit 1; fi'
+  ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .dmegalib.bashrc; if [[ ${MEGALIB} != "" ]]; then exit 0; else exit 1; fi'
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME}: MEGAlib has never been correctly installed"
     MACHINES[$m]=""
     continue
   fi 
 
-  # Check if .dcosima.cfg path exists
-  ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .dcosima.cfg ]]; then exit 0; else exit 1; fi'
+  # Check if .dmegalib.cfg path exists
+  ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .dmegalib.cfg ]]; then exit 0; else exit 1; fi'
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTENAME}: dmegalib has not been setup (no .dcosima.cfg file exists)"
+    echo " * Machine ${REMOTENAME}: dmegalib has not been setup (no .dmegalib.cfg file exists)"
     MACHINES[$m]=""
     continue
   fi 
 
   # Check if cosima is installed - cosima is the last one compiled, if cosima is there the rest should be there too
-  AVAILABLE=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
+  AVAILABLE=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .dmegalib.bashrc; type cosima > /dev/null" 2>&1`
   if [ "${AVAILABLE}" != "" ]; then
     echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): MEGAlib programs are not compiled"
     continue
   fi
 
   # Check how many more instances are allowed
-  ALLOWED=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dmegalib-allowedinstances"`
+  ALLOWED=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .dmegalib.bashrc; dmegalib-allowedinstances"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to get the number of allowed instances"
     continue
@@ -122,7 +122,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   ALLALLOWED=$(( ${ALLALLOWED} + ${ALLOWED} ))
 
   # Check how many instances are running
-  RUNNING=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dmegalib-runninginstances"`
+  RUNNING=`ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .dmegalib.bashrc; dmegalib-runninginstances"`
 	if [ "$?" != 0 ]; then
     echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to retrieve the number of running cosima instances"
 		continue
@@ -130,7 +130,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 	ALLRUNNING=$(( ${ALLRUNNING} + ${RUNNING} ))
 
   # Check how many instances are possible
-  REMOTECOMMAND='COUNT=`grep -c ^instances ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^instances ~/.dcosima.cfg; fi;'
+  REMOTECOMMAND='COUNT=`grep -c ^instances ~/.dmegalib.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^instances ~/.dmegalib.cfg; fi;'
   POSSIBLE=$(ssh -i ${HOME}/.ssh/dmegalib_rsa ${SSHFLAGS} -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND})
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Failed to read instances"
