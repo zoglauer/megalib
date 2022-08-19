@@ -129,6 +129,10 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_ExposureMode = MExposureMode::Flat;
   m_ExposureEfficiencyFile = "";
 
+  m_UseNearFieldNormalizers = false;
+  m_NearFieldDetectionEfficiency = "";
+  m_NearFieldParameterEfficiency = "";
+
 
   // Memory management
   m_RAM = 1500;
@@ -205,8 +209,11 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "ExposureMode", static_cast<int>(m_ExposureMode));
   new MXmlNode(bNode, "ExposureEfficiencyFile", CleanPath(m_ExposureEfficiencyFile));
 
-
-
+  // Menu Normalizers:
+  new MXmlNode(bNode, "UseNearFieldNormalizers", m_UseNearFieldNormalizers);
+  new MXmlNode(bNode, "NearFieldDetectionEfficiency", CleanPath(m_NearFieldDetectionEfficiency));
+  new MXmlNode(bNode, "NearFieldParameterEfficiency", CleanPath(m_NearFieldParameterEfficiency));
+  
   // Menu Coordinate-system
   aNode = new MXmlNode(Node, "CoordinateSystem");
 
@@ -345,6 +352,15 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
       }
       if ((cNode = bNode->GetNode("ExposureEfficiencyFile")) != 0) {
         m_ExposureEfficiencyFile = cNode->GetValue();
+      }
+      if ((cNode = bNode->GetNode("UseNearFieldNormalizers")) != 0) {
+        m_UseNearFieldNormalizers = cNode->GetValueAsBoolean();
+      }
+      if ((cNode = bNode->GetNode("NearFieldDetectionEfficiency")) != 0) {
+        m_NearFieldDetectionEfficiency = cNode->GetValue();
+      }
+      if ((cNode = bNode->GetNode("NearFieldParameterEfficiency")) != 0) {
+        m_NearFieldParameterEfficiency = cNode->GetValue();
       }
     }
   }

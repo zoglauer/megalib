@@ -314,6 +314,15 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
   }
   UseAbsorptions(Settings->GetUseAbsorptions());
 
+  if (Settings->GetUseNearFieldNormalizers() == true) {
+    if (SetResponseNormalizers(Settings->GetNearFieldDetectionEfficiency(), Settings->GetNearFieldParameterEfficiency()) == false) {
+      merr<<"Cannot set response normalizers! Aborting imaging!"<<show;
+      return false;
+    }
+  }
+
+
+
   // Exposure
   if (Settings->GetExposureMode() == MExposureMode::CalculateFromEfficiency) {
     if (SetExposureEfficiencyFile(Settings->GetExposureEfficiencyFile()) == false) {
@@ -441,7 +450,7 @@ void MImager::SetResponseGaussian(const double Transversal, const double Longitu
 {
   // Set the Gaussian response parameters
 
-  for (unsigned int t= 0; t < m_NThreads; ++t) {
+  for (unsigned int t = 0; t < m_NThreads; ++t) {
     MResponseGaussian* Response = new MResponseGaussian(Transversal, Longitudinal, Pair, PET);
     Response->SetThreshold(CutOff);
 
@@ -464,6 +473,24 @@ void MImager::SetResponseGaussianByUncertainties(const double Increase)
 
     m_BPs[t]->SetResponse(dynamic_cast<MResponse*>(Response));
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MImager::SetResponseNormalizers(MString NearFieldDetectionEfficiency, MString NearFieldParameterEfficiency)
+{
+  //! Set the response normalizers
+
+  m_ResponseNormalizers = new MResponseNormalizers();
+  if (m_ResponseNormalizers->LoadNearFieldEfficiencies(NearFieldDetectionEfficiency, NearFieldParameterEfficiency) == false) return false;
+
+  for (unsigned int t = 0; t < m_NThreads; ++t) {
+    m_BPs[t]->SetResponseNormalizers(m_ResponseNormalizers);
+  }
+
+  return true;
 }
 
 
@@ -832,6 +859,7 @@ bool MImager::Analyze(bool CalculateResponse)
 {
   // Do the imaging
 
+  /*
   // Hack load efficiency:
   MEfficiency* Efficiency = new MEfficiency();
   Efficiency->Load("/volumes/mobius/users/andreas/MediMax/MediMax_ID20998783616038/MediMaxResponse.listmoderesponsenearfield.emittedxdetectedy.rsp.gz");
@@ -844,7 +872,7 @@ bool MImager::Analyze(bool CalculateResponse)
   cout<<"C"<<endl;
   m_Exposure->Load("/volumes/mobius/users/andreas/MediMax/MediMax_ID20998783616038/MediMaxResponse.listmoderesponsenearfield.emittedxdetectedanywhere.rsp.gz");
   cout<<"D"<<endl;
-
+  */
   
   if (m_AnimationMode == c_AnimateBackprojections) {
     CalculateResponse = true;

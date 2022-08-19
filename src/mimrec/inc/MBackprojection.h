@@ -26,12 +26,14 @@
 #include "MPhysicalEvent.h"
 #include "MResponse.h"
 #include "MEfficiency.h"
+#include "MResponseNormalizers.h"
 #include "MDGeometryQuest.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
 
+//! Backprojection base class
 class MBackprojection : public MProjection, public MViewPort
 {
   // Public Interface:
@@ -58,6 +60,9 @@ class MBackprojection : public MProjection, public MViewPort
   virtual void SetResponse(MResponse* Response) { m_Response = Response; m_Response->SetApproximatedMaths(m_ApproximatedMaths); }
   //! Get the response
   MResponse* GetResponse() const { return m_Response; }
+
+  //! Set the response normalizers
+  virtual void SetResponseNormalizers(MResponseNormalizers* ResponseNormalizers) { m_ResponseNormalizers = ResponseNormalizers; }
 
   //! Set the efficiency
   virtual void SetEfficiency(MEfficiency* Efficiency) { m_Efficiency = Efficiency; }
@@ -104,6 +109,9 @@ class MBackprojection : public MProjection, public MViewPort
 
   //! The response - Compton as well as pair
   MResponse* m_Response;              
+
+  //! The response normalizers
+  MResponseNormalizers* m_ResponseNormalizers;
 
   //! The overall detector efficiency
   MEfficiency* m_Efficiency;              

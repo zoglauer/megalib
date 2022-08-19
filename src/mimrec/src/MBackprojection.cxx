@@ -74,6 +74,7 @@ MBackprojection::MBackprojection(MCoordinateSystem CoordinateSystem) : MProjecti
   // not tested!
 
   m_Response = nullptr;
+  m_ResponseNormalizers = nullptr;
   m_Efficiency = nullptr;
   m_Geometry = nullptr;
   m_UseAbsorptions = false;

@@ -372,11 +372,12 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
     return false;
   }
 
-  // If we have an efficiency the use it:
-  if (m_Efficiency != nullptr) {
+  // If we have response normalizers then use them:
+  if (m_ResponseNormalizers != nullptr) {
     Maximum = 0.0;
     InnerSum = 0.0;
     for (int i = 0; i < NUsedBins; ++i) {
+      /*
       int xBin = Bins[i] % m_x1NBins;
       int yBin = ((Bins[i] - xBin) / m_x1NBins) % m_x2NBins;
       int zBin = (Bins[i] - xBin - m_x1NBins*yBin) / (m_x1NBins*m_x2NBins);
@@ -387,18 +388,22 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
 
       //RotateImagingSystemDetectorSystem(x, y, z);
       MVector D(x, y, z);
-
-      double Efficiency = 0.0;
-      if (m_ApproximatedMaths == false) {
-        Efficiency = m_Efficiency->GetNearField(x, y, z, xCC, yCC, zCC);
-      } else {
-        Efficiency = m_Efficiency->GetNearField(x, y, z, xCC, yCC, zCC);
-      }
+      */
+      
+      double Efficiency = m_ResponseNormalizers->GetNearFieldDetectionEfficiency(Bins[i]);
       Image[i] *= Efficiency;
       InnerSum += Image[i];
 
       if (Image[i] > Maximum) Maximum = Image[i];
     }
+    
+    // Overall normalization:
+    double NearFieldParameterEfficiency = m_ResponseNormalizers->GetNearFieldParameterEfficiency(vector<double>{ xCC, yCC, zCC, m_C->GetEnergy(), Phi, -xCA, -yCA, -zCA });
+    
+    for (int i = 0; i < NUsedBins; ++i) {
+      Image[i] *= NearFieldParameterEfficiency/InnerSum;
+    }
+    InnerSum = NearFieldParameterEfficiency;
   }
 
   // If the image does not contain any content, return also false

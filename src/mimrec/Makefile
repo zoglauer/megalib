@@ -47,6 +47,7 @@ FILES = MSettingsMimrec \
 	MResponseGaussianByUncertainties \
 	MResponseConeShapes \
 	MResponsePRM \
+	MResponseNormalizers \
 	MImageGalactic \
 	MImageSpheric \
 	MEfficiency \
@@ -78,6 +79,7 @@ FILES_UI = \
 	MGUIResponseSelection \
 	MGUIPolarization \
 	MGUIExposure \
+	MGUINormalizers \
 
 LIBRARIES = \
 	-lSpectralyze \

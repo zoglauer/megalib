@@ -42,6 +42,7 @@
 #include "MGUIARM.h"
 #include "MGUISignificance.h"
 #include "MGUIExposure.h"
+#include "MGUINormalizers.h"
 #include "MGUIAnimation.h"
 #include "MGUIMemory.h"
 #include "MGUIImageDimensions.h"
@@ -132,7 +133,7 @@ void MGUIMimrecMain::Create()
   MenuImaging->AddEntry("Reconstruction algorithm", c_LikelihoodAlgorithm);
   //m_Menu->AddEntry("Penalty", c_LikelihoodPenalty);
   MenuImaging->AddSeparator();
-  MenuImaging->AddEntry("Exposure settings", c_Exposure);
+  MenuImaging->AddEntry("Normalizer settings", c_Normalizers);
   MenuImaging->AddSeparator();
   // MenuImaging->AddEntry("Backprojection algorithm", c_Algorithm);
   MenuImaging->AddEntry("Response type selection", c_Response);
@@ -350,8 +351,8 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         }
         break;
 
-      case c_Exposure:
-        new MGUIExposure(gClient->GetRoot(), this, m_Data);
+      case c_Normalizers:
+        new MGUINormalizers(gClient->GetRoot(), this, m_Data);
         break;
         
       case c_EventSelection:

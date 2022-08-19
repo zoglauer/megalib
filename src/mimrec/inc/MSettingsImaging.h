@@ -212,6 +212,18 @@ class MSettingsImaging : public MSettingsInterface
   MString GetExposureEfficiencyFile() const { return m_ExposureEfficiencyFile; }
   void SetExposureEfficiencyFile(MString ExposureEfficiencyFile) { m_ExposureEfficiencyFile = ExposureEfficiencyFile; }
   
+  
+  // Menu normalizers
+  bool GetUseNearFieldNormalizers() const { return m_UseNearFieldNormalizers; }
+  void SetUseNearFieldNormalizers(bool UseNearFieldNormalizers) { m_UseNearFieldNormalizers = UseNearFieldNormalizers; m_BackprojectionModified = true; }
+ 
+  MString GetNearFieldDetectionEfficiency() const { return m_NearFieldDetectionEfficiency; }
+  void SetNearFieldDetectionEfficiency(MString NearFieldDetectionEfficiency) { m_NearFieldDetectionEfficiency = NearFieldDetectionEfficiency; }
+ 
+  MString GetNearFieldParameterEfficiency() const { return m_NearFieldParameterEfficiency; }
+  void SetNearFieldParameterEfficiency(MString NearFieldParameterEfficiency) { m_NearFieldParameterEfficiency = NearFieldParameterEfficiency; }
+  
+  
   // Menu likelihood
 
   // Menu algorithm
@@ -383,6 +395,15 @@ class MSettingsImaging : public MSettingsInterface
 
   MString m_ImagingResponseConeShapesFileName;
 
+  // Response normalizers:
+  
+  //! True if we should use near field normalizers
+  bool m_UseNearFieldNormalizers;
+  //! The near field detection efficiency file
+  MString m_NearFieldDetectionEfficiency;
+  //! The near field parameter efficiency file
+  MString m_NearFieldParameterEfficiency;
+  
 
   // Memory management
   int m_RAM;

@@ -111,6 +111,10 @@ class MImager
   //! Set if absorption probabilities should be use
   void UseAbsorptions(bool UseAbsorptions = true);
 
+  //! Set the response normalizers
+  bool SetResponseNormalizers(MString NearFieldDetectionEfficiency, MString NearFieldParameterEfficiency);
+  
+
   // Deconvolution part:
 
   //! Use the classic EM algorithm for deconvolution
@@ -285,6 +289,8 @@ class MImager
   //! The exposure calculator
   MExposure* m_Exposure;
 
+  //! The response normalizers
+  MResponseNormalizers* m_ResponseNormalizers;
 
   // Deconvolution:
 
