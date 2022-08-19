@@ -185,7 +185,7 @@ while [[ ${WAIT} == true ]]; do
   # Finally check the system load
   CURRENTLOAD="0.0"
   if [[ ${OSTYPE} == darwin* ]]; then
-    CURRENTLOAD=`sysctl -n vm.loadavg | awk '{ print $1 }'`
+    CURRENTLOAD=`sysctl -n vm.loadavg | awk '{ print $2 }'`
   elif [[ ${OSTYPE} == linux* ]]; then 
     CURRENTLOAD=`cat /proc/loadavg | awk '{ print $1 }'`
   fi  
