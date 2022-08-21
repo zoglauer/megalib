@@ -30,94 +30,181 @@ GeWafer.Mother WorldVolume
 
 
 
-Echo "Test 0 start"
-Constant Test0 0
-If { Test0 > 0 }
-   For I { Test0 } -1.0 1.0
-       Echo "Test 0: Not Passed"
-   Done
-Else
-  Echo "Test 0: Passed"
-EndIf
-
-
-Echo "Test A1 start"
-If { 1 == 2 || 2 == 2 }
-  Echo "Test A1: Passed"
-Else
-  Echo "Test A1: Not passed"
-Endif 
-
-Echo "Test A2 start"
-If { 1 == 2 && 2 == 2 }
-  Echo "Test A2: NOT passed"
-Else
-  Echo "Test A2: Passed"
-Endif 
-
-
-Echo "Test B start"
-If { false }
-  Echo "Test B: NOT Passed"
-Else
-  Echo "Test B: Passed"
-Endif 
-
-
-Echo "Test C start"
+Echo "Simple true / false"
 If { true }
-  Echo "Test C: Passed"
+  Echo "Test (is true): Passed"
 Else
-  Echo "Test C: Not passed"
+  Echo "Test (is true): Not passed"
 Endif 
 
+If { false }
+  Echo "Test (is false): NOT Passed"
+Else
+  Echo "Test (is false): Passed"
+Endif
 
-Echo "Test D start"
+
+
+Echo "Equal/unequal test series
+If { 1 == 1 }
+  Echo "Test (1 == 1): Passed (true if-path)"
+Else
+  Echo "Test (1 == 1): Not passed (false if-path)"
+Endif
+
+If { 1 != 1 }
+  Echo "Test (1 != 1): Not passed (true if-path)"
+Else
+  Echo "Test (1 != 1): Passed (false if-path)"
+Endif
+
+If { 1 == 2 }
+  Echo "Test (1 == 2): Not passed (true if-path)"
+Else
+  Echo "Test (1 == 2): Passed (false if-path)"
+Endif
+
+If { 1 != 2 }
+  Echo "Test (1 != 2): Passed (true if-path)"
+Else
+  Echo "Test (1 != 2): Not passed (false if-path)"
+Endif
+
+
+
+Echo "OR test series"
+If { 1 == 2 || 1 == 2 }
+  Echo "Test (1 == 2 || 1 == 2): Not passed (true if-path)"
+Else
+  Echo "Test (1 == 2 || 1 == 2): Passed (false if-path)"
+Endif
+
+If { 1 == 2 || 2 == 2 }
+  Echo "Test (1 == 2 || 2 == 2): Passed (true if-path)"
+Else
+  Echo "Test (1 == 2 || 2 == 2): Not passed (false if-path)"
+Endif
+
+If { 1 == 1 || 1 == 2 }
+  Echo "Test (1 == 1 || 1 == 2): Passed (true if-path)"
+Else
+  Echo "Test (1 == 1 || 1 == 2): Not passed (false if-path)"
+Endif 
+
+If { 1 == 1 || 2 == 2 }
+  Echo "Test (1 == 1 || 2 == 2): Passed (true if-path)"
+Else
+  Echo "Test (1 == 1 || 2 == 2): Not passed (false if-path)"
+Endif
+
+
+Echo "AND test series"
+If { 1 == 2 && 1 == 2 }
+  Echo "Test (1 == 2 && 1 == 2): Not passed (true if-path)"
+Else
+  Echo "Test (1 == 2 && 1 == 2): Passed (false if-path)"
+Endif
+
+If { 1 == 2 && 2 == 2 }
+  Echo "Test (1 == 2 && 2 == 2): Not passed (true if-path)"
+Else
+  Echo "Test (1 == 2 && 2 == 2): Passed (false if-path)"
+Endif
+
+If { 1 == 1 && 1 == 2 }
+  Echo "Test (1 == 1 && 1 == 2): Not assed (true if-path)"
+Else
+  Echo "Test (1 == 1 && 1 == 2): Passed (false if-path)"
+Endif 
+
+If { 1 == 1 && 2 == 2 }
+  Echo "Test (1 == 1 && 2 == 2): Passed (true if-path)"
+Else
+  Echo "Test (1 == 1 && 2 == 2): Not passed (false if-path)"
+Endif
+
+
+
+
+
+
+
+Echo "If in for-loop:"
 For I 5 0 1
   If { $I > 3 }
-    Echo "Test D: Passed if $I > 3"
+    Echo "Test: Passed if $I > 3"
   Else
-    Echo "Test D: Passed if $I <= 3"
+    Echo "Test: Passed if $I <= 3"
   EndIf
 Done
 
 
-Echo "Test E start"
+Echo "For-loop in if"
 Constant TestE 0
 If { TestE > 0 }
    For I { TestE } -1.0 1.0
-       Echo "Test E: NOT passed"
+       Echo "Test: NOT passed"
    Done
 Else
-  Echo "Test E: Passed"
+  Echo "Test: Passed"
 EndIf
 
 
-Echo "Test F start"
+Echo "Double for-loop"
 Constant TestF 2
 If { TestF > 0 }
    For I { TestF } -1.0 1.0
      For J { TestF } -1.0 1.0
-       Echo "Test F: Passed at I=$I J=$J"
+       Echo "Test: Passed at I=$I J=$J"
      Done
    Done
 Else
-  Echo "Test F: NOT passed"
+  Echo "Test: NOT passed"
 EndIf
 
 
-Echo "Test G start"
+Echo "Another double for-loop"
 Constant TestGMax 1
 For X 2 0 1
   For Y 2 0 1
-    Echo "Test G: Testing X = $X and Y = $Y"
+    Echo "Test: Testing X = $X and Y = $Y"
     If { $X < TestGMax && $Y < TestGMax }
-      Echo "Test G: Passed if $X < TestGMax && $Y < TestGMax"
+      Echo "Test: Passed if $X < TestGMax && $Y < TestGMax"
     Else
-      Echo "Test G: Passed if $X >= TestGMax || $Y >= TestGMax"
+      Echo "Test: Passed if $X >= TestGMax || $Y >= TestGMax"
     EndIf
   Done
 Done
+
+
+
+Echo "AND and OR test with variable"
+Constant TestH_A 4
+Constant TestH_B 5
+
+If { TestH_A != 5 && TestH_B != 6 }
+  Echo "Test (4 != 5 && 5 != 6): Passed (true if-path)"    
+Else
+  Echo "Test H1 (4 != 5 && 5 != 6): Not passed (false if-path)"
+EndIf
+
+If { TestH_A != 5 && TestH_B != 5 }
+  Echo "Test (4 != 5 && 5 != 5): Not passed (true if-path)"
+Else
+  Echo "Test (4 != 5 && 5 != 5): Passed (false if-path)"
+EndIf
+
+If { TestH_A != 5 || TestH_B != 6 }
+  Echo "Test (4 != 5 || 5 != 6): Passed (true if-path)"
+Else
+  Echo "Test (4 != 5 || 5 != 6): Not passed (false if-path)"
+EndIf
+
+If { TestH_A != 5 && TestH_B != 5 }
+  Echo "Test (4 != 5 || 5 != 5): Not passed (true if-path)"
+Else
+  Echo "Test (4 != 5 || 5 != 5): Passed (false if-path)"
+EndIf
 
 
 #------------------------------------------------------------
