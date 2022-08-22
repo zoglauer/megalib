@@ -492,7 +492,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           OUTFILE=${OUTFILE/.evta.gz/}
           OUTFILE=${OUTFILE/.evta/}
 
-          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[$d]} -r ${OUTFILE} -m ${MODE}"
+          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -f ${DATADIR}/${DATAFILES[$d]} -g ${GEOMETRY} -r ${OUTFILE} -m ${MODE}"
           if [[ ${OPTIONS} != "" ]]; then REMOTECOMMAND+=" -o ${OPTIONS}"; fi
           if [[ ${SAVE} != "" ]]; then REMOTECOMMAND+=" -s ${SAVE}"; fi
           if [[ ${REVANCFG} != "" ]]; then REMOTECOMMAND+=" -c ${REVANCFG}"; fi
