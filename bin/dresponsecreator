@@ -85,7 +85,7 @@ LOGFILE=""
 LOGGING="tee"
 DELAY="10"
 NICE="19"
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 TESTRUN="FALSE"
 
 # Response creator specific options
@@ -208,7 +208,7 @@ fi
 
 if [ ! -f "${CFG}" ]; then
   echo " "
-  echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
+  echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dmegalib/.cfg!"
   exit 1  
 fi
 if [ ! -r "${CFG}" ]; then
@@ -375,9 +375,9 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     
     # Check if all data is accessible:
     COMMAND=""
-    COMMAND+=". ~/.bash_local;"
+    COMMAND+=". ~/.dmegalib.bashrc;"
     COMMAND+="if [[ ! -x \${MEGALIB}/bin/responsecreator ]]; then echo \"ERROR: MEGAlib not fully installed\"; exit 1; fi; "
-    COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \".dcosima.cfg configuration file not found.\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ~/.dmegalib.cfg ]]; then echo \".dmegalib.cfg configuration file not found.\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"Failed to access remote data directory!\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"Failed to create target directory\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[0]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[0]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
@@ -409,7 +409,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     OUTFILE=${OUTFILE/.evta.gz/}
     OUTFILE=${OUTFILE/.evta/}
     COMMAND=""
-    COMMAND+=". .bash_local; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -r /tmp/${OUTFILE} -m ${MODE}"
+    COMMAND+=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -r /tmp/${OUTFILE} -m ${MODE}"
     if [[ ${OPTIONS} != "" ]]; then COMMAND+=" -o ${OPTIONS}"; fi
     if [[ ${SAVE} != "" ]]; then COMMAND+=" -s ${SAVE}"; fi
     if [[ ${REVANCFG} != "" ]]; then COMMAND+=" -c ${REVANCFG}"; fi
@@ -492,7 +492,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           OUTFILE=${OUTFILE/.evta.gz/}
           OUTFILE=${OUTFILE/.evta/}
 
-          REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[$d]} -r ${OUTFILE} -m ${MODE}"
+          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[$d]} -r ${OUTFILE} -m ${MODE}"
           if [[ ${OPTIONS} != "" ]]; then REMOTECOMMAND+=" -o ${OPTIONS}"; fi
           if [[ ${SAVE} != "" ]]; then REMOTECOMMAND+=" -s ${SAVE}"; fi
           if [[ ${REVANCFG} != "" ]]; then REMOTECOMMAND+=" -c ${REVANCFG}"; fi
