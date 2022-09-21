@@ -92,8 +92,8 @@ class MResponseMatrixON : public MResponseMatrix
   //! Divide matrix by a scalar
   MResponseMatrixON& operator/=(const float& Value);  
   
-  //! Collapse some of the axes, the given axes remain in the response matrix
-  MResponseMatrixON Collapse(vector<unsigned int> RemainingAxisIndices);
+  //! Collapse some of the axes indicated by true
+  MResponseMatrixON Collapse(vector<bool> AxesToCollpse);
   
   //! return an axis name (order starts with 1)
   //! Throws exception

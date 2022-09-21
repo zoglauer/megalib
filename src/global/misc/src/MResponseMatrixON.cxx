@@ -546,38 +546,48 @@ MResponseMatrixON& MResponseMatrixON::operator/=(const float& Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON MResponseMatrixON::Collapse(vector<unsigned int> RemainingAxisIndices)
+MResponseMatrixON MResponseMatrixON::Collapse(vector<bool> Collapse)
 { 
-  //! Collapse some of the axes, the given axes remain in the response matrix
+  //! Collapse some of the axes, true mean collapse, false measn keep
+
+  if (Collapse.size() != m_NumberOfAxes) {
+    throw MExceptionArbitrary("The size of the input vector is not the same as the number of matrix axes!");
+  }
 
   // Create the new matrix:
   MResponseMatrixON New(m_Name);
-  for (unsigned int a = 0; a < RemainingAxisIndices.size(); ++a) {
-    if (RemainingAxisIndices[a] >= GetNumberOfAxes()) {
-	    throw MExceptionIndexOutOfBounds(0, GetNumberOfAxes(), RemainingAxisIndices[a]);
-	    return New;
+  for (unsigned int a = 0; a < Collapse.size(); ++a) {
+    if (Collapse[a] == false) {
+      New.AddAxis(GetAxis(a));
     }
-    New.AddAxis(GetAxis(RemainingAxisIndices[a]));
   }
   
   // Loop over all bins
-  vector<unsigned long> NewBin(RemainingAxisIndices.size());
+  vector<unsigned long> NewBin(New.m_NumberOfAxes);
   if (m_IsSparse == true) {
     for (unsigned long b = 0; b < m_BinsSparse.size(); ++b) {
-	  vector<unsigned long> Bin = FindBins(m_BinsSparse[b]);
-	  for (unsigned int rbin = 0; rbin < RemainingAxisIndices.size(); ++rbin) {
-        NewBin[rbin] = Bin[RemainingAxisIndices[rbin]];
+	    vector<unsigned long> OldBin = FindBins(m_BinsSparse[b]);
+      unsigned int nb = 0;
+      //NewBin.clear();
+      for (unsigned long ob = 0; ob < m_NumberOfAxes; ob ++) {
+        if (Collapse[ob] == false) {
+          NewBin[nb++] = OldBin[ob];
+        }
+      }
+	    New.Add(NewBin, m_ValuesSparse[b]);
 	  }
-	  New.Add(NewBin, m_ValuesSparse[b]);
-	}
   } else {
     for (unsigned long b = 0; b < m_NumberOfBins; ++b) {
-	  vector<unsigned long> Bin = FindBins(b);
-	  for (unsigned int rbin = 0; rbin < RemainingAxisIndices.size(); ++rbin) {
-        NewBin[rbin] = Bin[RemainingAxisIndices[rbin]];
+	    vector<unsigned long> OldBin = FindBins(b);
+      unsigned int nb = 0;
+      //NewBin.clear();
+      for (unsigned long ob = 0; ob < m_NumberOfAxes; ob ++) {
+        if (Collapse[ob] == false) {
+          NewBin[nb++] = OldBin[ob];
+        }
+      }
+	    New.Add(NewBin, m_Values[b]);
 	  }
-	  New.Add(NewBin, m_Values[b]);
-	}
   }
   
   return New;

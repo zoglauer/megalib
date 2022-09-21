@@ -54,6 +54,8 @@ protected:
   bool Append();
   //! Show the content of a file
   bool Show();
+  //! Collapse a few dimensions
+  bool Collapse();
   //! Divide two file
   bool Divide();
   //! Calculate the ration of two files
@@ -98,6 +100,10 @@ private:
   float m_x15;
   float m_x16;
   float m_x17;
+
+  bool m_Collapse = true;
+  vector<bool> m_CollapseAxis;
+ 
 
   // Operations on two files
 

@@ -84,6 +84,7 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
 
   m_Statistics = false;
   m_Show = false;
+  m_Collapse = false;
   
   m_Divide = false;
   m_Ratio = false;
@@ -167,10 +168,11 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: responsemanipulator <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<endl;
-  Usage<<"      Manipulations of single file:"<<endl;
+  Usage<<"      Operations on a single file:"<<endl;
   Usage<<"         -f:   file name <file name> [mandatory]"<<endl;
   Usage<<"         -s:   show statistics"<<endl;
   Usage<<"         -v:   view <x1> <x2> <x3> <x4> <x5> <x6> <x7> <x8> <x9> <x10> <x11> <x12> <x13> <x14> <x15> <x16> <x17> [use as many as the reponse has axes]"<<endl;
+  Usage<<"         -c:   collapse <list of axis, same as seen with -s>"<<endl;
   Usage<<endl;
   Usage<<"      Operations on two files:"<<endl;
   Usage<<"         -d:   divide <file name> <file name>"<<endl;
@@ -284,6 +286,16 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-z") {
       m_Zero = true;
       cout<<"Accepting view zeroed "<<endl;
+    } else if (Option == "-c") {
+      m_Collapse = true;
+      m_CollapseAxis.clear();
+      while (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
+        m_CollapseAxis.push_back(bool(atoi(argv[i+1])));
+        ++i;
+      }
+      cout<<"Accepting axes to collapse: ";
+      for (auto i: m_CollapseAxis) { cout<<i<<" "; }
+      cout<<endl;
     } else if (Option == "-v") {
       MString next;
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
@@ -472,16 +484,16 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     }
   }
 
-  if (m_Append == true || m_Show == true || m_Statistics == true) {
+  if (m_Append == true || m_Show == true || m_Statistics == true || m_Collapse == true) {
     if (m_FileName == "") {
       cout<<"Error: No file name given!"<<endl;
       cout<<Usage.str()<<endl;
       return false;
     }
   }
-  if (m_Append == false && m_Show == false && m_Statistics == false &&
+  if (m_Append == false && m_Show == false && m_Statistics == false && m_Collapse == false &&
       m_Divide == false && m_Ratio == false && m_Join == false && m_Probability == false) {
-    cout<<"Error: No operation give (e.g. show statitsics)!"<<endl;
+    cout<<"Error: No operation given (e.g. -s for show statitsics)!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
@@ -527,6 +539,7 @@ bool MResponseManipulator::Analyze()
 
   if (m_Statistics == true) Statistics();
   if (m_Show == true) Show();
+  if (m_Collapse == true) Collapse();
 
   if (m_Divide == true) Divide();
   if (m_Ratio == true) Ratio();
@@ -1294,6 +1307,30 @@ bool MResponseManipulator::Statistics()
   if (R == nullptr) return false;
   cout<<R->GetStatistics()<<endl;
   delete R;
+
+  return true;
+}
+
+
+/******************************************************************************
+ * Collapse a response matrix:
+ */
+bool MResponseManipulator::Collapse()
+{
+  MFileResponse File;
+  MResponseMatrix* R = File.Read(m_FileName);
+  if (R == nullptr) return false;
+  
+  if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+    cout<<"Starting collapse"<<endl;
+    MResponseMatrixON Collapsed = dynamic_cast<MResponseMatrixON*>(R)->Collapse(m_CollapseAxis);
+    delete R;
+    cout<<"Writing new file"<<endl;
+    Collapsed.Write(m_FileName + ".collapsed.rsp", true);
+  } else {
+    merr<<"Collapse just works for MResponseMatrixON type responses"<<endl;
+    return false;
+  }
 
   return true;
 }
