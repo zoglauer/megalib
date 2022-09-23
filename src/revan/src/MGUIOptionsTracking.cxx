@@ -156,9 +156,9 @@ void MGUIOptionsTracking::Create()
     AddFrame(PairLabel, SubLabel);
 
     m_NLayersForVertexSearch = new MGUIEEntry(this,
-                                      "Search for a pair vertex within this amount of layers (min 4):",
+                                      "Search for a pair vertex within this amount of layers (min 2):",
                                       false,
-                                      m_Data->GetNLayersForVertexSearch(), true, 4);
+                                      m_Data->GetNLayersForVertexSearch(), true, 2);
     AddFrame(m_NLayersForVertexSearch, SubOptions);
 
 

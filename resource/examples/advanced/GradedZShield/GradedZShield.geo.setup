@@ -5,7 +5,7 @@ Version 1.0
 
 # The thicknesses (not half thickness) of the graded-Z shield layers
 Constant Material1 BGO
-Constant ZSizeMaterial1 2.5
+Constant ZSizeMaterial1 2.53
 
 Constant Material2 Copper
 Constant ZSizeMaterial2  0.0

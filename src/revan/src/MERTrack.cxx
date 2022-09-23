@@ -145,9 +145,9 @@ bool MERTrack::SetParameters(bool SearchMIPs,
   m_RejectPureAmbiguities = RejectPureAmbiguities;
   m_NLayersForVertexSearch = NLayersForVertexSearch;
  
-  if (m_NLayersForVertexSearch < 4) {
-    merr<<"Error: Revan (tracking): NLayersForVertexSearch (="<<m_NLayersForVertexSearch<<") must be >= 4. Setting it to 4."<<show;
-    m_NLayersForVertexSearch = 4;
+  if (m_NLayersForVertexSearch < 2) {
+    merr<<"Error: Revan (tracking): NLayersForVertexSearch (="<<m_NLayersForVertexSearch<<") must be >= 2. Setting it to 2."<<show;
+    m_NLayersForVertexSearch = 2;
   }
   
   if (m_ComptonMaxLayerJump < 1) {
@@ -595,7 +595,7 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
      
       mdebug<<"Vertex statistics (max: "<<SearchRange<<"): layers used: "<<StopIndex<<", start of 2+ hits: "<<StartIndex<<"  layers with 2+ hits between start and stop: "<<LayersWithAtLeastTwoHitsBetweenStartAndStop<<" ("<<((StopIndex-StartIndex > 0) ? 100.0*LayersWithAtLeastTwoHitsBetweenStartAndStop/(StopIndex-StartIndex) : 0)<<"%)"<<endl; 
       
-      if (LayersWithAtLeastTwoHitsBetweenStartAndStop > 4 && double (LayersWithAtLeastTwoHitsBetweenStartAndStop)/(StopIndex-StartIndex) > 0.5) {  
+      if (LayersWithAtLeastTwoHitsBetweenStartAndStop >= m_NLayersForVertexSearch && double (LayersWithAtLeastTwoHitsBetweenStartAndStop)/(StopIndex-StartIndex) > 0.5) {  
         Vertex = (*Iterator1);
         VertexDirection = -1;
       }
@@ -610,6 +610,8 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
       List->AddRawEvent(New);
       mdebug<<"Search vertex: Found vertex: "<<Vertex->GetID()<<endl;
       break; // Only take first right now
+    } else {
+      mdebug<<"No vertex found"<<endl;
     }
   }
 
