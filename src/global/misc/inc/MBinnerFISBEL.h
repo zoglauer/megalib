@@ -22,6 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MBinnerSpherical.h"
 
 // Forward declarations:
 
@@ -30,7 +31,7 @@
 
 //! FISBEL: Fixed Integral Square Bins in Equi-longitude..?
 //! This is just the binner, it does not store any data itself
-class MBinnerFISBEL
+class MBinnerFISBEL : public MBinnerSpherical
 {
   // public interface:
  public:
