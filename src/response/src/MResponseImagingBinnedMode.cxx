@@ -100,10 +100,12 @@ MString MResponseImagingBinnedMode::Options()
 {
   ostringstream out;
   out<<"             anglebinwidth:           the width of a sky bin at the equator (default: 5 deg)"<<endl;
+  out<<"             anglebinmode:            use either FISBEL or HEALPIx (default: HEALPIx)"<<endl;
   out<<"             emin:                    minimum energy (default: 10 keV; cannot be used in combination with ebinedges)"<<endl;
   out<<"             emax:                    maximum energy (default: 2,000 keV; cannot be used in combination with ebinedges)"<<endl;
   out<<"             ebins:                   number of energy bins between min and max energy (default: 1; cannot be used in combination with ebinedges)"<<endl;
   out<<"             ebinedges:               the energy bin edges as a comma seperated list (default: not used, cannot be used in combination with emin, emax, or ebins)"<<endl;
+  out<<"             anglebinmodeelectron:    use either FISBEL or HEALPIx (default: HEALPIx)"<<endl;
   out<<"             anglebinwidthelectron:   the width of a aky bin at the equator (default: 5 deg)"<<endl;
   out<<"             dmin:                    minimum distance (default: 0 cm)"<<endl;
   out<<"             dmax:                    maximum distance (default: 1,000 cm)"<<endl;

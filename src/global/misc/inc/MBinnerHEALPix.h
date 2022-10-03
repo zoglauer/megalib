@@ -44,7 +44,7 @@ class MBinnerHEALPix : public MBinnerSpherical
   //! Get number of bins
   unsigned int GetNBins() const;
   
-  //! Get number of bins
+  //! Get NSIDE parameters
   unsigned int GetNSide() const {return m_NSide;};
 
   //! Return the minimum axis values [min theta, min phi]

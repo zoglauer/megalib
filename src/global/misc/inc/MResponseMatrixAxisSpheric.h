@@ -25,6 +25,7 @@
 #include "MGlobal.h"
 #include "MResponseMatrixAxis.h"
 #include "MBinnerFISBEL.h"
+#include "MBinnerHEALPix.h"
 
 // Forward declarations:
 
@@ -53,6 +54,8 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Set the axis in FISBEL mode with a longitude shift in degrees
   void SetFISBEL(unsigned long NBins, double LongitudeShift = 0);
   
+  //! Set the axis in HEALPIX (ring scheme)
+  void SetHEALPix(unsigned long NSide);
 
   //! Return the axis bin, given theta=latitude and phi=longitude in degrees
   virtual unsigned long GetAxisBin(double Theta, double Phi) const;

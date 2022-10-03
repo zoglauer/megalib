@@ -17,7 +17,7 @@ ClassImp(MBinnerHEALPix)
 
 
 //! Default constructor
-MBinnerHEALPix::MBinnerHEALPix(unsigned int NSide) : m_NumberOfBins(NSide)
+MBinnerHEALPix::MBinnerHEALPix(unsigned int NSide) : m_NSide(NSide)
 {
   // TODO Check nside valid
 }
@@ -41,8 +41,15 @@ unsigned int MBinnerHEALPix::FindBin(double Theta, double Phi) const
 {
 
   //TODO actual calculation
-  return 0
+  return 0;
 }
+
+//! Get number of bins/pixels
+unsigned int MBinnerHEALPix::GetNBins() const
+{
+  
+};
+
 
 //! Return axis bins edges for external drawing
 vector<vector<double>> MBinnerHEALPix::GetDrawingAxisBinEdges() const

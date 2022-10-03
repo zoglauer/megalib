@@ -101,6 +101,7 @@ FILES = MGlobal \
 	MBinnerFixedCountsPerBin \
 	MBinnerBayesianBlocks \
 	MBinnerFISBEL \
+	MBinnerHEALPix \
 	MXmlData \
 	MXmlNode \
 	MXmlAttribute \
