@@ -43,7 +43,6 @@ MResponseMatrixAxisSpheric::MResponseMatrixAxisSpheric(const MString& ThetaAxisN
 {
   m_Dimension = 2;
   m_Names.push_back(PhiAxisName);
-  m_Binner.Create(1);
 }
 
 
@@ -85,7 +84,7 @@ bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Ax
     return false;
   }
   
-  if (m_Binner != Axis.m_Binner) {
+  if (*m_Binner != *Axis.m_Binner) {
     return false;
   }
   
@@ -99,10 +98,21 @@ bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Ax
 //! Set the axis in FISBEL mode
 void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double LongitudeShift) 
 {
-  m_Binner.Create(NBins, LongitudeShift*c_Rad);
+  
+  std::shared_ptr<MBinnerFISBEL> m_Binner_fisbel = std::make_shared<MBinnerFISBEL>();
+  m_Binner_fisbel->Create(NBins, LongitudeShift*c_Rad);
+  
+  m_Binner = m_Binner_fisbel;
+
   m_NumberOfBins = NBins;
 }
 
+// //! Set the axis in HEALPix mode (ring scheme)
+// void MResponseMatrixAxisSpheric::SetHEALPix(unsigned long NSide) 
+// {
+//   m_Binner.Create(NBins, LongitudeShift*c_Rad);
+//   m_NumberOfBins = m_Binner->GetNBins();
+// }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -110,7 +120,7 @@ void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double Longitude
 //! Return the axis bin, given theta=latitude and phi=longitude 
 unsigned long MResponseMatrixAxisSpheric::GetAxisBin(double Theta, double Phi) const
 {
-  return m_Binner.FindBin(Theta*c_Rad, Phi*c_Rad);
+  return m_Binner->FindBin(Theta*c_Rad, Phi*c_Rad);
 }
 
 
@@ -120,7 +130,7 @@ unsigned long MResponseMatrixAxisSpheric::GetAxisBin(double Theta, double Phi) c
 //! Return the area of the given axis bin
 double MResponseMatrixAxisSpheric::GetArea(unsigned long Bin) const
 {
-  return 4*c_Pi/m_Binner.GetNBins() * c_Deg*c_Deg;
+  return 4*c_Pi/m_Binner->GetNBins() * c_Deg*c_Deg;
 }
 
 
@@ -130,7 +140,7 @@ double MResponseMatrixAxisSpheric::GetArea(unsigned long Bin) const
 //! Return the axis bins for drawing --- those might be narrower than the real bins
 vector<vector<double>> MResponseMatrixAxisSpheric::GetDrawingAxisBinEdges() const
 {
-  vector<vector<double>> AxisBinEdges = m_Binner.GetDrawingAxisBinEdges();
+  vector<vector<double>> AxisBinEdges = m_Binner->GetDrawingAxisBinEdges();
   AxisBinEdges.push_back(AxisBinEdges[0]);
   AxisBinEdges.erase(AxisBinEdges.begin());
   
@@ -163,7 +173,7 @@ bool MResponseMatrixAxisSpheric::InRange(double Theta, double Phi) const
 //! Return the minimum axis values
 vector<double> MResponseMatrixAxisSpheric::GetMinima() const
 {
-  return { 0, m_Binner.GetLongitudeShift() };
+  return m_Binner->GetMinima();
 }
 
 
@@ -173,7 +183,7 @@ vector<double> MResponseMatrixAxisSpheric::GetMinima() const
 //! Return the minimum axis values
 vector<double> MResponseMatrixAxisSpheric::GetMaxima() const
 {
-  return { 180, m_Binner.GetLongitudeShift() + 360 };
+  return m_Binner->GetMaxima();
 }
 
 
@@ -188,7 +198,7 @@ vector<double> MResponseMatrixAxisSpheric::GetBinCenters(unsigned long Bin) cons
     throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);
   }
   
-  vector<double> Centers = m_Binner.GetBinCenters(Bin);
+  vector<double> Centers = m_Binner->GetBinCenters(Bin);
   Centers[0] *= c_Deg;
   Centers[1] *= c_Deg;
   
@@ -203,7 +213,7 @@ vector<double> MResponseMatrixAxisSpheric::GetBinCenters(unsigned long Bin) cons
 //! Can throw: MExceptionIndexOutOfBounds
 vector<MVector> MResponseMatrixAxisSpheric::GetAllBinCenters() const
 {
-  return m_Binner.GetAllBinCenters();
+  return m_Binner->GetAllBinCenters();
 }
 
 
@@ -213,12 +223,11 @@ vector<MVector> MResponseMatrixAxisSpheric::GetAllBinCenters() const
 //! Write the content to a stream
 void MResponseMatrixAxisSpheric::Write(ostringstream& out)
 {
-  out<<"# Axis name"<<endl;
-  out<<"AN \""<<m_Names[0]<<"\" \""<<m_Names[1]<<"\""<<endl;
-  out<<"# Axis type"<<endl;
-  out<<"AT 2D FISBEL"<<endl;
-  out<<"# Axis data"<<endl;
-  out<<"AD "<<m_Binner.GetNBins()<<"  "<<m_Binner.GetLongitudeShift() * c_Deg<<endl;
+
+  MString name = m_Names[0] + "\" \"" + m_Names[1];
+  
+  m_Binner->Write(name, out);
+  
 }
 
 

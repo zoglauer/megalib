@@ -69,7 +69,13 @@ class MBinnerFISBEL : public MBinnerSpherical
   
   //! Get the latitude bin edges (in degree)
   vector<double> GetLatitudeBinEdges() const { return m_LatitudeBinEdges; } 
-  
+
+  //! Return the minimum axis values [min theta, min phi]
+  vector<double> GetMinima() const;
+
+  //! Return the minimum axis values [max theta, max phi]
+  vector<double> GetMaxima() const;
+    
   //! Get the bin center (returns: theta, phi in radians)
   //! Can throw: MExceptionIndexOutOfBounds
   vector<double> GetBinCenters(unsigned int Bin) const;
@@ -83,6 +89,9 @@ class MBinnerFISBEL : public MBinnerSpherical
   
   //! Return axis bins edges for external drawing (1st array: longitude/phi, 2nd array: latitude/theta)
   vector<vector<double>> GetDrawingAxisBinEdges() const;
+
+  //! Write the content to a stream
+  void Write(MString name, ostringstream& out) const;
   
   // protected methods:
  protected:

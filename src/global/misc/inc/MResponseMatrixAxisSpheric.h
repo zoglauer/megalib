@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <memory>
 
 // ROOT libs:
 
@@ -99,7 +100,7 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   // private members:
  private:
   //! The binner
-  MBinnerFISBEL m_Binner;
+    std::shared_ptr<MBinnerSpherical> m_Binner;
   
 
 #ifdef ___CLING___
