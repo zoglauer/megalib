@@ -76,20 +76,20 @@ MResponseMatrixAxisSpheric* MResponseMatrixAxisSpheric::Clone() const
 
 
 //! Equality operator
-bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Axis) const
-{
-  // We don't care about names, only the physical properties
+// bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Axis) const
+// {
+//   // We don't care about names, only the physical properties
   
-  if (m_Dimension != Axis.m_Dimension) {
-    return false;
-  }
+//   if (m_Dimension != Axis.m_Dimension) {
+//     return false;
+//   }
   
-  if (*m_Binner != *Axis.m_Binner) {
-    return false;
-  }
+//   if (*m_Binner != *Axis.m_Binner) {
+//     return false;
+//   }
   
-  return true;
-}
+//   return true;
+// }
 
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -42,10 +42,10 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Default destuctor 
   virtual ~MResponseMatrixAxisSpheric();
   
-  //! Equality operator
-  bool operator==(const MResponseMatrixAxisSpheric& Axis) const;
-  //! Inequality operator
-  bool operator!=(const MResponseMatrixAxisSpheric& Axis) const { return !(operator==(Axis)); }
+  // //! Equality operator
+  // bool operator==(const MResponseMatrixAxisSpheric& Axis) const;
+  // //! Inequality operator
+  // bool operator!=(const MResponseMatrixAxisSpheric& Axis) const { return !(operator==(Axis)); }
 
   //! Clone this axis
   virtual MResponseMatrixAxisSpheric* Clone() const;

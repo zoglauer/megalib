@@ -34,10 +34,10 @@ class MBinnerSpherical
     //! Return axis bins edges for external drawing (1st array: longitude/phi, 2nd array: latitude/theta)
     virtual vector<vector<double> > GetDrawingAxisBinEdges() const = 0;
 
-    //! Check if we have equal bins
-    virtual bool operator ==(const MBinnerSpherical&) const = 0;
-    //! ... or not
-    virtual bool operator !=(const MBinnerSpherical&) const = 0;
+    // //! Check if we have equal bins
+    // virtual bool operator ==(const MBinnerSpherical&) const = 0;
+    // //! ... or not
+    // virtual bool operator !=(const MBinnerSpherical&) const = 0;
   
     //! Write the content to a stream
     virtual void Write(MString name, ostringstream& out) const = 0;

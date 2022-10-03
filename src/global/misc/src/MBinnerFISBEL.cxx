@@ -64,16 +64,16 @@ MBinnerFISBEL::~MBinnerFISBEL()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Check if we have equal bins
-bool MBinnerFISBEL::operator==(const MBinnerFISBEL& Binner) const
-{
-  if (m_NumberOfBins != Binner.m_NumberOfBins) return false;
-  if (m_LongitudeBins != Binner.m_LongitudeBins) return false;
-  if (m_LatitudeBinEdges != Binner.m_LatitudeBinEdges) return false;
-  if (m_LongitudeShift != Binner.m_LongitudeShift) return false;
+// //! Check if we have equal bins
+// bool MBinnerFISBEL::operator==(const MBinnerFISBEL& Binner) const
+// {
+//   if (m_NumberOfBins != Binner.m_NumberOfBins) return false;
+//   if (m_LongitudeBins != Binner.m_LongitudeBins) return false;
+//   if (m_LatitudeBinEdges != Binner.m_LatitudeBinEdges) return false;
+//   if (m_LongitudeShift != Binner.m_LongitudeShift) return false;
   
-  return true;
-}
+//   return true;
+// }
 
 
 ////////////////////////////////////////////////////////////////////////////////

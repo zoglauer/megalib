@@ -46,10 +46,10 @@ class MBinnerFISBEL : public MBinnerSpherical
   //! Set the binning
   void Set(vector<unsigned int>& LongitudeBins, vector<double>& LatitudeBinEdges, unsigned int NumberOfBins, double LongitudeShift = 0);
   
-  //! Check if we have equal bins
-  bool operator ==(const MBinnerFISBEL& Binner) const;
-  //! ... or not
-  bool operator !=(const MBinnerFISBEL& Binner) const { return !operator==(Binner); }
+  // //! Check if we have equal bins
+  // bool operator ==(const MBinnerFISBEL& Binner) const;
+  // //! ... or not
+  // bool operator !=(const MBinnerFISBEL& Binner) const { return !operator==(Binner); }
   
   //! Find a bin
   //! Theta (= latitude) and phi (= longitude) are in (mathematical) spherical coordinates
