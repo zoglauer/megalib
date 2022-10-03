@@ -108,11 +108,16 @@ void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double Longitude
 }
 
 // //! Set the axis in HEALPix mode (ring scheme)
-// void MResponseMatrixAxisSpheric::SetHEALPix(unsigned long NSide) 
-// {
-//   m_Binner.Create(NBins, LongitudeShift*c_Rad);
-//   m_NumberOfBins = m_Binner->GetNBins();
-// }
+void MResponseMatrixAxisSpheric::SetHEALPix(unsigned long NSide) 
+{
+
+  std::shared_ptr<MBinnerHEALPix> m_Binner_healpix = std::make_shared<MBinnerHEALPix>(NSide);
+
+  m_Binner = m_Binner_healpix;
+
+  m_NumberOfBins = m_Binner->GetNBins();
+  
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
