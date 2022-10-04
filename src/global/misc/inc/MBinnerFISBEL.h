@@ -75,7 +75,7 @@ class MBinnerFISBEL : public MBinnerSpherical
 
   //! Return the minimum axis values [max theta, max phi]
   vector<double> GetMaxima() const;
-    
+
   //! Get the bin center (returns: theta, phi in radians)
   //! Can throw: MExceptionIndexOutOfBounds
   vector<double> GetBinCenters(unsigned int Bin) const;

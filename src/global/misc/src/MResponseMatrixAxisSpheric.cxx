@@ -20,6 +20,8 @@
 #include "MResponseMatrixAxisSpheric.h"
 
 // Standard libs:
+#include <math.h>
+using namespace std;
 
 // ROOT libs:
 
@@ -118,6 +120,27 @@ void MResponseMatrixAxisSpheric::SetHEALPix(unsigned long NSide)
   m_NumberOfBins = m_Binner->GetNBins();
   
 }
+
+
+//! Set the axis in FISBEL based on a target pixel size
+void MResponseMatrixAxisSpheric::SetFISBELSize(double PixelSize) {
+
+  int AngleBins = 4*c_Pi*c_Deg*c_Deg / PixelSize / PixelSize;
+  if (AngleBins < 1) AngleBins = 1;
+
+  SetFISBEL(AngleBins);
+
+}
+
+//! Set the axis in HEALPIX based on a target pixel size
+void MResponseMatrixAxisSpheric::SetHEALPixSize(double PixelSize) {
+
+  double approx_nside = sqrt(4*c_Pi/12)/PixelSize/c_Deg;
+  int order = int(ceil(log2(approx_nside)));
+
+  
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

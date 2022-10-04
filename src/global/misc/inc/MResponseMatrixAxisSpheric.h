@@ -57,6 +57,12 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Set the axis in HEALPIX (ring scheme)
   void SetHEALPix(unsigned long NSide);
 
+  //! Set the axis in FISBEL based on a target pixel size (deg)
+  void SetFISBELSize(double PixelSize);
+  
+  //! Set the axis in HEALPIX based on a target pixel size (deg)
+  void SetHEALPixSize(double PixelSize);  
+    
   //! Return the axis bin, given theta=latitude and phi=longitude in degrees
   virtual unsigned long GetAxisBin(double Theta, double Phi) const;
   
@@ -68,7 +74,7 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Get the 1D bin edges
   //! Check with Has1DBinEdges first, because this is not guaranteed
   virtual vector<double> Get1DBinEdges() const { return vector<double>(); }
-  
+    
   //! Return the area of the given axis bin
   virtual double GetArea(unsigned long Bin) const;
   
