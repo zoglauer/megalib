@@ -7,6 +7,8 @@
 #include <algorithm>
 using namespace std;
 
+// Other libs
+#include <pointing.h>
 
 #ifdef ___CLING___
 ClassImp(MBinnerHEALPix)
@@ -17,9 +19,9 @@ ClassImp(MBinnerHEALPix)
 
 
 //! Default constructor
-MBinnerHEALPix::MBinnerHEALPix(unsigned int NSide) : m_NSide(NSide)
+MBinnerHEALPix::MBinnerHEALPix(unsigned int order)
 {
-  // TODO Check nside valid
+  m_healpix = Healpix_Base(order, Healpix_Ordering_Scheme::RING);
 }
 
 
@@ -40,15 +42,12 @@ MBinnerHEALPix::~MBinnerHEALPix()
 unsigned int MBinnerHEALPix::FindBin(double Theta, double Phi) const
 {
 
-  //TODO actual calculation
-  return 0;
-}
+  pointing p(Theta, Phi);
 
-//! Get number of bins/pixels
-unsigned int MBinnerHEALPix::GetNBins() const
-{
+  int pix = m_healpix.ang2pix(p);
   
-};
+  return pix;
+}
 
 
 //! Return axis bins edges for external drawing
@@ -61,15 +60,27 @@ vector<vector<double>> MBinnerHEALPix::GetDrawingAxisBinEdges() const
 //! Can throw: MExceptionIndexOutOfBounds
 vector<double> MBinnerHEALPix::GetBinCenters(unsigned int Bin) const
 {
+  pointing p = m_healpix.pix2ang(Bin);
 
-
+  return {p.theta, p.phi};
 }
 
 
 //! Returns all bin centers as vector
 vector<MVector> MBinnerHEALPix::GetAllBinCenters() const
 {
-
+  vector<MVector> Vectors;
+  
+  for (unsigned int b = 0; b < GetNBins(); ++b) {
+    vector<double> Centers = GetBinCenters(b);
+    
+    MVector V;
+    V.SetMagThetaPhi(1.0, Centers[0], Centers[1]);
+    Vectors.push_back(V);
+  }
+  
+  return Vectors;
+ 
 }
 
 //! Return the minimum axis values
@@ -96,7 +107,7 @@ void MBinnerHEALPix::Write(MString name, ostringstream& out) const
   out<<"# Axis type"<<endl;
   out<<"AT 2D HEALPix"<<endl;
   out<<"# Axis data"<<endl;
-  out<<"AD "<< GetNSide() << "  " << "RING" << endl;
+  out<<"AD "<< GetOrder() << "  " << "RING" << endl;
 }  
 
 // MBinnerHEALPix.cxx: the end...

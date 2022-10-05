@@ -354,7 +354,7 @@ bool MResponseImagingBinnedMode::Initialize()
   }
   
   MResponseMatrixAxisSpheric AxisRecoilElectronCoordinates("#sigma [deg]", "#tau [deg]");
-  if (m_AngleBinMode == "fisbel") {
+  if (m_AngleBinModeElectron == "fisbel") {
     AxisRecoilElectronCoordinates.SetFISBELSize(m_AngleBinWidthElectron);
   }else{
     AxisRecoilElectronCoordinates.SetHEALPixSize(m_AngleBinWidthElectron);

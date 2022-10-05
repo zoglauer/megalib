@@ -15,6 +15,8 @@
 
 // Forward declarations:
 
+// Other libs:
+#include <healpix_base.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -26,7 +28,7 @@ class MBinnerHEALPix : public MBinnerSpherical
   // public interface:
  public:
   //! Default constructor
-  MBinnerHEALPix(unsigned int NSide);
+  MBinnerHEALPix(unsigned int order);
   //! Default destuctor 
   virtual ~MBinnerHEALPix();
     
@@ -42,11 +44,14 @@ class MBinnerHEALPix : public MBinnerSpherical
   unsigned int FindBin(double Theta, double Phi) const;
   
   //! Get number of bins
-  unsigned int GetNBins() const;
+  unsigned int GetNBins() const {return m_healpix.Npix();};
   
   //! Get NSIDE parameters
-  unsigned int GetNSide() const {return m_NSide;};
+  unsigned int GetNSide() const {return m_healpix.Nside();};
 
+  //! Get NSIDE parameters
+  unsigned int GetOrder() const {return m_healpix.Order();};    
+    
   //! Return the minimum axis values [min theta, min phi]
   vector<double> GetMinima() const;
 
@@ -77,9 +82,10 @@ class MBinnerHEALPix : public MBinnerSpherical
 
   // protected members:
  protected:
-  //! NSide parameter
-  unsigned int m_NSide;
 
+  // Healpix grid nside and scheme
+  Healpix_Base m_healpix; 
+    
   // Scheme
   // TODO
     

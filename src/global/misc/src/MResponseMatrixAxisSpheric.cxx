@@ -110,10 +110,10 @@ void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double Longitude
 }
 
 // //! Set the axis in HEALPix mode (ring scheme)
-void MResponseMatrixAxisSpheric::SetHEALPix(unsigned long NSide) 
+void MResponseMatrixAxisSpheric::SetHEALPix(unsigned long order) 
 {
 
-  std::shared_ptr<MBinnerHEALPix> m_Binner_healpix = std::make_shared<MBinnerHEALPix>(NSide);
+  std::shared_ptr<MBinnerHEALPix> m_Binner_healpix = std::make_shared<MBinnerHEALPix>(order);
 
   m_Binner = m_Binner_healpix;
 
@@ -135,9 +135,11 @@ void MResponseMatrixAxisSpheric::SetFISBELSize(double PixelSize) {
 //! Set the axis in HEALPIX based on a target pixel size
 void MResponseMatrixAxisSpheric::SetHEALPixSize(double PixelSize) {
 
-  double approx_nside = sqrt(4*c_Pi/12)/PixelSize/c_Deg;
+  double approx_nside = sqrt(4*c_Pi/12)/(PixelSize/c_Deg);
+
   int order = int(ceil(log2(approx_nside)));
 
+  SetHEALPix(order);
   
 }
 
