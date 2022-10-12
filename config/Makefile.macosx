@@ -42,6 +42,15 @@ else ifeq ("$(shell pkg-config --exists cfitsio 1>&2 2> /dev/null; echo $$?)", "
         HEALIBS += $(shell pkg-config --libs cfitsio)
 endif
 
+# HEALPix
+HEALPIXFLAGS =
+HEALPIXLIBS   =
+ifeq ("$(shell pkg-config --exists healpix_cxx 1>&2 2> /dev/null; echo $$?)", "0")
+	HEALPIXCFLAGS += $(shell pkg-config --cflags healpix_cxx)
+	HEALPIXLIBS += $(shell pkg-config --libs healpix_cxx)
+endif
+
+
 
 # Modifications for MacPorts on Monterey
 ifneq ($(wildcard /opt/local/lib/libgcc),)
