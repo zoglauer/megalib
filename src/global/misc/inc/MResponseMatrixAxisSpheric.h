@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <memory>
 
 // ROOT libs:
 
@@ -24,6 +25,7 @@
 #include "MGlobal.h"
 #include "MResponseMatrixAxis.h"
 #include "MBinnerFISBEL.h"
+#include "MBinnerHEALPix.h"
 
 // Forward declarations:
 
@@ -41,10 +43,10 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Default destuctor 
   virtual ~MResponseMatrixAxisSpheric();
   
-  //! Equality operator
-  bool operator==(const MResponseMatrixAxisSpheric& Axis) const;
-  //! Inequality operator
-  bool operator!=(const MResponseMatrixAxisSpheric& Axis) const { return !(operator==(Axis)); }
+  // //! Equality operator
+  // bool operator==(const MResponseMatrixAxisSpheric& Axis) const;
+  // //! Inequality operator
+  // bool operator!=(const MResponseMatrixAxisSpheric& Axis) const { return !(operator==(Axis)); }
 
   //! Clone this axis
   virtual MResponseMatrixAxisSpheric* Clone() const;
@@ -52,7 +54,15 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Set the axis in FISBEL mode with a longitude shift in degrees
   void SetFISBEL(unsigned long NBins, double LongitudeShift = 0);
   
+  //! Set the axis in HEALPIX (ring scheme)
+  void SetHEALPix(unsigned long order);
 
+  //! Set the axis in FISBEL based on a target pixel size (deg)
+  void SetFISBELSize(double PixelSize);
+  
+  //! Set the axis in HEALPIX based on a target pixel size (deg)
+  void SetHEALPixSize(double PixelSize);  
+    
   //! Return the axis bin, given theta=latitude and phi=longitude in degrees
   virtual unsigned long GetAxisBin(double Theta, double Phi) const;
   
@@ -64,7 +74,7 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Get the 1D bin edges
   //! Check with Has1DBinEdges first, because this is not guaranteed
   virtual vector<double> Get1DBinEdges() const { return vector<double>(); }
-  
+    
   //! Return the area of the given axis bin
   virtual double GetArea(unsigned long Bin) const;
   
@@ -99,7 +109,7 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   // private members:
  private:
   //! The binner
-  MBinnerFISBEL m_Binner;
+    std::shared_ptr<MBinnerSpherical> m_Binner;
   
 
 #ifdef ___CLING___
