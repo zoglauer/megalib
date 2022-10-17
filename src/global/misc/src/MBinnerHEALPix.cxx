@@ -1,5 +1,6 @@
 // Include the header:
 #include "MBinnerHEALPix.h"
+#include "MExceptions.h"
 
 // Standard libs:
 #include <vector>
@@ -53,7 +54,8 @@ unsigned int MBinnerHEALPix::FindBin(double Theta, double Phi) const
 //! Return axis bins edges for external drawing
 vector<vector<double>> MBinnerHEALPix::GetDrawingAxisBinEdges() const
 {
-
+    throw MExceptionArbitrary("GetDrawingAxisBinEdges not implemented for HEALPix");
+    return {{}};
 }
 
 //! Return the bin center(s) of the given axis bin
