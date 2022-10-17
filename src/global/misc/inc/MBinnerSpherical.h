@@ -42,11 +42,6 @@ class MBinnerSpherical
     //! Write the content to a stream
     virtual void Write(MString name, ostringstream& out) const = 0;
     
-// #ifdef ___CLING___
-//  public:
-//   ClassDef(MBinnerSpherical, 0) // no description
-// #endif
-
 };
 
 #endif
