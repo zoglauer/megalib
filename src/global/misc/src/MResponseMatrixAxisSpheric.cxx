@@ -139,6 +139,11 @@ void MResponseMatrixAxisSpheric::SetHEALPixSize(double PixelSize) {
 
   int order = int(ceil(log2(approx_nside)));
 
+  if (order < 1) {
+    // e.g. PixelSize = 360deg
+    order = 1;
+  }
+  
   SetHEALPix(order);
   
 }
