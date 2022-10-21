@@ -72,6 +72,35 @@ Endif
 
 
 
+Echo "Lower equal, larger eqal tests"
+If { 1 <= 2 }
+  Echo "Test (1 <= 2): Passed (true if-path)"
+Else
+  Echo "Test (1 == 2): Not passed (false if-path)"
+Endif
+
+If { 2 <= 1 }
+  Echo "Test (2 <= 1): Not passed (true if-path)"
+Else
+  Echo "Test (2 <= 1): Passed (false if-path)"
+Endif
+
+If { 1 >= 2 }
+  Echo "Test (1 >= 2): Not passed (true if-path)"
+Else
+  Echo "Test (1 >= 2): Passed (false if-path)"
+Endif
+
+If { 2 >= 1 }
+  Echo "Test (2 >= 1): Passed (true if-path)"
+Else
+  Echo "Test (2 >= 1): Not passed (false if-path)"
+Endif
+
+
+
+
+
 Echo "OR test series"
 If { 1 == 2 || 1 == 2 }
   Echo "Test (1 == 2 || 1 == 2): Not passed (true if-path)"
