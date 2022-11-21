@@ -34,7 +34,9 @@ for f in `ls ${Files}`; do
   else 
    Time=`tac $f | grep -m 1 "TI" | awk '{ print $2 }'`
   fi
-  ObsTime=`echo "${ObsTime} + ${Time}" | bc -l`
+  if [[ ${Time} != "" ]]; then
+    ObsTime=`echo "${ObsTime} + ${Time}" | bc -l`
+  fi
 done
 
 echo "Observation time: ${ObsTime}"
