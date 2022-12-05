@@ -248,8 +248,12 @@ double UTCosimaInputSpectra::TestPowerLaw()
   MString FileNamePrefix = "TestPowerLaw";
   if (CreateSourceFile(FileNamePrefix, MString("PowerLaw") + " " + EMin + " " + EMax + " " + PhotonIndex) == false) return false;
   
-  system(MString("rm -f ") + FileNamePrefix + ".inc1.id1.sim.gz");
-  system(MString("cosima -v 0 -z ") + FileNamePrefix + ".source &> /dev/null ");
+  if (system(MString("rm -f ") + FileNamePrefix + ".inc1.id1.sim.gz") == -1) {
+    return -1;
+  }
+  if (system(MString("cosima -v 0 -z ") + FileNamePrefix + ".source &> /dev/null") == -1) {
+    return -1;
+  }
 
   TH1D* Spectrum = CreateSpectrum(FileNamePrefix, 100, EMin, EMax);
   if (Spectrum == nullptr) return -1;
@@ -325,8 +329,13 @@ double UTCosimaInputSpectra::TestCutOffPowerLaw()
   MString FileNamePrefix = "TestCutOffPowerLaw";
   if (CreateSourceFile(FileNamePrefix, MString("CutOffPowerLaw") + " " + EMin + " " + EMax + " " + PhotonIndex + " " + CutOff) == false) return false;
   
-  system(MString("rm -f ") + FileNamePrefix + ".inc1.id1.sim.gz");
-  system(MString("cosima -v 0 -z ") + FileNamePrefix + ".source &> /dev/null");
+  if (system(MString("rm -f ") + FileNamePrefix + ".inc1.id1.sim.gz") == -1) {
+    return -1;
+  }
+  if (system(MString("cosima -v 0 -z ") + FileNamePrefix + ".source &> /dev/null") == -1) {
+    return -1;
+  }
+    
 
   TH1D* Spectrum = CreateSpectrum(FileNamePrefix, 100, EMin, EMax);
   if (Spectrum == nullptr) return -1;
