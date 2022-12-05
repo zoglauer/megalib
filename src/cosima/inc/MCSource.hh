@@ -321,6 +321,8 @@ public:
   static const int c_PowerLaw; 
   /// Id of a broken power law energy distribution
   static const int c_BrokenPowerLaw; 
+  /// Id of a cutoff power law energy distribution
+  static const int c_CutOffPowerLaw; 
   /// Id of a Gaussian energy distribution
   static const int c_Gaussian; 
   /// Id of a thermal bremsstrahlung distribution: 1/E*exp(E/E_T)

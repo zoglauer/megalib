@@ -57,13 +57,14 @@ const int MCSource::c_Monoenergetic                                = 1;
 const int MCSource::c_Linear                                       = 2; 
 const int MCSource::c_PowerLaw                                     = 3; 
 const int MCSource::c_BrokenPowerLaw                               = 4; 
-const int MCSource::c_Gaussian                                     = 5; 
-const int MCSource::c_ThermalBremsstrahlung                        = 6; 
-const int MCSource::c_BlackBody                                    = 7; 
-const int MCSource::c_BandFunction                                 = 8; 
-const int MCSource::c_FileDifferentialFlux                         = 9;
-const int MCSource::c_Activation                                   = 10; 
-const int MCSource::c_NormalizedEnergyBeamFluxFunction             = 11;
+const int MCSource::c_CutOffPowerLaw                               = 5; 
+const int MCSource::c_Gaussian                                     = 6; 
+const int MCSource::c_ThermalBremsstrahlung                        = 7; 
+const int MCSource::c_BlackBody                                    = 8; 
+const int MCSource::c_BandFunction                                 = 9; 
+const int MCSource::c_FileDifferentialFlux                         = 10;
+const int MCSource::c_Activation                                   = 11; 
+const int MCSource::c_NormalizedEnergyBeamFluxFunction             = 12;
 
 const int MCSource::c_StartAreaUnknown                             = 0;
 const int MCSource::c_StartAreaSphere                              = 1;
@@ -672,6 +673,7 @@ bool MCSource::SetSpectralType(const int& SpectralType)
   case c_Linear:
   case c_PowerLaw:
   case c_BrokenPowerLaw:
+  case c_CutOffPowerLaw:
   case c_Gaussian:
   case c_ThermalBremsstrahlung:
   case c_BlackBody:
@@ -711,6 +713,9 @@ string MCSource::GetSpectralTypeAsString() const
     break;
   case c_BrokenPowerLaw:
     Name = "BrokenPowerLaw";
+    break;
+  case c_CutOffPowerLaw:
+    Name = "CutOffPowerLaw";
     break;
   case c_Gaussian:
     Name = "Gaussian";
@@ -763,6 +768,9 @@ string MCSource::GetSpectralAsString() const
     break;
   case c_BrokenPowerLaw:
     Name<<"BrokenPowerLaw "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3/keV<<" "<<m_EnergyParam4<<" "<<m_EnergyParam5;
+    break;
+  case c_CutOffPowerLaw:
+    Name<<"CutOffPowerLaw "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3<<" "<<m_EnergyParam4/keV;
     break;
   case c_Gaussian:
     Name<<"Gaussian "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3;
@@ -1699,6 +1707,19 @@ bool MCSource::SetEnergy(double EnergyParam1,
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The second index (alpha) must be positive!"<<endl;
       return false;      
     }
+  } else if (m_SpectralType == c_CutOffPowerLaw) {
+    if (m_EnergyParam1 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam2 <= m_EnergyParam1) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam4 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The cutoff energy must be larger than 0!"<<endl;
+      return false;
+    }
   } else if (m_SpectralType == c_Gaussian) {
     if (m_EnergyParam1 <= 0) {
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The energy must be larger than 0!"<<endl;
@@ -1781,6 +1802,10 @@ bool MCSource::UpgradeEnergy()
 {
   if (m_SpectralType == c_BrokenPowerLaw) {
     m_EnergyParam6 = pow(m_EnergyParam3, -m_EnergyParam4+m_EnergyParam5);
+  } else if (m_SpectralType == c_CutOffPowerLaw) {
+    m_EnergyParam5 = pow(m_EnergyParam1, -m_EnergyParam3+1);
+    m_EnergyParam6 = pow(m_EnergyParam2, -m_EnergyParam3+1);
+    m_EnergyParam7 = exp(-m_EnergyParam1/m_EnergyParam4);
   } else if (m_SpectralType == c_BlackBody) {
     massert(m_EnergyParam1 > 0);
     massert(m_EnergyParam2 > m_EnergyParam1);
@@ -2486,6 +2511,9 @@ double MCSource::GetMeanEnergy() const
     Energy = (p1+m_EnergyParam6*p2)/(p3+m_EnergyParam6*p4);
     
     break;
+  case c_CutOffPowerLaw:
+    mimp<<"GetMeanNotYetImplemented!"<<show;
+    break;
   case c_Gaussian:
     Energy = m_EnergyParam1;
     break;
@@ -2563,6 +2591,24 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
       }
       if (CLHEP::RandFlat::shoot(1) < Probability) break;
     }
+  } else if (m_SpectralType == c_CutOffPowerLaw) {
+    
+    int MaxLoop = 1000;
+    m_Energy = 0;
+    while (MaxLoop-- > 0) {
+      if (m_EnergyParam3 != 1.0) {
+        m_Energy = pow(m_EnergyParam5 + CLHEP::RandFlat::shoot(1) * (m_EnergyParam6-m_EnergyParam5), 1.0/(-m_EnergyParam3 + 1));
+      } else {
+        m_Energy = exp(log(m_EnergyParam1) + CLHEP::RandFlat::shoot(1) * (log(m_EnergyParam2) - log(m_EnergyParam1)));
+      }
+      
+      if (CLHEP::RandFlat::shoot(1) < exp(-m_Energy/m_EnergyParam4)/m_EnergyParam7) break;
+    }
+    if (MaxLoop == 0) {
+      merr<<"Error: CutOffPowerlaw energy calculation: No result after 1000 loops"<<endl;
+      return false;
+    }
+
   } else if (m_SpectralType == c_Gaussian) {
     m_Energy = gRandom->Gaus(m_EnergyParam1, m_EnergyParam2);
   } else if (m_SpectralType == c_ThermalBremsstrahlung) {

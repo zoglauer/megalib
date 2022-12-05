@@ -22,12 +22,16 @@ G4_CFLAGS  := $(filter-out -Wshadow, $(G4_CFLAGS))
 G4_CFLAGS  := $(filter-out -Woverloaded-virtual, $(G4_CFLAGS))
 G4_LIBS    := $(shell geant4-config --libs) -Wl,-rpath,$(shell geant4-config --prefix)/lib
 LIBRARIES  := -lSivan -lGeomega -lCommonMisc -lCommonGui
+CPP_UT     := $(wildcard unittests/*.cc)
+CPP_UT     := $(filter-out unittests/MCTestDummy.cc,$(CPP_UT))
+PRG_UT     := $(patsubst %.cc,%,$(CPP_UT)) 
+PRG_UT     := $(patsubst unittests/%,$(BN)/%,$(PRG_UT)) 
 
 #----------------------------------------------------------------
 # Commands:
 #
 
-all: $(PRG)
+all: $(PRG) $(PRG_UT)
 
 lib: $(SOBJ) 
 
@@ -61,6 +65,9 @@ $(LB)/%.o: src/%.cc inc/%.hh
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) $(G4_CFLAGS) -c -o $@ $<
 
+$(PRG_UT): $(BN)/%: unittests/%.cc
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
+	@$(LD) $(CXXFLAGS) $(G4_CFLAGS) $(LDFLAGS) $< $(SOBJ) $(LIBRARIES) $(GLIBS) $(LIBS) $(G4_LIBS) -o $@
 
 #
 #----------------------------------------------------------------
