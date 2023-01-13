@@ -138,6 +138,12 @@ MEventSelector::MEventSelector()
   m_BeamRadius = 100000.0;
   m_BeamDepth = 100000.0;
 
+  m_UseBox = false;
+  m_BoxFirstIAMin = MVector(-c_FarAway, -c_FarAway, -c_FarAway);
+  m_BoxFirstIAMax = MVector(c_FarAway, c_FarAway, c_FarAway);
+  m_BoxSecondIAMin = MVector(-c_FarAway, -c_FarAway, -c_FarAway);
+  m_BoxSecondIAMax = MVector(c_FarAway, c_FarAway, c_FarAway);
+
   m_UsePhotos = true;
   m_UsePairs = true;
   m_UseComptons = true;
@@ -257,6 +263,12 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_BeamFocalSpot = EventSelector.m_BeamFocalSpot;
   m_BeamRadius = EventSelector.m_BeamRadius;
   m_BeamDepth = EventSelector.m_BeamDepth;
+
+  m_UseBox = EventSelector.m_UseBox;
+  m_BoxFirstIAMin = EventSelector.m_BoxFirstIAMin;
+  m_BoxFirstIAMax = EventSelector.m_BoxFirstIAMax;
+  m_BoxSecondIAMin = EventSelector.m_BoxSecondIAMin;
+  m_BoxSecondIAMax = EventSelector.m_BoxSecondIAMax;
                    
   m_PointingSelectionType = EventSelector.m_PointingSelectionType;
   m_PointingSelectionPointSourceLatitude = EventSelector.m_PointingSelectionPointSourceLatitude;
@@ -320,6 +332,7 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_NRejectedARM = EventSelector.m_NRejectedARM;
   m_NRejectedSPD = EventSelector.m_NRejectedSPD;
   m_NRejectedBeam = EventSelector.m_NRejectedBeam;              
+  m_NRejectedBox= EventSelector.m_NRejectedBox;              
   m_NRejectedQuickHack = EventSelector.m_NRejectedQuickHack;
 
   return (*this);
@@ -371,6 +384,7 @@ void MEventSelector::Reset()
   m_NRejectedARM = 0;
   m_NRejectedSPD = 0;
   m_NRejectedBeam = 0;
+  m_NRejectedBox = 0;
   m_NRejectedQuickHack = 0;
 }
 
@@ -455,6 +469,12 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
           MVector(S->GetBeamFocalSpotX(), S->GetBeamFocalSpotY(), S->GetBeamFocalSpotZ()));
   SetBeamRadius(S->GetBeamRadius());
   SetBeamDepth(S->GetBeamDepth());
+  
+  SetBox(S->GetBoxUse(), 
+         MVector(S->GetBoxFirstIAMinX(), S->GetBoxFirstIAMinY(), S->GetBoxFirstIAMinZ()),
+         MVector(S->GetBoxFirstIAMaxX(), S->GetBoxFirstIAMaxY(), S->GetBoxFirstIAMaxZ()),
+         MVector(S->GetBoxSecondIAMinX(), S->GetBoxSecondIAMinY(), S->GetBoxSecondIAMinZ()),
+         MVector(S->GetBoxSecondIAMaxX(), S->GetBoxSecondIAMaxY(), S->GetBoxSecondIAMaxZ()));
   
   SetThetaDeviationMax(S->GetThetaDeviationMax());
   SetInitialEnergyDepositPair(S->GetInitialEnergyDepositPairMin(), S->GetInitialEnergyDepositPairMax());
@@ -715,6 +735,36 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
         }      
         m_NRejectedBeam++;
         Return = false;
+      }
+    }
+  }
+  if (m_UseBox == true) {
+    if (Event->GetType() == MPhysicalEvent::c_Photo ||
+        Event->GetType() == MPhysicalEvent::c_Compton || 
+        Event->GetType() == MPhysicalEvent::c_Pair) {
+      MVector Position = Event->GetPosition();
+
+      if (m_BoxFirstIAMin.AtLeastOneSmaller(Position) == true || m_BoxFirstIAMax.AtLeastOneLarger(Position) == true) {
+        if (DumpOutput == true) {
+          cout<<"ID "<<Event->GetId()<<": Not within box selection: "
+              <<m_BoxFirstIAMin<<" <_all "<<Position<<" <_all "<<m_BoxFirstIAMax<<endl;
+        }      
+        m_NRejectedBox++;
+        Return = false;
+      }
+      
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        Position = dynamic_cast<MComptonEvent*>(Event)->C2();
+        if (m_BoxSecondIAMin.AtLeastOneSmaller(Position) == true || m_BoxSecondIAMax.AtLeastOneLarger(Position) == true) {
+          if (DumpOutput == true) {
+            cout<<"ID "<<Event->GetId()<<": Not within box selection: "
+                <<m_BoxSecondIAMin<<" <_all "<<Position<<" <_all "<<m_BoxSecondIAMax<<endl;
+          }      
+          m_NRejectedBox++;
+          Return = false;
+        } else {
+          cout<<"Passed"<<endl;
+        }
       }
     }
   }
@@ -1288,7 +1338,26 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     }
   }
   
-  
+  if (m_UseBox == true) {
+    if (Event->GetType() == MPhysicalEvent::c_Photo ||
+        Event->GetType() == MPhysicalEvent::c_Compton || 
+        Event->GetType() == MPhysicalEvent::c_Pair) {
+      MVector Position = Event->GetPosition();
+
+      if (m_BoxFirstIAMin.AtLeastOneSmaller(Position) == true || m_BoxFirstIAMax.AtLeastOneLarger(Position) == true) {
+        return false;
+      }
+      
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        Position = dynamic_cast<MComptonEvent*>(Event)->C2();
+        if (m_BoxSecondIAMin.AtLeastOneSmaller(Position) == true || m_BoxSecondIAMax.AtLeastOneLarger(Position) == true) {
+          return false;
+        }
+      }
+    }
+  }
+
+
   if (m_PointingSelectionType == 1) {
     MVector Location;
     Location.SetMagThetaPhi(1.0, (90 + m_PointingSelectionPointSourceLatitude)*c_Rad, m_PointingSelectionPointSourceLongitude*c_Rad);
@@ -1468,6 +1537,19 @@ void MEventSelector::SetBeamRadius(double Radius)
 void MEventSelector::SetBeamDepth(double Depth)
 {
   m_BeamDepth = Depth;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetBox(bool Use, MVector FirstIAMin, MVector FirstIAMax, MVector SecondIAMin, MVector SecondIAMax)
+{
+  m_UseBox = Use;
+  m_BoxFirstIAMin = FirstIAMin;
+  m_BoxFirstIAMax = FirstIAMax;
+  m_BoxSecondIAMin = SecondIAMin;
+  m_BoxSecondIAMax = SecondIAMax;
 }
 
 
@@ -1939,7 +2021,8 @@ MString MEventSelector::ToString()
   s<<"Event Id .......................  "<<m_NRejectedEventId<<endl;
   s<<"Detector of 1st interaction ....  "<<m_NRejectedFirstIADetector<<endl;
   s<<"Detector of 2nd interaction ....  "<<m_NRejectedSecondIADetector<<endl;
-  s<<"Beam  ..........................  "<<m_NRejectedBeam<<endl;
+  s<<"Beam selection .................  "<<m_NRejectedBeam<<endl;
+  s<<"Box selection  .................  "<<m_NRejectedBox<<endl;
   s<<"Total energy  ..................  "<<m_NRejectedTotalEnergy<<endl;
   s<<"Time  ..........................  "<<m_NRejectedTime<<endl;
   s<<"Time walk  .....................  "<<m_NRejectedTimeWalk<<endl;
@@ -2016,6 +2099,10 @@ ostream& operator<<(ostream& os, MEventSelector& S)
 
   os<<"Beam radius:                      "<<S.m_BeamRadius<<endl;
   os<<"Beam depth:                       "<<S.m_BeamDepth<<endl;
+  os<<"Box first interaction min:        "<<S.m_BoxFirstIAMin<<endl;
+  os<<"Box first interaction max:        "<<S.m_BoxFirstIAMax<<endl;
+  os<<"Box second interaction min:       "<<S.m_BoxSecondIAMin<<endl;
+  os<<"Box second interaction max:       "<<S.m_BoxSecondIAMax<<endl;
   os<<"First energy window:              "<<S.m_FirstTotalEnergyMin<<"-"<<S.m_FirstTotalEnergyMax<<endl;
   os<<"Second energy window:             "<<S.m_SecondTotalEnergyMin<<"-"<<S.m_SecondTotalEnergyMax<<endl;
   os<<"Time window:                      "<<S.m_TimeMin<<"-"<<S.m_TimeMax<<endl;

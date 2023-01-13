@@ -263,6 +263,7 @@ class MSettingsEventSelections : public MSettingsInterface
   void SetPointingBoxExtentLatitude(double PointingBoxExtentLatitude) { m_PointingBoxExtentLatitude = PointingBoxExtentLatitude; m_EventSelectionModified = true; }
   
   
+  // Beam selection
   
   bool GetBeamUse() const { return m_BeamUse; }
   void SetBeamUse(bool BeamUse) { m_BeamUse = BeamUse; m_EventSelectionModified = true; }
@@ -290,6 +291,50 @@ class MSettingsEventSelections : public MSettingsInterface
 
   double GetBeamDepth() const { return m_BeamDepth; }
   void SetBeamDepth(double BeamDepth) { m_BeamDepth = BeamDepth; m_EventSelectionModified = true; }
+
+
+  // Box selection
+
+  bool GetBoxUse() const { return m_BoxUse; }
+  void SetBoxUse(bool BoxUse) { m_BoxUse = BoxUse; m_EventSelectionModified = true; }
+  
+  double GetBoxFirstIAMinX() const {  return m_BoxFirstIAMinX; }
+  void SetBoxFirstIAMinX(double BoxFirstIAMinX) { m_BoxFirstIAMinX = BoxFirstIAMinX; m_EventSelectionModified = true; }
+  
+  double GetBoxFirstIAMinY() const {  return m_BoxFirstIAMinY; }
+  void SetBoxFirstIAMinY(double BoxFirstIAMinY) { m_BoxFirstIAMinY = BoxFirstIAMinY; m_EventSelectionModified = true; }
+  
+  double GetBoxFirstIAMinZ() const {  return m_BoxFirstIAMinZ; }
+  void SetBoxFirstIAMinZ(double BoxFirstIAMinZ) { m_BoxFirstIAMinZ = BoxFirstIAMinZ; m_EventSelectionModified = true; }
+  
+  double GetBoxFirstIAMaxX() const {  return m_BoxFirstIAMaxX; }
+  void SetBoxFirstIAMaxX(double BoxFirstIAMaxX) { m_BoxFirstIAMaxX = BoxFirstIAMaxX; m_EventSelectionModified = true; }
+  
+  double GetBoxFirstIAMaxY() const {  return m_BoxFirstIAMaxY; }
+  void SetBoxFirstIAMaxY(double BoxFirstIAMaxY) { m_BoxFirstIAMaxY = BoxFirstIAMaxY; m_EventSelectionModified = true; }
+  
+  double GetBoxFirstIAMaxZ() const {  return m_BoxFirstIAMaxZ; }
+  void SetBoxFirstIAMaxZ(double BoxFirstIAMaxZ) { m_BoxFirstIAMaxZ = BoxFirstIAMaxZ; m_EventSelectionModified = true; }
+  
+  double GetBoxSecondIAMinX() const {  return m_BoxSecondIAMinX; }
+  void SetBoxSecondIAMinX(double BoxSecondIAMinX) { m_BoxSecondIAMinX = BoxSecondIAMinX; m_EventSelectionModified = true; }
+  
+  double GetBoxSecondIAMinY() const {  return m_BoxSecondIAMinY; }
+  void SetBoxSecondIAMinY(double BoxSecondIAMinY) { m_BoxSecondIAMinY = BoxSecondIAMinY; m_EventSelectionModified = true; }
+  
+  double GetBoxSecondIAMinZ() const {  return m_BoxSecondIAMinZ; }
+  void SetBoxSecondIAMinZ(double BoxSecondIAMinZ) { m_BoxSecondIAMinZ = BoxSecondIAMinZ; m_EventSelectionModified = true; }
+  
+  double GetBoxSecondIAMaxX() const {  return m_BoxSecondIAMaxX; }
+  void SetBoxSecondIAMaxX(double BoxSecondIAMaxX) { m_BoxSecondIAMaxX = BoxSecondIAMaxX; m_EventSelectionModified = true; }
+  
+  double GetBoxSecondIAMaxY() const {  return m_BoxSecondIAMaxY; }
+  void SetBoxSecondIAMaxY(double BoxSecondIAMaxY) { m_BoxSecondIAMaxY = BoxSecondIAMaxY; m_EventSelectionModified = true; }
+  
+  double GetBoxSecondIAMaxZ() const {  return m_BoxSecondIAMaxZ; }
+  void SetBoxSecondIAMaxZ(double BoxSecondIAMaxZ) { m_BoxSecondIAMaxZ = BoxSecondIAMaxZ; m_EventSelectionModified = true; }
+
+
 
 
 
@@ -490,6 +535,21 @@ class MSettingsEventSelections : public MSettingsInterface
   double m_BeamFocalSpotZ;
   double m_BeamRadius;
   double m_BeamDepth;
+  
+  bool m_BoxUse;
+  double m_BoxFirstIAMinX;
+  double m_BoxFirstIAMinY; 
+  double m_BoxFirstIAMinZ;
+  double m_BoxFirstIAMaxX;
+  double m_BoxFirstIAMaxY; 
+  double m_BoxFirstIAMaxZ;
+  double m_BoxSecondIAMinX;
+  double m_BoxSecondIAMinY; 
+  double m_BoxSecondIAMinZ;
+  double m_BoxSecondIAMaxX;
+  double m_BoxSecondIAMaxY; 
+  double m_BoxSecondIAMaxZ;
+
 
 
   //! The special mode flag
