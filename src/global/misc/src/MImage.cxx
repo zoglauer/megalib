@@ -466,8 +466,9 @@ MString MImage::MakeCanvasTitle()
 {
   // Create a Canvas title of form "<m_Title> - <m_ID>"
 
-  char Text[1000];
-  sprintf(Text, "%s - %i", (const char *) m_Title.Data(), MImage::m_IDCounter);
+  const int Length = 1000;
+  char Text[Length];
+  snprintf(Text, Length, "%s - %i", (const char *) m_Title.Data(), MImage::m_IDCounter);
 
   MString Cleaned = Text;
   Cleaned.ReplaceAll(' ', '_');

@@ -2640,12 +2640,13 @@ void MInterfaceRevan::FindBeamPath()
   vector<TCanvas*> Canvases;
 
   unsigned int Layers = 11;
-  char Title[100];
+  const int Length = 100;
+  char Title[Length];
   double zStart = 15.7;
   for (unsigned int l = 0; l < Layers; ++l) {
     zValues.push_back(zStart);
     zStart += 1;
-    sprintf(Title, "Layer %d", l);
+    snprintf(Title, Length, "Layer %d", l);
     Histos.push_back(new TH2D(Title, Title, 128, -3.008, 3.008, 128, -3.008, 3.008));
     Histos[l]->SetBit(kCanDelete);
     Histos[l]->SetStats(false);

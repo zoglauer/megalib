@@ -75,18 +75,19 @@ MString MPhotoEvent::ToString() const
 {
   // Display the compton-data of this event
 
-  char Text[1000];
+  const int Length = 1000;
+  char Text[Length];
   MString String("The data of the Photo-event:\n"); 
 
-  sprintf(Text, "Energy: %.3f\n", m_Energy);
+  snprintf(Text, Length, "Energy: %.3f\n", m_Energy);
   String += MString(Text);
 
-  sprintf(Text, "Position: %.3f, %.3f, %.3f\n", 
+  snprintf(Text, Length, "Position: %.3f, %.3f, %.3f\n",
           m_Position.X(), m_Position.Y(), 
           m_Position.Z());
   String += MString(Text);
 
-  sprintf(Text, "Weight: %.3f\n", m_Weight);
+  snprintf(Text, Length, "Weight: %.3f\n", m_Weight);
   String += MString(Text);
 
   return String;
