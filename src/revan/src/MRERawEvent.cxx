@@ -465,7 +465,7 @@ MString MRERawEvent::ToString(bool WithLink, int Level)
 {
   //
 
-  const int Length = 2000;
+  const int Length = 5000;
   char *Text = new char[Length];
 
   MString String;

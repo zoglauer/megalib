@@ -1323,7 +1323,7 @@ MString MRETrack::ToString(bool WithLink, int Level)
   // WithLink: Display the links
   // Level:    A level of N displays 3*N blancs before the text
 
-  const int Length = 1000;
+  const int Length = 5000;
   char Text[Length];
 
   MString String("");
