@@ -397,13 +397,13 @@ void MImage::SetDrawOption(const int Option)
   } else if (Option == c_COLZ) {
     m_DrawOptionString = "COLZ";
   } else if (Option == c_COLCONT4) {
-    m_DrawOptionString = "COLCONT4";
+    m_DrawOptionString = "COLCONT0";
   } else if (Option == c_COLCONT4Z) {
-    m_DrawOptionString = "COLCONT4Z";
+    m_DrawOptionString = "COLCONT0Z";
   } else {
-    merr<<"Unknown draw option. Using \"COLCONT4Z\""<<show;
-    m_DrawOption = c_COLCONT4Z;
-    m_DrawOptionString = "COLCONT4Z";
+    merr<<"Unknown draw option. Using \"COLZ\""<<show;
+    m_DrawOption = c_COLZ;
+    m_DrawOptionString = "COLZ";
   }
 }
 
