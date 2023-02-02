@@ -11,6 +11,8 @@
 #------------------------------------------------------------------------------
 # Program and directories
 
+MAKE += -s
+
 SHELL=/bin/bash
 
 # Basic directories
