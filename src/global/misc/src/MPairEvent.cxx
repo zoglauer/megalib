@@ -561,9 +561,10 @@ MString MPairEvent::ToBasicString()
 {
   // Transform the data to one line of text
 
-  char LineBuffer[1000];
+  const int Length = 1000;
+  char LineBuffer[Length];
 
-  sprintf(LineBuffer, "P;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+  snprintf(LineBuffer, Length, "P;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
     m_PairCreationIA.X(), m_PairCreationIA.Y(), m_PairCreationIA.Z(), 
     m_ElectronDirection.X(), m_ElectronDirection.Y(), m_ElectronDirection.Z(), 
     m_PositronDirection.X(), m_PositronDirection.Y(), m_PositronDirection.Z(), 

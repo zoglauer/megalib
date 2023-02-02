@@ -757,9 +757,10 @@ MString MTime::GetString()
 {
   // Return in Format: 76751347.238477
 
-  char Text[100];
+  const int Length= 100;
+  char Text[Length];
   double Time = GetAsSeconds();
-  sprintf(Text, "Seconds since epoch: %10.6f", Time);
+  snprintf(Text, Length, "Seconds since epoch: %10.6f", Time);
   //cout<<GetAsSeconds()<<"!"<<GetNanoSeconds()<<endl;
 
   return Text; 
@@ -796,8 +797,9 @@ MString MTime::GetUTCString()
 {
   // Return in Format: 15.05.2002 13:15:23:123456789
 
-  char Text[100];
-  sprintf(Text, "%02u.%02u.%04d %02u:%02u:%02u:%09u", 
+  const int Length = 100;
+  char Text[Length];
+  snprintf(Text, Length, "%02u.%02u.%04d %02u:%02u:%02u:%09u",
           GetDays(), GetMonths(), GetYears(), GetHours(), GetMinutes(), GetSeconds(), GetNanoSeconds());
 
   return Text;
@@ -811,8 +813,9 @@ MString MTime::GetSQLString()
 {
   // Return in Format: 1997-01-15 20:16:28
 
-  char Text[100];
-  sprintf(Text, "%04d-%02u-%02u %02u:%02u:%02u", 
+  const int Length = 100;
+  char Text[Length];
+  snprintf(Text, Length, "%04d-%02u-%02u %02u:%02u:%02u",
           GetYears(), GetMonths(), GetDays(), GetHours(), GetMinutes(), GetSeconds());
 
   return Text;
@@ -826,8 +829,9 @@ MString MTime::GetSQLUString()
 {
   // Return in Format: 1997-01-15_20:16:28
 
-  char Text[100];
-  sprintf(Text, "%04d-%02u-%02u_%02u:%02u:%02u", 
+  const int Length = 100;
+  char Text[Length];
+  snprintf(Text, Length, "%04d-%02u-%02u_%02u:%02u:%02u",
           GetYears(), GetMonths(), GetDays(), GetHours(), GetMinutes(), GetSeconds());
 
   return Text;
@@ -841,8 +845,9 @@ MString MTime::GetShortString()
 {
   // Return in Format: 19970115_201628
 
-  char Text[100];
-  sprintf(Text, "%04d%02u%02u_%02u%02u%02u", 
+  const int Length = 100;
+  char Text[Length];
+  snprintf(Text, Length, "%04d%02u%02u_%02u%02u%02u",
           GetYears(), GetMonths(), GetDays(), GetHours(), GetMinutes(), GetSeconds());
 
   return Text;
@@ -856,8 +861,9 @@ MString MTime::GetFitsDateString()
 {
   // Return as fits date string: 31/12/94
   
-  char Text[100];
-  sprintf(Text, "%02u/%02u/%02u", 
+  const int Length = 100;
+  char Text[Length];
+  snprintf(Text, Length, "%02u/%02u/%02u",
           GetDays(), GetMonths(), GetYears() % 100);
   
   return Text;    
@@ -871,8 +877,9 @@ MString MTime::GetFitsTimeString()
 {
   // Return as fits time string: 15:45:57
 
-  char Text[100];
-  sprintf(Text, "%02u:%02u:%02u", 
+  const int Length = 100;
+  char Text[Length];
+  snprintf(Text, Length, "%02u:%02u:%02u",
           GetHours(), GetMinutes(), GetSeconds());
   
   return Text;

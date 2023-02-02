@@ -1323,10 +1323,11 @@ MString MRETrack::ToString(bool WithLink, int Level)
   // WithLink: Display the links
   // Level:    A level of N displays 3*N blancs before the text
 
-  char Text[1000];
+  const int Length = 1000;
+  char Text[Length];
 
   MString String("");
-  sprintf(Text, "Track (%d) starting with (%d) at (%.3f, %.3f, %.3f)+-(%.3f, %.3f, %.3f) with %.2f+-%.2f keV in %d and the following hits:\n",
+  snprintf(Text, Length, "Track (%d) starting with (%d) at (%.3f, %.3f, %.3f)+-(%.3f, %.3f, %.3f) with %.2f+-%.2f keV in %d and the following hits:\n",
           m_ID, (m_Start == 0) ? 0 : m_Start->GetID(), 
           m_Position.X(), m_Position.Y(), m_Position.Z(), 
           m_PositionResolution.X(), m_PositionResolution.Y(), m_PositionResolution.Z(), 
@@ -1353,7 +1354,7 @@ MString MRETrack::ToString(bool WithLink, int Level)
     }
     String += MString("Linked with: ");   
     for (int a = 0; a < GetNLinks(); a++) {
-      sprintf(Text, "  (%d)", GetLinkAt(a)->GetID());
+      snprintf(Text, Length, "  (%d)", GetLinkAt(a)->GetID());
       String += MString(Text);
     }
     String += MString("\n");
@@ -1369,7 +1370,7 @@ MString MRETrack::ToString(bool WithLink, int Level)
     }
   }
 
-  sprintf(Text, "Quality factor: %.10f\n",  m_QualityFactor);
+  snprintf(Text, Length, "Quality factor: %.10f\n",  m_QualityFactor);
   for (int i = 0; i < Level+1; i++) {
     String += MString("   ");
   }
