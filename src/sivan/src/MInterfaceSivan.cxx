@@ -2982,10 +2982,11 @@ void MInterfaceSivan::PitchAnalysis()
 
   
   TCanvas *ARMCanvas = new TCanvas("ARM (FWHM) D1 only!", "ARM (FWHM) D1 only!", 800, 600);
-  char ID[100];
+  const int Length = 100;
+  char ID[Length];
   for (int p = 1; p <= NPitchBins; p++) {
     for (int e = 1; e <= NEeBins; e++) {
-      sprintf(ID, "p: %d - E: %d", e,p);
+      snprintf(ID, Length, "p: %d - E: %d", e,p);
       Proj = ARM3DHist->ProjectionZ(ID, p, p, e, e);
       cout<<Proj->GetSum()<<endl;
       if (Proj->GetSum() > MinFit) {

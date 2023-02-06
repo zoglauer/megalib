@@ -284,8 +284,14 @@ void MImageGalactic::Display(TCanvas* Canvas)
     if (xSize < 0.15*ySize) xSize = 0.15*ySize;
   }
   
-  m_Canvas->SetWindowSize(xSize, ySize);
-  
+  if (gROOT->IsBatch() == false) {
+    m_Canvas->SetWindowSize(xSize, ySize);
+  } else {
+    m_Canvas->SetCanvasSize(xSize, ySize);
+  }
+
+  m_Canvas->Range(m_xMin, m_yMin, m_xMax, m_yMax);
+
   if (m_Projection == MImageProjection::c_None) {
     DisplayProjectionNone();
   } else {
@@ -521,8 +527,15 @@ void MImageGalactic::DisplayProjectionHammer()
   // Draw the axes
   if (IsNew == true) {
     
-    // Draw data:
-    Hist->Draw(m_DrawOptionString + " a");
+    // Draw data - CONT0 is not working
+    m_Canvas->cd();
+    MString DrawOption = m_DrawOptionString;
+    if (m_DrawOptionString == "COLCONT0") {
+      DrawOption = "COL";
+    } else if (m_DrawOptionString == "COLCONT0Z") {
+      DrawOption = "COLZ";
+    }
+    Hist->Draw(DrawOption + " a");
 
     // Paint coordinates:
     vector<double> Seperators = { 90.0, 60.0, 45.0, 30.0, 15.0, 10.0, 5.0, 2.0, 1.0, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01 };
@@ -616,7 +629,7 @@ void MImageGalactic::DisplayProjectionHammer()
       if (ySteps[l] > 0) out<<"+";
       out<<ySteps[l]<<"#circ";
 
-      cout<<"pos: "<<out.str().c_str()<<":"<<x<<":"<<y<<endl;
+      //cout<<"pos: "<<out.str().c_str()<<":"<<x<<":"<<y<<endl;
       TLatex* T = new TLatex(x + LatGap, y, out.str().c_str());
       T->SetTextFont(42);
       T->SetTextColor(DefaultTextColor);
@@ -695,13 +708,15 @@ void MImageGalactic::DisplayProjectionHammer()
     GalLat->SetTextAngle(90);
     GalLat->Draw();
   
-    TLatex* Value = new TLatex(m_xMax + 0.175*(m_xMax-m_xMin), 0.5*(m_yMin+m_yMax), m_vTitle);
-    Value->SetTextFont(42);
-    Value->SetTextColor(kBlack);
-    Value->SetTextAlign(22);
-    Value->SetTextSize(0.04);
-    Value->SetTextAngle(90);
-    Value->Draw();
+    if (m_DrawOptionString.Contains("Z") == true) {
+      TLatex* Value = new TLatex(m_xMax + 0.175*(m_xMax-m_xMin), 0.5*(m_yMin+m_yMax), m_vTitle);
+      Value->SetTextFont(42);
+      Value->SetTextColor(kBlack);
+      Value->SetTextAlign(22);
+      Value->SetTextSize(0.04);
+      Value->SetTextAngle(90);
+      Value->Draw();
+    }
   }  
   
   

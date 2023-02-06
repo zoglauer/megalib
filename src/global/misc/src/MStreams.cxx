@@ -81,7 +81,7 @@ MStreams& MStreams::printf(const char* Format, ...)
   // Format the string similar to sprintf ...
   const int max = 1024;
   char Text[max];
-  if (vsprintf(Text, Format, args) < 0) {
+  if (vsnprintf(Text, max, Format, args) < 0) {
     // ignore this error
   }
   // Save the string:

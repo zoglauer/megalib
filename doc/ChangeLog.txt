@@ -33,15 +33,31 @@ Version 3.99/4.00
 =================
 
 General:
-+ Default ROOT version is 6.22
-+ Updates for Aplle M1 and Ubuntu 6.22
++ License is now LPGL v3
++ Default ROOT version is 6.24
++ Updates for Apple M1 and Ubuntu 22.04
++ Updates to the dmegalib parallel simulation environment
 
 Geomega:
 + Speed ups reading large files
 + Fixed if-statement evaluations
++ Voxel3D is now allowed not to be a box detector
++ The geometry view is now restored after a reload of the mass-model
++ Do not allow to define multiple surrounding spheres
++ Fix path in which cross-section are stored
+
+Cosima:
++ mcosima has the new option "-a" to not generated concatenation files
+
+Response:
++ Parallel reading of spares rsp files
++ Cleanup interface in responsemanipulator
 
 Mimrec:
-Chenges for near-filed imaging
++ Chenges for near-filed imaging
++ Fixes in binned-mode imaging
++ Spherical images now can have hammer projection too
+
 
 
 

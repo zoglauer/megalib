@@ -86,7 +86,7 @@ LOG="FALSE"
 LOGFILE=""
 LOGGING="tee"
 DELAY="10"
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 
 
 # The number of already launched runs
@@ -247,7 +247,7 @@ if [[ -f "${CFG}" ]]; then
   echo " * Configuration file: ${CFG}"
 else 
   echo " "
-  echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
+  echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dmegalib.cfg!"
   commandhelp
   exit 1  
 fi
@@ -354,11 +354,11 @@ cat <<EOT >> ${VERIFYSCRIPT}
 
 
 # Check if the main bash script exists
-if [[ ! -f ~/.bash_local ]]; then 
+if [[ ! -f ~/.dmegalib.bashrc ]]; then 
   echo "   The remote machine has not been set up"
   exit 1
 fi
-. ~/.bash_local
+. ~/.dmegalib.bashrc
 
 # Check if cosima exists
 type cosima > /dev/null 2>&1
@@ -367,16 +367,16 @@ if [ "\$?" != "0" ]; then
   exit 2
 fi
 
-# Check if .dcosima.cfg exists
-if [[ ! -f ~/.dcosima.cfg ]]; then
+# Check if .dmegalib.cfg exists
+if [[ ! -f ~/.dmegalib.cfg ]]; then
   echo "   No remote dcosima configuration file found"
   exit 3
 fi
 
 # Check if we have a master directory
-COUNT=\$( grep -c ^directory ~/.dcosima.cfg ) 
+COUNT=\$( grep -c ^directory ~/.dmegalib.cfg ) 
 if [ \${COUNT} -eq 1 ]; then 
-  MASTERDIR=\$( grep ^directory ~/.dcosima.cfg | awk '{ print \$2 }' ) 
+  MASTERDIR=\$( grep ^directory ~/.dmegalib.cfg | awk '{ print \$2 }' ) 
 else
   echo "   No master directory in the remote dcosima configuration file"
   exit 4
@@ -698,7 +698,7 @@ wait ${RSYNCPID}
 echo "All processes have finied and all data has been synced. Now deleting the remote data..." | ${LOGGING}
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 
-  REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
+  REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dmegalib.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dmegalib.cfg; fi;'
   REMOTEMASTERDIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
     echo "ERROR: Failed to read remote master directory" | ${LOGGING}

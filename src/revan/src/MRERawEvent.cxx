@@ -469,14 +469,15 @@ MString MRERawEvent::ToString(bool WithLink, int Level)
 {
   //
 
-  char *Text = new char[2000];
+  const int Length = 5000;
+  char *Text = new char[Length];
 
   MString String;
 
   String = MString("");
 
   // Header:
-  sprintf(Text, "Raw Event (%lu) at %lf s with %d hits and %.2f+-%.2f keV, starting with (%d):\n", 
+  snprintf(Text, Length, "Raw Event (%lu) at %lf s with %d hits and %.2f+-%.2f keV, starting with (%d):\n",
           m_EventID, m_EventTime.GetAsSeconds(), GetNRESEs(), GetEnergy(), m_EnergyResolution, (m_Start != 0) ? m_Start->GetID() : -1);
   for (int i = 0; i < Level; i++) String += MString("   ");
   String += MString(Text);
@@ -499,10 +500,10 @@ MString MRERawEvent::ToString(bool WithLink, int Level)
   // Score
   if (m_Vertex == 0) {
     if (m_TrackQualityFactor != c_NoQualityFactor) {
-      sprintf(Text, "RE total score: Compton: %.8f Track: %.8f \n", 
+      snprintf(Text, Length, "RE total score: Compton: %.8f Track: %.8f \n",
               m_ComptonQualityFactor1, m_TrackQualityFactor);
     } else {
-      sprintf(Text, "RE total score: None\n");
+      snprintf(Text, Length, "RE total score: None\n");
     }
     for (int i = 0; i < Level; i++) {
       String += MString("   ");
@@ -510,7 +511,7 @@ MString MRERawEvent::ToString(bool WithLink, int Level)
     String += MString(Text);
     
   } else {
-    sprintf(Text, "RE total (pair) score %.3f ", m_PairQualityFactor);
+    snprintf(Text, Length, "RE total (pair) score %.3f ", m_PairQualityFactor);
     for (int i = 0; i < Level; i++) String += MString("   ");
     String += MString(Text);
   }
@@ -1252,7 +1253,8 @@ MString MRERawEvent::ToCompactString()
     return MString("");
   }
 
-  char Text[1000];
+  const int Length = 1000;
+  char Text[Length];
   double ED1 = 0.0, ED2 = 0.0;
 
   ED1 = m_Start->GetEnergy();
@@ -1260,30 +1262,30 @@ MString MRERawEvent::ToCompactString()
 
 
   if (m_Start->GetType() == MRESE::c_Track) {
-    sprintf(Text, 
-            "C;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;"
-            "%.6f;%.6f;%.6f;%.1f;%.1f; 10.0;10.0\n",
-            m_Start->GetPosition().X(), 
-            m_Start->GetPosition().Y(), 
-            m_Start->GetPosition().Z(),
-            m_Start->GetLinkAt(0)->GetPosition().X(), 
-            m_Start->GetLinkAt(0)->GetPosition().Y(), 
-            m_Start->GetLinkAt(0)->GetPosition().Z(),
-            ((MRETrack *) m_Start)->GetDirection().X(),
-            ((MRETrack *) m_Start)->GetDirection().Y(),
-            ((MRETrack *) m_Start)->GetDirection().Z(),
-            ED1, ED2);
+    snprintf(Text, Length,
+             "C;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;"
+             "%.6f;%.6f;%.6f;%.1f;%.1f; 10.0;10.0\n",
+             m_Start->GetPosition().X(),
+             m_Start->GetPosition().Y(),
+             m_Start->GetPosition().Z(),
+             m_Start->GetLinkAt(0)->GetPosition().X(),
+             m_Start->GetLinkAt(0)->GetPosition().Y(),
+             m_Start->GetLinkAt(0)->GetPosition().Z(),
+             ((MRETrack *) m_Start)->GetDirection().X(),
+             ((MRETrack *) m_Start)->GetDirection().Y(),
+             ((MRETrack *) m_Start)->GetDirection().Z(),
+             ED1, ED2);
   } else {
-    sprintf(Text, 
-            "C;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;"
-            "%.6f;%.6f;%.6f;%.1f;%.1f; 10.0;10.0\n",
-            m_Start->GetPosition().X(), 
-            m_Start->GetPosition().Y(), 
-            m_Start->GetPosition().Z(),
-            m_Start->GetLinkAt(0)->GetPosition().X(), 
-            m_Start->GetLinkAt(0)->GetPosition().Y(), 
-            m_Start->GetLinkAt(0)->GetPosition().Z(),
-            0.0, 0.0, 0.0, ED1, ED2);
+    snprintf(Text, Length,
+             "C;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;"
+             "%.6f;%.6f;%.6f;%.1f;%.1f; 10.0;10.0\n",
+             m_Start->GetPosition().X(),
+             m_Start->GetPosition().Y(),
+             m_Start->GetPosition().Z(),
+             m_Start->GetLinkAt(0)->GetPosition().X(),
+             m_Start->GetLinkAt(0)->GetPosition().Y(),
+             m_Start->GetLinkAt(0)->GetPosition().Z(),
+             0.0, 0.0, 0.0, ED1, ED2);
   }
 
   return MString(Text);

@@ -314,10 +314,11 @@ MString MRECluster::ToString(bool WithLink, int Level)
   // WithLink: Display the links
   // Level:    A level of N displays 3*N blancs before the text
 
-  char Text[1000];
+  const int Length = 5000;
+  char Text[Length];
 
   MString String("");
-  sprintf(Text, "Cluster (%d) at (%.3f, %.3f, %.3f)+-(%.3f, %.3f, %.3f) with %.2f+-%.2f keV in %d the following hits:\n",
+  snprintf(Text, Length, "Cluster (%d) at (%.3f, %.3f, %.3f)+-(%.3f, %.3f, %.3f) with %.2f+-%.2f keV in %d the following hits:\n",
           m_ID, m_Position.X(), m_Position.Y(), m_Position.Z(), 
           m_PositionResolution.X(), m_PositionResolution.Y(), m_PositionResolution.Z(), 
           m_Energy, m_EnergyResolution, m_Detector);
@@ -336,7 +337,7 @@ MString MRECluster::ToString(bool WithLink, int Level)
     }
     String += MString("Linked with: ");  
     for (int a = 0; a < GetNLinks(); a++) {
-      sprintf(Text, "  (%d)", GetLinkAt(a)->GetID());
+      snprintf(Text, Length, "  (%d)", GetLinkAt(a)->GetID());
       String += MString(Text);
     }
     String += MString("\n");

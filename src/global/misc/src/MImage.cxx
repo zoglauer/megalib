@@ -79,8 +79,8 @@ const int MImage::c_Cividis        = 13;
 // The GUI relies on this sequence - don't modifier unless you modifiy MGUIImageOptions
 const int MImage::c_COL           = 0;
 const int MImage::c_COLZ          = 1;
-const int MImage::c_COLCONT4      = 2;
-const int MImage::c_COLCONT4Z     = 3;
+const int MImage::c_COLCONT       = 2;
+const int MImage::c_COLCONTZ      = 3;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +98,7 @@ MImage::MImage()
   SetXAxis("x-axis", 0, 1, 1);
   SetValueAxisTitle("Intensity");
   SetSpectrum(c_Rainbow);
-  SetDrawOption(c_COLCONT4Z);
+  SetDrawOption(c_COLCONTZ);
 }
 
 
@@ -396,14 +396,14 @@ void MImage::SetDrawOption(const int Option)
     m_DrawOptionString = "COL";
   } else if (Option == c_COLZ) {
     m_DrawOptionString = "COLZ";
-  } else if (Option == c_COLCONT4) {
-    m_DrawOptionString = "COLCONT4";
-  } else if (Option == c_COLCONT4Z) {
-    m_DrawOptionString = "COLCONT4Z";
+  } else if (Option == c_COLCONT) {
+    m_DrawOptionString = "COLCONT0";
+  } else if (Option == c_COLCONTZ) {
+    m_DrawOptionString = "COLCONT0Z";
   } else {
-    merr<<"Unknown draw option. Using \"COLCONT4Z\""<<show;
-    m_DrawOption = c_COLCONT4Z;
-    m_DrawOptionString = "COLCONT4Z";
+    merr<<"Unknown draw option. Using \"COLZ\""<<show;
+    m_DrawOption = c_COLZ;
+    m_DrawOptionString = "COLZ";
   }
 }
 
@@ -466,8 +466,9 @@ MString MImage::MakeCanvasTitle()
 {
   // Create a Canvas title of form "<m_Title> - <m_ID>"
 
-  char Text[1000];
-  sprintf(Text, "%s - %i", (const char *) m_Title.Data(), MImage::m_IDCounter);
+  const int Length = 1000;
+  char Text[Length];
+  snprintf(Text, Length, "%s - %i", (const char *) m_Title.Data(), MImage::m_IDCounter);
 
   MString Cleaned = Text;
   Cleaned.ReplaceAll(' ', '_');

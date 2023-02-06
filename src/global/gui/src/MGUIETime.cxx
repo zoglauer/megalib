@@ -81,7 +81,8 @@ void MGUIETime::Create()
   // Create the label and the input-field.
 
   int i; 
-  char Text[5];
+  const int Length = 5;
+  char Text[Length];
   MTime Time;
 
   m_ComboLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 0, 0);
@@ -91,7 +92,7 @@ void MGUIETime::Create()
   // Hours:
   m_Hours = new TGComboBox(this, c_Hour);
   for (i = 0; i < 24; i++) {
-    sprintf(Text, "%i", i);
+    snprintf(Text, Length, "%i", i);
     m_Hours->AddEntry(Text, i);
   }
   m_Hours->Resize(40, 20);
@@ -107,7 +108,7 @@ void MGUIETime::Create()
   m_Minutes->AddEntry("00", 0);
   m_Minutes->AddEntry("05", 1);
   for (i = 2; i < 12; i++) {
-    sprintf(Text, "%i", i*5);
+    snprintf(Text, Length, "%i", i*5);
     m_Minutes->AddEntry(Text, i);
   }
   m_Minutes->Select(Time.GetMinutes()/5);
@@ -121,7 +122,7 @@ void MGUIETime::Create()
   // Days:
   m_Days = new TGComboBox(this, c_Day);
   for (i = 1; i < 32; i++) {
-    sprintf(Text, "%i", i);
+    snprintf(Text, Length, "%i", i);
     m_Days->AddEntry(Text, i);
   }
   m_Days->Select(Time.GetDays());
@@ -149,7 +150,7 @@ void MGUIETime::Create()
   // Years:
   m_Years = new TGComboBox(this, c_Year);
   for (i = 2000; i < 2021; i+=1) {
-    sprintf(Text, "%i", i);
+    snprintf(Text, Length, "%i", i);
     m_Years->AddEntry(Text, i);
   }
   m_Years->Select(Time.GetYears());

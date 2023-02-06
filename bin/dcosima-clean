@@ -39,7 +39,7 @@ for C in "${CMD[@]}"; do
 done
 
 # Default options:
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 REMOTEDIR="DCOSIMA_!!!!_IDONOTEXIST"
 
 # Overwrite default options with user options:
@@ -83,14 +83,14 @@ done
 echo " "
 echo "Cleaning..."
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  # Check if .dcosima.cfg path exists
-  ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .dcosima.cfg ]]; then exit 0; else      exit 1; fi'
+  # Check if .dmegalib.cfg path exists
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .dmegalib.cfg ]]; then exit 0; else      exit 1; fi'
   if [ "$?" != "0" ]; then
-    echo "ERROR: dmegalib has not been setup (no .dcosima.cfg file exists)"
+    echo "ERROR: dmegalib has not been setup (no .dmegalib.cfg file exists)"
     continue
   fi
 
-  REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
+  REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dmegalib.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dmegalib.cfg; fi;'
   REMOTEMASTERDIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
     echo "ERROR: Failed to read remote master directory"
@@ -103,7 +103,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
 
   # Let's first retrieve a list of all directories
-  REMOTECOMMAND='cd $(grep ^directory ~/.dcosima.cfg | tr -s " " | cut -d " " -f2); find . -mindepth 1 -maxdepth 1 -type d | sed "s|^\./||";'
+  REMOTECOMMAND='cd $(grep ^directory ~/.dmegalib.cfg | tr -s " " | cut -d " " -f2); find . -mindepth 1 -maxdepth 1 -type d | sed "s|^\./||";'
   DIRECTORIES=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
     echo "ERROR: Unable to retrieve the directories!"
