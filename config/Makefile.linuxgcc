@@ -33,7 +33,7 @@ LINK          = ln -s -f
 # HEASoft
 HEACFLAGS     = 
 HEALIBS       =
-ifneq ("$(wildcard $(LHEASOFT)/include/cfitsio.h)", "")
+ifneq ("$(wildcard $(LHEASOFT)/include/fitsio.h)", "")
 	HEACFLAGS += -I$(LHEASOFT)/include
 	HEALIBS += -L$(LHEASOFT)/lib 
 else ifeq ("$(shell pkg-config --exists cfitsio 1>&2 2> /dev/null; echo $$?)", "0")
