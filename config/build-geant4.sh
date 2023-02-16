@@ -7,9 +7,8 @@ if [ $? -eq 0 ]; then
     # echo "g++ compiler found - using it as default!";
     CONFIGUREOPTIONS="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
 fi
-CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL_DATA=ON -DGEANT4_USE_OPENGL_X11=OFF -DGEANT4_INSTALL_DATA_TIMEOUT=14400 -DGEANT4_USE_SYSTEM_EXPAT=OFF -DGEANT4_BUILD_CXXSTD=c++11"
-# For compilation with ROOT 6.06 
-#CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0"
+CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL_DATA=ON -DGEANT4_USE_OPENGL_X11=OFF -DGEANT4_INSTALL_DATA_TIMEOUT=14400 -DGEANT4_USE_SYSTEM_EXPAT=OFF -DCMAKE_CXX_STANDARD=17"
+
 # Reduce the warning messages:
 WARNINGS="-Wno-shadow -Wno-implicit-fallthrough -Wno-overloaded-virtual -Wno-deprecated-copy -Wno-unused-result -Wno-format-overflow="
 
@@ -291,23 +290,32 @@ else
   echo "Looking for Geant4 version ${WANTEDVERSION} with latest patch on the Geant4 website --- sometimes this takes a few minutes..."
   
   # Now check Geant4 repository for the given version:
-  TESTTARBALL="geant4.${WANTEDVERSION}.tar.gz"
-  echo "Trying to find ${TESTTARBALL}..."
-  EXISTS=`curl -s --head ${WEBSITE}/${TESTTARBALL} | grep gzip`
-  if [ "${EXISTS}" == "" ]; then
+  #TESTTARBALL="geant4_v${WANTEDVERSION}.tar.gz"
+  #echo "Trying to find ${TESTTARBALL}..."
+  #EXISTS=`curl -s --head ${WEBSITE}/${TESTTARBALL} | grep gzip`
+  #if [ "${EXISTS}" == "" ]; then
+  #  echo "ERROR: Unable to find suitable Geant4 tar ball at the Geant4 website"
+  #  exit 1
+  #fi
+  TARBALL=""
+  MAX_TRIALS=3
+  for s in `seq 0 100`; do
+    TESTTARBALL="geant4-v${WANTEDVERSION}.${s}.tar.gz"
+    echo "Trying to find ${TESTTARBALL}..."
+    EXISTS=`curl -s --head ${WEBSITE}/${TESTTARBALL} | grep gzip`
+    if [[ ${EXISTS} == "" ]]; then # sometimes version 00 does not exist...
+      MAX_TRIALS=$(( MAX_TRIALS - 1 ))
+      if [[ ${MAX_TRIALS} -eq 0 ]]; then
+        break
+      fi
+    else
+      TARBALL=${TESTTARBALL}
+    fi
+  done
+  if [ "${TARBALL}" == "" ]; then
     echo "ERROR: Unable to find suitable Geant4 tar ball at the Geant4 website"
     exit 1
   fi
-  TARBALL=${TESTTARBALL}
-  for s in `seq -w 01 10`; do
-    TESTTARBALL="geant4.${WANTEDVERSION}.p${s}.tar.gz"
-    echo "Trying to find ${TESTTARBALL}..."
-    EXISTS=`curl -s --head ${WEBSITE}/${TESTTARBALL} | grep gzip`
-    if [ "${EXISTS}" == "" ]; then
-      break
-    fi
-    TARBALL=${TESTTARBALL}
-  done
   echo "Using Geant4 tar ball ${TARBALL}"
   
   # Check if it already exists locally
@@ -350,10 +358,10 @@ fi
 
 
 
-GEANT4CORE=geant4_v${VER}
-GEANT4DIR=geant4_v${VER}${DEBUGSTRING}
-GEANT4SOURCEDIR=geant4_v${VER}-source   # Attention: the cleanup checks this name pattern before removing it
-GEANT4BUILDDIR=geant4_v${VER}-build     # Attention: the cleanup checks this name pattern before removing it
+GEANT4CORE=geant4_${VER}
+GEANT4DIR=geant4_${VER}${DEBUGSTRING}
+GEANT4SOURCEDIR=geant4_${VER}-source   # Attention: the cleanup checks this name pattern before removing it
+GEANT4BUILDDIR=geant4_${VER}-build     # Attention: the cleanup checks this name pattern before removing it
 
 echo "Checking for old installation..."
 if [ -d ${GEANT4DIR} ]; then
@@ -437,7 +445,7 @@ if [ "$?" != "0" ]; then
 fi
 mkdir ${GEANT4DIR}
 cd ${GEANT4DIR}
-mv ../geant4.${VER} ${GEANT4SOURCEDIR}
+mv ../geant4-${VER} ${GEANT4SOURCEDIR}
 mkdir ${GEANT4BUILDDIR}
 
 
