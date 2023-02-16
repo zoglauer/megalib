@@ -46,7 +46,7 @@
 #include "G4VEnergyLossProcess.hh"
 #include "G4ProcessVector.hh"
 #include "G4ProcessManager.hh"
-#include "G4LivermorePolarizedPhotoElectricModel.hh"
+//#include "G4LivermorePolarizedPhotoElectricModel.hh" removed in g4 v11
 #include "G4LivermorePhotoElectricModel.hh"
 #include "G4PenelopePhotoElectricModel.hh"
 #include "G4LivermoreIonisationModel.hh"
@@ -196,21 +196,21 @@ void MCPhysicsList::ConstructProcess()
   G4VModularPhysicsList::ConstructProcess();
   
   // Do some additional modifications to the default lists:
-  theParticleIterator->reset();
-  while ((*theParticleIterator)() == true) {
-    G4ParticleDefinition* particle = theParticleIterator->value();
+  GetParticleIterator()->reset();
+  while ((*GetParticleIterator())() == true) {
+    G4ParticleDefinition* particle = GetParticleIterator()->value();
     G4ProcessManager* pmanager = particle->GetProcessManager();
     G4ProcessVector* pvector = pmanager->GetProcessList();
     //cout<<particle->GetParticleName()<<endl;
     //cout<<"Gamma processes: "<<pvector->size()<<endl;
-    for (G4int p = 0; p < pvector->size(); ++p) {
+    for (G4int p = 0; p < int(pvector->size()); ++p) {
       G4VProcess* P = (*pvector)[p];
       //cout<<P->GetProcessName()<<endl;
       if (dynamic_cast<G4RadioactiveDecay*>(P) != 0) {
         G4RadioactiveDecay* RadioactiveDecay = dynamic_cast<G4RadioactiveDecay*>(P);
-        RadioactiveDecay->SetICM(true);  // Internal Conversion
+        //RadioactiveDecay->SetICM(true);  // Internal Conversion -> removed from PhysicList in v10.2 see release note
         RadioactiveDecay->SetARM(true);  // Atomic Rearrangement, i.e. filling of shell vacancies
-        RadioactiveDecay->SetHLThreshold(1.0E-9*second);  // Half life cut-off of isomeruic states
+        //RadioactiveDecay->SetHLThreshold(1.0E-9*second);  // Half life cut-off of isomeric states | no longer exist in g4 v11 , no track of that on the release notes 
       }
     }
   }
