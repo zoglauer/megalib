@@ -444,10 +444,10 @@ mkdir ${GEANT4BUILDDIR}
 
 # Some hardcoding of certain default patch conditions
 if [[ ${GEANT4CORE} == "geant4_v10.02.p03" ]]; then
-  GCC_MAIN_VERSION=$(gcc --version | grep gcc | awk '{ print $3 }' | awk -F. '{ print $1 }')
-  if [[ ${GCC_MAIN_VERSION} != "" ]] && [ ${GCC_MAIN_VERSION} -ge 11 ]; then
+  #GCC_MAIN_VERSION=$(gcc --version | grep gcc | awk '{ print $3 }' | awk -F. '{ print $1 }')
+  #if [[ ${GCC_MAIN_VERSION} != "" ]] && [ ${GCC_MAIN_VERSION} -ge 11 ]; then
     PATCH="on"
-  fi
+  #fi
 fi
 
 
