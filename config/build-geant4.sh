@@ -261,7 +261,8 @@ if [ "${TARBALL}" != "" ]; then
   
   # Check if it has the correct version:
   VER=`echo ${TARBALL} | awk -Fgeant4. '{ print $2 }' | awk -F.t '{ print $1 }'`;
-  SHORTVER=`echo ${TARBALL} | awk -Fgeant4. '{ print $2 }' | awk -F.t '{ print $1 }' | awk -F.p '{ print $1 }'`;
+  CHECKVER=`echo ${TARBALL} | awk -Fgeant4-v '{ print $2 }' | awk -F.t '{ print $1 }'`;
+  SHORTVER=`echo ${TARBALL} | awk -Fgeant4-v '{ print $2 }' | awk -F.t '{ print $1 }' | awk -F.p '{ print $1 }'`;
   echo "Version of Geant4 is: ${VER}"
   
   if [[ ${WANTEDVERSION} != "" ]]; then
@@ -270,7 +271,7 @@ if [ "${TARBALL}" != "" ]; then
       exit 1
     fi
   else 
-    bash ${MEGALIB}/config/check-geant4version.sh --good-version=${VER}
+    bash ${MEGALIB}/config/check-geant4version.sh --good-version=${CHECKVER}
     if [ "$?" != "0" ]; then
       echo "ERROR: The Geant4 tarball you supplied does not contain an acceptable Geant4 version!"
       exit 1
