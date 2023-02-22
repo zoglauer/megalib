@@ -144,7 +144,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("phot"); m_KnownProcessID.push_back(c_ProcessIDPhoto);
   
   m_KnownProcess.push_back("hadElastic"); m_KnownProcessID.push_back(c_ProcessIDElasticScattering);
-  
+  m_KnownProcess.push_back("ionElastic"); m_KnownProcessID.push_back(c_ProcessIDElasticScattering);
+
   m_KnownProcess.push_back("nFission"); m_KnownProcessID.push_back(c_ProcessIDFission);
   
   m_KnownProcess.push_back("PhotonInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
@@ -192,6 +193,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("xi-Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("xi+Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("xi0Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("anti_xi-Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+
   
   m_KnownProcess.push_back("HadronCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("nCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
