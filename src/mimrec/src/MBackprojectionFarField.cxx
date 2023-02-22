@@ -124,10 +124,10 @@ void MBackprojectionFarField::PrepareBackprojection()
   // Steradian per bin normalization...
   delete [] m_AreaBin;
   m_AreaBin = new double[m_x2NBins];
-  double TotalArea = 0.0;
+  //double TotalArea = 0.0;
   for (unsigned int x2 = 0; x2 < m_x2NBins; x2++) { // theta
     m_AreaBin[x2] = fabs(m_x1IntervalLength * (cos(m_x2Min + (x2+1)*m_x2IntervalLength) - cos(m_x2Min + x2*m_x2IntervalLength)));
-    TotalArea += m_AreaBin[x2];
+    //TotalArea += m_AreaBin[x2];
     m_AreaBin[x2] = m_AreaBin[x2];
   }
   //mout<<"Image Area: "<<TotalArea*m_x1NBins<<" sr"<<endl;
@@ -814,7 +814,7 @@ bool MBackprojectionFarField::BackprojectionPhoto(double* Image, int* Bins, int&
   MVector SkyDir;
 
   unsigned int i;
-  double InnerSum = 0.0;
+  //double InnerSum = 0.0;
 
   // We are going over all bins here...
   for (unsigned int x2 = 0; x2 < m_x2NBins; ++x2) { // x2 == theta
@@ -844,17 +844,17 @@ bool MBackprojectionFarField::BackprojectionPhoto(double* Image, int* Bins, int&
       }
       
       if (Maximum < Image[NUsedBins]) Maximum = Image[NUsedBins];
-      InnerSum += Image[NUsedBins];
+      //InnerSum += Image[NUsedBins];
 
       // Finally increase
       ++NUsedBins;
     }
   }
   
-//   if (InnerSum < 0.00001) {
-//     // Event not inside the viewport
-//     return false;
-//   }
+  // if (InnerSum < 0.00001) {
+  //   // Event not inside the viewport
+  //   return false;
+  // }
 
   return true;
 }

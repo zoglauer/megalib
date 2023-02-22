@@ -1,0 +1,29 @@
+# Optimizer options
+
+
+version="1"
+
+sourcedir="."
+backgrounddir="."
+cfg="-c OptimizerMimrec.cfg"
+geo="-g /volumes/crius/users/andreas/COSI_SMEX_2020/Simulations_MassModel_Iteration8_v1/massmodel-cosi-smex-v8/COSISMEX.O64.geo.setup"
+
+OnAxis="false"
+
+area="17671.5"
+started="50000000"
+gzipped=".gz"
+
+energies="130 200 350 550 700 1000 1300 2000 3500 5000 7000 10000"
+
+
+backgroundall=" \
+-b ${mydir}/TrappedHadronicBackgroundDecay.p1.tra.gz 2492622.705883023 \
+-b ${mydir}/HadronicBackgroundDecay.p1.tra.gz 2437709.656541880 \
+-b ${mydir}/PhotonicBackground.p1.tra.gz 84381.377432500 \
+-b ${mydir}/HadronicBackground.p1.tra.gz 90805.367007628  \
+-b ${mydir}/LeptonicBackground.p1.tra.gz 204695.343341382 "
+
+
+
+

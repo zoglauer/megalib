@@ -74,10 +74,11 @@ MString MUnidentifiableEvent::ToString() const
 {
   // Display the compton-data of this event
 
-  char Text[1000];
+  const int Length = 1000;
+  char Text[Length];
   MString String("The data of the Unidentifiable-event:\n"); 
 
-  sprintf(Text, "Energy: %.3f", m_Energy);
+  snprintf(Text, Length, "Energy: %.3f", m_Energy);
   String += MString(Text);
 
   return String;

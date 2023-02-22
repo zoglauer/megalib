@@ -233,8 +233,9 @@ void MTransceiverTcpIpBinary::StartTransceiving()
   m_StopThread = false;
   
   m_ThreadId++;
-  char Name[100];
-  sprintf(Name, "Transceiver #%i", m_ThreadId);
+  const int Length = 100;
+  char Name[Length];
+  snprintf(Name, Length, "Transceiver #%i", m_ThreadId);
 
   m_IsThreadRunning = false;
   m_TransceiverThread = 

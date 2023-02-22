@@ -1422,7 +1422,7 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
         m_BinsSparse.clear();
         
         // Keep this for debugging parallel mode
-        bool Parallel = true;
+        bool Parallel = false;
         
         if (Parallel == false) {
           while (Parser.TokenizeLine(T, true) == true) {
