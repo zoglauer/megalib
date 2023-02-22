@@ -448,6 +448,14 @@ ROOTDIR=root_v${VER}${DEBUGSTRING}
 ROOTSOURCEDIR=root_v${VER}-source   # Attention: the cleanup checks this name pattern before removing it
 ROOTBUILDDIR=root_v${VER}-build     # Attention: the cleanup checks this name pattern before removing it
 
+
+# Hardcoding default patch conditions
+# Needs to be done after the ROOT version is known and before we check the exiting installation
+if [[ ${ROOTCORE} == "root_v6.24.08" ]] || [[ ${ROOTCORE} == "root_v6.24.10" ]]; then
+  echo "This version of ROOT requires a mandatory patch"
+  PATCH="on"
+fi
+
 echo "Checking for old installation..."
 if [ -d ${ROOTDIR} ]; then
   cd ${ROOTDIR}
