@@ -18,30 +18,67 @@ bibliography: fretalon.bib
 
 # Summary
 
-Fretalon is a framework to simplify the implementation of the multi-step calibration pipeline of modern gamma-ray detectors.
-The framework is part MEGAlib, the Medium-Energy Gamma-ray library, which enables the data-analysis of a wide range
+`Fretalon` is a framework which simplifies the implementation of the multi-step calibration pipeline of modern gamma-ray detectors.
+It provides templates for the data and typical steps of the pipeline, handles the data as is passes through the individual steps of the pipeline, supervises the operation of the pipeline, and enables the setup of the analysis from a user interface or via a XML configuration file.
+The application developer just needs to customize the individual analysis task, the overall data flow and management is handled by the framework.
+`Fretalon` is the newest core tool of MEGAlib [Ref], the Medium-Energy Gamma-ray library, which enables the full data-analysis from simulation to high-level data-analysis for a wide range of gamma-ray instruments for space and ground applications.
+Calibration was the last element not handled within MEGAlib, and `Fretalon` closed this gap.
+As part of MEGAlib, `Fretalon` is written in C++ and utlizes the ROOT data-analysis framework [Ref].
+
+<!--- Within MEGAlib, `Fretalon` covers the initial segement of the analysis pipeline, which converts the data from the raw, measured data, i.e., the analog-digital converter units as well as detector/strip/pixel IDs, into physical units, i.e. the interaction locations and the amount of deposited energy at that location. --->
+
 
 # Statement of need
 
-`Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
-enables wrapping low-level languages (e.g., C) for speed without losing
-flexibility or ease-of-use in the user-interface. The API for `Gala` was
-designed to provide a class-based and user-friendly interface to fast (C or
-Cython-optimized) implementations of common operations such as gravitational
-potential and force evaluation, orbit integration, dynamical transformations,
-and chaos indicators for nonlinear dynamics. `Gala` also relies heavily on and
-interfaces well with the implementations of physical units and astronomical
-coordinate systems in the `Astropy` package [@astropy] (`astropy.units` and
-`astropy.coordinates`).
+Modern gamma-ray telescopes, such as COSI [Ref], GRIPS [Ref], GECCO [Ref], or ComPair [Ref] have deep, multi-step data pipelines and they all use MEGAlib for at least some of their data-analysis needs.
+COSI, the Compton Spectrometer and Imager, is the most technologically advanced of these detector systems, including the analysis pipeline.
+COSI's pipeline includes various steps in the calibration stage (e.g., coincidence search, energy calibration, charge sharing and charge loss correction, position calibration), in the event reconstruction stage (e.g., charged particle and gamma-ray tracking, background identification), as well as in the high-level analysis stage (e.g., event selection, imaging, spectral and polarization analysis).
+Most of these individual steps are close to identical for different detector and instrument types and a single tool can handle them. For example, MEGAlib's `Cosima` tool handles simulations for various instrument types, its `Revan` tool handles the event reconstruction, and `Mimrec` the high-level analysis.
+The calibration, however, needs to be adapted to the specific detectors, their number and arrangement, their vendor specfic characteristics, their read-out electronics, and the environment in which they operate.
+As consequence, the calibration stage cannot be handled by one pre-existing tool, but needs to be adaptable and adapted to each new detector system.
+For that task, we have written the `Fretalon` framework.
+Its name is a mix of the first letters of the word framework, and the french word for calibration "étalonnage".
+The specific calibration application written using `Fretalon` transfers the data from the raw, measured data which is the output of the detector into physical units, i.e., from analog-digital converter units, detector/strip/pixel IDs, time, detector orientation, etc., into the interaction locations, the amount of deposited energy at that location, and event times.
+This data can then be used by the other tools of `MEGAlib`.
 
-`Gala` was designed to be used by both astronomical researchers and by
-students in courses on gravitational dynamics or astronomy. It has already been
-used in a number of scientific publications [@Pearson:2017] and has also been
-used in graduate courses on Galactic dynamics to, e.g., provide interactive
-visualizations of textbook material [@Binney:2008]. The combination of speed,
-design, and support for Astropy functionality in `Gala` will enable exciting
-scientific explorations of forthcoming data releases from the *Gaia* mission
-[@gaia] by students and experts alike.
+# Key design features
+
+`Fretalon` needs to implement a set of design requirements to handle the various steps of the calibration in a uniform way. These include:
+
+- The raw data is organized in read-outs (base class MReadOut) containing individual measurements, the read-out data (base class MReadOutData), as well as the detector element which performed the measurement, the read-out element (base class MReadOutElement). Derived classes from MReadOutElement can contain more specific descriptions of what performed the measurement. For example MReadOutElementDoubleStrip represents a cross-strip detector, and contains the detector ID, the detector side (top or bottom), as well as the strip ID. Similarly, derived classes from MReadOutData contain more specific information about what was measured, such as analog-digital converter values (class MReadOutDataADValues), timing (class MReadOutDataTiming), etc. These can be combined into higher level read-outs via encapsulation.
+- All measured data of an event (i.e. all data generated by one gamma-ray plus various other sensor data) is collected in a read-out assembly (class MReadOutAssembly).
+- Each step in the pipeline is encapsulated in one module (class `MModule`).
+- Each module knows which step it provides (e.g. "energy calibration"), and which steps have to be done before (e.g. "read the data", "coincidence search"). This enables the user interface to automatically arrange the modules and provide a default sequence.
+- Each module provides an initilization function (`Initialize`) which, for example, reads in calibration data sets, and a finalize function (`Finalize`) which, for example, prints or stores diagnostics, closes data files, etc.
+- Each module knows if it can only be run in single-thread-mode (e.g. coincidence-search or event saving needs to process all the events in sequence), or can be multi-threaded (e.g. energy calibration can be parallelized). Despite the option of module internal multi-processing, the module needs to make sure that the events exit the module in the same sequence as they entered it - unless the module specifically is intended to sort the events.
+- Each module has a function to process the read-out assmebly (function `AnalyzeEvent`)
+- A supervisor (class `MSupervisor`) sets up the user interface and accepts input through it, manages the passage of the read-out assemblies through the modules, times their processing in each module and can spawn additional threads in modules which support multi-processing.
+- Each module is associate to a user interface (class derived from class `MGUIOptions`) which allows to set specific data or options (e.g., input files and settings), and to a user interface which allows to display data (class derived from class `MGUIExpo`).
+- A user interface allows to select the chosen modules, set their options, displays results, and enables to start and stop the processing.
+
+In the end, the only classes which the user must modify are the overall assmebly, the read-out assembly and the modules and their associated UI classes.
+
+
+# Example applications
+
+## The MEGAlib included example
+
+The MEGAlib advances examples directtory contains an example on how to setup and compile a `Fretalon` based program, how setup the modules.
+
+## Nuclearizer
+
+Nuclearizer [Ref, Ref, Ref] is the COSI specific calibration application, the tool `Fretalon` was originally designed for. It can be found in its own [Github repository](https://github.com/cositools/nuclearizer).
+
+
+# Availability
+
+`Fretalon` is available as part of MEGAlib 3 via [Github](https://github.com/zoglauer/megalib).
+
+# Acknowledgements
+
+The development of `Fretalon` was sponsored under NASA Astrophysics Research and Analysis grants NNX14AC81G and 80NSSC19K1389.
+
+
 
 # Mathematics
 
