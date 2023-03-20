@@ -28,7 +28,7 @@ Heaven_FirstSource.Flux              200.0
 
 Run Sky
 Sky.FileName                         RunTestSky
-Sky.NTriggers                        200
+Sky.NTriggers                        20000
 
 Sky.Source FirstSource
 FirstSource.ParticleType             1

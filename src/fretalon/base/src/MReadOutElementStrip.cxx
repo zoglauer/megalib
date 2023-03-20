@@ -120,7 +120,7 @@ MString MReadOutElementStrip::GetType() const
 bool MReadOutElementStrip::operator==(const MReadOutElement& R) const
 {
   const MReadOutElementStrip* S = dynamic_cast<const MReadOutElementStrip*>(&R);
-  if (S == 0) return false;
+  if (S == nullptr) return false;
 
   if (m_StripID != S->m_StripID) return false;
   if (m_DetectorID != S->m_DetectorID) return false;
@@ -136,7 +136,7 @@ bool MReadOutElementStrip::operator==(const MReadOutElement& R) const
 bool MReadOutElementStrip::operator<(const MReadOutElement& R) const
 {
   const MReadOutElementStrip* S = dynamic_cast<const MReadOutElementStrip*>(&R);
-  if (S == 0) return false;
+  if (S == nullptr) return false;
   
   if (m_DetectorID < S->m_DetectorID) return true;
   if (m_DetectorID == S->m_DetectorID) {
@@ -178,7 +178,7 @@ bool MReadOutElementStrip::Parse(const MTokenizer& T, unsigned int StartElement)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return the data as parsable string
+//! Return the data as a parsable string
 MString MReadOutElementStrip::ToParsableString(bool WithDescriptor) const
 {
   MString Return;

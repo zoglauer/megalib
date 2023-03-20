@@ -1,0 +1,78 @@
+#------------------------------------------------------------
+# Mass model for a 4-layer pixel detector Compton telescope
+#------------------------------------------------------------
+
+
+Name Pixeldetector
+Version 1.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+ShowSurroundingSphere False
+
+
+
+#------------------------------------------------------------
+# Materials section:
+#------------------------------------------------------------
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+#------------------------------------------------------------
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 50. 50. 50.
+WorldVolume.Mother 0
+
+
+Volume PixelDetectorVolume
+PixelDetectorVolume.Material CZT
+PixelDetectorVolume.Shape BOX 3.0 3.0 0.15
+
+For I 4 -1.5 1.0
+  PixelDetectorVolume.Copy PixelDetectorVolume_%I
+  PixelDetectorVolume_%I.Position 0 0 $I
+  PixelDetectorVolume_%I.Mother WorldVolume
+Done
+
+
+
+#------------------------------------------------------------
+# Detector and trigger section:
+#------------------------------------------------------------
+
+Voxel3D                  PixelDetector
+
+PixelDetector.SensitiveVolume     PixelDetectorVolume
+
+PixelDetector.Offset              0 0 0
+PixelDetector.VoxelNumber         20 20 1
+
+PixelDetector.TriggerThreshold    15
+PixelDetector.NoiseThresholdEqualsTriggerThreshold   True
+
+PixelDetector.EnergyResolution Gaus 10      10        2
+PixelDetector.EnergyResolution Gaus 100     100       2
+PixelDetector.EnergyResolution Gaus 1000    1000      2
+PixelDetector.EnergyResolution Gaus 10000   10000     2
+PixelDetector.EnergyResolution Gaus 100000  100000    2
+
+
+
+#------------------------------------------------------------
+# Trigger section:
+#------------------------------------------------------------
+
+Trigger PixelDetectorTrigger
+PixelDetectorTrigger.Veto false
+PixelDetectorTrigger.TriggerByDetector true
+PixelDetectorTrigger.Detector PixelDetector 2
+
+
+
+

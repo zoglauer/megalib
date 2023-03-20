@@ -120,7 +120,7 @@ MString MReadOutElementDoubleStrip::GetType() const
 bool MReadOutElementDoubleStrip::operator==(const MReadOutElement& R) const
 {
   const MReadOutElementDoubleStrip* S = dynamic_cast<const MReadOutElementDoubleStrip*>(&R);
-  if (S == 0) return false;
+  if (S == nullptr) return false;
   
   if (m_StripID != S->m_StripID) return false;
   if (m_DetectorID != S->m_DetectorID) return false;
@@ -137,7 +137,7 @@ bool MReadOutElementDoubleStrip::operator==(const MReadOutElement& R) const
 bool MReadOutElementDoubleStrip::operator<(const MReadOutElement& R) const
 {
   const MReadOutElementDoubleStrip* S = dynamic_cast<const MReadOutElementDoubleStrip*>(&R);
-  if (S == 0) return false;
+  if (S == nullptr) return false;
   
   if (m_DetectorID < S->m_DetectorID) return true;
   if (m_DetectorID == S->m_DetectorID) {
@@ -183,7 +183,7 @@ bool MReadOutElementDoubleStrip::Parse(const MTokenizer& T, unsigned int StartEl
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return the data as parsable string
+//! Return the data as a parsable string
 MString MReadOutElementDoubleStrip::ToParsableString(bool WithDescriptor) const
 {
   MString Return;

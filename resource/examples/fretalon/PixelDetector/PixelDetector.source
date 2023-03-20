@@ -1,0 +1,25 @@
+# Example simulation run for a pixel detector geometry:
+# A single point-source source in the zenith without background
+# observed for one day
+
+# Global parameters
+Version         1
+Geometry        PixelDetector.geo.setup
+
+# Physics list
+PhysicsListEM               LivermorePol
+
+# Output formats
+StoreSimulationInfo         all
+
+# Run & source parameters
+Run SpaceSim
+SpaceSim.FileName           PixelDetector
+SpaceSim.Time               86400
+
+SpaceSim.Source AGN
+AGN.ParticleType           1
+AGN.Beam                   FarFieldPointSource 0 0
+AGN.Spectrum               PowerLaw 100 10000 1.17
+AGN.Flux                   0.0565
+

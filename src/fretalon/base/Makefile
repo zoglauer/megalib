@@ -20,6 +20,7 @@ FILES = MFretalonRegistry \
 	MReadOutElement \
 	MReadOutElementStrip \
 	MReadOutElementDoubleStrip \
+	MReadOutElementPixel2D \
 	MReadOutData \
 	MReadOutDataADCValue \
 	MReadOutDataTiming \
