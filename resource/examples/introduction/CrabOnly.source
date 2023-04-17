@@ -1,0 +1,26 @@
+# Example run for Getting Started with MEGAlib tutorial
+# A Crab-like source at (20, -20) in detector coordinates
+
+
+# Global parameters
+Version         1
+Geometry        ${MEGALIB}/resource/examples/geomega/cosiballoon/COSIBalloon.12Detector.geo.setup
+
+# Physics list
+PhysicsListEM               LivermorePol
+
+# Output formats
+StoreSimulationInfo         all
+
+# Run & source parameters
+Run SpaceSim
+SpaceSim.FileName           CrabOnlySimulation
+SpaceSim.NTriggers          50000
+
+
+SpaceSim.Source Crab
+Crab.ParticleType           1
+Crab.Beam                   FarFieldPointSource 20 -20
+Crab.Spectrum               PowerLaw 100 10000 2.17
+Crab.Flux                   0.0565
+

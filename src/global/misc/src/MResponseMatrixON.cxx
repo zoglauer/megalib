@@ -63,7 +63,7 @@ ClassImp(MResponseMatrixON)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsParse)
+MResponseMatrixON::MResponseMatrixON(bool IsSparse) : MResponseMatrix(), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsSparse)
 {
   // default constructor
 }
@@ -72,10 +72,34 @@ MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_Number
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsParse) : MResponseMatrix(Name), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsParse)
+MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsSparse) : MResponseMatrix(Name), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsSparse)
 {
   // extended constructor
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMatrixON::MResponseMatrixON(const MResponseMatrixON& M)
+{
+  // copy constructor
+  
+  m_NumberOfBins = M.m_NumberOfBins;
+  m_Axes = M.m_Axes;
+  m_NumberOfAxes = M.m_NumberOfAxes;
+  m_IsSparse = M.m_IsSparse;
+  m_Values = M.m_Values;
+  m_ValuesSparse = M.m_ValuesSparse;
+  m_BinsSparse = M.m_BinsSparse;
+  m_ThreadRunning = M.m_ThreadRunning;
+  // That's the culprit preventing a default copy constructor - do not copy: m_ThreadMutex = M.m_ThreadMutex;
+  m_ThreadLines = M.m_ThreadLines;
+  m_ThreadGoodData = M.m_ThreadGoodData;
+  m_ThreadBins = M.m_ThreadBins;
+  m_ThreadValues = M.m_ThreadValues;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -272,6 +296,33 @@ bool MResponseMatrixON::operator==(const MResponseMatrixON& R)
   }
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMatrixON& MResponseMatrixON::operator=(const MResponseMatrixON& M)
+{
+  // Assignment operator
+  
+  if (this != &M) { // no self-assignments
+    m_NumberOfBins = M.m_NumberOfBins;
+    m_Axes = M.m_Axes;
+    m_NumberOfAxes = M.m_NumberOfAxes;
+    m_IsSparse = M.m_IsSparse;
+    m_Values = M.m_Values;
+    m_ValuesSparse = M.m_ValuesSparse;
+    m_BinsSparse = M.m_BinsSparse;
+    m_ThreadRunning = M.m_ThreadRunning;
+    // That's the culprit preventing a default copy constructor - do not copy: m_ThreadMutex = M.m_ThreadMutex;
+    m_ThreadLines = M.m_ThreadLines;
+    m_ThreadGoodData = M.m_ThreadGoodData;
+    m_ThreadBins = M.m_ThreadBins;
+    m_ThreadValues = M.m_ThreadValues;
+  }
+  
+  return *this;
 }
 
 
@@ -495,6 +546,57 @@ MResponseMatrixON& MResponseMatrixON::operator/=(const float& Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MResponseMatrixON MResponseMatrixON::Collapse(vector<bool> Collapse)
+{ 
+  //! Collapse some of the axes, true mean collapse, false measn keep
+
+  if (Collapse.size() != m_NumberOfAxes) {
+    throw MExceptionArbitrary("The size of the input vector is not the same as the number of matrix axes!");
+  }
+
+  // Create the new matrix:
+  MResponseMatrixON New(m_Name);
+  for (unsigned int a = 0; a < Collapse.size(); ++a) {
+    if (Collapse[a] == false) {
+      New.AddAxis(GetAxis(a));
+    }
+  }
+  
+  // Loop over all bins
+  vector<unsigned long> NewBin(New.m_NumberOfAxes);
+  if (m_IsSparse == true) {
+    for (unsigned long b = 0; b < m_BinsSparse.size(); ++b) {
+	    vector<unsigned long> OldBin = FindBins(m_BinsSparse[b]);
+      unsigned int nb = 0;
+      //NewBin.clear();
+      for (unsigned long ob = 0; ob < m_NumberOfAxes; ob ++) {
+        if (Collapse[ob] == false) {
+          NewBin[nb++] = OldBin[ob];
+        }
+      }
+	    New.Add(NewBin, m_ValuesSparse[b]);
+	  }
+  } else {
+    for (unsigned long b = 0; b < m_NumberOfBins; ++b) {
+	    vector<unsigned long> OldBin = FindBins(b);
+      unsigned int nb = 0;
+      //NewBin.clear();
+      for (unsigned long ob = 0; ob < m_NumberOfAxes; ob ++) {
+        if (Collapse[ob] == false) {
+          NewBin[nb++] = OldBin[ob];
+        }
+      }
+	    New.Add(NewBin, m_Values[b]);
+	  }
+  }
+  
+  return New;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 unsigned long MResponseMatrixON::FindBin(vector<unsigned long> X) const
 {
   // Find the bin of m_Values corresponding to the axis bins X
@@ -583,7 +685,7 @@ vector<unsigned long> MResponseMatrixON::FindBins(vector<double> X) const
       if (m_Axes[a]->InRange(X[Xbin]) == true) {
         Bins.push_back(m_Axes[a]->GetAxisBin(X[Xbin]));
       } else {
-        cout<<m_Name<<": Axis: "<<m_Axes[a]->GetNames()[0]<<endl;
+        cout<<m_Name<<": Axis: "<<m_Axes[a]->GetNames()[0]<<" (xbin="<<Xbin<<"/"<<X.size()<<")"<<endl;
         throw MExceptionValueOutOfBounds(X[Xbin]);
       }
     } else if (Dimension == 2) {
@@ -1391,7 +1493,7 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
         m_BinsSparse.clear();
         
         // Keep this for debugging parallel mode
-        bool Parallel = true;
+        bool Parallel = false;
         
         if (Parallel == false) {
           while (Parser.TokenizeLine(T, true) == true) {

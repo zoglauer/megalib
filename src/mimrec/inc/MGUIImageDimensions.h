@@ -68,12 +68,14 @@ class MGUIImageDimensions : public MGUIDialog
   MGUIEMinMaxEntry* m_PhiDimension;
   MGUIEEntry* m_PhiBins;
 
+  TGComboBox* m_ProjectionSpheric;
+
   MGUIEMinMaxEntry* m_LatitudeDimension;
   MGUIEEntry* m_LatitudeBins;
   MGUIEMinMaxEntry* m_LongitudeDimension;
   MGUIEEntry* m_LongitudeBins;
 
-  TGComboBox* m_Projection;
+  TGComboBox* m_ProjectionGalactic;
 
   MGUIEMinMaxEntry* m_XDimension;
   MGUIEEntry* m_XBins;

@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  thebe
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 20.04
+Kernel:                                    5.13.0-51-generic
+ 
+CPUModel:                                  AMD Ryzen Threadripper 3970X 32-Core Processor
+CPUName:                                   Ryzen Threadripper 3970X
+CPUSockets:                                1
+CPUCoresPerSocket:                         32
+CPUThreadsPerCore:                         2
+Cores:                                     32
+Threads:                                   64
+ 
+ROOTVersion:                               6.24/06
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            3.99.01
+MEGAlibGitHash:                            d62e90669a77bfb0784546a15b9a79fac3ae5f31 2022-06-22
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      24.796
+EventsPerSecondCosimaSingle:               4032.908
+DurationCosimaMultiple:                    41.660
+EventsPerSecondCosimaMultiple:             153624.579
+ 
+# Revan
+DurationRevanSingle:                       4.733
+EventsPerSecondRevanSingle:                21128.248
+DurationRevanMultiple:                     9.424
+EventsPerSecondRevanMultiple:              679117.147
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             15.226
+EventsPerSecondResponseCreatorSingle:      6567.713
+DurationResponseCreatorMultiple:           29.345
+EventsPerSecondResponseCreatorMultiple:    218095.075
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               .466
+EventsPerSecondMimrecImagingSingle:        214592.274
+DurationMimrecImagingMultiple:             .387
+EventsPerSecondMimrecImagingMultiple:      258397.932
+ 

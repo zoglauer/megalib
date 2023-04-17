@@ -153,8 +153,9 @@ void MTransceiverUDP::StartTransceiving()
   m_StopThread = false;
   
   m_ThreadId++;
-  char Name[100];
-  sprintf(Name, "Transceiver #%i", m_ThreadId);
+  const int Max = 100;
+  char Name[Max];
+  snprintf(Name, Max, "Transceiver #%i", m_ThreadId);
 
   m_IsThreadRunning = false;
   m_TransceiverThread = 

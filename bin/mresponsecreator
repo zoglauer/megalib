@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# Kill this and all child processes on Ctrl-C
+trap "pkill -P $$; exit 1;" SIGINT
 
 commandhelp() {
   echo ""

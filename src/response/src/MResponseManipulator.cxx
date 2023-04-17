@@ -83,12 +83,16 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
   // Intentionally left blanck
 
   m_Statistics = false;
-  m_Append = false;
   m_Show = false;
+  m_Collapse = false;
+  
   m_Divide = false;
   m_Ratio = false;
   m_Probability = false;
+  
+  m_Append = false;
   m_Join = false;
+  
   m_Normalized = false;
   m_Zero = false;
 
@@ -150,7 +154,7 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
  */
 MResponseManipulator::~MResponseManipulator()
 {
-  // Intentionally left blanck
+  // Intentionally left blank
 }
 
 
@@ -161,19 +165,29 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
 {
   ostringstream Usage;
   Usage<<endl;
-  Usage<<"  Usage: MResponseManipulator <options>"<<endl;
+  Usage<<"  Usage: responsemanipulator <options>"<<endl;
   Usage<<"    General options:"<<endl;
-  // Usage<<"         -f:   <file name>"<<endl;
-  Usage<<"         -v:   view <file name> <x1> <x2> <x3> <x4> <x5> <x6> <x7> <x8> <x9> <x10> <x11> <x12> <x13> <x14> <x15> <x16> <x17>"<<endl;
-  Usage<<"         -a:   append <file name>"<<endl;
-  Usage<<"         -j:   join <file name prefix>"<<endl;
+  Usage<<endl;
+  Usage<<"      Operations on a single file:"<<endl;
+  Usage<<"         -f:   file name <file name> [mandatory]"<<endl;
+  Usage<<"         -s:   show statistics"<<endl;
+  Usage<<"         -v:   view <x1> <x2> <x3> <x4> <x5> <x6> <x7> <x8> <x9> <x10> <x11> <x12> <x13> <x14> <x15> <x16> <x17> [use as many as the reponse has axes]"<<endl;
+  Usage<<"         -c:   collapse <list of axis, same as seen with -s>"<<endl;
+  Usage<<endl;
+  Usage<<"      Operations on two files:"<<endl;
   Usage<<"         -d:   divide <file name> <file name>"<<endl;
   Usage<<"         -r:   ratio <file name> <file name>"<<endl;
   Usage<<"         -p:   probability <good file name> <bad file name>"<<endl;
-  Usage<<"         -s:   show statistics <file name>"<<endl;
-  Usage<<"         -m:   smooth view <n> times"<<endl;
-  Usage<<"         -n:   normalized view"<<endl;
+  Usage<<endl;
+  Usage<<"      Operations on multiple files:"<<endl;
+  Usage<<"         -a:   append <long list of file name>"<<endl;
+  Usage<<"         -j:   join <file name prefix>"<<endl;
+  Usage<<endl;
+  Usage<<"      Modifiers on everything which shows figures:"<<endl;
+  Usage<<"         -m:   <int> smooth view n times"<<endl;
+  Usage<<"         -n:   normalized view by bin size"<<endl;
   Usage<<"         -z:   zero is a very small number in the view"<<endl;
+  Usage<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -194,7 +208,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
 
     // First check if each option has sufficient arguments:
     // Single argument
-    if (Option == "-f" || Option == "-a" || Option  == "-j" || Option == "-s") {
+    if (Option == "-f" || Option == "-a" || Option  == "-j" || Option == "-e") {
       if (!((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
         cout<<"Error: Option "<<argv[i][1]<<" needs an argument!"<<endl;
         cout<<Usage.str()<<endl;
@@ -237,6 +251,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     if (Option == "-f") {
       m_FileName = argv[++i];
       cout<<"Accepting file name: "<<m_FileName<<endl;
+    } else if (Option == "-s") {
+      m_Statistics = true;
+      cout<<"Accepting show statistics."<<endl;
     } else if (Option == "-a") {
       m_AppendFileNames.push_back(argv[++i]);
       m_Append = true;
@@ -260,10 +277,6 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       m_Prefix = argv[++i];
       m_Join = true;
       cout<<"Accepting file prefix for join: "<<m_Prefix<<endl;
-    } else if (Option == "-s") {
-      m_FileName = argv[++i];
-      m_Statistics = true;
-      cout<<"Accepting show statistics for "<<m_FileName<<endl;
     } else if (Option == "-m") {
       m_NSmooths = atoi(argv[++i]);
       cout<<"Accepting to smooth view "<<m_NSmooths<<" times"<<endl;
@@ -273,8 +286,17 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-z") {
       m_Zero = true;
       cout<<"Accepting view zeroed "<<endl;
+    } else if (Option == "-c") {
+      m_Collapse = true;
+      m_CollapseAxis.clear();
+      while (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
+        m_CollapseAxis.push_back(bool(atoi(argv[i+1])));
+        ++i;
+      }
+      cout<<"Accepting axes to collapse: ";
+      for (auto i: m_CollapseAxis) { cout<<i<<" "; }
+      cout<<endl;
     } else if (Option == "-v") {
-      m_FileName = argv[++i];
       MString next;
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
         next = MString(argv[i+1]);
@@ -462,16 +484,16 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     }
   }
 
-  if (m_Append == true || m_Show == true || m_Statistics == true) {
+  if (m_Append == true || m_Show == true || m_Statistics == true || m_Collapse == true) {
     if (m_FileName == "") {
       cout<<"Error: No file name given!"<<endl;
       cout<<Usage.str()<<endl;
       return false;
     }
   }
-  if (m_Append == false && m_Show == false && m_Statistics == false &&
+  if (m_Append == false && m_Show == false && m_Statistics == false && m_Collapse == false &&
       m_Divide == false && m_Ratio == false && m_Join == false && m_Probability == false) {
-    cout<<"Error: You must either append or join or divide or show a file or the statistics or create the ratio or propability function!"<<endl;
+    cout<<"Error: No operation given (e.g. -s for show statitsics)!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
@@ -515,12 +537,15 @@ bool MResponseManipulator::Analyze()
 {
   if (m_Interrupt == true) return false;
 
-  if (m_Append == true) Append();
-  if (m_Show == true) Show();
   if (m_Statistics == true) Statistics();
+  if (m_Show == true) Show();
+  if (m_Collapse == true) Collapse();
+
   if (m_Divide == true) Divide();
   if (m_Ratio == true) Ratio();
   if (m_Probability == true) Probability();
+
+  if (m_Append == true) Append();
   if (m_Join == true) Join();
 
   return true;
@@ -624,20 +649,22 @@ bool MResponseManipulator::Append()
 bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
 {
   // Get all files
+  cout<<"Retrieving files..."<<endl;
   TSystemDirectory D(".", gSystem->pwd());
   TList* Files = D.GetListOfFiles();
   if (Files == 0) {
-    mout<<"Can't get files!"<<endl;
+    mout<<"ERROR: Did not find or couldn't get any files!"<<endl;
     return false;
   }
 
 
   // Sort them
-  cout<<"Sorting files..."<<endl;
+  cout<<"Sorting and eliminating not matching files (current total: "<<Files->LastIndex()<<" files)"<<endl;
   unsigned int Added = 0;
   vector<vector<MString>> SortedFiles(Types.size(), vector<MString>());
-  for (int i = 0; i <= Files->LastIndex(); ++i) {
-    MString Name = Files->At(i)->GetName();
+  
+  for (const auto&& Object: *Files) {
+    MString Name = Object->GetName();
     if (Name.BeginsWith(Prefix) == false) continue;
     for (unsigned int t = 0; t < Types.size(); ++t) {
       // cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Type<<"\" (+ .gz)... ";
@@ -658,10 +685,11 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
   // Append them
   for (unsigned int t = 0; t < SortedFiles.size(); ++t) {
     if (SortedFiles[t].size() == 0) {
-      cout<<"No files of type "<<Types[t]<<endl;
+      //cout<<"No files of type "<<Types[t]<<endl;
       continue;
     }
-
+    cout<<"Processing file type "<<Types[t]<<endl;
+    
     bool AnyZipped = false;
     if (SortedFiles[t][0].EndsWith(".gz") == true) {
       AnyZipped = true;
@@ -689,7 +717,7 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
       if (First->GetOrder() != Append->GetOrder()) {
         mout<<"Cannot append file, because they are of different order!"<<endl;
       } else {
-        mout<<"Appending file "<<f<<"/"<<SortedFiles[t].size()<<": "<<SortedFiles[t][f]<<endl;
+        mout<<"Appending file "<<f<<"/"<<SortedFiles[t].size()-1<<": "<<SortedFiles[t][f]<<endl;
         if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
           MTimer AppendTimer;
           *dynamic_cast<MResponseMatrixON*>(First) += *dynamic_cast<MResponseMatrixON*>(Append);
@@ -772,7 +800,7 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
 
 
 /******************************************************************************
- * Find and join *.rsp files:
+ * Find and join *.root files:
  */
 bool MResponseManipulator::JoinROOTFiles(MString Prefix, vector<MString> Types)
 {
@@ -785,11 +813,11 @@ bool MResponseManipulator::JoinROOTFiles(MString Prefix, vector<MString> Types)
   }
 
   // Sort them
-  //cout<<"Sorting files..."<<endl;
+  cout<<"Sorting and eliminating not matching files (current total: "<<Files->LastIndex()<<" files)"<<endl;
   unsigned int Added = 0;
   vector<vector<MString>> SortedFiles(Types.size(), vector<MString>());
-  for (int i = 0; i <= Files->LastIndex(); ++i) {
-    MString Name = Files->At(i)->GetName();
+  for (const auto&& Object: *Files) {
+    MString Name = Object->GetName();
     if (Name.BeginsWith(Prefix) == false) continue;
     for (unsigned int t = 0; t < Types.size(); ++t) {
       //cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Types[t]<<"\" (+ .gz)... "<<endl;
@@ -909,7 +937,8 @@ bool MResponseManipulator::Join()
 
   Types.push_back(".binnedimaging.imagingresponse.rsp");
   Types.push_back(".binnedimaging.exposure.rsp");
-  Types.push_back(".binnedimaging.energyresponse.rsp");
+  Types.push_back(".binnedimaging.energyresponse2d.rsp");
+  Types.push_back(".binnedimaging.energyresponse4d.rsp");
   
   Types.push_back(".binnedpolarization.11D.rsp");
 
@@ -1278,6 +1307,30 @@ bool MResponseManipulator::Statistics()
   if (R == nullptr) return false;
   cout<<R->GetStatistics()<<endl;
   delete R;
+
+  return true;
+}
+
+
+/******************************************************************************
+ * Collapse a response matrix:
+ */
+bool MResponseManipulator::Collapse()
+{
+  MFileResponse File;
+  MResponseMatrix* R = File.Read(m_FileName);
+  if (R == nullptr) return false;
+  
+  if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+    cout<<"Starting collapse"<<endl;
+    MResponseMatrixON Collapsed = dynamic_cast<MResponseMatrixON*>(R)->Collapse(m_CollapseAxis);
+    delete R;
+    cout<<"Writing new file"<<endl;
+    Collapsed.Write(m_FileName + ".collapsed.rsp", true);
+  } else {
+    merr<<"Collapse just works for MResponseMatrixON type responses"<<endl;
+    return false;
+  }
 
   return true;
 }

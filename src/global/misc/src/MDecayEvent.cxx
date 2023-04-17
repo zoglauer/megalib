@@ -74,7 +74,7 @@ MString MDecayEvent::ToString()
 {
   // Display the compton-data of this event
 
-  char Text[1000];
+  //char Text[1000];
   MString String("The data of the Decay-event:\n"); 
 
 //   for (unsigned int i = 0; i < m_Energies.size(); ++i) {

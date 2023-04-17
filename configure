@@ -347,13 +347,15 @@ echo "(d) cfitsio library (optional)"
 echo ""
 
 FitsIOFound=1
-locate libcfitsio &> /dev/null
-if [[ "$?" == "0" ]]; then
-  echo "Found cfitsio";
-  FitsIOFound=0
-elif [[ ${LHEASOFT} != "" ]] && ( [[ -f ${LHEASOFT}/lib/libcfitsio.a ]] || [[ -f ${LHEASOFT}/lib/libcfitsio.so ]] ); then 
-  echo "Found cfitsio library";
+if [[ ${LHEASOFT} != "" ]] && ( [[ -f ${LHEASOFT}/lib/libcfitsio.a ]] || [[ -f ${LHEASOFT}/lib/libcfitsio.so ]] ); then 
+  echo "Found cfitsio library in ${LHEASOFT}/lib";
   FitsIOFound=0  
+else
+  locate libcfitsio &> /dev/null
+  if [[ "$?" == "0" ]]; then
+    echo "Found exiting cfitsio in a system path";
+    FitsIOFound=0
+  fi
 fi
 
 if [ ${FitsIOFound} == 1 ]; then

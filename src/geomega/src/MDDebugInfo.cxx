@@ -47,7 +47,7 @@ ClassImp(MDDebugInfo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDDebugInfo::MDDebugInfo() : m_Text(""), m_FileName(""), m_Line(0), m_TokenizerWithMathsUpToDate(false), m_TokenizerWithoutMathsUpToDate(false)
+MDDebugInfo::MDDebugInfo() : m_Text(""), m_FileName(""), m_Line(0), m_TokenizerWithMathsUpToDate(false), m_TokenizerWithoutMathsUpToDate(false), m_IsTokenizerValid(true)
 {
   // Default constructor
 }
@@ -57,7 +57,7 @@ MDDebugInfo::MDDebugInfo() : m_Text(""), m_FileName(""), m_Line(0), m_TokenizerW
 
 
 MDDebugInfo::MDDebugInfo(const MString& Text, const MString& FileName, const int Line) :
-  m_Text(Text), m_FileName(FileName), m_Line(Line), m_TokenizerWithMathsUpToDate(false), m_TokenizerWithoutMathsUpToDate(false)
+  m_Text(Text), m_FileName(FileName), m_Line(Line), m_TokenizerWithMathsUpToDate(false), m_TokenizerWithoutMathsUpToDate(false), m_IsTokenizerValid(true)
 {
   // Standard constructor
 }
@@ -91,7 +91,8 @@ MDDebugInfo& MDDebugInfo::operator=(const MDDebugInfo& DebugInfo)
   m_FileName = DebugInfo.m_FileName;
   m_Line = DebugInfo.m_Line;
   m_TokenizerWithMathsUpToDate = false; 
-  m_TokenizerWithoutMathsUpToDate = false;  
+  m_TokenizerWithoutMathsUpToDate = false;
+  m_IsTokenizerValid = DebugInfo.m_IsTokenizerValid;
 
   return *this;
 }
@@ -164,17 +165,21 @@ void MDDebugInfo::ReplaceFirst(MString Old, double Number)
 
 MTokenizer& MDDebugInfo::GetTokenizer(bool AllowMaths)
 {
-  //! Return the tokenizer - the flag indicates if the maths, or no-maths version is requested
+  // Return the tokenizer - the flag indicates if the maths, or no-maths version is requested
  
   if (AllowMaths == false) {
     if (m_TokenizerWithoutMathsUpToDate == false) {
-      m_TokenizerWithoutMaths.Analyse(m_Text, false);
+      if (m_TokenizerWithoutMaths.Analyse(m_Text, false) == false) {
+        m_IsTokenizerValid = false;
+      }
       m_TokenizerWithoutMathsUpToDate = true;
     }
     return m_TokenizerWithoutMaths;
   } else {
     if (m_TokenizerWithMathsUpToDate == false) {
-      m_TokenizerWithMaths.Analyse(m_Text, true);
+      if (m_TokenizerWithMaths.Analyse(m_Text, true) == false) {
+        m_IsTokenizerValid = false;
+      }
       m_TokenizerWithMathsUpToDate = true;
     }
     return m_TokenizerWithMaths;

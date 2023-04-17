@@ -25,7 +25,7 @@ SpaceSim.Time               1000.0
 SpaceSim.Source Crab
 Crab.ParticleType           1
 Crab.Beam                   FarFieldPointSource 0 0
-Crab.Spectrum               PowerLaw 800 100000 2.17
-# Energy integrated Crab flux from 800-100000 in ph/cm2/s -- actual Crab: 0.004972 ph/cm2/s
-Crab.Flux                   0.004972
+Crab.Spectrum               PowerLaw 100 10000 2.17
+# Energy integrated Crab flux from 100-10000 in ph/cm2/s -- actual Crab: 0.0565 ph/cm2/s
+Crab.Flux                   0.0565
 

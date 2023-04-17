@@ -44,9 +44,11 @@ class MResponseMatrixON : public MResponseMatrix
   // public interface:
  public:
   //! Default constructor
-  MResponseMatrixON(bool IsParse = false);
+  MResponseMatrixON(bool IsSparse = false);
   //! Default constructor with response name
-  MResponseMatrixON(const MString& Name, bool IsParse = false);
+  MResponseMatrixON(const MString& Name, bool IsSparse = false);
+  //! Default copy constructor
+  MResponseMatrixON(const MResponseMatrixON&);
   //! Default destructor
   virtual ~MResponseMatrixON();
   
@@ -68,6 +70,9 @@ class MResponseMatrixON : public MResponseMatrix
   //! Add a logarithmic axis
   void AddAxisLogarithmic(const MString& Name, unsigned long NBins, double Min, double Max, double UnderFlowMin = g_DoubleNotDefined, double OverFlowMax = g_DoubleNotDefined);
 
+  //! Assignment operator
+  MResponseMatrixON& operator=(const MResponseMatrixON& Other);
+  
   //! Equality operator -- only the axes are considered, NOT the content
   bool operator==(const MResponseMatrixON& ResponseMatrixO1);
   //! Add another matrix' content to this response matrix
@@ -86,6 +91,9 @@ class MResponseMatrixON : public MResponseMatrix
   MResponseMatrixON& operator*=(const float& Value);  
   //! Divide matrix by a scalar
   MResponseMatrixON& operator/=(const float& Value);  
+  
+  //! Collapse some of the axes indicated by true
+  MResponseMatrixON Collapse(vector<bool> AxesToCollpse);
   
   //! return an axis name (order starts with 1)
   //! Throws exception

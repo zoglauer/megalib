@@ -72,7 +72,7 @@ LOG="FALSE"
 LOGFILE=""
 LOGGING="tee"
 DELAY="10"
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 
 
 # The number of already launched runs
@@ -151,7 +151,7 @@ if [[ -f "${CFG}" ]]; then
   echo " * Configuration file: ${CFG}"
 else 
   echo " "
-  echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
+  echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dmegalib.cfg!"
   exit 1  
 fi
 
@@ -302,9 +302,9 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     fi  
     
     COMMAND=""
-    COMMAND+=". ~/.bash_local;"
+    COMMAND+=". ~/.dmegalib.bashrc;"
     COMMAND+="if [[ ! -x \${MEGALIB}/bin/cosima ]]; then echo \"ERROR: MEGAlib not fully installed\"; exit 1; fi; "
-    COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \".dcosima.cfg configuration file not found.\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ~/.dmegalib.cfg ]]; then echo \".dmegalib.cfg configuration file not found.\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"Failed to access remote data directory!\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"Failed to create target directory\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[$d]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
@@ -363,7 +363,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           SEED=""
           for N in `seq 1 8`; do SEED="${SEED}$(( RANDOM%10 ))"; done
           
-          REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; cosima -f ${STARTED} -t ${TARGETDIR} -s ${SEED} "
+          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; cosima -f ${STARTED} -t ${TARGETDIR} -s ${SEED} "
           if [[ ${ZIP} == TRUE ]]; then REMOTECOMMAND+=" -z"; fi
           REMOTECOMMAND+=" ${DATADIR}/${DATAFILES[$d]} "
           if [[ ${LOG} == TRUE ]]; then

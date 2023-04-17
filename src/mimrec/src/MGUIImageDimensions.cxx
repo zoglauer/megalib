@@ -93,24 +93,11 @@ void MGUIImageDimensions::Create()
 
 
   if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
-    AddSubTitle("Please enter dimensions and the number of bins\nfor images in spherical coordinates"); 
+    AddSubTitle("Image setup in spherical detector coordinates"); 
 
-    TGLabel* AxisRotationLabel = new TGLabel(this, "Enter the coordinates of the X- and Z-axis of the new rotated, coordinate system\nin the coordinates of the default system:");
-    AddFrame(AxisRotationLabel, AxisLayoutLabel);
+    TGLabel* CoordinatesLabel = new TGLabel(this, "Enter the minimum and maximum axis dimensions and the number of bins:");
+    AddFrame(CoordinatesLabel, AxisLayoutLabel);
 
-    m_XAxis = new MGUIEEntryList(this, "New X-axis vector:", MGUIEEntryList::c_SingleLine);
-    m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().X(), true);
-    m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().Y(), true);
-    m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().Z(), true);
-    m_XAxis->Create();
-    AddFrame(m_XAxis, AxisLayoutFirst);
-
-    m_ZAxis = new MGUIEEntryList(this, "New Z-axis vector:", MGUIEEntryList::c_SingleLine);
-    m_ZAxis->Add("", m_GUIData->GetImageRotationZAxis().X(), true);
-    m_ZAxis->Add("", m_GUIData->GetImageRotationZAxis().Y(), true);
-    m_ZAxis->Add("", m_GUIData->GetImageRotationZAxis().Z(), true);
-    m_ZAxis->Create();
-    AddFrame(m_ZAxis, AxisLayoutLast);
 
     m_ThetaDimension = new MGUIEMinMaxEntry(this,
                                             MString("Theta:"),
@@ -139,8 +126,50 @@ void MGUIImageDimensions::Create()
     
     m_PhiBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsPhi(), true, 1);
     AddFrame(m_PhiBins, BinLayout);
+    
+
+    TGLabel* AxisRotationLabel = new TGLabel(this, "Enter the coordinates of the X- and Z-axis of a new rotated, coordinate system\nin the coordinates of the default system. Sources will be located at different\npositions compared to the default detector coordinate system.\nTo go back to unrotated use: X=(1/0/0) and Z=(0/0/1)");
+    AddFrame(AxisRotationLabel, AxisLayoutLabel);
+
+    m_XAxis = new MGUIEEntryList(this, "New X-axis vector:", MGUIEEntryList::c_SingleLine);
+    m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().X(), true);
+    m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().Y(), true);
+    m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().Z(), true);
+    m_XAxis->Create();
+    AddFrame(m_XAxis, AxisLayoutFirst);
+
+    m_ZAxis = new MGUIEEntryList(this, "New Z-axis vector:", MGUIEEntryList::c_SingleLine);
+    m_ZAxis->Add("", m_GUIData->GetImageRotationZAxis().X(), true);
+    m_ZAxis->Add("", m_GUIData->GetImageRotationZAxis().Y(), true);
+    m_ZAxis->Add("", m_GUIData->GetImageRotationZAxis().Z(), true);
+    m_ZAxis->Create();
+    AddFrame(m_ZAxis, AxisLayoutLast);
+
+
+    TGHorizontalFrame* ProjectionFrame = new TGHorizontalFrame(this);
+    TGLayoutHints* ProjectionFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler, 20*m_FontScaler);
+    AddFrame(ProjectionFrame, ProjectionFrameLayout);
+        
+    TGLabel* ProjectionLabel = new TGLabel(ProjectionFrame, "Set the type of the spherical projection (None, Hammer):");
+    TGLayoutHints* ProjectionLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
+    ProjectionFrame->AddFrame(ProjectionLabel, ProjectionLabelLayout);
+
+    m_ProjectionSpheric = new TGComboBox(ProjectionFrame);
+    m_ProjectionSpheric->AddEntry("No Projection", static_cast<int>(MImageProjection::c_None));
+    m_ProjectionSpheric->AddEntry("Hammer projection", static_cast<int>(MImageProjection::c_Hammer));
+    m_ProjectionSpheric->Associate(this);
+    m_ProjectionSpheric->Select(static_cast<int>(m_GUIData->GetSphericalProjection()));
+    m_ProjectionSpheric->SetHeight(m_FontScaler*18);
+    m_ProjectionSpheric->SetWidth(m_FontScaler*140);
+    TGLayoutHints* ProjectionLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
+    ProjectionFrame->AddFrame(m_ProjectionSpheric, ProjectionLayout);
+
+    
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
-    AddSubTitle("Please enter dimensions and the number of bins\nfor images in galactic coordinates"); 
+    AddSubTitle("Image setup in Galactic coordinates"); 
+
+    TGLabel* CoordinatesLabel = new TGLabel(this, "Enter the minimum and maximum axis dimensions and the number of bins:");
+    AddFrame(CoordinatesLabel, AxisLayoutLabel);
 
     m_LatitudeDimension = new MGUIEMinMaxEntry(this,
                                             MString("Galactic latitude:"),
@@ -174,23 +203,28 @@ void MGUIImageDimensions::Create()
     TGLayoutHints* ProjectionFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler, 20*m_FontScaler);
     AddFrame(ProjectionFrame, ProjectionFrameLayout);
     
-    TGLabel* ProjectionLabel = new TGLabel(ProjectionFrame, "Please choose a projection:");
+    TGLabel* ProjectionLabel = new TGLabel(ProjectionFrame, "Set the type of the Galactic projection:");
     TGLayoutHints* ProjectionLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
     ProjectionFrame->AddFrame(ProjectionLabel, ProjectionLabelLayout);
 
-    m_Projection = new TGComboBox(ProjectionFrame);
-    m_Projection->AddEntry("No Projection", static_cast<int>(MImageProjection::c_None));
-    m_Projection->AddEntry("Hammer projection", static_cast<int>(MImageProjection::c_Hammer));
-    m_Projection->Associate(this);
-    m_Projection->Select(static_cast<int>(m_GUIData->GetImageProjection()));
-    m_Projection->SetHeight(m_FontScaler*18);
-    m_Projection->SetWidth(m_FontScaler*120);
+    m_ProjectionGalactic = new TGComboBox(ProjectionFrame);
+    m_ProjectionGalactic->AddEntry("No Projection", static_cast<int>(MImageProjection::c_None));
+    m_ProjectionGalactic->AddEntry("Hammer projection", static_cast<int>(MImageProjection::c_Hammer));
+    m_ProjectionGalactic->Associate(this);
+    m_ProjectionGalactic->Select(static_cast<int>(m_GUIData->GetGalProjection()));
+    m_ProjectionGalactic->SetHeight(m_FontScaler*18);
+    m_ProjectionGalactic->SetWidth(m_FontScaler*140);
     TGLayoutHints* ProjectionLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
-    ProjectionFrame->AddFrame(m_Projection, ProjectionLayout);
+    ProjectionFrame->AddFrame(m_ProjectionGalactic, ProjectionLayout);
     
+  // Cartesian
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
              m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
-    AddSubTitle("Please enter dimensions and the number of bins\nfor images in Cartesian coordinates"); 
+    AddSubTitle("Image setup in Cartesian coordinates"); 
+
+    TGLabel* CoordinatesLabel = new TGLabel(this, "Enter the minimum and maximum axis dimensions and the number of bins:");
+    AddFrame(CoordinatesLabel, AxisLayoutLabel);
+
     m_XDimension = new MGUIEMinMaxEntry(this,
                                         MString("x-axis:"),
                                         false,
@@ -306,7 +340,12 @@ bool MGUIImageDimensions::OnApply()
     if (m_PhiBins->IsModified() == true) {
       m_GUIData->SetBinsPhi(m_PhiBins->GetAsInt());
     }
+    
+    if (m_ProjectionSpheric->GetSelected() != static_cast<int>(m_GUIData->GetSphericalProjection())) {
+      m_GUIData->SetSphericalProjection(static_cast<MImageProjection>(m_ProjectionSpheric->GetSelected()));
+    }
 
+  // Galactic coordinates
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
 
     if (m_LatitudeDimension->CheckRange(-90.0, 90.0, -90.0, 90.0, true) == false) return false;
@@ -347,10 +386,11 @@ bool MGUIImageDimensions::OnApply()
       m_GUIData->SetBinsGalLongitude(m_LongitudeBins->GetAsInt());
     }
     
-    if (m_Projection->GetSelected() != static_cast<int>(m_GUIData->GetImageProjection())) {
-      m_GUIData->SetImageProjection(static_cast<MImageProjection>(m_Projection->GetSelected()));
+    if (m_ProjectionGalactic->GetSelected() != static_cast<int>(m_GUIData->GetGalProjection())) {
+      m_GUIData->SetGalProjection(static_cast<MImageProjection>(m_ProjectionGalactic->GetSelected()));
     }
     
+  // Cartesian:
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
              m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
 

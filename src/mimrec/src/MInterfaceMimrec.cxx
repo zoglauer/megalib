@@ -150,7 +150,9 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"      -s --spectrum:"<<endl;
   Usage<<"             Create a spectrum. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -a --arm-gamma:"<<endl;
-  Usage<<"             Create an arm. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"             Create an ARM plot. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"         --spd-electron:"<<endl;
+  Usage<<"             Create a SPD plot. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -l --light-curve:"<<endl;
   Usage<<"             Create a light curve. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -p --polarization:"<<endl;
@@ -331,8 +333,12 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       EnergySpectra();
       return KeepAlive;
     } else if (Option == "--arm-gamma" || Option == "-a") {
-      cout<<"Command-line parser: Generating ARM gamma..."<<endl;  
+      cout<<"Command-line parser: Generating ARM gamma..."<<endl;
       ARMGamma();
+      return KeepAlive;
+    } else if (Option == "--spd-electron") {
+      cout<<"Command-line parser: Generating SPD gamma..."<<endl;
+      SPDElectron();
       return KeepAlive;
     } else if (Option == "--light-curve" || Option == "-l") {
       cout<<"Command-line parser: Generating light curve..."<<endl;  
@@ -3560,7 +3566,11 @@ void MInterfaceMimrec::SPDElectron()
   Canvas->cd();
   Hist->Draw();
   Canvas->Update();
-  
+  if (m_OutputFileName.IsEmpty() == false) {
+    Canvas->SaveAs(m_OutputFileName);
+  }
+
+
   cout<<endl;
   cout<<"SPD - Characteristics:"<<endl;
   cout<<endl;

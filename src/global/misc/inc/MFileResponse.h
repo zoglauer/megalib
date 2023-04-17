@@ -52,6 +52,10 @@ class MFileResponse : public MParser
   long GetSimulatedEvents() const { return m_NumberOfSimulatedEvents; }
   //! Return the far field start area
   double GetFarFieldStartArea() const { return m_FarFieldStartArea; }
+  //! Return the spectral type
+  MString GetSpectralType() const { return m_SpectralType; }
+  //! Return the spectral parameters
+  vector<double> GetSpectralParameters() const { return m_SpectralParameters; }
   //! Are the values centered
   bool AreValuesCentered() const { return m_ValuesCentered; }
   //! Are the values centered
@@ -78,7 +82,11 @@ class MFileResponse : public MParser
   long m_NumberOfSimulatedEvents;
   //! The area from which the photons are started in far field
   double m_FarFieldStartArea;
-  //! Are the values stored cenetered
+  //! The spectral type (Linear, Mono, Powerlaw)
+  MString m_SpectralType;
+  //! The spectral parameters (depend on type)
+  vector<double> m_SpectralParameters;
+  //! Are the values stored centered
   bool m_ValuesCentered;
   //! The hash value
   unsigned long m_Hash;

@@ -53,7 +53,7 @@ class MImage
   //! Standard constructor
   MImage(MString Title, double* IA, 
          MString xTitle, double xMin, double xMax, int xNBins,
-         MString vTitle = "", int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
+         MString vTitle = "", int Spectrum = c_Viridis, int DrawOption = c_COLCONTZ);
   //! Standard destructor
   virtual ~MImage();
 
@@ -124,8 +124,8 @@ class MImage
   
   static const int c_COL;
   static const int c_COLZ;
-  static const int c_COLCONT4;
-  static const int c_COLCONT4Z;
+  static const int c_COLCONT;
+  static const int c_COLCONTZ;
 
   // protected methods:
  protected:

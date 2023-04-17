@@ -374,8 +374,9 @@ void MGUIDialog::AddSubTitle(const char *Format, ...)
 
   va_list args;
   va_start(args, Format);
-  char SubTitle[1024];
-  vsprintf(SubTitle, Format, args);
+  const int Length = 1024;
+  char SubTitle[Length];
+  vsnprintf(SubTitle, Length, Format, args);
   AddSubTitle(MString(SubTitle));
   va_end(args);
 }

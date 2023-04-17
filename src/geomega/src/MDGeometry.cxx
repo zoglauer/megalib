@@ -48,6 +48,7 @@ using namespace std;
 #include <TMath.h>
 #include <TGeoOverlap.h>
 #include <TObjArray.h>
+#include <TMD5.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -227,6 +228,7 @@ void MDGeometry::Reset()
   // m_StartVolume = ""; // This is a start option of geomega, so do not reset!
 
   m_IncludeList.clear();
+  m_IncludeListHashes.clear();
 
   if (m_GeoView != 0) {
     if (gROOT->FindObject("MainCanvasGeomega") != 0) {
@@ -234,6 +236,29 @@ void MDGeometry::Reset()
     }
     m_GeoView = 0;
   }
+  
+  m_ViewValid = false;
+  
+  m_ViewPositionX = 0;
+  m_ViewPositionY = 0;
+
+  m_ViewPositionShiftX = 0;
+  m_ViewPositionShiftY = 0;
+  
+  m_ViewSizeX = 0;
+  m_ViewSizeY = 0;
+  
+  m_ViewRangeMin.resize(3);
+  fill(m_ViewRangeMin.begin(), m_ViewRangeMin.end(), 0);
+  m_ViewRangeMax.resize(3);
+  fill(m_ViewRangeMax.begin(), m_ViewRangeMax.end(), 0);
+  m_ViewRotationPhi = 0;
+  m_ViewRotationTheta = 0;
+  m_ViewRotationPsi = 0;
+
+  m_ViewDistanceCOPtoCOV = 0;
+  m_ViewDistanceCOPtoPL = 0;
+
 
   m_Name = "";
 
@@ -264,7 +289,9 @@ void MDGeometry::Reset()
 
   m_DetectorSearchTolerance = 0.000001;
 
-  m_CrossSectionFileDirectory = g_MEGAlibPath + "/resource/geometries/materials";
+  m_DefaultCrossSectionFileDirectory = g_MEGAlibPath + "/resource/examples/geomega/materials";
+  // This one will be overwritten when we have the file name of the mass model
+  m_CrossSectionFileDirectory = g_MEGAlibPath + "/resource/examples/geomega/materials";
 
   MDVolume::ResetIDs();
   MDDetector::ResetIDs();
@@ -306,6 +333,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   MTimer Timer;
   double TimeLimit = 0;
   bool FoundDeprecated = false;
+  bool FoundSurroundingSphere = false;
 
   // First clean the geometry ...
   Reset();
@@ -338,8 +366,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   m_CrossSectionFileDirectory = MFile::GetDirectoryName(m_FileName);
-  m_CrossSectionFileDirectory += "/absorptions";
-
+  m_CrossSectionFileDirectory += "/cross-sections";
 
   if (g_Verbosity >= c_Info) {
     mout<<"Started scanning of geometry... This may take a while..."<<endl;
@@ -1000,7 +1027,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
-    
+    if ((*ContentIter).IsTokenizerValid() == false) {
+      Typo("Parsing of the line failed.");
+      return false;
+    }
+   
     if (Tokenizer.GetNTokens() == 0) {
       continue;
     }
@@ -1095,7 +1126,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
-    
+    if ((*ContentIter).IsTokenizerValid() == false) {
+      Typo("Parsing of the line failed.");
+      return false;
+    }
+        
     if (Tokenizer.GetNTokens() == 0) continue;
 
     if (Tokenizer.IsTokenAt(0, "Print") == true ||
@@ -1123,7 +1158,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
-    
+    if ((*ContentIter).IsTokenizerValid() == false) {
+      Typo("Parsing of the line failed.");
+      return false;
+    }
+       
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Let's scan for first order keywords:
@@ -1181,6 +1220,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // Surrounding sphere
     else if (Tokenizer.IsTokenAt(0, "SurroundingSphere") == true) {
+      if (FoundSurroundingSphere == true) {
+        Typo("You have multiple surrounding spheres defined in your code. The ones read later overwrite the original one. This is too error prone to be allowed.");
+        return false;
+      }
+
       if (Tokenizer.GetNTokens() != 6) {
         Typo("Line must contain five values: Radius, xPos, yPos, zPos of sphere center, Distance to sphere center");
         return false;
@@ -1196,6 +1240,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         Typo("Limitation: Concerning your surrounding sphere: The sphere radius must equal the distance to the sphere for the time being. Sorry.");
         return false;
       }
+
+      FoundSurroundingSphere = true;
 
       continue;
     }
@@ -1306,9 +1352,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // General absorption file directory
     else if (Tokenizer.IsTokenAt(0, "AbsorptionFileDirectory") == true ||
-             Tokenizer.IsTokenAt(0, "CrossSectionFilesDirectory") == true) {
+             Tokenizer.IsTokenAt(0, "CrossSectionFilesDirectory") == true ||
+             Tokenizer.IsTokenAt(0, "CrossSectionPath") == true) {
       if (Tokenizer.GetNTokens() != 2) {
-        Typo("Line must contain two values: CrossSectionFilesDirectory auxiliary");
+        Typo("Line must contain two values: CrossSectionPath auxiliary");
         return false;
       }
 
@@ -1324,7 +1371,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         Name.Prepend(MFile::GetDirectoryName(m_FileName));
 
         if (MFile::ExpandFileName(Name) == false) {
-          Typo("Unable to expand file name");
+          Typo("Unable to expand cross-section path to absolute path");
           return false;
         }
       }
@@ -3957,6 +4004,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // Material sanity checks
   for (unsigned int i = 0; i < GetNMaterials(); i++) {
+    m_MaterialList[i]->SetDefaultCrossSectionFileDirectory(m_DefaultCrossSectionFileDirectory);
     m_MaterialList[i]->SetCrossSectionFileDirectory(m_CrossSectionFileDirectory);
     if (m_MaterialList[i]->Validate() == false) {
       IsValid = false;
@@ -4344,7 +4392,7 @@ bool MDGeometry::NameExists(MString Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
+bool MDGeometry::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
 {
   // The geometry must have been loaded previously
   // You cannot display 2 geometries at once!
@@ -4356,11 +4404,13 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   }
 
   // Start by deleting the old windows:
-  if (m_GeoView != 0) {
-    if (gROOT->FindObject("MainCanvasGeomega") != 0) {
+  if (m_GeoView != nullptr) {
+    if (gROOT->FindObject("MainCanvasGeomega") != nullptr) {
       delete m_GeoView;
     }
-    m_GeoView = 0;
+    m_GeoView = nullptr;
+  } else {
+    RestoreView = false;
   }
 
   //mdebug<<"NVolumes: "<<m_WorldVolume->GetNVisibleVolumes()<<endl;
@@ -4374,10 +4424,23 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   MTimer Timer;
   double TimerLimit = 5;
 
-  if (Canvas == 0) {
-    m_GeoView = new TCanvas("MainCanvasGeomega","MainCanvasGeomega",800,800);
+  if (Canvas == nullptr) {
+    if (RestoreView == true && m_ViewValid == true) {
+      m_GeoView = new TCanvas("MainCanvasGeomega", "Geomega geometry display", m_ViewPositionX - m_ViewPositionShiftX, m_ViewPositionY - m_ViewPositionShiftY, m_ViewSizeX, m_ViewSizeY);
+      //m_GeoView->SetWindowPosition(m_ViewPositionX, m_ViewPositionY);
+      //m_GeoView->SetWindowSize(m_ViewSizeX, m_ViewSizeY);
+    } else {
+      int RefPos = 100;
+      m_GeoView = new TCanvas("MainCanvasGeomega", "Geomega geometry display", RefPos, RefPos, 700, 700);
+      m_ViewPositionShiftX = m_GeoView->GetWindowTopX() - RefPos;
+      m_ViewPositionShiftY = m_GeoView->GetWindowTopY() - RefPos;
+    }
   } else {
     Canvas->cd();
+    if (RestoreView == true && m_ViewValid == true) {
+      Canvas->SetWindowPosition(m_ViewPositionX, m_ViewPositionY);
+      Canvas->SetWindowSize(m_ViewSizeX, m_ViewSizeY);
+    }
   }
 
 
@@ -4402,13 +4465,66 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   }
   m_Geometry->SetCurrentNavigator(0); // current is the first navigator?
 
+  if (RestoreView == true && m_ViewValid == true) {
+    TView* View = m_GeoView->GetView();
+    View->SetRange(&m_ViewRangeMin[0], &m_ViewRangeMax[0]);
+    
+    int Reply = 0;
+    View->SetView(m_ViewRotationTheta, m_ViewRotationPhi, m_ViewRotationPsi, Reply);
+    
+    View->SetDview(m_ViewDistanceCOPtoCOV);
+    View->SetDproj(m_ViewDistanceCOPtoPL);
+    
+    if (m_ViewPerspective == true) {
+      View->SetPerspective();
+    } else {
+      View->SetParallel();
+    }
+    View->AdjustScales();
+  }
+
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimerLimit) {
     mout<<"Geometry drawn within "<<Timer.ElapsedTime()<<" seconds."<<endl;
   }
 
   return true;
 }
+ 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDGeometry::StoreViewParameters()
+{ 
+  //! Store the view parameters (zoom, rotation, etc.)
+ 
+  // Assume we do not have valid parameters if we cannot store everything
+  m_ViewValid = false;
+ 
+  if (m_GeoView == nullptr) {
+    return;
+  }
+ 
+  TView* View = m_GeoView->GetView();
+  if (View == nullptr) {
+    return;
+  }  
+  
+  m_GeoView->GetCanvasPar(m_ViewPositionX, m_ViewPositionY, m_ViewSizeX, m_ViewSizeY);
+  
+  View->GetRange(&m_ViewRangeMin[0], &m_ViewRangeMax[0]);
+  
+  m_ViewRotationPhi = View->GetLatitude();
+  m_ViewRotationTheta = View->GetLongitude();
+  m_ViewRotationPsi = View->GetPsi();
+  
+  m_ViewDistanceCOPtoCOV = View->GetDview();
+  m_ViewDistanceCOPtoPL = View->GetDproj();
+  
+  m_ViewPerspective = View->IsPerspective();
+  m_ViewValid = true;
+}
+ 
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -5308,10 +5424,19 @@ unsigned int MDGeometry::GetNVectors()
 
 void MDGeometry::AddInclude(MString FileName)
 {
-  // Add the name of an included file
+  // Add the name of an included file and its md5 hash
 
   if (IsIncluded(FileName) == false) {
     m_IncludeList.push_back(FileName);
+    
+    TMD5* MD5 = TMD5::FileChecksum(FileName);
+    if (MD5 == nullptr) {
+      cout<<" *** ERROR: Unable to calculate checksum for file "<<FileName<<endl;
+      m_IncludeListHashes.push_back("");
+    } else {
+      m_IncludeListHashes.push_back(MD5->AsString());
+    }
+    delete MD5;
   }
 }
 
@@ -5343,6 +5468,37 @@ int MDGeometry::GetNIncludes()
   return m_IncludeList.size();
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDGeometry::RequiresReload()
+{
+  // Return true if the geometry needs to be reloaded since files have changed
+  
+  if (m_IncludeList.size() != m_IncludeListHashes.size()) {
+    cout<<" *** ERROR: The number of stored hashes differs from the number of included files"<<endl;
+    return true;
+  }
+  
+  for (unsigned int i = 0; i < m_IncludeList.size(); ++i) {
+    TMD5* MD5 = TMD5::FileChecksum(m_IncludeList[i]);
+    MString Hash = "";
+    if (MD5 == nullptr) {
+      cout<<" *** ERROR: Unable to calculate checksum for file "<<m_IncludeList[i]<<endl;
+    } else {
+      Hash = MD5->AsString();
+    }
+    delete MD5;
+
+    if (Hash != m_IncludeListHashes[i]) {
+      cout<<"Info: File "<<m_IncludeList[i]<<" changed. Reload required!"<<endl;
+      return true;
+    }
+  }
+  
+  return false;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -5836,7 +5992,7 @@ bool MDGeometry::CreateCrossSectionFiles()
   }
   if (Success == false) {
     mout<<"   ***  Warning  ***"<<endl;
-    mout<<"Cannot load create cross section files correctly."<<endl;
+    mout<<"Cannot load created cross section files correctly."<<endl;
     mout<<"Please read the above error output for a possible fix..."<<endl;
     return false;
   }

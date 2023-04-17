@@ -65,7 +65,7 @@ done
 # Check for restricted users
 if [ "${REMOTE}" == "" ]; then
   # Get the remote inhibitors
-  INHIBITORS=`if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^inhibitors; else echo 'all'; fi;`
+  INHIBITORS=`if [ -f ~/.dmegalib.cfg ]; then cat ~/.dmegalib.cfg | grep ^inhibitors; else echo 'all'; fi;`
   # Get the remote users
   RUNNINGUSERS=`who | cut -d' ' -f1 | sort | uniq`
   
@@ -91,7 +91,7 @@ fi
 if [[ "${REMOTE}" == "" ]]; then
 
   GOOD=true
-  TIMES=$(if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^time; fi;)
+  TIMES=$(if [ -f ~/.dmegalib.cfg ]; then cat ~/.dmegalib.cfg | grep ^time; fi;)
   #echo "${TIMES}"
   START=$(echo ${TIMES} | awk '{ print $2 }')
   STOP=$(echo ${TIMES} | awk '{ print $3 }')
@@ -143,7 +143,7 @@ if [ "${REMOTE}" == "" ]; then
   if (( ${Load} < 0 )); then Load=0; fi
   #echo "Load: ${Load}"
   
-  MaximumInstances=`if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^instances; else echo 'instances $(nproc)'; fi`
+  MaximumInstances=`if [ -f ~/.dmegalib.cfg ]; then cat ~/.dmegalib.cfg | grep ^instances; else echo 'instances $(nproc)'; fi`
   MaximumInstances=`echo ${MaximumInstances} | awk '{ print $2 }'`
   #echo "Max: ${MaximumInstances}"
   
@@ -157,7 +157,7 @@ if [ "${REMOTE}" == "" ]; then
   #echo "Allowed: ${AllowedInstances}"    
 else
   #echo "Remote B"
-  AllowedInstances=`ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; dmegalib-allowedinstances"` 
+  AllowedInstances=`ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .dmegalib.bashrc; dmegalib-allowedinstances"` 
 fi
 
 echo "${AllowedInstances}"

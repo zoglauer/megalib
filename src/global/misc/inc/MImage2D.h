@@ -42,7 +42,7 @@ class MImage2D : public MImage
   MImage2D(MString Title, double* IA, 
            MString xTitle, double xMin, double xMax, int xNBins, 
            MString yTitle, double yMin, double yMax, int yNBins, 
-           MString vTitle, int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
+           MString vTitle, int Spectrum = c_Viridis, int DrawOption = c_COLCONTZ);
   //! Standard destructor
   virtual ~MImage2D();
 
