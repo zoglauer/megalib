@@ -322,7 +322,9 @@ public:
   /// Id of a broken power law energy distribution
   static const int c_BrokenPowerLaw; 
   /// Id of a cutoff power law energy distribution
-  static const int c_CutOffPowerLaw; 
+  static const int c_CutOffPowerLaw;
+  /// Id of a Comptonized distribution: E^alpha * exp(-(alpha+2)*E/E_peak)
+  static const int c_Comptonized;
   /// Id of a Gaussian energy distribution
   static const int c_Gaussian; 
   /// Id of a thermal bremsstrahlung distribution: 1/E*exp(E/E_T)
@@ -582,6 +584,8 @@ protected:
   double BlackBody(double Energy, double Temperature) const; 
   /// Shape of a Band function
   double BandFunction(const double Energy, double Alpha, const double Beta, const double E0) const; 
+  /// Shape of a Comptonized spectrum
+  double Comptonized(const double Energy, double Alpha, double Epeak) const;
 
   // protected members:
 protected:

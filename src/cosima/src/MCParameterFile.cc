@@ -1127,7 +1127,7 @@ bool MCParameterFile::Parse()
                 mdebug<<"Setting energy min ="<<T->GetTokenAtAsDouble(3)
                       <<" keV and max = "<<T->GetTokenAtAsDouble(4)
                       <<" keV and alpha = "<<T->GetTokenAtAsDouble(5)
-                      <<" keV and cutoff = "<<T->GetTokenAtAsDouble(6)
+                      <<" and cutoff = "<<T->GetTokenAtAsDouble(6)
                       <<" keV for source "<<Source->GetName()<<endl;
               } else {
                 Typo(i, "Cannot parse token Spectrum - power law correctly:"
@@ -1140,6 +1140,29 @@ bool MCParameterFile::Parse()
               return false;
             }
           } 
+          else if (Type == "comptonized" || Type == "comptonization" || Type == "comp") {
+            if (T->GetNTokens() == 7) {
+              Source->SetSpectralType(MCSource::c_Comptonized);
+              if (Source->SetEnergy(T->GetTokenAtAsDouble(3)*keV,
+                                    T->GetTokenAtAsDouble(4)*keV,
+                                    T->GetTokenAtAsDouble(5),
+                                    T->GetTokenAtAsDouble(6)*keV) == true) {
+                mdebug<<"Setting energy min ="<<T->GetTokenAtAsDouble(3)
+                      <<" keV and max = "<<T->GetTokenAtAsDouble(4)
+                      <<" keV and alpha = "<<T->GetTokenAtAsDouble(5)
+                      <<" and peak = "<<T->GetTokenAtAsDouble(6)
+                      <<" keV for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token Spectrum - comptonization correctly:"
+                     " Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token Spectrum - power law correctly:"
+                   " Number of tokens is not correct!");
+              return false;
+            }
+          }
           else if (Type == "gaussian" || Type == "g") {
             if (T->GetNTokens() == 6) {
               Source->SetSpectralType(MCSource::c_Gaussian);

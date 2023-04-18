@@ -57,14 +57,15 @@ const int MCSource::c_Monoenergetic                                = 1;
 const int MCSource::c_Linear                                       = 2; 
 const int MCSource::c_PowerLaw                                     = 3; 
 const int MCSource::c_BrokenPowerLaw                               = 4; 
-const int MCSource::c_CutOffPowerLaw                               = 5; 
-const int MCSource::c_Gaussian                                     = 6; 
-const int MCSource::c_ThermalBremsstrahlung                        = 7; 
-const int MCSource::c_BlackBody                                    = 8; 
-const int MCSource::c_BandFunction                                 = 9; 
-const int MCSource::c_FileDifferentialFlux                         = 10;
-const int MCSource::c_Activation                                   = 11; 
-const int MCSource::c_NormalizedEnergyBeamFluxFunction             = 12;
+const int MCSource::c_CutOffPowerLaw                               = 5;
+const int MCSource::c_Comptonized                                  = 6;
+const int MCSource::c_Gaussian                                     = 7;
+const int MCSource::c_ThermalBremsstrahlung                        = 8;
+const int MCSource::c_BlackBody                                    = 9;
+const int MCSource::c_BandFunction                                 = 10;
+const int MCSource::c_FileDifferentialFlux                         = 11;
+const int MCSource::c_Activation                                   = 12;
+const int MCSource::c_NormalizedEnergyBeamFluxFunction             = 13;
 
 const int MCSource::c_StartAreaUnknown                             = 0;
 const int MCSource::c_StartAreaSphere                              = 1;
@@ -674,6 +675,7 @@ bool MCSource::SetSpectralType(const int& SpectralType)
   case c_PowerLaw:
   case c_BrokenPowerLaw:
   case c_CutOffPowerLaw:
+  case c_Comptonized:
   case c_Gaussian:
   case c_ThermalBremsstrahlung:
   case c_BlackBody:
@@ -716,6 +718,9 @@ string MCSource::GetSpectralTypeAsString() const
     break;
   case c_CutOffPowerLaw:
     Name = "CutOffPowerLaw";
+    break;
+  case c_Comptonized:
+    Name = "Comptonized";
     break;
   case c_Gaussian:
     Name = "Gaussian";
@@ -771,6 +776,9 @@ string MCSource::GetSpectralAsString() const
     break;
   case c_CutOffPowerLaw:
     Name<<"CutOffPowerLaw "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3<<" "<<m_EnergyParam4/keV;
+    break;
+  case c_Comptonized:
+    Name<<"Comptonized "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3<<" "<<m_EnergyParam4/keV;
     break;
   case c_Gaussian:
     Name<<"Gaussian "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3;
@@ -1720,6 +1728,19 @@ bool MCSource::SetEnergy(double EnergyParam1,
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The cutoff energy must be larger than 0!"<<endl;
       return false;
     }
+  } else if (m_SpectralType == c_Comptonized) {
+    if (m_EnergyParam1 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam2 <= m_EnergyParam1) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam4 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The peak energy must be larger than 0!"<<endl;
+      return false;
+    }
   } else if (m_SpectralType == c_Gaussian) {
     if (m_EnergyParam1 <= 0) {
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The energy must be larger than 0!"<<endl;
@@ -1800,12 +1821,67 @@ bool MCSource::SetEnergy(double EnergyParam1,
  */
 bool MCSource::UpgradeEnergy() 
 {
+  // For distributions which use the maximum method,
+  //  cut off the min and max energy if the value falls below UpgradeCutOff of the maximum
+  double UpgradeCutOff = 1E-15;
+
   if (m_SpectralType == c_BrokenPowerLaw) {
     m_EnergyParam6 = pow(m_EnergyParam3, -m_EnergyParam4+m_EnergyParam5);
   } else if (m_SpectralType == c_CutOffPowerLaw) {
     m_EnergyParam5 = pow(m_EnergyParam1, -m_EnergyParam3+1);
     m_EnergyParam6 = pow(m_EnergyParam2, -m_EnergyParam3+1);
     m_EnergyParam7 = exp(-m_EnergyParam1/m_EnergyParam4);
+  } else if (m_SpectralType == c_Comptonized) {
+    // Calculate the maximum of the distribution
+    // Reminder:
+    // m_EnergyParam1 = Emin
+    // m_EnergyParam2 = Emax
+    // m_EnergyParam3 = Alpha
+    // m_EnergyParam3 = Epeak
+    // m_EnergyParam5 = Maximum with Emin & Emax
+    // m_EnergyParam6 = New Emin
+    // m_EnergyParam7 = New Emax
+
+
+    m_EnergyParam5 = 0;
+    double EMaxPos = -1.0;
+    if (m_EnergyParam3 != -2) {
+      EMaxPos = m_EnergyParam4*m_EnergyParam3/(m_EnergyParam3 + 2);
+    }
+    if (EMaxPos >= m_EnergyParam1 && EMaxPos <= m_EnergyParam2) {
+      m_EnergyParam5 = Comptonized(EMaxPos, m_EnergyParam3, m_EnergyParam4);
+    } else {
+      m_EnergyParam5 = Comptonized(m_EnergyParam1, m_EnergyParam3, m_EnergyParam4);
+      if (Comptonized(m_EnergyParam2, m_EnergyParam3, m_EnergyParam4) > m_EnergyParam5) {
+        m_EnergyParam5 = Comptonized(m_EnergyParam2, m_EnergyParam3, m_EnergyParam4);
+      }
+    }
+
+    m_EnergyParam7 = m_EnergyParam2;
+    while (true) {
+      if (Comptonized(m_EnergyParam7, m_EnergyParam3, m_EnergyParam4) / m_EnergyParam5 < UpgradeCutOff) {
+        m_EnergyParam7 -= 1.0*keV;
+      } else {
+        break;
+      }
+    }
+
+    m_EnergyParam6 = m_EnergyParam1;
+    while (true) {
+      if (Comptonized(m_EnergyParam6, m_EnergyParam3, m_EnergyParam4) / m_EnergyParam5 < UpgradeCutOff) {
+        m_EnergyParam6 += 1.0*keV;
+      } else {
+        break;
+      }
+    }
+
+    if (m_EnergyParam6 != m_EnergyParam1) {
+      mout<<m_Name<<": Optimized minimum energy: "<<m_EnergyParam6/keV<<" (orig: "<<m_EnergyParam1/keV<<")"<<endl;
+    }
+    if (m_EnergyParam7 != m_EnergyParam2) {
+      mout<<m_Name<<": Optimized maximum energy: "<<m_EnergyParam7/keV<<" (orig: "<<m_EnergyParam2/keV<<")"<<endl;
+    }
+
   } else if (m_SpectralType == c_BlackBody) {
     massert(m_EnergyParam1 > 0);
     massert(m_EnergyParam2 > m_EnergyParam1);
@@ -2514,6 +2590,9 @@ double MCSource::GetMeanEnergy() const
   case c_CutOffPowerLaw:
     mimp<<"GetMeanNotYetImplemented!"<<show;
     break;
+  case c_Comptonized:
+    mimp<<"GetMeanNotYetImplemented!"<<show;
+    break;
   case c_Gaussian:
     Energy = m_EnergyParam1;
     break;
@@ -2593,7 +2672,7 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
     }
   } else if (m_SpectralType == c_CutOffPowerLaw) {
     
-    int MaxLoop = 1000;
+    int MaxLoop = 10000;
     m_Energy = 0;
     while (MaxLoop-- > 0) {
       if (m_EnergyParam3 != 1.0) {
@@ -2605,7 +2684,20 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
       if (CLHEP::RandFlat::shoot(1) < exp(-m_Energy/m_EnergyParam4)/m_EnergyParam7) break;
     }
     if (MaxLoop == 0) {
-      merr<<"Error: CutOffPowerlaw energy calculation: No result after 1000 loops"<<endl;
+      merr<<m_Name<<": Error: CutOffPowerlaw energy calculation: No result after 10000 loops"<<endl;
+      return false;
+    }
+
+  } else if (m_SpectralType == c_Comptonized) {
+
+    int MaxLoop = 10000;
+    m_Energy = 0;
+    while (MaxLoop-- > 0) {
+      m_Energy = CLHEP::RandFlat::shoot(1) * (m_EnergyParam7 - m_EnergyParam6) + m_EnergyParam6;
+      if (CLHEP::RandFlat::shoot(1) < Comptonized(m_Energy, m_EnergyParam3, m_EnergyParam4)/m_EnergyParam5) break;
+    }
+    if (MaxLoop == 0) {
+      merr<<m_Name<<": Error: Comptonized energy calculation: No result after 10000 loops"<<endl;
       return false;
     }
 
@@ -3501,6 +3593,16 @@ double MCSource::BandFunction(const double Energy, double Alpha,
   }
 }
 
+
+/******************************************************************************
+ * Shape of a Comptonized spectrum
+ */
+double MCSource::Comptonized(const double Energy, double Alpha, double Epeak) const
+{
+  if (Epeak == 0) return 0;
+
+  return pow(Energy, Alpha)*exp(-(Alpha+2)*Energy/Epeak);
+}
 
 /*
  * MCSource.cc: the end...

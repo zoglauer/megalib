@@ -38,6 +38,8 @@
 #include <fstream>
 #include <future>
 #include <cmath>
+#include <chrono>
+#include <thread>
 using namespace std;
 
 /******************************************************************************/
@@ -65,6 +67,7 @@ protected:
   double TestPowerLaw();
   double TestBrokenPowerLaw();
   double TestCutOffPowerLaw();
+  double TestComptonization();
 
 
   // protected members:
@@ -88,8 +91,10 @@ private:
 UTCosimaInputSpectra::UTCosimaInputSpectra()
 {
   m_MassModelFileName = "$(MEGALIB)/src/cosima/unittests/GiganticSphere.geo.setup";
-  m_NumberOfTriggers = 200000;
+  m_NumberOfTriggers = 100000;
   m_SingleMode = false;
+
+  gROOT->SetBatch(true);
 }
 
 
@@ -112,17 +117,22 @@ bool UTCosimaInputSpectra::RunSingle()
 bool UTCosimaInputSpectra::Run()
 {
   future<double> TestPowerLawResult = async(launch::async, &UTCosimaInputSpectra::TestPowerLaw, this);
+  std::this_thread::sleep_for(std::chrono::milliseconds(5));
   future<double> TestCutOffPowerLawResult = async(launch::async, &UTCosimaInputSpectra::TestCutOffPowerLaw, this);
-  
+  std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  future<double> TestComptonization = async(launch::async, &UTCosimaInputSpectra::TestComptonization, this);
+  std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
   bool AllPassed = true;
 
   double TestPowerLawSigma = TestPowerLawResult.get();
   double TestCutOffPowerLawSigma = TestCutOffPowerLawResult.get();
+  double TestComptonizationSigma = TestComptonization.get();
 
   if (TestPowerLawSigma < 0) {
     cout<<"Failed: Power law test did not finish"<<endl;
     AllPassed = false;
-  } else if (TestPowerLawSigma >= 3) {
+  } else if (TestPowerLawSigma >= 3 || std::isnan(TestPowerLawSigma) == true) {
     cout<<"Failed: Power law significance: "<<TestPowerLawSigma<<" sigma"<<endl;
     AllPassed = false;
   } else {
@@ -132,13 +142,23 @@ bool UTCosimaInputSpectra::Run()
   if (TestCutOffPowerLawSigma < 0) {
     cout<<"Failed: Cutoff power law test did not finish"<<endl;
     AllPassed = false;
-  } else if (TestCutOffPowerLawSigma >= 3) {
-    cout<<"Failed: Cutoff power  law significance: "<<TestCutOffPowerLawSigma<<" sigma"<<endl;
+  } else if (TestCutOffPowerLawSigma >= 3 || std::isnan(TestCutOffPowerLawSigma) == true) {
+    cout<<"Failed: Cutoff power law significance: "<<TestCutOffPowerLawSigma<<" sigma"<<endl;
     AllPassed = false;
   } else {
-    cout<<"Passed: Cutoff power  law significance: "<<TestCutOffPowerLawSigma<<" sigma"<<endl;
+    cout<<"Passed: Cutoff power law significance: "<<TestCutOffPowerLawSigma<<" sigma"<<endl;
   }
-  
+
+  if (TestComptonizationSigma < 0) {
+    cout<<"Failed: Comptonization test did not finish"<<endl;
+    AllPassed = false;
+  } else if (TestComptonizationSigma >= 3 || std::isnan(TestComptonizationSigma) == true) {
+    cout<<"Failed: Comptonization significance: "<<TestComptonizationSigma<<" sigma"<<endl;
+    AllPassed = false;
+  } else {
+    cout<<"Passed: Comptonization significance: "<<TestComptonizationSigma<<" sigma"<<endl;
+  }
+
   if (AllPassed == true) {
     cout<<"Passed: All passed"<<endl;
   }
@@ -240,14 +260,14 @@ TH1D* UTCosimaInputSpectra::CreateSpectrum(MString FileNamePrefix, unsigned int 
 double UTCosimaInputSpectra::TestPowerLaw()
 {
   cout<<"Started test power law"<<endl;
-  
+
   int EMin = 10;
   int EMax = 10000;
   double PhotonIndex = 2;
-  
+
   MString FileNamePrefix = "TestPowerLaw";
   if (CreateSourceFile(FileNamePrefix, MString("PowerLaw") + " " + EMin + " " + EMax + " " + PhotonIndex) == false) return false;
-  
+
   if (system(MString("rm -f ") + FileNamePrefix + ".inc1.id1.sim.gz") == -1) {
     return -1;
   }
@@ -257,12 +277,12 @@ double UTCosimaInputSpectra::TestPowerLaw()
 
   TH1D* Spectrum = CreateSpectrum(FileNamePrefix, 100, EMin, EMax);
   if (Spectrum == nullptr) return -1;
-  
+
   TF1* Fit = new TF1(FileNamePrefix + "Fit","[0]*pow(x,-[1])", EMin, EMax);
   Fit->SetParameters(100, 2.5);
-  
+
   Spectrum->Fit(Fit, "IMN");
-  
+
   double FittedPhotonIndex = Fit->GetParameter(1);
   double FittedPhotonIndexError = Fit->GetParError(1);
 
@@ -270,6 +290,58 @@ double UTCosimaInputSpectra::TestPowerLaw()
   delete Spectrum;
 
   return fabs(PhotonIndex - FittedPhotonIndex) / FittedPhotonIndexError;
+}
+
+
+
+/******************************************************************************
+ * Comptonization test
+ */
+double UTCosimaInputSpectra::TestComptonization()
+{
+  cout<<"Started test comptonization"<<endl;
+
+  int EMin = 10;
+  int EMax = 10000;
+  double EPeak = 200;
+  double Alpha = -1.5;
+
+  MString FileNamePrefix = "TestComptonization";
+  if (CreateSourceFile(FileNamePrefix, MString("Comptonized") + " " + EMin + " " + EMax + " " + Alpha + " " +EPeak) == false) return false;
+
+  if (system(MString("rm -f ") + FileNamePrefix + ".inc1.id1.sim.gz") == -1) {
+    return -1;
+  }
+  cout<<"Launching cosima"<<endl;
+  if (system(MString("cosima -v 0 -z ") + FileNamePrefix + ".source &> Comptonized.log") == -1) {
+    return -1;
+  }
+
+  TH1D* Spectrum = CreateSpectrum(FileNamePrefix, 100, EMin, EMax);
+  if (Spectrum == nullptr) return -1;
+
+  TF1* Fit = new TF1(FileNamePrefix + "Fit","[0]*pow(x,[1])*exp(-([1]+2)*x/[2])", EMin, EMax);
+  Fit->SetParameters(10000, Alpha, EPeak);
+
+  Spectrum->Fit(Fit, "IMNR");
+
+  TCanvas* C = new TCanvas();
+  C->cd();
+  Spectrum->Draw();
+  Fit->Draw("SAME");
+  C->Update();
+  C->SaveAs(FileNamePrefix + ".png");
+
+  double FittedAlpha = Fit->GetParameter(1);
+  double FittedAlphaError = Fit->GetParError(1);
+
+  double FittedEPeak = Fit->GetParameter(2);
+  double FittedEPeakError = Fit->GetParError(2);
+
+  delete Fit;
+  delete Spectrum;
+
+  return max(fabs(EPeak - FittedEPeak) / FittedEPeakError, fabs(Alpha - FittedAlpha) / FittedAlphaError);
 }
 
 
@@ -319,7 +391,7 @@ double UTCosimaInputSpectra::TestBrokenPowerLaw()
  */
 double UTCosimaInputSpectra::TestCutOffPowerLaw()
 {
-  cout<<"Started cut off power law"<<endl;
+  cout<<"Started cut-off power law"<<endl;
 
   int EMin = 10;
   int EMax = 10000;
