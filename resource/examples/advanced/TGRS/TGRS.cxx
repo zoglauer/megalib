@@ -335,7 +335,7 @@ bool TGRS::Analyze()
       Hists[i]->SetBinContent(b, Hists[i]->GetBinContent(b)/Hists[i]->GetBinWidth(b));
     }
     cout<<"Obs Time: "<<SimFiles[i]->GetObservationTime()<<endl;
-    Hists[i]->Scale(1.0/SimFiles[i]->GetObservationTime());
+    Hists[i]->Scale(1.0/SimFiles[i]->GetObservationTime().GetAsDouble());
 
     Hists[i]->SetLineColor(3+i);
     Hists[i]->Draw("SAME");
