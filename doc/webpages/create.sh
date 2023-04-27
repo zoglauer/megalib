@@ -15,7 +15,7 @@ if [[ ! -d templates ]]; then
 fi
 
 if [[ ! -d python-env ]]; then
-  virtualenv -p python3 python-env
+  python3 -m venv python-env
   source python-env/bin/activate
   pip install bibtexparser
   pip install bs4
