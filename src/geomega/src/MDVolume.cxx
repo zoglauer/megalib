@@ -1389,36 +1389,43 @@ bool MDVolume::Validate()
 
 bool MDVolume::ValidateClonesHaveSameMotherVolume()
 {
-  // All copies must be in mothers of the some volume type
+  // All copies must be in mothers of the same volume type
 
-  MString MothersCloneTemplate = g_StringNotDefined;
+  bool MotherCloneTemplateFound = false;
+  MString MothersCloneTemplatesName = "";
 
-  // If this is a clone template:
-  if (GetCloneTemplate() != 0) {
+  // If this is a clone:
+  if (GetCloneTemplate() != nullptr) {
     for (unsigned int c = 0; c < GetCloneTemplate()->GetNClones(); ++c) {
-      if (GetCloneTemplate()->GetCloneAt(c)->GetMother() != 0) {
+      MDVolume* Mother = GetCloneTemplate()->GetCloneAt(c)->GetMother();
+      if (Mother != nullptr) {
         // Ignore virtual volumes:
-        if (GetCloneTemplate()->GetCloneAt(c)->GetMother()->IsVirtual() == false) {
-          if (GetCloneTemplate()->GetCloneAt(c)->GetMother()->GetCloneTemplate() != 0) {
-            if (MothersCloneTemplate == g_StringNotDefined) {
-              MothersCloneTemplate = GetCloneTemplate()->GetCloneAt(c)->GetMother()->GetCloneTemplate()->GetName();
+        if (Mother->IsVirtual() == false) {
+          MDVolume* MothersCloneTemplate = Mother->GetCloneTemplate();
+          if (MothersCloneTemplate != nullptr) {
+            if (MotherCloneTemplateFound == false) {
+              MothersCloneTemplatesName = MothersCloneTemplate->GetName();
+              MotherCloneTemplateFound = true;
             } else {
-              if (MothersCloneTemplate != GetCloneTemplate()->GetCloneAt(c)->GetMother()->GetCloneTemplate()->GetName()) {
+              if (MothersCloneTemplatesName.AreIdentical(MothersCloneTemplate->GetName()) == false) {
+              //if (MothersCloneTemplatesName != MothersCloneTemplate->GetName()) {
                 mout<<"   ***  SEVERE WARNING  ***  in volume "<<m_Name<<endl;
-                mout<<"Some of the clones are residing in different mother volumes(e.g. "<<MothersCloneTemplate
-                    <<" and "<<GetCloneTemplate()->GetCloneAt(c)->GetMother()->GetCloneTemplate()->GetName()<<")!"<<endl;
+                mout<<"Some of the clones are residing in different mother volumes(e.g. "<<MothersCloneTemplatesName
+                    <<" and "<<MothersCloneTemplate->GetName()<<")!"<<endl;
                 mout<<"Activation simulations will fail!"<<endl;
                 break;
               }
             }
           } else {
-            if (MothersCloneTemplate == g_StringNotDefined) {
-              MothersCloneTemplate = GetCloneTemplate()->GetCloneAt(c)->GetMother()->GetName();
+            if (MotherCloneTemplateFound == false) {
+              MothersCloneTemplatesName = Mother->GetName();
+              MotherCloneTemplateFound = true;
             } else {
-              if (MothersCloneTemplate != GetCloneTemplate()->GetCloneAt(c)->GetMother()->GetName()) {
+              //if (MothersCloneTemplatesName != Mother->GetName()) {
+              if (MothersCloneTemplatesName.AreIdentical(Mother->GetName()) == false) {
                 mout<<"   ***  SEVERE WARNING  ***  in volume "<<m_Name<<endl;
-                mout<<"Some of the clones are residing in different mother volumes (e.g. "<<MothersCloneTemplate
-                    <<" and "<<GetCloneTemplate()->GetCloneAt(c)->GetMother()->GetName()<<")!"<<endl;
+                mout<<"Some of the clones are residing in different mother volumes (e.g. "<<MothersCloneTemplatesName
+                    <<" and "<<Mother->GetName()<<")!"<<endl;
                 mout<<"Activation simulations will fail!"<<endl;
                 break;
               }
@@ -1429,10 +1436,24 @@ bool MDVolume::ValidateClonesHaveSameMotherVolume()
     }
   }
 
-    // Test daughters
+  // Test daughters - we do some modest speed up here since we only need to check the clone template once
+  vector<int> CheckedCloneTemplatesIDs;
+  for (unsigned int i = 0; i < GetNDaughters(); i++) {
+    if (GetDaughterAt(i)->GetCloneTemplate() != nullptr) {
+      if (std::find(CheckedCloneTemplatesIDs.begin(), CheckedCloneTemplatesIDs.end(), GetDaughterAt(i)->GetCloneTemplate()->GetID()) == CheckedCloneTemplatesIDs.end()) {
+        if (GetDaughterAt(i)->ValidateClonesHaveSameMotherVolume() == false) return false;
+        CheckedCloneTemplatesIDs.push_back(GetDaughterAt(i)->GetCloneTemplate()->GetID());
+      }
+    } else {
+      if (GetDaughterAt(i)->ValidateClonesHaveSameMotherVolume() == false) return false;
+    }
+  }
+
+  /*
   for (unsigned int i = 0; i < GetNDaughters(); i++) {
     if (GetDaughterAt(i)->ValidateClonesHaveSameMotherVolume() == false) return false;
   }
+  */
 
   return true;
 }
