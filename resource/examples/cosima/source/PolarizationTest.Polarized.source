@@ -13,8 +13,8 @@ StoreSimulationInfo       all
 
 # Run & source parameters
 Run SpaceSim
-SpaceSim.FileName         PolarizationTest.polarized
-SpaceSim.Triggers         100000
+SpaceSim.FileName         PolarizationTest.Polarized
+SpaceSim.Triggers         1000000
 
 SpaceSim.Source Crab
 Crab.ParticleType         1

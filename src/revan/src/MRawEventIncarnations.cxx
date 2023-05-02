@@ -102,12 +102,13 @@ MString MRawEventIncarnations::ToString(bool WithLink, int Level)
   }
   String += MString("Raw event with the following possible combinations:\n");
 
-  char Text[100];
+  const int Length = 100;
+  char Text[Length];
   for (int e = 0; e < GetNRawEvents(); e++) {
     for (int i = 0; i < Level; i++) {
       String += MString("   ");
     }
-    sprintf(Text, "Combination %d:\n", e+1);
+    snprintf(Text, Length, "Combination %d:\n", e+1);
     String += MString(Text);
 
     String += GetRawEventAt(e)->ToString(WithLink, Level+1);

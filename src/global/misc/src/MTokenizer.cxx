@@ -953,10 +953,10 @@ bool MTokenizer::CheckMaths(const MString& Token)
     T.RemoveAllInPlace("}");
     T.RemoveAllInPlace(".");
     T.RemoveAllInPlace(",");
-    T.RemoveAllInPlace(">");
-    T.RemoveAllInPlace("<");
     T.RemoveAllInPlace(">=");
     T.RemoveAllInPlace("<=");
+    T.RemoveAllInPlace(">");
+    T.RemoveAllInPlace("<");
     T.RemoveAllInPlace("!=");
     T.RemoveAllInPlace("==");
     T.RemoveAllInPlace("|");

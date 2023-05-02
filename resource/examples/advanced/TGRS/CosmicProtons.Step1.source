@@ -22,7 +22,7 @@ DefaultRangeCut     0.1
 # The run:
 Run Level1
 Level1.FileName               CosmicProtonsPrompt
-Level1.Triggers               500000
+Level1.Time                   500
 Level1.IsotopeProductionFile  IsotopesLarge.dat
 
 Level1.Source Level1_ProtonSource

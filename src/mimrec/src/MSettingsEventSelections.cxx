@@ -139,6 +139,20 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_BeamFocalSpotZ = 0.0;
   m_BeamRadius = 1000.0;
   m_BeamDepth = 1000.0;
+  
+  m_BoxUse = false;
+  m_BoxFirstIAMinX = -10000.0;
+  m_BoxFirstIAMinY = -10000.0; 
+  m_BoxFirstIAMinZ = -10000.0;
+  m_BoxFirstIAMaxX = +10000.0;
+  m_BoxFirstIAMaxY = +10000.0;
+  m_BoxFirstIAMaxZ = +10000.0;
+  m_BoxSecondIAMinX = -10000.0;
+  m_BoxSecondIAMinY = -10000.0; 
+  m_BoxSecondIAMinZ = -10000.0;
+  m_BoxSecondIAMaxX = +10000.0;
+  m_BoxSecondIAMaxY = +10000.0;
+  m_BoxSecondIAMaxZ = +10000.0;
 
   m_ThetaDeviationMax = 180;
 
@@ -289,6 +303,22 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "Radius", m_BeamRadius); 
   new MXmlNode(bNode, "BeamDepth", m_BeamDepth);
   
+  bNode = new MXmlNode(aNode, "Box");
+  new MXmlNode(bNode, "UseBox", m_BoxUse);
+  new MXmlNode(bNode, "FirstIAMinX", m_BoxFirstIAMinX); 
+  new MXmlNode(bNode, "FirstIAMinY", m_BoxFirstIAMinY); 
+  new MXmlNode(bNode, "FirstIAMinZ", m_BoxFirstIAMinZ); 
+  new MXmlNode(bNode, "FirstIAMaxX", m_BoxFirstIAMaxX); 
+  new MXmlNode(bNode, "FirstIAMaxY", m_BoxFirstIAMaxY); 
+  new MXmlNode(bNode, "FirstIAMaxZ", m_BoxFirstIAMaxZ); 
+  new MXmlNode(bNode, "SecondIAMinX", m_BoxSecondIAMinX); 
+  new MXmlNode(bNode, "SecondIAMinY", m_BoxSecondIAMinY); 
+  new MXmlNode(bNode, "SecondIAMinZ", m_BoxSecondIAMinZ); 
+  new MXmlNode(bNode, "SecondIAMaxX", m_BoxSecondIAMaxX); 
+  new MXmlNode(bNode, "SecondIAMaxY", m_BoxSecondIAMaxY); 
+  new MXmlNode(bNode, "SecondIAMaxZ", m_BoxSecondIAMaxZ); 
+
+
   bNode = new MXmlNode(aNode, "ExcludedFirstIADetectors");
   for (unsigned int i = 0; i < m_ExcludedFirstIADetectors.size(); ++i) {
     new MXmlNode(bNode, "ExcludedFirstIADetector",  m_ExcludedFirstIADetectors[i]);
@@ -556,6 +586,49 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
       if ((cNode = bNode->GetNode("BeamDepth")) != 0) {
         m_BeamDepth = cNode->GetValueAsDouble();
       }
+    }
+      
+    if ((bNode = aNode->GetNode("Box")) != 0) {
+      if ((cNode = bNode->GetNode("UseBox")) != 0) {
+        m_BoxUse = cNode->GetValueAsBoolean();
+      }
+      if ((cNode = bNode->GetNode("FirstIAMinX")) != 0) {
+        m_BoxFirstIAMinX = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("FirstIAMinY")) != 0) {
+        m_BoxFirstIAMinY = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("FirstIAMinZ")) != 0) {
+        m_BoxFirstIAMinZ = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("FirstIAMaxX")) != 0) {
+        m_BoxFirstIAMaxX = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("FirstIAMaxY")) != 0) {
+        m_BoxFirstIAMaxY = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("FirstIAMaxZ")) != 0) {
+        m_BoxFirstIAMaxZ = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("SecondIAMinX")) != 0) {
+        m_BoxSecondIAMinX = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("SecondIAMinY")) != 0) {
+        m_BoxSecondIAMinY = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("SecondIAMinZ")) != 0) {
+        m_BoxSecondIAMinZ = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("SecondIAMaxX")) != 0) {
+        m_BoxSecondIAMaxX = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("SecondIAMaxY")) != 0) {
+        m_BoxSecondIAMaxY = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("SecondIAMaxZ")) != 0) {
+        m_BoxSecondIAMaxZ = cNode->GetValueAsDouble();
+      }
+
     }
     
     if ((bNode = aNode->GetNode("ExcludedFirstIADetectors")) != 0 || (bNode = aNode->GetNode("ExcludedDetectors")) != 0) {

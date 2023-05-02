@@ -167,6 +167,67 @@ bool MVector::operator<(const MVector& V) const
 
   return true;
 }
+  
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MVector::AtLeastOneSmaller(const MVector& V) const
+{
+  // At least one component of V is smaller
+
+  if (V.m_X < m_X) return true;
+  if (V.m_Y < m_Y) return true;
+  if (V.m_Z < m_Z) return true;
+
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MVector::AtLeastOneLarger(const MVector& V) const
+{
+  // At least one component of V is larger
+  
+  if (V.m_X > m_X) return true;
+  if (V.m_Y > m_Y) return true;
+  if (V.m_Z > m_Z) return true;
+
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MVector::AllSmaller(const MVector& V) const
+{
+  //! All components of V are smaller
+  
+  if (V.m_X < m_X && V.m_Y < m_Y && V.m_Z < m_Z) {
+    return true;
+  }
+  
+  return false;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MVector::AllLarger(const MVector& V) const
+{
+  //! All components of V are larger
+  
+  if (V.m_X > m_X && V.m_Y > m_Y && V.m_Z > m_Z) {
+    return true;
+  }
+   
+  return false; 
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

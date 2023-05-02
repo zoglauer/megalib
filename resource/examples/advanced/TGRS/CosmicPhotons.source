@@ -17,7 +17,7 @@ DiscretizeHits                       true
 
 Run SpaceSim
 SpaceSim.FileName         CosmicPhotons
-SpaceSim.Time             50000.0
+SpaceSim.Time             500.0
 
 SpaceSim.Source MySource
 MySource.ParticleType           1

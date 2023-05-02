@@ -381,13 +381,14 @@ MString MJulianDay::GetUTCString()
 {
   // Liefert den aktuellen JulianDay als String zurück
 
-  char Text[100];
+  const int Length = 100;
+  char Text[Length];
 
   int Year, Month, Day, Hour, Minute, Second, NanoSecond;
 
   CalculateUTC(Year, Month, Day, Hour, Minute, Second, NanoSecond);
   // und in String schreiben
-  sprintf(Text, "%02u.%02u.%04d %02u:%02u:%02u:%09u", 
+  snprintf(Text, Length, "%02u.%02u.%04d %02u:%02u:%02u:%09u",
           Day, Month, Year, Hour, Minute, Second, NanoSecond);
 
   //mlog<<m_Day<<":"<<m_Month<<":"<<m_Year<<":"<<m_Hour<<":"<<m_Minute<<":"<<m_Second<<":"<<m_MicroSecond<<endl;

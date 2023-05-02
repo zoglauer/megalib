@@ -432,10 +432,11 @@ MString MRESEList::ToString(bool WithLink, int Level)
 
   massert(this != 0);
 
-  char Text[1000];
+  const int Length = 1000;
+  char Text[Length];
 
   MString String("");
-  sprintf(Text, "Contents of this RESEList:\n");
+  snprintf(Text, Length, "Contents of this RESEList:\n");
   for (int i = 0; i < Level; i++) {
     String += MString("   ");
   }

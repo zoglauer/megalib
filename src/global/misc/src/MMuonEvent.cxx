@@ -74,18 +74,19 @@ MString MMuonEvent::ToString() const
 {
   // Display the compton-data of this event
 
-  char Text[1000];
+  const int Length = 1000;
+  char Text[Length];
   MString String("The data of the Muon-event:\n"); 
 
-  sprintf(Text, "Energy: %.3f\n", m_Energy);
+  snprintf(Text, Length, "Energy: %.3f\n", m_Energy);
   String += MString(Text);
 
-  sprintf(Text, "Direction: %.3f, %.3f, %.3f\n", 
+  snprintf(Text, Length, "Direction: %.3f, %.3f, %.3f\n",
           m_Direction.X(), m_Direction.Y(), 
           m_Direction.Z());
   String += MString(Text);
 
-  sprintf(Text, "CenterOfGravity: %.3f, %.3f, %.3f\n", 
+  snprintf(Text, Length, "CenterOfGravity: %.3f, %.3f, %.3f\n",
           m_CenterOfGravity.X(), m_CenterOfGravity.Y(), 
           m_CenterOfGravity.Z());
   String += MString(Text);
