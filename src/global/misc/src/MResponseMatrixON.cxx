@@ -1354,6 +1354,32 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
                 break;
               }
             }
+          } else if (Type == "2D HEALPix") {
+            if (AxisName.size() != 2) {
+              mout<<"MResponseMatrixON: Did not find two axis names for the response matrix axis!"<<endl;
+              return false;
+            }
+            MResponseMatrixAxisSpheric* A = new MResponseMatrixAxisSpheric(AxisName[0], AxisName[1]);
+            // Sub parse until we found the axis data
+            while (Parser.TokenizeLine(T, true) == true) {
+              if (T.GetNTokens() < 2) continue;
+              if (T.GetTokenAt(0) == "AD") {
+                if (T.GetNTokens() == 2) {
+
+                  if (T.GetTokenAfterAsString(2) != "RING") {
+                  mout<<"MResponseMatrixON: Only HEALPix RING scheme supported for now!"<<endl;
+                  return false;
+                  }
+                  
+                  A->SetHEALPix(T.GetTokenAtAsUnsignedInt(1));
+                } else {
+                  mout<<"MResponseMatrixON: The HEALPix AD axis key word needs 2 (order and scheme) arguments!"<<endl;
+                  return false;
+                }
+                m_Axes.push_back(A);
+                break;
+              }
+            }
           }
         }
         break;
