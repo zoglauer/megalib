@@ -1364,11 +1364,11 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
             while (Parser.TokenizeLine(T, true) == true) {
               if (T.GetNTokens() < 2) continue;
               if (T.GetTokenAt(0) == "AD") {
-                if (T.GetNTokens() == 2) {
+                if (T.GetNTokens() == 3) {
 
                   if (T.GetTokenAfterAsString(2) != "RING") {
-                  mout<<"MResponseMatrixON: Only HEALPix RING scheme supported for now!"<<endl;
-                  return false;
+                    mout<<"MResponseMatrixON: Only HEALPix RING scheme supported for now!"<<endl;
+                    return false;
                   }
                   
                   A->SetHEALPix(T.GetTokenAtAsUnsignedInt(1));
