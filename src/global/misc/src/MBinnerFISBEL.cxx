@@ -430,6 +430,10 @@ void MBinnerFISBEL::View(vector<double> Data) const
   gSystem->ProcessEvents();
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return the minimum axis values
 vector<double> MBinnerFISBEL::GetMinima() const
 {
@@ -446,6 +450,10 @@ vector<double> MBinnerFISBEL::GetMaxima() const
   return { 180, GetLongitudeShift() + 360 };
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MBinnerFISBEL::Write(MString name, ostringstream& out) const
 {
   out<<"# Axis name"<<endl;
@@ -453,7 +461,7 @@ void MBinnerFISBEL::Write(MString name, ostringstream& out) const
   out<<"# Axis type"<<endl;
   out<<"AT 2D FISBEL"<<endl;
   out<<"# Axis data"<<endl;
-  out<<"AD "<< GetNBins() << "  " << GetLongitudeShift() * c_Deg<<endl;
+  out<<"AD "<< GetNBins() << " " << GetLongitudeShift() * c_Deg<<endl;
 }  
 
 // MBinnerFISBEL.cxx: the end...

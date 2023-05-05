@@ -1,3 +1,14 @@
+/*
+ * MBinnerHEALPix.h
+ *
+ * Copyright (C) by Israel Martinez Castellanos & Andreas Zoglauer.
+ * All rights reserved.
+ *
+ * Please see the source-file for the copyright-notice.
+ *
+ */
+
+
 #ifndef __MBinnerHEALPix__
 #define __MBinnerHEALPix__
 
@@ -13,22 +24,26 @@
 #include "MGlobal.h"
 #include "MBinnerSpherical.h"
 
+// HEALPix libs:
+#include <healpix_base.h>
+
 // Forward declarations:
 
 // Other libs:
-#include <healpix_base.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+//! A HEALPix based data binner using the RING scheme by default
 //! HEALPix: https://healpix.sourceforge.io/
-//! RING scheme by default
 //! This is just the binner, it does not store any data itself
 class MBinnerHEALPix : public MBinnerSpherical
 {
   // public interface:
  public:
   //! Default constructor
-  MBinnerHEALPix(unsigned int order);
+  MBinnerHEALPix(unsigned int Order);
   //! Default destuctor 
   virtual ~MBinnerHEALPix();
     
@@ -44,13 +59,13 @@ class MBinnerHEALPix : public MBinnerSpherical
   unsigned int FindBin(double Theta, double Phi) const;
   
   //! Get number of bins
-  unsigned int GetNBins() const {return m_healpix.Npix();};
+  unsigned int GetNBins() const { return m_HealPix.Npix(); }
   
   //! Get NSIDE parameters
-  unsigned int GetNSide() const {return m_healpix.Nside();};
+  unsigned int GetNSide() const { return m_HealPix.Nside(); }
 
-  //! Get NSIDE parameters
-  unsigned int GetOrder() const {return m_healpix.Order();};    
+  //! Get the Order parameters
+  unsigned int GetOrder() const { return m_HealPix.Order(); }
     
   //! Return the minimum axis values [min theta, min phi]
   vector<double> GetMinima() const;
@@ -71,6 +86,7 @@ class MBinnerHEALPix : public MBinnerSpherical
   //! Write the content to a stream
   void Write(MString name, ostringstream& out) const;
   
+
   // protected methods:
  protected:
 
@@ -84,10 +100,7 @@ class MBinnerHEALPix : public MBinnerSpherical
  protected:
 
   // Healpix grid nside and scheme
-  Healpix_Base m_healpix; 
-    
-  // Scheme
-  // TODO
+  Healpix_Base m_HealPix;
     
   // private members:
  private:

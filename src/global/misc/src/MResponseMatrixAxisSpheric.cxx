@@ -100,7 +100,6 @@ MResponseMatrixAxisSpheric* MResponseMatrixAxisSpheric::Clone() const
 //! Set the axis in FISBEL mode
 void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double LongitudeShift) 
 {
-  
   std::shared_ptr<MBinnerFISBEL> m_Binner_fisbel = std::make_shared<MBinnerFISBEL>();
   m_Binner_fisbel->Create(NBins, LongitudeShift*c_Rad);
   
@@ -109,43 +108,49 @@ void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double Longitude
   m_NumberOfBins = NBins;
 }
 
-// //! Set the axis in HEALPix mode (ring scheme)
-void MResponseMatrixAxisSpheric::SetHEALPix(unsigned long order) 
-{
 
-  std::shared_ptr<MBinnerHEALPix> m_Binner_healpix = std::make_shared<MBinnerHEALPix>(order);
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the axis in HEALPix mode (ring scheme)
+void MResponseMatrixAxisSpheric::SetHEALPix(unsigned long Order)
+{
+  std::shared_ptr<MBinnerHEALPix> m_Binner_healpix = std::make_shared<MBinnerHEALPix>(Order);
 
   m_Binner = m_Binner_healpix;
 
   m_NumberOfBins = m_Binner->GetNBins();
-  
 }
 
 
-//! Set the axis in FISBEL based on a target pixel size
-void MResponseMatrixAxisSpheric::SetFISBELSize(double PixelSize) {
+////////////////////////////////////////////////////////////////////////////////
 
+
+//! Set the axis in FISBEL based on a target pixel size
+void MResponseMatrixAxisSpheric::SetFISBELSize(double PixelSize)
+{
   int AngleBins = 4*c_Pi*c_Deg*c_Deg / PixelSize / PixelSize;
   if (AngleBins < 1) AngleBins = 1;
 
   SetFISBEL(AngleBins);
-
 }
 
-//! Set the axis in HEALPIX based on a target pixel size
-void MResponseMatrixAxisSpheric::SetHEALPixSize(double PixelSize) {
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the axis in HEALPIX based on a target pixel size
+void MResponseMatrixAxisSpheric::SetHEALPixSize(double PixelSize)
+{
   double approx_nside = sqrt(4*c_Pi/12)/(PixelSize/c_Deg);
 
-  int order = int(ceil(log2(approx_nside)));
-
-  if (order < 1) {
+  int Order = int(ceil(log2(approx_nside)));
+  if (Order < 1) {
     // e.g. PixelSize = 360deg
-    order = 1;
+    Order = 1;
   }
   
-  SetHEALPix(order);
-  
+  SetHEALPix(Order);
 }
 
 

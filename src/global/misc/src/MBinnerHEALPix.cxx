@@ -1,3 +1,21 @@
+/*
+ * MBinnerHEALPix.cxx
+ *
+ *
+ * Copyright (C) by Israel Martinez Castellanos & Andreas Zoglauer.
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Martinez Castellanos & Andreas Zoglauer.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
 // Include the header:
 #include "MBinnerHEALPix.h"
 #include "MExceptions.h"
@@ -8,8 +26,14 @@
 #include <algorithm>
 using namespace std;
 
-// Other libs
+// HEALPix libs:
 #include <pointing.h>
+
+// Other libs:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 #ifdef ___CLING___
 ClassImp(MBinnerHEALPix)
@@ -20,9 +44,9 @@ ClassImp(MBinnerHEALPix)
 
 
 //! Default constructor
-MBinnerHEALPix::MBinnerHEALPix(unsigned int order)
+MBinnerHEALPix::MBinnerHEALPix(unsigned int Order)
 {
-  m_healpix = Healpix_Base(order, Healpix_Ordering_Scheme::RING);
+  m_HealPix = Healpix_Base(Order, Healpix_Ordering_Scheme::RING);
 }
 
 
@@ -35,37 +59,43 @@ MBinnerHEALPix::~MBinnerHEALPix()
 }
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Find a bin
 unsigned int MBinnerHEALPix::FindBin(double Theta, double Phi) const
 {
-
   pointing p(Theta, Phi);
-
-  int pix = m_healpix.ang2pix(p);
-  
-  return pix;
+  return m_HealPix.ang2pix(p);
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 //! Return axis bins edges for external drawing
 vector<vector<double>> MBinnerHEALPix::GetDrawingAxisBinEdges() const
 {
-    throw MExceptionArbitrary("GetDrawingAxisBinEdges not implemented for HEALPix");
-    return {{}};
+  throw MExceptionArbitrary("GetDrawingAxisBinEdges not implemented for HEALPix");
+
+  return {{}};
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 //! Return the bin center(s) of the given axis bin
 //! Can throw: MExceptionIndexOutOfBounds
 vector<double> MBinnerHEALPix::GetBinCenters(unsigned int Bin) const
 {
-  pointing p = m_healpix.pix2ang(Bin);
+  pointing P = m_HealPix.pix2ang(Bin);
 
-  return {p.theta, p.phi};
+  return { P.theta, P.phi };
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 //! Returns all bin centers as vector
@@ -82,13 +112,6 @@ vector<MVector> MBinnerHEALPix::GetAllBinCenters() const
   }
   
   return Vectors;
- 
-}
-
-//! Return the minimum axis values
-vector<double> MBinnerHEALPix::GetMinima() const
-{
-  return { 0, 0};
 }
 
 
@@ -96,10 +119,23 @@ vector<double> MBinnerHEALPix::GetMinima() const
 
 
 //! Return the minimum axis values
+vector<double> MBinnerHEALPix::GetMinima() const
+{
+  return { 0, 0 };
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the maximum axis values
 vector<double> MBinnerHEALPix::GetMaxima() const
 {
   return { 180, 360 };
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 void MBinnerHEALPix::Write(MString name, ostringstream& out) const
@@ -109,8 +145,9 @@ void MBinnerHEALPix::Write(MString name, ostringstream& out) const
   out<<"# Axis type"<<endl;
   out<<"AT 2D HEALPix"<<endl;
   out<<"# Axis data"<<endl;
-  out<<"AD "<< GetOrder() << "  " << "RING" << endl;
+  out<<"AD "<< GetOrder() << " " << "RING" << endl;
 }  
+
 
 // MBinnerHEALPix.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

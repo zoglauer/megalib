@@ -108,8 +108,8 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
 
   // private members:
  private:
-  //! The binner
-    std::shared_ptr<MBinnerSpherical> m_Binner;
+  //! The binner - either FISBEL or HEALPix
+  std::shared_ptr<MBinnerSpherical> m_Binner;
   
 
 #ifdef ___CLING___
