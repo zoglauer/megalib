@@ -25,7 +25,7 @@ commandhelp() {
   echo "Usage: dresponsecreator [options]";
   echo ""
   echo "Options:"
-  echo "  --datadir=[path]: The data diretcory"
+  echo "  --datadir=[path]: The data directory"
   echo "  --targetdir=[path]: The target directory"
   echo "  --continue: Check for not yet created revan files and just create the new ones"
   echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
@@ -368,7 +368,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     fi
     COMMAND+="echo \"Available\"; exit 0; "
     
-    # Check if the data directory accessible on the remote machine
+    # Check if the data directory is accessible on the remote machine
     ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
     if [[ ${ANSWER} == "" ]]; then ANSWER="Check failed with unknown error!"; fi
     if [[ ${ANSWER} != "Available" ]]; then     
@@ -387,7 +387,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     OUTFILE=${OUTFILE/.evta.gz/}
     OUTFILE=${OUTFILE/.evta/}
     COMMAND=""
-    COMMAND+=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} revan -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -o ${TARGETDIR}/$OUTFILE}"
+    COMMAND+=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} revan -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -o ${TARGETDIR}/${OUTFILE}.delme"
     if [[ ${REVANCFG} != "" ]]; then COMMAND+=" -c ${REVANCFG}"; fi
     if [[ ${ZIP} == TRUE ]]; then COMMAND+=" -z"; fi
     COMMAND+=" --test"
@@ -456,7 +456,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           OUTFILE=${OUTFILE/.evta.gz/.tra.gz}
           OUTFILE=${OUTFILE/.evta/.tra}
 
-          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} revan -a -n -f ${DATADIR}/${DATAFILES[$d]} -g ${GEOMETRY} -o ${TARGETDIR}/${OUTFILE}"
+          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} revan --oi -a -n -f ${DATADIR}/${DATAFILES[$d]} -g ${GEOMETRY} -o ${TARGETDIR}/${OUTFILE}"
           if [[ ${REVANCFG} != "" ]]; then REMOTECOMMAND+=" -c ${REVANCFG}"; fi
           if [[ ${ZIP} == TRUE ]]; then REMOTECOMMAND+=" -z"; fi
           if [[ ${LOG} == TRUE ]]; then
