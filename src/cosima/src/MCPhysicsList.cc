@@ -41,6 +41,7 @@
 #include "G4EmPenelopePhysics.hh"
 #include "G4EmStandardPhysics.hh"
 #include "G4RadioactiveDecayPhysics.hh"
+
 #include "G4VProcess.hh"
 #include "G4VEmProcess.hh"
 #include "G4VEnergyLossProcess.hh"
@@ -177,6 +178,9 @@ void MCPhysicsList::Register()
   
   // We always register all sorts of decays:
   RegisterPhysics(new G4RadioactiveDecayPhysics());
+  
+  
+  
   
   // Check what we got:
   cout<<"Chosen physics: "<<endl;

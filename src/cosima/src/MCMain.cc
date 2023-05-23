@@ -394,12 +394,8 @@ unsigned int MCMain::ParseCommandLine(int argc, char** argv)
   }
 
   // Set the initial seed - Geant4 & ROOT !
-  //CLHEP::HepRandom::setTheSeed(m_Seed);
-  //G4Random::setTheSeed(m_Seed);
+  CLHEP::HepRandom::setTheSeed(m_Seed);
   gRandom->SetSeed(m_Seed);
-  /// FIXME
-  cout<<endl<<endl<<"FIXME: Switch to G4Random for random numbers throughout the code"<<endl<<endl;
-  gSystem->Sleep(1000);
 
   return 0;
 }
