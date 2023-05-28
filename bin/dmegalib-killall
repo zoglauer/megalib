@@ -54,8 +54,18 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"
 done
 
-# Create the install paths on all machines
+echo ""
+read -p "If you really want to kill everything which you and other users have started on the above machines, then type YES: " CONFIRMATION
+
+if [[ ${CONFIRMATION} != "YES" ]]; then
+  echo "Aborting killall"
+  exit 0
+fi
+
+
+# Kill everything on all machines
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  echo ""
   echo "Killing all cosima, responsecreator & revan instances for user ${REMOTEUSER[$m]} on ${REMOTEHOST[$m]}..."
   ssh -i ${HOME}/.ssh/dmegalib_rsa -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "killall -u ${REMOTEUSER[$m]} cosima; killall -u ${REMOTEUSER[$m]} responsecreator; killall -u ${REMOTEUSER[$m]} revan; exit 0;"
 done
