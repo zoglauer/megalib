@@ -99,26 +99,27 @@ HERE=$(pwd)
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
-  if [[ ${C} == *-d*=* ]]; then
+  echo "${C}"
+  if [[ ${C} == *-da*=* ]]; then
     DATADIR=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-ta*=* ]]; then
     TARGETDIR=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-co* ]]; then
-    CONTINUE="TRUE"
-  elif [[ ${C} == *-z* ]]; then
-    ZIP="TRUE"
-  elif [[ ${C} == *-d*=* ]]; then
+  elif [[ ${C} == *-de*=* ]]; then
     DELAY=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-l* ]]; then
-    LOG="TRUE"
-  elif [[ ${C} == *-te* ]]; then
-    TESTRUN="TRUE"
   elif [[ ${C} == *-g*=* ]]; then
     GEOMETRY=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-f*=* ]]; then
     FILENAME=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == -c=* ]] || [[ ${C} == --revan-config=* ]]; then
     REVANCFG=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-te* ]]; then
+    TESTRUN="TRUE"
+  elif [[ ${C} == *-l* ]]; then
+    LOG="TRUE"
+  elif [[ ${C} == *-co* ]]; then
+    CONTINUE="TRUE"
+  elif [[ ${C} == *-z* ]]; then
+    ZIP="TRUE"
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -391,9 +392,12 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     if [[ ${REVANCFG} != "" ]]; then COMMAND+=" -c ${REVANCFG}"; fi
     if [[ ${ZIP} == TRUE ]]; then COMMAND+=" -z"; fi
     COMMAND+=" --test"
+    
     ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${COMMAND} )
     if [[ ${ANSWER} != *TEST*RUN*SUCCESSFUL* ]]; then     
       echo " * Remote machine: ${MACHINES[$m]}: revan run failed" | ${LOGGING}
+      echo "" | ${LOGGING}
+      echo "Failed command: ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${COMMAND}"  | ${LOGGING} 
       echo "" | ${LOGGING}
       echo "---- ERROR MESSAGE ----" | ${LOGGING}
       echo "${ANSWER}" | ${LOGGING}
@@ -465,8 +469,6 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
             REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
           fi
       
-          echo "${REMOTECOMMAND}"
-
           ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
           if [[ "$?" != "0" ]]; then
             echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch revan!" | ${LOGGING}
