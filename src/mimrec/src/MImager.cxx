@@ -146,7 +146,7 @@ MImager::MImager(MCoordinateSystem CoordinateSystem, unsigned int NThreads)
 
   m_OutOfMemory = false;
 
-  m_DrawMode = MImage::c_COLCONT4Z;
+  m_DrawMode = MImage::c_COLCONTZ;
   m_Palette = MImage::c_Thesis;
   m_SourceCatalog = "";
   m_Projection = MImageProjection::c_None;

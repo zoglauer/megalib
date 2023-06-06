@@ -604,7 +604,9 @@ MString MGUIEEntry::MakeSmartString(double Number)
   out<<Number;
   
   MString S(out);
-  S.StripBack('0');
+  if (S.Contains(".") == true) {
+    S.StripBack('0');
+  }
   if (S == "") S = "0";
   
   return S;

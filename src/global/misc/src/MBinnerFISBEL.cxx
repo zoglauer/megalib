@@ -64,16 +64,16 @@ MBinnerFISBEL::~MBinnerFISBEL()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Check if we have equal bins
-bool MBinnerFISBEL::operator==(const MBinnerFISBEL& Binner) const
-{
-  if (m_NumberOfBins != Binner.m_NumberOfBins) return false;
-  if (m_LongitudeBins != Binner.m_LongitudeBins) return false;
-  if (m_LatitudeBinEdges != Binner.m_LatitudeBinEdges) return false;
-  if (m_LongitudeShift != Binner.m_LongitudeShift) return false;
+// //! Check if we have equal bins
+// bool MBinnerFISBEL::operator==(const MBinnerFISBEL& Binner) const
+// {
+//   if (m_NumberOfBins != Binner.m_NumberOfBins) return false;
+//   if (m_LongitudeBins != Binner.m_LongitudeBins) return false;
+//   if (m_LatitudeBinEdges != Binner.m_LatitudeBinEdges) return false;
+//   if (m_LongitudeShift != Binner.m_LongitudeShift) return false;
   
-  return true;
-}
+//   return true;
+// }
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -431,5 +431,39 @@ void MBinnerFISBEL::View(vector<double> Data) const
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the minimum axis values
+vector<double> MBinnerFISBEL::GetMinima() const
+{
+  return { 0, GetLongitudeShift() };
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the minimum axis values
+vector<double> MBinnerFISBEL::GetMaxima() const
+{
+  return { 180, GetLongitudeShift() + 360 };
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MBinnerFISBEL::Write(MString name, ostringstream& out) const
+{
+  out<<"# Axis name"<<endl;
+  out<<"AN \"" << name << "\""<<endl;
+  out<<"# Axis type"<<endl;
+  out<<"AT 2D FISBEL"<<endl;
+  out<<"# Axis data"<<endl;
+  out<<"AD "<< GetNBins() << " " << GetLongitudeShift() * c_Deg<<endl;
+}  
+
 // MBinnerFISBEL.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
+

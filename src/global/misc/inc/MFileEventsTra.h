@@ -42,7 +42,7 @@ class MFileEventsTra : public MFileEvents
   virtual ~MFileEventsTra();
 
   //! The Open method has to be derived to initialize the include file:
-  virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read);
+  virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read, bool IsBinary = false);
 
   //! Close the file and kill the thread (if it (still) exists)
   virtual bool Close();

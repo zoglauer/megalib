@@ -115,12 +115,18 @@ class MEventSelector
   void SetPointingSelectionBox(double Latitude, double Longitude, double LatitudeExtent, double LongitudeExtent);
   void ApplyPointingSelectionBox(MEventSelector& E) { E.SetPointingSelectionBox(m_PointingSelectionBoxLatitude, m_PointingSelectionBoxLongitude, m_PointingSelectionBoxLatitudeExtent, m_PointingSelectionBoxLongitudeExtent); }
   
+  // Beam selection
   void SetBeam(bool Use, MVector BeamStart, MVector BeamFocalSpot);
   void ApplyBeam(MEventSelector& E) { E.SetBeam(m_UseBeam, m_BeamStart, m_BeamFocalSpot); }
   void SetBeamRadius(double Radius);  
   void ApplyBeamRadius(MEventSelector& E) { E.SetBeamRadius(m_BeamRadius); }
   void SetBeamDepth(double Depth);  
   void ApplyBeamDepth(MEventSelector& E) { E.SetBeamDepth(m_BeamDepth); }
+
+  // Box selection
+  void SetBox(bool Use, MVector FirstIAMin, MVector FirstIAMax, MVector SecondIAMin, MVector SecondIAMax);
+  void ApplyBox(MEventSelector& E) { E.SetBox(m_UseBox, m_BoxFirstIAMin, m_BoxFirstIAMax, m_BoxSecondIAMin, m_BoxSecondIAMax); }
+   
 
   // Compton specific:
   void UseComptons(bool Comptons = true);
@@ -281,12 +287,17 @@ class MEventSelector
   double m_PointingSelectionBoxLatitudeExtent;
   double m_PointingSelectionBoxLongitudeExtent;
   
-  
   bool m_UseBeam;
   MVector m_BeamStart;
   MVector m_BeamFocalSpot;
   double m_BeamRadius;
   double m_BeamDepth;
+
+  bool m_UseBox;
+  MVector m_BoxFirstIAMin;
+  MVector m_BoxFirstIAMax;
+  MVector m_BoxSecondIAMin;
+  MVector m_BoxSecondIAMax;
 
   bool m_UsePhotos;
   bool m_UsePairs;
@@ -343,6 +354,7 @@ class MEventSelector
   long m_NRejectedARM;
   long m_NRejectedSPD;
   long m_NRejectedBeam;
+  long m_NRejectedBox;
   long m_NRejectedQuickHack;
 
   friend ostream& operator<<(ostream& os, MEventSelector& S);
