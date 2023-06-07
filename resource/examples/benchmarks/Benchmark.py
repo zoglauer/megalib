@@ -11,6 +11,7 @@ Mode="c"
 
 parser = argparse.ArgumentParser(description='View MEGAlib benchmarks')
 parser.add_argument('-m', '--mode', default='c',help='c: Cosima, r: Revan, m: Mimrec, a: ResponseCreator')
+parser.add_argument('-r', '--referencecount', type=int, default=7, help='Number of references to show (default: 7)')
 
 args = parser.parse_args()
 
@@ -19,6 +20,9 @@ if Mode != 'c' and Mode != 'r' and Mode != 'm' and Mode != 'a':
   print("Error: The mode must be either \'c\', \'r\', \'m\', or \'a\'.")
   sys.exit(0)
 
+ReferenceCount = args.referencecount
+if ReferenceCount < 0:
+  ReferenceCount = 0
 
 FileNames = []
 Reference = []
@@ -193,8 +197,8 @@ OSVersions = [x for _,x in sorted(zip(RunMulti, OSVersions))]
 RunSingle = [x for _,x in sorted(zip(RunMulti, RunSingle))]
 RunMulti = [x for _,x in sorted(zip(RunMulti, RunMulti))]
 
-# If we have more than 8 delete the weakest referneces
-while len(Reference) > 8:
+# If we have more than (RefernceCount+1) delete the weakest referneces
+while len(Reference) > ReferenceCount+1:
   # Find which one to delete
   ToDelete = 0
   if Reference[0] == "*** this ***":
