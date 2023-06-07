@@ -137,6 +137,11 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_BadString = E->m_BadString;
   m_Comments = E->m_Comments;
 
+  m_OIPosition = E->m_OIPosition;
+  m_OIDirection = E->m_OIDirection;
+  m_OIPolarization = E->m_OIPolarization;
+  m_OIEnergy = E->m_OIEnergy;  
+  
   return true;
 }
 

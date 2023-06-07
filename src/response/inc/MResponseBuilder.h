@@ -102,15 +102,22 @@ class MResponseBuilder
   //! Save the response matrices
   virtual bool Save();
 
-  //! Load the geometry, return 0 on failure
-  MGeometryRevan* LoadGeometry(bool ActivateNoise, double GlobalFailureRate);
+  //! Load the revan geometry, return nullptr on failure
+  MGeometryRevan* LoadRevanGeometry(bool ActivateNoise, double GlobalFailureRate);
+
+  //! Load the geometry, return nullptr on failure
+  MDGeometryQuest* LoadGeometry(bool ActivateNoise, double GlobalFailureRate);
 
   //! Get the output file prefix
   MString GetFilePrefix() const;
 
-  //! Initialize the next sivan/revan matching event for response creation
+  //! Initialize the next sivan/revan/mimrec matching event for response creation
   bool InitializeNextMatchingEvent();
-  
+
+  //! Initialize the next sivan/revan matching event for response creation
+  bool InitializeNextSimEvent();
+  //! Initialize the next mimrec matching event for response creation
+  bool InitializeNextTraEvent();  
   
   //! Do a sanity check if the simulations are usable for this task
   bool SanityCheckSimulations();
@@ -200,10 +207,10 @@ class MResponseBuilder
   // Sivan/Revan interface:
 
   //! The available modes
-  enum class MResponseBuilderReadMode : int { File, EventByEvent };
+  enum class MResponseBuilderReadMode : int { SimFile, SimEventByEvent, TraFile };
   
   //! The used read mode
-  MResponseBuilderReadMode m_Mode = MResponseBuilderReadMode::File;
+  MResponseBuilderReadMode m_Mode = MResponseBuilderReadMode::SimFile;
   
   //! A counter for all analyzed events
   unsigned long m_Counter;
@@ -214,11 +221,15 @@ class MResponseBuilder
   MRERawEvent* m_ReEvent;  
   //! The current revan event
   vector<MRERawEvent*> m_ReEvents;  
+  //! The current tra event
+  MPhysicalEvent* m_TraEvent;
   
   //! For read-mode file: The revan reader
   MRawEventAnalyzer* m_ReReader;
   //! For read-mode file: The sivan reader
   MFileEventsSim* m_SiReader;
+  //! For read-mode file: The tra reader
+  MFileEventsTra* m_TraReader;
 
   //! For read-mode file: True if the sim file was read completely
   bool m_ReaderFinished;
@@ -228,11 +239,15 @@ class MResponseBuilder
   unsigned int m_SivanEventID;
   unsigned int m_SivanLevel;
  
-  //! 
+  //! The mimrec event selector 
   MEventSelector m_MimrecEventSelector;
 
+  //! The geometry for sivan
   MGeometryRevan* m_SiGeometry;
+  //! The geometry for revan
   MGeometryRevan* m_ReGeometry;
+  //! The geometry for mimrec
+  MDGeometryQuest* m_Geometry;
   
   //! The IDs of all RESEs
   map<MRESE*, vector<int> > m_Ids;

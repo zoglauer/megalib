@@ -92,7 +92,7 @@ MResponseBuilder::MResponseBuilder()
   
   m_Suffix = ".rsp";
 
-  m_Mode = MResponseBuilderReadMode::EventByEvent;
+  m_Mode = MResponseBuilderReadMode::SimEventByEvent;
   
   m_OnlyINITRequired = false;
 
@@ -117,59 +117,89 @@ MResponseBuilder::~MResponseBuilder()
 //! Initialize the response matrices and their generation
 bool MResponseBuilder::Initialize() 
 { 
-  // Load revan geometry
-  if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
-  
-  // Create the raw event analyzer
-  m_ReReader = new MRawEventAnalyzer();
-  m_ReReader->SetGeometry(m_ReGeometry);
-  
-  
-  // Load revan settings file
-  if (m_RevanSettingsFileName != g_StringNotDefined && m_RevanSettingsFileName != "") {
-    if (m_RevanSettings.Read(m_RevanSettingsFileName) == false) {
-      merr<<"Unable to open revan settings file \""<<m_RevanSettingsFileName<<"\""<<endl; 
+  // If we start from a sim file or event
+  if (m_Mode == MResponseBuilderReadMode::SimFile || m_Mode == MResponseBuilderReadMode::SimEventByEvent) {
+    // Load revan geometry
+    if ((m_ReGeometry = LoadRevanGeometry(true, 0.0)) == nullptr) {
+      merr<<"Unable to open geometry file \""<<m_GeometryFileName<<"\""<<endl; 
       return false;
     }
-    m_ReReader->SetSettings(&m_RevanSettings);  
-  }
+    
+    // Create the raw event analyzer
+    m_ReReader = new MRawEventAnalyzer();
+    m_ReReader->SetGeometry(m_ReGeometry);
   
-  if (m_Mode == MResponseBuilderReadMode::File) {
-    if (m_ReReader->SetInputModeFile(m_DataFileName) == false) {
-      merr<<"Unable to open data file \""<<m_DataFileName<<"\" in revan"<<endl; 
-      return false;
+  
+    // Load revan settings file
+    if (m_RevanSettingsFileName != g_StringNotDefined && m_RevanSettingsFileName != "") {
+      if (m_RevanSettings.Read(m_RevanSettingsFileName) == false) {
+        merr<<"Unable to open revan settings file \""<<m_RevanSettingsFileName<<"\""<<endl; 
+        return false;
+      }
+      m_ReReader->SetSettings(&m_RevanSettings);  
     }
-  }
+  
+    if (m_Mode == MResponseBuilderReadMode::SimFile) {
+      if (m_ReReader->SetInputModeFile(m_DataFileName) == false) {
+        merr<<"Unable to open data file \""<<m_DataFileName<<"\" in revan"<<endl; 
+        return false;
+      }
+    }
 
-  // ... and initialize it
-  if (m_ReReader->PreAnalysis() == false) {
-    merr<<"Unable to initialize event reconstruction."<<endl;     
-    return false;
-  }
-  
-  
-  // Load the mimrec configuration file ...
-  if (m_MimrecSettingsFileName != g_StringNotDefined && m_MimrecSettingsFileName != "") {
-    if (m_MimrecSettings.Read(m_MimrecSettingsFileName) == false) {
-      merr<<"Unable to open mimrec settings file \""<<m_MimrecSettingsFileName<<"\""<<endl; 
+    // ... and initialize it
+    if (m_ReReader->PreAnalysis() == false) {
+      merr<<"Unable to initialize event reconstruction."<<endl;     
       return false;
     }
-    // ... and initialize the event selector 
-    m_MimrecEventSelector.SetSettings(&m_MimrecSettings);
-  }
   
-  // Load the sivan geometry
-  if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
+  
+    // Load the mimrec configuration file ...
+    if (m_MimrecSettingsFileName != g_StringNotDefined && m_MimrecSettingsFileName != "") {
+      if (m_MimrecSettings.Read(m_MimrecSettingsFileName) == false) {
+        merr<<"Unable to open mimrec settings file \""<<m_MimrecSettingsFileName<<"\""<<endl; 
+        return false;
+      }
+      // ... and initialize the event selector 
+      m_MimrecEventSelector.SetSettings(&m_MimrecSettings);
+    }
+  
+    // Load the sivan geometry
+    if ((m_SiGeometry = LoadRevanGeometry(false, 0.0)) == 0) return false;
 
-  // and the sivan file reader
-  if (m_Mode == MResponseBuilderReadMode::File) {
-    m_SiReader = new MFileEventsSim(m_SiGeometry);
-    if (m_SiReader->Open(m_DataFileName) == false) {
-      merr<<"Unable to open simulation file \""<<m_DataFileName<<"\" in sivan"<<endl; 
+    // and the sivan file reader
+    if (m_Mode == MResponseBuilderReadMode::SimFile) {
+      m_SiReader = new MFileEventsSim(m_SiGeometry);
+      if (m_SiReader->Open(m_DataFileName) == false) {
+        merr<<"Unable to open simulation file \""<<m_DataFileName<<"\" in sivan"<<endl; 
+        return false;
+      }
+    }
+  } else if (m_Mode == MResponseBuilderReadMode::TraFile) {
+    
+    // Load geometry
+    if ((m_Geometry = LoadGeometry(true, 0.0)) == nullptr) {
+      merr<<"Unable to open geometry file \""<<m_GeometryFileName<<"\""<<endl; 
+      return false;
+    }
+    
+    // Load the mimrec configuration file ...
+    if (m_MimrecSettingsFileName != g_StringNotDefined && m_MimrecSettingsFileName != "") {
+      if (m_MimrecSettings.Read(m_MimrecSettingsFileName) == false) {
+        merr<<"Unable to open mimrec settings file \""<<m_MimrecSettingsFileName<<"\""<<endl; 
+        return false;
+      }
+      // ... and initialize the event selector 
+      m_MimrecEventSelector.SetSettings(&m_MimrecSettings);
+    }
+    
+    // and the tra file reader
+    m_TraReader = new MFileEventsTra();
+    if (m_TraReader->Open(m_DataFileName) == false) {
+      merr<<"Unable to open tra file \""<<m_DataFileName<<"\""<<endl; 
       return false;
     }
   }
-
+  
   m_Counter = 0;
   
   return true; 
@@ -185,20 +215,31 @@ bool MResponseBuilder::Analyze()
   if (m_Counter > 0 && m_Counter % m_SaveAfter == 0) {
     if (Save() == false) return false;
   }  
-   
-  // Nothing to initialize
-  if (m_Mode == MResponseBuilderReadMode::File) {
+
+  // If we start from a sim file or event
+  if (m_Mode == MResponseBuilderReadMode::SimFile || m_Mode == MResponseBuilderReadMode::SimEventByEvent) {
+    // Nothing to initialize if not in sim file mode
+    if (m_Mode == MResponseBuilderReadMode::SimFile) {
+      if (InitializeNextMatchingEvent() == false) return false;
+    }
+  
+    if (m_ReEvent == nullptr) {
+      merr<<"No revan event available"<<endl;
+      return false;
+    }
+  
+    if (m_SiEvent == nullptr) {
+      merr<<"No sivan event available"<<endl;
+      return false;
+    }
+  } else if (m_Mode == MResponseBuilderReadMode::TraFile) {
+    
     if (InitializeNextMatchingEvent() == false) return false;
-  }
-  
-  if (m_ReEvent == nullptr) {
-    merr<<"No revan event available"<<endl;
-    return false;
-  }
-  
-  if (m_SiEvent == nullptr) {
-    merr<<"No sivan event available"<<endl;
-    return false;
+    
+    if (m_TraEvent == nullptr) {
+      merr<<"No tra event available"<<endl;
+      return false;
+    }
   }
   
   ++m_Counter;
@@ -259,7 +300,7 @@ bool MResponseBuilder::SetEvent(const MString String, bool NeedsNoising, int Ver
 {
   // Set and verify the simulation file name
 
-  m_Mode = MResponseBuilderReadMode::EventByEvent;
+  m_Mode = MResponseBuilderReadMode::SimEventByEvent;
 
   if (m_ReReader->AddRawEvent(String, NeedsNoising, Version) == false) {
     cout<<"Unable to add raw event"<<endl;
@@ -311,7 +352,14 @@ bool MResponseBuilder::SetDataFileName(const MString FileName)
   }
   m_DataFileName = FileName;
 
-  m_Mode = MResponseBuilderReadMode::File;
+  if (m_DataFileName.EndsWith(".sim") == true || m_DataFileName.EndsWith(".sim.gz") == true || m_DataFileName.EndsWith(".evta") == true || m_DataFileName.EndsWith(".evta.gz") == true) {
+    m_Mode = MResponseBuilderReadMode::SimFile;
+  } else if (m_DataFileName.EndsWith(".tra") == true || m_DataFileName.EndsWith(".tra.gz") == true) {
+    m_Mode = MResponseBuilderReadMode::TraFile;
+  } else {
+    mout<<"*** Error: Unable to determine file type \""<<FileName<<"\" (sim*, evta*, tra*)"<<endl;
+    return false;    
+  }
 
   return true;
 }
@@ -382,7 +430,7 @@ bool MResponseBuilder::SetMimrecSettingsFileName(const MString FileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGeometryRevan* MResponseBuilder::LoadGeometry(bool ActivateNoise, double GlobalFailureRate)
+MGeometryRevan* MResponseBuilder::LoadRevanGeometry(bool ActivateNoise, double GlobalFailureRate)
 {
   MGeometryRevan* ReGeometry = new MGeometryRevan();
   if (ReGeometry->ScanSetupFile(m_GeometryFileName) == true) {
@@ -392,7 +440,7 @@ MGeometryRevan* MResponseBuilder::LoadGeometry(bool ActivateNoise, double Global
   } else {
     mout<<"Response: Loading of geometry "<<ReGeometry->GetName()<<" failed!!"<<endl;
     delete ReGeometry;
-    ReGeometry = 0;
+    ReGeometry = nullptr;
   } 
 
   return ReGeometry;
@@ -402,11 +450,70 @@ MGeometryRevan* MResponseBuilder::LoadGeometry(bool ActivateNoise, double Global
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MDGeometryQuest* MResponseBuilder::LoadGeometry(bool ActivateNoise, double GlobalFailureRate)
+{
+  MDGeometryQuest* Geometry = new MDGeometryQuest();
+  if (Geometry->ScanSetupFile(m_GeometryFileName) == true) {
+    mout<<"Response: Geometry "<<Geometry->GetName()<<" loaded!"<<endl;
+    Geometry->ActivateNoising(ActivateNoise);
+    Geometry->SetGlobalFailureRate(GlobalFailureRate);
+  } else {
+    mout<<"Response: Loading of geometry "<<Geometry->GetName()<<" failed!!"<<endl;
+    delete Geometry;
+    Geometry = nullptr;
+  } 
+
+  return Geometry;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MResponseBuilder::InitializeNextMatchingEvent()
 {
-  // Initialize the next sivan/revan matching event for response creation
-
   if (m_Interrupt == true) return false;
+
+  // If we start from a sim file or event
+  if (m_Mode == MResponseBuilderReadMode::SimFile || m_Mode == MResponseBuilderReadMode::SimEventByEvent) {
+    return InitializeNextSimEvent();
+  } else if (m_Mode == MResponseBuilderReadMode::TraFile) {
+    return InitializeNextTraEvent();
+  } else {
+    cout<<"Unknown mode: "<<int(m_Mode)<<endl;
+    return false;    
+  }
+    
+  return true;
+}
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseBuilder::InitializeNextTraEvent()
+{
+  while (true) {
+    m_TraEvent = m_TraReader->GetNextEvent();
+    if (m_TraEvent == nullptr) {
+      m_ReaderFinished = true;
+      cout<<"Missing event statistics"<<endl;
+      return false;
+    }
+    if (m_MimrecEventSelector.IsQualifiedEventFast(m_TraEvent) == true) {
+      break;
+    }
+  }
+  
+  return true;  
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseBuilder::InitializeNextSimEvent()
+{
+  // Initialize the next sivan/revan matching event for response creation
   
   unsigned int ERReturnCode;
 

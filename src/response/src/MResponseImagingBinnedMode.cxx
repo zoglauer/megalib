@@ -298,7 +298,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
 
 //! Initialize the response matrices and their generation
 bool MResponseImagingBinnedMode::Initialize()
-{
+{  
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Initialize() == false) return false;
 
@@ -392,21 +392,50 @@ bool MResponseImagingBinnedMode::Analyze()
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
   
-  // We need to have at least an "INIT" in the simulation file per event 
-  if (m_SiEvent->GetNIAs() == 0) {
-    return true;
-  }
+  MPhysicalEvent* Event = nullptr;
+  MVector IdealOriginDir;
+  double EnergyInitial;
+  if (m_Mode == MResponseBuilderReadMode::SimFile || m_Mode == MResponseBuilderReadMode::SimEventByEvent) {
+    // We need to have at least an "INIT" in the simulation file per event 
+    if (m_SiEvent->GetNIAs() == 0) {
+      return true;
+    }
   
-  // We require a successful reconstruction 
-  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
-  if (REList->HasOnlyOptimumEvents() == false) {
-    return true;
-  }
+    // We require a successful reconstruction 
+    MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
+    if (REList->HasOnlyOptimumEvents() == false) {
+      return true;
+    }
     
-  // ... leading to an event
-  MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
-  if (Event == nullptr) {
-    return true;
+    // ... leading to an event
+    Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
+    if (Event == nullptr) {
+      return true;
+    }
+    
+    // and thew origin information
+    IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
+    EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+    
+  } else if (m_Mode == MResponseBuilderReadMode::TraFile) {
+    Event = m_TraEvent;
+    if (Event == nullptr) {
+      return true;
+    }
+    IdealOriginDir = -Event->GetOIDirection();
+    if (IdealOriginDir == g_VectorNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }
+    EnergyInitial = Event->GetOIEnergy();
+    if (IdealOriginDir == g_DoubleNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }    
+    
+  } else {
+    cout<<"Unknown mode in MResponseImagingBinnedMode::Analyze"<<endl;
+    return false;
   }
   
   // ... which needs to be a Compton event
@@ -428,8 +457,8 @@ bool MResponseImagingBinnedMode::Analyze()
   if (m_UseAtmosphericAbsorption == true) {
     // Deselect gamma rays based on the transmission probability 
     
-    double OriginAzimuth = (-m_SiEvent->GetIAAt(0)->GetSecondaryDirection()).Theta() * c_Deg;
-    double OriginEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+    double OriginAzimuth = IdealOriginDir.Theta() * c_Deg;
+    double OriginEnergy = EnergyInitial;
     
     double P = m_AtmosphericAbsorption.GetTransmissionProbability(m_Altitude, OriginAzimuth, OriginEnergy);
    
@@ -465,14 +494,12 @@ bool MResponseImagingBinnedMode::Analyze()
   
   double Distance = Compton->FirstLeverArm();
   
-  // Now get the origin information
-  MVector IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
+  // Now enhance the origin information
   IdealOriginDir = Rotation*IdealOriginDir;
   double Lambda = IdealOriginDir.Phi()*c_Deg;
   while (Lambda < -180) Lambda += 360.0;
   while (Lambda > +180) Lambda -= 360.0;
   double Nu = IdealOriginDir.Theta()*c_Deg;
-  double EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
   
   // And fill the matrices
   m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi, Sigma, Tau, Distance } );
