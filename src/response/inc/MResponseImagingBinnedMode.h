@@ -76,12 +76,10 @@ class MResponseImagingBinnedMode : public MResponseBuilder
  protected:
   //! The bin width of the angles near the equator for the gamma rays
   double m_AngleBinWidth;
-  //! fisbel or healpix
-  std::string m_AngleBinMode;
+  //! The mode on how to do the spherical coordinate sbinng: fisbel or healpix
+  MString m_AngleBinMode;
   //! The bin width of the angles near the equator for the recoil electron (360 for no electron tracking)
   double m_AngleBinWidthElectron;
-  //! fisbel or healpix
-  std::string m_AngleBinModeElectron;
   //! Number of energy bins
   unsigned int m_EnergyNBins;
   //! Minimum energy range

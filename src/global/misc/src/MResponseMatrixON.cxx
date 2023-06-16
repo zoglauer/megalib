@@ -167,8 +167,15 @@ void MResponseMatrixON::SwitchToNonSparse()
   if (m_IsSparse == false) return;
   
   m_Values.clear();
-  m_Values.resize(m_NumberOfBins, 0);
-  
+  try {
+    m_Values.resize(m_NumberOfBins, 0);
+  } catch (std::bad_alloc& Exception) {
+    cout<<"Your repsonse is too big too handle on this system: "<<m_NumberOfBins<<" bins = "<<double(m_NumberOfBins)*sizeof(float)/1024/1024/1024<<" GB"<<endl;
+    cout<<"Aborting!"<<endl;
+    abort();
+  }
+
+
   for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) {
     m_Values[m_BinsSparse[i]] = m_ValuesSparse[i];
   }
@@ -1371,7 +1378,7 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
                     return false;
                   }
                   
-                  A->SetHEALPix(T.GetTokenAtAsUnsignedInt(1));
+                  A->SetHEALPix(T.GetTokenAtAsInt(1));
                 } else {
                   mout<<"MResponseMatrixON: The HEALPix AD axis key word needs 2 (order and scheme) arguments!"<<endl;
                   return false;

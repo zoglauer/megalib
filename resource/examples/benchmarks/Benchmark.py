@@ -11,6 +11,7 @@ Mode="c"
 
 parser = argparse.ArgumentParser(description='View MEGAlib benchmarks')
 parser.add_argument('-m', '--mode', default='c',help='c: Cosima, r: Revan, m: Mimrec, a: ResponseCreator')
+parser.add_argument('-r', '--referencecount', type=int, default=7, help='Number of references to show (default: 7)')
 
 args = parser.parse_args()
 
@@ -19,6 +20,9 @@ if Mode != 'c' and Mode != 'r' and Mode != 'm' and Mode != 'a':
   print("Error: The mode must be either \'c\', \'r\', \'m\', or \'a\'.")
   sys.exit(0)
 
+ReferenceCount = args.referencecount
+if ReferenceCount < 0:
+  ReferenceCount = 0
 
 FileNames = []
 Reference = []
@@ -179,9 +183,8 @@ for f in range(0, len(FileNames)):
 print(len(Reference))
 print(len(IsGood))
 
+
 # Sorting:
-
-
 IsGood.sort(key=dict(zip(IsGood, RunMulti)).get)
 
 IsGood = [x for _,x in sorted(zip(RunMulti, IsGood))]
@@ -193,10 +196,27 @@ OSNames = [x for _,x in sorted(zip(RunMulti, OSNames))]
 OSVersions = [x for _,x in sorted(zip(RunMulti, OSVersions))]
 RunSingle = [x for _,x in sorted(zip(RunMulti, RunSingle))]
 RunMulti = [x for _,x in sorted(zip(RunMulti, RunMulti))]
-      
+
+# If we have more than (RefernceCount+1) delete the weakest referneces
+while len(Reference) > ReferenceCount+1:
+  # Find which one to delete
+  ToDelete = 0
+  if Reference[0] == "*** this ***":
+    ToDelete = 1
+  print("Deleting %: %".format(ToDelete, CPUNames[ToDelete]))
+  del IsGood[ToDelete]
+  del Reference[ToDelete]
+  del HostNames[ToDelete]
+  del CPUSockets[ToDelete]
+  del CPUNames[ToDelete]
+  del OSNames[ToDelete]
+  del OSVersions[ToDelete]
+  del RunSingle[ToDelete]
+  del RunMulti[ToDelete]
+
 # Some beautification
 CPUNames = [ s.replace("Ryzen Threadripper", "Threadripper") for s in CPUNames ]
-
+CPUNames = [ s.replace("Mobile Intel(R) Pentium(R) 4", "P4") for s in CPUNames ]
 
 
 print(IsGood)
@@ -212,7 +232,7 @@ print(RunMulti)
 # Plot histogram
 
 Labels = []
-for f in range(0, len(FileNames)):
+for f in range(0, len(Reference)):
   if int(CPUSockets[f]) > 1:
     Labels.append("{}\n{}x {}\n{} {}\n{}".format(HostNames[f], CPUSockets[f], CPUNames[f], OSNames[f], OSVersions[f], Reference[f]))
   else:

@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  oberon.ssl.berkeley.edu
+ 
+OSFlavour:                                 macOS
+OSVersion:                                 13.4
+Kernel:                                    22.5.0
+ 
+CPUModel:                                  Apple M1
+CPUName:                                   Apple M1
+CPUSockets:                                1
+CPUCoresPerSocket:                         8
+CPUThreadsPerCore:                         1
+Cores:                                     8
+Threads:                                   8
+ 
+ROOTVersion:                               6.28/04
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            3.99.02
+MEGAlibGitHash:                            94c9b31657138f7be60018c7b9f6e244d6db0e76 2023-06-06
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      17.065
+EventsPerSecondCosimaSingle:               5859.947
+DurationCosimaMultiple:                    26.069
+EventsPerSecondCosimaMultiple:             30687.790
+ 
+# Revan
+DurationRevanSingle:                       6.036
+EventsPerSecondRevanSingle:                16567.263
+DurationRevanMultiple:                     5.648
+EventsPerSecondRevanMultiple:              141643.059
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             9.769
+EventsPerSecondResponseCreatorSingle:      10236.462
+DurationResponseCreatorMultiple:           16.382
+EventsPerSecondResponseCreatorMultiple:    48834.086
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               41.373
+EventsPerSecondMimrecImagingSingle:        2417.035
+DurationMimrecImagingMultiple:             10.915
+EventsPerSecondMimrecImagingMultiple:      9161.704
+ 
