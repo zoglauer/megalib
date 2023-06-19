@@ -76,7 +76,8 @@ MResponseBuilder::MResponseBuilder()
   
   m_ReEvent = nullptr;
   m_SiEvent = nullptr;
-  
+  m_TraEvent = nullptr;
+
   m_RevanEventID = 0;
   m_RevanLevel = 0;
   m_SivanEventID = 0;
@@ -255,7 +256,9 @@ bool MResponseBuilder::Analyze()
 bool MResponseBuilder::Finalize() 
 { 
   if (Save() == false) return false;
-  
+
+  // TODO: Close all files and delete all remaining events
+
   return true; 
 }
 
@@ -493,6 +496,9 @@ bool MResponseBuilder::InitializeNextMatchingEvent()
 bool MResponseBuilder::InitializeNextTraEvent()
 {
   while (true) {
+    if (m_TraEvent != nullptr) {
+      delete m_TraEvent;
+    }
     m_TraEvent = m_TraReader->GetNextEvent();
     if (m_TraEvent == nullptr) {
       m_ReaderFinished = true;
