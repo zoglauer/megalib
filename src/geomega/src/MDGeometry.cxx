@@ -1273,7 +1273,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     // Show volumes
     else if (Tokenizer.IsTokenAt(0, "ShowOnlySensitiveVolumes") == true) {
       if (Tokenizer.GetNTokens() != 2) {
-        Typo("Line must contain two values: ShowVolumes false");
+        Typo("Line must contain two values: ShowOnlySensitiveVolumes false");
         return false;
       }
 

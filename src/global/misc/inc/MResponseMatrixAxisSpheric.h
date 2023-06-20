@@ -55,7 +55,7 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   void SetFISBEL(unsigned long NBins, double LongitudeShift = 0);
   
   //! Set the axis in HEALPIX (ring scheme)
-  void SetHEALPix(unsigned long order);
+  void SetHEALPix(int order);
 
   //! Set the axis in FISBEL based on a target pixel size (deg)
   void SetFISBELSize(double PixelSize);

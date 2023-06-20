@@ -44,9 +44,14 @@ ClassImp(MBinnerHEALPix)
 
 
 //! Default constructor
-MBinnerHEALPix::MBinnerHEALPix(unsigned int Order)
+MBinnerHEALPix::MBinnerHEALPix(int Order)
 {
-  m_HealPix = Healpix_Base(Order, Healpix_Ordering_Scheme::RING);
+  if (Order >= 0) {
+    m_HealPix = Healpix_Base(Order, Healpix_Ordering_Scheme::RING);
+    m_Order = Order;
+  } else {
+    m_Order = -1; 
+  }
 }
 
 
@@ -65,8 +70,12 @@ MBinnerHEALPix::~MBinnerHEALPix()
 //! Find a bin
 unsigned int MBinnerHEALPix::FindBin(double Theta, double Phi) const
 {
-  pointing p(Theta, Phi);
-  return m_HealPix.ang2pix(p);
+  if (m_Order < 0) {
+    return 0;
+  } else {
+    pointing p(Theta, Phi);
+    return m_HealPix.ang2pix(p);
+  }
 }
 
 
@@ -89,9 +98,12 @@ vector<vector<double>> MBinnerHEALPix::GetDrawingAxisBinEdges() const
 //! Can throw: MExceptionIndexOutOfBounds
 vector<double> MBinnerHEALPix::GetBinCenters(unsigned int Bin) const
 {
-  pointing P = m_HealPix.pix2ang(Bin);
-
-  return { P.theta, P.phi };
+  if (m_Order < 0 ) {
+    return { 0, 0 };
+  } else {
+    pointing P = m_HealPix.pix2ang(Bin);
+    return { P.theta, P.phi };
+  }
 }
 
 

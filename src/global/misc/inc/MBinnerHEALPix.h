@@ -42,8 +42,9 @@ class MBinnerHEALPix : public MBinnerSpherical
 {
   // public interface:
  public:
-  //! Default constructor
-  MBinnerHEALPix(unsigned int Order);
+  //! Default constructor taking the order of the HEALPix grid
+  //! A negative order means to use just one bin
+  MBinnerHEALPix(int Order);
   //! Default destuctor 
   virtual ~MBinnerHEALPix();
     
@@ -59,13 +60,13 @@ class MBinnerHEALPix : public MBinnerSpherical
   unsigned int FindBin(double Theta, double Phi) const;
   
   //! Get number of bins
-  unsigned int GetNBins() const { return m_HealPix.Npix(); }
+  unsigned int GetNBins() const { return (m_Order >= 0 ? m_HealPix.Npix() : 1); }
   
   //! Get NSIDE parameters
-  unsigned int GetNSide() const { return m_HealPix.Nside(); }
+  unsigned int GetNSide() const { return (m_Order >= 0 ? m_HealPix.Nside() : 1); }
 
   //! Get the Order parameters
-  unsigned int GetOrder() const { return m_HealPix.Order(); }
+  int GetOrder() const { return m_Order; }
     
   //! Return the minimum axis values [min theta, min phi]
   vector<double> GetMinima() const;
@@ -98,9 +99,11 @@ class MBinnerHEALPix : public MBinnerSpherical
 
   // protected members:
  protected:
-
-  // Healpix grid nside and scheme
+  //! Healpix grid nside and scheme
   Healpix_Base m_HealPix;
+  //! The HEALPix order / Nside
+  int m_Order;
+  
     
   // private members:
  private:

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Part of the megalib analysis cluster
-# Run remote instances of the responsecreator
+# Run remote instances of revan
 
 
 # On exit, or if we hit ctrl-C, kill all your children
@@ -10,53 +10,44 @@ trap CleanUp SIGTERM SIGINT
 CleanUp() {
   echo " "
   echo " "
-  echo "Received command to shut down gracefully..."
+  echo "Received command to shut down."
+  echo "No new processes will be started."
+  echo "But you have to wait yourself until everything on the remote machines has finished."
   echo " "
-  #P=$(jobs -p)
-  #if [[ ${P} != "" ]]; then
-  #  echo "Killing all sub-processes..."
-  #  kill ${P}
-  #fi
-  #sleep 1
-  
-  #echo "Killing all analysis tasks..."
-  #dcosima-kill -n=${LOCALDIR}
-  #echo "DONE"
-  #echo " "
   exit 1
 }
 
 commandhelp() {
   echo ""
-  echo "dresponsecreator - remotely create responses";
+  echo "drevan - remotely create tra files with revan";
   echo "Copyright by Andreas Zoglauer"
   echo ""
   echo "Usage: dresponsecreator [options]";
   echo ""
   echo "Options:"
-  echo "  --datadir=[path]: The data diretcory"
+  echo "  --datadir=[path]: The data directory"
   echo "  --targetdir=[path]: The target directory"
-  echo "  --continue: Check for not yet created response files and just create the new ones"
+  echo "  --continue: Check for not yet created revan files and just create the new ones"
   echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
   echo "  --zip: Compress the output files."
   echo "  --log: Create a log file of what is started where"
   echo "  --test: Just perfrom a test run"
   echo "  --help: Show this help."
   echo ""
-  echo "Response creator specific options (calling responsecreator --help)"
-  responsecreator --help
+  echo "Revan specific options (calling revan --help)"
+  revan --help
   echo "";
   echo "Attention:";
   echo "(1)"
-  echo "While in response creator an option is set via, e.g., -g Geometry.geo.setup"
-  echo "in dresponsecreator it is called via -g=Geometry.geo.setup!"
+  echo "While in revan an option is set via, e.g., -g Geometry.geo.setup"
+  echo "in drevan it is called via -g=Geometry.geo.setup!"
   echo "(2)"
   echo "Debug and verbosity are not supported here, filename will obviously overwritten"
   echo "(3)"
   echo "All file names need to be absolute and the files available on the remote machine"
   echo "";
   echo "Example: "
-  echo "  dresponsecreator -d=/nfsshare/Data -t=/nfsshare/Target -g=/nfsshare/MassModel/DetectorHead.geo.setup -r=Test -m=ib -c=/nfsshare/Revan.cfg -b=/nfsshare/Mimrec.cfg --log";
+  echo "  drevan -d=/nfsshare/Data -t=/nfsshare/Target -g=/nfsshare/MassModel/DetectorHead.geo.setup -c=/nfsshare/Revan.cfg";
   echo "";
 }
 
@@ -108,36 +99,27 @@ HERE=$(pwd)
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
-  if [[ ${C} == *-d*=* ]]; then
+  echo "${C}"
+  if [[ ${C} == *-da*=* ]]; then
     DATADIR=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-ta*=* ]]; then
     TARGETDIR=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-co* ]]; then
-    CONTINUE="TRUE"
-  elif [[ ${C} == *-z* ]]; then
-    ZIP="TRUE"
-  elif [[ ${C} == *-d*=* ]]; then
+  elif [[ ${C} == *-de*=* ]]; then
     DELAY=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-l* ]]; then
-    LOG="TRUE"
-  elif [[ ${C} == *-te* ]]; then
-    TESTRUN="TRUE"
   elif [[ ${C} == *-g*=* ]]; then
     GEOMETRY=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-f*=* ]]; then
     FILENAME=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-r*=* ]]; then
-    RESPONSENAME=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-m*=* ]]; then
-    MODE=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-o*=* ]]; then
-    OPTIONS=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-s*=* ]]; then
-    SAVE=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == -c=* ]] || [[ ${C} == --revan-config=* ]]; then
     REVANCFG=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == -b=* ]] || [[ ${C} == --mimrec-config=* ]]; then
-    MIMRECCFG=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-te* ]]; then
+    TESTRUN="TRUE"
+  elif [[ ${C} == *-l* ]]; then
+    LOG="TRUE"
+  elif [[ ${C} == *-co* ]]; then
+    CONTINUE="TRUE"
+  elif [[ ${C} == *-z* ]]; then
+    ZIP="TRUE"
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -145,7 +127,7 @@ for C in "${CMD[@]}"; do
   else
     echo ""
     echo "ERROR: Unknown command line option: ${C}"
-    echo "       See \"dresponsecreator --help\" for a list of options"
+    echo "       See \"drevan --help\" for a list of options"
     exit 1
   fi
 done
@@ -246,42 +228,20 @@ echo "Creating a list of all data files to use" | ${LOGGING}
 
 cd ${DATADIR}
 
-# Find all sim, evta, tra files except concatenation files (that's what the *inc*id* is for)
+# Find all sim and evta files except concatenation files (that's what the *inc*id* is for)
 DATAFILES=()
-for F in `ls -U *inc*id*.tra.gz 2>/dev/null`; do
-    DATAFILES+=( "${F}" )
+for F in `ls -U *inc*id*.sim.gz 2>/dev/null`; do
+  DATAFILES+=( "${F}" ) 
 done
-for F in `ls -U *inc*id*.tra 2>/dev/null`; do
-  DATAFILES+=( "${F}" )
+for F in `ls -U *inc*id*.sim 2>/dev/null`; do
+  DATAFILES+=( "${F}" ) 
 done
-if [ ${#DATAFILES[*]} -eq 0 ]; then
-  for F in `ls -U *inc*id*.evta.gz 2>/dev/null`; do
-    DATAFILES+=( "${F}" ) 
-  done
-  for F in `ls -U *inc*id*.evta 2>/dev/null`; do
-    DATAFILES+=( "${F}" ) 
-  done
-  if [ ${#DATAFILES[*]} -eq 0 ]; then
-    for F in `ls -U *inc*id*.sim 2>/dev/null`; do
-      DATAFILES+=( "${F}" ) 
-    done
-    for F in `ls -U *inc*id*.sim.gz 2>/dev/null`; do
-      DATAFILES+=( "${F}" ) 
-    done
-    if [ ${#DATAFILES[*]} -eq 0 ]; then
-      echo "Did not find any files - existing"
-      exit 1
-    else
-      echo "Found sim files - will use those"
-    fi
-  else
-    echo "Found evta files - will use those"
-  fi
-else 
-  echo "Found tra files - will use those"
-fi
-
-
+for F in `ls -U *inc*id*.evta 2>/dev/null`; do
+  DATAFILES+=( "${F}" ) 
+done
+for F in `ls -U *inc*id*.evta.gz 2>/dev/null`; do
+  DATAFILES+=( "${F}" ) 
+done
 
 # Done
 cd ${HERE}
@@ -289,7 +249,7 @@ cd ${HERE}
 
 # Check if we can continue:
 if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
-  TARGETFILES=$( find . -printf " %f" -name "*.rsp*" )
+  TARGETFILES=$( find . -printf " %f" -name "*.tra*" )
   NOTDONE=()
   
   for (( d=0; d<${#DATAFILES[*]}; d++ )); do
@@ -300,8 +260,6 @@ if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
     OUTFILE=${OUTFILE/.sim/}
     OUTFILE=${OUTFILE/.evta.gz/}
     OUTFILE=${OUTFILE/.evta/}
-    OUTFILE=${OUTFILE/.tra.gz/}
-    OUTFILE=${OUTFILE/.tra/}
 
     if [[ ${TARGETFILES} !=  *"${OUTFILE}"* ]]; then
       NOTDONE+=( "${DATAFILES[$d]}" )
@@ -400,21 +358,18 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     # Check if all data is accessible:
     COMMAND=""
     COMMAND+=". ~/.dmegalib.bashrc;"
-    COMMAND+="if [[ ! -x \${MEGALIB}/bin/responsecreator ]]; then echo \"ERROR: MEGAlib not fully installed\"; exit 1; fi; "
+    COMMAND+="if [[ ! -x \${MEGALIB}/bin/revan ]]; then echo \"ERROR: MEGAlib not fully installed\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ~/.dmegalib.cfg ]]; then echo \".dmegalib.cfg configuration file not found.\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"Failed to access remote data directory!\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"Failed to create target directory\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[0]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[0]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ${GEOMETRY} ]] || [[ ! -r ${GEOMETRY} ]] ; then echo \"Geometry file not found or not readable!\"; exit 1; fi; "
-    if [[ ${MIMRECCFG} != "" ]]; then
-      COMMAND+="if [[ ! -f ${MIMRECCFG} ]] || [[ ! -r ${MIMRECCFG} ]]; then echo \"Mimrec configuration file not found or not readable!\"; exit 1; fi; "
-    fi
     if [[ ${REVANCFG} != "" ]]; then 
       COMMAND+="if [[ ! -f ${REVANCFG} ]] || [[ ! -r ${REVANCFG} ]]; then echo \"Revan configuration file not found or not readable!\"; exit 1; fi; "
     fi
     COMMAND+="echo \"Available\"; exit 0; "
     
-    # Check if the data directory accessible on the remote machine
+    # Check if the data directory is accessible on the remote machine
     ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
     if [[ ${ANSWER} == "" ]]; then ANSWER="Check failed with unknown error!"; fi
     if [[ ${ANSWER} != "Available" ]]; then     
@@ -426,36 +381,23 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
  
     echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}" | ${LOGGING}
     
-    # Check if responsecreator starts up:
+    # Check if revan starts up:
     OUTFILE=${DATAFILES[0]}
     OUTFILE=${OUTFILE/.sim.gz/}
     OUTFILE=${OUTFILE/.sim/}
     OUTFILE=${OUTFILE/.evta.gz/}
     OUTFILE=${OUTFILE/.evta/}
-    OUTFILE=${OUTFILE/.tra.gz/}
-    OUTFILE=${OUTFILE/.tra/}
     COMMAND=""
-    COMMAND+=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -r /tmp/${OUTFILE} -m ${MODE}"
-    if [[ ${OPTIONS} != "" ]]; then COMMAND+=" -o ${OPTIONS}"; fi
-    if [[ ${SAVE} != "" ]]; then COMMAND+=" -s ${SAVE}"; fi
+    COMMAND+=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} revan -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -o ${TARGETDIR}/${OUTFILE}.delme"
     if [[ ${REVANCFG} != "" ]]; then COMMAND+=" -c ${REVANCFG}"; fi
-    if [[ ${MIMRECCFG} != "" ]]; then COMMAND+=" -b ${MIMRECCFG}"; fi
     if [[ ${ZIP} == TRUE ]]; then COMMAND+=" -z"; fi
     COMMAND+=" --test"
+    
     ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${COMMAND} )
-    if [[ "$?" != "0" ]]; then
-      echo " * Remote machine: ${MACHINES[$m]}: Failed to launch responsecreator!" | ${LOGGING}
-      echo "" | ${LOGGING}
-      echo "---- ERROR MESSAGE ----" | ${LOGGING}
-      echo "${ANSWER}" | ${LOGGING}
-      echo "-----------------------" | ${LOGGING}
-      echo "" | ${LOGGING}
-      MACHINES[$m]=""
-      MACHINEERRORS="TRUE"
-      continue
-    fi
     if [[ ${ANSWER} != *TEST*RUN*SUCCESSFUL* ]]; then     
-      echo " * Remote machine: ${MACHINES[$m]}: responsecreator run failed" | ${LOGGING}
+      echo " * Remote machine: ${MACHINES[$m]}: revan run failed" | ${LOGGING}
+      echo "" | ${LOGGING}
+      echo "Failed command: ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${COMMAND}"  | ${LOGGING} 
       echo "" | ${LOGGING}
       echo "---- ERROR MESSAGE ----" | ${LOGGING}
       echo "${ANSWER}" | ${LOGGING}
@@ -465,7 +407,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
       MACHINEERRORS="TRUE"
       continue
     else
-      echo " * Remote machine: ${MACHINES[$m]}: responsecreator OK" | ${LOGGING}
+      echo " * Remote machine: ${MACHINES[$m]}: revan OK" | ${LOGGING}
     fi    
 
     AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))    
@@ -513,28 +455,23 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
     
           OUTFILE=${DATAFILES[$d]}
-          OUTFILE=${OUTFILE/.sim.gz/}
-          OUTFILE=${OUTFILE/.sim/}
-          OUTFILE=${OUTFILE/.evta.gz/}
-          OUTFILE=${OUTFILE/.evta/}
-          OUTFILE=${OUTFILE/.tra.gz/}
-          OUTFILE=${OUTFILE/.tra/}
+          OUTFILE=${OUTFILE/.sim.gz/.tra.gz}
+          OUTFILE=${OUTFILE/.sim/.tra}
+          OUTFILE=${OUTFILE/.evta.gz/.tra.gz}
+          OUTFILE=${OUTFILE/.evta/.tra}
 
-          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -f ${DATADIR}/${DATAFILES[$d]} -g ${GEOMETRY} -r ${OUTFILE} -m ${MODE}"
-          if [[ ${OPTIONS} != "" ]]; then REMOTECOMMAND+=" -o ${OPTIONS}"; fi
-          if [[ ${SAVE} != "" ]]; then REMOTECOMMAND+=" -s ${SAVE}"; fi
+          REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} revan --oi -a -n -f ${DATADIR}/${DATAFILES[$d]} -g ${GEOMETRY} -o ${TARGETDIR}/${OUTFILE}"
           if [[ ${REVANCFG} != "" ]]; then REMOTECOMMAND+=" -c ${REVANCFG}"; fi
-          if [[ ${MIMRECCFG} != "" ]]; then REMOTECOMMAND+=" -b ${MIMRECCFG}"; fi
           if [[ ${ZIP} == TRUE ]]; then REMOTECOMMAND+=" -z"; fi
           if [[ ${LOG} == TRUE ]]; then
             REMOTECOMMAND+=" </dev/null >${OUTFILE}.log 2>&1 &"
           else
             REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
           fi
-       
+      
           ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
           if [[ "$?" != "0" ]]; then
-            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch responsecreator!" | ${LOGGING}
+            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch revan!" | ${LOGGING}
             MACHINES[$m]=""
             continue
           fi        
@@ -542,7 +479,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           STARTED=1
           STARTEDALLPRIORITIES=1
           
-          # Swich to next data file!
+          # Switch to next data file!
           d=$(( d + 1 ))
         
         fi
