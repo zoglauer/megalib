@@ -97,6 +97,10 @@ class MResponseSpectral : public MResponseBuilder
    unsigned int m_ARMCutNumberOfSkyBins;
    
    
+   //! fisbel or healpix
+  std::string m_AngleBinMode;
+   
+   
   MResponseMatrixON m_EnergyBeforeER;
   MResponseMatrixON m_EnergyUnselected;
   MResponseMatrixON m_EnergySelected;

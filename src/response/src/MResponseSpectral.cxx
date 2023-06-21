@@ -70,6 +70,7 @@ MResponseSpectral::MResponseSpectral()
   m_ARMCut = 5;
   m_ARMCutOriginAcceptanceRadius = 1;
   m_ARMCutNumberOfSkyBins = 413;
+  m_AngleBinMode = "fisbel";
 }
 
 
@@ -111,7 +112,7 @@ MString MResponseSpectral::Options()
   out<<"             armcut:          ARM cut radius (default: 5 deg)"<<endl;
   out<<"             armcutskybins:   sky bins for ARM cut response (default: 413 - 10^2 deg bins)"<<endl;
   out<<"             armcutorigin:    the acceptance radius around the center of the ARM bin from which the photon is allowed to have started (default: 1 deg)"<<endl;
-  
+  out<<"             anglebinmode     use either FISBEL or HEALPIx (default: FISBEL)"<<endl;
   return MString(out);
 }
 
@@ -149,10 +150,13 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
 
   // Parse
   for (unsigned int i = 0; i < Split2.size(); ++i) {
-    string Value = Split2[i][1].Data();
+    MString MValue = Split2[i][1];
+    string Value = MValue.Data();
     
     if (Split2[i][0] == "emin") {
       m_EnergyMinimum = stod(Value);
+    } else if (Split2[i][0] == "anglebinmode") {
+      m_AngleBinMode = MValue.ToLower();
     } else if (Split2[i][0] == "emax") {
       m_EnergyMaximum = stod(Value);
     } else if (Split2[i][0] == "ebins") {
@@ -244,6 +248,11 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
     return false;       
   } 
   
+  if (m_AngleBinMode != "fisbel" && m_AngleBinMode != "healpix") {
+    mout<<"Error: Sky bins only support fisbel and healpix modes"<<endl;
+    return false;       
+  }
+  
   // Dump it for user info
   mout<<endl;
   mout<<"Choosen options for spectral response:"<<endl;
@@ -259,6 +268,7 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
     for (auto E: m_EnergyBinEdges) mout<<E<<" ";
     mout<<endl;
   }
+  mout<<"  Sky bins binning mode:              "<<m_AngleBinMode<<endl;
   mout<<"  Sky bins energy:                    "<<m_EnergyNumberOfSkyBins<<endl;
   mout<<"  ARM cut:                            "<<m_ARMCut<<endl;
   mout<<"  ARM cut sky bins:                   "<<m_ARMCutNumberOfSkyBins<<endl;
@@ -291,7 +301,13 @@ bool MResponseSpectral::Initialize()
   }
   
   MResponseMatrixAxisSpheric Origin("Theta (detector coordinates) [deg]", "Phi (detector coordinates) [deg]");
+  
+  if (m_AngleBinMode == "fisbel") {
   Origin.SetFISBEL(m_EnergyNumberOfSkyBins);
+  }else{
+  Origin.SetHEALPix(m_EnergyNumberOfSkyBins);
+
+  }
   
   MResponseMatrixAxis Measured("measured energy [keV]");
   if (m_EnergyBinEdges.size() == 0) {
@@ -382,7 +398,12 @@ bool MResponseSpectral::Initialize()
 
   
   MResponseMatrixAxisSpheric ARMCut("ARM cut center - theta (detector coordinates) [deg]", "ARM cut center - phi (detector coordinates) [deg]");
-  ARMCut.SetFISBEL(m_ARMCutNumberOfSkyBins);
+  
+  if (m_AngleBinMode == "fisbel") {
+      ARMCut.SetFISBEL(m_ARMCutNumberOfSkyBins);
+  }else{
+      ARMCut.SetHEALPix(m_ARMCutNumberOfSkyBins);
+  }
   
   m_EnergySelectedARMCut.SetName(MString("Energy response with ARM cut of ") + m_ARMCut + " deg radius around given position");
   m_EnergySelectedARMCut.AddAxis(Ideal);

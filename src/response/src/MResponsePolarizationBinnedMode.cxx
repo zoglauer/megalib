@@ -58,6 +58,8 @@ MResponsePolarizationBinnedMode::MResponsePolarizationBinnedMode() : m_Polarizat
   
   m_AngleBinWidth = 5; // deg
   m_AngleBinWidthElectron = 360; // deg
+  m_AngleBinMode = "fisbel"; 
+  m_AngleBinModeElectron = "fisbel";
   m_EnergyNBins = 1;
   m_EnergyMinimum = 10; // keV
   m_EnergyMaximum = 2000; // keV
@@ -101,11 +103,13 @@ MString MResponsePolarizationBinnedMode::Options()
 {
   ostringstream out;
   out<<"             anglebinwidth:           the width of a sky bin at the equator (default: 5 deg)"<<endl;
+  out<<"             anglebinmode:            use either FISBEL or HEALPIx (default: FISBEL)"<<endl;
   out<<"             emin:                    minimum energy (default: 10 keV; cannot be used in combination with ebinedges)"<<endl;
   out<<"             emax:                    maximum energy (default: 2,000 keV; cannot be used in combination with ebinedges)"<<endl;
   out<<"             ebins:                   number of energy bins between min and max energy (default: 1; cannot be used in combination with ebinedges)"<<endl;
   out<<"             ebinedges:               the energy bin edges as a comma seperated list (default: not used, cannot be used in combination with emin, emax, or ebins)"<<endl;
   out<<"             anglebinwidthelectron:   the width of a aky bin at the equator (default: 5 deg)"<<endl;
+  out<<"             anglebinmodeelectron:    use either FISBEL or HEALPIx (default: FISBEL)"<<endl;
   out<<"             dmin:                    minimum distance (default: 0 cm)"<<endl;
   out<<"             dmax:                    maximum distance (default: 1,000 cm)"<<endl;
   out<<"             dbins:                   number of distance bins between min and max distance (default: 1)"<<endl;
@@ -172,8 +176,9 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
     
   // Parse
   for (unsigned int i = 0; i < Split2.size(); ++i) {
-    string Value = Split2[i][1].Data();
-    
+    MString MValue = Split2[i][1];
+    string Value = MValue.Data();  
+      
     if (Split2[i][0] == "emin") {
       m_EnergyMinimum = stod(Value);
     } else if (Split2[i][0] == "emax") {
@@ -187,6 +192,8 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
       m_EnergyNBins = 0;
     } else if (Split2[i][0] == "anglebinwidth") {
       m_AngleBinWidth = stod(Value);
+    } else if (Split2[i][0] == "anglebinmode") {
+      m_AngleBinMode = MValue.ToLower();  
     } else if (Split2[i][0] == "dmin") {
       m_DistanceMinimum = stod(Value);
     } else if (Split2[i][0] == "dmax") {
@@ -197,6 +204,8 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
       m_PolarizationAngleNBins = stod(Value);
     } else if (Split2[i][0] == "anglebinwidthelectron") {
       m_AngleBinWidthElectron = stod(Value);
+    } else if (Split2[i][0] == "anglebinmodeelectron") {
+      m_AngleBinModeElectron = MValue.ToLower();  
     } else if (Split2[i][0] == "atabsfilename") {
       m_AtmosphericAbsorptionFileName = Value;
     } else if (Split2[i][0] == "atabsaltitude") {
@@ -261,6 +270,17 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
     mout<<"Error: You need at give a positive width of the sky bins at the equator for the recoil electron"<<endl;
     return false;       
   }
+  
+  if (m_AngleBinMode != "fisbel" && m_AngleBinMode != "healpix") {
+    mout<<"Error: Sky bins only support fisbel and healpix modes"<<endl;
+    return false;       
+  }
+  if (m_AngleBinModeElectron != "fisbel" && m_AngleBinModeElectron != "healpix") {
+    mout<<"Error: Sky bins for the recoil electron only support fisbel and healpix modes"<<endl;
+    return false;       
+  }
+  
+  
   if (m_AtmosphericAbsorptionFileName != "") {
     if (MFile::Exists(m_AtmosphericAbsorptionFileName) == false) {
       mout<<"Error: The file: \""<<m_AtmosphericAbsorptionFileName<<"\" does not exist"<<endl;
@@ -287,11 +307,13 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
     mout<<"  Number of bins energy:                              "<<m_EnergyNBins<<endl;
   }
   mout<<"  Width of sky bins at equator:                       "<<m_AngleBinWidth<<endl;
+  mout<<"  Sky bins binning mode:                              "<<m_AngleBinMode<<endl;
   mout<<"  Minimum distance:                                   "<<m_DistanceMinimum<<endl;
   mout<<"  Maximum distance:                                   "<<m_DistanceMaximum<<endl;
   mout<<"  Number of bins distance:                            "<<m_DistanceNBins<<endl;
   mout<<"  Number of bins polarization angle:                  "<<m_PolarizationAngleNBins<<endl;
   mout<<"  Width of sky bins at equator for recoild electron:  "<<m_AngleBinWidthElectron<<endl;
+  mout<<"  Binning mode for recoild electron:                  "<<m_AngleBinModeElectron<<endl;
   if (m_UseAtmosphericAbsorption == true) {
     mout<<"  Atmospheric absorption file name:                   "<<m_AtmosphericAbsorptionFileName<<endl;
     mout<<"  Atmospheric absorption altitude:                    "<<m_Altitude<<endl;
@@ -311,10 +333,7 @@ bool MResponsePolarizationBinnedMode::Initialize()
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Initialize() == false) return false;
 
-  int AngleBins = 4*c_Pi*c_Deg*c_Deg / m_AngleBinWidth / m_AngleBinWidth;
-  if (AngleBins < 1) AngleBins = 1;
-  int AngleBinsElectron = 4*c_Pi*c_Deg*c_Deg / m_AngleBinWidthElectron / m_AngleBinWidthElectron;
-  if (AngleBinsElectron < 1) AngleBinsElectron = 1;
+  
   
   MResponseMatrixAxis AxisEnergyInitial("Initial energy [keV]");
   if (m_EnergyBinEdges.size() > 0) {
@@ -324,8 +343,13 @@ bool MResponsePolarizationBinnedMode::Initialize()
   }
   
   MResponseMatrixAxisSpheric AxisSkyCoordinates("#nu [deg]", "#lambda [deg]");
-  AxisSkyCoordinates.SetFISBEL(AngleBins);
-
+  if (m_AngleBinMode == "fisbel") {
+    AxisSkyCoordinates.SetFISBELSize(m_AngleBinWidth);
+  }else{
+    AxisSkyCoordinates.SetHEALPixSize(m_AngleBinWidth);
+  }
+  
+  
   MResponseMatrixAxis AxisEnergyMeasured("Measured energy [keV]");
   if (m_EnergyBinEdges.size() > 0) {
     AxisEnergyMeasured.SetBinEdges(m_EnergyBinEdges);
@@ -337,10 +361,18 @@ bool MResponsePolarizationBinnedMode::Initialize()
   AxisPhi.SetLinear(180/m_AngleBinWidth, 0, 180);
   
   MResponseMatrixAxisSpheric AxisScatteredGammaRayCoordinates("#psi [deg]", "#chi [deg]");
-  AxisScatteredGammaRayCoordinates.SetFISBEL(AngleBins);
-  
+   if (m_AngleBinMode == "fisbel") {
+    AxisScatteredGammaRayCoordinates.SetFISBELSize(m_AngleBinWidth);
+  }else{
+    AxisScatteredGammaRayCoordinates.SetHEALPixSize(m_AngleBinWidth);
+  }
+    
   MResponseMatrixAxisSpheric AxisRecoilElectronCoordinates("#sigma [deg]", "#tau [deg]");
-  AxisRecoilElectronCoordinates.SetFISBEL(AngleBinsElectron);
+  if (m_AngleBinModeElectron == "fisbel") {
+    AxisRecoilElectronCoordinates.SetFISBELSize(m_AngleBinWidthElectron);
+  }else{
+    AxisRecoilElectronCoordinates.SetHEALPixSize(m_AngleBinWidthElectron);
+  }  
   
   MResponseMatrixAxis AxisDistance("Distance [cm]");
   AxisDistance.SetLinear(m_DistanceNBins, m_DistanceMinimum, m_DistanceMaximum);
