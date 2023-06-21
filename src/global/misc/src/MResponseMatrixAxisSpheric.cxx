@@ -98,7 +98,7 @@ MResponseMatrixAxisSpheric* MResponseMatrixAxisSpheric::Clone() const
 
 
 //! Set the axis in FISBEL mode
-void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double LongitudeShift) 
+void MResponseMatrixAxisSpheric::SetFISBELByNumberOfBins(unsigned long NBins, double LongitudeShift)
 {
   std::shared_ptr<MBinnerFISBEL> m_Binner_fisbel = std::make_shared<MBinnerFISBEL>();
   m_Binner_fisbel->Create(NBins, LongitudeShift*c_Rad);
@@ -113,7 +113,7 @@ void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double Longitude
 
 
 //! Set the axis in HEALPix mode (ring scheme)
-void MResponseMatrixAxisSpheric::SetHEALPix(int Order)
+void MResponseMatrixAxisSpheric::SetHEALPixByOrder(int Order)
 {
   std::shared_ptr<MBinnerHEALPix> m_Binner_healpix = std::make_shared<MBinnerHEALPix>(Order);
 
@@ -127,12 +127,27 @@ void MResponseMatrixAxisSpheric::SetHEALPix(int Order)
 
 
 //! Set the axis in FISBEL based on a target pixel size
-void MResponseMatrixAxisSpheric::SetFISBELSize(double PixelSize)
+void MResponseMatrixAxisSpheric::SetFISBELByPixelSize(double PixelSize)
 {
   int AngleBins = 4*c_Pi*c_Deg*c_Deg / PixelSize / PixelSize;
   if (AngleBins < 1) AngleBins = 1;
 
-  SetFISBEL(AngleBins);
+  SetFISBELByNumberOfBins(AngleBins);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the axis in HEALPIX based on the targeted number of bins
+//! The actual number of bins is downscaled to the nearest order
+//! O(-1): 1 bin, O(0): 12, O(1): 48, O(2): 192, O(3): 768, O(4): 3072, O(5): 12288, O(6): 49152, O(7): 196608, O(8): 786432, etc. (x4 each further increase)
+void MResponseMatrixAxisSpheric::SetHEALPixByNumberOfBins(unsigned long NBins)
+{
+  // Find closest order:
+  int Order = int(floor(log2(sqrt(NBins/12.0))));
+
+  SetHEALPixByOrder(Order);
 }
 
 
@@ -140,21 +155,16 @@ void MResponseMatrixAxisSpheric::SetFISBELSize(double PixelSize)
 
 
 //! Set the axis in HEALPIX based on a target pixel size
-void MResponseMatrixAxisSpheric::SetHEALPixSize(double PixelSize)
+void MResponseMatrixAxisSpheric::SetHEALPixByPixelSize(double PixelSize)
 {
   // Make sure pixel size is > 0
-  
-  cout<<"Pixel size: "<<PixelSize<<endl;
-  
+
   // First find ideal angle bins
   double AngleBins = 4*c_Pi*c_Deg*c_Deg / PixelSize / PixelSize;
-  cout<<"Bins: "<<AngleBins<<endl;
   // Then find closest order:
   int Order = int(floor(log2(sqrt(AngleBins/12.0))));
- 
-  cout<<"Order: "<<Order<<" with "<<12*pow(2, Order)*pow(2, Order)<<" bins"<<endl;
-  
-  SetHEALPix(Order);
+
+  SetHEALPixByOrder(Order);
 }
 
 

@@ -52,16 +52,20 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   virtual MResponseMatrixAxisSpheric* Clone() const;
   
   //! Set the axis in FISBEL mode with a longitude shift in degrees
-  void SetFISBEL(unsigned long NBins, double LongitudeShift = 0);
-  
-  //! Set the axis in HEALPIX (ring scheme)
-  void SetHEALPix(int order);
-
+  void SetFISBELByNumberOfBins(unsigned long NBins, double LongitudeShift = 0);
   //! Set the axis in FISBEL based on a target pixel size (deg)
-  void SetFISBELSize(double PixelSize);
-  
+  void SetFISBELByPixelSize(double PixelSize);
+
+  //! Set the axis in HEALPIX based on the Order (ring scheme)
+  void SetHEALPixByOrder(int Order);
+  //! Set the axis in HEALPIX based on the targeted number of bins
+  //! The actual number of bins is downscaled to the nearest order
+  //! O(-1): 1 bin, O(0): 12, O(1): 48, O(2): 192, O(3): 768, O(4): 3072, O(5): 12288, O(6): 49152, O(7): 196608, O(8): 786432, etc. (x4 each further increase)
+  void SetHEALPixByNumberOfBins(unsigned long NBins);
   //! Set the axis in HEALPIX based on a target pixel size (deg)
-  void SetHEALPixSize(double PixelSize);  
+  //! The actual pixel size of bins is downscaled to the nearest order
+  //! O(-1): 180, O(0): 58.632, O(1): 29.316, O(2): 14.658, O(3): 7.329, O(4): 3.664, O(5): 1.832, O(6): 0.916, O(7): 0.458, O(8): 0.229, etc. (div 2 each further decrease)
+  void SetHEALPixByPixelSize(double PixelSize);
     
   //! Return the axis bin, given theta=latitude and phi=longitude in degrees
   virtual unsigned long GetAxisBin(double Theta, double Phi) const;

@@ -108,11 +108,11 @@ MString MResponseSpectral::Options()
   out<<"             eover:           overflow bin maximum (default: 100,000 keV)"<<endl;
   out<<"             elog:            use logarithmis binning or not - true or false (default: true)"<<endl;
   out<<"             ebinedges:       use these bin edges (ignores emin, emax, ebins, eunder & eover), example: ebinedges=100,200,300,400,500 (default: not used)"<<endl;
-  out<<"             eskybins:        sky bins (default: 413 - 10^2 deg bins)"<<endl;
+  out<<"             anglebinmode:    use either FISBEL or HEALPix (default: FISBEL) for all sky bins"<<endl;
+  out<<"             eskybins:        sky bins (default: 413 - 10^2 deg bins) - in HEALPix mode=, it will be rounded down to the closest order"<<endl;
   out<<"             armcut:          ARM cut radius (default: 5 deg)"<<endl;
-  out<<"             armcutskybins:   sky bins for ARM cut response (default: 413 - 10^2 deg bins)"<<endl;
+  out<<"             armcutskybins:   sky bins for ARM cut response (default: 413 - 10^2 deg bins) - in HEALPix mode, it will be rounded down to the clostest order."<<endl;
   out<<"             armcutorigin:    the acceptance radius around the center of the ARM bin from which the photon is allowed to have started (default: 1 deg)"<<endl;
-  out<<"             anglebinmode     use either FISBEL or HEALPIx (default: FISBEL)"<<endl;
   return MString(out);
 }
 
@@ -155,8 +155,6 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
     
     if (Split2[i][0] == "emin") {
       m_EnergyMinimum = stod(Value);
-    } else if (Split2[i][0] == "anglebinmode") {
-      m_AngleBinMode = MValue.ToLower();
     } else if (Split2[i][0] == "emax") {
       m_EnergyMaximum = stod(Value);
     } else if (Split2[i][0] == "ebins") {
@@ -183,6 +181,8 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
       m_EnergyNumberOfSkyBins = stod(Value);
     } else if (Split2[i][0] == "armcut") {
       m_ARMCut = stod(Value);
+    } else if (Split2[i][0] == "anglebinmode") {
+      m_AngleBinMode = MValue.ToLower();
     } else if (Split2[i][0] == "armcutskybins") {
       m_ARMCutNumberOfSkyBins = stod(Value);
     } else if (Split2[i][0] == "armcutorigin") {
@@ -249,7 +249,7 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
   } 
   
   if (m_AngleBinMode != "fisbel" && m_AngleBinMode != "healpix") {
-    mout<<"Error: Sky bins only support fisbel and healpix modes"<<endl;
+    mout<<"Error: Sky bins only support fisbel and healpix binning modes"<<endl;
     return false;       
   }
   
@@ -303,10 +303,9 @@ bool MResponseSpectral::Initialize()
   MResponseMatrixAxisSpheric Origin("Theta (detector coordinates) [deg]", "Phi (detector coordinates) [deg]");
   
   if (m_AngleBinMode == "fisbel") {
-  Origin.SetFISBEL(m_EnergyNumberOfSkyBins);
-  }else{
-  Origin.SetHEALPix(m_EnergyNumberOfSkyBins);
-
+    Origin.SetFISBELByNumberOfBins(m_EnergyNumberOfSkyBins);
+  } else {
+    Origin.SetHEALPixByNumberOfBins(m_EnergyNumberOfSkyBins);
   }
   
   MResponseMatrixAxis Measured("measured energy [keV]");
@@ -400,9 +399,9 @@ bool MResponseSpectral::Initialize()
   MResponseMatrixAxisSpheric ARMCut("ARM cut center - theta (detector coordinates) [deg]", "ARM cut center - phi (detector coordinates) [deg]");
   
   if (m_AngleBinMode == "fisbel") {
-      ARMCut.SetFISBEL(m_ARMCutNumberOfSkyBins);
-  }else{
-      ARMCut.SetHEALPix(m_ARMCutNumberOfSkyBins);
+    ARMCut.SetFISBELByNumberOfBins(m_ARMCutNumberOfSkyBins);
+  } else {
+    ARMCut.SetHEALPixByNumberOfBins(m_ARMCutNumberOfSkyBins);
   }
   
   m_EnergySelectedARMCut.SetName(MString("Energy response with ARM cut of ") + m_ARMCut + " deg radius around given position");
@@ -519,7 +518,6 @@ bool MResponseSpectral::Finalize()
 bool MResponseSpectral::Save()
 {
   MResponseBuilder::Save(); 
-
   
   m_EnergyBeforeER.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergyBeforeER.Write(GetFilePrefix() + ".beforeeventreconstruction" + m_Suffix, true);
@@ -544,8 +542,6 @@ bool MResponseSpectral::Save()
   
   m_EnergySelectedARMCutOriginRestricted.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergySelectedARMCutOriginRestricted.Write(GetFilePrefix() + ".armcutoriginrestricted" + m_Suffix, true);
-  
-
 
   return true;
 }

@@ -329,9 +329,9 @@ bool MResponseImagingBinnedMode::Initialize()
   MResponseMatrixAxisSpheric AxisSkyCoordinates("#nu [deg]", "#lambda [deg]");
 
   if (m_AngleBinMode == "fisbel") {
-    AxisSkyCoordinates.SetFISBELSize(m_AngleBinWidth);
+    AxisSkyCoordinates.SetFISBELByPixelSize(m_AngleBinWidth);
   } else {
-    AxisSkyCoordinates.SetHEALPixSize(m_AngleBinWidth);
+    AxisSkyCoordinates.SetHEALPixByPixelSize(m_AngleBinWidth);
     cout<<"Using HEALPix for sky with "<<AxisSkyCoordinates.GetNumberOfBins()<<" bins"<<endl;
   }
     
@@ -347,17 +347,17 @@ bool MResponseImagingBinnedMode::Initialize()
   
   MResponseMatrixAxisSpheric AxisScatteredGammaRayCoordinates("#psi [deg]", "#chi [deg]");
   if (m_AngleBinMode == "fisbel") {
-    AxisScatteredGammaRayCoordinates.SetFISBELSize(m_AngleBinWidth);
-  }else{
-    AxisScatteredGammaRayCoordinates.SetHEALPixSize(m_AngleBinWidth);
+    AxisScatteredGammaRayCoordinates.SetFISBELByPixelSize(m_AngleBinWidth);
+  } else {
+    AxisScatteredGammaRayCoordinates.SetHEALPixByPixelSize(m_AngleBinWidth);
     cout<<"Using HEALPix for scattered gamma ray with "<<AxisScatteredGammaRayCoordinates.GetNumberOfBins()<<" bins"<<endl;
   }
   
   MResponseMatrixAxisSpheric AxisRecoilElectronCoordinates("#sigma [deg]", "#tau [deg]");
   if (m_AngleBinMode == "fisbel") {
-    AxisRecoilElectronCoordinates.SetFISBELSize(m_AngleBinWidthElectron);
-  }else{
-    AxisRecoilElectronCoordinates.SetHEALPixSize(m_AngleBinWidthElectron);
+    AxisRecoilElectronCoordinates.SetFISBELByPixelSize(m_AngleBinWidthElectron);
+  } else {
+    AxisRecoilElectronCoordinates.SetHEALPixByPixelSize(m_AngleBinWidthElectron);
     cout<<"Using HEALPix for recoil electron with "<<AxisRecoilElectronCoordinates.GetNumberOfBins()<<" bins"<<endl;
   }
     

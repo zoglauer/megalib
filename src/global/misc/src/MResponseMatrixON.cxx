@@ -1350,9 +1350,9 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
               if (T.GetNTokens() < 2) continue;
               if (T.GetTokenAt(0) == "AD") {
                 if (T.GetNTokens() == 2) {
-                  A->SetFISBEL(T.GetTokenAtAsUnsignedInt(1));
+                  A->SetFISBELByNumberOfBins(T.GetTokenAtAsUnsignedInt(1));
                 } else if (T.GetNTokens() == 3) {
-                  A->SetFISBEL(T.GetTokenAtAsUnsignedInt(1), T.GetTokenAtAsDouble(2));
+                  A->SetFISBELByNumberOfBins(T.GetTokenAtAsUnsignedInt(1), T.GetTokenAtAsDouble(2));
                 } else {
                   mout<<"MResponseMatrixON: The FISBEL AD axis key word needs 1 (only the bins) or 2 (bins & longitude shift) arguments!"<<endl;
                   return false;
@@ -1378,7 +1378,7 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
                     return false;
                   }
                   
-                  A->SetHEALPix(T.GetTokenAtAsInt(1));
+                  A->SetHEALPixByOrder(T.GetTokenAtAsInt(1));
                 } else {
                   mout<<"MResponseMatrixON: The HEALPix AD axis key word needs 2 (order and scheme) arguments!"<<endl;
                   return false;
