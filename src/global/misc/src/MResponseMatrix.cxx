@@ -134,7 +134,7 @@ void MResponseMatrix::WriteHeader(ostringstream& out)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMatrix::Read(MString FileName)
+bool MResponseMatrix::Read(MString FileName, const bool MultiThreaded)
 {
   // Read the data from file directly into this matrix
 
@@ -157,7 +157,7 @@ bool MResponseMatrix::Read(MString FileName)
   SetFarFieldStartArea(Parser.GetFarFieldStartArea());
   SetSpectrum(Parser.GetSpectralType(), Parser.GetSpectralParameters());
 
-  Ok = ReadSpecific(Parser, Type, Version);
+  Ok = ReadSpecific(Parser, Type, Version, MultiThreaded);
 
   if (g_Verbosity == c_Chatty) {  
     mdebug<<"File \""<<FileName<<"\" with "<<GetNBins()

@@ -144,6 +144,10 @@ private:
   //! Smooth the image N times.
   int m_NSmooths;
 
+  // Reading
+
+  //! Multi-threaded reading
+  bool m_MultiThreaded;
 
 #ifdef ___CLING___
  public:

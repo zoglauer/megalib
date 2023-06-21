@@ -60,7 +60,7 @@ class MResponseMatrix
   unsigned int GetOrder() const { return m_Order; }
 
   //! Read the data from file
-  virtual bool Read(MString FileName);
+  virtual bool Read(MString FileName, const bool MultiThreaded = false);
   //! Write all data to file
   virtual bool Write(MString FileName, bool Stream = false) = 0;
 
@@ -102,7 +102,7 @@ class MResponseMatrix
   void WriteHeader(ostringstream& out);
   
   //! Read the class specific info from the file
-  virtual bool ReadSpecific(MFileResponse&, const MString&, const int) { return true; };
+  virtual bool ReadSpecific(MFileResponse&, const MString&, const int, const bool) { return true; }
   
   // private methods:
  private:

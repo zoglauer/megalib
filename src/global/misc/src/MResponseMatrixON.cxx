@@ -1300,7 +1300,8 @@ MResponseMatrixAxis* MResponseMatrixON::GetAxisByOrder(unsigned int Order)
 
 bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
                                      const MString& Type,
-                                     const int Version)
+                                     const int Version,
+                                     bool MultiThreaded)
 {
   // Read the data from file directly into this matrix
 
@@ -1454,10 +1455,7 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
         m_ValuesSparse.clear();
         m_BinsSparse.clear();
         
-        // Keep this for debugging parallel mode
-        bool Parallel = false;
-        
-        if (Parallel == false) {
+        if (MultiThreaded == false) {
           while (Parser.TokenizeLine(T, true) == true) {
             if (T.GetNTokens() != m_Axes.size() + 2) continue;
             if (T.GetTokenAt(0) == "RD") {
@@ -1479,82 +1477,88 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
           }
         } else {
           // Read all lines
-          m_ThreadLines.clear();
-          MString Line;
-          while (Parser.ReadLine(Line) == true) {
-            m_ThreadLines.push_back(Line);
-          }
-          
-          // Create temporary data storage
-          m_ThreadGoodData.clear();
-          m_ThreadGoodData.resize(m_ThreadLines.size(), false);
-          m_ThreadBins.clear();
-          m_ThreadBins.resize(m_ThreadLines.size(), 0);
-          m_ThreadValues.clear();
-          m_ThreadValues.resize(m_ThreadLines.size(), 0);
-          
-          
-          // Multi-threaded part:
-          unsigned int NThreads = thread::hardware_concurrency();
-          unsigned int NUsedThreads = 1;
-          
-          unsigned int Split = m_ThreadLines.size() / NThreads;
 
-          if (Split == 0) {
-            NUsedThreads = 1;
-            Split = m_ThreadLines.size();
-          } else {
-            NUsedThreads = NThreads;
-          }
-          
-          vector<pair<unsigned int, unsigned int>> LineApportionment;
-          
-          for (unsigned int i = 0; i < NUsedThreads; ++i) {
-            unsigned int Start = 0;
-            if (LineApportionment.size() != 0) {
-              Start = LineApportionment.back().second + 1;
+          MString Line;
+          bool MoreLines = true;
+          unsigned int MaxLinesInRAM = 1000000;
+          while (MoreLines == true) {
+            m_ThreadLines.clear();
+            while ((MoreLines = Parser.ReadLine(Line)) == true) {
+              m_ThreadLines.push_back(Line);
+              if (m_ThreadLines.size() == MaxLinesInRAM) break;
             }
-            unsigned int Stop = Start + Split - 1;
-            if (i == NUsedThreads - 1) {
-              Stop = m_ThreadLines.size() - 1;
+          
+            // Create temporary data storage
+            m_ThreadGoodData.clear();
+            m_ThreadGoodData.resize(m_ThreadLines.size(), false);
+            m_ThreadBins.clear();
+            m_ThreadBins.resize(m_ThreadLines.size(), 0);
+            m_ThreadValues.clear();
+            m_ThreadValues.resize(m_ThreadLines.size(), 0);
+          
+          
+            // Multi-threaded part:
+            unsigned int NThreads = thread::hardware_concurrency();
+            unsigned int NUsedThreads = 1;
+          
+            unsigned int Split = m_ThreadLines.size() / NThreads;
+
+            if (Split == 0) {
+              NUsedThreads = 1;
+              Split = m_ThreadLines.size();
+            } else {
+              NUsedThreads = NThreads;
             }
-            LineApportionment.push_back(pair<unsigned int, unsigned int>(Start, Stop));
-          }
+          
+            vector<pair<unsigned int, unsigned int>> LineApportionment;
+          
+            for (unsigned int i = 0; i < NUsedThreads; ++i) {
+              unsigned int Start = 0;
+              if (LineApportionment.size() != 0) {
+                Start = LineApportionment.back().second + 1;
+              }
+              unsigned int Stop = Start + Split - 1;
+              if (i == NUsedThreads - 1) {
+                Stop = m_ThreadLines.size() - 1;
+              }
+              LineApportionment.push_back(pair<unsigned int, unsigned int>(Start, Stop));
+            }
                   
           
-          vector<thread> Threads(NUsedThreads);
-          m_ThreadRunning.resize(NUsedThreads, true);
-          for (unsigned int t = 0; t < NUsedThreads; ++t) {
-            m_ThreadRunning[t] = true;
-            Threads[t] = thread(&MResponseMatrixON::SparseReadThreadEntry, this, t, LineApportionment[t].first, LineApportionment[t].second);
-          }
-          while (true) {
-            bool Finished = true;
+            vector<thread> Threads(NUsedThreads);
+            m_ThreadRunning.resize(NUsedThreads, true);
             for (unsigned int t = 0; t < NUsedThreads; ++t) {
-              if (m_ThreadRunning[t] == true) {
-                Finished = false;
+              m_ThreadRunning[t] = true;
+              Threads[t] = thread(&MResponseMatrixON::SparseReadThreadEntry, this, t, LineApportionment[t].first, LineApportionment[t].second);
+            }
+            while (true) {
+              bool Finished = true;
+              for (unsigned int t = 0; t < NUsedThreads; ++t) {
+                if (m_ThreadRunning[t] == true) {
+                  Finished = false;
+                  break;
+                }
+              }
+              if (Finished == false) {
+                this_thread::sleep_for(chrono::milliseconds(1));
+              } else {
+                for (unsigned int t = 0; t < NUsedThreads; ++t) {
+                  Threads[t].join();
+                }
                 break;
               }
             }
-            if (Finished == false) {
-              this_thread::sleep_for(chrono::milliseconds(1));
-            } else {
-              for (unsigned int t = 0; t < NUsedThreads; ++t) {
-                Threads[t].join();
+            // Now merge the data - if the file has been created with this class it is guaranteed to be in the correct sequence.
+            m_BinsSparse.reserve(m_ThreadBins.size());
+            m_ValuesSparse.reserve(m_ThreadValues.size());
+            for (unsigned int i = 0; i < m_ThreadGoodData.size(); ++i) {
+              if (m_ThreadGoodData[i] == true) {
+                m_BinsSparse.push_back(m_ThreadBins[i]);
+                m_ValuesSparse.push_back(m_ThreadValues[i]);
               }
-              break;
             }
-          }
-          // Now merge the data - if the file has been created with this class it is guaranteed to be in the correct sequence.
-          m_BinsSparse.reserve(m_ThreadBins.size());
-          m_ValuesSparse.reserve(m_ThreadValues.size());
-          for (unsigned int i = 0; i < m_ThreadGoodData.size(); ++i) {
-            if (m_ThreadGoodData[i] == true) {
-              m_BinsSparse.push_back(m_ThreadBins[i]);
-              m_ValuesSparse.push_back(m_ThreadValues[i]);
-            }
-          }
-        } // Multi-treaded read
+          } // more data
+        } // Multi-threaded read
       } // Stream or no stream
     } // Axis/Type loop
   } // main loop

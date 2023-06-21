@@ -119,7 +119,7 @@ class MResponseMatrixO4 : public MResponseMatrixOx
   // private methods:
  private:
   //! Read the specific data of this class - the main file handling is done in the base class!
-  virtual bool ReadSpecific(MFileResponse& Parser, const MString& Type, const int Version);
+  virtual bool ReadSpecific(MFileResponse& Parser, const MString& Type, const int Version, const bool MultiThreaded = false);
 
 
 

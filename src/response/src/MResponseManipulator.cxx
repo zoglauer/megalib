@@ -98,6 +98,8 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
 
   m_NSmooths = 0;
 
+  m_MultiThreaded = false;
+
   //gStyle->SetPalette(1, 0);
 
 //   // banana -> yellow -> orange -> red -> dark red
@@ -187,6 +189,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
   Usage<<"         -m:   <int> smooth view n times"<<endl;
   Usage<<"         -n:   normalized view by bin size"<<endl;
   Usage<<"         -z:   zero is a very small number in the view"<<endl;
+  Usage<<endl;
+  Usage<<"      Reading options:"<<endl;
+  Usage<<"         -t    read multi-threaded where enabled"<<endl;
   Usage<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -286,6 +291,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-z") {
       m_Zero = true;
       cout<<"Accepting view zeroed "<<endl;
+    } else if (Option == "-t") {
+      m_MultiThreaded = true;
+      cout<<"Accepting multi-threaded reading where enabled "<<endl;
     } else if (Option == "-c") {
       m_Collapse = true;
       m_CollapseAxis.clear();
@@ -558,7 +566,7 @@ bool MResponseManipulator::Analyze()
 bool MResponseManipulator::Append()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName);
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
   if (R == nullptr) {
     merr<<"Error: Unable to read first response file \""<<m_FileName<<"\" - aborting..."<<endl;
     return false;
@@ -566,7 +574,7 @@ bool MResponseManipulator::Append()
 
   for (unsigned int f = 0; f < m_AppendFileNames.size(); ++f) {
     MFileResponse AppendFile;
-    MResponseMatrix* RAppend = AppendFile.Read(m_AppendFileNames[f]);
+    MResponseMatrix* RAppend = AppendFile.Read(m_AppendFileNames[f], m_MultiThreaded);
     if (RAppend == nullptr) {
       merr<<"Error: Unable to read response file \""<<m_AppendFileNames[f]<<"\" - aborting..."<<endl;
       return false;
@@ -695,7 +703,7 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
       AnyZipped = true;
     }
     MFileResponse File;
-    MResponseMatrix* First = File.Read(SortedFiles[t][0]);
+    MResponseMatrix* First = File.Read(SortedFiles[t][0], m_MultiThreaded);
     if (First == nullptr) {
       merr<<"Error: Unable to read first response file \""<<SortedFiles[t][0]<<"\" - aborting..."<<endl;
       break;
@@ -708,7 +716,7 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
     for (unsigned int f = 1; f < SortedFiles[t].size(); ++f) {
       if (m_Interrupt == true) break;
 
-      MResponseMatrix* Append = File.Read(SortedFiles[t][f]);
+      MResponseMatrix* Append = File.Read(SortedFiles[t][f], m_MultiThreaded);
       if (Append == nullptr) {
         merr<<"Error: Unable to read response file \""<<SortedFiles[t][f]<<"\" - skipping it..."<<endl;
         continue;
@@ -997,12 +1005,12 @@ bool MResponseManipulator::Join()
 bool MResponseManipulator::Divide()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName, m_MultiThreaded);
   if (Zahler == 0) {
     mout<<"Unable to open Dividend"<<endl;
     return false;
   }
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName, m_MultiThreaded);
   if (Nenner == 0) {
     mout<<"Unable to open Dividor"<<endl;
     return false;
@@ -1083,9 +1091,9 @@ bool MResponseManipulator::Divide()
 bool MResponseManipulator::Ratio()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName, m_MultiThreaded);
   if (Zahler == 0) return false;
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName, m_MultiThreaded);
   if (Nenner == 0) return false;
 
   float SumZahler = Zahler->GetSum();
@@ -1185,9 +1193,9 @@ bool MResponseManipulator::Ratio()
 bool MResponseManipulator::Probability()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName, m_MultiThreaded);
   if (Zahler == 0) return false;
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName, m_MultiThreaded);
   if (Nenner == 0) return false;
 
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
@@ -1303,7 +1311,7 @@ bool MResponseManipulator::Probability()
 bool MResponseManipulator::Statistics()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName);
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
   if (R == nullptr) return false;
   cout<<R->GetStatistics()<<endl;
   delete R;
@@ -1318,7 +1326,7 @@ bool MResponseManipulator::Statistics()
 bool MResponseManipulator::Collapse()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName);
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
   if (R == nullptr) return false;
   
   if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
@@ -1349,7 +1357,7 @@ bool MResponseManipulator::Show()
   }
 
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName);
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
 
   if (R == nullptr) return false;
 
@@ -1417,7 +1425,7 @@ bool MResponseManipulator::Show()
   cout<<"Other:"<<OtherFile<<endl;
   if (OtherFile != m_FileName && MFile::FileExists(OtherFile)) {
     MFileResponse File;
-    MResponseMatrix* R = File.Read(OtherFile);
+    MResponseMatrix* R = File.Read(OtherFile, m_MultiThreaded);
 
     if (R == nullptr) return false;
 

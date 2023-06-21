@@ -42,7 +42,7 @@ class MFileResponse : public MParser
   explicit MFileResponse();
   virtual ~MFileResponse();
 
-  MResponseMatrix* Read(MString FileName);
+  MResponseMatrix* Read(MString FileName, bool MultiThreaded = false);
 
   //! Open the file name and read the header
   virtual bool Open(MString FileName, unsigned int Way = 1);

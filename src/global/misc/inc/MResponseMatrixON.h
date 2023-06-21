@@ -216,7 +216,7 @@ class MResponseMatrixON : public MResponseMatrix
   unsigned long CalculateNumberOfBins() const;
    
   //! Read the specific data of this class - the main file handling is done in the base class!
-  virtual bool ReadSpecific(MFileResponse& Parser, const MString& Type, const int Version);
+  virtual bool ReadSpecific(MFileResponse& Parser, const MString& Type, const int Version, const bool MultiThreaded = false);
 
   
   //! Sort the sparse matrix
