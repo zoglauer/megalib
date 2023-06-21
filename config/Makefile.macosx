@@ -18,6 +18,7 @@ ROOTCFLAGS    = $(shell root-config --cflags)
 ROOTLIBS      = $(shell root-config --libs)
 ROOTGLIBS     = $(shell root-config --glibs)
 
+# HEASoft
 HEACFLAGS     =
 HEALIBS       =
 ifneq ("$(wildcard $(LHEASOFT)/include/fitsio.h)", "")
@@ -40,7 +41,7 @@ endif
 
 # Compiler & linker options:
 CXX           = c++
-CXXFLAGS      = $(OPT) -std=c++14 -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) $(HEACFLAGS) $(HEALPIXCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-overloaded-virtual -Wno-tautological-undefined-compare
+CXXFLAGS      = $(OPT) -std=c++14 -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) $(HEACFLAGS) $(HEALPIXCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-overloaded-virtual -Wno-tautological-undefined-compare -Wno-deprecated-declarations -Wno-unused-but-set-variable
 DEFINES       = -UHARDWARE
 LD            = c++
 LDFLAGS       = $(OPT) -Xlinker -bind_at_load -flat_namespace -D___MACOSX___

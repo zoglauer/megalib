@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  iasis
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 22.04
+Kernel:                                    5.15.0-1032-raspi
+ 
+CPUModel:                                  Cortex-A72
+CPUName:                                   Cortex-A72
+CPUSockets:                                1
+CPUCoresPerSocket:                         4
+CPUThreadsPerCore:                         1
+Cores:                                     4
+Threads:                                   4
+ 
+ROOTVersion:                               6.28/04
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            3.99.02
+MEGAlibGitHash:                            87b23c6221051aab285bcc8ad40ef9498aa9fa61 2023-06-06
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      146.804
+EventsPerSecondCosimaSingle:               681.180
+DurationCosimaMultiple:                    180.755
+EventsPerSecondCosimaMultiple:             2212.940
+ 
+# Revan
+DurationRevanSingle:                       37.593
+EventsPerSecondRevanSingle:                2660.069
+DurationRevanMultiple:                     35.401
+EventsPerSecondRevanMultiple:              11299.115
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             84.599
+EventsPerSecondResponseCreatorSingle:      1182.047
+DurationResponseCreatorMultiple:           136.604
+EventsPerSecondResponseCreatorMultiple:    2928.171
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               231.793
+EventsPerSecondMimrecImagingSingle:        431.419
+DurationMimrecImagingMultiple:             153.745
+EventsPerSecondMimrecImagingMultiple:      650.427
+ 
