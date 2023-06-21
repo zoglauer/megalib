@@ -1481,11 +1481,15 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
           MString Line;
           bool MoreLines = true;
           unsigned int MaxLinesInRAM = 1000000;
-          while (MoreLines == true) {
+          vector<MString> MoreThreadLines;
+
+          while (MoreLines == true || MoreThreadLines.size() > 0) {
             m_ThreadLines.clear();
+            m_ThreadLines = MoreThreadLines;
+            MoreThreadLines.clear();
             while ((MoreLines = Parser.ReadLine(Line)) == true) {
               m_ThreadLines.push_back(Line);
-              if (m_ThreadLines.size() == MaxLinesInRAM) break;
+              if (m_ThreadLines.size() >= MaxLinesInRAM) break;
             }
           
             // Create temporary data storage
@@ -1540,7 +1544,16 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
                 }
               }
               if (Finished == false) {
-                this_thread::sleep_for(chrono::milliseconds(1));
+                if (MoreThreadLines.size() < MaxLinesInRAM && MoreLines == true) {
+                  for (unsigned int i = 0; i < 100; ++i) { // 100 is an OK compromise on M1 mac
+                    MoreLines = Parser.ReadLine(Line);
+                    if (MoreLines == false) break;
+                    MoreThreadLines.push_back(Line);
+                    if (MoreThreadLines.size() >= MaxLinesInRAM) break;
+                  }
+                } else {
+                  this_thread::sleep_for(chrono::milliseconds(1));
+                }
               } else {
                 for (unsigned int t = 0; t < NUsedThreads; ++t) {
                   Threads[t].join();
