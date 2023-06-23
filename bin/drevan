@@ -99,7 +99,6 @@ HERE=$(pwd)
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
-  echo "${C}"
   if [[ ${C} == *-da*=* ]]; then
     DATADIR=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-ta*=* ]]; then
@@ -168,24 +167,31 @@ if [[ ${TARGETDIR} == "" ]]; then
   echo "ERROR: You need to give a target directory where we create the response files"
   exit 1
 fi
-
-
-if [[ ${GEOMETRY} == "" ]]; then
-  echo " "
-  echo "ERROR: You need to give a geometry file"
-  exit 1
-fi
 # Check if we have read and write access
 if [ ! -r ${TARGETDIR} ] || [ ! -w ${TARGETDIR} ]; then
   echo " "
   echo "ERROR: You need to have read and write access to the target directory: ${TARGETDIR}"
   exit 1
 fi
+echo " * Target directory: ${TARGETDIR}"
+
+if [[ ${GEOMETRY} == "" ]]; then
+  echo " "
+  echo "ERROR: You need to give a geometry file"
+  exit 1
+fi
+echo " * Geometry: ${GEOMETRY}"
 
 if [[ ${LOG} == "TRUE" ]]; then
   LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
   LOGGING="tee -a ${LOGFILE}"
   echo " * Logging output to file: ${LOGFILE}"
+fi
+
+if [[ ${CONTINUE} == "TRUE" ]]; then
+  echo " * Continue"
+else
+  echo " * Clean restart (no continue)"
 fi
 
 if [ ! -f "${CFG}" ]; then
