@@ -85,9 +85,40 @@ unsigned int MBinnerHEALPix::FindBin(double Theta, double Phi) const
 //! Return axis bins edges for external drawing
 vector<vector<double>> MBinnerHEALPix::GetDrawingAxisBinEdges() const
 {
-  throw MExceptionArbitrary("GetDrawingAxisBinEdges not implemented for HEALPix");
+  vector<vector<double>> Axes;
 
-  return {{}};
+  if (m_Order < 0) {
+    Axes.push_back({0, 2*c_Pi});
+    Axes.push_back({0, c_Pi});
+    return Axes;
+  }
+
+  long NPixels = 12 * pow(4, m_Order);
+  double Length = sqrt(4*c_Pi/NPixels);
+  if (Length > 0.5 * c_Pi/180) {
+    Length = 0.5 * c_Pi/180;
+  }
+
+  unsigned int LongitudePixels = (unsigned int) (2*c_Pi/Length);
+  double LongitudeLength = 2*c_Pi / LongitudePixels;
+  vector<double> Longitude;
+  for (unsigned int i = 0; i < LongitudePixels; ++i) {
+    Longitude.push_back(LongitudeLength*i);
+  }
+  Longitude.push_back(2*c_Pi); // Making sure the last one is perfectly 2*c_Pi
+
+  unsigned int LatitudePixels = (unsigned int) (c_Pi/Length);
+  double LatitudeLength = c_Pi / LatitudePixels;
+  vector<double> Latitude;
+  for (unsigned int i = 0; i < LatitudePixels; ++i) {
+    Latitude.push_back(LatitudeLength*i);
+  }
+  Latitude.push_back(c_Pi); // Making sure the last one is perfectly c_Pi
+
+  Axes.push_back(Longitude);
+  Axes.push_back(Latitude);
+
+  return Axes;
 }
 
 

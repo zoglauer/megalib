@@ -263,7 +263,7 @@ vector<double> MResponseMatrixAxisSpheric::GetBinCenters(unsigned long Bin) cons
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return the bin centera of all axis bins as vector
+//! Return the bin centers of all axis bins as vector
 //! Can throw: MExceptionIndexOutOfBounds
 vector<MVector> MResponseMatrixAxisSpheric::GetAllBinCenters() const
 {
