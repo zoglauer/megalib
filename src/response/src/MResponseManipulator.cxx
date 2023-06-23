@@ -585,7 +585,10 @@ bool MResponseManipulator::Append()
     if (R->GetOrder() != RAppend->GetOrder()) {
       mout<<"Cannot append file, because they are of different order!"<<endl;
     } else {
-      if (R->GetOrder() == 1) {
+      if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+        *dynamic_cast<MResponseMatrixON*>(R) +=
+          *dynamic_cast<MResponseMatrixON*>(RAppend);
+      } else if (R->GetOrder() == 1) {
         *dynamic_cast<MResponseMatrixO1*>(R) +=
           *dynamic_cast<MResponseMatrixO1*>(RAppend);
       } else if (R->GetOrder() == 2) {
@@ -639,12 +642,19 @@ bool MResponseManipulator::Append()
       } else {
         merr<<"Unsupported matrix order: "<<R->GetOrder()<<endl;
       }
+
+      // Add up the simulated events
+      R->SetSimulatedEvents(R->GetSimulatedEvents() + RAppend->GetSimulatedEvents());
     }
 
     delete RAppend;
   }
 
-  R->Write((m_FileName + ".new"), true);
+  MString NewFileName = m_FileName + ".added.rsp";
+  if (m_FileName.EndsWith(".gz") == true) {
+    NewFileName += ".gz";
+  }
+  R->Write(NewFileName, true);
   delete R;
 
   return true;
