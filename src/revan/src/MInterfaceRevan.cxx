@@ -637,7 +637,7 @@ void MInterfaceRevan::GenerateSpectra()
           }
         } else {
           for (int r = 0; r < Before->GetNRESEs(); ++r) {
-            MString Name = Before->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume()->GetName();
+            MString Name = Before->GetRESEAt(r)->GetVolumeSequence()->GetDetector()->GetName();
             if (SpectrumBeforeByNamedDetector[Name] == nullptr) {
               TH1D* H = new TH1D(MString("HitSpectrumBeforeByNamedDetector_") + Name,
                                  MString("Spectrum for individual hits before reconstruction for named detector ") + Name,  xNBins, xBins);
