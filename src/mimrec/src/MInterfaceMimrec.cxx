@@ -5255,13 +5255,8 @@ void MInterfaceMimrec::Polarization()
   MComptonEvent* ComptonEvent = nullptr; 
   MPairEvent* PairEvent = nullptr; 
 
-  // Origin in spherical coordinates:
-  double Theta = m_Settings->GetTPTheta()*c_Rad;
-  double Phi = m_Settings->GetTPPhi()*c_Rad;
-
-  // Origin in Cartesian Corrdinates:
-  MVector Origin;
-  Origin.SetMagThetaPhi(c_FarAway, Theta, Phi);
+  // Test position for ARM:
+  MVector TestPosition = GetTestPosition();
 
   // Arm cut:
   double ArmCut = m_Settings->GetPolarizationArmCut();
@@ -5276,20 +5271,25 @@ void MInterfaceMimrec::Polarization()
   if (InitializeEventLoader() == false) return;
 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != nullptr) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
+
+        if (fabs(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
+          /*
           MVector Plain = ComptonEvent->Dg();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
-
           double Angle = Plain.Phi();
           Polarization->Fill(Angle*c_Deg);
+          */
+
+          double Angle = ComptonEvent->GetAzimuthalScatterAngle(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg;
+          Polarization->Fill(Angle);
 
           InsideArmCutSource++;
         } else {
@@ -5298,14 +5298,19 @@ void MInterfaceMimrec::Polarization()
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        if (fabs(PairEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
-          MVector Plain = PairEvent->GetElectronDirection() + 
-            PairEvent->GetPositronDirection();
+        if (fabs(PairEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
+          /*
+          MVector Plain = PairEvent->GetElectronDirection() + PairEvent->GetPositronDirection();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
-          
+
           double Angle = Plain.Phi();
           Polarization->Fill(Angle*c_Deg);
+          */
+
+          double Angle = PairEvent->GetAzimuthalScatterAngle(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg;
+          Polarization->Fill(Angle);
+
           InsideArmCutSource++;
         } else {
           OutsideArmCutSource++;
@@ -5340,20 +5345,25 @@ void MInterfaceMimrec::Polarization()
   SecondSelector.SetTimeMode(0); // Since the background file is likely simulation, we do not use a time cut -- this is noted in the GUI
   
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != nullptr) {
 
     // Only accept Comptons within the selected ranges...
     if (SecondSelector.IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
+        if (fabs(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
+          /*
           MVector Plain = ComptonEvent->Dg();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
 
           double Angle = Plain.Phi();
           Background->Fill(Angle*c_Deg);
+          */
+          double Angle = ComptonEvent->GetAzimuthalScatterAngle(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg;
+          Background->Fill(Angle);
+
           InsideArmCutBackground++;
         } else {
           OutsideArmCutBackground++;
@@ -5361,13 +5371,19 @@ void MInterfaceMimrec::Polarization()
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        if (fabs(PairEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
+        if (fabs(PairEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
+          /*
           MVector Plain = PairEvent->GetElectronDirection() + PairEvent->GetPositronDirection();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
           
           double Angle = Plain.Phi();
           Background->Fill(Angle*c_Deg);
+          */
+
+          double Angle = PairEvent->GetAzimuthalScatterAngle(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg;
+          Background->Fill(Angle);
+
           InsideArmCutBackground++;
         } else {
           OutsideArmCutBackground++;
