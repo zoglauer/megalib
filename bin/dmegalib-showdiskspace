@@ -36,7 +36,7 @@ for C in "${CMD[@]}"; do
   fi
 done
 
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 
 # Read configuration file and extract machines
 MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
@@ -71,7 +71,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi  
 
   # Check if we have a configuration file
-  CONFIGFILE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -f ~/.dcosima.cfg ]]; then echo \"NOT FOUND\"; fi; echo \"FOUND\";"`
+  CONFIGFILE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -f ~/.dmegalib.cfg ]]; then echo \"NOT FOUND\"; fi; echo \"FOUND\";"`
   if [ "${CONFIGFILE}" == "NOT FOUND" ]; then
     echo "   - NO dcosima configuration file found"
     echo " "
@@ -79,15 +79,15 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
 
   # Checking for remote global directory...
-  REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
+  REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dmegalib.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dmegalib.cfg; fi;'
   MASTERDIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
-    echo "   - NO directory to store the simulated data is given in the .dcosima.cfg file"
+    echo "   - NO directory to store the simulated data is given in the .dmegalib.cfg file"
     continue
   fi
   MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
   if [ "${MASTERDIR}" == "" ]; then
-    echo "   - Cannot read the simulation directory in the .dcosima.cfg file"
+    echo "   - Cannot read the simulation directory in the .dmegalib.cfg file"
     continue
   fi
 
@@ -110,7 +110,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   echo "   - Free disk space: ${FREEDISKSPACE} GByte"
   
   # Get the directories & the disk space used
-  REMOTECOMMAND='DIR=$(grep ^directory ~/.dcosima.cfg | tr -s " " | cut -d " " -f2); if [[ ! -d ${DIR} ]]; then exit; fi; cd ${DIR}; for i in $(find . -maxdepth 1 -mindepth 1 -type d | sed "s|^\./||"); do cd ${i}; DU=$(du -h -s); DU=${DU:0:${#DU}-1}; NEWESTFILE=0; for F in `find . -name "*" -type f`; do DATE=$(date -r ${F} +%s); if [[ ${DATE} -gt ${NEWESTFILE} ]]; then NEWESTFILE=${DATE}; fi; done; LATEST=$(date -d @${NEWESTFILE} +"%Y-%m-%d %H:%M"); echo "${i%%/}:|last access: ${LATEST}|disk space: ${DU}\n"; cd ..; done;'
+  REMOTECOMMAND='DIR=$(grep ^directory ~/.dmegalib.cfg | tr -s " " | cut -d " " -f2); if [[ ! -d ${DIR} ]]; then exit; fi; cd ${DIR}; for i in $(find . -maxdepth 1 -mindepth 1 -type d | sed "s|^\./||"); do cd ${i}; DU=$(du -h -s); DU=${DU:0:${#DU}-1}; NEWESTFILE=0; for F in `find . -name "*" -type f`; do DATE=$(date -r ${F} +%s); if [[ ${DATE} -gt ${NEWESTFILE} ]]; then NEWESTFILE=${DATE}; fi; done; LATEST=$(date -d @${NEWESTFILE} +"%Y-%m-%d %H:%M"); echo "${i%%/}:|last access: ${LATEST}|disk space: ${DU}\n"; cd ..; done;'
   SPACEANDDIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
     echo "   - Unable to retrieve the directories!"

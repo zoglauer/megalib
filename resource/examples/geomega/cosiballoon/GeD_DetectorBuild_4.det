@@ -1,0 +1,33 @@
+Include GeD_DetectorBuild_4.geo
+
+Strip3D Detector4
+Detector4.DetectorVolume GeWafer_4
+Detector4.SensitiveVolume GeWafer_4
+Detector4.StructuralPitch 0.0 0.0 0.0
+Detector4.StructuralOffset 0.0 0.0 0.0
+Detector4.Offset 0.32 0.32
+Detector4.StripNumber 37 37
+Detector4.EnergyResolution Gauss 0 0 1.02
+Detector4.EnergyResolution Gauss 100 100 1.02
+Detector4.EnergyResolution Gauss 300 300 1.04
+Detector4.EnergyResolution Gauss 1000 1000 1.07
+Detector4.EnergyResolution Gauss 3000 3000 1.15
+Detector4.EnergyResolution Gauss 10000 10000 1.42
+Detector4.DepthResolution 100 0.02
+Detector4.NoiseThreshold 15.0
+Detector4.TriggerThreshold 40.0
+Detector4.GuardringEnergyResolution 100 1.5
+Detector4.GuardringEnergyResolution 1000 1.5
+Detector4.GuardringTriggerThreshold 40
+Detector4.FailureRate 0.0
+
+Trigger Detector4_Trigger
+Detector4_Trigger.Veto False
+Detector4_Trigger.TriggerByChannel True
+Detector4_Trigger.Detector Detector4 1
+
+Trigger Detector4_GRTrigger
+Detector4_GRTrigger.Veto True
+Detector4_GRTrigger.TriggerByDetector True
+Detector4_GRTrigger.GuardringDetector Detector4 1
+

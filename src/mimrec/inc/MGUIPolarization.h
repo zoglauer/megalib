@@ -65,8 +65,10 @@ class MGUIPolarization : public MGUIDialog
   MGUIEFileSelector* m_PolarizationFile;
   MGUIEFileSelector* m_BackgroundFile; 
   
-  MGUIEEntry* m_Theta;
-  MGUIEEntry* m_Phi;
+  MGUIEEntry* m_ThetaIsX;
+  MGUIEEntry* m_PhiIsY;
+  MGUIEEntry* m_RadiusIsZ;
+
   MGUIEEntry* m_Cut;
   MGUIEEntry* m_Bins;
 

@@ -1,5 +1,8 @@
 #! /bin/bash
 
+# Kill this and all child processes on Ctrl-C
+trap "pkill -P $$; exit 1;" SIGINT
+
 help() {
   echo ""
   echo "mrevan - script for MEGAlib";
@@ -177,7 +180,7 @@ for SIMFILE in ${FILES}; do
     CMD+=" -g ${GEOMETRY}"
   fi
   nohup nice -n ${NICELEVEL} bash -c "${CMD}" > /dev/null &
-  sleep 0.5
+  sleep 1
 done
 
 

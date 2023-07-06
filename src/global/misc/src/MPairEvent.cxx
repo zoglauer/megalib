@@ -394,6 +394,26 @@ double MPairEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem&
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MPairEvent::GetAzimuthalScatterAngle(const MVector& Position, const MCoordinateSystem& CS)
+{
+  //! Return the azimuthal scatter angle value for the given test position in the given coordinate system
+
+  // Rotate the position into event coordinates
+  MVector RotPosition = Position;
+  if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
+
+  MVector Plain = GetElectronDirection() + GetPositronDirection();
+  Plain.RotateZ(-RotPosition.Phi());
+  Plain.RotateY(-RotPosition.Theta());
+
+  return Plain.Phi();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MPairEvent::Assimilate(char* LineBuffer)
 {
   // Takeover the event from a data-line
@@ -561,9 +581,10 @@ MString MPairEvent::ToBasicString()
 {
   // Transform the data to one line of text
 
-  char LineBuffer[1000];
+  const int Length = 1000;
+  char LineBuffer[Length];
 
-  sprintf(LineBuffer, "P;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+  snprintf(LineBuffer, Length, "P;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
     m_PairCreationIA.X(), m_PairCreationIA.Y(), m_PairCreationIA.Z(), 
     m_ElectronDirection.X(), m_ElectronDirection.Y(), m_ElectronDirection.Z(), 
     m_PositronDirection.X(), m_PositronDirection.Y(), m_PositronDirection.Z(), 

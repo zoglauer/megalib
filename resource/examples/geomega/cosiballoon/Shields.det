@@ -1,0 +1,85 @@
+Echo "Loading shields"
+
+
+Scintillator CsI_Shield
+CsI_Shield.DetectorVolume RectangularShieldModule_CSI
+CsI_Shield.SensitiveVolume RectangularShieldModule_CSI
+# The follwoing three lines will be overwritten in the named detectors, 
+# thus we put in a trigger threshold to immediately know what's wrong
+CsI_Shield.EnergyResolution Ideal
+CsI_Shield.TriggerThreshold 10000000.0
+CsI_Shield.NoiseThresholdEqualsTriggerThreshold true
+
+CsI_Shield.NamedDetector Shield1
+Shield1.Assign WorldVolume.RectangularShieldModule_Copy1_RectangularShieldModule_hull.RectangularShieldModule_CSI
+Shield1.EnergyResolution   Gauss     30.0     30.0    20.54
+Shield1.EnergyResolution   Gauss    100.0    100.0    37.50
+Shield1.EnergyResolution   Gauss   1000.0   1000.0   118.59
+Shield1.EnergyResolution   Gauss  10000.0  10000.0   375.00
+Shield1.TriggerThreshold 80.0
+Shield1.FailureRate 0.0
+
+CsI_Shield.NamedDetector Shield2
+Shield2.Assign WorldVolume.RectangularShieldModule_Copy6_RectangularShieldModule_hull.RectangularShieldModule_CSI
+Shield2.EnergyResolution   Gauss     30.0     30.0    20.48
+Shield2.EnergyResolution   Gauss    100.0    100.0    37.40
+Shield2.EnergyResolution   Gauss   1000.0   1000.0   118.27
+Shield2.EnergyResolution   Gauss  10000.0  10000.0   374.00
+Shield2.TriggerThreshold 80.0
+Shield2.FailureRate 0.0
+
+CsI_Shield.NamedDetector Shield3
+Shield3.Assign WorldVolume.RectangularShieldModule_Copy3_RectangularShieldModule_hull.RectangularShieldModule_CSI
+Shield3.EnergyResolution   Gauss     30.0     30.0   101.16
+Shield3.EnergyResolution   Gauss    100.0    100.0   184.70
+Shield3.EnergyResolution   Gauss   1000.0   1000.0   584.07
+Shield3.EnergyResolution   Gauss  10000.0  10000.0  1847.00
+Shield3.TriggerThreshold 80.0
+Shield3.FailureRate 0.0
+
+CsI_Shield.NamedDetector Shield4
+Shield4.Assign WorldVolume.RectangularShieldModule_Copy4_RectangularShieldModule_hull.RectangularShieldModule_CSI
+Shield4.EnergyResolution   Gauss     30.0     30.0    23.17
+Shield4.EnergyResolution   Gauss    100.0    100.0    42.30
+Shield4.EnergyResolution   Gauss   1000.0   1000.0   133.76
+Shield4.EnergyResolution   Gauss  10000.0  10000.0   423.00
+Shield4.TriggerThreshold 80.0
+Shield4.FailureRate 0.0
+
+CsI_Shield.NamedDetector Shield5
+Shield5.Assign WorldVolume.RectangularShieldModule_Copy5_RectangularShieldModule_hull.RectangularShieldModule_CSI
+Shield5.EnergyResolution   Gauss     30.0     30.0    16.82
+Shield5.EnergyResolution   Gauss    100.0    100.0    30.70
+Shield5.EnergyResolution   Gauss   1000.0   1000.0    97.08
+Shield5.EnergyResolution   Gauss  10000.0  10000.0   307.00
+Shield5.TriggerThreshold 80.0
+Shield5.FailureRate 0.0
+
+CsI_Shield.NamedDetector Shield6
+Shield6.Assign WorldVolume.RectangularShieldModule_Copy2_RectangularShieldModule_hull.RectangularShieldModule_CSI
+Shield6.EnergyResolution   Gauss     30.0     30.0    21.80
+Shield6.EnergyResolution   Gauss    100.0    100.0    39.80
+Shield6.EnergyResolution   Gauss   1000.0   1000.0   125.86
+Shield6.EnergyResolution   Gauss  10000.0  10000.0   398.00
+Shield6.TriggerThreshold 80.0
+Shield6.FailureRate 0.0
+
+
+# COSI Shield Trigger criteria
+
+
+Trigger CsI_Shield_Trigger
+CsI_Shield_Trigger.Veto true
+CsI_Shield_Trigger.TriggerByDetector True
+CsI_Shield_Trigger.Detector CsI_Shield 1
+### Carolyn added the following line as a result of geomega prompt, see below
+CsI_Shield.NoiseThresholdEqualsTriggerThreshold true
+
+####Jan 13th, 2014:
+#Errors reported:
+#   ***  Info  ***  for detector CsI_Shield
+#No noise threshold defined --- setting it to zero
+#   ***  Error  ***  Triggers with vetoes
+#A detector (here: CsI_Shield), which only has veto triggers, must have the flag "NoiseThresholdEqualsTriggerThreshold true"!"
+###Therefore I added "CsI_Shield.NoiseThresholdEqualsTriggerThreshold true" above
+~                                                                                               

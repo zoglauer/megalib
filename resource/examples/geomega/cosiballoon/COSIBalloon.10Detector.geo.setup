@@ -1,0 +1,31 @@
+#To use with just the Detectorhead, Shields and ThermalRadiators, no Gondola, no airslab.
+
+###Positive x is the direction of the sun (front)
+
+Include Intro.geo
+Include Shields.det
+Include GeD_10DetectorActive.det
+
+SurroundingSphere 60 0 0 0 60
+#ShowSurroundingSphere true
+
+Include UpperShield.geo
+UpperShield.Position 0 0 0
+UpperShield.Mother WorldVolume
+
+Include LowerShield.geo
+LowerShield.Position 0 0 0
+LowerShield.Mother WorldVolume
+
+Include DetectorHead.geo
+DetectorHead.Position 0 0 0
+DetectorHead.Mother WorldVolume
+
+Include ThermalRadiators_CompleteSet.geo
+ThermalRadiators_CompleteSet.Position 0 0 0
+ThermalRadiators_CompleteSet.Mother WorldVolume
+
+Include GradedZShield.geo
+GradedZShield.Position 0 0 {HalfWidthofRadiator + GradedZThickness + Zpos + 0.5842}
+GradedZShield.Mother WorldVolume
+

@@ -20,7 +20,7 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 # Compiler & linker options:
 CXX           = c++
-CXXFLAGS      = $(OPT) -std=c++11 -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-overloaded-virtual -Wno-tautological-undefined-compare
+CXXFLAGS      = $(OPT) -std=c++14 -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-unused-but-set-variable -Wno-overloaded-virtual -Wno-tautological-undefined-compare -Wno-deprecated-declarations
 DEFINES       = -UHARDWARE
 LD            = c++
 LDFLAGS       = $(OPT) -Xlinker -bind_at_load -flat_namespace -D___MACOSX___
@@ -34,7 +34,7 @@ LINK          = ln -s -f
 # HEASoft
 HEACFLAGS     =
 HEALIBS       =
-ifneq ("$(wildcard $(LHEASOFT)/include/cfitsio.h)", "")
+ifneq ("$(wildcard $(LHEASOFT)/include/fitsio.h)", "")
         HEACFLAGS += -I$(LHEASOFT)/include
         HEALIBS += -L$(LHEASOFT)/lib
 else ifeq ("$(shell pkg-config --exists cfitsio 1>&2 2> /dev/null; echo $$?)", "0")

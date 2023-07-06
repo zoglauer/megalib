@@ -108,12 +108,13 @@ MImage* MImageSpheric::Clone()
 {
   //! Clone this image
 
-  MImage* I =
+  MImageSpheric* I =
     new MImageSpheric(m_Title, m_IA,
                       m_xTitle, m_xMin, m_xMax, m_xNBins,
                       m_yTitle, m_yMin, m_yMax, m_yNBins,
                       m_vTitle, m_Spectrum, m_DrawOption);
 
+  I->SetProjection(m_Projection);
   I->Normalize(m_Normalize);
 
   return I;
@@ -219,8 +220,14 @@ void MImageSpheric::Display(TCanvas* Canvas)
     xSize = int(ySize/yImageSize*xImageSize);
     if (xSize < 0.15*ySize) xSize = 0.15*ySize;
   }
-  m_Canvas->SetWindowSize(xSize, ySize);
-  
+  if (gROOT->IsBatch() == false) {
+    m_Canvas->SetWindowSize(xSize, ySize);
+  } else {
+    m_Canvas->SetCanvasSize(xSize, ySize);
+  }
+
+  m_Canvas->Range(m_xMin, m_yMin, m_xMax, m_yMax);
+
   if (m_Projection == MImageProjection::c_None) {
     DisplayProjectionNone();
   } else {
@@ -301,38 +308,23 @@ void MImageSpheric::DisplayProjectionNone()
 
     // Redraw the new axis
     gPad->Update();
-    if (m_DrawOption == c_COLZ || m_DrawOption == c_COL) {
-      m_YAxis = new TGaxis(gPad->GetUxmin(),
-                           gPad->GetUymax(),
-                           gPad->GetUxmin()-0.001,
-                           gPad->GetUymin(),
-                           Hist->GetYaxis()->GetXmin(),
-                           Hist->GetYaxis()->GetXmax(),
-                           510,"-S");
-      m_YAxis->ImportAxisAttributes(Hist->GetYaxis());
-      m_YAxis->CenterTitle(true);
-      m_YAxis->SetTitle(m_yTitle);
-      m_YAxis->SetLabelOffset(-0.03f);
-      m_YAxis->SetTickLength(0.015f);
-      m_YAxis->SetTitleOffset(-1.5f);
-    } else {
-      m_YAxis = new TGaxis(gPad->GetUxmin(),
-                           gPad->GetUymax(),
-                           0.9999*gPad->GetUxmin(),
-                           gPad->GetUymin(),
-                           Hist->GetYaxis()->GetXmin(),
-                           Hist->GetYaxis()->GetXmax(),
-                           510,"-S");
-      m_YAxis->ImportAxisAttributes(Hist->GetYaxis());
-      m_YAxis->CenterTitle(true);
-      m_YAxis->SetTitle(m_yTitle);
-      m_YAxis->SetLabelOffset(-0.025f);
-      m_YAxis->SetLabelSize(0.035f);
-      m_YAxis->SetTitleOffset(-1.9f);
-      m_YAxis->SetTitleSize(0.04f);
-      m_YAxis->SetTickLength(0.015f);
-      m_YAxis->SetBit(TAxis::kRotateTitle);
-    }
+
+    m_YAxis = new TGaxis(gPad->GetUxmin(),
+                         gPad->GetUymax(),
+                         0.9999*gPad->GetUxmin(),
+                         gPad->GetUymin(),
+                         Hist->GetYaxis()->GetXmin(),
+                         Hist->GetYaxis()->GetXmax(),
+                         510,"-S");
+    m_YAxis->ImportAxisAttributes(Hist->GetYaxis());
+    m_YAxis->CenterTitle(true);
+    m_YAxis->SetTitle(m_yTitle);
+    m_YAxis->SetLabelOffset(-0.015f);
+    m_YAxis->SetLabelSize(0.035f);
+    m_YAxis->SetTitleOffset(-1.9f);
+    m_YAxis->SetTitleSize(0.04f);
+    m_YAxis->SetTickLength(0.015f);
+    m_YAxis->SetBit(TAxis::kRotateTitle);
 
 
     // Remove the current axis
@@ -355,8 +347,6 @@ void MImageSpheric::DisplayProjectionNone()
 void MImageSpheric::DisplayProjectionHammer()
 {
   // Display the image in a canvas
-
-  //cout<<"Hammer projection on"<<endl;
 
   double xMin = m_xMin;
   double xMax = m_yMax;
@@ -429,7 +419,7 @@ void MImageSpheric::DisplayProjectionHammer()
       y = Hist->GetYaxis()->GetBinCenter(by)*c_Rad;
 
       if (HammerInvConv(x, y, CentralMeridian, Long, Lat) == false) {
-		continue;
+        continue;
       }
       Long *= c_Deg;
       Lat *= c_Deg;
@@ -455,9 +445,15 @@ void MImageSpheric::DisplayProjectionHammer()
   // Draw the axes
   if (IsNew == true) {
         
-    // Draw data:
+    // Draw data - CONT0 is not working
     m_Canvas->cd();
-    Hist->Draw(m_DrawOptionString + " a");
+    MString DrawOption = m_DrawOptionString;
+    if (m_DrawOptionString == "COLCONT0") {
+      DrawOption = "COL";
+    } else if (m_DrawOptionString == "COLCONT0Z") {
+      DrawOption = "COLZ";
+    }
+    Hist->Draw(DrawOption + " a");
 
     // Paint coordinates:
     vector<double> Seperators = { 90.0, 60.0, 45.0, 30.0, 15.0, 10.0, 5.0, 2.0, 1.0, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01 };
@@ -614,13 +610,15 @@ void MImageSpheric::DisplayProjectionHammer()
     GalLat->SetTextAngle(90);
     GalLat->Draw();
   
-    TLatex* Value = new TLatex(xMax + 0.175*(xMax-xMin), 0.5*(yMin+yMax), m_vTitle);
-    Value->SetTextFont(42);
-    Value->SetTextColor(kBlack);
-    Value->SetTextAlign(22);
-    Value->SetTextSize(0.04);
-    Value->SetTextAngle(90);
-    Value->Draw();
+    if (m_DrawOptionString.Contains("Z") == true) {
+      TLatex* Value = new TLatex(xMax + 0.175*(xMax-xMin), 0.5*(yMin+yMax), m_vTitle);
+      Value->SetTextFont(42);
+      Value->SetTextColor(kBlack);
+      Value->SetTextAlign(22);
+      Value->SetTextSize(0.04);
+      Value->SetTextAngle(90);
+      Value->Draw();
+    }
   }
 
   m_Canvas->Update();

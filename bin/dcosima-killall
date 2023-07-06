@@ -37,7 +37,7 @@ for C in "${CMD[@]}"; do
 done
 
 # Default options:
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 MEGALIBPATH="Science/Software"
 
 # Find the master simulation directory

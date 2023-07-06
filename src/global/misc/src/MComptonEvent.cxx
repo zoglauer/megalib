@@ -543,6 +543,26 @@ double MComptonEvent::GetSPDElectron(const MVector& Position, const MCoordinateS
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MComptonEvent::GetAzimuthalScatterAngle(const MVector& Position, const MCoordinateSystem& CS)
+{
+  //! Return the azimuthal scatter angle value for the given test position in the given coordinate system
+
+  // Rotate the position into event coordinates
+  MVector RotPosition = Position;
+  if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
+
+  MVector Plain = Dg();
+  Plain.RotateZ(-RotPosition.Phi());
+  Plain.RotateY(-RotPosition.Theta());
+
+  return Plain.Phi();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MComptonEvent::Assimilate(MComptonEvent* Compton)
 {
   // Take over all the necessary event data and perform some elementary computations:
@@ -1098,9 +1118,10 @@ MPhysicalEvent* MComptonEvent::Data()
 MString MComptonEvent::ToBasicString() const
 {
   // Transform the data to one line of text
-  char LineBuffer[1000];
+  const int Length = 1000;
+  char LineBuffer[Length];
 
-  sprintf(LineBuffer, "C;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
+  snprintf(LineBuffer, Length, "C;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
     m_C1.X(), m_C1.Y(), m_C1.Z(), 
     m_C2.X(), m_C2.Y(), m_C2.Z(), 
     m_De.X(), m_De.Y(), m_De.Z(), 
@@ -1108,35 +1129,6 @@ MString MComptonEvent::ToBasicString() const
     m_dEe, m_dEg);
 
   return MString(LineBuffer);
-  
-  ostringstream S;
-
-  //S<<"<?>"<<LineBuffer<<"</?>"<<endl;
-
-
-  // Let's try xml:
-  // <Event>
-  //  <TIME> 8392.90527</TIME>
-  //  <HD1><X> 0.495</X><Y>-0.014</Y><Z> 0.000</Z><E> 5095.66</E></HD1>
-  //  <HD2><X>-0.231</X><Y> 0.071</Y><Z>-1.577</Z><E> 9319.43</E></HD2>
-  // </Event>
-
-  
-  S<<"<Event>"<<endl;
-  S<<"<HD1><X>"<<m_C1.X()
-     <<"</X><Y>"<<m_C1.Y()
-     <<"</Y><Z>"<<m_C1.Z()
-     <<"</Z><E>"<<m_Ee<<"</E></HD1>"<<endl;
-  S<<"<HD2><X>"<<m_C2.X()
-     <<"</X><Y>"<<m_C2.Y()
-     <<"</Y><Z>"<<m_C2.Z()
-     <<"</Z><E>"<<m_Eg<<"</E></HD2>"<<endl;
-  S<<"<ED><X>"<<m_De.X()
-     <<"</X><Y>"<<m_De.Y()
-     <<"</Y><Z>"<<m_De.Z()<<"</Z></ED>"<<endl;
-  S<<"</Event>"<<endl<<endl;
-
-  return S.str().c_str();
 }
 
 

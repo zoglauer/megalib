@@ -2,6 +2,9 @@
 
 checkload() {
   Load1Limit="0.9"
+  if [[ $(uname -s) == *arwin* ]]; then
+    Load1Limit="1.9"
+  fi
   while true; do
     Load1=$( uptime | awk -F: '{ print $NF }' | sed 's/,/ /g' | awk '{ print $1 }' )
     if (( $(echo "${Load1} > ${Load1Limit}" | bc -l) )); then
@@ -46,7 +49,13 @@ if [[ $(uname -s) == Linux ]]; then
 
   CPUModel=$( lscpu | grep "Model name" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
   CPUSockets=$( lscpu | grep "Socket" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
+  if ! [[ ${CPUSockets} =~ ^?[0-9]+$ ]]; then
+    CPUSockets=1
+  fi 
   CPUCoresPerSocket=$( lscpu | grep "per socket" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
+  if [[ ${CPUCoresPerSocket} == "" ]]; then
+    CPUCoresPerSocket=$( lscpu | grep "per cluster" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
+  fi
   CPUThreadsPerCore=$( lscpu | grep "per core" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
 elif [[ $(uname -s) == Darwin ]]; then
   OSFlavour="macOS"
@@ -61,6 +70,17 @@ fi
 
 Cores=$(( ${CPUSockets} * ${CPUCoresPerSocket} ))
 Threads=$(( ${CPUSockets} * ${CPUCoresPerSocket} * ${CPUThreadsPerCore} ))
+
+echo "System summary:"
+echo "OS flavour:            ${OSFlavour}"
+echo "OS version:            ${OSVersion}"
+echo "Kernel version:        ${Kernel}"
+echo "CPU model:             ${CPUModel}"
+echo "CPU sockets:           ${CPUSockets}"
+echo "CPU cores per socket:  ${CPUCoresPerSocket}"
+echo "CPU threads per core:  ${CPUThreadsPerCore}"
+echo "Total cores:           ${Cores}"
+echo "Total threads:         ${Threads}"
 
 Geant4Version=$( geant4-config --version )
 ROOTVersion=$( root-config --version )

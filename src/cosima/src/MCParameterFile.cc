@@ -777,15 +777,8 @@ bool MCParameterFile::Parse()
         }
       } else if (T->IsTokenAt(1, "FileName", true) == true) {
         if (T->GetNTokens() == 3) {
-          // ToDo: Check if source already exists:
           if (Run->SetFileName(T->GetTokenAtAsString(2)) == true) {
-            if (MFile::FileExists(T->GetTokenAtAsString(2)) == false) {
-              mdebug<<"Setting output file name "<<T->GetTokenAtAsString(2)
-                    <<" for run "<<Run->GetName()<<endl;
-            } else {
-              Typo(i, "File does already exist!");
-              return false;             
-            }
+            mdebug<<"Setting output file name "<<T->GetTokenAtAsString(2)<<" for run "<<Run->GetName()<<endl;
           } else {
             Typo(i, "Cannot parse token FileName correctly!");
             return false;             
@@ -1124,6 +1117,52 @@ bool MCParameterFile::Parse()
               return false;
             }
           } 
+          else if (Type == "cutoffpowerlaw" || Type == "cpl") {
+            if (T->GetNTokens() == 7) {
+              Source->SetSpectralType(MCSource::c_CutOffPowerLaw);
+              if (Source->SetEnergy(T->GetTokenAtAsDouble(3)*keV, 
+                                    T->GetTokenAtAsDouble(4)*keV,
+                                    T->GetTokenAtAsDouble(5),
+                                    T->GetTokenAtAsDouble(6)*keV) == true) {
+                mdebug<<"Setting energy min ="<<T->GetTokenAtAsDouble(3)
+                      <<" keV and max = "<<T->GetTokenAtAsDouble(4)
+                      <<" keV and alpha = "<<T->GetTokenAtAsDouble(5)
+                      <<" and cutoff = "<<T->GetTokenAtAsDouble(6)
+                      <<" keV for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token Spectrum - power law correctly:"
+                     " Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token Spectrum - power law correctly:"
+                   " Number of tokens is not correct!");
+              return false;
+            }
+          } 
+          else if (Type == "comptonized" || Type == "comptonization" || Type == "comp") {
+            if (T->GetNTokens() == 7) {
+              Source->SetSpectralType(MCSource::c_Comptonized);
+              if (Source->SetEnergy(T->GetTokenAtAsDouble(3)*keV,
+                                    T->GetTokenAtAsDouble(4)*keV,
+                                    T->GetTokenAtAsDouble(5),
+                                    T->GetTokenAtAsDouble(6)*keV) == true) {
+                mdebug<<"Setting energy min ="<<T->GetTokenAtAsDouble(3)
+                      <<" keV and max = "<<T->GetTokenAtAsDouble(4)
+                      <<" keV and alpha = "<<T->GetTokenAtAsDouble(5)
+                      <<" and peak = "<<T->GetTokenAtAsDouble(6)
+                      <<" keV for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token Spectrum - comptonization correctly:"
+                     " Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token Spectrum - power law correctly:"
+                   " Number of tokens is not correct!");
+              return false;
+            }
+          }
           else if (Type == "gaussian" || Type == "g") {
             if (T->GetNTokens() == 6) {
               Source->SetSpectralType(MCSource::c_Gaussian);

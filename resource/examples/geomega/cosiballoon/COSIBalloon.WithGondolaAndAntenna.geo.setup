@@ -1,0 +1,57 @@
+#To use with Gondola and Antennas:
+
+Include Intro.geo
+Include COSI_TriggerCriteria.det
+
+
+###Positive X is in the direction of the sun (front)
+
+SurroundingSphere 230 -50 0 30 230
+
+
+Constant zshift 10.884 
+##define to be the shift of the shields and detectorhead away from the origin, where the origin is defined as the center of the gondola
+
+#Include AirSlab.geo
+#AirSlab.Mother WorldVolume 
+#AirSlab.Position 0 0 80
+
+Include UpperShield.geo
+UpperShield.Position 0 0 {DetPositionWithinGondola + zshift}
+UpperShield.Mother WorldVolume
+
+Include LowerShield.geo
+LowerShield.Position 0 0 {DetPositionWithinGondola + zshift}
+LowerShield.Mother WorldVolume
+
+Include DetectorHead.12Det.geo
+DetectorHead.Position 0 0 {DetPositionWithinGondola + zshift} ###z used to be {-5.245 + zshift}
+DetectorHead.Mother WorldVolume
+
+Include ThermalRadiators_CompleteSet.geo
+ThermalRadiators_CompleteSet.Position 0 0 {DetPositionWithinGondola + zshift}
+ThermalRadiators_CompleteSet.Mother WorldVolume
+
+
+##Currently you need to un-comment the antenna code at the end of the Gondola.geo file. I could make this it's own geometry to include here, but I haven't had the chance.
+
+Include Gondola.geo
+Gondola.Position 0 0 0
+Gondola.Mother WorldVolume
+
+
+
+#USE THIS TO VISUALIZE SURROUNDING SPHERE, uncomment the following lines and make sure the radius and Position corresponds to the SurroundingSphere option used.
+#Volume testsphere
+#testsphere.Visibility 1
+#testsphere.Material Vacuum
+#testsphere.Shape SPHE 0 230 0 180 0 360
+#testsphere.Position -50 0 30
+#testsphere.Mother WorldVolume
+
+
+
+
+
+
+
