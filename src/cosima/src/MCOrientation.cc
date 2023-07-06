@@ -465,7 +465,7 @@ bool MCOrientation::GetOrientation(double Time, double& XThetaLat, double& XPhiL
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Perfrom the orientation for the given time
+//! Perform the orientation for the given time from local to oriented coordinate system
 bool MCOrientation::OrientPositionAndDirection(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
 {
   if (InRange(Time) == true) {
@@ -501,7 +501,7 @@ bool MCOrientation::OrientPositionAndDirection(double Time, G4ThreeVector& Posit
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Perfrom the inverted orientation for the given time
+//! Perfrom the inverted orientation for the given time from oriented to local coordiante system
 bool MCOrientation::OrientPositionAndDirectionInvers(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
 {
   if (InRange(Time) == true) {

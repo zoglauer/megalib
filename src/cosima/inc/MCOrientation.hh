@@ -72,7 +72,7 @@ class MCOrientation
   //! True if we actually have an orientation
   bool IsOriented() const { return m_IsOriented; }
   
-  //! True if we have loopin data, i.e. periodically repeating movemnet patterns
+  //! True if we have looping data, i.e. periodically repeating movement patterns
   bool IsLooping() const { return m_IsLooping; }
   
   //! Return the coordiante system
@@ -84,14 +84,14 @@ class MCOrientation
   //! Get the orientation
   bool GetOrientation(double Time, double& XThetaLat, double& XPhiLong, double& ZThetaLat, double& ZPhiLong) const;
   
-  //! Perform the orientation for the given time for a position and a direction
+  //! Perform the orientation for the given time for a position and a direction from local to oriented coordiante system
   bool OrientPositionAndDirection(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;  
-  //! Perform the invers orientation for the given time for a position and a direction
+  //! Perform the invers orientation for the given time for a position and a direction from oriented to local coordiante system
   bool OrientPositionAndDirectionInvers(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;
   
-  //! Perform the orientation for the given time for a direction (or polarization)
+  //! Perform the orientation for the given time for a direction (or polarization) from local to oriented coordiante system
   bool OrientDirection(double Time, G4ThreeVector& Direction) const;  
-  //! Perform the invers orientation for the given time for a direction  (or polarization)
+  //! Perform the invers orientation for the given time for a direction  (or polarization) from oriented to local coordiante system
   bool OrientDirectionInvers(double Time, G4ThreeVector& Direction) const;
   
   //! Return the start time or zero if there is none
@@ -108,7 +108,6 @@ class MCOrientation
   //! Read a list of orientations from file
   bool Read(MString FileName);
    
-  
   //! Check if Time is covered in the time array
   bool InRange(double Time) const;
 
