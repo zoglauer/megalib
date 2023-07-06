@@ -1279,7 +1279,7 @@ bool MGUIMainMelinator::OnLoadLast()
   vector<unsigned int> AllGroupIDs;
   
   MIsotopeStore Store;
-  if (Store.Load("$(MEGALIB)/resource/libraries/Calibration.isotopes") == false) {
+  if (Store.Load("$(MEGALIB)/resource/libraries/Calibration.isotopes", true) == false) {
     merr<<"Unable to load calibration isotopes..."<<show;
     return false;
   }
