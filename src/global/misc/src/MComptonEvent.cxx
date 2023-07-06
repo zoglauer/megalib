@@ -543,6 +543,26 @@ double MComptonEvent::GetSPDElectron(const MVector& Position, const MCoordinateS
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MComptonEvent::GetAzimuthalScatterAngle(const MVector& Position, const MCoordinateSystem& CS)
+{
+  //! Return the azimuthal scatter angle value for the given test position in the given coordinate system
+
+  // Rotate the position into event coordinates
+  MVector RotPosition = Position;
+  if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
+
+  MVector Plain = Dg();
+  Plain.RotateZ(-RotPosition.Phi());
+  Plain.RotateY(-RotPosition.Theta());
+
+  return Plain.Phi();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MComptonEvent::Assimilate(MComptonEvent* Compton)
 {
   // Take over all the necessary event data and perform some elementary computations:
