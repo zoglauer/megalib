@@ -59,7 +59,7 @@ MIsotopeStore::~MIsotopeStore()
 
 
 //! Load all isotopes form a standard MEGAlib isotope file
-bool MIsotopeStore::Load(MString FileName)
+bool MIsotopeStore::Load(MString FileName, bool ExcludeExcludedLines)
 {
   MFile::ExpandFileName(FileName);
   if (MFile::Exists(FileName) == false) return false;
@@ -85,7 +85,7 @@ bool MIsotopeStore::Load(MString FileName)
       if (m_Isotopes[s].GetElement() == Name && m_Isotopes[s].GetNucleons() == Nucleons) {
         m_Isotopes[s].AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), 
                               iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3),
-                              Flags);
+                              Flags, ExcludeExcludedLines);
         Found = true;
         break;
       }
@@ -96,7 +96,7 @@ bool MIsotopeStore::Load(MString FileName)
       Isotope.SetNucleons(Nucleons);
       Isotope.AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), 
                       iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3),
-                      Flags);
+                      Flags, ExcludeExcludedLines);
       m_Isotopes.push_back(Isotope);
     }
   }
