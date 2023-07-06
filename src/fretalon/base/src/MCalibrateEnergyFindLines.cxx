@@ -111,7 +111,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
   
   int Prior = 8;
   
-  int FirstPeakMinimumBinID = 3;
+  int FirstPeakMinimumBinID = 25;
   double FirstPeakMinimumPeakCounts = 300; 
   
   double MinimumPeakCounts = 100; 
