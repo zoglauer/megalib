@@ -3797,13 +3797,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
 
         MDVolumeSequence* VS = new MDVolumeSequence();
-        //cout<<"Assign pos: "<<Pos<<endl;
         m_WorldVolume->GetVolumeSequence(Pos, VS);
+        if (VS->GetDetector() == nullptr) {
+          MString VSout = VS->ToString();
+          Typo("The position is not within a detector");
+          cout<<VSout<<endl;
+          return false;
+        }
         D->SetVolumeSequence(*VS);
         if (D->HasGuardRing() == true) {
           D->GetGuardRing()->SetVolumeSequence(*VS);
         }
-        //cout<<"VS: "<<VS->ToString()<<endl;
         delete VS;
       }
     }
