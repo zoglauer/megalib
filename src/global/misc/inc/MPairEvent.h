@@ -94,7 +94,11 @@ class MPairEvent : public MPhysicalEvent
   MString ToBasicString();
 
   bool MostProbableDirectionIncomingGamma();
+
+  //! Return the angular resolution measure value for the given test position in the given coordinate system
   double GetARMGamma(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+  //! Return the azimuthal scatter angle value for the given test position in the given coordinate system
+  double GetAzimuthalScatterAngle(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
 
 
   // protected methods:

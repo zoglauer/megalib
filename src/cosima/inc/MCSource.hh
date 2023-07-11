@@ -587,6 +587,12 @@ protected:
   /// Shape of a Comptonized spectrum
   double Comptonized(const double Energy, double Alpha, double Epeak) const;
 
+  /// Perform an orientation of the vector from local into oriented coordinate system
+  bool PerformOrientation(G4ThreeVector& Direction);
+  /// Perform an orientation of the vector from local into oriented coordinate system
+  bool PerformOrientation(G4ThreeVector& Position, G4ThreeVector& Direction);
+
+
   // protected members:
 protected:
 
