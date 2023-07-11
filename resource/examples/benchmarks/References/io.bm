@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  io.local
+ 
+OSFlavour:                                 macOS
+OSVersion:                                 13.4.1
+Kernel:                                    22.5.0
+ 
+CPUModel:                                  Intel(R) Core(TM) i5-2415M CPU @ 2.30GHz
+CPUName:                                   i5-2415M
+CPUSockets:                                1
+CPUCoresPerSocket:                         2
+CPUThreadsPerCore:                         2
+Cores:                                     2
+Threads:                                   4
+ 
+ROOTVersion:                               6.28/04
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            3.99.02
+MEGAlibGitHash:                            ab0bd75a1f7945060fbe97ed19a6e7209a7efb7d 2023-07-10
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      68.194
+EventsPerSecondCosimaSingle:               1466.404
+DurationCosimaMultiple:                    118.714
+EventsPerSecondCosimaMultiple:             3369.442
+ 
+# Revan
+DurationRevanSingle:                       19.238
+EventsPerSecondRevanSingle:                5198.045
+DurationRevanMultiple:                     18.737
+EventsPerSecondRevanMultiple:              21348.134
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             33.686
+EventsPerSecondResponseCreatorSingle:      2968.592
+DurationResponseCreatorMultiple:           65.550
+EventsPerSecondResponseCreatorMultiple:    6102.212
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               103.211
+EventsPerSecondMimrecImagingSingle:        968.888
+DurationMimrecImagingMultiple:             48.047
+EventsPerSecondMimrecImagingMultiple:      2081.295
+ 
