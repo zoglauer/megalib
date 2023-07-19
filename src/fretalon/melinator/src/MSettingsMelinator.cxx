@@ -77,6 +77,7 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
   m_SaveAsFileName = "Out.ecal";
   
   m_SelectedDetectorID = -1;
+  m_SelectedDetectorSide = -1;
   
   m_MinimumTemperature = -numeric_limits<double>::max();
   m_MaximumTemperature = +numeric_limits<double>::max();
@@ -169,8 +170,10 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
   
   new MXmlNode(Node, "SaveAsFileName", m_SaveAsFileName);
   
-  //new MXmlNode(Node, "SelectedDetectorID", m_SelectedDetectorID);
-  
+  // Not stored, since command line options:
+  // new MXmlNode(Node, "SelectedDetectorID", m_SelectedDetectorID);
+  // new MXmlNode(Node, "SelectedDetectorSide", m_SelectedDetectorSide);
+
   return true;
 }
 
@@ -279,8 +282,12 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
   }
  
   /*
+  // Not stored since command line options
   if ((aNode = Node->GetNode("SelectedDetectorID")) != 0) {
     m_SelectedDetectorID = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("SelectedDetectorSide")) != 0) {
+    m_SelectedDetectorSide = aNode->GetValueAsInt();
   }
   */
  

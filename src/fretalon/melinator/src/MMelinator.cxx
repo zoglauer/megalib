@@ -126,10 +126,11 @@ void MMelinator::Clear()
   m_Isotopes.clear();
   
   m_SelectedDetectorID = -1;
-  
+  m_SelectedDetectorSide = -1;
+
   m_SelectedTemperatureMin = -numeric_limits<double>::max();
   m_SelectedTemperatureMax = +numeric_limits<double>::max();
-  
+
   m_HistogramChanged = true;
   m_HistogramCollection = -1;
   for (auto H: m_Histograms) delete H;
@@ -420,7 +421,7 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
       MReadOutSequence Sequence;
       long Counter = 0;
       long NewCounter = 0;
-      while (Reader.ReadNext(Sequence, m_SelectedDetectorID) == true) {
+      while (Reader.ReadNext(Sequence, m_SelectedDetectorID, m_SelectedDetectorSide) == true) {
         // Since we do energy calibration, exclude everything with more than the number of good hits
         //if (Sequence.HasIdenticalReadOutElementTypes() == true) {
         //  if (Sequence.GetNumberOfReadOuts() > 0 && 

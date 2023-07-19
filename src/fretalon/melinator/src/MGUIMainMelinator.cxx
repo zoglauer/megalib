@@ -1267,6 +1267,7 @@ bool MGUIMainMelinator::OnLoadLast()
    
   m_Melinator.Clear();
   m_Melinator.SetSelectedDetectorID(m_Settings->GetSelectedDetectorID());
+  m_Melinator.SetSelectedDetectorSide(m_Settings->GetSelectedDetectorSide());
   m_Melinator.SetSelectedTemperatureWindow(m_Settings->GetMinimumTemperature(), m_Settings->GetMaximumTemperature());
   
   MString FileName;

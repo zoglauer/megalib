@@ -95,16 +95,18 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"  Usage: Melinator <options>"<<endl;
   Usage<<endl;
-  Usage<<"      -l:"<<endl;
+  Usage<<"      -l"<<endl;
   Usage<<"             Load the last used calibration files"<<endl;
-  Usage<<"      -p:"<<endl;
+  Usage<<"      -p"<<endl;
   Usage<<"             Load the last used calibration files and parametrize all peaks"<<endl;
-  Usage<<"      -a:"<<endl;
+  Usage<<"      -a"<<endl;
   Usage<<"             Load the last used calibration files, parametrize all peaks, save the result, and exit"<<endl;
-  Usage<<"      -s <filename>.ecal:"<<endl;
-  Usage<<"             Save file name"<<endl;
+  Usage<<"      -e <filename>.ecal:"<<endl;
+  Usage<<"             ecal file name"<<endl;
   Usage<<"      -d --detector <int>:"<<endl;
   Usage<<"             Only look at this detector"<<endl;
+  Usage<<"      -s --side <int>:"<<endl;
+  Usage<<"             Only look at this detector side (0: negative, 1: positive, else: all)"<<endl;
   Usage<<"      -t --temperature <double> <double>:"<<endl;
   Usage<<"             Only look at this temperature window: [min...max]"<<endl;
   Usage<<"      -v --verbosity <0..5>:"<<endl;
@@ -134,7 +136,8 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
     
     // Single argument
     if (Option == "-c" || Option == "--configuration" ||
-        Option == "-s" || Option == "--save" ||
+        Option == "-s" || Option == "--side" ||
+        Option == "-e" || Option == "--ecal" ||
         Option == "-d" || Option == "--detector" ||
         Option == "-v" || Option == "--verbosity") {
       if (!((argc > i+1) && argv[i+1][0] != '-')){
@@ -164,12 +167,15 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   // Now parse all low level options
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
-    if (Option == "--save" || Option == "-s") {
+    if (Option == "--ecal" || Option == "-e") {
       m_Data->SetSaveAsFileName(argv[++i]);
       cout<<"Command-line parser: Use save as file name "<<m_Data->GetSaveAsFileName()<<endl;
     } else if (Option == "--detector" || Option == "-d") {
       m_Data->SetSelectedDetectorID(atoi(argv[++i]));
       cout<<"Command-line parser: Use only this detector: "<<m_Data->GetSelectedDetectorID()<<endl;
+    } else if (Option == "--side" || Option == "-s") {
+      m_Data->SetSelectedDetectorSide(atoi(argv[++i]));
+      cout<<"Command-line parser: Use only this detector side (0: neg, 1: pos, else: all): "<<m_Data->GetSelectedDetectorSide()<<endl;
     } else if (Option == "--temperature" || Option == "-t") {
       m_Data->SetMinimumTemperature(atof(argv[++i]));
       m_Data->SetMaximumTemperature(atof(argv[++i]));

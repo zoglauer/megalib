@@ -248,7 +248,7 @@ bool MFileReadOuts::ParseFooter(const MString& Line)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
+bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int SelectedDetectorSide)
 {
   // Return next single event from file... or 0 if there are no more.
   
@@ -267,7 +267,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
 
   // If we have an include file, we get the event from it!
   if (m_IncludeFileUsed == true) {
-    bool Return = dynamic_cast<MFileReadOuts*>(m_IncludeFile)->ReadNext(ROS, SelectedDetectorID);
+    bool Return = dynamic_cast<MFileReadOuts*>(m_IncludeFile)->ReadNext(ROS, SelectedDetectorID, SelectedDetectorSide);
     if (ROS.GetNumberOfReadOuts() == 0 || Return == false) {
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
@@ -313,7 +313,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
       if (OpenIncludeFile(Line) == true) {
         //mout<<"Switched to new include file: "<<m_IncludeFile->GetFileName()<<endl;
         // Now we have to read the first event:
-        bool Return = dynamic_cast<MFileReadOuts*>(m_IncludeFile)->ReadNext(ROS, SelectedDetectorID);
+        bool Return = dynamic_cast<MFileReadOuts*>(m_IncludeFile)->ReadNext(ROS, SelectedDetectorID, SelectedDetectorSide);
         if (ROS.GetNumberOfReadOuts() == 0 || Return == false) {
           //mout<<"Closing: "<<m_IncludeFile->GetFileName()<<endl;
           m_IncludeFile->Close();
@@ -340,9 +340,11 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
       // cout<<"Combined: "<<m_ROD->ToString()<<" vs. "<<m_ROD->GetCombinedType()<<endl;
       
       if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) m_ROE->GetDetectorID() == SelectedDetectorID)) {
-        MReadOut RO(*m_ROE, *m_ROD);
-        ROS.AddReadOut(RO);
-        //cout<<"Added: "<<RO.ToString()<<endl;
+        if (SelectedDetectorSide < 0 || SelectedDetectorSide >= 2 || (dynamic_cast<MReadOutElementDoubleStrip*>(m_ROE) != nullptr && (int) dynamic_cast<MReadOutElementDoubleStrip*>(m_ROE)->IsPositiveStrip() == SelectedDetectorSide)) {
+          MReadOut RO(*m_ROE, *m_ROD);
+          ROS.AddReadOut(RO);
+          //cout<<"Added: "<<RO.ToString()<<endl;
+        }
       }
       continue;
     }

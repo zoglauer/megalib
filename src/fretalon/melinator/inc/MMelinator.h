@@ -57,7 +57,10 @@ class MMelinator
   
   //! Set the ID of the selected detector (use all detectors when negative)
   void SetSelectedTemperatureWindow(double Min, double Max) { m_SelectedTemperatureMin = Min; m_SelectedTemperatureMax = Max; }
-  
+
+  //! Set the ID of the selected detector side (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  void SetSelectedDetectorSide(int SelectedDetectorSide) { m_SelectedDetectorSide = SelectedDetectorSide; }
+
   //! Load the calibration data containing the given isotopes and eventually merge files with identical data groups
   //! Return false if an error occurred
   //! This function performs parallel loading of all given files
@@ -199,7 +202,10 @@ class MMelinator
   double m_SelectedTemperatureMin;
   //! The selected temperature window maximum
   double m_SelectedTemperatureMax;
-  
+
+  //! The selected detector side (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  int m_SelectedDetectorSide;
+
   //! The group IDs
   vector<unsigned int> m_GroupIDs;
   //! The calibration file names

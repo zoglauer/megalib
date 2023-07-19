@@ -133,12 +133,17 @@ class MSettingsMelinator : public MSettings
   void SetSaveAsFileName(const MString& SaveAsFileName) { m_SaveAsFileName = SaveAsFileName; }
   //! Get the save-as file name
   MString GetSaveAsFileName() const { return m_SaveAsFileName; }
-  
+
   //! Set the single detector to use (negative means use all)
   void SetSelectedDetectorID(int ID) { m_SelectedDetectorID = ID; }
   //! Get the single detector to use (negative means use all)
   int GetSelectedDetectorID() const { return m_SelectedDetectorID; }
-  
+
+  //! Set the detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  void SetSelectedDetectorSide(int Side) { m_SelectedDetectorSide = Side; }
+  //! Get the detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  int GetSelectedDetectorSide() const { return m_SelectedDetectorSide; }
+
   //! Set the minimum allowed detector temperature
   void SetMinimumTemperature(double MinimumTemperature) { m_MinimumTemperature = MinimumTemperature; }
   //! Get the minimum allowed detector temperate
@@ -206,7 +211,9 @@ class MSettingsMelinator : public MSettings
   
   //! Set the single detector to use (negative means use all)
   int m_SelectedDetectorID;
-  
+  //! Set the detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  int m_SelectedDetectorSide;
+
   //! Set the minimum allowed detector temperature
   double m_MinimumTemperature;
   //! Set the maximum allowed detector temperature
