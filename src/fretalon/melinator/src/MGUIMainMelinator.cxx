@@ -168,7 +168,8 @@ void MGUIMainMelinator::Create()
   MenuFiles->AddEntry("Save", c_Save);
   MenuFiles->AddSeparator();
   MenuFiles->AddLabel("Configuration file");
-  MenuFiles->AddEntry("Open", c_LoadConfig);
+  //MenuFiles->AddEntry("Open", c_LoadConfig);
+  MenuFiles->AddEntry("Open -> use command line at launch", c_LoadConfig);
   MenuFiles->AddEntry("Save As", c_SaveConfig);
   MenuFiles->AddSeparator();
   MenuFiles->AddLabel("Geometry file");
@@ -1864,6 +1865,9 @@ bool MGUIMainMelinator::OnFitAll()
 //! Load a configuration file from disk
 bool MGUIMainMelinator::OnLoadConfiguration()
 {
+  //! Loading can leave the app in an inconsistent state, thus not do it now
+
+  /*
   const char** Types = new const char*[4];
   Types[0] = "Configuration file";
   Types[1] = "*.cfg";
@@ -1880,7 +1884,8 @@ bool MGUIMainMelinator::OnLoadConfiguration()
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
     m_Interface->LoadConfiguration(MString(Info.fFilename));
-  } 
+  }
+  */
 
   return true;
 }

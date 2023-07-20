@@ -260,7 +260,7 @@ bool MInterfaceMelinator::LoadConfiguration(MString FileName)
 {  
   // Load the configuration file
 
-  if (m_Data == 0) {
+  if (m_Data == nullptr) {
     m_Data = new MSettingsMelinator();
     m_BasicGuiData = dynamic_cast<MSettings*>(m_Data);
     //m_Gui->SetConfiguration(m_Data);
