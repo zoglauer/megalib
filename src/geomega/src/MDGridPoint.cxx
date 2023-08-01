@@ -100,18 +100,20 @@ MDGridPoint::MDGridPoint(const MDGridPoint& GridPoint)
   m_xGrid = GridPoint.m_xGrid;
   m_yGrid = GridPoint.m_yGrid;
   m_zGrid = GridPoint.m_zGrid;
-  m_Position = GridPoint.m_Position;
+  m_Position.Set(GridPoint.m_Position);
   m_Energy = GridPoint.m_Energy;
   m_Time = GridPoint.m_Time;
   m_Type = GridPoint.m_Type;
   m_Hits = GridPoint.m_Hits;
   m_Weight = GridPoint.m_Weight;
   
-  m_OriginIDs.clear();
-  m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
-  //m_OriginIDs = GridPoint.m_OriginIDs;
-  
-  m_Flags = GridPoint.m_Flags;
+  //m_OriginIDs.clear();
+  //m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
+  m_OriginIDs = GridPoint.m_OriginIDs;
+
+  if (GridPoint.m_Flags.IsEmpty() == false) {
+    m_Flags = GridPoint.m_Flags;
+  }
   
   m_IsAboveTriggerThreshold = GridPoint.m_IsAboveTriggerThreshold;
   m_IsReadOut = GridPoint.m_IsReadOut;
