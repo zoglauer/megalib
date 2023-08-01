@@ -629,6 +629,7 @@ vector<MDGridPoint> MDStrip3D::Grid(const MVector& PosInDetectorVolume, const do
   double DriftY = 0;
   
   //cout<<"Electron with: "<<Energy<<"!"<<NElectrons<<"!"<<m_EnergyPerElectron<<endl;
+  Collection.reserve(NElectrons);
   for (int e = 0; e < NElectrons; ++e) {
     
     // Randomize x, y position:
