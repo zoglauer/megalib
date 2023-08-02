@@ -214,7 +214,12 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
         }
       }
       */
-      
+           
+      if (Rejected == true) {
+        continue;
+      }
+
+
       // Remove the strip hits
       RE->RemoveAllAndCompress();
       
@@ -440,8 +445,7 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           Rejected = true;
           break;
         }
-        
-        
+            
         // Create the hits
         double XPos = 0;
         double YPos = 0;
@@ -568,8 +572,8 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
         }
         
         if (EnergyTotal > max(XEnergyTotal, YEnergyTotal) + 2.5*max(XEnergyRes, YEnergyRes) || EnergyTotal < min(XEnergyTotal, YEnergyTotal) - 2.5*max(XEnergyRes, YEnergyRes)) {
-          //cout<<"Rejected"<<endl;
-          cout<<"REjected: not resolvable by energy: tot="<<EnergyTotal<<"  x:"<<XEnergyTotal<<" y:"<<YEnergyTotal<<"  max res: "<<2.5*max(XEnergyRes, YEnergyRes)<<endl;
+          //cout<<"Rejected"<<endl:;
+          //cout<<"Strip-pairing: Rejected: not resolvable by energy: tot="<<EnergyTotal<<"  x:"<<XEnergyTotal<<" y:"<<YEnergyTotal<<"  max res: "<<2.5*max(XEnergyRes, YEnergyRes)<<endl;
           RE->SetRejectionReason(MRERawEvent::c_RejectionStripPairingNotResolvable);
           Rejected = true;
           break;
