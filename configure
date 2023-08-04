@@ -623,6 +623,16 @@ echo ""
 echo "Removing old build..."
 make clean
 
+# Store configuration
+echo ""
+echo "Storing configuration..."
+rm -f config/Configuration.txt
+echo "COMPILER=$(gcc --version | head -n 1)" >> config/Configuration.txt
+echo "PYTHON3=$(python3 --version)" >> config/Configuration.txt
+echo "ROOT=$(root-config --version)" >> config/Configuration.txt
+echo "GEANT4=$(geant4-config --version)" >> config/Configuration.txt
+
+
 echo ""
 echo ""
 echo "Done! Now type 'make' to compile and link MEGAlib"
