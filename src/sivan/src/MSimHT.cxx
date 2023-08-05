@@ -262,9 +262,16 @@ MString MSimHT::ToString() const
   out<<"Hit in D"<<m_DetectorType<<" ";
   out<<"at ("<<m_Position[0]<<", "<<m_Position[1]<<", "<<m_Position[2]<<") ";
   out<<"with "<<m_Energy<<" keV ";
-  out<<"from:                 ";
-  for (unsigned int i = 0; i < m_Origins.size(); ++i) {
-    out<<m_Origins[i]<<", ";
+  if (m_Origins.size() > 0) {
+    out<<"originating from IA"<<(m_Origins.size() == 1 ? " " : "s ");
+    for (unsigned int i = 0; i < m_Origins.size(); ++i) {
+      out<<m_Origins[i];
+      if (i != m_Origins.size() - 1) { // size=0 is handled in the beginning
+        out<<", ";
+      }
+    }
+  } else {
+    out<<"(no origin info)";
   }
 
   return out;
