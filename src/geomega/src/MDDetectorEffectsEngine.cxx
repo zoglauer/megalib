@@ -107,7 +107,62 @@ bool MDDetectorEffectsEngine::Run()
   // Noise the event time
   MDSystem* System = m_Geometry->GetSystem();
   System->NoiseTime(m_EventTime);
-  
+ 
+  // Set up the trigger unit
+  MDTriggerUnit& TU = *(m_Geometry->GetTriggerUnit());
+  TU.Reset();
+
+  // First check for simple vetoes
+  vector<MDDetector*> SimpleVetoDetectors = m_Geometry->GetTriggerUnit()->GetSimpleVetoDetectors();
+  if (SimpleVetoDetectors.size() != 0) {
+
+    for (unsigned int p = 0; p < m_GridPoints.size(); ++p) {
+      MDGridPoint P = m_GridPoints[p]; // Make a copy - we do not want to noise twice
+      const MDVolumeSequence& S = m_VolumeSequences[p];
+
+      // (1) Check if we have a detector in the simple veto detector list
+      if (find(SimpleVetoDetectors.begin(), SimpleVetoDetectors.end(), S.GetDetector()) == SimpleVetoDetectors.end()) {
+        continue;
+      }
+
+      // (2) Apply the noise -- switch the position into detector coordinates
+      MVector Position = P.GetPosition();
+      for (unsigned int i = 0; i < S.GetNVolumes(); i++) {
+        // Translate:
+        Position -= S.GetVolumeAt(i)->GetPosition();
+        // Rotate:
+        if (S.GetVolumeAt(i)->IsRotated() == true) {
+          Position = S.GetVolumeAt(i)->GetRotationMatrix() * Position;
+        }
+      }
+
+      double Energy = P.GetEnergy();
+      double Time = P.GetTime();
+      MString Flags = P.GetFlags();
+
+      S.GetDetector()->Noise(Position, Energy, Time, Flags, S.GetDeepestVolume());
+
+      // Update position, energy, and time
+      P.SetPosition(Position);
+      P.SetEnergy(Energy);
+      P.SetTime(Time);
+      P.SetFlags(Flags);
+
+      // (3) Finally add to the trigger unit
+      TU.AddHit(P.GetEnergy(), S);
+    }
+
+    //! Check for veto
+    if (TU.HasVetoed() == true) {
+      return false;
+    }
+
+    // Otherwise reset the trigger unit and do full processing
+    TU.Reset();
+  }
+
+
+
   // Re-grid the hits (e.g. split charge sharing, discretize undiscritzed hits, etc.)
   m_GridPointCollections.clear();
   for (unsigned int p = 0; p < m_GridPoints.size(); ++p) {
@@ -187,9 +242,6 @@ bool MDDetectorEffectsEngine::Run()
   }
       
   // Apply triggers
-  MDTriggerUnit& TU = *(m_Geometry->GetTriggerUnit());
-  TU.Reset();
-  
   for (unsigned int c = 0; c < m_GridPointCollections.size(); ++c) {
     const MDVolumeSequence& S = m_GridPointCollections[c].GetVolumeSequence();
     for (unsigned int p = 0; p < m_GridPointCollections[c].GetNGridPoints(); ++p) {

@@ -155,6 +155,42 @@ bool MDTriggerUnit::Validate() const
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the detectors whose vetos fullfil simple veto rules
+//! (a) it's a veto
+//! (b) it's a basic trigger
+//! (c) it's in a specific detector not a detector type
+//! (d) it's detector type is ACS / Scintillator / Simple
+vector<MDDetector*> MDTriggerUnit::GetSimpleVetoDetectors() const
+{
+  vector<MDDetector*> Detectors;
+
+  for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+    // In theory we also can have universal vetoes which are basic, but for the time being we are ignoring that case
+    if (m_Geometry->GetTriggerAt(t)->GetType() != MDTriggerType::c_Basic) {
+      continue;
+    }
+    // We checked before that it is a basic trigge
+    if (dynamic_cast<MDTriggerBasic*>(m_Geometry->GetTriggerAt(t))->IsVeto() == false) {
+      continue;
+    }
+    // We checked before that it is a basic trigger
+    if (dynamic_cast<MDTriggerBasic*>(m_Geometry->GetTriggerAt(t))->GetDetectorTypes().size() != 0) {
+      continue;
+    }
+    // We checked before that it is a basic trigger
+    for (MDDetector* D: dynamic_cast<MDTriggerBasic*>(m_Geometry->GetTriggerAt(t))->GetDetectors()) {
+      if (D->GetType() == MDDetector::c_ACS) {
+        Detectors.push_back(D);
+      }
+    }
+  }
+
+  return Detectors;
+}
+    
 
 ////////////////////////////////////////////////////////////////////////////////
 

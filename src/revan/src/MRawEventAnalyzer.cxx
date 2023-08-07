@@ -646,7 +646,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   
   
   
-  // Section Pre-B: EStripPairint:
+  // Section Pre-B: Strip pairing:
   
   if (SelectionsPassed == true) { // && m_EventClusteringAlgorithm > c_EventClusteringAlgoNone) {
     Timer.Start();

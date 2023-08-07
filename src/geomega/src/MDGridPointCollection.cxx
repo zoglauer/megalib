@@ -148,11 +148,20 @@ void MDGridPointCollection::Add(MDGridPoint& Point)
   if (m_Points.size() == 0 || (m_Points.size() > 0 && (m_Points[0].GetType() == Point.GetType() || (m_Points[0].GetType() == MDGridPoint::c_XStrip && Point.GetType() == MDGridPoint::c_YStrip) || (m_Points[0].GetType() == MDGridPoint::c_YStrip && Point.GetType() == MDGridPoint::c_XStrip)))) {
       
     bool Exists = false;
+    /*
     for (auto AllIter = m_Points.begin(); AllIter != m_Points.end(); ++AllIter) {
       if (Point == (*AllIter)) {
         (*AllIter) += Point;
         Exists = true;
         break;
+      }
+    }
+    */
+    for (auto& ExistingPoint: m_Points) {
+       if (Point == ExistingPoint) {
+         ExistingPoint += Point;
+         Exists = true;
+         break;
       }
     }
     if (Exists == false) {

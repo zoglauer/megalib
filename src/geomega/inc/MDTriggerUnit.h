@@ -62,6 +62,13 @@ class MDTriggerUnit
   //! Set a flag indicating that we always assume to have vetoed
   void AlwaysAssumeVeto(bool AlwaysAssumeVetoFlag) { m_AlwaysAssumeVeto = AlwaysAssumeVetoFlag; }
 
+  //! Return the detectors whose vetos fullfil simple veto rules
+  //! (a) it's a veto
+  //! (b) it's a basic trigger
+  //! (c) it's in a specific detector not a detector type
+  //! (d) it's detector type is ACS / Scintillator / Simple
+  vector<MDDetector*> GetSimpleVetoDetectors() const;
+
   //! Add a new hit
   bool AddHit(const MVector& Position, const double& Energy);
   //! Add a new hit
