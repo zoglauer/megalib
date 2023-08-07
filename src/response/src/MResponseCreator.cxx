@@ -143,7 +143,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -b  --mimrec-config   file     use this mimrec configuration file instead of defaults for the imaging response"<<endl;
   Usage<<"      -s  --save            int      save after this amount of entries"<<endl;
   Usage<<"      -z                             gzip the generated files"<<endl;
-  Usage<<"          --test                     Perform a test run"<<endl;
+  Usage<<"          --test                     Perform a test run. On success, the output will contain the string \"">>> TEST RUN SUCCESSFUL <<<"\""<<endl;
   Usage<<"          --verbosity       int      Verbosity level"<<endl;
   Usage<<"      -h  --help                     print this help"<<endl;
   Usage<<endl;
