@@ -3726,7 +3726,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // We need a final volume tree, thus this is really the final loop
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
-    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
+    MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false); // Do maths just when we do assign
     
     if (Tokenizer.GetNTokens() < 2) continue;
 
@@ -3762,7 +3762,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                 Found = true;
                 Start = Start->GetDaughterAt(v);
                 Seq.AddVolume(Start);
-                //cout<<"Found: "<<VolumeNames[i]<<endl;
+                //cout<<"Assign: Found: "<<VolumeNames[i]<<endl;
                 break;
               }
             }
@@ -3787,9 +3787,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Pos = Seq.GetPositionInFirstVolume(Pos, Start);
         }
         else if (Tokenizer.GetNTokens() == 5) {
-          Pos[0] = Tokenizer.GetTokenAtAsDouble(2);
-          Pos[1] = Tokenizer.GetTokenAtAsDouble(3);
-          Pos[2] = Tokenizer.GetTokenAtAsDouble(4);
+          MTokenizer& TokenizerMaths = (*ContentIter).GetTokenizer(true); // Do maths just when we do reading
+          Pos[0] = TokenizerMaths.GetTokenAtAsDouble(2);
+          Pos[1] = TokenizerMaths.GetTokenAtAsDouble(3);
+          Pos[2] = TokenizerMaths.GetTokenAtAsDouble(4);
         }
         else {
           Typo("Line must contain two strings and one volume sequence (\"NamedWafer.Assign WorldVolume.Tracker.Wafer1\")"
@@ -3799,6 +3800,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         MDVolumeSequence* VS = new MDVolumeSequence();
         m_WorldVolume->GetVolumeSequence(Pos, VS);
+        if (VS->GetDetector() == nullptr) {
+          MString VSout = VS->ToString();
+          Typo("The position is not within a detector");
+          cout<<VSout<<endl;
+          return false;
+        }
         D->SetVolumeSequence(*VS);
         if (D->HasGuardRing() == true) {
           D->GetGuardRing()->SetVolumeSequence(*VS);

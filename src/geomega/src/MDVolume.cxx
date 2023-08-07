@@ -2020,7 +2020,7 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
   // Pos is in the mothers coordinate system.
   // So translate and rotate the position into this volumes coordinate system
 
-  //mout<<"GetVSequence: Position Original: "<<m_Name<<endl;
+  //mout<<"GetVSequence: Checking if position is inside: "<<m_Name<<" @ "<<Pos<<endl;
 
   Pos -= m_Position;           // translate
 
@@ -2029,6 +2029,7 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
   }
 
   // Now check, if it is inside:
+  //cout<<"Pos in volume: "<<Pos<<endl;
   if (m_Shape->IsInside(Pos, m_Tolerance) == false) {
     return false;
   }
@@ -2082,10 +2083,10 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
   Sequence->AddPositionFront(Pos);
 
   // If this is the world volume, we set the detector again, to get the named detectors right
-  //cout<<"Check resetting of detector: "<<endl;
-  if (Sequence->GetDetector() != 0 && Sequence->GetDetector()->HasNamedDetectors() == true) {
+  //cout<<"Check reseting of detector: "<<endl;
+  if (Sequence->GetDetector() != nullptr && Sequence->GetDetector()->HasNamedDetectors() == true) {
     MDDetector* D = Sequence->GetDetector()->FindNamedDetector(*Sequence);
-    if (D != 0) {
+    if (D != nullptr) {
       //cout<<"New named detector: "<<D->GetName()<<endl;
       Sequence->SetDetector(D);
     } else {

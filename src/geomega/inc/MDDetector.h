@@ -47,8 +47,11 @@ class MDDetector
 {
   // public interface:
  public:
+  //! Default constructor with optional name of the detector
   MDDetector(MString Name = "");
+  //! Copy constructor
   MDDetector(const MDDetector& D);
+  //! Default derstructor
   virtual ~MDDetector();
 
   //! Clone the detector and all its properties
@@ -432,7 +435,7 @@ class MDDetector
   
   //! Return true if this is a named detector
   bool m_IsNamedDetector;
-  //! If this is a named detector, the detector we where named after
+  //! If this is a named detector, the detector we were named after
   MDDetector* m_NamedAfter;
   //! The list of named detectors
   vector<MDDetector*> m_NamedDetectors;

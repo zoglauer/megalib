@@ -203,11 +203,15 @@ class MComptonEvent : public MPhysicalEvent
 
 
   //! Return the Angular Resolution Measure value for the gamma cone for the given test position in the given coordinate system
-  double GetARMGamma(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+  double GetARMGamma(const MVector& TestPosition, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
   //! Return the Angular Resolution Measure value for the electron cone for the given test position in the given coordinate system
-  double GetARMElectron(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+  double GetARMElectron(const MVector& TestPosition, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
   //! Return the Scatter Plane Deviation value for the given test position in the given coordinate system
-  double GetSPDElectron(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+  double GetSPDElectron(const MVector& TestPosition, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+
+  //! Return the azimuthal scatter angle value for the given test position in the given coordinate system
+  double GetAzimuthalScatterAngle(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+
 
   //! Representation of the Kleine Nishina cross-section value of this events data
   double GetKleinNishina() const;

@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Tool to check the configuration used to compile MEGAlib
+
+commandhelp() {
+  echo ""
+  echo "megalib-config";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Shows MEGAlib configuration options"
+  echo ""
+  echo "Usage: megalib-config [options]";
+  echo ""
+  echo "Options:"
+  echo "  --compiler                : Version of the compiler used during configuration"
+  echo "  --python3                 : Version of python3 used during configuration"
+  echo "  --root                    : Version of ROOT used during configuration"
+  echo "  --geant4                  : Version of Geant4 used during configuration"
+  echo "  --help                    : Show this help"
+  echo ""
+}
+
+
+# Store command line as array
+CMD=( "$@" )
+MACHINESSTRING=""
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == --help ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+for C in "${CMD[@]}"; do
+  if [[ ${C} == --compiler ]]; then
+    cat $MEGALIB/config/Configuration.txt | grep "COMPILER" | awk -F= '{print $2}'
+  elif [[ ${C} == --python3 ]]; then
+    cat $MEGALIB/config/Configuration.txt | grep "PYTHON3" | awk -F= '{print $2}'
+  elif [[ ${C} == --root ]]; then
+    cat $MEGALIB/config/Configuration.txt | grep "ROOT" | awk -F= '{print $2}'
+  elif [[ ${C} == --geant4 ]]; then
+    cat $MEGALIB/config/Configuration.txt | grep "GEANT4" | awk -F= '{print $2}'
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+exit 0

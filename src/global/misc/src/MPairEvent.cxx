@@ -394,6 +394,26 @@ double MPairEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem&
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MPairEvent::GetAzimuthalScatterAngle(const MVector& Position, const MCoordinateSystem& CS)
+{
+  //! Return the azimuthal scatter angle value for the given test position in the given coordinate system
+
+  // Rotate the position into event coordinates
+  MVector RotPosition = Position;
+  if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
+
+  MVector Plain = GetElectronDirection() + GetPositronDirection();
+  Plain.RotateZ(-RotPosition.Phi());
+  Plain.RotateY(-RotPosition.Theta());
+
+  return Plain.Phi();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MPairEvent::Assimilate(char* LineBuffer)
 {
   // Takeover the event from a data-line

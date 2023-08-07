@@ -1131,7 +1131,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
-  if (Event->IsGoodEvent() == false) {
+  if (Event->IsGoodEvent() == false && m_UseFlaggedAsBad == false) {
     return false;
   }
 
@@ -1147,6 +1147,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
         Event->Ei() <= m_FourthTotalEnergyMax)) {
     return false;
   }
+
 
   // Compton events:
   if (Event->GetType() == MPhysicalEvent::c_Compton) {
@@ -1288,12 +1289,13 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
       return false;
     }
   } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
-    return false;
+    if (m_UseUnidentifiables == false) {
+      return false;
+    }
   } else {
     cout<<"Unknown event type: "<<Event->GetType()<<endl;
     return false;
   }
-
   
   if (m_TimeMode == 2) {
     if (m_TimeGTI.IsGood(Event->GetTime()) == false) {
@@ -1304,7 +1306,6 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
       return false;
     }
   }
-   
   
   if (Event->GetTimeWalk() < m_TimeWalkMin || 
       Event->GetTimeWalk() > m_TimeWalkMax) {
@@ -1320,6 +1321,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
   if (Event->IsBad() == true && m_UseFlaggedAsBad == false) {
     return false;
   }
+
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
@@ -1384,8 +1386,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
       return false;
     }
   }
-  
-  
+
 
   // Only start in certain detectors - needs an active geometry
   if (m_Geometry != 0) {
