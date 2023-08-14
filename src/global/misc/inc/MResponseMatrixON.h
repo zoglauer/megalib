@@ -19,6 +19,7 @@
 // Standard libs:
 #include <iostream>
 #include <vector>
+#include <map>
 #include <functional>
 #include <mutex>
 using namespace std;
@@ -103,7 +104,7 @@ class MResponseMatrixON : public MResponseMatrix
   virtual unsigned long GetNBins() const { return m_NumberOfBins; }
   
   //! Return the number of sparse bins
-  virtual unsigned long GetNumberOfSparseBins() const { return m_BinsSparse.size(); }
+  //virtual unsigned long GetNumberOfSparseBins() const { return m_ValuesSparse.size(); }
   
   //! Return the number of axes
   unsigned int GetNumberOfAxes() { return m_Axes.size(); }
@@ -157,9 +158,9 @@ class MResponseMatrixON : public MResponseMatrix
   // Specific for sparse
   
   //! Set the content of a sparse bin
-  void SetSparse(unsigned long SparseBin, float Value = 1);
+  //void SetSparse(unsigned long SparseBin, float Value = 1);
   //! Add to the content of a sparse bin
-  void AddSparse(unsigned long SparseBin, float Value = 1);
+  //void AddSparse(unsigned long SparseBin, float Value = 1);
   
   
   // Interface to retrieve the content
@@ -179,7 +180,7 @@ class MResponseMatrixON : public MResponseMatrix
   // Specific for sparse
   
   //! Set the content of a sparse bin
-  virtual float GetSparse(unsigned long SparseBin) const;
+  //virtual float GetSparse(unsigned long SparseBin) const;
   
   
   // Interface to the axes:
@@ -248,9 +249,10 @@ class MResponseMatrixON : public MResponseMatrix
   vector<float> m_Values;
   
   //! The data in sparse mode
-  vector<float> m_ValuesSparse;
+  map<unsigned long, float> m_ValuesSparse;
+  //vector<float> m_ValuesSparse;
   //! Axis values in sparse mode
-  vector<unsigned long> m_BinsSparse;
+  //vector<unsigned long> m_BinsSparse;
 
   //! Indicator if the threads are running
   vector<bool> m_ThreadRunning;
