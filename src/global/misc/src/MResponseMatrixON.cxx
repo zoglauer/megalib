@@ -2112,11 +2112,13 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize, MStr
       Canvas->Update();
 
     } else {
-      merr<<"Wrong number of axis: "<<NAxes<<endl;
+      merr<<endl;
+      merr<<"Wrong number of axis: "<<NAxes<<" (allowed: 1-3)"<<endl;
+      merr<<"Remember to use x, y, z with the -v option to choose your axes"<<endl;
     }
 
   } else {
-    mout<<"Empty response matrix of order 7"<<endl;
+    mout<<"Empty response matrix of order "<<m_Order<<endl;
   }
 }
 
