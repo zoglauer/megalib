@@ -85,6 +85,7 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
   m_Statistics = false;
   m_Show = false;
   m_Collapse = false;
+  m_SwitchSparseness = false;
   
   m_Divide = false;
   m_Ratio = false;
@@ -175,6 +176,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
   Usage<<"         -s:   show statistics"<<endl;
   Usage<<"         -v:   view <x1> <x2> <x3> <x4> <x5> <x6> <x7> <x8> <x9> <x10> <x11> <x12> <x13> <x14> <x15> <x16> <x17> [use as many as the reponse has axes]"<<endl;
   Usage<<"         -c:   collapse <list of axis, same as seen with -s>"<<endl;
+  Usage<<"         -w:   switch sparseness: sparse <-> not sparse"<<endl;
   Usage<<endl;
   Usage<<"      Operations on two files:"<<endl;
   Usage<<"         -d:   divide <file name> <file name>"<<endl;
@@ -259,6 +261,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-s") {
       m_Statistics = true;
       cout<<"Accepting show statistics."<<endl;
+    } else if (Option == "-w") {
+      m_SwitchSparseness = true;
+      cout<<"Accepting switch sparseness."<<endl;
     } else if (Option == "-a") {
       m_AppendFileNames.push_back(argv[++i]);
       m_Append = true;
@@ -492,14 +497,14 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     }
   }
 
-  if (m_Append == true || m_Show == true || m_Statistics == true || m_Collapse == true) {
+  if (m_Append == true || m_Show == true || m_Statistics == true || m_Collapse == true || m_SwitchSparseness == true) {
     if (m_FileName == "") {
       cout<<"Error: No file name given!"<<endl;
       cout<<Usage.str()<<endl;
       return false;
     }
   }
-  if (m_Append == false && m_Show == false && m_Statistics == false && m_Collapse == false &&
+  if (m_Append == false && m_Show == false && m_Statistics == false && m_Collapse == false && m_SwitchSparseness == false &&
       m_Divide == false && m_Ratio == false && m_Join == false && m_Probability == false) {
     cout<<"Error: No operation given (e.g. -s for show statitsics)!"<<endl;
     cout<<Usage.str()<<endl;
@@ -507,7 +512,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
   }
 
   // Check if files exist:
-  if (m_Show == true || m_Append == true || m_Statistics == true) {
+  if (m_Show == true || m_Append == true || m_Statistics == true || m_Collapse == true || m_SwitchSparseness == true) {
     if (MFile::FileExists(m_FileName) == false) {
       cout<<"Error: File \""<<m_FileName<<"\" does not exist!"<<endl;
       return false;
@@ -548,6 +553,7 @@ bool MResponseManipulator::Analyze()
   if (m_Statistics == true) Statistics();
   if (m_Show == true) Show();
   if (m_Collapse == true) Collapse();
+  if (m_SwitchSparseness == true) SwitchSparseness();
 
   if (m_Divide == true) Divide();
   if (m_Ratio == true) Ratio();
@@ -1331,6 +1337,47 @@ bool MResponseManipulator::Statistics()
 
 
 /******************************************************************************
+ * Swich the sparsness:
+ */
+bool MResponseManipulator::SwitchSparseness()
+{
+  MFileResponse File;
+  cout<<"Reading file"<<endl;
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
+  if (R == nullptr) return false;
+  if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+    MResponseMatrixON* RON = dynamic_cast<MResponseMatrixON*>(R);
+    MString NewFileName = m_FileName;
+    bool IsGzipped = false;
+    if (NewFileName.EndsWith(".gz") == true) {
+      NewFileName.ReplaceAtEndInPlace(".gz", "");
+      IsGzipped = true;
+    }
+    NewFileName.ReplaceAtEndInPlace(".rsp", "");
+    if (RON->IsSparse() == true) {
+      cout<<"Switching to non-sparse"<<endl;
+      RON->SwitchToNonSparse();
+      NewFileName += ".nonsparse.rsp";
+    } else {
+      cout<<"Switching to sparse"<<endl;
+      RON->SwitchToSparse();
+      NewFileName += ".sparse.rsp";      
+    }
+    if (IsGzipped == true) {
+      NewFileName += ".gz";
+    }
+    cout<<"Saving file "<<NewFileName<<endl;
+    RON->Write(NewFileName);
+  } else {
+    merr<<"Switch sparseness only works for MResponseMatrixON type responses"<<endl;
+  }
+  delete R;
+
+  return true;
+}
+
+
+/******************************************************************************
  * Collapse a response matrix:
  */
 bool MResponseManipulator::Collapse()
@@ -1346,7 +1393,7 @@ bool MResponseManipulator::Collapse()
     cout<<"Writing new file"<<endl;
     Collapsed.Write(m_FileName + ".collapsed.rsp", true);
   } else {
-    merr<<"Collapse just works for MResponseMatrixON type responses"<<endl;
+    merr<<"Collapse only works for MResponseMatrixON type responses"<<endl;
     return false;
   }
 

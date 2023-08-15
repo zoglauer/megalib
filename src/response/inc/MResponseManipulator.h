@@ -68,7 +68,9 @@ protected:
   bool JoinRSPFiles(MString Prefix, vector<MString> Type);
   //! Joind ROOT files
   bool JoinROOTFiles(MString Prefix, vector<MString> Type);
-
+  //! Switch sparse and save the file again
+  bool SwitchSparseness();
+  
 private:
   //! True, if the analysis needs to be interrupted
   bool m_Interrupt;
@@ -80,6 +82,9 @@ private:
 
   //! Show the statistics
   bool m_Statistics;
+
+  //! Switch sparsness: sparse <-> full, and save
+  bool m_SwitchSparseness;
 
   //! Viewing options:
   bool m_Show;
