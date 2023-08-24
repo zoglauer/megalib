@@ -399,7 +399,10 @@ public:
   /// Id of a divergent beam (with homogeneous intensity)
   /// from a point in Cartesian coordinates
   static const int c_NearFieldConeBeam;
-  /// Id of a divergent beam (with Gaussian intensity profile) 
+  /// Id of a divergent beam (with homogeneous intensity)
+  /// from a random point on a disk in Cartesian coordinates
+  static const int c_NearFieldConeBeamFromDisk;
+  /// Id of a divergent beam (with Gaussian intensity profile)
   /// from a point in Cartesian coordinates
   static const int c_NearFieldConeBeamGauss;
   /// Id of a fan beam with a beam width

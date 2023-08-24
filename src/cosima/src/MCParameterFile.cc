@@ -1305,8 +1305,7 @@ bool MCParameterFile::Parse()
           Type.ToLower();
           if (Type == "farfieldpointsource" || Type == "farfieldpoint" || Type == "ffps") {
             if (T->GetNTokens() == 5) {
-              Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldPoint);
+              Source->SetBeamType(MCSource::c_FarField, MCSource::c_FarFieldPoint);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
                                       T->GetTokenAtAsDouble(4)*deg) == true) {
                 mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)
@@ -1325,8 +1324,7 @@ bool MCParameterFile::Parse()
           } 
           else if (Type == "farfieldareasource" || Type == "farfieldarea" || Type == "ffas") {
             if (T->GetNTokens() == 7) {
-              Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldArea);
+              Source->SetBeamType(MCSource::c_FarField, MCSource::c_FarFieldArea);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg,
@@ -1343,8 +1341,7 @@ bool MCParameterFile::Parse()
           } 
           else if (Type == "farfieldisotropic" || Type == "isotropic") {
             if (T->GetNTokens() == 3) {
-              Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldIsotropic);
+              Source->SetBeamType(MCSource::c_FarField, MCSource::c_FarFieldIsotropic);
               // Nothing else needed
             } else {
               Typo(i, "Cannot parse token \"Beam - far field isotropic\" correctly: Number of tokens is not correct (!= 3)!");
@@ -1353,8 +1350,7 @@ bool MCParameterFile::Parse()
           } 
           else if (Type == "farfielddisk" || Type == "ffd") {
             if (T->GetNTokens() == 6) {
-              Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldGaussian);
+              Source->SetBeamType(MCSource::c_FarField, MCSource::c_FarFieldGaussian);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg) == true) {
@@ -1372,8 +1368,7 @@ bool MCParameterFile::Parse()
           } 
           else if (Type == "farfieldgaussian" || Type == "ffg") {
             if (T->GetNTokens() == 6) {
-              Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldGaussian);
+              Source->SetBeamType(MCSource::c_FarField, MCSource::c_FarFieldGaussian);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
                 T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg) == true) {
@@ -1391,8 +1386,7 @@ bool MCParameterFile::Parse()
           } 
           else if (Type == "farfieldassymetricgaussian" || Type == "farfieldassymgauss" || Type == "ffag") {
             if (T->GetNTokens() == 8) {
-              Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldAssymetricGaussian);
+              Source->SetBeamType(MCSource::c_FarField, MCSource::c_FarFieldAssymetricGaussian);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg,
@@ -1413,8 +1407,7 @@ bool MCParameterFile::Parse()
           } 
           else if (Type == "farfieldfilezenithdependent" || Type == "fffzd" || Type == "filespherezenithdep") {
             if (T->GetNTokens() >= 4) {
-              Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldFileZenithDependent);
+              Source->SetBeamType(MCSource::c_FarField, MCSource::c_FarFieldFileZenithDependent);
               MString FileName = T->GetTokenAfterAsString(3);
               MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
@@ -1437,8 +1430,7 @@ bool MCParameterFile::Parse()
           }
           else if (Type == "farfieldnormalizedenergybeamfluxfunction") {
             if (T->GetNTokens() >= 4) {
-              Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldNormalizedEnergyBeamFluxFunction);
+              Source->SetBeamType(MCSource::c_FarField, MCSource::c_FarFieldNormalizedEnergyBeamFluxFunction);
               MString FileName = T->GetTokenAfterAsString(3);
               MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
@@ -1462,8 +1454,7 @@ bool MCParameterFile::Parse()
           }
           else if (Type == "pointsource" || Type == "point" || Type == "ps") {
             if (T->GetNTokens() == 6) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldPoint);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldPoint);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm) == true) {
@@ -1484,8 +1475,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "restrictedpointsource" || Type == "restrictedpoint" || Type == "pointsourcerestricted" || Type == "rps" || Type == "psr") {
             if (T->GetNTokens() == 6) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldRestrictedPoint);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldRestrictedPoint);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm) == true) {
@@ -1506,8 +1496,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "linesource" || Type == "line" || Type == "ls") {
             if (T->GetNTokens() == 9) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldLine);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldLine);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -1534,8 +1523,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "restrictedlinesource" || Type == "restrictedline" || Type == "rls") {
             if (T->GetNTokens() == 9) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldRestrictedLine);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldRestrictedLine);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -1562,8 +1550,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "boxsource" || Type == "box" || Type == "bs") {
             if (T->GetNTokens() == 9) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                    MCSource::c_NearFieldBox);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldBox);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -1590,8 +1577,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "spheresource" || Type == "sphere" || Type == "ss") {
             if (T->GetNTokens() == 9) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldSphere);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldSphere);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -1618,8 +1604,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "discsource" || Type == "disc" || Type == "disksource" || Type == "disk" || Type == "ds") {
             if (T->GetNTokens() == 14) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldDisk);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldDisk);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -1656,8 +1641,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "homogeneousbeam" || Type == "hb") {
             if (T->GetNTokens() == 10) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                    MCSource::c_NearFieldBeam);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldBeam);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -1686,8 +1670,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "radialprofilebeam" || Type == "rpb") {
             if (T->GetNTokens() == 10) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldBeam1DProfile);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldBeam1DProfile);
               MString FileName = T->GetTokenAfterAsString(9);
               MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
@@ -1727,8 +1710,7 @@ bool MCParameterFile::Parse()
               mout<<"         Please update your source file according to the documentation"<<endl;
               
 
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldBeam2DProfile);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldBeam2DProfile);
               MString FileName = T->GetTokenAfterAsString(9);
               MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
@@ -1758,8 +1740,7 @@ bool MCParameterFile::Parse()
                 return false;
               }
             } else if (T->GetNTokens() == 11) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldBeam2DProfile);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldBeam2DProfile);
               MString FileName = T->GetTokenAfterAsString(10);
               MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
@@ -1797,8 +1778,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "diffractionpointsource" || Type == "diffractionpoint" || Type == "dps") {
             if (T->GetNTokens() == 11) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldDiffractionPoint);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldDiffractionPoint);
               MString FileName = T->GetTokenAfterAsString(10);
               MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
@@ -1836,8 +1816,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "diffractionpointsourcekspace" || Type == "diffractionpointkspace" || Type == "dpsk") {
             if (T->GetNTokens() == 11) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldDiffractionPointKSpace);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldDiffractionPointKSpace);
               MString FileName = T->GetTokenAfterAsString(10);
               MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
@@ -1875,8 +1854,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "conebeam" || Type == "cb") {
             if (T->GetNTokens() == 10) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                    MCSource::c_NearFieldConeBeam);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldConeBeam);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -1884,7 +1862,7 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(7),
                                       T->GetTokenAtAsDouble(8),
                                       T->GetTokenAtAsDouble(9)*deg) == true) {
-                mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)
+                mdebug<<"Setting beam "<<T->GetTokenAtAsDouble(3)
                       <<"/"<<T->GetTokenAtAsDouble(4)
                       <<"/"<<T->GetTokenAtAsDouble(5)
                       <<"/"<<T->GetTokenAtAsDouble(6)
@@ -1903,10 +1881,40 @@ bool MCParameterFile::Parse()
               return false;
             }
           }  
+        else if (Type == "conebeamfromdisk" || Type == "cbfd") {
+            if (T->GetNTokens() == 11) {
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldConeBeamFromDisk);
+              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
+                                      T->GetTokenAtAsDouble(4)*cm,
+                                      T->GetTokenAtAsDouble(5)*cm,
+                                      T->GetTokenAtAsDouble(6),
+                                      T->GetTokenAtAsDouble(7),
+                                      T->GetTokenAtAsDouble(8),
+                                      T->GetTokenAtAsDouble(9)*deg,
+                                      T->GetTokenAtAsDouble(10)*cm) == true) {
+                mdebug<<"Setting beam "<<T->GetTokenAtAsDouble(3)
+                      <<"/"<<T->GetTokenAtAsDouble(4)
+                      <<"/"<<T->GetTokenAtAsDouble(5)
+                      <<"/"<<T->GetTokenAtAsDouble(6)
+                      <<"/"<<T->GetTokenAtAsDouble(7)
+                      <<"/"<<T->GetTokenAtAsDouble(8)
+                      <<"/"<<T->GetTokenAtAsDouble(9)
+                      <<"/"<<T->GetTokenAtAsDouble(10)
+                      <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token \"Beam - cone beam from disk\" correctly:"
+                     " Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token \"Beam - cone beam from disk\" correctly:"
+                   " Number of tokens is not correct (!= 11)!");
+              return false;
+            }
+          }
           else if (Type == "gaussianconebeam" || Type == "gcb") {
             if (T->GetNTokens() == 11) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                    MCSource::c_NearFieldConeBeamGauss);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldConeBeamGauss);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -1915,7 +1923,7 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(8),
                                       T->GetTokenAtAsDouble(9)*deg,
                                       T->GetTokenAtAsDouble(10)*deg) == true) {
-                mdebug<<"Setting position "
+                mdebug<<"Setting beam "
                       <<T->GetTokenAtAsDouble(3)
                       <<"/"<<T->GetTokenAtAsDouble(4)
                       <<"/"<<T->GetTokenAtAsDouble(5)
@@ -1938,8 +1946,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "fanbeam" || Type == "fb") {
             if (T->GetNTokens() == 13) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldFanBeam);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldFanBeam);
               // Pos, Dir1, Dir2, Radius
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
@@ -1976,8 +1983,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "illuminateddisk" || Type == "id") {
             if (T->GetNTokens() == 11) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                    MCSource::c_NearFieldIlluminatedDisk);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldIlluminatedDisk);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -2008,8 +2014,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "illuminatedbox" || Type == "ib") {
             if (T->GetNTokens() == 11) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldIlluminatedSquare);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldIlluminatedSquare);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
                                       T->GetTokenAtAsDouble(4)*cm,
                                       T->GetTokenAtAsDouble(5)*cm,
@@ -2040,8 +2045,7 @@ bool MCParameterFile::Parse()
           }  
           else if (Type == "flatmap") {
             if (T->GetNTokens() == 11) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldFlatMap);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldFlatMap);
               MString FileName = T->GetTokenAfterAsString(10);
               MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
@@ -2081,13 +2085,11 @@ bool MCParameterFile::Parse()
             /// Only internally used!
           }
           else if (Type == "reversedirectiontopredecessor") {
-            Source->SetBeamType(MCSource::c_NearField,
-                                MCSource::c_NearFieldReverseDirectionToPredecessor);
+            Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldReverseDirectionToPredecessor);
           }
           else if (Type == "volume" || Type == "vol") {
             if (T->GetNTokens() == 4) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldVolume);
+              Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldVolume);
               if (Source->SetVolume(T->GetTokenAtAsString(3)) == true) {
                 mdebug<<"Setting start volume "<<T->GetTokenAtAsString(3)
                       <<" for source "<<Source->GetName()<<endl;

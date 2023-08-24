@@ -100,13 +100,14 @@ const int MCSource::c_NearFieldActivation                          = 20;
 const int MCSource::c_NearFieldBeam1DProfile                       = 21;
 const int MCSource::c_NearFieldBeam2DProfile                       = 22;
 const int MCSource::c_NearFieldConeBeam                            = 23;
-const int MCSource::c_NearFieldConeBeamGauss                       = 24;
-const int MCSource::c_NearFieldFanBeam                             = 25;
-const int MCSource::c_NearFieldIlluminatedDisk                     = 26;
-const int MCSource::c_NearFieldIlluminatedSquare                   = 27;
-const int MCSource::c_NearFieldVolume                              = 28;
-const int MCSource::c_NearFieldFlatMap                             = 29;
-const int MCSource::c_NearFieldReverseDirectionToPredecessor       = 30;
+const int MCSource::c_NearFieldConeBeamFromDisk                    = 24;
+const int MCSource::c_NearFieldConeBeamGauss                       = 25;
+const int MCSource::c_NearFieldFanBeam                             = 26;
+const int MCSource::c_NearFieldIlluminatedDisk                     = 27;
+const int MCSource::c_NearFieldIlluminatedSquare                   = 28;
+const int MCSource::c_NearFieldVolume                              = 29;
+const int MCSource::c_NearFieldFlatMap                             = 30;
+const int MCSource::c_NearFieldReverseDirectionToPredecessor       = 31;
 
 
 const int MCSource::c_PolarizationNone                             =  1;
@@ -952,6 +953,7 @@ bool MCSource::SetBeamType(const int& CoordinateSystem, const int& BeamType)
   case c_NearFieldBeam1DProfile:
   case c_NearFieldBeam2DProfile:
   case c_NearFieldConeBeam:
+  case c_NearFieldConeBeamFromDisk:
   case c_NearFieldConeBeamGauss:
   case c_NearFieldFanBeam:
   case c_NearFieldIlluminatedDisk:
@@ -1027,6 +1029,9 @@ string MCSource::GetBeamTypeAsString() const
     break;
   case c_NearFieldConeBeam:
     Name = "ConeBeam";
+    break;
+  case c_NearFieldConeBeamFromDisk:
+    Name = "ConeBeamFromDisk";
     break;
   case c_NearFieldConeBeamGauss:
     Name = "GaussianConeBeam";
@@ -1130,6 +1135,9 @@ string MCSource::GetBeamAsString() const
     break;
   case c_NearFieldConeBeam:
     Name<<"ConeBeam";
+    break;
+  case c_NearFieldConeBeamFromDisk:
+    Name<<"ConeBeamFromDisk";
     break;
   case c_NearFieldConeBeamGauss:
     Name<<"GaussianConeBeam";
@@ -1362,6 +1370,32 @@ bool MCSource::SetPosition(double PositionParam1,
     }
     if (m_PositionParam7 <= 0) {
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The opening angle must be larger than zero"<<endl;
+      return false;
+    }
+  } else if (m_BeamType == c_NearFieldConeBeamFromDisk) {
+    if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      return false;
+    }
+    if (m_PositionParam7 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The opening angle must be larger than zero"<<endl;
+      return false;
+    }
+    if (m_PositionParam8 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The disk radius must be larger than zero"<<endl;
+      return false;
+    }
+  } else if (m_BeamType == c_NearFieldConeBeamFromDisk) {
+    if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      return false;
+    }
+    if (m_PositionParam7 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The opening angle must be larger than zero"<<endl;
+      return false;
+    }
+    if (m_PositionParam8 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The radius must be larger than zero"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldConeBeamGauss) {
@@ -3111,6 +3145,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
              m_BeamType == c_NearFieldBeam1DProfile ||
              m_BeamType == c_NearFieldBeam2DProfile ||
              m_BeamType == c_NearFieldDisk ||
+             m_BeamType == c_NearFieldConeBeamFromDisk ||
              m_BeamType == c_NearFieldFlatMap) {
       // Create the circular beam:
       G4ThreeVector Temp;
@@ -3171,6 +3206,12 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         Temp[0] = Radius*cos(Phi);
         Temp[1] = Radius*sin(Phi);
         Temp[2] = (gRandom->Rndm()-0.5)*m_PositionParam9;
+      } else if (m_BeamType == c_NearFieldConeBeamFromDisk) {
+        Phi = 2*c_Pi*CLHEP::RandFlat::shoot();
+        Radius = m_PositionParam8*sqrt(CLHEP::RandFlat::shoot());
+        Temp[0] = Radius*cos(Phi);
+        Temp[1] = Radius*sin(Phi);
+        Temp[2] = 0;
       }
       
       // Rotate into normal direction (first around theta, then phi):
@@ -3266,6 +3307,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
     else if  (m_BeamType == c_NearFieldRestrictedPoint ||
               m_BeamType == c_NearFieldRestrictedLine ||
               m_BeamType == c_NearFieldConeBeam ||
+              m_BeamType == c_NearFieldConeBeamFromDisk ||
               m_BeamType == c_NearFieldConeBeamGauss) {
 
       // Initial remark: During SetPosition all parameters have been set in a way that 
@@ -3287,7 +3329,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       double Theta = 0, Phi = 0;
       if (m_BeamType == c_NearFieldRestrictedPoint ||
           m_BeamType == c_NearFieldRestrictedLine ||
-          m_BeamType == c_NearFieldConeBeam) {
+          m_BeamType == c_NearFieldConeBeam ||
+          m_BeamType == c_NearFieldConeBeamFromDisk) {
         // We have a flat distribution in angle space
         Phi = 2*c_Pi * CLHEP::RandFlat::shoot(1);
         Theta = acos(1.0 - CLHEP::RandFlat::shoot(1) * (1.0 - cos(m_PositionParam7)));
