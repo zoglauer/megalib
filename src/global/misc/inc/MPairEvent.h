@@ -43,7 +43,10 @@ class MPairEvent : public MPhysicalEvent
   bool Assimilate(MPairEvent* PairEvent);
   bool Assimilate(MPhysicalEvent* Event);
   bool Assimilate(char* LineBuffer);
-  virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
+
+  //! Stream the content into a tra-file compatible string
+  virtual MString ToTraString() const;
+  //! Parse a single line which is tra-file compatible
   virtual int ParseLine(const char* Line, bool Fast = false);
   //! Create a copy of this event
   virtual MPhysicalEvent* Duplicate();

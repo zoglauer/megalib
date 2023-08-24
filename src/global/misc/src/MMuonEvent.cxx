@@ -227,23 +227,21 @@ MPhysicalEvent* MMuonEvent::Data()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MMuonEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
+MString MMuonEvent::ToTraString() const
 {
-  // Hopefully a faster way to stream data from and to a file than ROOT...
+  //! Stream the content into a tra-file compatible string
 
-  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
+  MString T;
+  T += MPhysicalEvent::ToTraString();
 
-  if (Read == false) {
-    // Write Muon specific infos:
-    ostringstream S;
-    S<<"ME "<<m_Energy<<endl;
-    S<<"MD "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
-    S<<"MG "<<m_CenterOfGravity[0]<<" "<<m_CenterOfGravity[1]<<" "<<m_CenterOfGravity[2]<<endl;
-    File.Write(S);
-    File.Flush();
-  }
+  ostringstream S;
+  S<<"ME "<<m_Energy<<endl;
+  S<<"MD "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
+  S<<"MG "<<m_CenterOfGravity[0]<<" "<<m_CenterOfGravity[1]<<" "<<m_CenterOfGravity[2]<<endl;
 
-  return Return;
+  T += S.str();
+
+  return T;
 }
 
 

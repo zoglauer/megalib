@@ -1114,7 +1114,7 @@ MPhysicalEvent* MComptonEvent::Data()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+/*
 MString MComptonEvent::ToBasicString() const
 {
   // Transform the data to one line of text
@@ -1130,58 +1130,57 @@ MString MComptonEvent::ToBasicString() const
 
   return MString(LineBuffer);
 }
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MComptonEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
+MString MComptonEvent::ToTraString() const
 {
-  // Hopefully a faster way to stream data from and to a file than ROOT...
-  // Rearely used options which are zero and default to zero are not streamed!
-  
-  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
+  //! Stream the content into a tra-file compatible string
 
-  if (Read == false) {
-    // Write Compton specific infos:
-    
-    ostringstream S;
-    
-    if (m_ClusteringQualityFactor != 0) S<<"PQ "<<m_ClusteringQualityFactor<<endl;
-    S<<"SQ "<<m_SequenceLength<<endl;
-    S<<"CT "<<m_ComptonQualityFactor1<<" "<<m_ComptonQualityFactor2<<endl;
-    S<<"TL "<<m_TrackLength<<endl;
-    S<<"TE "<<m_TrackInitialDeposit<<endl;
-    if (m_TrackQualityFactor1 != 0 || m_TrackQualityFactor2 != 0) S<<"TQ "<<m_TrackQualityFactor1<<" "<<m_TrackQualityFactor2<<endl;
-    S<<"CE "<<m_Eg<<" "<<m_dEg<<"   "<<m_Ee<<" "<<m_dEe<<endl;
-    S<<"CD "<<m_C1[0]<<" "<<m_C1[1]<<" "<<m_C1[2]<<"   ";
-    S<<m_dC1[0]<<" "<<m_dC1[1]<<" "<<m_dC1[2]<<"   ";
-    S<<m_C2[0]<<" "<<m_C2[1]<<" "<<m_C2[2]<<"   ";
-    S<<m_dC2[0]<<" "<<m_dC2[1]<<" "<<m_dC2[2]<<"   ";
-    S<<m_De[0]<<" "<<m_De[1]<<" "<<m_De[2]<<"   ";
-    S<<m_dDe[0]<<" "<<m_dDe[1]<<" "<<m_dDe[2]<<endl;
-    if (m_ToF != 0 || m_dToF != 0) S<<"TF "<<m_ToF<<" "<<m_dToF<<endl;
-    S<<"LA "<<m_LeverArm<<endl;
-    if (m_CoincidenceWindow != 0) S<<"CW "<<m_CoincidenceWindow<<endl;
-    for (unsigned int h = 0; h < m_Hits.size(); ++h) {
-      S<<"CH "<<h
-      <<" "<<m_Hits[h].GetPosition().GetX()
-      <<" "<<m_Hits[h].GetPosition().GetY()
-      <<" "<<m_Hits[h].GetPosition().GetZ()
-      <<" "<<m_Hits[h].GetEnergy()
-      <<" "<<m_Hits[h].GetTime().GetAsDouble()
-      <<" "<<m_Hits[h].GetPositionUncertainty().GetX()
-      <<" "<<m_Hits[h].GetPositionUncertainty().GetY()
-      <<" "<<m_Hits[h].GetPositionUncertainty().GetZ()
-      <<" "<<m_Hits[h].GetEnergyUncertainty()
-      <<" "<<m_Hits[h].GetTimeUncertainty().GetAsDouble()<<endl;
-    }
-    
-    File.Write(S);
-    File.Flush();
+  MString T;
+  T += MPhysicalEvent::ToTraString();
+
+  ostringstream S;
+
+  if (m_ClusteringQualityFactor != 0) S<<"PQ "<<m_ClusteringQualityFactor<<endl;
+  S<<"SQ "<<m_SequenceLength<<endl;
+  S<<"CT "<<m_ComptonQualityFactor1<<" "<<m_ComptonQualityFactor2<<endl;
+  S<<"TL "<<m_TrackLength<<endl;
+  S<<"TE "<<m_TrackInitialDeposit<<endl;
+  if (m_TrackQualityFactor1 != 0 || m_TrackQualityFactor2 != 0) {
+    S<<"TQ "<<m_TrackQualityFactor1<<" "<<m_TrackQualityFactor2<<endl;
+  }
+  S<<"CE "<<m_Eg<<" "<<m_dEg<<"   "<<m_Ee<<" "<<m_dEe<<endl;
+  S<<"CD "<<m_C1[0]<<" "<<m_C1[1]<<" "<<m_C1[2]<<"   ";
+  S<<m_dC1[0]<<" "<<m_dC1[1]<<" "<<m_dC1[2]<<"   ";
+  S<<m_C2[0]<<" "<<m_C2[1]<<" "<<m_C2[2]<<"   ";
+  S<<m_dC2[0]<<" "<<m_dC2[1]<<" "<<m_dC2[2]<<"   ";
+  S<<m_De[0]<<" "<<m_De[1]<<" "<<m_De[2]<<"   ";
+  S<<m_dDe[0]<<" "<<m_dDe[1]<<" "<<m_dDe[2]<<endl;
+  if (m_ToF != 0 || m_dToF != 0) {
+    S<<"TF "<<m_ToF<<" "<<m_dToF<<endl;
+  }
+  S<<"LA "<<m_LeverArm<<endl;
+  if (m_CoincidenceWindow != 0) S<<"CW "<<m_CoincidenceWindow<<endl;
+  for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+    S<<"CH "<<h
+     <<" "<<m_Hits[h].GetPosition().GetX()
+     <<" "<<m_Hits[h].GetPosition().GetY()
+     <<" "<<m_Hits[h].GetPosition().GetZ()
+     <<" "<<m_Hits[h].GetEnergy()
+     <<" "<<m_Hits[h].GetTime().GetAsDouble()
+     <<" "<<m_Hits[h].GetPositionUncertainty().GetX()
+     <<" "<<m_Hits[h].GetPositionUncertainty().GetY()
+     <<" "<<m_Hits[h].GetPositionUncertainty().GetZ()
+     <<" "<<m_Hits[h].GetEnergyUncertainty()
+     <<" "<<m_Hits[h].GetTimeUncertainty().GetAsDouble()<<endl;
   }
 
-  return Return;
+  T += S.str();
+
+  return T;
 }
 
 

@@ -173,9 +173,29 @@ bool MMultiEvent::Validate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MString MMultiEvent::ToTraString() const
+{
+  //! Stream the content into a tra-file compatible string
+
+  MString T;
+  T += MPhysicalEvent::ToTraString();
+
+  for (unsigned int i = 0; i < m_Events.size(); ++i) {
+    T += "SI";
+    T += m_Events[i]->ToTraString();
+    T += "SF";
+  }
+
+  return T;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
 {
-  // Sstream data from and to a file than ROOT...
+  // Stream data from and to a file than ROOT...
 
   bool Return = true;
   
@@ -269,14 +289,8 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
 
   } else {
     // Write Multi specific infos:
-    Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
-    
-    for (unsigned int i = 0; i < m_Events.size(); ++i) {
-      File.WriteLine("SI");
-      m_Events[i]->Stream(File, Version, Read, Fast, ReadDelayed);
-      File.WriteLine("SF");
-    }
-    
+
+    File.Write(ToTraString());
     File.Flush();
   }
 

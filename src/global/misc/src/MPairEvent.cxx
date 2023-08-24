@@ -461,27 +461,23 @@ bool MPairEvent::Assimilate(char* LineBuffer)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MPairEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
+MString MPairEvent::ToTraString() const
 {
-  // Hopefully a faster way to stream data from and to a file than ROOT...
+  //! Stream the content into a tra-file compatible string
 
-  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
+  MString T;
+  T += MPhysicalEvent::ToTraString();
 
-  if (Read == false) {
-    // Write pair specific infos:
-    ostringstream S;
-    S<<"PC "<<m_PairCreationIA.X()<<" "<<m_PairCreationIA.Y()<<" "<<m_PairCreationIA.Z()<<endl;
-    S<<"PE "<<m_EnergyElectron<<" "<<m_EnergyErrorElectron<<" "
-     <<m_ElectronDirection.X()<<" "<<m_ElectronDirection.Y()<<" "<<m_ElectronDirection.Z()<<endl;
-    S<<"PP "<<m_EnergyPositron<<" "<<m_EnergyErrorPositron<<" "
-     <<m_PositronDirection.X()<<" "<<m_PositronDirection.Y()<<" "<<m_PositronDirection.Z()<<endl;
-    S<<"PI "<<m_InitialEnergyDeposit<<endl;
-    S<<"TQ "<<m_TrackQualityFactor<<endl;
-    File.Write(S);
-    File.Flush();
-  } 
+  ostringstream S;
+  S<<"PC "<<m_PairCreationIA.X()<<" "<<m_PairCreationIA.Y()<<" "<<m_PairCreationIA.Z()<<endl;
+  S<<"PE "<<m_EnergyElectron<<" "<<m_EnergyErrorElectron<<" "<<m_ElectronDirection.X()<<" "<<m_ElectronDirection.Y()<<" "<<m_ElectronDirection.Z()<<endl;
+  S<<"PP "<<m_EnergyPositron<<" "<<m_EnergyErrorPositron<<" "<<m_PositronDirection.X()<<" "<<m_PositronDirection.Y()<<" "<<m_PositronDirection.Z()<<endl;
+  S<<"PI "<<m_InitialEnergyDeposit<<endl;
+  S<<"TQ "<<m_TrackQualityFactor<<endl;
 
-  return Return;
+  T += S.str();
+
+  return T;
 }
 
 
