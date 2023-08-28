@@ -224,6 +224,53 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
     }
   }
 
+  // Are m_X equidistant?
+  bool Equidistant = true;
+  double Equidistance = (m_X.back() - m_X.front()) / (m_X.size()-1);
+  for (unsigned int i = 2; i < m_X.size(); ++i) {
+    if (fabs((m_X[i] - m_X[i-1]) - Equidistance) > 1E-10) {
+      Equidistant = false;
+      break;
+    }
+  }
+  if (Equidistant == true) {
+    m_XDistance = Equidistance;
+    cout<<"X is equidistant"<<endl;
+  } else {
+    m_XDistance = 0;
+    cout<<"X not equidistant"<<endl;
+  }
+  // Are m_Y equidistant?
+  Equidistant = true;
+  Equidistance = (m_Y.back() - m_Y.front()) / (m_Y.size()-1);
+  for (unsigned int i = 2; i < m_Y.size(); ++i) {
+    if (fabs((m_Y[i] - m_Y[i-1]) - Equidistance) > 1E-10) {
+      Equidistant = false;
+      break;
+    }
+  }
+  if (Equidistant == true) {
+    m_YDistance = Equidistance;
+  } else {
+    m_YDistance = 0;
+    cout<<"Y not equidistant"<<endl;
+  }
+  // Are m_Z equidistant?
+  Equidistant = true;
+  Equidistance = (m_Z.back() - m_Z.front()) / (m_Z.size()-1);
+  for (unsigned int i = 2; i < m_Z.size(); ++i) {
+    if (fabs((m_Z[i] - m_Z[i-1]) - Equidistance) > 1E-10) {
+      Equidistant = false;
+      break;
+    }
+  }
+  if (Equidistant == true) {
+    m_ZDistance = Equidistance;
+  } else {
+    m_ZDistance = 0;
+    cout<<"Z not equidistant"<<endl;
+  }
+
   // Round two: Parse the actual data
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     if (Parser.GetTokenizerAt(i)->GetNTokens() == 0) continue;

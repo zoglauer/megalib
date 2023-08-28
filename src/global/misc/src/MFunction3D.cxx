@@ -62,7 +62,7 @@ const unsigned int MFunction3D::c_InterpolationLinear   = 2;
 
 
 MFunction3D::MFunction3D() 
-  : m_InterpolationType(c_InterpolationUnknown)
+  : m_InterpolationType(c_InterpolationUnknown), m_XDistance(0), m_YDistance(0), m_ZDistance(0)
 {
   // Construct an instance of MFunction3D
 }
@@ -78,8 +78,11 @@ MFunction3D::MFunction3D(const MFunction3D& F)
   m_InterpolationType = F.m_InterpolationType;
 
   m_X = F.m_X;
+  m_XDistance = F.m_XDistance;
   m_Y = F.m_Y;
+  m_YDistance = F.m_YDistance;
   m_Z = F.m_Z;
+  m_ZDistance = F.m_ZDistance;
   m_V = F.m_V;
   m_Maximum = F.m_Maximum;
 }
@@ -104,8 +107,11 @@ const MFunction3D& MFunction3D::operator=(const MFunction3D& F)
   m_InterpolationType = F.m_InterpolationType;
 
   m_X = F.m_X;
+  m_XDistance = F.m_XDistance;
   m_Y = F.m_Y;
+  m_YDistance = F.m_YDistance;
   m_Z = F.m_Z;
+  m_ZDistance = F.m_ZDistance;
   m_V = F.m_V;
   m_Maximum = F.m_Maximum;
 
@@ -223,6 +229,54 @@ bool MFunction3D::Set(const MString FileName, const MString KeyWord,
       return false;
     }
   }
+
+  // Are m_X equidistant?
+  bool Equidistant = true;
+  double Equidistance = (m_X.back() - m_X.front()) / (m_X.size()-1);
+  for (unsigned int i = 2; i < m_X.size(); ++i) {
+    if (fabs((m_X[i] - m_X[i-1]) - Equidistance) > 1E-10) {
+      Equidistant = false;
+      break;
+    }
+  }
+  if (Equidistant == true) {
+    m_XDistance = Equidistance;
+    cout<<"X is equidistant"<<endl;
+  } else {
+    m_XDistance = 0;
+    cout<<"X not equidistant"<<endl;
+  }
+  // Are m_Y equidistant?
+  Equidistant = true;
+  Equidistance = (m_Y.back() - m_Y.front()) / (m_Y.size()-1);
+  for (unsigned int i = 2; i < m_Y.size(); ++i) {
+    if (fabs((m_Y[i] - m_Y[i-1]) - Equidistance) > 1E-10) {
+      Equidistant = false;
+      break;
+    }
+  }
+  if (Equidistant == true) {
+    m_YDistance = Equidistance;
+  } else {
+    m_YDistance = 0;
+    cout<<"Y not equidistant"<<endl;
+  }
+  // Are m_Z equidistant?
+  Equidistant = true;
+  Equidistance = (m_Z.back() - m_Z.front()) / (m_Z.size()-1);
+  for (unsigned int i = 2; i < m_Z.size(); ++i) {
+    if (fabs((m_Z[i] - m_Z[i-1]) - Equidistance) > 1E-10) {
+      Equidistant = false;
+      break;
+    }
+  }
+  if (Equidistant == true) {
+    m_ZDistance = Equidistance;
+  } else {
+    m_ZDistance = 0;
+    cout<<"Z not equidistant"<<endl;
+  }
+
 
   // Round two: Parse the actual data
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
@@ -770,8 +824,23 @@ double MFunction3D::GetVMax()
 
 int MFunction3D::FindXBin(double x) const 
 {
-  //! Find the z bin fast (switches between linear search and binary search)
+  //! Find the x bin fast (switches between linear search and binary search)
 
+  if (m_XDistance == 0) {
+    auto I = lower_bound(m_X.begin(), m_X.end(), x);
+    if (I == m_X.begin()) {
+      return -1;  // Smaller than the lowest bin edge
+    } else if (I == m_X.end()) {
+      return m_X.size();  // Greater than or equal to the largest bin edge
+    } else {
+      return distance(m_X.begin(), I);
+    }
+  } else {
+    // Equidistant case
+    return (int) ((x - m_X[0]) / m_XDistance);
+  }
+
+  /*
   massert(m_X.size() >= 2);
 
   if (x < m_X.front()) return -1;
@@ -806,6 +875,7 @@ int MFunction3D::FindXBin(double x) const
     }
     return int(lower);
   }
+  */
 }
 
 
@@ -816,6 +886,21 @@ int MFunction3D::FindYBin(double y) const
 {
   //! Find the z bin fast (switches between linear search and binary search)
 
+  if (m_YDistance == 0) {
+    auto I = lower_bound(m_Y.begin(), m_Y.end(), y);
+    if (I == m_Y.begin()) {
+      return -1;  // Smaller than the lowest bin edge
+    } else if (I == m_Y.end()) {
+      return m_Y.size();  // Greater than or equal to the largest bin edge
+    } else {
+      return distance(m_Y.begin(), I);
+    }
+  } else {
+    // Equidistant case
+    return (int) ((y - m_Y[0]) / m_YDistance);
+  }
+
+  /*
   massert(m_Y.size() >= 2);
 
   if (y < m_Y.front()) return -1;
@@ -850,6 +935,7 @@ int MFunction3D::FindYBin(double y) const
     }
     return int(lower);
   }
+  */
 }
 
 
@@ -860,6 +946,21 @@ int MFunction3D::FindZBin(double z) const
 {
   //! Find the z bin fast (switches between linear search and binary search)
 
+  if (m_ZDistance == 0) {
+    auto I = lower_bound(m_Z.begin(), m_Z.end(), z);
+    if (I == m_Z.begin()) {
+      return -1;  // Smaller than the lowest bin edge
+    } else if (I == m_Z.end()) {
+      return m_Z.size();  // Greater than or equal to the largest bin edge
+    } else {
+      return distance(m_Z.begin(), I);
+    }
+  } else {
+    // Equidistant case
+    return (int) ((z - m_Z[0]) / m_ZDistance);
+  }
+
+  /*
   massert(m_Z.size() >= 2);
 
   if (z < m_Z.front()) return -1;
@@ -894,6 +995,7 @@ int MFunction3D::FindZBin(double z) const
     }
     return int(lower);
   }
+  */
 }
 
 
