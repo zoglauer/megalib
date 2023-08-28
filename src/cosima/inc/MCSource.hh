@@ -31,6 +31,7 @@
 #include "MCOrientation.hh"
 
 // MEGAlib:
+#include "MTime.h"
 #include "MTokenizer.h"
 #include "MFunction.h"
 #include "MFunction2D.h"
@@ -83,10 +84,10 @@ public:
   bool IsFluxVariable() const { return m_IsFluxVariable; }
 
   /// Calculate the next emission of this source
-  bool CalculateNextEmission(double Time, double Scale);
+  bool CalculateNextEmission(MTime Time, double Scale);
 
   /// Return the time to the next photon emission of this source:
-  double GetNextEmission() const { return m_NextEmission; }
+  MTime GetNextEmission() const { return m_NextEmission; }
 
   /// Set a certain amount of events which should not be started:
   void NEventsToSkip(int NEvents) { m_NEventsToSkip += NEvents; }
@@ -112,7 +113,7 @@ public:
   unsigned int SizeEventList() const { return m_EventList.size(); }
   /// Add an entry of the event list -- will return false if we read the event list from file
   bool AddToEventList(double Energy, G4ThreeVector Position, G4ThreeVector Direction, 
-                      G4ThreeVector Polarization, double Time, 
+                      G4ThreeVector Polarization, MTime Time,
                       G4ParticleDefinition* ParticleType, MString VolumeName);
   /// Return the next particle type in the event list
   G4ParticleDefinition* GetEventListNextParticle() { return (m_EventListSize > 0) ? m_EventList[0]->m_ParticleDefinition : nullptr; }
@@ -609,7 +610,7 @@ private:
   static unsigned int s_ID;
 
   /// Time of the next emission
-  double m_NextEmission;
+  MTime m_NextEmission;
 
   /// Radius of the disk on which particles in spherical coordinates start 
   int m_StartAreaType;
@@ -640,7 +641,7 @@ private:
     G4ParticleDefinition* m_ParticleDefinition;
     bool m_IsSuccessor;
     MString m_VolumeName;
-    double m_Time;
+    MTime m_Time;
     
     bool operator <(const MEventListEntry A) const { return this->m_Time < A.m_Time; }
   };

@@ -168,6 +168,17 @@ MTime::MTime(unsigned int Seconds, unsigned int NanoSeconds)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MTime::MTime(const double Seconds, const double NanoSeconds)
+{
+  // Construct an instance of MTime
+
+  Set(Seconds, NanoSeconds);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MTime::MTime(unsigned int Year, unsigned int Month, unsigned int Day, unsigned int Hour, 
              unsigned int Minute, unsigned int Second, unsigned int NanoSecond)
 {
@@ -1056,11 +1067,89 @@ double MTime::GetAsDouble() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-std::ostream& operator<<(std::ostream& os, const MTime& Time)
+//! Shift the time by Range, until the time is in the range [0, Range)
+MTime MTime::MoveIntoRange(MTime Range)
+{
+  MTime T = *this;
+
+  // Get it roughly in range - we don't have the correct precision as double:
+  T -= T.GetAsDouble()/Range.GetAsDouble() * Range;
+
+  // Then get it really into range
+  while (T < MTime(0)) {
+    T += Range;
+  }
+  while (T > Range) {
+    T -= Range;
+  }
+
+  return T;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+ostream& operator<<(ostream& os, const MTime& Time)
 {
   os<<Time.GetLongIntsString();
   return os;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Addition
+MTime operator+ (const MTime& T, const MTime& U)
+{
+  return MTime(T.m_Seconds + U.m_Seconds, T.m_NanoSeconds + U.m_NanoSeconds);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Subtraction
+MTime operator- (const MTime& T, const MTime& U)
+{
+  return MTime(T.m_Seconds - U.m_Seconds, T.m_NanoSeconds - U.m_NanoSeconds);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Divide with scalar from right
+MTime operator/ (const MTime& T, const double S)
+{
+  if (S == 0) {
+    throw MExceptionDivisionByZero();
+    return MTime(0);
+  }
+
+  return MTime(double(T.m_Seconds)/S, double(T.m_NanoSeconds)/S);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Multiplication with scalar from right
+MTime operator* (const MTime& T, const double S)
+{
+  return MTime(S*T.m_Seconds, S*T.m_NanoSeconds);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Multiplication with scalar from left
+MTime operator* (const double S, const MTime& T)
+{
+  return MTime(S*T.m_Seconds, S*T.m_NanoSeconds);
+}
+
 
 // MTime.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

@@ -30,6 +30,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MTime.h"
 #include "MRotation.h"
 #include "MTokenizer.h"
 #include "MDDebugInfo.h"
@@ -82,23 +83,23 @@ class MCOrientation
   bool Parse(const MTokenizer& Tokenizer);
 
   //! Get the orientation
-  bool GetOrientation(double Time, double& XThetaLat, double& XPhiLong, double& ZThetaLat, double& ZPhiLong) const;
+  bool GetOrientation(const MTime& Time, double& XThetaLat, double& XPhiLong, double& ZThetaLat, double& ZPhiLong) const;
   
   //! Perform the orientation for the given time for a position and a direction from local to oriented coordiante system
-  bool OrientPositionAndDirection(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;  
+  bool OrientPositionAndDirection(const MTime& Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;
   //! Perform the invers orientation for the given time for a position and a direction from oriented to local coordiante system
-  bool OrientPositionAndDirectionInvers(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;
+  bool OrientPositionAndDirectionInvers(const MTime& Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;
   
   //! Perform the orientation for the given time for a direction (or polarization) from local to oriented coordiante system
-  bool OrientDirection(double Time, G4ThreeVector& Direction) const;  
+  bool OrientDirection(const MTime& Time, G4ThreeVector& Direction) const;
   //! Perform the invers orientation for the given time for a direction  (or polarization) from oriented to local coordiante system
-  bool OrientDirectionInvers(double Time, G4ThreeVector& Direction) const;
+  bool OrientDirectionInvers(const MTime& Time, G4ThreeVector& Direction) const;
   
   //! Return the start time or zero if there is none
-  double GetStartTime() const;
+  MTime GetStartTime() const;
   
   //! Return the stop time or zero if there is none
-  double GetStopTime() const;
+  MTime GetStopTime() const;
   
   //! Dump content into a string
   MString ToString() const;
@@ -109,10 +110,10 @@ class MCOrientation
   bool Read(MString FileName);
    
   //! Check if Time is covered in the time array
-  bool InRange(double Time) const;
+  bool InRange(const MTime& Time) const;
 
   //! Find the closest index - always check with InRange() first to avoid exceptions
-  unsigned int FindClosestIndex(double Time) const;
+  unsigned int FindClosestIndex(const MTime& Time) const;
 
   
   // private methods:
@@ -132,7 +133,7 @@ class MCOrientation
   MCOrientationCoordinateSystem m_CoordianteSystem;
   
   //! The times
-  vector<double> m_Times;
+  vector<MTime> m_Times;
   
   //! The x-Axis theta / latitude
   vector<double> m_XThetaLat;

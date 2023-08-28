@@ -2315,7 +2315,7 @@ bool MCSource::AddToEventList(double Energy,
                               G4ThreeVector Position, 
                               G4ThreeVector Direction, 
                               G4ThreeVector Polarization, 
-                              double Time,  
+                              MTime Time,
                               G4ParticleDefinition* ParticleDefinition, 
                               MString VolumeName)
 {
@@ -2382,15 +2382,15 @@ bool MCSource::SetIsotopeCount(double IsotopeCount)
  * Return the time to the next photon emission of this source:
  * The error in this routine is <= Scale
  */
-bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
+bool MCSource::CalculateNextEmission(MTime Time, double /*Scale*/)
 {
-  double NextEmission = 0;
+  MTime NextEmission(0);
 
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
       NextEmission = m_EventList[0]->m_Time - Time;
     } else {
-      NextEmission = numeric_limits<double>::max();
+      NextEmission = MTime::Max();
     }
   } else if (m_IsIsotopeCount == true) {
     if (m_ParticleDefinition == 0) GenerateParticleDefinition();

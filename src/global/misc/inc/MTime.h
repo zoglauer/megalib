@@ -22,6 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MExceptions.h"
 
 // Forward declarations:
 
@@ -43,6 +44,8 @@ class MTime
   MTime(int LinuxTime, int NanoSeconds = 0);
   //! Set the time as two unsigned integers -- the time is counted since Epoch
   MTime(unsigned int LinuxTime, unsigned int NanoSeconds = 0);
+  //! Set the time as 2 double -- the time is counted since Epoch
+  MTime(const double Seconds, const double NanoSeconds);
   //! Set the time elements (years, days, etc) individually
   MTime(unsigned int m_Year, unsigned int m_Month, unsigned int m_Day, unsigned int m_Hour = 0, 
         unsigned int m_Minute = 0, unsigned int m_Second = 0, unsigned int m_NanoSecond = 0);
@@ -113,7 +116,9 @@ class MTime
   bool operator>(const MTime& Time) const;
   bool operator<(const MTime& Time) const;
 
-  
+  //! Shift the time by Range, until the time is in the range [0, Range)
+  MTime MoveIntoRange(MTime Range);
+
   // Conversions
 
   // Convert into a double 
@@ -153,6 +158,9 @@ class MTime
   //! Busy wait loop --- Historic remnant from MEGAlyze --- should not be really here...
   static int BusyWait(int musec);
 
+  //! Return the maximum time
+  static MTime Max() { return MTime(numeric_limits<long int>::max(), 999999999L); }
+
   enum Format { FormatLowerLimit = 0, Short, UTC, SQL, SQLU, LongInts, MEGAlib, FormatUpperLimit };
 
 
@@ -171,8 +179,18 @@ class MTime
 
   // private members:
  private:
+  //! The seconds in the time
   long int m_Seconds;
-  long int m_NanoSeconds; 
+  //! The nano seconds in the time
+  long int m_NanoSeconds;
+
+
+  // Friend functions:
+  friend MTime operator+ (const MTime& T, const MTime& U);
+  friend MTime operator- (const MTime& T, const MTime& U);
+  friend MTime operator* (const MTime& T, const double S);
+  friend MTime operator/ (const MTime& T, const double S);
+  friend MTime operator* (const double S, const MTime& V);
 
 
 #ifdef ___CLING___
@@ -182,7 +200,22 @@ class MTime
 
 };
 
+
+// Section XXX: Globally defined operators
+
+// Streaming
 std::ostream& operator<<(std::ostream& os, const MTime& Time);
+
+//! Addition
+MTime operator+ (const MTime& T, const MTime& U);
+//! Subtraction
+MTime operator- (const MTime& T, const MTime& U);
+//! Multiplication with scalar from right
+MTime operator* (const MTime& T, const double S);
+//! Divide with scalar from right
+MTime operator/ (const MTime& T, const double S);
+//! Multiplication with scalar from left
+MTime operator* (const double S, const MTime& V);
 
 
 #endif

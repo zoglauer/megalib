@@ -390,7 +390,7 @@ bool MCOrientation::Read(MString FileName)
 
 
 //! Check if Time is covered in the time array
-bool MCOrientation::InRange(double Time) const
+bool MCOrientation::InRange(const MTime& Time) const
 {
   if (m_Times.size() == 0) {
     return false;
@@ -410,7 +410,7 @@ bool MCOrientation::InRange(double Time) const
   
   
 //! Find the closest index, always check with InRange(Time) first to avoid exceptions!
-unsigned int MCOrientation::FindClosestIndex(double Time) const
+unsigned int MCOrientation::FindClosestIndex(const MTime& Time) const
 {
   if (m_IsLooping == true) {
     if (m_Times.size() == 1) {
@@ -420,7 +420,8 @@ unsigned int MCOrientation::FindClosestIndex(double Time) const
       return 0;
     } else {
       // Get it in range
-      Time = fabs(fmod(Time - m_Times.front(), m_Times.back() - m_Times.front()));
+      //Time = fabs(fmod(Time - m_Times.front(), m_Times.back() - m_Times.front()));
+      MTime T = (Time - m_Times.front()).MoveIntoRange(m_Times.back() - m_Times.front());
       // Find and return the index
       return lower_bound(m_Times.begin(), m_Times.end(), Time) - m_Times.begin();
     }    
@@ -446,7 +447,7 @@ unsigned int MCOrientation::FindClosestIndex(double Time) const
 
 
 //! Get the orientation
-bool MCOrientation::GetOrientation(double Time, double& XThetaLat, double& XPhiLong, double& ZThetaLat, double& ZPhiLong) const
+bool MCOrientation::GetOrientation(const MTime& Time, double& XThetaLat, double& XPhiLong, double& ZThetaLat, double& ZPhiLong) const
 {
   if (InRange(Time) == true) {
     unsigned int Index = FindClosestIndex(Time);
@@ -466,7 +467,7 @@ bool MCOrientation::GetOrientation(double Time, double& XThetaLat, double& XPhiL
 
 
 //! Perform the orientation for the given time from local to oriented coordinate system
-bool MCOrientation::OrientPositionAndDirection(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
+bool MCOrientation::OrientPositionAndDirection(const MTime& Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
 {
   if (InRange(Time) == true) {
     unsigned int Index = FindClosestIndex(Time);
@@ -502,7 +503,7 @@ bool MCOrientation::OrientPositionAndDirection(double Time, G4ThreeVector& Posit
 
 
 //! Perfrom the inverted orientation for the given time from oriented to local coordiante system
-bool MCOrientation::OrientPositionAndDirectionInvers(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
+bool MCOrientation::OrientPositionAndDirectionInvers(const MTime& Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
 {
   if (InRange(Time) == true) {
     unsigned int Index = FindClosestIndex(Time);
@@ -537,7 +538,7 @@ bool MCOrientation::OrientPositionAndDirectionInvers(double Time, G4ThreeVector&
 
 
 //! Perfrom the orientation for the given time
-bool MCOrientation::OrientDirection(double Time, G4ThreeVector& Direction) const
+bool MCOrientation::OrientDirection(const MTime& Time, G4ThreeVector& Direction) const
 {
   if (InRange(Time) == true) {
     unsigned int Index = FindClosestIndex(Time);
@@ -570,7 +571,7 @@ bool MCOrientation::OrientDirection(double Time, G4ThreeVector& Direction) const
 
 
 //! Perfrom the inverted orientation for the given time
-bool MCOrientation::OrientDirectionInvers(double Time, G4ThreeVector& Direction) const
+bool MCOrientation::OrientDirectionInvers(const MTime& Time, G4ThreeVector& Direction) const
 {
   if (InRange(Time) == true) {
     unsigned int Index = FindClosestIndex(Time);
@@ -602,7 +603,7 @@ bool MCOrientation::OrientDirectionInvers(double Time, G4ThreeVector& Direction)
 
 
 //! Return the start time or zero if there is none
-double MCOrientation::GetStartTime() const
+MTime MCOrientation::GetStartTime() const
 {
   if (m_IsOriented == false || m_IsLooping == true || m_Times.size() == 0) {
     return 0;
@@ -616,7 +617,7 @@ double MCOrientation::GetStartTime() const
 
 
 //! Return the start time or zero if there is none
-double MCOrientation::GetStopTime() const
+MTime MCOrientation::GetStopTime() const
 {
   if (m_IsOriented == false || m_IsLooping == true || m_Times.size() == 0) {
     return 0;
