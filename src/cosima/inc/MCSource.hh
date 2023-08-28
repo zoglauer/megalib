@@ -34,6 +34,7 @@
 #include "MTime.h"
 #include "MTokenizer.h"
 #include "MFunction.h"
+#include "MFunctionTime.h"
 #include "MFunction2D.h"
 #include "MFunction3DSpherical.h"
 
@@ -719,7 +720,7 @@ private:
   double m_TotalEnergyFlux;
 
   /// The light curve
-  MFunction m_LightCurveFunction;
+  MFunctionTime m_LightCurveFunction;
   /// True if the light curve is repeating (i.e. pulsar vs. GRB)
   bool m_IsRepeatingLightCurve;
   /// The current light curve cycle

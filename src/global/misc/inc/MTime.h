@@ -116,13 +116,29 @@ class MTime
   bool operator>(const MTime& Time) const;
   bool operator<(const MTime& Time) const;
 
+  MTime operator-() const { return MTime(-m_Seconds, -m_NanoSeconds); }
+
+  // No implicit conversion operators - we want to make sure the loss of asccuracy is intentional
+  //! int conversion operator:
+  //operator int() const { return m_Seconds; }
+  //! long conversion operator:
+  //operator long() const { return m_Seconds; }
+  //! double conversion operator:
+  //operator double() const { return (double) m_Seconds + m_NanoSeconds/1000000000.0;; }
+
   //! Shift the time by Range, until the time is in the range [0, Range)
   MTime MoveIntoRange(MTime Range);
 
   // Conversions
 
-  // Convert into a double 
+  // Convert into a double
   double GetAsDouble() const;
+  // Convert into an int
+  int GetAsInt() const { return m_Seconds; }
+  // Convert into an int
+  long GetAsLong() const { return m_Seconds; }
+
+
   //! Return the days since the epoch 1970-01-01
   unsigned int GetDaysSinceEpoch();
   //! Get the seconds since epoch in double format (should be renamed: GetSecondsSinceEpoch())
@@ -188,9 +204,12 @@ class MTime
   // Friend functions:
   friend MTime operator+ (const MTime& T, const MTime& U);
   friend MTime operator- (const MTime& T, const MTime& U);
+  friend MTime operator* (const MTime& T, const MTime& U);
   friend MTime operator* (const MTime& T, const double S);
+  friend MTime operator/ (const MTime& T, const MTime& U);
   friend MTime operator/ (const MTime& T, const double S);
   friend MTime operator* (const double S, const MTime& V);
+  friend MTime sqrt(const MTime& T);
 
 
 #ifdef ___CLING___
@@ -210,12 +229,18 @@ std::ostream& operator<<(std::ostream& os, const MTime& Time);
 MTime operator+ (const MTime& T, const MTime& U);
 //! Subtraction
 MTime operator- (const MTime& T, const MTime& U);
+//! Multiplication of two time returning time (doesn't make sense physically, but is needed for some maths)
+MTime operator* (const MTime& T, const MTime& U);
 //! Multiplication with scalar from right
 MTime operator* (const MTime& T, const double S);
+//! Divide time by time return time (doesn't make sense physically, but is needed for some maths)
+MTime operator/ (const MTime& T, const MTime& U);
 //! Divide with scalar from right
 MTime operator/ (const MTime& T, const double S);
 //! Multiplication with scalar from left
 MTime operator* (const double S, const MTime& V);
+//! sqrt (doesn't make sense physically, but is needed for some maths)
+MTime sqrt(const MTime& T);
 
 
 #endif

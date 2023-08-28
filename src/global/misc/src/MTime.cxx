@@ -1122,12 +1122,41 @@ MTime operator- (const MTime& T, const MTime& U)
 //! Divide with scalar from right
 MTime operator/ (const MTime& T, const double S)
 {
+  // TODO: Redo to avoid precision loss
+
   if (S == 0) {
     throw MExceptionDivisionByZero();
     return MTime(0);
   }
 
   return MTime(double(T.m_Seconds)/S, double(T.m_NanoSeconds)/S);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Divide two times return a time (just for math, not for physics...)
+MTime operator/ (const MTime& T, const MTime& U)
+{
+  // TODO: Redo to avoid precision loss
+
+  if (U == MTime(0)) {
+    throw MExceptionDivisionByZero();
+    return MTime(0);
+  }
+
+  return MTime(T.m_Seconds/U.GetAsSeconds(), T.m_NanoSeconds/U.GetAsSeconds());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Multiplication of two times return a time (just for math, not for physics...)
+MTime operator* (const MTime& T, const MTime& U)
+{
+  return MTime(U.m_Seconds*T.m_Seconds, U.m_NanoSeconds*T.m_NanoSeconds);
 }
 
 
@@ -1148,6 +1177,18 @@ MTime operator* (const MTime& T, const double S)
 MTime operator* (const double S, const MTime& T)
 {
   return MTime(S*T.m_Seconds, S*T.m_NanoSeconds);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! sqrt (doesn't make sense physically, but is needed for some maths)
+MTime sqrt(const MTime& T)
+{
+  //TODO: Avoid accuracy loss
+
+  return MTime(sqrt(T.GetAsDouble()));
 }
 
 

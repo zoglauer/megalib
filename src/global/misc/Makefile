@@ -80,6 +80,7 @@ FILES = MGlobal \
 	MUnidentifiableEvent \
 	MParser \
 	MFunction \
+	MFunctionTime \
 	MFunction2D \
 	MFunction3D \
 	MFunction3DSpherical \

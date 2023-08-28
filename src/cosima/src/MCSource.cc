@@ -2119,7 +2119,7 @@ bool MCSource::UpgradeLightCurve()
     cout<<"Lightcurve integration: "<<m_LightCurveFunction.Integrate()<<endl;
     cout<<"Flux: "<<m_Flux*second<<" ph/s"<<endl;
     if (m_Flux > 0 && m_LightCurveFunction.Integrate() > 0) {
-      m_LightCurveFunction.ScaleY((m_LightCurveFunction.GetXMax() - m_LightCurveFunction.GetXMin())/m_LightCurveFunction.Integrate());
+      m_LightCurveFunction.ScaleY(((m_LightCurveFunction.GetXMax() - m_LightCurveFunction.GetXMin())/m_LightCurveFunction.Integrate()).GetAsDouble());
     }
     cout<<"Final light-curve integration: "<<m_LightCurveFunction.Integrate()<<endl;
     
@@ -2434,6 +2434,7 @@ bool MCSource::CalculateNextEmission(MTime Time, double /*Scale*/)
   }
   
   m_NextEmission = NextEmission + Time;
+  cout<<"Next:"<<m_NextEmission<<endl;
   
   // If we have a non-looping orientation, check if we are outside:
   if (m_Orientation.IsOriented() == true && m_Orientation.IsLooping() == false) {

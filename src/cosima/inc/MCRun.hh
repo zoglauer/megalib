@@ -123,9 +123,9 @@ public:
   bool SetActivationMode(const int ActivationMode);
 
   /// Set the duration (in seconds) of this run
-  bool SetDuration(const double& Duration);
+  bool SetDuration(const MTime& Duration);
   /// Return the duration (in seconds) of this run  
-  double GetDuration() const { return m_Duration; }
+  MTime GetDuration() const { return m_Duration; }
   /// Set the maximum number of triggers for this run
   bool SetTriggers(const long& Triggers);
   /// Return the maximum number of triggers for this run
@@ -164,7 +164,7 @@ public:
   MCSource* GetSource(unsigned int i);
 
   /// Add an event to an event list (used for activation simulation)
-  bool AddToBuildUpEventList(double Energy, G4ThreeVector Position, G4ThreeVector Direction, G4ThreeVector Polarization, double Time, G4ParticleDefinition* ParticleType, MString VolumeName);
+  bool AddToBuildUpEventList(double Energy, G4ThreeVector Position, G4ThreeVector Direction, G4ThreeVector Polarization, MTime Time, G4ParticleDefinition* ParticleType, MString VolumeName);
 
   /// Skip one event in the activation source given the particle type and volume name 
   bool SkipOneEvent(G4ParticleDefinition* ParticleType, MString VolumeName); 
@@ -177,9 +177,9 @@ public:
   void SaveIsotopeStore();
 
   /// Set the current time
-  void SetSimulatedTime(double Time) { m_SimulatedTime = Time; }
+  void SetSimulatedTime(const MTime& Time) { m_SimulatedTime = Time; }
   /// Set the current time
-  double GetSimulatedTime() const { return m_SimulatedTime; }
+  MTime GetSimulatedTime() const { return m_SimulatedTime; }
 
   /// Set the number of generated particles in the particle source
   void SetNGeneratedParticles(int NGeneratedParticles) { m_NGeneratedParticles = NGeneratedParticles; }
@@ -273,7 +273,7 @@ private:
   double m_NextEmissionScale;
 
   /// Duration of this run in seconds
-  double m_Duration;
+  MTime m_Duration;
   /// Maximum bnumber of triggered events
   long m_Triggers;
   /// Maximum number of events
@@ -295,7 +295,7 @@ private:
   unsigned int m_NAddedIsotopes;
 
   /// Simulated time
-  double m_SimulatedTime;
+  MTime m_SimulatedTime;
 
   /// Number of simulated events
   long m_NSimulatedEvents;

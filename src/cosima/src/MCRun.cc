@@ -89,7 +89,7 @@ MCRun::~MCRun()
 /******************************************************************************
  * Return true, if the duration could be set correctly
  */
-bool MCRun::SetDuration(const double& Duration) 
+bool MCRun::SetDuration(const MTime& Duration)
 { 
   if (Duration > 0) {
     m_Duration = Duration;
@@ -243,7 +243,7 @@ bool MCRun::AddToBuildUpEventList(double Energy,
                                   G4ThreeVector Position, 
                                   G4ThreeVector Direction, 
                                   G4ThreeVector Polarization, 
-                                  double Time, 
+                                  MTime Time,
                                   G4ParticleDefinition* ParticleType, 
                                   MString VolumeName)
 {
@@ -407,7 +407,7 @@ void MCRun::CheckIncarnationID()
  */
 void MCRun::SaveIsotopeStore()
 {
-  m_IsotopeStore.SetTime(m_SimulatedTime);
+  m_IsotopeStore.SetTime(m_SimulatedTime.GetAsDouble());
 
   if (m_IsotopeStoreName != "") {
     if (m_IsotopeStoreNameUpdated == false) {

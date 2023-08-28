@@ -787,7 +787,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
           }
     
           m_OutFile.Write("# Continued file...\n");
-          WriteFileHeader(Run.GetSimulatedTime()/s);
+          WriteFileHeader(Run.GetSimulatedTime().GetAsDouble()/s);
         }
       }
     }
