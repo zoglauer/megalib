@@ -90,6 +90,7 @@ MFunction::MFunction(const MFunction& F)
   m_InterpolationType = F.m_InterpolationType;
 
   m_X = F.m_X;
+  m_XZero = F.m_XZero;
   m_Y = F.m_Y;
   m_Cumulative = F.m_Cumulative;
   m_YNonNegative = F.m_YNonNegative;
@@ -124,6 +125,7 @@ const MFunction& MFunction::operator=(const MFunction& F)
   m_InterpolationType = F.m_InterpolationType;
 
   m_X = F.m_X;
+  m_XZero = F.m_XZero;
   m_Y = F.m_Y;
   m_Cumulative = F.m_Cumulative;
   m_YNonNegative = F.m_YNonNegative;
@@ -271,6 +273,10 @@ bool MFunction::Set(const MString FileName, const MString KeyWord)
     CreateSplines();
   }
 
+  for (auto x: m_X) {
+    m_XZero.push_back(x - m_X[0]);
+  }
+
   return true;
 }
 
@@ -339,6 +345,10 @@ bool MFunction::Set(const MResponseMatrixO1& Response)
   // Clean up:
   m_Cumulative.clear();
 
+  for (auto x: m_X) {
+    m_XZero.push_back(x - m_X[0]);
+  }
+
   return true;
 }
 
@@ -364,6 +374,10 @@ bool MFunction::Set(const vector<double>& X, const vector<double>& Y, unsigned i
   // Clean up:
   m_Cumulative.clear();
 
+  for (auto x: m_X) {
+    m_XZero.push_back(x - m_X[0]);
+  }
+
   return true;
 }
 
@@ -379,13 +393,16 @@ bool MFunction::Add(const double x, const double y)
   if (m_X.size() == 0) {
     m_X.push_back(x);
     m_Y.push_back(y);
+    m_XZero.push_back(x - m_X[0]);
   } else {
     if (x < m_X[0]) {
       m_X.insert(m_X.begin(), x);
       m_Y.insert(m_Y.begin(), y);
+      m_XZero.insert(m_X.begin(), x - m_X[0]);
     } else if (x > m_X.back()) {
       m_X.push_back(x);
       m_Y.push_back(y);
+      m_XZero.push_back(x - m_X[0]);
     } else {
       for (unsigned int i = 0; i < m_X.size(); ++i) {
         if (x == m_X[i]) {
@@ -395,6 +412,7 @@ bool MFunction::Add(const double x, const double y)
         } else if (x < m_X[i]) {
           m_X.insert(m_X.begin()+i, x);
           m_Y.insert(m_Y.begin()+i, y);
+          m_XZero.insert(m_XZero.begin()+i, x - m_X[0]);
           break;
         }
       }
@@ -438,9 +456,10 @@ void MFunction::ScaleX(double Scaler)
 {
   // Multiple the x-axis by some value
 
-   for (unsigned int i = 0; i < m_X.size(); ++i) {
+  for (unsigned int i = 0; i < m_X.size(); ++i) {
     m_X[i] *= Scaler;
-  }  
+    m_XZero[i] = m_X[i] - m_X[0];
+  }
 
   // We clear the cumulative function:
   m_Cumulative.clear();
@@ -1117,8 +1136,8 @@ double MFunction::FindX(double XStart, double Integral, bool Cyclic)
   //! Find the x value starting from Start which would be achieved after integrating for "Integral"
   //! If we go beyond x_max, x_max is returned if we are not cyclic, otherwise we continue at x_0
 
-  //cout<<"XStart: "<<XStart<<"  Integral: "<<Integral<<endl;
-  
+  // To reign in larger number rounding issues, use the offset x-values offset everything
+
   double Modulo = 0;
   if (Cyclic == true) {
     // Project XStart into the frame of this function
@@ -1132,24 +1151,24 @@ double MFunction::FindX(double XStart, double Integral, bool Cyclic)
     }
   }
 
-  double X = XStart + Modulo;
+  double X = XStart + Modulo - m_X[0]; // To reign in larger number rounding issues, offset everything
 
   // Find the bin X is in: 
-  if (X < m_X.front()) {
+  if (X < m_XZero.front()) {
     //merr<<"XStart ("<<XStart<<") smaller than minimum x-value ("<<m_X.front()<<") --- starting at minimum x-value"<<endl;
-    X = m_X.front();
+    X = m_XZero.front();
   }
-  if (X > m_X.back()) {
+  if (X > m_XZero.back()) {
     //merr<<"XStart ("<<XStart<<") larger than maximum x-value ("<<m_X.back()<<") --- starting at minimum x-value"<<endl;
-    X = m_X.front();
+    X = m_XZero.front();
   }
 
   // Step 1: Go from bin to bin until we find an upper limit bin, where iIntegral > I
 
   unsigned int BinStart = 0;
-  if (X > m_X.front()) {
-    //BinStart = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), X)) - m_X.begin() - 1;
-    BinStart = find_if(m_X.begin(), m_X.end(), bind(greater<double>(), placeholders::_1, X)) - m_X.begin() - 1;
+  if (X > m_XZero.front()) {
+    //BinStart = find_if(m_XZero.begin(), m_XZero.end(), bind2nd(greater<double>(), X)) - m_XZero.begin() - 1;
+    BinStart = find_if(m_XZero.begin(), m_XZero.end(), bind(greater<double>(), placeholders::_1, X)) - m_XZero.begin() - 1;
   }
 
   //cout<<"x: "<<X<<" Bin start: "<<BinStart<<endl;
@@ -1159,38 +1178,33 @@ double MFunction::FindX(double XStart, double Integral, bool Cyclic)
   double iIntegral = 0.0;
   do {
     NewUpperBin++;
-    tIntegral = Integrate(X, m_X[NewUpperBin]);
+    tIntegral = Integrate(X+m_X[0], m_X[NewUpperBin]);
     //cout<<"Int from "<<X<<" to "<<m_X[NewUpperBin]<<": "<<tIntegral<<" (total: "<<iIntegral<<")"<<endl;
     if (iIntegral + tIntegral < Integral) {
-      X = m_X[NewUpperBin];
+      X = m_XZero[NewUpperBin];
       iIntegral += tIntegral;
     } else {
       //cout<<"Found it"<<endl;
       break;
     }
-    if (X == m_X.back()) {
+    if (X == m_XZero.back()) {
       if (Cyclic == false) {
         break;
       } else {
         X = 0;
         NewUpperBin = 0;
-        Modulo -= m_X.back() - m_X.front();
-        cout<<"New Modulo (while): "<<Modulo<<endl;
+        Modulo -= m_XZero.back() - m_XZero.front();
       }
     }
   } while (true);
   
   // Non-cyclic exit case
-  if (X == m_X.back() && iIntegral < Integral) return numeric_limits<double>::max();
-  
-  //cout<<"UpperBin: "<<NewUpperBin<<endl;
-  
+  if (X == m_XZero.back() && iIntegral < Integral) return numeric_limits<double>::max();
+
   // Step 2: Interpolate --- only linear at the moment --- within the given bin to find the right x-value
-  
-  double m = (m_Y[NewUpperBin-1] - m_Y[NewUpperBin]) / (m_X[NewUpperBin-1] - m_X[NewUpperBin]);
-  double t = m_Y[NewUpperBin] - m*m_X[NewUpperBin];
-  
-  //cout<<"m: "<<m<<" t: "<<t<<endl;
+
+  double m = (m_Y[NewUpperBin-1] - m_Y[NewUpperBin]) / (m_XZero[NewUpperBin-1] - m_XZero[NewUpperBin]);
+  double t = m_Y[NewUpperBin] - m*m_XZero[NewUpperBin];
   
   double x1 = 0; 
   double x2 = 0;
@@ -1208,21 +1222,21 @@ double MFunction::FindX(double XStart, double Integral, bool Cyclic)
   }
   //cout<<"x1: "<<x1<<" x2: "<<x2<<endl;
   
-  if (x1 >= m_X[NewUpperBin-1] && x1 <= m_X[NewUpperBin] && (x2 < m_X[NewUpperBin-1] || x2 > m_X[NewUpperBin])) {
+  if (x1 >= m_XZero[NewUpperBin-1] && x1 <= m_XZero[NewUpperBin] && (x2 < m_XZero[NewUpperBin-1] || x2 > m_XZero[NewUpperBin])) {
     //mout<<"x="<<x1<<endl;
     X = x1;
-  } else if (x2 >= m_X[NewUpperBin-1] && x2 <= m_X[NewUpperBin] && (x1 < m_X[NewUpperBin-1] || x1 > m_X[NewUpperBin])) {
+  } else if (x2 >= m_XZero[NewUpperBin-1] && x2 <= m_XZero[NewUpperBin] && (x1 < m_XZero[NewUpperBin-1] || x1 > m_XZero[NewUpperBin])) {
     //mout<<"x="<<x2<<endl;
     X = x2; 
-  } else if ((x2 < m_X[NewUpperBin-1] || x2 > m_X[NewUpperBin]) && (x1 < m_X[NewUpperBin-1] || x1 > m_X[NewUpperBin])) {
-    merr<<"FindX: Both possible results are outside choosen bin ["<<m_X[NewUpperBin-1]<<"-"<<m_X[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;
+  } else if ((x2 < m_XZero[NewUpperBin-1] || x2 > m_XZero[NewUpperBin]) && (x1 < m_XZero[NewUpperBin-1] || x1 > m_XZero[NewUpperBin])) {
+    merr<<std::setprecision(20)<<"FindX: Both possible results are outside choosen bin ["<<m_XZero[NewUpperBin-1]<<"-"<<m_XZero[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;
   } else {
-    merr<<"FindX: Both possible results are within choosen bin ["<<m_X[NewUpperBin-1]<<"-"<<m_X[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;    
+    merr<<std::setprecision(20)<<"FindX: Both possible results are within choosen bin ["<<m_X[NewUpperBin-1]<<"-"<<m_X[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;
   }
   
   //cout<<"XStart: "<<XStart<<" X: "<<X<<" modulo: "<<Modulo<<endl;
   
-  return X - Modulo;
+  return X - Modulo + m_X[0];
 }
 
 
