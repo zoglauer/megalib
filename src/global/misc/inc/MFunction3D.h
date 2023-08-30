@@ -167,6 +167,9 @@ class MFunction3D
   //! For random number generation store the maximum
   double m_Maximum;
 
+  //! The cumulative function for faster random number generation
+  vector<double> m_Cumulative;
+
   // private members:
  private:
   

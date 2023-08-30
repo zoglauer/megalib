@@ -628,7 +628,7 @@ double MFunction3D::Evaluate(double x, double y, double z) const
   }
 
   if (m_InterpolationType == c_InterpolationConstant) {
-    return m_Z[0];
+    return m_V[0];
   } else if (m_InterpolationType == c_InterpolationLinear) {
 
     // Get Position:
