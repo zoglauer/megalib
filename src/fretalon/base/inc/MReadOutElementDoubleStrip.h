@@ -64,10 +64,16 @@ class MReadOutElementDoubleStrip : public MReadOutElementStrip
   //! I.e. for a double strip it is two (n and p side), otherwise it is usually 1
   virtual unsigned int GetMinimumNumberOfReadOutsForGoodInteraction() const { return 2; }
 
-  //! Set the strip type (x/y)
-  void IsPositiveStrip(bool IsPositiveStrip) { m_IsPositiveStrip = IsPositiveStrip; }
-  //! Return the strip type (x/y)
-  bool IsPositiveStrip() const { return m_IsPositiveStrip; }
+  //! Set the strip type (positive equals the lowest voltage value side of the detector)
+  void IsPositiveStrip(bool IsPositiveStrip) { m_IsLowVoltageStrip = IsPositiveStrip; }
+  //! Return the strip type (positive equals the lowest voltage value side of the detector)
+  bool IsPositiveStrip() const { return m_IsLowVoltageStrip; }
+
+  //! Is this the low voltage strip (= negative in ols nomenclature)
+  void IsLowVoltageStrip(bool IsLowVoltageStrip) { m_IsLowVoltageStrip = IsLowVoltageStrip; }
+  //! Return true if this is a high-volatge strip
+  bool IsLowVoltageStrip() const { return m_IsLowVoltageStrip; }
+
 
   //! Return the number of parsable elements
   virtual unsigned int GetNumberOfParsableElements() const;  
@@ -91,7 +97,7 @@ class MReadOutElementDoubleStrip : public MReadOutElementStrip
   // protected members:
  protected:
   //! The side of double sided strip detector
-  bool m_IsPositiveStrip;
+  bool m_IsLowVoltageStrip;
 
   // private members:
  private:
