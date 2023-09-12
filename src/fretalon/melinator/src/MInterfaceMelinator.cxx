@@ -106,7 +106,7 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -d --detector <int>:"<<endl;
   Usage<<"             Only look at this detector"<<endl;
   Usage<<"      -s --side <int>:"<<endl;
-  Usage<<"             Only look at this detector side (0: negative, 1: positive, else: all)"<<endl;
+  Usage<<"             Only look at this detector side (0: HV/negative, 1: LV/positive, else: all)"<<endl;
   Usage<<"      -t --temperature <double> <double>:"<<endl;
   Usage<<"             Only look at this temperature window: [min...max]"<<endl;
   Usage<<"      -v --verbosity <0..5>:"<<endl;
@@ -175,7 +175,7 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Use only this detector: "<<m_Data->GetSelectedDetectorID()<<endl;
     } else if (Option == "--side" || Option == "-s") {
       m_Data->SetSelectedDetectorSide(atoi(argv[++i]));
-      cout<<"Command-line parser: Use only this detector side (0: neg, 1: pos, else: all): "<<m_Data->GetSelectedDetectorSide()<<endl;
+      cout<<"Command-line parser: Use only this detector side (0: HV/neg, 1: LV/pos, else: all): "<<m_Data->GetSelectedDetectorSide()<<endl;
     } else if (Option == "--temperature" || Option == "-t") {
       m_Data->SetMinimumTemperature(atof(argv[++i]));
       m_Data->SetMaximumTemperature(atof(argv[++i]));

@@ -69,9 +69,9 @@ class MReadOutElementDoubleStrip : public MReadOutElementStrip
   //! Return the strip type (positive equals the lowest voltage value side of the detector)
   bool IsPositiveStrip() const { return m_IsLowVoltageStrip; }
 
-  //! Is this the low voltage strip (= negative in ols nomenclature)
+  //! Is this the-low voltage strip (= negative in old nomenclature)
   void IsLowVoltageStrip(bool IsLowVoltageStrip) { m_IsLowVoltageStrip = IsLowVoltageStrip; }
-  //! Return true if this is a high-volatge strip
+  //! Return true if this is a low-voltage strip
   bool IsLowVoltageStrip() const { return m_IsLowVoltageStrip; }
 
 
