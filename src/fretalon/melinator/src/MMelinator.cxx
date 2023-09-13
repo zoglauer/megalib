@@ -90,6 +90,10 @@ MMelinator::MMelinator()
   m_HistogramChanged = true;
   m_HistogramCollection = -1;
 
+  m_PeakFindingPrior = 8;
+  m_PeakFindingExcludeFirstNumberOfBins = 25;
+  m_PeakFindingMinimumPeakCounts = 100;
+
   m_PeakParametrizationMethod = MCalibrateEnergyFindLines::c_PeakParametrizationMethodBayesianBlockPeak;
   m_PeakParametrizationMethodFittedPeakBackgroundModel = MCalibrationFit::c_BackgroundModelLinear;
   m_PeakParametrizationMethodFittedPeakEnergyLossModel = MCalibrationFit::c_EnergyLossModelNone;
@@ -543,10 +547,10 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   Canvas.SetGridy();
   //Canvas.SetLogy();
   
-  Canvas.SetLeftMargin(0.08);
+  Canvas.SetLeftMargin(0.1);
   Canvas.SetRightMargin(0.05);
   Canvas.SetTopMargin(0.05);
-  Canvas.SetBottomMargin(0.12);
+  Canvas.SetBottomMargin(0.14);
   
   
   
@@ -595,14 +599,14 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
       //m_Histograms[h]->GetXaxis()->SetLabelOffset(0.0);
       m_Histograms[h]->GetXaxis()->SetLabelSize(0.05);
       m_Histograms[h]->GetXaxis()->SetTitleSize(0.06);
-      m_Histograms[h]->GetXaxis()->SetTitleOffset(0.9);
+      m_Histograms[h]->GetXaxis()->SetTitleOffset(1.1);
       m_Histograms[h]->GetXaxis()->CenterTitle(true);
       m_Histograms[h]->GetXaxis()->SetMoreLogLabels(true);
       
       //m_Histograms[h]->GetYaxis()->SetLabelOffset(0.001);
       m_Histograms[h]->GetYaxis()->SetLabelSize(0.05);
       m_Histograms[h]->GetYaxis()->SetTitleSize(0.06);
-      m_Histograms[h]->GetYaxis()->SetTitleOffset(0.6);
+      m_Histograms[h]->GetYaxis()->SetTitleOffset(0.8);
       m_Histograms[h]->GetYaxis()->CenterTitle(true);
     }
   }
@@ -611,9 +615,9 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
     if (m_Histograms[h] == 0) continue;
     
     if (h == 0) {
-      m_Histograms[h]->DrawCopy();
+      m_Histograms[h]->DrawCopy("HIST");
     } else {
-      m_Histograms[h]->DrawCopy("SAME");
+      m_Histograms[h]->DrawCopy("HIST SAME");
     }
   }
   
@@ -964,7 +968,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool 
   Graph->GetXaxis()->CenterTitle(true);
   Graph->GetXaxis()->SetMoreLogLabels(true);
   Graph->GetXaxis()->SetLimits(0.0, 1.1*MaximumX);
-  Graph->GetXaxis()->SetNdivisions(509, true);
+  Graph->GetXaxis()->SetNdivisions(505, true);
   
   if (UseEnergy == true) {
     Graph->GetYaxis()->SetTitle("energy [keV]");
@@ -1263,6 +1267,9 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
     FindLines.SetDiagnosticsMode(ShowDiagnostics);
     FindLines.SetRange(m_HistogramMin, m_HistogramMax);
     FindLines.SetTemperatureWindow(m_SelectedTemperatureMin, m_SelectedTemperatureMax);
+    FindLines.SetBayesianBlockPrior(m_PeakFindingPrior);
+    FindLines.SetNumberOfExcludedBinsAtLowEnergies(m_PeakFindingExcludeFirstNumberOfBins);
+    FindLines.SetMinimumNumberOfPeakCounts(m_PeakFindingMinimumPeakCounts);
     //cout<<"T1: "<<Timer.GetElapsed()<<endl;
     for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
       FindLines.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);

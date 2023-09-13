@@ -60,6 +60,10 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
   m_HistogramLogX = false;
   m_HistogramLogY = false;
 
+  m_PeakFindingPrior = 8;
+  m_PeakFindingExcludeFirstNumberOfBins = 25;
+  m_PeakFindingMinimumPeakCounts = 100;
+
   m_PeakHistogramBinningMode = 0;
   m_PeakHistogramBinningModeValue = 100;
 
@@ -155,6 +159,10 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "HistogramLogX", m_HistogramLogX);
   new MXmlNode(Node, "HistogramLogY", m_HistogramLogY);
 
+  new MXmlNode(Node, "PeakFindingPrior", m_PeakFindingPrior);
+  new MXmlNode(Node, "PeakFindingExcludeFirstNumberOfBins", m_PeakFindingExcludeFirstNumberOfBins);
+  new MXmlNode(Node, "PeakFindingMinimumPeakCounts", m_PeakFindingMinimumPeakCounts);
+
   new MXmlNode(Node, "PeakHistogramBinningMode", m_PeakHistogramBinningMode);
   new MXmlNode(Node, "PeakHistogramBinningModeValue", m_PeakHistogramBinningModeValue);
 
@@ -236,7 +244,17 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("HistogramLogY")) != 0) {
     m_HistogramLogY = aNode->GetValueAsBoolean();
   }
- 
+
+  if ((aNode = Node->GetNode("PeakFindingPrior")) != 0) {
+    m_PeakFindingPrior = aNode->GetValueAsUnsignedInt();
+  }
+  if ((aNode = Node->GetNode("PeakFindingExcludeFirstNumberOfBins")) != 0) {
+    m_PeakFindingExcludeFirstNumberOfBins = aNode->GetValueAsUnsignedInt();
+  }
+  if ((aNode = Node->GetNode("PeakFindingMinimumPeakCounts")) != 0) {
+    m_PeakFindingMinimumPeakCounts = aNode->GetValueAsUnsignedInt();
+  }
+
   if ((aNode = Node->GetNode("PeakHistogramBinningMode")) != 0) {
     m_PeakHistogramBinningMode = aNode->GetValueAsUnsignedInt();
   }

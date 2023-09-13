@@ -79,7 +79,25 @@ class MSettingsMelinator : public MSettings
   bool GetHistogramLogY() const { return m_HistogramLogY; }
   //! Set a flag indicating the y-axis is displayed logarithmic
   void SetHistogramLogY(bool HistogramLogY) { m_HistogramLogY = HistogramLogY; }
-  
+
+
+
+  //! Get the peak finding Bayesian block prior
+  unsigned int GetPeakFindingPrior() const { return m_PeakFindingPrior; }
+  //! Set the peak finding Bayesian block prior
+  void SetPeakFindingPrior(unsigned int PeakFindingPrior) { m_PeakFindingPrior = PeakFindingPrior; }
+
+  //! Get the peak finding number of bins excluded at lower energies
+  unsigned int GetPeakFindingExcludeFirstNumberOfBins() const { return m_PeakFindingExcludeFirstNumberOfBins; }
+  //! Set the peak finding number of bins excluded at lower energies
+  void SetPeakFindingExcludeFirstNumberOfBins(unsigned int PeakFindingExcludeFirstNumberOfBins) { m_PeakFindingExcludeFirstNumberOfBins = PeakFindingExcludeFirstNumberOfBins; }
+
+  //! Get the peak finding minimum number of counts in a peak
+  unsigned int GetPeakFindingMinimumPeakCounts() const { return m_PeakFindingMinimumPeakCounts; }
+  //! Set the peak finding minimum number of counts in a peak
+  void SetPeakFindingMinimumPeakCounts(unsigned int PeakFindingMinimumPeakCounts) { m_PeakFindingMinimumPeakCounts = PeakFindingMinimumPeakCounts; }
+
+
   
   //! Get the peak binning mode: 0: fixed number of bins, 1: fixed cts per bin, 2: Bayesian block
   unsigned int GetPeakHistogramBinningMode() const { return m_PeakHistogramBinningMode; }
@@ -183,6 +201,13 @@ class MSettingsMelinator : public MSettings
   //! Flag indicating that the y-axis is displayed logarithmic
   bool m_HistogramLogY;
   
+  //! Peak finding: Bayesian block prior
+  unsigned int m_PeakFindingPrior;
+  //! Peak finding: the number of bins excluded at lower energies
+  unsigned int m_PeakFindingExcludeFirstNumberOfBins;
+  //! Peak finding: the minimum number of counts in a peak
+  unsigned int m_PeakFindingMinimumPeakCounts;
+
   //! The binning mode for the peak histogram: fixed number of bins, fixed cts per bin, Bayesian block
   unsigned int m_PeakHistogramBinningMode;
   //! Depending on the binning mode, either bins, cts/bin, or prior

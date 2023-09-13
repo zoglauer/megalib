@@ -74,6 +74,14 @@ class MMelinator
     if (m_HistogramBinningModeValue != HistogramBinningModeValue) { m_HistogramBinningModeValue = HistogramBinningModeValue; m_HistogramChanged = true; }
   }
   
+  //! Set the peak finding Bayesian block prior
+  void SetPeakFindingPrior(unsigned int PeakFindingPrior) { m_PeakFindingPrior = PeakFindingPrior; }
+  //! Set the peak finding number of bins excluded at lower energies
+  void SetPeakFindingExcludeFirstNumberOfBins(unsigned int PeakFindingExcludeFirstNumberOfBins) { m_PeakFindingExcludeFirstNumberOfBins = PeakFindingExcludeFirstNumberOfBins; }
+  //! Set the peak finding minimum number of counts in a peak
+  void SetPeakFindingMinimumPeakCounts(unsigned int PeakFindingMinimumPeakCounts) { m_PeakFindingMinimumPeakCounts = PeakFindingMinimumPeakCounts; }
+
+
   //! Set the peak parametrization method
   void SetPeakParametrizationMethod(unsigned int Method) { m_PeakParametrizationMethod = Method; }
   
@@ -232,7 +240,14 @@ class MMelinator
   unsigned int m_HistogramCollection;
   //! The current histograms
   vector<TH1D*> m_Histograms;
- 
+
+  //! Peak finding: Bayesian block prior
+  unsigned int m_PeakFindingPrior;
+  //! Peak finding: the number of bins excluded at lower energies
+  unsigned int m_PeakFindingExcludeFirstNumberOfBins;
+  //! Peak finding: the minimum number of counts in a peak
+  unsigned int m_PeakFindingMinimumPeakCounts;
+
   //! The peak parametrization method in during calibration of the lines
   unsigned int m_PeakParametrizationMethod;
   
