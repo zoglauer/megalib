@@ -42,6 +42,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MTimer.h"
 #include "MGUIDefaults.h"
 #include "MFile.h"
 #include "MMath.h"
@@ -292,7 +293,7 @@ void MGUIMainMelinator::Create()
   m_HistogramBinningModeValue->SetLimits(TGNumberFormat::kNELLimitMinMax, 1, 1000000); 
   BinningValueFrame->AddFrame(m_HistogramBinningModeValue, TopLeftLayout);
   
-  m_HistogramBinningModeValueLabel = new TGLabel(BinningValueFrame, "To be determined later");
+  m_HistogramBinningModeValueLabel = new TGLabel(BinningValueFrame, "   TBD later   ");
   BinningValueFrame->AddFrame(m_HistogramBinningModeValueLabel, TopLeftTextLayout);
   
   OnSwitchHistogramBinningMode(m_Settings->GetHistogramBinningMode());
@@ -407,7 +408,7 @@ void MGUIMainMelinator::Create()
   m_PeakHistogramBinningModeValue->SetLimits(TGNumberFormat::kNELLimitMinMax, 1, 1000000); 
   PeakBinningValueFrame->AddFrame(m_PeakHistogramBinningModeValue, TopLeftLayout);
   
-  m_PeakHistogramBinningModeValueLabel = new TGLabel(PeakBinningValueFrame, "To be determined later");
+  m_PeakHistogramBinningModeValueLabel = new TGLabel(PeakBinningValueFrame, "  TBD later");
   PeakBinningValueFrame->AddFrame(m_PeakHistogramBinningModeValueLabel, TopLeftTextLayout);
   
   OnSwitchPeakHistogramBinningMode(m_Settings->GetPeakHistogramBinningMode());
@@ -1040,9 +1041,9 @@ bool MGUIMainMelinator::OnSwitchHistogramBinningMode(unsigned int ID)
     m_HistogramBinningModeValueLabel->SetText("ERROR");
   }
 
-  MapSubwindows();
-  MapWindow();  
-  Layout();  
+  //MapSubwindows();
+  MapWindow();
+  //Layout();
   
   return true;
 }
@@ -1634,7 +1635,7 @@ bool MGUIMainMelinator::UpdateDisplay(unsigned int Collection, unsigned int Line
   UpdateCollection(Collection, Line);
   UpdateLineFit(Collection, Line);
   UpdateCalibration(Collection, ActiveResultIsEnergy);
-  
+
   return true;
 }
 
@@ -1645,6 +1646,7 @@ bool MGUIMainMelinator::UpdateDisplay(unsigned int Collection, unsigned int Line
 //! Set the active collection and put it to the screen
 void MGUIMainMelinator::UpdateCollection(unsigned int Collection, unsigned int Line)
 {
+
   UpdateSettings();
   
   if (Collection < m_Melinator.GetNumberOfCollections()) {
@@ -1666,6 +1668,7 @@ void MGUIMainMelinator::UpdateCollection(unsigned int Collection, unsigned int L
     
     m_Melinator.SetHistogramProperties(m_Settings->GetHistogramMin(), m_Settings->GetHistogramMax(), 
       m_Settings->GetHistogramBinningMode(), m_Settings->GetHistogramBinningModeValue());
+
     m_Melinator.DrawSpectrum(*(m_SpectrumCanvas->GetCanvas()), m_ActiveCollection, Line);
 
     OnXAxis(m_Settings->GetHistogramLogX());

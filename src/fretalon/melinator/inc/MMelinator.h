@@ -178,6 +178,8 @@ class MMelinator
   bool CalibrateParallel(unsigned int ThreadID);
   //! This function is executed by the parallel loading threads
   bool LoadParallel(unsigned int ThreadID);
+  //! The function is executed by the parallel spectrum creation threads
+  bool CreateSpectrumParallel(unsigned int ThreadID, unsigned int CollectionID, unsigned int DataGroupID);
   
   
   // protected methods:
@@ -308,21 +310,32 @@ class MMelinatorThreadCaller
 {
  public:
   //! Standard constructor
-  MMelinatorThreadCaller(MMelinator* M, unsigned int ThreadID) {
+  //! ID1 and ID2 can be any ID/index we need to pass on
+  MMelinatorThreadCaller(MMelinator* M, unsigned int ThreadID, unsigned int ID1 = 0, unsigned int ID2 = 0) {
     m_Melinator = M;
     m_ThreadID = ThreadID;
+    m_ID1 = ID1;
+    m_ID2 = ID2;
   }
 
   //! Return the calling class
   MMelinator* GetThreadCaller() { return m_Melinator; }
   //! Return the thread ID
   unsigned int GetThreadID() { return m_ThreadID; }
+  //! Return ID1
+  unsigned int GetID1() { return m_ID1; }
+  //! Return ID2
+  unsigned int GetID2() { return m_ID2; }
 
  private:
   //! Store the calling class for retrieval
   MMelinator* m_Melinator;
   //! ID of the worker thread
   unsigned int m_ThreadID;
+  //! Special ID/index
+  unsigned int m_ID1;
+  //! Special ID/index
+  unsigned int m_ID2;
 };
 
 
@@ -334,6 +347,9 @@ void MMelinatorCallParallelCalibrationThread(void* address);
 
 //! Thread entry point for the parallel calibration
 void MMelinatorCallParallelLoadingThread(void* address);
+
+//! Thread entry point for the parallel spectrum creation
+void MMelinatorCallParallelSpectrumCreationThread(void* address);
 
 //! Streamify the read-out data
 std::ostream& operator<<(std::ostream& os, const MMelinator& R);

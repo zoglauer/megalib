@@ -80,6 +80,19 @@ ClassImp(MMelinator)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Thread entry point for the parallel calibration
+void MMelinatorCallParallelSpectrumCreationThread(void* Address)
+{
+  MMelinatorThreadCaller* Caller = (MMelinatorThreadCaller*) Address;
+
+  MMelinator* M = Caller->GetThreadCaller();
+  M->CreateSpectrumParallel(Caller->GetThreadID(), Caller->GetID1(), Caller->GetID2());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Default constructor
 MMelinator::MMelinator()
 {
@@ -287,14 +300,14 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
     m_CalibrationFileLoadingProgress[c] = 0.0;
   }
   
-  unsigned int NThreads = m_CalibrationFileNames.size();  
+  unsigned int NThreads = m_CalibrationFileNames.size();
 
   m_ThreadNextItem = 0;
   m_Threads.resize(NThreads);
   m_ThreadIsInitialized.resize(NThreads);
   m_ThreadShouldTerminate.resize(NThreads);
   m_ThreadIsFinished.resize(NThreads);
-  
+
   if (NThreads > 0) {
     
     // Start threads
@@ -552,25 +565,90 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   Canvas.SetTopMargin(0.05);
   Canvas.SetBottomMargin(0.14);
   
-  
-  
+
   if (m_HistogramChanged == true) {
-    
+
     for (auto H: m_Histograms) delete H;
     m_Histograms.clear();
     
-    //! Create the histograms
-    for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-      MReadOutDataGroup& G = C.GetReadOutDataGroup(g);
-      TH1D* H = CreateSpectrum(G.GetName(), G, m_HistogramMin, m_HistogramMax, m_HistogramBinningMode, m_HistogramBinningModeValue);
-      if (H->GetMaximum() > 0) {
-        m_Histograms.push_back(H); //C.GetReadOutElement().ToString(), G));
-      } else {
-        m_Histograms.push_back(0);
-        delete H;
+
+    // <-- Begin time critical
+
+    unsigned int NThreads = C.GetNumberOfReadOutDataGroups();
+
+    if (NThreads > 1) {
+      m_Histograms.resize(NThreads);
+
+      m_ThreadNextItem = 0;
+      m_Threads.resize(NThreads);
+      m_ThreadIsInitialized.resize(NThreads);
+      m_ThreadShouldTerminate.resize(NThreads);
+      m_ThreadIsFinished.resize(NThreads);
+
+      // Start threads
+      for (unsigned int t = 0; t < NThreads; ++t) {
+        TString Name = "Loading thread #";
+        Name += t;
+        //cout<<"Creating thread: "<<Name<<endl;
+        TThread* Thread = new TThread(Name, (void(*) (void *)) &MMelinatorCallParallelSpectrumCreationThread, (void*) new MMelinatorThreadCaller(this, t, Collection, t));
+        m_Threads[t] = Thread;
+        m_ThreadIsInitialized[t] = false;
+        m_ThreadShouldTerminate[t] = false;
+        m_ThreadIsFinished[t] = false;
+
+        Thread->Run();
+
+        // Wait until thread is initialized:
+        while (m_ThreadIsInitialized[t] == false && m_ThreadIsFinished[t] == false) {
+          // Sleep for a while...
+          TThread::Sleep(0, 10000000);
+        }
+
+      }
+
+      long Counter = 0;
+      bool ThreadsAreRunning = true;
+      while (ThreadsAreRunning == true) {
+
+        // Sleep for a 10 ms
+        TThread::Sleep(0, 10000000);
+        // Whenever we slept ~0.1 sec update the UI
+        if (++Counter % 10 == 0) {
+          gSystem->ProcessEvents();
+        }
+
+        int Running = 0;
+        ThreadsAreRunning = false;
+        for (unsigned int t = 0; t < NThreads; ++t) {
+          if (m_ThreadIsFinished[t] == false) {
+            ThreadsAreRunning = true;
+            Running++;
+          }
+        }
+      }
+
+      // None of the threads are running any more --- kill them
+      for (unsigned int t = 0; t < NThreads; ++t) {
+        m_Threads[t]->Kill();
+        m_Threads[t] = 0;
+      }
+
+    } else {
+      //! Create the histograms
+      for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g)  {
+        MReadOutDataGroup& G = C.GetReadOutDataGroup(g);
+        TH1D* H = CreateSpectrum(G.GetName(), G, m_HistogramMin, m_HistogramMax, m_HistogramBinningMode, m_HistogramBinningModeValue);
+        if (H->GetMaximum() > 0) {
+          m_Histograms.push_back(H);
+        } else {
+          m_Histograms.push_back(nullptr);
+          delete H;
+        }
       }
     }
-    
+    // --> end time critical
+
+
     double Max = 0;
     double Min = numeric_limits<double>::max();
     for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
@@ -584,7 +662,8 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
         }
       }
     }
-    
+
+
     for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
       if (m_Histograms[h] == 0) continue;
       m_Histograms[h]->SetMaximum(1.1*Max);
@@ -610,7 +689,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
       m_Histograms[h]->GetYaxis()->CenterTitle(true);
     }
   }
-  
+
   for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
     if (m_Histograms[h] == 0) continue;
     
@@ -620,7 +699,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
       m_Histograms[h]->DrawCopy("HIST SAME");
     }
   }
-  
+
   
   vector<int> ColorOffsets;
   ColorOffsets.push_back(-4);
@@ -689,7 +768,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
     m_Histograms[h]->DrawCopy("AXIS SAME");
     break;
   }
-  
+
   Canvas.Update();
   m_HistogramChanged = false;
 }
@@ -1064,9 +1143,41 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Perform parallel spectrum creation
+bool MMelinator::CreateSpectrumParallel(unsigned int ThreadID, unsigned int CollectionID, unsigned int DataGroupID)
+{
+  if (g_Verbosity >= c_Info) cout<<"Parallel spectrum creation thread #"<<ThreadID<<" has started"<<endl;
+
+  m_ThreadIsInitialized[ThreadID] = true;
+
+  MReadOutCollection& C = GetCollection(CollectionID);
+  MReadOutDataGroup& G = C.GetReadOutDataGroup(DataGroupID);
+  TH1D* H = CreateSpectrum(G.GetName(), G, m_HistogramMin, m_HistogramMax, m_HistogramBinningMode, m_HistogramBinningModeValue);
+  if (H->GetMaximum() > 0) {
+    m_Histograms[DataGroupID] = H;
+  } else {
+    m_Histograms[DataGroupID] = nullptr;
+    {
+      TLockGuard G(g_Mutex);
+      delete H;
+    }
+  }
+
+  m_ThreadIsFinished[ThreadID] = true;
+
+  if (g_Verbosity >= c_Info) cout<<"Parallel spectrum creation thread #"<<ThreadID<<" has finished"<<endl;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Create the histogram for the given read-out data group
 TH1D* MMelinator::CreateSpectrum(const MString& Title, MReadOutDataGroup& G, double Min, double Max, unsigned int HistogramBinningMode, double HistogramBinningModeValue)
 {
+
   MBinner* Binner = 0;
   if (HistogramBinningMode == c_HistogramBinningModeFixedNumberOfBins) {
     MBinnerFixedNumberOfBins* B = new MBinnerFixedNumberOfBins();
@@ -1083,7 +1194,7 @@ TH1D* MMelinator::CreateSpectrum(const MString& Title, MReadOutDataGroup& G, dou
     B->SetPrior(HistogramBinningModeValue);
     Binner = B;
   }
-  
+
   Binner->SetMinMax(Min, Max);
   for (unsigned int d = 0; d < G.GetNumberOfReadOutDatas(); ++d) {
     MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(G.GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
@@ -1091,7 +1202,7 @@ TH1D* MMelinator::CreateSpectrum(const MString& Title, MReadOutDataGroup& G, dou
       Binner->Add(ADC->GetADCValue());
     }
   }
-  
+
   TH1D* Histogram = 0;
   Histogram = Binner->GetNormalizedHistogram(Title, "read-out units", "counts / read-out unit");
   Histogram->SetBit(kCanDelete);
@@ -1099,7 +1210,7 @@ TH1D* MMelinator::CreateSpectrum(const MString& Title, MReadOutDataGroup& G, dou
   Histogram->SetFillStyle(0);
 
   delete Binner;
-  
+
   return Histogram;
 }
 
@@ -1144,7 +1255,7 @@ bool MMelinator::Calibrate(bool ShowDiagnostics)
     for (unsigned int t = 0; t < m_NThreads; ++t) {
       MString Name = "Calibration thread #";
       Name += t;
-      //cout<<"Creatung thread: "<<Name<<endl;
+      //cout<<"Creating thread: "<<Name<<endl;
       TThread* Thread = new TThread(Name, (void(*) (void *)) &MMelinatorCallParallelCalibrationThread, (void*) new MMelinatorThreadCaller(this, t));
       m_Threads[t] = Thread;
       m_ThreadIsInitialized[t] = false;
