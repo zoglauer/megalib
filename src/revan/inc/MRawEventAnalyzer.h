@@ -70,6 +70,9 @@ class MRawEventAnalyzer
   //! If events are written to a file, set it with this function
   bool SetOutputModeFile(MString Filename);
 
+  //! Save the origin information if this is a sim file
+  void SetSaveOI(bool SaveOI);
+
   //! Do not use any GUI functions
   void SetBatch(bool IsBatch) { m_IsBatch = IsBatch; }
   
@@ -87,15 +90,8 @@ class MRawEventAnalyzer
   
   //! Analyze one event
   //! The event can then be retrieved via GetOptimumEvent() or GetBestTryEvent()
-  //! Return codes:
-  //! c_AnalysisSucess
-  //! c_AnalysisCoincidenceWindowWait
-  //! c_AnalysisNoEventsInStore
-  //! c_AnalysisNoEventsLeftInFile
+  //! Return codes are the c_AnalaysisXYZ from below
   unsigned int AnalyzeEvent();
-  
-  //! Save the OI 
-  void SetSaveOI(bool SaveOI);
   
   // The return codes of AnalyzeEvent()
   static const unsigned int c_AnalysisSucess;

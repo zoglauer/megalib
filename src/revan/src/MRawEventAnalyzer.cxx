@@ -962,7 +962,7 @@ bool MRawEventAnalyzer::PostAnalysis()
 {
   // No more events available
   
-  if (m_PhysFile != nullptr) {
+  if (m_PhysFile != nullptr && m_Reader != nullptr) {
     m_PhysFile->SetObservationTime(m_Reader->GetObservationTime());
   } 
   

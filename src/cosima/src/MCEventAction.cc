@@ -27,6 +27,8 @@
 
 // MEGAlib:
 #include "MAssert.h"
+#include "MTime.h"
+#include "MFile.h"
 #include "MFile.h"
 #include "MDDetector.h"
 #include "MSimEvent.h"
@@ -95,6 +97,7 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, con
   m_SaveEvents = false;
   m_TransmitEvents = false;
   m_RelegateEvents = false;
+  m_ReconstructEvents = false;
 }
 
 
@@ -156,12 +159,12 @@ bool MCEventAction::NextRun()
       return false;
     }
 
-    WriteFileHeader(0.0);
+    WriteSimFileHeader(0.0);
   } else {
     m_SaveEvents = false;
   }
-  
-  // Open the TCP/IP putput 
+
+  // Open the TCP/IP output
   if (m_RunParameters.GetCurrentRun().GetTcpIpHostName() != "") {
     m_TransmitEvents = true;
 
@@ -171,7 +174,7 @@ bool MCEventAction::NextRun()
         return false;
       }
     }
-  
+
     m_Transceiver.SetName("Cosima");
     m_Transceiver.SetHost(m_RunParameters.GetCurrentRun().GetTcpIpHostName());
     m_Transceiver.SetPort(m_RunParameters.GetCurrentRun().GetTcpIpPort());
@@ -181,6 +184,87 @@ bool MCEventAction::NextRun()
     }
   } else {
     m_TransmitEvents = false;
+  }
+
+  // Open the revan output
+  if (m_RunParameters.GetCurrentRun().GetRevanConfigurationFileName() != "") {
+    m_ReconstructEvents = true;
+
+    m_Settings = new MSettingsRevan();
+    m_Settings->Read(m_RunParameters.GetCurrentRun().GetRevanConfigurationFileName());
+
+    m_ReconstructionGeometry = new MGeometryRevan();
+    MString GeometryFileName = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetGeometry()->GetFileName();
+    if (m_ReconstructionGeometry->ScanSetupFile(GeometryFileName, false) == false) {
+      cout<<"Loading of geometry "<<GeometryFileName<<" failed!!"<<endl;
+      return false;
+    }
+
+    // Initialize the raw event analyzer
+    m_RawEventAnalyzer = new MRawEventAnalyzer();
+    m_RawEventAnalyzer->SetGeometry(m_ReconstructionGeometry);
+    m_RawEventAnalyzer->SetSettings(m_Settings);
+
+    m_RawEventAnalyzer->SetSaveOI(true);
+
+    MString FileName = m_RunParameters.GetCurrentRun().GetTraFileName();
+    if (FileName.EndsWith(".gz") == false) {
+      FileName.ReplaceAtEndInPlace(".gz", "");
+    }
+    if (FileName.EndsWith(".tra") == false) {
+      FileName.ReplaceAtEndInPlace(".tra", "");
+    }
+    m_Incarnation = m_RunParameters.GetCurrentRun().GetIncarnationID();
+    m_ParallelID = m_RunParameters.GetCurrentRun().GetParallelID();
+
+    if (m_ParallelID != 0) {
+      FileName += ".p";
+      FileName += m_ParallelID;
+    }
+
+    FileName += ".inc";
+    FileName += m_Incarnation;
+    FileName += ".id1.tra";
+    if (m_Zip == true) {
+      FileName += ".gz";
+    }
+
+    m_RawEventAnalyzer->SetOutputModeFile(FileName);
+
+    if (m_RawEventAnalyzer->PreAnalysis() == false) {
+      cout<<"Revan pre-analysis failed!"<<endl;
+
+      delete m_RawEventAnalyzer;
+      m_RawEventAnalyzer = nullptr;
+      delete m_ReconstructionGeometry;
+      m_ReconstructionGeometry = nullptr;
+      delete m_Settings;
+      m_Settings = nullptr;
+
+      return false;
+    }
+
+
+    /*
+    m_TraFile = new MFileEventsTra();
+    if (m_TraFile->Open(FileName, MFile::c_Write) == false) {
+      mout<<"Unable to open tra file \""<<FileName<<"\""<<endl;
+
+      delete m_TraFile;
+      m_TraFile = nullptr;
+      delete m_RawEventAnalyzer;
+      m_RawEventAnalyzer = nullptr;
+      delete m_ReconstructionGeometry;
+      m_ReconstructionGeometry = nullptr;
+      delete m_Settings;
+      m_Settings = nullptr;
+
+      return false;
+    }
+    WriteTraFileHeader(0.0);
+    */
+  } else {
+    m_ReconstructEvents = false;
   }
 
 
@@ -197,7 +281,7 @@ bool MCEventAction::NextRun()
 /******************************************************************************
  * Write the file header of the sim file
  */
-bool MCEventAction::WriteFileHeader(double SimulationStartTime)
+bool MCEventAction::WriteSimFileHeader(double SimulationStartTime)
 {
   ostringstream Out;
   Out<<"# Simulation data file"<<endl;
@@ -214,7 +298,7 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
   Out<<"Seed       "<<m_Seed<<endl;
   Out<<endl;
 //   if (m_RunParameters.GetCurrentRun().GetNSources() == 1) {
-//     Out<<"FX "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetFlux()<<endl; 
+//     Out<<"FX "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetFlux()<<endl;
 //   } else {
 //     Out<<"# The FX keyword only appears when you have only one source"<<endl;
 //   }
@@ -228,9 +312,9 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
     }
   }
 
-    
+
   if (ValidStartArea == true) {
-    Out<<"SimulationStartAreaFarField "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetStartAreaAverageArea()/cm/cm<<endl; 
+    Out<<"SimulationStartAreaFarField "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetStartAreaAverageArea()/cm/cm<<endl;
   } else {
     Out<<"# The SimulationStartAreaFarField keyword is only meaningfull if you have only far field sources using a spherical start area"<<endl;
     Out<<"SimulationStartAreaFarField 0.0"<<endl;
@@ -247,31 +331,31 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
       SameSpectralType = false;
     }
   }
-  
+
   if (SameBeamType == true) {
     Out<<"BeamType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamAsString()<<endl;
   } else {
     Out<<"BeamType Multiple"<<endl;
   }
-  
+
   if (SameSpectralType == true) {
     Out<<"SpectralType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralAsString()<<endl;
   } else {
     Out<<"SpectralType Multiple"<<endl;
   }
-  
+
   Out<<endl;
-  Out<<"TB "<<SimulationStartTime<<endl; 
+  Out<<"TB "<<SimulationStartTime<<endl;
   Out<<endl;
   if (m_StoreBinary == true) {
-    Out<<"STARTBINARYSTREAM"<<endl; 
+    Out<<"STARTBINARYSTREAM"<<endl;
   }
 
   m_OutFile.Write(Out);
-  
+
   return true;
 }
-  
+
 
 /******************************************************************************
  * Set the collection ID of the hits
@@ -730,6 +814,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
             // Save and transmit know if we should do it
             SaveEventToFile(E[e]);
             TransmitEvent(E[e]);
+            ReconstructEvent(E[e]);
             if (m_RelegateEvents == true) {
               m_Relegator(E[e]); 
             }
@@ -740,9 +825,10 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
       } else {
         // Save and transmit know if we should do it
         if (m_Event->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
-          mout<<"Storing event "<<Run.GetNTriggeredEvents()<<" of "<<m_ID<<" at t_obs="<<Run.GetSimulatedTime()/s<<"s"<<endl;
+          mout<<"Storing event "<<Run.GetNTriggeredEvents()<<" of "<<m_ID<<" at t_obs="<<MTime(Run.GetSimulatedTime()/s).GetLongIntsString()<<" s"<<endl;
           SaveEventToFile(m_Event);
           TransmitEvent(m_Event);
+          ReconstructEvent(m_Event);
           if (m_RelegateEvents == true) {
             m_Relegator(m_Event); 
           }
@@ -787,7 +873,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
           }
     
           m_OutFile.Write("# Continued file...\n");
-          WriteFileHeader(Run.GetSimulatedTime()/s);
+          WriteSimFileHeader(Run.GetSimulatedTime()/s);
         }
       }
     }
@@ -828,10 +914,13 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
         }
       }
     }
+    if (m_ReconstructEvents == true) {
+      m_RawEventAnalyzer->PostAnalysis();
+    }
+
     Run.Stop();
   }
 }
-
 
 
 /******************************************************************************
@@ -865,10 +954,25 @@ bool MCEventAction::TransmitEvent(MSimEvent* Event)
       mout<<"Tranceiver not connected, queuing event..."<<endl;
     }
   }
+
   return true;
 }
 
-  /*
+
+/******************************************************************************
+ * Reconstruct the event
+ */
+bool MCEventAction::ReconstructEvent(MSimEvent* Event)
+{
+  if (m_ReconstructEvents == true) {
+    m_RawEventAnalyzer->AddRawEvent(Event->ToSimString(m_StoreSimulationInfo, m_StoreScientificPrecision, m_StoreSimulationInfoVersion), true, 101);
+    m_RawEventAnalyzer->AnalyzeEvent();
+  }
+
+  return true;
+}
+
+/*
  * MCEventAction.cc: the end...
  ******************************************************************************/
 
