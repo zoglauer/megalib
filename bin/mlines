@@ -21,7 +21,7 @@ cd ${DIR}
 
 CMD=" "
 TOTAL=0
-TYPES="cxx cc f hh h C cpp" 
+TYPES="cxx cc f hh h C cpp sh" 
 for TYPE in ${TYPES}; do
   for FILE in `find . -name "*.${TYPE}"`; do
     LINES=`grep -v '^\s*$' ${FILE} | grep -v '////' | wc -l`
