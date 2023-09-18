@@ -493,6 +493,11 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
   if (NeedsNoising == true) {
     m_Noising->Analyze(RE);
   }
+  if (RE->GetNRESEs() == 0) {
+    delete RE;
+    return false;
+  }
+
   m_EventStore->AddRawEvent(RE);
   
   return true;
@@ -1026,6 +1031,11 @@ bool MRawEventAnalyzer::PostAnalysis()
     out<<endl;
     out<<"----------------------------------------------------------------------------"<<endl;
     m_Reader->Close();
+  } else if ( m_Noising != nullptr) {
+    out<<endl;
+    out<<m_Noising->ToString();
+    out<<endl;
+    out<<"----------------------------------------------------------------------------"<<endl;
   }
   out<<endl;
   out<<"Event statistics for all triggered (!) events:"<<endl;

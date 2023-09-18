@@ -932,8 +932,9 @@ bool MCEventAction::TransmitEvent(MSimEvent* Event)
 bool MCEventAction::ReconstructEvent(MSimEvent* Event)
 {
   if (m_ReconstructEvents == true) {
-    m_RawEventAnalyzer->AddRawEvent(Event->ToSimString(m_StoreSimulationInfo, m_StoreScientificPrecision, m_StoreSimulationInfoVersion), true, 101);
-    m_RawEventAnalyzer->AnalyzeEvent();
+    if (m_RawEventAnalyzer->AddRawEvent(Event->ToSimString(m_StoreSimulationInfo, m_StoreScientificPrecision, m_StoreSimulationInfoVersion), true, 101) == true) {
+      m_RawEventAnalyzer->AnalyzeEvent();
+    }
   }
 
   return true;

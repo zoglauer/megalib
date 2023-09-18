@@ -88,6 +88,7 @@ class MRawEventAnalyzer
   
   //! In case the events are not read from file,
   //! create the event from a string containing ALL event data
+  //! Returns false, on parsing error, or if noising leads to vetoed/empty event
   bool AddRawEvent(const MString& RE, bool NeedsNoising = true, int Version = 25);
   
   //! Analyze one event
