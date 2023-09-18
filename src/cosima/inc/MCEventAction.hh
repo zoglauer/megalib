@@ -117,8 +117,10 @@ public:
   
   // protected methods:
 protected:
+  /// Create the sim file header
+  bool CreateSimFileHeader(double ObservationStartTime);
   /// Write the sim file header
-  bool WriteSimFileHeader(double ObservationStartTime);
+  bool WriteSimFileHeader();
 
   /// Save the event to file (only saves the event if we really want to)
   bool SaveEventToFile(MSimEvent* Event);
@@ -157,7 +159,7 @@ private:
   /// True if the evnts should be saved to file
   bool m_SaveEvents;
   /// Stream to the output file
-  MFile m_OutFile;
+  MFileEvents m_OutFile;
   /// Name of the current iutput file
   string m_OutFileName;
   /// Id of the output file, if the maximum file size has been exceeded
@@ -188,8 +190,6 @@ private:
   MGeometryRevan* m_ReconstructionGeometry;
   /// The revan reconstruction class
   MRawEventAnalyzer* m_RawEventAnalyzer;
-  /// The tra file for storing reconstructed events
-  MFileEventsTra* m_TraFile;
 
 
   /// Seed of the random number generator at the beginning of the event

@@ -127,6 +127,9 @@ bool MCEventAction::NextRun()
   G4String BaseName = m_RunParameters.GetCurrentRun().GetFileName().Data();
   G4String Name = BaseName; 
 
+  // We always transfer the header information - irrelevant if we write or not to the file
+  CreateSimFileHeader(0.0);
+
   if (Name != "") {
     m_SaveEvents = true;
     
@@ -159,7 +162,7 @@ bool MCEventAction::NextRun()
       return false;
     }
 
-    WriteSimFileHeader(0.0);
+    WriteSimFileHeader();
   } else {
     m_SaveEvents = false;
   }
@@ -230,6 +233,8 @@ bool MCEventAction::NextRun()
     }
 
     m_RawEventAnalyzer->SetOutputModeFile(FileName);
+    m_RawEventAnalyzer->TransferFileInformation(&m_OutFile);
+
 
     if (m_RawEventAnalyzer->PreAnalysis() == false) {
       cout<<"Revan pre-analysis failed!"<<endl;
@@ -244,25 +249,6 @@ bool MCEventAction::NextRun()
       return false;
     }
 
-
-    /*
-    m_TraFile = new MFileEventsTra();
-    if (m_TraFile->Open(FileName, MFile::c_Write) == false) {
-      mout<<"Unable to open tra file \""<<FileName<<"\""<<endl;
-
-      delete m_TraFile;
-      m_TraFile = nullptr;
-      delete m_RawEventAnalyzer;
-      m_RawEventAnalyzer = nullptr;
-      delete m_ReconstructionGeometry;
-      m_ReconstructionGeometry = nullptr;
-      delete m_Settings;
-      m_Settings = nullptr;
-
-      return false;
-    }
-    WriteTraFileHeader(0.0);
-    */
   } else {
     m_ReconstructEvents = false;
   }
@@ -279,29 +265,14 @@ bool MCEventAction::NextRun()
 
 
 /******************************************************************************
- * Write the file header of the sim file
+ * Create the file header of the sim file
  */
-bool MCEventAction::WriteSimFileHeader(double SimulationStartTime)
+bool MCEventAction::CreateSimFileHeader(double SimulationStartTime)
 {
-  ostringstream Out;
-  Out<<"# Simulation data file"<<endl;
-  Out<<"# Created by Cosima and "<<G4RunManager::GetRunManager()->GetVersionString()<<endl;
-  Out<<endl;
-  Out<<"Type       SIM"<<endl;
-  Out<<"Version    "<<m_StoreSimulationInfoVersion<<endl;
-  Out<<"Geometry   "<<m_RunParameters.GetGeometryFileName()<<endl;
-  Out<<endl;
-  MTime Now;
-  Out<<"Date       "<<Now.GetSQLString()<<endl;
-  Out<<"MEGAlib    "<<g_VersionString<<endl;
-  Out<<endl;
-  Out<<"Seed       "<<m_Seed<<endl;
-  Out<<endl;
-//   if (m_RunParameters.GetCurrentRun().GetNSources() == 1) {
-//     Out<<"FX "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetFlux()<<endl;
-//   } else {
-//     Out<<"# The FX keyword only appears when you have only one source"<<endl;
-//   }
+  m_OutFile.SetFileType("SIM");
+  m_OutFile.SetVersion(m_StoreSimulationInfoVersion);
+  m_OutFile.SetGeometryFileName(m_RunParameters.GetGeometryFileName());
+
   bool ValidStartArea = true;
   for (unsigned int so = 0; so < m_RunParameters.GetCurrentRun().GetNSources(); ++so) {
     if (m_RunParameters.GetCurrentRun().GetSource(so)->GetCoordinateSystem() != MCSource::c_FarField) {
@@ -311,14 +282,11 @@ bool MCEventAction::WriteSimFileHeader(double SimulationStartTime)
       ValidStartArea = false;
     }
   }
-
-
   if (ValidStartArea == true) {
-    Out<<"SimulationStartAreaFarField "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetStartAreaAverageArea()/cm/cm<<endl;
-  } else {
-    Out<<"# The SimulationStartAreaFarField keyword is only meaningfull if you have only far field sources using a spherical start area"<<endl;
-    Out<<"SimulationStartAreaFarField 0.0"<<endl;
+    m_OutFile.SetSimulationStartAreaFarField(m_RunParameters.GetCurrentRun().GetSource(0)->GetStartAreaAverageArea()/cm/cm);
   }
+
+  m_OutFile.SetSimulationSeed(m_Seed);
 
   bool SameBeamType = true;
   bool SameSpectralType = true;
@@ -333,25 +301,29 @@ bool MCEventAction::WriteSimFileHeader(double SimulationStartTime)
   }
 
   if (SameBeamType == true) {
-    Out<<"BeamType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamAsString()<<endl;
+    m_OutFile.SetBeamType(m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamAsString());
   } else {
-    Out<<"BeamType Multiple"<<endl;
+    m_OutFile.SetBeamType("Multiple");
   }
 
   if (SameSpectralType == true) {
-    Out<<"SpectralType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralAsString()<<endl;
+    m_OutFile.SetSpectralType(m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralAsString());
   } else {
-    Out<<"SpectralType Multiple"<<endl;
+    m_OutFile.SetSpectralType("Multiple");
   }
 
-  Out<<endl;
-  Out<<"TB "<<SimulationStartTime<<endl;
-  Out<<endl;
-  if (m_StoreBinary == true) {
-    Out<<"STARTBINARYSTREAM"<<endl;
-  }
+  m_OutFile.SetStartObservationTime(SimulationStartTime/s);
 
-  m_OutFile.Write(Out);
+  return true;
+}
+
+
+/******************************************************************************
+ * Write the file header of the sim file
+ */
+bool MCEventAction::WriteSimFileHeader()
+{
+  m_OutFile.WriteHeader();
 
   return true;
 }
@@ -873,7 +845,8 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
           }
     
           m_OutFile.Write("# Continued file...\n");
-          WriteSimFileHeader(Run.GetSimulatedTime()/s);
+          CreateSimFileHeader(Run.GetSimulatedTime()/s);
+          WriteSimFileHeader();
         }
       }
     }
@@ -885,25 +858,18 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
   m_TimerStarted = false;
 
   if (m_Interrupt == true || Run.CheckStopConditions() == true) {
+
+    m_OutFile.SetEndObservationTime(Run.GetSimulatedTime()/s);
+    m_OutFile.SetSimulatedEvents(Run.GetNSimulatedEvents());
+
     if (m_SaveEvents == true) {
       if (m_StoreBinary == true) {
         MBinaryStore S;
         S.AddString("EN", 2);
         m_OutFile.Write(S);
-        ostringstream O;   
-        O<<endl<<"ENDBINARYSTREAM"<<endl;
-        m_OutFile.Write(O);
-      } else {
-        ostringstream O;        
-        O<<"EN"<<endl;
-        m_OutFile.Write(O);
       }
 
-      ostringstream Out;        
-      Out<<endl; 
-      Out<<"TE "<<fixed<<setprecision(6)<<Run.GetSimulatedTime()/s<<endl; 
-      Out<<"TS "<<Run.GetNSimulatedEvents()<<endl;
-      m_OutFile.Write(Out);
+      m_OutFile.WriteFooter();
       m_OutFile.Close();
     }
     if (m_TransmitEvents == true) {
@@ -915,6 +881,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
       }
     }
     if (m_ReconstructEvents == true) {
+      m_RawEventAnalyzer->TransferFileInformation(&m_OutFile);
       m_RawEventAnalyzer->PostAnalysis();
     }
 

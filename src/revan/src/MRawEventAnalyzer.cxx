@@ -444,10 +444,27 @@ bool MRawEventAnalyzer::SetOutputModeFile(MString Filename)
     return false;
   }
 
+  if (m_Reader != nullptr) {
+    TransferFileInformation(m_Reader);
+  }
+
   return true;
 }
 
-  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MRawEventAnalyzer::TransferFileInformation(MFileEvents* External)
+{
+  if (m_PhysFile != nullptr && External != nullptr) {
+    m_PhysFile->TransferInformation(External);
+    m_PhysFile->SetFileType("TRA");
+  }
+
+  return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -963,7 +980,7 @@ bool MRawEventAnalyzer::PostAnalysis()
   // No more events available
   
   if (m_PhysFile != nullptr && m_Reader != nullptr) {
-    m_PhysFile->SetObservationTime(m_Reader->GetObservationTime());
+    TransferFileInformation(m_Reader);
   } 
   
   
@@ -1069,8 +1086,8 @@ bool MRawEventAnalyzer::PostAnalysis()
 
 
   if (m_PhysFile != nullptr) {
-    m_PhysFile->CloseEventList();
     m_PhysFile->AddFooter(out.str().c_str());
+    m_PhysFile->WriteFooter();
     m_PhysFile->Close();
   }
 

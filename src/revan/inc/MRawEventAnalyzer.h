@@ -69,6 +69,8 @@ class MRawEventAnalyzer
   bool SetInputModeFile(MString Filename);
   //! If events are written to a file, set it with this function
   bool SetOutputModeFile(MString Filename);
+ //! If the events are not read in this class from a file, but externally, set the additional header/footer information from this file
+  bool TransferFileInformation(MFileEvents* External);
 
   //! Save the origin information if this is a sim file
   void SetSaveOI(bool SaveOI);
