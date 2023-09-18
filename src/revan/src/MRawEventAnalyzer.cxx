@@ -483,6 +483,20 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
   MRERawEvent* RE = new MRERawEvent(m_Geometry);
   
   for (MString L: Lines) {
+    // A tiny hack, since, by design, the core revan library does not know anything about the simulation info:
+    if (m_SaveOI == true) {
+      if (L[0] == 'I' && L[1] == 'A') {
+        if (L[3] == 'I' && L[4] == 'N' && L[5] == 'I' && L[6] == 'T') {
+          double x, y, z, dx, dy, dz, px, py, pz, e;
+          if (sscanf(L.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf", &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+            ostringstream out;
+            out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+            L = out.str().c_str();
+          }
+        }
+      }
+    }
+
     if (RE->ParseLine(L, Version) == 1) {
       delete RE;
       cout<<"Parsing of line failed: "<<L<<endl;
