@@ -75,7 +75,7 @@ MFileResponse::MFileResponse() : MParser(' ', false)
   m_NumberOfSimulatedEvents = 0;
   m_FarFieldStartArea = 0;
   m_SpectralType = "";
-  m_SpectralParameters.clear();
+  m_BeamType = "";
 }
 
 
@@ -121,9 +121,10 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
         m_NumberOfSimulatedEvents = T.GetTokenAtAsLong(1);
       } else if (T.GetTokenAt(0) == "SA") {
         m_FarFieldStartArea = T.GetTokenAtAsDouble(1);
-      } else if (T.GetTokenAt(0) == "SM") {
-        m_SpectralType = T.GetTokenAtAsString(1);
-        m_SpectralParameters = T.GetTokenAtAsDoubleVector(2);
+      } else if (T.GetTokenAt(0) == "SP") {
+        m_SpectralType = T.GetTokenAfterAsString(1);
+      } else if (T.GetTokenAt(0) == "BE") {
+        m_BeamType = T.GetTokenAfterAsString(1);
       } else if (T.GetTokenAt(0) == "HA") {
         m_Hash = T.GetTokenAtAsUnsignedLong(1);
       } else if (T.GetTokenAt(0) == "CE") {
