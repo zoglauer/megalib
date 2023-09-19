@@ -392,6 +392,7 @@ echo "TAGS=( )" >> ${KillFileName}
 
 
 # Start the sims
+FirstTag=""
 for (( i=1; i <= ${Threads}; i+=1 )); do
   # First check if we are ready to launch a new thread
   mwait -i=${Max} -p=cosima
@@ -429,6 +430,10 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   sleep ${Delay}
   
   echo "TAGS+=( ${Tag} )"  >> ${KillFileName}
+
+  if [[ ${FirstTag} == "" ]]; then
+    FirstTag=${Tag}
+  fi
 done
 
 cat  >> ${KillFileName} <<EOF
@@ -477,10 +482,33 @@ if [[ ${Concatenate} == yes ]]; then
     fi
 
     # Wait until the first such file is created
-    while ( test ! -f ${FirstFileName} ); do
-      sleep 1
-      echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..."
-    done
+    FirstPID=$(ps -Af | grep "[ ]${FirstTag}" | grep -v "bash -c " | awk '{ print $2 }')
+    if [[ ${FirstPID} == "" ]] && [ ! -f ${FirstFileName} ]; then
+      echo ""
+      echo "Error:"
+      echo "Cosima is not running, and no sim file has been created."
+      echo "Most likely cosima has crashed during startup."
+      echo "Please do a test run with just cosima before running mcosima."
+      echo ""
+      echo "Exiting"
+      exit 1
+    else
+      while [[ ${FirstPID} == "" ]] && [ ! -f ${FirstFileName} ]; do
+        sleep 1
+        echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..."
+        FirstPID=$(ps -Af | grep "[ ]${FirstTag}" | grep -v "bash -c " | awk '{ print $2 }')
+      done
+    fi
+
+    if [ ! -f ${FirstFileName} ]; then
+      echo ""
+      echo "Error:"
+      echo "No sim file has been created."
+      echo "Please do a test run with just cosima before running mcosima,"
+      echo ""
+      echo "Exiting"
+      exit 1
+    fi
 
     # Wait until the header is written
     if [[ "${Zip}" == "yes" ]]; then

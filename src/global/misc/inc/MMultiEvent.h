@@ -45,7 +45,9 @@ class MMultiEvent : public MPhysicalEvent
   //! Copy the data of the given event into this one
   bool Assimilate(MPhysicalEvent* Event); 
 
-  //! Stream the data from a file
+  //! Stream the content into a tra-file compatible string
+  virtual MString ToTraString() const;
+  //! Stream the content to the given file-stream
   virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
   //! Parse a single line from the file
   virtual int ParseLine(const char* Line, bool Fast = false);

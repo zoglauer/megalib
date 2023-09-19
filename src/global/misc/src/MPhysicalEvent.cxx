@@ -266,6 +266,69 @@ const MPhysicalEventHit& MPhysicalEvent::GetHit(unsigned int i) const
   return m_Hits.front();
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MPhysicalEvent::ToTraString() const
+{
+  //! Stream the content into a tra-file compatible string
+
+  ostringstream S;
+  switch (m_EventType) {
+  case c_Compton:
+    S<<"ET CO"<<endl;
+    break;
+  case c_Pair:
+    S<<"ET PA"<<endl;
+    break;
+  case c_Photo:
+    S<<"ET PH"<<endl;
+    break;
+  case c_Muon:
+    S<<"ET MU"<<endl;
+    break;
+  case c_Decay:
+    S<<"ET DY"<<endl;
+    break;
+  case c_PET:
+    S<<"ET PT"<<endl;
+    break;
+  case c_Multi:
+    S<<"ET MT"<<endl;
+    break;
+  case c_Unidentifiable:
+    S<<"ET UN"<<endl;
+    break;
+  default:
+    massert(false);
+    S<<"ET Unkown"<<endl;
+    break;
+  }
+  S<<"ID "<<m_Id<<endl;
+  S<<"TI "<<m_Time.GetLongIntsString()<<endl;
+  if (m_TimeWalk != -1) {
+    S<<"TW "<<m_TimeWalk<<endl;
+  }
+
+  MRotationInterface::Stream(S);
+
+  if (m_Bad == true) {
+    S<<"BD "<<m_BadString<<endl;
+  }
+  if (m_Decay == true) {
+    S<<"DC"<<endl;
+  }
+  if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined) {
+    S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy<<endl;
+  }
+  for (unsigned int c = 0; c < m_Comments.size(); ++c) {
+    S<<"CC "<<m_Comments[c]<<endl;
+  }
+
+  return S.str();
+}
+
   
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -275,59 +338,7 @@ bool MPhysicalEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool
   // Hopefully a faster way to stream data from and to a file than ROOT...
 
   if (Read == false) {
-    ostringstream S;
-    switch (m_EventType) {
-    case c_Compton:
-      S<<"ET CO"<<endl;
-      break;
-    case c_Pair:
-      S<<"ET PA"<<endl;
-      break;
-    case c_Photo:
-      S<<"ET PH"<<endl;
-      break;
-    case c_Muon:
-      S<<"ET MU"<<endl;
-      break;
-    case c_Decay:
-      S<<"ET DY"<<endl;
-      break;
-    case c_PET:
-      S<<"ET PT"<<endl;
-      break;
-    case c_Multi:
-      S<<"ET MT"<<endl;
-      break;
-    case c_Unidentifiable:
-      S<<"ET UN"<<endl;
-      break;
-    default:
-      massert(false);
-      S<<"ET Unkown"<<endl;
-      break;
-    }
-    S<<"ID "<<m_Id<<endl;
-    S<<"TI "<<m_Time.GetLongIntsString()<<endl;
-    if (m_TimeWalk != -1) {
-      S<<"TW "<<m_TimeWalk<<endl;
-    }
-
-    MRotationInterface::Stream(S);
-
-    if (m_Bad == true) {
-      S<<"BD "<<m_BadString<<endl;
-    }
-    if (m_Decay == true) {
-      S<<"DC"<<endl;
-    }
-    if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined) {
-      S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy<<endl;
-    }
-    for (unsigned int c = 0; c < m_Comments.size(); ++c) {
-      S<<"CC "<<m_Comments[c]<<endl; 
-    }
-    
-    File.Write(S);
+    File.Write(ToTraString());
     File.Flush();
   } else {
     // Read each line until we reach the end of the file or a new SE...

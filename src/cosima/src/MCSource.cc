@@ -3011,7 +3011,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       } else {
         mout<<m_Name<<": Unknown start area type for position generation"<<endl;
       }
-     
+
       // Rotate according to theta and phi
       // left-handed rotation-matrix: first theta (rotation around y-axis) then phi (rotation around z-axis):
       // | +cosp -sinp 0 |   | +cost 0 +sint |   | x |
@@ -3020,9 +3020,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[0] = (x*cos(Theta)+z*sin(Theta))*cos(Phi) - y*sin(Phi);
       m_Position[1] = (x*cos(Theta)+z*sin(Theta))*sin(Phi) + y*cos(Phi);
       m_Position[2] = -x*sin(Theta)+z*cos(Theta);
-      
-      // Translate sphere center
-      m_Position += m_StartAreaPosition;
+
+      // We tranlate the start sphere position after handling any orientations
     } 
   } 
 
@@ -3396,51 +3395,15 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position += l*m_Direction;
     } 
   }
-  
-  // If there is any orientation, then rotate & translate
-  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
 
-  // Not all possible orientation combinations are valid!
-  // Can can have either:
-  // A) Sky and source in Galactic coordiantes then source must be a far field source
-  // B) Sky and source in Local coordiantes 
-  // C) Sky in Galactic coordiantes and source in local coordiantes
+  // Rotate from local into oriented coordiante system
+  if (PerformOrientation(m_Position, m_Direction) == false) return false;
   
-  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
-    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientPositionAndDirection(m_NextEmission, m_Position, m_Direction);
-    }
-         
-    if (Sky.IsOriented() == true) {
-      // This reorientation can only happen is both are of the same coordinate system
-      Sky.OrientPositionAndDirectionInvers(m_NextEmission, m_Position, m_Direction);
-    }             
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && 
-            Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
-    if (m_CoordinateSystem != c_FarField) {
-      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
-      return false;        
-    }
-        
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientPositionAndDirection(m_NextEmission, m_Position, m_Direction);
-    }
-        
-    if (Sky.IsOriented() == true) {
-      // This reorientation can only happen is both are of the same coordinate system
-      Sky.OrientPositionAndDirectionInvers(m_NextEmission, m_Position, m_Direction);
-    }    
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
-             Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientPositionAndDirection(m_NextEmission, m_Position, m_Direction);
-    }    
-  } else {
-    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
-    return false;
+  if (m_CoordinateSystem == c_FarField) {
+    // Translate the start sphere center
+    m_Position += m_StartAreaPosition;
   }
-  
+
   // Sanity check that the position is within the world volume
   if (MCRunManager::GetMCRunManager()->GetDetectorConstruction()->IsInsideWorldVolume(m_Position) == false) {
     mout<<"  ***  ERROR  ***   "<<m_Name<<": The position "<<m_Position/cm<<" cm is outside the world volume! Please make your world volume larger or your simulations are incorrect!"<<endl;
@@ -3483,14 +3446,19 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
     if (CLHEP::RandFlat::shoot(1) < m_PolarizationDegree) {
       if (m_PolarizationType == c_PolarizationAbsolute) {
         m_Polarization.set(m_PolarizationParam1, m_PolarizationParam2, m_PolarizationParam3);
-      } else {
+      }
+      // Relative
+      else {
+        G4ThreeVector Axis;
         if (m_PolarizationType == c_PolarizationRelativeX) {
-          m_Polarization = m_Direction.cross(G4ThreeVector(1.0, 0.0, 0.0));
+          Axis = G4ThreeVector(1.0, 0.0, 0.0);
         } else if (m_PolarizationType == c_PolarizationRelativeY) {
-          m_Polarization = m_Direction.cross(G4ThreeVector(0.0, 1.0, 0.0));
+          Axis = G4ThreeVector(0.0, 1.0, 0.0);
         } else if (m_PolarizationType == c_PolarizationRelativeZ) {
-          m_Polarization = m_Direction.cross(G4ThreeVector(0.0, 0.0, 1.0));
+          Axis = G4ThreeVector(0.0, 0.0, 1.0);
         }
+
+        m_Polarization = m_Direction.cross(Axis);
         m_Polarization.rotate(m_Direction, m_PolarizationParam1);
         m_Polarization = m_Polarization.unit();
       }
@@ -3500,7 +3468,7 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
       m_Polarization = m_Polarization.unit();
     }
   } else {
-    merr<<m_Name<<": Unknown polarization type: "<<m_PolarizationType<<endl;
+    merr<<m_Name<<": Unknown polarization type: "<<m_PolarizationType<<" -- assuming random"<<endl;
     m_Polarization = m_Direction.orthogonal();
     m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
     m_Polarization = m_Polarization.unit();
@@ -3512,59 +3480,113 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
           <<"   --> Will use zero polarization!"<<endl;
       m_Polarization.set(0.0, 0.0, 0.0);
     }
- 
   }
-  
-  
-  // If there is any orientation, then rotate & translate
-  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
-  
-  // Not all possible orientation combinations are valid!
-  // Can can have either:
-  // A) Sky and source in Galactic coordiantes then source must be a far field source
-  // B) Sky and source in Local coordiantes 
-  // C) Sky in Galactic coordiantes and source in local coordiantes
-  
-  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
-    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientDirection(m_NextEmission, m_Polarization);
-    }
-    
-    if (Sky.IsOriented() == true) {
-      // This reorientation can only happen is both are of the same coordinate system
-      Sky.OrientDirectionInvers(m_NextEmission, m_Polarization);
-    }             
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && 
-    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
-    if (m_CoordinateSystem != c_FarField) {
-      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
-      return false;        
-    }
-      
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientDirection(m_NextEmission, m_Polarization);
-    }
-      
-    if (Sky.IsOriented() == true) {
-      // This reorientation can only happen is both are of the same coordinate system
-      Sky.OrientDirectionInvers(m_NextEmission, m_Polarization);
-    }    
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
-    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientDirection(m_NextEmission, m_Polarization);
-    }    
-  } else {
-    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
-    return false;
-  }
-  
   
   Gun->SetParticlePolarization(m_Polarization);
 
   return true;
 }
+
+
+/******************************************************************************
+ * Perform an orientation of the vector from local into oriented coordinate system
+*/
+bool MCSource::PerformOrientation(G4ThreeVector& Direction)
+{
+  // If there is any orientation, then rotate & translate
+  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+
+  // Not all possible orientation combinations are valid!
+  // Can can have either:
+  // A) Sky and source in Galactic coordiantes then source must be a far field source
+  // B) Sky and source in Local coordiantes
+  // C) Sky in Galactic coordiantes and source in local coordiantes
+
+  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientDirection(m_NextEmission, Direction);
+    }
+
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientDirectionInvers(m_NextEmission, Direction);
+    }
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_CoordinateSystem != c_FarField) {
+      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
+      return false;
+    }
+
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientDirection(m_NextEmission, Direction);
+    }
+
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientDirectionInvers(m_NextEmission, Direction);
+    }
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientDirection(m_NextEmission, Direction);
+    }
+  } else {
+    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
+    return false;
+  }
+
+  return true;
+}
+
+
+/******************************************************************************
+ * Perform an orientation of the vector from local into oriented coordinate system
+ */
+bool MCSource::PerformOrientation(G4ThreeVector& Position, G4ThreeVector& Direction)
+{
+  // If there is any orientation, then rotate & translate
+  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+
+  // Not all possible orientation combinations are valid!
+  // Can can have either:
+  // A) Sky and source in Galactic coordiantes then source must be a far field source
+  // B) Sky and source in Local coordiantes
+  // C) Sky in Galactic coordiantes and source in local coordiantes
+
+  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientPositionAndDirection(m_NextEmission, Position, Direction);
+    }
+
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientPositionAndDirectionInvers(m_NextEmission, Position, Direction);
+    }
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_CoordinateSystem != c_FarField) {
+      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
+      return false;
+    }
+
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientPositionAndDirection(m_NextEmission, Position, Direction);
+    }
+
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientPositionAndDirectionInvers(m_NextEmission, Position, Direction);
+    }
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientPositionAndDirection(m_NextEmission, Position, Direction);
+    }
+  } else {
+    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
+    return false;
+  }
+
+  return true;
+}
+
 
 
 /******************************************************************************
