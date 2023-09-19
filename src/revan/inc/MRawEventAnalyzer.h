@@ -69,6 +69,11 @@ class MRawEventAnalyzer
   bool SetInputModeFile(MString Filename);
   //! If events are written to a file, set it with this function
   bool SetOutputModeFile(MString Filename);
+ //! If the events are not read in this class from a file, but externally, set the additional header/footer information from this file
+  bool TransferFileInformation(MFileEvents* External);
+
+  //! Save the origin information if this is a sim file
+  void SetSaveOI(bool SaveOI);
 
   //! Do not use any GUI functions
   void SetBatch(bool IsBatch) { m_IsBatch = IsBatch; }
@@ -83,19 +88,13 @@ class MRawEventAnalyzer
   
   //! In case the events are not read from file,
   //! create the event from a string containing ALL event data
+  //! Returns false, on parsing error, or if noising leads to vetoed/empty event
   bool AddRawEvent(const MString& RE, bool NeedsNoising = true, int Version = 25);
   
   //! Analyze one event
   //! The event can then be retrieved via GetOptimumEvent() or GetBestTryEvent()
-  //! Return codes:
-  //! c_AnalysisSucess
-  //! c_AnalysisCoincidenceWindowWait
-  //! c_AnalysisNoEventsInStore
-  //! c_AnalysisNoEventsLeftInFile
+  //! Return codes are the c_AnalaysisXYZ from below
   unsigned int AnalyzeEvent();
-  
-  //! Save the OI 
-  void SetSaveOI(bool SaveOI);
   
   // The return codes of AnalyzeEvent()
   static const unsigned int c_AnalysisSucess;

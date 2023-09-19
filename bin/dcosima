@@ -560,7 +560,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       if [[ ${ALLOWED} -gt 0 ]]; then
         LAUNCHED=$(( ${LAUNCHED} + 1 ))
         echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
-        dcosima-runinstance --source=${SOURCEFILENAME} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi` `if [[ ${LOG} == TRUE ]]; then echo "--log=${LOGFILE}"; fi`
+        dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi` `if [[ ${LOG} == TRUE ]]; then echo "--log=${LOGFILE}"; fi`
         STARTED=1
       fi
       if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi

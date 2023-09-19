@@ -1761,11 +1761,17 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   s<<"# The far-field start area (if zero a non-far-field simulation, or non-spherical start area was used)"<<endl;
   s<<"SA "<<m_FarFieldStartArea<<endl;
   s<<endl;
+  s<<"# The spectral parameters (empty if not set)"<<endl;
+  s<<"SP "<<m_SpectralType<<endl;
+  s<<endl;
+  s<<"# The beam parameters (empty if not set)"<<endl;
+  s<<"BE "<<m_BeamType<<endl;
+  s<<endl;
   s<<"# Are the values centered?"<<endl;
   s<<"CE false"<<endl;
   s<<endl;
   s<<"# Is the matrix sparse?"<<endl;
-  s<<"SP "<<(m_IsSparse == true ? "true" : "false")<<endl;
+  s<<"MS "<<(m_IsSparse == true ? "true" : "false")<<endl;
   s<<endl;
   File.Write(s);
 

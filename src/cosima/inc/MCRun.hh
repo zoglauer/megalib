@@ -114,6 +114,17 @@ public:
   /// Retuns the TCP/IP port (empty string if there is none, i.e. no TCP/IP connection is wished)
   unsigned int GetTcpIpPort() const { return m_TcpIpPort; }
 
+  /// Set the revan configuration file name. Returns always true
+  bool SetRevanConfigurationFileName(const MString& RevanConfigurationFileName) { m_RevanConfigurationFileName = RevanConfigurationFileName; return true; }
+  /// Retuns the revan configuration file name (empty string if there is none, i.e. no reconstruction connection is wished)
+  MString GetRevanConfigurationFileName() const { return m_RevanConfigurationFileName; }
+
+  /// Set the tra file name. Returns always true
+  bool SetTraFileName(const MString& TraFileName) { m_TraFileName = TraFileName; return true; }
+  /// Retuns the tra file name (empty string if there is none, i.e. no reconstruction connection is wished)
+  MString GetTraFileName() const { return m_TraFileName; }
+
+
   /// Set the name of the geometry file
   bool SetGeometryFileName(const MString& Name);
   /// Return the nme of the geometry file
@@ -258,6 +269,11 @@ private:
   /// The TCP/IP port
   unsigned int m_TcpIpPort;
   
+  /// The ravn configuration file name (empty if to reconstruction is desired)
+  MString m_RevanConfigurationFileName;
+  /// The tra file name to save the reconstructed events to
+  MString m_TraFileName;
+
   /// List of sources
   vector<MCSource*> m_SourceList;
 

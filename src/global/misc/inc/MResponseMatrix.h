@@ -73,14 +73,17 @@ class MResponseMatrix
   void SetFarFieldStartArea(double Area) { m_FarFieldStartArea = Area; }
   //! Get the start are aof far-field simulations
   double GetFarFieldStartArea() const { return m_FarFieldStartArea; }
-  
-  //! Set the spectrum
-  void SetSpectrum(MString SpectralType, vector<double> SpectralParameters) { m_SpectralType = SpectralType, m_SpectralParameters = SpectralParameters; }
+
+  //! Set the spectral type
+  void SetSpectralType(MString SpectralType) { m_SpectralType = SpectralType; }
   //! Get the spectral type
   MString GetSpectralType() const { return m_SpectralType; }
-  //! Get the spectral parameters
-  vector<double> GetSpectralParameters() const { return m_SpectralParameters; }
-  
+
+  //! Set the beam type
+  void SetBeamType(MString BeamType) { m_BeamType = BeamType; }
+  //! Get the beam type
+  MString GetBeamType() const { return m_BeamType; }
+
   virtual unsigned long GetNBins() const = 0;
   virtual float GetMaximum() const = 0;
   virtual float GetMinimum() const = 0;
@@ -124,8 +127,8 @@ class MResponseMatrix
   //! The spectral type (Linear, Mono, Powerlaw)
   MString m_SpectralType;
 
-  //! The spectral parameters (depend on type)
-  vector<double> m_SpectralParameters;
+  //! The beam type
+  MString m_BeamType;
 
   //! A hash value --- this value is not calculated but has to be set from outside or read in via file
   unsigned long m_Hash;

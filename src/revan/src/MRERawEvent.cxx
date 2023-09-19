@@ -1643,27 +1643,6 @@ MRESE* MRERawEvent::GetNextRESE()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MRERawEvent::Parse(MString Event, int Version)
-{
-  // Return  0, if all lines got correctly parsed
-  // Return  1, and stop if a line got not correctly parsed
-  // Return  2, and stop if a line got not parsed
-  // Return -1, and stop if the end of event has been reached
-
-  vector<MString> Lines = Event.Tokenize("\n");
-  int ReturnCode = -2;
-  for (const MString& L: Lines) {
-    int ReturnCode = ParseLine(L, Version);
-    if (ReturnCode == 1) return ReturnCode;
-  }
-
-  return ReturnCode;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 int MRERawEvent::ParseLine(const char* Line, int Version)
 {
   // Return  0, if the line got correctly parsed

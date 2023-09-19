@@ -44,6 +44,11 @@ using namespace std;
 #include "MTransceiverTcpIp.h"
 #include "MSimEvent.h"
 #include "MDTriggerUnit.h"
+#include "MSettingsRevan.h"
+#include "MGeometryRevan.h"
+#include "MRawEventAnalyzer.h"
+#include "MFileEventsTra.h"
+#include "MRERawEvent.h"
 
 
 /******************************************************************************/
@@ -112,13 +117,17 @@ public:
   
   // protected methods:
 protected:
-  /// Write the file header 
-  bool WriteFileHeader(double ObservationStartTime);
+  /// Create the sim file header
+  bool CreateSimFileHeader(double ObservationStartTime);
+  /// Write the sim file header
+  bool WriteSimFileHeader();
 
   /// Save the event to file (only saves the event if we really want to)
   bool SaveEventToFile(MSimEvent* Event);
   /// Transmit event via TCP/IP (only transmit it if we have an open transceiver)
   bool TransmitEvent(MSimEvent* Event);
+  /// Reconstruct the event (only reconstructs the events if we really want it to)
+  bool ReconstructEvent(MSimEvent* Event);
 
   // protected members:
 protected:
@@ -150,7 +159,7 @@ private:
   /// True if the evnts should be saved to file
   bool m_SaveEvents;
   /// Stream to the output file
-  MFile m_OutFile;
+  MFileEvents m_OutFile;
   /// Name of the current iutput file
   string m_OutFileName;
   /// Id of the output file, if the maximum file size has been exceeded
@@ -172,6 +181,17 @@ private:
   /// The function pointer for relegation
   void (*m_Relegator)(MSimEvent*);
   
+
+  /// True if the events should be reconstructed
+  bool m_ReconstructEvents;
+  /// The revan settings file to use for the reconstruction
+  MSettingsRevan* m_Settings;
+  /// The revan geometry to use for the reconstruction
+  MGeometryRevan* m_ReconstructionGeometry;
+  /// The revan reconstruction class
+  MRawEventAnalyzer* m_RawEventAnalyzer;
+
+
   /// Seed of the random number generator at the beginning of the event
   long m_Seed;
 
