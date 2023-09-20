@@ -505,7 +505,6 @@ bool MResponseBuilder::InitializeNextTraEvent()
 
       m_NumberOfSimulatedEventsClosedFiles = m_TraReader->GetSimulatedEvents();
       m_NumberOfSimulatedEventsThisFile = 0;
-      cout<<"SIM: "<<m_NumberOfSimulatedEventsClosedFiles<<endl;
       return false;
     }
     if (m_MimrecEventSelector.IsQualifiedEventFast(m_TraEvent) == true) {
