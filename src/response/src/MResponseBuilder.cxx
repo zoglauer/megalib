@@ -502,7 +502,10 @@ bool MResponseBuilder::InitializeNextTraEvent()
     m_TraEvent = m_TraReader->GetNextEvent();
     if (m_TraEvent == nullptr) {
       m_ReaderFinished = true;
-      cout<<"Missing event statistics"<<endl;
+
+      m_NumberOfSimulatedEventsClosedFiles = m_TraReader->GetSimulatedEvents();
+      m_NumberOfSimulatedEventsThisFile = 0;
+      cout<<"SIM: "<<m_NumberOfSimulatedEventsClosedFiles<<endl;
       return false;
     }
     if (m_MimrecEventSelector.IsQualifiedEventFast(m_TraEvent) == true) {

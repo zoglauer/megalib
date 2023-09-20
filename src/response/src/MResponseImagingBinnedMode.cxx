@@ -328,6 +328,14 @@ bool MResponseImagingBinnedMode::Initialize()
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Initialize() == false) return false;
 
+  // Cast the reader for easier information extraction
+  MFileEvents* Reader = nullptr;
+  if (m_SiReader != nullptr) {
+    Reader = dynamic_cast<MFileEvents*>(m_SiReader);
+  } else if (m_TraReader != nullptr) {
+    Reader = dynamic_cast<MFileEvents*>(m_TraReader);
+  }
+
   MResponseMatrixAxis AxisEnergyInitial("Initial energy [keV]");
   if (m_EnergyBinEdges.size() > 0) {
     AxisEnergyInitial.SetBinEdges(m_EnergyBinEdges);
@@ -389,38 +397,38 @@ bool MResponseImagingBinnedMode::Initialize()
   m_ImagingResponse.AddAxis(AxisScatteredGammaRayCoordinates);
   m_ImagingResponse.AddAxis(AxisRecoilElectronCoordinates);
   m_ImagingResponse.AddAxis(AxisDistance);
-  if (m_SiReader != nullptr) {
-    m_ImagingResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
-    m_ImagingResponse.SetSpectralType(m_SiReader->GetSpectralType());
-    m_ImagingResponse.SetBeamType(m_SiReader->GetBeamType());
+  if (Reader != nullptr) {
+    m_ImagingResponse.SetFarFieldStartArea(Reader->GetSimulationStartAreaFarField());
+    m_ImagingResponse.SetSpectralType(Reader->GetSpectralType());
+    m_ImagingResponse.SetBeamType(Reader->GetBeamType());
   }
 
   m_Exposure.SetName("Exposure");
   m_Exposure.AddAxis(AxisEnergyInitial);
   m_Exposure.AddAxis(AxisSkyCoordinates);
-  if (m_SiReader != nullptr) {
-    m_Exposure.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
-    m_Exposure.SetSpectralType(m_SiReader->GetSpectralType());
-    m_Exposure.SetBeamType(m_SiReader->GetBeamType());
+  if (Reader != nullptr) {
+    m_Exposure.SetFarFieldStartArea(Reader->GetSimulationStartAreaFarField());
+    m_Exposure.SetSpectralType(Reader->GetSpectralType());
+    m_Exposure.SetBeamType(Reader->GetBeamType());
   }
 
   m_EnergyResponse4D.SetName("Energy response 4D");
   m_EnergyResponse4D.AddAxis(AxisEnergyInitial);
   m_EnergyResponse4D.AddAxis(AxisSkyCoordinates);
   m_EnergyResponse4D.AddAxis(AxisEnergyMeasured);
-  if (m_SiReader != nullptr) {
-    m_EnergyResponse4D.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
-    m_EnergyResponse4D.SetSpectralType(m_SiReader->GetSpectralType());
-    m_EnergyResponse4D.SetBeamType(m_SiReader->GetBeamType());
+  if (Reader != nullptr) {
+    m_EnergyResponse4D.SetFarFieldStartArea(Reader->GetSimulationStartAreaFarField());
+    m_EnergyResponse4D.SetSpectralType(Reader->GetSpectralType());
+    m_EnergyResponse4D.SetBeamType(Reader->GetBeamType());
   }
 
   m_EnergyResponse2D.SetName("Energy response 2D");
   m_EnergyResponse2D.AddAxis(AxisEnergyInitial);
   m_EnergyResponse2D.AddAxis(AxisEnergyMeasured);
-  if (m_SiReader != nullptr) {
-    m_EnergyResponse2D.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
-    m_EnergyResponse2D.SetSpectralType(m_SiReader->GetSpectralType());
-    m_EnergyResponse2D.SetBeamType(m_SiReader->GetBeamType());
+  if (Reader != nullptr) {
+    m_EnergyResponse2D.SetFarFieldStartArea(Reader->GetSimulationStartAreaFarField());
+    m_EnergyResponse2D.SetSpectralType(Reader->GetSpectralType());
+    m_EnergyResponse2D.SetBeamType(Reader->GetBeamType());
   }
 
   if (m_UseAtmosphericAbsorption == true) {
