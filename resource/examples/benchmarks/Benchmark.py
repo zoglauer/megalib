@@ -241,8 +241,12 @@ for f in range(0, len(Reference)):
 FontScaler = 0.5
 
 matplotlib.rcParams.update({'font.size': FontScaler*18})
-matplotlib.rcParams.update({'axes.titlesize': FontScaler*30})
-matplotlib.rcParams.update({'axes.labelsize': FontScaler*24})
+matplotlib.rcParams.update({'axes.titlesize': FontScaler*32})
+matplotlib.rcParams.update({'axes.labelsize': FontScaler*24}) 
+if len(Reference) <= 8:
+  matplotlib.rcParams.update({'xtick.labelsize': FontScaler*18})
+else:
+  matplotlib.rcParams.update({'xtick.labelsize': FontScaler*18*8/len(Reference)})
 matplotlib.rcParams.update({'figure.figsize': [12.0, 6.0]})
 
 x = np.arange(len(Labels))  # the label locations

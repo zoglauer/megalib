@@ -25,6 +25,7 @@ confhelp() {
   echo " "
   echo "--debug=[off/no, on/yes, strong/hard]"
   echo "    Default is on."
+  echo "    Strong enables the address sanitizer on Linux with gcc to detect memory access errors."
   echo " "
   echo "--compiler=[gcc, clang, icc]"
   echo "    This currently only works on Linux. Default is gcc. On a Mac always the default compiler is used."
@@ -483,9 +484,9 @@ if [[ ${DEBUG} == normal ]] || [[ ${DEBUG} == strong ]]; then
   OPTIONS+=" -g"
   if  [[ ${DEBUG} == strong ]]; then
     OPTIONS+=" -DDEBUG1"
-  fi
-  if [[ ${COMP} == gcc ]] && [[ ${OS} == linux ]]; then
-    OPTIONS+=" -fstack-protector-all"
+    if [[ ${COMP} == gcc ]] && [[ ${OS} == linux ]]; then
+      OPTIONS+=" -fsanitize=address"
+    fi
   fi
 fi
                 
@@ -622,6 +623,16 @@ fi
 echo ""
 echo "Removing old build..."
 make clean
+
+# Store configuration
+echo ""
+echo "Storing configuration..."
+rm -f config/Configuration.txt
+echo "COMPILER=$(gcc --version | head -n 1)" >> config/Configuration.txt
+echo "PYTHON3=$(python3 --version)" >> config/Configuration.txt
+echo "ROOT=$(root-config --version)" >> config/Configuration.txt
+echo "GEANT4=$(geant4-config --version)" >> config/Configuration.txt
+
 
 echo ""
 echo ""

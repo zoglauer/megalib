@@ -53,9 +53,9 @@ class MComptonEvent : public MPhysicalEvent
   //! Initialize from a text line
   bool Assimilate(char* LineBuffer);
   
-  //! Steam the content of this class into a file
-  virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
-  //! Parse a line 
+  //! Stream the content into a tra-file compatible string
+  virtual MString ToTraString() const;
+  //! Parse a single line which is tra-file compatible
   virtual int ParseLine(const char* Line, bool Fast = false);
   //! Create a copy of this event
   virtual MPhysicalEvent* Duplicate();
@@ -241,7 +241,6 @@ class MComptonEvent : public MPhysicalEvent
   // Miscellaneous:
   virtual void Reset();
   virtual MString ToString() const;
-  MString ToBasicString() const;
 
   // To do: Implement all different possibilities...
   

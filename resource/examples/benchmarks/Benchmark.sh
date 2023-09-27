@@ -20,7 +20,7 @@ checkload() {
 }
 
 
-# For compatibility with macOS Catalina, compile a little C++ program to get the time in milliseconds
+# For compatibility with macOS, compile a little C++ program to get the time in milliseconds
 
 TempEXE=$(mktemp)
 TimerC="${TempEXE}.cpp"
@@ -49,9 +49,12 @@ if [[ $(uname -s) == Linux ]]; then
 
   CPUModel=$( lscpu | grep "Model name" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
   CPUSockets=$( lscpu | grep "Socket" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
-  if ! [[ ${CPUSockets} =~ ^?[0-9]+$ ]]; then
+  if ! [[ ${CPUSockets} =~ ^[0-9]+$ ]]; then
     CPUSockets=1
   fi 
+  if [[ ${CPUSockets} == "0" ]]; then
+    CPUSockets=1
+  fi
   CPUCoresPerSocket=$( lscpu | grep "per socket" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
   if [[ ${CPUCoresPerSocket} == "" ]]; then
     CPUCoresPerSocket=$( lscpu | grep "per cluster" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )

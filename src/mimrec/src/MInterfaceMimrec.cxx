@@ -5589,6 +5589,8 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
   
   // Initalize the image size (x-axis)
   int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
+  MVector TestPosition = GetTestPosition();
 
   TH1D* Hist = new TH1D("AzimuthalComptonScatterAngle", "Azimuthal Compton Scatter Angle", NBins, -180, 180);
   Hist->SetBit(kCanDelete);
@@ -5599,19 +5601,8 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
   Hist->SetMinimum(0.0);
   Hist->SetNdivisions(-508, "X");
 
-
   MPhysicalEvent* Event = nullptr;
   MComptonEvent* ComptonEvent = nullptr; 
-
-  // Origin in spherical coordinates:
-  double Theta = m_Settings->GetTPTheta()*c_Rad;
-  double Phi = m_Settings->GetTPPhi()*c_Rad;
-
-  // Origin in Cartesian Corrdinates:
-  MVector Origin;
-  Origin.SetMagThetaPhi(c_FarAway, Theta, Phi);
-
-  double ArmCut = 180;
 
   // Some statistics:
   int InsideArmCutSource = 0;
@@ -5624,16 +5615,14 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
-          MVector Plain = ComptonEvent->Dg();
-          Plain.RotateZ(-Phi);
-          Plain.RotateY(-Theta);
-          
-          double Angle = Plain.Phi();
-          Hist->Fill(Angle*c_Deg);
+        if (fabs(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < Disk) {
+
+          double Angle = ComptonEvent->GetAzimuthalScatterAngle(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg;
+
+          Hist->Fill(Angle);
           
           InsideArmCutSource++;
-          } else {
+        } else {
           OutsideArmCutSource++;
         }
       }
@@ -5641,7 +5630,7 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
 
     delete Event;
   }   
-  
+
   // Close the event loader
   FinalizeEventLoader();
 

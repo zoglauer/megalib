@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  callisto
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 22.04
+Kernel:                                    5.19.0-46-generic
+ 
+CPUModel:                                  Intel(R) Core(TM) i7-4558U CPU @ 2.80GHz
+CPUName:                                   i7-4558U
+CPUSockets:                                1
+CPUCoresPerSocket:                         2
+CPUThreadsPerCore:                         2
+Cores:                                     2
+Threads:                                   4
+ 
+ROOTVersion:                               6.28/04
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            3.99.02
+MEGAlibGitHash:                            08b49f84e201ebaf3691011a9fceaec3c65daaa5 2023-07-10
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      36.294
+EventsPerSecondCosimaSingle:               2755.276
+DurationCosimaMultiple:                    63.256
+EventsPerSecondCosimaMultiple:             6323.510
+ 
+# Revan
+DurationRevanSingle:                       8.409
+EventsPerSecondRevanSingle:                11892.020
+DurationRevanMultiple:                     12.547
+EventsPerSecondRevanMultiple:              31880.130
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             18.994
+EventsPerSecondResponseCreatorSingle:      5264.820
+DurationResponseCreatorMultiple:           42.131
+EventsPerSecondResponseCreatorMultiple:    9494.196
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               70.112
+EventsPerSecondMimrecImagingSingle:        1426.289
+DurationMimrecImagingMultiple:             33.153
+EventsPerSecondMimrecImagingMultiple:      3016.318
+ 

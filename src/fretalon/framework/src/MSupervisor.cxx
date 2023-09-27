@@ -412,7 +412,7 @@ bool MSupervisor::Validate()
       if (Found == false) {
         // if it is a hard requirement than we have to quit
         if (m_Modules[m]->GetPreceedingModuleHardRequirement(t) == true) {
-          mout<<"Hard predecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
+          mout<<"Hard predecessor requirements for module \""<<m_Modules[m]->GetName()<<"\" are not fullfilled (type: "<<m_Modules[m]->GetPreceedingModuleType(t)<<")"<<endl;
           if (m < ValidUntil) {
             ValidUntil = m;
           }
