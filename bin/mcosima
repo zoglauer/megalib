@@ -41,7 +41,8 @@ help() {
   #echo "    -p:            use this parallel ID without checking for the cosima output files"
   #echo "    -i:            use this incarnation ID without checking for the cosima output files"
   #echo "    -r:            use random IDs"
-  echo "    -z:            zip the simulations files"
+  echo "    -z:            Not used: zgip the simulations files (already default)"
+  echo "    -u:            Do not gzip the simulations files (default is gzip them)"
   echo "    -e:            Use the given special cosima executable instead"
   echo "    -a:            Abstain from creating a concatenation sim file"
   echo "    -w:            If set, wait until all jobs have finished."
@@ -71,7 +72,7 @@ RandomIDs="no"
 Nice=0;
 Wait="no"
 Concatenate="yes"
-Zip="no"
+Zip="yes"
 Delay=0.5
 ExecuteString="cosima"
 Executable="cosima"
@@ -123,6 +124,10 @@ while [ $# -gt 0 ] ; do
   -z|--zip)
     Found=1;
     Zip="yes"
+    ;;
+  -u|--unzip)
+    Found=1;
+    Zip="no"
     ;;
   -r|--random)
     Found=1;
@@ -405,8 +410,8 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   for N in `seq 1 16`; do Tag="${Tag}$(( 1 + RANDOM%9 ))"; done
   
   Cmd="${ExecuteString} -v 0 -s ${Seed} -p ${ThreadsID} -f ${i} -t ${Tag}"
-  if [[ "${Zip}" == "yes" ]]; then
-    Cmd="${Cmd} -z"
+  if [[ "${Zip}" == "no" ]]; then
+    Cmd="${Cmd} -u"
   fi
   if [[ ${ParallelID} -gt 0 ]]; then
     Cmd="${Cmd} -p ${ParallelID}"
