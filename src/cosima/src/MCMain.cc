@@ -62,7 +62,7 @@ MCMain::MCMain()
   m_HasMacro = false;
   m_Interactive = false;
   m_UseDebug = false;
-  m_Zip = false;
+  m_Zip = true;
 
   m_Verbosity = 1;
 
@@ -254,7 +254,8 @@ unsigned int MCMain::ParseCommandLine(int argc, char** argv)
   Usage<<"         -c:   convert to MEGAlib (file name)"<<endl;
   Usage<<"         -s:   seed (integer > 0)"<<endl;
   Usage<<"         -m:   macro file name (type: *.mac)"<<endl;
-  Usage<<"         -z:   gzip *.sim files"<<endl;
+  Usage<<"         -u:   do not gzip *.sim files (default is to gzip them)"<<endl;
+  Usage<<"         -z:   Not used: gzip *.sim files (already default, use -u to not zip them)"<<endl;
   //Usage<<"         -p:   parallel ID (used by mcosima)"<<endl;
   //Usage<<"         -f:   incarnation ID (used by mcosima)"<<endl;
   //Usage<<"         -t:   unique tag ID (used by mcosima)"<<endl;
@@ -340,7 +341,10 @@ unsigned int MCMain::ParseCommandLine(int argc, char** argv)
       m_HasMacro = true;
     } else if (Option == "-z") {
       m_Zip = true;
-      mout<<"All simulation file are going to be gzip'ed!"<<endl;
+      mout<<"All simulation files are going to be gzip'ed!"<<endl;
+    } else if (Option == "-u") {
+      m_Zip = false;
+      mout<<"Simulation files are NOT going to be gzip'ed!"<<endl;
     } else if (Option == "-s") {
       m_Seed = atol(argv[++i]);
       if (m_Seed <= 0) {
