@@ -46,7 +46,7 @@ commandhelp() {
   echo "  --source=[filename]: The source file"
   echo "  --continue=[name]: Continue a simulation run with the given name (ignores --source & --prefix)"
   echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
-  echo "  --zip: Compress the output files."
+  echo "  --unzip: Do not compress the output files (gzip'ing them is the default)."
   echo "  --log: Create a log file of what is started where"
   echo "  --help: Show this help."
   echo ""
@@ -80,7 +80,7 @@ SOURCE=""
 SOURCEFILENAME=""
 INSTANCES="1"
 PREFIX=""
-ZIP="FALSE"
+ZIP="TRUE"
 CONTINUE=""
 LOG="FALSE"
 LOGFILE=""
@@ -109,6 +109,8 @@ for C in "${CMD[@]}"; do
     CONTINUE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
+  elif [[ ${C} == *-u* ]]; then
+    ZIP="FALSE"
   elif [[ ${C} == *-d* ]]; then
     DELAY=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-l* ]]; then
@@ -236,6 +238,12 @@ if [[ ${LOG} == "TRUE" ]]; then
   LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
   LOGGING="tee -a ${LOGFILE}"
   echo " * Logging output to file: ${LOGFILE}"
+fi
+
+if [[ ${ZIP} == "TRUE" ]]; then
+  echo " * Gzip'ing output"
+else
+  echo " * Not gzip'ing output"
 fi
 
 if [[ ${INSTANCES} -gt 0 ]]; then
@@ -678,7 +686,7 @@ if [[ ${LAUNCHED} -gt 0 ]]; then
   echo " " >> ${ConcatFileName}
     
   for (( i=1; i <= ${INSTANCES}; i+=1 )); do
-    IN="IN ${Base}.p1.inc1.id1${Binary}.${SIMORTRAOUTPUT}"
+    IN="IN ${Base}.p1.inc${i}.id1${Binary}.${SIMORTRAOUTPUT}"
     if [ "${ZIP}" == "TRUE" ]; then
       IN="${IN}.gz"
     fi

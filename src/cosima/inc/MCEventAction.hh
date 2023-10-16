@@ -59,7 +59,7 @@ class MCEventAction : public G4UserEventAction
 public:
   /// Constructor taking the run parameters as argument
   MCEventAction(MCParameterFile& RunParameters, const bool Zip, 
-                const long Seed);
+                const long Seed, const bool m_NoTimeOut);
   /// Default destructor
   virtual ~MCEventAction();
 
@@ -234,6 +234,12 @@ private:
   double m_TotalTime;
   /// Flag indicating if the timer has started
   bool m_TimerStarted;
+  /// Flag indicating that we should not consider time outs
+  bool m_NoTimeOut;
+  /// A time out - if no events are stored after this time stop the simulation
+  double m_TimeOut;
+  /// Flag indicating that we can ignore the time out since events have been stored
+  bool m_IgnoreTimeOut;
 
   /// Map of passive material name and deposited energy
   map<string, double> m_PassiveMaterialMap; 

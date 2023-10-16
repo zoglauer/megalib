@@ -265,7 +265,7 @@ OUT="/dev/null"
 if [[ ${LOGFILE} != "" ]]; then
   OUT="Sim.inc${INSTANCEID}.log"
 fi
-ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.dmegalib.bashrc; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -t ${RUNDIR} -v 0 -s ${SEED} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCEFILE} > ${OUT} 2>&1 &"
+ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.dmegalib.bashrc; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -t ${RUNDIR} -v 0 -s ${SEED} `if [[ ${ZIP} == FALSE ]]; then echo "-u"; fi` ${SOURCEFILE} > ${OUT} 2>&1 &"
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to start the simulations" | ${LOGGING}
   exit 1
