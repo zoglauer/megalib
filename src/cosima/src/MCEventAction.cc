@@ -43,6 +43,7 @@
 #include "Randomize.hh"
 
 // Standard lib:
+#include <malloc/_malloc_type.h>
 #include <string>
 #include <cstdlib>
 #include <ctime>
@@ -59,8 +60,8 @@ const int MCEventAction::c_InvalidCollID = -987;
 /******************************************************************************
  * Default constructor
  */
-MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, const long Seed) : 
-  m_RunParameters(RunParameters), m_Zip(Zip)
+MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, const long Seed, const bool NoTimeOut) :
+  m_RunParameters(RunParameters), m_NoTimeOut(NoTimeOut), m_Zip(Zip)
 {
   m_OutFileName = "";
 
@@ -84,6 +85,8 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, con
 
   m_TotalTime = 0;
   m_TimerStarted = false;
+  m_TimeOut = 30*60; // seconds
+  m_IgnoreTimeOut = false;
 
   m_Interrupt = false;
 
@@ -187,6 +190,7 @@ bool MCEventAction::NextRun()
   // Some final initializations
   m_TotalTime = 0;
   m_TimerStarted = false;
+  m_IgnoreTimeOut = false;
 
   m_Interrupt = false;
 
@@ -733,6 +737,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
             if (m_RelegateEvents == true) {
               m_Relegator(E[e]); 
             }
+            m_IgnoreTimeOut = true;
           }
           
           delete E[e];
@@ -746,6 +751,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
           if (m_RelegateEvents == true) {
             m_Relegator(m_Event); 
           }
+          m_IgnoreTimeOut = true;
         }
       }
     
@@ -829,6 +835,28 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
       }
     }
     Run.Stop();
+  }
+
+  if (m_NoTimeOut == false && m_IgnoreTimeOut == false) {
+    if (m_TotalTime > m_TimeOut) {
+      mout<<endl;
+      mout<<"WARNING"<<endl;
+      mout<<endl;
+      mout<<"No events stored after "<<m_TimeOut<<" seconds"<<endl;
+      mout<<"It seems that the simulations are not working correctly. Stopping them."<<endl;
+      mout<<"If you need a longer simulation run without storing data, please use the -t command line flag (see cosima --help)."<<endl;
+      mout<<endl;
+
+      if (m_SaveEvents == true) {
+        ostringstream O;
+        O<<"CC Simulation aborted since no events were stored after "<<m_TimeOut<<" seconds"<<endl;
+        O<<"If you need a longer simulation run without storing data, please use the -t command line flag (see cosima --help)."<<endl;
+        O<<"EN"<<endl;
+        m_OutFile.Write(O);
+      }
+      m_Interrupt = true;
+      Run.Stop();
+    }
   }
 }
 
