@@ -43,7 +43,6 @@
 #include "Randomize.hh"
 
 // Standard lib:
-#include <malloc/_malloc_type.h>
 #include <string>
 #include <cstdlib>
 #include <ctime>
