@@ -143,6 +143,10 @@ class MString
   unsigned long ToUnsignedLong() const { return (unsigned int) stoul(m_String.c_str()); }
   double ToDouble() const { return atof(m_String.c_str()); }
 
+  // Trim beginning and end:
+  void TrimInPlace(MString Characters = " \t\n\r\f\v") { m_String.erase(m_String.find_last_not_of(Characters) + 1); m_String.erase(0, m_String.find_first_not_of(Characters)); }
+  MString& Trim(MString Characters = " \t\n\r\f\v") { m_String.erase(m_String.find_last_not_of(Characters) + 1); m_String.erase(0, m_String.find_first_not_of(Characters)); return *this; }
+
 
   // Comparison
 

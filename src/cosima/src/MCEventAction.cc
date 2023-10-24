@@ -276,6 +276,13 @@ bool MCEventAction::CreateSimFileHeader(double SimulationStartTime)
   m_OutFile.SetVersion(m_StoreSimulationInfoVersion);
   m_OutFile.SetGeometryFileName(m_RunParameters.GetGeometryFileName());
 
+  MString G4Version = G4RunManager::GetRunManager()->GetVersionString();
+  for (MString S: G4Version.Tokenize(" ")) {
+    if (S.BeginsWith("geant4-")) {
+      m_OutFile.SetGeant4Version(S);
+    }
+  }
+
   bool ValidStartArea = true;
   for (unsigned int so = 0; so < m_RunParameters.GetCurrentRun().GetNSources(); ++so) {
     if (m_RunParameters.GetCurrentRun().GetSource(so)->GetCoordinateSystem() != MCSource::c_FarField) {

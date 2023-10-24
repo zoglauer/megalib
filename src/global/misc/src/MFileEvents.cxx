@@ -32,11 +32,13 @@
 using namespace std;
 
 // ROOT libs:
+#include "TSystem.h"
 
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MTime.h"
+#include "MSystem.h"
 #include "MTokenizer.h"
 #include "MGUIProgressBar.h"
 
@@ -76,6 +78,9 @@ MFileEvents::MFileEvents() : MFile()
   m_NOpenedIncludeFiles = 0;
 
   m_OriginalFileName = "";
+
+  m_HasGeant4Version = false;
+  m_Geant4Version = "";
 
   m_HasStartObservationTime = false;
   m_StartObservationTime = 0.0;
@@ -133,6 +138,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     bool FoundType = false;
     bool FoundGeometry = false;
     bool FoundMEGAlibVersion = false;
+    bool FoundGeant4Version = false;
     bool FoundTB = false;
     bool FoundIN = false;
     bool FoundSimulationStartAreaFarField = false;
@@ -140,7 +146,10 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     bool FoundBeamType = false;
     bool FoundSpectralType = false;
     bool FoundBinaryStream = false;
-    
+
+    m_HasGeant4Version = false;
+    m_Geant4Version = "";
+
     m_HasStartObservationTime = false;
     m_StartObservationTime = 0.0;
 
@@ -224,6 +233,20 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
           } else {
             m_MEGAlibVersion = Tokens.GetTokenAfterAsString(1);
             FoundMEGAlibVersion = true;
+          }
+        }
+      }
+      if (FoundGeant4Version == false) {
+        if (Line.BeginsWith("Geant4") == true) {
+          MTokenizer Tokens;
+          Tokens.Analyze(Line);
+          if (Tokens.GetNTokens() < 2) {
+            mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+            mout<<"Unable to read geometry name."<<endl;
+          } else {
+            m_HasGeant4Version = true;
+            m_Geant4Version = Tokens.GetTokenAfterAsString(1);
+            FoundGeant4Version = true;
           }
         }
       }
@@ -495,6 +518,9 @@ void MFileEvents::TransferInformation(MFileEvents* File)
   m_Version = File->GetVersion();
   m_GeometryFileName = File->GetGeometryFileName();
 
+  m_HasGeant4Version = File->HasGeant4Version();
+  m_Geant4Version = File->GetGeant4Version();
+
   m_HasSimulationStartAreaFarField = File->HasSimulationStartAreaFarField();
   m_SimulationStartAreaFarField = File->GetSimulationStartAreaFarField();
 
@@ -538,7 +564,16 @@ bool MFileEvents::WriteHeader()
   Header<<"Geometry  "<<m_GeometryFileName<<endl;
   Header<<endl;
   Header<<"Date      "<<Now.GetSQLString()<<endl;
+  Header<<endl;
+  Header<<"OS        "<<MSystem::GetOS()<<endl;
+  Header<<"Host      "<<gSystem->HostName()<<endl;
+  Header<<endl;
+  Header<<"ROOT      "<<ROOT_RELEASE<<endl;
+  if (m_HasGeant4Version == true) {
+    Header<<"Geant4    "<<m_Geant4Version<<endl;
+  }
   Header<<"MEGAlib   "<<g_VersionString<<endl;
+
   if (m_HasSimulationStartAreaFarField == true || m_HasSimulationSeed == true) {
     Header<<endl;
     if (m_HasSimulationStartAreaFarField == true) {

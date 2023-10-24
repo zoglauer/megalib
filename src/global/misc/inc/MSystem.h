@@ -53,6 +53,8 @@ class MSystem
   bool GetFileSuffix(MString Filename, MString* Suffix);
   bool GetFileWithoutSuffix(MString Filename, MString* NewFilename);
   
+  //! Return the OS version and name via "uname -rs"
+  static MString GetOS();
 
   // protected methods:
  protected:
