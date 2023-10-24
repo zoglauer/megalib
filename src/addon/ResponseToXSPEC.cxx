@@ -1152,7 +1152,8 @@ bool ResponseToXSPEC::MakeARF(MResponseMatrixO2 Rsp){
 	//spectrum file case: arbitrary spectral shape
 	else {
 		//read spectral file
-		ifstream specFile(m_SpectrumFileName);
+		ifstream specFile;
+    specFile.open(m_SpectrumFileName);
 		string s;
 		double e, c;
 
@@ -1166,6 +1167,14 @@ bool ResponseToXSPEC::MakeARF(MResponseMatrixO2 Rsp){
 				energyFromFile.push_back(e);
 				countsFromFile.push_back(c);
 			}
+		} else {
+			cout<<"Unable to open file: "<<m_SpectrumFileName<<endl;
+			return false;
+		}
+
+		if (energyFromFile.size() == 0 || countsFromFile.size() == 0) {
+			cout<<"Unable to read data from file: "<<m_SpectrumFileName<<endl;
+			return false;
 		}
 
 		//interpolate: can use TGraph
@@ -2607,6 +2616,11 @@ bool ResponseToXSPEC::MakePHA(MResponseMatrixO2 Rsp){
 	if (m_CalculateErrorImgReg && isTTree){
  		src_error = MakeSrcError(Rsp, eLow, eHigh);
 		bkg_error = MakeBkgError(Rsp, eLow, eHigh);
+	}
+
+	if (bkg_energy_error.size() < 2) {
+		cout<<"Unable to determine background energy and error"<<endl;
+		return false;
 	}
 
 	//for lookup matrix method: calculate error and energy together

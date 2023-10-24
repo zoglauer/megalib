@@ -201,6 +201,7 @@ bool MLMLOSEM::DoOneIteration()
       
       // Deconvolve
       Threads.clear();
+      Threads.resize(m_NUsedThreads);
       for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
         m_ThreadRunning[t] = true;
         Threads[t] = thread(&MLMLOSEM::DeconvolveThreadEntry, this, t, m_EventApportionment[t + s*m_NUsedThreads].first, m_EventApportionment[t + s*m_NUsedThreads].second);

@@ -441,7 +441,7 @@ bool SimRandomCoincidence::ParseCommandLine(int argc, char** argv)
   m_TimeReadout *= m_TimeStretch;
   m_TimeReset *= m_TimeStretch;
   m_StopTime *= m_TimeStretch;
-  for (unsigned int i = 0; i <= m_Times.size(); ++i) {
+  for (unsigned int i = 0; i < m_Times.size(); ++i) {
     m_Times[i] *= m_TimeStretch;
   }
 

@@ -2394,8 +2394,8 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
     }
   } else if (m_IsIsotopeCount == true) {
     if (m_ParticleDefinition == 0) GenerateParticleDefinition();
-    double Random = 0.0;
-    while (Random == 0.0) Random = CLHEP::RandFlat::shoot(1);
+    double Random = 0;
+    while (Random == 0) Random = CLHEP::RandFlat::shoot(1);
   
     NextEmission = -log(Random)/log(2)*m_HalfLife/m_IsotopeCount;
     m_IsotopeCount -= 1.0;

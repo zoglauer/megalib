@@ -1285,6 +1285,7 @@ void MInterfaceSivan::ViewHits()
   double zBinWidth = (zMax-zMin)/NBins;
 
   double *Array = new double[NBins*NBins*NBins];
+  for (unsigned int i = 0; i < NBins*NBins*NBins; ++i) Array[i] = 0;
 
   while ((Event = Loader->GetNextEvent()) != 0) {
     //cout<<"Hi!"<<endl;
@@ -1802,14 +1803,12 @@ void MInterfaceSivan::TrackLengthVersusEnergy()
   int NEvents = 0; 
   int MaxLength = 30;
   int Bin;
-  double *Length = new double[MaxLength];
   double Average = 0.0;
 
   // Start the Event loader
   MSimEvent *Event;
   MSimEventLoader *Loader = new MSimEventLoader(m_Data->GetCurrentFileName());
   if (Loader->IsFileOpen() == false) {
-    delete [] Length;
     return; 
   }
 
@@ -1830,7 +1829,6 @@ void MInterfaceSivan::TrackLengthVersusEnergy()
         Event->GetEventType() == MSimEvent::Compton) {
       Bin = Event->GetLengthFirstTrack();
       if (Bin >= 0 && Bin < MaxLength) {
-        Length[Bin]++;
         Average += Bin;
         NEvents++;
         //cout<<Bin<<endl;
@@ -1838,7 +1836,6 @@ void MInterfaceSivan::TrackLengthVersusEnergy()
     }
   }
 
-  delete [] Length;
   delete Progress;
 
   if (NEvents > 1) {
@@ -4019,7 +4016,10 @@ void MInterfaceSivan::InitialInteraction()
   
   
   // Determine width of number columns
-  unsigned int Width = (unsigned int) log10((double) Total) + 1;
+  unsigned int Width = 1;
+  if (Total > 0) {
+    Width += (unsigned int) log10((double) Total);
+  }
   if (Width < 4) Width = 4;
 
   cout<<"As counts:"<<endl<<endl;

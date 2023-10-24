@@ -4171,19 +4171,18 @@ bool MDGeometry::AddFile(MString FileName, list<MDDebugInfo>& FileContent)
     return true;
   }
 
-  int LineCounter = 0;
-  int LineLength = 10000;
-  char* LineBuffer = new char[LineLength];
 
   ifstream FileStream;
   FileStream.open(FileName);
-
   if (FileStream.is_open() == 0) {
     mout<<"   ***  Error  ***  "<<endl;
     mout<<"Can't open file "<<FileName<<endl;
-    delete [] LineBuffer;
     return false;
   }
+
+  int LineCounter = 0;
+  int LineLength = 10000;
+  char* LineBuffer = new char[LineLength];
 
   int Comment = 0;
   MTokenizer Tokenizer;

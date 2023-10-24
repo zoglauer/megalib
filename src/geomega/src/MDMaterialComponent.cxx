@@ -105,7 +105,7 @@ bool MDMaterialComponent::SetElement(MString Name)
       
       
   bool Found = false;
-  for (unsigned int i = 0; i < 100; ++i) {
+  for (unsigned int i = 0; i < ElementName.size(); ++i) {
     MString Element(ElementName[i]);
     Element.ToLower();
     Name.ToLower();

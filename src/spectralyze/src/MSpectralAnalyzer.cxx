@@ -169,6 +169,7 @@ bool MSpectralAnalyzer::SetSpectrum(int NBins, double EnergyMin, double EnergyMa
   // regular histogram routine
   double Dist = 0.0;
   double* Bins = new double[NBins+1];
+  for (unsigned int i = 0; i < NBins+1; ++i) Bins = 0;
 
   vector<double> vBins;
   double E = EnergyMin;

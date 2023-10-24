@@ -1,0 +1,15 @@
+#!/bin/bash
+
+type cppcheck >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "ERROR: cppcheck must be installed"
+  exit 1
+fi
+
+cd ${MEGALIB}/src
+cppcheck --enable=warning -I ${MEGALIB}/inc --force --suppress=unknownMacro:global/misc/src/MExceptions.cxx .
+
+# style,information,warning
+
+exit 0
+

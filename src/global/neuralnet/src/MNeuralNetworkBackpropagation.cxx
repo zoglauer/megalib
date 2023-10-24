@@ -207,7 +207,7 @@ bool MNeuralNetworkBackpropagation::Stream(const bool Read)
     // Ret  2, if the line got not parsed
     // Ret -1, if the end of event has been reached
     
-    int Ret;
+    int Ret = 0;
     MString Line;
     while (IsGood() == true) {
       ReadLine(Line);
