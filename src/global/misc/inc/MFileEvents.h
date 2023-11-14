@@ -77,6 +77,13 @@ class MFileEvents : public MFile
   //! Return the number of events in this file (it counts the "SE")
   int GetNEvents(bool Count);
 
+  //! Return true if we have a valid Geant4 version
+  bool HasGeant4Version() const { return m_HasGeant4Version; }
+  //! Get the Geant4 version - check with HasGeant4Version() first
+  virtual MString GetGeant4Version() { return m_Geant4Version; }
+  //! Set the Geant4 version
+  void SetGeant4Version(MString Geant4Version) { m_Geant4Version = Geant4Version; m_HasGeant4Version = true;}
+
   //! Return true if we have a valid number of simulated events
   bool HasSimulatedEvents() const { return m_HasSimulatedEvents; }
   //! Get the number of simulated events - check with HasStartObservationTime() first
@@ -194,7 +201,12 @@ class MFileEvents : public MFile
 
   //! The original file name (different from m_FileName in case ofjumping from file to file via NF keyword)
   MString m_OriginalFileName;
- 
+
+  //! True if we have a valid Geant4 version
+  bool m_HasGeant4Version;
+  //! The Geant4 version as string
+  MString m_Geant4Version;
+
   //! True if we have a valid number of simulated events
   bool m_HasSimulatedEvents;
   //! Number of simulated events
