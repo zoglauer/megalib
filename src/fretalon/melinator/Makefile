@@ -12,18 +12,18 @@
 # Base definitions:
 #
 
-PROGRAM = melinator
+PROGRAM := melinator
 
-MAIN  = MMelinatorMain
+MAIN := MMelinatorMain
 
-LIBRARY = Melinator
+LIBRARY := Melinator
 
-FILES = MSettingsMelinator \
+FILES := MSettingsMelinator \
 	MMelinator \
 
-LIBRARY_UI = MelinatorGui
+LIBRARY_UI := MelinatorGui
 
-FILES_UI = \
+FILES_UI := \
 	MGUIMainMelinator \
 	MGUIEReadOutElement \
 	MGUIEReadOutElementView \
@@ -31,7 +31,7 @@ FILES_UI = \
 	MGUILoadCalibration \
 	MInterfaceMelinator \
 
-LIBRARIES = \
+LIBRARIES := \
 	-lFretalonBase \
 	-lSivan \
 	-lGeomega \
@@ -42,30 +42,30 @@ LIBRARIES = \
 # Derived definitions:
 #
 
-OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
-HEADERS=$(patsubst %, inc/%.h, $(FILES))
-SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+OBJECTS:=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS:=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB:=$(LB)/lib$(LIBRARY).$(DLL)
 
-DICTIONARYNAME=$(LIBRARY)_Dictionary
-DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
-DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
-LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
-ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
-ROOTPCM=lib$(LIBRARY)_rdict.pcm
+DICTIONARYNAME:=$(LIBRARY)_Dictionary
+DICTIONARY:=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT:=$(LB)/$(DICTIONARYNAME).o
+LINKDEF:=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP:=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM:=lib$(LIBRARY)_rdict.pcm
 
-OBJECTS_UI=$(patsubst %, $(LB)/%.o, $(FILES_UI))
-HEADERS_UI=$(patsubst %, inc/%.h, $(FILES_UI))
-SHAREDLIB_UI=$(LB)/lib$(LIBRARY_UI).$(DLL)
+OBJECTS_UI:=$(patsubst %, $(LB)/%.o, $(FILES_UI))
+HEADERS_UI:=$(patsubst %, inc/%.h, $(FILES_UI))
+SHAREDLIB_UI:=$(LB)/lib$(LIBRARY_UI).$(DLL)
 
-DICTIONARYNAME_UI=$(LIBRARY_UI)_Dictionary
-DICTIONARY_UI=$(LB)/$(DICTIONARYNAME_UI).cxx
-DICTIONARYOBJECT_UI=$(LB)/$(DICTIONARYNAME_UI).o
-LINKDEF_UI=$(LB)/$(DICTIONARYNAME_UI)_LinkDef.h
-ROOTMAP_UI=$(LB)/lib$(LIBRARY_UI).rootmap
-ROOTPCM_UI=lib$(LIBRARY_UI)_rdict.pcm
+DICTIONARYNAME_UI:=$(LIBRARY_UI)_Dictionary
+DICTIONARY_UI:=$(LB)/$(DICTIONARYNAME_UI).cxx
+DICTIONARYOBJECT_UI:=$(LB)/$(DICTIONARYNAME_UI).o
+LINKDEF_UI:=$(LB)/$(DICTIONARYNAME_UI)_LinkDef.h
+ROOTMAP_UI:=$(LB)/lib$(LIBRARY_UI).rootmap
+ROOTPCM_UI:=lib$(LIBRARY_UI)_rdict.pcm
 
-OBJECT_MAIN=$(patsubst %, $(LB)/%.o, $(MAIN))
-EXECUTABLE=$(BN)/$(PROGRAM)
+OBJECT_MAIN:=$(patsubst %, $(LB)/%.o, $(MAIN))
+EXECUTABLE:=$(BN)/$(PROGRAM)
 
 
 #----------------------------------------------------------------
