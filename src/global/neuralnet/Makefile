@@ -12,11 +12,11 @@
 # Definitions:
 #
 
-PRGT	= $(BN)/neuralnettester
+PRGT	:= $(BN)/neuralnettester
 
-TOBJS	= $(LB)/Main.o
+TOBJS	:= $(LB)/Main.o
 
-NOBJS 	= $(LB)/MNeuron.o \
+NOBJS 	:= $(LB)/MNeuron.o \
 	$(LB)/MAdalineNeuron.o \
 	$(LB)/MBiasNeuron.o \
 	$(LB)/MInputNeuron.o \
@@ -33,9 +33,9 @@ NOBJS 	= $(LB)/MNeuron.o \
 	$(LB)/MNeuralNetworkBackpropagation.o \
 	$(LB)/MNeuralNetworkBackpropagationAssembly.o \
 
-OBJS	= $(NOBJS) $(TOBJS)
+OBJS	:= $(NOBJS) $(TOBJS)
 
-SNOBJ	= $(LB)/libNeuralNet.$(DLL)
+SNOBJ	:= $(LB)/libNeuralNet.$(DLL)
 
 
 

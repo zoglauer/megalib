@@ -12,17 +12,17 @@
 # Base definitions:
 #
 
-PROGRAM = eview
+PROGRAM := eview
 
-MAIN  = MEviewMain
+MAIN    := MEviewMain
 
-LIBRARY = Eview
+LIBRARY := Eview
 
-FILES = MGUIEviewMain \
+FILES := MGUIEviewMain \
 	MSettingsEview \
 	MGUIEviewOptions \
 
-LIBRARIES = \
+LIBRARIES := \
 	-lRevan \
 	-lRevanGui \
 	-lSivan \
@@ -36,20 +36,20 @@ LIBRARIES = \
 # Derived definitions:
 #
 
-OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
-HEADERS=$(patsubst %, inc/%.h, $(FILES))
-SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+OBJECTS:=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS:=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB:=$(LB)/lib$(LIBRARY).$(DLL)
 
-DICTIONARYNAME=$(LIBRARY)_Dictionary
-DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
-DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
-LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
-ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
-ROOTPCM=lib$(LIBRARY)_rdict.pcm
+DICTIONARYNAME:=$(LIBRARY)_Dictionary
+DICTIONARY:=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT:=$(LB)/$(DICTIONARYNAME).o
+LINKDEF:=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP:=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM:=lib$(LIBRARY)_rdict.pcm
 
 
-OBJECT_MAIN=$(patsubst %, $(LB)/%.o, $(MAIN))
-EXECUTABLE=$(BN)/$(PROGRAM)
+OBJECT_MAIN:=$(patsubst %, $(LB)/%.o, $(MAIN))
+EXECUTABLE:=$(BN)/$(PROGRAM)
 
 
 #----------------------------------------------------------------
