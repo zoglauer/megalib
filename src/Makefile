@@ -23,6 +23,9 @@
 glo:
 	$(MAKE) -C global
 
+dict_glo:
+	$(MAKE) dict -C global
+
 clean_glomisc:
 	@$(MAKE) clean_misc -C global
 
@@ -42,21 +45,11 @@ geo:
 geolib:
 	$(MAKE) lib -C geomega
 
+dict_geo:
+	$(MAKE) dict -C geomega
+
 clean_geo:
 	@$(MAKE) clean -C geomega
-
-
-#------------------------------------------------------------------------------
-# Megalyze:
-
-meg:
-	@$(MAKE) -C megalyze
-
-meglib:
-	@$(MAKE) -r lib -C megalyze
-
-clean_meg:
-	@$(MAKE) clean -C megalyze
 
 
 #------------------------------------------------------------------------------
@@ -67,6 +60,9 @@ fre:
 
 frelib:
 	@$(MAKE) -r lib -C fretalon
+
+dict_fre:
+	@$(MAKE) dict -C fretalon
 
 clean_fre:
 	@$(MAKE) clean -C fretalon
@@ -87,6 +83,9 @@ spe:
 spelib:
 	@$(MAKE) lib -C spectralyze
 
+dict_spe:
+	@$(MAKE) dict -C spectralyze
+
 clean_spe:
 	@$(MAKE) clean -C spectralyze
 
@@ -100,6 +99,9 @@ mim:
 mimlib:
 	@$(MAKE) lib -C mimrec
 
+dict_mim:
+	@$(MAKE) dict -C mimrec
+
 clean_mim:
 	@$(MAKE) clean -C mimrec
 
@@ -109,6 +111,9 @@ clean_mim:
 
 rea:
 	@$(MAKE) -C realta
+
+dict_rea:
+	@$(MAKE) dict -C realta
 
 clean_rea:
 	@$(MAKE) clean -C realta
@@ -123,6 +128,9 @@ rev:
 revlib:
 	@$(MAKE) lib -C revan
 
+dict_rev:
+	@$(MAKE) dict -C revan
+
 clean_rev:
 	@$(MAKE) clean -C revan
 
@@ -136,21 +144,11 @@ res:
 reslib:
 	@$(MAKE) lib -C response
 
+dict_res:
+	@$(MAKE) dict -C response
+
 clean_res:
 	@$(MAKE) clean -C response
-
-
-#------------------------------------------------------------------------------
-# Herty:
-
-her:
-	@if test -d herty; then $(MAKE) -C herty; fi
-
-herlib:
-	@if test -d herty; then $(MAKE) lib -C herty; fi
-
-clean_her:
-	@if test -d herty; then $(MAKE) clean -C herty; fi
 
 
 #------------------------------------------------------------------------------
@@ -161,6 +159,9 @@ siv:
 
 sivlib:
 	@$(MAKE) lib -C sivan
+
+dict_siv:
+	@$(MAKE) dict -C sivan
 
 clean_siv:
 	@$(MAKE) clean -C sivan
@@ -186,38 +187,11 @@ endif
 evi:
 	@$(MAKE) -C eview
 
+dict_evi:
+	@$(MAKE) dict -C eview
+
 clean_evi:
 	@$(MAKE) clean -C eview
-
-
-#------------------------------------------------------------------------------
-# Miworks:
-
-miw:
-	@if test -d miworks; then $(MAKE) -C miworks; fi
-
-clean_miw:
-	@if test -d miworks; then $(MAKE) clean -C miworks; fi
-
-
-#------------------------------------------------------------------------------
-# BeamMonitor:
-
-bm:
-	@if test -d beammonitor; then $(MAKE) -C beammonitor; fi
-
-clean_bm:
-	@if test -d beammonitor; then $(MAKE) clean -C beammonitor; fi
-
-
-#------------------------------------------------------------------------------
-# Calibration:
-
-cal:
-	@if test -d calibration; then $(MAKE) -C calibration; fi
-
-clean_cal:
-	@if test -d calibration; then $(MAKE) clean -C calibration; fi
 
 
 #------------------------------------------------------------------------------
@@ -247,11 +221,8 @@ link:
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
 	@$(MAKE) link -C cosima
 endif
-	@if test -d miworks; then $(MAKE) link -C miworks; fi
-	@if test -d megalyze; then $(MAKE) link -C megalyze; fi
-	@if test -d herty; then $(MAKE) link -C herty; fi
-	@if test -d beammonitor; then $(MAKE) link -C beammonitor; fi
-	@if test -d calibration; then $(MAKE) link -C calibration; fi
+
+dict: dict_glo dict_geo dict_mim dict_rea dict_rev dict_siv dict_evi dict_spe dict_fre dict_res
 
 all:
 	@$(MAKE) -C global
@@ -268,11 +239,6 @@ all:
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
 	@$(MAKE) -C cosima
 endif
-	@if test -d miworks; then $(MAKE) -C miworks; fi
-	@if test -d megalyze; then $(MAKE) -C megalyze; fi
-	@if test -d herty; then $(MAKE) -C herty; fi
-	@if test -d beammonitor; then $(MAKE) -C beammonitor; fi
-	@if test -d calibration; then $(MAKE) -C calibration; fi
 
 clean:
 	@$(MAKE) clean -C global
@@ -289,11 +255,6 @@ clean:
 	@$(MAKE) clean -C cosima -f Makefile
 	@rm -f *~
 	@rm -f \#*
-	@if test -d miworks; then $(MAKE) clean -C miworks; fi
-	@if test -d megalyze; then $(MAKE) clean -C megalyze; fi
-	@if test -d herty; then $(MAKE) clean -C herty; fi
-	@if test -d beammonitor; then $(MAKE) clean -C beammonitor; fi
-	@if test -d calibration; then $(MAKE) clean -C calibration; fi
 
 
 

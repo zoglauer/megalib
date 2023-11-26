@@ -134,6 +134,8 @@ link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
 	@echo "$(OBJECTS) $(DICTIONARYOBJECT)" >> $(LB)/AllObjects.txt
 
+dict: $(DICTIONARYOBJECT)
+
 clean:
 	@rm -f src/*~
 	@rm -f src/\#*
@@ -148,12 +150,11 @@ clean:
 #
 
 $(DICTIONARY): $(HEADERS)
-	@echo "Generating $(DICTIONARYNAME)_LinkDef ..."
+	@echo "Generating LinkDef $(DICTIONARYNAME) ..."
 	@$(BN)/generatelinkdef -o $(LINKDEF) -i $(HEADERS)
-	@echo "Generating dictionary ..."
+	@echo "Generating dictionary $(DICTIONARYNAME) ..."
 	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
 	@mv $(ROOTPCM) $(LB)
-	@echo "Dictionary done ..."
 
 $(SHAREDLIB): $(DICTIONARYOBJECT) $(OBJECTS)
 	@echo "Linking lib$(LIBRARY) ..."
@@ -164,7 +165,7 @@ $(OBJECTS): $(LB)/%.o: src/%.cxx inc/%.h
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(DICTIONARYOBJECT): $(DICTIONARY)
-	@echo "Compiling dictionary ..."
+	@echo "Compiling dictionary $(DICTIONARYNAME) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 #

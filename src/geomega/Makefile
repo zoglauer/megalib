@@ -119,6 +119,8 @@ link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
 	@echo "$(OBJECTS) $(DICTIONARYOBJECT) $(OBJECTS_UI) $(DICTIONARYOBJECT_UI)" >> $(LB)/AllObjects.txt
 
+dict: $(DICTIONARYOBJECT) $(DICTIONARYOBJECT_UI)
+
 clean:
 	@rm -f src/*~
 	@rm -f src/\#*

@@ -22,6 +22,14 @@ link:
 	@$(MAKE) link -C melinator
 	@$(MAKE) link -C framework
 
+dict: dict_base dict_melinator
+
+dict_base:
+	@$(MAKE) dict -C base
+
+dict_melinator:
+	@$(MAKE) dict -C melinator
+
 clean:
 	@$(MAKE) clean -C base
 	@$(MAKE) clean -C melinator

@@ -13,12 +13,20 @@ all:
 	$(MAKE) -C gui
 
 link:
-	@$(MAKE) link -C gui
 	@$(MAKE) link -C misc
+	@$(MAKE) link -C gui
+
+dict: dict_misc dict_gui
+
+dict_misc:
+	@$(MAKE) dict -C misc
+
+dict_gui:
+	@$(MAKE) dict -C gui
 
 clean:
-	@$(MAKE) clean -C gui
 	@$(MAKE) clean -C misc
+	@$(MAKE) clean -C gui
 	@rm -f *~
 	@rm -f \#*
 

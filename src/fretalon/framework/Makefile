@@ -47,7 +47,9 @@ link:
 headers: link
 	@$(LINK) inc/MAssembly.headers $(IN)/MAssembly.h
 	@$(LINK) inc/MReadOutAssembly.headers $(IN)/MReadOutAssembly.h
-	
+
+dict: $(DICTIONARYOBJECT)
+
 clean:
 	@rm -f src/*~
 	@rm -f src/\#*

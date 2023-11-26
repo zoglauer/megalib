@@ -59,13 +59,13 @@ CMD=
 #.NOPARALLEL:
 .EXPORT_ALL_VARIABLES: all copy miw geo geolib
 .SILENT:
-.NOTPARALLEL: info glo geo spe miw rev siv res mim evi meg her bm cal fre add cos 
-.SUFFIXES:
+.NOTPARALLEL: info glo geo spe miw rev siv res mim evi rea fre add cos 
+#.SUFFIXES:
 .SUFFIXES: .cxx .h .o .so
 
-all: info link only combine
+all: info link dict only combine
 
-only: info glo geo spe rev siv res mim evi rea fre add cos 
+only: glo geo spe rev siv res mim evi rea fre add cos 
 
 
 #------------------------------------------------------------------------------
@@ -99,10 +99,14 @@ endif
 endif
 	echo "Starting MEGAlib compilation in mode: $(CMODE)"
 
+dict: info link
+	@echo "Starting compilation of all dictionaries first"
+	@$(MAKE) dict -C src
+
 global: info glo 
 
 glo: link
-	$(MAKE) glo -C src
+	@$(MAKE) glo -C src
 
 clean_globalmisc:
 	@$(MAKE) clean_glomisc -C src
@@ -285,22 +289,6 @@ clean_response:
 
 
 #------------------------------------------------------------------------------
-# Herty:
-
-herty: info her
-	@$(BN)/herty
-
-herlib: link glo
-	@$(MAKE) herlib -C src
-
-her: link glo geolib
-	@$(MAKE) her -C src
-
-clean_herty:
-	@$(MAKE) clean_her -C src
-
-
-#------------------------------------------------------------------------------
 # Realta:
 
 realta: info rea 
@@ -311,50 +299,6 @@ rea: link glo rev mim spe siv geolib spelib
 
 clean_realta:
 	@$(MAKE) clean_rea -C src
-
-
-
-#------------------------------------------------------------------------------
-# MIWorks:
-
-miworks: info glo miw
-	@$(BN)/miworks $(CMD)
-
-miw: link glo
-	@$(MAKE) miw -C src
-
-clean_miworks:
-	@$(MAKE) clean_miw -C src
-
-
-
-#------------------------------------------------------------------------------
-# BeamMonitor:
-
-
-beammonitor: info bm
-	@$(BN)/BeamMonitor $(CMD)
-
-bm: link glo meg
-	@$(MAKE) bm -C src
-
-clean_bm:
-	@$(MAKE) clean_bm -C src
-
-
-
-#------------------------------------------------------------------------------
-# Calibration:
-
-calibration: info cal
-	@$(BN)/CalibCsISingle $(CMD)
-
-cal: link glo meg 
-	@$(MAKE) cal -C src
-
-clean_cal:
-	@$(MAKE) clean_cal -C src
-
 
 
 #------------------------------------------------------------------------------
