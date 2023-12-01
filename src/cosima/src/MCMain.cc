@@ -63,6 +63,7 @@ MCMain::MCMain()
   m_Interactive = false;
   m_UseDebug = false;
   m_Zip = true;
+  m_NoTimeOut = false;
 
   m_Verbosity = 1;
 
@@ -110,7 +111,7 @@ bool MCMain::Initialize()
   // set mandatory initialization classes
   m_RunManager->SetUserInitialization(new MCPhysicsList(m_RunParameters));
 
-  m_RunManager->SetUserAction(new MCEventAction(m_RunParameters, m_Zip, m_Seed));
+  m_RunManager->SetUserAction(new MCEventAction(m_RunParameters, m_Zip, m_Seed, m_NoTimeOut));
 
 
   // Set geometry
@@ -256,6 +257,7 @@ unsigned int MCMain::ParseCommandLine(int argc, char** argv)
   Usage<<"         -m:   macro file name (type: *.mac)"<<endl;
   Usage<<"         -u:   do not gzip *.sim files (default is to gzip them)"<<endl;
   Usage<<"         -z:   Not used: gzip *.sim files (already default, use -u to not zip them)"<<endl;
+  Usage<<"         -n:   No time out if no events are stored after 30 minutes (default is time out)"<<endl;
   //Usage<<"         -p:   parallel ID (used by mcosima)"<<endl;
   //Usage<<"         -f:   incarnation ID (used by mcosima)"<<endl;
   //Usage<<"         -t:   unique tag ID (used by mcosima)"<<endl;
@@ -342,6 +344,9 @@ unsigned int MCMain::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-z") {
       m_Zip = true;
       mout<<"All simulation files are going to be gzip'ed!"<<endl;
+    } else if (Option == "-n") {
+      m_NoTimeOut = true;
+      mout<<"Do not timeout if no events are stored after 30 minutes"<<endl;
     } else if (Option == "-u") {
       m_Zip = false;
       mout<<"Simulation files are NOT going to be gzip'ed!"<<endl;
