@@ -74,18 +74,19 @@ MString MMuonEvent::ToString() const
 {
   // Display the compton-data of this event
 
-  char Text[1000];
+  const int Length = 1000;
+  char Text[Length];
   MString String("The data of the Muon-event:\n"); 
 
-  sprintf(Text, "Energy: %.3f\n", m_Energy);
+  snprintf(Text, Length, "Energy: %.3f\n", m_Energy);
   String += MString(Text);
 
-  sprintf(Text, "Direction: %.3f, %.3f, %.3f\n", 
+  snprintf(Text, Length, "Direction: %.3f, %.3f, %.3f\n",
           m_Direction.X(), m_Direction.Y(), 
           m_Direction.Z());
   String += MString(Text);
 
-  sprintf(Text, "CenterOfGravity: %.3f, %.3f, %.3f\n", 
+  snprintf(Text, Length, "CenterOfGravity: %.3f, %.3f, %.3f\n",
           m_CenterOfGravity.X(), m_CenterOfGravity.Y(), 
           m_CenterOfGravity.Z());
   String += MString(Text);
@@ -226,23 +227,21 @@ MPhysicalEvent* MMuonEvent::Data()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MMuonEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
+MString MMuonEvent::ToTraString() const
 {
-  // Hopefully a faster way to stream data from and to a file than ROOT...
+  //! Stream the content into a tra-file compatible string
 
-  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
+  MString T;
+  T += MPhysicalEvent::ToTraString();
 
-  if (Read == false) {
-    // Write Muon specific infos:
-    ostringstream S;
-    S<<"ME "<<m_Energy<<endl;
-    S<<"MD "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
-    S<<"MG "<<m_CenterOfGravity[0]<<" "<<m_CenterOfGravity[1]<<" "<<m_CenterOfGravity[2]<<endl;
-    File.Write(S);
-    File.Flush();
-  }
+  ostringstream S;
+  S<<"ME "<<m_Energy<<endl;
+  S<<"MD "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
+  S<<"MG "<<m_CenterOfGravity[0]<<" "<<m_CenterOfGravity[1]<<" "<<m_CenterOfGravity[2]<<endl;
 
-  return Return;
+  T += S.str();
+
+  return T;
 }
 
 

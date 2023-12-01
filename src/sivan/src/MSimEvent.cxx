@@ -1517,7 +1517,8 @@ double MSimEvent::GetRCEnergyGamma()
   // b. sum up the energy of all hits in this list 
 
   bool FoundIt;
-  double EnergyElectron = 0, EnergyGamma = 0;
+  double EnergyElectron = 0;
+  double EnergyGamma = 0;
 
   // a. 
   int* IAList = new int[m_IAs.size()];
@@ -1572,7 +1573,8 @@ double MSimEvent::GetRCEnergyElectron()
   // b. sum up the energy of all hits in this list 
 
   bool FoundIt;
-  double EnergyElectron = 0, EnergyGamma = 0;
+  double EnergyElectron = 0;
+  double EnergyGamma = 0;
 
   // a. 
   int* IAList = new int[m_IAs.size()];

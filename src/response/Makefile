@@ -13,15 +13,15 @@
 #
 
 
-PROGRAM1 = responsemanipulator
-MAIN1    = MResponseManipulatorMain
+PROGRAM1 := responsemanipulator
+MAIN1    := MResponseManipulatorMain
 
-PROGRAM2 = responsecreator
-MAIN2    = MResponseCreatorMain
+PROGRAM2 := responsecreator
+MAIN2    := MResponseCreatorMain
 
-LIBRARY = ResponseCreator
+LIBRARY := ResponseCreator
 
-FILES = MResponseCreator \
+FILES := MResponseCreator \
 	MResponseManipulator \
 	MResponseBuilder \
 	MResponseBase \
@@ -48,7 +48,7 @@ FILES = MResponseCreator \
 	MResponseStripPairingTMVAEventFile \
 	MResponseComptelDataSpace \
 	
-LIBRARIES = \
+LIBRARIES := \
 	-lRevan \
 	-lSivan \
 	-lMimrec \
@@ -62,22 +62,22 @@ LIBRARIES = \
 # Derived definitions:
 #
 
-OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
-HEADERS=$(patsubst %, inc/%.h, $(FILES))
-SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+OBJECTS:=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS:=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB:=$(LB)/lib$(LIBRARY).$(DLL)
 
-DICTIONARYNAME=$(LIBRARY)_Dictionary
-DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
-DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
-LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
-ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
-ROOTPCM=lib$(LIBRARY)_rdict.pcm
+DICTIONARYNAME:=$(LIBRARY)_Dictionary
+DICTIONARY:=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT:=$(LB)/$(DICTIONARYNAME).o
+LINKDEF:=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP:=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM:=lib$(LIBRARY)_rdict.pcm
 
-OBJECT_MAIN1=$(patsubst %, $(LB)/%.o, $(MAIN1))
-EXECUTABLE1=$(BN)/$(PROGRAM1)
+OBJECT_MAIN1:=$(patsubst %, $(LB)/%.o, $(MAIN1))
+EXECUTABLE1:=$(BN)/$(PROGRAM1)
 
-OBJECT_MAIN2=$(patsubst %, $(LB)/%.o, $(MAIN2))
-EXECUTABLE2=$(BN)/$(PROGRAM2)
+OBJECT_MAIN2:=$(patsubst %, $(LB)/%.o, $(MAIN2))
+EXECUTABLE2:=$(BN)/$(PROGRAM2)
 
 
 #----------------------------------------------------------------

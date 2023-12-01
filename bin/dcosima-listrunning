@@ -36,7 +36,7 @@ for C in "${CMD[@]}"; do
   fi
 done
 
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 
 # Read configuration file and extract machines
 MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )

@@ -41,8 +41,10 @@ help() {
   #echo "    -p:            use this parallel ID without checking for the cosima output files"
   #echo "    -i:            use this incarnation ID without checking for the cosima output files"
   #echo "    -r:            use random IDs"
-  echo "    -z:            zip the simulations files"
+  echo "    -z:            Not used: zgip the simulations files (already default)"
+  echo "    -u:            Do not gzip the simulations files (default is gzip them)"
   echo "    -e:            Use the given special cosima executable instead"
+  echo "    -a:            Abstain from creating a concatenation sim file"
   echo "    -w:            If set, wait until all jobs have finished."
   echo "";
   echo "Example:";
@@ -69,7 +71,8 @@ FirstIncarnationID=1
 RandomIDs="no"
 Nice=0;
 Wait="no"
-Zip="no"
+Concatenate="yes"
+Zip="yes"
 Delay=0.5
 ExecuteString="cosima"
 Executable="cosima"
@@ -114,9 +117,17 @@ while [ $# -gt 0 ] ; do
     Found=1;
     Wait="yes"
     ;;
+  -a|--abstain)
+    Found=1;
+    Concatenate="no"
+    ;;
   -z|--zip)
     Found=1;
     Zip="yes"
+    ;;
+  -u|--unzip)
+    Found=1;
+    Zip="no"
     ;;
   -r|--random)
     Found=1;
@@ -323,7 +334,8 @@ if [[ ${RandomIDs} == "yes" ]]; then
 elif [[ ${IncarnationID} -gt 0 ]]; then
   echo "Incarnation ID: ${IncarnationID}"
 fi
-echo "gzip'ing the output file: ${Zip}"
+echo "Gzip'ing the output file: ${Zip}"
+echo "Creating concatenation file ${Concatenate}"
 echo "Waiting until all threads have finished: ${Wait}"
 
 
@@ -385,6 +397,7 @@ echo "TAGS=( )" >> ${KillFileName}
 
 
 # Start the sims
+FirstTag=""
 for (( i=1; i <= ${Threads}; i+=1 )); do
   # First check if we are ready to launch a new thread
   mwait -i=${Max} -p=cosima
@@ -397,8 +410,8 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   for N in `seq 1 16`; do Tag="${Tag}$(( 1 + RANDOM%9 ))"; done
   
   Cmd="${ExecuteString} -v 0 -s ${Seed} -p ${ThreadsID} -f ${i} -t ${Tag}"
-  if [[ "${Zip}" == "yes" ]]; then
-    Cmd="${Cmd} -z"
+  if [[ "${Zip}" == "no" ]]; then
+    Cmd="${Cmd} -u"
   fi
   if [[ ${ParallelID} -gt 0 ]]; then
     Cmd="${Cmd} -p ${ParallelID}"
@@ -422,6 +435,10 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   sleep ${Delay}
   
   echo "TAGS+=( ${Tag} )"  >> ${KillFileName}
+
+  if [[ ${FirstTag} == "" ]]; then
+    FirstTag=${Tag}
+  fi
 done
 
 cat  >> ${KillFileName} <<EOF
@@ -448,86 +465,110 @@ EOF
 
 
 # Create a concatenation file
-ConcatFileName="Bla.sim"
+if [[ ${Concatenate} == yes ]]; then
+  ConcatFileName="Bla.sim"
 
-# Extract the base file names from the source file
-grep -i ".FileName" ${Source} | while read line; do
-  Base=`echo $line | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`;
+  # Extract the base file names from the source file
+  grep -i ".FileName" ${Source} | while read line; do
+    Base=`echo $line | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`;
   
-  # Ignore comments
-  Start=`echo $line | sed 's/^ *//g'`; 
-  if [[ ${Start} == \#* ]] || [[ ${Start} == \/\/* ]]; then
-    continue
-  fi
+    # Ignore comments
+    Start=`echo $line | sed 's/^ *//g'`; 
+    if [[ ${Start} == \#* ]] || [[ ${Start} == \/\/* ]]; then
+      continue
+    fi
   
-  echo "Creating concatenation file for simulation \"${Base}\""
-  ConcatFileName="${Base}.p${ThreadsID}.sim"
+    echo "Creating concatenation file for simulation \"${Base}\""
+    ConcatFileName="${Base}.p${ThreadsID}.sim"
 
-  FirstFileName="${Base}.p${ThreadsID}.inc${FirstIncarnationID}.id1.sim"
-  if [[ "${Zip}" == "yes" ]]; then
-    FirstFileName="${FirstFileName}.gz"
-  fi
+    FirstFileName="${Base}.p${ThreadsID}.inc${FirstIncarnationID}.id1.sim"
+    if [[ "${Zip}" == "yes" ]]; then
+      FirstFileName="${FirstFileName}.gz"
+    fi
 
-  # Wait until the first such file is created
-  while ( test ! -f ${FirstFileName} ); do
-    sleep 1
-    echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..."
-  done
+    # Wait until the first such file is created
+    FirstPID=$(ps -Af | grep "[ ]${FirstTag}" | grep -v "bash -c " | awk '{ print $2 }')
+    if [[ ${FirstPID} == "" ]] && [ ! -f ${FirstFileName} ]; then
+      echo ""
+      echo "Error:"
+      echo "Cosima is not running, and no sim file has been created."
+      echo "Most likely cosima has crashed during startup."
+      echo "Please do a test run with just cosima before running mcosima."
+      echo ""
+      echo "Exiting"
+      exit 1
+    else
+      while [[ ${FirstPID} == "" ]] && [ ! -f ${FirstFileName} ]; do
+        sleep 1
+        echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..."
+        FirstPID=$(ps -Af | grep "[ ]${FirstTag}" | grep -v "bash -c " | awk '{ print $2 }')
+      done
+    fi
 
-  # Wait until the header is written
-  if [[ "${Zip}" == "yes" ]]; then
-    while [ `gunzip -c ${FirstFileName} 2> /dev/null | wc -l | awk -F" " '{ print $1 }'` -le 100 ]; do
+    if [ ! -f ${FirstFileName} ]; then
+      echo ""
+      echo "Error:"
+      echo "No sim file has been created."
+      echo "Please do a test run with just cosima before running mcosima,"
+      echo ""
+      echo "Exiting"
+      exit 1
+    fi
+
+    # Wait until the header is written
+    if [[ "${Zip}" == "yes" ]]; then
+      while [ `gunzip -c ${FirstFileName} 2> /dev/null | wc -l | awk -F" " '{ print $1 }'` -le 100 ]; do
+        # Remark: 2> /dev/null suppresses a "unexpected end of file" error message since the file is obviously not yet closed
+        sleep 1;
+        echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
+      done
+    else
+      while [ `wc -l ${FirstFileName} | awk -F" " '{ print $1 }'` -le 100 ]; do
+        sleep 1;
+        echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
+      done
+    fi
+
+    # Create a concatenation file
+    rm -f ${ConcatFileName}
+    echo "# Concatenation file generated by mcosima" >> ${ConcatFileName}
+
+    if [[ "${Zip}" == "yes" ]]; then
+      gunzip -c ${FirstFileName} 2> /dev/null | head -n 100 > /tmp/mcosima.head
       # Remark: 2> /dev/null suppresses a "unexpected end of file" error message since the file is obviously not yet closed
-      sleep 1;
-      echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
-    done
-  else
-    while [ `wc -l ${FirstFileName} | awk -F" " '{ print $1 }'` -le 100 ]; do
-      sleep 1;
-      echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
-    done
-  fi
-
-  # Create a concatenation file
-  rm -f ${ConcatFileName}
-  echo "# Concatenation file generated by mcosima" >> ${ConcatFileName}
-
-  if [[ "${Zip}" == "yes" ]]; then
-    gunzip -c ${FirstFileName} 2> /dev/null | head -n 100 > /tmp/mcosima.head
-    # Remark: 2> /dev/null suppresses a "unexpected end of file" error message since the file is obviously not yet closed
-  else
-    head -n 100 ${FirstFileName} > /tmp/mcosima.head
-  fi
-  while read LINE
-  do
-    # Keep all information but: #, Seed, TB
-    FIRST=${LINE%% *}
-    if [ "${FIRST}" == "SE" ]; then
-      break
+    else
+      head -n 100 ${FirstFileName} > /tmp/mcosima.head
     fi
-    if ( [ "${FIRST}" != "#" ] && [ "${FIRST}" != "Seed" ] && [ "${FIRST}" != "TB" ] ); then
-      echo "${LINE}" >> ${ConcatFileName}
+    while read LINE
+    do
+      # Keep all information but: #, Seed, TB
+      FIRST=${LINE%% *}
+      if [ "${FIRST}" == "SE" ]; then
+        break
+      fi
+      if ( [ "${FIRST}" != "#" ] && [ "${FIRST}" != "Seed" ] && [ "${FIRST}" != "TB" ] ); then
+        echo "${LINE}" >> ${ConcatFileName}
+      fi
+    done < /tmp/mcosima.head
+    rm /tmp/mcosima.head
+
+    echo " " >> ${ConcatFileName}
+
+    for (( i=1; i <= ${Threads}; i+=1 )); do
+      echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
+    done
+
+    echo "EN" >> ${ConcatFileName}
+    echo " " >> ${ConcatFileName}
+
+    # Zip the concatenation file if desired
+    if [[ "${Zip}" == "yes" ]]; then
+      gzip ${ConcatFileName}
     fi
-  done < /tmp/mcosima.head
-  rm /tmp/mcosima.head
 
-  echo " " >> ${ConcatFileName}
-
-  for (( i=1; i <= ${Threads}; i+=1 )); do
-    echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
+    echo "Created concatenation file \"${ConcatFileName}\""
   done
-
-  echo "EN" >> ${ConcatFileName}
-  echo " " >> ${ConcatFileName}
-
-  # Zip the concatenation file if desired
-  if [[ "${Zip}" == "yes" ]]; then
-    gzip ${ConcatFileName}
-  fi
-
-  echo "Created concatenation file \"${ConcatFileName}\""
-done
-
+fi
 
 # Check if we wait until all threads have finished
 if [ "${Wait}" = "yes" ]; then

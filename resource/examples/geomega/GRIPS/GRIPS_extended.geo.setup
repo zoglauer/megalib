@@ -8,6 +8,8 @@ Version 1.2
 Echo The surrounding sphere is NOT automatically updated!
 SurroundingSphere 155.0  0.0  0.0  -65.0  155.0
 
+ShowOnlySensitiveVolumes True
+
 // Use this volume, to test the surrounding sphere:
 #Volume Sphere
 #Sphere.Material Vacuum

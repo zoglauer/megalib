@@ -57,13 +57,15 @@ const int MCSource::c_Monoenergetic                                = 1;
 const int MCSource::c_Linear                                       = 2; 
 const int MCSource::c_PowerLaw                                     = 3; 
 const int MCSource::c_BrokenPowerLaw                               = 4; 
-const int MCSource::c_Gaussian                                     = 5; 
-const int MCSource::c_ThermalBremsstrahlung                        = 6; 
-const int MCSource::c_BlackBody                                    = 7; 
-const int MCSource::c_BandFunction                                 = 8; 
-const int MCSource::c_FileDifferentialFlux                         = 9;
-const int MCSource::c_Activation                                   = 10; 
-const int MCSource::c_NormalizedEnergyBeamFluxFunction             = 11;
+const int MCSource::c_CutOffPowerLaw                               = 5;
+const int MCSource::c_Comptonized                                  = 6;
+const int MCSource::c_Gaussian                                     = 7;
+const int MCSource::c_ThermalBremsstrahlung                        = 8;
+const int MCSource::c_BlackBody                                    = 9;
+const int MCSource::c_BandFunction                                 = 10;
+const int MCSource::c_FileDifferentialFlux                         = 11;
+const int MCSource::c_Activation                                   = 12;
+const int MCSource::c_NormalizedEnergyBeamFluxFunction             = 13;
 
 const int MCSource::c_StartAreaUnknown                             = 0;
 const int MCSource::c_StartAreaSphere                              = 1;
@@ -672,6 +674,8 @@ bool MCSource::SetSpectralType(const int& SpectralType)
   case c_Linear:
   case c_PowerLaw:
   case c_BrokenPowerLaw:
+  case c_CutOffPowerLaw:
+  case c_Comptonized:
   case c_Gaussian:
   case c_ThermalBremsstrahlung:
   case c_BlackBody:
@@ -711,6 +715,12 @@ string MCSource::GetSpectralTypeAsString() const
     break;
   case c_BrokenPowerLaw:
     Name = "BrokenPowerLaw";
+    break;
+  case c_CutOffPowerLaw:
+    Name = "CutOffPowerLaw";
+    break;
+  case c_Comptonized:
+    Name = "Comptonized";
     break;
   case c_Gaussian:
     Name = "Gaussian";
@@ -763,6 +773,12 @@ string MCSource::GetSpectralAsString() const
     break;
   case c_BrokenPowerLaw:
     Name<<"BrokenPowerLaw "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3/keV<<" "<<m_EnergyParam4<<" "<<m_EnergyParam5;
+    break;
+  case c_CutOffPowerLaw:
+    Name<<"CutOffPowerLaw "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3<<" "<<m_EnergyParam4/keV;
+    break;
+  case c_Comptonized:
+    Name<<"Comptonized "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3<<" "<<m_EnergyParam4/keV;
     break;
   case c_Gaussian:
     Name<<"Gaussian "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3;
@@ -1699,6 +1715,32 @@ bool MCSource::SetEnergy(double EnergyParam1,
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The second index (alpha) must be positive!"<<endl;
       return false;      
     }
+  } else if (m_SpectralType == c_CutOffPowerLaw) {
+    if (m_EnergyParam1 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam2 <= m_EnergyParam1) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam4 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The cutoff energy must be larger than 0!"<<endl;
+      return false;
+    }
+  } else if (m_SpectralType == c_Comptonized) {
+    if (m_EnergyParam1 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam2 <= m_EnergyParam1) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam4 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The peak energy must be larger than 0!"<<endl;
+      return false;
+    }
   } else if (m_SpectralType == c_Gaussian) {
     if (m_EnergyParam1 <= 0) {
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The energy must be larger than 0!"<<endl;
@@ -1779,8 +1821,67 @@ bool MCSource::SetEnergy(double EnergyParam1,
  */
 bool MCSource::UpgradeEnergy() 
 {
+  // For distributions which use the maximum method,
+  //  cut off the min and max energy if the value falls below UpgradeCutOff of the maximum
+  double UpgradeCutOff = 1E-15;
+
   if (m_SpectralType == c_BrokenPowerLaw) {
     m_EnergyParam6 = pow(m_EnergyParam3, -m_EnergyParam4+m_EnergyParam5);
+  } else if (m_SpectralType == c_CutOffPowerLaw) {
+    m_EnergyParam5 = pow(m_EnergyParam1, -m_EnergyParam3+1);
+    m_EnergyParam6 = pow(m_EnergyParam2, -m_EnergyParam3+1);
+    m_EnergyParam7 = exp(-m_EnergyParam1/m_EnergyParam4);
+  } else if (m_SpectralType == c_Comptonized) {
+    // Calculate the maximum of the distribution
+    // Reminder:
+    // m_EnergyParam1 = Emin
+    // m_EnergyParam2 = Emax
+    // m_EnergyParam3 = Alpha
+    // m_EnergyParam3 = Epeak
+    // m_EnergyParam5 = Maximum with Emin & Emax
+    // m_EnergyParam6 = New Emin
+    // m_EnergyParam7 = New Emax
+
+
+    m_EnergyParam5 = 0;
+    double EMaxPos = -1.0;
+    if (m_EnergyParam3 != -2) {
+      EMaxPos = m_EnergyParam4*m_EnergyParam3/(m_EnergyParam3 + 2);
+    }
+    if (EMaxPos >= m_EnergyParam1 && EMaxPos <= m_EnergyParam2) {
+      m_EnergyParam5 = Comptonized(EMaxPos, m_EnergyParam3, m_EnergyParam4);
+    } else {
+      m_EnergyParam5 = Comptonized(m_EnergyParam1, m_EnergyParam3, m_EnergyParam4);
+      if (Comptonized(m_EnergyParam2, m_EnergyParam3, m_EnergyParam4) > m_EnergyParam5) {
+        m_EnergyParam5 = Comptonized(m_EnergyParam2, m_EnergyParam3, m_EnergyParam4);
+      }
+    }
+
+    m_EnergyParam7 = m_EnergyParam2;
+    while (true) {
+      if (Comptonized(m_EnergyParam7, m_EnergyParam3, m_EnergyParam4) / m_EnergyParam5 < UpgradeCutOff) {
+        m_EnergyParam7 -= 1.0*keV;
+      } else {
+        break;
+      }
+    }
+
+    m_EnergyParam6 = m_EnergyParam1;
+    while (true) {
+      if (Comptonized(m_EnergyParam6, m_EnergyParam3, m_EnergyParam4) / m_EnergyParam5 < UpgradeCutOff) {
+        m_EnergyParam6 += 1.0*keV;
+      } else {
+        break;
+      }
+    }
+
+    if (m_EnergyParam6 != m_EnergyParam1) {
+      mout<<m_Name<<": Optimized minimum energy: "<<m_EnergyParam6/keV<<" (orig: "<<m_EnergyParam1/keV<<")"<<endl;
+    }
+    if (m_EnergyParam7 != m_EnergyParam2) {
+      mout<<m_Name<<": Optimized maximum energy: "<<m_EnergyParam7/keV<<" (orig: "<<m_EnergyParam2/keV<<")"<<endl;
+    }
+
   } else if (m_SpectralType == c_BlackBody) {
     massert(m_EnergyParam1 > 0);
     massert(m_EnergyParam2 > m_EnergyParam1);
@@ -2486,6 +2587,12 @@ double MCSource::GetMeanEnergy() const
     Energy = (p1+m_EnergyParam6*p2)/(p3+m_EnergyParam6*p4);
     
     break;
+  case c_CutOffPowerLaw:
+    mimp<<"GetMeanNotYetImplemented!"<<show;
+    break;
+  case c_Comptonized:
+    mimp<<"GetMeanNotYetImplemented!"<<show;
+    break;
   case c_Gaussian:
     Energy = m_EnergyParam1;
     break;
@@ -2563,6 +2670,37 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
       }
       if (CLHEP::RandFlat::shoot(1) < Probability) break;
     }
+  } else if (m_SpectralType == c_CutOffPowerLaw) {
+    
+    int MaxLoop = 10000;
+    m_Energy = 0;
+    while (MaxLoop-- > 0) {
+      if (m_EnergyParam3 != 1.0) {
+        m_Energy = pow(m_EnergyParam5 + CLHEP::RandFlat::shoot(1) * (m_EnergyParam6-m_EnergyParam5), 1.0/(-m_EnergyParam3 + 1));
+      } else {
+        m_Energy = exp(log(m_EnergyParam1) + CLHEP::RandFlat::shoot(1) * (log(m_EnergyParam2) - log(m_EnergyParam1)));
+      }
+      
+      if (CLHEP::RandFlat::shoot(1) < exp(-m_Energy/m_EnergyParam4)/m_EnergyParam7) break;
+    }
+    if (MaxLoop == 0) {
+      merr<<m_Name<<": Error: CutOffPowerlaw energy calculation: No result after 10000 loops"<<endl;
+      return false;
+    }
+
+  } else if (m_SpectralType == c_Comptonized) {
+
+    int MaxLoop = 10000;
+    m_Energy = 0;
+    while (MaxLoop-- > 0) {
+      m_Energy = CLHEP::RandFlat::shoot(1) * (m_EnergyParam7 - m_EnergyParam6) + m_EnergyParam6;
+      if (CLHEP::RandFlat::shoot(1) < Comptonized(m_Energy, m_EnergyParam3, m_EnergyParam4)/m_EnergyParam5) break;
+    }
+    if (MaxLoop == 0) {
+      merr<<m_Name<<": Error: Comptonized energy calculation: No result after 10000 loops"<<endl;
+      return false;
+    }
+
   } else if (m_SpectralType == c_Gaussian) {
     m_Energy = gRandom->Gaus(m_EnergyParam1, m_EnergyParam2);
   } else if (m_SpectralType == c_ThermalBremsstrahlung) {
@@ -2873,7 +3011,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       } else {
         mout<<m_Name<<": Unknown start area type for position generation"<<endl;
       }
-     
+
       // Rotate according to theta and phi
       // left-handed rotation-matrix: first theta (rotation around y-axis) then phi (rotation around z-axis):
       // | +cosp -sinp 0 |   | +cost 0 +sint |   | x |
@@ -2882,9 +3020,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[0] = (x*cos(Theta)+z*sin(Theta))*cos(Phi) - y*sin(Phi);
       m_Position[1] = (x*cos(Theta)+z*sin(Theta))*sin(Phi) + y*cos(Phi);
       m_Position[2] = -x*sin(Theta)+z*cos(Theta);
-      
-      // Translate sphere center
-      m_Position += m_StartAreaPosition;
+
+      // We tranlate the start sphere position after handling any orientations
     } 
   } 
 
@@ -3258,51 +3395,15 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position += l*m_Direction;
     } 
   }
-  
-  // If there is any orientation, then rotate & translate
-  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
 
-  // Not all possible orientation combinations are valid!
-  // Can can have either:
-  // A) Sky and source in Galactic coordiantes then source must be a far field source
-  // B) Sky and source in Local coordiantes 
-  // C) Sky in Galactic coordiantes and source in local coordiantes
+  // Rotate from local into oriented coordiante system
+  if (PerformOrientation(m_Position, m_Direction) == false) return false;
   
-  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
-    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientPositionAndDirection(m_NextEmission, m_Position, m_Direction);
-    }
-         
-    if (Sky.IsOriented() == true) {
-      // This reorientation can only happen is both are of the same coordinate system
-      Sky.OrientPositionAndDirectionInvers(m_NextEmission, m_Position, m_Direction);
-    }             
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && 
-            Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
-    if (m_CoordinateSystem != c_FarField) {
-      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
-      return false;        
-    }
-        
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientPositionAndDirection(m_NextEmission, m_Position, m_Direction);
-    }
-        
-    if (Sky.IsOriented() == true) {
-      // This reorientation can only happen is both are of the same coordinate system
-      Sky.OrientPositionAndDirectionInvers(m_NextEmission, m_Position, m_Direction);
-    }    
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
-             Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientPositionAndDirection(m_NextEmission, m_Position, m_Direction);
-    }    
-  } else {
-    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
-    return false;
+  if (m_CoordinateSystem == c_FarField) {
+    // Translate the start sphere center
+    m_Position += m_StartAreaPosition;
   }
-  
+
   // Sanity check that the position is within the world volume
   if (MCRunManager::GetMCRunManager()->GetDetectorConstruction()->IsInsideWorldVolume(m_Position) == false) {
     mout<<"  ***  ERROR  ***   "<<m_Name<<": The position "<<m_Position/cm<<" cm is outside the world volume! Please make your world volume larger or your simulations are incorrect!"<<endl;
@@ -3345,14 +3446,19 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
     if (CLHEP::RandFlat::shoot(1) < m_PolarizationDegree) {
       if (m_PolarizationType == c_PolarizationAbsolute) {
         m_Polarization.set(m_PolarizationParam1, m_PolarizationParam2, m_PolarizationParam3);
-      } else {
+      }
+      // Relative
+      else {
+        G4ThreeVector Axis;
         if (m_PolarizationType == c_PolarizationRelativeX) {
-          m_Polarization = m_Direction.cross(G4ThreeVector(1.0, 0.0, 0.0));
+          Axis = G4ThreeVector(1.0, 0.0, 0.0);
         } else if (m_PolarizationType == c_PolarizationRelativeY) {
-          m_Polarization = m_Direction.cross(G4ThreeVector(0.0, 1.0, 0.0));
+          Axis = G4ThreeVector(0.0, 1.0, 0.0);
         } else if (m_PolarizationType == c_PolarizationRelativeZ) {
-          m_Polarization = m_Direction.cross(G4ThreeVector(0.0, 0.0, 1.0));
+          Axis = G4ThreeVector(0.0, 0.0, 1.0);
         }
+
+        m_Polarization = m_Direction.cross(Axis);
         m_Polarization.rotate(m_Direction, m_PolarizationParam1);
         m_Polarization = m_Polarization.unit();
       }
@@ -3362,7 +3468,7 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
       m_Polarization = m_Polarization.unit();
     }
   } else {
-    merr<<m_Name<<": Unknown polarization type: "<<m_PolarizationType<<endl;
+    merr<<m_Name<<": Unknown polarization type: "<<m_PolarizationType<<" -- assuming random"<<endl;
     m_Polarization = m_Direction.orthogonal();
     m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
     m_Polarization = m_Polarization.unit();
@@ -3374,59 +3480,113 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
           <<"   --> Will use zero polarization!"<<endl;
       m_Polarization.set(0.0, 0.0, 0.0);
     }
- 
   }
-  
-  
-  // If there is any orientation, then rotate & translate
-  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
-  
-  // Not all possible orientation combinations are valid!
-  // Can can have either:
-  // A) Sky and source in Galactic coordiantes then source must be a far field source
-  // B) Sky and source in Local coordiantes 
-  // C) Sky in Galactic coordiantes and source in local coordiantes
-  
-  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
-    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientDirection(m_NextEmission, m_Polarization);
-    }
-    
-    if (Sky.IsOriented() == true) {
-      // This reorientation can only happen is both are of the same coordinate system
-      Sky.OrientDirectionInvers(m_NextEmission, m_Polarization);
-    }             
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && 
-    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
-    if (m_CoordinateSystem != c_FarField) {
-      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
-      return false;        
-    }
-      
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientDirection(m_NextEmission, m_Polarization);
-    }
-      
-    if (Sky.IsOriented() == true) {
-      // This reorientation can only happen is both are of the same coordinate system
-      Sky.OrientDirectionInvers(m_NextEmission, m_Polarization);
-    }    
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
-    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
-    if (m_Orientation.IsOriented() == true) {
-      m_Orientation.OrientDirection(m_NextEmission, m_Polarization);
-    }    
-  } else {
-    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
-    return false;
-  }
-  
   
   Gun->SetParticlePolarization(m_Polarization);
 
   return true;
 }
+
+
+/******************************************************************************
+ * Perform an orientation of the vector from local into oriented coordinate system
+*/
+bool MCSource::PerformOrientation(G4ThreeVector& Direction)
+{
+  // If there is any orientation, then rotate & translate
+  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+
+  // Not all possible orientation combinations are valid!
+  // Can can have either:
+  // A) Sky and source in Galactic coordiantes then source must be a far field source
+  // B) Sky and source in Local coordiantes
+  // C) Sky in Galactic coordiantes and source in local coordiantes
+
+  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientDirection(m_NextEmission, Direction);
+    }
+
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientDirectionInvers(m_NextEmission, Direction);
+    }
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_CoordinateSystem != c_FarField) {
+      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
+      return false;
+    }
+
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientDirection(m_NextEmission, Direction);
+    }
+
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientDirectionInvers(m_NextEmission, Direction);
+    }
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientDirection(m_NextEmission, Direction);
+    }
+  } else {
+    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
+    return false;
+  }
+
+  return true;
+}
+
+
+/******************************************************************************
+ * Perform an orientation of the vector from local into oriented coordinate system
+ */
+bool MCSource::PerformOrientation(G4ThreeVector& Position, G4ThreeVector& Direction)
+{
+  // If there is any orientation, then rotate & translate
+  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+
+  // Not all possible orientation combinations are valid!
+  // Can can have either:
+  // A) Sky and source in Galactic coordiantes then source must be a far field source
+  // B) Sky and source in Local coordiantes
+  // C) Sky in Galactic coordiantes and source in local coordiantes
+
+  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientPositionAndDirection(m_NextEmission, Position, Direction);
+    }
+
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientPositionAndDirectionInvers(m_NextEmission, Position, Direction);
+    }
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_CoordinateSystem != c_FarField) {
+      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
+      return false;
+    }
+
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientPositionAndDirection(m_NextEmission, Position, Direction);
+    }
+
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientPositionAndDirectionInvers(m_NextEmission, Position, Direction);
+    }
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.OrientPositionAndDirection(m_NextEmission, Position, Direction);
+    }
+  } else {
+    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
+    return false;
+  }
+
+  return true;
+}
+
 
 
 /******************************************************************************
@@ -3455,6 +3615,16 @@ double MCSource::BandFunction(const double Energy, double Alpha,
   }
 }
 
+
+/******************************************************************************
+ * Shape of a Comptonized spectrum
+ */
+double MCSource::Comptonized(const double Energy, double Alpha, double Epeak) const
+{
+  if (Epeak == 0) return 0;
+
+  return pow(Energy, Alpha)*exp(-(Alpha+2)*Energy/Epeak);
+}
 
 /*
  * MCSource.cc: the end...

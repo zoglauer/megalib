@@ -146,7 +146,7 @@ MImager::MImager(MCoordinateSystem CoordinateSystem, unsigned int NThreads)
 
   m_OutOfMemory = false;
 
-  m_DrawMode = MImage::c_COLCONT4Z;
+  m_DrawMode = MImage::c_COLCONTZ;
   m_Palette = MImage::c_Thesis;
   m_SourceCatalog = "";
   m_Projection = MImageProjection::c_None;
@@ -233,7 +233,7 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
     MVector XAxis = Settings->GetImageRotationXAxis();
     MVector ZAxis = Settings->GetImageRotationZAxis();
     if (XAxis.IsOrthogonal(ZAxis) == false) {
-      merr<<"The image rotation axes are not orthogonal! Aborting imaging!"<<show;
+      merr<<"Spherical coordiantes: The axes of the fixed additional rotation are not orthogonal! Aborting imaging!"<<show;
       return false;
     }
     

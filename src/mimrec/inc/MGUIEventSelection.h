@@ -156,14 +156,21 @@ class MGUIEventSelection : public MGUIDialog
   MGUIEEntryList* m_PointingBoxLocation;
   MGUIEEntry* m_PointingBoxExtentLatitude;
   MGUIEEntry* m_PointingBoxExtentLongitude;
-
-
-  // Beam frame
+  
+  
+  // Beam/Box frame
   TGCheckButton* m_UseBeam;
   MGUIEEntryList* m_BeamStart;
   MGUIEEntryList* m_BeamFocalSpot;
   MGUIEEntry* m_BeamRadius;
   MGUIEEntry* m_BeamDepth;
+  
+  TGCheckButton* m_UseBox;
+  MGUIEEntryList* m_BoxFirstIAMin;
+  MGUIEEntryList* m_BoxFirstIAMax;
+  MGUIEEntryList* m_BoxSecondIAMin;
+  MGUIEEntryList* m_BoxSecondIAMax;
+
 
 
   enum ButtonIDs { c_Compton = 140,
@@ -190,7 +197,8 @@ class MGUIEventSelection : public MGUIDialog
                    c_UsePointingSelectionNone,
                    c_UsePointingSelectionPointSource,
                    c_UsePointingSelectionBox,
-                   c_UseBeam };
+                   c_UseBeam,
+                   c_UseBox };
 
 
 #ifdef ___CLING___

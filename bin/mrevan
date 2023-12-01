@@ -1,5 +1,8 @@
 #! /bin/bash
 
+# Kill this and all child processes on Ctrl-C
+trap "pkill -P $$; exit 1;" SIGINT
+
 help() {
   echo ""
   echo "mrevan - script for MEGAlib";
@@ -10,6 +13,7 @@ help() {
   echo "    -n <nice>:      The nice level as an integer (default: 0)"
   echo "    -c <file name>: Revan configuration file name (mandatory)"
   echo "    -g <geometry file name>: Overwrites the geometry in the configuration file (optional)"
+  echo "    -o:             Save origin information (for response creation)"
   echo "    -f <file name>: Long list of sim/evta files - MUST BE LAST"
   echo "";
   echo "Example:";
@@ -31,6 +35,7 @@ NICELEVEL=0
 CFG=""
 FILES=""
 GEOMETRY=""
+ORIGIN="FALSE"
 
 # Find the default number of threads
 if [[ ${OSTYPE} == darwin* ]]; then
@@ -53,6 +58,9 @@ while [ $# -gt 0 ] ; do
   -h|--help)
     help;
     exit 0;;
+  -o)
+    ORIGIN="TRUE"
+    ;;
   -t)
     shift;
     if [ $# -eq 0 ]; then
@@ -111,7 +119,7 @@ while [ $# -gt 0 ] ; do
       exit 0;
     fi
     while [ $# -ne 0 ]; do
-      FILES+=" "$1;
+      FILES+="$1 ";
       shift;
     done
     ;;
@@ -162,9 +170,10 @@ echo " "
 echo "Number of threads to use:  ${THREADS}"
 echo "Nice level:                ${NICELEVEL}"
 if [[ ${GEOMETRY} != "" ]]; then
-  echo "Geometry:                ${GEOMETRY}"
+  echo "Geometry:                  ${GEOMETRY}"
 fi
 echo "Revan configuration file:  ${CFG}"
+echo "Origin info:               ${ORIGIN}"
 echo "Sim/evta files:            ${FILES}"
 
 
@@ -172,12 +181,16 @@ echo "Sim/evta files:            ${FILES}"
 for SIMFILE in ${FILES}; do
   mwait -p=revan -i=${THREADS}
   echo "Launching revan for file ${SIMFILE}"
-  CMD="source ${MEGALIB}/bin/source-megalib.sh; revan -c ${CFG} -a -n -f ${SIMFILE}"
+  OPTIONS="-c ${CFG} -a -n "
+  if [[ ${ORIGIN} == "TRUE" ]]; then
+    OPTIONS+="--oi "
+  fi
+  CMD="source ${MEGALIB}/bin/source-megalib.sh; revan ${OPTIONS} -f ${SIMFILE}"
   if [[ ${GEOMETRY} != "" ]]; then
     CMD+=" -g ${GEOMETRY}"
   fi
   nohup nice -n ${NICELEVEL} bash -c "${CMD}" > /dev/null &
-  sleep 0.5
+  sleep 1
 done
 
 

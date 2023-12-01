@@ -130,7 +130,7 @@ bool MFileEventsTra::Close()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFileEventsTra::Open(MString FileName, unsigned int Way)
+bool MFileEventsTra::Open(MString FileName, unsigned int Way, bool IsBinary)
 {
   // Derived open which initializes the include file
 
@@ -142,7 +142,7 @@ bool MFileEventsTra::Open(MString FileName, unsigned int Way)
 
   m_MoreEvents = true;
 
-  return MFileEvents::Open(FileName, Way);
+  return MFileEvents::Open(FileName, Way, IsBinary);
 }
 
 

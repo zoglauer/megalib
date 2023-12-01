@@ -11,17 +11,19 @@
 #------------------------------------------------------------------------------
 # Program and directories
 
-SHELL=/bin/bash
+MAKE += -s
+
+SHELL	:=/bin/bash
 
 # Basic directories
-TOP	= $(shell pwd)
-SR	= $(TOP)/src
-IN	= $(TOP)/include
-LB	= $(TOP)/lib
-BN	= $(TOP)/bin
-HT	= $(TOP)/doc/html
-CT	= $(TOP)/cint
-CF	= $(TOP)/config
+TOP	:= $(shell pwd)
+SR	:= $(TOP)/src
+IN	:= $(TOP)/include
+LB	:= $(TOP)/lib
+BN	:= $(TOP)/bin
+HT	:= $(TOP)/doc/html
+CT	:= $(TOP)/cint
+CF	:= $(TOP)/config
 
 #------------------------------------------------------------------------------
 # Included options (result of ./configure)
@@ -52,7 +54,7 @@ LDFLAGS     += -L$(LB)
 #------------------------------------------------------------------------------
 # Commands:
 
-CMD=
+CMD :=
 
 #.NOPARALLEL:
 .EXPORT_ALL_VARIABLES: all copy miw geo geolib
@@ -69,8 +71,8 @@ only: info glo geo spe rev siv res mim evi rea fre add cos
 #------------------------------------------------------------------------------
 # Version check:
 
-ROOTVERSIONOK   = $(shell bash $(CF)/configure_rootversiontest )
-GEANT4VERSIONOK = $(shell bash $(CF)/configure_geant4versiontest )
+ROOTVERSIONOK   := $(shell bash $(CF)/configure_rootversiontest )
+GEANT4VERSIONOK := $(shell bash $(CF)/configure_geant4versiontest )
 
 
 #------------------------------------------------------------------------------

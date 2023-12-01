@@ -53,7 +53,7 @@ class MResponseMatrix
   //! Set a hash value --- usually used to verify an outside object is still
   //! identical with that which has been used to create this response 
   void SetHash(const unsigned long& Hash) { m_Hash = Hash; }
-  //! Return a hash value --- the has is not created internally, but has to be set
+  //! Return a hash value --- the hash is not created internally, but has to be set
   unsigned long GetHash() const { return m_Hash; }
 
   //! Return the order, i.e. the number of independent axes
@@ -73,6 +73,13 @@ class MResponseMatrix
   void SetFarFieldStartArea(double Area) { m_FarFieldStartArea = Area; }
   //! Get the start are aof far-field simulations
   double GetFarFieldStartArea() const { return m_FarFieldStartArea; }
+  
+  //! Set the spectrum
+  void SetSpectrum(MString SpectralType, vector<double> SpectralParameters) { m_SpectralType = SpectralType, m_SpectralParameters = SpectralParameters; }
+  //! Get the spectral type
+  MString GetSpectralType() const { return m_SpectralType; }
+  //! Get the spectral parameters
+  vector<double> GetSpectralParameters() const { return m_SpectralParameters; }
   
   virtual unsigned long GetNBins() const = 0;
   virtual float GetMaximum() const = 0;
@@ -113,6 +120,12 @@ class MResponseMatrix
   long m_NumberOfSimulatedEvents;
   //! The start area of far-field simulations
   double m_FarFieldStartArea;
+
+  //! The spectral type (Linear, Mono, Powerlaw)
+  MString m_SpectralType;
+
+  //! The spectral parameters (depend on type)
+  vector<double> m_SpectralParameters;
 
   //! A hash value --- this value is not calculated but has to be set from outside or read in via file
   unsigned long m_Hash;

@@ -56,7 +56,7 @@ fi
 
 
 # Read configuration file and extract machines
-CFG=~/.dcosima.cfg
+CFG=~/.dmegalib.cfg
 if [ ! -f ${CFG} ]; then
   echo "ERROR: No dmegalib configuration file present. Please run dmegalib-setup first."
   exit 1

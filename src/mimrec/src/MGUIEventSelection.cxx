@@ -111,7 +111,7 @@ void MGUIEventSelection::Create()
   TGCompositeFrame* PairFrame = m_MainTab->AddTab("Pairs");
   TGCompositeFrame* SourceFrame = m_MainTab->AddTab("Origin");
   TGCompositeFrame* PointingFrame = m_MainTab->AddTab("Pointing");
-  TGCompositeFrame* BeamFrame = m_MainTab->AddTab("Beam");
+  TGCompositeFrame* BeamFrame = m_MainTab->AddTab("Beam/Box");
   TGCompositeFrame* SpecialFrame = 0;
   if (m_Settings->GetSpecialMode() == true) {
     SpecialFrame = m_MainTab->AddTab("Special");
@@ -832,10 +832,9 @@ void MGUIEventSelection::Create()
   }
 
 
-  // Beam frame
-
-
-  m_UseBeam = new TGCheckButton(BeamFrame, "Use beam selection:", c_UseBeam);
+  // Beam/Box frame
+  
+  m_UseBeam = new TGCheckButton(BeamFrame, "Use beam to select on the first interaction in the detector:", c_UseBeam);
   BeamFrame->AddFrame(m_UseBeam, MinMaxFirstLayout);
   m_UseBeam->Associate(this);
   m_UseBeam->SetState((m_Settings->GetBeamUse() == true) ?  kButtonDown : kButtonUp);
@@ -893,6 +892,66 @@ void MGUIEventSelection::Create()
     m_BeamFocalSpot->SetEnabled(true);
     m_BeamRadius->SetEnabled(true);
     m_BeamDepth->SetEnabled(true);
+  }
+
+  
+  m_UseBox = new TGCheckButton(BeamFrame, "Use two boxes to select on the location of the first and second interaction:", c_UseBox);
+  BeamFrame->AddFrame(m_UseBox, MinMaxFirstLayout);
+  m_UseBox->Associate(this);
+  m_UseBox->SetState((m_Settings->GetBoxUse() == true) ?  kButtonDown : kButtonUp);
+
+  MGUIEText* BoxFirstIADescription = new MGUIEText(BeamFrame, "Box containing the first interaction", MGUIEText::c_Left);
+  BeamFrame->AddFrame(BoxFirstIADescription, BeamLayout);
+
+  TGLayoutHints* BoxLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, LeftGap+40, RightGap, 5, 0);
+
+  m_BoxFirstIAMin = new MGUIEEntryList(BeamFrame, "Mininum x, y, z corner [cm]", MGUIEEntryList::c_SingleLine);
+  m_BoxFirstIAMin->Add("", m_Settings->GetBoxFirstIAMinX());
+  m_BoxFirstIAMin->Add("", m_Settings->GetBoxFirstIAMinY());
+  m_BoxFirstIAMin->Add("", m_Settings->GetBoxFirstIAMinZ());
+  m_BoxFirstIAMin->SetEntryFieldSize(FieldSize);
+  m_BoxFirstIAMin->Create();
+  BeamFrame->AddFrame(m_BoxFirstIAMin, BoxLayout);
+
+  m_BoxFirstIAMax = new MGUIEEntryList(BeamFrame, "Maximum x, y, z corner [cm]", MGUIEEntryList::c_SingleLine);
+  m_BoxFirstIAMax->Add("", m_Settings->GetBoxFirstIAMaxX());
+  m_BoxFirstIAMax->Add("", m_Settings->GetBoxFirstIAMaxY());
+  m_BoxFirstIAMax->Add("", m_Settings->GetBoxFirstIAMaxZ());
+  m_BoxFirstIAMax->SetEntryFieldSize(FieldSize);
+  m_BoxFirstIAMax->Create();
+  BeamFrame->AddFrame(m_BoxFirstIAMax, BoxLayout);
+
+  MGUIEText* BoxSecondIADescription = new MGUIEText(BeamFrame, "Box containing the second interaction", MGUIEText::c_Left);
+  BeamFrame->AddFrame(BoxSecondIADescription, BeamLayout);
+
+
+  m_BoxSecondIAMin = new MGUIEEntryList(BeamFrame, "Mininum x, y, z corner [cm]", MGUIEEntryList::c_SingleLine);
+  m_BoxSecondIAMin->Add("", m_Settings->GetBoxSecondIAMinX());
+  m_BoxSecondIAMin->Add("", m_Settings->GetBoxSecondIAMinY());
+  m_BoxSecondIAMin->Add("", m_Settings->GetBoxSecondIAMinZ());
+  m_BoxSecondIAMin->SetEntryFieldSize(FieldSize);
+  m_BoxSecondIAMin->Create();
+  BeamFrame->AddFrame(m_BoxSecondIAMin, BoxLayout);
+
+  m_BoxSecondIAMax = new MGUIEEntryList(BeamFrame, "Maximum x, y, z corner [cm]", MGUIEEntryList::c_SingleLine);
+  m_BoxSecondIAMax->Add("", m_Settings->GetBoxSecondIAMaxX());
+  m_BoxSecondIAMax->Add("", m_Settings->GetBoxSecondIAMaxY());
+  m_BoxSecondIAMax->Add("", m_Settings->GetBoxSecondIAMaxZ());
+  m_BoxSecondIAMax->SetEntryFieldSize(FieldSize);
+  m_BoxSecondIAMax->Create();
+  BeamFrame->AddFrame(m_BoxSecondIAMax, BoxLayout);
+
+
+  if (m_UseBox->GetState() == kButtonUp) {
+    m_BoxFirstIAMin->SetEnabled(false);
+    m_BoxFirstIAMax->SetEnabled(false);
+    m_BoxSecondIAMin->SetEnabled(false);
+    m_BoxSecondIAMax->SetEnabled(false);
+  } else {
+    m_BoxFirstIAMin->SetEnabled(true);
+    m_BoxFirstIAMax->SetEnabled(true);
+    m_BoxSecondIAMin->SetEnabled(true);
+    m_BoxSecondIAMax->SetEnabled(true);
   }
 
 
@@ -1154,6 +1213,20 @@ bool MGUIEventSelection::ProcessMessage(long Message, long Parameter1,
           m_BeamDepth->SetEnabled(true);
         }
         break;
+        
+      case c_UseBox:
+        if (m_UseBox->GetState() == kButtonUp) {
+          m_BoxFirstIAMin->SetEnabled(false);
+          m_BoxFirstIAMax->SetEnabled(false);
+          m_BoxSecondIAMin->SetEnabled(false);
+          m_BoxSecondIAMax->SetEnabled(false);
+        } else {
+          m_BoxFirstIAMin->SetEnabled(true);
+          m_BoxFirstIAMax->SetEnabled(true);
+          m_BoxSecondIAMin->SetEnabled(true);
+          m_BoxSecondIAMax->SetEnabled(true);
+        }
+        break;
 
      default:
         break;
@@ -1266,28 +1339,27 @@ bool MGUIEventSelection::OnApply()
   }
   if (m_OpeningAnglePair->CheckRange(0.0, 180.0, 0.0, 180.0, true) == false) return false;
   if (m_InitialEnergyDepositPair->CheckRange(0.0, 100000.0, 0.0, 100000.0, true) == false) return false;
-
-
-  // Forgot why this has to be the case - or if it is still valid...
-  /*
-  if ((m_FirstTotalEnergy->GetMinValue() < m_SecondTotalEnergy->GetMaxValue() &&
-       m_FirstTotalEnergy->GetMaxValue() > m_SecondTotalEnergy->GetMinValue()) ||
-      (m_SecondTotalEnergy->GetMinValue() < m_FirstTotalEnergy->GetMaxValue() &&
-       m_SecondTotalEnergy->GetMaxValue() > m_FirstTotalEnergy->GetMinValue()) ||
-      (m_ThirdTotalEnergy->GetMinValue() < m_ThirdTotalEnergy->GetMaxValue() &&
-       m_ThirdTotalEnergy->GetMaxValue() > m_ThirdTotalEnergy->GetMinValue()) ||
-      (m_FourthTotalEnergy->GetMinValue() < m_FourthTotalEnergy->GetMaxValue() &&
-       m_FourthTotalEnergy->GetMaxValue() > m_FourthTotalEnergy->GetMinValue())) {
-    new TGMsgBox(gClient->GetRoot(), this, "Type error",
-                 "Overlapping energy bands are not allowed!", kMBIconStop, kMBOk);
-    return false;
-  }
-  */
-  if (m_FirstTotalEnergy->GetMaxValue() == 0 &&
-      m_SecondTotalEnergy->GetMaxValue() == 0 &&
-      m_ThirdTotalEnergy->GetMaxValue() == 0 &&
+  
+  
+  if (m_FirstTotalEnergy->GetMaxValue() == 0 && 
+      m_SecondTotalEnergy->GetMaxValue() == 0 && 
+      m_ThirdTotalEnergy->GetMaxValue() == 0 && 
       m_FourthTotalEnergy->GetMaxValue() == 0) {
     mgui<<"At least one total energy window must be open."<<error;
+    return false;
+  }
+
+  MVector BoxFirstIAMin(m_BoxFirstIAMin->GetAsDouble(0), m_BoxFirstIAMin->GetAsDouble(1), m_BoxFirstIAMin->GetAsDouble(2));
+  MVector BoxFirstIAMax(m_BoxFirstIAMax->GetAsDouble(0), m_BoxFirstIAMax->GetAsDouble(1), m_BoxFirstIAMax->GetAsDouble(2));
+  MVector BoxSecondIAMin(m_BoxSecondIAMin->GetAsDouble(0), m_BoxSecondIAMin->GetAsDouble(1), m_BoxSecondIAMin->GetAsDouble(2));
+  MVector BoxSecondIAMax(m_BoxSecondIAMax->GetAsDouble(0), m_BoxSecondIAMax->GetAsDouble(1), m_BoxSecondIAMax->GetAsDouble(2));
+
+  if (BoxFirstIAMin.AllLarger(BoxFirstIAMax) == false) {
+    mgui<<"Box selection: First interaction: All minimum components need to be smaller than the maximum components"<<error; 
+    return false;
+  }
+  if (BoxSecondIAMin.AllLarger(BoxSecondIAMax) == false) {
+    mgui<<"Box selection: Second interaction: All minimum components need to be smaller than the maximum components"<<error; 
     return false;
   }
 
@@ -1486,9 +1558,10 @@ bool MGUIEventSelection::OnApply()
   if (m_PointingBoxExtentLongitude->IsModified() == true) {
     m_Settings->SetPointingBoxExtentLongitude(m_PointingBoxExtentLongitude->GetAsDouble());
   }
-
-
-
+  
+  
+  // Beam
+  
   if (m_Settings->GetBeamUse() != ((m_UseBeam->GetState() == kButtonDown) ? true : false)) {
     m_Settings->SetBeamUse((m_UseBeam->GetState() == kButtonDown) ? true : false);
   }
@@ -1509,6 +1582,39 @@ bool MGUIEventSelection::OnApply()
     m_Settings->SetBeamRadius(m_BeamRadius->GetAsDouble());
     m_Settings->SetBeamDepth(m_BeamDepth->GetAsDouble());
   }
+
+  // Box
+  
+  if (m_Settings->GetBoxUse() != ((m_UseBox->GetState() == kButtonDown) ? true : false)) {
+    m_Settings->SetBoxUse((m_UseBox->GetState() == kButtonDown) ? true : false);
+  }
+
+  if (m_BoxFirstIAMin->IsModified() == true) {
+    m_Settings->SetBoxFirstIAMinX(m_BoxFirstIAMin->GetAsDouble(0));
+    m_Settings->SetBoxFirstIAMinY(m_BoxFirstIAMin->GetAsDouble(1));
+    m_Settings->SetBoxFirstIAMinZ(m_BoxFirstIAMin->GetAsDouble(2));
+  }
+
+  if (m_BoxFirstIAMax->IsModified() == true) {
+    m_Settings->SetBoxFirstIAMaxX(m_BoxFirstIAMax->GetAsDouble(0));
+    m_Settings->SetBoxFirstIAMaxY(m_BoxFirstIAMax->GetAsDouble(1));
+    m_Settings->SetBoxFirstIAMaxZ(m_BoxFirstIAMax->GetAsDouble(2));
+  }
+
+  if (m_BoxSecondIAMin->IsModified() == true) {
+    m_Settings->SetBoxSecondIAMinX(m_BoxSecondIAMin->GetAsDouble(0));
+    m_Settings->SetBoxSecondIAMinY(m_BoxSecondIAMin->GetAsDouble(1));
+    m_Settings->SetBoxSecondIAMinZ(m_BoxSecondIAMin->GetAsDouble(2));
+  }
+
+  if (m_BoxSecondIAMax->IsModified() == true) {
+    m_Settings->SetBoxSecondIAMaxX(m_BoxSecondIAMax->GetAsDouble(0));
+    m_Settings->SetBoxSecondIAMaxY(m_BoxSecondIAMax->GetAsDouble(1));
+    m_Settings->SetBoxSecondIAMaxZ(m_BoxSecondIAMax->GetAsDouble(2));
+  }
+  
+  
+
 
   if (m_FirstIADistance->IsModified() == true) {
     m_Settings->SetFirstDistanceRangeMin(m_FirstIADistance->GetMinValue());

@@ -57,7 +57,7 @@ INSTANCEID=""
 ZIP="FALSE"
 LOGFILE=""
 LOGGING="tee"
-CFG="~/.dcosima.cfg"
+CFG="~/.dmegalib.cfg"
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
@@ -137,7 +137,7 @@ if [[ -f ${CFG} ]]; then
   echo " * Configuration file: ${CFG}"
 else 
   echo " "
-  echo "ERROR: You need to have an existing configuration file (you gave: ${CFG}), the default one should be ~/.dcosima.cfg!"
+  echo "ERROR: You need to have an existing configuration file (you gave: ${CFG}), the default one should be ~/.dmegalib.cfg!"
   commandhelp
   exit 1  
 fi
@@ -161,7 +161,7 @@ echo "   --> Host ${HOST} is accessible"
 
 # Check if cosima is available:
 echo " * Checking if host has cosima installed..."
-AVAILABLE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; type cosima > /dev/null" 2>&1`
+AVAILABLE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .dmegalib.bashrc; type cosima > /dev/null" 2>&1`
 if [ "${AVAILABLE}" != "" ]; then
   echo "ERROR: Cosima not found!" | ${LOGGING}
   exit 1
@@ -171,7 +171,7 @@ echo "   --> Cosima found on machine"
 
 # Check if we have a configuration file
 echo " * Checking if host has a dcosima configuration file"
-CONFIGFILE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -f ~/.dcosima.cfg ]]; then exit 1; fi; exit 0;"`
+CONFIGFILE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -f ~/.dmegalib.cfg ]]; then exit 1; fi; exit 0;"`
 if [ "$?" != "0" ]; then
   echo "ERROR: dcosima configuration file not found" | ${LOGGING}
   exit 1
@@ -181,17 +181,17 @@ echo "   --> Cosima configuration file found"
 
 # Check if we have a global directory defined in the configuration file, if yes we will use that one
 echo " * Checking for remote global directory..."
-REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
+REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dmegalib.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dmegalib.cfg; fi;'
 MASTERDIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to read the remote master directory to store the simulations" | ${LOGGING}
-  echo "       Make sure you have a directory in the remote .dcosima.cfg file" | ${LOGGING}
+  echo "       Make sure you have a directory in the remote .dmegalib.cfg file" | ${LOGGING}
   exit 1
 fi
 MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
 if [ "${MASTERDIR}" == "" ]; then
   echo "ERROR: Failed to read the remote master directory to store the simulations" | ${LOGGING}
-  echo "       Make sure you have a directory in the remote .dcosima.cfg file" | ${LOGGING}
+  echo "       Make sure you have a directory in the remote .dmegalib.cfg file" | ${LOGGING}
   exit 1
 fi
 echo "   --> Master directory: ${MASTERDIR}"
@@ -199,7 +199,7 @@ echo "   --> Master directory: ${MASTERDIR}"
 
 # Check if we have a nice level defined in the configuration file, if yes we will use that one
 echo " * Checking for nice level..."
-REMOTECOMMAND='COUNT=`grep -c ^nice ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^nice ~/.dcosima.cfg; fi;'
+REMOTECOMMAND='COUNT=`grep -c ^nice ~/.dmegalib.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^nice ~/.dmegalib.cfg; fi;'
 NICELEVEL=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to read remote nice level"
@@ -265,7 +265,7 @@ OUT="/dev/null"
 if [[ ${LOGFILE} != "" ]]; then
   OUT="Sim.inc${INSTANCEID}.log"
 fi
-ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -t ${RUNDIR} -v 0 -s ${SEED} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCEFILE} > ${OUT} 2>&1 &"
+ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.dmegalib.bashrc; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -t ${RUNDIR} -v 0 -s ${SEED} `if [[ ${ZIP} == FALSE ]]; then echo "-u"; fi` ${SOURCEFILE} > ${OUT} 2>&1 &"
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to start the simulations" | ${LOGGING}
   exit 1

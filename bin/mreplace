@@ -93,11 +93,12 @@ for file in `find $directory -type d`; do
     dir=$current"/"$file;
     rcvs=`echo $dir | awk '{printf("%i\n",index($0,"CVS"))}'`
     rsvn=`echo $dir | awk '{printf("%i\n",index($0,".svn"))}'`
-    if ([ $rcvs = 0 ] && [ $rsvn = 0 ]); then
+    rgit=`echo $dir | awk '{printf("%i\n",index($0,".git"))}'`
+    if ([ $rcvs = 0 ] && [ $rsvn = 0 ] && [ $rgit = 0 ]); then
         echo "Changing to $dir...";
         cd $dir;
         for type in $types; do
-            rename ${start} ${stop} *.${type}
+            rename "s/${start}/${stop}/" *.${type}
             Exchange;
         done
     fi

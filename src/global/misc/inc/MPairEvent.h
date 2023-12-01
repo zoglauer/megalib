@@ -43,7 +43,10 @@ class MPairEvent : public MPhysicalEvent
   bool Assimilate(MPairEvent* PairEvent);
   bool Assimilate(MPhysicalEvent* Event);
   bool Assimilate(char* LineBuffer);
-  virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
+
+  //! Stream the content into a tra-file compatible string
+  virtual MString ToTraString() const;
+  //! Parse a single line which is tra-file compatible
   virtual int ParseLine(const char* Line, bool Fast = false);
   //! Create a copy of this event
   virtual MPhysicalEvent* Duplicate();
@@ -94,7 +97,11 @@ class MPairEvent : public MPhysicalEvent
   MString ToBasicString();
 
   bool MostProbableDirectionIncomingGamma();
+
+  //! Return the angular resolution measure value for the given test position in the given coordinate system
   double GetARMGamma(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+  //! Return the azimuthal scatter angle value for the given test position in the given coordinate system
+  double GetAzimuthalScatterAngle(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
 
 
   // protected methods:

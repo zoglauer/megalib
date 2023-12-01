@@ -43,7 +43,7 @@ class MImageUpdate : public MImage
   MImageUpdate(MString Title, double *IA, int NEntries, 
                MString xTitle, double xMin, double xMax, int xNBins, 
                unsigned int Mode = c_History, unsigned int ShortStorage = 0, unsigned int LongStorage = 0, 
-               int AdditionalText = c_None, int Spectrum = c_Incendescent, int DrawOption = c_COLCONT4Z);
+               int AdditionalText = c_None, int Spectrum = c_Incendescent, int DrawOption = c_COLCONTZ);
   virtual ~MImageUpdate();
 
   void Add(double x, double Value = 1);

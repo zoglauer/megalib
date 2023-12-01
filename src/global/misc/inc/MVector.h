@@ -110,7 +110,19 @@ public:
   bool operator!=(const MVector&) const;
 
   //! Less operator
+  //! This one is intended for sorting purposes
+  //! If x is smaller return true, if x is equal check y, if y is equal check z
   bool operator<(const MVector&) const;
+  
+  //! At least one component of V is smaller
+  bool AtLeastOneSmaller(const MVector& V) const;
+  //! At least one component of V is larger
+  bool AtLeastOneLarger(const MVector& V) const;
+  
+  //! All components of V are smaller
+  bool AllSmaller(const MVector& V) const;
+  //! All components of V are larger
+  bool AllLarger(const MVector& V) const;
 
   //! Add W to this vector
   MVector& operator+=(const MVector& W) { m_X += W.m_X; m_Y += W.m_Y; m_Z += W.m_Z; return *this; }

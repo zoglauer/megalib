@@ -123,8 +123,8 @@ void MGUIImageOptions::Create()
   m_DrawMode = new TGComboBox(DrawModeFrame);
   m_DrawMode->AddEntry("Boxes 2D", MImage::c_COL);
   m_DrawMode->AddEntry("Boxes 2D with palette", MImage::c_COLZ);
-  m_DrawMode->AddEntry("Smooth contours 2D", MImage::c_COLCONT4);
-  m_DrawMode->AddEntry("Smooth contours 2D with palette", MImage::c_COLCONT4Z);
+  m_DrawMode->AddEntry("Smooth contours 2D", MImage::c_COLCONT);
+  m_DrawMode->AddEntry("Smooth contours 2D with palette", MImage::c_COLCONTZ);
   m_DrawMode->Associate(this);
   m_DrawMode->Select(m_GUIData->GetImageDrawMode());
   m_DrawMode->SetHeight(m_FontScaler*18);

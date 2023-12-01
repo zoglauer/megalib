@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# Kill this and all child processes on Ctrl-C
+trap "pkill -P $$; exit 1;" SIGINT
 
 commandhelp() {
   echo ""
@@ -205,6 +207,7 @@ else
       nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} &> /dev/null &
     fi
     echo "Started run ${COUNTER} out of ${COUNTERMAX} with ID ${ID}"
+    sleep 1
 
     COUNTER=$(( ${COUNTER} + 1 ))
   done

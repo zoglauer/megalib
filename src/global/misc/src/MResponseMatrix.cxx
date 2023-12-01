@@ -60,7 +60,7 @@ const float MResponseMatrix::c_ShowNo = numeric_limits<float>::max()/2.25;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrix::MResponseMatrix() : m_Name("Unnamed response matrix"), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0)
+MResponseMatrix::MResponseMatrix() : m_Name("Unnamed response matrix"), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0), m_SpectralType(""), m_Hash(0)
 {
   // default constructor
 }
@@ -69,7 +69,7 @@ MResponseMatrix::MResponseMatrix() : m_Name("Unnamed response matrix"), m_Order(
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrix::MResponseMatrix(MString Name) : m_Name(Name), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0)
+MResponseMatrix::MResponseMatrix(MString Name) : m_Name(Name), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0), m_SpectralType(""), m_Hash(0)
 {
   // default constructor
 }
@@ -95,6 +95,8 @@ void MResponseMatrix::Clear()
   m_Order = 0;
   m_NumberOfSimulatedEvents = 0;
   m_FarFieldStartArea = 0;
+  m_SpectralType = "";
+  m_SpectralParameters.clear();
   m_Hash = 0;
 }
 
@@ -119,6 +121,13 @@ void MResponseMatrix::WriteHeader(ostringstream& out)
   out<<endl;
   out<<"# The far-field start area (if zero a non-far-field simulation, or non-spherical start area was used)"<<endl;
   out<<"SA "<<m_FarFieldStartArea<<endl;
+  out<<endl;
+  out<<"# The spectral parameters (empty if not set)"<<endl;
+  out<<"SM "<<m_SpectralType;
+  for (unsigned int p = 0; p < m_SpectralParameters.size(); ++p) {
+    out<<" "<<m_SpectralParameters[p];
+  }
+  out<<endl;
   out<<endl;
 }
 
@@ -146,6 +155,7 @@ bool MResponseMatrix::Read(MString FileName)
   SetHash(Parser.GetHash());
   SetSimulatedEvents(Parser.GetSimulatedEvents());
   SetFarFieldStartArea(Parser.GetFarFieldStartArea());
+  SetSpectrum(Parser.GetSpectralType(), Parser.GetSpectralParameters());
 
   Ok = ReadSpecific(Parser, Type, Version);
 

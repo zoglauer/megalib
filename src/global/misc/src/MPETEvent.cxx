@@ -74,29 +74,30 @@ MPETEvent::~MPETEvent()
 //! Convert to a human readable string
 MString MPETEvent::ToString() const
 {
-  char Text[1000];
+  const int Length = 1000;
+  char Text[Length];
   MString String("Position-emmision-tomography event:\n"); 
   
-  sprintf(Text, "  Energy1: %.3f +- %.3f \n", m_Energy1, m_EnergyResolution1);
+  snprintf(Text, Length, "  Energy1: %.3f +- %.3f \n", m_Energy1, m_EnergyResolution1);
   String += MString(Text);
   
-  sprintf(Text, "  Position1: %.3f, %.3f, %.3f  +- %.3f %.3f  %.3f \n", 
+  snprintf(Text, Length, "  Position1: %.3f, %.3f, %.3f  +- %.3f %.3f  %.3f \n",
           m_Position1.X(), m_Position1.Y(), m_Position1.Z(), 
           m_PositionResolution1.X(), m_PositionResolution1.Y(), m_PositionResolution1.Z());
   String += MString(Text);
 
-  sprintf(Text, "  Timing1: %.9f +- %.3f \n", m_Timing1, m_TimingResolution1);
+  snprintf(Text, Length, "  Timing1: %.9f +- %.3f \n", m_Timing1, m_TimingResolution1);
   String += MString(Text);
   
-  sprintf(Text, "  Energy2: %.3f +- %.3f \n", m_Energy2, m_EnergyResolution2);
+  snprintf(Text, Length, "  Energy2: %.3f +- %.3f \n", m_Energy2, m_EnergyResolution2);
   String += MString(Text);
   
-  sprintf(Text, "  Position2: %.3f, %.3f, %.3f +- %.3f  %.3f  %.3f \n", 
+  snprintf(Text, Length, "  Position2: %.3f, %.3f, %.3f +- %.3f  %.3f  %.3f \n",
           m_Position2.X(), m_Position2.Y(), m_Position2.Z(), 
           m_PositionResolution2.X(), m_PositionResolution2.Y(), m_PositionResolution2.Z());
   String += MString(Text);
   
-  sprintf(Text, "  Timing2: %.9f +- %.9f \n", m_Timing2, m_TimingResolution2);
+  snprintf(Text, Length, "  Timing2: %.9f +- %.9f \n", m_Timing2, m_TimingResolution2);
   String += MString(Text);
   
 
@@ -200,27 +201,24 @@ bool MPETEvent::Validate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MPETEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
+MString MPETEvent::ToTraString() const
 {
-  // Sstream data from and to a file than ROOT...
+  //! Stream the content into a tra-file compatible string
 
-  // If we are reading, then this handles everything....
-  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
+  MString T;
+  T += MPhysicalEvent::ToTraString();
 
-  if (Read == false) {
-    // Write PET specific infos:
-    ostringstream S;
-    S<<"EF "<<m_Energy1<<" "<<m_EnergyResolution1<<endl;
-    S<<"PF "<<m_Position1[0]<<" "<<m_Position1[1]<<" "<<m_Position1[2]<<"    "<<m_PositionResolution1[0]<<" "<<m_PositionResolution1[1]<<" "<<m_PositionResolution1[2]<<endl;
-    S<<"ZF "<<m_Timing1<<" "<<m_TimingResolution1<<endl;
-    S<<"ES "<<m_Energy2<<" "<<m_EnergyResolution2<<endl;
-    S<<"PS "<<m_Position2[0]<<" "<<m_Position2[1]<<" "<<m_Position2[2]<<"    "<<m_PositionResolution2[0]<<" "<<m_PositionResolution2[1]<<" "<<m_PositionResolution2[2]<<endl;
-    S<<"ZS "<<m_Timing2<<" "<<m_TimingResolution2<<endl;
-    File.Write(S);
-    File.Flush();
-  }
+  ostringstream S;
+  S<<"EF "<<m_Energy1<<" "<<m_EnergyResolution1<<endl;
+  S<<"PF "<<m_Position1[0]<<" "<<m_Position1[1]<<" "<<m_Position1[2]<<"    "<<m_PositionResolution1[0]<<" "<<m_PositionResolution1[1]<<" "<<m_PositionResolution1[2]<<endl;
+  S<<"ZF "<<m_Timing1<<" "<<m_TimingResolution1<<endl;
+  S<<"ES "<<m_Energy2<<" "<<m_EnergyResolution2<<endl;
+  S<<"PS "<<m_Position2[0]<<" "<<m_Position2[1]<<" "<<m_Position2[2]<<"    "<<m_PositionResolution2[0]<<" "<<m_PositionResolution2[1]<<" "<<m_PositionResolution2[2]<<endl;
+  S<<"ZS "<<m_Timing2<<" "<<m_TimingResolution2<<endl;
 
-  return Return;
+  T += S.str();
+
+  return T;
 }
 
 
