@@ -165,6 +165,8 @@ class MRotationInterface
   // private methods:
  private:
 
+public:
+  double m_LongAvg, m_LatAvg;
 
 
   // protected members:

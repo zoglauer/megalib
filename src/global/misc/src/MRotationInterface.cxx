@@ -562,6 +562,13 @@ MRotation MRotationInterface::GetGalacticPointingRotationMatrix()
                                  m_GalacticPointingXAxis.Z(), m_GalacticPointingYAxis.Z(), m_GalacticPointingZAxis.Z());
   m_IsGalacticPointingRotationCalculated = true;
   
+  // HACK: Rotate around z-axis into center of image:
+  double Angle = m_LongAvg; //m_GalacticPointingZAxis.Phi();
+  m_GalacticPointingRotation.Rotate(Angle, MVector(0, 0, 1));
+
+  Angle = m_LatAvg; // m_GalacticPointingZAxis.Theta() - c_Pi/2.0;
+  m_GalacticPointingRotation.Rotate(Angle, MVector(1, 0, 0));
+
   return m_GalacticPointingRotation;
 }
 

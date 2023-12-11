@@ -323,6 +323,7 @@ class MImager
   //! Currently used bins for the response
   unsigned long m_UsedBins;
 
+  double m_LongAvg, m_LatAvg;
 
   // private members:
  private:

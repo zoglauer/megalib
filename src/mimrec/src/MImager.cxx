@@ -833,6 +833,27 @@ bool MImager::Analyze(bool CalculateResponse)
 {
   // Do the imaging
 
+  // HACK: Calculate the average pointing:
+  MPhysicalEvent* Event = nullptr;
+  // ... loop over all events and save a count in the belonging bin ...
+  unsigned long NPointings = 0;
+  m_LongAvg = 0;
+  m_LatAvg = 0;
+  while ((Event = m_EventFile.GetNextEvent()) != 0) {
+    // Only accept some events...
+    if (m_Selector.IsQualifiedEventFast(Event) == true) {
+      m_LongAvg += Event->GetGalacticPointingZAxisLongitude();
+      m_LatAvg += Event->GetGalacticPointingZAxisLatitude();
+      NPointings++;
+    }
+
+    delete Event;
+  }
+  m_EventFile.Rewind();
+  m_LongAvg /= NPointings;
+  m_LatAvg /= NPointings;
+  cout<<"Average Pointing: long="<<m_LongAvg*c_Deg<<"   lat="<<m_LatAvg*c_Deg<<endl;
+
   if (m_AnimationMode == c_AnimateBackprojections) {
     CalculateResponse = true;
   }
@@ -1234,6 +1255,8 @@ void* MImager::ResponseSliceComputationThread(unsigned int ThreadID)
     if (m_NThreads > 1) {
       Event->ParseDelayed(m_FastFileParsing);
     }
+    Event->m_LongAvg = m_LongAvg;
+    Event->m_LatAvg = m_LatAvg;
 
     /// IsQualified is NOT reentrant --- but the only thing modified are its counters, which we do not use here...
     if (m_Selector.IsQualifiedEventFast(Event) == true) {
