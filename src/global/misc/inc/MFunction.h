@@ -160,6 +160,8 @@ class MFunction
 
   //! The x-axis data
   vector<double> m_X;
+  //! The x-axis data starting at 0
+  vector<double> m_XZero;
   //! The y-axis data
   vector<double> m_Y;
 

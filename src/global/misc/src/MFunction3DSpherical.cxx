@@ -224,6 +224,53 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
     }
   }
 
+  // Are m_X equidistant?
+  bool Equidistant = true;
+  double Equidistance = (m_X.back() - m_X.front()) / (m_X.size()-1);
+  for (unsigned int i = 2; i < m_X.size(); ++i) {
+    if (fabs((m_X[i] - m_X[i-1]) - Equidistance) > 1E-10) {
+      Equidistant = false;
+      break;
+    }
+  }
+  if (Equidistant == true) {
+    m_XDistance = Equidistance;
+    cout<<"X is equidistant"<<endl;
+  } else {
+    m_XDistance = 0;
+    cout<<"X not equidistant"<<endl;
+  }
+  // Are m_Y equidistant?
+  Equidistant = true;
+  Equidistance = (m_Y.back() - m_Y.front()) / (m_Y.size()-1);
+  for (unsigned int i = 2; i < m_Y.size(); ++i) {
+    if (fabs((m_Y[i] - m_Y[i-1]) - Equidistance) > 1E-10) {
+      Equidistant = false;
+      break;
+    }
+  }
+  if (Equidistant == true) {
+    m_YDistance = Equidistance;
+  } else {
+    m_YDistance = 0;
+    cout<<"Y not equidistant"<<endl;
+  }
+  // Are m_Z equidistant?
+  Equidistant = true;
+  Equidistance = (m_Z.back() - m_Z.front()) / (m_Z.size()-1);
+  for (unsigned int i = 2; i < m_Z.size(); ++i) {
+    if (fabs((m_Z[i] - m_Z[i-1]) - Equidistance) > 1E-10) {
+      Equidistant = false;
+      break;
+    }
+  }
+  if (Equidistant == true) {
+    m_ZDistance = Equidistance;
+  } else {
+    m_ZDistance = 0;
+    cout<<"Z not equidistant"<<endl;
+  }
+
   // Round two: Parse the actual data
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     if (Parser.GetTokenizerAt(i)->GetNTokens() == 0) continue;
@@ -389,16 +436,92 @@ double MFunction3DSpherical::Integrate() const
 
   return Integral;
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MFunction3DSpherical::GetRandom(double& x, double& y, double& z)
+void MFunction3DSpherical::GetRandom(double& X, double& Y, double& Z)
 {
   // Return a random number distributed as the underlying function
   // The following is an accurate and safe version but rather slow...
 
+  if (m_Cumulative.size() == 0) {
+    m_Cumulative.resize(m_X.size()*m_Y.size()*m_Z.size());
+    for (unsigned int x = 0; x < m_X.size()-1; ++x) {
+      double xCenter = 0.5*(m_X[x+1] + m_X[x]);
+      double xSize = fabs((m_X[x+1] - m_X[x]))*c_Rad;
+      for (unsigned int y = 0; y < m_Y.size()-1; ++y) {
+        double yCenter = 0.5*(m_Y[y+1] + m_Y[y]);
+        double ySize = fabs(cos(m_Y[y]*c_Rad) - cos(m_Y[y+1]*c_Rad));
+        for (unsigned int z = 0; z < m_Z.size()-1; ++z) {
+          double zCenter = 0.5*(m_Z[z+1] + m_Z[z]);
+          double zSize = fabs(m_Z[z+1] - m_Z[z]);
+
+          unsigned long Bin = x + y*m_X.size() + z*m_X.size()*m_Y.size();
+          m_Cumulative[Bin] = xSize*ySize*zSize*Evaluate(xCenter, yCenter, zCenter);
+        }
+      }
+    }
+    for (unsigned int i = 1; i < m_Cumulative.size(); ++i) {
+      m_Cumulative[i] += m_Cumulative[i-1];
+    }
+  }
+
+
+  // Find a random bin
+  double RandomCumulative = gRandom->Rndm()*m_Cumulative.back();
+  auto upperBoundIt = upper_bound(m_Cumulative.begin(), m_Cumulative.end(), RandomCumulative);
+
+  if (upperBoundIt == m_Cumulative.end()) {
+    cout<<"Error: We should never, ever reach that part of the code..."<<endl;
+    return;
+  }
+  unsigned long Bin = distance(m_Cumulative.begin(), upperBoundIt);
+
+  //cout<<"Bin: "<<Bin<<" for "<<RandomCumulative<<endl;
+  unsigned int xBin = Bin % m_X.size();
+  Bin -= xBin;
+  Bin /= m_X.size();
+  unsigned int yBin = Bin % m_Y.size();
+  Bin -= yBin;
+  Bin /= m_Y.size();
+  unsigned int zBin = Bin;
+  //cout<<"Bins: "<<xBin<<":"<<yBin<<":"<<zBin<<endl;
+
+  // Find the maximum value in that bin
+  double Max = -numeric_limits<double>::max();
+  for (unsigned int x = xBin; x <= xBin+1; ++x) {
+    for (unsigned int y = yBin; y <= yBin+1; ++y) {
+      for (unsigned int z = zBin; z <= zBin+1; ++z) {
+        double V = m_V[x + y*m_X.size() + z*m_X.size()*m_Y.size()];
+        if (V > Max) Max = V;
+      }
+    }
+  }
+  //cout<<"Max: "<<Max<<endl;
+
+  // Find a random position inside the bin
+  double x_min = m_X[xBin];
+  double x_diff = m_X[xBin+1] - m_X[xBin];
+
+  double y_min = cos(m_Y[yBin]*c_Rad);
+  double y_diff = cos(m_Y[yBin]*c_Rad) - cos(m_Y[yBin+1]*c_Rad);
+
+  double z_min = m_Z[zBin];
+  double z_diff = m_Z[zBin+1] - m_Z[zBin];
+
+  double V = 0;
+  do {
+    X = gRandom->Rndm()*x_diff + x_min;
+    Y = acos(y_min - gRandom->Rndm()*y_diff)*c_Deg;
+    Z = gRandom->Rndm()*z_diff + z_min;
+
+    V = Evaluate(X, Y, Z);
+  } while (Max*gRandom->Rndm() > V);
+  //cout<<"Final: "<<X<<":"<<Y<<":"<<Z<<endl;
+
+  /*
   if (m_Maximum == g_DoubleNotDefined) {
     m_Maximum = GetVMax();
   }
@@ -414,12 +537,13 @@ void MFunction3DSpherical::GetRandom(double& x, double& y, double& z)
   
   double v = 0;
   do {
-    x = gRandom->Rndm()*x_diff + x_min;
-    y = acos(y_min - gRandom->Rndm()*y_diff)*c_Deg;
-    z = gRandom->Rndm()*z_diff + z_min;
+    X = gRandom->Rndm()*x_diff + x_min;
+    Y = acos(y_min - gRandom->Rndm()*y_diff)*c_Deg;
+    Z = gRandom->Rndm()*z_diff + z_min;
     
-    v = Evaluate(x, y, z);
+    v = Evaluate(X, Y, Z);
   } while (m_Maximum*gRandom->Rndm() > v);
+  */
 }
 
 
@@ -432,19 +556,24 @@ void MFunction3DSpherical::Plot(bool Random)
   
   if (m_X.size() >= 2 && m_Y.size() >= 2 && m_Z.size() >= 2) {
 
-    TH3D* Hist = new TH3D("MFunction3DSpherical", "MFunction3DSpherical", m_X.size(), m_X.front(), m_X.back(), m_Y.size(), m_Y.front(), m_Y.back(), m_Z.size(), m_Z.front(), m_Z.back());
+    TH3D* Hist = new TH3D("MFunction3DSpherical", "MFunction3DSpherical",  m_X.size()-1, &m_X[0], m_Y.size()-1, &m_Y[0], m_Z.size()-1, &m_Z[0]);
     Hist->SetXTitle("phi in degree");
     Hist->SetYTitle("theta in degree");
     Hist->SetZTitle("energy in keV");
 
-    TH2D* Projection = new TH2D("MFunction3DSpherical-P", "MFunction3DSpherical-P", 
-                          m_X.size(), m_X.front(), m_X.back(), 
-                          m_Y.size(), m_Y.front(), m_Y.back());
+    TH2D* Projection = new TH2D("MFunction3DSpherical-P", "MFunction3DSpherical-P", m_X.size()-1, &m_X[0], m_Y.size()-1, &m_Y[0]);
     Projection->SetXTitle("phi in degree");
     Projection->SetYTitle("theta in degree");
 
+
+    TH1D* ProjectionZ = new TH1D("MFunction3DSpherical-Z", "MFunction3DSpherical-Z", m_Z.size()-1, &m_Z[0]);
+    ProjectionZ->SetXTitle("energy in [keV]");
+
     TCanvas* Canvas = new TCanvas("DiagnosticsCanvas", "DiagnosticsCanvas");
     Canvas->cd();
+    if (m_Z.back() / (m_Z.front() > 0 ? m_Z.front() : 1) > 1000) {
+      Canvas->SetLogz();
+    }
 
     if (Random == true) {
       double x, y, z;
@@ -458,13 +587,39 @@ void MFunction3DSpherical::Plot(bool Random)
         }
         GetRandom(x, y, z);
         Hist->Fill(x, y, z, 1);
+        Projection->Fill(x, y, 1);
+        ProjectionZ->Fill(z, 1);
+      }
+      for (int bx = 1; bx <= Hist->GetXaxis()->GetNbins(); ++bx) {
+        for (int by = 1; by <= Hist->GetYaxis()->GetNbins(); ++by) {
+          double Area = c_Pi*(Hist->GetXaxis()->GetBinUpEdge(bx)*c_Rad - Hist->GetXaxis()->GetBinLowEdge(bx)*c_Rad);
+          Area *= cos(Hist->GetYaxis()->GetBinLowEdge(by)*c_Rad) - cos(Hist->GetYaxis()->GetBinUpEdge(by)*c_Rad);
+          for (int bz = 1; bz <= Hist->GetZaxis()->GetNbins(); ++bz) {
+            Hist->SetBinContent(bx, by, bz, Hist->GetBinContent(bx, by, bz) / Area / Hist->GetZaxis()->GetBinWidth(bz));
+          }
+        }
+      }
+      for (int bx = 1; bx <= Hist->GetXaxis()->GetNbins(); ++bx) {
+        for (int by = 1; by <= Hist->GetYaxis()->GetNbins(); ++by) {
+          double Area = c_Pi*(Projection->GetXaxis()->GetBinUpEdge(bx)*c_Rad - Projection->GetXaxis()->GetBinLowEdge(bx)*c_Rad);
+          Area *= cos(Projection->GetYaxis()->GetBinLowEdge(by)*c_Rad) - cos(Projection->GetYaxis()->GetBinUpEdge(by)*c_Rad);
+          Projection->SetBinContent(bx, by, Projection->GetBinContent(bx, by) / Area);
+        }
+      }
+      for (int bz = 1; bz <= Hist->GetZaxis()->GetNbins(); ++bz) {
+        ProjectionZ->SetBinContent(bz, ProjectionZ->GetBinContent(bz) / ProjectionZ->GetXaxis()->GetBinWidth(bz));
       }
     } else {
       for (int bx = 1; bx <= Hist->GetXaxis()->GetNbins(); ++bx) {
         for (int by = 1; by <= Hist->GetYaxis()->GetNbins(); ++by) {
           for (int bz = 1; bz <= Hist->GetZaxis()->GetNbins(); ++bz) {
-            Hist->SetBinContent(bx, by, bz, Evaluate(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by), Hist->GetZaxis()->GetBinCenter(bz)));
-            Projection->SetBinContent(bx, by, Projection->GetBinContent(bx, by) + Evaluate(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by), Hist->GetZaxis()->GetBinCenter(bz)));
+            double x = Hist->GetXaxis()->GetBinCenter(bx);
+            double y = Hist->GetYaxis()->GetBinCenter(by);
+            double z = Hist->GetZaxis()->GetBinCenter(bz);
+            double v = Evaluate(x, y, z);
+            Hist->Fill(x, y, z, v);
+            Projection->Fill(x, y, v);
+            ProjectionZ->Fill(z, v);
           }
         }
       }
@@ -478,8 +633,17 @@ void MFunction3DSpherical::Plot(bool Random)
     ProjectionCanvas->cd();
     Projection->Draw("colz");
     ProjectionCanvas->Update();
-    
-    
+
+
+    TCanvas* ProjectionZCanvas = new TCanvas();
+    if (m_Z.back() / (m_Z.front() > 0 ? m_Z.front() : 1) > 1000) {
+      ProjectionZCanvas->SetLogx();
+    }
+    ProjectionZCanvas->cd();
+    ProjectionZ->Draw();
+    ProjectionZCanvas->Update();
+
+
     gSystem->ProcessEvents();
 
     for (unsigned int i = 0; i < 10; ++i) {
