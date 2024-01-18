@@ -125,7 +125,7 @@ ${geo} \
 --csl 2 2 7 \
 --phi 180 180 1 \
 --fdi 0.25 0.75 3 \
---cqf 1 1 1 \
+--cqf 0.95 1.0 6 \
 --arm 2.0 4.0 5 \
 --egy ${energy} 2.0 15.0 14 \
 --ehc 0 0 1 \
@@ -148,7 +148,7 @@ SensitivityOptimizer \
   --csl 2 2 7 \
   --phi 180 180 1 \
   --fdi 0.25 0.75 3 \
-  --cqf 1 1 1 \
+  --cqf 0.95 1.0 6 \
   --arm 2.0 4.0 5 \
   --egy ${energy} 1.0 5.0 9 \
   --ehc 0 0 1 \

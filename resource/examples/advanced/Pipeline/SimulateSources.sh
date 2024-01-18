@@ -96,7 +96,7 @@ fi
 
 for a in ${AllSourceFiles}; do
 
-  mdelay cosima ${NCPUS}
+  mwait --instances=threads --load=threads -p=cosima
   echo "Starting to simulate ${a}"
   cosima -z ${a} > /dev/null &
   sleep 1
