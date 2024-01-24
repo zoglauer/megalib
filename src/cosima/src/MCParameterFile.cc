@@ -271,6 +271,8 @@ bool MCParameterFile::Parse()
           m_PhysicsListEM = MCPhysicsList::c_EMLivermore;
         } else if (Type == "penelope") {
           m_PhysicsListEM = MCPhysicsList::c_EMPenelope;
+        } else if (Type == "livermore-5d") {
+          m_PhysicsListEM = MCPhysicsList::c_EMLivermore5D;
         } else {
           Typo(i, "Cannot parse token PhysicsListEM correctly:"
                " Unknown package string (Usage: e.g. \"PhysicsListEM Livermore\"");

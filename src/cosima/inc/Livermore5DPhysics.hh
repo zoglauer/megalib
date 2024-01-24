@@ -25,23 +25,23 @@
 //
 // $Id: G4EmLivermorePolarizedPhysics.hh 66704 2013-01-10 18:20:17Z gunter $
 
-#ifndef LivermorePolarizedBH5DPhysics_h
-#define LivermorePolarizedBH5DPhysics_h 1
+#ifndef Livermore5DPhysics_h
+#define Livermore5DPhysics_h 1
 
 #include "G4VPhysicsConstructor.hh"
 #include "globals.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-class LivermorePolarizedBH5DPhysics : public G4VPhysicsConstructor
+class Livermore5DPhysics : public G4VPhysicsConstructor
 {
 public:
-  LivermorePolarizedBH5DPhysics(G4int ver = 1);
+  Livermore5DPhysics(G4int ver = 1);
 
   // obsolete
-  LivermorePolarizedBH5DPhysics(G4int ver, const G4String&);
+  Livermore5DPhysics(G4int ver, const G4String&);
 
-  virtual ~LivermorePolarizedBH5DPhysics();
+  virtual ~Livermore5DPhysics();
 
   virtual void ConstructParticle();
   virtual void ConstructProcess();

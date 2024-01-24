@@ -23,9 +23,9 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// $Id: LivermorePolarizedBH5DPhysics.cc 102321 2017-01-23 09:51:59Z gcosmo $
+// $Id: Livermore5DPhysics.cc 102321 2017-01-23 09:51:59Z gcosmo $
 
-#include "LivermorePolarizedBH5DPhysics.hh"
+#include "Livermore5DPhysics.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4SystemOfUnits.hh"
 
@@ -120,13 +120,13 @@
 // factory
 #include "G4PhysicsConstructorFactory.hh"
 //
-G4_DECLARE_PHYSCONSTR_FACTORY(LivermorePolarizedBH5DPhysics);
+G4_DECLARE_PHYSCONSTR_FACTORY(Livermore5DPhysics);
 
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-LivermorePolarizedBH5DPhysics::LivermorePolarizedBH5DPhysics(G4int ver)
-  : G4VPhysicsConstructor("LivermorePolarizedBH5DPhysics"), verbose(ver)
+Livermore5DPhysics::Livermore5DPhysics(G4int ver)
+  : G4VPhysicsConstructor("Livermore5DPhysics"), verbose(ver)
 {
   G4EmParameters* param = G4EmParameters::Instance();
   param->SetDefaults();
@@ -142,8 +142,8 @@ LivermorePolarizedBH5DPhysics::LivermorePolarizedBH5DPhysics(G4int ver)
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-LivermorePolarizedBH5DPhysics::LivermorePolarizedBH5DPhysics(G4int ver, const G4String&)
-  : G4VPhysicsConstructor("LivermorePolarizedBH5DPhysics"), verbose(ver)
+Livermore5DPhysics::Livermore5DPhysics(G4int ver, const G4String&)
+  : G4VPhysicsConstructor("Livermore5DPhysics"), verbose(ver)
 {
   G4EmParameters* param = G4EmParameters::Instance();
   param->SetDefaults();
@@ -158,12 +158,12 @@ LivermorePolarizedBH5DPhysics::LivermorePolarizedBH5DPhysics(G4int ver, const G4
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-LivermorePolarizedBH5DPhysics::~LivermorePolarizedBH5DPhysics()
+Livermore5DPhysics::~Livermore5DPhysics()
 {}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void LivermorePolarizedBH5DPhysics::ConstructParticle()
+void Livermore5DPhysics::ConstructParticle()
 {
   // gamma
   G4Gamma::Gamma();
@@ -198,7 +198,7 @@ void LivermorePolarizedBH5DPhysics::ConstructParticle()
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void LivermorePolarizedBH5DPhysics::ConstructProcess()
+void Livermore5DPhysics::ConstructProcess()
 {
   if(verbose > 1) {
     G4cout << "### " << GetPhysicsName() << " Construct Processes " << G4endl;

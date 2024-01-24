@@ -20,6 +20,8 @@
 #include "MCPhysicsList.hh"
 #include "MCPhysicsListParticles.hh"
 
+#include "Livermore5DPhysics.hh"
+
 // Geant4:
 #include "QGSP_BIC_HP.hh"
 #include "QGSP_BERT_HP.hh"
@@ -70,8 +72,9 @@ const int MCPhysicsList::c_EMLivermore = 2;
 const int MCPhysicsList::c_EMLivermorePolarized = 3; 
 const int MCPhysicsList::c_EMLivermoreG4LECS = 4; 
 const int MCPhysicsList::c_EMPenelope = 5; 
+const int MCPhysicsList::c_EMLivermore5D = 6; 
 const int MCPhysicsList::c_EMMin = 0; 
-const int MCPhysicsList::c_EMMax = 5; 
+const int MCPhysicsList::c_EMMax = 6; 
 
 const int MCPhysicsList::c_HDNone = 0; 
 const int MCPhysicsList::c_HDQGSP_BIC_HP = 1; 
@@ -126,6 +129,8 @@ void MCPhysicsList::Register()
     RegisterPhysics(new G4EmLivermorePhysics());
   } else if (m_PhysicsListEM == c_EMLivermorePolarized) {
     RegisterPhysics(new G4EmLivermorePolarizedPhysics());
+  } else if (m_PhysicsListEM == c_EMLivermore5D) {
+    RegisterPhysics(new Livermore5DPhysics());
   } else {
     mout<<"Unknown EM physics list ID: "<<m_PhysicsListEM<<endl;
     mout<<"Using Penelope"<<endl;
