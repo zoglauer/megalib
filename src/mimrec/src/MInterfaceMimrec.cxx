@@ -159,6 +159,8 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"             Perform polarization analysis. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"         --interaction-distance:"<<endl;
   Usage<<"             Create interaction distance plots. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"         --save-cfg:"<<endl;
+  Usage<<"             Safe the configuration. If the -o option is given then the configuration is saved to this file."<<endl;
   Usage<<"         --scatter-angles:"<<endl;
   Usage<<"             Create the scatter-angle distributions. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"         --sequence-length:"<<endl;
@@ -349,8 +351,12 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       Polarization();
       return KeepAlive;
     } else if (Option == "--scatter-angles") {
-      cout<<"Command-line parser: Generating scatter-angles plot..."<<endl;  
+      cout<<"Command-line parser: Generating scatter-angles plot..."<<endl;
       ScatterAnglesDistribution();
+      return KeepAlive;
+    } else if (Option == "--save-cfg") {
+      cout<<"Command-line parser: Save the configuration..."<<endl;
+      SaveConfiguration(m_OutputFileName != "" ? m_OutputFileName : "NewConfiguration.cfg");
       return KeepAlive;
     } else if (Option == "--interaction-distance") {
       cout<<"Command-line parser: Generating interaction-distance plot..."<<endl;  
