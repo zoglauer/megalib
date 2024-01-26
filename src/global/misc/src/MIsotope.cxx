@@ -111,14 +111,16 @@ MString MIsotope::GetName() const
 
 
 //! Add line parameters:
-void MIsotope::AddLine(double Energy, double BranchingRatio, const MString& Flags) 
+void MIsotope::AddLine(double Energy, double BranchingRatio, const MString& Flags, bool ExcludeExcludedLines)
 { 
-  m_LineEnergies.push_back(Energy); 
-  m_LineBranchingRatios.push_back(BranchingRatio);
-  m_LineExcludeFlags.push_back(false);
-  m_LineDefaultFlags.push_back(false);
-  if (Flags.Contains("E") == true) m_LineExcludeFlags.back() = true;
-  if (Flags.Contains("D") == true) m_LineDefaultFlags.back() = true;
+  if (ExcludeExcludedLines == false || (ExcludeExcludedLines == true && Flags.Contains("E") == false)) {
+    m_LineEnergies.push_back(Energy);
+    m_LineBranchingRatios.push_back(BranchingRatio);
+    m_LineExcludeFlags.push_back(false);
+    m_LineDefaultFlags.push_back(false);
+    if (Flags.Contains("E") == true) m_LineExcludeFlags.back() = true;
+    if (Flags.Contains("D") == true) m_LineDefaultFlags.back() = true;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

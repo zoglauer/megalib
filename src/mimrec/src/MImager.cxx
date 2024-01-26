@@ -233,7 +233,7 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
     MVector XAxis = Settings->GetImageRotationXAxis();
     MVector ZAxis = Settings->GetImageRotationZAxis();
     if (XAxis.IsOrthogonal(ZAxis) == false) {
-      merr<<"The image rotation axes are not orthogonal! Aborting imaging!"<<show;
+      merr<<"Spherical coordiantes: The axes of the fixed additional rotation are not orthogonal! Aborting imaging!"<<show;
       return false;
     }
     

@@ -1038,13 +1038,13 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
   // This is only an experimental flag --- don't activate it unless you know what you are doing...
   bool UseCenterD2 = false;
 
-  if (m_Event != 0 && m_Event->GetType() != m_EventType) {
+  if (m_Event != nullptr && m_Event->GetType() != m_EventType) {
     // We had an upgrade...
     delete m_Event;
-    m_Event = 0;
+    m_Event = nullptr;
   }
 
-  if (m_Event == 0) {
+  if (m_Event == nullptr) {
     if (m_EventType == c_ComptonEvent) {
       MComptonEvent* CE = new MComptonEvent();
       double ED1 = 0.0;
@@ -1205,8 +1205,9 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection(), Start->GetPolarization(), Start->GetEnergy());
     }
   }
+  m_Event->ClearComments(); // Since this info might be added multiple times.
   for (unsigned int c = 0; c < m_Comments.size(); ++c) {
-    m_Event->AddComment(m_Comments[c]); 
+    m_Event->AddComment(m_Comments[c]);
   }
 
   m_Event->Validate();
@@ -1669,6 +1670,27 @@ MRESE* MRERawEvent::GetNextRESE()
   m_RESEIt_c = Temp;
 
   return m_RESEIt_p;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int MRERawEvent::Parse(MString Event, int Version)
+{
+  // Return  0, if all lines got correctly parsed
+  // Return  1, and stop if a line got not correctly parsed
+  // Return  2, and stop if a line got not parsed
+  // Return -1, and stop if the end of event has been reached
+
+  vector<MString> Lines = Event.Tokenize("\n");
+  int ReturnCode = -2;
+  for (const MString& L: Lines) {
+    int ReturnCode = ParseLine(L, Version);
+    if (ReturnCode == 1) return ReturnCode;
+  }
+
+  return ReturnCode;
 }
 
 

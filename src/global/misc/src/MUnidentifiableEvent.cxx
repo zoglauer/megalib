@@ -151,20 +151,19 @@ bool MUnidentifiableEvent::Validate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MUnidentifiableEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
+MString MUnidentifiableEvent::ToTraString() const
 {
-  // Hopefully a faster way to stream data from and to a file than ROOT...
+  //! Stream the content into a tra-file compatible string
 
-  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
+  MString T;
+  T += MPhysicalEvent::ToTraString();
 
-  if (Read == false) {
-    ostringstream S;
-    S<<"PE "<<m_Energy<<endl;
-    File.Write(S);
-    File.Flush();
-  } 
+  ostringstream S;
+  S<<"PE "<<m_Energy<<endl;
 
-  return Return;
+  T += S.str();
+
+  return T;
 }
 
 

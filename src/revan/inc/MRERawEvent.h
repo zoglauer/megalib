@@ -53,6 +53,9 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! Duplicate this RESE
   MRERawEvent* Duplicate();
   
+  //! Parse a whole event
+  int Parse(MString Event, int Version);
+
   //! Parse the text Line which contains hit information from a sim or evta file
   int ParseLine(const char* Line, int Version);
   
@@ -142,8 +145,11 @@ class MRERawEvent : public MRESE, public MRotationInterface
   bool GetExternalBadEventFlag() { return m_ExternalBadEventFlag; }
   MString GetExternalBadEventString() { return m_ExternalBadEventString; }
 
-
+  //! Set the physical event
+  //! We create a local copy, thus Event will not be owned
   void SetPhysicalEvent(MPhysicalEvent* Event);
+  //! Get the physical event
+  //! This class owns the object, thus make your own ->Duplicate()
   MPhysicalEvent* GetPhysicalEvent();
 
 

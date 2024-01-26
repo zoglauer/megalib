@@ -207,6 +207,7 @@ else
       nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} &> /dev/null &
     fi
     echo "Started run ${COUNTER} out of ${COUNTERMAX} with ID ${ID}"
+    sleep 1
 
     COUNTER=$(( ${COUNTER} + 1 ))
   done

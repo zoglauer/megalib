@@ -197,23 +197,21 @@ bool MPhotoEvent::Assimilate(char *LineBuffer)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MPhotoEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
+MString MPhotoEvent::ToTraString() const
 {
-  // Hopefully a faster way to stream data from and to a file than ROOT...
+  //! Stream the content into a tra-file compatible string
 
-  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
+  MString T;
+  T += MPhysicalEvent::ToTraString();
 
-  if (Read == false) {
-    // Write Photo specific infos:
-    ostringstream S;
-    S<<"PE "<<m_Energy<<endl;
-    S<<"PP "<<m_Position[0]<<" "<<m_Position[1]<<" "<<m_Position[2]<<endl;
-    S<<"PW "<<m_Weight<<endl;
-    File.Write(S);
-    File.Flush();
-  }
+  ostringstream S;
+  S<<"PE "<<m_Energy<<endl;
+  S<<"PP "<<m_Position[0]<<" "<<m_Position[1]<<" "<<m_Position[2]<<endl;
+  S<<"PW "<<m_Weight<<endl;
 
-  return Return;
+  T += S.str();
+
+  return T;
 }
 
 

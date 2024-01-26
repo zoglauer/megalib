@@ -3011,7 +3011,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       } else {
         mout<<m_Name<<": Unknown start area type for position generation"<<endl;
       }
-     
+
       // Rotate according to theta and phi
       // left-handed rotation-matrix: first theta (rotation around y-axis) then phi (rotation around z-axis):
       // | +cosp -sinp 0 |   | +cost 0 +sint |   | x |
@@ -3020,9 +3020,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[0] = (x*cos(Theta)+z*sin(Theta))*cos(Phi) - y*sin(Phi);
       m_Position[1] = (x*cos(Theta)+z*sin(Theta))*sin(Phi) + y*cos(Phi);
       m_Position[2] = -x*sin(Theta)+z*cos(Theta);
-      
-      // Translate sphere center
-      m_Position += m_StartAreaPosition;
+
+      // We tranlate the start sphere position after handling any orientations
     } 
   } 
 
@@ -3400,6 +3399,11 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
   // Rotate from local into oriented coordiante system
   if (PerformOrientation(m_Position, m_Direction) == false) return false;
   
+  if (m_CoordinateSystem == c_FarField) {
+    // Translate the start sphere center
+    m_Position += m_StartAreaPosition;
+  }
+
   // Sanity check that the position is within the world volume
   if (MCRunManager::GetMCRunManager()->GetDetectorConstruction()->IsInsideWorldVolume(m_Position) == false) {
     mout<<"  ***  ERROR  ***   "<<m_Name<<": The position "<<m_Position/cm<<" cm is outside the world volume! Please make your world volume larger or your simulations are incorrect!"<<endl;

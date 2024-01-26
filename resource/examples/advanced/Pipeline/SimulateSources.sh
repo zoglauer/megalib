@@ -32,7 +32,7 @@ PointSourceContinuumPolarizedTemplate=${MEGALIB}/resource/examples/advanced/Pipe
 
 
 THREADS=1
-NCPUS=`cat /proc/cpuinfo | grep "processor" | wc -l`
+NCPUS=`grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}'`
 
 # Create the directory where to store the simulation file
 if [ ! -d "${PointSourceDir}" ]; then

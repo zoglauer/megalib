@@ -307,7 +307,7 @@ bool MRotationInterface::ToBinary(MBinaryStore& Out, const int BinaryPrecision, 
 
 //! Stream to a file
 //! Reading has to be done in the derived class 
-void MRotationInterface::Stream(ostringstream& S)
+void MRotationInterface::Stream(ostringstream& S) const
 {
   if (m_HasGalacticPointing == true) {
     double phi = m_GalacticPointingXAxis.Phi()*c_Deg;
