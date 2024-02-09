@@ -4646,16 +4646,25 @@ void MDGeometry::CalculateMasses()
     }
   }
 
+  map<MString, double> MassByName;
+  for (MassesIter = Masses.begin(); MassesIter != Masses.end(); ++MassesIter) {
+    MassByName[(*MassesIter).first->GetName()] = (*MassesIter).second;
+  }
+
   ostringstream out;
   out.setf(ios_base::fixed, ios_base::floatfield);
   out.precision(3);
   out<<endl;
   out<<"Mass summary by material: "<<endl;
   out<<endl;
-  for (MassesIter = (Masses.begin());
-       MassesIter != Masses.end(); MassesIter++) {
-    out<<setw(NameWidth+2)<<(*MassesIter).first->GetName()<<" :  "<<setw(12)<<(*MassesIter).second<<" g"<<endl;
-    Total += (*MassesIter).second;
+  //for (MassesIter = (Masses.begin());
+  //     MassesIter != Masses.end(); MassesIter++) {
+  //  out<<setw(NameWidth+2)<<(*MassesIter).first->GetName()<<" :  "<<setw(12)<<(*MassesIter).second<<" g"<<endl;
+  //  Total += (*MassesIter).second;
+  //}
+  for (auto I = MassByName.begin(); I != MassByName.end(); ++I) {
+    out<<setw(NameWidth+2)<<(*I).first<<" :  "<<setw(12)<<(*I).second<<" g"<<endl;
+    Total += (*I).second;
   }
   out<<endl;
   out<<setw(NameWidth+2)<<"Total"<<" :  "<<setw(12)<<Total<<" g"<<endl;
