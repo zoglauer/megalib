@@ -4056,7 +4056,7 @@ void MInterfaceMimrec::EnergyDistributionElectronPhoton()
   if (InitializeEventLoader() == false) return;
 
   bool xLog = m_Settings->GetLogBinningSpectrum();
-  double xMin = GetTotalEnergyMin();
+  double xMin = 0;
   double xMax = GetTotalEnergyMax();
   
   if (xLog == true) {
