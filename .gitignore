@@ -84,6 +84,7 @@ include
 lib
 external
 External
+resource/examples/geomega/materials/
 
 # Special files
 *~
