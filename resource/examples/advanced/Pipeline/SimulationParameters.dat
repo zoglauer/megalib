@@ -23,6 +23,11 @@ PointSourceMonoEnergies="1808.7 1157.04 1173.2 1332.5 100 130 200 350 500 550 70
 # Should the default set of broad lines be simulated
 SimulateBroadLines=true
 
+# Should the default set of extended lines be simulated
+SimulateExtendedLines=true
+# Extents
+Extents="2.5 5 5.6 7.5 10.0"
+
 # Energies at which to start the continuum simulations - empty if no continuum sources shall be simulated
 # 80(00) keV was chosen in order to be able to use 100(00) as the sensitivity determination boundary
 # and not run into energy resolution effects (assuming the enery resolution is better than 5%)
