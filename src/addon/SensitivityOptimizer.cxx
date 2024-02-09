@@ -513,7 +513,10 @@ private:
   vector<MString> m_BackgroundFiles;
   //! List of all measurement times
   vector<double> m_BackgroundTimes;
-  
+
+  //! The mimrec settings
+  MSettingsMimrec m_MimrecSettings;
+
   //! The main event selector
   MEventSelector m_EventSelector;
   
@@ -682,9 +685,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       if (!((argc > i+1) && 
         (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
         mlog<<"Error: Option \""<<argv[i][1]<<"\" needs one argument!"<<endl;
-      mlog<<Usage.str()<<endl;
-      return false;
-        }
+        mlog<<Usage.str()<<endl;
+        return false;
+      }
     } else if (Option == "--csl" || Option == "-b" || Option == "-w" || Option == "--pos") {
       if (!((argc > i+2) && 
         (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
@@ -702,8 +705,8 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) && 
         (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0))) {
         mlog<<"Error: Option \""<<argv[i][1]<<"\" needs three arguments!"<<endl;
-      mlog<<Usage.str()<<endl;
-    return false;
+        mlog<<Usage.str()<<endl;
+        return false;
         }
       } else if (Option == "--egy" || Option == "--ehp") {
         if (!((argc > i+4) && 
@@ -712,9 +715,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
           (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) && 
           (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0))) {
           mlog<<"Error: Option \""<<argv[i][1]<<"\" needs four arguments!"<<endl;
-        mlog<<Usage.str()<<endl;
-        return false;
-          }
+          mlog<<Usage.str()<<endl;
+          return false;
+        }
       } else if (Option == "-p") {
         if (!((argc > i+5) && 
           (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
@@ -723,9 +726,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
           (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0) && 
           (argv[i+5][0] != '-' || isalpha(argv[i+5][1]) == 0))) {
           mlog<<"Error: Option \""<<argv[i][1]<<"\" needs five arguments!"<<endl;
-        mlog<<Usage.str()<<endl;
-        return false;
-          }
+          mlog<<Usage.str()<<endl;
+          return false;
+        }
       } else if (Option == "-k") {
         if (!((argc > i+8) && 
           (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
@@ -737,9 +740,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
           (argv[i+7][0] != '-' || isalpha(argv[i+7][1]) == 0) && 
           (argv[i+8][0] != '-' || isalpha(argv[i+8][1]) == 0))) {
           mlog<<"Error: Option \""<<argv[i][1]<<"\" needs eight arguments!"<<endl;
-        mlog<<Usage.str()<<endl;
-        return false;
-          }
+          mlog<<Usage.str()<<endl;
+          return false;
+        }
       }
   }
   
@@ -860,7 +863,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         mlog<<Usage.str()<<endl;
         return false;       
       }
-      mlog<<"Accepting configuration file name: "<<ConfigurationFile<<endl;
+      mlog<<"Accepting geometry file name: "<<GeometryFile<<endl;
     } else if (Option == "--simple") {
       m_ComplexEquation = false; 
       mlog<<"Using simple sensitivity equation"<<endl;
@@ -1524,9 +1527,8 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
   }  
   
   // Load the configuration file and initialize the event selector:
-  MSettingsMimrec Data;
-  Data.Read(ConfigurationFile);
-  m_EventSelector.SetSettings(&Data);
+  m_MimrecSettings.Read(ConfigurationFile);
+  m_EventSelector.SetSettings(&m_MimrecSettings);
   m_EventSelector.SetGeometry(&m_Geometry);
   
   return true;
@@ -1818,7 +1820,11 @@ bool SensitivityOptimizer::Analyze()
                                     S.SetTrackQualityFactor(0, m_TQF[k]);
                                     S.SetEarthHorizonCut(EH);
                                     S.SetFirstTotalEnergy(m_EnergyMin[e], m_EnergyMax[eup]);  
-                                    S.SetComptonAngle(0, m_Phi[p]);
+                                    
+                                    double ComptonAngleMin = m_MimrecSettings.GetComptonAngleRangeMin();
+                                    double ComptonAngleMax = m_MimrecSettings.GetComptonAngleRangeMax();
+                                    S.SetComptonAngle(ComptonAngleMin, ComptonAngleMax < m_Phi[p] ? ComptonAngleMax : m_Phi[p]);
+
                                     S.SetThetaDeviationMax(m_The[t]);
                                     S.SetSequenceLength(m_CSLMin[l], m_CSLMax[l]);
                                     S.SetTrackLength(m_TSLMin[u], m_TSLMax[u]);
@@ -1830,11 +1836,18 @@ bool SensitivityOptimizer::Analyze()
                                     MVector Position(xx, xy, xz);
                                     
                                     S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
-                                    S.SetSourceARM(0, m_ARMorRadius[a]);
+
+                                    double ARMMin = m_MimrecSettings.GetSourceARMMin();
+                                    double ARMMax = m_MimrecSettings.GetSourceARMMax();
+                                    S.SetSourceARM(ARMMin, ARMMax < m_ARMorRadius[a] ? ARMMax : m_ARMorRadius[a]);
+
                                     S.SetSourceSPD(0, m_SPD[s]);
                                     S.SetBeamRadius(m_BRA[b]);
                                     S.SetBeamDepth(m_BDE[c]);
-                                    S.SetFirstDistance(m_FDI[f], c_FarAway);
+                                    
+                                    double FirstDistanceMin = m_MimrecSettings.GetFirstDistanceRangeMin();
+                                    double FirstDistanceMax = m_MimrecSettings.GetFirstDistanceRangeMax();
+                                    S.SetFirstDistance(FirstDistanceMin > m_FDI[f] ? FirstDistanceMin : m_FDI[f], FirstDistanceMax < c_FarAway ? FirstDistanceMax : c_FarAway);
                                     
                                     TrackedCompton_Final[GetTrackedComptonIndex(c, b, q, k, r, h, e, eup, p, t, s, a, u, l, f, x, y)].SetEventSelector(S);
                                     for (unsigned int bf = 0; bf < m_BackgroundFiles.size(); ++bf) {
@@ -1921,7 +1934,11 @@ bool SensitivityOptimizer::Analyze()
                             //S.SetTrackQualityFactor(0, m_TQF[k]);
                             S.SetEarthHorizonCut(EH);
                             S.SetFirstTotalEnergy(m_EnergyMin[e], m_EnergyMax[eup]);  
-                            S.SetComptonAngle(0, m_Phi[p]);
+
+                            double ComptonAngleMin = m_MimrecSettings.GetComptonAngleRangeMin();
+                            double ComptonAngleMax = m_MimrecSettings.GetComptonAngleRangeMax();
+                            S.SetComptonAngle(ComptonAngleMin, ComptonAngleMax < m_Phi[p] ? ComptonAngleMax : m_Phi[p]);
+
                             //S.SetThetaDeviationMax(m_The[t]);
                             S.SetSequenceLength(m_CSLMin[l], m_CSLMax[l]);
                             //S.SetTrackLength(m_TSLMin[u], m_TSLMax[u]);
@@ -1933,11 +1950,18 @@ bool SensitivityOptimizer::Analyze()
                             MVector Position(xx, xy, xz);
                             
                             S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
-                            S.SetSourceARM(0, m_ARMorRadius[a]);
+                            
+                            double ARMMin = m_MimrecSettings.GetSourceARMMin();
+                            double ARMMax = m_MimrecSettings.GetSourceARMMax();
+                            S.SetSourceARM(ARMMin, ARMMax < m_ARMorRadius[a] ? ARMMax : m_ARMorRadius[a]);
+
                             //S.SetSourceSPD(0, m_SPD[s]);
                             S.SetBeamRadius(m_BRA[b]);
                             S.SetBeamDepth(m_BDE[c]);
-                            S.SetFirstDistance(m_FDI[f], c_FarAway);
+                            
+                            double FirstDistanceMin = m_MimrecSettings.GetFirstDistanceRangeMin();
+                            double FirstDistanceMax = m_MimrecSettings.GetFirstDistanceRangeMax();
+                            S.SetFirstDistance(FirstDistanceMin > m_FDI[f] ? FirstDistanceMin : m_FDI[f], FirstDistanceMax < c_FarAway ? FirstDistanceMax : c_FarAway);
                             
                             UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetEventSelector(S);
                             for (unsigned int bf = 0; bf < m_BackgroundFiles.size(); ++bf) {
