@@ -40,6 +40,7 @@ FILES := MGeometryRevan \
 	MERTrackGas \
 	MERTrackDirectional \
 	MERTrackChiSquare \
+	MERTrackWithinCrossStripDetectorTMVADataSet \
 	MERCSR \
 	MERCSRChiSquare \
 	MERCSREnergyRecovery \

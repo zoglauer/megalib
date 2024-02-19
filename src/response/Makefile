@@ -29,6 +29,7 @@ FILES := MResponseCreator \
 	MResponseEventClusterizerTMVA \
 	MResponseClusteringDSS \
 	MResponseTracking \
+	MResponseTrackWithinCrossStripDetectorTMVAEventFile \
 	MResponseMultipleCompton \
 	MResponseMultipleComptonBayes \
 	MResponseMultipleComptonEventFile \
