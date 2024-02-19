@@ -27,6 +27,7 @@
 #include "MDVolume.h"
 #include "MDGrid.h"
 #include "MDGridPoint.h"
+#include "MDGridPointCollection.h"
 #include "MDVolumeSequence.h"
 #include "MFunction.h"
 #include "MFunction3D.h"
@@ -177,6 +178,8 @@ class MDDetector
   virtual bool HasGuardRing() const { return m_HasGuardRing; }
   //! Return the guard ring detector or a nullptr if we don't have any
   MDGuardRing* GetGuardRing() { return m_GuardRing; }
+  //! Return the guard ring detector or a nullptr if we don't have any
+  const MDGuardRing* GetGuardRing() const { return m_GuardRing; }
   
   
   //! Return true, if the detector has a time resolution
@@ -187,26 +190,26 @@ class MDDetector
   virtual unsigned int GetNSensitiveVolumes() const;
   virtual int GetGlobalNSensitiveVolumes() const;
 
-  //! Discretize the position to a voxel of the volume, which needs to be a clone template!
-  virtual vector<MDGridPoint> Discretize(const MVector& Pos, 
-                                         const double& Energy, 
-                                         const double& Time, 
-                                         MDVolume* Volume) const = 0;
   //! Return the Grid point of this position - only the grid part is filled!
   virtual MDGridPoint GetGridPoint(const MVector& Pos) const = 0;
 
   //! Return a position in detector volume coordinates
-  virtual MVector GetPositionInDetectorVolume(const unsigned int xGrid, 
-                                              const unsigned int yGrid,
-                                              const unsigned int zGrid,
-                                              const MVector PositionInGrid,
-                                              const unsigned int Type,
-                                              MDVolume* Volume) = 0;
-
+  virtual MVector GetPositionInDetectorVolume(const unsigned int xGrid, const unsigned int yGrid, const unsigned int zGrid, const MVector PositionInGrid, const unsigned int Type, const MDVolume* Volume) const = 0;
+                                              
+  //! Return true if the energy is above the trigger threshold
   virtual bool IsAboveTriggerThreshold(const double& Energy, const MDGridPoint& Point) const;
   
+  //! Return true if the energy is above the noise threshold
+  virtual bool IsAboveNoiseThreshold(const double& Energy, const MDGridPoint& Point) const;
+  
+  //! Return the sigmas above the noise level this energy is
+  virtual double SigmasAboveNoiseLevel(const double& Energy, const MDGridPoint& Point) const;
+  
+  //! Grid a hit, e.g. split due to e.g. charge transport, or do nothing and just return the grid of the hit
+  virtual vector<MDGridPoint> Grid(const MVector& Pos, const double& Energy, const double& Time, const MDVolume* Volume) const = 0;
+    
   //! Noise a normal hit
-  virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const = 0;
+  virtual void Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const = 0;
   
   //! Noise a guard ring hit - if the detector has a guard ring
   //virtual bool NoiseGuardRing(double&) const { return false; }
@@ -231,7 +234,7 @@ class MDDetector
   // The named detector interface -- this is usually only used in connection of calibrating real data, NOT for simulated data
 
   //! Return true if this is a named detector
-  bool IsNamedDetector() { return m_IsNamedDetector; }
+  bool IsNamedDetector() const { return m_IsNamedDetector; }
   
   //! Add a named detector - returns false in case the detector cannot be added
   bool AddNamedDetector(MDDetector* Detector);
@@ -308,7 +311,8 @@ class MDDetector
   static const int c_DepthResolutionTypeNone;
   static const int c_DepthResolutionTypeIdeal;
   static const int c_DepthResolutionTypeGauss;
-
+  
+  
   
   // protected methods:
  protected:
@@ -420,7 +424,7 @@ class MDDetector
 
   //! True if this detector has a guard ring:
   bool m_HasGuardRing;
-  //! The guard ring itself - nullptr if we don;t have any
+  //! The guard ring itself - nullptr if we don't have any
   MDGuardRing* m_GuardRing; 
 
   //! Flag indicating if the grid of trigger blocked channels is used 
@@ -435,7 +439,8 @@ class MDDetector
   MDDetector* m_NamedAfter;
   //! The list of named detectors
   vector<MDDetector*> m_NamedDetectors;
-  //! The volume sequence - filled if this is a named detector
+  //! The volume sequence - filled AND ONLY VALID if this is a named detector
+  // TODO: Rename to m_NamedVolumeSequence
   MDVolumeSequence m_VolumeSequence;
 
 

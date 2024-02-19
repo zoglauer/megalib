@@ -45,7 +45,7 @@ MCVHit::MCVHit()
   m_Name = "Unknown";
   m_DetectorType = MDDetector::c_NoDetectorType;
 
-  m_LastAddedOrigin = -1; 
+  m_LastAddedOrigin = g_UnsignedIntNotDefined; 
 }
 
 
@@ -61,7 +61,7 @@ MCVHit::~MCVHit()
 /******************************************************************************
  * Add a track ID as origin to this hit
  */
-void MCVHit::AddOrigin(int TrackId)
+void MCVHit::AddOrigin(unsigned int TrackId)
 {
   // Since m_origin is a set, the origin is not added if it already exists!
 
@@ -72,9 +72,9 @@ void MCVHit::AddOrigin(int TrackId)
 /******************************************************************************
  * Add several origins to the list
  */
-void MCVHit::AddOrigins(const set<int>& Origins)
+void MCVHit::AddOrigins(const set<unsigned int>& Origins)
 {
-  set<int>::const_iterator Iter;
+  set<unsigned int>::const_iterator Iter;
   for (Iter = Origins.begin(); Iter != Origins.end(); ++Iter) {
     AddOrigin(*Iter);
   }
@@ -97,6 +97,7 @@ MSimHT* MCVHit::GetCalibrated()
 {
   MSimHT* HT = new MSimHT();
   HT->Set(m_DetectorType, MVector(m_Position.getX()/cm, m_Position.getY()/cm, m_Position.getZ()/cm), m_Energy/keV, m_Time/s, m_Origins, false);
+
   return HT;
 }
 

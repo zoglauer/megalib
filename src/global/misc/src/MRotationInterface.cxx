@@ -38,9 +38,9 @@ ClassImp(MRotationInterface)
 
 
 //! Default constructor
-MRotationInterface::MRotationInterface()
+MRotationInterface::MRotationInterface() : m_Id(0), m_HasGalacticPointing(false), m_GalacticPointingXAxis(1.0, 0.0, 0.0), m_GalacticPointingZAxis(0.0, 0.0, 1.0), m_HasDetectorRotation(false), m_DetectorRotationXAxis(1.0, 0.0, 0.0), m_DetectorRotationZAxis(0.0, 0.0, 1.0), m_HasHorizonPointing(false), m_HorizonPointingXAxis(1.0, 0.0, 0.0), m_HorizonPointingZAxis(0.0, 0.0, 1.0), m_IsGalacticPointingRotationCalculated(false), m_IsGalacticPointingInverseRotationCalculated(false)
 {
-  Reset();
+  // Too slow: Reset();
 }
 
 
@@ -83,18 +83,18 @@ void MRotationInterface::Reset()
 {
   m_Id = 0;
   
-  m_GalacticPointingXAxis = MVector(1.0, 0.0, 0.0);
-  m_GalacticPointingZAxis = MVector(0.0, 0.0, 1.0);
+  m_GalacticPointingXAxis.SetXYZ(1.0, 0.0, 0.0);
+  m_GalacticPointingZAxis.SetXYZ(0.0, 0.0, 1.0);
   m_HasGalacticPointing = false; 
   m_IsGalacticPointingRotationCalculated = false;
   m_IsGalacticPointingInverseRotationCalculated = false;
 
-  m_DetectorRotationXAxis = MVector(1.0, 0.0, 0.0);
-  m_DetectorRotationZAxis = MVector(0.0, 0.0, 1.0);
+  m_DetectorRotationXAxis.SetXYZ(1.0, 0.0, 0.0);
+  m_DetectorRotationZAxis.SetXYZ(0.0, 0.0, 1.0);
   m_HasDetectorRotation = false; 
   
-  m_HorizonPointingXAxis = MVector(1.0, 0.0, 0.0);
-  m_HorizonPointingZAxis = MVector(0.0, 0.0, 1.0);
+  m_HorizonPointingXAxis.SetXYZ(1.0, 0.0, 0.0);
+  m_HorizonPointingZAxis.SetXYZ(0.0, 0.0, 1.0);
   m_HasHorizonPointing = false; 
 }
 

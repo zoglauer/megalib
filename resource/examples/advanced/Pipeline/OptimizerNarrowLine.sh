@@ -134,6 +134,31 @@ ${geo} \
 mdelay SensitivityOptimizer $(( $(nproc) / 2 ))
 
 
+
+energy="1157.04"
+energywidth="0"
+setsources
+
+SensitivityOptimizer \
+  ${time} \
+  ${source} \
+  ${backgroundall} \
+  ${cfg} \
+  ${geo} \
+  --csl 2 2 7 \
+  --phi 180 180 1 \
+  --fdi 0.25 0.75 3 \
+  --cqf 1 1 1 \
+  --arm 2.0 4.0 5 \
+  --egy ${energy} 1.0 5.0 9 \
+  --ehc 0 0 1 \
+  -n NarrowLine_${type}_${energy}.v${version} &
+
+mdelay SensitivityOptimizer $(( $(nproc) / 2 ))
+
+
+
+
 energy="1173.2"
 energywidth="0"
 setsources
@@ -219,6 +244,8 @@ mdelay SensitivityOptimizer $(( $(nproc) / 2 ))
 
 
 
+
+
 energy="1808.7"
 energywidth="0"
 setsources
@@ -242,7 +269,22 @@ ${geo} \
 mdelay SensitivityOptimizer $(( $(nproc) / 2 ))
 
 
+SensitivityOptimizer \
+${time} \
+${source} \
+${backgroundall} \
+${cfg} \
+${geo} \
+--csl 2 2 7 \
+--phi 180 180 1 \
+--fdi 0.5 0.5 1 \
+--cqf 0.95 1 6 \
+--arm 1.0 3.0 5 \
+--egy ${energy} 1.0 5.0 9 \
+--ehc 0 0 1 \
+-n NarrowLine_${type}_${energy}.v${version} &
 
+mdelay SensitivityOptimizer $(( $(nproc) / 2 ))
 
 
 

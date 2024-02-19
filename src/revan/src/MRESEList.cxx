@@ -142,9 +142,10 @@ void MRESEList::DeleteAll()
   //m_RESEList->Delete();
 
   for (vector<MRESE*>::iterator Iter = m_RESEList.begin(); Iter != m_RESEList.end(); ++Iter) {
-    if ((*Iter) != 0) {
+    if ((*Iter) != nullptr) {
       (*Iter)->DeleteAll();
       delete (*Iter);
+      (*Iter) = nullptr;
     }
   }
 }
