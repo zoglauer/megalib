@@ -563,8 +563,22 @@ bool MResponseBuilder::SanityCheckSimulations()
     if (RE->GetVertex() != 0) continue;
 
     if (int(m_SiEvent->GetNHTs()) < RE->GetNRESEs()) {
-      mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): The simulation has less hits ("<<m_SiEvent->GetNHTs()<<") than the raw event ("<<RE->GetNRESEs()<<")!"<<endl;
-      return false;
+      bool HasStripHits = false;
+      for (int i = 0; i < RE->GetNRESEs(); ++i) {
+        if (RE->GetRESEAt(i)->GetType() == MRESE::c_StripHit) {
+          HasStripHits = true;
+          break;
+        }
+      }
+
+      if (HasStripHits == false) {
+        mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): The simulation has less hits ("<<m_SiEvent->GetNHTs()<<") than the raw event ("<<RE->GetNRESEs()<<")!"<<endl;
+
+        cout<<endl<<m_SiEvent->ToSimString()<<endl;
+        cout<<endl<<RE->ToString()<<endl;
+
+        return false;
+      }
     }
 
     for (int i = 0; i < RE->GetNRESEs(); ++i) {
@@ -666,43 +680,6 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
   } else {
     // If not find them...
     
-    /* For MEGAlib < 4
-    
-    // Get the revan RESE Ids
-    vector<int> Ids = GetReseIds(RESE);
-
-    vector<int> OriginIds;
-    OriginIds.reserve(10);
-
-    // Generate sim IDs:
-    for (vector<int>::iterator Iter = Ids.begin(); Iter != Ids.end(); ++Iter) {
-      unsigned int HTID = (*Iter) - IdOffset;
-      if (HTID >= m_SiEvent->GetNHTs()) {
-        merr<<"The RESE has higher IDs "<<HTID<<" than the sim file HTs!"<<endl;
-        return OriginIds;
-      }
-      MSimHT* HT = m_SiEvent->GetHTAt(HTID);
-      if (HT == 0) {
-        merr<<"Hit not found. ID's don't match. Something is badly wrong..."<<endl;
-        return OriginIds;
-      }
-
-      for (unsigned int o = 0; o < HT->GetNOrigins(); ++o) {
-        int Origin = int(HT->GetOriginAt(o));
-        if (find(OriginIds.begin(), OriginIds.end(), Origin) == OriginIds.end()) { // not found
-          // Add it if it is no INIT, ANNI or DECA --- but why?? We can have on electron started at INIT or DECA generating hits
-          if (Origin >= 1 && 
-            m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "INIT" && 
-            m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "ANNI" && 
-            m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "DECA") {
-            OriginIds.push_back(Origin);
-          }
-        }
-      }
-    }
-    */
-    
-    
     set<unsigned int> RESEOriginIDs = RESE->GetOriginIDs();
     //cout<<"RESE origin IDs: "; for (auto I: RESEOriginIDs) cout<<I<<" "; cout<<endl;
     
@@ -727,6 +704,46 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
 
     return OriginIds;
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<int> MResponseBuilder::GetOriginIds(vector<MRESE*>& RESEs)
+{
+  vector<int> OriginIDs;
+
+  for (MRESE* RESE: RESEs) {
+    vector<int> NewIDs = GetOriginIds(RESE);
+    for (int ID : NewIDs) {
+      if (std::find(OriginIDs.begin(), OriginIDs.end(), ID) == OriginIDs.end()) {
+        OriginIDs.push_back(ID);
+      }
+    }
+  }
+  sort(OriginIDs.begin(), OriginIDs.end());
+  return OriginIDs;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<int> MResponseBuilder::GetOriginIds(vector<vector<MRESE*>>& RESEs)
+{
+  vector<int> OriginIDs;
+
+  for (vector<MRESE*>& RV: RESEs) {
+    vector<int> NewIDs = GetOriginIds(RV);
+    for (int ID : NewIDs) {
+      if (std::find(OriginIDs.begin(), OriginIDs.end(), ID) == OriginIDs.end()) {
+        OriginIDs.push_back(ID);
+      }
+    }
+  }
+  sort(OriginIDs.begin(), OriginIDs.end());
+  return OriginIDs;
 }
 
 

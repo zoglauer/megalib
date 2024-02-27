@@ -110,6 +110,7 @@ class MResponseCreator
   enum MResponseModes {
     c_ModeUnknown,
     c_ModeTracks,
+    c_ModeTrackWithinCrossStripDetectorTMVAEventFile,
     c_ModeComptonsBayes,
     c_ModeComptonsEventFile,
     c_ModeComptonsLens,

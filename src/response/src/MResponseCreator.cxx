@@ -54,6 +54,7 @@ using namespace std;
 #include "MResponsePolarizationBinnedMode.h"
 #include "MResponseEarthHorizon.h"
 #include "MResponseTracking.h"
+#include "MResponseTrackWithinCrossStripDetectorTMVAEventFile.h"
 #include "MResponseEventQuality.h"
 #include "MResponseEventQualityTMVAEventFile.h"
 #include "MResponseStripPairingTMVAEventFile.h"
@@ -158,6 +159,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<MResponseEventClusterizerTMVA::Options()<<endl;
   Usage<<"      cd : clustering for double sided-strip detectors"<<endl;
   Usage<<"      t  : track"<<endl;
+  Usage<<"      tf : "<<MResponseTrackWithinCrossStripDetectorTMVAEventFile::Description()<<endl;
   Usage<<"      cf : "<<MResponseMultipleComptonEventFile::Description()<<endl;
   Usage<<MResponseMultipleComptonEventFile::Options()<<endl;
   Usage<<"      cb : "<<MResponseMultipleComptonBayes::Description()<<endl;
@@ -259,6 +261,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       if (SubOption == "t") {
         m_Mode = c_ModeTracks;
         cout<<"Choosing track mode"<<endl;
+      } else if (SubOption == "tf") {
+        m_Mode = c_ModeTrackWithinCrossStripDetectorTMVAEventFile;
       } else if (SubOption == "gf") {
         m_Mode = c_ModeEventClusterizerTMVAEventFile;
       } else if (SubOption == "gt") {
@@ -564,6 +568,31 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
 
+    if (Response.Initialize() == false) return false;
+    while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
+
+  } else if (m_Mode == c_ModeTrackWithinCrossStripDetectorTMVAEventFile) {
+
+    if (m_RevanCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No revan configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+
+    MResponseTrackWithinCrossStripDetectorTMVAEventFile Response;
+
+    Response.SetDataFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
     while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;

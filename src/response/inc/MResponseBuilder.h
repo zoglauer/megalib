@@ -119,7 +119,11 @@ class MResponseBuilder
   vector<int> GetReseIds(MRESE* RESE);
   //! Return a list of Sivan Origin IA IDs for the given RESE
   vector<int> GetOriginIds(MRESE* RESE);
-  
+  //! Return a list of Sivan Origin IA IDs for the given vector of RESEs
+  vector<int> GetOriginIds(vector<MRESE*>& RESE);
+  //! Return a list of Sivan Origin IA IDs for the given vector of vector of RESEs
+  vector<int> GetOriginIds(vector<vector<MRESE*>>& RESE);
+
   //! Check if IDs (RESE or origins?) are in sequence
   bool AreIdsInSequence(const vector<int>& Ids);
   

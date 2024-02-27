@@ -40,6 +40,8 @@ using namespace std;
 #include "MStreams.h"
 #include "MSystem.h"
 #include "MRESEIterator.h"
+#include "MRESE.h"
+#include "MREStripHit.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -246,28 +248,36 @@ bool MResponseTrackWithinCrossStripDetectorTMVAEventFile::Analyze()
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
   
+  //cout<<endl<<"Start "<<m_SiEvent->GetID()<<endl;
+
+  //cout<<endl<<m_SiEvent->ToSimString()<<endl;
+  //cout<<endl<<m_ReEvent->ToString()<<endl;
+
   // We need to have at least an "INIT" in the simulation file per event 
   if (m_SiEvent->GetNIAs() < 2) {
+    //cout<<"No INIT"<<endl;
     return true;
   }
   
   // We require the initial raw event
   MRERawEvent* RE = m_ReReader->GetInitialRawEvent();
   if (RE == nullptr) {
+    //cout<<"No initial raw event"<<endl;
     return true;
   }
-  
+  //cout<<endl<<RE->ToString()<<endl;
+
   // (I) Event cleaning
 
   // For training we only want events where the first interaction is a Compton event
   if (m_SiEvent->GetIAAt(1)->GetProcess() != "COMP") {
-    cout<<"First IA is not Compton"<<endl;
+    //cout<<"First IA is not Compton"<<endl;
     return true;
   }
   
   // It needs to be in a cross-strip detector
   if (m_SiEvent->GetIAAt(1)->GetDetectorType() != MDDetector::c_Strip3D) {
-    cout<<"First IA is not in a 3D strip detector"<<endl;
+    //cout<<"First IA is not in a 3D strip detector"<<endl;
     return true;
   }
 
@@ -290,120 +300,138 @@ bool MResponseTrackWithinCrossStripDetectorTMVAEventFile::Analyze()
   vector<bool> Ignore;
   vector<MDVolumeSequence*> StripVolumeSequences;
   
+  vector<vector<MREStripHit*>> StripHitsPerDetector;
+
   // (1) Collect the data
   for (unsigned int r = 0; r < RESEs.size(); ++r) {
     MRESE* R = RESEs[r];
-    MDVolumeSequence* VS = R->GetVolumeSequence();
-    
-    VolumeTree.push_back(VS->ToStringVolumes().GetHash()); // x 
-    VolumeTree.push_back(VolumeTree.back()); // y = x
-    
-    MVector PositionInDetector = VS->GetPositionInSensitiveVolume();
-    MDGridPoint GP = VS->GetDetector()->GetGridPoint(PositionInDetector);
-    
-    IsXStrip.push_back(true);
-    StripID.push_back(GP.GetXGrid());
-    StripEnergy.push_back(R->GetEnergy());
-    StripVolumeSequences.push_back(VS);
-    Ignore.push_back(false);
-    Origins.push_back(GetOriginIds(R));
-    
-    IsXStrip.push_back(false);
-    StripID.push_back(GP.GetYGrid());
-    StripEnergy.push_back(R->GetEnergy());
-    StripVolumeSequences.push_back(VS);
-    Ignore.push_back(false);
-    Origins.push_back(GetOriginIds(R));
-  }
-  
-  
-  // (2) Combine hits in same strip
-  for (unsigned int s1 = 0; s1 < VolumeTree.size(); ++s1) {
-    if (Ignore[s1] == true) continue;
-    for (unsigned int s2 = s1+1; s2 < VolumeTree.size(); ++s2) {
-      if (Ignore[s2] == true) continue;
-      if (VolumeTree[s1] != VolumeTree[s2]) continue;
-      if (IsXStrip[s1] != IsXStrip[s2]) continue;
-      if (StripID[s1] != StripID[s2]) continue;
-      
-      // Match:
-      StripEnergy[s1] += StripEnergy[s2];
-      StripEnergy[s2] = 0;
-      Ignore[s2] = true;
+    if (R->GetDetector() != MDDetector::c_Strip3D) continue;
+
+    MREStripHit* StripHit = dynamic_cast<MREStripHit*>(R);
+    if (StripHit == nullptr) {
+      //cout<<"ERROR: RESE is not strip hit"<<endl;
+      continue;
+    }
+
+    bool DetectorFound = false;
+    for (auto& SHVector: StripHitsPerDetector) {
+      if (StripHit->GetVolumeSequence()->HasSameDetector(SHVector[0]->GetVolumeSequence()) == true) {
+        SHVector.push_back(StripHit);
+        DetectorFound = true;
+        break;
+      }
+    }
+    if (DetectorFound == false) {
+      StripHitsPerDetector.push_back(vector<MREStripHit*>());
+      StripHitsPerDetector.back().push_back(StripHit);
     }
   }
-  
-  
-  // (3) Noise & thresholds
-  m_ReGeometry->ActivateNoising(true);
-  for (unsigned int s1 = 0; s1 < VolumeTree.size(); ++s1) {
-    if (Ignore[s1] == true) continue;
-   
-    MVector Pos = StripVolumeSequences[s1]->GetPositionInDetector();
-    double Energy = StripEnergy[s1];
-    double Time = 0;
-    MDVolume* Volume = StripVolumeSequences[s1]->GetSensitiveVolume();
-    MDDetector* D = StripVolumeSequences[s1]->GetDetector();
-
-    D->Noise(Pos, Energy, Time, Volume);
-    
-    StripEnergy[s1] = Energy;
-    if (Energy == 0) Ignore[s1] = true;
+  if (StripHitsPerDetector.size() == 0) {
+    //cout<<"No strip hits found"<<endl;
+    return true;
   }
-  m_ReGeometry->ActivateNoising(false);
+
+  // (2) Sort the data:
+  // ... by side
+  vector<vector<vector<MREStripHit*>>> StripHitsPerDetectorPerSide;
+  for (auto& SHVector: StripHitsPerDetector) {
+    StripHitsPerDetectorPerSide.push_back(vector<vector<MREStripHit*>>());
+    StripHitsPerDetectorPerSide.back().push_back(vector<MREStripHit*>());
+    StripHitsPerDetectorPerSide.back().push_back(vector<MREStripHit*>());
+
+    for (auto SH: SHVector) {
+      if (SH->IsXStrip() == true) {
+        StripHitsPerDetectorPerSide.back().at(0).push_back(SH);
+      } else {
+        StripHitsPerDetectorPerSide.back().at(1).push_back(SH);
+      }
+    }
+  }
+  // ... by channel
+  for (auto& SHDetector: StripHitsPerDetectorPerSide) {
+    for (auto& SHSide: SHDetector) {
+      std::sort(SHSide.begin(), SHSide.end(), [](const MREStripHit* A, const MREStripHit* B) {
+        return A->GetStripID() < B->GetStripID();
+      });
+    }
+  }
+
+  // (3) We do not want to worry about strip pairing here, thus we only keep data with exactly one hit per detector
+  for (auto SHDetector = StripHitsPerDetectorPerSide.begin(); SHDetector != StripHitsPerDetectorPerSide.end();) {
+    bool Sequential = true;
+    for (auto& SHSide: (*SHDetector)) {
+      for (unsigned int i = 1; i < SHSide.size(); ++i) {
+        if (SHSide[i]->GetStripID() != SHSide[i-1]->GetStripID()+1) {
+          Sequential = false;
+        }
+      }
+      if (Sequential == false) break;
+    }
+
+    if (Sequential == true) {
+      ++SHDetector;
+    } else {
+      SHDetector = StripHitsPerDetectorPerSide.erase(SHDetector);
+      //cout<<"Not sequential"<<endl;
+    }
+  }
+
+  // (4) Now make sure
+  // (a) we have exactly one interation per detector and
+  // (b) its a Compton interaction
+  // (c) store it position, and recoil electron direction
+  vector<MVector> Positions;
+  vector<MVector> RecoilElectronDirections;
+  for (auto SHDetector = StripHitsPerDetectorPerSide.begin(); SHDetector != StripHitsPerDetectorPerSide.end();) {
+    vector<MRESE*> RESEs;
+    for (auto& SHSide: (*SHDetector)) {
+      for (MREStripHit* SH: SHSide) {
+        RESEs.push_back(dynamic_cast<MRESE*>(SH));
+      }
+    }
+
+    vector<int> OriginIDs = GetOriginIds(RESEs);
+
+    MSimIA* IA = m_SiEvent->GetIAAt(OriginIDs[0]-1);
+    if (ContainsOnlyComptonDependants(OriginIDs) == true && IA->GetProcess() == "COMP") {
+      ++SHDetector;
+      Positions.push_back(IA->GetPosition());
+      RecoilElectronDirections.push_back(IA->GetSecondaryDirection());
+    } else {
+      SHDetector = StripHitsPerDetectorPerSide.erase(SHDetector);
+      //cout<<"Not exactly one IA in detector or first IA is not a compton"<<endl;
+    }
+  }
 
   
-  // (4) Assemble by detector and write to file
-  for (unsigned int s1 = 0; s1 < VolumeTree.size(); ++s1) {
-    if (Ignore[s1] == true) continue;
-    
+  // (5) Assemble by detector and write to file
+  for (unsigned int d = 0; d < StripHitsPerDetectorPerSide.size(); ++d) {
+    vector<vector<MREStripHit*>> SHDetector = StripHitsPerDetectorPerSide[d];
+
     vector<unsigned int> XStripIDs;
     vector<unsigned int> YStripIDs;
     vector<double> XStripEnergies;
     vector<double> YStripEnergies;
     vector<int> AllOrigins;
-    
-    // (a) Collect
-    if (IsXStrip[s1] == true) {
-      XStripIDs.push_back(StripID[s1]);
-      XStripEnergies.push_back(StripEnergy[s1]);
-    } else {
-      YStripIDs.push_back(StripID[s1]);
-      YStripEnergies.push_back(StripEnergy[s1]);
-    }
-    for (int O: Origins[s1]) {
-      if (find(AllOrigins.begin(), AllOrigins.end(), O) == AllOrigins.end()) {
-        AllOrigins.push_back(O);
-      }
-    }
-    Ignore[s1] = true;
-    
-    for (unsigned int s2 = s1+1; s2 < VolumeTree.size(); ++s2) {
-      if (Ignore[s2] == true) continue;
-      if (VolumeTree[s1] != VolumeTree[s2]) continue;
 
-      if (IsXStrip[s2] == true) {
-        XStripIDs.push_back(StripID[s2]);
-        XStripEnergies.push_back(StripEnergy[s2]);
-      } else {
-        YStripIDs.push_back(StripID[s2]);
-        YStripEnergies.push_back(StripEnergy[s2]);
-      }
-      for (int O: Origins[s2]) {
-        if (find(AllOrigins.begin(), AllOrigins.end(), O) == AllOrigins.end()) {
-          AllOrigins.push_back(O);
-        }
-      }
-      Ignore[s2] = true;      
+    for (auto& SHSideX: SHDetector[0]) {
+      XStripIDs.push_back(SHSideX->GetStripID());
+      XStripEnergies.push_back(SHSideX->GetEnergy());
+      //cout<<"Added x"<<SHSideX->GetStripID()<<endl;
     }
+
+    for (auto& SHSideY: SHDetector[1]) {
+      YStripIDs.push_back(SHSideY->GetStripID());
+      YStripEnergies.push_back(SHSideY->GetEnergy());
+      //cout<<"Added y"<<SHSideY->GetStripID()<<endl;
+    }
+
+
     
     // (b) Shuffle -- otherwise we will get patterns...
-    ShuffleStrips(XStripIDs, XStripEnergies);
-    ShuffleStrips(YStripIDs, YStripEnergies);
+    //ShuffleStrips(XStripIDs, XStripEnergies);
+    //ShuffleStrips(YStripIDs, YStripEnergies);
     
-
-
-
     // (d) Write to file
     if (XStripIDs.size() == 0 || XStripIDs.size() > m_MaxNHitsX) continue;
     if (YStripIDs.size() == 0 || YStripIDs.size() > m_MaxNHitsY) continue;
@@ -411,12 +439,14 @@ bool MResponseTrackWithinCrossStripDetectorTMVAEventFile::Analyze()
     if (m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillEventData(RE->GetEventID(), XStripIDs, YStripIDs, XStripEnergies, YStripEnergies) == false) {
       continue;
     }
-    if (m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillResultData(NIntersections, UndetectedHit, AllIntersections) == false) {
+    if (m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillResultData(Positions[d], RecoilElectronDirections[d]) == false) {
       continue;
     }
     
     m_Trees[XStripIDs.size()][YStripIDs.size()]->Fill();
   }
+
+  //cout<<"Done"<<endl;
 
   return true;
 }
@@ -431,7 +461,7 @@ bool MResponseTrackWithinCrossStripDetectorTMVAEventFile::Finalize()
   // We only save at the end since ROOT has trouble updating the file...
   for (unsigned int x = 1; x <= m_MaxNHitsX; ++x) {
     for (unsigned int y = 1; y <= m_MaxNHitsY; ++y) {
-      TFile Tree(m_ResponseName + ".x" + x + ".y" + y + ".strippairing.root", "recreate");
+      TFile Tree(m_ResponseName + ".x" + x + ".y" + y + "." + m_ResponseNameSuffix + ".root", "recreate");
       Tree.cd();
       m_Trees[x][y]->Write();
       Tree.Close();      
