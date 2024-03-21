@@ -604,27 +604,6 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
             NRComptonD1WithTrackInARM++;
           }
         }
-
-//         if (Event->GetRCEnergy() < 1900 || Event->GetRCEnergy() > 2100) continue;
-
-//         Compton->SetDe(A);
-          
-//         //Compton->SetC1(Event->GetRCFirstIAClustered());
-//         Compton->SetC1(Event->GetICFirstIA());
-        
-//         //Compton->SetEe(Event->GetRCEnergyElectron());
-//         Compton->SetEe(Event->GetICEnergyElectron());
-        
-//         //Compton->SetC2(Event->GetRCSecondIAClustered());
-//         Compton->SetC2(Event->GetICSecondIA());
-        
-//         //Compton->SetEg(Event->GetRCEnergyGamma());
-//         Compton->SetEg(Event->GetICEnergyGamma());
-        
-           
-//         Compton->SetLeverArm((Event->GetICFirstIA() - Event->GetICSecondIA()).Mag()); // Wrong one!
-//         mimp<<"Lever arm is wrong implemented!"<<show;
-
         
         if (UseIdealEvent == false) {
           Compton->SetDe(A);
@@ -638,6 +617,9 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
           Compton->SetEg(Event->GetRCEnergyGamma());
 
           if (Compton->IsKinematicsOK() == false) {
+            continue;
+          }
+          if (Compton->C1() == Compton->C2()) { // First two interactions are in same cluster
             continue;
           }
         } else {
