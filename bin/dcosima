@@ -44,7 +44,7 @@ commandhelp() {
   echo "  --name=[name]: The name of the run, which will also be the prefix for the output directory"
   echo "  --instances=[number]: The number of instances to use"
   echo "  --source=[filename]: The source file"
-  echo "  --continue=[name]: Continue a simulation run with the given name (ignores --source & --prefix)"
+  echo "  --continue=[name]: Continue a simulation run with the given name (ignores --name)"
   echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
   echo "  --unzip: Do not compress the output files (gzip'ing them is the default)."
   echo "  --log: Create a log file of what is started where"
@@ -163,15 +163,17 @@ if [[ ${CONTINUE} != "" ]]; then
       LOG="TRUE"
     fi
     
-    SOURCEFILENAME=`ls *.source`
-    if [[ $( echo ${SOURCEFILENAME} | wc -l ) !=  1 ]]; then
-      echo " "
-      echo "ERROR: I did not find exactly one source file: ${SOURCEFILENAME}"
-      commandhelp
-      exit 1      
+    if [[ ${SOURCE} == "" ]]; then
+      SOURCEFILENAME=`ls *.source`
+      if [[ $( ls *.source | wc -l ) !=  1 ]]; then
+        echo " "
+        echo "ERROR: I did not find exactly one source file: ${SOURCEFILENAME}"
+        commandhelp
+        exit 1      
+      fi
+      SOURCE="${CONTINUE}/${SOURCEFILENAME}"
     fi
-    SOURCE="${CONTINUE}/${SOURCEFILENAME}"
-    
+
     echo "   Looking for simulation file with highest ID... this might take a while.."
     LAUNCHED=$(ls *.p1.inc*.id1.sim* | awk -v FS="(inc|.id)" '{print $2}' | sort -n | tail -1)
     if [[ ${LAUNCHED} == "" ]]; then
