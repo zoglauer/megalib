@@ -126,9 +126,15 @@ if [ "${GOOD}" == "true" ]; then
 fi  
 
 if [ "${CHECK}" == "true" ]; then
+  if [ ! -d ${ROOTPATH} ]; then
+    echo " "
+    echo "ERROR: The given directory ${ROOTPATH} does no exist."
+    exit 1;
+  fi
+
   if [ ! -f ${ROOTPATH}/bin/root-config ]; then
     echo " "
-    echo "ERROR: The given directory ${ROOTPATH} does no contain a correct ROOT installation"
+    echo "ERROR: The file ${ROOTPATH}/bin/root-config does exist and thus you do not have a standard ROOT installation"
     exit 1;
   fi
 
