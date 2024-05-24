@@ -1,5 +1,5 @@
 /*
- * MResponseMultipleCompton.cxx
+ * MResponseMultipleComptonBayes.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MResponseMultipleCompton
+// MResponseMultipleComptonBayes
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MResponseMultipleCompton.h"
+#include "MResponseMultipleComptonBayes.h"
 
 // Standard libs:
 #include <limits>
@@ -46,7 +46,7 @@ using namespace std;
 
 
 #ifdef ___CLING___
-ClassImp(MResponseMultipleCompton)
+ClassImp(MResponseMultipleComptonBayes)
 #endif
 
 
@@ -54,7 +54,7 @@ ClassImp(MResponseMultipleCompton)
 
 
 //! Default constructor
-MResponseMultipleCompton::MResponseMultipleCompton()
+MResponseMultipleComptonBayes::MResponseMultipleComptonBayes()
 {  
   m_ResponseNameSuffix = "mc";
   
@@ -77,7 +77,7 @@ MResponseMultipleCompton::MResponseMultipleCompton()
 
 
 //! Default destructor
-MResponseMultipleCompton::~MResponseMultipleCompton()
+MResponseMultipleComptonBayes::~MResponseMultipleComptonBayes()
 {
   // Nothing to delete
 }
@@ -86,7 +86,580 @@ MResponseMultipleCompton::~MResponseMultipleCompton()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsComptonTrack(MRESE& Start, MRESE& Center, 
+//! Return a brief description of this response class
+MString MResponseMultipleComptonBayes::Description()
+{
+  return MString("Compton event reconstruction (Bayes)");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return information on the parsable options for this response class
+MString MResponseMultipleComptonBayes::Options()
+{
+  ostringstream out;
+  out<<"             maxia:                 the maximum number of interactions (default: 7)"<<endl;
+  out<<"             emin:                  minimum energy (default: 100 keV)"<<endl;
+  out<<"             emax:                  maximum energy (default: 10000 keV)"<<endl;
+
+  return MString(out);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse the options
+bool MResponseMultipleComptonBayes::ParseOptions(const MString& Options)
+{
+  // Split the different options
+  vector<MString> Split1 = Options.Tokenize(":");
+  // Split Option <-> Value
+  vector<vector<MString>> Split2;
+  for (MString S: Split1) {
+    Split2.push_back(S.Tokenize("="));
+  }
+
+  // Basic sanity check and to lower for all options
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    if (Split2[i].size() == 0) {
+      mout<<"Error: Empty option in string "<<Options<<endl;
+      return false;
+    }
+    if (Split2[i].size() == 1) {
+      mout<<"Error: Option has no value: "<<Split2[i][0]<<endl;
+      return false;
+    }
+    if (Split2[i].size() > 2) {
+      mout<<"Error: Option has more than one value or you used the wrong separator (not \":\"): "<<Split1[i]<<endl;
+      return false;
+    }
+    Split2[i][0].ToLowerInPlace();
+  }
+
+  // Parse
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    string Value = Split2[i][1].Data();
+
+    if (Split2[i][0] == "emin") {
+      m_EnergyMinimum = stod(Value);
+    } else if (Split2[i][0] == "emax") {
+      m_EnergyMaximum = stod(Value);
+    } else if (Split2[i][0] == "maxia") {
+      m_MaxNInteractions = stoi(Value);
+    } else {
+      mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
+      return false;
+    }
+  }
+
+  // Sanity checks:
+  if (m_EnergyMinimum <= 0 || m_EnergyMaximum <= 0) {
+    mout<<"Error: All energy values must be positive (larger than zero)"<<endl;
+    return false;
+  }
+  if (m_EnergyMinimum >= m_EnergyMaximum) {
+    mout<<"Error: The minimum energy must be smaller than the maximum energy"<<endl;
+    return false;
+  }
+  if (m_MaxNInteractions < 2) {
+    mout<<"Error: You need at least 2 interactions"<<endl;
+    return false;
+  }
+
+  // Dump it for user info
+  mout<<endl;
+  mout<<"Choosen options for binned imaging response:"<<endl;
+  mout<<"  Minimum energy:                                     "<<m_EnergyMinimum<<endl;
+  mout<<"  Maximum energy:                                     "<<m_EnergyMaximum<<endl;
+  mout<<"  Maximum number of interactions:                     "<<m_MaxNInteractions<<endl;
+  mout<<endl;
+
+  return true;
+}
+
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Initialize the response matrices and their generation
+bool MResponseMultipleComptonBayes::Initialize()
+{ 
+  // Initialize next matching event, save if necessary
+  if (MResponseBuilder::Initialize() == false) return false;
+  
+  m_MaxNInteractions = m_RevanSettings.GetCSRMaxNHits();
+  //m_MaxNInteractions = 3;
+  m_ReReader->SetCSROnlyCreateSequences(true);
+
+  if (m_ReReader->PreAnalysis() == false) return false;
+
+  double MaxCosineLimit = 10;
+
+  // Axis representing the sequence length:
+  vector<float> AxisSequenceLength;
+  for (unsigned int i = 2; i <= m_MaxNInteractions+1; ++i) {
+    AxisSequenceLength.push_back(i);
+  }
+  MString NameAxisSequenceLength = "Sequence length";
+
+  // Material: 0: unknown, 1: Si, 2: Ge, 3: Xe, 4: CsI
+  // Make sure this is identical with: MERCSRBayesian::GetMaterial()
+  vector<float> AxisMaterial;
+  AxisMaterial = CreateEquiDist(-0.5, 4.5, 5);
+  MString NameAxisMaterial = "Material (0: ?, 1: Si, 2: Ge, 3: Xe, 4: CsI)";
+
+  // Compton scatter angle axis:
+  // Make sure it starts, well below 0 and exceeds (slightly) 1!
+  vector<float> AxisComptonScatterAngleStart;
+  AxisComptonScatterAngleStart = CreateEquiDist(-1.5, 1.1, 26, -MaxCosineLimit, +MaxCosineLimit);
+  MString NameAxisComptonScatterAngleStart = "cos#varphi";
+
+  // Scatter probability axis
+  vector<float> AxisScatterProbability = CreateEquiDist(-0.025, 1.025, 42);
+  MString NameAxisScatterProbability = "Scatter probability";
+
+  // Total energy axis for scatter probabilities
+  vector<float> AxisTotalEnergyDistances = CreateLogDist(15, m_EnergyMaximum, 38, 1, 20000);
+  MString NameAxisTotalEnergyDistances = "Energy [keV]";
+
+  // Total energy axis for scatter probabilities
+  vector<float> AxisTotalEnergyStart = CreateLogDist(m_EnergyMinimum, m_EnergyMaximum, 38, 1, 20000);
+  MString NameAxisTotalEnergyStart = "Energy [keV]";
+
+
+  // Make sure it starts, well below 0 and exceeds (slightly) 1!
+  vector<float> AxisComptonScatterAngleDual;
+  AxisComptonScatterAngleDual = CreateEquiDist(-1.5, 1.1, 26, -MaxCosineLimit, +MaxCosineLimit);
+  MString NameAxisComptonScatterAngleDual = "cos#varphi";
+
+  // Total energy axis for scatter probabilities
+  vector<float> AxisTotalEnergyDual = CreateLogDist(m_EnergyMinimum, m_EnergyMaximum, 18, 1, 20000);
+  MString NameAxisTotalEnergyDual = "Energy [keV]";
+
+  // Scatter probability axis
+  vector<float> AxisScatterProbabilityDual = CreateEquiDist(0, 1, 15, -0.025, 1.025);
+  MString NameAxisScatterProbabilityDual = "Scatter probability";
+  
+
+
+  // Global good/bad:
+  m_GoodBadTable = MResponseMatrixO2("MC: Good/Bad ratio (=prior)", 
+                                     CreateEquiDist(0, 2, 2), 
+                                     AxisSequenceLength); 
+  m_GoodBadTable.SetAxisNames("GoodBad", 
+                              NameAxisSequenceLength);
+
+  // Dual:
+  m_PdfDualGood = MResponseMatrixO4("MC: Dual (good)", 
+                                    AxisTotalEnergyDual,
+                                    AxisComptonScatterAngleDual,  
+                                    AxisScatterProbabilityDual,
+                                    AxisMaterial);
+  m_PdfDualGood.SetAxisNames(NameAxisTotalEnergyStart, 
+                             NameAxisComptonScatterAngleStart, 
+                             NameAxisScatterProbabilityDual, 
+                             NameAxisMaterial);
+  m_PdfDualBad = MResponseMatrixO4("MC: Dual (bad)", 
+                                   AxisTotalEnergyDual,
+                                   AxisComptonScatterAngleDual,  
+                                   AxisScatterProbabilityDual,
+                                   AxisMaterial);
+  m_PdfDualBad.SetAxisNames(NameAxisTotalEnergyStart, 
+                            NameAxisComptonScatterAngleStart, 
+                            NameAxisScatterProbabilityDual, 
+                            NameAxisMaterial);
+  
+
+  // Start point:
+  m_PdfStartGood = MResponseMatrixO4("MC: Start (good)", 
+                                     AxisTotalEnergyStart,
+                                     AxisComptonScatterAngleStart, 
+                                     AxisSequenceLength, 
+                                     AxisMaterial);
+  m_PdfStartGood.SetAxisNames(NameAxisTotalEnergyStart, 
+                              NameAxisComptonScatterAngleStart, 
+                              NameAxisSequenceLength, 
+                              NameAxisMaterial);
+  m_PdfStartBad = MResponseMatrixO4("MC: Start (bad)", 
+                                    AxisTotalEnergyStart, 
+                                    AxisComptonScatterAngleStart, 
+                                    AxisSequenceLength, 
+                                    AxisMaterial);
+  m_PdfStartBad.SetAxisNames(NameAxisTotalEnergyStart, 
+                             NameAxisComptonScatterAngleStart, 
+                             NameAxisSequenceLength, 
+                             NameAxisMaterial);
+
+
+  // Track:
+  m_PdfTrackGood = MResponseMatrixO6("MC: Track (good)", 
+                                     CreateEquiDist(-0.5, 1.5, 36, c_NoBound, MaxCosineLimit),
+                                     CreateEquiDist(-0.5, 1.5, 1, c_NoBound, MaxCosineLimit),
+                                     CreateEquiDist(0, 1000000, 1),
+                                     CreateLogDist(500, 10000, 10, 0, 100000, 0, false),
+                                     AxisSequenceLength, 
+                                     AxisMaterial);
+  m_PdfTrackGood.SetAxisNames("#Delta #alpha [deg]", 
+                              "#alpha_{G} [deg]", 
+                              "d [cm]", 
+                              "E_{e}", 
+                              NameAxisSequenceLength, 
+                              NameAxisMaterial);
+  m_PdfTrackBad = MResponseMatrixO6("MC: Track (bad)", 
+                                    CreateEquiDist(-0.5, 1.5, 36, c_NoBound, MaxCosineLimit),
+                                    CreateEquiDist(-0.5, 1.5, 1, c_NoBound, MaxCosineLimit),
+                                    CreateEquiDist(0, 1000000, 1),
+                                    CreateLogDist(500, 10000, 10, 0, 100000, 0, false),
+                                    AxisSequenceLength, 
+                                    AxisMaterial);
+  m_PdfTrackBad.SetAxisNames("#Delta cos#alpha [deg]", 
+                             "cos#alpha_{G} [deg]", 
+                             "d [cm]", 
+                             "E_{e}", 
+                             NameAxisSequenceLength, 
+                             NameAxisMaterial);
+
+  
+  // Compton scatter distance:
+  m_PdfComptonScatterProbabilityGood = MResponseMatrixO4("MC: Compton distance (good)", 
+                                        AxisScatterProbability,
+                                        AxisTotalEnergyDistances, 
+                                        AxisSequenceLength, 
+                                        AxisMaterial);
+  m_PdfComptonScatterProbabilityGood.SetAxisNames(NameAxisScatterProbability, 
+                                 NameAxisTotalEnergyDistances, 
+                                 NameAxisSequenceLength, 
+                                 NameAxisMaterial);
+  m_PdfComptonScatterProbabilityBad = MResponseMatrixO4("MC: Compton distance (bad)", 
+                                       AxisScatterProbability, 
+                                       AxisTotalEnergyDistances, 
+                                       AxisSequenceLength, 
+                                       AxisMaterial);
+  m_PdfComptonScatterProbabilityBad.SetAxisNames(NameAxisScatterProbability, 
+                                NameAxisTotalEnergyDistances, 
+                                NameAxisSequenceLength, 
+                                NameAxisMaterial);
+
+
+  // Lastdistance:
+  m_PdfPhotoAbsorptionProbabilityGood = MResponseMatrixO4("MC: Photo distance (good)", 
+                                            AxisScatterProbability, 
+                                            AxisTotalEnergyDistances, 
+                                            AxisSequenceLength, 
+                                            AxisMaterial);
+  m_PdfPhotoAbsorptionProbabilityGood.SetAxisNames(NameAxisScatterProbability, 
+                                     NameAxisTotalEnergyDistances, 
+                                     NameAxisSequenceLength, 
+                                     NameAxisMaterial);
+  m_PdfPhotoAbsorptionProbabilityBad = MResponseMatrixO4("MC: Photo distance (bad)", 
+                                           AxisScatterProbability, 
+                                           AxisTotalEnergyDistances, 
+                                           AxisSequenceLength, 
+                                           AxisMaterial);
+  m_PdfPhotoAbsorptionProbabilityBad.SetAxisNames(NameAxisScatterProbability, 
+                                    NameAxisTotalEnergyDistances, 
+                                    NameAxisSequenceLength, 
+                                    NameAxisMaterial);
+
+
+  // CentralCompton:
+  
+  // Assymetries would be best handled if -1 .. 1
+  //vector<float> AxisDifferenceComptonScatterAngle = 
+  //  CreateLogDist(1E-3, 2, 18, 0.0000001, MaxCosineLimit);
+  vector<float> AxisDifferenceComptonScatterAngle; 
+  vector<float> A = CreateLogDist(0.003, 2, 14, c_NoBound, MaxCosineLimit);
+  for (unsigned int i = A.size()-1; i < A.size(); --i) {
+    AxisDifferenceComptonScatterAngle.push_back(-A[i]);
+  }
+  for (unsigned int i = 0; i < A.size(); ++i) {
+    AxisDifferenceComptonScatterAngle.push_back(A[i]);
+  }
+  MString NameAxisDifferenceComptonScatterAngle = "cos#varphi_{E} - cos#varphi_{G}";
+
+  vector<float> AxisComptonScatterAngle;
+  AxisComptonScatterAngle = CreateEquiDist(-1.4, 1.2, 13, -MaxCosineLimit, c_NoBound);
+  MString NameAxisComptonScatterAngle = NameAxisComptonScatterAngleStart;
+
+
+  vector<float> AxisDistance = CreateLogDist(0.2, 10, 7, 0.01, 100, 0, false);
+  MString NameAxisDistance = "Distance [cm]";
+
+  vector<float> AxisTotalEnergy = CreateLogDist(100, m_EnergyMaximum, 4, 1, 10000, 0, false);
+  //CreateLogDist(1, 10000, 1); //, 1, 10000, 0, false);
+  //mimp<<"No total energy bins!"<<show;
+  MString NameAxisTotalEnergy = "E_{tot} [keV]";
+
+  m_PdfComptonGood = MResponseMatrixO6("MC: Central (good)", 
+                                       AxisDifferenceComptonScatterAngle,
+                                       AxisComptonScatterAngle, 
+                                       AxisDistance,
+                                       AxisTotalEnergy,
+                                       AxisSequenceLength, 
+                                       AxisMaterial);
+  m_PdfComptonGood.SetAxisNames(NameAxisDifferenceComptonScatterAngle, 
+                                NameAxisComptonScatterAngle, 
+                                NameAxisDistance, 
+                                NameAxisTotalEnergy, 
+                                NameAxisSequenceLength, 
+                                NameAxisMaterial);
+  m_PdfComptonBad = MResponseMatrixO6("MC: Central (bad)", 
+                                      AxisDifferenceComptonScatterAngle, 
+                                      AxisComptonScatterAngle,
+                                      AxisDistance,
+                                      AxisTotalEnergy,
+                                      AxisSequenceLength, 
+                                      AxisMaterial);
+  m_PdfComptonBad.SetAxisNames(NameAxisDifferenceComptonScatterAngle, 
+                               NameAxisComptonScatterAngle, 
+                               NameAxisDistance, 
+                               NameAxisTotalEnergy, 
+                               NameAxisSequenceLength, 
+                               NameAxisMaterial);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Save the responses
+bool MResponseMultipleComptonBayes::Save()
+{
+  MResponseBuilder::Save(); 
+
+  m_GoodBadTable.Write(GetFilePrefix() + ".goodbad" + m_Suffix, true);
+  
+  m_PdfDualGood.Write(GetFilePrefix() + ".dual.good" + m_Suffix, true);
+  m_PdfDualBad.Write(GetFilePrefix() + ".dual.bad" + m_Suffix, true);
+  
+  m_PdfStartGood.Write(GetFilePrefix() + ".start.good" + m_Suffix, true);
+  m_PdfStartBad.Write(GetFilePrefix() + ".start.bad" + m_Suffix, true);
+  
+  m_PdfTrackGood.Write(GetFilePrefix() + ".track.good" + m_Suffix, true);
+  m_PdfTrackBad.Write(GetFilePrefix() + ".track.bad" + m_Suffix, true);
+  
+  m_PdfComptonGood.Write(GetFilePrefix() + ".compton.good" + m_Suffix, true);
+  m_PdfComptonBad.Write(GetFilePrefix() + ".compton.bad" + m_Suffix, true);
+  
+  m_PdfComptonScatterProbabilityGood.Write(GetFilePrefix() + ".comptondistance.good" + m_Suffix, true);
+  m_PdfComptonScatterProbabilityBad.Write(GetFilePrefix() + ".comptondistance.bad" + m_Suffix, true);
+      
+  m_PdfPhotoAbsorptionProbabilityGood.Write(GetFilePrefix() + ".photodistance.good" + m_Suffix, true);
+  m_PdfPhotoAbsorptionProbabilityBad.Write(GetFilePrefix() + ".photodistance.bad" + m_Suffix, true);
+      
+  return true;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Analyze the current event
+bool MResponseMultipleComptonBayes::Analyze()
+{ 
+  // Initlize next matching event, save if necessary
+  if (MResponseBuilder::Analyze() == false) return false;
+  
+  
+  //g_Verbosity = 1;
+  double Etot = 0;
+  double Eres = 0;
+ 
+  
+  for (auto RE: m_ReEvents) {
+    if (RE == nullptr) continue;
+    
+    if (RE->GetNRESEs() <= 1) {
+      mdebug<<"GeneratePdf: Not enough hits!"<<endl;
+      continue;
+    }
+    
+    if (RE->GetEnergy() < m_EnergyMinimum || RE->GetEnergy() > m_EnergyMaximum) {
+      mdebug<<"GeneratePdf: Energy out of bounds!"<<endl;
+      continue;
+    }
+
+    mdebug<<endl<<endl;
+    mdebug<<RE->ToString()<<endl;
+    
+    if (RE->GetStartPoint() == 0) continue;
+    
+    // Check if complete sequence is ok:
+    bool SequenceOk = true;
+    unsigned int SequenceLength = RE->GetNRESEs();
+    int PreviousPosition = 0;
+    
+    if (SequenceLength > m_MaxNInteractions) continue;
+    
+    if (SequenceLength == 2) {
+      // Look at start:
+      MRESEIterator Iter;
+      Iter.Start(RE->GetStartPoint());
+      Iter.GetNextRESE();
+      Etot = RE->GetEnergy();
+      Eres = RE->GetEnergyResolution();
+      
+      double CosPhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
+      double PhotoDistance = CalculateAbsorptionProbabilityTotal(*Iter.GetCurrent(), *Iter.GetNext(), Iter.GetNext()->GetEnergy());
+      
+      if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
+        mdebug<<"--------> Found GOOD dual Compton event!"<<endl;
+        m_PdfDualGood.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
+      } else {
+        mdebug<<"--------> Found bad dual Compton event!"<<endl;
+        m_PdfDualBad.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
+        SequenceOk = false;
+      }
+    } else {
+      // Look at start:
+      MRESEIterator Iter;
+      Iter.Start(RE->GetStartPoint());
+      Iter.GetNextRESE();
+      Etot = RE->GetEnergy();
+      Eres = RE->GetEnergyResolution();
+      if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
+        mdebug<<"--------> Found GOOD Compton start!"<<endl;
+        m_PdfStartGood.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+      } else {
+        mdebug<<"--------> Found bad Compton start!"<<endl;
+        m_PdfStartBad.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+        SequenceOk = false;
+      }
+      
+      // Track at start?
+      if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
+        double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+        double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+        if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
+          mdebug<<"--------> Found GOOD Track start!"<<endl;
+          m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+        } else {
+          mdebug<<"--------> Found bad Track start!"<<endl;
+          m_PdfTrackBad.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          SequenceOk = false;
+        }
+      }
+      
+      
+      // Central part of the Compton track
+      Iter.GetNextRESE();
+      while (Iter.GetNext() != 0) {
+        // Add here
+        Etot -= Iter.GetPrevious()->GetEnergy();
+        Eres = sqrt(Eres*Eres - Iter.GetPrevious()->GetEnergyResolution()*Iter.GetPrevious()->GetEnergyResolution());
+        PreviousPosition++;
+        
+        // In the current implementation/simulation the hits have to be in increasing order...
+        if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
+          double ComptonDistance = 
+          CalculateAbsorptionProbabilityCompton(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
+          mdebug<<"Dist C: "<<ComptonDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
+          if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
+            mdebug<<"--------> Found GOOD Distance sequence!"<<endl;
+            // Retrieve the data:
+            m_PdfComptonScatterProbabilityGood.Add(ComptonDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          } else {
+            mdebug<<"--------> Found bad Distance sequence!"<<endl;
+            // Retrieve the data:
+            m_PdfComptonScatterProbabilityBad.Add(ComptonDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+            SequenceOk = false;
+          } // Add good / bad
+        }
+        
+        // Decide if it is good or bad...
+        // In the current implementation/simulation the hits have to be in increasing order...
+        double dPhi = CalculateDCosPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot);
+        double PhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
+        double Lever = CalculateMinLeverArm(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext());
+        int Material = GetMaterial(*Iter.GetCurrent());
+        
+        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
+          mdebug<<"--------> Found GOOD internal Compton sequence!"<<endl;
+          // Retrieve the data:
+          m_PdfComptonGood.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
+          
+        } else {
+          mdebug<<"--------> Found bad internal Compton sequence!"<<endl;
+          // Retrieve the data:
+          m_PdfComptonBad.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
+          SequenceOk = false;
+        } // Add good / bad
+        
+        // Track at central?
+        if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
+          //MRETrack* T = (MRETrack*) Iter.GetCurrent();
+          double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+          double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+          if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
+            mdebug<<"--------> Found GOOD Track start (central)!"<<endl;
+            m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          } else {
+            mdebug<<"--------> Found bad Track start (central)!"<<endl;
+            m_PdfTrackBad.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+            SequenceOk = false;
+          }
+        }
+        Iter.GetNextRESE();
+      }
+      
+      Etot -= Iter.GetPrevious()->GetEnergy();
+      Eres = sqrt(Eres*Eres - Iter.GetPrevious()->GetEnergyResolution()*Iter.GetPrevious()->GetEnergyResolution());
+      PreviousPosition++;
+      
+      // Decide if it is good or bad...
+      // In the current implementation/simulation the hits have to be in increasing order...
+      if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
+        double LastDistance = CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
+        mdebug<<"Dist P: "<<LastDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
+        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
+          mdebug<<"--------> Found GOOD Lastdistance sequence!"<<endl;
+          // Retrieve the data:
+          m_PdfPhotoAbsorptionProbabilityGood.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
+                                                  Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+        } else {
+          mdebug<<"--------> Found bad Lastdistance sequence!"<<endl;
+          // Retrieve the data:
+          m_PdfPhotoAbsorptionProbabilityBad.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
+                                                 Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          SequenceOk = false;
+        } // Add good / bad
+      }
+    }
+    
+    if (SequenceOk == false) {
+      m_GoodBadTable.Add(0.5, SequenceLength, 1);
+      //mdebug<<"No good sequence exists"<<endl<<endl<<endl<<endl;
+    } else {
+      m_GoodBadTable.Add(1.5, SequenceLength, 1);
+      mdebug<<"One good sequence exists"<<endl<<endl<<endl<<endl;
+    }
+  } // For each raw event...
+  
+  
+  return true;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Finalize the response generation (i.e. save the data a final time )
+bool MResponseMultipleComptonBayes::Finalize()
+{ 
+  return MResponseBuilder::Finalize(); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseMultipleComptonBayes::IsComptonTrack(MRESE& Start, MRESE& Center,
                                        int PreviousPosition, double Etot, double Eres)
 {
   // A good start point of the track consists of the following:
@@ -134,7 +707,7 @@ bool MResponseMultipleCompton::IsComptonTrack(MRESE& Start, MRESE& Center,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsTrackStart(MRESE& Start, MRESE& Central, double Energy)
+bool MResponseMultipleComptonBayes::IsTrackStart(MRESE& Start, MRESE& Central, double Energy)
 {
   // According to the current simulation (GMega), the RESEs are in sequence if
   // (1) the IDs of their hits are in increasing order without holes
@@ -235,7 +808,7 @@ bool MResponseMultipleCompton::IsTrackStart(MRESE& Start, MRESE& Central, double
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsTrackStop(MRESE& Central, 
+bool MResponseMultipleComptonBayes::IsTrackStop(MRESE& Central,
                                            MRESE& Stop, double Energy)
 {
   // According to the current simulation (GMega), the RESEs are in sequence if
@@ -327,7 +900,7 @@ bool MResponseMultipleCompton::IsTrackStop(MRESE& Central,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::AreReseInSequence(MRESE& Start, 
+bool MResponseMultipleComptonBayes::AreReseInSequence(MRESE& Start,
                                                  MRESE& Central, 
                                                  MRESE& Stop, 
                                                  double Energy)
@@ -428,7 +1001,7 @@ bool MResponseMultipleCompton::AreReseInSequence(MRESE& Start,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsComptonStart(MRESE& Start, double Etot, double Eres)
+bool MResponseMultipleComptonBayes::IsComptonStart(MRESE& Start, double Etot, double Eres)
 {
   // Return true if the given RESEs are in sequence
   //
@@ -502,7 +1075,7 @@ bool MResponseMultipleCompton::IsComptonStart(MRESE& Start, double Etot, double 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MResponseMultipleCompton::NumberOfComptonInteractions(vector<int> AllSimIds, int Origin)
+unsigned int MResponseMultipleComptonBayes::NumberOfComptonInteractions(vector<int> AllSimIds, int Origin)
 {
   unsigned int N = 0;
   
@@ -519,7 +1092,7 @@ unsigned int MResponseMultipleCompton::NumberOfComptonInteractions(vector<int> A
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsComptonSequence(MRESE& Start, MRESE& Central, 
+bool MResponseMultipleComptonBayes::IsComptonSequence(MRESE& Start, MRESE& Central,
                                           int StartPosition, double Etot, 
                                           double Eres)
 {
@@ -572,7 +1145,7 @@ bool MResponseMultipleCompton::IsComptonSequence(MRESE& Start, MRESE& Central,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsComptonSequence(MRESE& Start, MRESE& Central, 
+bool MResponseMultipleComptonBayes::IsComptonSequence(MRESE& Start, MRESE& Central,
                                           MRESE& Stop, int StartPosition, 
                                           double Etot, double Eres)
 {
@@ -672,7 +1245,7 @@ bool MResponseMultipleCompton::IsComptonSequence(MRESE& Start, MRESE& Central,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsComptonEnd(MRESE& End)
+bool MResponseMultipleComptonBayes::IsComptonEnd(MRESE& End)
 {
   // A good start point for tripple Comptons requires:
   // (1) An absorption better than 98%
@@ -771,7 +1344,7 @@ bool MResponseMultipleCompton::IsComptonEnd(MRESE& End)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsSingleCompton(MRESE& Start)
+bool MResponseMultipleComptonBayes::IsSingleCompton(MRESE& Start)
 {
   // Check if all interaction in start are from one single Compton interaction:
 
@@ -812,7 +1385,7 @@ bool MResponseMultipleCompton::IsSingleCompton(MRESE& Start)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::AreInComptonSequence(const vector<int>& StartOriginIds, 
+bool MResponseMultipleComptonBayes::AreInComptonSequence(const vector<int>& StartOriginIds,
                                                     const vector<int>& CentralOriginIds,
                                                     int StartPosition)
 {
@@ -859,7 +1432,7 @@ bool MResponseMultipleCompton::AreInComptonSequence(const vector<int>& StartOrig
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimIds)
+bool MResponseMultipleComptonBayes::ContainsOnlyComptonDependants(vector<int> AllSimIds)
 {
   // We do two checks here, one down the tree and one up the tree
   
@@ -953,7 +1526,7 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds, 
+bool MResponseMultipleComptonBayes::IsAbsorbed(const vector<int>& AllSimIds,
                                           double Energy, double EnergyResolution)
 {
   // Rules:
@@ -1059,7 +1632,7 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsTotalAbsorbed(const vector<int>& AllSimIds, 
+bool MResponseMultipleComptonBayes::IsTotalAbsorbed(const vector<int>& AllSimIds,
                                                double Energy, double EnergyResolution)
 {
   massert(AllSimIds.size() > 0);
@@ -1112,7 +1685,7 @@ bool MResponseMultipleCompton::IsTotalAbsorbed(const vector<int>& AllSimIds,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::GetIdealDepositedEnergy(int MinId)
+double MResponseMultipleComptonBayes::GetIdealDepositedEnergy(int MinId)
 {
   //  
 
@@ -1141,7 +1714,7 @@ double MResponseMultipleCompton::GetIdealDepositedEnergy(int MinId)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleCompton::IsTrackCompletelyAbsorbed(const vector<int>& Ids, double Energy)
+bool MResponseMultipleComptonBayes::IsTrackCompletelyAbsorbed(const vector<int>& Ids, double Energy)
 {
   // Return true if the track is completely absorbed
   //
@@ -1221,7 +1794,7 @@ bool MResponseMultipleCompton::IsTrackCompletelyAbsorbed(const vector<int>& Ids,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateMinLeverArm(MRESE& Start, MRESE& Central, 
+double MResponseMultipleComptonBayes::CalculateMinLeverArm(MRESE& Start, MRESE& Central,
                                                MRESE& Stop)
 {
   return MERCSRBayesian::CalculateMinLeverArm(Start.GetPosition(),
@@ -1233,7 +1806,7 @@ double MResponseMultipleCompton::CalculateMinLeverArm(MRESE& Start, MRESE& Centr
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateDPhiInDegree(MRESE& Start, MRESE& Central, 
+double MResponseMultipleComptonBayes::CalculateDPhiInDegree(MRESE& Start, MRESE& Central,
                                         MRESE& Stop, double Energy)
 {
   return MERCSRBayesian::CalculateDPhiInDegree(&Start, &Central, &Stop, Energy);
@@ -1243,7 +1816,7 @@ double MResponseMultipleCompton::CalculateDPhiInDegree(MRESE& Start, MRESE& Cent
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateDCosPhi(MRESE& Start, MRESE& Central, 
+double MResponseMultipleComptonBayes::CalculateDCosPhi(MRESE& Start, MRESE& Central,
                                                   MRESE& Stop, double Energy)
 {
   return MERCSRBayesian::CalculateDCosPhi(&Start, &Central, &Stop, Energy);
@@ -1253,7 +1826,7 @@ double MResponseMultipleCompton::CalculateDCosPhi(MRESE& Start, MRESE& Central,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateDCosAlpha(MRETrack& Track, MRESE& Central, double Energy)
+double MResponseMultipleComptonBayes::CalculateDCosAlpha(MRETrack& Track, MRESE& Central, double Energy)
 {
   return MERCSRBayesian::CalculateDCosAlpha(&Track, &Central, Energy);
 }
@@ -1262,7 +1835,7 @@ double MResponseMultipleCompton::CalculateDCosAlpha(MRETrack& Track, MRESE& Cent
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateDAlphaInDegree(MRETrack& Track, MRESE& Central, double Energy)
+double MResponseMultipleComptonBayes::CalculateDAlphaInDegree(MRETrack& Track, MRESE& Central, double Energy)
 {
   return MERCSRBayesian::CalculateDAlphaInDegree(&Track, &Central, Energy);
 }
@@ -1271,7 +1844,7 @@ double MResponseMultipleCompton::CalculateDAlphaInDegree(MRETrack& Track, MRESE&
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateCosAlphaE(MRETrack& Track, MRESE& Central, double Energy)
+double MResponseMultipleComptonBayes::CalculateCosAlphaE(MRETrack& Track, MRESE& Central, double Energy)
 {
   return MERCSRBayesian::CalculateCosAlphaE(&Track, &Central, Energy);
 }
@@ -1280,7 +1853,7 @@ double MResponseMultipleCompton::CalculateCosAlphaE(MRETrack& Track, MRESE& Cent
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateAlphaEInDegree(MRETrack& Track, MRESE& Central, double Energy)
+double MResponseMultipleComptonBayes::CalculateAlphaEInDegree(MRETrack& Track, MRESE& Central, double Energy)
 {
   return MERCSRBayesian::CalculateAlphaEInDegree(&Track, &Central, Energy);
 }
@@ -1289,7 +1862,7 @@ double MResponseMultipleCompton::CalculateAlphaEInDegree(MRETrack& Track, MRESE&
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateCosAlphaG(MRETrack& Track, MRESE& Central, double Energy)
+double MResponseMultipleComptonBayes::CalculateCosAlphaG(MRETrack& Track, MRESE& Central, double Energy)
 {
   return MERCSRBayesian::CalculateCosAlphaG(&Track, &Central, Energy);
 }
@@ -1298,7 +1871,7 @@ double MResponseMultipleCompton::CalculateCosAlphaG(MRETrack& Track, MRESE& Cent
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateAlphaGInDegree(MRETrack& Track, MRESE& Central, double Energy)
+double MResponseMultipleComptonBayes::CalculateAlphaGInDegree(MRETrack& Track, MRESE& Central, double Energy)
 {
   return MERCSRBayesian::CalculateAlphaGInDegree(&Track, &Central, Energy);
 }
@@ -1307,7 +1880,7 @@ double MResponseMultipleCompton::CalculateAlphaGInDegree(MRETrack& Track, MRESE&
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateAbsorptionProbabilityPhoto(MRESE& Start, 
+double MResponseMultipleComptonBayes::CalculateAbsorptionProbabilityPhoto(MRESE& Start,
                                                                      MRESE& Stop, 
                                                                      double Etot)
 {
@@ -1324,7 +1897,7 @@ double MResponseMultipleCompton::CalculateAbsorptionProbabilityPhoto(MRESE& Star
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateAbsorptionProbabilityTotal(MRESE& Start, 
+double MResponseMultipleComptonBayes::CalculateAbsorptionProbabilityTotal(MRESE& Start,
                                                                      MRESE& Stop, 
                                                                      double Etot)
 {
@@ -1341,7 +1914,7 @@ double MResponseMultipleCompton::CalculateAbsorptionProbabilityTotal(MRESE& Star
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateAbsorptionProbabilityCompton(MRESE& Start, 
+double MResponseMultipleComptonBayes::CalculateAbsorptionProbabilityCompton(MRESE& Start,
                                                                        MRESE& Stop, 
                                                                        double Etot)
 {
@@ -1359,7 +1932,7 @@ double MResponseMultipleCompton::CalculateAbsorptionProbabilityCompton(MRESE& St
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculatePhiEInDegree(MRESE& Central, double Etot)
+double MResponseMultipleComptonBayes::CalculatePhiEInDegree(MRESE& Central, double Etot)
 {
   return MERCSRBayesian::CalculatePhiEInDegree(&Central, Etot);
 }
@@ -1368,7 +1941,7 @@ double MResponseMultipleCompton::CalculatePhiEInDegree(MRESE& Central, double Et
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculatePhiGInDegree(MRESE& Start, MRESE& Central, 
+double MResponseMultipleComptonBayes::CalculatePhiGInDegree(MRESE& Start, MRESE& Central,
                                                        MRESE& Stop)
 {
   return MERCSRBayesian::CalculatePhiGInDegree(&Start, &Central, &Stop);
@@ -1378,7 +1951,7 @@ double MResponseMultipleCompton::CalculatePhiGInDegree(MRESE& Start, MRESE& Cent
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateCosPhiG(MRESE& Start, MRESE& Central, 
+double MResponseMultipleComptonBayes::CalculateCosPhiG(MRESE& Start, MRESE& Central,
                                                   MRESE& Stop)
 {
   return MERCSRBayesian::CalculateCosPhiG(&Start, &Central, &Stop);
@@ -1388,7 +1961,7 @@ double MResponseMultipleCompton::CalculateCosPhiG(MRESE& Start, MRESE& Central,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleCompton::CalculateCosPhiE(MRESE& Central, double Etot)
+double MResponseMultipleComptonBayes::CalculateCosPhiE(MRESE& Central, double Etot)
 {
   return MERCSRBayesian::CalculateCosPhiE(&Central, Etot);
 }
@@ -1397,11 +1970,11 @@ double MResponseMultipleCompton::CalculateCosPhiE(MRESE& Central, double Etot)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MResponseMultipleCompton::GetMaterial(MRESE& Hit)
+int MResponseMultipleComptonBayes::GetMaterial(MRESE& Hit)
 {
   return MERCSRBayesian::GetMaterial(&Hit);
 }
 
 
-// MResponseMultipleCompton.cxx: the end...
+// MResponseMultipleComptonBayes.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

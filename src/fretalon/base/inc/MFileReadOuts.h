@@ -48,8 +48,13 @@ class MFileReadOuts : public MFileEvents
   virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read);
 
   //! Return the next event
-  //! If SelectedDetectorID >= 0 then restrict yourself to SelectedDetectorID
-  bool ReadNext(MReadOutSequence& Sequence, int SelectedDetectorID = -1);
+  //! If SelectedDetectorID is non-negative then restrict yourself to SelectedDetectorID
+  //! SelectedDetectorSide:
+  //!   < 0: all
+  //!     0: negative side
+  //!     1: positive side
+  //!   >=2: all
+  bool ReadNext(MReadOutSequence& Sequence, int SelectedDetectorID = -1, int SelectedDetectorSide = -1);
 
   
   // protected methods:

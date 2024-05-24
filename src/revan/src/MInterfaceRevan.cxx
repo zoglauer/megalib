@@ -143,6 +143,8 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
   Usage<<"             Analyze the evta-file given with the -f option, otherwise the file in the configuration file"<<endl;
   Usage<<"      -s --generate spectra:"<<endl;
   Usage<<"             Generate spectra using the options previously set in the GUI and stored in the configuration file"<<endl;
+  Usage<<"         --save-cfg:"<<endl;
+  Usage<<"             Safe the configuration. If the -o option is given then the configuration is saved to this file."<<endl;
   Usage<<endl;
   Usage<<"      -t  --test:"<<endl;
   Usage<<"             Perform a test run."<<endl;
@@ -291,6 +293,10 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Analyzing..."<<endl;
       AnalyzeEvents();
       return true;
+    } else if (Option == "--save-cfg") {
+      cout<<"Command-line parser: Save the configuration..."<<endl;
+      SaveConfiguration(m_OutputFilenName != "" ? m_OutputFilenName : "NewConfiguration.cfg");
+      return false;
     } else if (Option == "--generate-spectra" || Option == "-s") {
       cout<<"Command-line parser: Generate spectra (use the options from the configuration file)"<<endl;
       GenerateSpectra();
