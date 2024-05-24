@@ -60,6 +60,7 @@ MResponsePolarizationBinnedMode::MResponsePolarizationBinnedMode() : m_Polarizat
   m_AngleBinWidthElectron = 360; // deg
   m_AngleBinMode = "fisbel"; 
   m_EnergyNBins = 1;
+  m_EnergyBinMode = "lin";
   m_EnergyMinimum = 10; // keV
   m_EnergyMaximum = 2000; // keV
   m_EnergyBinEdges.clear();
@@ -113,6 +114,7 @@ MString MResponsePolarizationBinnedMode::Options()
   out<<"             emin:                    minimum energy (default: 10 keV; cannot be used in combination with ebinedges)"<<endl;
   out<<"             emax:                    maximum energy (default: 2,000 keV; cannot be used in combination with ebinedges)"<<endl;
   out<<"             ebins:                   number of energy bins between min and max energy (default: 1; cannot be used in combination with ebinedges)"<<endl;
+  out<<"             emode:                   One of: lin (linear), log (logarithmic) (default: lin; cannot be used in combination with ebinedges)"<<endl;
   out<<"             ebinedges:               the energy bin edges as a comma seperated list (default: not used, cannot be used in combination with emin, emax, or ebins)"<<endl;
   out<<"             anglebinwidthelectron:   the width of a aky bin at the equator (default: 5 deg)"<<endl;
   out<<"             dmin:                    minimum distance (default: 0 cm)"<<endl;
@@ -190,6 +192,8 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
       m_EnergyMaximum = stod(Value);
     } else if (Split2[i][0] == "ebins") {
       m_EnergyNBins = stod(Value);
+    } else if (Split2[i][0] == "ebinmode") {
+      m_EnergyBinMode = MValue.ToLower();
     } else if (Split2[i][0] == "ebinedges") {
       vector<MString> Edges = MString(Value).Tokenize(",");
       m_EnergyBinEdges.clear();
@@ -248,6 +252,10 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
       mout<<"Error: You need at least one energy bin"<<endl;
       return false;       
     }
+    if (m_EnergyBinMode != "lin" && m_EnergyBinMode != "log") {
+      mout<<"Error: Energy bins only support lin and log modes"<<endl;
+      return false;
+    }
   }
   if (m_DistanceMinimum < 0 || m_DistanceMaximum < 0) {
     mout<<"Error: All distance values must be non-negative"<<endl;
@@ -303,6 +311,7 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
     mout<<"  Minimum energy:                                     "<<m_EnergyMinimum<<endl;
     mout<<"  Maximum energy:                                     "<<m_EnergyMaximum<<endl;
     mout<<"  Number of bins energy:                              "<<m_EnergyNBins<<endl;
+    mout<<"  Energy binning mode:                                "<<m_EnergyBinMode<<endl;
   }
   mout<<"  Width of sky bins at equator:                       "<<m_AngleBinWidth<<endl;
   mout<<"  Sky bins binning mode:                              "<<m_AngleBinMode<<endl;
@@ -336,7 +345,11 @@ bool MResponsePolarizationBinnedMode::Initialize()
   if (m_EnergyBinEdges.size() > 0) {
     AxisEnergyInitial.SetBinEdges(m_EnergyBinEdges);
   } else {
-    AxisEnergyInitial.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    if (m_EnergyBinMode == "log") {
+      AxisEnergyInitial.SetLogarithmic(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    } else {
+      AxisEnergyInitial.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    }
   }
   
   MResponseMatrixAxisSpheric AxisSkyCoordinates("#nu [deg]", "#lambda [deg]");
@@ -351,7 +364,11 @@ bool MResponsePolarizationBinnedMode::Initialize()
   if (m_EnergyBinEdges.size() > 0) {
     AxisEnergyMeasured.SetBinEdges(m_EnergyBinEdges);
   } else {
-    AxisEnergyMeasured.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    if (m_EnergyBinMode == "log") {
+      AxisEnergyMeasured.SetLogarithmic(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    } else {
+      AxisEnergyMeasured.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    }
   }
   
   MResponseMatrixAxis AxisPhi("#phi [deg]");

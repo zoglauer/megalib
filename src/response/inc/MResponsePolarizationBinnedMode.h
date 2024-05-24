@@ -81,6 +81,8 @@ class MResponsePolarizationBinnedMode : public MResponseBuilder
   double m_AngleBinWidthElectron;
   //! Number of energy bins
   unsigned int m_EnergyNBins;
+  //! The mode how to do the spherical coordinates binning: lin or log
+  MString m_EnergyBinMode;
   //! Minimum energy range
   double m_EnergyMinimum;
   //! Maximum energy range
