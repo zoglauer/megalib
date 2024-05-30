@@ -94,6 +94,7 @@ MInterfaceRevan::MInterfaceRevan() : MInterface()
   m_BasicGuiData = dynamic_cast<MSettings*>(m_Data);
 
   m_TestRun = false;
+  m_RootOutput = false;
 
   m_OutputFilenName = "";
 }
@@ -106,7 +107,6 @@ MInterfaceRevan::~MInterfaceRevan()
 {
   // default destructor
 
-  m_Analyzer = 0;
   m_Geometry = 0;
 }
 
@@ -138,6 +138,9 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"         --oi:"<<endl;
   Usage<<"             Save the OI information, in case tra files are generated"<<endl;
+  Usage<<endl;
+  Usage<<"      --rootoutput:"<<endl;
+  Usage<<"             Save the some information in a .root file (implies --oi)"<<endl;
   Usage<<endl;
   Usage<<"      -a --analyze:"<<endl;
   Usage<<"             Analyze the evta-file given with the -f option, otherwise the file in the configuration file"<<endl;
@@ -202,6 +205,10 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--test" || Option == "-t") {
       m_TestRun = true;
       cout<<"Command-line parser: Performing a test run"<<endl;
+    } else if (Option == "--rootoutput") {
+      m_RootOutput = true;
+      m_Data->SetSaveOI(true);
+      cout<<"Command-line parser: Generating root output file"<<endl;
     } else if (Option == "--debug" || Option == "-d") {
       g_Verbosity = 2;
       cout<<"Command-line parser: Use debug mode"<<endl;
@@ -452,7 +459,7 @@ void MInterfaceRevan::AnalyzeEvents()
   MRawEventAnalyzer Analyzer;
   Analyzer.SetGeometry(m_Geometry);
   if (Analyzer.SetInputModeFile(m_Data->GetCurrentFileName()) == false) return;
-  if (Analyzer.SetOutputModeFile(FilenameOut) == false) return;
+  if (Analyzer.SetOutputModeFile(FilenameOut, m_RootOutput) == false) return;
   SetGuiData(Analyzer);
 
   if (Analyzer.PreAnalysis() == false) {

@@ -56,7 +56,8 @@ MFileEventsRoot::MFileEventsRoot(TString FileName, unsigned int Way) //: MFileEv
     createHeader();
     m_footer = new TTree("Footer", "Footer");
     createFooter();
-    m_merit = nullptr;
+    m_merit = new TTree("Merit", "Merit");
+    createMerit();
   }
 }
 
@@ -138,7 +139,7 @@ bool MFileEventsRoot::AddEvent(MPhysicalEvent* P) {
   EvtDirY = evtdir.GetY();
   EvtDirZ = evtdir.GetZ();
   // Fill merit with one event
-//  m_merit->Fill();
+  m_merit->Fill();
   return true;
 }
 

@@ -31,6 +31,7 @@ using namespace std;
 #include "MGeometryRevan.h"
 #include "MFileEventsEvta.h"
 #include "MFileEventsTra.h"
+#include "MFileEventsRoot.h"
 #include "MSettingsEventReconstruction.h"
 #include "MERCSRTMVAMethods.h"
 
@@ -68,7 +69,7 @@ class MRawEventAnalyzer
   //! If events are read from file set it here
   bool SetInputModeFile(MString Filename);
   //! If events are written to a file, set it with this function
-  bool SetOutputModeFile(MString Filename);
+  bool SetOutputModeFile(MString Filename, bool rootOutput = false);
 
   //! Do not use any GUI functions
   void SetBatch(bool IsBatch) { m_IsBatch = IsBatch; }
@@ -341,6 +342,9 @@ class MRawEventAnalyzer
 
   //! The tra file writer
   MFileEventsTra* m_PhysFile;
+
+  //! The Root file write
+  MFileEventsRoot* m_RootFile;
 
   //! Intermediate store of the events after reading
   MRawEventIncarnations* m_EventStore;
