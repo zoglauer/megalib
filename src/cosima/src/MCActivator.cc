@@ -375,7 +375,7 @@ bool MCActivator::CalculateEquilibriumRates()
               if (Tree[b].back().GetHalfLife() == numeric_limits<double>::max()) continue;
               
               //cout<<<<endl;
-	      const G4Ions* ion = dynamic_cast<const G4Ions*>(*(Tree[b].back().GetDefinition()));
+	      const G4Ions* ion = dynamic_cast<const G4Ions*>((Tree[b].back().GetDefinition()));
               DecayTable = Decay->LoadDecayTable(ion);
               if (DecayTable == 0) {
                 mout<<"Error: Decay table not found for: "<<m_Rates.GetID(v, i)<<endl;
