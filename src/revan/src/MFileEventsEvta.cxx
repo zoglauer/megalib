@@ -27,6 +27,8 @@
 #include "MFileEventsEvta.h"
 
 // Standard libs:
+//#include <iostream>
+//using namespace std;
 
 // ROOT libs:
 
@@ -203,9 +205,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
 
   // This takes care of (SC1)
   if (m_IncludeFileUsed == true) {
-    MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+    MFileEventsEvta* IncludedFile = dynamic_cast<MFileEventsEvta*>(m_IncludeFile);
+    IncludedFile->SaveOI(m_SaveOI); // Inherit the SaveOI status
+    MRERawEvent* RE = IncludedFile->GetNextEvent();
     if (RE == nullptr) {
-      m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+      m_Noising->AddStatistics(IncludedFile->GetERNoising());
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
@@ -225,6 +229,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
 
   MString Line;
   int nInteraction; bool firstLine = false;
+  //char MCInteraction[5];
   double x, y, z, dx, dy, dz, px, py, pz, e; // For OI fields
   while (IsGood() == true) {
     if (ReadLine(Line) == false) break;
@@ -302,7 +307,10 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
       ReadFooter(true);
     } else if (Line[0] == 'I' && Line[1] == 'N') {
       if (m_IncludeFileUsed == true) {
-        MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+        MFileEventsEvta* IncludedFile = dynamic_cast<MFileEventsEvta*>(m_IncludeFile);
+        IncludedFile->SaveOI(m_SaveOI); // Inherit the SaveOI status
+        MRERawEvent* RE = IncludedFile->GetNextEvent();
+        //MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
         if (RE == 0) {
           m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
           m_IncludeFile->Close();
@@ -329,9 +337,10 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
           if (firstLine) {
             if (sscanf(Line.Data(), "IA %*s %d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f",
                 &nInteraction, &x, &y, &z) == 4) {
-              if (nInteraction == 2) { // Retain interaction position instead of original positio // Retain interaction position instead of original position
+              if (nInteraction == 2) { // Retain interaction position instead of original position
+                //MCInteraction[4] = '\0';
                 ostringstream out;
-                out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+                out<<"OI "<</*MCInteraction<<" "<<*/x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
                 Line = out.str().c_str(); 
                 firstLine = false;
               }
@@ -373,13 +382,15 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
   // (SC1) If there is an active INclude-file we have to get the event from this file
   //       If there are no more events in the include file, we continue reading this file  
   
-  
   // This takes care of (SC0)
   if (UpdateProgress() == false) return nullptr;
   
   // This takes care of (SC1)
   if (m_IncludeFileUsed == true) {
-    MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+    MFileEventsEvta* IncludedFile = dynamic_cast<MFileEventsEvta*>(m_IncludeFile);
+    IncludedFile->SaveOI(m_SaveOI); // Inherit the SaveOI status
+    MRERawEvent* RE = IncludedFile->GetNextEvent();
+    //MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
     if (RE == nullptr) {
       m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
@@ -413,10 +424,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
       else if (Line[0] == 'I' && Line[1] == 'N') {
         
         if (OpenIncludeFile(Line) == true) {
-          
-          Event = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+          MFileEventsEvta* IncludedFile = dynamic_cast<MFileEventsEvta*>(m_IncludeFile);
+          IncludedFile->SaveOI(m_SaveOI); // Inherit the SaveOI status
+          Event = IncludedFile->GetNextEvent();
           if (Event == nullptr) {
-            m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+            m_Noising->AddStatistics(IncludedFile->GetERNoising());
             m_IncludeFile->Close();
             m_IncludeFileUsed = false;
             break;
