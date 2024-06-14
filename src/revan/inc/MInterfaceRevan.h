@@ -115,11 +115,11 @@ class MInterfaceRevan : public MInterface
   MGUIRevanMain* m_Gui;
   MSettingsRevan* m_Data; // All the information of the GUI
 
-  MRawEventAnalyzer* m_Analyzer;
   MGeometryRevan* m_Geometry;
 
   //! True if we perform a test run
   bool m_TestRun;
+  bool m_RootOutput;
 
   //! Default output file name
   MString m_OutputFilenName;

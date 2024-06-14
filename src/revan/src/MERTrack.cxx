@@ -322,7 +322,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
     Timer.Start();
     // Generate a list of possible Compton tracks -
-    // we only want to have sequences now and do not yet care aboput directions!
+    // we only want to have sequences now and do not yet care about directions!
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; e++) {
       RE = m_List->GetRawEventAt(e);

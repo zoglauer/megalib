@@ -23,6 +23,7 @@ FILES := MGeometryRevan \
 	MRawEventIncarnationList \
 	MRawEventAnalyzer \
 	MFileEventsEvta \
+        MFileEventsRoot \
 	MFileDecay \
 	MERConstruction \
 	MERNoising \

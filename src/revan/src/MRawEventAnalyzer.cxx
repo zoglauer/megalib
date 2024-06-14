@@ -26,7 +26,7 @@
 // During the analysis of one event, different ordering possibilties are stored
 // in the m_RawEvents member. After loading the event it contains only one
 // expression of the event: only single hits. After the track analysis also the
-// possibilties for different tracks in the one raw event are stored as
+// possibilities for different tracks in the one raw event are stored as
 // different expressions in the m_RawEvents member.
 //
 // After all analysis is done the most likely expression is the chosen one.
@@ -143,6 +143,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
 
   m_FilenameOut = "";
   m_PhysFile = nullptr;
+  m_RootFile = nullptr;
 
   m_Geometry = nullptr; 
   m_RawEvents = new MRawEventIncarnationList();
@@ -258,6 +259,7 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
 
   delete m_Reader;
   delete m_PhysFile;
+  if(m_RootFile) delete m_RootFile;
 
   m_RawEvents->DeleteAll();
   delete m_RawEvents;
@@ -437,10 +439,15 @@ bool MRawEventAnalyzer::SetInputModeFile(MString Filename)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MRawEventAnalyzer::SetOutputModeFile(MString Filename)
+bool MRawEventAnalyzer::SetOutputModeFile(MString Filename, bool rootOutput)
 {
   delete m_PhysFile;
   m_PhysFile = nullptr;
+
+  if(m_RootFile) {
+    delete m_RootFile;
+    m_RootFile = nullptr;
+  }
 
   if (Filename == "") {
     mout<<"MRawEventAnalyzer: No output file name given!"<<endl;
@@ -454,6 +461,10 @@ bool MRawEventAnalyzer::SetOutputModeFile(MString Filename)
     delete m_PhysFile;
     m_PhysFile = nullptr;
     return false;
+  }
+
+  if(rootOutput) {
+    m_RootFile = new MFileEventsRoot(m_FilenameOut, MFile::c_Create);
   }
 
   return true;
@@ -783,7 +794,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     
     Event = m_RawEvents->GetOptimumPhysicalEvent();
   } else {
-    mdebug<<"We have a best rey events..."<<endl;
+    mdebug<<"We have a best try events..."<<endl;
     
     Event = m_RawEvents->GetBestTryPhysicalEvent();
     
@@ -801,6 +812,12 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     if (m_PhysFile != nullptr) {
       if (m_PhysFile->AddEvent(Event) == false) {
         merr<<"Saving of the event failed!"<<show;
+        return c_AnalysisSavingEventFailed;
+      }
+    }
+    if (m_RootFile) {
+      if (m_RootFile->AddEvent(Event) == false) {
+        merr<<"Adding event to ROOT file failed!"<<show;
         return c_AnalysisSavingEventFailed;
       }
     }
@@ -1071,6 +1088,19 @@ bool MRawEventAnalyzer::PostAnalysis()
       }
     }
     out<<"    Total ................................................ "<<setw(Width)<<Total<<endl;
+    if (m_RootFile) {//For ROOT file footer
+      m_RootFile->NEvents = m_NEvents;
+      m_RootFile->NPassedEventSelection = m_NPassedEventSelection;
+      m_RootFile->NGoodEvents = m_NGoodEvents;
+      m_RootFile->NPhotoEvents = m_NPhotoEvents;
+      m_RootFile->NComptonEvents = m_NComptonEvents;
+      m_RootFile->NDecayEvents = m_NDecayEvents;
+      m_RootFile->NPairEvents = m_NPairEvents;
+      m_RootFile->NMuonEvents = m_NMuonEvents;
+      m_RootFile->NPETEvents = m_NPETEvents;
+      m_RootFile->NMultiEvents = m_NMultiEvents;
+      m_RootFile->RejectedEvents = Total;
+    }
   } else {
     out<<endl;
     out<<"  No events available"<<endl;
@@ -1084,6 +1114,27 @@ bool MRawEventAnalyzer::PostAnalysis()
     m_PhysFile->CloseEventList();
     m_PhysFile->AddFooter(out.str().c_str());
     m_PhysFile->Close();
+  }
+  if (m_RootFile) {// Fill ROOT file footer
+    strncpy(m_RootFile->Date, T.GetSQLString().Data(), 1023)[1023]='\0';
+    strncpy(m_RootFile->OriginalFile, m_Filename.Data(), 1023)[1023]='\0';
+    strncpy(m_RootFile->GeometryFile, m_Geometry->GetFileName().Data(), 1023)[1023]='\0';
+    if(m_HitClusterizer) strncpy(m_RootFile->HitClusterizer, m_HitClusterizer->ToString().Data(), 1023)[1023]='\0';
+    if(m_Tracker) strncpy(m_RootFile->Tracker, m_Tracker->ToString().Data(), 1023)[1023]='\0';
+    if(m_CSR) strncpy(m_RootFile->CSR, m_CSR->ToString().Data(), 1023)[1023]='\0';
+    if(m_Decay) strncpy(m_RootFile->Decay, m_Decay->ToString().Data(), 1023)[1023]='\0';
+    if(m_Reader) strncpy(m_RootFile->ERNoising, m_Reader->GetERNoising()->ToString().Data(), 1023)[1023]='\0';
+    m_RootFile->AddFooter();
+//    m_RootFile->ObservationTime = (char*)m_Reader->GetObservationTime().GetString(); Deal with later
+   // m_RootFile->Date = (char*)T.GetSQLString().Data();
+   // m_RootFile->OriginalFile = (char*)m_Filename.Data();
+   // m_RootFile->GeometryFile = (char*)m_Geometry->GetFileName().Data();
+   // m_RootFile->HitClusterizer = (char*)m_HitClusterizer->ToString().Data();
+   // m_RootFile->Tracker = (char*)m_Tracker->ToString().Data();
+   // m_RootFile->CSR = (char*)m_CSR->ToString().Data();
+   // m_RootFile->Decay = (char*)m_Decay->ToString().Data();
+   // m_RootFile->ERNoising = (char*)m_Reader->GetERNoising()->ToString().Data();
+    //m_RootFile->AddFooter();
   }
 
   mout<<out.str().c_str()<<endl;
@@ -1403,6 +1454,11 @@ bool MRawEventAnalyzer::PreAnalysis()
       m_PhysFile->SetVersion(1);
       m_PhysFile->SetGeometryFileName(m_Geometry->GetFileName());
       m_PhysFile->WriteHeader();
+    }
+    if (m_RootFile) {
+      m_RootFile->m_version = 1;
+      strncpy(m_RootFile->m_geometry, m_Geometry->GetFileName().Data(), 1023)[1023]='\0';
+      m_RootFile->AddHeader();
     }
   }
 
