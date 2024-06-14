@@ -224,8 +224,6 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
   MRERawEvent* Event = new MRERawEvent(m_Geometry);
 
   MString Line;
-  int nInteraction; bool firstLine = false;
-  double x, y, z, dx, dy, dz, px, py, pz, e; // For OI fields
   while (IsGood() == true) {
     if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
@@ -294,9 +292,6 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
     // Round 3:
     if ((Line[0] == 'S' && Line[1] == 'E')) {
       // Everything already handled!
-      // Reset OI fields
-      x = 0.; y = 0.; z = 0.; dx = 0.; dy = 0.; dz = 0.; px = 0.; py = 0.; pz = 0.; e = 0.;
-      nInteraction = 0; firstLine = false;
     } else if ((Line[0] == 'N' && Line[1] == 'F') ||
                (Line[0] == 'E' && Line[1] == 'N')) {
       ReadFooter(true);
@@ -320,21 +315,13 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
       
       if (m_SaveOI == true) {
         if (Line[0] == 'I' && Line[1] == 'A') {
-          if (Line[3] == 'I' && Line[4] == 'N' && Line[5] == 'I' && Line[6] == 'T') { // Retain the original direction, energy and polarization
-            if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*f;%*f;%*f;%*f;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
-              &dx, &dy, &dz, &px, &py, &pz, &e) == 7) {
-              firstLine = true;
-            }
-          }
-          if (firstLine) {
-            if (sscanf(Line.Data(), "IA %*s %d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f",
-                &nInteraction, &x, &y, &z) == 4) {
-              if (nInteraction == 2) { // Retain interaction position instead of original positio // Retain interaction position instead of original position
-                ostringstream out;
-                out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
-                Line = out.str().c_str(); 
-                firstLine = false;
-              }
+          if (Line[3] == 'I' && Line[4] == 'N' && Line[5] == 'I' && Line[6] == 'T') {
+            double x, y, z, dx, dy, dz, px, py, pz, e;
+            if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+              &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+              ostringstream out;
+              out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+              Line = out.str().c_str();
             }
           }
         }
@@ -506,7 +493,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
           Event->AddREAM(GR);
         }
         if (m_SaveOI == true && SimEvent->GetNIAs() > 0) {
-          Event->SetOriginInformation(SimEvent->GetIAAt(1)->GetPosition(), SimEvent->GetIAAt(0)->GetSecondaryDirection(), SimEvent->GetIAAt(0)->GetSecondaryPolarization(), SimEvent->GetIAAt(0)->GetSecondaryEnergy());
+          Event->SetOriginInformation(SimEvent->GetIAAt(0)->GetPosition(), SimEvent->GetIAAt(0)->GetSecondaryDirection(), SimEvent->GetIAAt(0)->GetSecondaryPolarization(), SimEvent->GetIAAt(0)->GetSecondaryEnergy());
         }
         
         delete SimEvent;
