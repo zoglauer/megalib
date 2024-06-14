@@ -203,9 +203,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
 
   // This takes care of (SC1)
   if (m_IncludeFileUsed == true) {
-    MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+    MFileEventsEvta* IncludedFile = dynamic_cast<MFileEventsEvta*>(m_IncludeFile);
+    IncludedFile->SaveOI(m_SaveOI); // Inherit the SaveOI status
+    MRERawEvent* RE = IncludedFile->GetNextEvent();
     if (RE == nullptr) {
-      m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+      m_Noising->AddStatistics(IncludedFile->GetERNoising());
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
@@ -297,9 +299,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
       ReadFooter(true);
     } else if (Line[0] == 'I' && Line[1] == 'N') {
       if (m_IncludeFileUsed == true) {
-        MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+        MFileEventsEvta* IncludedFile = dynamic_cast<MFileEventsEvta*>(m_IncludeFile);
+        IncludedFile->SaveOI(m_SaveOI); // Inherit the SaveOI status
+        MRERawEvent* RE = IncludedFile->GetNextEvent();
         if (RE == 0) {
-          m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+          m_Noising->AddStatistics(IncludedFile->GetERNoising());
           m_IncludeFile->Close();
           m_IncludeFileUsed = false;
         } else {
@@ -366,9 +370,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
   
   // This takes care of (SC1)
   if (m_IncludeFileUsed == true) {
-    MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+    MFileEventsEvta* IncludedFile = dynamic_cast<MFileEventsEvta*>(m_IncludeFile);
+    IncludedFile->SaveOI(m_SaveOI); // Inherit the SaveOI status
+    MRERawEvent* RE = IncludedFile->GetNextEvent();
     if (RE == nullptr) {
-      m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+      m_Noising->AddStatistics(IncludedFile->GetERNoising());
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
@@ -400,10 +406,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
       else if (Line[0] == 'I' && Line[1] == 'N') {
         
         if (OpenIncludeFile(Line) == true) {
-          
-          Event = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
+          MFileEventsEvta* IncludedFile = dynamic_cast<MFileEventsEvta*>(m_IncludeFile);
+          IncludedFile->SaveOI(m_SaveOI); // Inherit the SaveOI status
+          Event = IncludedFile->GetNextEvent();
           if (Event == nullptr) {
-            m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+            m_Noising->AddStatistics(IncludedFile->GetERNoising());
             m_IncludeFile->Close();
             m_IncludeFileUsed = false;
             break;
