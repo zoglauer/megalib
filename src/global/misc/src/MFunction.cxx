@@ -520,7 +520,9 @@ double MFunction::Evaluate(double x) const
 {
   // Evalute the function considering the different interpolation types
 
-  if (m_InterpolationType == c_InterpolationUnknown) {
+  auto InterpolationType = m_InterpolationType;
+
+  if (InterpolationType == c_InterpolationUnknown) {
     merr<<"Unknown interpolation type: "<<c_InterpolationUnknown<<show;
     return 0;
   }
@@ -531,13 +533,20 @@ double MFunction::Evaluate(double x) const
     return 0;
   }
 
-  if (m_InterpolationType == c_InterpolationConstant || m_X.size() == 1) {
+  if (InterpolationType == c_InterpolationLinLog) {
+    if (m_X.back() > 1E+09) {
+      merr<<"Info: Large x-axis values make LinLog interpolation fail. Switching to LinLin!"<<endl;
+      InterpolationType = c_InterpolationLinLin;
+    }
+  }
+
+  if (InterpolationType == c_InterpolationConstant || m_X.size() == 1) {
     return m_Y[0];
-  } else if (m_InterpolationType == c_InterpolationSpline3) {
+  } else if (InterpolationType == c_InterpolationSpline3) {
     return m_Spline3->Eval(x);
-  } else if (m_InterpolationType == c_InterpolationSpline5) {
+  } else if (InterpolationType == c_InterpolationSpline5) {
     return m_Spline5->Eval(x);
-  } else if (m_InterpolationType == c_InterpolationNone) {
+  } else if (InterpolationType == c_InterpolationNone) {
 
     // Get Position:
     int xPosition = -1; 
@@ -556,10 +565,10 @@ double MFunction::Evaluate(double x) const
 
     return m_Y[xPosition];
 
-  } else if (m_InterpolationType == c_InterpolationLinLin ||
-             m_InterpolationType == c_InterpolationLinLog ||
-             m_InterpolationType == c_InterpolationLogLin ||
-             m_InterpolationType == c_InterpolationLogLog) {
+  } else if (InterpolationType == c_InterpolationLinLin ||
+             InterpolationType == c_InterpolationLinLog ||
+             InterpolationType == c_InterpolationLogLin ||
+             InterpolationType == c_InterpolationLogLog) {
 
     double y = 0.0;
 
@@ -595,11 +604,11 @@ double MFunction::Evaluate(double x) const
     }
 
     // Attention for log interpolation make sure all values are positive!
-    if (m_InterpolationType == c_InterpolationLinLog || m_InterpolationType == c_InterpolationLogLog) {
+    if (InterpolationType == c_InterpolationLinLog || InterpolationType == c_InterpolationLogLog) {
       y1 = log(y1);
       y2 = log(y2);
     }
-    if (m_InterpolationType == c_InterpolationLogLin || m_InterpolationType == c_InterpolationLogLog) {
+    if (InterpolationType == c_InterpolationLogLin || InterpolationType == c_InterpolationLogLog) {
       x = log(x);
       x1 = log(x1);
       x2 = log(x2);
@@ -608,14 +617,14 @@ double MFunction::Evaluate(double x) const
     double m = (y2-y1)/(x2-x1);
     double t = y2 - m*x2;
 
-    if (m_InterpolationType == c_InterpolationLinLog || m_InterpolationType == c_InterpolationLogLog) {
+    if (InterpolationType == c_InterpolationLinLog || InterpolationType == c_InterpolationLogLog) {
       y = exp(m*x+t);
     } else {
       y = m*x+t;
     }
     
     if (std::isnan(y)) { // std:: is required here due to multiple definitions
-      merr<<"Interpolation error for interpolation type "<<m_InterpolationType<<": y is NaN!"<<endl;;
+      merr<<"Interpolation error for interpolation type "<<InterpolationType<<": y is NaN!"<<endl;;
       merr<<"   m="<<m<<"  t="<<t<<"  x1="<<x1<<"  y1="<<y1<<"  x2="<<x2<<"  y2="<<y2<<show;
     }
 
@@ -643,6 +652,8 @@ double MFunction::Integrate(double XMin, double XMax) const
 {
   // Integrate the data from min to max
   
+  auto InterpolationType = m_InterpolationType;
+
   if (XMin < m_X.front()) {
     merr<<"XMin ("<<XMin<<") smaller than minimum x-value ("<<m_X.front()<<") --- starting at minimum x-value"<<endl;
     XMin = m_X.front();
@@ -656,20 +667,34 @@ double MFunction::Integrate(double XMin, double XMax) const
     return 0.0;    
   }
 
+  // Switch to XZero to handle very large numbers
+  XMin -= m_X.front();
+  XMax -= m_X.front();
+
+  // ... use m_XZero from now on for x-axis
+
+  // More sanity checks
+  if (InterpolationType == c_InterpolationLinLog) {
+    if (m_X.back() > 1E+09) {
+      merr<<"Info: Large x-axis values make LinLog interpolation fail. Switching to LinLin!"<<endl;
+      InterpolationType = c_InterpolationLinLin;
+    }
+  }
+
   int BinMin = 0;
-  if (XMin > m_X.front()) {
-    // BinMin = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), XMin)) - m_X.begin() - 1;
-    BinMin = find_if(m_X.begin(), m_X.end(), bind(greater<double>(), placeholders::_1, XMin)) - m_X.begin() - 1;
+  if (XMin > m_XZero.front()) {
+    // BinMin = find_if(m_XZero.begin(), m_XZero.end(), bind2nd(greater<double>(), XMin)) - m_XZero.begin() - 1;
+    BinMin = find_if(m_XZero.begin(), m_XZero.end(), bind(greater<double>(), placeholders::_1, XMin)) - m_XZero.begin() - 1;
 //     unsigned int upper = m_Cumulative.size();
 //     unsigned int center = 1;
 //     unsigned int lower = 0;
     
 //     while (upper-lower > 1) {
 //       center = (upper+lower) >> 1;
-//       if (XMin == m_X[center]) {
+//       if (XMin == m_XZero[center]) {
 //         BinMin = int(center)+1;
 //       }
-//       if (XMin < m_X[center]) {
+//       if (XMin < m_XZero[center]) {
 //         upper = center;
 //       } else {
 //         lower = center;
@@ -677,20 +702,20 @@ double MFunction::Integrate(double XMin, double XMax) const
 //     }
 //     BinMin = int(lower)+1;
   }
-  int BinMax = m_X.size()-1;
-  if (XMax < m_X.back()) {
-    //BinMax = find_if(m_X.begin(), m_X.end(), bind2nd(greater_equal<double>(), XMax)) - m_X.begin();
-    BinMax = find_if(m_X.begin(), m_X.end(), bind(greater_equal<double>(), placeholders::_1, XMax)) - m_X.begin();
+  int BinMax = m_XZero.size()-1;
+  if (XMax < m_XZero.back()) {
+    //BinMax = find_if(m_XZero.begin(), m_XZero.end(), bind2nd(greater_equal<double>(), XMax)) - m_XZero.begin();
+    BinMax = find_if(m_XZero.begin(), m_XZero.end(), bind(greater_equal<double>(), placeholders::_1, XMax)) - m_XZero.begin();
 //     unsigned int upper = m_Cumulative.size();
 //     unsigned int center = 1;
 //     unsigned int lower = 0;
     
 //     while (upper-lower > 1) {
 //       center = (upper+lower) >> 1;
-//       if (XMax == m_X[center]) {
+//       if (XMax == m_XZero[center]) {
 //         BinMax = int(center)+1;
 //       }
-//       if (XMax < m_X[center]) {
+//       if (XMax < m_XZero[center]) {
 //         upper = center;
 //       } else {
 //         lower = center;
@@ -700,30 +725,30 @@ double MFunction::Integrate(double XMin, double XMax) const
   }
   
   double Integral = 0.0;
-  if (m_InterpolationType == c_InterpolationConstant) {
+  if (InterpolationType == c_InterpolationConstant) {
     Integral = (XMax - XMin) * m_Y[0];
-  } else if (m_InterpolationType == c_InterpolationNone) {
+  } else if (InterpolationType == c_InterpolationNone) {
     // Just sum rectangular bins:
 
-    double BinCenterMin = m_X[BinMin-1] + 0.5*(m_X[BinMin] - m_X[BinMin-1]);
-    double BinCenterMax = m_X[BinMax-1] + 0.5*(m_X[BinMax] - m_X[BinMax-1]);
+    double BinCenterMin = m_XZero[BinMin-1] + 0.5*(m_XZero[BinMin] - m_XZero[BinMin-1]);
+    double BinCenterMax = m_XZero[BinMax-1] + 0.5*(m_XZero[BinMax] - m_XZero[BinMax-1]);
 
     if (BinMin != BinMax) {
       if (XMin < BinCenterMin) {
         Integral += (BinCenterMin - XMin)*m_Y[BinMin-1];
-        Integral += (m_X[BinMin] - BinCenterMin)*m_Y[BinMin];
+        Integral += (m_XZero[BinMin] - BinCenterMin)*m_Y[BinMin];
       } else {
-        Integral += (m_X[BinMin] - XMin)*m_Y[BinMin];
+        Integral += (m_XZero[BinMin] - XMin)*m_Y[BinMin];
       }
       for (int b = BinMin; b < BinMax; ++b) {
-        Integral += 0.5*(m_X[BinMin+1] - m_X[BinMin])*m_Y[BinMin];
-        Integral += 0.5*(m_X[BinMin+1] - m_X[BinMin])*m_Y[BinMin+1];
+        Integral += 0.5*(m_XZero[BinMin+1] - m_XZero[BinMin])*m_Y[BinMin];
+        Integral += 0.5*(m_XZero[BinMin+1] - m_XZero[BinMin])*m_Y[BinMin+1];
       }
       if (XMax > BinCenterMax) {
-        Integral += (BinCenterMax - m_X[BinMax-1])*m_Y[BinMax-1];
+        Integral += (BinCenterMax - m_XZero[BinMax-1])*m_Y[BinMax-1];
         Integral += (XMax - BinCenterMax)*m_Y[BinMax];
       } else {
-        Integral += (XMax - m_X[BinMax-1])*m_Y[BinMax-1];
+        Integral += (XMax - m_XZero[BinMax-1])*m_Y[BinMax-1];
       }
     } else {
       if (XMin < BinCenterMin && XMax < BinCenterMin) {
@@ -735,10 +760,10 @@ double MFunction::Integrate(double XMin, double XMax) const
         Integral += (XMax - BinCenterMax)*m_Y[BinMin];
       }
     }      
-  } else if (m_InterpolationType == c_InterpolationLinLin ||
-             m_InterpolationType == c_InterpolationLinLog ||
-             m_InterpolationType == c_InterpolationLogLin ||
-             m_InterpolationType == c_InterpolationLogLog) {
+  } else if (InterpolationType == c_InterpolationLinLin ||
+             InterpolationType == c_InterpolationLinLog ||
+             InterpolationType == c_InterpolationLogLin ||
+             InterpolationType == c_InterpolationLogLog) {
     
     double x1, x2, y1, y2;
     for (int i = BinMin; i < BinMax; ++i) {
@@ -747,25 +772,25 @@ double MFunction::Integrate(double XMin, double XMax) const
         x1 = XMin;
         y1 = Evaluate(x1);
       } else {
-        x1 = m_X[i];
+        x1 = m_XZero[i];
         y1 = m_Y[i];
       }
       if (i == BinMax) {
         x2 = XMax;
         y2 = Evaluate(x2);
       } else {
-        x2 = m_X[i+1];
+        x2 = m_XZero[i+1];
         y2 = m_Y[i+1];
       }
       
       // Attention for log interpolation make sure all values are positive!
-      if (m_InterpolationType == c_InterpolationLinLog || 
-          m_InterpolationType == c_InterpolationLogLog) {
+      if (InterpolationType == c_InterpolationLinLog ||
+          InterpolationType == c_InterpolationLogLog) {
         y1 = log(y1);
         y2 = log(y2);
       }
-      if (m_InterpolationType == c_InterpolationLogLin || 
-          m_InterpolationType == c_InterpolationLogLog) {
+      if (InterpolationType == c_InterpolationLogLin ||
+          InterpolationType == c_InterpolationLogLog) {
         x1 = log(x1);
         x2 = log(x2);
       }
@@ -777,32 +802,34 @@ double MFunction::Integrate(double XMin, double XMax) const
       double t = y2 - m*x2;
 
       // Switch back
-      if (m_InterpolationType == c_InterpolationLinLog || 
-          m_InterpolationType == c_InterpolationLogLog) {
+      if (InterpolationType == c_InterpolationLinLog ||
+          InterpolationType == c_InterpolationLogLog) {
         y1 = exp(y1);
         y2 = exp(y2);
       }
-      if (m_InterpolationType == c_InterpolationLogLin || 
-          m_InterpolationType == c_InterpolationLogLog) {
+      if (InterpolationType == c_InterpolationLogLin ||
+          InterpolationType == c_InterpolationLogLog) {
         x1 = exp(x1);
         x2 = exp(x2);
       }
       
       // Do the integration using the correct formula for the various modi:
-      if (m_InterpolationType == c_InterpolationLinLin) {
+      if (InterpolationType == c_InterpolationLinLin) {
         // y=m*x+t --> int(m*x+t)
         Integral += 0.5*m*(x2*x2-x1*x1) + t*(x2-x1);      
-      } else if (m_InterpolationType == c_InterpolationLinLog) {
+      } else if (InterpolationType == c_InterpolationLinLog) {
         // ln(y) = m*x+t --> int(exp(m*x+t))
         if (fabs(m) < 10E-8) {
           Integral += exp(t)*(x2-x1); 
+          cout<<"x1:"<<x1<<" x2:"<<x2<<" y1:"<<y1<<" y2:"<<y2<<" m:"<<m<<" t:"<<t<<":"<<exp(t)<<":"<<x2-x1<<endl;
         } else {
           Integral += 1/m * (exp(m*x2+t) - exp(m*x1+t));
+          cout<<1/m<<":"<<exp(m*x2+t)<<":"<<exp(m*x1+t)<<endl;
         }
-      } else if (m_InterpolationType == c_InterpolationLogLin) {
+      } else if (InterpolationType == c_InterpolationLogLin) {
         // y = m*ln(x) + t --> int(m*ln(x) + t)
         Integral += x2*(m*(log(x2) - 1) + t) - x1*(m*(log(x1) - 1) + t);
-      } else if (m_InterpolationType == c_InterpolationLogLog) {
+      } else if (InterpolationType == c_InterpolationLogLog) {
         // ln(y) = m*ln(x) + t --> y = exp(t)*x^m --> int(exp(t)*x^m)
         if (fabs(m+1) < 10E-8) {
           Integral += exp(t)*(log(x2)-log(x1)); 
@@ -810,8 +837,10 @@ double MFunction::Integrate(double XMin, double XMax) const
           Integral += exp(t)/(m+1) * (pow(x2, m+1) - pow(x1, m+1));
         }
       }
+      if (std::isfinite(Integral) == false) {
+        merr<<"Error: Integral is no longer finite at bin: "<<i<<endl;
+      }
     }
-
   } else {
     merr<<"This interpolation type is no longer supported..."<<endl;
   }
@@ -1230,9 +1259,9 @@ double MFunction::FindX(double XStart, double Integral, bool Cyclic)
     //mout<<"x="<<x2<<endl;
     X = x2; 
   } else if ((x2 < m_XZero[NewUpperBin-1] || x2 > m_XZero[NewUpperBin]) && (x1 < m_XZero[NewUpperBin-1] || x1 > m_XZero[NewUpperBin])) {
-    merr<<std::setprecision(20)<<"FindX: Both possible results are outside choosen bin ["<<m_XZero[NewUpperBin-1]<<"-"<<m_XZero[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;
+    merr<<std::setprecision(20)<<"FindX: Both possible results are outside choosen bin ["<<m_XZero[NewUpperBin-1]<<"-"<<m_XZero[NewUpperBin]<<"] with bin ID="<<NewUpperBin-1<<" and y range ["<<m_Y[NewUpperBin-1]<<"-"<<m_Y[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;
   } else {
-    merr<<std::setprecision(20)<<"FindX: Both possible results are within choosen bin ["<<m_X[NewUpperBin-1]<<"-"<<m_X[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;
+    merr<<std::setprecision(20)<<"FindX: Both possible results are within choosen bin ["<<m_X[NewUpperBin-1]<<"-"<<m_X[NewUpperBin]<<"] with bin ID="<<NewUpperBin-1<<" and y range ["<<m_Y[NewUpperBin-1]<<"-"<<m_Y[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;
   }
   
   //cout<<"XStart: "<<XStart<<" X: "<<X<<" modulo: "<<Modulo<<endl;

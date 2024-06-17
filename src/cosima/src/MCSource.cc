@@ -510,13 +510,13 @@ bool MCSource::SetStartAreaParameters(double StartAreaParam1,
   }
 
   // We have to update the start area parameters
-  UpgradeStartArea();
+  if (UpgradeStartArea() == false) return false;
   // We have to update the position vectors
-  UpgradePosition();
+  if (UpgradePosition() == false) return false;
   // and the flux normalization
-  UpgradeFlux();
+  if (UpgradeFlux() == false) return false;
   // and the light curve information
-  UpgradeLightCurve();
+  if (UpgradeLightCurve() == false) return false;
   
   return true;
 }
@@ -2116,13 +2116,25 @@ bool MCSource::UpgradeLightCurve()
   if (m_LightCurveType == c_LightCurveFile) {
     // Make sure the y-value is the flux in particles/second
     
-    cout<<"Lightcurve integration: "<<m_LightCurveFunction.Integrate()<<endl;
-    cout<<"Flux: "<<m_Flux*second<<" ph/s"<<endl;
-    if (m_Flux > 0 && m_LightCurveFunction.Integrate() > 0) {
-      m_LightCurveFunction.ScaleY((m_LightCurveFunction.GetXMax() - m_LightCurveFunction.GetXMin())/m_LightCurveFunction.Integrate());
+    // Sanity check:
+    auto LightCurveIntegral = m_LightCurveFunction.Integrate();
+    if (std::isfinite(LightCurveIntegral) == false) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The light curve integral is not finite: " <<LightCurveIntegral<<endl;
+      return false;
     }
-    cout<<"Final light-curve integration: "<<m_LightCurveFunction.Integrate()<<endl;
-    
+
+    cout<<"Lightcurve integration: "<<LightCurveIntegral<<endl;
+    cout<<"Flux: "<<m_Flux*second<<" ph/s"<<endl;
+    if (m_Flux > 0 && LightCurveIntegral > 0) {
+      m_LightCurveFunction.ScaleY((m_LightCurveFunction.GetXMax() - m_LightCurveFunction.GetXMin())/LightCurveIntegral);
+    }
+    LightCurveIntegral = m_LightCurveFunction.Integrate();
+    cout<<"Final light-curve integration: "<<LightCurveIntegral<<endl;
+    if (std::isfinite(LightCurveIntegral) == false) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The light curve integral is not finite:" <<LightCurveIntegral<<endl;
+      return false;
+    }
+
     if (m_NextEmission < m_LightCurveFunction.GetXMin()) {
       m_NextEmission = m_LightCurveFunction.GetXMin();
     }
