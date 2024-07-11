@@ -92,6 +92,10 @@ MInterfaceRevan::MInterfaceRevan() : MInterface()
   m_Geometry = 0;
   m_Data = new MSettingsRevan();
   m_BasicGuiData = dynamic_cast<MSettings*>(m_Data);
+
+  m_TestRun = false;
+
+  m_OutputFilenName = "";
 }
 
 
@@ -129,6 +133,9 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
   Usage<<"             E.g. to change the coincidence window, one would set pattern to:"<<endl;
   Usage<<"             -C CoincidenceWindow=1e-06"<<endl;
   Usage<<endl;
+  Usage<<"      -o --output-filename:"<<endl;
+  Usage<<"             Use this output filename instead of the default created one (default: {sim,evta}[.gz] -> {tra}[.gz])"<<endl;
+  Usage<<endl;
   Usage<<"         --oi:"<<endl;
   Usage<<"             Save the OI information, in case tra files are generated"<<endl;
   Usage<<endl;
@@ -136,7 +143,11 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
   Usage<<"             Analyze the evta-file given with the -f option, otherwise the file in the configuration file"<<endl;
   Usage<<"      -s --generate spectra:"<<endl;
   Usage<<"             Generate spectra using the options previously set in the GUI and stored in the configuration file"<<endl;
+  Usage<<"         --save-cfg:"<<endl;
+  Usage<<"             Safe the configuration. If the -o option is given then the configuration is saved to this file."<<endl;
   Usage<<endl;
+  Usage<<"      -t  --test:"<<endl;
+  Usage<<"             Perform a test run."<<endl;
   Usage<<"      -d --debug:"<<endl;
   Usage<<"             Use debug mode"<<endl;
   Usage<<"      -n --no-gui:"<<endl;
@@ -162,6 +173,7 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
 
     // Double argument
     if (Option == "-f" || Option == "--filename" ||
+        Option == "-o" || Option == "--output-filename" ||
         Option == "-c" || Option == "--configuration" ||
         Option == "-j" || Option == "--jobs" ||
         Option == "-g" || Option == "--geometry") {
@@ -189,6 +201,9 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Do not use the gui"<<endl;
       m_UseGui = false;
       gROOT->SetBatch(true);
+    } else if (Option == "--test" || Option == "-t") {
+      m_TestRun = true;
+      cout<<"Command-line parser: Performing a test run"<<endl;
     } else if (Option == "--debug" || Option == "-d") {
       g_Verbosity = 2;
       cout<<"Command-line parser: Use debug mode"<<endl;
@@ -233,6 +248,9 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
         return false;
       }
       cout<<"Command-line parser: Use file "<<m_Data->GetCurrentFileName()<<endl;
+    } else if (Option == "--output-filename" || Option == "-o") {
+      m_OutputFilenName = argv[++i];
+      cout<<"Command-line parser: Use this output file name "<<m_OutputFilenName<<endl;
     } else if (Option == "--oi") {
       m_Data->SetSaveOI(true);
       cout<<"Command-line parser: Store OI"<<endl;
@@ -261,6 +279,13 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
     }
   }
 
+  // In case we do a test run, we do it now
+  if (m_TestRun == true) {
+    gROOT->SetBatch(true);
+    AnalyzeEvents();
+    return false;
+  }
+
   // Now parse all high level options, which do not invoke the GUI
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
@@ -268,6 +293,10 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Analyzing..."<<endl;
       AnalyzeEvents();
       return true;
+    } else if (Option == "--save-cfg") {
+      cout<<"Command-line parser: Save the configuration..."<<endl;
+      SaveConfiguration(m_OutputFilenName != "" ? m_OutputFilenName : "NewConfiguration.cfg");
+      return false;
     } else if (Option == "--generate-spectra" || Option == "-s") {
       cout<<"Command-line parser: Generate spectra (use the options from the configuration file)"<<endl;
       GenerateSpectra();
@@ -410,15 +439,18 @@ void MInterfaceRevan::AnalyzeEvents()
 
   MTimer Timer;
 
-  MString FilenameOut = m_Data->GetCurrentFileName();
-  if (FilenameOut.EndsWith("evta")) {
-    FilenameOut.Replace(FilenameOut.Length()-4, 4, "tra");
-  } else if (FilenameOut.EndsWith("evta.gz")) {
-    FilenameOut.Replace(FilenameOut.Length()-7, 7, "tra.gz");
-  } else if (FilenameOut.EndsWith("sim")) {
-    FilenameOut.Replace(FilenameOut.Length()-3, 3, "tra");
-  } else if (FilenameOut.EndsWith("sim.gz")) {
-    FilenameOut.Replace(FilenameOut.Length()-6, 6, "tra.gz");
+  MString FilenameOut = m_OutputFilenName;
+  if (FilenameOut == "") {
+    FilenameOut = m_Data->GetCurrentFileName();
+    if (FilenameOut.EndsWith("evta")) {
+      FilenameOut.Replace(FilenameOut.Length()-4, 4, "tra");
+    } else if (FilenameOut.EndsWith("evta.gz")) {
+      FilenameOut.Replace(FilenameOut.Length()-7, 7, "tra.gz");
+    } else if (FilenameOut.EndsWith("sim")) {
+      FilenameOut.Replace(FilenameOut.Length()-3, 3, "tra");
+    } else if (FilenameOut.EndsWith("sim.gz")) {
+      FilenameOut.Replace(FilenameOut.Length()-6, 6, "tra.gz");
+    }
   }
   
   //FilenameOut = MFile::GetWorkingDirectory() + "/" + MFile::GetBaseName(FilenameOut);
@@ -433,6 +465,12 @@ void MInterfaceRevan::AnalyzeEvents()
     mout<<"Event reconstruction: Initialization failed."<<endl;
     return;
   }
+
+  if (m_TestRun == true) {
+    cout<<">>> TEST RUN SUCCESSFUL <<<"<<endl;
+    return;
+  }
+
   unsigned int ReturnCode = 0;
   do {
     ReturnCode = Analyzer.AnalyzeEvent();
@@ -605,7 +643,7 @@ void MInterfaceRevan::GenerateSpectra()
           }
         } else {
           for (int r = 0; r < Before->GetNRESEs(); ++r) {
-            MString Name = Before->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume()->GetName();
+            MString Name = Before->GetRESEAt(r)->GetVolumeSequence()->GetDetector()->GetName();
             if (SpectrumBeforeByNamedDetector[Name] == nullptr) {
               TH1D* H = new TH1D(MString("HitSpectrumBeforeByNamedDetector_") + Name,
                                  MString("Spectrum for individual hits before reconstruction for named detector ") + Name,  xNBins, xBins);

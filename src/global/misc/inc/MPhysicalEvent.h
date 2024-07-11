@@ -53,6 +53,8 @@ class MPhysicalEvent : public MRotationInterface
   virtual MPhysicalEvent* Duplicate();
   //! Stream the content to the given file-stream
   virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
+  //! Stream the content into a tra-file compatible string
+  virtual MString ToTraString() const;
   //! Parse the content of the stream
   virtual int ParseLine(const char* Line, bool Fast = false);
   //! Parse the content of the stream
@@ -111,6 +113,8 @@ class MPhysicalEvent : public MRotationInterface
   unsigned int GetNComments() const { return m_Comments.size(); }
   //! Get the specific comment -- throws MExceptionIndexOutOfBounds otherwise
   MString GetComment(unsigned int i) const;
+  //! Clear comments
+  void ClearComments() { m_Comments.clear(); }
   
   //! Add a hit
   void AddHit(const MPhysicalEventHit& Hit) { m_Hits.push_back(Hit); }
@@ -130,6 +134,7 @@ class MPhysicalEvent : public MRotationInterface
   //! Get the OI energy information
   double GetOIEnergy() const { return m_OIEnergy; }
 
+  //! Convert content to a descriptive string of the event
   virtual MString ToString() const;
 
   static const int c_Unknown;

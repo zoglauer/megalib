@@ -41,8 +41,11 @@ class MUnidentifiableEvent : public MPhysicalEvent
 
   // Initilisations
   bool Assimilate(MUnidentifiableEvent* UnidentifiableEvent);
-  bool Assimilate(MPhysicalEvent *Event); 
-  virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
+  bool Assimilate(MPhysicalEvent *Event);
+
+  //! Stream the content into a tra-file compatible string
+  virtual MString ToTraString() const;
+  //! Parse a single line from the file
   virtual int ParseLine(const char* Line, bool Fast = false);
   //! Create a copy of this event
   virtual MPhysicalEvent* Duplicate();

@@ -18,7 +18,7 @@ DefaultRangeCut     0.1
 
 Run ActivationStep3
 ActivationStep3.FileName              CosmicProtons.Decays
-ActivationStep3.Time                  10000.0
+ActivationStep3.Time                  500.0
 
 ActivationStep3.ActivationSources     CosmicProtons.activation.dat
 

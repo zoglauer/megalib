@@ -151,15 +151,24 @@ class MFunction3D
 
   //! The x-axis data
   vector<double> m_X;
+  //! If the edges are equidistant this is the distance
+  double m_XDistance;
   //! The y-axis data
   vector<double> m_Y;
+  //! If the edges are equidistant this is the distance
+  double m_YDistance;
   //! The z-axis data
   vector<double> m_Z;
+  //! If the edges are equidistant this is the distance
+  double m_ZDistance;
   //! The value-axis data
   vector<double> m_V;
 
   //! For random number generation store the maximum
   double m_Maximum;
+
+  //! The cumulative function for faster random number generation
+  vector<double> m_Cumulative;
 
   // private members:
  private:

@@ -1,0 +1,20 @@
+diff -rupN root_v6.24.10/root_v6.24.10-source/cmake/modules/SearchInstalledSoftware.cmake root_v6.24.10_patched/root_v6.24.10-source/cmake/modules/SearchInstalledSoftware.cmake
+--- root_v6.24.10/root_v6.24.10-source/cmake/modules/SearchInstalledSoftware.cmake	2022-09-29 06:03:06.000000000 -0700
++++ root_v6.24.10_patched/root_v6.24.10-source/cmake/modules/SearchInstalledSoftware.cmake	2023-02-22 11:21:52.000000000 -0800
+@@ -142,6 +142,7 @@ if(builtin_freetype)
+     if(CMAKE_SYSTEM_NAME STREQUAL AIX)
+       set(_freetype_zlib --without-zlib)
+     endif()
++    set(_freetype_brotli "--with-brotli=no")
+     if(CMAKE_OSX_SYSROOT)
+       set(_freetype_cc "${_freetype_cc} -isysroot ${CMAKE_OSX_SYSROOT}")
+     endif()
+@@ -151,7 +152,7 @@ if(builtin_freetype)
+       URL_HASH SHA256=efe71fd4b8246f1b0b1b9bfca13cfff1c9ad85930340c27df469733bbb620938
+       CONFIGURE_COMMAND ./configure --prefix <INSTALL_DIR> --with-pic
+                          --disable-shared --with-png=no --with-bzip2=no
+-                         --with-harfbuzz=no ${_freetype_zlib}
++                         --with-harfbuzz=no ${_freetype_brotli} ${_freetype_zlib}
+                           "CC=${_freetype_cc}" CFLAGS=${_freetype_cflags}
+       INSTALL_COMMAND ""
+       LOG_DOWNLOAD 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1 BUILD_IN_SOURCE 1

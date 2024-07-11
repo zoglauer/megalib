@@ -185,25 +185,23 @@ unsigned int MDecayEvent::GetNPhysicalEvents() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDecayEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
+MString MDecayEvent::ToTraString() const
 {
-  // Hopefully a faster way to stream data from and to a file than ROOT...
+  //! Stream the content into a tra-file compatible string
 
-  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
+  MString T;
+  T += MPhysicalEvent::ToTraString();
 
-  if (Read == false) {
-    // Write Decay specific infos:
-    ostringstream S;
-    S<<"DB "<<m_BetaEnergy<<" "
-     <<m_BetaPosition[0]<<" "<<m_BetaPosition[1]<<" "<<m_BetaPosition[2]<<endl;
-    for (unsigned int i = 0; i < GetNPhysicalEvents(); ++i) {
-      S<<"DA "<<endl;
-    }
-    File.Write(S);
-    File.Flush();
+  ostringstream S;
+  S<<"DB "<<m_BetaEnergy<<" "<<m_BetaPosition[0]<<" "<<m_BetaPosition[1]<<" "<<m_BetaPosition[2]<<endl;
+  for (unsigned int i = 0; i < GetNPhysicalEvents(); ++i) {
+    S<<"DA "<<endl;
+    //TODO: This seems to be unfinshed...
   }
 
-  return Return;
+  T += S.str();
+
+  return T;
 }
 
 

@@ -12,13 +12,13 @@
 # Base definitions:
 #
 
-PROGRAM = sivan
+PROGRAM := sivan
 
-MAIN  = MSivanMain
+MAIN  := MSivanMain
 
-LIBRARY = Sivan
+LIBRARY := Sivan
 
-FILES = MSettingsSivan \
+FILES := MSettingsSivan \
 	MSimCluster \
 	MSimHT \
 	MSimIA \
@@ -30,15 +30,15 @@ FILES = MSettingsSivan \
 	MSimBinaryOptions \
 	MFileEventsSim \
 
-LIBRARY_UI = SivanGui
+LIBRARY_UI := SivanGui
 
-FILES_UI = \
+FILES_UI := \
 	MInterfaceSivan \
 	MGUISivanMain \
 	MGUISivanEventSelection \
 	MGUISivanTracking \
 
-LIBRARIES = \
+LIBRARIES := \
 	-lGeomega \
 	-lCommonMisc \
 	-lCommonGui \
@@ -48,32 +48,32 @@ LIBRARIES = \
 # Derived definitions:
 #
 
-OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
-HEADERS=$(patsubst %, inc/%.h, $(FILES))
-SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+OBJECTS:=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS:=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB:=$(LB)/lib$(LIBRARY).$(DLL)
 
-DICTIONARYNAME=$(LIBRARY)_Dictionary
-DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
-DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
-LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
-ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
-ROOTPCM=lib$(LIBRARY)_rdict.pcm
-
-
-OBJECTS_UI=$(patsubst %, $(LB)/%.o, $(FILES_UI))
-HEADERS_UI=$(patsubst %, inc/%.h, $(FILES_UI))
-SHAREDLIB_UI=$(LB)/lib$(LIBRARY_UI).$(DLL)
-
-DICTIONARYNAME_UI=$(LIBRARY_UI)_Dictionary
-DICTIONARY_UI=$(LB)/$(DICTIONARYNAME_UI).cxx
-DICTIONARYOBJECT_UI=$(LB)/$(DICTIONARYNAME_UI).o
-LINKDEF_UI=$(LB)/$(DICTIONARYNAME_UI)_LinkDef.h
-ROOTMAP_UI=$(LB)/lib$(LIBRARY_UI).rootmap
-ROOTPCM_UI=lib$(LIBRARY_UI)_rdict.pcm
+DICTIONARYNAME:=$(LIBRARY)_Dictionary
+DICTIONARY:=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT:=$(LB)/$(DICTIONARYNAME).o
+LINKDEF:=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP:=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM:=lib$(LIBRARY)_rdict.pcm
 
 
-OBJECT_MAIN=$(patsubst %, $(LB)/%.o, $(MAIN))
-EXECUTABLE=$(BN)/$(PROGRAM)
+OBJECTS_UI:=$(patsubst %, $(LB)/%.o, $(FILES_UI))
+HEADERS_UI:=$(patsubst %, inc/%.h, $(FILES_UI))
+SHAREDLIB_UI:=$(LB)/lib$(LIBRARY_UI).$(DLL)
+
+DICTIONARYNAME_UI:=$(LIBRARY_UI)_Dictionary
+DICTIONARY_UI:=$(LB)/$(DICTIONARYNAME_UI).cxx
+DICTIONARYOBJECT_UI:=$(LB)/$(DICTIONARYNAME_UI).o
+LINKDEF_UI:=$(LB)/$(DICTIONARYNAME_UI)_LinkDef.h
+ROOTMAP_UI:=$(LB)/lib$(LIBRARY_UI).rootmap
+ROOTPCM_UI:=lib$(LIBRARY_UI)_rdict.pcm
+
+
+OBJECT_MAIN:=$(patsubst %, $(LB)/%.o, $(MAIN))
+EXECUTABLE:=$(BN)/$(PROGRAM)
 
 
 #----------------------------------------------------------------

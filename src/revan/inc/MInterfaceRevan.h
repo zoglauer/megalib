@@ -118,6 +118,11 @@ class MInterfaceRevan : public MInterface
   MRawEventAnalyzer* m_Analyzer;
   MGeometryRevan* m_Geometry;
 
+  //! True if we perform a test run
+  bool m_TestRun;
+
+  //! Default output file name
+  MString m_OutputFilenName;
 
 #ifdef ___CLING___
  public:

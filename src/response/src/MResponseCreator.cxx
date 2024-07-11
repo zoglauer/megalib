@@ -39,7 +39,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MResponseClusteringDSS.h"
-#include "MResponseMultipleCompton.h"
+#include "MResponseMultipleComptonBayes.h"
 #include "MResponseMultipleComptonEventFile.h"
 #include "MResponseMultipleComptonLens.h"
 #include "MResponseMultipleComptonTMVA.h"
@@ -143,7 +143,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -b  --mimrec-config   file     use this mimrec configuration file instead of defaults for the imaging response"<<endl;
   Usage<<"      -s  --save            int      save after this amount of entries"<<endl;
   Usage<<"      -z                             gzip the generated files"<<endl;
-  Usage<<"          --test                     Perform a test run"<<endl;
+  Usage<<"          --test                     Perform a test run. On success, the output will contain the string \">>> TEST RUN SUCCESSFUL <<<\""<<endl;
   Usage<<"          --verbosity       int      Verbosity level"<<endl;
   Usage<<"      -h  --help                     print this help"<<endl;
   Usage<<endl;
@@ -160,7 +160,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      t  : track"<<endl;
   Usage<<"      cf : "<<MResponseMultipleComptonEventFile::Description()<<endl;
   Usage<<MResponseMultipleComptonEventFile::Options()<<endl;
-  Usage<<"      cb : compton (Bayesian)"<<endl;
+  Usage<<"      cb : "<<MResponseMultipleComptonBayes::Description()<<endl;
+  Usage<<MResponseMultipleComptonBayes::Options()<<endl;
   Usage<<"      ct : "<<MResponseMultipleComptonTMVA::Description()<<endl;
   Usage<<MResponseMultipleComptonTMVA::Options()<<endl;
   Usage<<"      cl : compton (Laue lens or collimated)"<<endl;
@@ -265,7 +266,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       } else if (SubOption == "cd") {
         m_Mode = c_ModeClusteringDSS;
       } else if (SubOption == "cb") {
-        m_Mode = c_ModeComptons;
+        m_Mode = c_ModeComptonsBayes;
         cout<<"Choosing Compton mode (Bayesian)"<<endl;
       } else if (SubOption == "ct") {
         m_Mode = c_ModeComptonsTMVA;
@@ -398,7 +399,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
-  } else if (m_Mode == c_ModeComptons) {
+  } else if (m_Mode == c_ModeComptonsBayes) {
 
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
@@ -406,14 +407,14 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       return false;
     }
 
-    MResponseMultipleCompton Response;
+    MResponseMultipleComptonBayes Response;
 
     Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
 
-    Response.SetMaxNInteractions(m_MaxNInteractions);
+    //Response.SetMaxNInteractions(m_MaxNInteractions);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 

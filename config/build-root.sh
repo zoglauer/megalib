@@ -17,8 +17,6 @@ if [[ $? -eq 0 ]]; then
 fi
 # Until ROOT 6.24: C++ 11
 CONFIGUREOPTIONS+=" -DCMAKE_CXX_STANDARD=17"
-# To compile ROOT 6.06 with gcc 5.x --- no longer  needed for ROOT 6.08 and higher
-#CONFIGUREOPTIONS+=" -DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0"
 # We want a minimal system and enable what we really need:
 #CONFIGUREOPTIONS+=" -Dgminimal=ON"
 # Open GL -- needed by geomega
@@ -447,6 +445,14 @@ ROOTCORE=root_v${VER}
 ROOTDIR=root_v${VER}${DEBUGSTRING}
 ROOTSOURCEDIR=root_v${VER}-source   # Attention: the cleanup checks this name pattern before removing it
 ROOTBUILDDIR=root_v${VER}-build     # Attention: the cleanup checks this name pattern before removing it
+
+
+# Hardcoding default patch conditions
+# Needs to be done after the ROOT version is known and before we check the exiting installation
+if [[ ${ROOTCORE} == "root_v6.24.08" ]] || [[ ${ROOTCORE} == "root_v6.24.10" ]]; then
+  echo "This version of ROOT requires a mandatory patch"
+  PATCH="on"
+fi
 
 echo "Checking for old installation..."
 if [ -d ${ROOTDIR} ]; then

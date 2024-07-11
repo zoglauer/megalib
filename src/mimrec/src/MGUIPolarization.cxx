@@ -110,11 +110,33 @@ void MGUIPolarization::Create()
   AddFrame(ButtonFrame, ButtonFrameLayout);
   
 
-  m_Theta = new MGUIEEntry(ButtonFrame, "Theta [deg]:      ", false, m_Data->GetTPTheta());
-  ButtonFrame->AddFrame(m_Theta, SingleLayout);
+  if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
 
-  m_Phi = new MGUIEEntry(ButtonFrame, "Phi [deg]:", false, m_Data->GetTPPhi());
-  ButtonFrame->AddFrame(m_Phi, SingleLayout);
+    m_ThetaIsX = new MGUIEEntry(ButtonFrame, "Theta [deg]:", false, m_Data->GetTPTheta());
+    ButtonFrame->AddFrame(m_ThetaIsX, SingleLayout);
+    m_PhiIsY = new MGUIEEntry(ButtonFrame, "Phi [deg]:", false, m_Data->GetTPPhi());
+    ButtonFrame->AddFrame(m_PhiIsY, SingleLayout);
+
+  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
+
+    m_ThetaIsX = new MGUIEEntry(ButtonFrame, "Latitude [deg]:", false, m_Data->GetTPGalLatitude());
+    ButtonFrame->AddFrame(m_ThetaIsX, SingleLayout);
+    m_PhiIsY = new MGUIEEntry(ButtonFrame, "Longitude [deg]:", false, m_Data->GetTPGalLongitude());
+    ButtonFrame->AddFrame(m_PhiIsY, SingleLayout);
+
+  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
+
+    m_ThetaIsX = new MGUIEEntry(ButtonFrame, "x [cm]:", false, m_Data->GetTPX());
+    ButtonFrame->AddFrame(m_ThetaIsX, SingleLayout);
+    m_PhiIsY = new MGUIEEntry(ButtonFrame, "y [cm]:", false, m_Data->GetTPY());
+    ButtonFrame->AddFrame(m_PhiIsY, SingleLayout);
+    m_RadiusIsZ = new MGUIEEntry(ButtonFrame, "z [cm]:", false, m_Data->GetTPZ());
+    ButtonFrame->AddFrame(m_RadiusIsZ, SingleLayout);
+
+  }
+
+
 
   m_Cut = new MGUIEEntry(ButtonFrame, "ARM cut [deg]:", false, m_Data->GetPolarizationArmCut());
   ButtonFrame->AddFrame(m_Cut, SingleLayout);
@@ -158,15 +180,33 @@ bool MGUIPolarization::OnApply()
 {
   // The Apply button has been pressed
 
-  // First test the data
-  if (m_Theta->IsDouble(0, 180) == false || 
-      m_Phi->IsDouble(-360, 360) == false) {
-    return false;
+  // First test the data (m_RadiusIsZ has not to be checked!)
+  if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+    if (m_ThetaIsX->IsDouble(0, 180) == false ||
+        m_PhiIsY->IsDouble(-360, 360) == false) {
+      return false;
+    }
+  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
+    if (m_ThetaIsX->IsDouble(-90, 90) == false ||
+        m_PhiIsY->IsDouble(-360, 360) == false) {
+      return false;
+    }
   }
   
   // Otherwise update the data:
-  m_Data->SetTPTheta(m_Theta->GetAsDouble());
-  m_Data->SetTPPhi(m_Phi->GetAsDouble());
+  // Otherwise update the data:
+  if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+    m_Data->SetTPTheta(m_ThetaIsX->GetAsDouble());
+    m_Data->SetTPPhi(m_PhiIsY->GetAsDouble());
+  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
+    m_Data->SetTPGalLatitude(m_ThetaIsX->GetAsDouble());
+    m_Data->SetTPGalLongitude(m_PhiIsY->GetAsDouble());
+  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
+    m_Data->SetTPX(m_ThetaIsX->GetAsDouble());
+    m_Data->SetTPY(m_PhiIsY->GetAsDouble());
+    m_Data->SetTPZ(m_RadiusIsZ->GetAsDouble());
+  }
   m_Data->SetPolarizationArmCut(m_Cut->GetAsDouble());
   m_Data->SetHistBinsPolarization(m_Bins->GetAsInt());
      
