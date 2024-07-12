@@ -98,7 +98,9 @@ void MCRunManager::StartBeam()
     mout<<"Starting activator \""<<m_RunParameters.GetActivator(a).GetName()<<"\":"<<endl;
     mout<<endl;
 
-    m_RunParameters.GetActivator(a).LoadCountsFiles();
+    if (m_RunParameters.GetActivator(a).LoadCountsFiles() == false) {
+      return;
+    }
     m_RunParameters.GetActivator(a).CalculateEquilibriumRates();
     m_RunParameters.GetActivator(a).SaveOutputFile();
   }
