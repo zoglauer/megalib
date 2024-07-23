@@ -678,7 +678,7 @@ bool MResponseBuilder::SanityCheckSimulations()
     if (RE->GetVertex() != 0) continue;
 
     if (int(m_SiEvent->GetNHTs()) < RE->GetNRESEs()) {
-      mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): The simulation has less hits than the raw event!!!"<<endl;
+      mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): The simulation has less hits ("<<m_SiEvent->GetNHTs()<<") than the raw event ("<<RE->GetNRESEs()<<")!"<<endl;
       return false;
     }
 
@@ -772,7 +772,7 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
   // Extremely time critical function!
 
   // ID offset between hits in revan and sivan
-  const int IdOffset = 2;
+  //const unsigned int IdOffset = 2;
 
   // First check if it already exits
   map<MRESE*, vector<int> >::iterator RIter = m_OriginIds.find(RESE);
@@ -780,6 +780,8 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
     return (*RIter).second;
   } else {
     // If not find them...
+    
+    /* For MEGAlib < 4
     
     // Get the revan RESE Ids
     vector<int> Ids = GetReseIds(RESE);
@@ -813,7 +815,27 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
         }
       }
     }
-
+    */
+    
+    
+    set<unsigned int> RESEOriginIDs = RESE->GetOriginIDs();
+    //cout<<"RESE origin IDs: "; for (auto I: RESEOriginIDs) cout<<I<<" "; cout<<endl;
+    
+    vector<int> OriginIds;
+    OriginIds.reserve(10);
+    
+    for (auto Iter = RESEOriginIDs.begin(); Iter != RESEOriginIDs.end(); ++Iter) {
+      int Origin  = (*Iter);
+      if (Origin >= 1 && 
+        m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "INIT" && 
+        m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "ANNI" && 
+        m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "DECA") {
+        OriginIds.push_back(int(Origin));
+      }
+    }
+    
+    //cout<<"Origin IDs: "; for (auto I: OriginIds) cout<<I<<" "; cout<<endl;
+    
     // ... finally store them
     sort(OriginIds.begin(), OriginIds.end());
     m_OriginIds[RESE] = OriginIds;
@@ -830,13 +852,13 @@ bool MResponseBuilder::AreIdsInSequence(const vector<int>& Ids)
 {
   // Return true if the given Ids are in sequence without holes
 
-  const int IdOffset = 2;
+  const unsigned int IdOffset = 2;
 
 //   for (unsigned int i = 0; i < Ids.size()-1; ++i) {
 //     if (Ids[i+1] - Ids[i] != 1) return false;
 //   }
 
-  vector<int> Origins;
+  vector<unsigned int> Origins;
   for (unsigned int i = 0; i < Ids.size(); ++i) {
     for (unsigned int h = 0; h < m_SiEvent->GetHTAt(Ids[i]-IdOffset)->GetNOrigins(); ++h) {
       bool Contained = false;
@@ -871,7 +893,7 @@ bool MResponseBuilder::AreIdsInSequence(const vector<int>& Ids)
         if (m_SiEvent->GetHTAt(h)->IsOrigin(Origins[o]) == true) {
           bool Found = false;
           for (unsigned int i = 0; i < Ids.size(); ++i) {
-            if (int(h) == Ids[i]-IdOffset) {
+            if (h == Ids[i]-IdOffset) {
               Found = true;
               break;
             }

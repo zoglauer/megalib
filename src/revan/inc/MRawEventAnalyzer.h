@@ -37,6 +37,7 @@ using namespace std;
 // Forward declarations:
 class MDGeometryQuest;
 class MERCoincidence;
+class MERStripPairing;
 class MEREventClusterizer;
 class MERHitClusterizer;
 class MERTrack;
@@ -337,6 +338,8 @@ class MRawEventAnalyzer
   //! Coincidence search
   MERCoincidence* m_Coincidence;
   //! Event clustering
+  MERStripPairing* m_StripPairer;
+  //! Event clustering
   MEREventClusterizer* m_EventClusterizer;
   //! Hit clustering
   MERHitClusterizer* m_HitClusterizer;
@@ -465,6 +468,7 @@ class MRawEventAnalyzer
   MGeometryRevan* m_OriginGeometry;
 
   double m_TimeLoad;
+  double m_TimeStripPairing;
   double m_TimeEventClusterize;
   double m_TimeHitClusterize;
   double m_TimeTrack;

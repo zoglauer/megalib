@@ -92,9 +92,9 @@ class MDTriggerBasic : public MDTrigger
   bool Applies(MDDetector* D) const;
 
   //! Returns true if the hit could be added 
-  bool AddHit(MDVolumeSequence& VS);
+  bool AddHit(const MDVolumeSequence& VS);
   //! Returns true if the hit could be added 
-  bool AddGuardRingHit(MDVolumeSequence& VS);
+  bool AddGuardRingHit(const MDVolumeSequence& VS);
 
   //! Reset all added hits - it will not change the basic setup of the trigger (type, detector, required hits)
   void Reset();

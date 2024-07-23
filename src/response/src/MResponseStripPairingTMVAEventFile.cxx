@@ -332,8 +332,9 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
     double Time = 0;
     MDVolume* Volume = StripVolumeSequences[s1]->GetSensitiveVolume();
     MDDetector* D = StripVolumeSequences[s1]->GetDetector();
+    MString Flags;
 
-    D->Noise(Pos, Energy, Time, Volume);
+    D->Noise(Pos, Energy, Time, Flags, Volume);
     
     StripEnergy[s1] = Energy;
     if (Energy == 0) Ignore[s1] = true;

@@ -57,13 +57,11 @@ class SensitivityPoint
 {
 public:
   //! Default constructor
-  SensitivityPoint() :
-    m_ObservationTime(1000000.0),
-    m_SigmaLevel(3.0),
-    m_SourceStartAreaPerPhotons(1.0), 
-    m_SourceCounts(0), 
-    m_EnergyWindowScaler(1.0) {};
-
+  SensitivityPoint() : 
+  m_ObservationTime(1000000.0), 
+  m_SourceStartAreaPerPhotons(1.0), 
+  m_SourceCounts(0), 
+  m_EnergyWindowScaler(1.0) {};
   //! Copy constructor
   SensitivityPoint(const SensitivityPoint& S) { (*this) = S; }
   //! Default destructor
@@ -73,8 +71,7 @@ public:
   const SensitivityPoint& operator=(const SensitivityPoint& S) {
     m_EventSelector = S.m_EventSelector;
     m_ObservationTime = S.m_ObservationTime;
-    m_SigmaLevel = S.m_SigmaLevel;
-
+    
     m_SourceStartAreaPerPhotons = S.m_SourceStartAreaPerPhotons;
     m_SourceCounts = S.m_SourceCounts;
     
@@ -107,15 +104,10 @@ public:
   
   
   //! Set the observation time
-  void SetObservationTime(double ObservationTime) {
+  void SetObservationTime(double ObservationTime) { 
     m_ObservationTime = ObservationTime;
   }
-    
-  //! Set the detection treshold in sigma
-  void SetSigmaLevel(double SigmaLevel) {
-    m_SigmaLevel = SigmaLevel;
-  }
-
+  
   //! Set the start area
   void SetStartAreaPerPhotons(double StartAreaPerPhotons) { 
     m_SourceStartAreaPerPhotons = StartAreaPerPhotons;
@@ -241,9 +233,8 @@ public:
   
   //! 
   double GetSensitivity() {
-
-    double Sigma = m_SigmaLevel;
-      
+    double Sigma = 3.0;
+    
     if (m_ObservationTime <= 0) {
       merr<<"No observation time"<<endl;
       return 0;
@@ -282,9 +273,8 @@ public:
   
   //! 
   double GetSensitivityUncertainty() {
-
-    double Sigma = m_SigmaLevel;
-
+    double Sigma = 3.0;
+    
     if (m_ObservationTime <= 0) {
       merr<<"No observation time"<<endl;
       return 0;
@@ -337,8 +327,7 @@ public:
 private:
   MEventSelector m_EventSelector;
   double m_ObservationTime;
-  double m_SigmaLevel;
-
+  
   double m_SourceStartAreaPerPhotons;
   int m_SourceCounts;
   
@@ -366,7 +355,6 @@ ostream& operator<<(ostream& os, SensitivityPoint& S)
   os<<"*********************************"<<endl;
   os<<endl;
   os<<S.m_EventSelector<<endl;
-  os<<"Detection threshold: " << S.m_SigmaLevel << " sigma" << endl;
   os<<"Source counts: "<<S.m_SourceCounts<<" cts"<<endl;
   if (S.m_SourceCounts < 1000) {
     os<<endl;
@@ -513,18 +501,13 @@ private:
   vector<MString> m_BackgroundFiles;
   //! List of all measurement times
   vector<double> m_BackgroundTimes;
-
-  //! The mimrec settings
-  MSettingsMimrec m_MimrecSettings;
-
+  
   //! The main event selector
   MEventSelector m_EventSelector;
   
   //!
   double m_ObservationTime;
-    
-  double m_SigmaLevel;
-
+  
   vector<unsigned int> m_CSLMin;
   vector<unsigned int> m_CSLMax;
   vector<unsigned int> m_TSLMin;
@@ -585,8 +568,6 @@ SensitivityOptimizer::SensitivityOptimizer() : m_Interrupt(false)
   
   m_ObservationTime = 1000000;
   
-  m_SigmaLevel = 3.0;
-
   m_MinBackgroundCounts = 0;
 }
 
@@ -649,8 +630,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"      Special:"<<endl;
   Usage<<"      -w <min> <max>:                               Use a larger energy window for collection of background events (in keV)"<<endl;
-  Usage<<"      --min-background-counts:                      Only use bins where all background components contain data"<<endl;
-  Usage<<"      -s <threshold>:                               Detection threshold in sigma. Default: 3.0"<<endl;
+  Usage<<"      --min-background-counts:                    Only use bins where all background components contain data"<<endl;
   Usage<<endl;
   Usage<<endl;
   Usage<<"    What does e.g. \"--arm <min> <max> <steps>\" mean?"<<endl;
@@ -681,13 +661,13 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
     
     // First check if each option has sufficient arguments:
     // Single argument
-    if (Option == "-c" || Option == "-g" || Option == "-m" || Option == "-n" || Option == "-s") {
+    if (Option == "-c" || Option == "-g" || Option == "-m" || Option == "-n") {
       if (!((argc > i+1) && 
         (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
         mlog<<"Error: Option \""<<argv[i][1]<<"\" needs one argument!"<<endl;
-        mlog<<Usage.str()<<endl;
-        return false;
-      }
+      mlog<<Usage.str()<<endl;
+      return false;
+        }
     } else if (Option == "--csl" || Option == "-b" || Option == "-w" || Option == "--pos") {
       if (!((argc > i+2) && 
         (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
@@ -705,8 +685,8 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) && 
         (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0))) {
         mlog<<"Error: Option \""<<argv[i][1]<<"\" needs three arguments!"<<endl;
-        mlog<<Usage.str()<<endl;
-        return false;
+      mlog<<Usage.str()<<endl;
+    return false;
         }
       } else if (Option == "--egy" || Option == "--ehp") {
         if (!((argc > i+4) && 
@@ -715,9 +695,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
           (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) && 
           (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0))) {
           mlog<<"Error: Option \""<<argv[i][1]<<"\" needs four arguments!"<<endl;
-          mlog<<Usage.str()<<endl;
-          return false;
-        }
+        mlog<<Usage.str()<<endl;
+        return false;
+          }
       } else if (Option == "-p") {
         if (!((argc > i+5) && 
           (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
@@ -726,9 +706,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
           (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0) && 
           (argv[i+5][0] != '-' || isalpha(argv[i+5][1]) == 0))) {
           mlog<<"Error: Option \""<<argv[i][1]<<"\" needs five arguments!"<<endl;
-          mlog<<Usage.str()<<endl;
-          return false;
-        }
+        mlog<<Usage.str()<<endl;
+        return false;
+          }
       } else if (Option == "-k") {
         if (!((argc > i+8) && 
           (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
@@ -740,9 +720,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
           (argv[i+7][0] != '-' || isalpha(argv[i+7][1]) == 0) && 
           (argv[i+8][0] != '-' || isalpha(argv[i+8][1]) == 0))) {
           mlog<<"Error: Option \""<<argv[i][1]<<"\" needs eight arguments!"<<endl;
-          mlog<<Usage.str()<<endl;
-          return false;
-        }
+        mlog<<Usage.str()<<endl;
+        return false;
+          }
       }
   }
   
@@ -863,7 +843,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         mlog<<Usage.str()<<endl;
         return false;       
       }
-      mlog<<"Accepting geometry file name: "<<GeometryFile<<endl;
+      mlog<<"Accepting configuration file name: "<<ConfigurationFile<<endl;
     } else if (Option == "--simple") {
       m_ComplexEquation = false; 
       mlog<<"Using simple sensitivity equation"<<endl;
@@ -871,11 +851,8 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       m_MinBackgroundCounts = atoi(argv[++i]); 
       mlog<<"Using only bins where all background components have at leats "<<m_MinBackgroundCounts<<" counts"<<endl;
     } else if (Option == "-t") {
-      m_ObservationTime = atof(argv[++i]);
+      m_ObservationTime = atof(argv[++i]); 
       mlog<<"Accepting observation time: "<<m_ObservationTime<<endl;
-    } else if (Option == "-s") {
-      m_SigmaLevel = atof(argv[++i]);
-      mlog<<"Accepting detection threshold: "<<m_SigmaLevel<<endl;
     } else if (Option == "-w") {
       m_EnergyWindowMin = atof(argv[++i]);
       m_EnergyWindowMax = atof(argv[++i]);
@@ -1289,13 +1266,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         m_EnergyMax.push_back(mean + min + s*(max-min)/(steps-1));
         m_EnergyMin.push_back(mean - max + s*(max-min)/(steps-1));
       }
-      mlog<<"Accepting "<<m_EnergyMin.size()<<" Energy steps: Min: ";
+      mlog<<"Accepting "<<m_EnergyMin.size()<<" Energy steps: ";
       for (unsigned int i = 0; i < m_EnergyMax.size(); ++i) {
-        mlog<<m_EnergyMin[i]<<" ";
-      }
-      mlog<<"   Max: ";
-      for (unsigned int i = 0; i < m_EnergyMax.size(); ++i) {
-        mlog<<m_EnergyMax[i]<<" ";
+        mlog<<"("<<m_EnergyMin[i]<<"-"<<m_EnergyMax[i]<<")  ";
       }
       mlog<<endl;
     } else if (Option == "--contegy") {
@@ -1527,8 +1500,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
   }  
   
   // Load the configuration file and initialize the event selector:
-  m_MimrecSettings.Read(ConfigurationFile);
-  m_EventSelector.SetSettings(&m_MimrecSettings);
+  MSettingsMimrec Data;
+  Data.Read(ConfigurationFile);
+  m_EventSelector.SetSettings(&Data);
   m_EventSelector.SetGeometry(&m_Geometry);
   
   return true;
@@ -1717,7 +1691,6 @@ bool SensitivityOptimizer::Analyze()
               //cout<<"y: "<<y<<":"<<y_max<<endl;
               
               Photo_Final[GetPhotoIndex(c, b, e, eup, x, y)].SetObservationTime(m_ObservationTime);
-              Photo_Final[GetPhotoIndex(c, b, e, eup, x, y)].SetSigmaLevel(m_SigmaLevel);
               if (m_ModeSourceExtension == s_ModePointSource) {
                 SourceIndex = FindSourceIndex(x, y);
                 if (m_ModeSpectrum == s_ModeContinuum) {
@@ -1796,7 +1769,6 @@ bool SensitivityOptimizer::Analyze()
                                   for (unsigned int y = 0; y < y_max; ++y) {
                                     //cout<<"y: "<<y<<":"<<y_max<<endl;
                                     TrackedCompton_Final[GetTrackedComptonIndex(c, b, q, k, r, h, e, eup, p, t, s, a, u, l, f, x, y)].SetObservationTime(m_ObservationTime);
-                                    TrackedCompton_Final[GetTrackedComptonIndex(c, b, q, k, r, h, e, eup, p, t, s, a, u, l, f, x, y)].SetSigmaLevel(m_SigmaLevel);
                                     if (m_ModeSourceExtension == s_ModePointSource) {
                                       SourceIndex = FindSourceIndex(x, y);
                                       if (m_ModeSpectrum == s_ModeContinuum) {
@@ -1820,11 +1792,7 @@ bool SensitivityOptimizer::Analyze()
                                     S.SetTrackQualityFactor(0, m_TQF[k]);
                                     S.SetEarthHorizonCut(EH);
                                     S.SetFirstTotalEnergy(m_EnergyMin[e], m_EnergyMax[eup]);  
-                                    
-                                    double ComptonAngleMin = m_MimrecSettings.GetComptonAngleRangeMin();
-                                    double ComptonAngleMax = m_MimrecSettings.GetComptonAngleRangeMax();
-                                    S.SetComptonAngle(ComptonAngleMin, ComptonAngleMax < m_Phi[p] ? ComptonAngleMax : m_Phi[p]);
-
+                                    S.SetComptonAngle(0, m_Phi[p]);
                                     S.SetThetaDeviationMax(m_The[t]);
                                     S.SetSequenceLength(m_CSLMin[l], m_CSLMax[l]);
                                     S.SetTrackLength(m_TSLMin[u], m_TSLMax[u]);
@@ -1836,18 +1804,11 @@ bool SensitivityOptimizer::Analyze()
                                     MVector Position(xx, xy, xz);
                                     
                                     S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
-
-                                    double ARMMin = m_MimrecSettings.GetSourceARMMin();
-                                    double ARMMax = m_MimrecSettings.GetSourceARMMax();
-                                    S.SetSourceARM(ARMMin, ARMMax < m_ARMorRadius[a] ? ARMMax : m_ARMorRadius[a]);
-
+                                    S.SetSourceARM(0, m_ARMorRadius[a]);
                                     S.SetSourceSPD(0, m_SPD[s]);
                                     S.SetBeamRadius(m_BRA[b]);
                                     S.SetBeamDepth(m_BDE[c]);
-                                    
-                                    double FirstDistanceMin = m_MimrecSettings.GetFirstDistanceRangeMin();
-                                    double FirstDistanceMax = m_MimrecSettings.GetFirstDistanceRangeMax();
-                                    S.SetFirstDistance(FirstDistanceMin > m_FDI[f] ? FirstDistanceMin : m_FDI[f], FirstDistanceMax < c_FarAway ? FirstDistanceMax : c_FarAway);
+                                    S.SetFirstDistance(m_FDI[f], c_FarAway);
                                     
                                     TrackedCompton_Final[GetTrackedComptonIndex(c, b, q, k, r, h, e, eup, p, t, s, a, u, l, f, x, y)].SetEventSelector(S);
                                     for (unsigned int bf = 0; bf < m_BackgroundFiles.size(); ++bf) {
@@ -1910,7 +1871,6 @@ bool SensitivityOptimizer::Analyze()
                           for (unsigned int y = 0; y < y_max; ++y) {
                             //cout<<"y: "<<y<<":"<<y_max<<endl;
                             UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetObservationTime(m_ObservationTime);
-                            UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetSigmaLevel(m_SigmaLevel);
                             if (m_ModeSourceExtension == s_ModePointSource) {
                               SourceIndex = FindSourceIndex(x, y);
                               if (m_ModeSpectrum == s_ModeContinuum) {
@@ -1934,11 +1894,7 @@ bool SensitivityOptimizer::Analyze()
                             //S.SetTrackQualityFactor(0, m_TQF[k]);
                             S.SetEarthHorizonCut(EH);
                             S.SetFirstTotalEnergy(m_EnergyMin[e], m_EnergyMax[eup]);  
-
-                            double ComptonAngleMin = m_MimrecSettings.GetComptonAngleRangeMin();
-                            double ComptonAngleMax = m_MimrecSettings.GetComptonAngleRangeMax();
-                            S.SetComptonAngle(ComptonAngleMin, ComptonAngleMax < m_Phi[p] ? ComptonAngleMax : m_Phi[p]);
-
+                            S.SetComptonAngle(0, m_Phi[p]);
                             //S.SetThetaDeviationMax(m_The[t]);
                             S.SetSequenceLength(m_CSLMin[l], m_CSLMax[l]);
                             //S.SetTrackLength(m_TSLMin[u], m_TSLMax[u]);
@@ -1950,18 +1906,11 @@ bool SensitivityOptimizer::Analyze()
                             MVector Position(xx, xy, xz);
                             
                             S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
-                            
-                            double ARMMin = m_MimrecSettings.GetSourceARMMin();
-                            double ARMMax = m_MimrecSettings.GetSourceARMMax();
-                            S.SetSourceARM(ARMMin, ARMMax < m_ARMorRadius[a] ? ARMMax : m_ARMorRadius[a]);
-
+                            S.SetSourceARM(0, m_ARMorRadius[a]);
                             //S.SetSourceSPD(0, m_SPD[s]);
                             S.SetBeamRadius(m_BRA[b]);
                             S.SetBeamDepth(m_BDE[c]);
-                            
-                            double FirstDistanceMin = m_MimrecSettings.GetFirstDistanceRangeMin();
-                            double FirstDistanceMax = m_MimrecSettings.GetFirstDistanceRangeMax();
-                            S.SetFirstDistance(FirstDistanceMin > m_FDI[f] ? FirstDistanceMin : m_FDI[f], FirstDistanceMax < c_FarAway ? FirstDistanceMax : c_FarAway);
+                            S.SetFirstDistance(m_FDI[f], c_FarAway);
                             
                             UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetEventSelector(S);
                             for (unsigned int bf = 0; bf < m_BackgroundFiles.size(); ++bf) {
@@ -1969,7 +1918,7 @@ bool SensitivityOptimizer::Analyze()
                               UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetBackgroundName(bf, m_BackgroundFiles[bf]);
                             }
                             if (m_ModeSpectrum == s_ModeLine && m_EnergyWindowMin > 0 && m_EnergyWindowMax > 0) {
-                              UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetLargeEnergyWindow(m_EnergyMin[e], m_EnergyMax[eup], m_EnergyWindowMin, m_EnergyWindowMax);
+                              UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetLargeEnergyWindow(m_EnergyMin[e], m_EnergyMax[e], m_EnergyWindowMin, m_EnergyWindowMax);
                             }
                             UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].UseComplexEquation(m_ComplexEquation);
                           }
@@ -2020,7 +1969,6 @@ bool SensitivityOptimizer::Analyze()
                           for (unsigned int y = 0; y < y_max; ++y) {
                             //cout<<"y: "<<y<<":"<<y_max<<endl;
                             Pair_Final[GetPairIndex(d, o, c, b, k, r, h, e, eup, a, u, x, y)].SetObservationTime(m_ObservationTime);
-                            Pair_Final[GetPairIndex(d, o, c, b, k, r, h, e, eup, a, u, x, y)].SetSigmaLevel(m_SigmaLevel);
                             if (m_ModeSourceExtension == s_ModePointSource) {
                               SourceIndex = FindSourceIndex(x, y);
                               if (m_ModeSpectrum == s_ModeContinuum) {
@@ -2497,7 +2445,6 @@ bool SensitivityOptimizer::Analyze()
   for (unsigned int x = 0; x < x_max; ++x) {         
     for (unsigned int y = 0; y < y_max; ++y) {         
       MFileEventsTra Source;
-      Source.SetFastFileParsing(true);
       if (m_ModeSourceExtension == s_ModePointSource) {
         // We have for each angle one point source
         SourceIndex = FindSourceIndex(x, y);
@@ -2544,10 +2491,9 @@ bool SensitivityOptimizer::Analyze()
                       //mlog<<"TQF"<<endl;
                       if (Compton->TrackQualityFactor1() > m_TQF[k]) continue;
                       for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
-                        if (Compton->Ei() < m_EnergyMin[e]) continue;
                         for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
                           //mlog<<"E"<<endl;
-                          if (Compton->Ei() > m_EnergyMax[eup]) continue;
+                          if (Compton->Ei() > m_EnergyMax[eup] || Compton->Ei() < m_EnergyMin[e]) continue;
                           for (unsigned int p = 0; p < p_max; ++p) {
                             //mlog<<"Phi"<<endl;
                             if (Compton->Phi() > m_Phi[p]*c_Rad) continue;
@@ -2597,10 +2543,9 @@ bool SensitivityOptimizer::Analyze()
                     //mlog<<"CQF"<<endl;
                     if (Compton->ComptonQualityFactor1() > m_CQF[q]) continue;
                     for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
-                      if (Compton->Ei() < m_EnergyMin[e]) continue;
                       for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
                         //mlog<<"E"<<endl;
-                        if (Compton->Ei() > m_EnergyMax[eup]) continue;
+                        if (Compton->Ei() > m_EnergyMax[eup] || Compton->Ei() < m_EnergyMin[e]) continue;
                         for (unsigned int p = 0; p < p_max; ++p) {
                           //mlog<<"Phi"<<endl;
                           if (Compton->Phi() > m_Phi[p]*c_Rad) continue;
@@ -2646,10 +2591,9 @@ bool SensitivityOptimizer::Analyze()
                       //mlog<<"1"<<endl;
                       //if (Pair->TrackQualityFactor1() > m_TQF[k]) continue;
                       for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
-                        if (Pair->Ei() < m_EnergyMin[e]) continue;
                         for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
                           //mlog<<"3"<<endl;
-                          if (Pair->Ei() > m_EnergyMax[eup]) continue;
+                          if (Pair->Ei() > m_EnergyMax[eup] || Pair->Ei() < m_EnergyMin[e]) continue;
                           for (unsigned int r = 0; r < r_max; ++r) {
                             //mlog<<"2"<<endl;
                             for (unsigned int h = 0; h < h_max; ++h) {
@@ -2704,7 +2648,6 @@ bool SensitivityOptimizer::Analyze()
   // Sensitivity:
   for (unsigned int bf = 0; bf < m_BackgroundFiles.size(); ++bf) {
     MFileEventsTra Source;
-    Source.SetFastFileParsing(true);
     if (Source.Open(m_BackgroundFiles[bf]) == false) {
       mlog<<"Unable to open file "<<m_BackgroundFiles[bf]<<endl;
       return false;
@@ -2733,6 +2676,8 @@ bool SensitivityOptimizer::Analyze()
                       for (unsigned int h = 0; h < h_max; ++h) {
                         for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
                           for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
+                            // if (Compton->Ei() > m_EnergyMax[e] || Compton->Ei() < m_EnergyMin[e]) continue;
+                            if (Compton->Ei() > m_EnergyWindowMax || Compton->Ei() < m_EnergyWindowMin) continue;
                             for (unsigned int p = 0; p < p_max; ++p) {
                               if (Compton->Phi() > m_Phi[p]*c_Rad) continue;
                               for (unsigned int t = 0; t < t_max; ++t) {
@@ -2775,11 +2720,14 @@ bool SensitivityOptimizer::Analyze()
                     for (unsigned int h = 0; h < h_max; ++h) {
                       for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
                         for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
+                          // if (Compton->Ei() > m_EnergyMax[e] || Compton->Ei() < m_EnergyMin[e]) continue;
+                          if (Compton->Ei() > m_EnergyWindowMax || Compton->Ei() < m_EnergyWindowMin) continue;
                           for (unsigned int p = 0; p < p_max; ++p) {
                             if (Compton->Phi() > m_Phi[p]*c_Rad) continue;
                             for (unsigned int a = 0; a < a_max; ++a) {
                               for (unsigned int l = 0; l < l_max; ++l) {
-                                if (Compton->SequenceLength() < m_CSLMin[l] || Compton->SequenceLength() > m_CSLMax[l]) continue;
+                                if (Compton->SequenceLength() < m_CSLMin[l] ||
+                                  Compton->SequenceLength() > m_CSLMax[l]) continue;
                                 for (unsigned int f = 0; f < f_max; ++f) {
                                   for (unsigned int x = 0; x < x_max; ++x) {
                                     for (unsigned int y = 0; y < y_max; ++y) {
@@ -2814,6 +2762,8 @@ bool SensitivityOptimizer::Analyze()
                     //if (Pair->TrackQualityFactor1() > m_TQF[k]) continue;
                     for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
                       for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
+                        //mlog<<"3"<<endl;
+                        if (Pair->Ei() > m_EnergyWindowMax || Pair->Ei() < m_EnergyWindowMin) continue;
                         for (unsigned int r = 0; r < r_max; ++r) {
                           //mlog<<"2"<<endl;
                           for (unsigned int h = 0; h < h_max; ++h) {

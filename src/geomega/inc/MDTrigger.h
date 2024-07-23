@@ -83,9 +83,9 @@ class MDTrigger
   virtual bool IsVetoing(MDDetector*) const { return false; }
   
   //! Returns true if the hit could be added 
-  virtual bool AddHit(MDVolumeSequence&) { return false; }
+  virtual bool AddHit(const MDVolumeSequence&) { return false; }
   //! Returns true if the hit could be added 
-  virtual bool AddGuardRingHit(MDVolumeSequence&) { return false; }
+  virtual bool AddGuardRingHit(const MDVolumeSequence&) { return false; }
 
   //! Reset all added hits - it will not change the basic setup of the trigger (type, detector, required hits)
   virtual void Reset() { }

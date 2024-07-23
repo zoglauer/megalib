@@ -3,7 +3,29 @@
 ******************************************************************************
 
 
+Version 3.99/4.00
+=================
 
+Geomega:
++ Rewrite of the detector effects engine
+
+
+
+
+
+Version 3.99/4.00
+=================
+
+General:
++ Default ROOT version is 6.22
++ Updates for Aplle M1 and Ubuntu 6.22
+
+Geomega:
++ Speed ups reading large files
++ Fixed if-statement evaluations
+
+Mimrec:
+Chenges for near-filed imaging
 
 
 
