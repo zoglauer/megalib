@@ -14,31 +14,42 @@ General:
 + License is now LPGL v3
 + Default ROOT version is 6.28
 + C++-2014 is now default
-+ Updates for Apple M1 and Ubuntu 22.04
-+ Updates to the dmegalib parallel simulation environment
++ Updates for all the latest OS'es
++ Improvements to the dmegalib parallel simulation environment
++ Improved event and file writting
 
 Geomega:
 + Speed ups reading large files
 + Fixed if-statement evaluations
 + Voxel3D is now allowed not to be a box detector
 + The geometry view is now restored after a reload of the mass-model
++ Option to automatically view the geometry upon launch
 + Do not allow to define multiple surrounding spheres
 + Fix path in which cross-section are stored
-+ Voxel3D is allowed to be non-box detector if it an intersection or subtraction
 
 Cosima:
 + mcosima has the new option "-a" to not generated concatenation files
 + gzip'ing sim files is now default
++ Improvements to the orientation handling to enable COSI data challenge simulations
++ Enable a timeout (stop simulating) if no new events are stored after 30 minutes
++ Added Comptonization model as spectrum
++ Added cutoff power law
++ Added more unit tests
 
 Response:
 + Parallel reading of spares rsp files
 + Cleanup interface in responsemanipulator
++ Option to collapse response matrices
++ Store simulation parameters in rsp files
 
 Mimrec:
 + Changes for near-field imaging
 + Fixes in binned-mode imaging
++ Default color palette now is Viridis
 + Spherical images now can have hammer projection too
 + Save the cfg file via command line
++ Enable polarization analysis in Galactic coordinates
++ Feature to perform box selections on first and second interactio
 
 Revan:
 + Save the cfg file via command line
@@ -46,6 +57,12 @@ Revan:
 
 Fretalon / Melinator:
 + Significant speed ups and optimizations to handle new COSI calibrations
++ Parallelization of spectrum generation
++ UI: Added peak finding options to UI, scrollbar for options, include errors for peak fitting, minor canvas changes
+
+Examples:
++ Sensitivity optimizer
++ Add test data for MEGAlib's getting started guide
 
 And many smaller bug fixes and optimizations
 
