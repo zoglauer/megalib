@@ -7,12 +7,13 @@
 
 
 
-Version 3.99/4.00
-=================
+Version 4.00
+============
 
 General:
 + License is now LPGL v3
-+ Default ROOT version is 6.24
++ Default ROOT version is 6.28
++ C++-2014 is now default
 + Updates for Apple M1 and Ubuntu 22.04
 + Updates to the dmegalib parallel simulation environment
 
@@ -23,19 +24,30 @@ Geomega:
 + The geometry view is now restored after a reload of the mass-model
 + Do not allow to define multiple surrounding spheres
 + Fix path in which cross-section are stored
++ Voxel3D is allowed to be non-box detector if it an intersection or subtraction
 
 Cosima:
 + mcosima has the new option "-a" to not generated concatenation files
++ gzip'ing sim files is now default
 
 Response:
 + Parallel reading of spares rsp files
 + Cleanup interface in responsemanipulator
 
 Mimrec:
-+ Chenges for near-filed imaging
++ Changes for near-field imaging
 + Fixes in binned-mode imaging
 + Spherical images now can have hammer projection too
++ Save the cfg file via command line
 
+Revan:
++ Save the cfg file via command line
++ Add energy windows to Bayesian and TMVA reconstrcution
+
+Fretalon / Melinator:
++ Significant speed ups and optimizations to handle new COSI calibrations
+
+And many smaller bug fixes and optimizations
 
 
 
