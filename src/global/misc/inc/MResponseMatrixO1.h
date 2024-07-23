@@ -35,7 +35,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-template< class T > class greater_than : public unary_function< T, bool > 
+template< class T > class greater_than
 {
  public:
   explicit greater_than( const T& x ) : arg2( x ) { }

@@ -16,7 +16,7 @@ if [[ $? -eq 0 ]]; then
   CONFIGUREOPTIONS+=" -DCMAKE_IGNORE_PATH=${PORTPATH};${PORTPATH}/bin;${PORTPATH}/include;${PORTPATH}/include/libxml2;${PORTPATH}/include/unicode"
 fi
 # Until ROOT 6.24: C++ 11
-CONFIGUREOPTIONS+=" -DCMAKE_CXX_STANDARD=14"
+CONFIGUREOPTIONS+=" -DCMAKE_CXX_STANDARD=17"
 # We want a minimal system and enable what we really need:
 #CONFIGUREOPTIONS+=" -Dgminimal=ON"
 # Open GL -- needed by geomega

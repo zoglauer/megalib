@@ -42,7 +42,7 @@ using namespace std;
 
 /******************************************************************************/
 
-struct NextEmissionSort : public binary_function<const MCSource*, const MCSource*, bool> {
+struct NextEmissionSort {
 public:
   bool operator() (const MCSource* S1, const MCSource* S2) const {
 

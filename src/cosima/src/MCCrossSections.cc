@@ -31,6 +31,12 @@
 #include "G4Material.hh"
 #include "G4MaterialTable.hh"
 #include "G4Version.hh"
+#include "G4LivermorePhotoElectricModel.hh"
+#include "G4LivermoreRayleighModel.hh"
+#include "G4LivermoreGammaConversionModel.hh"
+#include "G4ParticleTable.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4DataVector.hh"
 
 // ROOT:
 #include "TSystem.h"
@@ -70,21 +76,37 @@ bool MCCrossSections::CreateCrossSectionFiles(MString Path)
   // Make sure the path exists
   gSystem->mkdir(Path, true);
 
-  G4CrossSectionHandler* CrossSectionHandlerPhoto = new G4CrossSectionHandler;
-  CrossSectionHandlerPhoto->Clear();
-  CrossSectionHandlerPhoto->LoadData("phot/pe-cs-");
+  
+  // Get the G4ParticleTable
+  G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
 
-  G4CrossSectionHandler* CrossSectionHandlerRayleigh = new G4CrossSectionHandler;
-  CrossSectionHandlerRayleigh->Clear();
-  CrossSectionHandlerRayleigh->LoadData("rayl/re-cs-");
-
+  // Get the G4ParticleDefinition for a photon
+  G4ParticleDefinition* gamma = particleTable->FindParticle("gamma");
+    
   G4CrossSectionHandler* CrossSectionHandlerCompton = new G4CrossSectionHandler;
   CrossSectionHandlerCompton->Clear();
   CrossSectionHandlerCompton->LoadData("comp/ce-cs-");
 
-  G4CrossSectionHandler* CrossSectionHandlerPair = new G4CrossSectionHandler;
-  CrossSectionHandlerPair->Clear();
-  CrossSectionHandlerPair->LoadData("pair/pp-cs-");
+  G4LivermorePhotoElectricModel* CrossSectionHandlerPhoto = new G4LivermorePhotoElectricModel;
+  G4DataVector Data;
+  CrossSectionHandlerPhoto->Initialise(gamma,Data);
+ 
+  
+  //G4CrossSectionHandler* CrossSectionHandlerPhoto = new G4CrossSectionHandler;
+  //CrossSectionHandlerPhoto->Clear();
+  //CrossSectionHandlerPhoto->LoadData("phot/pe-cs-");
+
+  G4LivermoreRayleighModel* CrossSectionHandlerRayleigh = new G4LivermoreRayleighModel;
+  //G4CrossSectionHandler* CrossSectionHandlerRayleigh = new G4CrossSectionHandler;
+  //CrossSectionHandlerRayleigh->Clear();
+  //CrossSectionHandlerRayleigh->LoadData("rayl/re-cs-");
+
+  G4LivermoreGammaConversionModel*  CrossSectionHandlerPair = new G4LivermoreGammaConversionModel;
+  //G4CrossSectionHandler* CrossSectionHandlerPair = new G4CrossSectionHandler;
+  //CrossSectionHandlerPair->Clear();
+  //CrossSectionHandlerPair->LoadData("pair/pp-cs-");
+
+  cout<<"Cross-section Data loaded !"<<endl;
 
   // Loop over all materials and write the cross-section files
   double eMin = 1*keV;
@@ -98,6 +120,8 @@ bool MCCrossSections::CreateCrossSectionFiles(MString Path)
   MString File;
   const G4MaterialTable* Table = G4Material::GetMaterialTable();
   //const G4ProductionCutsTable* Table = G4ProductionCutsTable::GetProductionCutsTable();
+
+  
 
   for (unsigned int mat = 0; mat < Table->size(); ++mat) {
     //const G4Material* M = Table->GetMaterialCutsCouple(mat)->GetMaterial();
@@ -127,7 +151,7 @@ bool MCCrossSections::CreateCrossSectionFiles(MString Path)
       for (int e = 0; e <= eBins; ++e) {
         out<<"R1 "
            <<fixed<<setw(16)<<exp(eMin+e*eDist)/keV<<" "
-           <<scientific<<CrossSectionHandlerPhoto->ValueForMaterial(M, exp(eMin+e*eDist))/(1/cm)<<endl;
+           <<scientific<<CrossSectionHandlerPhoto->CrossSectionPerVolume(M, gamma,exp(eMin+e*eDist))/(1/cm)<<endl;
       }
       out<<endl;
     } else {
@@ -154,7 +178,7 @@ bool MCCrossSections::CreateCrossSectionFiles(MString Path)
       for (int e = 0; e <= eBins; ++e) {
         out<<"R1 "
            <<fixed<<setw(16)<<exp(eMin+e*eDist)/keV<<" "
-           <<scientific<<CrossSectionHandlerRayleigh->ValueForMaterial(M, exp(eMin+e*eDist))/(1/cm)<<endl;
+           <<scientific<<CrossSectionHandlerRayleigh->CrossSectionPerVolume(M,gamma, exp(eMin+e*eDist))/(1/cm)<<endl;
       }
       out<<endl;
     } else {
@@ -208,7 +232,7 @@ bool MCCrossSections::CreateCrossSectionFiles(MString Path)
       for (int e = 0; e <= eBins; ++e) {
         out<<"R1 "
            <<fixed<<setw(16)<<exp(eMin+e*eDist)/keV<<" "
-           <<scientific<<CrossSectionHandlerPair->ValueForMaterial(M, exp(eMin+e*eDist))/(1/cm)<<endl;
+           <<scientific<<CrossSectionHandlerPair->CrossSectionPerVolume(M, gamma,exp(eMin+e*eDist))/(1/cm)<<endl;
       }
       out<<endl;
     } else {
@@ -235,10 +259,10 @@ bool MCCrossSections::CreateCrossSectionFiles(MString Path)
       for (int e = 0; e <= eBins; ++e) {
         out<<"R1 "
            <<fixed<<setw(16)<<exp(eMin+e*eDist)/keV<<" "
-           <<scientific<<(CrossSectionHandlerPhoto->ValueForMaterial(M, exp(eMin+e*eDist)) + 
-                          CrossSectionHandlerRayleigh->ValueForMaterial(M, exp(eMin+e*eDist)) + 
+           <<scientific<<(CrossSectionHandlerPhoto->CrossSectionPerVolume(M, gamma,exp(eMin+e*eDist)) + 
+                          CrossSectionHandlerRayleigh->CrossSectionPerVolume(M,gamma ,exp(eMin+e*eDist)) + 
                           CrossSectionHandlerCompton->ValueForMaterial(M, exp(eMin+e*eDist)) + 
-                          CrossSectionHandlerPair->ValueForMaterial(M, exp(eMin+e*eDist)))/(1/cm)<<endl;
+                          CrossSectionHandlerPair->CrossSectionPerVolume(M, gamma,exp(eMin+e*eDist)))/(1/cm)<<endl;
       }
       out<<endl;
     } else {

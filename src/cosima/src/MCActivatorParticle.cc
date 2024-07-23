@@ -129,7 +129,46 @@ void MCActivatorParticle::SetIDAndExcitation(unsigned int ID, double Excitation)
   G4IonTable* Table = G4IonTable::GetIonTable();
   int AtomicNumber = int(m_ID/1000);
   int AtomicMass = m_ID - int(m_ID/1000)*1000;
-  m_Definition = Table->GetIon(AtomicNumber, AtomicMass, Excitation);
+  //m_Definition = Table->GetIon(AtomicNumber, AtomicMass, Excitation);
+
+
+   if(   Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::no_Float)!= -1001)
+  {m_Definition =     Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::no_Float);}
+  
+  //if the level state of the isotope is a floating level , loop over the levels until we Get
+ //the isotope in order to not get 0s lifetime . Will be probably fixed in the next patch
+  else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_X)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_X);}
+  
+  else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_Y)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_Y);}
+  
+  else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_Z)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_Z);}
+  
+  else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_U)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_U);}
+  
+  else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_V)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_V);}
+  
+   else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_W)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_W);}
+  
+   else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_R)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_R);}
+   
+    else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_S)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_S);}
+    
+   else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_T)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_T);}
+   
+   else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_A)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_A);}
+  
+   else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_B)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_B);}
+   
+    else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_C)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_C);}
+    
+   else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_D)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_D);}
+  
+   else if (Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_E)!= -1001) {m_Definition =  Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_E);}
+  
+  
+  else if(m_Definition==0){cout<<"Half Life time below the SetThresholdOfHalfLife or no isotope found with this excitation energy -> create a isotope with 0s of half-time  ! Z = "<<AtomicNumber
+  << " A = "<< AtomicMass<< " E = "<<Excitation<<endl;
+  m_Definition =     Table->GetIon(AtomicNumber, AtomicMass, Excitation);}
 
   massert(m_Definition != 0);
 }

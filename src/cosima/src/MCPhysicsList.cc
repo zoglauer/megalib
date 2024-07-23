@@ -41,12 +41,13 @@
 #include "G4EmPenelopePhysics.hh"
 #include "G4EmStandardPhysics.hh"
 #include "G4RadioactiveDecayPhysics.hh"
+
 #include "G4VProcess.hh"
 #include "G4VEmProcess.hh"
 #include "G4VEnergyLossProcess.hh"
 #include "G4ProcessVector.hh"
 #include "G4ProcessManager.hh"
-#include "G4LivermorePolarizedPhotoElectricModel.hh"
+//#include "G4LivermorePolarizedPhotoElectricModel.hh" removed in g4 v11
 #include "G4LivermorePhotoElectricModel.hh"
 #include "G4PenelopePhotoElectricModel.hh"
 #include "G4LivermoreIonisationModel.hh"
@@ -57,6 +58,8 @@
 #include "G4UAtomicDeexcitation.hh"
 #include "G4LossTableManager.hh"  
 #include "G4NuclideTable.hh"
+
+#include "G4EmParameters.hh"
 
 // MEGAlib:
 #include "MStreams.h"
@@ -176,6 +179,9 @@ void MCPhysicsList::Register()
   // We always register all sorts of decays:
   RegisterPhysics(new G4RadioactiveDecayPhysics());
   
+  
+  
+  
   // Check what we got:
   cout<<"Chosen physics: "<<endl;
   for (unsigned int p = 0; ; ++p) {
@@ -196,24 +202,32 @@ void MCPhysicsList::ConstructProcess()
   G4VModularPhysicsList::ConstructProcess();
   
   // Do some additional modifications to the default lists:
-  theParticleIterator->reset();
-  while ((*theParticleIterator)() == true) {
-    G4ParticleDefinition* particle = theParticleIterator->value();
+  GetParticleIterator()->reset();
+  while ((*GetParticleIterator())() == true) {
+    G4ParticleDefinition* particle = GetParticleIterator()->value();
     G4ProcessManager* pmanager = particle->GetProcessManager();
     G4ProcessVector* pvector = pmanager->GetProcessList();
     //cout<<particle->GetParticleName()<<endl;
     //cout<<"Gamma processes: "<<pvector->size()<<endl;
-    for (G4int p = 0; p < pvector->size(); ++p) {
+    for (G4int p = 0; p < int(pvector->size()); ++p) {
       G4VProcess* P = (*pvector)[p];
       //cout<<P->GetProcessName()<<endl;
       if (dynamic_cast<G4RadioactiveDecay*>(P) != 0) {
         G4RadioactiveDecay* RadioactiveDecay = dynamic_cast<G4RadioactiveDecay*>(P);
-        RadioactiveDecay->SetICM(true);  // Internal Conversion
+        //RadioactiveDecay->SetICMode(true);  // Internal Conversion geant4 11  removed SetICM() method, as deprecated for some time and no longer used. ICM now set exclusively in G4PhotonEvaporation. Added printout of the flag of atomic relaxation.
         RadioactiveDecay->SetARM(true);  // Atomic Rearrangement, i.e. filling of shell vacancies
-        RadioactiveDecay->SetHLThreshold(1.0E-9*second);  // Half life cut-off of isomeruic states
+        //RadioactiveDecay->SetHLThreshold(1.0E-9*second);  // Half life cut-off of isomeric states | no longer exist in g4 v11 , no track of that on the release notes 
       }
-    }
-  }
+      
+     // if (dynamic_cast<G4ComptonScattering*>(P) != 0) {
+     //   cout<< "compton here !"<<endl;
+      
+     //   G4ComptonScattering* ComptonScat = dynamic_cast<G4ComptonScattering*>(P);
+     //    ComptonScat->SetMinKinEnergy(1*GeV);
+     // }
+      
+    } //end for loop
+  }//end while loop
   
   G4VAtomDeexcitation* D = G4LossTableManager::Instance()->AtomDeexcitation();
   D->SetFluo(true);
@@ -223,8 +237,19 @@ void MCPhysicsList::ConstructProcess()
   G4NuclideTable::GetInstance()->SetLevelTolerance(100*eV);
   G4NuclideTable::GetInstance()->SetThresholdOfHalfLife(0.0001*ns);
   
-
+  // for geant4 v11 in order to have same EM parameters as v10.02
+  G4EmParameters* emParameters = G4EmParameters::Instance();
+  emParameters->SetFluo(true);
+  emParameters->SetPixe(true);
+  emParameters->SetAuger(true);
+  emParameters->SetDeexcitationIgnoreCut(false);
   
+  //remove the comments below if you want exactly the same paramameters as v10.02
+  //Not sure of the result if you do that
+  //emParameters->SetMuHadLateralDisplacement(false);
+  //emParameters->SetMscRangeFactor(0.04);
+  //emParameters->SetMscSkin(1);
+  //emParameters->SetAugerCascade(false);
   
   /* unnecessary as of Geant4 9.6
   // Do some additional modifications to the default lists:

@@ -36,9 +36,13 @@
 #include "G4ParticleDefinition.hh"
 #include "G4ParticleTypes.hh"
 #include "G4EventManager.hh"
-#include "G4NuclearLevel.hh"
-#include "G4NuclearLevelManager.hh"
-#include "G4NuclearLevelStore.hh"
+//#include "G4NuclearLevel.hh" //no longer exist in g4 v11
+//#include "G4NuclearLevelManager.hh" // same
+//#include "G4NuclearLevelStore.hh" // same
+#include "G4NuclearLevelData.hh" //replace libs upper ? see release note 10.2
+#include "G4LevelManager.hh"
+#include "G4NucLevel.hh"
+
 #include "G4Ions.hh"
 #include "G4IonTable.hh"
 
@@ -73,6 +77,7 @@ const int MCSteppingAction::c_ProcessIDDecay                  = 11;
 const int MCSteppingAction::c_ProcessIDRadioactiveDecay       = 12;
 const int MCSteppingAction::c_ProcessIDIonization             = 13;
 const int MCSteppingAction::c_ProcessIDTransportation         = 14;
+const int MCSteppingAction::c_ProcessIDNoProcess              = 15;
 
 
 /******************************************************************************
@@ -118,6 +123,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("LowEnConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
   m_KnownProcess.push_back("LowEnPolarizConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
   m_KnownProcess.push_back("muPairProd"); m_KnownProcessID.push_back(c_ProcessIDPair);
+  m_KnownProcess.push_back("ePairProd"); m_KnownProcessID.push_back(c_ProcessIDPair);
+
   
   m_KnownProcess.push_back("annihil"); m_KnownProcessID.push_back(c_ProcessIDAnnihilation);
   m_KnownProcess.push_back("PenAnnih"); m_KnownProcessID.push_back(c_ProcessIDAnnihilation);
@@ -137,7 +144,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("phot"); m_KnownProcessID.push_back(c_ProcessIDPhoto);
   
   m_KnownProcess.push_back("hadElastic"); m_KnownProcessID.push_back(c_ProcessIDElasticScattering);
-  
+  m_KnownProcess.push_back("ionElastic"); m_KnownProcessID.push_back(c_ProcessIDElasticScattering);
+
   m_KnownProcess.push_back("nFission"); m_KnownProcessID.push_back(c_ProcessIDFission);
   
   m_KnownProcess.push_back("PhotonInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
@@ -154,6 +162,7 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("KaonPlusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("KaonMinusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("LambdaInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("anti_lambdaInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("AntiLambdaInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("SigmaMinusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("SigmaPlusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
@@ -184,6 +193,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("xi-Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("xi+Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("xi0Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("anti_xi-Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+
   
   m_KnownProcess.push_back("HadronCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("nCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
@@ -207,6 +218,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("CoulombScat"); m_KnownProcessID.push_back(c_ProcessIDIonization);
 
   m_KnownProcess.push_back("Transportation"); m_KnownProcessID.push_back(c_ProcessIDTransportation);
+  m_KnownProcess.push_back("NoProcess"); m_KnownProcessID.push_back(c_ProcessIDNoProcess);
+
 
   // To lower all processes:
   for (unsigned int i = 0; i < m_KnownProcess.size(); ++i) m_KnownProcessFrequency.push_back(0);  
@@ -910,18 +923,129 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           //cout<<"Storing: "<<Nucleus->GetParticleName()<<endl;
           if (Nucleus->GetExcitationEnergy() > 1*keV) {
             //cout<<"Alignment > 1 keV"<<endl;
-            G4NuclearLevelManager* M = G4NuclearLevelStore::GetInstance()->GetManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
-            if (M->IsValid() == true) {
-              const G4NuclearLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
+            const G4LevelManager* M = G4NuclearLevelData::GetInstance()->GetLevelManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
+	    bool IsValid =true ;// IsValid() method no longer available for G4LevelManager, always true for now , need to check 
+            if (IsValid == true) {
+              const G4NucLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
               if (Level != 0) {
                 G4IonTable* Table = G4IonTable::GetIonTable();
-                Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), Level->Energy()));
+		
+		 if(Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::no_Float)!=-1001){ 
+    Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::no_Float));}
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_X)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_X)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Y)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Y)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Z)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Z)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_U)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_U)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_V)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_V)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_W)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_W)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_R)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_R)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_S)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_S)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_A)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_A)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_B)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_B)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_C)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_C)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_D)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_D)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_E)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_E)); }
+		
+    else { cout<<"Isotope not found from MCSteppingAction"<<endl;
+           cout<< Nucleus->GetAtomicNumber() << Nucleus->GetAtomicMass()<< M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())<<endl;
+           Nucleus = nullptr;
+    }	 	
+		
+               // Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())));
               }
             }
           } else {
             //cout<<"Alignment < 1 keV"<<endl;
             G4IonTable* Table = G4IonTable::GetIonTable();
-            Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0));
+            //Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0));
+	    
+	    
+	    if(Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::no_Float)!=-1001){ 
+    Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::no_Float));}
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_X)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_X)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Y)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Y)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Z)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Z)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_U)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_U)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_V)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_V)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_W)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_W)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_R)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_R)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_S)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_S)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_A)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_A)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_B)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_B)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_C)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_C)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_D)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_D)); }
+    
+    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_E)!=-1001)
+    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_E)); }
+		
+    else { cout<<"Isotope not found from MCSteppingAction"<<endl;
+           cout<< "Z : "<<Nucleus->GetAtomicNumber()<< "A :"<< Nucleus->GetAtomicMass()<<"E : " <<0.0<<endl;
+           Nucleus = nullptr;
+    }	 	
+	    
+	    
           }
           //cout<<"NE: "<<Nucleus->GetExcitationEnergy()/keV<<"keV"<<endl;
 
@@ -991,8 +1115,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           //cout<<Track->GetDefinition()->GetParticleName()<<" --> "<<Step->GetPostStepPoint()->GetGlobalTime()/second<<" sec "<<Step->GetPreStepPoint()->GetGlobalTime()/second<<" sec"<<endl;
           G4TouchableHistory* Hist = (G4TouchableHistory*) (Step->GetPreStepPoint()->GetTouchable());
           G4LogicalVolume* V = Hist->GetVolume(0)->GetLogicalVolume();
-          G4String Name = V->GetName();
-          Name.remove(Name.size()-3, 3);
+          G4String Name = V->GetName(); 
+          Name.erase(Name.size()-3, 3);
           MCRunManager::GetMCRunManager()->GetCurrentRun().SkipOneEvent(Track->GetDefinition(), Name);
         }
         
@@ -1003,7 +1127,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           G4TouchableHistory* Hist = (G4TouchableHistory*) (Step->GetPreStepPoint()->GetTouchable());
           G4LogicalVolume* V = Hist->GetVolume(0)->GetLogicalVolume();
           G4String Name = V->GetName();
-          Name.remove(Name.size()-3, 3);
+          Name.erase(Name.size()-3, 3);
 
           double GlobalTime = Step->GetPostStepPoint()->GetGlobalTime();
 //           if (Track->GetDefinition()->GetParticleName() == "Ge73[66.7]") {
@@ -1409,7 +1533,7 @@ int MCSteppingAction::GetProcessId(const G4String& Name)
       return m_KnownProcessID[i];
     }
   }
-  
+  //cout<<Name<<endl;
   return c_ProcessIDUncovered;
 }
   
@@ -1782,17 +1906,65 @@ G4ParticleDefinition* MCSteppingAction::GetParticleDefinition(int ID, double Exc
   
   // Check for ions first
   if (ID > 1000) {
-    G4ParticleDefinition* Ion = 0;
+    
     G4IonTable* Table = G4IonTable::GetIonTable();
     int AtomicNumber = int(ID/1000);
     int AtomicMass = ID - int(ID/1000)*1000;
-    Ion = Table->GetIon(AtomicNumber, AtomicMass, Excitation);
-    if (Ion == 0) {
+    
+    
+    if(Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::no_Float)!=-1001){ 
+    ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::no_Float);}
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_X)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_X); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_Y)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_Y); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_Z)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_Z); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_U)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_U); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_V)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_V); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_W)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_W); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_R)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_R); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_S)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_S); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_T); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_T); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_A)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_A); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_B)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_B); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_C)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_C); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_D)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_D); }
+    
+    else if( Table->GetLifeTime(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_E)!=-1001)
+    { ParticleDefinition = Table->GetIon(AtomicNumber, AtomicMass, Excitation,G4Ions::G4FloatLevelBase::plus_E); }
+    
+    
+    else {
       merr<<"Particle type not yet implemented!"<<endl;
       ParticleDefinition = nullptr;
-    } else {
-      ParticleDefinition = Ion;
-    }
+    } 
   } else if (ID == MCSource::c_Gamma) {
     ParticleDefinition = G4Gamma::Gamma();
   } else if (ID == MCSource::c_Positron) {
