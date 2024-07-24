@@ -64,8 +64,11 @@ Examples:
 + Sensitivity optimizer
 + Add test data for MEGAlib's getting started guide
 
-And many smaller bug fixes and optimizations
+Known issues:
++ Cosima: Activation simulations still miss some important lines
++ Cosima: Using light curves with large time numbers (i.e. corresponding to current date in seconds) can create artificial spikes
 
+And many smaller bug fixes and optimizations
 
 
 Version 3.03/3.04
