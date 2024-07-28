@@ -745,14 +745,14 @@ double MFunction::Integrate(double XMin, double XMax) const
 
       if (i == BinMin) {
         x1 = XMin;
-        y1 = Evaluate(x1);
+        y1 = Evaluate(x1+m_X[0]);
       } else {
         x1 = m_X[i];
         y1 = m_Y[i];
       }
       if (i == BinMax) {
         x2 = XMax;
-        y2 = Evaluate(x2);
+        y2 = Evaluate(x2+m_X[0]);
       } else {
         x2 = m_X[i+1];
         y2 = m_Y[i+1];
