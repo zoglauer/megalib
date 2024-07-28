@@ -47,6 +47,9 @@ class MModuleTemplate : public MModule
 
   //! Main data analysis routine, which updates the event to a new level 
   virtual bool AnalyzeEvent(MReadOutAssembly* Event);
+  
+  //! Finalize the module
+  virtual void Finalize();
 
   //! Show the options GUI
   virtual void ShowOptionsGUI();

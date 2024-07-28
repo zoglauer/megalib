@@ -59,7 +59,7 @@ class MRotationInterface
 
   //! Stream to a file
   //! Reading has to be done in the derived class
-  void Stream(ostringstream& S);
+  void Stream(ostringstream& S) const;
 
   //! Retrieve the *key* content from binary
   bool ParseBinary(MBinaryStore& Out, const bool HasGalacticPointing, const bool HasDetectorRotation, const bool HasHorizonPointing, const int BinaryPrecision = 32, const int Version = 25);

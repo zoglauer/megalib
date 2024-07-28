@@ -58,7 +58,7 @@ class MIsotope
   unsigned int GetNucleons() const { return m_Nucleons; }
   
   //! Add line parameters:
-  virtual void AddLine(double Energy, double BranchingRatio, const MString& Flags);
+  virtual void AddLine(double Energy, double BranchingRatio, const MString& Flags, bool ExcludeExcludedLines = false);
   //! Return the number of lines
   unsigned GetNLines() const { return m_LineEnergies.size(); }
   //! Return the line energy

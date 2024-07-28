@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  methusalem
+ 
+OSFlavour:                                 debian
+OSVersion:                                 11
+Kernel:                                    5.10.0-22-686-pae
+ 
+CPUModel:                                  Mobile Intel(R) Pentium(R) 4 - M CPU 2.50GHz
+CPUName:                                   Mobile Intel(R) Pentium(R) 4 - M  2.50GHz
+CPUSockets:                                1
+CPUCoresPerSocket:                         1
+CPUThreadsPerCore:                         1
+Cores:                                     1
+Threads:                                   1
+ 
+ROOTVersion:                               6.28/04
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            3.99.02
+MEGAlibGitHash:                            1232fe46f9609df8176bb16b774bdad32f65b8e1 2023-05-27
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      406.195
+EventsPerSecondCosimaSingle:               246.187
+DurationCosimaMultiple:                    393.380
+EventsPerSecondCosimaMultiple:             254.207
+ 
+# Revan
+DurationRevanSingle:                       71.087
+EventsPerSecondRevanSingle:                1406.726
+DurationRevanMultiple:                     61.396
+EventsPerSecondRevanMultiple:              1628.770
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             226.675
+EventsPerSecondResponseCreatorSingle:      441.160
+DurationResponseCreatorMultiple:           232.060
+EventsPerSecondResponseCreatorMultiple:    430.923
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               130.810
+EventsPerSecondMimrecImagingSingle:        764.467
+DurationMimrecImagingMultiple:             124.107
+EventsPerSecondMimrecImagingMultiple:      805.756
+ 

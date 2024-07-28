@@ -48,7 +48,7 @@ class MString
   // Copy constructor
   MString(const MString& String) : m_String(String.m_String) {}
   // Move constructor
-  MString(MString&& String) : m_String(move(String.m_String)) {}
+  MString(MString&& String) : m_String(std::move(String.m_String)) {}
   MString(const string& S) { m_String = S; }
   MString(const ostringstream& S) { m_String = S.str(); }
   MString(const char* S) { if (S!= nullptr) m_String = S; }
@@ -66,7 +66,7 @@ class MString
   virtual ~MString() {}
 
   // Move
-  MString& operator=(MString&& String) { m_String = move(String.m_String); return *this; }
+  MString& operator=(MString&& String) { m_String = std::move(String.m_String); return *this; }
 
   // Assignment:
   MString& operator=(const MString& S) { m_String = S.m_String; return *this; }

@@ -2,11 +2,15 @@
 
 # Start with the configure options, since we want to compare them to what was done previously
 CONFIGUREOPTIONS=""
-type g++ >/dev/null 2>&1
-if [ $? -eq 0 ]; then
+# On Linux use the default gcc compiler, but not on mac
+if [[ $(uname -a) != *arwin* ]]; then
+  type g++ >/dev/null 2>&1
+  if [ $? -eq 0 ]; then
     # echo "g++ compiler found - using it as default!";
     CONFIGUREOPTIONS="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
+  fi
 fi
+
 CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL_DATA=ON -DGEANT4_USE_OPENGL_X11=OFF -DGEANT4_INSTALL_DATA_TIMEOUT=14400 -DGEANT4_USE_SYSTEM_EXPAT=OFF -DCMAKE_CXX_STANDARD=17"
 
 # Reduce the warning messages:
@@ -364,6 +368,14 @@ GEANT4DIR=geant4_${VER}${DEBUGSTRING}
 GEANT4SOURCEDIR=geant4_${VER}-source   # Attention: the cleanup checks this name pattern before removing it
 GEANT4BUILDDIR=geant4_${VER}-build     # Attention: the cleanup checks this name pattern before removing it
 
+
+# Hardcoding default patch conditions
+# Needs to be done after the Geant4 version is known and before we check the exiting installation
+if [[ ${GEANT4CORE} == "geant4_v10.02.p03" ]]; then
+  PATCH="on"
+  echo "This version of Geant4 requires a mandatory patch"
+fi
+
 echo "Checking for old installation..."
 if [ -d ${GEANT4DIR} ]; then
   cd ${GEANT4DIR}
@@ -449,15 +461,6 @@ cd ${GEANT4DIR}
 mv ../geant4-${VER} ${GEANT4SOURCEDIR}
 mkdir ${GEANT4BUILDDIR}
 
-
-
-# Some hardcoding of certain default patch conditions
-if [[ ${GEANT4CORE} == "geant4_v10.02.p03" ]]; then
-  GCC_MAIN_VERSION=$(gcc --version | grep gcc | awk '{ print $3 }' | awk -F. '{ print $1 }')
-  if [[ ${GCC_MAIN_VERSION} != "" ]] && [ ${GCC_MAIN_VERSION} -ge 11 ]; then
-    PATCH="on"
-  fi
-fi
 
 
 PATCHAPPLIED="Patch not applied"

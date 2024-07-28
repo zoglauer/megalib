@@ -41,7 +41,7 @@ class MIsotopeStore
   virtual ~MIsotopeStore();
 
   //! Load all isotopes form a standard MEGAlib isotope file
-  bool Load(MString FileName);
+  bool Load(MString FileName, bool ExcludeExcludedLines = false);
 
   //! Return the number of isotopes
   unsigned int GetNumberOfIsotopes() const { return m_Isotopes.size(); }

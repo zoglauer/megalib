@@ -12,9 +12,9 @@
 # Base definitions:
 #
 
-LIBRARY = FretalonBase
+LIBRARY := FretalonBase
 
-FILES = MFretalonRegistry \
+FILES := MFretalonRegistry \
 	MFileReadOuts \
 	MReadOut \
 	MReadOutElement \
@@ -43,9 +43,9 @@ FILES = MFretalonRegistry \
 	MCalibrationFitGaussLandau \
 	MCalibrationModel \
 
-SLOBJ = libFretalonBase.$(DLL)
+SLOBJ := libFretalonBase.$(DLL)
 
-LIBRARIES = \
+LIBRARIES := \
 	-lSivan \
 	-lGeomega \
 	-lCommonGui \
@@ -55,16 +55,16 @@ LIBRARIES = \
 # Derived definitions:
 #
 
-OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
-HEADERS=$(patsubst %, inc/%.h, $(FILES))
-SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+OBJECTS:=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS:=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB:=$(LB)/lib$(LIBRARY).$(DLL)
 
-DICTIONARYNAME=$(LIBRARY)_Dictionary
-DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
-DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
-LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
-ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
-ROOTPCM=lib$(LIBRARY)_rdict.pcm
+DICTIONARYNAME:=$(LIBRARY)_Dictionary
+DICTIONARY:=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT:=$(LB)/$(DICTIONARYNAME).o
+LINKDEF:=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP:=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM:=lib$(LIBRARY)_rdict.pcm
 
 
 #----------------------------------------------------------------

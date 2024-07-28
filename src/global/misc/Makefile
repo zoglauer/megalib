@@ -12,9 +12,9 @@
 # Base definitions:
 #
 
-LIBRARY = CommonMisc
+LIBRARY := CommonMisc
 
-FILES = MGlobal \
+FILES := MGlobal \
 	MAssert \
 	MCoordinateSystem \
 	MExceptions \
@@ -112,16 +112,16 @@ FILES = MGlobal \
 # Derived definitions:
 #
 
-OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
-HEADERS=$(patsubst %, inc/%.h, $(FILES))
-SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+OBJECTS:=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS:=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB:=$(LB)/lib$(LIBRARY).$(DLL)
 
-DICTIONARYNAME=$(LIBRARY)_Dictionary
-DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
-DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
-LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
-ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
-ROOTPCM=lib$(LIBRARY)_rdict.pcm
+DICTIONARYNAME:=$(LIBRARY)_Dictionary
+DICTIONARY:=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT:=$(LB)/$(DICTIONARYNAME).o
+LINKDEF:=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP:=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM:=lib$(LIBRARY)_rdict.pcm
 
 
 #----------------------------------------------------------------

@@ -51,7 +51,7 @@ if TotalRM.Read(TotalRMFileName) == False:
   print("Unable to open file: {}".format(TotalRMFileName.Data()))
   exit()
 
-Title = M.MString("Cross-sections for ") + Material
+Title = M.MString("Macroscopic cross-sections for ") + Material
 TotalRMHist = M.TH1D("Total", Title.Data(), NBins, Bins)
 for b in range(1, NBins+1): 
   TotalRMHist.SetBinContent(b, TotalRM.GetInterpolated(TotalRMHist.GetBinCenter(b)*1000))
@@ -67,7 +67,7 @@ TotalRMHist.SetMaximum(yMax*yMaxScaler)
 TotalRMHist.SetLineColor(1)
 TotalRMHist.SetLineWidth(5)
 TotalRMHist.SetXTitle("Energy [MeV]")
-TotalRMHist.SetYTitle("cross section [cm^{2}]")
+TotalRMHist.SetYTitle("cross section [1/cm]")
 
 
 PhotoRMFileName = M.MString("Xsection.Photo.") + Material + M.MString(".rsp")

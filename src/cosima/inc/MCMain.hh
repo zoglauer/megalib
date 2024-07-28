@@ -106,7 +106,9 @@ private:
   int m_ParallelID;
   /// Assigned fixed incarbation ID of the output file(s) 
   int m_IncarnationID;
-  
+  /// No timeout: Normally the simulation times out if no events are stored, this flag prevents this
+  bool m_NoTimeOut;
+
   /// Name of the parameter file
   MString m_ParameterFileName;
   /// Name of the macro file

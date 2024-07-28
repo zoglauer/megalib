@@ -52,24 +52,9 @@ class MResponseMultipleCompton : public MResponseBuilder
   void SetDoAbsorptions(const bool Flag = true) { m_DoAbsorptions = Flag; }
   //! Set whether or not absorptions should be considered
   void SetMaxNInteractions(const unsigned int MaxNInteractions) { m_MaxNInteractions = MaxNInteractions; }
-  
-  //! Initialize the response matrices and their generation
-  virtual bool Initialize();
-
-  //! Analyze th events (all if in file mode, one if in event-by-event mode)
-  virtual bool Analyze();
-    
-  //! Finalize the response generation (i.e. save the data a final time )
-  virtual bool Finalize();
-
 
   // protected methods:
  protected:
-
-  //! Save the response matrices
-  virtual bool Save();
-
-      
 
   bool IsTrackStart(MRESE& Start, MRESE& Central, double Energy);
   bool IsTrackStop(MRESE& Central, MRESE& Stop, double Energy);
@@ -126,6 +111,11 @@ class MResponseMultipleCompton : public MResponseBuilder
 
   // protected members:
  protected:
+  //! Minimum energy range
+  double m_EnergyMinimum;
+  //! Maximum energy range
+  double m_EnergyMaximum;
+
   //! Do or not to do absorptions
   bool m_DoAbsorptions;
   //! MaximumSequenceLength up to which absorptions are considered
@@ -139,33 +129,6 @@ class MResponseMultipleCompton : public MResponseBuilder
   double m_MaxTrackEnergyDifference;
   double m_MaxTrackEnergyDifferencePercent;
 
-  // The event/pdf matrices:
-  //!
-  MResponseMatrixO2 m_GoodBadTable;
-  //!
-  MResponseMatrixO4 m_PdfStartGood;
-
-  MResponseMatrixO4 m_PdfStartBad;
-
-  MResponseMatrixO6 m_PdfTrackGood;
-
-  MResponseMatrixO6 m_PdfTrackBad;
-
-  MResponseMatrixO4 m_PdfComptonScatterProbabilityGood;
-
-  MResponseMatrixO4 m_PdfComptonScatterProbabilityBad;
-
-  MResponseMatrixO4 m_PdfPhotoAbsorptionProbabilityGood;
-
-  MResponseMatrixO4 m_PdfPhotoAbsorptionProbabilityBad;
-
-  MResponseMatrixO6 m_PdfComptonGood;
-
-  MResponseMatrixO6 m_PdfComptonBad;
-
-  MResponseMatrixO4 m_PdfDualGood;
-
-  MResponseMatrixO4 m_PdfDualBad;
 
 
   // private members:

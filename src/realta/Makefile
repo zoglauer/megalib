@@ -12,26 +12,26 @@
 # Base definitions:
 #
 
-PROGRAM1 = realta
-MAIN1  = MRealtaMain
+PROGRAM1 := realta
+MAIN1  := MRealtaMain
 
-PROGRAM2 = eventtransmitter
-MAIN2 = MEventTransmitter
+PROGRAM2 := eventtransmitter
+MAIN2 := MEventTransmitter
 
-LIBRARY = Realta
+LIBRARY := Realta
 
-FILES = MSettingsRealta \
+FILES := MSettingsRealta \
 	MRealTimeAnalyzer \
 	MRealTimeEvent \
 
-LIBRARY_UI = RealtaGui
+LIBRARY_UI := RealtaGui
 
-FILES_UI = \
+FILES_UI := \
 	MGUIRealtaMain \
 	MGUINetwork \
 	MGUIAccumulation \
 
-LIBRARIES = \
+LIBRARIES := \
 	-lGeomega \
 	-lRevan \
 	-lRevanGui \
@@ -48,35 +48,35 @@ LIBRARIES = \
 # Derived definitions:
 #
 
-OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
-HEADERS=$(patsubst %, inc/%.h, $(FILES))
-SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+OBJECTS:=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS:=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB:=$(LB)/lib$(LIBRARY).$(DLL)
 
-DICTIONARYNAME=$(LIBRARY)_Dictionary
-DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
-DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
-LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
-ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
-ROOTPCM=lib$(LIBRARY)_rdict.pcm
-
-
-OBJECTS_UI=$(patsubst %, $(LB)/%.o, $(FILES_UI))
-HEADERS_UI=$(patsubst %, inc/%.h, $(FILES_UI))
-SHAREDLIB_UI=$(LB)/lib$(LIBRARY_UI).$(DLL)
-
-DICTIONARYNAME_UI=$(LIBRARY_UI)_Dictionary
-DICTIONARY_UI=$(LB)/$(DICTIONARYNAME_UI).cxx
-DICTIONARYOBJECT_UI=$(LB)/$(DICTIONARYNAME_UI).o
-LINKDEF_UI=$(LB)/$(DICTIONARYNAME_UI)_LinkDef.h
-ROOTMAP_UI=$(LB)/lib$(LIBRARY_UI).rootmap
-ROOTPCM_UI=lib$(LIBRARY_UI)_rdict.pcm
+DICTIONARYNAME:=$(LIBRARY)_Dictionary
+DICTIONARY:=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT:=$(LB)/$(DICTIONARYNAME).o
+LINKDEF:=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP:=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM:=lib$(LIBRARY)_rdict.pcm
 
 
-OBJECT_MAIN1=$(patsubst %, $(LB)/%.o, $(MAIN1))
-EXECUTABLE1=$(BN)/$(PROGRAM1)
+OBJECTS_UI:=$(patsubst %, $(LB)/%.o, $(FILES_UI))
+HEADERS_UI:=$(patsubst %, inc/%.h, $(FILES_UI))
+SHAREDLIB_UI:=$(LB)/lib$(LIBRARY_UI).$(DLL)
 
-OBJECT_MAIN2=$(patsubst %, $(LB)/%.o, $(MAIN2))
-EXECUTABLE2=$(BN)/$(PROGRAM2)
+DICTIONARYNAME_UI:=$(LIBRARY_UI)_Dictionary
+DICTIONARY_UI:=$(LB)/$(DICTIONARYNAME_UI).cxx
+DICTIONARYOBJECT_UI:=$(LB)/$(DICTIONARYNAME_UI).o
+LINKDEF_UI:=$(LB)/$(DICTIONARYNAME_UI)_LinkDef.h
+ROOTMAP_UI:=$(LB)/lib$(LIBRARY_UI).rootmap
+ROOTPCM_UI:=lib$(LIBRARY_UI)_rdict.pcm
+
+
+OBJECT_MAIN1:=$(patsubst %, $(LB)/%.o, $(MAIN1))
+EXECUTABLE1:=$(BN)/$(PROGRAM1)
+
+OBJECT_MAIN2:=$(patsubst %, $(LB)/%.o, $(MAIN2))
+EXECUTABLE2:=$(BN)/$(PROGRAM2)
 
 
 #----------------------------------------------------------------
