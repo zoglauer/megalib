@@ -60,7 +60,6 @@
 #include "G4NuclideTable.hh"
 
 #include "G4EmParameters.hh"
-
 // MEGAlib:
 #include "MStreams.h"
 
@@ -216,6 +215,8 @@ void MCPhysicsList::ConstructProcess()
         G4RadioactiveDecay* RadioactiveDecay = dynamic_cast<G4RadioactiveDecay*>(P);
         //RadioactiveDecay->SetICMode(true);  // Internal Conversion geant4 11  removed SetICM() method, as deprecated for some time and no longer used. ICM now set exclusively in G4PhotonEvaporation. Added printout of the flag of atomic relaxation.
         RadioactiveDecay->SetARM(true);  // Atomic Rearrangement, i.e. filling of shell vacancies
+	RadioactiveDecay->SetThresholdForVeryLongDecayTime(1.0e+60*CLHEP::year); // Ignore radioactive decays at rest of nuclides happening after this (very long) time threshold
+
         //RadioactiveDecay->SetHLThreshold(1.0E-9*second);  // Half life cut-off of isomeric states | no longer exist in g4 v11 , no track of that on the release notes 
       }
       
@@ -243,6 +244,10 @@ void MCPhysicsList::ConstructProcess()
   emParameters->SetPixe(true);
   emParameters->SetAuger(true);
   emParameters->SetDeexcitationIgnoreCut(false);
+  
+ 
+  
+  
   
   //remove the comments below if you want exactly the same paramameters as v10.02
   //Not sure of the result if you do that

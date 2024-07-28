@@ -205,7 +205,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("Decay"); m_KnownProcessID.push_back(c_ProcessIDDecay);
   
   m_KnownProcess.push_back("RadioactiveDecay"); m_KnownProcessID.push_back(c_ProcessIDRadioactiveDecay);
-  
+  m_KnownProcess.push_back("Radioactivation"); m_KnownProcessID.push_back(c_ProcessIDRadioactiveDecay);
+
   m_KnownProcess.push_back("LowEnergyIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
   m_KnownProcess.push_back("hLowEIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
   m_KnownProcess.push_back("ionIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
