@@ -32,6 +32,8 @@
 // Geant4:
 #include "G4SystemOfUnits.hh"
 #include "G4RadioactiveDecay.hh"
+#include "G4Radioactivation.hh"
+
 #include "G4ParticleDefinition.hh"
 #include "G4DecayTable.hh"
 #include "G4VDecayChannel.hh"
@@ -164,6 +166,9 @@ bool MCActivator::LoadCountsFiles()
 
   m_Rates.Reset();
 
+
+
+
   for (unsigned int i = 0; i < m_CountsFiles.size(); ++i) {
     mout<<"Loading and merging isotopes file "<<m_CountsFiles[i]<<endl;
     MCIsotopeStore Counts;
@@ -206,23 +211,65 @@ bool MCActivator::CalculateEquilibriumRates()
 {
   // Determine the activation after ActivationTime & Cool-down time
 
-  /*
+  
   // Some test
-  G4IonTable* IonTable = G4IonTable::GetIonTable();
-  int Z = 30;
-  for (int A = 60; A <= 72; ++A) {
-    G4Ions* Ion = dynamic_cast<G4Ions*>(IonTable->GetIon(Z, A, 0));
-    if (Ion == 0) continue;
-    //Ion->DumpTable();
+  /*G4IonTable* IonTable = G4IonTable::GetIonTable();
+
+  int Z = 70;
+  for (int A = 157; A <= 157; ++A) {
+    G4Ions* Ion = dynamic_cast<G4Ions*>(IonTable->GetIon(Z, A, 0.5293,G4Ions::G4FloatLevelBase::no_Float));
+    if (Ion == 0) {cout<<"ion not found !"<<endl; continue;}
+    Ion->DumpTable();
+    
+   
+    
+    cout<<"Life time :"<<IonTable->GetLifeTime(Z, A, 0,G4Ions::G4FloatLevelBase::plus_Y)<<endl;
+    G4ParticleDefinition* part = IonTable->GetIon(Z, A, 0,G4Ions::G4FloatLevelBase::plus_Y);
+    cout<<"Life time from PDG def:"<<part->GetPDGLifeTime()/s<<endl;
+
+
 
     G4RadioactiveDecay* Decay = new G4RadioactiveDecay();
     G4DecayTable* DecayTable = Decay->LoadDecayTable(*Ion);
     if (DecayTable == 0) continue;
     if (DecayTable->entries() == 0) continue;
     DecayTable->DumpInfo();
+    
+    //G4Radioactivation* Decay_bis = new G4Radioactivation();
+    //G4DecayTable* DecayTable_bis = Decay_bis->LoadDecayTable(*Ion);
+    //if (DecayTable_bis == 0) continue;
+    //if (DecayTable_bis->entries() == 0) continue;
+    //DecayTable_bis->DumpInfo();
+  
+  
+    const G4LevelManager* M = G4NuclearLevelData::GetInstance()->GetLevelManager(Z, A);
+    const G4NucLevel* NuclearLevel = M->NearestLevel(Ion->GetExcitationEnergy());
+    cout<<"Number of gammas: "<<NuclearLevel->NumberOfTransitions()<<endl;
+    cout<<"Number of transition from G4LevelManager: "<<M->NumberOfTransitions()<<endl;
+
+    for (int h = 0; h < int(NuclearLevel->NumberOfTransitions()); ++h) {
+                    cout<<"final excitation index : "<< NuclearLevel->FinalExcitationIndex(h)<<endl; 
+
+                    cout<<"Gamma energy: "<<M->NearestLevelEnergy(Ion->GetExcitationEnergy(),NuclearLevel->FinalExcitationIndex(h))/keV<<endl;
+		    cout<<"level density: "<<M->LevelDensity(Ion->GetExcitationEnergy())<<endl;
+
+		     
+		    double NewLevelEnergy =0.;
+        NewLevelEnergy = M->NearestLevelEnergy(M->NearestLevelEnergy(Ion->GetExcitationEnergy()) - M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h)));
+	cout<< "new level energy : " <<NewLevelEnergy<<endl;
+	const G4NucLevel* NewNuclearLevel = M->NearestLevel(M->NearestLevelEnergy(Ion->GetExcitationEnergy()) - M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h)));
+
+
+        if (NewNuclearLevel!=0){ cout<< "new Half life : "<< NewNuclearLevel->GetTimeGamma()<<endl;}
+        else {
+                  cout<<"Error: No nearest level found for: "<<Ion->GetParticleName()<<" Excitation: "<<M->NearestLevelEnergy(Ion->GetExcitationEnergy()) - M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))<<endl;
+                  cout<<"       This isotope is excluded from further analysis!"<<endl;
+
+               }
+		    }
   }
-  return true;
-  */
+  return true;*/
+  
   
 
   // We utilize G4RadioactiveDecay to retrieve the decay tables
@@ -241,7 +288,13 @@ bool MCActivator::CalculateEquilibriumRates()
     for (unsigned int i = 0; i < m_Rates.GetNIDs(v); ++i) {
       cout<<"Start: ID: "<<m_Rates.GetID(v, i)<<"  #Ex: "<<m_Rates.GetNExcitations(v, i)<<endl;      
 
-      if (m_Rates.GetID(v, i) == 72154 || m_Rates.GetID(v, i) == 71154 || m_Rates.GetID(v, i) == 70154 || m_Rates.GetID(v, i) == 73158 || m_Rates.GetID(v, i) == 74158) {
+      //73192 because it create W192 unknow isotope ?
+      //44090 because  Ru90 -> Tc90[0.000X]  with HL = 0 which lead to a bug when trying to get this isotope
+      // and then goes to Tc90[0.000Y] with HL 8.7s which lead to geant4 loop
+      // hope it will be corrected in the next patch (here v11.01)
+       
+      if (m_Rates.GetID(v, i) == 44090 || m_Rates.GetID(v, i) == 73192 )  
+      {
         cout<<"Warning: This element sends Geant4 in an infinite loop -- skipping!"<<endl;
         continue;
       }
@@ -322,7 +375,8 @@ bool MCActivator::CalculateEquilibriumRates()
               if (Tree[b].back().GetHalfLife() == numeric_limits<double>::max()) continue;
               
               //cout<<<<endl;
-              DecayTable = Decay->LoadDecayTable(*(Tree[b].back().GetDefinition()));
+	      const G4Ions* ion = dynamic_cast<const G4Ions*>((Tree[b].back().GetDefinition()));
+              DecayTable = Decay->LoadDecayTable(ion);
               if (DecayTable == 0) {
                 mout<<"Error: Decay table not found for: "<<m_Rates.GetID(v, i)<<endl;
                 continue;
@@ -356,6 +410,14 @@ bool MCActivator::CalculateEquilibriumRates()
                       MCActivatorParticle NewParticle;
                       NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(ParticleDef->GetParticleName()), 
                                                   ExcitationEnergy);
+		      //NewParticle.GetDefinition()->DumpTable();
+		      // have to compute get the Halflife with the good def (ex Tb145[0.000Y] and not Tb145 ) #g4v11.01 bug
+		      DetermineHalfLife(NewParticle.GetDefinition(), HalfLife, ExcitationEnergy, false);
+		      //cout<< "Name :" <<NewParticle.GetDefinition()->GetParticleName()<<endl;
+		      //cout<< NewParticle.GetDefinition()->GetPDGLifeTime()*log(2.0)/s<<" sec"<<endl;
+		      //cout<< "Name : " << ParticleName<<endl;
+		      //cout<< ParticleDef->GetPDGLifeTime()*log(2.0)/s<<" sec"<<endl; 		  
+ 		  
                       if (Tree[b].back().GetBranchingRatio()* Channel->GetBR() > 1.01) {
                         mout<<"Error (DecayLoop): Branching ratio of "<<Tree[b].back().GetName()<<" larger than one: "<<Tree[b].back().GetBranchingRatio()* Channel->GetBR()<<endl;
                         continue;
@@ -364,6 +426,7 @@ bool MCActivator::CalculateEquilibriumRates()
                       //cout<<"Adding to branch "<<b<<", after "<<ABranch.back().GetName()<<": "<<ParticleDef->GetParticleName()<<" -> BR="<<Channel->GetBR()<<endl;
                       NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()* Channel->GetBR());
                       NewParticle.SetHalfLife(HalfLife);
+		      //cout<<"HALFLIFE after SetHalfLife = "<<NewParticle.GetHalfLife()<<endl;
                       
                       //cout<<"ID: "<<MCSteppingAction::GetParticleType(Nucleus->GetParticleName())<<":"<<Nucleus->GetExcitationEnergy()<<endl;
                       ABranch.push_back(NewParticle);
@@ -418,50 +481,55 @@ bool MCActivator::CalculateEquilibriumRates()
 
             NChanges = 0;
             unsigned int b_max = Tree.size(); // The tree will grow, thus do not go beyond the original max size --- we will visit the new branches later!
+	    
+
+	    
             for (unsigned int b = 0; b < b_max; ++b) {
-              if (Tree[b].size() == 0 || Tree[b].back().GetExcitation() < 1.0*keV) continue;
-              
+              if (Tree[b].size() == 0 || Tree[b].back().GetExcitation() < 1.0*keV) {
+	      continue;
+                       }
               // We have to make sure that in the first round only all immidiate decays are handled, which replace individial elements
               // in the chain, only in the second round we ONCE add to the chain and then test immidiate decays again
               if (Tree[b].back().GetHalfLife() > m_HalfLifeCutOff && ImmidiateDecayRound == true) {
                 continue;
               }
-              
               G4Ions* Nucleus = dynamic_cast<G4Ions*>(Tree[b].back().GetDefinition()); 
-              
+
+	      
               bool LevelsOK = true;
               //G4NucLearLevelManager* M = G4NucLevelStore::GetInstance()->GetManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
               const G4LevelManager* M = G4NuclearLevelData::GetInstance()->GetLevelManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
-	      
+
+
 	      //if (M->IsValid() == true) {
-	      bool IsValid = true; // IsValid() Method no longer exist for G4LevelManager, is all level are registered now ? 
-	      if (IsValid == true) {
+	      if (M != nullptr) {
+               const G4NucLevel* NuclearLevel = M->NearestLevel(Nucleus->GetExcitationEnergy());
 
                 //M->PrintAll();
-                const G4NucLevel* NuclearLevel = M->NearestLevel(Nucleus->GetExcitationEnergy());
                 cout<<"Nearest level: "<<M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())/keV<<" vs. "<<Nucleus->GetExcitationEnergy()/keV<<endl;
                 if (NuclearLevel != 0) {
                   // Create new levels...
                   cout<<"Number of gammas: "<<NuclearLevel->NumberOfTransitions()<<endl;
+
                   for (int h = 0; h < int(NuclearLevel->NumberOfTransitions()); ++h) {
                     vector<MCActivatorParticle> ABranch = Tree[b];
-                    cout<<"Gamma energy: "<<M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))/keV<<endl;
+                    //cout<<"Gamma energy: "<<M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))/keV<<endl;
                     
                     double NewLevelEnergy = 0.0;
                     double NewHalfLife = 0.0;
-                    if (fabs(M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) - M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))) > 1*keV && /* NuclearLevel->GammaEnergies()[h] > 1*keV && */
+                    if (/*fabs(M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) - M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))) > 1*keV &&*/ /* NuclearLevel->GammaEnergies()[h] > 1*keV && */
                         M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) != M->MaxLevelEnergy()) { // table has some significant uncertainties...
                       // Make sure we know the exact energy of the new level:
-                      const G4NucLevel* NewNuclearLevel = M->NearestLevel(M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) - M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h)));
+                      const G4NucLevel* NewNuclearLevel = M->GetLevel(NuclearLevel->FinalExcitationIndex(h));
                       if (NewNuclearLevel != 0) {
-                        NewLevelEnergy = M->NearestLevelEnergy(M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) - M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h)));
-                        if (NewNuclearLevel->GetTimeGamma () > m_HalfLifeCutOff) {
-                          NewHalfLife = NewNuclearLevel->GetTimeGamma ();
+                        NewLevelEnergy = M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h));
+                        if (NewNuclearLevel->GetTimeGamma() > m_HalfLifeCutOff) {
+                          NewHalfLife = NewNuclearLevel->GetTimeGamma();
                         } else {
                           NewHalfLife = 0.0;
                         }
                       } else {
-                        mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<<M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) - M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))<<endl;
+                        mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<< M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))<<endl;
                         mout<<"       This isotope is excluded from further analysis!"<<endl;
                         LevelsOK = false;                        
                       }
@@ -515,6 +583,7 @@ bool MCActivator::CalculateEquilibriumRates()
                       cout<<"Adding entry with energy: "<<NewParticle.GetExcitation()/keV<<endl;
                     }
                   } // all possible gammas
+		  
                   if (NuclearLevel->NumberOfTransitions() > 0 && LevelsOK == true) {
                     Tree[b].clear(); // mark for removal
                     TreeChanged = true;
@@ -1284,10 +1353,10 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
       const G4LevelManager* M = G4NuclearLevelData::GetInstance()->GetLevelManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
 
       //M->PrintAll();
-      bool IsValid = true; // IsValid() Method no longer exist for G4LevelManager, is all level are registered now ? 
-      if (IsValid == true) {
+      if (M!=nullptr) {
+       const G4NucLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
+
         //const G4NucLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
-	const G4NucLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
 
         //Level->PrintAll();
         if (Level != 0) {
