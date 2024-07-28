@@ -1,6 +1,6 @@
 # Set all MEGAlib-related environment variables
 
-#if [ -n "$ZSH_VERSION" ]; then emulate -L bash; fi
+if [ -n "$ZSH_VERSION" ]; then emulate -L ksh; fi
 
 # Store command line as array
 MTMP_CMD=( "$@" )
@@ -97,6 +97,7 @@ if [ "${MTMP_GEANT4PATH}" != "${MTMP_NODEFAULT}" ]; then
   if (test -f ${MTMP_GEANT4PATH}/bin/geant4.sh); then
     
     if [[ -n $ZSH_VERSION ]]; then
+      BASH_SOURCE=()
       BASH_SOURCE[0]="${MTMP_GEANT4PATH}/bin/geant4.sh" emulate ksh -c '. "${BASH_SOURCE[0]}"'
       PATHTOGEANT4MAKE="${MTMP_GEANT4PATH}/share/Geant4/geant4make"
       BASH_SOURCE[0]="${PATHTOGEANT4MAKE}/geant4make.sh" emulate ksh -c 'source "${BASH_SOURCE[0]}"'
