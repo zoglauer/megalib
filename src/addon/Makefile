@@ -15,7 +15,7 @@
 # Definitions:
 #
 
-PRGSX = \
+PRGSX := \
 	$(BN)/SensitivityOptimizer \
 	$(BN)/Mask \
 	$(BN)/ConvertMGeant \
@@ -37,18 +37,18 @@ PRGSX = \
 	$(BN)/IsotopeFileSplitter \
 	$(BN)/VariableSourceDetector \
 
-FITS = \
+FITS := \
 	$(BN)/TraFitsConverter \
 	$(BN)/ConvertMGGPOD \
 	$(BN)/ResponseToXSPEC \
 	
-MPI = $(BN)/bundler
+MPI := $(BN)/bundler
 
 
 
-MLIBS = -L$(LB) -lMimrecGui -lMimrec -lRevanGui -lRevan -lSivanGui -lSivan -lSpectralyzeGui -lSpectralyze -lGeomegaGui -lGeomega -lCommonMisc -lCommonGui  
+MLIBS := -L$(LB) -lMimrecGui -lMimrec -lRevanGui -lRevan -lSivanGui -lSivan -lSpectralyzeGui -lSpectralyze -lGeomegaGui -lGeomega -lCommonMisc -lCommonGui  
 
-EVERYTHING = $(PRGSX) $(FITS)
+EVERYTHING := $(PRGSX) $(FITS)
 
 #----------------------------------------------------------------
 # Commands:

@@ -41,7 +41,8 @@ help() {
   #echo "    -p:            use this parallel ID without checking for the cosima output files"
   #echo "    -i:            use this incarnation ID without checking for the cosima output files"
   #echo "    -r:            use random IDs"
-  echo "    -z:            zip the simulations files"
+  echo "    -z:            Not used: zgip the simulations files (already default)"
+  echo "    -u:            Do not gzip the simulations files (default is gzip them)"
   echo "    -e:            Use the given special cosima executable instead"
   echo "    -a:            Abstain from creating a concatenation sim file"
   echo "    -w:            If set, wait until all jobs have finished."
@@ -71,7 +72,7 @@ RandomIDs="no"
 Nice=0;
 Wait="no"
 Concatenate="yes"
-Zip="no"
+Zip="yes"
 Delay=0.5
 ExecuteString="cosima"
 Executable="cosima"
@@ -123,6 +124,10 @@ while [ $# -gt 0 ] ; do
   -z|--zip)
     Found=1;
     Zip="yes"
+    ;;
+  -u|--unzip)
+    Found=1;
+    Zip="no"
     ;;
   -r|--random)
     Found=1;
@@ -392,6 +397,7 @@ echo "TAGS=( )" >> ${KillFileName}
 
 
 # Start the sims
+FirstTag=""
 for (( i=1; i <= ${Threads}; i+=1 )); do
   # First check if we are ready to launch a new thread
   mwait -i=${Max} -p=cosima
@@ -404,8 +410,8 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   for N in `seq 1 16`; do Tag="${Tag}$(( 1 + RANDOM%9 ))"; done
   
   Cmd="${ExecuteString} -v 0 -s ${Seed} -p ${ThreadsID} -f ${i} -t ${Tag}"
-  if [[ "${Zip}" == "yes" ]]; then
-    Cmd="${Cmd} -z"
+  if [[ "${Zip}" == "no" ]]; then
+    Cmd="${Cmd} -u"
   fi
   if [[ ${ParallelID} -gt 0 ]]; then
     Cmd="${Cmd} -p ${ParallelID}"
@@ -429,6 +435,10 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   sleep ${Delay}
   
   echo "TAGS+=( ${Tag} )"  >> ${KillFileName}
+
+  if [[ ${FirstTag} == "" ]]; then
+    FirstTag=${Tag}
+  fi
 done
 
 cat  >> ${KillFileName} <<EOF
@@ -477,10 +487,33 @@ if [[ ${Concatenate} == yes ]]; then
     fi
 
     # Wait until the first such file is created
-    while ( test ! -f ${FirstFileName} ); do
-      sleep 1
-      echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..."
-    done
+    FirstPID=$(ps -Af | grep "[ ]${FirstTag}" | grep -v "bash -c " | awk '{ print $2 }')
+    if [[ ${FirstPID} == "" ]] && [ ! -f ${FirstFileName} ]; then
+      echo ""
+      echo "Error:"
+      echo "Cosima is not running, and no sim file has been created."
+      echo "Most likely cosima has crashed during startup."
+      echo "Please do a test run with just cosima before running mcosima."
+      echo ""
+      echo "Exiting"
+      exit 1
+    else
+      while [[ ${FirstPID} == "" ]] && [ ! -f ${FirstFileName} ]; do
+        sleep 1
+        echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..."
+        FirstPID=$(ps -Af | grep "[ ]${FirstTag}" | grep -v "bash -c " | awk '{ print $2 }')
+      done
+    fi
+
+    if [ ! -f ${FirstFileName} ]; then
+      echo ""
+      echo "Error:"
+      echo "No sim file has been created."
+      echo "Please do a test run with just cosima before running mcosima,"
+      echo ""
+      echo "Exiting"
+      exit 1
+    fi
 
     # Wait until the header is written
     if [[ "${Zip}" == "yes" ]]; then

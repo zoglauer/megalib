@@ -25,6 +25,7 @@ confhelp() {
   echo " "
   echo "--debug=[off/no, on/yes, strong/hard]"
   echo "    Default is on."
+  echo "    Strong enables the address sanitizer on Linux with gcc to detect memory access errors."
   echo " "
   echo "--compiler=[gcc, clang, icc]"
   echo "    This currently only works on Linux. Default is gcc. On a Mac always the default compiler is used."
@@ -483,9 +484,9 @@ if [[ ${DEBUG} == normal ]] || [[ ${DEBUG} == strong ]]; then
   OPTIONS+=" -g"
   if  [[ ${DEBUG} == strong ]]; then
     OPTIONS+=" -DDEBUG1"
-  fi
-  if [[ ${COMP} == gcc ]] && [[ ${OS} == linux ]]; then
-    OPTIONS+=" -fstack-protector-all"
+    if [[ ${COMP} == gcc ]] && [[ ${OS} == linux ]]; then
+      OPTIONS+=" -fsanitize=address"
+    fi
   fi
 fi
                 
@@ -514,9 +515,9 @@ echo "# Section A: Additional libraries" >> config/Makefile.options
 echo "# " >> config/Makefile.options
 echo "# Important: Don't modify this sections by yourself " >> config/Makefile.options
 echo " " >> config/Makefile.options
-echo "GEANT4INSTALLED  = ${Geant4Found}" >> config/Makefile.options
-echo "HEASOFTINSTALLED = ${FitsIOFound}" >> config/Makefile.options
-echo "MPIINSTALLED = ${MPIFound}" >> config/Makefile.options
+echo "GEANT4INSTALLED  := ${Geant4Found}" >> config/Makefile.options
+echo "HEASOFTINSTALLED := ${FitsIOFound}" >> config/Makefile.options
+echo "MPIINSTALLED     := ${MPIFound}" >> config/Makefile.options
 echo " " >> config/Makefile.options
 
 echo "# " >> config/Makefile.options
@@ -537,7 +538,7 @@ if [[ ${ARCH} == linux ]]; then
 fi
 echo "Please see the file config/Makefile.options for more optimization options for the Intel and GNU compiler"
 echo "" >> config/Makefile.options
-echo "OPT = ${OPTIONS}" >> config/Makefile.options
+echo "OPT := ${OPTIONS}" >> config/Makefile.options
 if ( [ $Geant4Found -eq 0 ] ); then 
     echo "$G4DEBUG" >> config/Makefile.options
 fi
@@ -550,10 +551,10 @@ echo "#            If you have anything else, set it in Makefile.user " >> confi
 echo "# " >> config/Makefile.options
 echo "" >> config/Makefile.options
 if ( [ $Geant4OpenGLFound -eq 0 ] ); then 
-    echo "G4VIS_USE_OPENGLX=1" >> config/Makefile.options
+    echo "G4VIS_USE_OPENGLX  := 1" >> config/Makefile.options
 fi
 if ( [ $Geant4DawnFileFound -eq 0 ] ); then 
-    echo "G4VIS_USE_DAWNFILE=1" >> config/Makefile.options
+    echo "G4VIS_USE_DAWNFILE := 1" >> config/Makefile.options
 fi
 echo "" >> config/Makefile.options
 
@@ -622,6 +623,16 @@ fi
 echo ""
 echo "Removing old build..."
 make clean
+
+# Store configuration
+echo ""
+echo "Storing configuration..."
+rm -f config/Configuration.txt
+echo "COMPILER=$(gcc --version | head -n 1)" >> config/Configuration.txt
+echo "PYTHON3=$(python3 --version)" >> config/Configuration.txt
+echo "ROOT=$(root-config --version)" >> config/Configuration.txt
+echo "GEANT4=$(geant4-config --version)" >> config/Configuration.txt
+
 
 echo ""
 echo ""

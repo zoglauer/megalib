@@ -68,6 +68,9 @@ MResponseMultipleComptonEventFile::MResponseMultipleComptonEventFile()
   m_MaxTrackEnergyDifference = 30; // keV
   m_MaxTrackEnergyDifferencePercent = 0.1;
   
+  m_EnergyMinimum = 100; // keV
+  m_EnergyMaximum = 10000; // keV
+
   // We can save much more frequently here, since the files are a lot smaller
   m_SaveAfter = numeric_limits<long>::max();
   
@@ -102,7 +105,9 @@ MString MResponseMultipleComptonEventFile::Options()
 {
   ostringstream out;
   out<<"             initial:   use the path to the initial IA (default: true)"<<endl;
-  
+  out<<"             emin:                  minimum energy (default: 100 keV)"<<endl;
+  out<<"             emax:                  maximum energy (default: 10000 keV)"<<endl;
+
   return MString(out);
 }
 
@@ -150,6 +155,10 @@ bool MResponseMultipleComptonEventFile::ParseOptions(const MString& Options)
       } else {
         mout<<"Error: Unrecognized value ("<<Value<<") for option "<<Value<<endl;
       }
+    } else if (Split2[i][0] == "emin") {
+      m_EnergyMinimum = stod(Value);
+    } else if (Split2[i][0] == "emax") {
+      m_EnergyMaximum = stod(Value);
     } else {
       mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
       return false;
@@ -160,6 +169,8 @@ bool MResponseMultipleComptonEventFile::ParseOptions(const MString& Options)
   mout<<endl;
   mout<<"Choosen options for creating TMVA data files:"<<endl;
   mout<<"  Path to first IA:          "<<(m_UsePathToFirstIA == true ? "true" : "false")<<endl;
+  mout<<"  Minimum energy:            "<<m_EnergyMinimum<<endl;
+  mout<<"  Maximum energy:            "<<m_EnergyMaximum<<endl;
   mout<<endl;
   
   return true;
@@ -274,7 +285,12 @@ bool MResponseMultipleComptonEventFile::Analyze()
       mdebug<<"CreateResponse: Too many hits: "<<SequenceLength<<endl;
       continue;
     }
-    
+
+    if (RE->GetEnergy() < m_EnergyMinimum || RE->GetEnergy() > m_EnergyMaximum) {
+      mdebug<<"CreateResponse: Energy out of bounds!"<<endl;
+      continue;
+    }
+
     if (RE->GetRejectionReason() == MRERawEvent::c_RejectionTotalEnergyOutOfLimits ||
         RE->GetRejectionReason() == MRERawEvent::c_RejectionLeverArmOutOfLimits ||
         RE->GetRejectionReason() == MRERawEvent::c_RejectionEventIdOutOfLimits) {

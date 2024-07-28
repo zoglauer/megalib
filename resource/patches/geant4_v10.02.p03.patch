@@ -1,3 +1,15 @@
+diff -rupN geant4_v10.02.p03/geant4_v10.02.p03-source/cmake/Modules/Geant4InstallData.cmake geant4_v10.02.p03_patched/geant4_v10.02.p03-source/cmake/Modules/Geant4InstallData.cmake
+--- geant4_v10.02.p03/geant4_v10.02.p03-source/cmake/Modules/Geant4InstallData.cmake	2017-01-27 04:25:00.000000000 -0800
++++ geant4_v10.02.p03_patched/geant4_v10.02.p03-source/cmake/Modules/Geant4InstallData.cmake	2023-02-17 10:38:59.000000000 -0800
+@@ -99,7 +99,7 @@
+ # retrieving them globally
+ #-----------------------------------------------------------------------
+ # Geant4 Data Repository
+-set(GEANT4_DATASETS_URL "http://geant4.cern.ch/support/source")
++set(GEANT4_DATASETS_URL "https://cern.ch/geant4-data/datasets")
+
+ # Where to install data in the build tree
+ set(GEANT4_BUILD_FULL_DATADIR ${PROJECT_BINARY_DIR}/data)
 diff -rupN geant4_v10.02.p03/geant4_v10.02.p03-source/source/persistency/ascii/src/G4tgrEvaluator.cc geant4_v10.02.p03_patched/geant4_v10.02.p03-source/source/persistency/ascii/src/G4tgrEvaluator.cc
 --- geant4_v10.02.p03/geant4_v10.02.p03-source/source/persistency/ascii/src/G4tgrEvaluator.cc	2017-01-27 04:25:00.000000000 -0800
 +++ geant4_v10.02.p03_patched/geant4_v10.02.p03-source/source/persistency/ascii/src/G4tgrEvaluator.cc	2022-03-18 13:06:28.050991804 -0700
