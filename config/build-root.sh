@@ -24,7 +24,7 @@ CONFIGUREOPTIONS+=" -Dopengl=ON"
 # Mathmore -- needed for fitting, e.g. ARMs"
 CONFIGUREOPTIONS+=" -Dmathmore=ON"
 # Minuit2 -- needed for parallel fitting with melinator
-CONFIGUREOPTIONS+=" -Dminuit2=ON"
+# Minuit 2 is default startin g ROOT 6.30: CONFIGUREOPTIONS+=" -Dminuit2=ON"
 # XFT -- needed for smoothed fonts
 CONFIGUREOPTIONS+=" -Dxft=ON"
 # Afterimage -- support to draw images in pads and save as png, etc.
