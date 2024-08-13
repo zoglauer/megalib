@@ -35,6 +35,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MExceptions.h"
 #include "MResponseMatrixAxis.h"
 #include "MResponseMatrixAxisSpheric.h"
 
@@ -429,7 +430,13 @@ bool MResponsePolarizationBinnedMode::Analyze()
 { 
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
-  
+ 
+  // This should never happen, but in case the analysis failed more badly:
+  if (m_SiEvent == nullptr) {
+    throw MExceptionPointerIsInvalid("m_SiEvent", m_SiEvent);
+    return false;
+  }
+
   // We need to have at least an "INIT" in the simulation file per event 
   if (m_SiEvent->GetNIAs() == 0) {
     return true;
