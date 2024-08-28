@@ -202,6 +202,9 @@ public:
   /// Return true, if the far field transmission probability file could be set and read correctly
   bool SetFarFieldTransmissionProbability(const MString& FileName);
 
+
+  /// Set the Earth occultation option to true
+  bool SetEarthOccultation(double Theta);
   
   /// Return true, if the successor flag couls be set correctly
   bool SetIsSuccessor(const bool& IsSuccessorFlag) { m_IsSuccessor = IsSuccessorFlag; return true; }
@@ -747,6 +750,11 @@ private:
   
   /// Flag indicating we should apply the far field transmission probabilities
   bool m_UseFarFieldTransmissionProbability;
+  /// Flag indicating we should apply the Earth occultation
+  bool m_UseEarthOccultation;
+  /// Theta max use for the Earth Occultation
+  double m_ThetaMaxEarthOccultation;
+  
   /// Far field transmission probabilities
   MFunction2D m_FarFieldTransmissionProbability;
   
