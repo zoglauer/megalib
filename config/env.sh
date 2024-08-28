@@ -2,13 +2,8 @@
 
 if [ -n "$ZSH_VERSION" ]; then emulate -L ksh; fi
 
-# Store command line
-MTMP_CMD=""
-while [[ $# -gt 0 ]] ; do
-  MTMP_CMD="${MTMP_CMD} $1"
-  shift
-done
-
+# Store command line as array
+MTMP_CMD=( "$@" )
 
 # Default options:
 MTMP_NODEFAULT="!@#$%"
@@ -21,7 +16,7 @@ MTMP_HEADASPATH=${MTMP_NODEFAULT}
 MTMP_MEGALIBPATH=${MTMP_NODEFAULT}
 
 # Overwrite default options with user options:
-for C in ${MTMP_CMD}; do
+for C in "${MTMP_CMD[@]}"; do
   if [[ ${C} == *-p*=* ]]; then
     MTMP_PREFIX=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-r*=* ]]; then
@@ -100,12 +95,17 @@ if [ "${MTMP_GEANT4PATH}" != "${MTMP_NODEFAULT}" ]; then
   fi
 
   if (test -f ${MTMP_GEANT4PATH}/bin/geant4.sh); then
-    source ${MTMP_GEANT4PATH}/bin/geant4.sh > /dev/null
-    PATHTOGEANT4MAKE=${MTMP_GEANT4PATH}/share/Geant4-`${MTMP_GEANT4PATH}/bin/geant4-config --version`/geant4make
-    MTMP_HERE=`pwd`
-    cd ${PATHTOGEANT4MAKE}
-    source geant4make.sh
-    cd ${MTMP_HERE}
+    
+    if [[ -n $ZSH_VERSION ]]; then
+      BASH_SOURCE=()
+      BASH_SOURCE[0]="${MTMP_GEANT4PATH}/bin/geant4.sh" emulate ksh -c '. "${BASH_SOURCE[0]}"'
+      PATHTOGEANT4MAKE="${MTMP_GEANT4PATH}/share/Geant4/geant4make"
+      BASH_SOURCE[0]="${PATHTOGEANT4MAKE}/geant4make.sh" emulate ksh -c 'source "${BASH_SOURCE[0]}"'
+    else
+      source "${MTMP_GEANT4PATH}/bin/geant4.sh"
+      PATHTOGEANT4MAKE="${MTMP_GEANT4PATH}/share/Geant4/geant4make"
+      source "${PATHTOGEANT4MAKE}/geant4make.sh"
+    fi
 
     if [[ `uname -a` == *Darwin* ]]; then
       export LD_LIBRARY_PATH=${G4LIB}/..:${LD_LIBRARY_PATH}
@@ -113,19 +113,10 @@ if [ "${MTMP_GEANT4PATH}" != "${MTMP_NODEFAULT}" ]; then
     fi
 
     export G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION=1
-  elif (test -f ${MTMP_GEANT4PATH}/env.sh); then
-    source ${MTMP_GEANT4PATH}/env.sh > /dev/null  
-
-    export LD_LIBRARY_PATH=${G4INSTALL}/lib/${G4SYSTEM}:${LD_LIBRARY_PATH}
-    if [[ `uname -a` == *Darwin* ]]; then
-      export DYLD_LIBRARY_PATH=${G4INSTALL}/lib/${G4SYSTEM}/lib:${LD_LIBRARY_PATH}
-    fi
-
-    export G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION=1
   else
     echo " " 
-    echo "WARNING: geant4.sh or env.sh not found in Geant4 directory: ${MTMP_GEANT4PATH}/bin"
-    echo "         Assuming we are currently installing Geant4 otherwise make sure to run \"./Configure\" (Geant4 < 9.5) or \"cmake install\" (Geant4 >= 9.5)!"
+    echo "WARNING: geant4.sh not found in Geant4 directory: ${MTMP_GEANT4PATH}/bin"
+    echo "         Please make sure Geant4 is installed."
     echo ""
     G4INSTALL=${MTMP_GEANT4PATH}
   fi 

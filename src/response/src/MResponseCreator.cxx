@@ -364,22 +364,48 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     cout<<Usage.str()<<endl;
     return false;
   }
+  
   if (m_GeometryFileName == g_StringNotDefined) {
     cout<<"Error: No geometry file name given!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
+  } else {
+    if (MFile::Exists(m_GeometryFileName) == false) {
+      cout<<"Error: The geometry file does not exist: "<<m_GeometryFileName<<endl;
+      return false;
+    }
   }
+  
   if (m_FileName == g_StringNotDefined) {
     cout<<"Error: No file name given!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
+  } else {
+    if (MFile::Exists(m_FileName) == false) {
+      cout<<"Error: The data file does not exist: "<<m_FileName<<endl;
+      return false;
+    }
   }
+
   if (m_ResponseName == g_StringNotDefined) {
     cout<<"Error: No response name given!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
 
+  if (m_RevanCfgFileName != g_StringNotDefined) {
+    if (MFile::Exists(m_RevanCfgFileName) == false) {
+      cout<<"Error: The revan configuration file does not exist: "<<m_RevanCfgFileName<<endl;
+      return false;
+    }
+  }
+
+  if (m_MimrecCfgFileName != g_StringNotDefined) {
+    if (MFile::Exists(m_MimrecCfgFileName) == false) {
+      cout<<"Error: The mimrec configuration file does not exist: "<<m_MimrecCfgFileName<<endl;
+      return false;
+    }
+  }
 
   // Launch the different response generators:
   if (m_Mode == c_ModeClusteringDSS) {

@@ -54,6 +54,12 @@ class MFileEventsEvta : public MFileEvents
   //! Save the OI information
   void SaveOI(bool SaveOI = true) { m_SaveOI = SaveOI; }
 
+  //! Return the number of simulated events
+  //! Attention: This information is only complete after all files have been scanned,
+  //! i.e. after GetEvents has been called for all events!
+  //! In addition, this is the number for the total file(s), NOT up to the just read event!!
+  virtual long GetSimulatedEvents();
+
   // protected methods:
  protected:
   //! Update the observation times using the given event

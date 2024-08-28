@@ -46,7 +46,7 @@ class MSimCluster
   int GetDetector();
   double GetTime();
   //! Return all origins
-  vector<int> GetOrigins() const;
+  vector<unsigned int> GetOrigins() const;
   //! Return the volume sequence of this hit
   MDVolumeSequence* GetVolumeSequence();
 
@@ -64,7 +64,7 @@ class MSimCluster
 
   MString ToString();
 
-  bool HasOrigin(int Origin);
+  bool HasOrigin(unsigned int Origin);
 
   // protected methods:
  protected:
@@ -93,7 +93,7 @@ class MSimCluster
   //! Time of the deposit
   double m_Time;           
   //! Particles from these vertices (= origins) contributed to this hit
-  vector<int> m_Origins; 
+  vector<unsigned int> m_Origins; 
   //! Volume history of theis hit
   MDVolumeSequence* m_VolumeSequence;   
   

@@ -11,7 +11,7 @@ MAIN_DIR="$(pwd)"
 MEGALIB_BRANCH="feature/dee2022"
 
 # Mass model
-MASSMODEL_DIR=${MAIN_DIR}/massmodel-cosi-smex-v11
+MASSMODEL_DIR=${MAIN_DIR}/massmodel
 MASSMODEL_SIMS=${MASSMODEL_DIR}/COSISMEX.geo.setup
 MASSMODEL_ANALYSIS=${MASSMODEL_DIR}/COSISMEX.O64.geo.setup
 
@@ -34,7 +34,7 @@ BACKGROUND_TRAPPEDDECAY_SIMS=400
 # Sources
 PS_DIR=${MAIN_DIR}/PointSources
 PS_ANGLES="0 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180"
-PS_ENERGIES="1808.7 1173.2 1332.5 100 130 200 350 500 550 700 1000 1300 2000 3500 5000 7000 10000"
+PS_ENERGIES="1808.7 1157.02 1173.2 1332.5 100 130 200 350 500 550 700 1000 1300 2000 3500 5000 7000 10000"
 PS_EVENTS=100000000
 
 # Revan
@@ -207,6 +207,14 @@ if [[ ${RUN_OPTIMIZER} == "TRUE" ]]; then
   cp ${MEGALIB}/resource/examples/advanced/Pipeline/OptimizerMimrec.cfg .
   cp ${MEGALIB}/resource/examples/advanced/Pipeline/OptimizerNarrowLine.sh .
 
+  # In case the simulation got interrupted, the concatenation files might not exist or be wrong.
+  # Thus recreate them
+  mtraconcatter LeptonicBackground.p1.inc*
+  mtraconcatter PhotonicBackground.p1.inc*
+  mtraconcatter HadronicBackground.p1.inc*
+  mtraconcatter HadronicBackgroundDecay.p1.inc*
+  mtraconcatter TrappedHadronicBackgroundDecay.p1.inc*
+
   echo "Getting leptonic observation time"
   TIME_LEPTONIC=$(mtime LeptonicBackground.p1.inc* | grep "Observation" | awk -F: '{ print $2 }' | xargs)
   echo "Getting photonic observation time"
@@ -250,7 +258,7 @@ if [[ ${RUN_OPTIMIZER} == "TRUE" ]]; then
   echo "backgroundall=\"-b \${backgrounddir}/TrappedHadronicBackgroundDecay.p1.tra.gz ${TIME_TRAPPED_DECAY} -b \${backgrounddir}/HadronicBackgroundDecay.p1.tra.gz ${TIME_HADRONIC_DECAY} -b \${backgrounddir}/PhotonicBackground.p1.tra.gz ${TIME_PHOTONIC} -b \${backgrounddir}/HadronicBackground.p1.tra.gz ${TIME_HADRONIC_PROMPT} -b \${backgrounddir}/LeptonicBackground.p1.tra.gz ${TIME_LEPTONIC}\" " >> ${OPTI}
   echo " " >> ${OPTI}
 
-  echo "Starting optimizer conitinuum"
+  echo "Starting optimizer continuum"
   bash OptimizerContinuum.sh &
   echo "Getting optimizer narrow lines"
   bash OptimizerNarrowLine.sh &

@@ -75,7 +75,7 @@ MFileResponse::MFileResponse() : MParser(' ', false)
   m_NumberOfSimulatedEvents = 0;
   m_FarFieldStartArea = 0;
   m_SpectralType = "";
-  m_SpectralParameters.clear();
+  m_BeamType = "";
 }
 
 
@@ -121,9 +121,10 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
         m_NumberOfSimulatedEvents = T.GetTokenAtAsLong(1);
       } else if (T.GetTokenAt(0) == "SA") {
         m_FarFieldStartArea = T.GetTokenAtAsDouble(1);
-      } else if (T.GetTokenAt(0) == "SM") {
-        m_SpectralType = T.GetTokenAtAsString(1);
-        m_SpectralParameters = T.GetTokenAtAsDoubleVector(2);
+      } else if (T.GetTokenAt(0) == "SP") {
+        m_SpectralType = T.GetTokenAfterAsString(1);
+      } else if (T.GetTokenAt(0) == "BE") {
+        m_BeamType = T.GetTokenAfterAsString(1);
       } else if (T.GetTokenAt(0) == "HA") {
         m_Hash = T.GetTokenAtAsUnsignedLong(1);
       } else if (T.GetTokenAt(0) == "CE") {
@@ -165,7 +166,7 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrix* MFileResponse::Read(MString FileName)
+MResponseMatrix* MFileResponse::Read(MString FileName, bool MultiThreaded)
 {
   // Open the file and read it;
   
@@ -185,92 +186,92 @@ MResponseMatrix* MFileResponse::Read(MString FileName)
 
   if (m_FileType == "ResponseMatrixON" || m_FileType == "ResponseMatrixONSparse" || m_FileType == "ResponseMatrixONStream") {
     MResponseMatrixON* RON = new MResponseMatrixON();
-    if (RON->Read(FileName) == true) {
+    if (RON->Read(FileName, MultiThreaded) == true) {
       R = RON;
     }
   } else if (m_FileType == "ResponseMatrixO1" || m_FileType == "ResponseMatrixO1Stream") {
     MResponseMatrixO1* RO1 = new MResponseMatrixO1();
-    if (RO1->Read(FileName) == true) {
+    if (RO1->Read(FileName, MultiThreaded) == true) {
       R = RO1;
     }
   } else if (m_FileType == "ResponseMatrixO2" || m_FileType == "ResponseMatrixO2Stream") {
     MResponseMatrixO2* RO2 = new MResponseMatrixO2();
-    if (RO2->Read(FileName) == true) {
+    if (RO2->Read(FileName, MultiThreaded) == true) {
       R = RO2;
     }
   } else if (m_FileType == "ResponseMatrixO3" || m_FileType == "ResponseMatrixO3Stream") {
     MResponseMatrixO3* RO3 = new MResponseMatrixO3();
-    if (RO3->Read(FileName) == true) {
+    if (RO3->Read(FileName, MultiThreaded) == true) {
       R = RO3;
     }
   } else if (m_FileType == "ResponseMatrixO4" || m_FileType == "ResponseMatrixO4Stream") {
     MResponseMatrixO4* RO4 = new MResponseMatrixO4();
-    if (RO4->Read(FileName) == true) {
+    if (RO4->Read(FileName, MultiThreaded) == true) {
       R = RO4;
     }
   } else if (m_FileType == "ResponseMatrixO5" || m_FileType == "ResponseMatrixO5Stream") {
     MResponseMatrixO5* RO5 = new MResponseMatrixO5();
-    if (RO5->Read(FileName) == true) {
+    if (RO5->Read(FileName, MultiThreaded) == true) {
       R = RO5;
     }
   } else if (m_FileType == "ResponseMatrixO6" || m_FileType == "ResponseMatrixO6Stream") {
     MResponseMatrixO6* RO6 = new MResponseMatrixO6();
-    if (RO6->Read(FileName) == true) {
+    if (RO6->Read(FileName, MultiThreaded) == true) {
       R = RO6;
     }
   } else if (m_FileType == "ResponseMatrixO7" || m_FileType == "ResponseMatrixO7Stream") {
     MResponseMatrixO7* RO7 = new MResponseMatrixO7();
-    if (RO7->Read(FileName) == true) {
+    if (RO7->Read(FileName, MultiThreaded) == true) {
       R = RO7;
     }
   } else if (m_FileType == "ResponseMatrixO8" || m_FileType == "ResponseMatrixO8Stream") {
     MResponseMatrixO8* RO8 = new MResponseMatrixO8();
-    if (RO8->Read(FileName) == true) {
+    if (RO8->Read(FileName, MultiThreaded) == true) {
       R = RO8;
     }
   } else if (m_FileType == "ResponseMatrixO9" || m_FileType == "ResponseMatrixO9Stream") {
     MResponseMatrixO9* RO9 = new MResponseMatrixO9();
-    if (RO9->Read(FileName) == true) {
+    if (RO9->Read(FileName, MultiThreaded) == true) {
       R = RO9;
     }
   } else if (m_FileType == "ResponseMatrixO10" || m_FileType == "ResponseMatrixO10Stream") {
     MResponseMatrixO10* RO10 = new MResponseMatrixO10();
-    if (RO10->Read(FileName) == true) {
+    if (RO10->Read(FileName, MultiThreaded) == true) {
       R = RO10;
     }
   } else if (m_FileType == "ResponseMatrixO11" || m_FileType == "ResponseMatrixO11Stream") {
     MResponseMatrixO11* RO11 = new MResponseMatrixO11();
-    if (RO11->Read(FileName) == true) {
+    if (RO11->Read(FileName, MultiThreaded) == true) {
       R = RO11;
     }
   } else if (m_FileType == "ResponseMatrixO12" || m_FileType == "ResponseMatrixO12Stream") {
     MResponseMatrixO12* RO12 = new MResponseMatrixO12();
-    if (RO12->Read(FileName) == true) {
+    if (RO12->Read(FileName, MultiThreaded) == true) {
       R = RO12;
     }
   } else if (m_FileType == "ResponseMatrixO13" || m_FileType == "ResponseMatrixO13Stream") {
     MResponseMatrixO13* RO13 = new MResponseMatrixO13();
-    if (RO13->Read(FileName) == true) {
+    if (RO13->Read(FileName, MultiThreaded) == true) {
       R = RO13;
     }
   } else if (m_FileType == "ResponseMatrixO14" || m_FileType == "ResponseMatrixO14Stream") {
     MResponseMatrixO14* RO14 = new MResponseMatrixO14();
-    if (RO14->Read(FileName) == true) {
+    if (RO14->Read(FileName, MultiThreaded) == true) {
       R = RO14;
     }
   } else if (m_FileType == "ResponseMatrixO15" || m_FileType == "ResponseMatrixO15Stream") {
     MResponseMatrixO15* RO15 = new MResponseMatrixO15();
-    if (RO15->Read(FileName) == true) {
+    if (RO15->Read(FileName, MultiThreaded) == true) {
       R = RO15;
     }
   } else if (m_FileType == "ResponseMatrixO16" || m_FileType == "ResponseMatrixO16Stream") {
     MResponseMatrixO16* RO16 = new MResponseMatrixO16();
-    if (RO16->Read(FileName) == true) {
+    if (RO16->Read(FileName, MultiThreaded) == true) {
       R = RO16;
     }
   } else if (m_FileType == "ResponseMatrixO17" || m_FileType == "ResponseMatrixO17Stream") {
     MResponseMatrixO17* RO17 = new MResponseMatrixO17();
-    if (RO17->Read(FileName) == true) {
+    if (RO17->Read(FileName, MultiThreaded) == true) {
       R = RO17;
     }
   } else {

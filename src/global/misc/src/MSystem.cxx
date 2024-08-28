@@ -565,5 +565,28 @@ bool MSystem::FileExist(MString Filename)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MSystem::GetOS()
+{
+  MString Result;
+
+  array<char, 128> Buffer;
+  unique_ptr<FILE, decltype(&pclose)> Pipe(popen("uname -sr", "r"), pclose);
+  if (!Pipe) {
+     mout<<"Error: Unable to open pipe"<<endl;
+     return Result;
+  }
+  while (fgets(Buffer.data(), Buffer.size(), Pipe.get()) != nullptr) {
+    Result += Buffer.data();
+  }
+
+  Result.TrimInPlace();
+
+  return Result;
+}
+
+
 // MSystem: the end...
 ////////////////////////////////////////////////////////////////////////////////

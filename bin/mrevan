@@ -176,19 +176,34 @@ echo "Revan configuration file:  ${CFG}"
 echo "Origin info:               ${ORIGIN}"
 echo "Sim/evta files:            ${FILES}"
 
+# Compile the run options:
+OPTIONS="-c ${CFG} -a -n "
+if [[ ${ORIGIN} == "TRUE" ]]; then
+  OPTIONS+="--oi "
+fi
+if [[ ${GEOMETRY} != "" ]]; then
+  OPTIONS+=" -g ${GEOMETRY}"
+fi
+
+# Do a test run:
+VERIFY=$(revan ${OPTIONS} -t -f ${FILES%% *})
+if echo "${VERIFY}" | grep -q "SUCCESS"; then
+  echo ""
+  echo "Successfully completed revan test run"
+else 
+  echo ""
+  echo "The revan test run failed:"
+  echo "CMD: revan ${OPTIONS} -t -f ${FILES%% *}"
+  echo "${VERIFY}"
+  exit 1
+fi
+
 
 # Now run, revan RUN!
 for SIMFILE in ${FILES}; do
   mwait -p=revan -i=${THREADS}
   echo "Launching revan for file ${SIMFILE}"
-  OPTIONS="-c ${CFG} -a -n "
-  if [[ ${ORIGIN} == "TRUE" ]]; then
-    OPTIONS+="--oi "
-  fi
   CMD="source ${MEGALIB}/bin/source-megalib.sh; revan ${OPTIONS} -f ${SIMFILE}"
-  if [[ ${GEOMETRY} != "" ]]; then
-    CMD+=" -g ${GEOMETRY}"
-  fi
   nohup nice -n ${NICELEVEL} bash -c "${CMD}" > /dev/null &
   sleep 1
 done

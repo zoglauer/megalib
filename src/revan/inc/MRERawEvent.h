@@ -52,9 +52,6 @@ class MRERawEvent : public MRESE, public MRotationInterface
   
   //! Duplicate this RESE
   MRERawEvent* Duplicate();
-  
-  //! Parse a whole event
-  int Parse(MString Event, int Version);
 
   //! Parse the text Line which contains hit information from a sim or evta file
   int ParseLine(const char* Line, int Version);
@@ -290,7 +287,9 @@ class MRERawEvent : public MRESE, public MRotationInterface
   static const int c_RejectionEventClusteringUnresolvedHits      = 33;
   static const int c_RejectionEventClusteringNoOrigins           = 34;
   static const int c_RejectionEventClusteringEnergyOutOfBounds   = 35;
-
+  static const int c_RejectionStripPairingMissingStrips          = 36;
+  static const int c_RejectionStripPairinTooManyStrips           = 37;
+  static const int c_RejectionStripPairingNotResolvable          = 38;
   
   static const double c_NoQualityFactor;
   static const double c_NoScore;

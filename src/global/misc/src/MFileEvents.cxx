@@ -27,15 +27,18 @@
 #include "MFileEvents.h"
 
 // Standard libs:
+#include <cstring>
 #include <limits>
 using namespace std;
 
 // ROOT libs:
+#include "TSystem.h"
 
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MTime.h"
+#include "MSystem.h"
 #include "MTokenizer.h"
 #include "MGUIProgressBar.h"
 
@@ -71,16 +74,38 @@ MFileEvents::MFileEvents() : MFile()
   m_IncludeFileUsed = false;
   m_IsIncludeFile = false;
 
-  m_OriginalFileName = "";
-
-  m_HasStartObservationTime = false;
-  m_HasEndObservationTime = false;
-
-  m_ObservationTime = 0.0;
-  m_HasObservationTime = false;
-
   m_NIncludeFiles = 0;
   m_NOpenedIncludeFiles = 0;
+
+  m_OriginalFileName = "";
+
+  m_HasGeant4Version = false;
+  m_Geant4Version = "";
+
+  m_HasStartObservationTime = false;
+  m_StartObservationTime = 0.0;
+
+  m_HasEndObservationTime = false;
+  m_EndObservationTime = 0.0;
+
+  m_HasObservationTime = false;
+  m_ObservationTime = 0.0;
+
+  m_HasSimulationStartAreaFarField = false;
+  m_SimulationStartAreaFarField = 0.0;
+
+  m_HasSimulationSeed = false;
+  m_SimulationSeed = 0;
+
+  m_HasBeamType = false;
+  m_BeamType = "";
+
+  m_HasSpectralType = false;
+  m_SpectralType = "";
+
+  m_HasSimulatedEvents = false;
+  m_SimulatedEvents = 0;
+
 }
 
 
@@ -113,12 +138,23 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     bool FoundType = false;
     bool FoundGeometry = false;
     bool FoundMEGAlibVersion = false;
+    bool FoundGeant4Version = false;
     bool FoundTB = false;
     bool FoundIN = false;
+    bool FoundSimulationStartAreaFarField = false;
+    bool FoundSimulationSeed = false;
+    bool FoundBeamType = false;
+    bool FoundSpectralType = false;
     bool FoundBinaryStream = false;
-    
+
+    m_HasGeant4Version = false;
+    m_Geant4Version = "";
+
     m_HasStartObservationTime = false;
+    m_StartObservationTime = 0.0;
+
     m_HasEndObservationTime = false;
+    m_EndObservationTime = 0.0;
 
     m_ObservationTime = 0.0;
     m_HasObservationTime = false;
@@ -126,8 +162,17 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     m_NIncludeFiles = 0;
     m_NOpenedIncludeFiles = 0;
 
-    m_NIncludeFiles = 0;
-    m_NOpenedIncludeFiles = 0;
+    m_HasSimulationStartAreaFarField = false;
+    m_SimulationStartAreaFarField = 0.0;
+
+    m_HasSimulationSeed = false;
+    m_SimulationSeed = 0;
+
+    m_HasBeamType = false;
+    m_BeamType = "";
+
+    m_HasSpectralType = false;
+    m_SpectralType = "";
 
     int Lines = 0;
     int MaxLines = 100;
@@ -191,6 +236,20 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
           }
         }
       }
+      if (FoundGeant4Version == false) {
+        if (Line.BeginsWith("Geant4") == true) {
+          MTokenizer Tokens;
+          Tokens.Analyze(Line);
+          if (Tokens.GetNTokens() < 2) {
+            mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+            mout<<"Unable to read geometry name."<<endl;
+          } else {
+            m_HasGeant4Version = true;
+            m_Geant4Version = Tokens.GetTokenAfterAsString(1);
+            FoundGeant4Version = true;
+          }
+        }
+      }
       if (FoundTB == false) {
         if (Line.BeginsWith("TB") == true) {
           MTokenizer Tokens;
@@ -202,6 +261,62 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
             m_StartObservationTime = Tokens.GetTokenAtAsDouble(1);
             m_HasStartObservationTime = true;
             FoundTB = true;
+          }
+        }
+      }
+      if (FoundSimulationStartAreaFarField == false) {
+        if (Line.BeginsWith("SimulationStartAreaFarField") == true || Line.BeginsWith("StartAreaFarField") == true) {
+          MTokenizer Tokens;
+          Tokens.Analyze(Line);
+          if (Tokens.GetNTokens() != 2) {
+            mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+            mout<<"Unable to read SimulationStartAreaFarField"<<endl;
+          } else {
+            m_HasSimulationStartAreaFarField = true;
+            m_SimulationStartAreaFarField = Tokens.GetTokenAtAsDouble(1);
+            FoundSimulationStartAreaFarField = true;
+          }
+        }
+      }
+      if (FoundSimulationSeed == false) {
+        if (Line.BeginsWith("SimulationSeed") == true) {
+          MTokenizer Tokens;
+          Tokens.Analyze(Line);
+          if (Tokens.GetNTokens() != 2) {
+            mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+            mout<<"Unable to read SimulationSeed"<<endl;
+          } else {
+            m_HasSimulationSeed = true;
+            m_SimulationSeed = Tokens.GetTokenAtAsUnsignedLong(1);
+            FoundSimulationSeed = true;
+          }
+        }
+      }
+      if (FoundBeamType == false) {
+        if (Line.BeginsWith("BeamType") == true) {
+          MTokenizer Tokens;
+          Tokens.Analyze(Line);
+          if (Tokens.GetNTokens() < 2) {
+            mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+            mout<<"Unable to read BeamType"<<endl;
+          } else {
+            m_HasBeamType = true;
+            m_BeamType = Tokens.GetTokenAfterAsString(1);
+            FoundBeamType = true;
+          }
+        }
+      }
+      if (FoundSpectralType == false) {
+        if (Line.BeginsWith("SpectralType") == true) {
+          MTokenizer Tokens;
+          Tokens.Analyze(Line);
+          if (Tokens.GetNTokens() < 2) {
+            mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+            mout<<"Unable to read SpectralType"<<endl;
+          } else {
+            m_HasSpectralType = true;
+            m_SpectralType = Tokens.GetTokenAfterAsString(1);
+            FoundSpectralType = true;
           }
         }
       }
@@ -307,6 +422,28 @@ bool MFileEvents::ParseFooter(const MString& Line)
     }
   }
 
+  // In case the job crashed badly we might have no TS, thus use the last ID
+  if (Line.BeginsWith("ID") == true) {
+    MTokenizer Tokens;
+    Tokens.Analyze(Line);
+    if (Tokens.GetNTokens() == 3) {
+      m_SimulatedEvents = Tokens.GetTokenAtAsInt(2);
+      m_HasSimulatedEvents = true;
+    }
+  }
+  if (Line.BeginsWith("TS") == true) {
+    MTokenizer Tokens;
+    Tokens.Analyze(Line);
+    if (Tokens.GetNTokens() != 2) {
+      mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+      mout<<"Unable to read TS keyword"<<endl;
+      return false;
+    } else {
+      m_SimulatedEvents = Tokens.GetTokenAtAsInt(1);
+      m_HasSimulatedEvents = true;
+    }
+  }
+
   return true;
 }
 
@@ -373,13 +510,49 @@ MString MFileEvents::GetGeometryFileName() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MFileEvents::TransferInformation(MFileEvents* File)
+{
+  // Transfer header information
+
+  m_FileType = File->GetFileType();
+  m_Version = File->GetVersion();
+  m_GeometryFileName = File->GetGeometryFileName();
+
+  m_HasGeant4Version = File->HasGeant4Version();
+  m_Geant4Version = File->GetGeant4Version();
+
+  m_HasSimulationStartAreaFarField = File->HasSimulationStartAreaFarField();
+  m_SimulationStartAreaFarField = File->GetSimulationStartAreaFarField();
+
+  m_HasSimulationSeed = File->HasSimulationSeed();
+  m_SimulationSeed = File->GetSimulationSeed();
+
+  m_HasBeamType = File->HasBeamType();
+  m_BeamType = File->GetBeamType();
+
+  m_HasSpectralType = File->HasSpectralType();
+  m_SpectralType = File->GetSpectralType();
+
+  m_HasStartObservationTime = File->HasStartObservationTime();
+  m_StartObservationTime = File->GetStartObservationTime();
+
+  m_HasEndObservationTime = File->HasEndObservationTime();
+  m_EndObservationTime = File->GetEndObservationTime();
+
+  m_HasSimulatedEvents = File->HasSimulatedEvents();
+  m_SimulatedEvents = File->GetSimulatedEvents();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MFileEvents::WriteHeader()
 {
   // Write basic header information
 
   if (m_Way == c_Read) {
     merr<<"Only valid if file is in write-mode!"<<endl;
-    massert(m_Way != c_Read);
     return false;
   }
 
@@ -391,7 +564,41 @@ bool MFileEvents::WriteHeader()
   Header<<"Geometry  "<<m_GeometryFileName<<endl;
   Header<<endl;
   Header<<"Date      "<<Now.GetSQLString()<<endl;
+  Header<<endl;
+  Header<<"OS        "<<MSystem::GetOS()<<endl;
+  Header<<"Host      "<<gSystem->HostName()<<endl;
+  Header<<endl;
+  Header<<"ROOT      "<<ROOT_RELEASE<<endl;
+  if (m_HasGeant4Version == true) {
+    Header<<"Geant4    "<<m_Geant4Version<<endl;
+  }
   Header<<"MEGAlib   "<<g_VersionString<<endl;
+
+  if (m_HasSimulationStartAreaFarField == true || m_HasSimulationSeed == true) {
+    Header<<endl;
+    if (m_HasSimulationStartAreaFarField == true) {
+      Header<<"SimulationStartAreaFarField "<<m_SimulationStartAreaFarField<<endl;
+    }
+    if (m_HasSimulationSeed == true) {
+      Header<<"SimulationSeed "<<m_SimulationSeed<<endl;
+    }
+  }
+  if (m_HasBeamType == true || m_HasSpectralType == true) {
+    Header<<endl;
+    if (m_HasBeamType == true) {
+      Header<<"BeamType "<<m_BeamType<<endl;
+    }
+    if (m_HasSpectralType == true) {
+      Header<<"SpectralType "<<m_SpectralType<<endl;
+    }
+  }
+
+  if (m_HasStartObservationTime == true) {
+    Header<<endl;
+    Header<<"TB "<<m_StartObservationTime.GetLongIntsString()<<endl;
+  }
+
+
   Header<<endl;
   if (m_IsBinary == true) {
     Header<<"STARTBINARYSTREAM"<<endl; 
@@ -405,6 +612,53 @@ bool MFileEvents::WriteHeader()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MFileEvents::WriteFooter()
+{
+  // Write basic footer information
+
+  if (m_Way == c_Read) {
+    merr<<"Only valid if file is in write-mode!"<<endl;
+    return false;
+  }
+
+  if (m_IsOpen == false) {
+    merr<<"File is not open!"<<endl;
+    return false;
+  }
+
+  ostringstream Footer;
+
+  if (m_IsBinary == true) {
+    Footer<<"STARTBINARYSTREAM"<<endl;
+  } else {
+    Footer<<"EN"<<endl;
+  }
+  Footer<<endl;
+
+  Footer<<endl;
+  if (m_HasEndObservationTime == true) {
+    Footer<<"TE "<<m_EndObservationTime.GetLongIntsString()<<endl;
+  }
+  if (m_HasSimulatedEvents == true) {
+    Footer<<"TS "<<m_SimulatedEvents<<endl;
+  }
+
+  if (m_ExtraFooterText.IsEmpty() == false) {
+    Footer<<endl;
+    Footer<<"FT START"<<endl;
+    Footer<<m_ExtraFooterText<<endl;
+    Footer<<"FT STOP";
+  }
+
+  Footer<<endl<<endl;
+  Write(Footer);
+
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MFileEvents::AddFooter(const MString& Text)
 {
   // Add text to the file as footer - it always goes into the master file!
@@ -414,25 +668,10 @@ bool MFileEvents::AddFooter(const MString& Text)
 
   if (m_Way == c_Read) {
     merr<<"Only valid if file is in write-mode!"<<endl;
-    massert(m_Way != c_Read);
     return false;
   }
 
-  if (m_IsOpen == false) return false;
-
-  // Text always goes to the main file!
-  if (Text.IsEmpty() == false) {
-    ostringstream ToWrite;
-    ToWrite<<endl<<"FT START"<<endl;
-    ToWrite<<Text<<endl;
-    ToWrite<<"FT STOP"<<endl<<endl;
-    Write(ToWrite);
-
-    if (GetFileLength() >= numeric_limits<streamsize>::max()) {
-      mout<<"Warning: Writing footer resulted in exceeding of max file size..."<<endl;
-      mout<<"         Some closing remarks might be lost..."<<endl;
-    }
-  }
+  m_ExtraFooterText += Text;
 
   return true;
 }
@@ -447,7 +686,6 @@ bool MFileEvents::CloseEventList()
 
   if (m_Way == c_Read) {
     merr<<"Only valid if file is in write-mode!"<<endl;
-    massert(m_Way != c_Read);
     return false;
   }
 

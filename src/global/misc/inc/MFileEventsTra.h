@@ -63,6 +63,11 @@ class MFileEventsTra : public MFileEvents
   bool AddEvent(MPhysicalEvent* P);
   bool AddText(const MString& Text);
 
+  //! Return the number of simulated events
+  //! Attention: This information is only complete after all files have been scanned,
+  //! i.e. after GetNextEvent() has been called for all events!
+  //! In addition, this is the number for the total file(s), NOT up to the just read event!!
+  virtual long GetSimulatedEvents();
 
   // protected methods:
  protected:
