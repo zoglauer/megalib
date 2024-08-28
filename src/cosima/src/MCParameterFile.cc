@@ -861,14 +861,15 @@ bool MCParameterFile::Parse()
           if (O.Parse(*T) == false) {
             Typo(i, "Cannot parse token \"OrientationSky\" correctly");
             return false;
-          }          
+          }
+	  
           // The sky can only be rotated if in Galactic coordinates
-          if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic && O.IsOriented() == true) {
+          if ( O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic  && O.IsOriented() == true) {
             Typo(i, "\"OrientationSky\" can only have an orientation in Galactic coordinates!");
             return false;            
           }
           Run->SetSkyOrientation(O);
-          
+
         } else {
           Typo(i, "Cannot parse token \"OrientationSky\" correctly: Number of tokens is not correct!");
           return false;
@@ -2328,6 +2329,7 @@ bool MCParameterFile::Parse()
       } else if (T->IsTokenAt(1, "Flux", true) == true) {
       } else if (T->IsTokenAt(1, "FarFieldTransmissionProbability", true) == true) {
       } else if (T->IsTokenAt(1, "EventList", true) == true) {
+      } else if (T->IsTokenAt(1, "EarthOccultation", true) == true) {
       } else {      
         Typo(i, MString("Unknown keyword: ") + T->GetTokenAt(1));
         return false;
@@ -2879,6 +2881,31 @@ bool MCParameterFile::Parse()
           return false;
         }
       }
+      
+      else if (T->IsTokenAt(1, "EarthOccultation", true)) {
+       
+        if (T->GetNTokens() == 3) {
+	  double Theta = T->GetTokenAtAsDouble(2);
+	  if(Source->SetEarthOccultation(Theta)==true){
+	     mdebug<<"Setting Earth Occultation"<<endl;
+	  } else{
+	     Typo(i, "Cannot set Earth Occultation");
+             return false;
+	  }
+       }
+	if (T->GetNTokens() == 2) {
+	  //if theta is not specify we set it to 0 and will calculate from the ori file
+	  double Theta = 0.0;
+	  if(Source->SetEarthOccultation(Theta)==true){
+	     mdebug<<"Setting Earth Occultation"<<endl;
+	  } else{
+	     Typo(i, "Cannot set Earth Occultation");
+             return false;
+	  }
+	
+       }
+      }    
+      
     } // is source
   } // Step 6
 
