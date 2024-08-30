@@ -68,14 +68,14 @@ class MARMFitter
   // Interface to set up the fitter
 
   //! Set the number of bins for the ARM fit hisogram
-  //! The deafult is 101
+  //! The default is 101
   void SetNumberOfBins(unsigned int NumberOfBins = 101);
 
   //! Set the maximum range of the ARM values
   //! The maximum value is 180
   //! The histogram will go from [-MaxARM, MaxARM]
-  //! The defaulkt is 180
-  void SetMaxARM(double MaxARM = 180);
+  //! The default is 180
+  void SetMaximumARMValue(double MaxARM = 180);
 
   //! Set the test position, and its coordinate system
   //! Do not call this function while adding events
@@ -86,7 +86,7 @@ class MARMFitter
   void UseOptimizedBinning(bool DoIt = true) { m_OptimizeBinning = DoIt; }
 
   //! If this is set we use an unbinned-likelihood fit
-  void UseUnbinnedFitting(bool DoIt = true) { m_UnbinnedFitting = DoIt; }
+  void UseBinnedFitting(bool DoIt = true) { m_UnbinnedFitting = !DoIt; }
 
   //! Fit this function to the data
   //! One of: c_Gauss, c_Lorentz, c_GaussLorentz, c_GaussDoubleLorentz, c_AsymmetricGaussDoubleLorentz
@@ -103,18 +103,19 @@ class MARMFitter
   //! Add an ARM value
   void AddARMValue(double ARMValue) { m_OriginalARMValues.push_back(ARMValue); }
 
+  //! Load the ARM value from file
+  bool LoadARMValues(MString FileName);
+  //! Save the the ARM values to file
+  bool SaveARMValues(MString FileName);
+
   // Interface to do the fits
-
-  //! Perform a single fit with the chosen fit function
-  bool FitOnce();
-
-  //! Perform fits with all fit functions and report Baker-Cousin results
-  bool FitAll();
 
   //! Performs N fits.
   //! Each fit samples randomly form the stored ARM values to determine the average width and error correctly
-  bool FitMultiple(unsigned int NumberOfFits = 100);
+  bool Fit(unsigned int NumberOfFits = 1);
 
+  //! Perform fits with all fit functions and report Baker-Cousin results
+  bool FitAll();
 
   // Interface to retrieve the results
 
@@ -124,16 +125,29 @@ class MARMFitter
   //! Return the bootstrapped FWHM'es
   vector<double> GetBootstrappedFWHMSamples() { return m_BootStrappedFWHMSamples; }
 
-  //! Return the FWHM result
-  double GetFWHM() const;
+  //! Return the FWHM result or g_DoubleNotDefined if fit was not successful or not done yet
+  double GetAverageFWHM() const;
 
-  //! Return the FWHM uncertainty result
-  double GetFWHMUncertainty() const;
+  //! Return the FWHM uncertainty result or g_DoubleNotDefined if fit was not successful or not done yet
+  double GetAverageFWHMUncertainty() const;
+
+  //! Return the 50.0% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
+  double Get50p0PercentContainment() const;
+  //! Return the 68.3% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
+  double Get68p3PercentContainment() const;
+  //! Return the 95.5% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
+  double Get95p5PercentContainment() const;
+  //! Return the 99.7% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
+  double Get99p7PercentContainment() const;
 
   //! Return a summary string
   MString ToString();
 
   //! Draw an ARM histogram
+  //! This works like a root histogram, you would do:
+  //! Canvas->cd();
+  //! ARMFitter->Draw();
+  //! Canvas->Update();
   void Draw();
 
 
@@ -228,6 +242,9 @@ class MARMFitter
   //! The global mutex
   std::mutex m_Mutex;
 
+  //! True if the binning has already been optimized
+  bool m_IsBinningOptimized;
+
   //! Check is we have a final results
   bool m_FitSuccessful;
 
@@ -246,13 +263,13 @@ class MARMFitter
   //! The final fit parameters
   vector<double> m_FinalFitParameters;
 
-  //! The 50% containment radius (accurate to the next largest bin in the histogram)
+  //! The 50% containment radius within the ARM window (accurate to the next largest value in the data set)
   double m_Containment50Percent;
-  //! The 1-sigmna containment radius (accurate to the next largest bin in the histogra)
+  //! The 1-sigmna containment radius within the ARM window (accurate to the next largest value in the data set)
   double m_Containment1Sigma;
-  //! The 2-sigma containment radius (accurate to the next largest bin in the histogra)
+  //! The 2-sigma containment radius within the ARM window (accurate to the next largest value in the data set)
   double m_Containment2Sigma;
-  //! The 3-sigma containment radius (accurate to the next largest bin in the histogra)
+  //! The 3-sigma containment radius within the ARM window (accurate to the next largest value in the data set)
   double m_Containment3Sigma;
 
   //! Minimum height for fitting
@@ -269,11 +286,15 @@ class MARMFitter
   double m_MaxScale;
 
   //! Guess for the widths for fitting
-  double m_WidthGuess;
+  double m_GuessWidth;
   //! Guess for the height for fitting
-  double m_HeightGuess;
+  double m_GuessHeight;
   //! Guess for the scale for fitting
-  double m_ScaleGuess;
+  double m_GuessScale;
+  //! Guess for the low-x maximum for fitting
+  double m_GuessMaximumLow;
+  //! Guess for the high-x maximum for fitting
+  double m_GuessMaximumHigh;
 
 
 #ifdef ___CLING___

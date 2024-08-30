@@ -1120,12 +1120,12 @@ void MInterfaceMimrec::ARMGamma()
 
   MARMFitter Fitter;
   Fitter.SetNumberOfBins(m_Settings->GetHistBinsARMGamma());
-  Fitter.SetMaxARM(m_Settings->GetTPDistanceTrans());
+  Fitter.SetMaximumARMValue(m_Settings->GetTPDistanceTrans());
   //Fitter.SetFitFunction(MARMFitFunctionID::c_GeneralizedNormal);
   //Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormal);
   //Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormalGeneralizedNormal);
   Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz);
-  Fitter.UseUnbinnedFitting(false);
+  Fitter.UseBinnedFitting(true);
   Fitter.UseOptimizedBinning();
 
   bool FoundEvents = false;
@@ -1146,6 +1146,8 @@ void MInterfaceMimrec::ARMGamma()
     delete Event;
   } 
   
+  Fitter.SaveARMValues("Data.dat");
+
   // Close the event loader
   FinalizeEventLoader();
 
@@ -1153,8 +1155,7 @@ void MInterfaceMimrec::ARMGamma()
     mgui<<"No events passed the event selections."<<error;
   }
 
-  Fitter.FitOnce();
-  //Fitter.FitMultiple(100);
+  Fitter.Fit(100);
   //Fitter.FitAll();
 
   if (Fitter.WasFittingSuccessful() == true) {

@@ -212,16 +212,16 @@ double UTARMFitter::TestSingleFit()
   // Set up the fitter and fit
   MARMFitter Fitter;
   Fitter.SetNumberOfBins(NumberOfBins);
-  Fitter.SetMaxARM(MaxARM);
+  Fitter.SetMaximumARMValue(MaxARM);
 
   for (unsigned int i = 0; i < Counts; ++i) {
     Fitter.AddARMValue(ARMValues[i]);
   }
 
-  Fitter.FitOnce();
+  Fitter.Fit(1);
 
   if (Fitter.WasFittingSuccessful() == true) {
-    cout<<"FWHM: "<<Fitter.GetFWHM()<<endl;
+    cout<<"FWHM: "<<Fitter.GetAverageFWHM()<<endl;
   }
 
   TCanvas* FitterCanvas = new TCanvas();
@@ -277,7 +277,7 @@ double UTARMFitter::TestBootstrapping()
   // Set up the fitter and fit
   MARMFitter Fitter;
   Fitter.SetNumberOfBins(NumberOfBins);
-  Fitter.SetMaxARM(MaxARM);
+  Fitter.SetMaximumARMValue(MaxARM);
   Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz);
   Fitter.UseOptimizedBinning();
 
@@ -285,12 +285,12 @@ double UTARMFitter::TestBootstrapping()
     Fitter.AddARMValue(ARMValues[i]);
   }
 
-  Fitter.FitMultiple(200);
+  Fitter.Fit(200);
 
   if (Fitter.WasFittingSuccessful() == true) {
-    cout<<"Average FWHM: "<<Fitter.GetFWHM()<<endl;
-    cout<<"FWHM Uncertainty: "<<Fitter.GetFWHMUncertainty()<<endl;
-    cout<<"Sigma difference: "<<fabs(OriginalFWHM - Fitter.GetFWHM())/Fitter.GetFWHMUncertainty()<<endl;
+    cout<<"Average FWHM: "<<Fitter.GetAverageFWHM()<<endl;
+    cout<<"FWHM Uncertainty: "<<Fitter.GetAverageFWHMUncertainty()<<endl;
+    cout<<"Sigma difference: "<<fabs(OriginalFWHM - Fitter.GetAverageFWHM())/Fitter.GetAverageFWHMUncertainty()<<endl;
 
     vector<double> FWHMes = Fitter.GetBootstrappedFWHMSamples();
     if (FWHMes.size() > 0) {

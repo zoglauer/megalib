@@ -31,6 +31,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <functional>
+#include <fstream>
 
 // ROOT libs:
 #include "TH1.h"
@@ -78,6 +79,8 @@ MARMFitter::MARMFitter()
   m_ARMFitFunction = MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz;
 
   m_OptimizeBinning = false;
+  m_IsBinningOptimized = false;
+
   m_UnbinnedFitting = true;
 
   m_MinHeight = 0;
@@ -87,9 +90,9 @@ MARMFitter::MARMFitter()
   m_MinScale = 0.1;
   m_MaxScale = 1000;
 
-  m_WidthGuess = 2;
-  m_HeightGuess = 2;
-  m_ScaleGuess = 2;
+  m_GuessWidth = 2;
+  m_GuessHeight = 2;
+  m_GuessScale = 2;
 
   m_MaximumNumberOfThreads = 2*std::thread::hardware_concurrency();
   if (m_MaximumNumberOfThreads < 1) m_MaximumNumberOfThreads = 1;
@@ -118,6 +121,7 @@ void MARMFitter::SetNumberOfBins(unsigned int NumberOfBins)
     merr<<"You need at least 10 bins to be able to fit an ARM, and not "<<NumberOfBins<<". Setting it to 10."<<endl;
     m_NumberOfBins = 10;
   }
+  m_IsBinningOptimized = false;
 }
 
 
@@ -126,7 +130,7 @@ void MARMFitter::SetNumberOfBins(unsigned int NumberOfBins)
 
 
 //!
-void MARMFitter::SetMaxARM(double MaxARMValue)
+void MARMFitter::SetMaximumARMValue(double MaxARMValue)
 {
   m_MaxARMValue = MaxARMValue;
   if (m_MaxARMValue <= 0 || m_MaxARMValue > 180) {
@@ -164,6 +168,11 @@ void MARMFitter::Reset()
   m_FinalFitParameters.clear();
   m_FinalBakerCousins = g_DoubleNotDefined;
   m_FinalBakerCousinsUncertainty = g_DoubleNotDefined;
+
+  m_Containment50Percent = g_DoubleNotDefined;
+  m_Containment1Sigma = g_DoubleNotDefined;
+  m_Containment2Sigma = g_DoubleNotDefined;
+  m_Containment3Sigma = g_DoubleNotDefined;
 }
 
 
@@ -183,6 +192,8 @@ void MARMFitter::AddEvent(MComptonEvent* ComptonEvent)
 //! Optimize binning - check sif the binning is OK, otherwise check for a better one
 bool MARMFitter::OptimizeBinning()
 {
+  if (m_IsBinningOptimized == true) return true;
+
   const unsigned int MinimumBinContent = 50;
   const unsigned int MinimumBins = 5;
 
@@ -244,6 +255,7 @@ bool MARMFitter::OptimizeBinning()
   }
 
   m_NumberOfBins = NumberOfBins;
+  m_IsBinningOptimized = true;
 
   return true;
 }
@@ -289,17 +301,18 @@ MString MARMFitter::GetARMFitFunction(MARMFitFunctionID ID)
   if (ID == MARMFitFunctionID::c_Gauss) {
     return MString("[&](double *x, double *p){ return p[0] + p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)); }");
   } else if (ID == MARMFitFunctionID::c_Lorentz) {
-    return MString("[&](double *x, double *p){ return p[0] + p[2]/(p[3]*p[3] + (x[0]-p[1])*(x[0]-p[1])); }");
+    return MString("[&](double *x, double *p){ return p[0] + p[2]*(p[3]*p[3])/(p[3]*p[3] + (x[0]-p[1])*(x[0]-p[1])); }");
   } else if (ID == MARMFitFunctionID::c_GeneralizedNormal) {
     return MString("[&](double *x, double *p){ return p[0] + p[2]*exp(-0.5*pow(fabs(x[0]-p[1])/p[3], p[4])); }");
   } else if (ID == MARMFitFunctionID::c_GaussLorentz) {
     return MString("[&](double *x, double *p){ return p[0] + p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) + p[4]/(p[5]*p[5] + (x[0]-p[1])*(x[0]-p[1])); }");
   } else if (ID == MARMFitFunctionID::c_GaussLorentzLorentz) {
-    return MString("[&](double *x, double *p){ return p[0] + p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) + p[4]/(p[5]*p[5] + (x[0]-p[1])*(x[0]-p[1])) + p[6]/(p[7]*p[7] + (x[0]-p[1])*(x[0]-p[1])); }");
+    return MString("[&](double *x, double *p){ return p[0] + p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) + p[4]*(p[5]*p[5])/(p[5]*p[5] + (x[0]-p[1])*(x[0]-p[1])) + p[6]*(p[7]*p[7])/(p[7]*p[7] + (x[0]-p[1])*(x[0]-p[1])); }");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz) {
-    return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) ) + p[5]/(p[6]*p[6] + (x[0]-p[1])*(x[0]-p[1])) + p[7]/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1])); }");
+    return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) ) + p[5]*(p[6]*p[6])/(p[6]*p[6] + (x[0]-p[1])*(x[0]-p[1])) + p[7]*(p[8]*p[8])/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1])); }");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGaussGaussLorentzLorentz) {
-    return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) )  +  p[5]*exp(-0.5*pow((x[0]-p[1])/p[6], 2))  +  p[7]/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1]))  +  p[9]/(p[10]*p[10] + (x[0]-p[1])*(x[0]-p[1])); }");
+    //return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) )  +  p[5]*exp(-0.5*pow((x[0]-p[1])/p[6], 2))  +  p[7]*(p[8]*p[8])/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1]))  +  p[9]*(p[10]*p[10])/(p[10]*p[10] + (x[0]-p[1])*(x[0]-p[1])); }");
+    return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) )  +  p[5]*exp(-0.5*pow((x[0]-p[1])/p[6], 2))  +  p[7]*p[8]/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1]))  +  p[9]*p[10]/(p[10]*p[10] + (x[0]-p[1])*(x[0]-p[1])); }");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormal) {
     return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow(fabs(x[0]-p[1])/p[3], p[4])) : p[2]*exp(-0.5*pow(fabs(x[0]-p[1])/p[5], p[6])) )  +  p[7]*exp(-0.5*pow(fabs(x[0]-p[1])/p[8], p[9])) ; }");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormalGeneralizedNormal) {
@@ -385,13 +398,13 @@ void MARMFitter::SetupARMFitGauss(ROOT::Fit::Fitter& Fitter, TF1** FitFunction)
   if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(1);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  vector<double> Parameters = { 1, 1, 1, 1};
+  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
   Fitter.Config().ParSettings(0).SetName("Offset");
   Fitter.Config().ParSettings(0).SetLimits(m_MinHeight, m_MaxHeight);
   Fitter.Config().ParSettings(1).SetName("Shift");
-  Fitter.Config().ParSettings(1).SetLimits(-m_MaxARMValue, m_MaxARMValue);
+  Fitter.Config().ParSettings(1).SetLimits(m_GuessMaximumLow, m_GuessMaximumHigh);
 
   Fitter.Config().ParSettings(2).SetName("Gauss - height");
   Fitter.Config().ParSettings(2).SetLimits(m_MinHeight, m_MaxHeight);
@@ -416,13 +429,13 @@ void MARMFitter::SetupARMFitLorentz(ROOT::Fit::Fitter& Fitter, TF1** FitFunction
   if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(1);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  vector<double> Parameters = { 1, 1, 1, 1 };
+  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
   Fitter.Config().ParSettings(0).SetName("Offset");
   Fitter.Config().ParSettings(0).SetLimits(m_MinHeight, m_MaxHeight);
   Fitter.Config().ParSettings(1).SetName("Shift");
-  Fitter.Config().ParSettings(1).SetLimits(-m_MaxARMValue, m_MaxARMValue);
+  Fitter.Config().ParSettings(1).SetLimits(m_GuessMaximumLow, m_GuessMaximumHigh);
 
   Fitter.Config().ParSettings(2).SetName("Lorentz - height");
   Fitter.Config().ParSettings(2).SetLimits(m_MinHeight, m_MaxHeight);
@@ -446,13 +459,13 @@ void MARMFitter::SetupARMFitGeneralizedNormal(ROOT::Fit::Fitter& Fitter, TF1** F
   if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(10);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  vector<double> Parameters = { 1, 1, 1, 1, 1.5};
+  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessScale };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
   Fitter.Config().ParSettings(0).SetName("Offset");
   Fitter.Config().ParSettings(0).SetLimits(m_MinHeight, m_MaxHeight);
   Fitter.Config().ParSettings(1).SetName("Shift");
-  Fitter.Config().ParSettings(1).SetLimits(-m_MaxARMValue, m_MaxARMValue);
+  Fitter.Config().ParSettings(1).SetLimits(m_GuessMaximumLow, m_GuessMaximumHigh);
 
   Fitter.Config().ParSettings(2).SetName("Generalized normal - height");
   Fitter.Config().ParSettings(2).SetLimits(m_MinHeight, m_MaxHeight);
@@ -477,13 +490,13 @@ void MARMFitter::SetupARMFitGaussLorentz(ROOT::Fit::Fitter& Fitter, TF1** FitFun
   if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(1);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  vector<double> Parameters = { 1, 1, 1, 1, 1, 1};
+  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessHeight, m_GuessWidth };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
   Fitter.Config().ParSettings(0).SetName("Offset");
   Fitter.Config().ParSettings(0).SetLimits(m_MinHeight, m_MaxHeight);
   Fitter.Config().ParSettings(1).SetName("Shift");
-  Fitter.Config().ParSettings(1).SetLimits(-m_MaxARMValue, m_MaxARMValue);
+  Fitter.Config().ParSettings(1).SetLimits(m_GuessMaximumLow, m_GuessMaximumHigh);
 
   Fitter.Config().ParSettings(2).SetName("Gauss - height");
   Fitter.Config().ParSettings(2).SetLimits(m_MinHeight, m_MaxHeight);
@@ -512,13 +525,13 @@ void MARMFitter::SetupARMFitGaussLorentzLorentz(ROOT::Fit::Fitter& Fitter, TF1**
   if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(1);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  vector<double> Parameters = { 1, 1, 1, 1, 1, 1, 1, 1};
+  vector<double> Parameters = { 1 , 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessHeight, m_GuessWidth, m_GuessHeight, m_GuessWidth };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
   Fitter.Config().ParSettings(0).SetName("Offset");
   Fitter.Config().ParSettings(0).SetLimits(m_MinHeight, m_MaxHeight);
   Fitter.Config().ParSettings(1).SetName("Shift");
-  Fitter.Config().ParSettings(1).SetLimits(-m_MaxARMValue, m_MaxARMValue);
+  Fitter.Config().ParSettings(1).SetLimits(m_GuessMaximumLow, m_GuessMaximumHigh);
 
   Fitter.Config().ParSettings(2).SetName("Gauss - height");
   Fitter.Config().ParSettings(2).SetLimits(m_MinHeight, m_MaxHeight);
@@ -553,15 +566,14 @@ void MARMFitter::SetupARMFitAsymmetricGaussLorentzLorentz(ROOT::Fit::Fitter& Fit
   //Fitter.Config().MinimizerOptions().SetPrintLevel(0);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  //vector<double> Parameters = { 0, 1, 1, 1, 1, 1, 1, 1, 1};
-  vector<double> Parameters = { 0, 0, m_HeightGuess, 0.9*m_WidthGuess, 1.1*m_WidthGuess, 0.9*m_HeightGuess, 0.95*m_WidthGuess, 1.1*m_HeightGuess, 1.05*m_WidthGuess };
+  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, 0.9*m_GuessWidth, 1.1*m_GuessWidth, 0.9*m_GuessHeight, 0.5*m_GuessWidth, 1.1*m_GuessHeight, 2*m_GuessWidth };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
 
   Fitter.Config().ParSettings(0).SetName("Offset");
   Fitter.Config().ParSettings(0).SetLimits(m_MinHeight, m_MaxHeight);
   Fitter.Config().ParSettings(1).SetName("Shift");
-  Fitter.Config().ParSettings(1).SetLimits(-m_MaxARMValue, m_MaxARMValue);
+  Fitter.Config().ParSettings(1).SetLimits(m_GuessMaximumLow, m_GuessMaximumHigh);
 
   Fitter.Config().ParSettings(2).SetName("Gauss - height");
   Fitter.Config().ParSettings(2).SetLimits(m_MinHeight, m_MaxHeight);
@@ -598,14 +610,14 @@ void MARMFitter::SetupARMFitAsymmetricGaussGaussLorentzLorentz(ROOT::Fit::Fitter
   //Fitter.Config().MinimizerOptions().SetPrintLevel(0);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  vector<double> Parameters = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessWidth, m_GuessHeight, m_GuessWidth, m_GuessHeight, m_GuessWidth, m_GuessHeight, m_GuessWidth };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
 
   Fitter.Config().ParSettings(0).SetName("Offset");
   Fitter.Config().ParSettings(0).SetLimits(m_MinHeight, m_MaxHeight);
   Fitter.Config().ParSettings(1).SetName("Shift");
-  Fitter.Config().ParSettings(1).SetLimits(-m_MaxARMValue, m_MaxARMValue);
+  Fitter.Config().ParSettings(1).SetLimits(m_GuessMaximumLow, m_GuessMaximumHigh);
 
   Fitter.Config().ParSettings(2).SetName("Gauss #1 - height");
   Fitter.Config().ParSettings(2).SetLimits(m_MinHeight, m_MaxHeight);
@@ -647,13 +659,13 @@ void MARMFitter::SetupARMFitAsymmetricGeneralizedNormalGeneralizedNormal(ROOT::F
   //Fitter.Config().MinimizerOptions().SetPrintLevel(0);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  vector<double> Parameters = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessWidth, m_GuessHeight, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
   Fitter.Config().ParSettings(0).SetName("Offset");
   Fitter.Config().ParSettings(0).SetLimits(m_MinHeight, m_MaxHeight);
   Fitter.Config().ParSettings(1).SetName("Shift");
-  Fitter.Config().ParSettings(1).SetLimits(-m_MaxARMValue, m_MaxARMValue);
+  Fitter.Config().ParSettings(1).SetLimits(m_GuessMaximumLow, m_GuessMaximumHigh);
 
   Fitter.Config().ParSettings(2).SetName("GeneralizedNormal #1 - height");
   Fitter.Config().ParSettings(2).SetLimits(m_MinHeight, m_MaxHeight);
@@ -692,13 +704,13 @@ void MARMFitter::SetupARMFitAsymmetricGeneralizedNormalGeneralizedNormalGenerali
   //Fitter.Config().MinimizerOptions().SetPrintLevel(0);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  vector<double> Parameters = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessWidth, m_GuessHeight, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
   Fitter.Config().ParSettings(0).SetName("Offset");
   Fitter.Config().ParSettings(0).SetLimits(m_MinHeight, m_MaxHeight);
   Fitter.Config().ParSettings(1).SetName("Shift");
-  Fitter.Config().ParSettings(1).SetLimits(-m_MaxARMValue, m_MaxARMValue);
+  Fitter.Config().ParSettings(1).SetLimits(m_GuessMaximumLow, m_GuessMaximumHigh);
 
   Fitter.Config().ParSettings(2).SetName("GeneralizedNormal #1 - height");
   Fitter.Config().ParSettings(2).SetLimits(m_MinHeight, m_MaxHeight);
@@ -744,6 +756,9 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
     }
   }
 
+  // Calculate the ARM metrics not depending on a fit
+  CalculateARMMetrics();
+
   // Set up for fitting
   ROOT::Fit::DataOptions DataOptions;
   DataOptions.fIntegral = true;
@@ -770,8 +785,8 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
     for (int b = 1; b <= D->GetNbinsX(); ++b) D->SetBinError(b, sqrt(D->GetBinContent(b)));
     ROOT::Fit::FillData(BinnedData, D);
     delete D;
-    //Fitter.LikelihoodFit(BinnedData, true);
-    Fitter.LeastSquareFit(BinnedData);
+    Fitter.LikelihoodFit(BinnedData, true);
+    //Fitter.LeastSquareFit(BinnedData);
   }
 
   // Retrieve results
@@ -808,58 +823,6 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Perform a single fit with the chosen fit function
-bool MARMFitter::FitOnce()
-{
-  m_FitSuccessful = false;
-
-  // Pre-calculate limits on fits
-  m_MinHeight = 0;
-  m_MaxHeight = m_OriginalARMValues.size();
-
-  vector<double> MinHeightData;
-  MinHeightData.reserve(m_OriginalARMValues.size());
-  for (double V: m_OriginalARMValues) {
-    if (V > -15 && V < 15) {
-      MinHeightData.push_back(V); // The ARM width should be within that...
-    }
-  }
-  // If the above is not working look at the value and zoom in or out
-  double SumOfSquares = 0.0;
-  for (double V: MinHeightData) {
-    SumOfSquares += V*V;
-  }
-  m_MinWidth = 0.5*sqrt(SumOfSquares / MinHeightData.size());
-  m_MaxWidth = 180;
-
-  m_WidthGuess = sqrt(SumOfSquares / MinHeightData.size());
-  m_HeightGuess = 0.3*MinHeightData.size();
-  m_ScaleGuess = 2;
-
-
-  // Right size the result storage
-  m_BootStrappedFWHMSamples.clear();
-  m_BootStrappedFWHMSamples.resize(1);
-
-  m_BootStrappedFitParameters.clear();
-  m_BootStrappedFitParameters.resize(1);
-
-  m_BootStrappedBakerCousins.clear();
-  m_BootStrappedBakerCousins.resize(1);
-
-  // Fit
-  if (PerformFit(0, m_OriginalARMValues) == true) {
-    CalculateBootStrappedMetrics();
-    m_FitSuccessful = true;
-  }
-
-  return m_FitSuccessful;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 //! Perform fits with all fit functions and report Baker-Cousin likelihood ratios
 bool MARMFitter::FitAll()
 {
@@ -871,7 +834,7 @@ bool MARMFitter::FitAll()
   cout<<"Fitting through all functions (except Lorentz) with "<<NFits<<" samples."<<endl;
 
   m_ARMFitFunction = MARMFitFunctionID::c_Gauss;
-  FitMultiple(NFits);
+  Fit(NFits);
   if (m_FinalBakerCousins < BestBC) { BestBC = m_FinalBakerCousins; Best = m_ARMFitFunction; }
   cout<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
@@ -881,43 +844,43 @@ bool MARMFitter::FitAll()
   //cout<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
   m_ARMFitFunction = MARMFitFunctionID::c_GeneralizedNormal;
-  FitMultiple(NFits);
+  Fit(NFits);
   if (m_FinalBakerCousins < BestBC) { BestBC = m_FinalBakerCousins; Best = m_ARMFitFunction; }
   cout<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
   m_ARMFitFunction = MARMFitFunctionID::c_GaussLorentz;
-  FitMultiple(NFits);
+  Fit(NFits);
   if (m_FinalBakerCousins < BestBC) { BestBC = m_FinalBakerCousins; Best = m_ARMFitFunction; }
   cout<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
   m_ARMFitFunction = MARMFitFunctionID::c_GaussLorentzLorentz;
-  FitMultiple(NFits);
+  Fit(NFits);
   if (m_FinalBakerCousins < BestBC) { BestBC = m_FinalBakerCousins; Best = m_ARMFitFunction; }
   cout<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
   m_ARMFitFunction = MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz;
-  FitMultiple(NFits);
+  Fit(NFits);
   if (m_FinalBakerCousins < BestBC) { BestBC = m_FinalBakerCousins; Best = m_ARMFitFunction; }
   cout<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
   m_ARMFitFunction = MARMFitFunctionID::c_AsymmetricGaussGaussLorentzLorentz;
-  FitMultiple(NFits);
+  Fit(NFits);
   if (m_FinalBakerCousins < BestBC) { BestBC = m_FinalBakerCousins; Best = m_ARMFitFunction; }
   cout<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
   m_ARMFitFunction = MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormal;
-  FitMultiple(NFits);
+  Fit(NFits);
   if (m_FinalBakerCousins < BestBC) { BestBC = m_FinalBakerCousins; Best = m_ARMFitFunction; }
   cout<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
   m_ARMFitFunction = MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormalGeneralizedNormal;
-  FitMultiple(NFits);
+  Fit(NFits);
   if (m_FinalBakerCousins < BestBC) { BestBC = m_FinalBakerCousins; Best = m_ARMFitFunction; }
   cout<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
   // Do the best again:
   m_ARMFitFunction = Best;
-  FitMultiple(2*NFits);
+  Fit(2*NFits);
   cout<<"Best: "<<GetARMFitFunctionName(m_ARMFitFunction)<<" - BC: "<<MString(m_FinalBakerCousins, m_FinalBakerCousinsUncertainty)<<endl;
 
   return m_FitSuccessful;
@@ -1008,7 +971,6 @@ void MARMFitter::CalculateARMMetrics()
 {
   // Determine containment radii
 
-  /*
   double Sigma0 = 0.5;
   m_Containment50Percent = g_DoubleNotDefined;
   double Sigma1 = 0.6826;
@@ -1018,29 +980,29 @@ void MARMFitter::CalculateARMMetrics()
   double Sigma3 = 0.9973;
   m_Containment3Sigma = g_DoubleNotDefined;
 
-  int CentralBin = Histogram->FindBin(0);
-  double All = Histogram->Integral(1, m_NumberOfBins);
-  double Content = 0.0;
-  for (int b = 0; b + CentralBin <= Histogram->GetNbinsX(); ++b) {
-    if (b == 0) {
-      Content += Histogram->GetBinContent(CentralBin);
-    } else {
-      Content += Histogram->GetBinContent(CentralBin + b) + Histogram->GetBinContent(CentralBin - b);
-    }
-    if (m_Containment50Percent == g_DoubleNotDefined && Content >= Sigma0*All) {
-      m_Containment50Percent = Histogram->GetBinCenter(CentralBin + b);
-    }
-    if (m_Containment1Sigma == g_DoubleNotDefined && Content >= Sigma1*All) {
-      m_Containment1Sigma = Histogram->GetBinCenter(CentralBin + b);
-    }
-    if (m_Containment2Sigma == g_DoubleNotDefined && Content >= Sigma2*All) {
-      m_Containment2Sigma = Histogram->GetBinCenter(CentralBin + b);
-    }
-    if (m_Containment3Sigma == g_DoubleNotDefined && Content >= Sigma3*All) {
-      m_Containment3Sigma = Histogram->GetBinCenter(CentralBin + b);
+  vector<double> SortedAbs;
+  for (double& A: m_OriginalARMValues) {
+    if (A >= -m_MaxARMValue && A <= m_MaxARMValue) {
+      SortedAbs.push_back(fabs(A));
     }
   }
-  */
+  std::sort(SortedAbs.begin(), SortedAbs.end());
+
+  double Total = SortedAbs.size();
+  for (int b = 0; b < SortedAbs.size(); ++b) {
+    if (m_Containment50Percent == g_DoubleNotDefined && b >= Sigma0*Total) {
+      m_Containment50Percent = SortedAbs[b];
+    }
+    if (m_Containment1Sigma == g_DoubleNotDefined && b >= Sigma1*Total) {
+      m_Containment1Sigma = SortedAbs[b];
+    }
+    if (m_Containment2Sigma == g_DoubleNotDefined && b >= Sigma2*Total) {
+      m_Containment2Sigma = SortedAbs[b];
+    }
+    if (m_Containment3Sigma == g_DoubleNotDefined && b >= Sigma3*Total) {
+      m_Containment3Sigma = SortedAbs[b];
+    }
+  }
 }
 
 
@@ -1070,32 +1032,44 @@ void MARMFitter::ParallelFitting(int FitID, std::condition_variable& CV)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Performs N fits.
+//! Performs N fits. N must be 1 or larger.
 //! Each fit samples randomly from the stored ARM values to determine the average width and error correctly
-bool MARMFitter::FitMultiple(unsigned int NumberOfFits)
+bool MARMFitter::Fit(unsigned int NumberOfFits)
 {
   if (NumberOfFits <= 0) return false;
 
   m_FitSuccessful = true;
 
-  // Pre-calculate limits on fits
-  m_MinHeight = 0;
-  m_MaxHeight = m_OriginalARMValues.size();
+  if (m_OptimizeBinning == true) {
+    OptimizeBinning();
+  }
 
-  vector<double> MinHeightData;
-  MinHeightData.reserve(m_OriginalARMValues.size());
+  // Pre-calculate limits on fits
+
+  // We need a histogram, to do it easily
+  unsigned int NEvents = 0;
+  TH1D* Hist = new TH1D("", "", m_NumberOfBins, -m_MaxARMValue, m_MaxARMValue);
   for (double V: m_OriginalARMValues) {
-    if (V > -15 && V < 15) {
-      MinHeightData.push_back(V); // The ARM width should be within that...
+    if (V >= -15 && V <= 15) {
+      Hist->Fill(V);
+      NEvents++;
     }
   }
-  // If the above is not working look at the value and zoom in or out
-  double SumOfSquares = 0.0;
-  for (double V: MinHeightData) {
-    SumOfSquares += V*V;
+  m_MinHeight = 0;
+  if (m_UnbinnedFitting == false) {
+    m_MaxHeight = 1.25 * Hist->GetMaximum();
+  } else {
+    m_MaxHeight = 0.5*NEvents;
   }
-  m_MinWidth = 0.5*sqrt(SumOfSquares / MinHeightData.size());
+  m_GuessHeight = 0.5*m_MaxHeight;
+
+  m_MinWidth = 0.25*Hist->GetRMS();
   m_MaxWidth = m_MaxARMValue;
+  m_GuessWidth = Hist->GetRMS();
+
+  double MaxX = Hist->GetBinCenter(Hist->GetMaximumBin());
+  m_GuessMaximumLow = MaxX - 0.5*Hist->GetRMS();
+  m_GuessMaximumHigh = MaxX + 0.5*Hist->GetRMS();
 
 
   // Right size the result storage
@@ -1108,19 +1082,22 @@ bool MARMFitter::FitMultiple(unsigned int NumberOfFits)
   m_BootStrappedBakerCousins.clear();
   m_BootStrappedBakerCousins.resize(NumberOfFits);
 
+  if (NumberOfFits > 1) {
+    // Start the threads
+    m_NumberOfRunningThreads = 0;
+    vector<thread> Threads;
+    condition_variable CV;
 
-  // Start the threads
-  m_NumberOfRunningThreads = 0;
-  vector<thread> Threads;
-  condition_variable CV;
+    for (unsigned int i = 0; i < NumberOfFits; ++i) {
+      Threads.emplace_back([this, &CV, i]() { this->ParallelFitting(i, CV); } );
+    }
 
-  for (unsigned int i = 0; i < NumberOfFits; ++i) {
-    Threads.emplace_back([this, &CV, i]() { this->ParallelFitting(i, CV); } );
-  }
-
-  // Join all threads with the main thread
-  for (thread& T: Threads) {
-    T.join();
+    // Join all threads with the main thread
+    for (thread& T: Threads) {
+      T.join();
+    }
+  } else {
+    PerformFit(0, m_OriginalARMValues);
   }
 
   // Caluclate the results
@@ -1134,7 +1111,7 @@ bool MARMFitter::FitMultiple(unsigned int NumberOfFits)
 
 
 //! Return the the FWHM result
-double MARMFitter::GetFWHM() const
+double MARMFitter::GetAverageFWHM() const
 {
   return m_FitSuccessful ? m_FinalFWHM : g_DoubleNotDefined;
 }
@@ -1144,9 +1121,49 @@ double MARMFitter::GetFWHM() const
 
 
 //! Return the FWHM uncertainty result
-double MARMFitter::GetFWHMUncertainty() const
+double MARMFitter::GetAverageFWHMUncertainty() const
 {
   return m_FitSuccessful ? m_FinalFWHMUncertainty : g_DoubleNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the 50.0% containment for events with +- maximum ARM value
+double MARMFitter::Get50p0PercentContainment() const
+{
+  return m_FitSuccessful ? m_Containment50Percent : g_DoubleNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the 68.3% containment for events with +- maximum ARM value
+double MARMFitter::Get68p3PercentContainment() const
+{
+  return m_FitSuccessful ? m_Containment1Sigma : g_DoubleNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the 95.5% containment for events with +- maximum ARM value
+double MARMFitter::Get95p5PercentContainment() const
+{
+  return m_FitSuccessful ? m_Containment2Sigma : g_DoubleNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the 99.7% containment for events with +- maximum ARM value
+double MARMFitter::Get99p7PercentContainment() const
+{
+  return m_FitSuccessful ? m_Containment3Sigma : g_DoubleNotDefined;
 }
 
 
@@ -1180,6 +1197,12 @@ MString MARMFitter::ToString()
   out<<"  Fit mode: "<<(m_UnbinnedFitting == true ? "Unbinned" : "Binned")<<" likelihood fit"<<endl;
   out<<"  Fit function: "<<GetARMFitFunctionName(m_ARMFitFunction)<<endl;
   out<<"  Average FWHM after "<<m_BootStrappedFWHMSamples.size()<<" boot straps: "<<MString(m_FinalFWHM, m_FinalFWHMUncertainty, "degree")<<endl;
+  out<<endl;
+  out<<"Containment (with +- "<<m_MaxARMValue<<" deg):"<<endl;
+  out<<"  50.0 %: "<<m_Containment50Percent<<" deg"<<endl;
+  out<<"  68.3 %: "<<m_Containment1Sigma<<" deg"<<endl;
+  out<<"  95.5 %: "<<m_Containment2Sigma<<" deg"<<endl;
+  out<<"  99.7 %: "<<m_Containment3Sigma<<" deg"<<endl;
   out<<endl;
 
   return out;
@@ -1256,6 +1279,62 @@ void MARMFitter::Draw()
   return;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Load the ARM value from file
+bool MARMFitter::LoadARMValues(MString FileName)
+{
+  m_OriginalARMValues.clear();
+
+  ifstream fin;
+  fin.open(FileName);
+  if (fin.is_open() == false) {
+    merr<<"Unable to open "<<FileName<<endl;
+    return false;
+  }
+
+  string Line;
+  string Prefix;
+  double Value;
+  while (getline(fin, Line)) {
+    if (Line.size() < 4 || Line.substr(0, 2) != "DP") continue;
+    istringstream iss(Line);
+    // Read the prefix ("DP") and the value
+    if (iss>>Prefix>>Value) {
+      m_OriginalARMValues.push_back(Value);
+    }
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Save the the ARM values to a file
+bool MARMFitter::SaveARMValues(MString FileName)
+{
+  if (m_OriginalARMValues.size() > 0) {
+    ofstream fout;
+    fout.open(FileName);
+    if (fout.is_open() == false) {
+      merr<<"Unable to open "<<FileName<<endl;
+      return false;
+    }
+    fout<<"# ARM data file"<<endl;
+    fout<<endl;
+    for (auto& A: m_OriginalARMValues) {
+      fout<<"DP "<<A<<endl;
+    }
+    fout<<endl;
+    fout.close();
+  }
+
+  return true;
+}
 
 // MARMFitter.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
