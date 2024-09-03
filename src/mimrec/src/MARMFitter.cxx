@@ -169,10 +169,15 @@ void MARMFitter::Reset()
   m_FinalBakerCousins = g_DoubleNotDefined;
   m_FinalBakerCousinsUncertainty = g_DoubleNotDefined;
 
-  m_Containment50Percent = g_DoubleNotDefined;
-  m_Containment1Sigma = g_DoubleNotDefined;
-  m_Containment2Sigma = g_DoubleNotDefined;
-  m_Containment3Sigma = g_DoubleNotDefined;
+  m_Containment50PercentUsingARMSelection = g_DoubleNotDefined;
+  m_Containment1SigmaUsingARMSelection = g_DoubleNotDefined;
+  m_Containment2SigmaUsingARMSelection = g_DoubleNotDefined;
+  m_Containment3SigmaUsingARMSelection = g_DoubleNotDefined;
+
+  m_Containment50PercentUsingAllData = g_DoubleNotDefined;
+  m_Containment1SigmaUsingAllData = g_DoubleNotDefined;
+  m_Containment2SigmaUsingAllData = g_DoubleNotDefined;
+  m_Containment3SigmaUsingAllData = g_DoubleNotDefined;
 }
 
 
@@ -972,37 +977,67 @@ void MARMFitter::CalculateARMMetrics()
   // Determine containment radii
 
   double Sigma0 = 0.5;
-  m_Containment50Percent = g_DoubleNotDefined;
   double Sigma1 = 0.6826;
-  m_Containment1Sigma = g_DoubleNotDefined;
   double Sigma2 = 0.9546;
-  m_Containment2Sigma = g_DoubleNotDefined;
   double Sigma3 = 0.9973;
-  m_Containment3Sigma = g_DoubleNotDefined;
 
-  vector<double> SortedAbs;
+  m_Containment50PercentUsingARMSelection = g_DoubleNotDefined;
+  m_Containment1SigmaUsingARMSelection = g_DoubleNotDefined;
+  m_Containment2SigmaUsingARMSelection = g_DoubleNotDefined;
+  m_Containment3SigmaUsingARMSelection = g_DoubleNotDefined;
+
+  vector<double> SortedAbsSelected;
   for (double& A: m_OriginalARMValues) {
     if (A >= -m_MaxARMValue && A <= m_MaxARMValue) {
-      SortedAbs.push_back(fabs(A));
+      SortedAbsSelected.push_back(fabs(A));
     }
   }
-  std::sort(SortedAbs.begin(), SortedAbs.end());
+  std::sort(SortedAbsSelected.begin(), SortedAbsSelected.end());
 
-  double Total = SortedAbs.size();
-  for (int b = 0; b < SortedAbs.size(); ++b) {
-    if (m_Containment50Percent == g_DoubleNotDefined && b >= Sigma0*Total) {
-      m_Containment50Percent = SortedAbs[b];
+  double Total = SortedAbsSelected.size();
+  for (int b = 0; b < SortedAbsSelected.size(); ++b) {
+    if (m_Containment50PercentUsingARMSelection == g_DoubleNotDefined && b >= Sigma0*Total) {
+      m_Containment50PercentUsingARMSelection = SortedAbsSelected[b];
     }
-    if (m_Containment1Sigma == g_DoubleNotDefined && b >= Sigma1*Total) {
-      m_Containment1Sigma = SortedAbs[b];
+    if (m_Containment1SigmaUsingARMSelection == g_DoubleNotDefined && b >= Sigma1*Total) {
+      m_Containment1SigmaUsingARMSelection = SortedAbsSelected[b];
     }
-    if (m_Containment2Sigma == g_DoubleNotDefined && b >= Sigma2*Total) {
-      m_Containment2Sigma = SortedAbs[b];
+    if (m_Containment2SigmaUsingARMSelection == g_DoubleNotDefined && b >= Sigma2*Total) {
+      m_Containment2SigmaUsingARMSelection = SortedAbsSelected[b];
     }
-    if (m_Containment3Sigma == g_DoubleNotDefined && b >= Sigma3*Total) {
-      m_Containment3Sigma = SortedAbs[b];
+    if (m_Containment3SigmaUsingARMSelection == g_DoubleNotDefined && b >= Sigma3*Total) {
+      m_Containment3SigmaUsingARMSelection = SortedAbsSelected[b];
     }
   }
+
+
+  m_Containment50PercentUsingAllData = g_DoubleNotDefined;
+  m_Containment1SigmaUsingAllData = g_DoubleNotDefined;
+  m_Containment2SigmaUsingAllData = g_DoubleNotDefined;
+  m_Containment3SigmaUsingAllData = g_DoubleNotDefined;
+
+  vector<double> SortedAbsAll;
+  for (double& A: m_OriginalARMValues) {
+    SortedAbsAll.push_back(fabs(A));
+  }
+  std::sort(SortedAbsAll.begin(), SortedAbsAll.end());
+
+  Total = SortedAbsAll.size();
+  for (int b = 0; b < SortedAbsAll.size(); ++b) {
+    if (m_Containment50PercentUsingAllData == g_DoubleNotDefined && b >= Sigma0*Total) {
+      m_Containment50PercentUsingAllData = SortedAbsAll[b];
+    }
+    if (m_Containment1SigmaUsingAllData == g_DoubleNotDefined && b >= Sigma1*Total) {
+      m_Containment1SigmaUsingAllData = SortedAbsAll[b];
+    }
+    if (m_Containment2SigmaUsingAllData == g_DoubleNotDefined && b >= Sigma2*Total) {
+      m_Containment2SigmaUsingAllData = SortedAbsAll[b];
+    }
+    if (m_Containment3SigmaUsingAllData == g_DoubleNotDefined && b >= Sigma3*Total) {
+      m_Containment3SigmaUsingAllData = SortedAbsAll[b];
+    }
+  }
+
 }
 
 
@@ -1127,13 +1162,14 @@ double MARMFitter::GetAverageFWHMUncertainty() const
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Return the 50.0% containment for events with +- maximum ARM value
-double MARMFitter::Get50p0PercentContainment() const
+double MARMFitter::Get50p0PercentContainmentUsingARMSelection() const
 {
-  return m_FitSuccessful ? m_Containment50Percent : g_DoubleNotDefined;
+  return m_FitSuccessful ? m_Containment50PercentUsingARMSelection : g_DoubleNotDefined;
 }
 
 
@@ -1141,9 +1177,9 @@ double MARMFitter::Get50p0PercentContainment() const
 
 
 //! Return the 68.3% containment for events with +- maximum ARM value
-double MARMFitter::Get68p3PercentContainment() const
+double MARMFitter::Get68p3PercentContainmentUsingARMSelection() const
 {
-  return m_FitSuccessful ? m_Containment1Sigma : g_DoubleNotDefined;
+  return m_FitSuccessful ? m_Containment1SigmaUsingARMSelection : g_DoubleNotDefined;
 }
 
 
@@ -1151,9 +1187,9 @@ double MARMFitter::Get68p3PercentContainment() const
 
 
 //! Return the 95.5% containment for events with +- maximum ARM value
-double MARMFitter::Get95p5PercentContainment() const
+double MARMFitter::Get95p5PercentContainmentUsingARMSelection() const
 {
-  return m_FitSuccessful ? m_Containment2Sigma : g_DoubleNotDefined;
+  return m_FitSuccessful ? m_Containment2SigmaUsingARMSelection : g_DoubleNotDefined;
 }
 
 
@@ -1161,9 +1197,49 @@ double MARMFitter::Get95p5PercentContainment() const
 
 
 //! Return the 99.7% containment for events with +- maximum ARM value
-double MARMFitter::Get99p7PercentContainment() const
+double MARMFitter::Get99p7PercentContainmentUsingARMSelection() const
 {
-  return m_FitSuccessful ? m_Containment3Sigma : g_DoubleNotDefined;
+  return m_FitSuccessful ? m_Containment3SigmaUsingARMSelection : g_DoubleNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the 50.0% containment for all events
+double MARMFitter::Get50p0PercentContainmentUsingAllData() const
+{
+  return m_FitSuccessful ? m_Containment50PercentUsingAllData : g_DoubleNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the 68.3% containment for all events
+double MARMFitter::Get68p3PercentContainmentUsingAllData() const
+{
+  return m_FitSuccessful ? m_Containment1SigmaUsingAllData : g_DoubleNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the 95.5% containment for all events
+double MARMFitter::Get95p5PercentContainmentUsingAllData() const
+{
+  return m_FitSuccessful ? m_Containment2SigmaUsingAllData : g_DoubleNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the 99.7% containment for all events
+double MARMFitter::Get99p7PercentContainmentUsingAllData() const
+{
+  return m_FitSuccessful ? m_Containment3SigmaUsingAllData : g_DoubleNotDefined;
 }
 
 
@@ -1198,11 +1274,17 @@ MString MARMFitter::ToString()
   out<<"  Fit function: "<<GetARMFitFunctionName(m_ARMFitFunction)<<endl;
   out<<"  Average FWHM after "<<m_BootStrappedFWHMSamples.size()<<" boot straps: "<<MString(m_FinalFWHM, m_FinalFWHMUncertainty, "degree")<<endl;
   out<<endl;
-  out<<"Containment (with +- "<<m_MaxARMValue<<" deg):"<<endl;
-  out<<"  50.0 %: "<<m_Containment50Percent<<" deg"<<endl;
-  out<<"  68.3 %: "<<m_Containment1Sigma<<" deg"<<endl;
-  out<<"  95.5 %: "<<m_Containment2Sigma<<" deg"<<endl;
-  out<<"  99.7 %: "<<m_Containment3Sigma<<" deg"<<endl;
+  out<<"Containment:"<<endl;
+  out<<"  using +- "<<m_MaxARMValue<<" deg ARM selection:"<<endl;
+  out<<"    50.0 %:\t"<<m_Containment50PercentUsingARMSelection<<" deg"<<endl;
+  out<<"    68.3 %:\t"<<m_Containment1SigmaUsingARMSelection<<" deg"<<endl;
+  out<<"    95.5 %:\t"<<m_Containment2SigmaUsingARMSelection<<" deg"<<endl;
+  out<<"    99.7 %:\t"<<m_Containment3SigmaUsingARMSelection<<" deg"<<endl;
+  out<<"  using all data:"<<endl;
+  out<<"    50.0 %:\t"<<m_Containment50PercentUsingAllData<<" deg"<<endl;
+  out<<"    68.3 %:\t"<<m_Containment1SigmaUsingAllData<<" deg"<<endl;
+  out<<"    95.5 %:\t"<<m_Containment2SigmaUsingAllData<<" deg"<<endl;
+  out<<"    99.7 %:\t"<<m_Containment3SigmaUsingAllData<<" deg"<<endl;
   out<<endl;
 
   return out;

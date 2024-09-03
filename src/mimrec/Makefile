@@ -64,6 +64,7 @@ FILES_UI := \
 	MGUIMimrecMain \
 	MGUIHistogramData \
 	MGUIARM \
+	MGUIARMExtended \
 	MGUIAnimation \
 	MGUICoordinateSystem \
 	MGUIEventSelection \

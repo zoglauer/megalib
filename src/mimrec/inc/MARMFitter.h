@@ -79,7 +79,7 @@ class MARMFitter
 
   //! Set the test position, and its coordinate system
   //! Do not call this function while adding events
-  void SetTestPosition(MVector TestPosition, MCoordinateSystem);
+  void SetTestPosition(MVector TestPosition, MCoordinateSystem CoordinateSystem);
 
   //! If this is set we try to optimize the binning
   //! Especially if we have too many bins we iterate until we have at least 50 counts in one bin - if possible
@@ -98,9 +98,9 @@ class MARMFitter
   //! Reset the internally stored ARM values
   void Reset();
 
-  //! Add Event - only stores the actual ARM value
+  //! Add Event - only stores the actual ARM value - do not do any prior ARM selections
   void AddEvent(MComptonEvent* Event);
-  //! Add an ARM value
+  //! Add an ARM value - do not do any prior ARM selections
   void AddARMValue(double ARMValue) { m_OriginalARMValues.push_back(ARMValue); }
 
   //! Load the ARM value from file
@@ -132,13 +132,22 @@ class MARMFitter
   double GetAverageFWHMUncertainty() const;
 
   //! Return the 50.0% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
-  double Get50p0PercentContainment() const;
+  double Get50p0PercentContainmentUsingARMSelection() const;
   //! Return the 68.3% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
-  double Get68p3PercentContainment() const;
+  double Get68p3PercentContainmentUsingARMSelection() const;
   //! Return the 95.5% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
-  double Get95p5PercentContainment() const;
+  double Get95p5PercentContainmentUsingARMSelection() const;
   //! Return the 99.7% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
-  double Get99p7PercentContainment() const;
+  double Get99p7PercentContainmentUsingARMSelection() const;
+
+  //! Return the 50.0% containment using all data or g_DoubleNotDefined if fit was not successful or not done yet
+  double Get50p0PercentContainmentUsingAllData() const;
+  //! Return the 68.3% containment using all data or g_DoubleNotDefined if fit was not successful or not done yet
+  double Get68p3PercentContainmentUsingAllData() const;
+  //! Return the 95.5% containment using all data or g_DoubleNotDefined if fit was not successful or not done yet
+  double Get95p5PercentContainmentUsingAllData() const;
+  //! Return the 99.7% containment using all data or g_DoubleNotDefined if fit was not successful or not done yet
+  double Get99p7PercentContainmentUsingAllData() const;
 
   //! Return a summary string
   MString ToString();
@@ -264,13 +273,22 @@ class MARMFitter
   vector<double> m_FinalFitParameters;
 
   //! The 50% containment radius within the ARM window (accurate to the next largest value in the data set)
-  double m_Containment50Percent;
+  double m_Containment50PercentUsingARMSelection;
   //! The 1-sigmna containment radius within the ARM window (accurate to the next largest value in the data set)
-  double m_Containment1Sigma;
+  double m_Containment1SigmaUsingARMSelection;
   //! The 2-sigma containment radius within the ARM window (accurate to the next largest value in the data set)
-  double m_Containment2Sigma;
+  double m_Containment2SigmaUsingARMSelection;
   //! The 3-sigma containment radius within the ARM window (accurate to the next largest value in the data set)
-  double m_Containment3Sigma;
+  double m_Containment3SigmaUsingARMSelection;
+
+  //! The 50% containment radius using all data (accurate to the next largest value in the data set)
+  double m_Containment50PercentUsingAllData;
+  //! The 1-sigmna containment radius using all data (accurate to the next largest value in the data set)
+  double m_Containment1SigmaUsingAllData;
+  //! The 2-sigma containment radius using all data (accurate to the next largest value in the data set)
+  double m_Containment2SigmaUsingAllData;
+  //! The 3-sigma containment radius using all data (accurate to the next largest value in the data set)
+  double m_Containment3SigmaUsingAllData;
 
   //! Minimum height for fitting
   double m_MinHeight;

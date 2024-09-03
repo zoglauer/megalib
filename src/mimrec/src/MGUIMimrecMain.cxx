@@ -40,6 +40,7 @@
 #include "MGUIResponseParameterConeShapes.h"
 #include "MGUIResponseParameterPRM.h"
 #include "MGUIARM.h"
+#include "MGUIARMExtended.h"
 #include "MGUISignificance.h"
 #include "MGUIExposure.h"
 #include "MGUIAnimation.h"
@@ -425,7 +426,7 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
         
       case c_ResponseArmGamma:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
+        new MGUIARMExtended(gClient->GetRoot(), this, m_Data, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGamma();
         }
