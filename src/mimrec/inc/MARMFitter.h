@@ -88,10 +88,18 @@ class MARMFitter
   //! If this is set we use an unbinned-likelihood fit
   void UseBinnedFitting(bool DoIt = true) { m_UnbinnedFitting = !DoIt; }
 
+  //! Get a list of all fit functions:
+  vector<MARMFitFunctionID> GetListOfFitFunctions() const;
+
   //! Fit this function to the data
-  //! One of: c_Gauss, c_Lorentz, c_GaussLorentz, c_GaussDoubleLorentz, c_AsymmetricGaussDoubleLorentz
-  //! If not set,  default is c_AsymmetricGaussDoubleLorentz
+  //! One of: c_Gauss, c_Lorentz, c_GaussLorentz, c_GaussDoubleLorentz, c_AsymmetricGaussLorentzLorentz, etc.
+  //! If not set,  default is c_AsymmetricGaussLorentzLorentz
   void SetFitFunction(MARMFitFunctionID ID) { m_ARMFitFunction = ID; }
+
+  //! Fit this function to the data
+  //! The ID corresponds to the position of the corresponding MARMFitFunctionID in the vector retuned by GetListOfFitFunctions()
+  //! If it's not in there use c_AsymmetricGaussLorentzLorentz
+  void SetFitFunction(unsigned int ID);
 
   // Interface to set the data
 
@@ -159,6 +167,14 @@ class MARMFitter
   //! Canvas->Update();
   void Draw();
 
+  //! Return the function of the fit given the fit function ID
+  MString GetARMFitFunction(MARMFitFunctionID ARMFitID);
+  //! Return the name of the fit given the fit function ID
+  MString GetARMFitFunctionName(MARMFitFunctionID ARMFitID);
+  //! Return the number of parameters of the fit given the fit function ID
+  unsigned int GetARMFitFunctionNumberOfParameters(MARMFitFunctionID ARMFitID);
+
+
 
 
   // protected methods:
@@ -197,12 +213,6 @@ class MARMFitter
   //! Setup an Assymetric-Gauss-Double-Lorentz-function
   void SetupARMFitAsymmetricGeneralizedNormalGeneralizedNormalGeneralizedNormal(ROOT::Fit::Fitter& Fitter, TF1** FitFunction);
 
-  //! Return the function of the fit given the fit function ID
-  MString GetARMFitFunction(MARMFitFunctionID ARMFitID);
-  //! Return the name of the fit given the fit function ID
-  MString GetARMFitFunctionName(MARMFitFunctionID ARMFitID);
-  //! Return the number of parameters of the fit given the fit function ID
-  unsigned int GetARMFitFunctionNumberOfParameters(MARMFitFunctionID ARMFitID);
 
   // private methods:
  private:

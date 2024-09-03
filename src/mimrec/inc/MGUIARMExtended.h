@@ -23,6 +23,7 @@
 #include <TGLabel.h>
 #include <TGTextBuffer.h>
 #include <TGTextEntry.h>
+#include <TGComboBox.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -73,12 +74,12 @@ class MGUIARMExtended : public MGUIDialog
   bool& m_OkPressed;
 
   //! Check button indicating if we do want to use a test position in spectral mode
-  TGCheckButton* m_UseTestPosition;
-  const int m_UseTestPositionID = 140;
+  MGUIEEntry* m_NumberOfFits;
+  //const int m_NumberOfFitsID = 140;
 
   //! Check button indicating if we do want to use a logarithmic binning in spectral mode
-  TGCheckButton* m_UseLog;
-  const int m_UseLogID = 141;
+  TGCheckButton* m_OptimizedBinning;
+  const int m_OptimizedBinningID = 141;
   
   MGUIEEntry* m_ThetaIsX;
   MGUIEEntry* m_PhiIsY;
@@ -86,7 +87,14 @@ class MGUIARMExtended : public MGUIDialog
   MGUIEEntry* m_Distance;
   MGUIEEntry* m_Bins;
 
-  
+  //! The fit function combo box
+  TGComboBox* m_FitFunctions;
+
+
+  //! Check button indicating if we do want to use a logarithmic binning in spectral mode
+  TGCheckButton* m_UseUnbinnedFitting;
+  const int m_UseUnbinnedFittingID = 142;
+
 #ifdef ___CLING___
  public:
   ClassDef(MGUIARMExtended, 0) // Dialogbox: Select the ARM-parameters

@@ -1124,9 +1124,9 @@ void MInterfaceMimrec::ARMGamma()
   //Fitter.SetFitFunction(MARMFitFunctionID::c_GeneralizedNormal);
   //Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormal);
   //Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormalGeneralizedNormal);
-  Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz);
-  Fitter.UseBinnedFitting(true);
-  Fitter.UseOptimizedBinning();
+  Fitter.SetFitFunction(m_Settings->GetFitFunctionIDARMGamma());
+  Fitter.UseBinnedFitting(!m_Settings->GetUseUnbinnedFittingARMGamma());
+  Fitter.UseOptimizedBinning(m_Settings->GetOptimizeBinningARMGamma());
 
   bool FoundEvents = false;
   MPhysicalEvent* Event = nullptr;
@@ -1146,7 +1146,7 @@ void MInterfaceMimrec::ARMGamma()
     delete Event;
   } 
   
-  Fitter.SaveARMValues("Data.dat");
+  //Fitter.SaveARMValues("Data.dat");
 
   // Close the event loader
   FinalizeEventLoader();
@@ -1155,7 +1155,7 @@ void MInterfaceMimrec::ARMGamma()
     mgui<<"No events passed the event selections."<<error;
   }
 
-  Fitter.Fit(100);
+  Fitter.Fit(m_Settings->GetNumberOfFitsARMGamma());
   //Fitter.FitAll();
 
   if (Fitter.WasFittingSuccessful() == true) {

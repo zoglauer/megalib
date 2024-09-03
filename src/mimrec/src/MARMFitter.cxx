@@ -153,6 +153,25 @@ void MARMFitter::SetTestPosition(MVector TestPosition, MCoordinateSystem Coordin
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Fit this function to the data
+//! The ID corresponds to the position of the corresponding MARMFitFunctionID in the vector retuned by GetListOfFitFunctions()
+//! If it's not in there use c_AsymmetricGaussLorentzLorentz
+void MARMFitter::SetFitFunction(unsigned int ID)
+{
+  vector<MARMFitFunctionID> IDs = GetListOfFitFunctions();
+
+  if (ID < IDs.size()) {
+    m_ARMFitFunction = IDs[ID];
+  } else {
+    merr<<"There is no function with ID n"<<ID<<". Choosing assymmetric gauss + Lorentz + Lorentz"<<endl;
+    m_ARMFitFunction = MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Reset the internally stored ARM values
 void MARMFitter::Reset()
 {
@@ -277,19 +296,19 @@ MString MARMFitter::GetARMFitFunctionName(MARMFitFunctionID ID)
   } else if (ID == MARMFitFunctionID::c_Lorentz) {
     return MString("Lorentz");
   } else if (ID == MARMFitFunctionID::c_GeneralizedNormal) {
-    return MString("GeneralizedNormal");
+    return MString("Generalized-Normal");
   } else if (ID == MARMFitFunctionID::c_GaussLorentz) {
-    return MString("Gauss+Lorentz");
+    return MString("Gauss + Lorentz");
   } else if (ID == MARMFitFunctionID::c_GaussLorentzLorentz) {
-    return MString("Gauss+Lorentz+Lorentz");
+    return MString("Gauss + Lorentz + Lorentz");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz) {
-    return MString("AsymmetricGauss+Lorentz+Lorentz");
+    return MString("Asymmetric-Gauss + Lorentz + Lorentz");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGaussGaussLorentzLorentz) {
-    return MString("AsymmetricGauss+Gauss+Lorentz+Lorentz");
+    return MString("Asymmetric-Gauss + Gauss + Lorentz + Lorentz");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormal) {
-    return MString("AsymmetricGeneralizedNormal+GeneralizedNormal");
+    return MString("Asymmetric-Generalized-Normal + Generalized-Normal");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormalGeneralizedNormal) {
-    return MString("AsymmetricGeneralizedNormal+GeneralizedNormal+GeneralizedNormal");
+    return MString("Asymmetric-Generalized-Normal + Generalized-Normal + Generalized-Normal");
   } else {
     new MExceptionObjectDoesNotExist("Unknown ARM fit function ID");
     return MString("Unknown ARM fit function ID");
@@ -357,6 +376,27 @@ unsigned int MARMFitter::GetARMFitFunctionNumberOfParameters(MARMFitFunctionID I
     new MExceptionObjectDoesNotExist("Unknown ARM fit function ID");
     return 0;
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get a list of all fit functions:
+vector<MARMFitFunctionID> MARMFitter::GetListOfFitFunctions() const
+{
+  vector<MARMFitFunctionID> List;
+  List.push_back(MARMFitFunctionID::c_Gauss);
+  List.push_back(MARMFitFunctionID::c_Lorentz);
+  List.push_back(MARMFitFunctionID::c_GeneralizedNormal);
+  List.push_back(MARMFitFunctionID::c_GaussLorentz);
+  List.push_back(MARMFitFunctionID::c_GaussLorentzLorentz);
+  List.push_back(MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz);
+  List.push_back(MARMFitFunctionID::c_AsymmetricGaussGaussLorentzLorentz);
+  List.push_back(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormal);
+  List.push_back(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormalGeneralizedNormal);
+
+  return List;
 }
 
 
@@ -481,6 +521,7 @@ void MARMFitter::SetupARMFitGeneralizedNormal(ROOT::Fit::Fitter& Fitter, TF1** F
 
   Fitter.Config().SetUpdateAfterFit();
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -709,7 +750,7 @@ void MARMFitter::SetupARMFitAsymmetricGeneralizedNormalGeneralizedNormalGenerali
   //Fitter.Config().MinimizerOptions().SetPrintLevel(0);
   Fitter.SetFunction(WrappedFitFunction, false);
 
-  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessWidth, m_GuessHeight, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale };
+  vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessWidth, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale };
   Fitter.Config().SetParamsSettings(Parameters.size(), Parameters.data());
 
   Fitter.Config().ParSettings(0).SetName("Offset");
@@ -1071,8 +1112,6 @@ void MARMFitter::ParallelFitting(int FitID, std::condition_variable& CV)
 //! Each fit samples randomly from the stored ARM values to determine the average width and error correctly
 bool MARMFitter::Fit(unsigned int NumberOfFits)
 {
-  if (NumberOfFits <= 0) return false;
-
   m_FitSuccessful = true;
 
   if (m_OptimizeBinning == true) {
@@ -1131,12 +1170,14 @@ bool MARMFitter::Fit(unsigned int NumberOfFits)
     for (thread& T: Threads) {
       T.join();
     }
-  } else {
+  } else if (NumberOfFits == 1) {
     PerformFit(0, m_OriginalARMValues);
   }
 
-  // Caluclate the results
-  CalculateBootStrappedMetrics();
+  if (NumberOfFits >= 1) {
+    // Caluclate the results
+    CalculateBootStrappedMetrics();
+  }
 
   return m_FitSuccessful;
 }
@@ -1270,9 +1311,17 @@ MString MARMFitter::ToString()
   out<<"  In selection (+- "<<m_MaxARMValue<<" deg): "<<SelectedEvents<<endl;
   out<<endl;
   out<<"Fit:"<<endl;
-  out<<"  Fit mode: "<<(m_UnbinnedFitting == true ? "Unbinned" : "Binned")<<" likelihood fit"<<endl;
-  out<<"  Fit function: "<<GetARMFitFunctionName(m_ARMFitFunction)<<endl;
-  out<<"  Average FWHM after "<<m_BootStrappedFWHMSamples.size()<<" boot straps: "<<MString(m_FinalFWHM, m_FinalFWHMUncertainty, "degree")<<endl;
+  if (m_BootStrappedFWHMSamples.size() > 0) {
+    out<<"  Fit mode: "<<(m_UnbinnedFitting == true ? "Unbinned" : "Binned")<<" likelihood fit"<<endl;
+    out<<"  Fit function: "<<GetARMFitFunctionName(m_ARMFitFunction)<<endl;
+    if (m_BootStrappedFWHMSamples.size() > 1) {
+      out<<"  Average FWHM after "<<m_BootStrappedFWHMSamples.size()<<" boot straps: "<<MString(m_FinalFWHM, m_FinalFWHMUncertainty, "degree")<<endl;
+    } else {
+      out<<"  FWHM after 1 fit: "<<m_FinalFWHM<<" degree"<<endl;
+    }
+  } else {
+    out<<"  No fits performed"<<endl;
+  }
   out<<endl;
   out<<"Containment:"<<endl;
   out<<"  using +- "<<m_MaxARMValue<<" deg ARM selection:"<<endl;
