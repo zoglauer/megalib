@@ -157,6 +157,14 @@ class MARMFitter
   //! Return the 99.7% containment using all data or g_DoubleNotDefined if fit was not successful or not done yet
   double Get99p7PercentContainmentUsingAllData() const;
 
+  //! Get the counts in the FWHM window or g_DoubleNotDefined if we don't have a FWHM
+  unsigned int GetFWHMWindowCounts() const;
+  //! Get the counts in the FWHM minus uncertainty window or g_DoubleNotDefined if we don't have a FWHM uncertainty
+  unsigned int GetFWHMWindowCountsMinimum() const;
+  //! Get the counts in the FWHM plus uncertainty window or g_DoubleNotDefined if we don't have a FWHM uncertainty
+  unsigned int GetFWHMWindowCountsMaximum() const;
+
+
   //! Return a summary string
   MString ToString();
 
@@ -299,6 +307,13 @@ class MARMFitter
   double m_Containment2SigmaUsingAllData;
   //! The 3-sigma containment radius using all data (accurate to the next largest value in the data set)
   double m_Containment3SigmaUsingAllData;
+
+  //! The counts in the FWHM window or g_UnsignedIntNotDefined if we don't have a FWHM
+  unsigned int m_CountsFWHMWindow;
+  //! The counts in the FWHM minus uncertainty window or g_UnsignedIntNotDefined if we don't have a FWHM uncertainty
+  unsigned int m_CountsFWHMWindowMinimum;
+  //! The counts in the FWHM plus uncertainty window or g_UnsignedIntNotDefined if we don't have a FWHM uncertainty
+  unsigned int m_CountsFWHMWindowMaximum;
 
   //! Minimum height for fitting
   double m_MinHeight;

@@ -291,9 +291,6 @@ bool MGUIARMExtended::OnApply()
   m_Settings->SetFitFunctionIDARMGamma(m_FitFunctions->GetSelected());
   m_Settings->SetUseUnbinnedFittingARMGamma(m_UseUnbinnedFitting->GetState() == kButtonDown ? true : false);
 
-
-
-
   m_OkPressed = true;
   
   return true;

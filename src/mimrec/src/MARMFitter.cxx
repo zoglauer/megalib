@@ -197,6 +197,10 @@ void MARMFitter::Reset()
   m_Containment1SigmaUsingAllData = g_DoubleNotDefined;
   m_Containment2SigmaUsingAllData = g_DoubleNotDefined;
   m_Containment3SigmaUsingAllData = g_DoubleNotDefined;
+
+  m_CountsFWHMWindow = g_UnsignedIntNotDefined;
+  m_CountsFWHMWindowMinimum = g_UnsignedIntNotDefined;
+  m_CountsFWHMWindowMaximum = g_UnsignedIntNotDefined;
 }
 
 
@@ -1003,8 +1007,28 @@ void MARMFitter::CalculateBootStrappedMetrics()
         });
     m_FinalBakerCousinsUncertainty = std::sqrt(SquaredSumBakerCousins / m_BootStrappedBakerCousins.size());
 
-  } else {
-    merr<<"Cannot calculate ARM metrics, since we don't have any bootstrapped values."<<endl;
+
+    m_CountsFWHMWindow = g_UnsignedIntNotDefined;
+    m_CountsFWHMWindowMinimum = g_UnsignedIntNotDefined;
+    m_CountsFWHMWindowMaximum = g_UnsignedIntNotDefined;
+
+    vector<double> SortedAbs;
+    for (double& A: m_OriginalARMValues) {
+      SortedAbs.push_back(fabs(A));
+    }
+    std::sort(SortedAbs.begin(), SortedAbs.end());
+
+    for (int b = 0; b < SortedAbs.size(); ++b) {
+      if (m_CountsFWHMWindowMinimum == g_UnsignedIntNotDefined && SortedAbs[b] >= m_FinalFWHM - m_FinalFWHMUncertainty) {
+        m_CountsFWHMWindowMinimum = b;
+      }
+      if (m_CountsFWHMWindow == g_UnsignedIntNotDefined && SortedAbs[b] >= m_FinalFWHM) {
+        m_CountsFWHMWindow = b;
+      }
+      if (m_CountsFWHMWindowMaximum == g_UnsignedIntNotDefined && SortedAbs[b] >= m_FinalFWHM + m_FinalFWHMUncertainty) {
+        m_CountsFWHMWindowMaximum = b;
+      }
+    }
   }
 }
 
@@ -1280,7 +1304,38 @@ double MARMFitter::Get95p5PercentContainmentUsingAllData() const
 //! Return the 99.7% containment for all events
 double MARMFitter::Get99p7PercentContainmentUsingAllData() const
 {
-  return m_FitSuccessful ? m_Containment3SigmaUsingAllData : g_DoubleNotDefined;
+  return m_FitSuccessful ? m_Containment3SigmaUsingAllData : g_UnsignedIntNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the counts in the FWHM window or g_DoubleNotDefined if we don't have a FWHM
+unsigned int MARMFitter::GetFWHMWindowCounts() const
+{
+  return m_FitSuccessful ? m_CountsFWHMWindow : g_UnsignedIntNotDefined;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the counts in the FWHM minus uncertainty window or g_DoubleNotDefined if we don't have a FWHM uncertainty
+unsigned int MARMFitter::GetFWHMWindowCountsMinimum() const
+{
+  return m_FitSuccessful ? m_CountsFWHMWindowMinimum : g_UnsignedIntNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the counts in the FWHM plus uncertainty window or g_DoubleNotDefined if we don't have a FWHM uncertainty
+unsigned int MARMFitter::GetFWHMWindowCountsMaximum() const
+{
+  return m_FitSuccessful ? m_CountsFWHMWindowMaximum : g_UnsignedIntNotDefined;
 }
 
 
@@ -1316,8 +1371,10 @@ MString MARMFitter::ToString()
     out<<"  Fit function: "<<GetARMFitFunctionName(m_ARMFitFunction)<<endl;
     if (m_BootStrappedFWHMSamples.size() > 1) {
       out<<"  Average FWHM after "<<m_BootStrappedFWHMSamples.size()<<" boot straps: "<<MString(m_FinalFWHM, m_FinalFWHMUncertainty, "degree")<<endl;
+      out<<"  Counts in +-FWHM window: "<<m_CountsFWHMWindow<<" (-"<<m_CountsFWHMWindow-m_CountsFWHMWindowMinimum<<", +"<<m_CountsFWHMWindowMaximum-m_CountsFWHMWindow<<")"<<endl;
     } else {
       out<<"  FWHM after 1 fit: "<<m_FinalFWHM<<" degree"<<endl;
+      out<<"  Counts in +-FWHM window: "<<m_CountsFWHMWindow<<endl;
     }
   } else {
     out<<"  No fits performed"<<endl;

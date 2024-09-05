@@ -36,10 +36,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//! The position selection dialog box called by all interfaces which allow
-//! this selection
-//! It has 3 modes: ARM Gamma, ARM Electron, Spectrum
-//! This window will wait for being unmapped and not be deleted on close
+//! This is the UI window for the extended ARM fitting dialog
 class MGUIARMExtended : public MGUIDialog
 {
   // Public Interface:
@@ -51,8 +48,11 @@ class MGUIARMExtended : public MGUIDialog
 
   // protected methods:
  protected:
+  //! Create the window
   virtual void Create();
+  //! Process all messages
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
+  //! Save the data when OK was pressed
   virtual bool OnApply();
 
 
@@ -69,29 +69,33 @@ class MGUIARMExtended : public MGUIDialog
   //! The user settings data
   MSettingsMimrec* m_Settings;
 
-
   //! The return message that OK was pressed
   bool& m_OkPressed;
 
-  //! Check button indicating if we do want to use a test position in spectral mode
+  //! The number of fits to use
   MGUIEEntry* m_NumberOfFits;
-  //const int m_NumberOfFitsID = 140;
 
-  //! Check button indicating if we do want to use a logarithmic binning in spectral mode
+  //! Check button indicating if we do want to use optimized binninf
   TGCheckButton* m_OptimizedBinning;
   const int m_OptimizedBinningID = 141;
   
+  //! Entry for the theta / latitude / X value
   MGUIEEntry* m_ThetaIsX;
+  //! Entry fir the phi / longitude / Y value
   MGUIEEntry* m_PhiIsY;
+  //! Entry for the radius / Z value
   MGUIEEntry* m_RadiusIsZ;
+
+  //! Entry for the ARM window
   MGUIEEntry* m_Distance;
+
+  //! Enetry for the number of bins
   MGUIEEntry* m_Bins;
 
   //! The fit function combo box
   TGComboBox* m_FitFunctions;
 
-
-  //! Check button indicating if we do want to use a logarithmic binning in spectral mode
+  //! Check button indicating if we do want to use unbinned fitting
   TGCheckButton* m_UseUnbinnedFitting;
   const int m_UseUnbinnedFittingID = 142;
 
