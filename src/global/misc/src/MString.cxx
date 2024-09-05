@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <locale>
+#include <iomanip>
 using namespace std;
 
 // ROOT libs:
@@ -67,6 +68,21 @@ ostream& operator<<(ostream& out, const MString& S)
   out<<S.GetString(); 
   return out; 
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString::MString(const double D, unsigned int Precision)
+{
+  //! Construct with double of given precision
+
+  ostringstream in;
+  in<<setprecision(Precision)<<D;
+
+  m_String = in.str();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

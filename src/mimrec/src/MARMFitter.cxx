@@ -802,9 +802,6 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
     }
   }
 
-  // Calculate the ARM metrics not depending on a fit
-  CalculateARMMetrics();
-
   // Set up for fitting
   ROOT::Fit::DataOptions DataOptions;
   DataOptions.fIntegral = true;
@@ -1136,6 +1133,9 @@ bool MARMFitter::Fit(unsigned int NumberOfFits)
     OptimizeBinning();
   }
 
+  // Calculate the ARM metrics not depending on a fit
+  CalculateARMMetrics();
+
   // Pre-calculate limits on fits
 
   // We need a histogram, to do it easily
@@ -1364,10 +1364,10 @@ MString MARMFitter::ToString()
     out<<"  Fit mode: "<<(m_UnbinnedFitting == true ? "Unbinned" : "Binned")<<" likelihood fit"<<endl;
     out<<"  Fit function: "<<GetARMFitFunctionName(m_ARMFitFunction)<<endl;
     if (m_BootStrappedFWHMSamples.size() > 1) {
-      out<<"  Average FWHM after "<<m_BootStrappedFWHMSamples.size()<<" boot straps: "<<MString(m_FinalFWHM, m_FinalFWHMUncertainty, "degree")<<endl;
+      out<<"  Average FWHM after "<<m_BootStrappedFWHMSamples.size()<<" bootstraps: "<<MString(m_FinalFWHM, m_FinalFWHMUncertainty, "degree")<<endl;
       out<<"  Counts in +-FWHM window: "<<m_CountsFWHMWindow<<" (-"<<m_CountsFWHMWindow-m_CountsFWHMWindowMinimum<<", +"<<m_CountsFWHMWindowMaximum-m_CountsFWHMWindow<<")"<<endl;
     } else {
-      out<<"  FWHM after 1 fit: "<<m_FinalFWHM<<" degree"<<endl;
+      out<<"  FWHM after 1 fit: "<<setprecision(3)<<m_FinalFWHM<<" degree"<<endl;
       out<<"  Counts in +-FWHM window: "<<m_CountsFWHMWindow<<endl;
     }
   } else {
@@ -1376,6 +1376,7 @@ MString MARMFitter::ToString()
   out<<endl;
   out<<"Containment:"<<endl;
   out<<"  using +- "<<m_MaxARMValue<<" deg ARM selection:"<<endl;
+  out<<fixed<<setprecision(2);
   out<<"    50.0 %:\t"<<m_Containment50PercentUsingARMSelection<<" deg"<<endl;
   out<<"    68.3 %:\t"<<m_Containment1SigmaUsingARMSelection<<" deg"<<endl;
   out<<"    95.5 %:\t"<<m_Containment2SigmaUsingARMSelection<<" deg"<<endl;
@@ -1447,14 +1448,21 @@ void MARMFitter::Draw()
 
   Histogram->Draw("HIST SAME"); // Overdraws the fits
 
-  MString Text("FWHM of fit function: ");
-  Text += MString(m_FinalFWHM, m_FinalFWHMUncertainty, "#circ", true);
+  if (m_BootStrappedFWHMSamples.size() > 0) {
+    MString Text("FWHM of fit function: ");
+    if (m_BootStrappedFWHMSamples.size() == 1) {
+      Text += MString(m_FinalFWHM, 3u);
+      Text += "#circ";
+    } else {
+      Text += MString(m_FinalFWHM, m_FinalFWHMUncertainty, "#circ", true);
+    }
 
-  TLatex* Latex = new TLatex();
-  Latex->SetTextFont(gStyle->GetLabelFont());
-  Latex->SetTextSize(gStyle->GetLabelSize());
-  Latex->SetTextAlign(21);
-  Latex->DrawLatexNDC(0.5, 0.02, Text.Data());
+    TLatex* Latex = new TLatex();
+    Latex->SetTextFont(gStyle->GetLabelFont());
+    Latex->SetTextSize(gStyle->GetLabelSize());
+    Latex->SetTextAlign(21);
+    Latex->DrawLatexNDC(0.5, 0.02, Text.Data());
+  }
 
   // No delete Histogram - Histogramn deletion managed by ROOT
 
@@ -1517,6 +1525,7 @@ bool MARMFitter::SaveARMValues(MString FileName)
 
   return true;
 }
+
 
 // MARMFitter.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

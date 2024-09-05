@@ -65,6 +65,8 @@ class MString
   MString(const unsigned long i) { operator+=(i); }
   MString(const float i) { operator+=(i); }
   MString(const double i) { operator+=(i); }
+  //! Constrcut with double of given precision
+  MString(const double i, unsigned int Precision);
   //! Construct from value, uncertainty, unit using scientific rounding
   //! If Latex is true, the +- will be repalce by #pm for display with ROOT
   //! Will be something like (12.345, 1.872, "mm") -> "(12.3 +- 1.9) mm"
