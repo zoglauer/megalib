@@ -505,7 +505,7 @@ void MARMFitter::SetupARMFitGeneralizedNormal(ROOT::Fit::Fitter& Fitter, TF1** F
   ROOT::Math::WrappedMultiTF1 WrappedFitFunction(**FitFunction, 1);
 
   Fitter.Config().SetMinimizer("Minuit2", "Migrad");
-  if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(10);
+  if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(1);
   Fitter.SetFunction(WrappedFitFunction, false);
 
   vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessScale };
@@ -613,7 +613,6 @@ void MARMFitter::SetupARMFitAsymmetricGaussLorentzLorentz(ROOT::Fit::Fitter& Fit
 
   Fitter.Config().SetMinimizer("Minuit2", "Migrad");
   if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(1);
-  //Fitter.Config().MinimizerOptions().SetPrintLevel(0);
   Fitter.SetFunction(WrappedFitFunction, false);
 
   vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, 0.9*m_GuessWidth, 1.1*m_GuessWidth, 0.9*m_GuessHeight, 0.5*m_GuessWidth, 1.1*m_GuessHeight, 2*m_GuessWidth };
@@ -657,7 +656,6 @@ void MARMFitter::SetupARMFitAsymmetricGaussGaussLorentzLorentz(ROOT::Fit::Fitter
 
   Fitter.Config().SetMinimizer("Minuit2", "Migrad");
   if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(1);
-  //Fitter.Config().MinimizerOptions().SetPrintLevel(0);
   Fitter.SetFunction(WrappedFitFunction, false);
 
   vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessWidth, m_GuessHeight, m_GuessWidth, m_GuessHeight, m_GuessWidth, m_GuessHeight, m_GuessWidth };
@@ -706,7 +704,6 @@ void MARMFitter::SetupARMFitAsymmetricGeneralizedNormalGeneralizedNormal(ROOT::F
 
   Fitter.Config().SetMinimizer("Minuit2", "Migrad");
   if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(1);
-  //Fitter.Config().MinimizerOptions().SetPrintLevel(0);
   Fitter.SetFunction(WrappedFitFunction, false);
 
   vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessWidth, m_GuessHeight, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale };
@@ -750,8 +747,7 @@ void MARMFitter::SetupARMFitAsymmetricGeneralizedNormalGeneralizedNormalGenerali
   ROOT::Math::WrappedMultiTF1 WrappedFitFunction(**FitFunction, 1);
 
   Fitter.Config().SetMinimizer("Minuit2", "Migrad");
-  if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(0);
-  //Fitter.Config().MinimizerOptions().SetPrintLevel(0);
+  if (g_Verbosity >= c_Info) Fitter.Config().MinimizerOptions().SetPrintLevel(1);
   Fitter.SetFunction(WrappedFitFunction, false);
 
   vector<double> Parameters = { 1, 0.5*(m_GuessMaximumLow+m_GuessMaximumHigh), m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessWidth, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale, m_GuessHeight, m_GuessWidth, m_GuessScale };
@@ -821,11 +817,11 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
 
   // Do the fitting
   if (m_UnbinnedFitting == true) {
-    cout<<"Unbinned fit"<<endl;
+    //cout<<"Unbinned fit"<<endl;
     ROOT::Fit::UnBinData UnbinnedData(CleanedData.size(), CleanedData.data(), Range);
     Fitter.LikelihoodFit(UnbinnedData, true);
   } else {
-    cout<<"Binned fit"<<endl;
+    //cout<<"Binned fit"<<endl;
     DataOptions.fIntegral = true;
     DataOptions.fUseRange =true;
     ROOT::Fit::BinData BinnedData(DataOptions, Range);
@@ -841,8 +837,6 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
 
   // Retrieve results
   TFitResult Result = Fitter.Result();
-
-  //cout<<"Best fit: "<<GetARMFitFunctionName(m_ARMFitFunction)<<" (Baker-Cousins likelihood ratio: "<<std::fixed<<Result.MinFcnValue()<<")"<<endl;
 
   FitFunction->SetParameters(Result.GetParams());
 
