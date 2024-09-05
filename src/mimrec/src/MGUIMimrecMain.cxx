@@ -40,6 +40,7 @@
 #include "MGUIResponseParameterConeShapes.h"
 #include "MGUIResponseParameterPRM.h"
 #include "MGUIARM.h"
+#include "MGUIARMExtended.h"
 #include "MGUISignificance.h"
 #include "MGUIExposure.h"
 #include "MGUIAnimation.h"
@@ -235,6 +236,7 @@ void MGUIMimrecMain::Create()
   MenuResponse->AddLabel("Compton specific");
   MenuResponse->AddSeparator();
   MenuResponse->AddEntry("ARM of scattered gamma ray", c_ResponseArmGamma);
+  MenuResponse->AddEntry("ARM of scattered gamma ray (classic binned mode)", c_ResponseArmGammaClassic);
   MenuResponse->AddEntry("SPD of recoil electron", c_ResponseSpdElectron);
   MenuResponse->AddPopup("All ARM/SPD options", MenuARM);
   MenuResponse->AddSeparator();
@@ -424,12 +426,19 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
         
       case c_ResponseArmGamma:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
+        new MGUIARMExtended(gClient->GetRoot(), this, m_Data, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGamma();
         }
         break;
-        
+
+      case c_ResponseArmGammaClassic:
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
+        if (OKPressed == true) {
+          m_Interface->ARMGammaClassic();
+        }
+        break;
+
       case c_ResponsePhiKinVsPhiGeo:
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {

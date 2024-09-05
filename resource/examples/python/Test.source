@@ -1,10 +1,8 @@
 # Example run for Cosima
-# A Crab-like source in the zenith on cosmic and albedo photon background
-
 
 # Global parameters
 Version         1
-Geometry        $(MEGALIB)/resource/examples/geomega/special/Max.geo.setup
+Geometry        Test.geo.setup
 
 # Physics list
 PhysicsListEM               LivermorePol

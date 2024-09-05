@@ -486,7 +486,7 @@ double MComptonEvent::GetRandomPhi(const double Ei)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem& CS) 
+double MComptonEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem CS)
 {
   // The ARM value for the scattered gamma-ray is the minimum angle between 
   // the gamma-cone-surface and the line connecting the cone-apex with the 
@@ -507,7 +507,7 @@ double MComptonEvent::GetARMGamma(const MVector& Position, const MCoordinateSyst
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetARMElectron(const MVector& Position, const MCoordinateSystem& CS) 
+double MComptonEvent::GetARMElectron(const MVector& Position, const MCoordinateSystem CS)
 {
   // The ARM value for the recoil electron is the minimum angle between 
   // the elctron-cone-surface and the line connecting the cone-apex with the 
@@ -525,7 +525,7 @@ double MComptonEvent::GetARMElectron(const MVector& Position, const MCoordinateS
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetSPDElectron(const MVector& Position, const MCoordinateSystem& CS)
+double MComptonEvent::GetSPDElectron(const MVector& Position, const MCoordinateSystem CS)
 {
   // The SPD value for the recoil electron is the minimum angle between 
   // the electron-cone-surface and the line connecting the cone-apex with the 
@@ -543,7 +543,7 @@ double MComptonEvent::GetSPDElectron(const MVector& Position, const MCoordinateS
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetAzimuthalScatterAngle(const MVector& Position, const MCoordinateSystem& CS)
+double MComptonEvent::GetAzimuthalScatterAngle(const MVector& Position, const MCoordinateSystem CS)
 {
   //! Return the azimuthal scatter angle value for the given test position in the given coordinate system
 
