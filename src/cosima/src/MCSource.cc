@@ -3626,6 +3626,95 @@ double MCSource::Comptonized(const double Energy, double Alpha, double Epeak) co
   return pow(Energy, Alpha)*exp(-(Alpha+2)*Energy/Epeak);
 }
 
+/******************************************************************************
+
+* Polarization conventions
+*/
+
+
+// Constants for angle normalization
+const double PI = 3.14159265358979323846;
+
+
+// Normalize angles between 0 and π (0 to 180 degrees)
+double MCSource::NormalizeAngle(double angle) const {
+  if (angle < 0) {
+    angle += PI;
+  }
+  return angle;
+}
+
+// Orthographic projection: returns px and py vectors
+std::pair<G4ThreeVector, G4ThreeVector> MCSource::OrthographicProjection(const G4ThreeVector& vec, const G4ThreeVector& ref_vector) const {
+  double dot_product = vec.dot(ref_vector);
+  G4ThreeVector px = ref_vector - dot_product * vec;
+  px = px.unit();  // Normalize px
+  G4ThreeVector py = vec.cross(px);
+  return std::make_pair(px, py);
+}
+
+// Stereographic projection: returns px and py vectors
+std::pair<G4ThreeVector, G4ThreeVector> MCSource::StereographicProjection(const G4ThreeVector& vec, const G4ThreeVector& ref_vector) const {
+  G4ThreeVector norm_ref = ref_vector.unit();
+  double denom = (vec.z() + 1.0);
+  G4ThreeVector px(1.0 - (vec.x() * vec.x() - vec.y() * vec.y()) / (denom * denom),
+                   -2.0 * vec.x() * vec.y() / (denom * denom),
+                   -2.0 * vec.x() / denom);
+  px = px.unit();  // Normalize px
+  G4ThreeVector py = vec.cross(px);
+  return std::make_pair(px, py);
+}
+
+// Transform the polarization angle between conventions
+double MCSource::TransformPolarizationAngle(double pa_1, const std::pair<G4ThreeVector, G4ThreeVector>& projection1, const std::pair<G4ThreeVector, G4ThreeVector>& projection2) const {
+  double cos_pa_1 = std::cos(pa_1);
+  double sin_pa_1 = std::sin(pa_1);
+
+  // Calculate the polarization vector in the current convention
+  G4ThreeVector pol_vec = projection1.first * cos_pa_1 + projection1.second * sin_pa_1;
+
+  // Compute dot products for transformation in the new convention
+  double a = pol_vec.dot(projection2.first);
+  double b = pol_vec.dot(projection2.second);
+
+  // Calculate the new polarization angle in the new convention
+  double pa_2 = std::atan2(b, a);
+  return NormalizeAngle(pa_2);
+}
+
+// Example function to demonstrate the projections and angle transformations
+bool MCSource::ProcessPolarizationTransformation() {
+  // Example input: polarization angle in radians (45 degrees)
+  double pa_1 = PI / 4.0;
+
+  // Reference vector: Z-axis (default)
+  G4ThreeVector ref_vector(0, 0, 1);
+
+  // Example source direction vector
+  G4ThreeVector vec(std::sin(PI / 6) * std::cos(PI / 4),
+                    std::sin(PI / 6) * std::sin(PI / 4),
+                    std::cos(PI / 6));
+
+  // Perform orthographic projection
+  auto ortho_projection = OrthographicProjection(vec, ref_vector);
+
+  // Perform stereographic projection
+  auto stereo_projection = StereographicProjection(vec, ref_vector);
+
+  // Transform the polarization angle from orthographic to stereographic
+  double pa_2_ortho_to_stereo = TransformPolarizationAngle(pa_1, ortho_projection, stereo_projection);
+
+  // Transform the polarization angle from stereographic back to orthographic
+  double pa_2_stereo_to_ortho = TransformPolarizationAngle(pa_2_ortho_to_stereo, stereo_projection, ortho_projection);
+
+  // Output results (replace this with the appropriate output mechanism for your framework)
+  mout << "PA_1: " << pa_1 << " radians" << endl;
+  mout << "PA_2 (Ortho to Stereo): " << pa_2_ortho_to_stereo << " radians" << endl;
+  mout << "PA_2 (Stereo to Ortho): " << pa_2_stereo_to_ortho << " radians" << endl;
+
+  return true;
+}
+
 /*
  * MCSource.cc: the end...
  ******************************************************************************/
