@@ -3666,21 +3666,30 @@ std::pair<G4ThreeVector, G4ThreeVector> MCSource::StereographicProjection(const 
 }
 
 // Transform the polarization angle between conventions
-double MCSource::TransformPolarizationAngle(double pa_1, const std::pair<G4ThreeVector, G4ThreeVector>& projection1, const std::pair<G4ThreeVector, G4ThreeVector>& projection2) const {
+ddouble MCSource::TransformPolarizationAngle(double pa_1, const std::pair<G4ThreeVector, G4ThreeVector>& projection1, const std::pair<G4ThreeVector, G4ThreeVector>& projection2) const {
   double cos_pa_1 = std::cos(pa_1);
   double sin_pa_1 = std::sin(pa_1);
 
-  // Calculate the polarization vector in the current convention
-  G4ThreeVector pol_vec = projection1.first * cos_pa_1 + projection1.second * sin_pa_1;
+  // Defining the first projection's basis vectors
+  G4ThreeVector px1 = projection1.first;
+  G4ThreeVector py1 = projection1.second;
 
-  // Compute dot products for transformation in the new convention
-  double a = pol_vec.dot(projection2.first);
-  double b = pol_vec.dot(projection2.second);
+  // Defining the second projection's basis vectors
+  G4ThreeVector px2 = projection2.first;
+  G4ThreeVector py2 = projection2.second;
 
-  // Calculate the new polarization angle in the new convention
+  // Compute the polarization vector in the original coordinate system
+  G4ThreeVector pol_vec = px1 * cos_pa_1 + py1 * sin_pa_1;
+
+  // Compute dot products with the new coordinate system
+  double a = pol_vec.dot(px2);
+  double b = pol_vec.dot(py2);
+
+  // Calculate the new polarization angle
   double pa_2 = std::atan2(b, a);
   return NormalizeAngle(pa_2);
 }
+
 
 // Example function to demonstrate the projections and angle transformations
 bool MCSource::ProcessPolarizationTransformation() {
