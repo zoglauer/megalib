@@ -139,6 +139,9 @@ class MARMFitter
   //! Return the FWHM uncertainty result or g_DoubleNotDefined if fit was not successful or not done yet
   double GetAverageFWHMUncertainty() const;
 
+  //! Return the average (only) reduced chi-square result or g_DoubleNotDefined if fit was not successful or not done yet
+  double GetAverageReducedChiSquare() const;
+
   //! Return the 50.0% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
   double Get50p0PercentContainmentUsingARMSelection() const;
   //! Return the 68.3% containment for events with +- maximum ARM value or g_DoubleNotDefined if fit was not successful or not done yet
@@ -261,6 +264,8 @@ class MARMFitter
   vector<vector<double>> m_BootStrappedFitParameters;
   //! The boot-strapped Baker-Cousins-Likelihood ratio values:
   vector<double> m_BootStrappedBakerCousins;
+  //! The boot-strapped reduced chi-square values:
+  vector<double> m_BootStrappedReducedChiSquares;
 
   //! The maximum number of allowed threads
   unsigned int m_MaximumNumberOfThreads;
@@ -289,6 +294,9 @@ class MARMFitter
 
   //! The final fit parameters
   vector<double> m_FinalFitParameters;
+
+  //! The final (average) reduced chi-square value
+  double m_FinalReducedChiSquare;
 
   //! The 50% containment radius within the ARM window (accurate to the next largest value in the data set)
   double m_Containment50PercentUsingARMSelection;

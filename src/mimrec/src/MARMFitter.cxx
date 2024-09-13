@@ -180,6 +180,7 @@ void MARMFitter::Reset()
   m_BootStrappedFWHMSamples.clear();
   m_BootStrappedFitParameters.clear();
   m_BootStrappedBakerCousins.clear();
+  m_BootStrappedReducedChiSquares.clear();
 
   m_FitSuccessful = false;
   m_FinalFWHM = g_DoubleNotDefined;
@@ -187,6 +188,7 @@ void MARMFitter::Reset()
   m_FinalFitParameters.clear();
   m_FinalBakerCousins = g_DoubleNotDefined;
   m_FinalBakerCousinsUncertainty = g_DoubleNotDefined;
+  m_FinalReducedChiSquare = g_DoubleNotDefined;
 
   m_Containment50PercentUsingARMSelection = g_DoubleNotDefined;
   m_Containment1SigmaUsingARMSelection = g_DoubleNotDefined;
@@ -217,13 +219,13 @@ void MARMFitter::AddEvent(MComptonEvent* ComptonEvent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Optimize binning - check sif the binning is OK, otherwise check for a better one
+//! Optimize binning - checks if the binning is OK, otherwise check for a better one
 bool MARMFitter::OptimizeBinning()
 {
   if (m_IsBinningOptimized == true) return true;
 
   const unsigned int MinimumBinContent = 50;
-  const unsigned int MinimumBins = 5;
+  unsigned int MinimumBins = GetARMFitFunctionNumberOfParameters(m_ARMFitFunction) + 5;
 
   bool BinningOptimized = false;
 
@@ -337,7 +339,8 @@ MString MARMFitter::GetARMFitFunction(MARMFitFunctionID ID)
   } else if (ID == MARMFitFunctionID::c_GaussLorentzLorentz) {
     return MString("[&](double *x, double *p){ return p[0] + p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) + p[4]*(p[5]*p[5])/(p[5]*p[5] + (x[0]-p[1])*(x[0]-p[1])) + p[6]*(p[7]*p[7])/(p[7]*p[7] + (x[0]-p[1])*(x[0]-p[1])); }");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz) {
-    return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) ) + p[5]*(p[6]*p[6])/(p[6]*p[6] + (x[0]-p[1])*(x[0]-p[1])) + p[7]*(p[8]*p[8])/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1])); }");
+    //return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) ) + p[5]*(p[6]*p[6])/(p[6]*p[6] + (x[0]-p[1])*(x[0]-p[1])) + p[7]*(p[8]*p[8])/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1])); }");
+    return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) ) + p[5]*p[6]/(p[6]*p[6] + (x[0]-p[1])*(x[0]-p[1])) + p[7]*p[8]/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1])); }");
   } else if (ID == MARMFitFunctionID::c_AsymmetricGaussGaussLorentzLorentz) {
     //return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) )  +  p[5]*exp(-0.5*pow((x[0]-p[1])/p[6], 2))  +  p[7]*(p[8]*p[8])/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1]))  +  p[9]*(p[10]*p[10])/(p[10]*p[10] + (x[0]-p[1])*(x[0]-p[1])); }");
     return MString("[&](double *x, double *p){ return p[0] + (x[0] - p[1] >= 0 ? p[2]*exp(-0.5*pow((x[0]-p[1])/p[3], 2)) : p[2]*exp(-0.5*pow((x[0]-p[1])/p[4], 2)) )  +  p[5]*exp(-0.5*pow((x[0]-p[1])/p[6], 2))  +  p[7]*p[8]/(p[8]*p[8] + (x[0]-p[1])*(x[0]-p[1]))  +  p[9]*p[10]/(p[10]*p[10] + (x[0]-p[1])*(x[0]-p[1])); }");
@@ -808,6 +811,11 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
 
   // Calculate the ARM metrics not depending on a fit
   CalculateARMMetrics();
+  
+  // We need a histogram for chi-square calculation
+  TH1D* DataHist = new TH1D("", "", m_NumberOfBins, -m_MaxARMValue, m_MaxARMValue);
+  for (auto& V: CleanedData) DataHist->Fill(V);
+  for (int b = 1; b <= DataHist->GetNbinsX(); ++b) DataHist->SetBinError(b, sqrt(DataHist->GetBinContent(b)));
 
   // Set up for fitting
   ROOT::Fit::DataOptions DataOptions;
@@ -829,12 +837,8 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
     DataOptions.fIntegral = true;
     DataOptions.fUseRange =true;
     ROOT::Fit::BinData BinnedData(DataOptions, Range);
-    // Easiest option to fill the binned data set is via a histogram:
-    TH1D* D = new TH1D("", "", m_NumberOfBins, -m_MaxARMValue, m_MaxARMValue);
-    for (auto& V: CleanedData) D->Fill(V);
-    for (int b = 1; b <= D->GetNbinsX(); ++b) D->SetBinError(b, sqrt(D->GetBinContent(b)));
-    ROOT::Fit::FillData(BinnedData, D);
-    delete D;
+    // Easiest option to fill the binned data set is via the histogram:
+    ROOT::Fit::FillData(BinnedData, DataHist);
     Fitter.LikelihoodFit(BinnedData, true);
     //Fitter.LeastSquareFit(BinnedData);
   }
@@ -849,6 +853,21 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
   // Calculate FWHM ...
   double FWHM = MInterface::GetFWHM(FitFunction, -m_MaxARMValue, m_MaxARMValue);
 
+  // Calculate chi-square
+  double ChiSquare = 0.0;
+  for (int b = 1; b <= DataHist->GetNbinsX(); ++b) {
+    double Y = DataHist->GetBinContent(b);
+    double U = DataHist->GetBinError(b);
+    double E = FitFunction->Eval(DataHist->GetBinCenter(b));
+    if (Y > 0 && E > 0) {
+      ChiSquare += pow(Y - E, 2)/U/U;
+    }
+  }
+  int DegreesOfFreeDom = DataHist->GetNbinsX() - GetARMFitFunctionNumberOfParameters(m_ARMFitFunction);
+
+
+  delete DataHist;
+
   {
     std::unique_lock<std::mutex> Lock(m_Mutex);
 
@@ -860,6 +879,8 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
     }
 
     m_BootStrappedBakerCousins[FitID] = Result.MinFcnValue();
+
+    m_BootStrappedReducedChiSquares[FitID] = ChiSquare/DegreesOfFreeDom;
 
     Result.Print();
   }
@@ -968,6 +989,7 @@ void MARMFitter::CalculateBootStrappedMetrics()
   m_FinalFitParameters.clear();
   m_FinalBakerCousins = g_DoubleNotDefined;
   m_FinalBakerCousinsUncertainty = g_DoubleNotDefined;
+  m_FinalReducedChiSquare = g_DoubleNotDefined;
 
   if (m_BootStrappedFWHMSamples.size() > 0) {
     // Calculate the average
@@ -1006,6 +1028,10 @@ void MARMFitter::CalculateBootStrappedMetrics()
             return acc + (x - BC) * (x - BC);
         });
     m_FinalBakerCousinsUncertainty = std::sqrt(SquaredSumBakerCousins / m_BootStrappedBakerCousins.size());
+
+    // Calculate the average reduced chi-square
+    double SumReducedChiSquare = std::accumulate(m_BootStrappedReducedChiSquares.begin(), m_BootStrappedReducedChiSquares.end(), 0.0);
+    m_FinalReducedChiSquare = SumReducedChiSquare / m_BootStrappedReducedChiSquares.size();
 
 
     m_CountsFWHMWindow = g_UnsignedIntNotDefined;
@@ -1179,6 +1205,9 @@ bool MARMFitter::Fit(unsigned int NumberOfFits)
 
   m_BootStrappedBakerCousins.clear();
   m_BootStrappedBakerCousins.resize(NumberOfFits);
+
+  m_BootStrappedReducedChiSquares.clear();
+  m_BootStrappedReducedChiSquares.resize(NumberOfFits);
 
   if (NumberOfFits > 1) {
     // Start the threads
@@ -1370,10 +1399,14 @@ MString MARMFitter::ToString()
     out<<"  Fit mode: "<<(m_UnbinnedFitting == true ? "Unbinned" : "Binned")<<" likelihood fit"<<endl;
     out<<"  Fit function: "<<GetARMFitFunctionName(m_ARMFitFunction)<<endl;
     if (m_BootStrappedFWHMSamples.size() > 1) {
-      out<<"  Average FWHM after "<<m_BootStrappedFWHMSamples.size()<<" boot straps: "<<MString(m_FinalFWHM, m_FinalFWHMUncertainty, "degree")<<endl;
+      out<<"  Average FWHM after "<<m_BootStrappedFWHMSamples.size()<<" bootstraps: "<<MString(m_FinalFWHM, m_FinalFWHMUncertainty, "degree")<<endl;
+      out<<"  Average reduced chi-square: "<<m_FinalReducedChiSquare<<endl;
       out<<"  Counts in +-FWHM window: "<<m_CountsFWHMWindow<<" (-"<<m_CountsFWHMWindow-m_CountsFWHMWindowMinimum<<", +"<<m_CountsFWHMWindowMaximum-m_CountsFWHMWindow<<")"<<endl;
     } else {
-      out<<"  FWHM after 1 fit: "<<m_FinalFWHM<<" degree"<<endl;
+      out<<"  FWHM after 1 fit: "<<setprecision(3)<<m_FinalFWHM<<" degree"<<endl;
+      if (m_UnbinnedFitting == false) {
+        out<<"  Reduced chi-square: "<<m_FinalReducedChiSquare<<endl;
+      }
       out<<"  Counts in +-FWHM window: "<<m_CountsFWHMWindow<<endl;
     }
   } else {

@@ -244,15 +244,15 @@ double UTARMFitter::TestBootstrapping()
   cout<<"Started test bootstrapping"<<endl;
 
   // Basics
-  constexpr unsigned int Counts = 1000;
-  constexpr unsigned int NumberOfBins = 201;
-  constexpr double MaxARM = 20;
+  constexpr unsigned int Counts = 100000;
+  constexpr unsigned int NumberOfBins = 101;
+  constexpr double MaxARM = 10;
 
   vector<double> ARMValues;
   ARMValues.reserve(Counts);
 
   // Create the ARM data
-  TF1* Sampler = new TF1("DoubleLorentzAsymGausArm", DoubleLorentzAsymGausArm, -MaxARM, MaxARM, 9);
+  TF1* Sampler = new TF1("DoubleLorentzAsymGausArm", DoubleLorentzAsymGausArm, -180, 180, 9);
   Sampler->SetBit(kCanDelete);
   Sampler->SetParNames("Offset",
                        "Mean",
@@ -263,10 +263,10 @@ double UTARMFitter::TestBootstrapping()
                        "Gaus Height",
                        "Gaus Sigma 1",
                        "Gaus Sigma 2");
-  Sampler->SetParameters(0, 1.0, 2.0, 150, 3.0, 800, 500, 2.5, 5.5);
+  Sampler->SetParameters(0, 0.0, 2.0, 0, 3.0, 0, 500, 2.5, 2.5);
 
   for (unsigned int i = 0; i < Counts; ++i) {
-    ARMValues.push_back(Sampler->GetRandom(-MaxARM, MaxARM));
+    ARMValues.push_back(Sampler->GetRandom(-180, 180));
   }
 
   double OriginalFWHM = MInterface::GetFWHM(Sampler, -MaxARM, MaxARM);
@@ -278,14 +278,16 @@ double UTARMFitter::TestBootstrapping()
   MARMFitter Fitter;
   Fitter.SetNumberOfBins(NumberOfBins);
   Fitter.SetMaximumARMValue(MaxARM);
-  Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz);
-  Fitter.UseOptimizedBinning();
+  //Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGaussLorentzLorentz);
+  Fitter.SetFitFunction(MARMFitFunctionID::c_Gauss);
+  Fitter.UseOptimizedBinning(true);
+  Fitter.UseBinnedFitting(true);
 
   for (unsigned int i = 0; i < Counts; ++i) {
     Fitter.AddARMValue(ARMValues[i]);
   }
 
-  Fitter.Fit(200);
+  Fitter.Fit(1);
 
   if (Fitter.WasFittingSuccessful() == true) {
     cout<<"Average FWHM: "<<Fitter.GetAverageFWHM()<<endl;
@@ -318,6 +320,8 @@ double UTARMFitter::TestBootstrapping()
     Fitter.Draw();
     FitterCanvas->Modified();
     FitterCanvas->Update();
+
+    cout<<Fitter.ToString()<<endl;
   }
 
   return true;
