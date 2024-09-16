@@ -1,0 +1,23 @@
+# Example run for Cosima
+
+# Global parameters
+Version         1
+Geometry        GeDSSDElectronTracking.geo.setup
+
+# Physics list
+PhysicsListEM               LivermorePol
+
+# Output formats
+StoreSimulationInfo         all
+
+# Run & source parameters
+Run SpaceSim
+SpaceSim.FileName           GeDSSDElectronTracking
+SpaceSim.Triggers           1000000
+
+SpaceSim.Source Test
+Test.ParticleType           1
+Test.Beam                   FarFieldIsotropic
+Test.Spectrum               Linear 1 10000
+Test.Flux                   1.0
+
