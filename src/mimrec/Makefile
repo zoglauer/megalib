@@ -54,6 +54,7 @@ FILES := MSettingsMimrec \
 	MExposure \
 	MEarthHorizon \
 	MStandardAnalysis \
+	MARMFitter \
 	MVariableSourceDetector \
 
 LIBRARY_UI := MimrecGui
@@ -63,6 +64,7 @@ FILES_UI := \
 	MGUIMimrecMain \
 	MGUIHistogramData \
 	MGUIARM \
+	MGUIARMExtended \
 	MGUIAnimation \
 	MGUICoordinateSystem \
 	MGUIEventSelection \
@@ -117,12 +119,16 @@ ROOTPCM_UI:=lib$(LIBRARY_UI)_rdict.pcm
 OBJECT_MAIN:=$(patsubst %, $(LB)/%.o, $(MAIN))
 EXECUTABLE:=$(BN)/$(PROGRAM)
 
+CXX_UT := $(wildcard unittests/*.cxx)
+EXE_UT := $(patsubst %.cxx,%,$(CXX_UT))
+EXE_UT := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
+
 
 #----------------------------------------------------------------
 # Commands:
 #
 
-all: $(EXECUTABLE)
+all: $(EXECUTABLE) $(EXE_UT)
 
 lib: $(SHAREDLIB) 
 
@@ -195,6 +201,11 @@ $(OBJECT_MAIN): $(LB)/%.o: src/%.cxx inc/%.h
 $(EXECUTABLE): $(SHAREDLIB_UI) $(SHAREDLIB) $(OBJECT_MAIN)
 	@echo "Linking $(subst $(BN)/,,$@) ..."
 	@$(LD) $(LDFLAGS) $(OBJECT_MAIN) $(SHAREDLIB_UI) $(SHAREDLIB) $(LIBRARIES) $(GLIBS) $(LIBS) -o $(EXECUTABLE)
+
+
+$(EXE_UT): $(BN)/%: unittests/%.cxx $(SHAREDLIB)
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
+	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< $(SHAREDLIB) $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
 
 	
 #
