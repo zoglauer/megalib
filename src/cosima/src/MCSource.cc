@@ -407,9 +407,8 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
   // if we use the Earth Occultation , we skip the event if the direction is coming from the Earth
   if (m_UseEarthOccultation == true) {
   
-    double Energy = ParticleGun->GetCurrentSource()->GetEneDist()->GetMonoEnergy()/keV;
+    
     G4ThreeVector Dir = -ParticleGun->GetCurrentSource()->GetAngDist()->GenerateOne();
-    G4ThreeVector Pos = ParticleGun->GetCurrentSource()->GetPosDist()->GenerateOne();
     double ThetafromGun = Dir.getTheta() / deg;
     
     //get the Earth aspect information from the orientation file
@@ -441,10 +440,6 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
       // convert the Earth galactic l,b coordinate into cartesian representation 
       G4ThreeVector EarthZenith(cos(Lat+c_Pi/2.0)*cos(Lon) , cos(Lat+c_Pi/2.0)*sin(Lon) , sin(Lat+c_Pi/2.0)); 
      
-      //rotate the local coordinate system of the event into the oriented coordinate system
-      Sky.OrientPositionAndDirection(m_NextEmission, Pos, Dir);
-      //cout<<"Angle between 2 vector : "<<EarthZenith.angle(Dir)/deg<<endl;
-      
             
       //Do the Theta cut
       // crosscheck test directly cut the theta from particle gun
