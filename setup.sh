@@ -168,7 +168,7 @@ OSTYPE=$(uname -s)
 OPT="normal"
 DEBUG="off"
 UPDATES="off"
-PATCH="off"
+PATCH="on"
 CLEANUP="off"
 BRANCH=""
 
