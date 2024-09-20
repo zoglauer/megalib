@@ -1445,6 +1445,18 @@ bool MCParameterFile::Parse()
               return false;
             }
           }
+	  else if (Type == "farfieldearthoccultation" ) {
+            if (T->GetNTokens() >= 3) {
+              Source->SetBeamType(MCSource::c_FarField,
+                                  MCSource::c_FarFieldEarthOccultation);
+              
+              mdebug<<"Using beam: "<<Type<<endl;
+            } else {
+              Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
+                   " Number of tokens must be larger than 2!");
+              return false;
+            }
+          }
           else if (Type == "farfieldnormalizedenergybeamfluxfunction") {
             if (T->GetNTokens() >= 4) {
               Source->SetBeamType(MCSource::c_FarField,
@@ -2884,19 +2896,22 @@ bool MCParameterFile::Parse()
       
       else if (T->IsTokenAt(1, "EarthOccultation", true)) {
        
-        if (T->GetNTokens() == 3) {
-	  double Theta = T->GetTokenAtAsDouble(2);
-	  if(Source->SetEarthOccultation(Theta)==true){
+        if (T->GetNTokens() == 4) {
+	  double Theta = T->GetTokenAtAsDouble(3);
+	  bool InverseCut = T->GetTokenAtAsBoolean(2);
+	  if(Source->SetEarthOccultation(Theta,InverseCut)==true){
 	     mdebug<<"Setting Earth Occultation"<<endl;
 	  } else{
 	     Typo(i, "Cannot set Earth Occultation");
              return false;
 	  }
        }
-	if (T->GetNTokens() == 2) {
-	  //if theta is not specify we set it to 0 and will calculate from the ori file
+	if (T->GetNTokens() == 3) {
+	  //if theta is not specify we set it to 0 and will calculate it from the ori file
+	  // depending on the altitude
 	  double Theta = 0.0;
-	  if(Source->SetEarthOccultation(Theta)==true){
+	  bool InverseCut = T->GetTokenAtAsBoolean(2);
+	  if(Source->SetEarthOccultation(Theta,InverseCut)==true){
 	     mdebug<<"Setting Earth Occultation"<<endl;
 	  } else{
 	     Typo(i, "Cannot set Earth Occultation");
