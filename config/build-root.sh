@@ -16,7 +16,7 @@ if [[ $? -eq 0 ]]; then
   CONFIGUREOPTIONS+=" -DCMAKE_IGNORE_PATH=${PORTPATH};${PORTPATH}/bin;${PORTPATH}/include;${PORTPATH}/include/libxml2;${PORTPATH}/include/unicode"
 fi
 # Until ROOT 6.24: C++ 11
-CONFIGUREOPTIONS+=" -DCMAKE_CXX_STANDARD=14"
+CONFIGUREOPTIONS+=" -DCMAKE_CXX_STANDARD=17"
 # We want a minimal system and enable what we really need:
 #CONFIGUREOPTIONS+=" -Dgminimal=ON"
 # Open GL -- needed by geomega
@@ -333,10 +333,17 @@ if [ "${TARBALL}" != "" ]; then
   fi
 
   # Check if it has the correct version:
-  VER=`tar xfzO ${TARBALL} ${ROOTTOPDIR}/build/version_number | sed 's|/|.|g'`
-  RESULT=$?
-  if [ "${RESULT}" != "0" ]; then
-    echo "ERROR: Something went wrong unpacking the ROOT tarball!"
+  VER=""
+  if tar -tf ${TARBALL} | grep -q "${ROOTTOPDIR}/build/version_number"; then  
+    VER=`tar xfzO ${TARBALL} ${ROOTTOPDIR}/build/version_number | sed 's|/|.|g'`
+  elif tar -tf ${TARBALL} | grep -q "${ROOTTOPDIR}/core/foundation/inc/ROOT/RVersion.hxx"; then
+    VER+=$(tar xfzO ${TARBALL} ${ROOTTOPDIR}/core/foundation/inc/ROOT/RVersion.hxx | grep "ROOT_VERSION_MAJOR" | head -n 1 | awk '{ print $3 }')
+    VER+="."
+    VER+=$(tar xfzO ${TARBALL} ${ROOTTOPDIR}/core/foundation/inc/ROOT/RVersion.hxx | grep "ROOT_VERSION_MINOR" | head -n 1 | awk '{ print $3 }')
+    VER+="."
+    VER+=$(tar xfzO ${TARBALL} ${ROOTTOPDIR}/core/foundation/inc/ROOT/RVersion.hxx | grep "ROOT_VERSION_PATCH" | head -n 1 | awk '{ print $3 }')
+  else
+    echo "ERROR: Cannot find the ROOT version in the tarball!"
     exit 1
   fi
   if echo ${VER} | grep -E '[ "]' >/dev/null; then
@@ -430,9 +437,17 @@ else
     exit 1
   fi
 
-  VER=`tar xfzO ${TARBALL} ${ROOTTOPDIR}/build/version_number | sed 's|/|.|g'`
-  if [ "$?" != "0" ]; then
-    echo "ERROR: Something went wrong unpacking the ROOT tarball!"
+  VER=""
+  if tar -tf ${TARBALL} | grep -q "${ROOTTOPDIR}/build/version_number"; then
+    VER=`tar xfzO ${TARBALL} ${ROOTTOPDIR}/build/version_number | sed 's|/|.|g'`
+  elif tar -tf ${TARBALL} | grep -q "${ROOTTOPDIR}/core/foundation/inc/ROOT/RVersion.hxx"; then
+    VER+=$(tar xfzO ${TARBALL} ${ROOTTOPDIR}/core/foundation/inc/ROOT/RVersion.hxx | grep "ROOT_VERSION_MAJOR" | head -n 1 | awk '{ print $3 }')
+    VER+="."
+    VER+=$(tar xfzO ${TARBALL} ${ROOTTOPDIR}/core/foundation/inc/ROOT/RVersion.hxx | grep "ROOT_VERSION_MINOR" | head -n 1 | awk '{ print $3 }')
+    VER+="."
+    VER+=$(tar xfzO ${TARBALL} ${ROOTTOPDIR}/core/foundation/inc/ROOT/RVersion.hxx | grep "ROOT_VERSION_PATCH" | head -n 1 | awk '{ print $3 }')
+  else
+    echo "ERROR: Cannot find the ROOT version in the tarball!"
     exit 1
   fi
   if echo ${VER} | grep -E '[ "]' >/dev/null; then
