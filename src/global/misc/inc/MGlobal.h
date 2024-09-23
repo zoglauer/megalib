@@ -132,6 +132,10 @@ extern TMutex* g_Mutex;
 //! The ID of the main thread
 extern Long_t g_MainThreadID;
 
+//! The OS name
+extern MString g_OSType;
+
+
 // And here a lot of other useful constants:
 extern const double c_Pi;
 extern const double c_TwoPi;

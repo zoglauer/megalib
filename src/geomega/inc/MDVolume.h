@@ -225,6 +225,8 @@ class MDVolume
   //! Find the number of placements of a volume
   bool GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
 
+  //! Return the center locations of the volumes
+  vector<MVector> GetCenterLocations(const MString& VolumeName);
 
   //! Recursively return a geomega setup file type string
   MString GetGeomega();

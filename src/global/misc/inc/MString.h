@@ -43,13 +43,15 @@ class MString
 {
   // public interface:
  public:
-  //! Deafult constructor
+  //! Default constructor
   MString() {};
-  // Copy constructor
+  //! Copy constructor
   MString(const MString& String) : m_String(String.m_String) {}
-  // Move constructor
+  //! Move constructor
   MString(MString&& String) : m_String(std::move(String.m_String)) {}
+  //! Initialize with string
   MString(const string& S) { m_String = S; }
+  //! Initilaize with ostringstream
   MString(const ostringstream& S) { m_String = S.str(); }
   MString(const char* S) { if (S!= nullptr) m_String = S; }
   //! Copy first n characters of S
@@ -63,6 +65,13 @@ class MString
   MString(const unsigned long i) { operator+=(i); }
   MString(const float i) { operator+=(i); }
   MString(const double i) { operator+=(i); }
+  //! Constrcut with double of given precision
+  MString(const double i, unsigned int Precision);
+  //! Construct from value, uncertainty, unit using scientific rounding
+  //! If Latex is true, the +- will be repalce by #pm for display with ROOT
+  //! Will be something like (12.345, 1.872, "mm") -> "(12.3 +- 1.9) mm"
+  MString(double Value, double Uncertainty, MString Units = "", bool Latex = false);
+  //! Default destructor
   virtual ~MString() {}
 
   // Move
@@ -255,9 +264,10 @@ class MString
   //! Test if the string is a positive integer -- ignores whitespace at beginning and end
   bool IsPositiveInteger() const;
 
-  // General type test (use for int, long, etc.)
+  //! General type test (use for int, long, etc.)
   template <typename T> bool Is() const;
 
+  //! For compatibility with ???
   static const size_t npos;
 
   // protected methods:

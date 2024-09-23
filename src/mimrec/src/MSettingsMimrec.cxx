@@ -80,6 +80,12 @@ MSettingsMimrec::MSettingsMimrec(bool AutoLoad) : MSettings("MimrecConfiguration
   m_HistBinsSpectrum = 200;
   m_HistBinsPolarization = 90;
 
+  // More options for the ARM
+  m_OptimizeBinningARMGamma = false;
+  m_NumberOfFitsARMGamma = 0;
+  m_FitFunctionIDARMGamma = 5;
+  m_UseUnbinnedFittingARMGamma = false;
+
   // Polarization
   m_PolarizationBackgroundFileName = "";
   m_PolarizationArmCut = 10;
@@ -146,6 +152,13 @@ bool MSettingsMimrec::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "ARMElectron", m_HistBinsARMElectron);
   new MXmlNode(aNode, "Spectrum", m_HistBinsSpectrum);
   new MXmlNode(aNode, "Polarization", m_HistBinsPolarization);
+
+  // ARM Gamma additional options
+  aNode = new MXmlNode(Node, "ARMGammaExtra");
+  new MXmlNode(aNode, "OptimizeBinning", m_OptimizeBinningARMGamma);
+  new MXmlNode(aNode, "NumberOfFits", m_NumberOfFitsARMGamma);
+  new MXmlNode(aNode, "FitFunctionID", m_FitFunctionIDARMGamma);
+  new MXmlNode(aNode, "UseUnbinnedFitting", m_UseUnbinnedFittingARMGamma);
 
   // Menu Polarization
   aNode = new MXmlNode(Node, "Polarization");
@@ -235,6 +248,20 @@ bool MSettingsMimrec::ReadXml(MXmlNode* Node)
     }
   }
 
+  if ((aNode = Node->GetNode("ARMGammaExtra")) != 0) {
+    if ((bNode = aNode->GetNode("OptimizeBinning")) != 0) {
+      m_OptimizeBinningARMGamma = bNode->GetValueAsBoolean();
+    }
+    if ((bNode = aNode->GetNode("NumberOfFits")) != 0) {
+      m_NumberOfFitsARMGamma = bNode->GetValueAsUnsignedInt();
+    }
+    if ((bNode = aNode->GetNode("FitFunctionID")) != 0) {
+      m_FitFunctionIDARMGamma = bNode->GetValueAsUnsignedInt();
+    }
+    if ((bNode = aNode->GetNode("UseUnbinnedFitting")) != 0) {
+      m_UseUnbinnedFittingARMGamma = bNode->GetValueAsBoolean();
+    }
+  }
 
   if ((aNode = Node->GetNode("Polarization")) != 0) {
     if ((bNode = aNode->GetNode("BackgroundFile")) != 0) {
@@ -244,7 +271,6 @@ bool MSettingsMimrec::ReadXml(MXmlNode* Node)
       m_PolarizationArmCut = bNode->GetValueAsDouble();
     }
   }
-    
 
   return true;
 }

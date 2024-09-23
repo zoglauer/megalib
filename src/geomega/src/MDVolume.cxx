@@ -2324,6 +2324,34 @@ MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Place
 ////////////////////////////////////////////////////////////////////////////////
 
 
+vector<MVector> MDVolume::GetCenterLocations(const MString& VolumeName)
+{
+  //! Return the center locations of all volumes named VolumeName
+
+  vector<MVector> Positions;
+
+  for (unsigned int d = 0; d < GetNDaughters(); ++d) {
+    if (GetDaughterAt(d)->GetName() == VolumeName) {
+      Positions.push_back(GetDaughterAt(d)->GetPosition());
+    } else {
+      // Get the locations
+      vector<MVector> Interim = GetDaughterAt(d)->GetCenterLocations(VolumeName);
+      // Rotate them into this volume and add them to the main vector
+      for (MVector& P: Interim) {
+        P = m_InvertedRotMatrix*P;
+        P += m_Position;
+        Positions.push_back(P);
+      }
+    }
+  }
+
+  return Positions;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MDVolume::VirtualizeNonDetectorVolumes()
 {
   // Check the list of daughters, those not containing sensitive detectors
