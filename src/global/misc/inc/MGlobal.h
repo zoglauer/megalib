@@ -80,10 +80,7 @@
 #ifndef __MGlobal__
 #define __MGlobal__
 
-#include "TROOT.h"
-#include "TSystem.h"
 #include "TMutex.h"
-#include "TVirtualMutex.h"
 
 #include "MVector.h"
 #include "MString.h"

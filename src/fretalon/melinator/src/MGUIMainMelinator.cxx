@@ -26,6 +26,7 @@
 using namespace std;
 
 // ROOT libs:
+#include <TSystem.h>
 #include <KeySymbols.h>
 #include <TApplication.h>
 #include <TGPicture.h>
