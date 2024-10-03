@@ -42,7 +42,7 @@ using namespace std;
 
 //! This class represents all orientations in Cosima
 enum class MCOrientationCoordinateSystem : int { 
-  c_Local = 0, c_Galactic = 1 
+  c_Local = 0, c_Galactic = 1
 };
 
 //! I/O for MCOrientationCoordinateSystem
