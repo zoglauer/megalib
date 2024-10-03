@@ -252,7 +252,7 @@ bool MCOrientation::Parse(const MTokenizer& Tokenizer)
     if (Read(Tokenizer.GetTokenAtAsString(5)) == false) {
       mlog<<"   ***  Error  ***  Unable to read orientation file correctly: \""<<Tokenizer.GetTokenAtAsString(5)<<"\""<<endl;
       return false; 
-     }
+    }
     
     if (m_Times.size() > 0) {
       m_IsOriented = true;
