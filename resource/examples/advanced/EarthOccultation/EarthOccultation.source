@@ -21,9 +21,9 @@ crab.Flux                       0.048977e-3
 crab.EarthOccultation False 
 
 # You can specify the maximum angle between the direction of the particle and the Earth zenith vector 
-# This is what you want to use for a source like the crab and a specic angle between the particle direction
+# This is what you want to use for a source like the crab and a specic angle between the particle direction and the Earth zenith vector 
 # if Thetamax is not specify, cosima will compute it from the Orientation file and the corresponding altitude
-# and the Earth zenith vector 
+
 
 #crab.EarthOccultation False 20
 
