@@ -24,7 +24,8 @@
 using namespace std;
 
 // ROOT libs:
-#include <TGPicture.h>
+#include "TSystem.h"
+#include "TGPicture.h"
 
 // MEGAlib libs:
 #include "MGUIAbout.h"

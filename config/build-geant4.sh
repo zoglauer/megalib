@@ -10,7 +10,7 @@ if [[ $(uname -a) != *arwin* ]]; then
     CONFIGUREOPTIONS="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
   fi
 fi
-CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL_DATA=ON -DGEANT4_USE_OPENGL_X11=OFF -DGEANT4_INSTALL_DATA_TIMEOUT=14400 -DGEANT4_USE_SYSTEM_EXPAT=OFF -DGEANT4_BUILD_CXXSTD=c++14"
+CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL_DATA=ON -DGEANT4_USE_OPENGL_X11=OFF -DGEANT4_INSTALL_DATA_TIMEOUT=14400 -DGEANT4_USE_SYSTEM_EXPAT=OFF -DGEANT4_BUILD_CXXSTD=c++17"
 #CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0"
 # Reduce the warning messages:
 WARNINGS="-Wno-shadow -Wno-implicit-fallthrough -Wno-overloaded-virtual -Wno-deprecated-copy -Wno-unused-result -Wno-format-overflow="
@@ -456,7 +456,7 @@ PATCHAPPLIED="Patch not applied"
 if [[ ${PATCH} == on ]]; then
   echo "Patching..."
   if [ -f "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" ]; then
-    patch -p1 < ${MEGALIB}/resource/patches/${GEANT4CORE}.patch
+    patch -p1 -l < ${MEGALIB}/resource/patches/${GEANT4CORE}.patch
     PATCHMD5=`openssl md5 "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" | awk -F" " '{ print $2 }'`
     PATCHAPPLIED="Patch applied ${PATCHMD5}"
     echo "Applied patch: ${MEGALIB}/resource/patches/${GEANT4CORE}.patch"
