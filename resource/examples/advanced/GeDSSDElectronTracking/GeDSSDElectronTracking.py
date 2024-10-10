@@ -286,17 +286,32 @@ class GeDSSDElectronTracking:
     
     # create a new TCanvas
     CanvasDistance = ROOT.TCanvas()
+    CanvasDistance.SetTitle("Distances")
     CanvasDistance.cd()
     HistDistance.Draw()
     CanvasDistance.Update()
-    ROOTSaver.append(CanvasDistance)
 
-    ROOTSaver.append(ROOT.TCanvas())
+    #ROOTSaver.append(ROOT.TCanvas())
     CanvasDirection = ROOT.TCanvas()
+    CanvasDistance.SetTitle("Direction")
     HistDirection.Draw()
     CanvasDirection.Update()
+
+    # Fit
+    Fit = ROOT.TF1("Fit", "[0] + gaus(1)", -180, 180)
+
+    # Set initial parameters for the Gaussians
+    Fit.SetParameters(200, 2900, 0, 30)  # Initial counts for each Gaussian
+
+    # Fit the histogram with the function
+    HistDirection.Fit(Fit, "R")
+
+    Fit.SetLineColor(ROOT.kGreen+3)
+    Fit.Draw("SAME")
+    CanvasDirection.Update()
+
     CanvasDirection.SaveAs(Pattern + ".png")
-    ROOTSaver.append(ROOT.TCanvas())
+    #ROOTSaver.append(ROOT.TCanvas())
 
     print("\nResult:")
     print("All events: {}".format(NEvents))
@@ -304,6 +319,9 @@ class GeDSSDElectronTracking:
     print("Average direction: {}".format(AverageDirection/NEvents))
     print("Average energy: {}".format(AverageEnergy/NEvents))
 
+    print("Peak: {}".format(Fit.GetParameter(1)))
+    print("Offset: {}".format(Fit.GetParameter(0)))
+    print("Peak/Offset: {}".format(Fit.GetParameter(1)/Fit.GetParameter(0)))
 
     # prevent Canvases from closing
     #wait()
