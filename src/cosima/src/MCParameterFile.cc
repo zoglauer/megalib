@@ -324,8 +324,12 @@ bool MCParameterFile::Parse()
           m_DecayMode = c_DecayModeIgnore;  
         } else if  (Mode == "activationbuildup") {
           m_DecayMode = c_DecayModeActivationBuildUp;
+	  Typo(i, "Cannot use this activation option for this current MEGAlib branch. Please use the option Buildup");
+          return false;	
         } else if  (Mode == "activationdelayeddecay") {
           m_DecayMode = c_DecayModeActivationDelayedDecay;
+	  Typo(i, "Cannot use this activation option for this current MEGAlib branch. Please use the option Buildup");
+          return false;		
         } else {
           Typo(i, "Cannot parse token DecayMode correctly:"
                " Unknown Decay mode!");
@@ -861,14 +865,14 @@ bool MCParameterFile::Parse()
           if (O.Parse(*T) == false) {
             Typo(i, "Cannot parse token \"OrientationSky\" correctly");
             return false;
-          }          
+          }	
           // The sky can only be rotated if in Galactic coordinates
           if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic && O.IsOriented() == true) {
             Typo(i, "\"OrientationSky\" can only have an orientation in Galactic coordinates!");
             return false;            
           }
           Run->SetSkyOrientation(O);
-          
+	
         } else {
           Typo(i, "Cannot parse token \"OrientationSky\" correctly: Number of tokens is not correct!");
           return false;
@@ -1441,6 +1445,18 @@ bool MCParameterFile::Parse()
             } else {
               Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
                    " Number of tokens must be larger than 3!");
+              return false;
+            }
+          }
+	  else if (Type == "farfieldearthoccultation" ) {
+            if (T->GetNTokens() >= 3) {
+              Source->SetBeamType(MCSource::c_FarField,
+                                  MCSource::c_FarFieldEarthOccultation);
+              
+              mdebug<<"Using beam: "<<Type<<endl;
+            } else {
+              Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
+                   " Number of tokens must be larger than 2!");
               return false;
             }
           }
@@ -2328,6 +2344,7 @@ bool MCParameterFile::Parse()
       } else if (T->IsTokenAt(1, "Flux", true) == true) {
       } else if (T->IsTokenAt(1, "FarFieldTransmissionProbability", true) == true) {
       } else if (T->IsTokenAt(1, "EventList", true) == true) {
+      } else if (T->IsTokenAt(1, "EarthOccultation", true) == true) {
       } else {      
         Typo(i, MString("Unknown keyword: ") + T->GetTokenAt(1));
         return false;
@@ -2879,6 +2896,34 @@ bool MCParameterFile::Parse()
           return false;
         }
       }
+      
+      else if (T->IsTokenAt(1, "EarthOccultation", true)) {
+       
+        if (T->GetNTokens() == 4) {
+	  double Theta = T->GetTokenAtAsDouble(3);
+	  bool InverseCut = T->GetTokenAtAsBoolean(2);
+	  if(Source->SetEarthOccultation(Theta,InverseCut)==true){
+	     mdebug<<"Setting Earth Occultation"<<endl;
+	  } else{
+	     Typo(i, "Cannot set Earth Occultation");
+             return false;
+	  }
+       }
+	if (T->GetNTokens() == 3) {
+	  //if theta is not specify we set it to 0 and will calculate it from the ori file
+	  // depending on the altitude
+	  double Theta = 0.0;
+	  bool InverseCut = T->GetTokenAtAsBoolean(2);
+	  if(Source->SetEarthOccultation(Theta,InverseCut)==true){
+	     mdebug<<"Setting Earth Occultation"<<endl;
+	  } else{
+	     Typo(i, "Cannot set Earth Occultation");
+             return false;
+	  }
+	
+       }
+      }    
+      
     } // is source
   } // Step 6
 

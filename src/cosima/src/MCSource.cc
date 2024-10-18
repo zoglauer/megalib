@@ -85,6 +85,7 @@ const int MCSource::c_FarFieldFileZenithDependent                  = 5;
 const int MCSource::c_FarFieldNormalizedEnergyBeamFluxFunction     = 6;
 const int MCSource::c_FarFieldIsotropic                            = 7;
 const int MCSource::c_FarFieldDisk                                 = 8;
+const int MCSource::c_FarFieldEarthOccultation                     = 9;
 
 const int MCSource::c_NearFieldPoint                               = 10;
 const int MCSource::c_NearFieldRestrictedPoint                     = 11;
@@ -272,6 +273,9 @@ void MCSource::Initialize()
   m_PolarizationDegree = 0.0;
   
   m_UseFarFieldTransmissionProbability = false;
+  m_UseEarthOccultation = false;
+  m_ThetaMaxEarthOccultation = 0.0;
+  m_EarthOccultation_InverseCut = false;
   
   m_NGeneratedParticles = 0;
   
@@ -402,7 +406,74 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
     }
   }
   
+  // if we use the Earth Occultation , we skip the event if the direction is coming from the Earth
+  if (m_UseEarthOccultation == true) {
   
+    G4ThreeVector Dir = -ParticleGun->GetCurrentSource()->GetAngDist()->GenerateOne();
+    
+    
+    
+   //get the Earth aspect information from the orientation file
+    const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+    double Alt,Lat,Lon=0;
+    if (Sky.GetEarthCoordinate(m_NextEmission,  Alt,  Lat, Lon)==true){
+     
+      double ThetaMax;
+      
+      //if Theta max is set by the user
+      if (m_ThetaMaxEarthOccultation != 0.0){
+      
+          ThetaMax = m_ThetaMaxEarthOccultation;
+      }
+     
+      else{
+      
+      //Compute the theta max (angle between the particle direction and Earth-based zenith) 
+      //using the altitude from ori file
+      double R_Earth = 6378; //km
+      ThetaMax =  ( c_Pi - asin( R_Earth/(R_Earth+Alt/km) ) )/deg;
+      
+      }
+     
+     
+      //cout<< "Alt,Lat,Lon : "<<Alt/km<<" "<<Lat/deg<<" "<<Lon/deg<<endl;
+      //cout<<"Theta max: "<<ThetaMax <<endl;
+       
+      // convert the Earth galactic l,b coordinate into cartesian representation  
+      G4ThreeVector EarthZenith(cos(Lat)*cos(Lon) , cos(Lat)*sin(Lon) , sin(Lat)); 
+     
+      //rotate the oriented coordinate system of the event into the local coordinate system
+      //Sky.OrientDirectionInvers(m_NextEmission, Dir);
+      Sky.OrientDirection(m_NextEmission, Dir);
+      
+      //For some reason Z of particle dir needs to be *-1 #reverseingeniering
+      Dir[2] = Dir[2]*-1;
+      
+      //cout<< "particle Dir: "<<Dir[0]<<" " <<Dir[1] <<" "<<Dir[2]<<endl;
+      //cout<<"Earth zenith: "<< EarthZenith[0]<<" "<<EarthZenith[1]<<" "<<EarthZenith[2]<<endl;
+      //cout<<"Angle between 2 vector : "<<EarthZenith.angle(Dir)/deg<<endl;
+      
+      
+            
+      //Do the Theta cut
+      if (m_EarthOccultation_InverseCut){
+      if (EarthZenith.angle(Dir)/deg <ThetaMax ){
+       ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(0);
+       }
+       
+      } else {
+       if (EarthZenith.angle(Dir)/deg >=ThetaMax ){
+       ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(0);
+       }
+      }
+    }
+    else{
+    merr<<"the time is not in the ori time range : "<<m_NextEmission<< " ["<< Sky.GetStartTime()<<","<< Sky.GetStopTime() <<"]"<<endl;
+    }
+    
+    
+    
+  }
   return true;
 }
 
@@ -964,6 +1035,7 @@ bool MCSource::SetBeamType(const int& CoordinateSystem, const int& BeamType)
   case c_FarFieldGaussian:
   case c_FarFieldAssymetricGaussian:
   case c_FarFieldFileZenithDependent:
+  case c_FarFieldEarthOccultation:
   case c_FarFieldNormalizedEnergyBeamFluxFunction:
   case c_FarFieldIsotropic:
   case c_FarFieldDisk:
@@ -1063,6 +1135,9 @@ string MCSource::GetBeamTypeAsString() const
     break;
   case c_FarFieldFileZenithDependent:
     Name = "FarFieldFileZenithDependent";
+    break;
+  case c_FarFieldEarthOccultation:
+    Name = "FarFieldEarthOccultation";
     break;
   case c_FarFieldNormalizedEnergyBeamFluxFunction:
     Name = "FarFieldNormalizedEnergyBeamFluxFunction";
@@ -1167,6 +1242,9 @@ string MCSource::GetBeamAsString() const
   case c_FarFieldFileZenithDependent:
     Name<<"FarFieldFileZenithDependent";
     break;
+  case c_FarFieldEarthOccultation:
+    Name<<"FarFieldEarthOccultation";
+    break;  
   case c_FarFieldNormalizedEnergyBeamFluxFunction:
     Name<<"FarFieldNormalizedEnergyBeamFluxFunction";
     break;
@@ -1292,6 +1370,8 @@ bool MCSource::SetPosition(double PositionParam1,
       return false;
     }
   } else if (m_BeamType == c_FarFieldFileZenithDependent) {
+    // nothing
+  } else if (m_BeamType == c_FarFieldEarthOccultation) {
     // nothing
   } else if (m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
     // nothing
@@ -2075,7 +2155,25 @@ bool MCSource::SetFarFieldTransmissionProbability(const MString& FileName)
   return true;
 }
 
+/******************************************************************************
+ * Return true, if the Earth occultation option is choose
+ */
+bool MCSource::SetEarthOccultation(double Theta,bool InverseCut)
+{
 
+  if (m_CoordinateSystem != c_FarField) {
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": Earth Occultation : You can only use Earth Occultation for far field sources!"<<endl;
+    return false;
+  }
+
+  mout<<"Source : Earth occultation is activated !"<<endl;
+  mout<<"Earth occultation inverted ?"<<InverseCut<<endl;
+  m_UseEarthOccultation = true;
+  m_ThetaMaxEarthOccultation = Theta;
+  m_EarthOccultation_InverseCut = InverseCut;
+  
+  return true;
+}
 /******************************************************************************
  * Return true, if the light curve could be set correctly
  */
@@ -2430,6 +2528,7 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
     if (m_LightCurveType == c_LightCurveFile) {
       double dIntegral = CLHEP::RandExponential::shoot(1.0/GetFlux());
       //cout<<"dIntegral: "<<dIntegral<<endl;
+      //cout<<m_NextEmission<<endl;
       NextEmission = m_LightCurveFunction.FindX(m_NextEmission, dIntegral, m_IsRepeatingLightCurve);
       if (m_IsRepeatingLightCurve == false && NextEmission >= m_LightCurveFunction.GetXMax()) {
         m_IsActive = false;
@@ -2821,6 +2920,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         m_BeamType == c_FarFieldDisk ||
         m_BeamType == c_FarFieldAssymetricGaussian ||
         m_BeamType == c_FarFieldFileZenithDependent ||
+	m_BeamType == c_FarFieldEarthOccultation ||
         m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction ||
         m_BeamType == c_FarFieldIsotropic) {
       if (m_BeamType == c_FarFieldPoint || m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
@@ -2996,6 +3096,38 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
           }
         } else {
           mout<<m_Name<<": Unknown start area type for position generation"<<endl;
+        }
+      
+      
+      } else if (m_BeamType == c_FarFieldEarthOccultation) {
+        // Determine a random position on the sphere between 
+        // theta min and theta max that are computed each time
+	      // according to the pointing of the spacecraft in order
+	      //to take into account the Earth Occultation
+        
+        if (m_StartAreaType == c_StartAreaSphere) {
+	
+	       //determine the theta range 
+	
+	      //get the Earth aspect information from the orientation file
+            const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+            double Alt,Lat,Lon=0;
+            if (Sky.GetEarthCoordinate(m_NextEmission,  Alt,  Lat, Lon)==true){
+     
+             
+           }
+          else{
+                merr<<"the time is not in the ori time range : "<<m_NextEmission<< " ["<<Sky.GetStartTime()<<","<< Sky.GetStopTime() <<"]"<<endl;
+           }
+	   
+	    //sort theta and phi 
+        
+            Theta = acos(cos(0*deg) - CLHEP::RandFlat::shoot(1)*(cos(0*deg) - cos(5*deg)));
+            Phi = CLHEP::RandFlat::shoot(1)*360*deg;
+              
+        
+        } else {
+          mout<<m_Name<<": Earth Occultation only handle StartAreaSphere for position generation"<<endl;
         }
       }
       
