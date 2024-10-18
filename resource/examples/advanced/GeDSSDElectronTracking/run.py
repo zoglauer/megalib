@@ -40,10 +40,11 @@ parser.add_argument('-l', '--layout', default='N+N,10', help='Layout of the hidd
 parser.add_argument('-m', '--maxevents', default='100000', help='Maximum number of events to use')
 parser.add_argument('-e', '--onlyevaluate', action='store_true', help='Only test the approach')
 parser.add_argument('-t', '--onlytrain', action='store_true', help='Only train the approach')
+parser.add_argument('-a', '--all', action='store_true', help='Independently of what file was given operate on all')
 
 args = parser.parse_args()
 
-AI = GeDSSDElectronTracking(args.file, args.output, args.layout, int(args.maxevents))
+AI = GeDSSDElectronTracking(args.file, args.output, args.layout, int(args.maxevents), args.all)
 
 if args.onlyevaluate == False:
   if AI.train() == False:
