@@ -99,6 +99,7 @@ class MGUISivanMain : public MGUIMain
                    c_NInteractions,
                    c_SecondaryGenerationPattern,
                    c_EnergyLossByMaterial,
+                   c_OriginVolumesOfActivation,
                    c_Test };
 
 
