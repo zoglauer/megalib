@@ -633,6 +633,8 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   mdebug<<endl;
   mdebug<<"ER - Event: "<<RE->GetEventID()<<endl;
   mdebug<<endl;
+  mdebug<<RE->ToString()<<endl;
+  mdebug<<endl;
   
   
   // Store the inital coincident event:

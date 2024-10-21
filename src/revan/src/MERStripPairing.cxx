@@ -127,7 +127,7 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
 {
   // Search for coincidences
 
-  //cout<<"StripPairing started for "<<List->Get(0)->GetRawEventAt(0)->GetEventID()<<endl;
+  mdebug<<"StripPairing started for "<<List->Get(0)->GetRawEventAt(0)->GetEventID()<<endl;
 
   unsigned int MaxCombinations = 5;
   
@@ -141,13 +141,24 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
     for (unsigned int r = 0; r < r_max; ++r) {
       MRawEventIncarnations* REI = List->Get(r);
       if (REI->GetNRawEvents() != 1) {
-        merr<<"Event clustering: Only one raw event incarnation can be present at this stage of the analysis"<<endl;
+        merr<<"Strip pairing: Only one raw event incarnation can be present at this stage of the analysis"<<endl;
         //RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyEventIncarnations);  // This automatically marks the event invalid for further analysis...
         continue; 
       }
       
       RE = REI->GetRawEventAt(0);
       
+      bool StripHitsFound = false;
+      for (int r = 0; r < RE->GetNRESEs(); ++r) {
+        if (RE->GetRESEAt(r)->GetType() == MRESE::c_StripHit) {
+          StripHitsFound = true;
+        }
+      }
+      if (StripHitsFound == false) {
+        mdebug<<"No strip hits presents. Skipping strip pairing."<<endl;
+        continue;
+      }
+
       //cout<<RE->ToString()<<endl;
       
       bool Rejected = false;
