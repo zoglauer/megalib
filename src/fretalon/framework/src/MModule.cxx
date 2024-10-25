@@ -307,14 +307,13 @@ bool MModule::DoSingleAnalysis()
   }
   
   if (E != 0) {
-    if (FullfillsRequirements(E) == true) {
+    if (FullfillsRequirements(E) == true && E->IsFilteredOut() == false) {
       AnalyzeEvent(E);
-      if (m_IsFinished == true) {
-        delete E;
-        E = 0;
-      } else {
-        ++m_NAnalyzedEvents;
-      }
+    }
+    ++m_NAnalyzedEvents; // Analyzed actually just means passed through...
+    if (m_IsFinished == true) {
+      delete E;
+      E = 0;
     }
     if (E != 0) {
       m_Queues->AddOutgoing(E);
