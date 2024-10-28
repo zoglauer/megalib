@@ -777,6 +777,11 @@ bool MSupervisor::Analyze(bool TestRun)
         break;
       }
       mout<<"Initialization of module "<<GetModule(m)->GetName()<<" failed"<<endl;
+
+      // Finalize already initialized modules since threads are already running:
+      for (unsigned int r = 0; r <= m; ++r) {
+        GetModule(r)->Finalize();
+      }
       m_IsAnalysisRunning = false;
       return false;
     }
@@ -1100,7 +1105,7 @@ void MSupervisor::View()
 void MSupervisor::Exit()
 {
   // Prepare to exit the application
-  
+
   if (m_IsAnalysisRunning == true) {
     m_SoftInterrupt = true;
     m_HardInterrupt = true;
