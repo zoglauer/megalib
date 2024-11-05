@@ -227,12 +227,13 @@ MVector MDShape::GetRandomPositionInside()
     R.SetZ((2.0*gRandom->Rndm()-1.0)*BBox->GetDZ() + BBox->GetOrigin()[2]);
 
     Counter++;
-    if (Counter > 1 && Counter%100 == 0) {
-      mout<<"   ***  Warning  ***  in shape "<<m_Type<<endl;
-      mout<<"GetRandomPositionInside() required more than "<<Counter<<" trials."<<endl;
-      mout<<"You might want to ask the developers to write an optimized version of GetRandomPositionInside() for type "<<m_Type<<endl;
-    }
   } while (IsInside(R) == false);
+
+  if (Counter > 100) {
+    mout<<"   ***  Warning  ***  in shape "<<m_Name<<endl;
+    mout<<"GetRandomPositionInside() required "<<Counter<<" trials."<<endl;
+    mout<<"You might want to ask the developers to write an optimized version of GetRandomPositionInside() for type "<<m_Type<<endl;
+  }
 
   return R;
 }

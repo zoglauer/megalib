@@ -552,6 +552,8 @@ double MComptonEvent::GetAzimuthalScatterAngle(const MVector& Position, const MC
   if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
   if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
 
+  // Rotate the direction of the scattered gamma-ray as if it would come from zenith:
+  // First around Z then around Y
   MVector Plain = Dg();
   Plain.RotateZ(-RotPosition.Phi());
   Plain.RotateY(-RotPosition.Theta());
