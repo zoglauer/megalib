@@ -865,10 +865,9 @@ bool MCParameterFile::Parse()
           if (O.Parse(*T) == false) {
             Typo(i, "Cannot parse token \"OrientationSky\" correctly");
             return false;
-          }
-	  
+          }	  
           // The sky can only be rotated if in Galactic coordinates
-          if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic  && O.IsOriented() == true) {
+          if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic && O.IsOriented() == true) {
             Typo(i, "\"OrientationSky\" can only have an orientation in Galactic coordinates!");
             return false;            
           }
