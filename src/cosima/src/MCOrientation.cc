@@ -236,10 +236,12 @@ bool MCOrientation::Parse(const MTokenizer& Tokenizer)
 
     
   } else if (Tokenizer.IsTokenAt(3, "File") == true) {
-    if (Tokenizer.GetNTokens() != 6) {
+    if (Tokenizer.GetNTokens() != 6 ) {
       mlog<<"   ***  Error  ***  You need exactly 6 tokens to for an orientation read from file"<<endl;
       return false;
     }
+    
+    
     if (Tokenizer.IsTokenAt(4, "Loop") == true) {
       m_IsLooping = true;
     } else if (Tokenizer.IsTokenAt(4, "NoLoop") == true) {
@@ -249,10 +251,13 @@ bool MCOrientation::Parse(const MTokenizer& Tokenizer)
       return false;        
     }
     
+    
     if (Read(Tokenizer.GetTokenAtAsString(5)) == false) {
       mlog<<"   ***  Error  ***  Unable to read orientation file correctly: \""<<Tokenizer.GetTokenAtAsString(5)<<"\""<<endl;
       return false; 
-    }
+     }
+    
+    
     
     if (m_Times.size() > 0) {
       m_IsOriented = true;
@@ -390,6 +395,7 @@ bool MCOrientation::Read(MString FileName)
       return false; 
     }
   }
+ 
  
  
   return true;
