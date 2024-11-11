@@ -324,12 +324,8 @@ bool MCParameterFile::Parse()
           m_DecayMode = c_DecayModeIgnore;  
         } else if  (Mode == "activationbuildup") {
           m_DecayMode = c_DecayModeActivationBuildUp;
-	  Typo(i, "Cannot use this activation option for this current MEGAlib branch. Please use the option Buildup");
-          return false;	
         } else if  (Mode == "activationdelayeddecay") {
           m_DecayMode = c_DecayModeActivationDelayedDecay;
-	  Typo(i, "Cannot use this activation option for this current MEGAlib branch. Please use the option Buildup");
-          return false;		
         } else {
           Typo(i, "Cannot parse token DecayMode correctly:"
                " Unknown Decay mode!");
@@ -865,14 +861,15 @@ bool MCParameterFile::Parse()
           if (O.Parse(*T) == false) {
             Typo(i, "Cannot parse token \"OrientationSky\" correctly");
             return false;
-          }	
+          }
+	  
           // The sky can only be rotated if in Galactic coordinates
-          if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic && O.IsOriented() == true) {
+          if ( O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic  && O.IsOriented() == true) {
             Typo(i, "\"OrientationSky\" can only have an orientation in Galactic coordinates!");
             return false;            
           }
           Run->SetSkyOrientation(O);
-	
+
         } else {
           Typo(i, "Cannot parse token \"OrientationSky\" correctly: Number of tokens is not correct!");
           return false;
@@ -1449,14 +1446,16 @@ bool MCParameterFile::Parse()
             }
           }
 	  else if (Type == "farfieldearthoccultation" ) {
-            if (T->GetNTokens() >= 3) {
+            if (T->GetNTokens() >= 4) {
               Source->SetBeamType(MCSource::c_FarField,
                                   MCSource::c_FarFieldEarthOccultation);
-              
+	      double Theta = 0.0; // here we don't use theta
+	      bool InverseCut = T->GetTokenAtAsBoolean(2); 			  
+              Source->SetEarthOccultation(Theta,InverseCut);
               mdebug<<"Using beam: "<<Type<<endl;
             } else {
               Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
-                   " Number of tokens must be larger than 2!");
+                   " Number of tokens must be larger than 4!");
               return false;
             }
           }
@@ -2195,7 +2194,17 @@ bool MCParameterFile::Parse()
               Typo(i, "Cannot parse token \"Polarization absolute\" correctly: Number of tokens is not correct!");
               return false;
             }
-          } else if (Type == "relativex") {
+          } else if (Type == "galactic") {
+            if (T->GetNTokens() == 5) {
+              Source->SetPolarizationType(MCSource::c_PolarizationGalactic);
+              Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
+              Source->SetPolarization(T->GetTokenAtAsDouble(4)*deg);
+            } else {
+              Typo(i, "Cannot parse token \"Polarization galactic\" correctly: Number of tokens is not correct!");
+              return false;
+            }
+	  
+	   } else if (Type == "relativex") {
             if (T->GetNTokens() == 5) {
               Source->SetPolarizationType(MCSource::c_PolarizationRelativeX);
               Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
