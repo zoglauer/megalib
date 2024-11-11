@@ -14,9 +14,7 @@
  * and all its terms.
  *
  */
-   
-   
-        
+           
 // Cosima:
 #include "MCCommon.hh"
 #include "MCSource.hh"
@@ -272,7 +270,6 @@ void MCSource::Initialize()
   m_PolarizationParam2 = c_Invalid;
   m_PolarizationParam3 = c_Invalid;
   m_PolarizationDegree = 0.0;
-    
   m_UseFarFieldTransmissionProbability = false;
   m_UseEarthOccultation = false;
   m_ThetaMaxEarthOccultation = 0.0;
@@ -414,7 +411,7 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
     
     
     
-   //get the Earth aspect information from the orientation file
+     //get the Earth aspect information from the orientation file
     const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
     double Alt,Lat,Lon=0;
     if (Sky.GetEarthCoordinate(m_NextEmission,  Alt,  Lat, Lon)==true){
@@ -431,7 +428,7 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
       
       //Compute the theta max (angle between the particle direction and Earth-based zenith) 
       //using the altitude from ori file
-      int R_Earth = 6378; //km
+      double R_Earth = 6378; //km
       ThetaMax =  ( c_Pi - asin( R_Earth/(R_Earth+Alt/km) ) )/deg;
       
       }
@@ -3760,7 +3757,7 @@ bool MCSource::PerformOrientation(G4ThreeVector& Direction)
       // This reorientation can only happen is both are of the same coordinate system
       Sky.OrientDirectionInvers(m_NextEmission, Direction);
     }
-  } else if ( m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic ) {
+  } else if ( m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
     if (m_CoordinateSystem != c_FarField) {
       mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
       return false;
@@ -3774,7 +3771,7 @@ bool MCSource::PerformOrientation(G4ThreeVector& Direction)
       // This reorientation can only happen is both are of the same coordinate system
       Sky.OrientDirectionInvers(m_NextEmission, Direction);
     }
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic  ) {
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
     if (m_Orientation.IsOriented() == true) {
       m_Orientation.OrientDirection(m_NextEmission, Direction);
     }
@@ -3810,7 +3807,7 @@ bool MCSource::PerformOrientation(G4ThreeVector& Position, G4ThreeVector& Direct
       // This reorientation can only happen is both are of the same coordinate system
       Sky.OrientPositionAndDirectionInvers(m_NextEmission, Position, Direction);
     }
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic  ) {
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
     if (m_CoordinateSystem != c_FarField) {
       mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
       return false;
@@ -3824,7 +3821,7 @@ bool MCSource::PerformOrientation(G4ThreeVector& Position, G4ThreeVector& Direct
       // This reorientation can only happen is both are of the same coordinate system
       Sky.OrientPositionAndDirectionInvers(m_NextEmission, Position, Direction);
     }
-  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic ) {
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
     if (m_Orientation.IsOriented() == true) {
       m_Orientation.OrientPositionAndDirection(m_NextEmission, Position, Direction);
     }
