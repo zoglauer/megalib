@@ -137,7 +137,7 @@ bool MDShapeSubtraction::Validate()
     }
     
     delete m_Geo;
-    cout<<"Creating Node of: "<<m_SubShapes[0]->GetName()<<" & "<<m_SubShapes[1]->GetName()<<endl;
+    //cout<<"Creating Node of: "<<m_SubShapes[0]->GetName()<<" & "<<m_SubShapes[1]->GetName()<<endl;
     TGeoSubtraction* Node = new TGeoSubtraction(m_SubShapes[0]->GetRootShape(), m_SubShapes[1]->GetRootShape(), 0, m_Orientation->GetRootMatrix());
     m_Geo = new TGeoCompositeShape(m_Name, Node);
     
@@ -171,28 +171,62 @@ bool MDShapeSubtraction::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& I
 
 double MDShapeSubtraction::GetVolume()
 {
-  // Return the volume of this cylinder
+  // Return the volume of this subtraction
 
-  return m_Geo->Capacity();
+  // Since the accuracy is only 1%, run it 16 times to get 4 times better precision
+  const unsigned int Runs = 16;
+  double Sum = 0.0;
+  for (unsigned int i = 0; i < Runs; ++i) {
+    Sum += m_Geo->Capacity();
+  }
+
+  return Sum / Runs;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeSubtraction::Scale(const double Factor)
+bool MDShapeSubtraction::Scale(const double Factor, const MString Axes)
 {
-  // Scale this shape by Factor
+  //! Scale the axes given in Axes by a factor Scaler
 
-  m_Scaler = Factor;
-  
-  //if (m_Minuend->GetScaler() != Factor) m_Minuend->Scale(Factor);
-  //if (m_Subtrahend->GetScaler() != Factor) m_Subtrahend->Scale(Factor);
-  //if (m_Orientation->GetScaler() != Factor) m_Orientation->Scale(Factor);
-  
+  // Don't do anything if the scaling has already been applied
+  if (Factor == m_Scaler && Axes == m_ScalingAxis) return true;
+
+  // Base class handles sanity checks and storing data
+  if (MDShape::Scale(Factor, Axes) == false) return false;
+  // If there was no scaling return true;
+  if (IsScaled() == false) return true;
+
+
+  // Scale
+  if (m_SubShapes[0]->IsScaled() == true) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"Trying to scale already scaled minuend: "<<m_SubShapes[0]->GetName()<<endl;
+    return false;
+  }
+
+  if (m_SubShapes[1]->IsScaled() == true) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"Trying to scale already scaled subtrahend: "<<m_SubShapes[1]->GetName()<<endl;
+    return false;
+  }
+
+  if (m_Orientation->IsScaled() == true) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"Trying to scale already scaled orientation: "<<m_Orientation->GetName()<<endl;
+    return false;
+  }
+
+  m_SubShapes[0]->Scale(m_Scaler, m_ScalingAxis);
+  m_SubShapes[1]->Scale(m_Scaler, m_ScalingAxis);
+  m_Orientation->Scale(m_Scaler, m_ScalingAxis);
+
+
+  // Validate
   m_IsValidated = false;
-  
-  Validate();
+  return Validate();
 }
 
 

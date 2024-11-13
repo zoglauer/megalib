@@ -1951,16 +1951,25 @@ bool MDVolume::ApplyPulseShape(double Time, MVector& Pos, double& Energy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolume::Scale(const double Factor)
+bool MDVolume::Scale(const double Factor, const MString Axes)
 {
   // Scale this volume and all daughter volumes correctly
 
+  if (Factor == 1.0 || Axes == "") return true;
+
   if (m_CloneTemplate != 0 &&
       m_CloneTemplate->IsCloneTemplateVolumeWritten() == false) {
-    m_Shape->Scale(Factor);
-    m_CloneTemplate->SetCloneTemplateVolumeWritten(true);
+    if (m_Shape->Scale(Factor, Axes) == true) {
+      m_CloneTemplate->SetCloneTemplateVolumeWritten(true);
+    } else {
+      // Error message alreday printed
+      return false;
+    }
   } else if (IsClone() == false) {
-    m_Shape->Scale(Factor);
+    if (m_Shape->Scale(Factor, Axes) == false) {
+      // Error message alreday handled
+      return false;
+    }
   }
   // The position of this volume is unchanged!
 
@@ -1968,7 +1977,8 @@ bool MDVolume::Scale(const double Factor)
   vector<MDVolume*>::iterator Daughters;
   for (Daughters = m_Daughters.begin(); Daughters != m_Daughters.end(); ++Daughters) {
     (*Daughters)->SetPosition((*Daughters)->GetPosition()*Factor);
-    if ((*Daughters)->Scale(Factor) == false) {
+    if ((*Daughters)->Scale(Factor, Axes) == false) {
+      // Error message already printed
       return false;
     }
   }
@@ -2330,6 +2340,34 @@ MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Place
   //mout<<m_Name<<" Pos: "<<Position<<endl;
 
   return Position;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<MVector> MDVolume::GetCenterLocations(const MString& VolumeName)
+{
+  //! Return the center locations of all volumes named VolumeName
+
+  vector<MVector> Positions;
+
+  for (unsigned int d = 0; d < GetNDaughters(); ++d) {
+    if (GetDaughterAt(d)->GetName() == VolumeName) {
+      Positions.push_back(GetDaughterAt(d)->GetPosition());
+    } else {
+      // Get the locations
+      vector<MVector> Interim = GetDaughterAt(d)->GetCenterLocations(VolumeName);
+      // Rotate them into this volume and add them to the main vector
+      for (MVector& P: Interim) {
+        P = m_InvertedRotMatrix*P;
+        P += m_Position;
+        Positions.push_back(P);
+      }
+    }
+  }
+
+  return Positions;
 }
 
 

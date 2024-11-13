@@ -103,6 +103,9 @@ class MInterfaceSivan : public MInterface
   
   void SecondaryGenerationPattern();
 
+  //! List the top volumes, where activation is originating
+  void OriginVolumesOfActivation();
+
   void TriggerPatternEfficiency();
   void BeamMonitorEfficiency();
 

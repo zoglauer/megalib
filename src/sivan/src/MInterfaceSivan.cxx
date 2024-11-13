@@ -5273,23 +5273,28 @@ void MInterfaceSivan::MissingInteractionsStatistics()
   double EscapedEnergy = 0.0;
   double NSEnergy = 0.0;
   map<MString, int> Materials;
+  map<MString, int> MaterialOfFirstMissingInteraction;
   map<MString, double> EnergyInPassiveMaterial;
 
   EventFile.Rewind();
   while ((Event = EventFile.GetNextEvent(false)) != 0) {
+    bool FirstNonStartFound = false;
     for (unsigned int i = 1; i < Event->GetNIAs(); ++i) {
       if (Event->GetIAAt(i)->GetProcess() != "INIT" && 
           Event->GetIAAt(i)->GetProcess() != "ESCP") {
         if (Event->GetIAAt(i)->GetDetectorType() == 0) {
+          MDVolumeSequence* S = m_Geometry->GetVolumeSequencePointer(Event->GetIAAt(i)->GetPosition());
+
           zPosAll->Fill(Event->GetIAAt(i)->GetPosition()[2]);
           xyPosAll->Fill(Event->GetIAAt(i)->GetPosition()[0], Event->GetIAAt(i)->GetPosition()[1]);
           xyzPosAll->Fill(Event->GetIAAt(i)->GetPosition()[0], Event->GetIAAt(i)->GetPosition()[1], Event->GetIAAt(i)->GetPosition()[2]);
-          if (i == 1) {
+          if (FirstNonStartFound == false) {
             zPosStart->Fill(Event->GetIAAt(i)->GetPosition()[2]);
             xyPosStart->Fill(Event->GetIAAt(i)->GetPosition()[0], Event->GetIAAt(i)->GetPosition()[1]);
             xyzPosStart->Fill(Event->GetIAAt(i)->GetPosition()[0], Event->GetIAAt(i)->GetPosition()[1], Event->GetIAAt(i)->GetPosition()[2]);
+            FirstNonStartFound = true;
+            MaterialOfFirstMissingInteraction[S->GetDeepestVolume()->GetMaterial()->GetName()]++;
           }
-          MDVolumeSequence* S = m_Geometry->GetVolumeSequencePointer(Event->GetIAAt(i)->GetPosition());
           Materials[S->GetDeepestVolume()->GetMaterial()->GetName()]++;
           delete S;
         }
@@ -5339,14 +5344,28 @@ void MInterfaceSivan::MissingInteractionsStatistics()
 
   map<MString, int>::iterator MaterialsIter;
   mout<<endl;
-  mout<<"Materials of passive material interaction:"<<endl;
+  mout<<"Materials of passive material of first missing interaction:"<<endl;
 
   int AllHits = 0;
-  for (MaterialsIter = (Materials.begin()); 
+  for (MaterialsIter = (MaterialOfFirstMissingInteraction.begin());
+       MaterialsIter != MaterialOfFirstMissingInteraction.end(); MaterialsIter++) {
+    AllHits += (*MaterialsIter).second;
+  }
+  for (MaterialsIter = (MaterialOfFirstMissingInteraction.begin());
+       MaterialsIter != MaterialOfFirstMissingInteraction.end(); MaterialsIter++) {
+    cout<<setw(24)<<(*MaterialsIter).first<<": "<<setw(10)<<(*MaterialsIter).second
+        <<" ("<<setprecision(4)<<setw(9)<<double((*MaterialsIter).second)/AllHits*100.0<<"%)"<<endl;
+  }
+
+  mout<<endl;
+  mout<<"Materials of passive material any missing interaction:"<<endl;
+
+  AllHits = 0;
+  for (MaterialsIter = (Materials.begin());
        MaterialsIter != Materials.end(); MaterialsIter++) {
     AllHits += (*MaterialsIter).second;
   }
-  for (MaterialsIter = (Materials.begin()); 
+  for (MaterialsIter = (Materials.begin());
        MaterialsIter != Materials.end(); MaterialsIter++) {
     cout<<setw(24)<<(*MaterialsIter).first<<": "<<setw(10)<<(*MaterialsIter).second
         <<" ("<<setprecision(4)<<setw(9)<<double((*MaterialsIter).second)/AllHits*100.0<<"%)"<<endl;
@@ -6282,7 +6301,7 @@ void MInterfaceSivan::IsotopeGeneration()
   
   return;
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -6410,6 +6429,56 @@ void MInterfaceSivan::ActivationPerIncidenceEnergy()
   return;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MInterfaceSivan::OriginVolumesOfActivation()
+{
+  // List the top volumes, where activation is originating
+
+  map<MString, unsigned int> m_CountsPerVolume;
+  double MinEnergy = 0;
+  double MaxEnergy = 2000;
+
+
+  // Open the simulation file:
+  MFileEventsSim EventFile(m_Geometry);
+  if (EventFile.Open(m_Data->GetCurrentFileName()) == false) {
+    mgui<<"Unable to open file"<<error;
+    return;
+  }
+  EventFile.ShowProgress();
+
+  MSimEvent* Event = nullptr;
+  while ((Event = EventFile.GetNextEvent()) != 0) {
+    if (Event->GetNIAs() > 0) {
+      if (Event->GetIAAt(0)->GetSecondaryParticleID() > 1000) {
+        cout<<Event->GetIAAt(0)->GetSecondaryParticleID()<<":"<<Event->GetVeto()<<":"<<Event->GetNClusters()<<endl;
+        if (Event->GetVeto() == false) {
+          if (Event->GetREnergy() >= MinEnergy && Event->GetREnergy() <= MaxEnergy) {
+            MDVolumeSequence S = m_Geometry->GetVolumeSequence(Event->GetIAAt(0)->GetPosition());
+            m_CountsPerVolume[S.GetDeepestVolume()->GetName()] += 1;
+          }
+        }
+      }
+    }
+    delete Event;
+  }
+
+  // Create a vector to hold the map elements to allow sorting
+  vector<pair<string, int>> V(m_CountsPerVolume.begin(), m_CountsPerVolume.end());
+
+  sort(V.begin(), V.end(), [](const auto& a, const auto& b) {
+    return a.second > b.second; // Sort in descending order
+  });
+
+  for (const auto& Pair: V) {
+    cout<<Pair.first<< ": "<<Pair.second<<endl;
+  }
+
+  return;
+}
 
 // MInterfaceSivan: the end...
 ////////////////////////////////////////////////////////////////////////////////
