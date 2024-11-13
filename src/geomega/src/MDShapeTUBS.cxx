@@ -314,7 +314,7 @@ bool MDShapeTUBS::Scale(const double Factor, const MString Axes)
 
   // Validate
   m_IsValidated = false;
-  Validate();
+  return Validate();
 }
 
 
