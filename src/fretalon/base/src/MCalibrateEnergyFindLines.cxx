@@ -21,6 +21,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <type_traits>
 using namespace std;
 
 // ROOT libs:
@@ -325,7 +326,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       
       // If this is the first peak it must be at least 3 bins away from the first bin and from any bin with less than 1 counts:
       //if (FirstPeak == true) {
-        if (PeakBin < m_ExcludeFirstNumberOfBins) {
+        if (std::make_unsigned<int>::type(PeakBin) < m_ExcludeFirstNumberOfBins) {
           if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak must be at least "<<m_ExcludeFirstNumberOfBins<<" bins away from start, and not only "<<PeakBin<<endl;
           continue;          
         } else {
