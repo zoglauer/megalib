@@ -384,7 +384,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   MDOrientation* Orientation = 0;
 
   // For scaling some volumes:
-  map<MDVolume*, double> ScaledVolumes;
+  map<MDVolume*, double> ScaledVolumesScaler;
+  map<MDVolume*, MString> ScaledVolumesScalingAxes;
 
   // Since the geometry-file can include other geometry files,
   // we have to store the whole file in memory
@@ -2508,16 +2509,21 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         V->SetLineWidth(Tokenizer.GetTokenAtAsInt(2));
       } else if (Tokenizer.IsTokenAt(1, "Scale") == true) {
-        if (Tokenizer.GetNTokens() != 3) {
-          Typo("Line must contain two strings and one integer"
-               " e.g. \"Triangle.Scale 2.0\"");
+        if (Tokenizer.GetNTokens() < 3 || Tokenizer.GetNTokens() > 4) {
+          Typo("Line must contain two strings, one double, and one optional scaling axes"
+               " e.g. \"Triangle.Scale 2.0 XY\"");
           return false;
         }
         if (Tokenizer.GetTokenAtAsDouble(2) <= 0) {
           Typo("The color value needs to be positive");
           return false;
         }
-        ScaledVolumes[V] = Tokenizer.GetTokenAtAsDouble(2);
+        ScaledVolumesScaler[V] = Tokenizer.GetTokenAtAsDouble(2);
+        if (Tokenizer.GetNTokens() == 4) {
+          ScaledVolumesScalingAxes[V] = Tokenizer.GetTokenAtAsString(3);
+        } else {
+          ScaledVolumesScalingAxes[V] = "XYZ";
+        }
       } else if (Tokenizer.IsTokenAt(1, "Virtual") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain two strings and one boolean"
@@ -3668,16 +3674,25 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   // Scale some volumes:
-  map<MDVolume*, double>::iterator ScaleIter;
-  for (ScaleIter = ScaledVolumes.begin();
-       ScaleIter != ScaledVolumes.end(); ++ScaleIter) {
-    if ((*ScaleIter).first->IsClone() == false) {
-      (*ScaleIter).first->Scale((*ScaleIter).second);
+  auto ScaleIter = ScaledVolumesScaler.begin();
+  auto AxesIter = ScaledVolumesScalingAxes.begin();
+
+  while (ScaleIter != ScaledVolumesScaler.end() && AxesIter != ScaledVolumesScalingAxes.end()) {
+    if (ScaleIter->first == AxesIter->first) {  // Make sure the keys match
+      if ((*ScaleIter).first->IsClone() == false) {
+        (*ScaleIter).first->Scale((*ScaleIter).second, (*AxesIter).second);
+      } else {
+        mout<<"   ***  Error  ***  Scaling is not applicable to clones/copies"<<endl;
+        Reset();
+        return false;
+      }
     } else {
-      mout<<"   ***  Error  ***  Scaling is not applicable to clones/copies"<<endl;
+      mout<<"   ***  Internal Fatal Error  ***  The axes and the scaler iterators for scaled volumes are not in sync."<<endl;
       Reset();
       return false;
     }
+    ++ScaleIter;
+    ++AxesIter;
   }
   m_WorldVolume->ResetCloneTemplateFlags();
 
@@ -4669,12 +4684,18 @@ void MDGeometry::CalculateMasses()
   out<<endl;
   out<<setw(NameWidth+2)<<"Total"<<" :  "<<setw(12)<<Total<<" g"<<endl;
   out<<endl;
-  out<<"No warranty for this information!"<<endl;
   out<<"This information is only valid, if "<<endl;
   out<<"(a) No volume intersects any volume which is not either its mother or daughter."<<endl;
   out<<"(b) All daughters lie completely inside their mothers"<<endl;
   out<<"(c) The material information is correct"<<endl;
-  out<<"(d) tbd."<<endl;
+  out<<"(d) and more"<<endl;
+  out<<endl;
+  out<<"Attention:"<<endl;
+  out<<"If you have boolean volumes, ROOT determines the volume via random samples."<<endl;
+  out<<"This is a ROOT limitation. The accuracy is >1% (= 10,000 samples)."<<endl;
+  out<<"If you have other volumes in the boolean volume, then the accuracy is before the subtraction."<<endl;
+  out<<"In rare cases of very small volumes, this can lead to negative masses..."<<endl;
+  out<<endl;
 
   mout<<out.str()<<endl;
 }

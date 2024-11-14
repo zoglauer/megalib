@@ -203,9 +203,10 @@ class MDVolume
   //! Finds all DEEPEST volumes Pos is in...
   //! The return value is for internal purposes only!
   bool FindOverlaps(MVector Pos, vector<MDVolume*>& OverlappingVolumes);
-  //! Scale this volume
+  //! Scale this volume, scalingaxes is "X", "Y", "Z" or any combination thereof
+  //! However, not all volumes support all scalings.
   //! The return value is for internal purposes only!
-  bool Scale(const double Scale);
+  bool Scale(const double Scale, const MString ScalingAxes);
   //! Correctly remove all virtual volumes from the volume tree
   //! The return value is for internal purposes only!
   //! The vector contains a list of all newly generated volumes
