@@ -35,14 +35,20 @@ class MResponseMatrix;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class to read response files
 class MFileResponse : public MParser
 {
   // public interface:
  public:
+  //! Default constructor
   explicit MFileResponse();
+  //! Default destructor
   virtual ~MFileResponse();
 
+  //! Read a response matrix
   MResponseMatrix* Read(MString FileName);
+  //! We cannot use the base class version here
+  bool Read(MBinaryStore& Store, unsigned int CharactersToRead) { return false; }
 
   //! Open the file name and read the header
   virtual bool Open(MString FileName, unsigned int Way = 1);
