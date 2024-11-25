@@ -88,7 +88,8 @@ class MERCSR : public MERConstruction
   double CalculatePhotoDistance(const MVector& Start, const MVector& Stop, double Etot);
   double CalculateComptonDistance(const MVector& Start, const MVector& Stop, double Etot);
   double CalculateTotalDistance(const MVector& Start, const MVector& Stop, double Etot);
-  
+  double CalculateReach(const MVector& Start, const MVector& Stop, double Etot);
+
   
   // private methods:
  private:

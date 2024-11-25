@@ -219,8 +219,13 @@ bool MResponseMultipleComptonBayes::Initialize()
   MString NameAxisComptonScatterAngleStart = "cos#varphi";
 
   // Scatter probability axis
-  vector<float> AxisScatterProbability = CreateEquiDist(-0.025, 1.025, 42);
-  MString NameAxisScatterProbability = "Scatter probability";
+  // vector<float> AxisScatterProbability = CreateEquiDist(-0.001, 1.001, 42);
+  vector<float> AxisScatterProbability = { -0.001, 0.001, 0.005, 0.01 };
+  vector<float> Middle = CreateEquiDist(0.025, 0.975, 38);
+  AxisScatterProbability.insert(AxisScatterProbability.end(), Middle.begin(), Middle.end());
+  AxisScatterProbability.insert(AxisScatterProbability.end(),{ 0.99, 0.995, 0.999, 1.001 });
+  MString NameAxisScatterProbabilityPhoto = "Scatter probability";
+  MString NameAxisScatterProbabilityCompton = "Reach probability";
 
   // Total energy axis for scatter probabilities
   vector<float> AxisTotalEnergyDistances = CreateLogDist(15, m_EnergyMaximum, 38, 1, 20000);
@@ -241,7 +246,8 @@ bool MResponseMultipleComptonBayes::Initialize()
   MString NameAxisTotalEnergyDual = "Energy [keV]";
 
   // Scatter probability axis
-  vector<float> AxisScatterProbabilityDual = CreateEquiDist(0, 1, 15, -0.025, 1.025);
+  vector<float> AxisScatterProbabilityDual = CreateEquiDist(-0.001, 0.99, 15);
+  AxisScatterProbabilityDual.push_back(1.001);
   MString NameAxisScatterProbabilityDual = "Scatter probability";
   
 
@@ -330,7 +336,7 @@ bool MResponseMultipleComptonBayes::Initialize()
                                         AxisTotalEnergyDistances, 
                                         AxisSequenceLength, 
                                         AxisMaterial);
-  m_PdfComptonScatterProbabilityGood.SetAxisNames(NameAxisScatterProbability, 
+  m_PdfComptonScatterProbabilityGood.SetAxisNames(NameAxisScatterProbabilityCompton,
                                  NameAxisTotalEnergyDistances, 
                                  NameAxisSequenceLength, 
                                  NameAxisMaterial);
@@ -339,7 +345,7 @@ bool MResponseMultipleComptonBayes::Initialize()
                                        AxisTotalEnergyDistances, 
                                        AxisSequenceLength, 
                                        AxisMaterial);
-  m_PdfComptonScatterProbabilityBad.SetAxisNames(NameAxisScatterProbability, 
+  m_PdfComptonScatterProbabilityBad.SetAxisNames(NameAxisScatterProbabilityCompton,
                                 NameAxisTotalEnergyDistances, 
                                 NameAxisSequenceLength, 
                                 NameAxisMaterial);
@@ -351,7 +357,7 @@ bool MResponseMultipleComptonBayes::Initialize()
                                             AxisTotalEnergyDistances, 
                                             AxisSequenceLength, 
                                             AxisMaterial);
-  m_PdfPhotoAbsorptionProbabilityGood.SetAxisNames(NameAxisScatterProbability, 
+  m_PdfPhotoAbsorptionProbabilityGood.SetAxisNames(NameAxisScatterProbabilityPhoto,
                                      NameAxisTotalEnergyDistances, 
                                      NameAxisSequenceLength, 
                                      NameAxisMaterial);
@@ -360,7 +366,7 @@ bool MResponseMultipleComptonBayes::Initialize()
                                            AxisTotalEnergyDistances, 
                                            AxisSequenceLength, 
                                            AxisMaterial);
-  m_PdfPhotoAbsorptionProbabilityBad.SetAxisNames(NameAxisScatterProbability, 
+  m_PdfPhotoAbsorptionProbabilityBad.SetAxisNames(NameAxisScatterProbabilityPhoto,
                                     NameAxisTotalEnergyDistances, 
                                     NameAxisSequenceLength, 
                                     NameAxisMaterial);
@@ -389,7 +395,7 @@ bool MResponseMultipleComptonBayes::Initialize()
   vector<float> AxisDistance = CreateLogDist(0.2, 10, 7, 0.01, 100, 0, false);
   MString NameAxisDistance = "Distance [cm]";
 
-  vector<float> AxisTotalEnergy = CreateLogDist(100, m_EnergyMaximum, 4, 1, 10000, 0, false);
+  vector<float> AxisTotalEnergy = CreateLogDist(100, m_EnergyMaximum, 4, 1, std::max(2*m_EnergyMaximum, 10000.0), 0, false);
   //CreateLogDist(1, 10000, 1); //, 1, 10000, 0, false);
   //mimp<<"No total energy bins!"<<show;
   MString NameAxisTotalEnergy = "E_{tot} [keV]";
@@ -471,7 +477,7 @@ bool MResponseMultipleComptonBayes::Analyze()
   double Etot = 0;
   double Eres = 0;
  
-  
+  //cout<<endl<<endl<<"Analyze: 'ing "<<m_ReEvents.size()<<" sequences"<<endl;
   for (auto RE: m_ReEvents) {
     if (RE == nullptr) continue;
     
@@ -506,11 +512,21 @@ bool MResponseMultipleComptonBayes::Analyze()
       Eres = RE->GetEnergyResolution();
       
       double CosPhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
+      if (CosPhiE <= -10) CosPhiE = -9.99;
       double PhotoDistance = CalculateAbsorptionProbabilityTotal(*Iter.GetCurrent(), *Iter.GetNext(), Iter.GetNext()->GetEnergy());
       
       if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
-        mdebug<<"--------> Found GOOD dual Compton event!"<<endl;
-        m_PdfDualGood.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
+        // IsComptonSequence caluculates absorption for the second component only, thus I have to:
+        double Etot2 = Etot - Iter.GetCurrent()->GetEnergy();
+        double Eres2 = sqrt(Eres*Eres - Iter.GetCurrent()->GetEnergyResolution()*Iter.GetCurrent()->GetEnergyResolution());
+        if (IsComptonSequence(*Iter.GetCurrent(), *Iter.GetNext(), Etot2, Eres2) == true) {
+          mdebug<<"--------> Found GOOD dual Compton event!"<<endl;
+          m_PdfDualGood.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
+        } else {
+          mdebug<<"--------> Found bad dual Compton event!"<<endl;
+          m_PdfDualBad.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
+          SequenceOk = false;
+        }
       } else {
         mdebug<<"--------> Found bad dual Compton event!"<<endl;
         m_PdfDualBad.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
@@ -536,7 +552,7 @@ bool MResponseMultipleComptonBayes::Analyze()
       if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
         double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
         double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
-        if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
+        if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), Etot, Eres) == true) {
           mdebug<<"--------> Found GOOD Track start!"<<endl;
           m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
         } else {
@@ -558,9 +574,9 @@ bool MResponseMultipleComptonBayes::Analyze()
         // In the current implementation/simulation the hits have to be in increasing order...
         if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
           double ComptonDistance = 
-          CalculateAbsorptionProbabilityCompton(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
+          CalculateReach(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
           mdebug<<"Dist C: "<<ComptonDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
-          if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
+          if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot, Eres) == true) {
             mdebug<<"--------> Found GOOD Distance sequence!"<<endl;
             // Retrieve the data:
             m_PdfComptonScatterProbabilityGood.Add(ComptonDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
@@ -579,7 +595,7 @@ bool MResponseMultipleComptonBayes::Analyze()
         double Lever = CalculateMinLeverArm(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext());
         int Material = GetMaterial(*Iter.GetCurrent());
         
-        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
+        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot, Eres) == true) {
           mdebug<<"--------> Found GOOD internal Compton sequence!"<<endl;
           // Retrieve the data:
           m_PdfComptonGood.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
@@ -596,7 +612,7 @@ bool MResponseMultipleComptonBayes::Analyze()
           //MRETrack* T = (MRETrack*) Iter.GetCurrent();
           double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
           double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
-          if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
+          if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), Etot, Eres) == true) {
             mdebug<<"--------> Found GOOD Track start (central)!"<<endl;
             m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
           } else {
@@ -617,7 +633,7 @@ bool MResponseMultipleComptonBayes::Analyze()
       if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
         double LastDistance = CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
         mdebug<<"Dist P: "<<LastDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
-        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
+        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot, Eres) == true) {
           mdebug<<"--------> Found GOOD Lastdistance sequence!"<<endl;
           // Retrieve the data:
           m_PdfPhotoAbsorptionProbabilityGood.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
@@ -659,8 +675,7 @@ bool MResponseMultipleComptonBayes::Finalize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonBayes::IsComptonTrack(MRESE& Start, MRESE& Center,
-                                       int PreviousPosition, double Etot, double Eres)
+bool MResponseMultipleComptonBayes::IsComptonTrack(MRESE& Start, MRESE& Center, double Etot, double Eres)
 {
   // A good start point of the track consists of the following:
   // (1) Start is a track
@@ -684,7 +699,7 @@ bool MResponseMultipleComptonBayes::IsComptonTrack(MRESE& Start, MRESE& Center,
   }
 
   // (3)
-  if (IsComptonSequence(Start, Center, PreviousPosition, Etot-Start.GetEnergy(), Eres) == false) {
+  if (IsComptonSequence(Start, Center, Etot-Start.GetEnergy(), Eres) == false) {
     // Attention: Eres is a little to large...
     mdebug<<"IsComptonTrack: No Compton sequence!"<<endl;
     return false;        
@@ -1006,7 +1021,7 @@ bool MResponseMultipleComptonBayes::IsComptonStart(MRESE& Start, double Etot, do
   // Return true if the given RESEs are in sequence
   //
   // A good start point for tripple Comptons requires:
-  // (1) An absorption better than 3 sigma energy resolution + 2 keV for the fuirst hitr and the while sequence...
+  // (1) An absorption better than 3 sigma energy resolution + 2 keV for the first hit and the while sequence...
   // (2) The origin is or produced a photon
   // (3) We have exactly one Compton interaction and maybe some other, secondary interaction
 
@@ -1037,8 +1052,8 @@ bool MResponseMultipleComptonBayes::IsComptonStart(MRESE& Start, double Etot, do
       return false;
     }
     // Full sequence
-    if (IsTotalAbsorbed(StartOriginIds, Etot, Eres) == false) {
-      if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Not completely absorbed!"<<endl;
+    if (IsTotallyAbsorbed(StartOriginIds, Etot, Eres) == false) {
+      if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Remaining sequence not completely absorbed!"<<endl;
       return false;
     }
   }
@@ -1092,9 +1107,7 @@ unsigned int MResponseMultipleComptonBayes::NumberOfComptonInteractions(vector<i
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonBayes::IsComptonSequence(MRESE& Start, MRESE& Central,
-                                          int StartPosition, double Etot, 
-                                          double Eres)
+bool MResponseMultipleComptonBayes::IsComptonSequence(MRESE& Start, MRESE& Central, double Etot, double Eres)
 {
   // Return true if the given RESEs are in sequence
   //
@@ -1126,13 +1139,13 @@ bool MResponseMultipleComptonBayes::IsComptonSequence(MRESE& Start, MRESE& Centr
     mdebug<<"IsComptonSequence2: Central contains not only Compton dependants"<<endl;
     return false;
   }
-  if (AreInComptonSequence(StartOriginIds, CentralOriginIds, StartPosition) == false) {
+  if (AreInComptonSequence(StartOriginIds, CentralOriginIds) == false) {
     mdebug<<"IsComptonSequence2: Not in Compton sequence!"<<endl;
     return false;
   }
 
   if (Etot > 0) {
-    if (IsTotalAbsorbed(CentralOriginIds, Etot, Eres) == false) {
+    if (IsTotallyAbsorbed(CentralOriginIds, Etot, Eres) == false) {
       mdebug<<"IsComptonSequence2: Not completely absorbed!"<<endl;
       return false;
     }
@@ -1145,9 +1158,7 @@ bool MResponseMultipleComptonBayes::IsComptonSequence(MRESE& Start, MRESE& Centr
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonBayes::IsComptonSequence(MRESE& Start, MRESE& Central,
-                                          MRESE& Stop, int StartPosition, 
-                                          double Etot, double Eres)
+bool MResponseMultipleComptonBayes::IsComptonSequence(MRESE& Start, MRESE& Central, MRESE& Stop, double Etot, double Eres)
 {
   // Return true if the given RESEs are in sequence
 
@@ -1213,16 +1224,16 @@ bool MResponseMultipleComptonBayes::IsComptonSequence(MRESE& Start, MRESE& Centr
     mdebug<<"IsComptonSequence3: Stop contains not only Compton dependants"<<endl;
     return false;
   }
-  if (AreInComptonSequence(StartOriginIds, CentralOriginIds, StartPosition) == false) {
+  if (AreInComptonSequence(StartOriginIds, CentralOriginIds) == false) {
     mdebug<<"IsComptonSequence3: Not in Compton sequence!"<<endl;
     return false;
   }
-  if (AreInComptonSequence(CentralOriginIds, StopOriginIds, 0) == false) {
+  if (AreInComptonSequence(CentralOriginIds, StopOriginIds) == false) {
     mdebug<<"IsComptonSequence3: Not in Compton sequence!"<<endl;
     return false;
   }
 
-  if (IsTotalAbsorbed(CentralOriginIds, Etot, Eres) == false) {
+  if (IsTotallyAbsorbed(CentralOriginIds, Etot, Eres) == false) {
     mdebug<<"IsComptonSequence3: Not completely absorbed!"<<endl;
     return false;
   }
@@ -1273,7 +1284,7 @@ bool MResponseMultipleComptonBayes::IsComptonEnd(MRESE& End)
   }
   
   // Absorption:
-  if (IsTotalAbsorbed(EndOriginIds, End.GetEnergy(), End.GetEnergyResolution()) == false) {
+  if (IsTotallyAbsorbed(EndOriginIds, End.GetEnergy(), End.GetEnergyResolution()) == false) {
     mdebug<<"IsComptonEnd: Not completely absorbed!"<<endl;
     return false;
   }
@@ -1385,9 +1396,7 @@ bool MResponseMultipleComptonBayes::IsSingleCompton(MRESE& Start)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonBayes::AreInComptonSequence(const vector<int>& StartOriginIds,
-                                                    const vector<int>& CentralOriginIds,
-                                                    int StartPosition)
+bool MResponseMultipleComptonBayes::AreInComptonSequence(const vector<int>& StartOriginIds, const vector<int>& CentralOriginIds)
 {
   // They are in good sequence if 
   //  (1) Both smallest IDs originate from 1
@@ -1396,19 +1405,21 @@ bool MResponseMultipleComptonBayes::AreInComptonSequence(const vector<int>& Star
   massert(StartOriginIds.size() > 0);
   massert(CentralOriginIds.size() > 0);
   
+  mdebug<<"AreInComptonSequence: Start origin ID: "<<StartOriginIds[0]<<" Central origin ID: "<<CentralOriginIds[0]<<endl;
+
   if (m_SiEvent->GetIAAt(StartOriginIds[0]-1)->GetProcess() != "COMP") {
-    mdebug<<"CS: No COMP"<<endl;
+    mdebug<<"AreInComptonSequence: No COMP"<<endl;
     return false;
   }
 
   if (m_SiEvent->GetIAAt(StartOriginIds[0]-1)->GetOriginID() != 
       m_SiEvent->GetIAAt(CentralOriginIds[0]-1)->GetOriginID()) {
-    mdebug<<"CS: No common origin"<<endl;
+    mdebug<<"AreInComptonSequence: No common origin"<<endl;
     return false;
   }
 
 //   if (m_SiEvent->GetIAAt(StartOriginIds[0]-1)->GetMotherParticleNumber() != 1) {
-//     mdebug<<"CS: Mother is no photon: "<<m_SiEvent->GetIAAt(StartOriginIds[0]-1)->GetMotherParticleNumber()<<endl;
+//     mdebug<<"AreInComptonSequence: Mother is no photon: "<<m_SiEvent->GetIAAt(StartOriginIds[0]-1)->GetMotherParticleNumber()<<endl;
 //     return false;
 //   }
 
@@ -1421,7 +1432,7 @@ bool MResponseMultipleComptonBayes::AreInComptonSequence(const vector<int>& Star
     }
   }
   if (FoundBehind == false) {
-    mdebug<<"CS: Not behind each other!"<<endl;
+    mdebug<<"AreInComptonSequence: Not behind each other!"<<endl;
     return false;
   }
 
@@ -1434,10 +1445,15 @@ bool MResponseMultipleComptonBayes::AreInComptonSequence(const vector<int>& Star
 
 bool MResponseMultipleComptonBayes::ContainsOnlyComptonDependants(vector<int> AllSimIds)
 {
+  // ?
+
   // We do two checks here, one down the tree and one up the tree
   
   // First check upwards: Is everything in there originating from somewhere else in there or is it an initial process (COMP, INIT, produced a photon)
+  //cout<<"ContainsOnlyComptonDependants: Sim IDs: "; for (auto i: AllSimIds) { cout<<i<<" "; } cout<<endl;
+
   for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
+    //cout<<"ContainsOnlyComptonDependants checking "<<AllSimIds[i]<<endl;
     int ID = AllSimIds[i];
     int HighestOriginID = ID;
     while (true) {
@@ -1457,21 +1473,32 @@ bool MResponseMultipleComptonBayes::ContainsOnlyComptonDependants(vector<int> Al
     
     // We are good if the end point is a Compton scatter or a photo effect which is preceeded by a Compton in the list:
     bool IsGood = false;
+    mdebug<<"ContainsOnlyComptonDependants: Highest ID "<<HighestOriginID<<endl;
     if (m_SiEvent->GetIAAt(HighestOriginID-1)->GetProcess() == "COMP") {
+      mdebug<<"ContainsOnlyComptonDependants: Highest ID "<<HighestOriginID<<" is COMP"<<endl;
       IsGood = true;
     } else if (m_SiEvent->GetIAAt(HighestOriginID-1)->GetProcess() == "PHOT") {
       int Predeccessor = HighestOriginID-1;
       while (true) {
-        if (Predeccessor == 1) break; // we reached init
+        if (Predeccessor == 1) {
+          mdebug<<"ContainsOnlyComptonDependants: Good. "<<Predeccessor<<" is INIT"<<endl;
+          break; // we reached init
+        }
         if (m_SiEvent->GetIAAt(Predeccessor-1)->GetOriginID() == m_SiEvent->GetIAAt(HighestOriginID-1)->GetOriginID()) {
           if (m_SiEvent->GetIAAt(Predeccessor-1)->GetProcess() == "COMP") {
+            /* 2024-11-24: This doesn't make sense: If its a predecessor it will never be in the list
             if (find(AllSimIds.begin(), AllSimIds.end(), Predeccessor) != AllSimIds.end()) {
+              mdebug<<"ContainsOnlyComptonDependants: Good. Preceeding Compton IA "<<Predeccessor<<" is in list"<<endl;
               IsGood = true;
               break;
             } else {
-              mdebug<<"ContainsOnlyComptonDependants: Preceeding Compton IA is missing"<<endl;
+              mdebug<<"ContainsOnlyComptonDependants: Preceeding Compton IA "<<Predeccessor<<" is missing in list"<<endl;
               return false;
             }
+            */
+            // Replacement:
+            IsGood = true;
+            break;
           }
         }
         --Predeccessor;
@@ -1526,11 +1553,10 @@ bool MResponseMultipleComptonBayes::ContainsOnlyComptonDependants(vector<int> Al
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonBayes::IsAbsorbed(const vector<int>& AllSimIds,
-                                          double Energy, double EnergyResolution)
+bool MResponseMultipleComptonBayes::IsAbsorbed(const vector<int>& AllSimIds, double Energy, double EnergyResolution)
 {
   // Rules:
-  // If a Compton scattering is included, the energy of the of the recoild electron plus any instant deposits, bremsstrahlug, etc. must be contained
+  // If a Compton scattering is included, the energy of the of the recoil electron plus any instant deposits, bremsstrahlug, etc. must be contained
   // If a photo is included, the energy of the INCOMING gamma-ray must be contained
   
   EnergyResolution = 3.0*EnergyResolution + 2.0;
@@ -1588,10 +1614,11 @@ bool MResponseMultipleComptonBayes::IsAbsorbed(const vector<int>& AllSimIds,
   
   mdebug<<"SimIDs: "; for (int i: SimIDs) mdebug<<i<<" "; mdebug<<endl;
   
-  // (d) Sanity check - we just should have COMP & PHOT in our list
+  // (d) Sanity check - we just should have COMP & PHOT, RAYL & PAIR in our list
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
-    if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "COMP" && m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "PHOT") {
-      cout<<"Error: We only should have COMP and PHOT IA's at this point and not \""<<m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess()<<"\". Did you use hadronic processes for the simulations?"<<endl;
+    if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "COMP" && m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "PHOT" && m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "RAYL") {
+      cout<<"Info: We are ignoreing events that contain any other interaction but COMP, PHOT, RAYL. This one has \""<<m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess()<<"\"."<<endl;
+      return false;
     }
   }
   
@@ -1614,7 +1641,7 @@ bool MResponseMultipleComptonBayes::IsAbsorbed(const vector<int>& AllSimIds,
         IdealEnergy += m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy();
       }      
     } else {
-      cout<<"Error: We only should have COMP and PHOT IA's at this point. Did you use hadronic processes for the simulations?"<<endl;      
+      cout<<"Error: We only should have COMP, RAYL, and PHOT IA's at this point. Did you use hadronic processes for the simulations?"<<endl;
     }
   }
   
@@ -1632,49 +1659,63 @@ bool MResponseMultipleComptonBayes::IsAbsorbed(const vector<int>& AllSimIds,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonBayes::IsTotalAbsorbed(const vector<int>& AllSimIds,
-                                               double Energy, double EnergyResolution)
+bool MResponseMultipleComptonBayes::IsTotallyAbsorbed(const vector<int>& AllSimIds, double Energy, double EnergyResolution)
 {
+  // This checks if the sequence is totally absorbed
+
   massert(AllSimIds.size() > 0);
 
   EnergyResolution = 3*EnergyResolution+2;
 
+  // Find the minimum ID, as it will belong to the original Compton
   int MinId = numeric_limits<int>::max();
   for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
     if (MinId > AllSimIds[i] && AllSimIds[i] > 1) MinId = AllSimIds[i];
   }
+  mdebug<<"IsTotallyAbsorbed: Min ID: "<<MinId<<endl;
 
   if (MinId == numeric_limits<int>::max()) return false;
 
-  double Ideal;
+  int CurrentIDInVector = MinId - 1;
+  int MotherIDInVector = MinId - 2;
+
   MSimIA* Top = 0;
-  if (m_SiEvent->GetIAAt(MinId-2)->GetOriginID() == m_SiEvent->GetIAAt(MinId-1)->GetOriginID()) {
-    Top = m_SiEvent->GetIAAt(MinId-2);
-  } else {
-    Top = m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(MinId-1)->GetOriginID()-1);
+  // If Current and mother have same origin ID then we are in a normal sequence, and choose the mother
+  if (m_SiEvent->GetIAAt(MotherIDInVector)->GetOriginID() == m_SiEvent->GetIAAt(CurrentIDInVector)->GetOriginID()) {
+    Top = m_SiEvent->GetIAAt(MotherIDInVector);
+  }
+  // Other wise we have something like Bremsstrahlung and have to find the start this way:
+  else {
+    Top = m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(CurrentIDInVector)->GetOriginID()-1);
   }
 
-  if (m_SiEvent->GetIAAt(MinId-2)->GetProcess() == "COMP") {
+  double Ideal = 0.0;
+  if (m_SiEvent->GetIAAt(MotherIDInVector)->GetProcess() == "COMP") {
     Ideal = Top->GetMotherEnergy();
+    mdebug<<"IsTotallyAbsorbed: GetMother of "<<Top->GetID()<<" with "<<Ideal<<endl;
   } else {
     Ideal = Top->GetSecondaryEnergy();
+    mdebug<<"IsTotallyAbsorbed: GetSecondary of "<<Top->GetID()<<" with "<<Ideal<<endl;
   }
 
-  if (MinId-2 != 0) {
-    Ideal = m_SiEvent->GetIAAt(MinId-2)->GetMotherEnergy();
+  /* Now that was redundant and wrong
+  if (MotherIDInVector != 0) {
+    Ideal = m_SiEvent->GetIAAt(MotherIDInVector)->GetMotherEnergy();
   } else {
-    Ideal = m_SiEvent->GetIAAt(MinId-2)->GetSecondaryEnergy();
+    Ideal = m_SiEvent->GetIAAt(MotherIDInVector)->GetSecondaryEnergy();
   }
+  */
 
   if (fabs(Ideal - Energy) > EnergyResolution) {
-      mdebug<<"Is totally absorbed: Not completely absorbed: Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
+      mdebug<<"IsTotallyAbsorbed: Not completely absorbed: Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
     return false;
   } else {
-    mdebug<<"Is totally absorbed: Completely absorbed: Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
+    mdebug<<"IsTotallyAbsorbed: Completely absorbed: Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
   }
+
 //   if (fabs((Ideal - Energy)/Ideal) > m_MaxEnergyDifferencePercent &&
 //       fabs(Ideal - Energy) > m_MaxEnergyDifference ) {
-//       mdebug<<"Is totally absorbed: Not completely absorbed: Tot abs: i="<<Ideal<<" r="<<Energy<<endl;
+//       mdebug<<"IsTotallyAbsorbed: Not completely absorbed: Tot abs: i="<<Ideal<<" r="<<Energy<<endl;
 //     return false;
 //   }
 
@@ -1914,18 +1955,30 @@ double MResponseMultipleComptonBayes::CalculateAbsorptionProbabilityTotal(MRESE&
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MResponseMultipleComptonBayes::CalculateAbsorptionProbabilityCompton(MRESE& Start,
-                                                                       MRESE& Stop, 
-                                                                       double Etot)
+double MResponseMultipleComptonBayes::CalculateAbsorptionProbabilityCompton(MRESE& Start, MRESE& Stop, double Etot)
 {
-  double Distance = 
-    m_ReGeometry->GetComptonAbsorptionProbability(Start.GetPosition(), 
-                                                  Stop.GetPosition(), Etot); 
+  double Distance =
+    m_ReGeometry->GetComptonAbsorptionProbability(Start.GetPosition(),
+                                                  Stop.GetPosition(), Etot);
 
   //cout<<"Distance: "<<Distance<<" E: "<<Etot<<endl;
   //cout<<Start.ToString()<<endl;
   //cout<<Stop.ToString()<<endl;
   return Distance;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MResponseMultipleComptonBayes::CalculateReach(MRESE& Start, MRESE& Stop, double Etot)
+{
+  double ReachProbability = 1.0;
+  ReachProbability *= (1 - m_ReGeometry->GetPairAbsorptionProbability(Start.GetPosition(), Stop.GetPosition(), Etot));
+  ReachProbability *= (1 - m_ReGeometry->GetComptonAbsorptionProbability(Start.GetPosition(), Stop.GetPosition(), Etot));
+  ReachProbability *= (1 - m_ReGeometry->GetPhotoAbsorptionProbability(Start.GetPosition(), Stop.GetPosition(), Etot));
+
+  return ReachProbability;
 }
 
 
