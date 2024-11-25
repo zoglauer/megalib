@@ -105,6 +105,9 @@ class MERCSR : public MERConstruction
   bool m_CreateOnlyPermutations;
   bool m_GuaranteeStartD1;
 
+  //! The maximum/minimum cos(Compton scatter angle) limit
+  double m_MaxCosineLimit;
+
   /// The sorted list of quality factors
   map<double, vector<MRESE*>, less_equal<double> > m_QualityFactors;
   /// An iterator over the sorted list of quality factors

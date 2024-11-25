@@ -137,6 +137,9 @@ class MResponseMultipleComptonBayes : public MResponseMultipleCompton
   //! Maximum energy range
   double m_EnergyMaximum;
 
+  //! The maximum/minimum cos(Compton scatter angle) limit
+  double m_MaxCosineLimit;
+
   //! Do or not to do absorptions
   bool m_DoAbsorptions;
   //! MaximumSequenceLength up to which absorptions are considered
