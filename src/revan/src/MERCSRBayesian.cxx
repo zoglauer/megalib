@@ -329,9 +329,7 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
     
       // Compton Distance:
       if (Size <= m_UseAbsorptionsUpTo) {
-        double ComptonDistance = 
-          CalculateComptonDistance((*(Iter-1))->GetPosition(), 
-                                   (*Iter)->GetPosition(), Etot);
+        double ComptonDistance = CalculateReach((*(Iter-1))->GetPosition(), (*Iter)->GetPosition(), Etot);
         Material = float(GetMaterial(*Iter));
         EntriesGood = m_GoodComptonDistance.Get(ComptonDistance, Etot, SizeF, Material);
         EntriesBad = m_BadComptonDistance.Get(ComptonDistance, Etot, SizeF, Material);
