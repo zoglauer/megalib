@@ -70,6 +70,9 @@ MResponseMultipleComptonBayes::MResponseMultipleComptonBayes()
 
   m_EnergyMinimum = 100; // keV
   m_EnergyMaximum = 10000; // keV
+
+  // If you change it here, also change it in MResponseMultiComptonBayes
+  m_MaxCosineLimit = 2;
 }
 
 
@@ -197,7 +200,7 @@ bool MResponseMultipleComptonBayes::Initialize()
 
   if (m_ReReader->PreAnalysis() == false) return false;
 
-  double MaxCosineLimit = 10;
+
 
   // Axis representing the sequence length:
   vector<float> AxisSequenceLength;
@@ -215,7 +218,7 @@ bool MResponseMultipleComptonBayes::Initialize()
   // Compton scatter angle axis:
   // Make sure it starts, well below 0 and exceeds (slightly) 1!
   vector<float> AxisComptonScatterAngleStart;
-  AxisComptonScatterAngleStart = CreateEquiDist(-1.5, 1.1, 26, -MaxCosineLimit, +MaxCosineLimit);
+  AxisComptonScatterAngleStart = CreateEquiDist(-1.5, 1.1, 26, -m_MaxCosineLimit, +m_MaxCosineLimit);
   MString NameAxisComptonScatterAngleStart = "cos#varphi";
 
   // Scatter probability axis
@@ -238,7 +241,7 @@ bool MResponseMultipleComptonBayes::Initialize()
 
   // Make sure it starts, well below 0 and exceeds (slightly) 1!
   vector<float> AxisComptonScatterAngleDual;
-  AxisComptonScatterAngleDual = CreateEquiDist(-1.5, 1.1, 26, -MaxCosineLimit, +MaxCosineLimit);
+  AxisComptonScatterAngleDual = CreateEquiDist(-1.5, 1.1, 26, -m_MaxCosineLimit, +m_MaxCosineLimit);
   MString NameAxisComptonScatterAngleDual = "cos#varphi";
 
   // Total energy axis for scatter probabilities
@@ -303,8 +306,8 @@ bool MResponseMultipleComptonBayes::Initialize()
 
   // Track:
   m_PdfTrackGood = MResponseMatrixO6("MC: Track (good)", 
-                                     CreateEquiDist(-0.5, 1.5, 36, c_NoBound, MaxCosineLimit),
-                                     CreateEquiDist(-0.5, 1.5, 1, c_NoBound, MaxCosineLimit),
+                                     CreateEquiDist(-0.5, 1.5, 36, -m_MaxCosineLimit, m_MaxCosineLimit),
+                                     CreateEquiDist(-0.5, 1.5, 1, -m_MaxCosineLimit, m_MaxCosineLimit),
                                      CreateEquiDist(0, 1000000, 1),
                                      CreateLogDist(500, 10000, 10, 0, 100000, 0, false),
                                      AxisSequenceLength, 
@@ -316,8 +319,8 @@ bool MResponseMultipleComptonBayes::Initialize()
                               NameAxisSequenceLength, 
                               NameAxisMaterial);
   m_PdfTrackBad = MResponseMatrixO6("MC: Track (bad)", 
-                                    CreateEquiDist(-0.5, 1.5, 36, c_NoBound, MaxCosineLimit),
-                                    CreateEquiDist(-0.5, 1.5, 1, c_NoBound, MaxCosineLimit),
+                                    CreateEquiDist(-0.5, 1.5, 36, -m_MaxCosineLimit, m_MaxCosineLimit),
+                                    CreateEquiDist(-0.5, 1.5, 1, -m_MaxCosineLimit, m_MaxCosineLimit),
                                     CreateEquiDist(0, 1000000, 1),
                                     CreateLogDist(500, 10000, 10, 0, 100000, 0, false),
                                     AxisSequenceLength, 
@@ -376,9 +379,9 @@ bool MResponseMultipleComptonBayes::Initialize()
   
   // Assymetries would be best handled if -1 .. 1
   //vector<float> AxisDifferenceComptonScatterAngle = 
-  //  CreateLogDist(1E-3, 2, 18, 0.0000001, MaxCosineLimit);
+  //  CreateLogDist(1E-3, 2, 18, 0.0000001, m_MaxCosineLimit);
   vector<float> AxisDifferenceComptonScatterAngle; 
-  vector<float> A = CreateLogDist(0.003, 2, 14, c_NoBound, MaxCosineLimit);
+  vector<float> A = CreateLogDist(0.003, 1.8, 13, c_NoBound, m_MaxCosineLimit);
   for (unsigned int i = A.size()-1; i < A.size(); --i) {
     AxisDifferenceComptonScatterAngle.push_back(-A[i]);
   }
@@ -388,7 +391,7 @@ bool MResponseMultipleComptonBayes::Initialize()
   MString NameAxisDifferenceComptonScatterAngle = "cos#varphi_{E} - cos#varphi_{G}";
 
   vector<float> AxisComptonScatterAngle;
-  AxisComptonScatterAngle = CreateEquiDist(-1.4, 1.2, 13, -MaxCosineLimit, c_NoBound);
+  AxisComptonScatterAngle = CreateEquiDist(-1.4, 1.2, 13, -m_MaxCosineLimit, m_MaxCosineLimit);
   MString NameAxisComptonScatterAngle = NameAxisComptonScatterAngleStart;
 
 
@@ -512,7 +515,8 @@ bool MResponseMultipleComptonBayes::Analyze()
       Eres = RE->GetEnergyResolution();
       
       double CosPhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
-      if (CosPhiE <= -10) CosPhiE = -9.99;
+      if (CosPhiE <= -m_MaxCosineLimit) CosPhiE = -0.99*m_MaxCosineLimit;
+      if (CosPhiE >= +m_MaxCosineLimit) CosPhiE = +0.99*m_MaxCosineLimit;
       double PhotoDistance = CalculateAbsorptionProbabilityTotal(*Iter.GetCurrent(), *Iter.GetNext(), Iter.GetNext()->GetEnergy());
       
       if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
@@ -539,19 +543,29 @@ bool MResponseMultipleComptonBayes::Analyze()
       Iter.GetNextRESE();
       Etot = RE->GetEnergy();
       Eres = RE->GetEnergyResolution();
+
+      double CosPhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
+      if (CosPhiE <= -m_MaxCosineLimit) CosPhiE = -0.99*m_MaxCosineLimit;
+      if (CosPhiE >= +m_MaxCosineLimit) CosPhiE = +0.99*m_MaxCosineLimit;
+
       if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
         mdebug<<"--------> Found GOOD Compton start!"<<endl;
-        m_PdfStartGood.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+        m_PdfStartGood.Add(Etot, CosPhiE, SequenceLength, GetMaterial(*Iter.GetCurrent()));
       } else {
         mdebug<<"--------> Found bad Compton start!"<<endl;
-        m_PdfStartBad.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+        m_PdfStartBad.Add(Etot, CosPhiE, SequenceLength, GetMaterial(*Iter.GetCurrent()));
         SequenceOk = false;
       }
       
       // Track at start?
       if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
         double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+        if (dAlpha <= -m_MaxCosineLimit) dAlpha = -0.99*m_MaxCosineLimit;
+        if (dAlpha >= +m_MaxCosineLimit) dAlpha = +0.99*m_MaxCosineLimit;
         double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+        if (Alpha <= -m_MaxCosineLimit) Alpha = -0.99*m_MaxCosineLimit;
+        if (Alpha >= +m_MaxCosineLimit) Alpha = +0.99*m_MaxCosineLimit;
+
         if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), Etot, Eres) == true) {
           mdebug<<"--------> Found GOOD Track start!"<<endl;
           m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
@@ -573,8 +587,7 @@ bool MResponseMultipleComptonBayes::Analyze()
         
         // In the current implementation/simulation the hits have to be in increasing order...
         if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
-          double ComptonDistance = 
-          CalculateReach(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
+          double ComptonDistance = CalculateReach(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
           mdebug<<"Dist C: "<<ComptonDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
           if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot, Eres) == true) {
             mdebug<<"--------> Found GOOD Distance sequence!"<<endl;
@@ -591,7 +604,12 @@ bool MResponseMultipleComptonBayes::Analyze()
         // Decide if it is good or bad...
         // In the current implementation/simulation the hits have to be in increasing order...
         double dPhi = CalculateDCosPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot);
+        if (dPhi <= -m_MaxCosineLimit) CosPhiE = -0.99*m_MaxCosineLimit;
+        if (dPhi >= +m_MaxCosineLimit) CosPhiE = +0.99*m_MaxCosineLimit;
         double PhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
+        if (PhiE <= -m_MaxCosineLimit) PhiE = -0.99*m_MaxCosineLimit;
+        if (PhiE >= +m_MaxCosineLimit) PhiE = +0.99*m_MaxCosineLimit;
+
         double Lever = CalculateMinLeverArm(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext());
         int Material = GetMaterial(*Iter.GetCurrent());
         
@@ -611,7 +629,12 @@ bool MResponseMultipleComptonBayes::Analyze()
         if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
           //MRETrack* T = (MRETrack*) Iter.GetCurrent();
           double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+          if (dAlpha <= -m_MaxCosineLimit) dAlpha = -0.99*m_MaxCosineLimit;
+          if (dAlpha >= +m_MaxCosineLimit) dAlpha = +0.99*m_MaxCosineLimit;
           double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+          if (Alpha <= -m_MaxCosineLimit) Alpha = -0.99*m_MaxCosineLimit;
+          if (Alpha >= +m_MaxCosineLimit) Alpha = +0.99*m_MaxCosineLimit;
+
           if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), Etot, Eres) == true) {
             mdebug<<"--------> Found GOOD Track start (central)!"<<endl;
             m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
