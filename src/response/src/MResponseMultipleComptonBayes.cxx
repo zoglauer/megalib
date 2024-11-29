@@ -604,8 +604,8 @@ bool MResponseMultipleComptonBayes::Analyze()
         // Decide if it is good or bad...
         // In the current implementation/simulation the hits have to be in increasing order...
         double dPhi = CalculateDCosPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot);
-        if (dPhi <= -m_MaxCosineLimit) CosPhiE = -0.99*m_MaxCosineLimit;
-        if (dPhi >= +m_MaxCosineLimit) CosPhiE = +0.99*m_MaxCosineLimit;
+        if (dPhi <= -m_MaxCosineLimit) dPhi = -0.99*m_MaxCosineLimit;
+        if (dPhi >= +m_MaxCosineLimit) dPhi = +0.99*m_MaxCosineLimit;
         double PhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
         if (PhiE <= -m_MaxCosineLimit) PhiE = -0.99*m_MaxCosineLimit;
         if (PhiE >= +m_MaxCosineLimit) PhiE = +0.99*m_MaxCosineLimit;
@@ -621,7 +621,11 @@ bool MResponseMultipleComptonBayes::Analyze()
         } else {
           mdebug<<"--------> Found bad internal Compton sequence!"<<endl;
           // Retrieve the data:
+
           m_PdfComptonBad.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
+          if (fabs(dPhi) < 0.1) {
+            cout<<"Close to good: dPhi="<<dPhi<<" PhiE="<<PhiE<<" PhiG="<<CalculateCosPhiG(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())<<endl;
+          }
           SequenceOk = false;
         } // Add good / bad
         
@@ -659,13 +663,14 @@ bool MResponseMultipleComptonBayes::Analyze()
         if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot, Eres) == true) {
           mdebug<<"--------> Found GOOD Lastdistance sequence!"<<endl;
           // Retrieve the data:
-          m_PdfPhotoAbsorptionProbabilityGood.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
-                                                  Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          m_PdfPhotoAbsorptionProbabilityGood.Add(LastDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
         } else {
           mdebug<<"--------> Found bad Lastdistance sequence!"<<endl;
           // Retrieve the data:
-          m_PdfPhotoAbsorptionProbabilityBad.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
-                                                 Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          m_PdfPhotoAbsorptionProbabilityBad.Add(LastDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          if (LastDistance > 0.4 && LastDistance < 0.6 && Etot < 200) {
+            cout<<"Close to good: dist="<<LastDistance<<" && Etot="<<Etot<<endl;
+          }
           SequenceOk = false;
         } // Add good / bad
       }
