@@ -1453,7 +1453,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_FarField,
                                   MCSource::c_FarFieldEarthOccultation);
 	      double Theta = 0.0; // here we don't use theta
-	      bool InverseCut = T->GetTokenAtAsBoolean(2); 			  
+	      bool InverseCut = T->GetTokenAtAsBoolean(3); 			  
               Source->SetEarthOccultation(Theta,InverseCut);
               mdebug<<"Using beam: "<<Type<<endl;
             } else {
