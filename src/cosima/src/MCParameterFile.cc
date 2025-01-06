@@ -329,7 +329,7 @@ bool MCParameterFile::Parse()
         } else if  (Mode == "activationdelayeddecay") {
           m_DecayMode = c_DecayModeActivationDelayedDecay;
 	  Typo(i, "Cannot use this activation option for this current MEGAlib branch. Please use the option Buildup");
-          return false;
+          return false;		
         } else {
           Typo(i, "Cannot parse token DecayMode correctly:"
                " Unknown Decay mode!");
@@ -865,7 +865,7 @@ bool MCParameterFile::Parse()
           if (O.Parse(*T) == false) {
             Typo(i, "Cannot parse token \"OrientationSky\" correctly");
             return false;
-          }	  
+          }	 
           // The sky can only be rotated if in Galactic coordinates
           if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic && O.IsOriented() == true) {
             Typo(i, "\"OrientationSky\" can only have an orientation in Galactic coordinates!");
