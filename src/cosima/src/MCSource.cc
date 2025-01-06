@@ -3660,12 +3660,12 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
        
         //celestial north pole in galactic coordinates l b is 122.93� and 27.13�
 	//see :https://lambda.gsfc.nasa.gov/product/about/pol_convention.html
-	//for some reason we need to multiply by -1 for Z #reverseingienering
+	//because of left handed megalib convention we need to multiply by -1 for Z #reverseingienering
         G4ThreeVector CelestNorthPole(cos(27.13*deg)*cos(122.93*deg) , cos(27.13*deg)*sin(122.93*deg) , -1*sin(27.13*deg)); 
 	
 	//convert the north pole in local coordinates
 	Sky.OrientDirectionInvers(m_NextEmission, CelestNorthPole);
-	cout<<"celest vector : "<<CelestNorthPole[0]<<" "<<CelestNorthPole[1]<<" "<<CelestNorthPole[2]<<endl;
+	//cout<<"celest vector : "<<CelestNorthPole[0]<<" "<<CelestNorthPole[1]<<" "<<CelestNorthPole[2]<<endl;
 	
 	
 	
@@ -3674,8 +3674,10 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
 	//normalize py
 	py = py.unit();
 	G4ThreeVector px = py.cross(m_Direction);
+	
         //normalize px
 	px = px.unit();
+	
        
         //cout<<"py : "<<py<<endl;
 	//cout<<"px : "<<px<<endl;
@@ -3689,9 +3691,9 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
 	m_Polarization = m_Polarization.unit();
 	
 	//cout<<"polarization vector : "<<m_Polarization[0]<<" "<<m_Polarization[1]<<" "<<m_Polarization[2]<<endl;
-	cout<<"photon dir vector : "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
-	Sky.OrientDirection(m_NextEmission, m_Direction);
-	cout<<"photon dir (gal) vector : "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
+	//cout<<"photon dir vector : "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
+	//Sky.OrientDirection(m_NextEmission, m_Direction);
+	//cout<<"photon dir (gal) vector : "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
       }
       // Relative
       else {
@@ -3721,6 +3723,7 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
   }
   
   if (m_PolarizationType != c_PolarizationNone) {
+  
     if (m_Polarization.isOrthogonal(m_Direction) == false) {
       merr<<m_Name<<": The polarization vector is not orthogonal on the direction vector!"<<endl
           <<"   --> Will use zero polarization!"<<endl;
