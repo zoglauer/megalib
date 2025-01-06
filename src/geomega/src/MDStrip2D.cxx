@@ -500,19 +500,20 @@ bool MDStrip2D::AreNear(const MVector& Pos1, const MVector& dPos1,
   // --------------------
   // | 5 | 4 | 5 | 8 | 13
 
-  static const double Epsilon = 0.00001; 
+  static const double Epsilon = 0.01; // Needs to be larger than the accuracy in the sim file
 
+  //cout<<"Testing "<<fabs(Pos1[0] - Pos2[0])/m_PitchX*fabs(Pos1[0] - Pos2[0])/m_PitchX<<":"<<fabs(Pos1[1] - Pos2[1])/m_PitchY*fabs(Pos1[1] - Pos2[1])/m_PitchY<<":"<<Level+Epsilon<<endl;
   if (fabs(Pos1[0] - Pos2[0])/m_PitchX*fabs(Pos1[0] - Pos2[0])/m_PitchX +
       fabs(Pos1[1] - Pos2[1])/m_PitchY*fabs(Pos1[1] - Pos2[1])/m_PitchY < Level+Epsilon) {
-    //cout<<"Adjacent!"<<endl;
+    //cout<<"MDStrip2D::AreNear: Adjacent!"<<endl;
     if (Sigma < 0) {
       return true;
     } else if (fabs(Pos1[2] - Pos2[2]) < Sigma*(dPos1[2]+Epsilon) ||
         fabs(Pos1[2] - Pos2[2]) < Sigma*(dPos2[2]+Epsilon) || Sigma < 0) {
-      //cout<<"Within Sigma: "<<Sigma*(dPos2[2]+Epsilon)<<endl;
+      //cout<<"MDStrip2D::AreNear: Within Sigma: "<<Sigma*(dPos2[2]+Epsilon)<<endl;
       return true;
     } else {
-      //cout<<"Outside Sigma: "<<Sigma*(dPos2[2]+Epsilon)<<endl;
+      //cout<<"MDStrip2D::AreNear: Outside Sigma: "<<Sigma*(dPos2[2]+Epsilon)<<"(Sigma: "<<Sigma<<" * Delta zPos2: "<<dPos2[2]<<")"<<endl;
     }
   }
   //cout<<"Not adjacent: "<<fabs(Pos1[0] - Pos2[0])/m_PitchX*fabs(Pos1[0] - Pos2[0])/m_PitchX<<"!"

@@ -219,7 +219,7 @@ class MResponseBuilder
   MSimEvent* m_SiEvent;
   //! The current revan event - if we have multiple, this is just the first one
   MRERawEvent* m_ReEvent;  
-  //! The current revan event
+  //! The current list of revan events
   vector<MRERawEvent*> m_ReEvents;  
   //! The current tra event
   MPhysicalEvent* m_TraEvent;

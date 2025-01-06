@@ -42,7 +42,7 @@ class MCalibrationFitGaussLandau : public MCalibrationFitGaussian
   virtual ~MCalibrationFitGaussLandau();
 
   //! The assignment operator
-  virtual MCalibrationFitGaussLandau& operator= (const MCalibrationFitGaussLandau& Fit);
+  MCalibrationFitGaussLandau& operator= (const MCalibrationFitGaussLandau& Fit);
 
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationFitGaussLandau* Clone() const;

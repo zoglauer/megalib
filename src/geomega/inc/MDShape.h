@@ -69,10 +69,17 @@ class MDShape
   virtual double GetVolume() = 0;
   virtual MVector GetRandomPositionInside(); 
 
-  //! Scale this shape by Factor
-  virtual void Scale(const double Scale);
+  //! Scale this shape by Factor, optionally give the axis.
+  //! The options for the latter are "X", "Y", "Z", and any combination thereof
+  //! For anything but "XYZ", the daughter volumes are not allowed to have orientations
+  virtual bool Scale(const double Scaler, const MString Axes = "XYZ");
   //! Get the current scale factor
   double GetScaler() const { return m_Scaler; }
+  //! Get scaler axid
+  MString GetScalingAxis() const { return m_ScalingAxis; }
+  //! True if we are scaled
+  bool IsScaled() const;
+
 
   //! Return a unique position within the volume of the detector (center if possible)
   virtual MVector GetUniquePosition() const = 0;
@@ -113,7 +120,9 @@ class MDShape
 
   //! The scale factor
   double m_Scaler;
-  
+  //! The scaling axis "X", "Y", "Z", and any combination thereof
+  MString m_ScalingAxis;
+
   //! If this shape consists of other shapes, they are stored here
   vector<MDShape*> m_SubShapes;
   
