@@ -271,7 +271,6 @@ void MCSource::Initialize()
   m_PolarizationParam2 = c_Invalid;
   m_PolarizationParam3 = c_Invalid;
   m_PolarizationDegree = 0.0;
-	
   m_UseFarFieldTransmissionProbability = false;
   m_UseEarthOccultation = false;
   m_ThetaMaxEarthOccultation = 0.0;
@@ -413,7 +412,7 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
     
     
     
-    //get the Earth aspect information from the orientation file
+   //get the Earth aspect information from the orientation file
     const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
     double Alt,Lat,Lon=0;
     if (Sky.GetEarthCoordinate(m_NextEmission,  Alt,  Lat, Lon)==true){
@@ -441,7 +440,7 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
        
       // convert the Earth galactic l,b coordinate into cartesian representation  
       G4ThreeVector EarthZenith(cos(Lat)*cos(Lon) , cos(Lat)*sin(Lon) , sin(Lat)); 
-                
+        
       //rotate the oriented coordinate system of the event into the local coordinate system
       //Sky.OrientDirectionInvers(m_NextEmission, Dir);
       Sky.OrientDirection(m_NextEmission, Dir);
@@ -3117,8 +3116,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
 	    //get the Earth aspect information from the orientation file
             const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
             double Alt,Lat,Lon=0;
-	    //double xLat,xLon,zLat,zLon=0;
-            if (Sky.GetEarthCoordinate(m_NextEmission,  Alt,  Lat, Lon)==true){ //&& Sky.GetOrientation(m_NextEmission,xLat,xLon,zLat,zLon)==true ){
+	    
+            if (Sky.GetEarthCoordinate(m_NextEmission,  Alt,  Lat, Lon)==true){
                 
 		double R_Earth = 6378; //km
 		
@@ -3128,18 +3127,9 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
 		// convert the Earth galactic l,b coordinate into cartesian representation  
                 G4ThreeVector EarthZenith(cos(Lat)*cos(Lon) , cos(Lat)*sin(Lon) , sin(Lat));
 		
-		// convert the spacecraft galacticz pointing l,b coordinate into cartesian representation  
-                //G4ThreeVector SpacecraftZenith(cos(zLat)*cos(zLon) , cos(zLat)*sin(zLon) , sin(zLat));
-		
-		//double ThetaRocking = EarthZenith.angle(SpacecraftZenith)/deg;
-		
-		//Theta upper lim should be Thetamax + ThetaRocking
-		//double ThetaUpper = ThetaMax + ThetaRocking;
 		
               while(true){
-	        //sort theta and phi until it match requirement        
-		
-                //Theta = acos(cos(0*deg) - CLHEP::RandFlat::shoot(1)*(cos(0*deg) - cos(ThetaUpper*deg)));
+	        //sort theta and phi until it match requirement
 		  
                 // sort random theta and phi
 		Theta = acos(1 - CLHEP::RandFlat::shoot(1)*2);
@@ -3151,7 +3141,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
 		
 		//rotate the event into the galactic coordinate system
                 Sky.OrientDirection(m_NextEmission, Dir);
-		//For some reason Z of particle dir needs to be *-1 #reverseingeniering		
+		//Due to the left-handed galactic system used in MEGAlib 
+	        //the Z of particle dir needs to be *-1 #reverseingeniering		
 		Dir[2] = Dir[2]*-1;
 		
 		if (m_EarthOccultation_InverseCut){
@@ -3649,7 +3640,7 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
         //get the Earth aspect information from the orientation file
         const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
        
-        //celestial north pole in galactic coordinates l b is 122.93� and 27.13�
+        //celestial north pole in galactic coordinates l b is 122.93 deg and 27.13 deg
 	//see :https://lambda.gsfc.nasa.gov/product/about/pol_convention.html
 	//because of left handed megalib convention we need to multiply by -1 for Z #reverseingienering
         G4ThreeVector CelestNorthPole(cos(27.13*deg)*cos(122.93*deg) , cos(27.13*deg)*sin(122.93*deg) , -1*sin(27.13*deg)); 
@@ -3678,7 +3669,7 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
 	cos(m_PolarizationParam1)*px[1]+sin(m_PolarizationParam1)*py[1],
 	cos(m_PolarizationParam1)*px[2]+sin(m_PolarizationParam1)*py[2]);
 
-        //m_Polarization[2] = m_Polarization[2]*-1;
+        
 	m_Polarization = m_Polarization.unit();
 	
 	//cout<<"polarization vector : "<<m_Polarization[0]<<" "<<m_Polarization[1]<<" "<<m_Polarization[2]<<endl;
@@ -3714,7 +3705,6 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
   }
   
   if (m_PolarizationType != c_PolarizationNone) {
-  
     if (m_Polarization.isOrthogonal(m_Direction) == false) {
       merr<<m_Name<<": The polarization vector is not orthogonal on the direction vector!"<<endl
           <<"   --> Will use zero polarization!"<<endl;
@@ -3751,7 +3741,7 @@ bool MCSource::PerformOrientation(G4ThreeVector& Direction)
       // This reorientation can only happen is both are of the same coordinate system
       Sky.OrientDirectionInvers(m_NextEmission, Direction);
     }
-  } else if ( m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
     if (m_CoordinateSystem != c_FarField) {
       mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
       return false;
