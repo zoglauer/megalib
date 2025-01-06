@@ -14,7 +14,8 @@
  * and all its terms.
  *
  */
-           
+
+
 // Cosima:
 #include "MCCommon.hh"
 #include "MCSource.hh"
@@ -270,6 +271,7 @@ void MCSource::Initialize()
   m_PolarizationParam2 = c_Invalid;
   m_PolarizationParam3 = c_Invalid;
   m_PolarizationDegree = 0.0;
+	
   m_UseFarFieldTransmissionProbability = false;
   m_UseEarthOccultation = false;
   m_ThetaMaxEarthOccultation = 0.0;
@@ -411,7 +413,7 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
     
     
     
-     //get the Earth aspect information from the orientation file
+    //get the Earth aspect information from the orientation file
     const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
     double Alt,Lat,Lon=0;
     if (Sky.GetEarthCoordinate(m_NextEmission,  Alt,  Lat, Lon)==true){
@@ -439,16 +441,6 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
        
       // convert the Earth galactic l,b coordinate into cartesian representation  
       G4ThreeVector EarthZenith(cos(Lat)*cos(Lon) , cos(Lat)*sin(Lon) , sin(Lat)); 
-     
-      
-      //compute zpointing of spacecraft
-      //double Xlat=0;
-      //double Xlon=0;
-      //double Zlat=0;
-      //double Zlon=0;
-      //Sky.GetOrientation(m_NextEmission,Xlat,Xlon,Zlat,Zlon);
-      //G4ThreeVector SpacecraftZaxis(cos(Zlat)*cos(Zlon) , cos(Zlat)*sin(Zlon) , sin(Zlat)); 
-      //G4ThreeVector SpacecraftXaxis(cos(Xlat)*cos(Xlon) , cos(Xlat)*sin(Xlon) , sin(Xlat));
                 
       //rotate the oriented coordinate system of the event into the local coordinate system
       //Sky.OrientDirectionInvers(m_NextEmission, Dir);
@@ -460,9 +452,7 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
       //cout<< "particle Dir: "<<Dir[0]<<" " <<Dir[1] <<" "<<Dir[2]<<endl;
       //cout<<"Earth zenith: "<< EarthZenith[0]<<" "<<EarthZenith[1]<<" "<<EarthZenith[2]<<endl;
       //cout<<"Angle between 2 vector : "<<EarthZenith.angle(Dir)/deg<<endl;
-      //cout<<"Angle between Earth zenith and spacecraft Z axis : "<<EarthZenith.angle(SpacecraftZaxis)/deg<<endl;
-      //cout<<"Angle between Earth zenith and spacecraft X axis : "<<EarthZenith.angle(SpacecraftXaxis)/deg<<endl;
-      
+     
       
       
             
@@ -2328,6 +2318,7 @@ bool MCSource::SetPolarization(double PolarizationParam1,
   
   return true;
 }
+
 
 /******************************************************************************
  * Set the degree of polarization 1.0 == 100% polarized
