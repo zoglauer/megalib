@@ -5,8 +5,10 @@
 #
 # Please see the MEGAlib software license and documentation for more informations.
 
-
 # Part 1:
+# Store command line as array
+CMD=( "$@" )
+
 # Helper functions
 
 TIMESTART=$(date +%s)
@@ -77,6 +79,9 @@ confhelp() {
   echo "    Check periodically for updates. Default is off."
   echo "    Even if set to on, update checks will only be performed, if the user has write access to the MEGAlib installation."
   echo " "
+  #echo "--allowroot"
+  #echo "    By default this script does not allow to be installed as ROOT. This option allows it."
+  #echo " " 
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -104,7 +109,15 @@ if [ "$SHELL" != "/bin/bash" ]; then
   echo " "
 fi
 
-if [[ $EUID -eq 0 ]]; then
+# Check if the command line contains "--allowroot"
+ALLOWROOT="off"
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *--allowroot* ]]; then
+    ALLOWROOT="on"
+  fi
+done
+
+if [[ $EUID -eq 0 ]] && [[ ${ALLOWROOT} == off ]]; then
   echo " " 1>&2
   echo "Error: For security reasons, this script is not intended to be run as superuser/root." 1>&2
   echo "       It is intended for a user installation of MEGAlib." 1>&2
@@ -129,9 +142,6 @@ fi
 
 # Part 3:
 # Upgrade the input options:
-
-# Store command line as array
-CMD=( "$@" )
 
 # Check for help
 for C in "${CMD[@]}"; do
@@ -171,6 +181,7 @@ UPDATES="off"
 PATCH="on"
 CLEANUP="off"
 BRANCH=""
+# ALLOWROOT="off" - initialized in the beginning not here
 
 MAXTHREADS=1;
 if [[ ${OSTYPE} == *arwin* ]]; then
@@ -253,6 +264,9 @@ for C in "${CMD[@]}"; do
   elif [[ ${C} == *-b* ]]; then
     BRANCH=`echo ${C} | awk -F"=" '{ print $2 }'`
     RELEASE="dev"
+  elif [[ ${C} == *--allowroot* ]]; then
+    # Handled above too
+    ALLOWROOT="on"
   elif [[ ${C} == *-h ]] || [[ ${C} == *-hel* ]]; then
     echo ""
     confhelp
