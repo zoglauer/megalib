@@ -375,8 +375,8 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
 
       // Compton:
       double dPhi = CalculateDCosPhi((*(Iter-1)), (*Iter), (*(Iter+1)), Etot);
-      if (dPhi <= -m_MaxCosineLimit) CosPhiE = -0.99*m_MaxCosineLimit;
-      if (dPhi >= +m_MaxCosineLimit) CosPhiE = +0.99*m_MaxCosineLimit;
+      if (dPhi <= -m_MaxCosineLimit) dPhi = -0.99*m_MaxCosineLimit;
+      if (dPhi >= +m_MaxCosineLimit) dPhi = +0.99*m_MaxCosineLimit;
       double PhiE = CalculateCosPhiE((*Iter), Etot);
       if (PhiE <= -m_MaxCosineLimit) PhiE = -0.99*m_MaxCosineLimit;
       if (PhiE >= +m_MaxCosineLimit) PhiE = +0.99*m_MaxCosineLimit;
