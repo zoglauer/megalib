@@ -401,8 +401,6 @@ bool MFunction::Add(const long double x, const long double y)
     }
   }
 
-  CheckDynamicRange();
-
   return true;
 }
 
@@ -414,7 +412,7 @@ void MFunction::CheckDynamicRange()
   //! Check the dynamic range and give a warning message if we are too big
 
   static bool FirstCall = true;
-  if (FirstCall == true) {
+  if (FirstCall == true && m_X.size() > 0) {
     if (sizeof(long double) < 16) {
       if (m_X.back() / m_X.front() >= 100000000 && m_X.back() - m_X.front() >= 100000000) { // best guess how to handle zero
         mout<<endl;
