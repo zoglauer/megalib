@@ -35,6 +35,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MExceptions.h"
 #include "MResponseMatrixAxis.h"
 #include "MResponseMatrixAxisSpheric.h"
 
@@ -429,24 +430,68 @@ bool MResponsePolarizationBinnedMode::Analyze()
 { 
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
+ 
+  MPhysicalEvent* Event = nullptr;
+  MVector IdealOriginDir;
+  MVector IdealPolDir;
+  double EnergyInitial;
+  if (m_Mode == MResponseBuilderReadMode::SimFile || m_Mode == MResponseBuilderReadMode::SimEventByEvent) {
+
+    // This should never happen, but in case the analysis failed more badly:
+    if (m_SiEvent == nullptr) {
+      throw MExceptionPointerIsInvalid("m_SiEvent", m_SiEvent);
+      return false;
+    }
+
+    // We need to have at least an "INIT" in the simulation file per event
+    if (m_SiEvent->GetNIAs() == 0) {
+      return true;
+    }
   
-  // We need to have at least an "INIT" in the simulation file per event 
-  if (m_SiEvent->GetNIAs() == 0) {
-    return true;
-  }
-  
-  // We require a successful reconstruction 
-  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
-  if (REList->HasOnlyOptimumEvents() == false) {
-    return true;
-  }
+    // We require a successful reconstruction
+    MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
+    if (REList->HasOnlyOptimumEvents() == false) {
+      return true;
+    }
     
-  // ... leading to an event
-  MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
-  if (Event == nullptr) {
-    return true;
+    // ... leading to an event
+    Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
+    if (Event == nullptr) {
+      return true;
+    }
+
+    // and thew origin information
+    IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
+    EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+    IdealPolDir = m_SiEvent->GetIAAt(0)->GetSecondaryPolarisation();
+
+  } else if (m_Mode == MResponseBuilderReadMode::TraFile) {
+    Event = m_TraEvent;
+    if (Event == nullptr) {
+      return true;
+    }
+    IdealOriginDir = -Event->GetOIDirection();
+    if (IdealOriginDir == g_VectorNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }
+    EnergyInitial = Event->GetOIEnergy();
+    if (IdealOriginDir == g_DoubleNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }
+    IdealPolDir = Event->GetOIPolarization();
+    if (IdealPolDir == g_VectorNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }
+
+  } else {
+    cout<<"Unknown mode in MResponseImagingBinnedMode::Analyze"<<endl;
+    return false;
   }
-  
+
+
   // ... which needs to be a Compton event
   if (Event->GetType() != MPhysicalEvent::c_Compton) {
     return true;
@@ -504,14 +549,12 @@ bool MResponsePolarizationBinnedMode::Analyze()
   double Distance = Compton->FirstLeverArm();
   
   // Now get the origin information
-  MVector IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
   IdealOriginDir = Rotation*IdealOriginDir;
   double Lambda = IdealOriginDir.Phi()*c_Deg;
   while (Lambda < -180) Lambda += 360.0;
   while (Lambda > +180) Lambda -= 360.0;
   double Nu = IdealOriginDir.Theta()*c_Deg;
-  double EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
-  MVector IdealPolDir = m_SiEvent->GetIAAt(0)->GetSecondaryPolarisation();
+
   IdealPolDir = Rotation*IdealPolDir;
   
   MVector PolAngleReferenceDir = IdealOriginDir;

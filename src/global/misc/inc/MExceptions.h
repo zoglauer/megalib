@@ -423,6 +423,32 @@ public:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when a pointer is zero and
+//! the error cannot be reconvered gracefully
+class MExceptionPointerIsInvalid : public MException
+{
+public:
+  //! Constructor giving the minium array index, its size, and the accessing index to the array
+  MExceptionPointerIsInvalid(MString PointerName, void* Pointer) : MException() {
+    ostringstream out;
+    out<<"The pointer \""<<PointerName<<"\" is invalid: "<<reinterpret_cast<std::size_t>(Pointer)<<endl;
+    m_Description = out.str();
+  }
+  //! Default destructor
+  virtual ~MExceptionPointerIsInvalid() throw() {}
+
+
+private:
+
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionPointerIsInvalid, 1)
+#endif
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

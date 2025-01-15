@@ -427,7 +427,7 @@ bool MFileEvents::ParseFooter(const MString& Line)
     MTokenizer Tokens;
     Tokens.Analyze(Line);
     if (Tokens.GetNTokens() == 3) {
-      m_SimulatedEvents = Tokens.GetTokenAtAsInt(2);
+      m_SimulatedEvents = Tokens.GetTokenAtAsLong(2);
       m_HasSimulatedEvents = true;
     }
   }
@@ -439,7 +439,7 @@ bool MFileEvents::ParseFooter(const MString& Line)
       mout<<"Unable to read TS keyword"<<endl;
       return false;
     } else {
-      m_SimulatedEvents = Tokens.GetTokenAtAsInt(1);
+      m_SimulatedEvents = Tokens.GetTokenAtAsLong(1);
       m_HasSimulatedEvents = true;
     }
   }
