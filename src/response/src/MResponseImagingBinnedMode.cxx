@@ -56,8 +56,9 @@ MResponseImagingBinnedMode::MResponseImagingBinnedMode() : m_ImagingResponse(tru
   m_ResponseNameSuffix = "binnedimaging";
   m_OnlyINITRequired = true;
 
-  // TODO: New default response parameters
-  m_ParametrizationMode = "rel";
+  // New default response parameters "rel" (relative) is using epsilon (Em-Ei)/Ei ,
+  // phi and zeta. "abs" (absolute) is the old/usual response parametrization
+  m_ParametrizationMode = "abs";
   m_EpsilonNBins = 1;
   m_EpsilonBinMode = "lin";
   m_EpsilonMinimum = -1;
@@ -113,7 +114,7 @@ MString MResponseImagingBinnedMode::Options()
 {
   ostringstream out;
 
-  // TODO: Additional response parameters
+  //  Additional response parameters
   out<<"             parammode:               use either rel (relative) or abs (absolute) response parametrization (default: rel)"<<endl;
   out<<"             epsmin                   minimum epsilon (default: -1; cannot be used in combination with epsbinedges)"<<endl;
   out<<"             epsmax                   maximum epsilon (default: 1; cannot be used in combination with epsbinedges)"<<endl;
@@ -179,7 +180,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     Split2[i][0].ToLowerInPlace();
   }
 
-  // TODO: Epsilon option checks
+  //Epsilon option checks
   bool HasEpsBinEdges = false;
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i][0] == "epsbinedges") {
@@ -200,21 +201,21 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       }
     }
   }
-  // TODO: Phi option checks
+  //  Phi option checks
   bool HasPhiBinEdges = false;
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i][0] == "phibinedges") {
       HasPhiBinEdges = true;
     }
   }
-  // TODO: Theta option checks
+  //  Theta option checks
   bool HasThetaBinEdges = false;
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i][0] == "thetabinedges") {
       HasThetaBinEdges = true;
     }
   }
-  // TODO: Zeta option checks
+  //  Zeta option checks
   bool HasZetaBinEdges = false;
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i][0] == "zetabinedges") {
@@ -249,14 +250,9 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     MString MValue = Split2[i][1];
     string Value = MValue.Data();
 
-    // TODO: Response mode, epsilon, phi, theta and zeta parse
+    //  Response mode, epsilon, phi, theta and zeta parse
     if (Split2[i][0] == "parammode") {
       m_ParametrizationMode = MValue.ToLower();
-    // TODO: Remove Seq Option
-    } else if (Split2[i][0] == "seqmin") {
-      m_SeqMin = stod(Value);
-    } else if (Split2[i][0] == "seqmax") {
-      m_SeqMax = stod(Value);
     } else if (Split2[i][0] == "epsmin") {
       m_EpsilonMinimum = stod(Value);
     } else if (Split2[i][0] == "epsmax") {
@@ -324,7 +320,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   
   // Sanity checks:
 
-  // TODO: Response mode, epsilon, phi, theta and zeta sanity check
+  // Response mode, epsilon, phi, theta and zeta sanity check
   if (m_ParametrizationMode != "rel" && m_ParametrizationMode != "abs") {
       mout<<"Error: The parametrization mode is either 'rel' or 'abs'"<<endl;
       return false; 
@@ -464,7 +460,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   mout<<endl;
   mout<<"Choosen options for binned imaging response:"<<endl;
 
-  // TODO: Output response mode, epsilon, phi, theta, zeta
+  //  Output response mode, epsilon, phi, theta, zeta
   mout<<"  Response parametrization mode:                      "<<m_ParametrizationMode<<endl;
   if (HasEpsBinEdges == true) {
     mout<<"  Bin edges epsilon:                                  ";
@@ -554,7 +550,7 @@ bool MResponseImagingBinnedMode::Initialize()
     cout<<"Using HEALPix for sky with "<<AxisSkyCoordinates.GetNumberOfBins()<<" bins"<<endl;
   }
     
-  // TODO: Define epsilon axis
+  // Define epsilon axis
   MResponseMatrixAxis AxisEpsilon("Epsilon");
   if (m_EpsilonBinEdges.size() > 0) {
     AxisEpsilon.SetBinEdges(m_EpsilonBinEdges);
@@ -577,7 +573,7 @@ bool MResponseImagingBinnedMode::Initialize()
     }
   }
 
-  // TODO: Define angles
+  // Define angles
   MResponseMatrixAxis AxisPhi("#phi [deg]");
   if (m_PhiBinEdges.size() > 0) {
     AxisPhi.SetBinEdges(m_PhiBinEdges);
@@ -622,7 +618,7 @@ bool MResponseImagingBinnedMode::Initialize()
   m_ImagingResponse.AddAxis(AxisEnergyInitial);
   m_ImagingResponse.AddAxis(AxisSkyCoordinates);
 
-  // TODO: Add correct energy and angle axis
+  // Add correct energy and angle axis
   if (m_ParametrizationMode == "rel") {
     m_ImagingResponse.AddAxis(AxisEpsilon);
   } else {
@@ -658,7 +654,7 @@ bool MResponseImagingBinnedMode::Initialize()
   m_EnergyResponse4D.AddAxis(AxisEnergyInitial);
   m_EnergyResponse4D.AddAxis(AxisSkyCoordinates);
 
-  // TODO: Add correct energy axis
+  // Add correct energy axis
   if (m_ParametrizationMode == "rel") {
     m_EnergyResponse4D.AddAxis(AxisEpsilon);
   } else {
@@ -673,7 +669,7 @@ bool MResponseImagingBinnedMode::Initialize()
   m_EnergyResponse2D.SetName("Energy response 2D");
   m_EnergyResponse2D.AddAxis(AxisEnergyInitial);
 
-  // TODO: Add correct energy axis
+  // Add correct energy axis
   if (m_ParametrizationMode == "rel") {
     m_EnergyResponse2D.AddAxis(AxisEpsilon);
   } else {
@@ -779,11 +775,7 @@ bool MResponseImagingBinnedMode::Analyze()
       return true;
     }
   }
-  // TODO: Remove Selection
-  if (Compton->SequenceLength() < m_SeqMin || Compton->SequenceLength() > m_SeqMax) {
-    mout<<"Wrong sequence length: "<<(Compton->SequenceLength())<<endl;
-    return true;
-  }
+  
   
   // Get the data space information
   MRotation Rotation = Compton->GetDetectorRotationMatrix();
@@ -819,18 +811,15 @@ bool MResponseImagingBinnedMode::Analyze()
   while (Lambda > +180) Lambda -= 360.0;
   double Nu = IdealOriginDir.Theta()*c_Deg;
 
-  // TODO: Relative energy implementation
+  // Relative energy implementation a.k.a epsilon
   double Epsilon = (EnergyMeasured - EnergyInitial)/EnergyInitial;
 
-  // TODO: Theta implementation;
-  // MVector IdealOriginPosition = m_SiEvent->GetIAAt(0)->GetPosition();
-  // double Theta = Compton->GetARMGamma(IdealOriginPosition)*c_Deg;
+  // Theta implementation
   double PhiGeomtric = IdealOriginDir.Angle(Dg)*c_Deg;
   double Theta = PhiGeomtric - Phi;
-  // mout<<"My: ("<<Theta_2<<") vs. MEGAlib: ("<<Theta<<")"<<endl;
-  // mout<<"File: "<<IdealOriginDir<<" vs. MEGAlib: "<<(IdealOriginPosition - Compton->m_C1).Unit()<<endl;
+  
 
-  // TODO: Zeta implementation - RelativeX convention
+  // Zeta implementation - RelativeX convention
   MVector Axis = MVector(1.0, 0.0, 0.0);
   MVector PolarizationZ = -IdealOriginDir;
   MVector PolarizationX = PolarizationZ.Cross(Axis).Unit();
@@ -843,30 +832,10 @@ bool MResponseImagingBinnedMode::Analyze()
   ProjectedDg = ChangeBasis * ProjectedDg;
   double Zeta = ProjectedDg.Phi()*c_Deg - 90;
   if (Zeta < 0) Zeta += 360;
-
-  // TODO: Zeta Alternative
-  // double Zeta_2 = 0;
-  // double YAngle = PolarizationZ.Cross(Dg).Angle(PolarizationY)*c_Deg;
-  // double XAngle = PolarizationZ.Cross(Dg).Angle(PolarizationX)*c_Deg;
-  // if (YAngle <= 90) {
-  //   if (XAngle <= 90) {
-  //     Zeta_2 = 270 + XAngle;
-  //   } else {
-  //     Zeta_2 = YAngle;
-  //   }
-  // } else {
-  //   if (XAngle <= 90) {
-  //     Zeta_2 = 270 - XAngle;
-  //   } else {
-  //     Zeta_2 = YAngle;
-  //   }
-  // }
-
-  // mout << "Zeta 01 ("<<Zeta<<") - Zeta 02 ("<<Zeta_2<<")"<<endl;
   
   // And fill the matrices
 
-  // TODO: Relative parametrization matrix fill
+  //  Relative parametrization matrix fill
   if (m_ParametrizationMode == "rel") {
     m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, Epsilon, Phi, Theta, Zeta, Sigma, Tau, Distance } );
     m_Exposure.Add( vector<double>{ EnergyInitial, Nu, Lambda } );
