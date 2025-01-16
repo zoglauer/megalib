@@ -1449,14 +1449,16 @@ bool MCParameterFile::Parse()
             }
           }
 	  else if (Type == "farfieldearthoccultation" ) {
-            if (T->GetNTokens() >= 3) {
+            if (T->GetNTokens() >= 4) {
               Source->SetBeamType(MCSource::c_FarField,
                                   MCSource::c_FarFieldEarthOccultation);
-              
+	      double Theta = 0.0; // here we don't use theta
+	      bool InverseCut = T->GetTokenAtAsBoolean(3); 			  
+              Source->SetEarthOccultation(Theta,InverseCut);
               mdebug<<"Using beam: "<<Type<<endl;
             } else {
               Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
-                   " Number of tokens must be larger than 2!");
+                   " Number of tokens must be larger than 4!");
               return false;
             }
           }
@@ -2195,7 +2197,17 @@ bool MCParameterFile::Parse()
               Typo(i, "Cannot parse token \"Polarization absolute\" correctly: Number of tokens is not correct!");
               return false;
             }
-          } else if (Type == "relativex") {
+          } else if (Type == "galactic") {
+            if (T->GetNTokens() == 5) {
+              Source->SetPolarizationType(MCSource::c_PolarizationGalactic);
+              Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
+              Source->SetPolarization(T->GetTokenAtAsDouble(4)*deg);
+            } else {
+              Typo(i, "Cannot parse token \"Polarization galactic\" correctly: Number of tokens is not correct!");
+              return false;
+            }
+	  
+	   } else if (Type == "relativex") {
             if (T->GetNTokens() == 5) {
               Source->SetPolarizationType(MCSource::c_PolarizationRelativeX);
               Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));

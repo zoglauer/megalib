@@ -116,7 +116,7 @@ const int MCSource::c_PolarizationAbsolute                         =  3;
 const int MCSource::c_PolarizationRelativeX                        =  4;
 const int MCSource::c_PolarizationRelativeY                        =  5;
 const int MCSource::c_PolarizationRelativeZ                        =  6;
-
+const int MCSource::c_PolarizationGalactic                         =  7;
 
 // Don't change this list because the ID is written to the Sim file
 const int MCSource::c_Gamma                                        = 1;
@@ -271,7 +271,6 @@ void MCSource::Initialize()
   m_PolarizationParam2 = c_Invalid;
   m_PolarizationParam3 = c_Invalid;
   m_PolarizationDegree = 0.0;
-  
   m_UseFarFieldTransmissionProbability = false;
   m_UseEarthOccultation = false;
   m_ThetaMaxEarthOccultation = 0.0;
@@ -441,7 +440,7 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
        
       // convert the Earth galactic l,b coordinate into cartesian representation  
       G4ThreeVector EarthZenith(cos(Lat)*cos(Lon) , cos(Lat)*sin(Lon) , sin(Lat)); 
-     
+        
       //rotate the oriented coordinate system of the event into the local coordinate system
       //Sky.OrientDirectionInvers(m_NextEmission, Dir);
       Sky.OrientDirection(m_NextEmission, Dir);
@@ -452,17 +451,18 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
       //cout<< "particle Dir: "<<Dir[0]<<" " <<Dir[1] <<" "<<Dir[2]<<endl;
       //cout<<"Earth zenith: "<< EarthZenith[0]<<" "<<EarthZenith[1]<<" "<<EarthZenith[2]<<endl;
       //cout<<"Angle between 2 vector : "<<EarthZenith.angle(Dir)/deg<<endl;
+     
       
       
             
       //Do the Theta cut
       if (m_EarthOccultation_InverseCut){
-      if (EarthZenith.angle(Dir)/deg <ThetaMax ){
+      if (abs(EarthZenith.angle(Dir)/deg) <ThetaMax ){
        ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(0);
        }
        
       } else {
-       if (EarthZenith.angle(Dir)/deg >=ThetaMax ){
+       if (abs(EarthZenith.angle(Dir)/deg) >=ThetaMax ){
        ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(0);
        }
       }
@@ -2256,6 +2256,7 @@ bool MCSource::SetPolarizationType(const int& PolarizationType)
   case c_PolarizationRelativeX:
   case c_PolarizationRelativeY:
   case c_PolarizationRelativeZ:
+  case c_PolarizationGalactic:
     m_PolarizationType = PolarizationType;
     return true;
   default:
@@ -2292,6 +2293,9 @@ string MCSource::GetPolarizationTypeAsString() const
   case c_PolarizationRelativeZ:
     Name = "RelativeZ";
     break;
+  case c_PolarizationGalactic:
+    Name = "Galactic";
+    break;    
   default:
     break;
   }
@@ -3102,28 +3106,67 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       } else if (m_BeamType == c_FarFieldEarthOccultation) {
         // Determine a random position on the sphere between 
         // theta min and theta max that are computed each time
-	      // according to the pointing of the spacecraft in order
-	      //to take into account the Earth Occultation
+	// according to the pointing of the spacecraft in order
+	//to take into account the Earth Occultation
         
         if (m_StartAreaType == c_StartAreaSphere) {
 	
-	       //determine the theta range 
+	    //determine the theta range 
 	
-	      //get the Earth aspect information from the orientation file
+	    //get the Earth aspect information from the orientation file
             const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
             double Alt,Lat,Lon=0;
+	    
             if (Sky.GetEarthCoordinate(m_NextEmission,  Alt,  Lat, Lon)==true){
-     
-             
+                
+		double R_Earth = 6378; //km
+		
+	        //compute theta max according to the current altitude
+                double ThetaMax =  ( c_Pi - asin( R_Earth/(R_Earth+Alt/km) ) )/deg;
+		
+		// convert the Earth galactic l,b coordinate into cartesian representation  
+                G4ThreeVector EarthZenith(cos(Lat)*cos(Lon) , cos(Lat)*sin(Lon) , sin(Lat));
+		
+		
+              while(true){
+	        //sort theta and phi until it match requirement
+		  
+                // sort random theta and phi
+		Theta = acos(1 - CLHEP::RandFlat::shoot(1)*2);
+                Phi = CLHEP::RandFlat::shoot(1)*360*deg;
+		  
+		// compute xyz of the particle
+		G4ThreeVector Dir(sin(Theta)*cos(Phi),sin(Theta)*sin(Phi),cos(Theta));
+		
+		
+		//rotate the event into the galactic coordinate system
+                Sky.OrientDirection(m_NextEmission, Dir);
+		//Due to the left-handed galactic system used in MEGAlib 
+	        //the Z of particle dir needs to be *-1 #reverseingeniering		
+		Dir[2] = Dir[2]*-1;
+		
+		if (m_EarthOccultation_InverseCut){
+      			if (EarthZenith.angle(Dir)/deg >ThetaMax ){
+			break;
+       		}
+       
+      		} else {
+       			if (EarthZenith.angle(Dir)/deg <=ThetaMax ){
+       		        break;
+       		 	}
+                }
+	      }
+	      
+	      
+	      
+	      
+	      	      
            }
           else{
                 merr<<"the time is not in the ori time range : "<<m_NextEmission<< " ["<<Sky.GetStartTime()<<","<< Sky.GetStopTime() <<"]"<<endl;
            }
 	   
-	    //sort theta and phi 
-        
-            Theta = acos(cos(0*deg) - CLHEP::RandFlat::shoot(1)*(cos(0*deg) - cos(5*deg)));
-            Phi = CLHEP::RandFlat::shoot(1)*360*deg;
+	    
               
         
         } else {
@@ -3582,7 +3625,8 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
     m_Polarization = m_Direction.orthogonal();
     m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
     m_Polarization = m_Polarization.unit();
-  } else if (m_PolarizationType == c_PolarizationAbsolute || 
+  } else if (m_PolarizationType == c_PolarizationAbsolute ||
+             m_PolarizationType == c_PolarizationGalactic ||
              m_PolarizationType == c_PolarizationRelativeX ||
              m_PolarizationType == c_PolarizationRelativeY ||
              m_PolarizationType == c_PolarizationRelativeZ) {
@@ -3590,6 +3634,48 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
     if (CLHEP::RandFlat::shoot(1) < m_PolarizationDegree) {
       if (m_PolarizationType == c_PolarizationAbsolute) {
         m_Polarization.set(m_PolarizationParam1, m_PolarizationParam2, m_PolarizationParam3);
+      }
+      if (m_PolarizationType == c_PolarizationGalactic) {
+      
+        //get the Earth aspect information from the orientation file
+        const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+       
+        //celestial north pole in galactic coordinates l b is 122.93 deg and 27.13 deg
+	//see :https://lambda.gsfc.nasa.gov/product/about/pol_convention.html
+	//because of left handed megalib convention we need to multiply by -1 for Z #reverseingienering
+        G4ThreeVector CelestNorthPole(cos(27.13*deg)*cos(122.93*deg) , cos(27.13*deg)*sin(122.93*deg) , -1*sin(27.13*deg)); 
+	
+	//convert the north pole in local coordinates
+	Sky.OrientDirectionInvers(m_NextEmission, CelestNorthPole);
+	//cout<<"celest vector : "<<CelestNorthPole[0]<<" "<<CelestNorthPole[1]<<" "<<CelestNorthPole[2]<<endl;
+	
+	
+	
+	//compute px and py perpendicular to photon direction
+	G4ThreeVector py = CelestNorthPole.cross(m_Direction);
+	//normalize py
+	py = py.unit();
+	G4ThreeVector px = py.cross(m_Direction);
+	
+        //normalize px
+	px = px.unit();
+	
+       
+        //cout<<"py : "<<py<<endl;
+	//cout<<"px : "<<px<<endl;
+       
+        //define the polarization vector
+	m_Polarization = G4ThreeVector(cos(m_PolarizationParam1)*px[0]+sin(m_PolarizationParam1)*py[0],
+	cos(m_PolarizationParam1)*px[1]+sin(m_PolarizationParam1)*py[1],
+	cos(m_PolarizationParam1)*px[2]+sin(m_PolarizationParam1)*py[2]);
+
+        
+	m_Polarization = m_Polarization.unit();
+	
+	//cout<<"polarization vector : "<<m_Polarization[0]<<" "<<m_Polarization[1]<<" "<<m_Polarization[2]<<endl;
+	//cout<<"photon dir vector : "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
+	//Sky.OrientDirection(m_NextEmission, m_Direction);
+	//cout<<"photon dir (gal) vector : "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
       }
       // Relative
       else {

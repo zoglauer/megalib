@@ -432,6 +432,8 @@ public:
   static const int c_PolarizationRandom;
   /// Id of the polarization being in absolute coordinates
   static const int c_PolarizationAbsolute;
+  /// Id of the polarization being in Galactic coordinates
+  static const int c_PolarizationGalactic;
   /// Id of the polarization being calculated relative to particle direction and x-axis
   static const int c_PolarizationRelativeX;
   /// Id of the polarization being calculated relative to particle direction and y-axis
