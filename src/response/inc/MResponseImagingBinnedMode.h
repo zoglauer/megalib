@@ -74,6 +74,24 @@ class MResponseImagingBinnedMode : public MResponseBuilder
 
   // protected members:
  protected:
+  //! Use relative coordinate parametrization
+  MString m_ParametrizationMode;
+  //! Number of epsilon bins
+  unsigned int m_EpsilonNBins;
+  //! The mode how to do the epsilon binning: lin or log
+  MString m_EpsilonBinMode;
+  //! Minimum epsilon range
+  double m_EpsilonMinimum;
+  //! Maximum epsilon range
+  double m_EpsilonMaximum;
+  //! Epsilon bin edges
+  vector<double> m_EpsilonBinEdges;
+  //! Phi bin edges
+  vector<double> m_PhiBinEdges;
+  //! Theta bin edges
+  vector<double> m_ThetaBinEdges;
+  //! Zeta bin edges
+  vector<double> m_ZetaBinEdges;
   //! The bin width of the angles near the equator for the gamma rays
   double m_AngleBinWidth;
   //! The mode on how to do the spherical coordinates binning: fisbel or healpix
