@@ -43,11 +43,11 @@ Reader = M.MFileEventsTra()
 if Reader.Open(M.MString(FileName)) == False:
   print("Unable to open input file " + FileName + ". Aborting!")
   quit()
-Reader.GetObservationTime()
+#Reader.GetObservationTime()
 
 # Load output tra file
 OutputFileName = FileName
-OutputFileName = OutputFileName.replace('.tra.', '.filtered.tra.')
+OutputFileName = OutputFileName.replace('.tra', '.filtered.tra')
 Writer = M.MFileEventsTra()
 if Writer.Open(OutputFileName, M.MFile.c_Write) == False:
   print("Unable to open output file " + OutputFileName + ". Aborting!")
@@ -59,7 +59,12 @@ Writer.WriteHeader()
 
 
 HistBeforeFilter = M.TH1D("Energy Before Filter", "Energy Before Filter", 500, 0, 10000)
+HistBeforeFilter.SetXTitle("Energy [keV]")
+HistBeforeFilter.SetYTitle("counts")
+
 HistAfterFilter = M.TH1D("Energy After Filter", "Energy After Filter", 500, 0, 10000)
+HistAfterFilter.SetXTitle("Energy [keV]")
+HistAfterFilter.SetYTitle("counts")
 
 
 while True: 
@@ -67,9 +72,9 @@ while True:
   if not Event:
     break
   M.SetOwnership(Event, True)
-  
+ 
+  IsOverflow = False
   if Event.GetType() == M.MPhysicalEvent.c_Compton:
-    IsOverflow = False
     for h in range(0, Event.GetNHits()):
       HitEnergy = Event.GetHit(h).GetEnergy() 
       if 1799.999 < HitEnergy < 1800.001:
@@ -83,16 +88,18 @@ while True:
       elif 8999.999 < HitEnergy < 9000.001:
         IsOverflow = True
 
-    HistBeforeFilter.Fill(Event.Ei())
-    if IsOverflow == False:
-      HistAfterFilter.Fill(Event.Ei())
-      Writer.AddEvent(Event)
+    if Event.Ei() > 0.0: # Events with bad Compton kinematics have 0 here
+      HistBeforeFilter.Fill(Event.Ei())
+      if IsOverflow == False:
+        HistAfterFilter.Fill(Event.Ei())
 
-    if Event.Ei() < 50:
-      print("{}".format(Event.Ei()))
+  if IsOverflow == False:    
+    Writer.AddEvent(Event)
+
 
 Reader.Close()
 
+Writer.TransferInformation(Reader)
 Writer.WriteFooter()
 Writer.Close()
 
