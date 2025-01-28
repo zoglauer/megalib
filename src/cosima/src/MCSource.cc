@@ -2429,7 +2429,7 @@ bool MCSource::AddToEventList(double Energy,
                               G4ThreeVector Position, 
                               G4ThreeVector Direction, 
                               G4ThreeVector Polarization, 
-                              double Time,  
+                              long double Time,
                               G4ParticleDefinition* ParticleDefinition, 
                               MString VolumeName)
 {
@@ -2496,15 +2496,15 @@ bool MCSource::SetIsotopeCount(double IsotopeCount)
  * Return the time to the next photon emission of this source:
  * The error in this routine is <= Scale
  */
-bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
+bool MCSource::CalculateNextEmission(long double Time, double /*Scale*/)
 {
-  double NextEmission = 0;
+  long double NextEmission = 0;
 
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
       NextEmission = m_EventList[0]->m_Time - Time;
     } else {
-      NextEmission = numeric_limits<double>::max();
+      NextEmission = numeric_limits<long double>::max();
     }
   } else if (m_IsIsotopeCount == true) {
     if (m_ParticleDefinition == 0) GenerateParticleDefinition();
@@ -2536,7 +2536,7 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
       NextEmission = m_LightCurveFunction.FindX(m_NextEmission, dIntegral, m_IsRepeatingLightCurve);
       if (m_IsRepeatingLightCurve == false && NextEmission >= m_LightCurveFunction.GetXMax()) {
         m_IsActive = false;
-        m_NextEmission = numeric_limits<double>::max();
+        m_NextEmission = numeric_limits<long double>::max();
         mout<<m_Name<<": light-curve data exceeded."<<endl;
         return true;
       } else {
@@ -2555,7 +2555,7 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
     if (m_NextEmission > m_Orientation.GetStopTime()) {
       mout<<m_Name<<": orientation data exceeded (next emission: "<<m_NextEmission/second<<" vs. max time: "<<m_Orientation.GetStopTime()/second<<")."<<endl;      
       m_IsActive = false;
-      m_NextEmission = numeric_limits<double>::max();
+      m_NextEmission = numeric_limits<long double>::max();
     }
   }
   
@@ -2564,7 +2564,7 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
     if (m_NextEmission > Sky.GetStopTime()) {
       mout<<m_Name<<": orientation data exceeded (next emission: "<<m_NextEmission/second<<" vs. max time: "<<m_Orientation.GetStopTime()/second<<")."<<endl;      
       m_IsActive = false;
-      m_NextEmission = numeric_limits<double>::max();
+      m_NextEmission = numeric_limits<long double>::max();
     }
   }  
   

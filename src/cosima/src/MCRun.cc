@@ -243,7 +243,7 @@ bool MCRun::AddToBuildUpEventList(double Energy,
                                   G4ThreeVector Position, 
                                   G4ThreeVector Direction, 
                                   G4ThreeVector Polarization, 
-                                  double Time, 
+                                  long double Time,
                                   G4ParticleDefinition* ParticleType, 
                                   MString VolumeName)
 {
@@ -625,7 +625,7 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
 
     // Step 2: Check if one of the stop conditions is fulfilled
     //         Then we can stop now
-    if (NextSource->GetNextEmission() == numeric_limits<double>::max()) {
+    if (NextSource->GetNextEmission() == numeric_limits<long double>::max()) {
       // We ran out of events here, thus we are done. 
       // Thus just pick the event stop condition, and say it is fullfilled.
       m_StopCondition = c_StopByEvents;
