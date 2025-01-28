@@ -48,6 +48,8 @@ class MTime
         unsigned int m_Minute = 0, unsigned int m_Second = 0, unsigned int m_NanoSecond = 0);
   //! Set the time as a double -- the time is counted since Epoch
   MTime(double Time);
+  //! Set the time as a long double -- the time is counted since Epoch
+  MTime(long double Time);
   //! Copy constructor
   MTime(const MTime& Time);
   
@@ -59,12 +61,13 @@ class MTime
   
   bool Now();
   bool Set(unsigned int m_Year, unsigned int m_Month, unsigned int m_Day, unsigned int m_Hour = 0, 
-             unsigned int m_Minute = 0, unsigned int m_Second = 0, unsigned int m_NanoSecond = 0);
+           unsigned int m_Minute = 0, unsigned int m_Second = 0, unsigned int m_NanoSecond = 0);
   bool Set(const long int LinuxTime, const long int NanoSeconds = 0);
   bool Set(const int LinuxTime, const int NanoSeconds = 0);
   bool Set(const unsigned int LinuxTime, const unsigned int NanoSeconds = 0);
   bool Set(const double Seconds, const double NanoSeconds);
   bool Set(double Time);
+  bool Set(long double Time);
   bool Set(const MTime& Time);
   //! Set a string in MEGAlib TI format: TI 123456789.123456789
   //! Starts the conversion at character I

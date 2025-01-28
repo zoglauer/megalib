@@ -198,6 +198,17 @@ MTime::MTime(double Time)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MTime::MTime(long double Time)
+{
+  // This format is not really accurate... on a 64bit System
+
+  Set(Time);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MTime::MTime(const MTime& Time)
 {
   m_Seconds = Time.m_Seconds;
@@ -358,6 +369,22 @@ bool MTime::Set(const double Seconds, const double NanoSeconds)
 
 
 bool MTime::Set(double Time)
+{
+  //
+
+  m_Seconds = (long int) Time;
+  m_NanoSeconds = (long int) TMath::FloorNint((Time - m_Seconds) * 1000000000);
+
+  Normalize();
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MTime::Set(long double Time)
 {
   //
 
