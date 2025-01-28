@@ -166,11 +166,11 @@ bool MFunction::Set(const MString FileName, const MString KeyWord)
         m_InterpolationType = c_InterpolationNone;
       } else if (IP == "lin" || IP == "linlin") {
         m_InterpolationType = c_InterpolationLinLin;
-      } else if (IP == "linlog") {
+      } else if (IP == "linlogl") {
         m_InterpolationType = c_InterpolationLinLog;
-      } else if (IP == "loglin") {
+      } else if (IP == "logllin") {
         m_InterpolationType = c_InterpolationLogLin;
-      } else if (IP == "log" || IP == "loglog") {
+      } else if (IP == "logl" || IP == "logllogl") {
         m_InterpolationType = c_InterpolationLogLog;
       } else {
         mout<<"In the function defined by: "<<FileName<<endl;
@@ -559,22 +559,22 @@ long double MFunction::Evaluate(long double x) const
       y2 = m_Y[Position+1];
     }
 
-    // Attention for log interpolation make sure all values are positive!
+    // Attention for logl interpolation make sure all values are positive!
     if (m_InterpolationType == c_InterpolationLinLog || m_InterpolationType == c_InterpolationLogLog) {
-      y1 = log(y1);
-      y2 = log(y2);
+      y1 = logl(y1);
+      y2 = logl(y2);
     }
     if (m_InterpolationType == c_InterpolationLogLin || m_InterpolationType == c_InterpolationLogLog) {
-      x = log(x);
-      x1 = log(x1);
-      x2 = log(x2);
+      x = logl(x);
+      x1 = logl(x1);
+      x2 = logl(x2);
     }
 
     long double m = (y2-y1)/(x2-x1);
     long double t = y2 - m*x2;
 
     if (m_InterpolationType == c_InterpolationLinLog || m_InterpolationType == c_InterpolationLogLog) {
-      y = exp(m*x+t);
+      y = expl(m*x+t);
     } else {
       y = m*x+t;
     }
@@ -723,16 +723,16 @@ long double MFunction::Integrate(long double XMin, long double XMax) const
         y2 = m_Y[i+1];
       }
       
-      // Attention for log interpolation make sure all values are positive!
+      // Attention for logl interpolation make sure all values are positive!
       if (m_InterpolationType == c_InterpolationLinLog || 
           m_InterpolationType == c_InterpolationLogLog) {
-        y1 = log(y1);
-        y2 = log(y2);
+        y1 = logl(y1);
+        y2 = logl(y2);
       }
       if (m_InterpolationType == c_InterpolationLogLin || 
           m_InterpolationType == c_InterpolationLogLog) {
-        x1 = log(x1);
-        x2 = log(x2);
+        x1 = logl(x1);
+        x2 = logl(x2);
       }
       
       //cout<<x1<<":"<<x2<<endl;
@@ -744,13 +744,13 @@ long double MFunction::Integrate(long double XMin, long double XMax) const
       // Switch back
       if (m_InterpolationType == c_InterpolationLinLog || 
           m_InterpolationType == c_InterpolationLogLog) {
-        y1 = exp(y1);
-        y2 = exp(y2);
+        y1 = expl(y1);
+        y2 = expl(y2);
       }
       if (m_InterpolationType == c_InterpolationLogLin || 
           m_InterpolationType == c_InterpolationLogLog) {
-        x1 = exp(x1);
-        x2 = exp(x2);
+        x1 = expl(x1);
+        x2 = expl(x2);
       }
       
       // Do the integration using the correct formula for the various modi:
@@ -758,21 +758,21 @@ long double MFunction::Integrate(long double XMin, long double XMax) const
         // y=m*x+t --> int(m*x+t)
         Integral += 0.5*m*(x2*x2-x1*x1) + t*(x2-x1);      
       } else if (m_InterpolationType == c_InterpolationLinLog) {
-        // ln(y) = m*x+t --> int(exp(m*x+t))
+        // ln(y) = m*x+t --> int(expl(m*x+t))
         if (fabs(m) < 10E-8) {
-          Integral += exp(t)*(x2-x1); 
+          Integral += expl(t)*(x2-x1);
         } else {
-          Integral += 1/m * (exp(m*x2+t) - exp(m*x1+t));
+          Integral += 1/m * (expl(m*x2+t) - expl(m*x1+t));
         }
       } else if (m_InterpolationType == c_InterpolationLogLin) {
         // y = m*ln(x) + t --> int(m*ln(x) + t)
-        Integral += x2*(m*(log(x2) - 1) + t) - x1*(m*(log(x1) - 1) + t);
+        Integral += x2*(m*(logl(x2) - 1) + t) - x1*(m*(logl(x1) - 1) + t);
       } else if (m_InterpolationType == c_InterpolationLogLog) {
-        // ln(y) = m*ln(x) + t --> y = exp(t)*x^m --> int(exp(t)*x^m)
+        // ln(y) = m*ln(x) + t --> y = expl(t)*x^m --> int(expl(t)*x^m)
         if (fabs(m+1) < 10E-8) {
-          Integral += exp(t)*(log(x2)-log(x1)); 
+          Integral += expl(t)*(logl(x2)-logl(x1));
         } else {
-          Integral += exp(t)/(m+1) * (pow(x2, m+1) - pow(x1, m+1));
+          Integral += expl(t)/(m+1) * (powl(x2, m+1) - powl(x1, m+1));
         }
       }
     }
@@ -836,7 +836,7 @@ long double MFunction::GetRandomTimesX()
 
   // Find a random number on the total intensity scale and then (function call)
   // the appropriate x-value
-  return GetRandomInterpolate(sqrt(gRandom->Rndm())*m_Cumulative.back());
+  return GetRandomInterpolate(sqrtl(gRandom->Rndm())*m_Cumulative.back());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -904,14 +904,14 @@ long double MFunction::GetRandomInterpolate(long double Itot)
     x2 = m_X[Bin];
     y2 = m_Y[Bin];
     
-    // Attention for log interpolation make sure all values are positive!
+    // Attention for logl interpolation make sure all values are positive!
     if (m_InterpolationType == c_InterpolationLinLog || m_InterpolationType == c_InterpolationLogLog) {
-      y1 = log(y1);
-      y2 = log(y2);
+      y1 = logl(y1);
+      y2 = logl(y2);
     }
     if (m_InterpolationType == c_InterpolationLogLin || m_InterpolationType == c_InterpolationLogLog) {
-      x1 = log(x1);
-      x2 = log(x2);
+      x1 = logl(x1);
+      x2 = logl(x2);
     }
     
     // Calculate m, t of the interpolation "line" (it's always a line in the respective mode) 
@@ -920,12 +920,12 @@ long double MFunction::GetRandomInterpolate(long double Itot)
     
     // Switch back
     if (m_InterpolationType == c_InterpolationLinLog || m_InterpolationType == c_InterpolationLogLog) {
-      y1 = exp(y1);
-      y2 = exp(y2);
+      y1 = expl(y1);
+      y2 = expl(y2);
     }
     if (m_InterpolationType == c_InterpolationLogLin || m_InterpolationType == c_InterpolationLogLog) {
-      x1 = exp(x1);
-      x2 = exp(x2);
+      x1 = expl(x1);
+      x2 = expl(x2);
     }
 
     // Relative intensity in this bin:
@@ -935,7 +935,7 @@ long double MFunction::GetRandomInterpolate(long double Itot)
       // We know m, t (from y=m*x+t), as well as I = Itot - I[Bin-1], i.e. the covered area in the given bin
       // What we want is x:
       // I = int(x'[Bin-1]->x) m*x'+t dx'
-      // x = (-t+-sqrt(t*t+m*m*x0*x0+2*m*t*x0+2*m*I))/m
+      // x = (-t+-sqrtl(t*t+m*m*x0*x0+2*m*t*x0+2*m*I))/m
       
       // Special case:
       if (m == 0) {
@@ -951,8 +951,8 @@ long double MFunction::GetRandomInterpolate(long double Itot)
       long double Value = (t+m*x1)*(t+m*x1) + 2*m*I;
   
       // the possible solutions
-      long double xs1 = (-t-sqrt(Value))/m;
-      long double xs2 = (-t+sqrt(Value))/m;
+      long double xs1 = (-t-sqrtl(Value))/m;
+      long double xs2 = (-t+sqrtl(Value))/m;
       
       long double x = 0.0;
       if (m >= 0) {
@@ -987,15 +987,15 @@ long double MFunction::GetRandomInterpolate(long double Itot)
       return x;
 
     } else if (m_InterpolationType == c_InterpolationLinLog) {
-      // Here we look for the solution if I = int[x'[Bin-1]->x] exp(m*x'+t) dx'
+      // Here we look for the solution if I = int[x'[Bin-1]->x] expl(m*x'+t) dx'
       // Fortunately that's easier, since we have only one valid solution
       
       // Special case:
       if (fabs(m) < 10E-8) { // m == 0
-        return x1 + I*exp(-t);
+        return x1 + I*expl(-t);
       }
 
-      return (log(exp(x1*m+t) + I*m) - t)/m;
+      return (logl(expl(x1*m+t) + I*m) - t)/m;
 
     } else if (m_InterpolationType == c_InterpolationLogLin) {
       // Here we look for the solution if I = int[x'[Bin-1]->x] m*ln(x')+t dx'
@@ -1010,25 +1010,25 @@ long double MFunction::GetRandomInterpolate(long double Itot)
       }
       
       long double LW = 0.0;
-      // That's just a guess --- not sure is it is not a function of (m*x1*log(x1)-m*x1+t*x1+I)/m*exp(-(m-t)/m
+      // That's just a guess --- not sure is it is not a function of (m*x1*logl(x1)-m*x1+t*x1+I)/m*expl(-(m-t)/m
       if (m < 0) {
-        LW = LambertW((m*x1*log(x1)-m*x1+t*x1+I)/m*exp(-(m-t)/m), -1);
+        LW = LambertW((m*x1*logl(x1)-m*x1+t*x1+I)/m*expl(-(m-t)/m), -1);
       } else {
-        LW = LambertW((m*x1*log(x1)-m*x1+t*x1+I)/m*exp(-(m-t)/m), 0);
+        LW = LambertW((m*x1*logl(x1)-m*x1+t*x1+I)/m*expl(-(m-t)/m), 0);
       }
       
-      return exp((LW*m+m-t)/m);
+      return expl((LW*m+m-t)/m);
       
     } else if (m_InterpolationType == c_InterpolationLogLog) {
-      // Here we look for the solution if I = int[x'[Bin-1]->x] exp(t)*x'^m dx'
+      // Here we look for the solution if I = int[x'[Bin-1]->x] expl(t)*x'^m dx'
       // Fortunately that's easier, since we have only one valid solution
       
       // Special case:
       if (fabs(m+1) < 10E-8) { // m == -1
-        return (x1*exp(t) + I) * exp(-t);
+        return (x1*expl(t) + I) * expl(-t);
       }
       
-      return exp(-(t-log(pow(x1, m+1)*exp(t)+I*m+I))/(m+1));
+      return expl(-(t-logl(powl(x1, m+1)*expl(t)+I*m+I))/(m+1));
     }
     
   } else {
@@ -1185,8 +1185,8 @@ long double MFunction::FindX(long double XStart, long double Integral, bool Cycl
     long double b = t;
     long double c = -((Integral-iIntegral) + 0.5*m*X*X + t*X);
   
-    x1 = (-b-sqrt(b*b-4*a*c))/(2*a);
-    x2 = (-b+sqrt(b*b-4*a*c))/(2*a);
+    x1 = (-b-sqrtl(b*b-4*a*c))/(2*a);
+    x2 = (-b+sqrtl(b*b-4*a*c))/(2*a);
   } else {
     x1 = X + (Integral-iIntegral)/t; // t cannot be null here other wise we would have jumped the bin...
     x2 = numeric_limits<long double>::max();
@@ -1271,23 +1271,23 @@ long double MFunction::LambertW(long double x, int Branch)
     if (x <= 20) {
       long double Eta = 2 + 2*TMath::E()*x;
       
-      long double N2 = 4.612634277343749*sqrt(sqrt(sqrt(Eta) + 1.09556884765625)); // eqn. (6) --> Eta -> sqrt(Eta)
-      long double N1 = (4 - 3*sqrt(2.0) + N2*(2*sqrt(2.0) - 3))/(sqrt(2.0) - 2); // eqn. above (6)
+      long double N2 = 4.612634277343749*sqrtl(sqrtl(sqrtl(Eta) + 1.09556884765625)); // eqn. (6) --> Eta -> sqrtl(Eta)
+      long double N1 = (4 - 3*sqrtl(2.0) + N2*(2*sqrtl(2.0) - 3))/(sqrtl(2.0) - 2); // eqn. above (6)
       
-      long double D = N1*sqrt(Eta)/(N2 + sqrt(Eta)); // eqn. below (5)
+      long double D = N1*sqrtl(Eta)/(N2 + sqrtl(Eta)); // eqn. below (5)
       
-      LW = -1.0 + sqrt(Eta)/(1.0 + sqrt(Eta)/(3.0 + D)); // eqn. (5)
+      LW = -1.0 + sqrtl(Eta)/(1.0 + sqrtl(Eta)/(3.0 + D)); // eqn. (5)
     } else {
       // The case x > 20:
-      long double h = exp(-1.124491989777808/(0.4225028202459761+log(x))); // eqn. (7)
-      LW = log(x/log(x/pow(log(x), h))); // eqn. (8)
+      long double h = expl(-1.124491989777808/(0.4225028202459761+logl(x))); // eqn. (7)
+      LW = logl(x/logl(x/powl(logl(x), h))); // eqn. (8)
     }
     
   
     // Now do some iterations:
     unsigned int NIterations = 2; // if the statements in the paper are correct two passes should be enough
     for (unsigned int i = 0; i < NIterations; ++i) {
-      long double zn = log(x/LW) - LW;  // eqn. 13 + 2
+      long double zn = logl(x/LW) - LW;  // eqn. 13 + 2
       long double en = (zn/(1+LW))*((2*(1 + LW)*(1 + LW + 2.0/3.0*zn) - zn)/(2*(1+LW)*(1 + LW + 2.0/3.0*zn) - 2*zn)); // eqn. 13 + 1
       LW = LW*(1.0 + en); // eqn. 13
     }
@@ -1297,13 +1297,13 @@ long double MFunction::LambertW(long double x, int Branch)
     // Chapeau-Blondeau & Monir, IEEE Transactions on signal processing, v. 50, #9, p. 2160, 2002
 
     if (x >= -1/TMath::E() && x < -0.333) {
-      long double p = -sqrt(2*(TMath::E()*x + 1));
-      LW = -1 + p - 1.0/3.0*pow(p, 2) + 11.0/72.0*pow(p, 3) - 43.0/540.0*pow(p, 4) + 769.0/17280.0*pow(p, 5) - 221.0/8505*pow(p, 6);
+      long double p = -sqrtl(2*(TMath::E()*x + 1));
+      LW = -1 + p - 1.0/3.0*powl(p, 2) + 11.0/72.0*powl(p, 3) - 43.0/540.0*powl(p, 4) + 769.0/17280.0*powl(p, 5) - 221.0/8505*powl(p, 6);
     } else if (x >= -0.333 && x <= -0.033) {
-      LW = (-8.0960+391.0025*x-47.4252*x*x - 4877.6330*pow(x, 3) - 5532.7760*pow(x, 4))/(1 - 82.9423*x + 433.8688*pow(x, 2) + 1515.3060*pow(x, 3));
+      LW = (-8.0960+391.0025*x-47.4252*x*x - 4877.6330*powl(x, 3) - 5532.7760*powl(x, 4))/(1 - 82.9423*x + 433.8688*powl(x, 2) + 1515.3060*powl(x, 3));
     } else if (x >= -0.333 && x < 0) {
-      long double l1 = log(-x);
-      long double l2 = log(-log(-x));
+      long double l1 = logl(-x);
+      long double l2 = logl(-logl(-x));
       LW = l1 -l2 + l2/l1 + (-2 + l2)*l2/(2*l1*l1) + (6 - 9*l2 + 2*l2*l2)*l2/(6*l1*l1*l1) + (-12 + 36*l2 - 22*l2*l2 + 3*l2*l2*l2)*l2/(12*l1*l1*l1*l1) + (60 - 300*l2 + 350*l2*l2 - 125*l2*l2*l2 + 12*l2*l2*l2*l2)*l2/(60*l1*l1*l1*l1*l1);
     } else {
       cout<<"This branch (\"-1\") of the LabertW function is only defined within ["<<-1/TMath::E()<<";0[! Input is "<<x<<". Returning zero..."<<endl;
