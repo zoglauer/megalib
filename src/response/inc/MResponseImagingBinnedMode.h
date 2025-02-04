@@ -74,6 +74,9 @@ class MResponseImagingBinnedMode : public MResponseBuilder
 
   // protected members:
  protected:
+  // TODO: Remove Seq Option 
+  double m_SeqMin;
+  double m_SeqMax;
   //! Use relative coordinate parametrization
   MString m_ParametrizationMode;
   //! Number of epsilon bins
