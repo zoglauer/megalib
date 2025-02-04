@@ -56,13 +56,12 @@ MResponseImagingBinnedMode::MResponseImagingBinnedMode() : m_ImagingResponse(tru
   m_ResponseNameSuffix = "binnedimaging";
   m_OnlyINITRequired = true;
 
-  // New default response parameters "rel" (relative) is using epsilon (Em-Ei)/Ei ,
-  // phi and zeta. "abs" (absolute) is the old/usual response parametrization
-  m_ParametrizationMode = "abs";
+  // TODO: New default response parameters
+  m_ParametrizationMode = "rel";
   m_EpsilonNBins = 1;
   m_EpsilonBinMode = "lin";
   m_EpsilonMinimum = -1;
-  m_EpsilonMaximum = 1;
+  m_EpsilonMaximum = 0.1;
   m_EpsilonBinEdges.clear();
   m_PhiBinEdges.clear(); // deg
   m_ThetaBinEdges.clear(); // deg
@@ -114,11 +113,12 @@ MString MResponseImagingBinnedMode::Options()
 {
   ostringstream out;
 
-  //  Additional response parameters
+  // TODO: Additional response parameters
   out<<"             parammode:               use either rel (relative) or abs (absolute) response parametrization (default: rel)"<<endl;
   out<<"             epsmin                   minimum epsilon (default: -1; cannot be used in combination with epsbinedges)"<<endl;
-  out<<"             epsmax                   maximum epsilon (default: 1; cannot be used in combination with epsbinedges)"<<endl;
+  out<<"             epsmax                   maximum epsilon (default: 0.1; cannot be used in combination with epsbinedges)"<<endl;
   out<<"             epsbins                  number of epsilon bins between min and max epsilon (default: 1; cannot be used in combination with epsbinedges)"<<endl;
+  out<<"             epsbinmode               one of: lin (linear), log (logarithmic) (default: lin; cannot be used in combination with ebinedges)"<<endl;
   out<<"             epsbinedges              the epsilon bin edges as a comma seperated list (default: not used, cannot be used in combination with epsmin, epsmax, epsbins)"<<endl;
   out<<"             phibinedges              the phi bin edges as a comma seperated list (default: not used)"<<endl;
   out<<"             thetabinedges            the theta bin edges as a comma seperated list (default: not used)"<<endl;
@@ -180,7 +180,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     Split2[i][0].ToLowerInPlace();
   }
 
-  //Epsilon option checks
+  // TODO: Epsilon option checks
   bool HasEpsBinEdges = false;
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i][0] == "epsbinedges") {
@@ -201,21 +201,21 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       }
     }
   }
-  //  Phi option checks
+  // TODO: Phi option checks
   bool HasPhiBinEdges = false;
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i][0] == "phibinedges") {
       HasPhiBinEdges = true;
     }
   }
-  //  Theta option checks
+  // TODO: Theta option checks
   bool HasThetaBinEdges = false;
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i][0] == "thetabinedges") {
       HasThetaBinEdges = true;
     }
   }
-  //  Zeta option checks
+  // TODO: Zeta option checks
   bool HasZetaBinEdges = false;
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i][0] == "zetabinedges") {
@@ -224,13 +224,13 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   }
   
   // Energy option checks
-  bool HasBinEdges = false;
+  bool HasEiBinEdges = false;
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i][0] == "ebinedges") {
-      HasBinEdges = true;
+      HasEiBinEdges = true;
     }
   }
-  if (HasBinEdges == true) {
+  if (HasEiBinEdges == true) {
     for (unsigned int i = 0; i < Split2.size(); ++i) {
       if (Split2[i][0] == "emin") {
         mout<<"Error: You can not have ebinedges and emin at the same time as options"<<endl;
@@ -250,9 +250,14 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     MString MValue = Split2[i][1];
     string Value = MValue.Data();
 
-    //  Response mode, epsilon, phi, theta and zeta parse
+    // TODO: Response mode, epsilon, phi, theta and zeta parse
     if (Split2[i][0] == "parammode") {
       m_ParametrizationMode = MValue.ToLower();
+    // TODO: Remove Seq Option
+    } else if (Split2[i][0] == "seqmin") {
+      m_SeqMin = stod(Value);
+    } else if (Split2[i][0] == "seqmax") {
+      m_SeqMax = stod(Value);
     } else if (Split2[i][0] == "epsmin") {
       m_EpsilonMinimum = stod(Value);
     } else if (Split2[i][0] == "epsmax") {
@@ -273,12 +278,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     } else if (Split2[i][0] == "thetabinedges") {
       vector<MString> ThetaEdges = MString(Value).Tokenize(",");
       m_ThetaBinEdges.clear();
-      for (MString S: ThetaEdges) {
-        if (static_cast<unsigned char>(S.ToString()[0]) == static_cast<unsigned char>(226)) {
-          S = MString("-" + S.ToString().substr(3));
-        }
-        m_ThetaBinEdges.push_back(S.ToDouble());
-      }
+      for (MString S: ThetaEdges) m_ThetaBinEdges.push_back(S.ToDouble());
     } else if (Split2[i][0] == "zetabinedges") {
       vector<MString> ZetaEdges = MString(Value).Tokenize(",");
       m_ZetaBinEdges.clear();
@@ -320,7 +320,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   
   // Sanity checks:
 
-  // Response mode, epsilon, phi, theta and zeta sanity check
+  // TODO: Response mode, epsilon, phi, theta and zeta sanity check
   if (m_ParametrizationMode != "rel" && m_ParametrizationMode != "abs") {
       mout<<"Error: The parametrization mode is either 'rel' or 'abs'"<<endl;
       return false; 
@@ -355,6 +355,14 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       mout<<"Error: You need at least 2 phi bin edges"<<endl;
       return false;    
     }
+    if (m_PhiBinEdges[0] < 0) {
+      mout<<"Error: The minimum phi bin edge cannot be samller than 0"<<endl;
+      return false;    
+    }
+    if (m_PhiBinEdges.back() > 180) {
+      mout<<"Error: The maximum phi bin edge cannot be larger than 180"<<endl;
+      return false;    
+    }
     for (unsigned int e = 1; e < m_PhiBinEdges.size(); ++e) {
       if (m_PhiBinEdges[e] <= m_PhiBinEdges[e-1]) {
         mout<<"Error: The phi bin edges must be in increasing order"<<endl;
@@ -365,6 +373,14 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   if (HasThetaBinEdges == true) {
     if (m_ThetaBinEdges.size() < 2) {
       mout<<"Error: You need at least 2 theta bin edges"<<endl;
+      return false;    
+    }
+    if (m_ThetaBinEdges[0] < -180) {
+      mout<<"Error: The minimum theta bin edge cannot be samller than -180"<<endl;
+      return false;    
+    }
+    if (m_ThetaBinEdges.back() > 180) {
+      mout<<"Error: The maximum theta bin edge cannot be larger than 180"<<endl;
       return false;    
     }
     for (unsigned int e = 1; e < m_ThetaBinEdges.size(); ++e) {
@@ -379,6 +395,14 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       mout<<"Error: You need at least 2 zeta bin edges"<<endl;
       return false;    
     }
+    if (m_ZetaBinEdges[0] < 0) {
+      mout<<"Error: The minimum zeta bin edge cannot be samller than 0"<<endl;
+      return false;    
+    }
+    if (m_ZetaBinEdges.back() > 360) {
+      mout<<"Error: The maximum zeta bin edge cannot be larger than 360"<<endl;
+      return false;    
+    }
     for (unsigned int e = 1; e < m_ZetaBinEdges.size(); ++e) {
       if (m_ZetaBinEdges[e] <= m_ZetaBinEdges[e-1]) {
         mout<<"Error: The zeta bin edges must be in increasing order"<<endl;
@@ -386,18 +410,18 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       }
     }
   }
-  if (HasBinEdges == true) {
+  if (HasEiBinEdges == true) {
     if (m_EnergyBinEdges.size() < 2) {
-      mout<<"Error: You need at least 2 bin edges"<<endl;
+      mout<<"Error: You need at least 2 energy bin edges"<<endl;
       return false;    
     }
     if (m_EnergyBinEdges[0] < 0) {
-      mout<<"Error: The minimum bin edge cannot be samller than 0"<<endl;
+      mout<<"Error: The minimum energy bin edge cannot be samller than 0"<<endl;
       return false;    
     }
     for (unsigned int e = 1; e < m_EnergyBinEdges.size(); ++e) {
       if (m_EnergyBinEdges[e] <= m_EnergyBinEdges[e-1]) {
-        mout<<"Error: The bin edges must be in increasing order"<<endl;
+        mout<<"Error: The energy bin edges must be in increasing order"<<endl;
         return false;    
       }
     }
@@ -460,7 +484,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   mout<<endl;
   mout<<"Choosen options for binned imaging response:"<<endl;
 
-  //  Output response mode, epsilon, phi, theta, zeta
+  // TODO: Output response mode, epsilon, phi, theta, zeta
   mout<<"  Response parametrization mode:                      "<<m_ParametrizationMode<<endl;
   if (HasEpsBinEdges == true) {
     mout<<"  Bin edges epsilon:                                  ";
@@ -472,7 +496,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     mout<<"  Number of bins epsilon:                             "<<m_EpsilonNBins<<endl;
     mout<<"  Epsilon binning mode:                               "<<m_EpsilonBinMode<<endl;
   }
-  if (HasBinEdges == true) {
+  if (HasEiBinEdges == true) {
     mout<<"  Bin edges energy:                                   ";
     for (double E: m_EnergyBinEdges) mout<<E<<" ";
     mout<<endl;
@@ -550,7 +574,7 @@ bool MResponseImagingBinnedMode::Initialize()
     cout<<"Using HEALPix for sky with "<<AxisSkyCoordinates.GetNumberOfBins()<<" bins"<<endl;
   }
     
-  // Define epsilon axis
+  // TODO: Define epsilon axis
   MResponseMatrixAxis AxisEpsilon("Epsilon");
   if (m_EpsilonBinEdges.size() > 0) {
     AxisEpsilon.SetBinEdges(m_EpsilonBinEdges);
@@ -573,7 +597,7 @@ bool MResponseImagingBinnedMode::Initialize()
     }
   }
 
-  // Define angles
+  // TODO: Define angles
   MResponseMatrixAxis AxisPhi("#phi [deg]");
   if (m_PhiBinEdges.size() > 0) {
     AxisPhi.SetBinEdges(m_PhiBinEdges);
@@ -585,14 +609,14 @@ bool MResponseImagingBinnedMode::Initialize()
   if (m_ThetaBinEdges.size() > 0) {
     AxisTheta.SetBinEdges(m_ThetaBinEdges);
   } else {
-    AxisTheta.SetLinear(180/m_AngleBinWidth, -180, 180);
+    AxisTheta.SetLinear(360/m_AngleBinWidth, -180, 180);
   }
   
   MResponseMatrixAxis AxisZeta("#zeta [deg]");
   if (m_ZetaBinEdges.size() > 0) {
     AxisZeta.SetBinEdges(m_ZetaBinEdges);
   } else {
-    AxisZeta.SetLinear(180/m_AngleBinWidth, 0, 360);
+    AxisZeta.SetLinear(360/m_AngleBinWidth, 0, 360);
   }
   
   MResponseMatrixAxisSpheric AxisScatteredGammaRayCoordinates("#psi [deg]", "#chi [deg]");
@@ -618,7 +642,7 @@ bool MResponseImagingBinnedMode::Initialize()
   m_ImagingResponse.AddAxis(AxisEnergyInitial);
   m_ImagingResponse.AddAxis(AxisSkyCoordinates);
 
-  // Add correct energy and angle axis
+  // TODO: Add correct energy and angle axis
   if (m_ParametrizationMode == "rel") {
     m_ImagingResponse.AddAxis(AxisEpsilon);
   } else {
@@ -654,7 +678,7 @@ bool MResponseImagingBinnedMode::Initialize()
   m_EnergyResponse4D.AddAxis(AxisEnergyInitial);
   m_EnergyResponse4D.AddAxis(AxisSkyCoordinates);
 
-  // Add correct energy axis
+  // TODO: Add correct energy axis
   if (m_ParametrizationMode == "rel") {
     m_EnergyResponse4D.AddAxis(AxisEpsilon);
   } else {
@@ -669,7 +693,7 @@ bool MResponseImagingBinnedMode::Initialize()
   m_EnergyResponse2D.SetName("Energy response 2D");
   m_EnergyResponse2D.AddAxis(AxisEnergyInitial);
 
-  // Add correct energy axis
+  // TODO: Add correct energy axis
   if (m_ParametrizationMode == "rel") {
     m_EnergyResponse2D.AddAxis(AxisEpsilon);
   } else {
@@ -775,7 +799,11 @@ bool MResponseImagingBinnedMode::Analyze()
       return true;
     }
   }
-  
+  // TODO: Remove Selection
+  if (Compton->SequenceLength() < m_SeqMin || Compton->SequenceLength() > m_SeqMax) {
+    mout<<"Wrong sequence length: "<<(Compton->SequenceLength())<<endl;
+    return true;
+  }
   
   // Get the data space information
   MRotation Rotation = Compton->GetDetectorRotationMatrix();
@@ -811,15 +839,18 @@ bool MResponseImagingBinnedMode::Analyze()
   while (Lambda > +180) Lambda -= 360.0;
   double Nu = IdealOriginDir.Theta()*c_Deg;
 
-  // Relative energy implementation a.k.a epsilon
+  // TODO: Relative energy implementation
   double Epsilon = (EnergyMeasured - EnergyInitial)/EnergyInitial;
 
-  // Theta implementation
+  // TODO: Theta implementation;
+  // MVector IdealOriginPosition = m_SiEvent->GetIAAt(0)->GetPosition();
+  // double Theta = Compton->GetARMGamma(IdealOriginPosition)*c_Deg;
   double PhiGeomtric = IdealOriginDir.Angle(Dg)*c_Deg;
   double Theta = PhiGeomtric - Phi;
-  
+  // mout<<"My: ("<<Theta_2<<") vs. MEGAlib: ("<<Theta<<")"<<endl;
+  // mout<<"File: "<<IdealOriginDir<<" vs. MEGAlib: "<<(IdealOriginPosition - Compton->m_C1).Unit()<<endl;
 
-  // Zeta implementation - RelativeX convention
+  // TODO: Zeta implementation - RelativeX convention
   MVector Axis = MVector(1.0, 0.0, 0.0);
   MVector PolarizationZ = -IdealOriginDir;
   MVector PolarizationX = PolarizationZ.Cross(Axis).Unit();
@@ -832,10 +863,30 @@ bool MResponseImagingBinnedMode::Analyze()
   ProjectedDg = ChangeBasis * ProjectedDg;
   double Zeta = ProjectedDg.Phi()*c_Deg - 90;
   if (Zeta < 0) Zeta += 360;
+
+  // TODO: Zeta Alternative
+  // double Zeta_2 = 0;
+  // double YAngle = PolarizationZ.Cross(Dg).Angle(PolarizationY)*c_Deg;
+  // double XAngle = PolarizationZ.Cross(Dg).Angle(PolarizationX)*c_Deg;
+  // if (YAngle <= 90) {
+  //   if (XAngle <= 90) {
+  //     Zeta_2 = 270 + XAngle;
+  //   } else {
+  //     Zeta_2 = YAngle;
+  //   }
+  // } else {
+  //   if (XAngle <= 90) {
+  //     Zeta_2 = 270 - XAngle;
+  //   } else {
+  //     Zeta_2 = YAngle;
+  //   }
+  // }
+
+  // mout << "Zeta 01 ("<<Zeta<<") - Zeta 02 ("<<Zeta_2<<")"<<endl;
   
   // And fill the matrices
 
-  //  Relative parametrization matrix fill
+  // TODO: Relative parametrization matrix fill
   if (m_ParametrizationMode == "rel") {
     m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, Epsilon, Phi, Theta, Zeta, Sigma, Tau, Distance } );
     m_Exposure.Add( vector<double>{ EnergyInitial, Nu, Lambda } );
