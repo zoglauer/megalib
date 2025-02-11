@@ -40,7 +40,7 @@ class MResponseMatrixOx : public MResponseMatrix
   MResponseMatrixOx(MString Name);
   virtual ~MResponseMatrixOx();
 
-  virtual bool Read(MString FileName);
+  virtual bool Read(MString FileName, const bool MultiThreaded = false);
   
   virtual float GetAxisContent(unsigned int b, unsigned int order = 0) const = 0;
   virtual vector<float> GetAxis(unsigned int order = 0) const = 0;

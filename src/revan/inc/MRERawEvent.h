@@ -52,9 +52,6 @@ class MRERawEvent : public MRESE, public MRotationInterface
   
   //! Duplicate this RESE
   MRERawEvent* Duplicate();
-  
-  //! Parse a whole event
-  int Parse(MString Event, int Version);
 
   //! Parse the text Line which contains hit information from a sim or evta file
   int ParseLine(const char* Line, int Version);

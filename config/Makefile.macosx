@@ -18,18 +18,6 @@ ROOTCFLAGS    := $(shell root-config --cflags)
 ROOTLIBS      := $(shell root-config --libs)
 ROOTGLIBS     := $(shell root-config --glibs)
 
-# Compiler & linker options:
-CXX           := c++
-CXXFLAGS      := $(OPT) -std=c++14 -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-unused-but-set-variable -Wno-overloaded-virtual -Wno-tautological-undefined-compare -Wno-deprecated-declarations
-DEFINES       := -UHARDWARE
-LD            := c++
-LDFLAGS       := $(OPT) -Xlinker -bind_at_load -flat_namespace -D___MACOSX___
-SOFLAGS       := -dynamiclib -flat_namespace -undefined suppress 
-LIBS          := $(ROOTLIBS) -lpthread -lThread -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA
-GLIBS         := $(ROOTGLIBS) 
-DEPFLAGS      := -M
-
-LINK          := ln -s -f
 
 # HEASoft
 HEACFLAGS     :=
@@ -38,9 +26,33 @@ ifeq ("$(shell PKG_CONFIG_PATH=$(LHEASOFT)/lib/pkgconfig pkg-config --exists cfi
         HEACFLAGS += $(shell PKG_CONFIG_PATH=$(LHEASOFT)/lib/pkgconfig pkg-config --cflags cfitsio)
         HEALIBS += $(shell PKG_CONFIG_PATH=$(LHEASOFT)/lib/pkgconfig pkg-config --libs cfitsio --static)
 else ifeq ("$(shell pkg-config --exists cfitsio 1>&2 2> /dev/null; echo $$?)", "0")
-        HEACFLAGS += $(shell pkg-config --cflags cfitsio)
-        HEALIBS += $(shell pkg-config --libs cfitsio)
+	HEACFLAGS += $(shell pkg-config --cflags cfitsio)
+	HEALIBS += $(shell pkg-config --libs cfitsio)
 endif
+
+
+# HEALPix
+HEALPIXFLAGS   :=
+HEALPIXLIBS    :=
+ifeq ("$(shell pkg-config --exists healpix_cxx 1>&2 2> /dev/null; echo $$?)", "0")
+	HEALPIXCFLAGS += $(shell pkg-config --cflags healpix_cxx)
+	HEALPIXCFLAGS := $(filter-out -fopenmp, $(HEALPIXCFLAGS))
+	HEALPIXLIBS += $(shell pkg-config --libs healpix_cxx)
+endif
+
+
+# Compiler & linker options:
+CXX           := c++
+CXXFLAGS      := $(OPT) -std=c++14 -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) $(HEACFLAGS) $(HEALPIXCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-overloaded-virtual -Wno-tautological-undefined-compare -Wno-deprecated-declarations -Wno-unused-but-set-variable
+DEFINES       := -UHARDWARE
+LD            := c++
+LDFLAGS       := $(OPT) -Xlinker -bind_at_load -flat_namespace -D___MACOSX___
+SOFLAGS       := -dynamiclib -flat_namespace -undefined suppress
+LIBS          := $(ROOTLIBS) $(HEALIBS) $(HEALPIXLIBS) -lpthread -lThread -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA
+GLIBS         := $(ROOTGLIBS)
+DEPFLAGS      := -M
+
+LINK          := ln -s -f
 
 
 # Modifications for MacPorts on Monterey
