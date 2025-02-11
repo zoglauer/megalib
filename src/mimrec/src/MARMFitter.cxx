@@ -869,7 +869,7 @@ bool MARMFitter::FitAll()
 {
   unsigned int NFits = 500;
 
-  MARMFitFunctionID Best;
+  MARMFitFunctionID Best = MARMFitFunctionID::c_Gauss;
   double BestBC = 0;
 
   cout<<"Fitting through all functions (except Lorentz) with "<<NFits<<" samples."<<endl;
@@ -974,14 +974,14 @@ void MARMFitter::CalculateBootStrappedMetrics()
 
     // Find the bin with the FWHM closest to the average to choose the best fit parameters
     unsigned int ClosestBin = 0;
-    double ClosestValue = m_BootStrappedFWHMSamples[0];
+    //double ClosestValue = m_BootStrappedFWHMSamples[0];
     double MinDifference = std::abs(m_BootStrappedFWHMSamples[0] - m_FinalFWHM);
 
     for (unsigned int b = 1; b < m_BootStrappedFWHMSamples.size(); ++b) {
       double Difference = std::abs(m_BootStrappedFWHMSamples[b] - m_FinalFWHM);
       if (Difference < MinDifference) {
         MinDifference = Difference;
-        ClosestValue = m_BootStrappedFWHMSamples[b];
+        //ClosestValue = m_BootStrappedFWHMSamples[b];
         ClosestBin = b;
       }
     }
@@ -1009,7 +1009,7 @@ void MARMFitter::CalculateBootStrappedMetrics()
     }
     std::sort(SortedAbs.begin(), SortedAbs.end());
 
-    for (int b = 0; b < SortedAbs.size(); ++b) {
+    for (unsigned int b = 0; b < SortedAbs.size(); ++b) {
       if (m_CountsFWHMWindowMinimum == g_UnsignedIntNotDefined && SortedAbs[b] >= m_FinalFWHM - m_FinalFWHMUncertainty) {
         m_CountsFWHMWindowMinimum = b;
       }
@@ -1051,7 +1051,7 @@ void MARMFitter::CalculateARMMetrics()
   std::sort(SortedAbsSelected.begin(), SortedAbsSelected.end());
 
   double Total = SortedAbsSelected.size();
-  for (int b = 0; b < SortedAbsSelected.size(); ++b) {
+  for (unsigned int b = 0; b < SortedAbsSelected.size(); ++b) {
     if (m_Containment50PercentUsingARMSelection == g_DoubleNotDefined && b >= Sigma0*Total) {
       m_Containment50PercentUsingARMSelection = SortedAbsSelected[b];
     }
@@ -1079,7 +1079,7 @@ void MARMFitter::CalculateARMMetrics()
   std::sort(SortedAbsAll.begin(), SortedAbsAll.end());
 
   Total = SortedAbsAll.size();
-  for (int b = 0; b < SortedAbsAll.size(); ++b) {
+  for (unsigned int b = 0; b < SortedAbsAll.size(); ++b) {
     if (m_Containment50PercentUsingAllData == g_DoubleNotDefined && b >= Sigma0*Total) {
       m_Containment50PercentUsingAllData = SortedAbsAll[b];
     }

@@ -383,8 +383,9 @@ else
   for s in `seq -w 00 2 98`; do
     TESTTARBALL="root_v${WANTEDVERSION}.${s}.source.tar.gz"
     echo "Trying to find ${TESTTARBALL}..."
-    EXISTS=`curl -s --head https://root.cern.ch/download/${TESTTARBALL} | grep gzip`
-    if [[ ${EXISTS} == "" ]]; then # sometimes version 00 does not exist...
+    # old: EXISTS=`curl -s --head https://root.cern.ch/download/${TESTTARBALL} | grep gzip`
+    EXISTS=$(curl -s --head https://root.cern.ch/download/${TESTTARBALL} | head -n 1 )
+    if [[ ${EXISTS} != *OK* ]]; then
       MAX_TRIALS=$(( MAX_TRIALS - 1 ))
       if [[ ${MAX_TRIALS} -eq 0 ]]; then
         break
