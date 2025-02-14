@@ -64,7 +64,7 @@ class MCalibrationModel : public ROOT::Math::IParamFunction
   virtual ~MCalibrationModel();
 
   //! The assignment operator
-  virtual MCalibrationModel& operator= (const MCalibrationModel& CalibrationModel);
+  MCalibrationModel& operator= (const MCalibrationModel& CalibrationModel);
 
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModel* Clone() const;
@@ -174,7 +174,7 @@ public:
   virtual ~MCalibrationModelPoly1Zero() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly1Zero& operator= (const MCalibrationModelPoly1Zero& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly1Zero& operator= (const MCalibrationModelPoly1Zero& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
   
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1Zero* Clone() const { return new MCalibrationModelPoly1Zero(*this); }
@@ -217,7 +217,7 @@ public:
   virtual ~MCalibrationModelPoly1() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly1& operator= (const MCalibrationModelPoly1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly1& operator= (const MCalibrationModelPoly1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
   
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1* Clone() const { return new MCalibrationModelPoly1(*this); }
@@ -261,7 +261,7 @@ class MCalibrationModelPoly2 : public MCalibrationModel
   virtual ~MCalibrationModelPoly2() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly2& operator= (const MCalibrationModelPoly2& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly2& operator= (const MCalibrationModelPoly2& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
 
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly2* Clone() const { return new MCalibrationModelPoly2(*this); }
@@ -307,7 +307,7 @@ class MCalibrationModelPoly3 : public MCalibrationModel
   virtual ~MCalibrationModelPoly3() {}
 
   //! The assignment operator
-  virtual MCalibrationModelPoly3& operator= (const MCalibrationModelPoly3& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly3& operator= (const MCalibrationModelPoly3& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
 
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly3* Clone() const { return new MCalibrationModelPoly3(*this); }
@@ -354,7 +354,7 @@ class MCalibrationModelPoly4 : public MCalibrationModel
   virtual ~MCalibrationModelPoly4() {}
 
   //! The assignment operator
-  virtual MCalibrationModelPoly4& operator= (const MCalibrationModelPoly4& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly4& operator= (const MCalibrationModelPoly4& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
 
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly4* Clone() const { return new MCalibrationModelPoly4(*this); }
@@ -402,7 +402,7 @@ public:
   virtual ~MCalibrationModelPoly1Inv1() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly1Inv1& operator= (const MCalibrationModelPoly1Inv1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly1Inv1& operator= (const MCalibrationModelPoly1Inv1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
   
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1Inv1* Clone() const { return new MCalibrationModelPoly1Inv1(*this); }
@@ -450,7 +450,7 @@ public:
   virtual ~MCalibrationModelPoly1Inv1Zero() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly1Inv1Zero& operator= (const MCalibrationModelPoly1Inv1Zero& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly1Inv1Zero& operator= (const MCalibrationModelPoly1Inv1Zero& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
   
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1Inv1Zero* Clone() const { return new MCalibrationModelPoly1Inv1Zero(*this); }
@@ -496,7 +496,7 @@ public:
   virtual ~MCalibrationModelPoly2Inv1() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly2Inv1& operator= (const MCalibrationModelPoly2Inv1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly2Inv1& operator= (const MCalibrationModelPoly2Inv1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
   
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly2Inv1* Clone() const { return new MCalibrationModelPoly2Inv1(*this); }
@@ -545,7 +545,7 @@ public:
   virtual ~MCalibrationModelPoly2Inv1Zero() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly2Inv1Zero& operator= (const MCalibrationModelPoly2Inv1Zero& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly2Inv1Zero& operator= (const MCalibrationModelPoly2Inv1Zero& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
   
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly2Inv1Zero* Clone() const { return new MCalibrationModelPoly2Inv1Zero(*this); }
@@ -592,7 +592,7 @@ class MCalibrationModelPoly1Exp1 : public MCalibrationModel
   virtual ~MCalibrationModelPoly1Exp1() {}
 
   //! The assignment operator
-  virtual MCalibrationModelPoly1Exp1& operator= (const MCalibrationModelPoly1Exp1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly1Exp1& operator= (const MCalibrationModelPoly1Exp1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
 
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1Exp1* Clone() const { return new MCalibrationModelPoly1Exp1(*this); }
@@ -644,7 +644,7 @@ class MCalibrationModelPoly1Exp2 : public MCalibrationModel
   virtual ~MCalibrationModelPoly1Exp2() {}
 
   //! The assignment operator
-  virtual MCalibrationModelPoly1Exp2& operator= (const MCalibrationModelPoly1Exp2& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly1Exp2& operator= (const MCalibrationModelPoly1Exp2& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
 
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1Exp2* Clone() const { return new MCalibrationModelPoly1Exp2(*this); }
@@ -696,7 +696,7 @@ public:
   virtual ~MCalibrationModelPoly1Exp3() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly1Exp3& operator= (const MCalibrationModelPoly1Exp3& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly1Exp3& operator= (const MCalibrationModelPoly1Exp3& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
   
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1Exp3* Clone() const { return new MCalibrationModelPoly1Exp3(*this); }
@@ -748,7 +748,7 @@ public:
   virtual ~MCalibrationModelPoly1Log1() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly1Log1& operator= (const MCalibrationModelPoly1Log1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly1Log1& operator= (const MCalibrationModelPoly1Log1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
   
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1Log1* Clone() const { return new MCalibrationModelPoly1Log1(*this); }
@@ -799,7 +799,7 @@ public:
   virtual ~MCalibrationModelPoly2Log1() {}
   
   //! The assignment operator
-  virtual MCalibrationModelPoly2Log1& operator= (const MCalibrationModelPoly2Log1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  MCalibrationModelPoly2Log1& operator= (const MCalibrationModelPoly2Log1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
   
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly2Log1* Clone() const { return new MCalibrationModelPoly2Log1(*this); }

@@ -188,6 +188,7 @@ class MString
   MString& operator+=(unsigned long N) { ostringstream out; out<<N; m_String += out.str(); return *this; }
   MString& operator+=(float N) { ostringstream out; out.precision(8); out<<N; m_String += out.str(); return *this; }
   MString& operator+=(double N) { ostringstream out; out.precision(15); out<<N; m_String += out.str(); return *this; }
+  MString& operator+=(long double N) { ostringstream out; (sizeof(long double) == 128) ? out.precision(31) : out.precision(15); out<<N; m_String += out.str(); return *this; }
 
 
   //! Remove all characters from Start to the End
