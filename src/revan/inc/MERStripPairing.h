@@ -24,6 +24,7 @@
 #include "MTime.h"
 #include "MERConstruction.h"
 #include "MRawEventIncarnationList.h"
+#include "MRERawEvent.h"
 #include "MREStripHit.h"
 
 // Forward declarations:
@@ -41,8 +42,11 @@ class MERStripPairing : public MERConstruction
   //! Default destructor
   virtual ~MERStripPairing();
 
-  //! Search for coincidences --- return the event or zero if non found
+  //! Perform strip pairing - we assume to have just one event in the list
   bool Analyze(MRawEventIncarnationList* List);
+
+  //! Perform strip pairing
+  bool Analyze(MRERawEvent* RE);
 
   //! Dump some elemenatry information about the algorithm settings
   MString ToString(bool CoreOnly) const;
