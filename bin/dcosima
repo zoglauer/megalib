@@ -139,6 +139,8 @@ if [[ ${CONTINUE} != "" ]]; then
     echo " * Continuing simulation into directory: ${SOURCE}"
     # We have to determine the prefix, the RUNID, source, and the number of already lauched files
     PREFIX=`echo ${CONTINUE} | awk -F"_ID" ' { print $1 }'`
+    PREFIX=$( basename "${PREFIX}" )
+    echo " * Run prefix: ${PREFIX}"
     if [[ ${PREFIX} == "" ]]; then
       echo " "
       echo "ERROR: I am not sure the run-continuation directory is a dcosima directory, since I was unable to find the run prefix"

@@ -73,6 +73,8 @@ using namespace std;
 #include "MPeak.h"
 #include "MIsotope.h"
 #include "MPrelude.h"
+#include "MERStripPairing.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1948,6 +1950,10 @@ void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
   }
   Reader->ShowProgress(m_UseGui);
 
+  // If we have strip detectors, we have to do strip pairing first:
+  MERStripPairing* StripPairer = new MERStripPairing();
+
+
   unsigned int MaxNPositions = 10000000;
   vector<MVector> Positions;
   vector<double> Energies;
@@ -1961,6 +1967,8 @@ void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
   MRERawEvent* RE = 0;
   while ((RE = Reader->GetNextEvent()) != 0) {
     
+    StripPairer->Analyze(RE);
+
     // Make sure the total energy is right:
     double Total = 0;
     for (int i = 0; i < RE->GetNRESEs(); ++i) {
@@ -2140,6 +2148,12 @@ void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
   zCanvas->cd();
   zHist->Draw();
   zCanvas->Update();
+
+  mout<<endl;
+  mout<<"Remarks concerning the spatial hit distribution plots:"<<endl;
+  mout<<"* In strip detectors, the positions are after strip pairing, which has a non-zero failure rate."<<endl;
+  mout<<"* For any pixelated/voxelated/strip detector, binning can create gaps or spikes in the images."<<endl;
+  mout<<endl;
 
   return;
 }

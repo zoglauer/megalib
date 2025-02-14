@@ -121,33 +121,19 @@ vector<vector<vector<unsigned int>>> MERStripPairing::FindNewCombinations(vector
 
 
 ////////////////////////////////////////////////////////////////////////////////
-  
-  
-bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
-{
-  // Search for coincidences
 
-  mdebug<<"StripPairing started for "<<List->Get(0)->GetRawEventAt(0)->GetEventID()<<endl;
+
+bool MERStripPairing::Analyze(MRERawEvent* RE)
+{
+  // Do the strip pairing for one event
 
   unsigned int MaxCombinations = 5;
-  
-  MRERawEvent* RE = 0;
 
   if (m_Algorithm == c_None) {
     //cout<<"No strip pairing search"<<endl;
   } else if (m_Algorithm == c_ChiSquare) {
     //cout<<"StripPairing chi square"<<endl;
-    unsigned int r_max = List->Size();
-    for (unsigned int r = 0; r < r_max; ++r) {
-      MRawEventIncarnations* REI = List->Get(r);
-      if (REI->GetNRawEvents() != 1) {
-        merr<<"Strip pairing: Only one raw event incarnation can be present at this stage of the analysis"<<endl;
-        //RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyEventIncarnations);  // This automatically marks the event invalid for further analysis...
-        continue; 
-      }
-      
-      RE = REI->GetRawEventAt(0);
-      
+
       bool StripHitsFound = false;
       for (int r = 0; r < RE->GetNRESEs(); ++r) {
         if (RE->GetRESEAt(r)->GetType() == MRESE::c_StripHit) {
@@ -156,46 +142,46 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
       }
       if (StripHitsFound == false) {
         mdebug<<"No strip hits presents. Skipping strip pairing."<<endl;
-        continue;
+        return true;
       }
 
       //cout<<RE->ToString()<<endl;
-      
+
       bool Rejected = false;
-      
+
       // (1) Split hits by detector ID
-      vector<long> DetectorIDs; 
+      vector<long> DetectorIDs;
       vector<vector<vector<MREStripHit*>>> StripHits; // list of detector ID, list of sides, list of hits
-      
+
       for (int r = 0; r < RE->GetNRESEs(); ++r) {
-        if (RE->GetRESEAt(r)->GetType() == MRESE::c_StripHit) { 
+        if (RE->GetRESEAt(r)->GetType() == MRESE::c_StripHit) {
           MREStripHit* SH = dynamic_cast<MREStripHit*>(RE->GetRESEAt(r));
           unsigned int Side = (SH->IsXStrip() == true) ? 0 : 1;
-          
+
           // Check if detector is on list
           bool DetectorFound = false;
           unsigned int DetectorPos = 0;
           for (unsigned int d = 0; d < DetectorIDs.size(); ++d) {
             if (DetectorIDs[d] == SH->GetDetectorID()) {
-              DetectorFound = true; 
+              DetectorFound = true;
               DetectorPos = d;
             }
           }
-          
+
           if (DetectorFound == true) {
             StripHits[DetectorPos][Side].push_back(SH);
           } else {
             vector<vector<MREStripHit*>> List;
             List.push_back(vector<MREStripHit*>()); // X
             List.push_back(vector<MREStripHit*>()); // Y
-            List[Side].push_back(SH); 
+            List[Side].push_back(SH);
             StripHits.push_back(List);
             DetectorIDs.push_back(SH->GetDetectorID());
           }
         }
       }
-      
-      // Limit the strip hits 
+
+      // Limit the strip hits
       const unsigned int MaxStripHits = 6;
       for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
         for (unsigned int side = 0; side <=1; ++side) { // side loop
@@ -206,8 +192,8 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           }
         }
       }
-      
-      
+
+
       /*
       cout<<"Strip hits: "<<endl;
       for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
@@ -220,29 +206,29 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
               cout<<StripHits[d][side][sh]->ToString();
             }
           } else {
-            cout<<"no hits"<<endl; 
+            cout<<"no hits"<<endl;
           }
         }
       }
       */
-           
+
       if (Rejected == true) {
-        continue;
+        return true;
       }
 
 
       // Remove the strip hits
       RE->RemoveAllAndCompress();
-      
+
       // (2) Check if we have enough strips and enough energy for each detector
       for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
-        
+
         if (StripHits[d][0].size() == 0 || StripHits[d][1].size() == 0) {
           RE->SetRejectionReason(MRERawEvent::c_RejectionStripPairingMissingStrips);
           Rejected = true;
           break;
         }
-        
+
         double xEnergy = 0;
         double xEnergyRes = 0;
         for (unsigned int sh = 0; sh < StripHits[d][0].size(); ++sh) {
@@ -255,23 +241,23 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           yEnergy += StripHits[d][1][sh]->GetEnergy();
           yEnergyRes += StripHits[d][1][sh]->GetEnergyResolution()*StripHits[d][1][sh]->GetEnergyResolution();
         }
-        
+
         //cout<<"Energies: "<<xEnergy<<":"<<xEnergyRes<<" -- "<<yEnergy<<":"<<yEnergyRes<<endl;
       }
-       
+
       if (Rejected == true) {
-        continue; 
+        return true;
       }
-        
-      
+
+
       // (3) Find all possible combinations
       vector<vector<vector<vector<vector<unsigned int>>>>> Combinations;  // list of detector IDs, list of sides, list of combinations; combination with list of combined strips
       for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
-                
+
         Combinations.push_back(vector<vector<vector<vector<unsigned int>>>>());
         for (unsigned int s = 0; s <= 1 ; ++s) {
           Combinations[d].push_back(vector<vector<vector<unsigned int>>>()); // X
-          Combinations[d].push_back(vector<vector<vector<unsigned int>>>()); // Y      
+          Combinations[d].push_back(vector<vector<vector<unsigned int>>>()); // Y
         }
         // Create the seed combinations
         for (unsigned int s = 0; s < StripHits[d].size(); ++s) {
@@ -284,22 +270,22 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           Combinations[d][s].push_back(Combination);
         }
       }
-        
+
       // Starting from this seed, find more new combinations
       for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
         for (unsigned int side = 0; side <=1; ++side) { // side loop
-          
+
           vector<vector<vector<unsigned int>>> NewCombinations;
-          
+
           bool CombinationsAdded = true;
           while (CombinationsAdded == true) {
             CombinationsAdded = false;
 
             NewCombinations = FindNewCombinations(Combinations[d][side], StripHits[d][side]);
             //cout<<"Size: "<<NewCombinations.size()<<endl;
-            
+
             // Find equal combinations and eliminate them from the new list
-            for (unsigned int c = 0; c < Combinations[d][side].size(); ++c) { 
+            for (unsigned int c = 0; c < Combinations[d][side].size(); ++c) {
               auto Iter = NewCombinations.begin();
               while (Iter != NewCombinations.end()) {
                 if (Combinations[d][side][c] == (*Iter)) {
@@ -313,10 +299,10 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
                   if (Equal == true) {
                     Iter = NewCombinations.erase(Iter);
                   } else {
-                    Iter++; 
+                    Iter++;
                   }
                 } else {
-                  Iter++; 
+                  Iter++;
                 }
               }
             }
@@ -330,7 +316,7 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
             }
           } // combination search
         } // side loop
-        
+
         /*
         cout<<"All combinations:"<<endl;
         for (unsigned int xc = 0; xc < Combinations[d][0].size(); ++xc) {
@@ -356,26 +342,26 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           cout<<endl;
         }
         */
-        
+
         // (3) Evaluate all combinations
         // All strip combinations for one side have been found, now check for the best x-y combinations
         double BestChiSquare = numeric_limits<double>::max();
         vector<vector<unsigned int>> BestXSideCombo;
         vector<vector<unsigned int>> BestYSideCombo;
-        
+
         for (unsigned int xc = 0; xc < Combinations[d][0].size(); ++xc) {
           for (unsigned int yc = 0; yc < Combinations[d][1].size(); ++yc) {
-            
+
             if (abs(long(Combinations[d][0][xc].size()) - long(Combinations[d][1][yc].size())) > 1) {
               continue;
             }
-            
+
             unsigned int MinSize = min(Combinations[d][0][xc].size(), Combinations[d][1][yc].size());
-            
+
             if (max(Combinations[d][0][xc].size(), Combinations[d][1][yc].size()) > MaxCombinations) {
               continue;
             }
-            
+
             bool MorePermutations = true;
             while (MorePermutations == true) {
               //cout<<"New permutation..."<<endl;
@@ -385,49 +371,49 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
               //           PrintCombi(NCombi[p]);
               //         }
               double ChiSquare = 0;
-              
+
               for (unsigned int en = 0; en < MinSize; ++en) {
                 unsigned int ep = en;
-                
+
                 double xEnergy = 0;
                 double xResolution = 0;
                 for (unsigned int entry = 0; entry < Combinations[d][0][xc][en].size(); ++entry) {
                   xEnergy += StripHits[d][0][Combinations[d][0][xc][en][entry]]->GetEnergy();
                   xResolution += pow(StripHits[d][0][Combinations[d][0][xc][en][entry]]->GetEnergyResolution(), 2);
-                } 
-                
+                }
+
                 double yEnergy = 0;
                 double yResolution = 0;
                 for (unsigned int entry = 0; entry < Combinations[d][1][yc][ep].size(); ++entry) {
                   yEnergy += StripHits[d][1][Combinations[d][1][yc][ep][entry]]->GetEnergy();
                   yResolution += pow(StripHits[d][1][Combinations[d][1][yc][ep][entry]]->GetEnergyResolution(), 2);
-                } 
+                }
                 //cout << "yEnergy: " << yEnergy << endl;
                 //cout << "  Sub - Test en=" << en << " (" << xEnergy << ") with ep="
                 //     << ep << " (" << yEnergy << "):" << endl;
                 //cout<<xResolution<<":"<<yResolution<<endl;
-                ChiSquare += (xEnergy - yEnergy)*(xEnergy - yEnergy) / (xResolution + yResolution);            
+                ChiSquare += (xEnergy - yEnergy)*(xEnergy - yEnergy) / (xResolution + yResolution);
               }
               ChiSquare /= MinSize;
               //cout<<"Chi square: "<<ChiSquare<<endl;
-              
+
               if (ChiSquare < BestChiSquare) {
                 BestChiSquare = ChiSquare;
                 BestXSideCombo = Combinations[d][0][xc];
                 BestYSideCombo = Combinations[d][1][yc];
               }
-              
+
               //cout<<"ChiSquare: "<<ChiSquare<<endl;
-              
+
               if (Combinations[d][1][yc].size() > Combinations[d][0][xc].size()) {
                 MorePermutations = next_permutation(Combinations[d][1][yc].begin(), Combinations[d][1][yc].end());
               } else {
                 MorePermutations = next_permutation(Combinations[d][0][xc].begin(), Combinations[d][0][xc].end());
-              } 
+              }
             }
           }
         }
-        
+
         /*
         cout<<"Best combo:"<<endl;
         cout<<"X: ";
@@ -449,14 +435,14 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
         }
         cout<<endl;
         */
-        
+
         // Now create hits:
         if (BestChiSquare == numeric_limits<double>::max()) {
           RE->SetRejectionReason(MRERawEvent::c_RejectionStripPairingMissingStrips);
           Rejected = true;
           break;
         }
-            
+
         // Create the hits
         double XPos = 0;
         double YPos = 0;
@@ -468,11 +454,11 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
         double EnergyResolution = 0;
         double ZPos = 0;
         double MinTime = 0;
-        
+
         double XEnergyTotal = 0;
         double YEnergyTotal = 0;
         double EnergyTotal = 0;
-        
+
         for (unsigned int h = 0; h < min(BestXSideCombo.size(), BestYSideCombo.size()); ++h) {
           XPos = 0;
           YPos = 0;
@@ -480,7 +466,7 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           YEnergy = 0;
           ZPos = 0;
           MinTime = numeric_limits<double>::max();
-          
+
           for (unsigned int sh = 0; sh < BestXSideCombo[h].size(); ++sh) {
             //cout<<"x-pos: "<<StripHits[d][0][BestXSideCombo[h][sh]]->GetNonStripPosition()<<endl;
             XPos += StripHits[d][0][BestXSideCombo[h][sh]]->GetEnergy() * StripHits[d][0][BestXSideCombo[h][sh]]->GetNonStripPosition();
@@ -494,7 +480,7 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           XPos /= XEnergy;
           XEnergyRes = sqrt(XEnergyRes);
           XEnergyTotal += XEnergy;
-          
+
           for (unsigned int sh = 0; sh < BestYSideCombo[h].size(); ++sh) {
             YPos += StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergy() * StripHits[d][1][BestYSideCombo[h][sh]]->GetNonStripPosition();
             ZPos += StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergy() * StripHits[d][1][BestYSideCombo[h][sh]]->GetDepthPosition();
@@ -507,32 +493,32 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           YPos /= YEnergy;
           YEnergyRes = sqrt(YEnergyRes);
           YEnergyTotal += YEnergy;
-          
+
           ZPos /= (XEnergy + YEnergy);
-          
+
           Energy = 0.0;
           if (XEnergy > YEnergy + 3*YEnergyRes) {
-            Energy = XEnergy; 
+            Energy = XEnergy;
             EnergyResolution = XEnergyRes;
           } else if (YEnergy > XEnergy + 3*XEnergyRes) {
-            Energy = YEnergy; 
+            Energy = YEnergy;
             EnergyResolution = YEnergyRes;
           } else {
             Energy = (XEnergy/(XEnergyRes*XEnergyRes) + YEnergy/(YEnergyRes*YEnergyRes)) / (1.0/(XEnergyRes*XEnergyRes) + 1.0/(YEnergyRes*YEnergyRes));
             EnergyResolution = sqrt( 1.0 / (1.0/(XEnergyRes*XEnergyRes) + 1.0/(YEnergyRes*YEnergyRes)) );
           }
           EnergyTotal += Energy;
-          
+
           //cout<<"Energy: "<<Energy<<"  "<<XEnergy<<" vs. "<<YEnergy<<" ("<<XEnergyRes<<" vs. "<<YEnergyRes<<")"<<endl;
-          
+
           MVector PosDet(XPos, YPos, ZPos);
-          
+
           MVector PositionResolution = StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetDetector()->GetPositionResolution(PosDet, EnergyTotal);
-          
+
           MVector PosWorld = StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetPositionInFirstVolume(PosDet, StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetDetectorVolume());
-          
+
           double TimeResolution = StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetDetector()->GetTimeResolution(EnergyTotal);
-          
+
           MREHit* Hit = new MREHit();
           Hit->SetEnergy(Energy);
           Hit->SetPosition(PosWorld);
@@ -543,20 +529,20 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           Hit->FixResolutions(true);
           Hit->SetVolumeSequence(new MDVolumeSequence(*StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()));
           Hit->SetDetector(StripHits[d][1][BestYSideCombo[h][0]]->GetDetector());
-          
+
           set<unsigned int> XOrigins;
           for (unsigned int sh = 0; sh < BestXSideCombo[h].size(); ++sh) {
             set<unsigned int> SHOrigins = StripHits[d][0][BestXSideCombo[h][sh]]->GetOriginIDs();
             XOrigins.insert(SHOrigins.begin(), SHOrigins.end());
           }
-          
+
           set<unsigned int> YOrigins;
           for (unsigned int sh = 0; sh < BestYSideCombo[h].size(); ++sh) {
             set<unsigned int> SHOrigins = StripHits[d][1][BestYSideCombo[h][sh]]->GetOriginIDs();
             YOrigins.insert(SHOrigins.begin(), SHOrigins.end());
             //cout<<"Strip origin IDs: "; for (auto I: StripHits[d][1][BestYSideCombo[h][sh]]->GetOriginIDs()) cout<<I<<" "; cout<<endl;
           }
-          
+
           // The origins can only be the origins which are common to both
           bool FoundCommon = false;
           for (auto IterX = XOrigins.begin(); IterX != XOrigins.end(); ++IterX) {
@@ -565,7 +551,7 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
                 Hit->AddOriginID(*IterX);
                 FoundCommon = true;
               }
-              
+
             }
           }
           // If there are non common, take all, which
@@ -573,15 +559,15 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
             Hit->AddOriginIDs(XOrigins);
             Hit->AddOriginIDs(YOrigins);
           }
-          
+
           //cout<<"Origin IDs: "; for (auto I: Hit->GetOriginIDs()) cout<<I<<" "; cout<<endl;
-          
+
           RE->AddRESE(Hit);
-          
-          
+
+
           //cout<<Hit->ToString()<<endl;
         }
-        
+
         if (EnergyTotal > max(XEnergyTotal, YEnergyTotal) + 2.5*max(XEnergyRes, YEnergyRes) || EnergyTotal < min(XEnergyTotal, YEnergyTotal) - 2.5*max(XEnergyRes, YEnergyRes)) {
           //cout<<"Rejected"<<endl:;
           //cout<<"Strip-pairing: Rejected: not resolvable by energy: tot="<<EnergyTotal<<"  x:"<<XEnergyTotal<<" y:"<<YEnergyTotal<<"  max res: "<<2.5*max(XEnergyRes, YEnergyRes)<<endl;
@@ -589,11 +575,11 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           Rejected = true;
           break;
         }
-        
-        // 
-        
+
+        //
+
       } // detector loop
-      
+
       // Delete all strip hits:
       for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
         for (unsigned int side = 0; side <=1; ++side) { // side loop
@@ -602,17 +588,52 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           }
         }
       }
-              
+
       //cout<<"After:"<<endl;
       //cout<<RE->ToString()<<endl;
-      
-      
-    } // raw events loop
+
   } else {
     merr<<"Unknown strip pairing algorithm with ID="<<m_Algorithm<<endl;
   }
 
 
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
+{
+  // Search for coincidences
+
+  mdebug<<"StripPairing started for "<<List->Get(0)->GetRawEventAt(0)->GetEventID()<<endl;
+  
+  bool Return = true;
+
+  if (m_Algorithm == c_None) {
+    //cout<<"No strip pairing search"<<endl;
+  } else if (m_Algorithm == c_ChiSquare) {
+    //cout<<"StripPairing chi square"<<endl;
+    unsigned int r_max = List->Size();
+    for (unsigned int r = 0; r < r_max; ++r) {
+      MRawEventIncarnations* REI = List->Get(r);
+      if (REI->GetNRawEvents() != 1) {
+        merr<<"Strip pairing: Only one raw event incarnation can be present at this stage of the analysis"<<endl;
+        //RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyEventIncarnations);  // This automatically marks the event invalid for further analysis...
+        continue; 
+      }
+      
+      // We only look at the first event;
+      if (Analyze(REI->GetRawEventAt(0)) == false) Return = false;
+
+    } // raw events loop
+  } else {
+    merr<<"Unknown strip pairing algorithm with ID="<<m_Algorithm<<endl;
+  }
+
+  // For some reason we previusly ignored the Return here... Let's keep it that way
   return true;
 }
 
