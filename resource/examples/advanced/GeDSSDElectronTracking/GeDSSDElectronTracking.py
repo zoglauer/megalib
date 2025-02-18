@@ -21,6 +21,8 @@ class GeDSSDElectronTracking:
 
     self.FileTag = "TrackWithinCrossStripDetectorTMVA"
 
+    print(self.FileName)
+
     self.AllFileNames = []
     if self.UseAll == True:
       Index = self.FileName.find('.x')
@@ -34,7 +36,9 @@ class GeDSSDElectronTracking:
           if os.path.exists(NewFile):
             self.AllFileNames.append(NewFile)
     else:
-      self.AllFileNames += self.FileName
+      self.AllFileNames.append(self.FileName)
+    
+    print(self.AllFileNames)
 
     if len(self.AllFileNames) == 0:
       print("Error: No input files available")
@@ -46,7 +50,7 @@ class GeDSSDElectronTracking:
       # (1) Read the data tree
       DataFile = ROOT.TFile(FileName);
       if DataFile.IsOpen() == False:
-        print("Error: Opening DataFile")
+        print("Error: Opening DataFile: {}".format(FileName))
         sys.exit()
 
       DataTree = DataFile.Get(self.FileTag);
