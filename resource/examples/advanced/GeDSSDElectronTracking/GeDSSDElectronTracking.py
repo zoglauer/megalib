@@ -363,8 +363,9 @@ class GeDSSDElectronTracking:
     print("Peak/Offset: {}".format(Fit.GetParameter(1)/Fit.GetParameter(0)))
 
     # prevent Canvases from closing
-    #wait()
-    print("Close the ROOT window via File -> Close!")
+    import os
+    print("ATTENTION: Please exit by clicking: File -> Close ROOT! Do not just close the window by clicking \"x\"")
+    print("           ... and if you didn't honor this warning, and are stuck, execute the following in a new terminal: kill " + str(os.getpid()))
     ROOT.gApplication.Run()
 
 
