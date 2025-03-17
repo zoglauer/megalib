@@ -13,8 +13,9 @@ commandhelp() {
   echo "  --instances=[integer or \"cores\", \"threads\"]: Maximum number of instances or \"cores\"/\"threads\" for the number of available cores or threads (default: 1)"
   echo "  --load=[integer or \"cores\", \"threads\"]: Maximum system load as integer or \"cores\"/\"threads\" for the number of available cores or threads (default: threads + 3)"
   echo "  --program=[name]: The main program to wait for"
-  #echo "  --auxprogram=[name]: Other programs to wait for"
+  echo "  --auxprogram=[name]: Other programs to wait for"
   echo "  --memory: Make sure we have enough free memory, if more than one instance is running"
+  echo "  --delay=[integer]: The delay time"
   echo "  --quiet: No text output"
   echo ""
   echo "Examples:"
@@ -29,10 +30,11 @@ commandhelp() {
 # Defaults
 INSTANCES="cores"
 LOAD="10000"
-PROGAM=""
+PROGRAM=""
 AUXPROGRAMS=()
 MEMORY=false
 QUIET=false
+DELAY=5
 
 # Store command line as array
 CMD=( "$@" )
@@ -54,8 +56,10 @@ for C in "${CMD[@]}"; do
     LOAD=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-p*=* ]]; then
     PROGRAM=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-c*=* ]]; then
+  elif [[ ${C} == *-a*=* ]]; then
     AUXPROGRAMS+=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-d*=* ]]; then
+    DELAY=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-m* ]]; then
     MEMORY=true
   elif [[ ${C} == *-q* ]]; then
@@ -122,7 +126,11 @@ while [[ ${WAIT} == true ]]; do
   # We exclude this process itself in the listing
   # sed -> don't remember
   RUNNINGTHREADS=0
-  RUNNINGTHREADS=$(( RUNNINGTHREADS + $(ps -Af | grep "[ ]${PROGRAM}" | grep -v "mwait ${PROGRAM}" | grep -v "bash -c " | grep -v "timeout " | wc -l | sed 's/^ *//g') ))
+  RUNNINGTHREADS=$(( RUNNINGTHREADS + $(ps -Af | grep -e "[ ]${PROGRAM}" -e "/${PROGRAM}" | grep -v "mwait ${PROGRAM}" | grep -v "bash -c " | grep -v "timeout " | grep -v "grep" | wc -l | sed 's/^ *//g') ))
+  for A in "${AUXPROGRAMS[@]}"; do
+    RUNNINGTHREADS=$(( RUNNINGTHREADS + $(ps -Af | grep -e "[ ]${A}" -e "/${A}" | grep -v "mwait ${A}" | grep -v "bash -c " | grep -v "timeout " | grep -v "grep" | wc -l | sed 's/^ *//g') ))
+  done
+  
   
   #echo "mwait: ${MAXTHREADS} vs. ${RUNNINGTHREADS}"
   
@@ -131,7 +139,7 @@ while [[ ${WAIT} == true ]]; do
     if [[ ${QUIET} == false ]]; then
       echo "Waiting for a free slot: Running ${RUNNINGTHREADS} of ${MAXTHREADS} allowed instances of ${PROGRAM}"
     fi
-    sleep 5
+    sleep ${DELAY}
     continue
   fi
   
@@ -159,7 +167,7 @@ while [[ ${WAIT} == true ]]; do
             echo "Waiting till all programs (n=${RUNNINGTHREADS}) reach memory saturation (now: ${TOTALMEMORY}), last: ${LASTTOTALMEMORY} )..."
           fi
         fi
-        sleep 1
+        sleep ${DELAY}
       else
         break
       fi
@@ -177,7 +185,7 @@ while [[ ${WAIT} == true ]]; do
       if [[ ${QUIET} == false ]]; then
         echo "Waiting until we have enough free memory (required: ${REQUIREDMEMORY}, available: ${AVAILABLEMEMORY})..."
       fi
-      sleep 5
+      sleep ${DELAY}
       continue
     fi
   fi
@@ -195,7 +203,7 @@ while [[ ${WAIT} == true ]]; do
     if [[ ${QUIET} == false ]]; then
       echo "Waiting until the system load falls below the threshold (threshold: ${MAXLOAD}, current:  ${CURRENTLOAD})..."
     fi
-    sleep 5
+    sleep ${DELAY}
     continue  
   fi
   
