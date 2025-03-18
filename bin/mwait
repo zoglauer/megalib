@@ -57,7 +57,7 @@ for C in "${CMD[@]}"; do
   elif [[ ${C} == *-p*=* ]]; then
     PROGRAM=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-a*=* ]]; then
-    AUXPROGRAMS+=`echo ${C} | awk -F"=" '{ print $2 }'`
+    AUXPROGRAMS+=( `echo ${C} | awk -F"=" '{ print $2 }'` )
   elif [[ ${C} == *-d*=* ]]; then
     DELAY=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-m* ]]; then
