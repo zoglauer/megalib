@@ -22,9 +22,7 @@ using PyCall
 M = pyimport("ROOT")
 MEGAlibPath = ENV["MEGALIB"]  # Get the value of the environment variable M
 MEGAlibPath = joinpath(MEGAlibPath, "lib/libMEGAlib.so")  # Safely join the path
-println(MEGAlibPath)
 M.gSystem.Load(MEGAlibPath)
-#M.gSystem.Load("/Users/andreas/Documents/Science/Software/COSItools/megalib/lib/libMEGAlib.so")
 
 
 # Initialize MEGAlib
@@ -41,7 +39,7 @@ else
     exit()
 end
 # Deactivate noising
-
+Geometry.ActivateNoising(false)
 
 # Open the sim file
 Reader = M.MFileEventsSim(Geometry)  # Create an instance of MFileEventsSim with the loaded geometry
