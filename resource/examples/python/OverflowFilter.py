@@ -103,19 +103,19 @@ Writer.TransferInformation(Reader)
 Writer.WriteFooter()
 Writer.Close()
 
-CanvasBeforeFilter = M.TCanvas()
-CanvasBeforeFilter.cd()
-HistBeforeFilter.Draw()
-CanvasBeforeFilter.Update()
+#CanvasBeforeFilter = M.TCanvas()
+#CanvasBeforeFilter.cd()
+#HistBeforeFilter.Draw()
+#CanvasBeforeFilter.Update()
 
-CanvasAfterFilter = M.TCanvas()
-CanvasAfterFilter.cd()
-HistAfterFilter.Draw()
-CanvasAfterFilter.Update()
+#CanvasAfterFilter = M.TCanvas()
+#CanvasAfterFilter.cd()
+#HistAfterFilter.Draw()
+#CanvasAfterFilter.Update()
 
 
 # Prevent the canvases from being closed
-import os
-print("ATTENTION: Please exit by clicking: File -> Close ROOT! Do not just close the window by clicking \"x\"")
-print("           ... and if you didn't honor this warning, and are stuck, execute the following in a new terminal: kill " + str(os.getpid()))
-M.gApplication.Run()
+#import os
+#print("ATTENTION: Please exit by clicking: File -> Close ROOT! Do not just close the window by clicking \"x\"")
+#print("           ... and if you didn't honor this warning, and are stuck, execute the following in a new terminal: kill " + str(os.getpid()))
+#M.gApplication.Run()
