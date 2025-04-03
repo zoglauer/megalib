@@ -254,7 +254,7 @@ bool TraAnalyzer::Analyze()
       return false;
     }
     if (InformationTransfered == false) {
-      Writer->TransferInformation(Reader);
+      // Only works in MEGAlib 5.0: Writer->TransferInformation(Reader);
       InformationTransfered = true;
     }
 
@@ -278,7 +278,7 @@ bool TraAnalyzer::Analyze()
   for (MPhysicalEvent* Event: Events) {
     Writer->AddEvent(Event);
   }
-  Writer->WriteFooter();
+  // Only works in MEGAlib 5.0: Writer->WriteFooter();
   Writer->Close();
 
   // Some cleanup
