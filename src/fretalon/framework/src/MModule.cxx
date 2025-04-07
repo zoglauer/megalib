@@ -29,6 +29,7 @@
 // Standard libs:
 
 // ROOT libs:
+#include "TSystem.h"
 
 // MEGAlib libs:
 #include "MModuleReadOutAssemblyQueues.h"

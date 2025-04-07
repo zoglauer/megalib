@@ -22,8 +22,9 @@
 // Standard libs:
 
 // ROOT libs:
-#include <TGPicture.h>
-#include <TStyle.h>
+#include "TSystem.h"
+#include "TGPicture.h"
+#include "TStyle.h"
 
 // MEGAlib libs:
 #include "MGUIAbout.h"

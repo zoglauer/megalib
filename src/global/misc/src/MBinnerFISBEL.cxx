@@ -29,6 +29,7 @@ using namespace std;
 #include "TMath.h"
 #include "TH2.h"
 #include "TCanvas.h"
+#include "TSystem.h"
 
 // MEGAlib libs:
 #include "MExceptions.h"
