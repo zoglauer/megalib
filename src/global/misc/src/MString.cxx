@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <locale>
+#include <iomanip>
 using namespace std;
 
 // ROOT libs:
@@ -66,6 +67,61 @@ ostream& operator<<(ostream& out, const MString& S)
 { 
   out<<S.GetString(); 
   return out; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString::MString(const double D, unsigned int Precision)
+{
+  //! Construct with double of given precision
+
+  ostringstream in;
+  in<<setprecision(Precision)<<D;
+
+  m_String = in.str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString::MString(double Value, double Uncertainty, MString Units, bool Latex)
+{
+  //! Construct from value, uncertainty, unit using scientific rounding
+  //! Will be something like (12.345, 1.872, "mm") -> "(12.3 +- 1.9) mm"
+
+  // Find at which position the first digit is, e.g.:
+  // 187.2 = 2, 3.23 = 0, 0.348 = -1, etc.
+  int RoundOffDigit = int(log10(Uncertainty));
+  if (Uncertainty < 1) RoundOffDigit -= 1; // Due to how rounding using int() works
+
+  // If the uncertainty starts with 1 & 2, we have one more significant digit.
+  if (round(Uncertainty * pow(10, -RoundOffDigit)) < 3) RoundOffDigit -= 1;
+
+  // Now round
+  double Scale = pow(10, -RoundOffDigit);
+  Value = round(Value * Scale) / Scale;
+  Uncertainty = round(Uncertainty * Scale) / Scale;
+
+  // Print the result
+  ostringstream out;
+  if (Units != "") {
+    if (Latex == true) {
+      out<<"("<<Value<<" #pm "<<Uncertainty<<") "<<Units;
+    } else {
+      out<<"("<<Value<<" ± "<<Uncertainty<<") "<<Units;
+    }
+  } else {
+    if (Latex == true) {
+      out<<Value<<" #pm "<<Uncertainty;
+    } else {
+      out<<Value<<" ± "<<Uncertainty;
+    }
+  }
+
+  m_String = out.str();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

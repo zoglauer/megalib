@@ -233,9 +233,33 @@ void MGUIMainFretalon::UpdateModules()
 {
   // Remove all existing modules:
 
-  m_ModuleFrame->RemoveAll();  // Deletes everyting too, especially the m_Modules.
+  // The next few lines are to work around a ROOT bug on macOS
+  double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+
+  TGFrameElement *el;
+  TIter next(m_ModuleFrame->GetList());
+  while ((el = (TGFrameElement *) next())) {
+    m_ModuleFrame->HideFrame(el->fFrame);
+    m_ModuleFrame->RemoveFrame(el->fFrame);
+    delete el->fFrame;
+  }
+
   m_ModuleFrame->Resize();
-  m_Modules.clear(); // Modules itself already deleted via m_ModuleFrame->RemoveAll()
+  m_Modules.clear();
+
+  HideFrame(m_ModuleFrame);
+  RemoveFrame(m_ModuleFrame);
+  delete m_ModuleFrame;
+
+  m_ModuleFrame = new TGVerticalFrame(this);
+  TGLayoutHints* SectionLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 40*FontScaler, 20*FontScaler, 0, 10*FontScaler);
+  AddFrame(m_ModuleFrame, SectionLayout);
+  // end ROOT bug work around
+
+  // The non-ROOT-bug-on-macOS version was:
+  // m_ModuleFrame->RemoveAll();  // Deletes everyting too, especially the m_Modules.
+  // m_ModuleFrame->Resize();
+  // m_Modules.clear(); // Modules itself already deleted via m_ModuleFrame->RemoveAll()
 
   for (unsigned int m = 0; m < m_Supervisor->GetNModules(); ++m) {
     MGUIEModule* GuiModule = new MGUIEModule(m_ModuleFrame, m, m_Supervisor->GetModule(m));

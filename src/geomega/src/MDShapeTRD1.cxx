@@ -248,18 +248,33 @@ double MDShapeTRD1::GetVolume()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeTRD1::Scale(const double Factor)
+bool MDShapeTRD1::Scale(const double Factor, const MString Axes)
 {
-  // Scale this shape by Factor
+  //! Scale the axes given in Axes by a factor Scaler
 
-  m_Ddx1 *= Factor;
-  m_Ddx2 *= Factor;
-  m_Dy *= Factor;
-  m_Dz *= Factor;
+  // Don't do anything if the scaling has already been applied
+  if (Factor == m_Scaler && Axes == m_ScalingAxis) return true;
+
+  // Base class handles sanity checks and storing data
+  if (MDShape::Scale(Factor, Axes) == false) return false;
+  // If there was no scaling return true;
+  if (IsScaled() == false) return true;
+
+  // Now scale
+  if (m_ScalingAxis.Contains("X") == true) {
+    m_Ddx1 *= m_Scaler;
+    m_Ddx2 *= m_Scaler;
+  }
+  if (m_ScalingAxis.Contains("Y") == true) {
+    m_Dy *= m_Scaler;
+  }
+  if (m_ScalingAxis.Contains("Z") == true) {
+    m_Dz *= m_Scaler;
+  }
   
+  // Now validate
   m_IsValidated = false;
-  
-  Validate();
+  return Validate();
 }
 
 

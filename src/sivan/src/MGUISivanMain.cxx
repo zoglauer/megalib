@@ -112,22 +112,10 @@ void MGUISivanMain::Create()
   m_MenuAnalysis->AddEntry("Newly generated isotopes distribution", c_IsotopeGeneration);
   m_MenuAnalysis->AddEntry("Energy distribution by decayed isotope", c_EnergyPerNucleus);
   m_MenuAnalysis->AddEntry("Activation per incidence energy", c_ActivationPerIncidenceEnergy);
+  m_MenuAnalysis->AddEntry("Origin volume of activation", c_OriginVolumesOfActivation);
   // m_MenuAnalysis->AddEntry("Charge sharing between voxels...", c_ChargeSharing);
   m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("Doppler broadening", c_DopplerARM);
-
-
-//   m_MenuAnalysis->AddEntry("Event selections", M_SV_EVENTSELECTION);
-//   m_MenuAnalysis->AddSeparator();
-//   m_MenuAnalysis->AddEntry("Options", M_SV_OPTIONS);
-//   m_MenuAnalysis->AddSeparator();
-//   m_MenuAnalysis->AddEntry("Start creating tra-file", M_SV_START);
-//   m_MenuAnalysis->AddEntry("View hits", M_SV_VIEWHITS);
-//   m_MenuAnalysis->AddEntry("Energy loss", M_SV_ENERGYLOSS);
-//   m_MenuAnalysis->AddEntry("Crystals with certain deposited energies", M_SV_ENERGYCRYSTAL);
-//   m_MenuAnalysis->AddEntry("Distance and angular error of multiple comptons", M_SV_MULTIPLECOMPTONS);
-//   m_MenuAnalysis->AddEntry("Create Response", M_SV_CREATERESPONSE);
-//   m_MenuAnalysis->AddEntry("Doppler Broadening", M_SV_DOPPLER);
 
   // m_MenuAnalysis->AddSeparator();
   // m_MenuAnalysis->AddEntry("Some testing...", c_Test);
@@ -327,7 +315,11 @@ bool MGUISivanMain::ProcessMessage(long Message, long Parameter1,
       case c_ActivationPerIncidenceEnergy:
         m_Interface->ActivationPerIncidenceEnergy();
         break;
-      
+
+      case c_OriginVolumesOfActivation:
+        m_Interface->OriginVolumesOfActivation();
+        break;
+
       default:
         break;
       }

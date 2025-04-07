@@ -617,7 +617,7 @@ void MGUIEventSelection::Create()
 
   m_SourceSpheric = new MGUIEEntryList(SourceFrame, "Location (Theta, Phi) [deg]", MGUIEEntryList::c_SingleLine);
   m_SourceSpheric->Add("", m_Settings->GetSourceTheta(), kTRUE, 0.0, 180.0);
-  m_SourceSpheric->Add("", m_Settings->GetSourcePhi(), kTRUE, 0.0, 360.0);
+  m_SourceSpheric->Add("", m_Settings->GetSourcePhi(), kTRUE, -180.0, 360.0);
   m_SourceSpheric->SetEntryFieldSize(FieldSize);
   m_SourceSpheric->Create();
   SourceFrame->AddFrame(m_SourceSpheric, SourceLayout);

@@ -25,7 +25,7 @@ DEFINES       := -UHARDWARE
 LD            := c++
 LDFLAGS       := $(OPT) -Xlinker -bind_at_load -flat_namespace -D___MACOSX___
 SOFLAGS       := -dynamiclib -flat_namespace -undefined suppress 
-LIBS          := $(ROOTLIBS) -lpthread -lThread -lMinuit -lGeom -lSpectrum -lTMVA
+LIBS          := $(ROOTLIBS) -lpthread -lThread -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA
 GLIBS         := $(ROOTGLIBS) 
 DEPFLAGS      := -M
 
@@ -34,9 +34,9 @@ LINK          := ln -s -f
 # HEASoft
 HEACFLAGS     :=
 HEALIBS       :=
-ifneq ("$(wildcard $(LHEASOFT)/include/fitsio.h)", "")
-        HEACFLAGS += -I$(LHEASOFT)/include
-        HEALIBS += -L$(LHEASOFT)/lib
+ifeq ("$(shell PKG_CONFIG_PATH=$(LHEASOFT)/lib/pkgconfig pkg-config --exists cfitsio 1>&2 2> /dev/null; echo $$?)", "0")
+        HEACFLAGS += $(shell PKG_CONFIG_PATH=$(LHEASOFT)/lib/pkgconfig pkg-config --cflags cfitsio)
+        HEALIBS += $(shell PKG_CONFIG_PATH=$(LHEASOFT)/lib/pkgconfig pkg-config --libs cfitsio --static)
 else ifeq ("$(shell pkg-config --exists cfitsio 1>&2 2> /dev/null; echo $$?)", "0")
         HEACFLAGS += $(shell pkg-config --cflags cfitsio)
         HEALIBS += $(shell pkg-config --libs cfitsio)

@@ -96,6 +96,9 @@ bool MERCSRBayesian::SetParameters(MString FileName,
 
   m_UseAbsorptionsUpTo = 5;
 
+  // If you change it here, also change it in MResponseMultiComptonBayes
+  m_MaxCosineLimit = 2;
+
   m_FileName = FileName;
 
   if (m_CreateOnlyPermutations == false) {
@@ -221,8 +224,9 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
   if (Size == 2) {
     Material = float(GetMaterial(*Iter));
     double CosPhiE = CalculateCosPhiE((*Iter), Etot);
-    double Distance = 
-      CalculateTotalDistance((*Iter)->GetPosition(), (*(Iter+1))->GetPosition(), (*(Iter+1))->GetEnergy());
+    if (CosPhiE <= -m_MaxCosineLimit) CosPhiE = -0.99*m_MaxCosineLimit;
+    if (CosPhiE >= +m_MaxCosineLimit) CosPhiE = +0.99*m_MaxCosineLimit;
+    double Distance = CalculateTotalDistance((*Iter)->GetPosition(), (*(Iter+1))->GetPosition(), (*(Iter+1))->GetEnergy());
 
     EntriesGood = m_GoodDualDeposit.Get(Etot, CosPhiE, Distance, Material);
     EntriesBad = m_BadDualDeposit.Get(Etot, CosPhiE, Distance, Material);
@@ -256,9 +260,12 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
   } else {
     // Check start:
     Material = float(GetMaterial(*Iter));
-    double PhiE = CalculateCosPhiE((*Iter), Etot);
-    EntriesGood = m_GoodStartDeposit.Get(Etot, PhiE, SizeF, Material);
-    EntriesBad = m_BadStartDeposit.Get(Etot, PhiE, SizeF, Material);
+    double CosPhiE = CalculateCosPhiE((*Iter), Etot);
+    if (CosPhiE <= -m_MaxCosineLimit) CosPhiE = -0.99*m_MaxCosineLimit;
+    if (CosPhiE >= +m_MaxCosineLimit) CosPhiE = +0.99*m_MaxCosineLimit;
+
+    EntriesGood = m_GoodStartDeposit.Get(Etot, CosPhiE, SizeF, Material);
+    EntriesBad = m_BadStartDeposit.Get(Etot, CosPhiE, SizeF, Material);
     SumGood = m_SumGoodStartDeposit.Get(SizeF);
     SumBad = m_SumBadStartDeposit.Get(SizeF);
     VerifyEntries(EntriesGood, EntriesBad);
@@ -266,7 +273,7 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
     if (ShowDebug == true) {
       cout<<"Start:        "
           <<setw(8)<<Etot<<"  "
-          <<setw(8)<<PhiE<<"  "
+          <<setw(8)<<CosPhiE<<"  "
           <<setw(8)<<Size<<"  "
           <<setw(8)<<Material<<"  "
           <<setw(8)<<0.0<<"  "
@@ -289,7 +296,12 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
     // Check initial track:
     if ((*Iter)->GetType() ==  MRESE::c_Track) {
       double dAlpha = CalculateDCosAlpha((MRETrack*) (*Iter), *(Iter+1), Etot);
+      if (dAlpha <= -m_MaxCosineLimit) dAlpha = -0.99*m_MaxCosineLimit;
+      if (dAlpha >= +m_MaxCosineLimit) dAlpha = +0.99*m_MaxCosineLimit;
       double Alpha = CalculateCosAlphaG((MRETrack*) (*Iter), *(Iter+1), Etot);
+      if (Alpha <= -m_MaxCosineLimit) Alpha = -0.99*m_MaxCosineLimit;
+      if (Alpha >= +m_MaxCosineLimit) Alpha = +0.99*m_MaxCosineLimit;
+
       double ElectronEnergy = (*Iter)->GetEnergy();
       EntriesGood = m_GoodTrack.Get(dAlpha, Alpha, 1, ElectronEnergy, SizeF, Material);
       EntriesBad = m_BadTrack.Get(dAlpha, Alpha, 1, ElectronEnergy, SizeF, Material);
@@ -329,9 +341,7 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
     
       // Compton Distance:
       if (Size <= m_UseAbsorptionsUpTo) {
-        double ComptonDistance = 
-          CalculateComptonDistance((*(Iter-1))->GetPosition(), 
-                                   (*Iter)->GetPosition(), Etot);
+        double ComptonDistance = CalculateReach((*(Iter-1))->GetPosition(), (*Iter)->GetPosition(), Etot);
         Material = float(GetMaterial(*Iter));
         EntriesGood = m_GoodComptonDistance.Get(ComptonDistance, Etot, SizeF, Material);
         EntriesBad = m_BadComptonDistance.Get(ComptonDistance, Etot, SizeF, Material);
@@ -364,10 +374,12 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
       }
 
       // Compton:
-      double dPhi =
-        CalculateDCosPhi((*(Iter-1)), (*Iter), (*(Iter+1)), Etot);
-      double PhiE = 
-        CalculateCosPhiE((*Iter), Etot);
+      double dPhi = CalculateDCosPhi((*(Iter-1)), (*Iter), (*(Iter+1)), Etot);
+      if (dPhi <= -m_MaxCosineLimit) dPhi = -0.99*m_MaxCosineLimit;
+      if (dPhi >= +m_MaxCosineLimit) dPhi = +0.99*m_MaxCosineLimit;
+      double PhiE = CalculateCosPhiE((*Iter), Etot);
+      if (PhiE <= -m_MaxCosineLimit) PhiE = -0.99*m_MaxCosineLimit;
+      if (PhiE >= +m_MaxCosineLimit) PhiE = +0.99*m_MaxCosineLimit;
       double Lever = CalculateMinLeverArm((*(Iter-1))->GetPosition(), 
                                           (*Iter)->GetPosition(),
                                           (*(Iter+1))->GetPosition());
@@ -404,7 +416,11 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
       // Check central track:
       if ((*Iter)->GetType() ==  MRESE::c_Track) {
         double dAlpha = CalculateDCosAlpha((MRETrack*) (*Iter), *(Iter+1), Etot);
+        if (dAlpha <= -m_MaxCosineLimit) dAlpha = -0.99*m_MaxCosineLimit;
+        if (dAlpha >= +m_MaxCosineLimit) dAlpha = +0.99*m_MaxCosineLimit;
         double Alpha = CalculateCosAlphaG((MRETrack*) (*Iter), *(Iter+1), Etot);
+        if (Alpha <= -m_MaxCosineLimit) Alpha = -0.99*m_MaxCosineLimit;
+        if (Alpha >= +m_MaxCosineLimit) Alpha = +0.99*m_MaxCosineLimit;
         double ElectronEnergy = (*Iter)->GetEnergy();
         EntriesGood = m_GoodTrack.Get(dAlpha, Alpha, 1, ElectronEnergy, SizeF, Material);
         EntriesBad = m_BadTrack.Get(dAlpha, Alpha, 1, ElectronEnergy, SizeF, Material);

@@ -30,6 +30,7 @@ FILES := MResponseCreator \
 	MResponseClusteringDSS \
 	MResponseTracking \
 	MResponseMultipleCompton \
+	MResponseMultipleComptonBayes \
 	MResponseMultipleComptonEventFile \
 	MResponseMultipleComptonLens \
 	MResponseMultipleComptonTMVA \

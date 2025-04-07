@@ -74,6 +74,7 @@ using namespace std;
 #include "MResponsePRM.h"
 #include "MResponseEnergyLeakage.h"
 #include "MBinnerBayesianBlocks.h"
+#include "MARMFitter.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -159,6 +160,8 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"             Perform polarization analysis. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"         --interaction-distance:"<<endl;
   Usage<<"             Create interaction distance plots. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"         --save-cfg:"<<endl;
+  Usage<<"             Safe the configuration. If the -o option is given then the configuration is saved to this file."<<endl;
   Usage<<"         --scatter-angles:"<<endl;
   Usage<<"             Create the scatter-angle distributions. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"         --sequence-length:"<<endl;
@@ -349,8 +352,12 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       Polarization();
       return KeepAlive;
     } else if (Option == "--scatter-angles") {
-      cout<<"Command-line parser: Generating scatter-angles plot..."<<endl;  
+      cout<<"Command-line parser: Generating scatter-angles plot..."<<endl;
       ScatterAnglesDistribution();
+      return KeepAlive;
+    } else if (Option == "--save-cfg") {
+      cout<<"Command-line parser: Save the configuration..."<<endl;
+      SaveConfiguration(m_OutputFileName != "" ? m_OutputFileName : "NewConfiguration.cfg");
       return KeepAlive;
     } else if (Option == "--interaction-distance") {
       cout<<"Command-line parser: Generating interaction-distance plot..."<<endl;  
@@ -1109,10 +1116,85 @@ void MInterfaceMimrec::ARMGamma()
   // Start with the event file loader first (just in case something goes wrong here)
   if (InitializeEventLoader() == false) return;
 
+  MVector TestPosition = GetTestPosition();
+
+  MARMFitter Fitter;
+  Fitter.SetNumberOfBins(m_Settings->GetHistBinsARMGamma());
+  Fitter.SetMaximumARMValue(m_Settings->GetTPDistanceTrans());
+  //Fitter.SetFitFunction(MARMFitFunctionID::c_GeneralizedNormal);
+  //Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormal);
+  //Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormalGeneralizedNormal);
+  Fitter.SetFitFunction(m_Settings->GetFitFunctionIDARMGamma());
+  Fitter.UseBinnedFitting(!m_Settings->GetUseUnbinnedFittingARMGamma());
+  Fitter.UseOptimizedBinning(m_Settings->GetOptimizeBinningARMGamma());
+
+  bool FoundEvents = false;
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr;
+  // ... loop over all events and save a count in the belonging bin ...
+  while ((Event = GetNextEvent()) != nullptr) {
+
+    // Only accept Comptons within the selected ranges...
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
+        Fitter.AddARMValue(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg);
+        FoundEvents = true;
+      }
+    }
+
+    delete Event;
+  } 
+  
+  //Fitter.SaveARMValues("Data.dat");
+
+  // Close the event loader
+  FinalizeEventLoader();
+
+  if (FoundEvents == false) {
+    mgui<<"No events passed the event selections."<<error;
+  }
+
+  Fitter.Fit(m_Settings->GetNumberOfFitsARMGamma());
+  //Fitter.FitAll();
+
+  if (Fitter.WasFittingSuccessful() == true) {
+    // Draw the histogram
+    TCanvas* FitterCanvas = new TCanvas();
+    FitterCanvas->SetTitle("ARM of Compton cone");
+    FitterCanvas->cd();
+    Fitter.Draw();
+    FitterCanvas->Modified();
+    FitterCanvas->Update();
+    if (m_OutputFileName.IsEmpty() == false) {
+      FitterCanvas->SaveAs(m_OutputFileName);
+    }
+
+    // Dump the results
+    mout<<Fitter.ToString()<<endl;
+  }
+
+  return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MInterfaceMimrec::ARMGammaClassic()
+{
+  // Display the angular resolution measurement for the gamma-ray
+  // The ARM value for the scattered gamma-ray is the minimum angle between
+  // the gamma-cone-surface and the line connecting the cone-apex with the
+  // (Test-)position
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
 
   //double ConfidenceLevel = 0.9; // 90%
   MString ConfidenceLevelString = "90%";
-  
+
   int NEvents = 0;
   double Value = 0;
   int NAverages = 0;
@@ -1123,7 +1205,7 @@ void MInterfaceMimrec::ARMGamma()
   double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
   double BinWidth = 2.0*Disk/NBins;
-  
+
   // Initalize the image size (x-axis)
   TH1D* Hist = new TH1D("ARMComptonCone", "ARM (Compton cone)", NBins, -Disk, Disk);
   Hist->SetBit(kCanDelete);
@@ -1138,8 +1220,8 @@ void MInterfaceMimrec::ARMGamma()
   Hist->SetMinimum(0);
 
   MPhysicalEvent* Event = nullptr;
-  MComptonEvent* ComptonEvent = nullptr; 
-//   MPairEvent* PairEvent = 0; 
+  MComptonEvent* ComptonEvent = nullptr;
+//   MPairEvent* PairEvent = 0;
   // ... loop over all events and save a count in the belonging bin ...
   while ((Event = GetNextEvent()) != 0) {
 
@@ -1168,8 +1250,8 @@ void MInterfaceMimrec::ARMGamma()
     }
 
     delete Event;
-  } 
-  
+  }
+
   // Close the event loader
   FinalizeEventLoader();
 
@@ -1222,7 +1304,6 @@ void MInterfaceMimrec::ARMGamma()
       mout<<"  "<<100*Sigma3<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
       Sigma3Found = true;
     }
-    
   }
 
 
@@ -1235,10 +1316,10 @@ void MInterfaceMimrec::ARMGamma()
 
   TF1* Fit = 0;
   ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
-  Fit = new TF1("DoubleLorentzAsymGausArm", DoubleLorentzAsymGausArm, 
+  Fit = new TF1("DoubleLorentzAsymGausArm", DoubleLorentzAsymGausArm,
                 -Disk*0.99, Disk*0.99, 9);
   Fit->SetBit(kCanDelete);
-  Fit->SetParNames("Offset", "Mean", 
+  Fit->SetParNames("Offset", "Mean",
                    "Lorentz Width 1", "Lorentz Height 1",
                    "Lorentz Width 2", "Lorentz Height 2",
                    "Gaus Height", "Gaus Sigma 1", "Gaus Sigma 2");
@@ -1252,7 +1333,7 @@ void MInterfaceMimrec::ARMGamma()
   Fit->SetParLimits(6, 0, 2*Hist->GetMaximum());
   Fit->SetParLimits(7, 0.5*SigmaGuess, 180);
   Fit->SetParLimits(8, 0.5*SigmaGuess, 180);
-  
+
   Canvas->cd();
   TFitResultPtr FitResult;
   TH1D* Confidence = 0;
@@ -1269,7 +1350,7 @@ void MInterfaceMimrec::ARMGamma()
       if (TVirtualFitter::GetFitter() != nullptr) {
         (TVirtualFitter::GetFitter())->GetConfidenceIntervals(Confidence, ConfidenceLevel);
       } else {
-        merr<<"Virtual fitter is nullptr -- confidence intervals are wrong!"<<endl; 
+        merr<<"Virtual fitter is nullptr -- confidence intervals are wrong!"<<endl;
       }
       Hist->SetTitle(MString("ARM (Compton cone) with ") + ConfidenceLevelString + MString(" confidence intervals"));
     }
@@ -1283,7 +1364,7 @@ void MInterfaceMimrec::ARMGamma()
       Confidence->Draw("E5 SAME");
     }
     */
-    Fit->Draw("SAME");      
+    Fit->Draw("SAME");
   }
   Hist->Draw("HIST SAME");
   Canvas->Modified();
@@ -1291,16 +1372,16 @@ void MInterfaceMimrec::ARMGamma()
   if (m_OutputFileName.IsEmpty() == false) {
     Canvas->SaveAs(m_OutputFileName);
   }
-  
+
   // Calculate FWHM and its uncertainty using the confidence intervals
   double FWHM = GetFWHM(Fit, -180, 180);
   double MinFWHM = -1;
   double MaxFWHM = -1;
-  
+
   bool FWHMConfidenceGood = false;
   if (Confidence != 0) {
     FWHMConfidenceGood = true;
-    
+
     // Sub-step a1: Find maximum of upper error curve
     int MaxBin = 0;
     double MaxContent = 0;
@@ -1311,10 +1392,10 @@ void MInterfaceMimrec::ARMGamma()
       }
     }
     MaxContent = Fit->GetMaximum(); // Use the fit itstself since it is more accurate (and the Confidence is anyway derived from it)
-    
+
     // Sub-step a2: Find left half value
     int LeftBelow = 0;
-    for (int b = MaxBin; b >= 1; --b) { 
+    for (int b = MaxBin; b >= 1; --b) {
       if (Confidence->GetBinContent(b) + Confidence->GetBinError(b) < 0.5*MaxContent) {
         LeftBelow = b;
         break;
@@ -1336,10 +1417,10 @@ void MInterfaceMimrec::ARMGamma()
     double m = (y2-y1) / (x2-x1);
     double t = y2 - m*x2;
     double LeftFWHMBoarder = (0.5*MaxContent - t) / m;
-    
+
     // Sub-step a3: Find right half value
     int RightBelow = Confidence->GetNbinsX()+1;
-    for (int b = MaxBin; b <= Confidence->GetNbinsX(); ++b) { 
+    for (int b = MaxBin; b <= Confidence->GetNbinsX(); ++b) {
       if (Confidence->GetBinContent(b) + Confidence->GetBinError(b) < 0.5*MaxContent) {
         RightBelow = b;
         break;
@@ -1361,17 +1442,17 @@ void MInterfaceMimrec::ARMGamma()
     m = (y2-y1) / (x2-x1);
     t = y2 - m*x2;
     double RightFWHMBoarder = (0.5*MaxContent - t) / m;
-    
+
     MaxFWHM = RightFWHMBoarder - LeftFWHMBoarder;
     //cout<<"Boarders: "<<LeftFWHMBoarder<<":"<<RightFWHMBoarder<<endl;
-    
-    
+
+
     // Sub-step b1: Find maximum of lower error curve
     // --> no need to redo
-    
+
     // Sub-step b2: Find left half value
     LeftBelow = 0;
-    for (int b = MaxBin; b >= 1; --b) { 
+    for (int b = MaxBin; b >= 1; --b) {
       if (Confidence->GetBinContent(b) - Confidence->GetBinError(b) < 0.5*MaxContent) {
         LeftBelow = b;
         break;
@@ -1393,10 +1474,10 @@ void MInterfaceMimrec::ARMGamma()
     m = (y2-y1) / (x2-x1);
     t = y2 - m*x2;
     LeftFWHMBoarder = (0.5*MaxContent - t) / m;
-    
+
     // Sub-step b3: Find right half value
     RightBelow = Confidence->GetNbinsX()+1;
-    for (int b = MaxBin; b <= Confidence->GetNbinsX(); ++b) { 
+    for (int b = MaxBin; b <= Confidence->GetNbinsX(); ++b) {
       if (Confidence->GetBinContent(b) - Confidence->GetBinError(b) < 0.5*MaxContent) {
         RightBelow = b;
         break;
@@ -1418,14 +1499,14 @@ void MInterfaceMimrec::ARMGamma()
     m = (y2-y1) / (x2-x1);
     t = y2 - m*x2;
     RightFWHMBoarder = (0.5*MaxContent - t) / m;
-    
+
     MinFWHM = RightFWHMBoarder - LeftFWHMBoarder;
     //cout<<"Boarders: "<<LeftFWHMBoarder<<":"<<RightFWHMBoarder<<endl;
   }
-  
-  
+
+
   // Dump all the information
-  
+
   cout<<endl;
   cout<<endl;
   cout<<"Statistics of ARM histogram and fit"<<endl;
@@ -1439,11 +1520,11 @@ void MInterfaceMimrec::ARMGamma()
   if (Fit != 0) {
     cout<<"Total FWHM of fit (not of data!):        "<<FWHM<<" deg";
     if (FWHMConfidenceGood == true) {
-      cout<<" ("<<ConfidenceLevelString<<" confidence interval: "<<MinFWHM<<" deg ... "<<MaxFWHM<<" deg)"; 
+      cout<<" ("<<ConfidenceLevelString<<" confidence interval: "<<MinFWHM<<" deg ... "<<MaxFWHM<<" deg)";
     }
-    if (FitResult->Parameter(2) < 0.5*BinWidth || 
-        FitResult->Parameter(4) < 0.5*BinWidth || 
-        FitResult->Parameter(7) < 0.5*BinWidth || 
+    if (FitResult->Parameter(2) < 0.5*BinWidth ||
+        FitResult->Parameter(4) < 0.5*BinWidth ||
+        FitResult->Parameter(7) < 0.5*BinWidth ||
         FitResult->Parameter(8) < 0.5*BinWidth) {
       cout<<" --- WARNING: One of the widths is smaller than one bin --- fit result my be inaccurate!"<<endl;
     } else {
@@ -4050,7 +4131,7 @@ void MInterfaceMimrec::EnergyDistributionElectronPhoton()
   if (InitializeEventLoader() == false) return;
 
   bool xLog = m_Settings->GetLogBinningSpectrum();
-  double xMin = GetTotalEnergyMin();
+  double xMin = 0;
   double xMax = GetTotalEnergyMax();
   
   if (xLog == true) {
