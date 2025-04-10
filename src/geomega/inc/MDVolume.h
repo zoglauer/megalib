@@ -77,7 +77,8 @@ class MDVolume
 
   void SetShape(MDShape* Shape);
   MDShape* GetShape();
-
+  const MDShape* GetShape() const;
+  
   void SetMaterial(MDMaterial *Material);
   MDMaterial* GetMaterial();
 
@@ -178,7 +179,7 @@ class MDVolume
   //! Return true if the volume is part of the volume tree
   bool ContainsVolume(const MString& Name, bool IncludeTemplates=false);
   //! Find detector volume and apply (random) noise to position, energy and time
-  bool Noise(MVector& Pos, double& Energy, double& Time);
+  bool Noise(MVector& Pos, double& Energy, double& Time, MString& Flags);
   //! Find detector volume and apply pulse-shape correction
   bool ApplyPulseShape(double Time, MVector& Pos, double& Energy);
 
@@ -203,9 +204,10 @@ class MDVolume
   //! Finds all DEEPEST volumes Pos is in...
   //! The return value is for internal purposes only!
   bool FindOverlaps(MVector Pos, vector<MDVolume*>& OverlappingVolumes);
-  //! Scale this volume
+  //! Scale this volume, scalingaxes is "X", "Y", "Z" or any combination thereof
+  //! However, not all volumes support all scalings.
   //! The return value is for internal purposes only!
-  bool Scale(const double Scale);
+  bool Scale(const double Scale, const MString ScalingAxes);
   //! Correctly remove all virtual volumes from the volume tree
   //! The return value is for internal purposes only!
   //! The vector contains a list of all newly generated volumes
@@ -225,6 +227,8 @@ class MDVolume
   //! Find the number of placements of a volume
   bool GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
 
+  //! Return the center locations of the volumes
+  vector<MVector> GetCenterLocations(const MString& VolumeName);
 
   //! Recursively return a geomega setup file type string
   MString GetGeomega();

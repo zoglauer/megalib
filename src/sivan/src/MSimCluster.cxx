@@ -169,7 +169,7 @@ bool MSimCluster::AddHT(MSimHT* HT)
   
   if (HT->GetTime() < m_Time) m_Time = HT->GetTime();
   
-  vector<int> Origins = HT->GetOrigins();
+  vector<unsigned int> Origins = HT->GetOrigins();
   for (unsigned int o = 0; o < Origins.size(); ++o) {
     if (HasOrigin(Origins[o]) == false) {
       m_Origins.push_back(Origins[o]);
@@ -179,6 +179,7 @@ bool MSimCluster::AddHT(MSimHT* HT)
   
   return true;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -200,7 +201,7 @@ bool MSimCluster::HasHT(MSimHT* HT)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<int> MSimCluster::GetOrigins() const
+vector<unsigned int> MSimCluster::GetOrigins() const
 {
   //! Return all origins
 
@@ -211,7 +212,7 @@ vector<int> MSimCluster::GetOrigins() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MSimCluster::HasOrigin(int Origin)
+bool MSimCluster::HasOrigin(unsigned int Origin)
 {
   // 
 

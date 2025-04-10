@@ -74,6 +74,7 @@ using namespace std;
 #include "MResponsePRM.h"
 #include "MResponseEnergyLeakage.h"
 #include "MBinnerBayesianBlocks.h"
+#include "MARMFitter.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -159,6 +160,8 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"             Perform polarization analysis. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"         --interaction-distance:"<<endl;
   Usage<<"             Create interaction distance plots. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"         --save-cfg:"<<endl;
+  Usage<<"             Safe the configuration. If the -o option is given then the configuration is saved to this file."<<endl;
   Usage<<"         --scatter-angles:"<<endl;
   Usage<<"             Create the scatter-angle distributions. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"         --sequence-length:"<<endl;
@@ -351,6 +354,10 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--scatter-angles") {
       cout<<"Command-line parser: Generating scatter-angles plot..."<<endl;
       ScatterAnglesDistribution();
+      return KeepAlive;
+    } else if (Option == "--save-cfg") {
+      cout<<"Command-line parser: Save the configuration..."<<endl;
+      SaveConfiguration(m_OutputFileName != "" ? m_OutputFileName : "NewConfiguration.cfg");
       return KeepAlive;
     } else if (Option == "--interaction-distance") {
       cout<<"Command-line parser: Generating interaction-distance plot..."<<endl;
@@ -1109,6 +1116,81 @@ void MInterfaceMimrec::ARMGamma()
   // Start with the event file loader first (just in case something goes wrong here)
   if (InitializeEventLoader() == false) return;
 
+  MVector TestPosition = GetTestPosition();
+
+  MARMFitter Fitter;
+  Fitter.SetNumberOfBins(m_Settings->GetHistBinsARMGamma());
+  Fitter.SetMaximumARMValue(m_Settings->GetTPDistanceTrans());
+  //Fitter.SetFitFunction(MARMFitFunctionID::c_GeneralizedNormal);
+  //Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormal);
+  //Fitter.SetFitFunction(MARMFitFunctionID::c_AsymmetricGeneralizedNormalGeneralizedNormalGeneralizedNormal);
+  Fitter.SetFitFunction(m_Settings->GetFitFunctionIDARMGamma());
+  Fitter.UseBinnedFitting(!m_Settings->GetUseUnbinnedFittingARMGamma());
+  Fitter.UseOptimizedBinning(m_Settings->GetOptimizeBinningARMGamma());
+
+  bool FoundEvents = false;
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr;
+  // ... loop over all events and save a count in the belonging bin ...
+  while ((Event = GetNextEvent()) != nullptr) {
+
+    // Only accept Comptons within the selected ranges...
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
+        Fitter.AddARMValue(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg);
+        FoundEvents = true;
+      }
+    }
+
+    delete Event;
+  } 
+  
+  //Fitter.SaveARMValues("Data.dat");
+
+  // Close the event loader
+  FinalizeEventLoader();
+
+  if (FoundEvents == false) {
+    mgui<<"No events passed the event selections."<<error;
+  }
+
+  Fitter.Fit(m_Settings->GetNumberOfFitsARMGamma());
+  //Fitter.FitAll();
+
+  if (Fitter.WasFittingSuccessful() == true) {
+    // Draw the histogram
+    TCanvas* FitterCanvas = new TCanvas();
+    FitterCanvas->SetTitle("ARM of Compton cone");
+    FitterCanvas->cd();
+    Fitter.Draw();
+    FitterCanvas->Modified();
+    FitterCanvas->Update();
+    if (m_OutputFileName.IsEmpty() == false) {
+      FitterCanvas->SaveAs(m_OutputFileName);
+    }
+
+    // Dump the results
+    mout<<Fitter.ToString()<<endl;
+  }
+
+  return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MInterfaceMimrec::ARMGammaClassic()
+{
+  // Display the angular resolution measurement for the gamma-ray
+  // The ARM value for the scattered gamma-ray is the minimum angle between
+  // the gamma-cone-surface and the line connecting the cone-apex with the
+  // (Test-)position
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
 
   //double ConfidenceLevel = 0.9; // 90%
   MString ConfidenceLevelString = "90%";
@@ -1222,7 +1304,6 @@ void MInterfaceMimrec::ARMGamma()
       mout<<"  "<<100*Sigma3<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
       Sigma3Found = true;
     }
-
   }
 
 
@@ -1284,7 +1365,6 @@ void MInterfaceMimrec::ARMGamma()
     }
     */
     Fit->Draw("SAME");
-
   }
   Hist->Draw("HIST SAME");
   Canvas->Modified();
@@ -3022,7 +3102,6 @@ void MInterfaceMimrec::ARMGammaVsComptonProbability()
     new TCanvas("Canvas ARM vs Compton quality factor",
                 "Canvas ARM vs Compton quality factor", 800, 600);
   ARMvsComptonCanvas->cd();
-
   Hist->Draw("COLZ");
   ARMvsComptonCanvas->Update();
 
@@ -3836,11 +3915,9 @@ void MInterfaceMimrec::EnergySpectra()
   Bayes.SetMinimumBinWidth((xMax-xMin)/NBins);
   Bayes.SetPrior(3);
 
-
   // ... loop over all events and save a count in the belonging bin ...
   MPhysicalEvent* Event = nullptr;
   while ((Event = GetNextEvent()) != 0) {
-
 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
@@ -4051,7 +4128,7 @@ void MInterfaceMimrec::EnergyDistributionElectronPhoton()
   if (InitializeEventLoader() == false) return;
 
   bool xLog = m_Settings->GetLogBinningSpectrum();
-  double xMin = GetTotalEnergyMin();
+  double xMin = 0;
   double xMax = GetTotalEnergyMax();
   
   if (xLog == true) {
@@ -5615,7 +5692,6 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-
         if (fabs(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < Disk) {
 
           double Angle = ComptonEvent->GetAzimuthalScatterAngle(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg;
@@ -5814,7 +5890,7 @@ void MInterfaceMimrec::AngularResolutionVsQualityFactorPair()
 
   // Initalize the image size (x-axis)
   //BinWidth = 2*Disk/NBins;
-  TH2D* Hist = new TH2D("Angular resolution pairs", "Angular resolution pairs", NBins, 0, Disk, 10000, 0, 10000);
+  TH2D* Hist = new TH2D("Angular resolution pairs", "Angular resolution pairs", NBins, 0, Disk, 100  , 0, 1    );
   Hist->SetBit(kCanDelete);
   Hist->SetDirectory(0);
   Hist->SetXTitle("Angular resolution pairs [#circ]");

@@ -9,15 +9,15 @@ G.Initialize()
 
 # We are good to go ...
 
-GeometryName = "$(MEGALIB)/resource/examples/geomega/special/Max.geo.setup"
-FileName = "Test.inc1.id1.tra"
+GeometryFileName = "Test.geo.setup"
+FileName = "Test.inc1.id1.tra.gz"
 
 # Load geometry:
 Geometry = M.MDGeometryQuest()
-if Geometry.ScanSetupFile(M.MString(GeometryName)) == True:
-  print("Geometry " + GeometryName + " loaded!")
+if Geometry.ScanSetupFile(M.MString(GeometryFileName)) == True:
+  print("Geometry " + GeometryFileName + " loaded!")
 else:
-  print("Unable to load geometry " + GeometryName + " - Aborting!")
+  print("Unable to load geometry " + GeometryFileName + " - Aborting!")
   quit()
     
 # Open the tra reader

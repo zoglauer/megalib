@@ -28,6 +28,7 @@ FILES := MGeometryRevan \
 	MERConstruction \
 	MERNoising \
 	MERCoincidence \
+	MERStripPairing \
 	MEREventClusterizer \
 	MEREventClusterizerDistance \
 	MEREventClusterizerTMVA \
@@ -57,6 +58,7 @@ FILES := MGeometryRevan \
 	MRESE \
 	MRESEList \
 	MRESEIterator \
+	MREStripHit \
 	MREHit \
 	MRECluster \
 	MRETrack \

@@ -128,6 +128,8 @@ MDGeometry::MDGeometry()
 
   m_TriggerUnit = new MDTriggerUnit(this);
   m_System = new MDSystem("NoName");
+  m_DetectorEffectsEngine = new MDDetectorEffectsEngine();
+  m_DetectorEffectsEngine->SetGeometry(this);
 
   // Make sure we ignore the default ROOT geometry...
   // BUG: In case we are multi-threaded and some one interact with the geometry
@@ -384,7 +386,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   MDOrientation* Orientation = 0;
 
   // For scaling some volumes:
-  map<MDVolume*, double> ScaledVolumes;
+  map<MDVolume*, double> ScaledVolumesScaler;
+  map<MDVolume*, MString> ScaledVolumesScalingAxes;
 
   // Since the geometry-file can include other geometry files,
   // we have to store the whole file in memory
@@ -2508,16 +2511,21 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         V->SetLineWidth(Tokenizer.GetTokenAtAsInt(2));
       } else if (Tokenizer.IsTokenAt(1, "Scale") == true) {
-        if (Tokenizer.GetNTokens() != 3) {
-          Typo("Line must contain two strings and one integer"
-               " e.g. \"Triangle.Scale 2.0\"");
+        if (Tokenizer.GetNTokens() < 3 || Tokenizer.GetNTokens() > 4) {
+          Typo("Line must contain two strings, one double, and one optional scaling axes"
+               " e.g. \"Triangle.Scale 2.0 XY\"");
           return false;
         }
         if (Tokenizer.GetTokenAtAsDouble(2) <= 0) {
           Typo("The color value needs to be positive");
           return false;
         }
-        ScaledVolumes[V] = Tokenizer.GetTokenAtAsDouble(2);
+        ScaledVolumesScaler[V] = Tokenizer.GetTokenAtAsDouble(2);
+        if (Tokenizer.GetNTokens() == 4) {
+          ScaledVolumesScalingAxes[V] = Tokenizer.GetTokenAtAsString(3);
+        } else {
+          ScaledVolumesScalingAxes[V] = "XYZ";
+        }
       } else if (Tokenizer.IsTokenAt(1, "Virtual") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain two strings and one boolean"
@@ -3176,18 +3184,18 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (D->GetType() == MDDetector::c_Voxel3D) {
           if (D->HasGuardRing() == false) {
             dynamic_cast<MDVoxel3D*>(D)->HasGuardRing(true);
-            D->GetGuardRing()->SetActive(true);
-            D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           }
+          D->GetGuardRing()->SetActive(true);
+          D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(3));
         } else {
           if (D->HasGuardRing() == false) {
             dynamic_cast<MDStrip2D*>(D)->HasGuardRing(true);
-            D->GetGuardRing()->SetActive(true);
-            D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           }
+          D->GetGuardRing()->SetActive(true);
+          D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(3));
@@ -3479,26 +3487,26 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
 
       } else if (Tokenizer.IsTokenAt(1, "DriftConstant") == true) {
-        if (D->GetType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_DriftChamber || D->GetType() == MDDetector::c_Strip3D) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two string and 1 double:"
                  " e.g. \"Chamber.DriftConstant 3\"");
             return false;
           }
-          dynamic_cast<MDDriftChamber*>(D)->SetDriftConstant(Tokenizer.GetTokenAtAsDouble(2));
+          dynamic_cast<MDStrip3D*>(D)->SetDriftConstant(Tokenizer.GetTokenAtAsDouble(2));
         } else {
           Typo("Option DriftConstant only supported for DriftChamber");
           return false;
         }
 
       } else if (Tokenizer.IsTokenAt(1, "EnergyPerElectron") == true) {
-        if (D->GetType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_DriftChamber || D->GetType() == MDDetector::c_Strip3D) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two strings and 1 double:"
                  " e.g. \"Chamber.EnergyPerElectron 3\"");
             return false;
           }
-          dynamic_cast<MDDriftChamber*>(D)->SetEnergyPerElectron(Tokenizer.GetTokenAtAsDouble(2));
+          dynamic_cast<MDStrip3D*>(D)->SetEnergyPerElectron(Tokenizer.GetTokenAtAsDouble(2));
         } else {
           Typo("Option EnergyPerElectron only supported for DriftChamber");
           return false;
@@ -3668,16 +3676,25 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   // Scale some volumes:
-  map<MDVolume*, double>::iterator ScaleIter;
-  for (ScaleIter = ScaledVolumes.begin();
-       ScaleIter != ScaledVolumes.end(); ++ScaleIter) {
-    if ((*ScaleIter).first->IsClone() == false) {
-      (*ScaleIter).first->Scale((*ScaleIter).second);
+  auto ScaleIter = ScaledVolumesScaler.begin();
+  auto AxesIter = ScaledVolumesScalingAxes.begin();
+
+  while (ScaleIter != ScaledVolumesScaler.end() && AxesIter != ScaledVolumesScalingAxes.end()) {
+    if (ScaleIter->first == AxesIter->first) {  // Make sure the keys match
+      if ((*ScaleIter).first->IsClone() == false) {
+        (*ScaleIter).first->Scale((*ScaleIter).second, (*AxesIter).second);
+      } else {
+        mout<<"   ***  Error  ***  Scaling is not applicable to clones/copies"<<endl;
+        Reset();
+        return false;
+      }
     } else {
-      mout<<"   ***  Error  ***  Scaling is not applicable to clones/copies"<<endl;
+      mout<<"   ***  Internal Fatal Error  ***  The axes and the scaler iterators for scaled volumes are not in sync."<<endl;
       Reset();
       return false;
     }
+    ++ScaleIter;
+    ++AxesIter;
   }
   m_WorldVolume->ResetCloneTemplateFlags();
 
@@ -4018,21 +4035,6 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
-  // Check if all cross sections are present if not try to create them
-  bool CrossSectionsPresent = true;
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    if (m_MaterialList[i]->AreCrossSectionsPresent() == false) {
-      CrossSectionsPresent = false;
-      break;
-    }
-  }
-  if (CrossSectionsPresent == false && AllowCrossSectionCreation == true) {
-    if (CreateCrossSectionFiles() == false) {
-      mout<<"   ***  Warning  ***  "<<endl;
-      mout<<"Not all cross section files are present!"<<endl;
-    }
-  }
-
 
   // Check if we can apply the keyword komplex ER
   // Does not cover all possibilities (e.g. rotated detector etc.)
@@ -4106,7 +4108,22 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     Reset();
     return false;
   }
-
+  
+  // Check if all cross sections are present if not try to create them
+  bool CrossSectionsPresent = true;
+  for (unsigned int i = 0; i < GetNMaterials(); i++) {
+    if (m_MaterialList[i]->AreCrossSectionsPresent() == false) {
+      CrossSectionsPresent = false;
+      break;
+    }
+  }
+  if (CrossSectionsPresent == false && AllowCrossSectionCreation == true) {
+    if (CreateCrossSectionFiles() == false) {
+      mout<<"   ***  Warning  ***  "<<endl;
+      mout<<"Not all cross section files are present!"<<endl;
+    }
+  }
+  
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (validation & post-processing) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
@@ -4646,26 +4663,41 @@ void MDGeometry::CalculateMasses()
     }
   }
 
+  map<MString, double> MassByName;
+  for (MassesIter = Masses.begin(); MassesIter != Masses.end(); ++MassesIter) {
+    MassByName[(*MassesIter).first->GetName()] = (*MassesIter).second;
+  }
+
   ostringstream out;
   out.setf(ios_base::fixed, ios_base::floatfield);
   out.precision(3);
   out<<endl;
   out<<"Mass summary by material: "<<endl;
   out<<endl;
-  for (MassesIter = (Masses.begin());
-       MassesIter != Masses.end(); MassesIter++) {
-    out<<setw(NameWidth+2)<<(*MassesIter).first->GetName()<<" :  "<<setw(12)<<(*MassesIter).second<<" g"<<endl;
-    Total += (*MassesIter).second;
+  //for (MassesIter = (Masses.begin());
+  //     MassesIter != Masses.end(); MassesIter++) {
+  //  out<<setw(NameWidth+2)<<(*MassesIter).first->GetName()<<" :  "<<setw(12)<<(*MassesIter).second<<" g"<<endl;
+  //  Total += (*MassesIter).second;
+  //}
+  for (auto I = MassByName.begin(); I != MassByName.end(); ++I) {
+    out<<setw(NameWidth+2)<<(*I).first<<" :  "<<setw(12)<<(*I).second<<" g"<<endl;
+    Total += (*I).second;
   }
   out<<endl;
   out<<setw(NameWidth+2)<<"Total"<<" :  "<<setw(12)<<Total<<" g"<<endl;
   out<<endl;
-  out<<"No warranty for this information!"<<endl;
   out<<"This information is only valid, if "<<endl;
   out<<"(a) No volume intersects any volume which is not either its mother or daughter."<<endl;
   out<<"(b) All daughters lie completely inside their mothers"<<endl;
   out<<"(c) The material information is correct"<<endl;
-  out<<"(d) tbd."<<endl;
+  out<<"(d) and more"<<endl;
+  out<<endl;
+  out<<"Attention:"<<endl;
+  out<<"If you have boolean volumes, ROOT determines the volume via random samples."<<endl;
+  out<<"This is a ROOT limitation. The accuracy is >1% (= 10,000 samples)."<<endl;
+  out<<"If you have other volumes in the boolean volume, then the accuracy is before the subtraction."<<endl;
+  out<<"In rare cases of very small volumes, this can lead to negative masses..."<<endl;
+  out<<endl;
 
   mout<<out.str()<<endl;
 }

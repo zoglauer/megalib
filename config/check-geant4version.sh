@@ -99,13 +99,13 @@ Geant4VersionMin=`echo ${VERSIONS} | awk -F" " '{ print $1 }'`
 Geant4VersionMax=`echo ${VERSIONS} | awk -F" " '{ print $NF }'`
 
 Sep=$((${#Geant4VersionMin}-1))
-if [ ${Geant4VersionMin:0:${Sep}} -ge 10 ]; then 
+if [ ${Geant4VersionMin:0:${Sep}} -eq 10 ]; then 
   Geant4VersionMinString="${Geant4VersionMin:0:${Sep}}.0${Geant4VersionMin:${Sep}:1}"
 else 
   Geant4VersionMinString="${Geant4VersionMin:0:${Sep}}.${Geant4VersionMin:${Sep}:1}"
 fi
 Sep=$((${#Geant4VersionMax}-1))
-if [ ${Geant4VersionMax:0:${Sep}} -ge 10 ]; then 
+if [ ${Geant4VersionMax:0:${Sep}} -eq 10 ]; then 
   Geant4VersionMaxString="${Geant4VersionMax:0:${Sep}}.0${Geant4VersionMax:${Sep}:1}"
 else
   Geant4VersionMaxString="${Geant4VersionMax:0:${Sep}}.${Geant4VersionMax:${Sep}:1}"

@@ -78,6 +78,8 @@ public:
 
   // protected members:
 protected:
+  //! Update melinator with the latest options
+  void UpdateMelinator();
   //! Set the active collection
   void UpdateCollection(unsigned int Collection, unsigned int Line);
   //! Set the active collection
@@ -89,7 +91,7 @@ protected:
   bool UpdateDisplay(unsigned int Collection, unsigned int Line, bool ActiveResultIsEnergy);
 
   //! Update the saved GUI data
-  bool Update();
+  bool UpdateSettings();
   
   //! Create the selection GUI element    
   void CreateSelection();
@@ -207,6 +209,14 @@ private:
   //! Check button indicating that the Y-axis should be logarithmic
   TGCheckButton* m_HistogramLogY;
   
+
+  //! Entry representing the prior for bayesian block peak fining
+  TGNumberEntry* m_PeakFindingPrior;
+  //! Entry representing the number of ignored bins
+  TGNumberEntry* m_PeakFindingExcludeFirstNumberOfBins;
+  //! Entry representing the minimum number of counts in an accepted peak
+  TGNumberEntry* m_PeakFindingMinimumPeakCounts;
+
   
   //! Choose the binning mode (fixed bins, fixed number of counts, Bayesian block)
   TGComboBox* m_PeakHistogramBinningMode;

@@ -117,13 +117,14 @@ void MDACS::SetDetectorVolume(MDVolume *Volume)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDACS::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDACS::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
 
   if (m_NoiseActive == false) return;
 
   // Test for failure:
   if (gRandom->Rndm() < m_FailureRate) {
+    Flags += " FAILURE";
     Energy = 0;
     return;
   }
@@ -132,12 +133,14 @@ void MDACS::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) 
   ApplyEnergyResolution(Energy);
 
   // Overflow:
-  ApplyOverflow(Energy);
+  if (ApplyOverflow(Energy) == true) {
+    Flags += " OVERFLOW"; 
+  }
   
   // Noise threshold:
-  if (ApplyNoiseThreshold(Energy) == true) {
-    return;
-  }
+  //if (ApplyNoiseThreshold(Energy) == true) {
+  //  return;
+  //}
 
   // Noise the time:
   ApplyTimeResolution(Time, Energy);
@@ -150,10 +153,10 @@ void MDACS::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MDGridPoint> MDACS::Discretize(const MVector& PosInDetectorVolume, 
-                                      const double& Energy, 
-                                      const double& Time, 
-                                      MDVolume* DetectorVolume) const
+vector<MDGridPoint> MDACS::Grid(const MVector& PosInDetectorVolume, 
+                                const double& Energy, 
+                                const double& Time, 
+                                const MDVolume* DetectorVolume) const
 {
   // Discretize Pos to a voxel of this detector
 
@@ -183,7 +186,7 @@ MVector MDACS::GetPositionInDetectorVolume(const unsigned int xGrid,
                                            const unsigned int zGrid,
                                            const MVector PositionInGrid,
                                            const unsigned int Type,
-                                           MDVolume* Volume)
+                                           const MDVolume* Volume) const
 {
   // Return the position in the detector volume
   // 

@@ -21,6 +21,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <type_traits>
 using namespace std;
 
 // ROOT libs:
@@ -66,6 +67,10 @@ MCalibrateEnergyFindLines::MCalibrateEnergyFindLines() : MCalibrateEnergy()
   
   m_TemperatureMin = -numeric_limits<double>::max();
   m_TemperatureMax = +numeric_limits<double>::max();
+
+  m_Prior = 8;
+  m_ExcludeFirstNumberOfBins = 25;
+  m_MinimumPeakCounts = 100;
 }
 
 
@@ -109,12 +114,9 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
 {
   if (g_Verbosity >= c_Info) cout<<endl<<"Finding peaks for ROG ID: "<<ROGID<<" ("<<m_ROGs[ROGID]->GetName()<<")"<<endl;
   
-  int Prior = 8;
-  
-  int FirstPeakMinimumBinID = 3;
+  // Other options are in the constructor
   double FirstPeakMinimumPeakCounts = 300; 
-  
-  double MinimumPeakCounts = 100; 
+
   double MinimumHeight = 1.5; 
   double MinimumBinWidthForBayesianBinner = 8;
   double ComptonEdgeThreshold = 0.5;
@@ -126,7 +128,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
   MBinnerBayesianBlocks Binner;
   Binner.SetMinimumBinWidth(MinimumBinWidthForBayesianBinner);
   Binner.SetMinMax(m_RangeMinimum, m_RangeMaximum);
-  Binner.SetPrior(Prior);
+  Binner.SetPrior(m_Prior);
   for (unsigned int d = 0; d < m_ROGs[ROGID]->GetNumberOfReadOutDatas(); ++d) {
     MReadOutDataTemperature* T = dynamic_cast<MReadOutDataTemperature*>(m_ROGs[ROGID]->GetReadOutData(d).Get(MReadOutDataTemperature::m_TypeID));
     if (T != nullptr) {
@@ -259,11 +261,11 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       if (g_Verbosity >= c_Chatty) cout<<FirstDerivation->GetBinLowEdge(b+1)<<": Height etc. : "<<CountsPerBinBefore<<":"<<Height<<":"<<CountsPerBinAfter<<endl;
       Height -= 0.5*(CountsPerBinBefore + CountsPerBinAfter);
       
-      if (CountsPerBin*Width < MinimumPeakCounts) {
-        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<MinimumPeakCounts<<")"<<endl;
+      if (CountsPerBin*Width < m_MinimumPeakCounts) {
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<m_MinimumPeakCounts<<")"<<endl;
         continue;
       } else {
-        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: Enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<MinimumPeakCounts<<")"<<endl;        
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: Enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<m_MinimumPeakCounts<<")"<<endl;
       }
       P.SetCounts(CountsPerBin*Width);
         
@@ -323,14 +325,14 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       if (g_Verbosity >= c_Chatty) cout<<"Peak bin: "<<PeakBin<<endl;
       
       // If this is the first peak it must be at least 3 bins away from the first bin and from any bin with less than 1 counts:
-      if (FirstPeak == true) {
-        if (PeakBin < FirstPeakMinimumBinID) {
-          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak must be at least "<<FirstPeakMinimumBinID<<" bins away from start, and not only "<<PeakBin<<endl;
+      //if (FirstPeak == true) {
+        if (std::make_unsigned<int>::type(PeakBin) < m_ExcludeFirstNumberOfBins) {
+          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak must be at least "<<m_ExcludeFirstNumberOfBins<<" bins away from start, and not only "<<PeakBin<<endl;
           continue;          
         } else {
-          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: First peak is at least "<<FirstPeakMinimumBinID<<" bins away from start: "<<PeakBin<<endl;          
+          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: First peak is at least "<<m_ExcludeFirstNumberOfBins<<" bins away from start: "<<PeakBin<<endl;
         }
-      }
+      //}
       
       
       
@@ -390,7 +392,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
           if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: Enough peak counts for a first peak: "<<Excess<<endl;          
         }
       } else {
-        if (Excess < MinimumPeakCounts) {
+        if (Excess < m_MinimumPeakCounts) {
           if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough peak counts: "<<Excess<<endl;
           continue;
         } else {          
@@ -591,8 +593,8 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
       if (Fit.Evaluate(P.GetLowEdge()) < 0.8*Fit.Evaluate(P.GetHighEdge()) &&
         Fit.Evaluate(P.GetHighEdge()) > 3.0 && Fit.Evaluate(P.GetPeak())/Fit.Evaluate(P.GetHighEdge()) < 10) {
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The peak sits on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is less than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<" and right has at least an 3 count average and the peak-to-right-edge ratio is smaller than 10)"<<endl;  
-        P.IsGood(false);
-        continue;
+        //P.IsGood(false);
+        //continue;
       } else {
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Passed: The peak sits NOT on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is more than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<" or right has less than a 3 count average and the peak-to-right-edge ratio is not smaller than 10)"<<endl;          
       }
@@ -676,6 +678,7 @@ bool MCalibrateEnergyFindLines::CheckPeaks()
     }
   }
   
+  /*
   if (FWHMes.size() >= 3) {
     // Calculate outliers via the modified thomson tau method
     MMath M;
@@ -699,7 +702,7 @@ bool MCalibrateEnergyFindLines::CheckPeaks()
   } else {
     if (g_Verbosity >= c_Info) cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
   }
-  
+  */
   
   return true;
 }

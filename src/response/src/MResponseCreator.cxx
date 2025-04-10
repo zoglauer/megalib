@@ -39,7 +39,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MResponseClusteringDSS.h"
-#include "MResponseMultipleCompton.h"
+#include "MResponseMultipleComptonBayes.h"
 #include "MResponseMultipleComptonEventFile.h"
 #include "MResponseMultipleComptonLens.h"
 #include "MResponseMultipleComptonTMVA.h"
@@ -160,7 +160,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      t  : track"<<endl;
   Usage<<"      cf : "<<MResponseMultipleComptonEventFile::Description()<<endl;
   Usage<<MResponseMultipleComptonEventFile::Options()<<endl;
-  Usage<<"      cb : compton (Bayesian)"<<endl;
+  Usage<<"      cb : "<<MResponseMultipleComptonBayes::Description()<<endl;
+  Usage<<MResponseMultipleComptonBayes::Options()<<endl;
   Usage<<"      ct : "<<MResponseMultipleComptonTMVA::Description()<<endl;
   Usage<<MResponseMultipleComptonTMVA::Options()<<endl;
   Usage<<"      cl : compton (Laue lens or collimated)"<<endl;
@@ -265,7 +266,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       } else if (SubOption == "cd") {
         m_Mode = c_ModeClusteringDSS;
       } else if (SubOption == "cb") {
-        m_Mode = c_ModeComptons;
+        m_Mode = c_ModeComptonsBayes;
         cout<<"Choosing Compton mode (Bayesian)"<<endl;
       } else if (SubOption == "ct") {
         m_Mode = c_ModeComptonsTMVA;
@@ -363,22 +364,48 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     cout<<Usage.str()<<endl;
     return false;
   }
+  
   if (m_GeometryFileName == g_StringNotDefined) {
     cout<<"Error: No geometry file name given!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
+  } else {
+    if (MFile::Exists(m_GeometryFileName) == false) {
+      cout<<"Error: The geometry file does not exist: "<<m_GeometryFileName<<endl;
+      return false;
+    }
   }
+  
   if (m_FileName == g_StringNotDefined) {
     cout<<"Error: No file name given!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
+  } else {
+    if (MFile::Exists(m_FileName) == false) {
+      cout<<"Error: The data file does not exist: "<<m_FileName<<endl;
+      return false;
+    }
   }
+
   if (m_ResponseName == g_StringNotDefined) {
     cout<<"Error: No response name given!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
 
+  if (m_RevanCfgFileName != g_StringNotDefined) {
+    if (MFile::Exists(m_RevanCfgFileName) == false) {
+      cout<<"Error: The revan configuration file does not exist: "<<m_RevanCfgFileName<<endl;
+      return false;
+    }
+  }
+
+  if (m_MimrecCfgFileName != g_StringNotDefined) {
+    if (MFile::Exists(m_MimrecCfgFileName) == false) {
+      cout<<"Error: The mimrec configuration file does not exist: "<<m_MimrecCfgFileName<<endl;
+      return false;
+    }
+  }
 
   // Launch the different response generators:
   if (m_Mode == c_ModeClusteringDSS) {
@@ -398,7 +425,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     while (m_TestRun == false && m_Interrupt == false && Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
-  } else if (m_Mode == c_ModeComptons) {
+  } else if (m_Mode == c_ModeComptonsBayes) {
 
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
@@ -406,14 +433,14 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       return false;
     }
 
-    MResponseMultipleCompton Response;
+    MResponseMultipleComptonBayes Response;
 
     Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
 
-    Response.SetMaxNInteractions(m_MaxNInteractions);
+    //Response.SetMaxNInteractions(m_MaxNInteractions);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 

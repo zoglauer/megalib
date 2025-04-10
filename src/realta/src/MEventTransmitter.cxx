@@ -206,12 +206,12 @@ bool MEventTransmitter::Analyze()
   vector<MFileEvents*> Readers;
   for (unsigned int s = 0; s < m_SimFileNames.size(); ++s) {
     MFileEvents* Reader;
-    if (m_SimFileNames[s].EndsWith("sim")) {
+    if (m_SimFileNames[s].EndsWith("sim") || m_SimFileNames[s].EndsWith("sim.gz")) {
       Reader = new MFileEventsSim(Geometry);
-    } else if (m_SimFileNames[s].EndsWith("evta")) {
+    } else if (m_SimFileNames[s].EndsWith("evta") || m_SimFileNames[s].EndsWith("evta.gz")) {
       Reader = new MFileEventsEvta(Geometry);
     } else {
-      cout<<"Error: File must either have sim or evta suffix: "<<m_SimFileNames[s]<<endl;
+      cout<<"Error: File must either have sim(.gz) or evta(.gz) suffix: "<<m_SimFileNames[s]<<endl;
       return false;
     }
     if (Reader->Open(m_SimFileNames[s]) == false) {

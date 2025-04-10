@@ -40,7 +40,18 @@ class MDShapeTRAP : public MDShape
   //! Default destructor
   virtual ~MDShapeTRAP();
 
-  //! Set the all parameters of the shape
+  //! Set the all parameters of the shape - The definition is the same as in ROOT
+  //! dz: half-length along the z axis
+  //! theta: polar angle of the line joining the centre of the face at -DZ to the centre of the one at +DZ
+  //! phi: azimuthal angle of the line joining the centre of the face at -DZ to the centre of the one at +DZ
+  //! h1: half-length along y of the face at -DZ
+  //! bl1: half-length along x of the side at -H1 in y of the face at -DZ in z
+  //! tl1: half-length along x of the side at +H1 in y of the face at -DZ in z
+  //! alpha1: angle with respect to the y axis from the centre of the side at -H1 in y to the centre of the side at +H1 in y of the face at -DZ in z
+  //! h2: half-length along y of the face at +DZ
+  //! bl2: half-length along x of the side at -H2 in y of the face at +DZ in z
+  //! tl2: half-length along x of the side at +H2 in y of the face at +DZ in z
+  //! alpha2: angle with respect to the y axis from the centre of the side at -H2 in y to the centre of the side at +H2 in y of the face at +DZ in z
   bool Set(double Dz, double Theta, double Phi, 
            double H1, double Bl1, double Tl1, double Alpha1, 
            double H2, double Bl2, double Tl2, double Alpha2);
@@ -70,8 +81,8 @@ class MDShapeTRAP : public MDShape
 
   double GetVolume();
 
-  //! Scale this shape by Factor
-  virtual void Scale(const double Factor);
+  //! Scale the axes given in Axes by a factor Scaler
+  virtual bool Scale(const double Scaler, const MString Axes = "XYZ");
 
   //! Return a unique position within the volume of the detector (center if possible)
   virtual MVector GetUniquePosition() const;

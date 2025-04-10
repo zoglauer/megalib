@@ -82,8 +82,10 @@ class MDVolumeSequence
   //! Set the detector
   void SetDetector(MDDetector* Detector);
   //! Get the detector or return zero if there is no detector
-  MDDetector* GetDetector() const;
-
+  MDDetector* GetDetector();
+  //! Get the detector or return zero if there is no detector
+  const MDDetector* GetDetector() const;
+  
   //! Set the position within the detector volume
   void SetPositionInDetector(MVector Pos);
   //! Return the position within the detector volume --- before using test with GetDetectorVolume() != 0 is there is a detector!
@@ -94,8 +96,10 @@ class MDVolumeSequence
   //! Set the detector volume
   void SetDetectorVolume(MDVolume* Volume);
   //! Get the detector volume or zero if there is not detector volume
-  MDVolume* GetDetectorVolume() const;
-
+  MDVolume* GetDetectorVolume();
+  //! Get the detector volume or zero if there is not detector volume
+  const MDVolume* GetDetectorVolume() const;
+  
   //! Set the position within the sensitive volume
   void SetPositionInSensitiveVolume(MVector Pos);
   //! Return the position within the sensitive volume --- before using test with GetSensitiveVolume() != 0 is there is such a volume
@@ -104,8 +108,10 @@ class MDVolumeSequence
   //! Set the senitive volume
   void SetSensitiveVolume(MDVolume* Volume);
   //! Return the sensitive volume or zero if there is no sensitive volume in the sequence
-  MDVolume* GetSensitiveVolume() const;
-
+  MDVolume* GetSensitiveVolume();
+  //! Return the sensitive volume or zero if there is no sensitive volume in the sequence
+  const MDVolume* GetSensitiveVolume() const;
+  
   //! Return true if a volume of the given name is in the sequence (make sure to consider the naming conventions during removal of virtual volumes)
   bool HasVolume(MString Name) const;
   //! Return true if the volume is in the sequence
@@ -116,7 +122,7 @@ class MDVolumeSequence
   bool HasSameDetector(MDVolumeSequence* VS) const;
 
   //! Given a position in volume Volume,  rotate/translate in the first (the world) volume
-  MVector GetPositionInFirstVolume(const MVector& Position, MDVolume* Volume) const;
+  MVector GetPositionInFirstVolume(const MVector& Position, const MDVolume* Volume) const;
 
   //! Return the rotation of the given volume IN the world volume
   MRotation GetRotationInFirstVolume(MDVolume* Volume) const;

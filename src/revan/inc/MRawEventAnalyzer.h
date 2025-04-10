@@ -38,6 +38,7 @@ using namespace std;
 // Forward declarations:
 class MDGeometryQuest;
 class MERCoincidence;
+class MERStripPairing;
 class MEREventClusterizer;
 class MERHitClusterizer;
 class MERTrack;
@@ -70,6 +71,11 @@ class MRawEventAnalyzer
   bool SetInputModeFile(MString Filename);
   //! If events are written to a file, set it with this function
   bool SetOutputModeFile(MString Filename, bool rootOutput = false);
+ //! If the events are not read in this class from a file, but externally, set the additional header/footer information from this file
+  bool TransferFileInformation(MFileEvents* External);
+
+  //! Save the origin information if this is a sim file
+  void SetSaveOI(bool SaveOI);
 
   //! Do not use any GUI functions
   void SetBatch(bool IsBatch) { m_IsBatch = IsBatch; }
@@ -84,15 +90,12 @@ class MRawEventAnalyzer
 
   //! In case the events are not read from file,
   //! create the event from a string containing ALL event data
+  //! Returns false, on parsing error, or if noising leads to vetoed/empty event
   bool AddRawEvent(const MString& RE, bool NeedsNoising = true, int Version = 25);
 
   //! Analyze one event
   //! The event can then be retrieved via GetOptimumEvent() or GetBestTryEvent()
-  //! Return codes:
-  //! c_AnalysisSucess
-  //! c_AnalysisCoincidenceWindowWait
-  //! c_AnalysisNoEventsInStore
-  //! c_AnalysisNoEventsLeftInFile
+  //! Return codes are the c_AnalaysisXYZ from below
   unsigned int AnalyzeEvent();
 
   //! Save the OI
@@ -190,7 +193,6 @@ class MRawEventAnalyzer
   static const int c_CSRAlgoFoMToF;
   static const int c_CSRAlgoFoMToFAndE;
   static const int c_CSRAlgoBayesian;
-
   static const int c_CSRAlgoTMVA;
 
   //! Set the Compton photon tracking algorithm: One of c_CSRAlgoNone, c_CSRAlgoFoM, c_CSRAlgoFoME, c_CSRAlgoFoMToF, c_CSRAlgoBayesian
@@ -307,7 +309,6 @@ class MRawEventAnalyzer
 
   // Decay options
   void SetDecayFileName(MString FileName) { m_DecayFileName = FileName; }
-
   void AddDecayEnergy(double Energy, double Error) { m_DecayEnergy.push_back(Energy); m_DecayEnergyError.push_back(Error); }
 
 
@@ -354,6 +355,8 @@ class MRawEventAnalyzer
 
   //! Coincidence search
   MERCoincidence* m_Coincidence;
+  //! Event clustering
+  MERStripPairing* m_StripPairer;
   //! Event clustering
   MEREventClusterizer* m_EventClusterizer;
   //! Hit clustering
@@ -487,6 +490,7 @@ class MRawEventAnalyzer
   MGeometryRevan* m_OriginGeometry;
 
   double m_TimeLoad;
+  double m_TimeStripPairing;
   double m_TimeEventClusterize;
   double m_TimeHitClusterize;
   double m_TimeTrack;

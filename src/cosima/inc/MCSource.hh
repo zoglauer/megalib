@@ -202,6 +202,9 @@ public:
   /// Return true, if the far field transmission probability file could be set and read correctly
   bool SetFarFieldTransmissionProbability(const MString& FileName);
 
+
+  /// Set the Earth occultation option to true
+  bool SetEarthOccultation(double Theta,bool InverseCut);
   
   /// Return true, if the successor flag couls be set correctly
   bool SetIsSuccessor(const bool& IsSuccessorFlag) { m_IsSuccessor = IsSuccessorFlag; return true; }
@@ -371,6 +374,9 @@ public:
   static const int c_FarFieldIsotropic;
   /// Id of an far-field disk 
   static const int c_FarFieldDisk;
+  /// Id of an far-field where we apply the Earth occultation 
+  static const int c_FarFieldEarthOccultation;
+  
   
   /// Id of a point like source in Cartesian coordinates
   static const int c_NearFieldPoint;
@@ -426,6 +432,8 @@ public:
   static const int c_PolarizationRandom;
   /// Id of the polarization being in absolute coordinates
   static const int c_PolarizationAbsolute;
+  /// Id of the polarization being in Galactic coordinates
+  static const int c_PolarizationGalactic;
   /// Id of the polarization being calculated relative to particle direction and x-axis
   static const int c_PolarizationRelativeX;
   /// Id of the polarization being calculated relative to particle direction and y-axis
@@ -747,6 +755,13 @@ private:
   
   /// Flag indicating we should apply the far field transmission probabilities
   bool m_UseFarFieldTransmissionProbability;
+  /// Flag indicating we should apply the Earth occultation
+  bool m_UseEarthOccultation;
+  /// Theta max use for the Earth Occultation
+  double m_ThetaMaxEarthOccultation;
+  /// Flag indicating if we want a Inverse Earth occultation for albedo
+  bool m_EarthOccultation_InverseCut;
+  
   /// Far field transmission probabilities
   MFunction2D m_FarFieldTransmissionProbability;
   

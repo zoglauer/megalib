@@ -50,7 +50,7 @@ class MCalibrationFit : public ROOT::Math::IParamFunction
   virtual ~MCalibrationFit();
 
   //! The assignment operator
-  virtual MCalibrationFit& operator= (const MCalibrationFit& CalibrationFit);
+  MCalibrationFit& operator= (const MCalibrationFit& CalibrationFit);
 
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationFit* Clone() const;

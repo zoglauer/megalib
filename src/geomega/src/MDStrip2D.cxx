@@ -192,7 +192,7 @@ void MDStrip2D::HasGuardRing(bool HasGuardRing)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDStrip2D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDStrip2D::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
   // Noise energy of this hit:
   
@@ -200,6 +200,7 @@ void MDStrip2D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 
   // Test for failure:
   if (m_FailureRate > 0 && gRandom->Rndm() < m_FailureRate) {
+    Flags += " FAILURE";
     Energy = 0;
     return;
   }
@@ -208,12 +209,14 @@ void MDStrip2D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
   ApplyEnergyResolution(Energy);
  
   // Overflow:
-  ApplyOverflow(Energy);
+  if (ApplyOverflow(Energy) == true) {
+    Flags += " OVERFLOW";
+  }
   
   // Noise threshold:
-  if (ApplyNoiseThreshold(Energy) == true) {
-    return;
-  }
+  //if (ApplyNoiseThreshold(Energy) == true) {
+  //  return;
+  //}
   
   // Noise the time:
   ApplyTimeResolution(Time, Energy);
@@ -226,10 +229,10 @@ void MDStrip2D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MDGridPoint> MDStrip2D::Discretize(const MVector& PosInDetector, 
-                                          const double& Energy, 
-                                          const double& Time, 
-                                          MDVolume* DetectorVolume) const
+vector<MDGridPoint> MDStrip2D::Grid(const MVector& PosInDetector, 
+                                    const double& Energy, 
+                                    const double& Time, 
+                                    const MDVolume* DetectorVolume) const
 {
   // Discretize Pos to a voxel of this volume
 
@@ -352,7 +355,7 @@ MVector MDStrip2D::GetPositionInDetectorVolume(const unsigned int xGrid,
                                                const unsigned int zGrid,
                                                const MVector PositionInGrid,
                                                const unsigned int Type,
-                                               MDVolume* Volume)
+                                               const MDVolume* Volume) const
 {
   // Return the position in the detector volume
 
@@ -497,19 +500,20 @@ bool MDStrip2D::AreNear(const MVector& Pos1, const MVector& dPos1,
   // --------------------
   // | 5 | 4 | 5 | 8 | 13
 
-  static const double Epsilon = 0.00001; 
+  static const double Epsilon = 0.01; // Needs to be larger than the accuracy in the sim file
 
+  //cout<<"Testing "<<fabs(Pos1[0] - Pos2[0])/m_PitchX*fabs(Pos1[0] - Pos2[0])/m_PitchX<<":"<<fabs(Pos1[1] - Pos2[1])/m_PitchY*fabs(Pos1[1] - Pos2[1])/m_PitchY<<":"<<Level+Epsilon<<endl;
   if (fabs(Pos1[0] - Pos2[0])/m_PitchX*fabs(Pos1[0] - Pos2[0])/m_PitchX +
       fabs(Pos1[1] - Pos2[1])/m_PitchY*fabs(Pos1[1] - Pos2[1])/m_PitchY < Level+Epsilon) {
-    //cout<<"Adjacent!"<<endl;
+    //cout<<"MDStrip2D::AreNear: Adjacent!"<<endl;
     if (Sigma < 0) {
       return true;
     } else if (fabs(Pos1[2] - Pos2[2]) < Sigma*(dPos1[2]+Epsilon) ||
         fabs(Pos1[2] - Pos2[2]) < Sigma*(dPos2[2]+Epsilon) || Sigma < 0) {
-      //cout<<"Within Sigma: "<<Sigma*(dPos2[2]+Epsilon)<<endl;
+      //cout<<"MDStrip2D::AreNear: Within Sigma: "<<Sigma*(dPos2[2]+Epsilon)<<endl;
       return true;
     } else {
-      //cout<<"Outside Sigma: "<<Sigma*(dPos2[2]+Epsilon)<<endl;
+      //cout<<"MDStrip2D::AreNear: Outside Sigma: "<<Sigma*(dPos2[2]+Epsilon)<<"(Sigma: "<<Sigma<<" * Delta zPos2: "<<dPos2[2]<<")"<<endl;
     }
   }
   //cout<<"Not adjacent: "<<fabs(Pos1[0] - Pos2[0])/m_PitchX*fabs(Pos1[0] - Pos2[0])/m_PitchX<<"!"

@@ -538,6 +538,21 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+long MFileEventsEvta::GetSimulatedEvents()
+{
+  //! Return the number of simulated events
+
+  if (m_HasSimulatedEvents == false) {
+    ReadFooter();
+  }
+
+  return m_SimulatedEvents;
+}
+
+
 
 // MFileEventsEvta.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
