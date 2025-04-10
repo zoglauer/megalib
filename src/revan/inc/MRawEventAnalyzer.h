@@ -98,9 +98,6 @@ class MRawEventAnalyzer
   //! Return codes are the c_AnalaysisXYZ from below
   unsigned int AnalyzeEvent();
 
-  //! Save the OI
-  void SetSaveOI(bool SaveOI);
-
   // The return codes of AnalyzeEvent()
   static const unsigned int c_AnalysisSucess;
   static const unsigned int c_AnalysisCoincidenceWindowWait;

@@ -109,7 +109,7 @@ MInterfaceRevan::~MInterfaceRevan()
 {
   // default destructor
 
-  m_Analyzer = 0;
+  //m_Analyzer = 0;
   m_Geometry = 0;
 }
 

@@ -55,8 +55,6 @@ class MCPhysicsList: public G4VModularPhysicsList
   static const int c_EMLivermore; 
   /// Id representing low energy Livermore package with polarized Compton effects
   static const int c_EMLivermorePolarized; 
-  /// Id representing low energy Livermore package with polarized Compton effects and polarized BetheHeitler5DModel for pair production
-  static const int c_EMLivermore5D; 
   /// Id representing low energy Livermore package with Mark Kippen's extension
   static const int c_EMLivermoreG4LECS; 
   /// Id representing low energy EM Penelope package
