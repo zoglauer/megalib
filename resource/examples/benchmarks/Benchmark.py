@@ -185,7 +185,7 @@ print(len(IsGood))
 
 
 # Sorting:
-IsGood.sort(key=dict(zip(IsGood, RunMulti)).get)
+#IsGood.sort(key=dict(zip(IsGood, RunMulti)).get)
 
 IsGood = [x for _,x in sorted(zip(RunMulti, IsGood))]
 Reference = [x for _,x in sorted(zip(RunMulti, Reference))]
@@ -197,13 +197,41 @@ OSVersions = [x for _,x in sorted(zip(RunMulti, OSVersions))]
 RunSingle = [x for _,x in sorted(zip(RunMulti, RunSingle))]
 RunMulti = [x for _,x in sorted(zip(RunMulti, RunMulti))]
 
-# If we have more than (RefernceCount+1) delete the weakest referneces
+# If we have more than (RefernceCount+1) first cull results which are within 5% of an higher value
+HighestRef=-1
+for i in range(len(Reference) - 1, -1, -1):
+  if HighestRef < 0:
+    if IsGood[i] == True:
+      HighestRef = i
+  else:
+    if Reference[0] == "*** this ***":
+      HighestRef = i
+      continue
+
+    if RunMulti[i] > 0.95*RunMulti[HighestRef]:
+      IsGood[i] = False
+      print("Deleting {}".format(CPUNames[i]))
+    else: 
+      HighestRef = i
+
+Reference = [a for a, keep in zip(Reference, IsGood) if keep]
+HostNames = [a for a, keep in zip(HostNames, IsGood) if keep]
+CPUSockets = [a for a, keep in zip(CPUSockets, IsGood) if keep]
+CPUNames = [a for a, keep in zip(CPUNames, IsGood) if keep]
+OSNames = [a for a, keep in zip(OSNames, IsGood) if keep]
+OSVersions = [a for a, keep in zip(OSVersions, IsGood) if keep]
+RunSingle = [a for a, keep in zip(RunSingle, IsGood) if keep]
+RunMulti = [a for a, keep in zip(RunMulti, IsGood) if keep]
+IsGood = [a for a, keep in zip(IsGood, IsGood) if keep]
+
+
+# If we have more than (RefernceCount+1) delete the weakest references
 while len(Reference) > ReferenceCount+1:
   # Find which one to delete
   ToDelete = 0
   if Reference[0] == "*** this ***":
     ToDelete = 1
-  print("Deleting %: %".format(ToDelete, CPUNames[ToDelete]))
+  print("Deleting {}".format(CPUNames[ToDelete]))
   del IsGood[ToDelete]
   del Reference[ToDelete]
   del HostNames[ToDelete]

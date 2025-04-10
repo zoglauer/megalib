@@ -79,7 +79,25 @@ class MSettingsMelinator : public MSettings
   bool GetHistogramLogY() const { return m_HistogramLogY; }
   //! Set a flag indicating the y-axis is displayed logarithmic
   void SetHistogramLogY(bool HistogramLogY) { m_HistogramLogY = HistogramLogY; }
-  
+
+
+
+  //! Get the peak finding Bayesian block prior
+  unsigned int GetPeakFindingPrior() const { return m_PeakFindingPrior; }
+  //! Set the peak finding Bayesian block prior
+  void SetPeakFindingPrior(unsigned int PeakFindingPrior) { m_PeakFindingPrior = PeakFindingPrior; }
+
+  //! Get the peak finding number of bins excluded at lower energies
+  unsigned int GetPeakFindingExcludeFirstNumberOfBins() const { return m_PeakFindingExcludeFirstNumberOfBins; }
+  //! Set the peak finding number of bins excluded at lower energies
+  void SetPeakFindingExcludeFirstNumberOfBins(unsigned int PeakFindingExcludeFirstNumberOfBins) { m_PeakFindingExcludeFirstNumberOfBins = PeakFindingExcludeFirstNumberOfBins; }
+
+  //! Get the peak finding minimum number of counts in a peak
+  unsigned int GetPeakFindingMinimumPeakCounts() const { return m_PeakFindingMinimumPeakCounts; }
+  //! Set the peak finding minimum number of counts in a peak
+  void SetPeakFindingMinimumPeakCounts(unsigned int PeakFindingMinimumPeakCounts) { m_PeakFindingMinimumPeakCounts = PeakFindingMinimumPeakCounts; }
+
+
   
   //! Get the peak binning mode: 0: fixed number of bins, 1: fixed cts per bin, 2: Bayesian block
   unsigned int GetPeakHistogramBinningMode() const { return m_PeakHistogramBinningMode; }
@@ -133,12 +151,17 @@ class MSettingsMelinator : public MSettings
   void SetSaveAsFileName(const MString& SaveAsFileName) { m_SaveAsFileName = SaveAsFileName; }
   //! Get the save-as file name
   MString GetSaveAsFileName() const { return m_SaveAsFileName; }
-  
+
   //! Set the single detector to use (negative means use all)
   void SetSelectedDetectorID(int ID) { m_SelectedDetectorID = ID; }
   //! Get the single detector to use (negative means use all)
   int GetSelectedDetectorID() const { return m_SelectedDetectorID; }
-  
+
+  //! Set the detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  void SetSelectedDetectorSide(int Side) { m_SelectedDetectorSide = Side; }
+  //! Get the detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  int GetSelectedDetectorSide() const { return m_SelectedDetectorSide; }
+
   //! Set the minimum allowed detector temperature
   void SetMinimumTemperature(double MinimumTemperature) { m_MinimumTemperature = MinimumTemperature; }
   //! Get the minimum allowed detector temperate
@@ -178,6 +201,13 @@ class MSettingsMelinator : public MSettings
   //! Flag indicating that the y-axis is displayed logarithmic
   bool m_HistogramLogY;
   
+  //! Peak finding: Bayesian block prior
+  unsigned int m_PeakFindingPrior;
+  //! Peak finding: the number of bins excluded at lower energies
+  unsigned int m_PeakFindingExcludeFirstNumberOfBins;
+  //! Peak finding: the minimum number of counts in a peak
+  unsigned int m_PeakFindingMinimumPeakCounts;
+
   //! The binning mode for the peak histogram: fixed number of bins, fixed cts per bin, Bayesian block
   unsigned int m_PeakHistogramBinningMode;
   //! Depending on the binning mode, either bins, cts/bin, or prior
@@ -206,7 +236,9 @@ class MSettingsMelinator : public MSettings
   
   //! Set the single detector to use (negative means use all)
   int m_SelectedDetectorID;
-  
+  //! Set the detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  int m_SelectedDetectorSide;
+
   //! Set the minimum allowed detector temperature
   double m_MinimumTemperature;
   //! Set the maximum allowed detector temperature

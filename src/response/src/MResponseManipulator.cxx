@@ -85,6 +85,7 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
   m_Statistics = false;
   m_Show = false;
   m_Collapse = false;
+  m_SwitchSparseness = false;
   
   m_Divide = false;
   m_Ratio = false;
@@ -97,6 +98,8 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
   m_Zero = false;
 
   m_NSmooths = 0;
+
+  m_MultiThreaded = false;
 
   //gStyle->SetPalette(1, 0);
 
@@ -173,6 +176,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
   Usage<<"         -s:   show statistics"<<endl;
   Usage<<"         -v:   view <x1> <x2> <x3> <x4> <x5> <x6> <x7> <x8> <x9> <x10> <x11> <x12> <x13> <x14> <x15> <x16> <x17> [use as many as the reponse has axes]"<<endl;
   Usage<<"         -c:   collapse <list of axis, same as seen with -s>"<<endl;
+  Usage<<"         -w:   switch sparseness: sparse <-> not sparse"<<endl;
   Usage<<endl;
   Usage<<"      Operations on two files:"<<endl;
   Usage<<"         -d:   divide <file name> <file name>"<<endl;
@@ -187,6 +191,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
   Usage<<"         -m:   <int> smooth view n times"<<endl;
   Usage<<"         -n:   normalized view by bin size"<<endl;
   Usage<<"         -z:   zero is a very small number in the view"<<endl;
+  Usage<<endl;
+  Usage<<"      Reading options:"<<endl;
+  Usage<<"         -t    read multi-threaded where enabled"<<endl;
   Usage<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -254,6 +261,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-s") {
       m_Statistics = true;
       cout<<"Accepting show statistics."<<endl;
+    } else if (Option == "-w") {
+      m_SwitchSparseness = true;
+      cout<<"Accepting switch sparseness."<<endl;
     } else if (Option == "-a") {
       m_AppendFileNames.push_back(argv[++i]);
       m_Append = true;
@@ -286,6 +296,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-z") {
       m_Zero = true;
       cout<<"Accepting view zeroed "<<endl;
+    } else if (Option == "-t") {
+      m_MultiThreaded = true;
+      cout<<"Accepting multi-threaded reading where enabled "<<endl;
     } else if (Option == "-c") {
       m_Collapse = true;
       m_CollapseAxis.clear();
@@ -484,14 +497,14 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     }
   }
 
-  if (m_Append == true || m_Show == true || m_Statistics == true || m_Collapse == true) {
+  if (m_Append == true || m_Show == true || m_Statistics == true || m_Collapse == true || m_SwitchSparseness == true) {
     if (m_FileName == "") {
       cout<<"Error: No file name given!"<<endl;
       cout<<Usage.str()<<endl;
       return false;
     }
   }
-  if (m_Append == false && m_Show == false && m_Statistics == false && m_Collapse == false &&
+  if (m_Append == false && m_Show == false && m_Statistics == false && m_Collapse == false && m_SwitchSparseness == false &&
       m_Divide == false && m_Ratio == false && m_Join == false && m_Probability == false) {
     cout<<"Error: No operation given (e.g. -s for show statitsics)!"<<endl;
     cout<<Usage.str()<<endl;
@@ -499,7 +512,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
   }
 
   // Check if files exist:
-  if (m_Show == true || m_Append == true || m_Statistics == true) {
+  if (m_Show == true || m_Append == true || m_Statistics == true || m_Collapse == true || m_SwitchSparseness == true) {
     if (MFile::FileExists(m_FileName) == false) {
       cout<<"Error: File \""<<m_FileName<<"\" does not exist!"<<endl;
       return false;
@@ -540,6 +553,7 @@ bool MResponseManipulator::Analyze()
   if (m_Statistics == true) Statistics();
   if (m_Show == true) Show();
   if (m_Collapse == true) Collapse();
+  if (m_SwitchSparseness == true) SwitchSparseness();
 
   if (m_Divide == true) Divide();
   if (m_Ratio == true) Ratio();
@@ -558,7 +572,7 @@ bool MResponseManipulator::Analyze()
 bool MResponseManipulator::Append()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName);
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
   if (R == nullptr) {
     merr<<"Error: Unable to read first response file \""<<m_FileName<<"\" - aborting..."<<endl;
     return false;
@@ -566,7 +580,7 @@ bool MResponseManipulator::Append()
 
   for (unsigned int f = 0; f < m_AppendFileNames.size(); ++f) {
     MFileResponse AppendFile;
-    MResponseMatrix* RAppend = AppendFile.Read(m_AppendFileNames[f]);
+    MResponseMatrix* RAppend = AppendFile.Read(m_AppendFileNames[f], m_MultiThreaded);
     if (RAppend == nullptr) {
       merr<<"Error: Unable to read response file \""<<m_AppendFileNames[f]<<"\" - aborting..."<<endl;
       return false;
@@ -577,7 +591,10 @@ bool MResponseManipulator::Append()
     if (R->GetOrder() != RAppend->GetOrder()) {
       mout<<"Cannot append file, because they are of different order!"<<endl;
     } else {
-      if (R->GetOrder() == 1) {
+      if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+        *dynamic_cast<MResponseMatrixON*>(R) +=
+          *dynamic_cast<MResponseMatrixON*>(RAppend);
+      } else if (R->GetOrder() == 1) {
         *dynamic_cast<MResponseMatrixO1*>(R) +=
           *dynamic_cast<MResponseMatrixO1*>(RAppend);
       } else if (R->GetOrder() == 2) {
@@ -631,12 +648,19 @@ bool MResponseManipulator::Append()
       } else {
         merr<<"Unsupported matrix order: "<<R->GetOrder()<<endl;
       }
+
+      // Add up the simulated events
+      R->SetSimulatedEvents(R->GetSimulatedEvents() + RAppend->GetSimulatedEvents());
     }
 
     delete RAppend;
   }
 
-  R->Write((m_FileName + ".new"), true);
+  MString NewFileName = m_FileName + ".added.rsp";
+  if (m_FileName.EndsWith(".gz") == true) {
+    NewFileName += ".gz";
+  }
+  R->Write(NewFileName, true);
   delete R;
 
   return true;
@@ -695,7 +719,7 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
       AnyZipped = true;
     }
     MFileResponse File;
-    MResponseMatrix* First = File.Read(SortedFiles[t][0]);
+    MResponseMatrix* First = File.Read(SortedFiles[t][0], m_MultiThreaded);
     if (First == nullptr) {
       merr<<"Error: Unable to read first response file \""<<SortedFiles[t][0]<<"\" - aborting..."<<endl;
       break;
@@ -708,7 +732,7 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
     for (unsigned int f = 1; f < SortedFiles[t].size(); ++f) {
       if (m_Interrupt == true) break;
 
-      MResponseMatrix* Append = File.Read(SortedFiles[t][f]);
+      MResponseMatrix* Append = File.Read(SortedFiles[t][f], m_MultiThreaded);
       if (Append == nullptr) {
         merr<<"Error: Unable to read response file \""<<SortedFiles[t][f]<<"\" - skipping it..."<<endl;
         continue;
@@ -997,12 +1021,12 @@ bool MResponseManipulator::Join()
 bool MResponseManipulator::Divide()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName, m_MultiThreaded);
   if (Zahler == 0) {
     mout<<"Unable to open Dividend"<<endl;
     return false;
   }
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName, m_MultiThreaded);
   if (Nenner == 0) {
     mout<<"Unable to open Dividor"<<endl;
     return false;
@@ -1083,9 +1107,9 @@ bool MResponseManipulator::Divide()
 bool MResponseManipulator::Ratio()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName, m_MultiThreaded);
   if (Zahler == 0) return false;
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName, m_MultiThreaded);
   if (Nenner == 0) return false;
 
   float SumZahler = Zahler->GetSum();
@@ -1185,9 +1209,9 @@ bool MResponseManipulator::Ratio()
 bool MResponseManipulator::Probability()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName, m_MultiThreaded);
   if (Zahler == 0) return false;
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName, m_MultiThreaded);
   if (Nenner == 0) return false;
 
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
@@ -1303,9 +1327,50 @@ bool MResponseManipulator::Probability()
 bool MResponseManipulator::Statistics()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName);
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
   if (R == nullptr) return false;
   cout<<R->GetStatistics()<<endl;
+  delete R;
+
+  return true;
+}
+
+
+/******************************************************************************
+ * Swich the sparsness:
+ */
+bool MResponseManipulator::SwitchSparseness()
+{
+  MFileResponse File;
+  cout<<"Reading file"<<endl;
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
+  if (R == nullptr) return false;
+  if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+    MResponseMatrixON* RON = dynamic_cast<MResponseMatrixON*>(R);
+    MString NewFileName = m_FileName;
+    bool IsGzipped = false;
+    if (NewFileName.EndsWith(".gz") == true) {
+      NewFileName.ReplaceAtEndInPlace(".gz", "");
+      IsGzipped = true;
+    }
+    NewFileName.ReplaceAtEndInPlace(".rsp", "");
+    if (RON->IsSparse() == true) {
+      cout<<"Switching to non-sparse"<<endl;
+      RON->SwitchToNonSparse();
+      NewFileName += ".nonsparse.rsp";
+    } else {
+      cout<<"Switching to sparse"<<endl;
+      RON->SwitchToSparse();
+      NewFileName += ".sparse.rsp";      
+    }
+    if (IsGzipped == true) {
+      NewFileName += ".gz";
+    }
+    cout<<"Saving file "<<NewFileName<<endl;
+    RON->Write(NewFileName);
+  } else {
+    merr<<"Switch sparseness only works for MResponseMatrixON type responses"<<endl;
+  }
   delete R;
 
   return true;
@@ -1318,7 +1383,7 @@ bool MResponseManipulator::Statistics()
 bool MResponseManipulator::Collapse()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName);
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
   if (R == nullptr) return false;
   
   if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
@@ -1328,7 +1393,7 @@ bool MResponseManipulator::Collapse()
     cout<<"Writing new file"<<endl;
     Collapsed.Write(m_FileName + ".collapsed.rsp", true);
   } else {
-    merr<<"Collapse just works for MResponseMatrixON type responses"<<endl;
+    merr<<"Collapse only works for MResponseMatrixON type responses"<<endl;
     return false;
   }
 
@@ -1349,7 +1414,7 @@ bool MResponseManipulator::Show()
   }
 
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName);
+  MResponseMatrix* R = File.Read(m_FileName, m_MultiThreaded);
 
   if (R == nullptr) return false;
 
@@ -1417,7 +1482,7 @@ bool MResponseManipulator::Show()
   cout<<"Other:"<<OtherFile<<endl;
   if (OtherFile != m_FileName && MFile::FileExists(OtherFile)) {
     MFileResponse File;
-    MResponseMatrix* R = File.Read(OtherFile);
+    MResponseMatrix* R = File.Read(OtherFile, m_MultiThreaded);
 
     if (R == nullptr) return false;
 

@@ -24,7 +24,8 @@
 using namespace std;
 
 // ROOT libs:
-#include <TGPicture.h>
+#include "TSystem.h"
+#include "TGPicture.h"
 
 // MEGAlib libs:
 #include "MGUIAbout.h"
@@ -383,7 +384,7 @@ void MGUIRevanMain::Open()
     Types[8] = "All files";
     Types[9] = "*";
     Types[10] = 0;
-    Types[1] = 0;
+    Types[11] = 0;
   } else {
     Types[0] = "Analyzed events";
     Types[1] = "*.evta";

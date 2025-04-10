@@ -35,7 +35,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-template< class T > class greater_than : public unary_function< T, bool > 
+template< class T > class greater_than
 {
  public:
   explicit greater_than( const T& x ) : arg2( x ) { }
@@ -116,7 +116,7 @@ class MResponseMatrixO1 : public MResponseMatrixOx
   // private methods:
  private:
   //! Read the specific data of this class - the main file handling is done in the base class!
-  virtual bool ReadSpecific(MFileResponse& Parser, const MString& Type, const int Version);
+  virtual bool ReadSpecific(MFileResponse& Parser, const MString& Type, const int Version, const bool MultiThreaded = false);
 
 
   // protected members:

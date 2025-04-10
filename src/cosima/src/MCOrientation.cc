@@ -71,6 +71,9 @@ void MCOrientation::Clear()
   m_XPhiLong.clear();
   m_ZThetaLat.clear();
   m_ZPhiLong.clear();
+  m_EarthAlt.clear();
+  m_EarthLat.clear();
+  m_EarthLong.clear();
   
   m_Translations.clear();
   
@@ -281,8 +284,8 @@ bool MCOrientation::Read(MString FileName)
   for (unsigned int l = 0; l < P.GetNLines(); ++l) {
     MTokenizer* T = P.GetTokenizerAt(l);
     if (T->IsTokenAt(0, "OG") == true) {
-      if (T->GetNTokens() != 6) {
-        mlog<<"   ***  Error  ***  Number of tokens for OG keyword must be 6"<<endl;
+      if (T->GetNTokens() != 6 && T->GetNTokens() != 9 &&(m_CoordianteSystem == MCOrientationCoordinateSystem::c_Galactic || m_CoordianteSystem == MCOrientationCoordinateSystem::c_Local) ) {
+        mlog<<"   ***  Error  ***  Number of tokens for OG keyword must be 6 or 9"<<endl;
         return false;          
       }
       
@@ -290,7 +293,14 @@ bool MCOrientation::Read(MString FileName)
       m_XThetaLat.push_back(T->GetTokenAtAsDouble(2)*deg);
       m_XPhiLong.push_back(T->GetTokenAtAsDouble(3)*deg);
       m_ZThetaLat.push_back(T->GetTokenAtAsDouble(4)*deg);
-      m_ZPhiLong.push_back(T->GetTokenAtAsDouble(5)*deg); 
+      m_ZPhiLong.push_back(T->GetTokenAtAsDouble(5)*deg);
+      
+      if (T->GetNTokens() == 9){
+        m_EarthAlt.push_back(T->GetTokenAtAsDouble(6)*km);
+        m_EarthLat.push_back(T->GetTokenAtAsDouble(7)*deg);
+        m_EarthLong.push_back(T->GetTokenAtAsDouble(8)*deg);
+      }
+       
       
       if (m_XThetaLat.back() > 90 || m_XThetaLat.back() < -90) {
         mlog<<"   ***  Error  ***  Latitude value for X axis not within [-90, 90]: "<<m_XThetaLat.back()<<endl;
@@ -454,6 +464,26 @@ bool MCOrientation::GetOrientation(double Time, double& XThetaLat, double& XPhiL
     XPhiLong = m_XPhiLong[Index];
     ZThetaLat = m_ZThetaLat[Index];
     ZPhiLong = m_ZPhiLong[Index];
+    
+    return true;
+  }
+  
+  return false;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the Earth coordinates of the current spacecraft orbit position 
+bool MCOrientation::GetEarthCoordinate(double Time, double& Alt, double& Lat, double& Long) const
+{
+  if (InRange(Time) == true) {
+    unsigned int Index = FindClosestIndex(Time);
+    Alt = m_EarthAlt[Index];
+    Lat = m_EarthLat[Index];
+    Long = m_EarthLong[Index];
     
     return true;
   }

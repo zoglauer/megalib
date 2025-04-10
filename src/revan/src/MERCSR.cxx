@@ -116,7 +116,7 @@ bool MERCSR::Analyze(MRawEventIncarnations* List)
   MERConstruction::Analyze(List);
 
   if (m_CreateOnlyPermutations == true) {
-    m_List->SetOptimumEvent(0);
+    m_List->SetOptimumEvent(nullptr);
 
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; ++e) {
@@ -126,6 +126,7 @@ bool MERCSR::Analyze(MRawEventIncarnations* List)
         m_List->DeleteRawEvent(RE);
         e--;
         e_max--;
+        //cout<<endl<<"Created "<<NewList->GetNRawEvents()<<" events"<<endl<<endl<<endl;
         for (int i = 0; i < NewList->GetNRawEvents(); ++i) {
           m_List->AddRawEvent(NewList->GetRawEventAt(i));
         }
@@ -593,12 +594,26 @@ double MERCSR::CalculatePhotoDistance(const MVector& Start,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MERCSR::CalculateComptonDistance(const MVector& Start, 
+double MERCSR::CalculateComptonDistance(const MVector& Start,
                                                 const MVector& Stop, double Etot)
 {
-  double Distance = m_Geometry->GetComptonAbsorptionProbability(Start, Stop, Etot); 
-  
+  double Distance = m_Geometry->GetComptonAbsorptionProbability(Start, Stop, Etot);
+
   return Distance;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MERCSR::CalculateReach(const MVector& Start, const MVector& Stop, double Etot)
+{
+  double ReachProbability = 1.0;
+  ReachProbability *= (1 - m_Geometry->GetPairAbsorptionProbability(Start, Stop, Etot));
+  ReachProbability *= (1 - m_Geometry->GetComptonAbsorptionProbability(Start, Stop, Etot));
+  ReachProbability *= (1 - m_Geometry->GetPhotoAbsorptionProbability(Start, Stop, Etot));
+
+  return ReachProbability;
 }
 
 

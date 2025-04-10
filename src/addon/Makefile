@@ -26,6 +26,7 @@ PRGSX := \
 	$(BN)/SimBinaryConverter \
 	$(BN)/SimRandomCoincidence \
 	$(BN)/TraAnalyzer \
+  $(BN)/TraMerger \
 	$(BN)/DecayAnalyzer \
 	$(BN)/BackgroundMixer \
 	$(BN)/SimpleComptonImaging \

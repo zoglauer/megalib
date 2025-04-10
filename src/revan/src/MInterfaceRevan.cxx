@@ -73,6 +73,8 @@ using namespace std;
 #include "MPeak.h"
 #include "MIsotope.h"
 #include "MPrelude.h"
+#include "MERStripPairing.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -94,6 +96,7 @@ MInterfaceRevan::MInterfaceRevan() : MInterface()
   m_BasicGuiData = dynamic_cast<MSettings*>(m_Data);
 
   m_TestRun = false;
+  m_RootOutput = false;
 
   m_OutputFilenName = "";
 }
@@ -106,7 +109,7 @@ MInterfaceRevan::~MInterfaceRevan()
 {
   // default destructor
 
-  m_Analyzer = 0;
+  //m_Analyzer = 0;
   m_Geometry = 0;
 }
 
@@ -139,10 +142,15 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
   Usage<<"         --oi:"<<endl;
   Usage<<"             Save the OI information, in case tra files are generated"<<endl;
   Usage<<endl;
+  Usage<<"      --rootoutput:"<<endl;
+  Usage<<"             Save the some information in a .root file (implies --oi)"<<endl;
+  Usage<<endl;
   Usage<<"      -a --analyze:"<<endl;
   Usage<<"             Analyze the evta-file given with the -f option, otherwise the file in the configuration file"<<endl;
   Usage<<"      -s --generate spectra:"<<endl;
   Usage<<"             Generate spectra using the options previously set in the GUI and stored in the configuration file"<<endl;
+  Usage<<"         --save-cfg:"<<endl;
+  Usage<<"             Safe the configuration. If the -o option is given then the configuration is saved to this file."<<endl;
   Usage<<endl;
   Usage<<"      -t  --test:"<<endl;
   Usage<<"             Perform a test run."<<endl;
@@ -202,6 +210,10 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--test" || Option == "-t") {
       m_TestRun = true;
       cout<<"Command-line parser: Performing a test run"<<endl;
+    } else if (Option == "--rootoutput") {
+      m_RootOutput = true;
+      m_Data->SetSaveOI(true);
+      cout<<"Command-line parser: Generating root output file"<<endl;
     } else if (Option == "--debug" || Option == "-d") {
       g_Verbosity = 2;
       cout<<"Command-line parser: Use debug mode"<<endl;
@@ -291,6 +303,10 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Analyzing..."<<endl;
       AnalyzeEvents();
       return true;
+    } else if (Option == "--save-cfg") {
+      cout<<"Command-line parser: Save the configuration..."<<endl;
+      SaveConfiguration(m_OutputFilenName != "" ? m_OutputFilenName : "NewConfiguration.cfg");
+      return false;
     } else if (Option == "--generate-spectra" || Option == "-s") {
       cout<<"Command-line parser: Generate spectra (use the options from the configuration file)"<<endl;
       GenerateSpectra();
@@ -452,7 +468,7 @@ void MInterfaceRevan::AnalyzeEvents()
   MRawEventAnalyzer Analyzer;
   Analyzer.SetGeometry(m_Geometry);
   if (Analyzer.SetInputModeFile(m_Data->GetCurrentFileName()) == false) return;
-  if (Analyzer.SetOutputModeFile(FilenameOut) == false) return;
+  if (Analyzer.SetOutputModeFile(FilenameOut, m_RootOutput) == false) return;
   SetGuiData(Analyzer);
 
   if (Analyzer.PreAnalysis() == false) {
@@ -1944,6 +1960,10 @@ void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
   }
   Reader->ShowProgress(m_UseGui);
 
+  // If we have strip detectors, we have to do strip pairing first:
+  MERStripPairing* StripPairer = new MERStripPairing();
+
+
   unsigned int MaxNPositions = 10000000;
   vector<MVector> Positions;
   vector<double> Energies;
@@ -1956,6 +1976,8 @@ void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
   MRESE* RESE = 0;
   MRERawEvent* RE = 0;
   while ((RE = Reader->GetNextEvent()) != 0) {
+
+    StripPairer->Analyze(RE);
 
     // Make sure the total energy is right:
     double Total = 0;
@@ -2136,6 +2158,12 @@ void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
   zCanvas->cd();
   zHist->Draw();
   zCanvas->Update();
+
+  mout<<endl;
+  mout<<"Remarks concerning the spatial hit distribution plots:"<<endl;
+  mout<<"* In strip detectors, the positions are after strip pairing, which has a non-zero failure rate."<<endl;
+  mout<<"* For any pixelated/voxelated/strip detector, binning can create gaps or spikes in the images."<<endl;
+  mout<<endl;
 
   return;
 }

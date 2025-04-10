@@ -114,7 +114,7 @@ MDGuardRing::~MDGuardRing()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDGuardRing::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDGuardRing::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
   // If we are not active, then we return no energy
   if (m_IsActive == false) {
@@ -152,16 +152,18 @@ void MDGuardRing::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Vo
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MDGridPoint> MDGuardRing::Discretize(const MVector& PosInDetectorVolume, 
+vector<MDGridPoint> MDGuardRing::Grid(const MVector& PosInDetectorVolume, 
                                       const double& Energy, 
                                       const double& Time, 
-                                      MDVolume* DetectorVolume) const
+                                      const MDVolume* DetectorVolume) const
 {
   // Discretize Pos to a voxel of this detector
 
   vector<MDGridPoint> Points;
   Points.push_back(MDGridPoint(0, 0, 0, MDGridPoint::c_GuardRing, m_UniquePosition, Energy, Time));
  
+  //cout<<"Guard ring gridding"<<endl;
+  
   return Points;
 }
 
@@ -185,7 +187,7 @@ MVector MDGuardRing::GetPositionInDetectorVolume(const unsigned int xGrid,
                                            const unsigned int zGrid,
                                            const MVector PositionInGrid,
                                            const unsigned int Type,
-                                           MDVolume* Volume)
+                                           const MDVolume* Volume) const
 {
   // Return the position in the detector volume
   // 
@@ -254,7 +256,7 @@ bool MDGuardRing::Validate()
     
   if (MDDetector::Validate() == false) return false;
 
-  // Verify that we have aunique position
+  // Verify that we have a unique position
   if (m_UniquePosition == g_VectorNotDefined) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"No unique guard ring position given!"<<endl;

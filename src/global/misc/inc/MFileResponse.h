@@ -35,14 +35,20 @@ class MResponseMatrix;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class to read response files
 class MFileResponse : public MParser
 {
   // public interface:
  public:
+  //! Default constructor
   explicit MFileResponse();
+  //! Default destructor
   virtual ~MFileResponse();
 
-  MResponseMatrix* Read(MString FileName);
+  //! Read a response matrix
+  MResponseMatrix* Read(MString FileName, bool MultiThreaded = false);
+  //! We cannot use the base class version here
+  bool Read(MBinaryStore& Store, unsigned int CharactersToRead) { return false; }
 
   //! Open the file name and read the header
   virtual bool Open(MString FileName, unsigned int Way = 1);
@@ -55,7 +61,7 @@ class MFileResponse : public MParser
   //! Return the spectral type
   MString GetSpectralType() const { return m_SpectralType; }
   //! Return the spectral parameters
-  vector<double> GetSpectralParameters() const { return m_SpectralParameters; }
+  MString GetBeamType() const { return m_BeamType; }
   //! Are the values centered
   bool AreValuesCentered() const { return m_ValuesCentered; }
   //! Are the values centered
@@ -84,8 +90,8 @@ class MFileResponse : public MParser
   double m_FarFieldStartArea;
   //! The spectral type (Linear, Mono, Powerlaw)
   MString m_SpectralType;
-  //! The spectral parameters (depend on type)
-  vector<double> m_SpectralParameters;
+  //! The beam type
+  MString m_BeamType;
   //! Are the values stored centered
   bool m_ValuesCentered;
   //! The hash value

@@ -44,7 +44,7 @@ commandhelp() {
   echo "  --name=[name]: The name of the run, which will also be the prefix for the output directory"
   echo "  --instances=[number]: The number of instances to use"
   echo "  --source=[filename]: The source file"
-  echo "  --continue=[name]: Continue a simulation run with the given name (ignores --source & --prefix)"
+  echo "  --continue=[name]: Continue a simulation run with the given name (ignores --name)"
   echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
   echo "  --unzip: Do not compress the output files (gzip'ing them is the default)."
   echo "  --log: Create a log file of what is started where"
@@ -87,7 +87,7 @@ LOGFILE=""
 LOGGING="tee"
 DELAY="10"
 CFG=~/.dmegalib.cfg
-
+SIMORTRAOUTPUT="sim"
 
 # The number of already launched runs
 LAUNCHED=0
@@ -139,6 +139,8 @@ if [[ ${CONTINUE} != "" ]]; then
     echo " * Continuing simulation into directory: ${SOURCE}"
     # We have to determine the prefix, the RUNID, source, and the number of already lauched files
     PREFIX=`echo ${CONTINUE} | awk -F"_ID" ' { print $1 }'`
+    PREFIX=$( basename "${PREFIX}" )
+    echo " * Run prefix: ${PREFIX}"
     if [[ ${PREFIX} == "" ]]; then
       echo " "
       echo "ERROR: I am not sure the run-continuation directory is a dcosima directory, since I was unable to find the run prefix"
@@ -163,17 +165,19 @@ if [[ ${CONTINUE} != "" ]]; then
       LOG="TRUE"
     fi
     
-    SOURCEFILENAME=`ls *.source`
-    if [[ $( echo ${SOURCEFILENAME} | wc -l ) !=  1 ]]; then
-      echo " "
-      echo "ERROR: I did not find exactly one source file: ${SOURCEFILENAME}"
-      commandhelp
-      exit 1      
+    if [[ ${SOURCE} == "" ]]; then
+      SOURCEFILENAME=`ls *.source`
+      if [[ $( ls *.source | wc -l ) !=  1 ]]; then
+        echo " "
+        echo "ERROR: I did not find exactly one source file: ${SOURCEFILENAME}"
+        commandhelp
+        exit 1      
+      fi
+      SOURCE="${CONTINUE}/${SOURCEFILENAME}"
     fi
-    SOURCE="${CONTINUE}/${SOURCEFILENAME}"
-    
+
     echo "   Looking for simulation file with highest ID... this might take a while.."
-    LAUNCHED=$(ls *.p1.inc*.id1.sim* | awk -v FS="(inc|.id)" '{print $2}' | sort -n | tail -1)
+    LAUNCHED=$(ls *.p1.inc*.id1.{sim,tra}* 2>/dev/null | awk -v FS="(inc|.id)" '{print $2}' | sort -n | tail -1)
     if [[ ${LAUNCHED} == "" ]]; then
       echo " "
       echo "ERROR: Did not find any simulation files"
@@ -182,7 +186,7 @@ if [[ ${CONTINUE} != "" ]]; then
     fi
     echo "   Continuing simulation with ID $(( LAUNCHED + 1 )).."
     
-    if [[ $( ls *p1.inc*.id1.sim.gz ) != "" ]]; then 
+    if [[ $( ls *p1.inc*.id1.{sim,tra}.gz 2>/dev/null ) != "" ]]; then 
       ZIP="TRUE"
     fi
     
@@ -204,6 +208,10 @@ else
   commandhelp
   exit 1
 fi
+if [[ $(grep "\.Reconstruction" ${SOURCE}) != "" ]]; then
+  SIMORTRAOUTPUT="tra"
+fi
+
 # Check if the source file is really a source file
 NUMBEROFRUNS=`cat ${SOURCE} | grep "^Run " | wc -l`
 if [[ ${NUMBEROFRUNS} == 0 ]]; then
@@ -568,7 +576,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       if [[ ${ALLOWED} -gt 0 ]]; then
         LAUNCHED=$(( ${LAUNCHED} + 1 ))
         echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
-        dcosima-runinstance --source=${SOURCEFILENAME} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi` `if [[ ${LOG} == TRUE ]]; then echo "--log=${LOGFILE}"; fi`
+        dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi` `if [[ ${LOG} == TRUE ]]; then echo "--log=${LOGFILE}"; fi`
         STARTED=1
       fi
       if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
@@ -627,10 +635,10 @@ if [[ ${LAUNCHED} -gt 0 ]]; then
   cd ${LOCALDIR}
 
   echo "Creating concatenation file for simulation \"${Base}\"" | ${LOGGING}
-  ConcatFileName="${Base}.p1${Binary}.sim"
-  rm -f "${Base}.p1${Binary}.sim*"
+  ConcatFileName="${Base}.p1${Binary}.${SIMORTRAOUTPUT}"
+  rm -f "${Base}.p1${Binary}.${SIMORTRAOUTPUT}*"
 
-  FirstFileName="${Base}.p1.inc1.id1${Binary}.sim"
+  FirstFileName="${Base}.p1.inc1.id1${Binary}.${SIMORTRAOUTPUT}"
   if [ "${ZIP}" == "TRUE" ]; then
     FirstFileName="${FirstFileName}.gz"
   fi 
@@ -682,11 +690,11 @@ if [[ ${LAUNCHED} -gt 0 ]]; then
   echo " " >> ${ConcatFileName}
     
   for (( i=1; i <= ${INSTANCES}; i+=1 )); do
-    if [[ "${ZIP}" == "TRUE" ]]; then
-      echo "IN ${Base}.p1.inc${i}.id1.sim.gz" >> ${ConcatFileName}
-    else
-      echo "IN ${Base}.p1.inc${i}.id1.sim" >> ${ConcatFileName}
+    IN="IN ${Base}.p1.inc${i}.id1${Binary}.${SIMORTRAOUTPUT}"
+    if [ "${ZIP}" == "TRUE" ]; then
+      IN="${IN}.gz"
     fi
+    echo "${IN}" >> ${ConcatFileName}
   done
     
   echo "EN" >> ${ConcatFileName}

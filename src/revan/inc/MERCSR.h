@@ -88,7 +88,8 @@ class MERCSR : public MERConstruction
   double CalculatePhotoDistance(const MVector& Start, const MVector& Stop, double Etot);
   double CalculateComptonDistance(const MVector& Start, const MVector& Stop, double Etot);
   double CalculateTotalDistance(const MVector& Start, const MVector& Stop, double Etot);
-  
+  double CalculateReach(const MVector& Start, const MVector& Stop, double Etot);
+
   
   // private methods:
  private:
@@ -103,6 +104,9 @@ class MERCSR : public MERConstruction
   int m_MaxNInteractions;
   bool m_CreateOnlyPermutations;
   bool m_GuaranteeStartD1;
+
+  //! The maximum/minimum cos(Compton scatter angle) limit
+  double m_MaxCosineLimit;
 
   /// The sorted list of quality factors
   map<double, vector<MRESE*>, less_equal<double> > m_QualityFactors;

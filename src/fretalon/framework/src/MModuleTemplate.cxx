@@ -122,6 +122,19 @@ bool MModuleTemplate::AnalyzeEvent(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MModuleTemplate::Finalize()
+{
+  // Initialize the module 
+
+  MModule::Finalize();
+  
+  // Your code here
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MModuleTemplate::ShowOptionsGUI()
 {
   //! Show the options GUI --- has to be overwritten!

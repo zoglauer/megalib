@@ -34,6 +34,7 @@
 #include "MDTriggerUnit.h"
 #include "MDSystem.h"
 #include "MDOrientation.h"
+#include "MDDetectorEffectsEngine.h"
 
 // Standard libs:
 #include <vector>
@@ -151,6 +152,9 @@ class MDGeometry
   MDSystem* GetSystem(const MString& Name);
   MDSystem* GetSystem() { return m_System; }
   
+  //! Return the default detectior effects engine
+  MDDetectorEffectsEngine* GetDetectorEffectsEngine() { return m_DetectorEffectsEngine; }
+  
   // Interface to all stored vectors
   
   void AddVector(MDVector* Vector);
@@ -251,6 +255,9 @@ class MDGeometry
   //! The main system
   MDSystem* m_System;
 
+  //! The detector effects engine
+  MDDetectorEffectsEngine* m_DetectorEffectsEngine;
+  
   //! A list of all vectors
   vector<MDVector*> m_VectorList;
 

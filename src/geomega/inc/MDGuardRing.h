@@ -34,6 +34,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+// A guard ring of a strip, pixel, etc. detector
 class MDGuardRing : public MDDetector
 {
   // public interface:
@@ -68,12 +69,12 @@ class MDGuardRing : public MDDetector
   MVector GetUniquePosition() const { return m_UniquePosition; }
   
   //! Noise a hit
-  virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
-  //! discretize a hit into grid points
-  virtual vector<MDGridPoint> Discretize(const MVector& Pos, 
-                                         const double& Energy, 
-                                         const double& Time,
-                                         MDVolume* Volume) const;
+  virtual void Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const;
+  //! Grid a hit -- in this case just return the single grid point of the hit
+  virtual vector<MDGridPoint> Grid(const MVector& Pos, 
+                                   const double& Energy,
+                                   const double& Time,
+                                   const MDVolume* Volume) const;
   //! Return the Grid point of this position
   virtual MDGridPoint GetGridPoint(const MVector& Pos) const;
   //! Return a position in detector volume coordinates
@@ -82,7 +83,7 @@ class MDGuardRing : public MDDetector
                                               const unsigned int zGrid,
                                               const MVector PositionInGrid,
                                               const unsigned int Type,
-                                              MDVolume* Volume);
+                                              const MDVolume* Volume) const;
 
   virtual MString GetGeomega() const;
   virtual MString ToString() const;

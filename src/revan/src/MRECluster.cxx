@@ -68,6 +68,8 @@ MRECluster::MRECluster() : MRESE()
   m_Position = MVector(0.0, 0.0, 0.0);
   m_Energy = 0.0;
   m_Detector = -1; // not adjusted
+  
+  m_IgnoreMissingDepth = true;
 }
 
 
@@ -203,10 +205,21 @@ MRESE* MRECluster::RemoveRESE(MRESE *RESE)
   // Remove a RESE from this cluster
   // RESE must be of type MREHit!!
 
+  // TODO: This does not handle rotated detectors!
+  
   if (ContainsRESE(RESE) == true) {
     //  Undo the changes in AddHit()
     if (m_AllowOverwrite == true) {
-      m_Position = 1.0/(m_Energy - RESE->GetEnergy())*(m_Energy*m_Position - RESE->GetEnergy()*RESE->GetPosition());
+      if (m_IgnoreMissingDepth == true) {
+        if (RESE->GetNoiseFlags().Contains("NODEPTH") == true) {
+          m_Position[0] = 1.0/(m_Energy - RESE->GetEnergy())*(m_Energy*m_Position[0] - RESE->GetEnergy()*RESE->GetPosition()[0]);
+          m_Position[1] = 1.0/(m_Energy - RESE->GetEnergy())*(m_Energy*m_Position[1] - RESE->GetEnergy()*RESE->GetPosition()[1]);
+        } else {
+          m_Position = 1.0/(m_Energy - RESE->GetEnergy())*(m_Energy*m_Position - RESE->GetEnergy()*RESE->GetPosition());
+        }
+      } else {
+        m_Position = 1.0/(m_Energy - RESE->GetEnergy())*(m_Energy*m_Position - RESE->GetEnergy()*RESE->GetPosition());
+      }
       m_Energy -= RESE->GetEnergy();
     }
 
@@ -231,10 +244,51 @@ void MRECluster::AddHit(MREHit *Hit)
       m_Time = Hit->GetTime();
       m_Position = Hit->GetPosition();
       m_Energy = Hit->GetEnergy();
+      if (Hit->GetNoiseFlags().Contains("NODEPTH") == true) {
+        m_NoiseFlags += " NODEPTH";
+      }
     } else {
       m_Time = min(m_Time, Hit->GetTime());
-      m_Position = (1.0/(m_Energy + Hit->GetEnergy()))*(m_Energy*m_Position + Hit->GetEnergy()*Hit->GetPosition());
       m_Energy += Hit->GetEnergy();
+      
+      if (m_IgnoreMissingDepth == false) {
+        m_Position = (1.0/(m_Energy + Hit->GetEnergy()))*(m_Energy*m_Position + Hit->GetEnergy()*Hit->GetPosition());
+        if (Hit->GetNoiseFlags().Contains("NODEPTH") == true) {
+          if (m_NoiseFlags.Contains("NODEPTH") == false) {
+            m_NoiseFlags += " NODEPTH";
+          }
+        }
+      } else {
+        // If we alreday have a good depth:
+        cout<<"NF: "<<Hit->GetNoiseFlags()<<endl;
+        bool HasGoodDepth = false;
+        for (int r = 0; r < GetNRESEs(); ++r) {
+          if (GetRESEAt(r)->GetNoiseFlags().Contains("NODEPTH") == false) {
+            HasGoodDepth = true; 
+          }
+        }
+        if (HasGoodDepth == true) {
+          if (Hit->GetNoiseFlags().Contains("NODEPTH") == false) {
+            m_Position = (1.0/(m_Energy + Hit->GetEnergy()))*(m_Energy*m_Position + Hit->GetEnergy()*Hit->GetPosition());
+          } else {
+            m_Position[0] = (1.0/(m_Energy + Hit->GetEnergy()))*(m_Energy*m_Position[0] + Hit->GetEnergy()*Hit->GetPosition())[0];
+            m_Position[1] = (1.0/(m_Energy + Hit->GetEnergy()))*(m_Energy*m_Position[1] + Hit->GetEnergy()*Hit->GetPosition())[1];
+            // m_Position[2] unchanged
+            cout<<"Ignore new depth"<<endl;
+          }
+        } else {
+          // If we have no good depth, but this RESE has one, the we take the depth of this RESE
+          if (Hit->GetNoiseFlags().Contains("NODEPTH") == false) {
+            m_Position[0] = (1.0/(m_Energy + Hit->GetEnergy()))*(m_Energy*m_Position[0] + Hit->GetEnergy()*Hit->GetPosition())[0];
+            m_Position[1] = (1.0/(m_Energy + Hit->GetEnergy()))*(m_Energy*m_Position[1] + Hit->GetEnergy()*Hit->GetPosition())[1];
+            m_Position[2] = Hit->GetPosition()[2];
+            m_NoiseFlags.RemoveAllInPlace(" NODEPTH");
+            cout<<"Ignore old depth"<<endl;
+          } else {
+            m_Position = (1.0/(m_Energy + Hit->GetEnergy()))*(m_Energy*m_Position + Hit->GetEnergy()*Hit->GetPosition());
+          }
+        }
+      }
     }
   }
 

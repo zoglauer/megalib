@@ -26,6 +26,7 @@
 #include "MDVolumeSequence.h"
 #include "MDVolume.h"
 #include "MDMaterial.h"
+#include "MDGridPointCollection.h"
 
 // Standard libs::
 #include <vector>
@@ -55,8 +56,11 @@ class MDGeometryQuest : public MDGeometry
   using MDGeometry::GetMaterial;
   MDMaterial* GetMaterial(MVector Pos);
 
-  bool Noise(MVector& Pos, double& Energy, double& Time);
-  bool Noise(MVector& Pos, double& Energy, double& Time, MDVolumeSequence& VS);
+  MDGridPointCollection Grid(MVector& Pos, double& Energy, double& Time, MDVolumeSequence& VS);
+  
+  
+  bool Noise(MVector& Pos, double& Energy, double& Time, MString& Flags);
+  bool Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolumeSequence& VS);
   void ApplyPulseShape(double Time, MVector& Pos, double& Energy);
 
   void GetResolutions(MVector Pos, double Energy, double Time, 

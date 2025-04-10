@@ -46,7 +46,7 @@ ClassImp(MReadOutElementDoubleStrip)
 
 
 //! Default constructor
-MReadOutElementDoubleStrip::MReadOutElementDoubleStrip(): MReadOutElementStrip(), m_IsPositiveStrip(true)
+MReadOutElementDoubleStrip::MReadOutElementDoubleStrip(): MReadOutElementStrip(), m_IsLowVoltageStrip(true)
 {
 }
 
@@ -55,7 +55,7 @@ MReadOutElementDoubleStrip::MReadOutElementDoubleStrip(): MReadOutElementStrip()
 
 
 //! Read out element of a DOUBLE-SIDED strip detector  
-MReadOutElementDoubleStrip::MReadOutElementDoubleStrip(unsigned int DetectorID, unsigned int StripID, bool IsPositiveStrip) : MReadOutElementStrip(DetectorID, StripID), m_IsPositiveStrip(IsPositiveStrip)
+MReadOutElementDoubleStrip::MReadOutElementDoubleStrip(unsigned int DetectorID, unsigned int StripID, bool IsLowVoltageStrip) : MReadOutElementStrip(DetectorID, StripID), m_IsLowVoltageStrip(IsLowVoltageStrip)
 {
 }
 
@@ -75,7 +75,7 @@ MReadOutElementDoubleStrip::~MReadOutElementDoubleStrip()
 //! Clone this read-out element - the returned element must be deleted!
 MReadOutElementDoubleStrip* MReadOutElementDoubleStrip::Clone() const
 {
-  MReadOutElementDoubleStrip* R = new MReadOutElementDoubleStrip(m_DetectorID, m_StripID, m_IsPositiveStrip);
+  MReadOutElementDoubleStrip* R = new MReadOutElementDoubleStrip(m_DetectorID, m_StripID, m_IsLowVoltageStrip);
   return R;
 }
 
@@ -87,7 +87,7 @@ MReadOutElementDoubleStrip* MReadOutElementDoubleStrip::Clone() const
 void MReadOutElementDoubleStrip::Clear()
 {
   MReadOutElementStrip::Clear();
-  m_IsPositiveStrip = true;
+  m_IsLowVoltageStrip = true;
 }
 
 
@@ -124,7 +124,7 @@ bool MReadOutElementDoubleStrip::operator==(const MReadOutElement& R) const
   
   if (m_StripID != S->m_StripID) return false;
   if (m_DetectorID != S->m_DetectorID) return false;
-  if (m_IsPositiveStrip != S->m_IsPositiveStrip) return false;
+  if (m_IsLowVoltageStrip != S->m_IsLowVoltageStrip) return false;
   
   return true;
 }
@@ -143,7 +143,7 @@ bool MReadOutElementDoubleStrip::operator<(const MReadOutElement& R) const
   if (m_DetectorID == S->m_DetectorID) {
     if (m_StripID < S->m_StripID) return true;
     if (m_StripID == S->m_StripID) {
-      if (m_IsPositiveStrip == false && S->m_IsPositiveStrip == true) return true;
+      if (m_IsLowVoltageStrip == false && S->m_IsLowVoltageStrip == true) return true;
     }  
   }
   
@@ -174,7 +174,7 @@ bool MReadOutElementDoubleStrip::Parse(const MTokenizer& T, unsigned int StartEl
   
   m_DetectorID = T.GetTokenAtAsUnsignedIntFast(StartElement);
   m_StripID = T.GetTokenAtAsUnsignedIntFast(StartElement+1);
-  m_IsPositiveStrip = (T.GetTokenAt(StartElement+2) == "p") ? true : false;
+  m_IsLowVoltageStrip = (T.GetTokenAt(StartElement+2) == "l" || T.GetTokenAt(StartElement+2) == "p") ? true : false;
   
   return true;
 }
@@ -194,7 +194,7 @@ MString MReadOutElementDoubleStrip::ToParsableString(bool WithDescriptor) const
   Return += " ";
   Return += m_StripID;
   Return += " ";
-  Return += (m_IsPositiveStrip ? "p" : "n");
+  Return += (m_IsLowVoltageStrip ? "l" : "h");
 
   return Return;
 }
@@ -207,7 +207,7 @@ MString MReadOutElementDoubleStrip::ToParsableString(bool WithDescriptor) const
 MString MReadOutElementDoubleStrip::ToString() const
 {
   ostringstream os;
-  os<<"Detector: "<<m_DetectorID<<", side: "<<((m_IsPositiveStrip == true) ? "pos" : "neg")<<", strip: "<<m_StripID;
+  os<<"Detector: "<<m_DetectorID<<", side: "<<((m_IsLowVoltageStrip == true) ? "LV" : "HV")<<", strip: "<<m_StripID;
   return os.str();
 }
 

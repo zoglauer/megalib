@@ -129,6 +129,11 @@ TH1D* MBinner::GetHistogram(const MString& Title, const MString& xTitle, const M
   
   for (unsigned int i = 0; i < m_BinnedData.size(); ++i) {
     Hist->SetBinContent(i+1, m_BinnedData[i]);
+    if (m_BinnedData[i] > 0) {
+      Hist->SetBinError(i+1, sqrt(m_BinnedData[i]));
+    } else {
+      Hist->SetBinError(i+1, 1);
+    }
   }
   
   return Hist;
@@ -143,9 +148,14 @@ TH1D* MBinner::GetNormalizedHistogram(const MString& Title, const MString& xTitl
 {
   TH1D* Hist = GetHistogram(Title, xTitle, yTitle);
  
-  for (int b = 0; b <= Hist->GetNbinsX(); ++b) {
+  for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
     if (Hist->GetBinWidth(b) > 0) {
       Hist->SetBinContent(b, Hist->GetBinContent(b)/Hist->GetBinWidth(b));
+      if (Hist->GetBinContent(b) > 0) {
+        Hist->SetBinError(b, sqrt(Hist->GetBinContent(b))/Hist->GetBinWidth(b));
+      } else {
+        Hist->SetBinError(b, 1/Hist->GetBinWidth(b));
+      }
     }
   }
  

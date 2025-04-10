@@ -379,6 +379,57 @@ void MDOrientation::SetRotation(MRotation RotationMatrix, int RotID)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDOrientation::Scale(const double Scale, const MString Axes)
+{
+  // Scale this shape by a factor of Scale
+
+  if (IsScaled() == true) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"The shape is already scaled."<<endl;
+    return false;
+  }
+
+  for (unsigned int c = 0; c < Axes.Length(); ++c) {
+    char C = Axes[c];
+    if (C != 'X' && C != 'Y' && C != 'Z') {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+      mout<<"The scaling axis can only contaion X, Y, or Z, and not "<<C<<"."<<endl;
+      return false;
+    }
+  }
+
+  if (Scale == 1.0) return true;
+
+  if (IsRotated() == true && Axes != "XYZ") {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"This is a rotated volumes. The only allowed scaling is \"XYZ\"."<<endl;
+    return false;
+  }
+
+  m_Scaler = Scale;
+  m_ScalingAxis = Axes;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! True if we are scaled
+bool MDOrientation::IsScaled() const
+{
+  if (m_ScalingAxis != "") {
+    return true;
+  }
+
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MString MDOrientation::ToString() const
 {
   //! Dump content into a string

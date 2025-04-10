@@ -415,19 +415,38 @@ double MDShapePGON::GetVolume()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapePGON::Scale(const double Factor)
+bool MDShapePGON::Scale(const double Factor, const MString Axes)
 {
-  // Scale this shape by Factor
-  
+  //! Scale the axes given in Axes by a factor Scaler
+
+  // Don't do anything if the scaling has already been applied
+  if (Factor == m_Scaler && Axes == m_ScalingAxis) return true;
+
+  // Base class handles sanity checks and storing data
+  if (MDShape::Scale(Factor, Axes) == false) return false;
+  // If there was no scaling return true;
+  if (IsScaled() == false) return true;
+
+  if ((m_ScalingAxis.Contains("X") == true && m_ScalingAxis.Contains("Y") == false) || (m_ScalingAxis.Contains("X") == false && m_ScalingAxis.Contains("Y") == true)) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"This volume can only be scaled the same way in X as in Y axis, i.e., the axis string must contain \"XY\"."<<endl;
+    return false;
+  }
+
+  // Scale
   for (unsigned int i = 0; i < m_NSections; ++i) {
-    m_Rmin[i] *= Factor;
-    m_Rmax[i] *= Factor;
-    m_Z[i] *= Factor;  
+    if (m_ScalingAxis.Contains("X") == true && m_ScalingAxis.Contains("Y") == true) {
+      m_Rmin[i] *= m_Scaler;
+      m_Rmax[i] *= m_Scaler;
+    }
+    if (m_ScalingAxis.Contains("Z") == true) {
+      m_Z[i] *= m_Scaler;
+    }
   }
   
+  // Validate
   m_IsValidated = false;
-  
-  Validate();
+  return Validate();
 }
 
 

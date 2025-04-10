@@ -910,7 +910,8 @@ MResponseMatrixO1 MResponseMatrixO4::GetSliceInterpolated(float x1, unsigned int
 
 bool MResponseMatrixO4::ReadSpecific(MFileResponse& Parser, 
                                      const MString& Type, 
-                                     const int Version)
+                                     const int Version,
+                                     const bool)
 {
   // Read the data from file directly into this matrix
 

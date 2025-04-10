@@ -316,9 +316,9 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
           }
           if (AllIncreasing == true) {
             NewSetsOfMatches.push_back(NewSet);
-            //cout<<"Increasing: "<<OldSet.ToString()<<" with "<<SubSet.ToString()<<endl; 
+            //cout<<"Increasing: "<<OldSet.ToString()<<" with "<<SubSet.ToString()<<endl;
           } else {
-            //cout<<"Not increasing: "<<OldSet.ToString()<<" with "<<SubSet.ToString()<<endl; 
+            //cout<<"Not increasing: "<<OldSet.ToString()<<" with "<<SubSet.ToString()<<endl;
           }
         }
       }

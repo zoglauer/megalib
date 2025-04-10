@@ -33,6 +33,8 @@
 // MEGAlib libs:
 #include "MAssert.h" 
 #include "MStreams.h"
+#include "MDDetector.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -50,7 +52,7 @@ MDGridPointCollection::MDGridPointCollection(const MDVolumeSequence& VolumeSeque
 {
   // Construct an instance of MDGridPointCollection
 
-  massert(m_VolumeSequence.GetDetector() != 0);
+  massert(m_VolumeSequence.GetDetector() != nullptr);
 }
 
 
@@ -80,24 +82,20 @@ MDGridPointCollection::~MDGridPointCollection()
 
 
 void MDGridPointCollection::Add(const MVector& PositionInDetector, const double Energy, 
-                                const double Time, const vector<int>& Origins)
+                                const double Time, const set<unsigned int>& Origins)
 {
   // Add and discretize a measurement
 
-  vector<MDGridPoint> NewPoints = 
-    m_VolumeSequence.GetDetector()->Discretize(PositionInDetector, Energy, Time, 
-                                               m_VolumeSequence.GetDeepestVolume());
+  vector<MDGridPoint> NewPoints = m_VolumeSequence.GetDetector()->Grid(PositionInDetector, Energy, Time, m_VolumeSequence.GetDeepestVolume());
   
   vector<MDGridPoint>::iterator NewIter;
   vector<MDGridPoint>::iterator AllIter;
 
-  for (NewIter = NewPoints.begin(); 
-       NewIter != NewPoints.end(); ++NewIter) {
-    (*NewIter).SetOrigins(Origins);
+  for (NewIter = NewPoints.begin(); NewIter != NewPoints.end(); ++NewIter) {
+    (*NewIter).SetOriginIDs(Origins);
 
     bool Added = false;
-    for (AllIter = m_Points.begin();
-         AllIter != m_Points.end(); ++AllIter) {
+    for (AllIter = m_Points.begin(); AllIter != m_Points.end(); ++AllIter) {
       if ((*NewIter) == (*AllIter)) {
         (*AllIter) += (*NewIter);
         Added = true;
@@ -118,8 +116,7 @@ void MDGridPointCollection::AddUndiscretized(const MVector& PositionInDetector)
 {
   // Add a measurement
 
-  MDGridPoint NewPoint = 
-    m_VolumeSequence.GetDetector()->GetGridPoint(PositionInDetector);
+  MDGridPoint NewPoint = m_VolumeSequence.GetDetector()->GetGridPoint(PositionInDetector);
   
   vector<MDGridPoint>::iterator AllIter;
 
@@ -141,16 +138,54 @@ void MDGridPointCollection::AddUndiscretized(const MVector& PositionInDetector)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MDGridPointCollection::Add(MDGridPoint& Point)
+{
+  // Add another grid point
+  //
+  // TODO: Ideally we should verify that the volume sequences are identical, 
+  //       but the point does not have one, and I cannot create one, since we have no geometry
+  
+  if (m_Points.size() == 0 || (m_Points.size() > 0 && (m_Points[0].GetType() == Point.GetType() || (m_Points[0].GetType() == MDGridPoint::c_XStrip && Point.GetType() == MDGridPoint::c_YStrip) || (m_Points[0].GetType() == MDGridPoint::c_YStrip && Point.GetType() == MDGridPoint::c_XStrip)))) {
+      
+    bool Exists = false;
+    /*
+    for (auto AllIter = m_Points.begin(); AllIter != m_Points.end(); ++AllIter) {
+      if (Point == (*AllIter)) {
+        (*AllIter) += Point;
+        Exists = true;
+        break;
+      }
+    }
+    */
+    for (auto& ExistingPoint: m_Points) {
+       if (Point == ExistingPoint) {
+         ExistingPoint += Point;
+         Exists = true;
+         break;
+      }
+    }
+    if (Exists == false) {
+      m_Points.push_back(Point);      
+    }
+  } else {
+    merr<<"ERROR: Grid points are not of same type ("<<m_Points[0].GetType()<<" vs "<<Point.GetType()<<")- grid point not added"<<endl; 
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MDGridPointCollection::Add(MDGridPointCollection& Collection)
 {
   // Add another GridPointCollection
-
+  
   if (Collection.HasSameDetector(&m_VolumeSequence) == true) {
     
     vector<MDGridPoint>::iterator AllIter;
     for (unsigned int p = 0; p < Collection.GetNGridPoints(); ++p) {
       MDGridPoint NewPoint = Collection.GetGridPointAt(p);
-
+      
       bool Added = false;
       for (AllIter = m_Points.begin();
            AllIter != m_Points.end(); ++AllIter) {
@@ -210,7 +245,7 @@ bool MDGridPointCollection::HasSameDetector(MDGridPointCollection& Grid)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDGridPointCollection::GetWorldPositionGridPointAt(unsigned int i)
+MVector MDGridPointCollection::GetWorldPositionGridPointAt(unsigned int i) const
 {
   // Return the Position of grid i in world coordinates
 
@@ -297,5 +332,16 @@ double MDGridPointCollection::GetWeightedHits()
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDGridPointCollection::RemoveNonReadOuts()
+{
+  //! Remove not read-out grid points
+  
+  m_Points.erase(std::remove_if(m_Points.begin(), m_Points.end(), [](const MDGridPoint& P) { return (P.IsReadOut() == false); }), m_Points.end());
+}
+  
+  
 // MDGridPointCollection.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

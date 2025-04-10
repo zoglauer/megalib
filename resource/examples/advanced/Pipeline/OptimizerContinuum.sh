@@ -104,6 +104,24 @@ ${geo} \
 --fdi 0.4 1.0 4 \
 --cqf 0.25 1.75 3 \
 --arm 3.0 10.0 8 \
+--contegy 200 500 \
+--ehc 0 0 1 \
+-n Cont_${type}_200_500.${version} &
+
+mdelay SensitivityOptimizer $(( $(nproc) / 2 ))
+
+
+SensitivityOptimizer \
+${time} \
+${sourcelow} \
+${backgroundall} \
+${cfg} \
+${geo} \
+--csl 2 2 7 \
+--phi 90 180 3 \
+--fdi 0.4 1.0 4 \
+--cqf 0.25 1.75 3 \
+--arm 3.0 10.0 8 \
 --contegy 250 750 \
 --ehc 0 0 1 \
 -n Cont_${type}_250_750.${version} &

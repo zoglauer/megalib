@@ -67,6 +67,9 @@ MResponseMultipleCompton::MResponseMultipleCompton()
 
   m_MaxTrackEnergyDifference = 30; // keV
   m_MaxTrackEnergyDifferencePercent = 0.1;
+
+  m_EnergyMinimum = 100; // keV
+  m_EnergyMaximum = 10000; // keV
 }
 
 
@@ -77,478 +80,6 @@ MResponseMultipleCompton::MResponseMultipleCompton()
 MResponseMultipleCompton::~MResponseMultipleCompton()
 {
   // Nothing to delete
-}
-
-  
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Initialize the response matrices and their generation
-bool MResponseMultipleCompton::Initialize() 
-{ 
-  // Initialize next matching event, save if necessary
-  if (MResponseBuilder::Initialize() == false) return false;
-  
-  m_MaxNInteractions = m_RevanSettings.GetCSRMaxNHits();
-  //m_MaxNInteractions = 3;
-  m_ReReader->SetCSROnlyCreateSequences(true);
-
-  if (m_ReReader->PreAnalysis() == false) return false;
-
-  double MaxCosineLimit = 10;
-
-  // Axis representing the sequence length:
-  vector<float> AxisSequenceLength;
-  for (unsigned int i = 2; i <= m_MaxNInteractions+1; ++i) {
-    AxisSequenceLength.push_back(i);
-  }
-  MString NameAxisSequenceLength = "Sequence length";
-
-  double MaxEnergy = 5000;
-  
-  // Material: 0: unknown, 1: Si, 2: Ge, 3: Xe, 4: CsI
-  // Make sure this is identical with: MERCSRBayesian::GetMaterial()
-  vector<float> AxisMaterial;
-  AxisMaterial = CreateEquiDist(-0.5, 4.5, 5);
-  MString NameAxisMaterial = "Material (0: ?, 1: Si, 2: Ge, 3: Xe, 4: CsI)";
-
-  // Compton scatter angle axis:
-  // Make sure it starts, well below 0 and exceeds (slightly) 1!
-  vector<float> AxisComptonScatterAngleStart;
-  AxisComptonScatterAngleStart = CreateEquiDist(-1.5, 1.1, 26, -MaxCosineLimit, +MaxCosineLimit);
-  MString NameAxisComptonScatterAngleStart = "cos#varphi";
-
-  // Scatter probability axis
-  vector<float> AxisScatterProbability = CreateEquiDist(-0.025, 1.025, 42);
-  MString NameAxisScatterProbability = "Scatter probability";
-
-  // Total energy axis for scatter probabilities
-  vector<float> AxisTotalEnergyDistances = CreateLogDist(15, MaxEnergy, 38, 1, 20000);
-  MString NameAxisTotalEnergyDistances = "Energy [keV]";
-
-  // Total energy axis for scatter probabilities
-  vector<float> AxisTotalEnergyStart = CreateLogDist(100, MaxEnergy, 38, 1, 20000);
-  MString NameAxisTotalEnergyStart = "Energy [keV]";
-
-
-  // Make sure it starts, well below 0 and exceeds (slightly) 1!
-  vector<float> AxisComptonScatterAngleDual;
-  AxisComptonScatterAngleDual = CreateEquiDist(-1.5, 1.1, 26, -MaxCosineLimit, +MaxCosineLimit);
-  MString NameAxisComptonScatterAngleDual = "cos#varphi";
-
-  // Total energy axis for scatter probabilities
-  vector<float> AxisTotalEnergyDual = CreateLogDist(100, MaxEnergy, 18, 1, 20000);
-  MString NameAxisTotalEnergyDual = "Energy [keV]";
-
-  // Scatter probability axis
-  vector<float> AxisScatterProbabilityDual = CreateEquiDist(0, 1, 15, -0.025, 1.025);
-  MString NameAxisScatterProbabilityDual = "Scatter probability";
-  
-
-
-  // Global good/bad:
-  m_GoodBadTable = MResponseMatrixO2("MC: Good/Bad ratio (=prior)", 
-                                     CreateEquiDist(0, 2, 2), 
-                                     AxisSequenceLength); 
-  m_GoodBadTable.SetAxisNames("GoodBad", 
-                              NameAxisSequenceLength);
-
-  // Dual:
-  m_PdfDualGood = MResponseMatrixO4("MC: Dual (good)", 
-                                    AxisTotalEnergyDual,
-                                    AxisComptonScatterAngleDual,  
-                                    AxisScatterProbabilityDual,
-                                    AxisMaterial);
-  m_PdfDualGood.SetAxisNames(NameAxisTotalEnergyStart, 
-                             NameAxisComptonScatterAngleStart, 
-                             NameAxisScatterProbabilityDual, 
-                             NameAxisMaterial);
-  m_PdfDualBad = MResponseMatrixO4("MC: Dual (bad)", 
-                                   AxisTotalEnergyDual,
-                                   AxisComptonScatterAngleDual,  
-                                   AxisScatterProbabilityDual,
-                                   AxisMaterial);
-  m_PdfDualBad.SetAxisNames(NameAxisTotalEnergyStart, 
-                            NameAxisComptonScatterAngleStart, 
-                            NameAxisScatterProbabilityDual, 
-                            NameAxisMaterial);
-  
-
-  // Start point:
-  m_PdfStartGood = MResponseMatrixO4("MC: Start (good)", 
-                                     AxisTotalEnergyStart,
-                                     AxisComptonScatterAngleStart, 
-                                     AxisSequenceLength, 
-                                     AxisMaterial);
-  m_PdfStartGood.SetAxisNames(NameAxisTotalEnergyStart, 
-                              NameAxisComptonScatterAngleStart, 
-                              NameAxisSequenceLength, 
-                              NameAxisMaterial);
-  m_PdfStartBad = MResponseMatrixO4("MC: Start (bad)", 
-                                    AxisTotalEnergyStart, 
-                                    AxisComptonScatterAngleStart, 
-                                    AxisSequenceLength, 
-                                    AxisMaterial);
-  m_PdfStartBad.SetAxisNames(NameAxisTotalEnergyStart, 
-                             NameAxisComptonScatterAngleStart, 
-                             NameAxisSequenceLength, 
-                             NameAxisMaterial);
-
-
-  // Track:
-  m_PdfTrackGood = MResponseMatrixO6("MC: Track (good)", 
-                                     CreateEquiDist(-0.5, 1.5, 36, c_NoBound, MaxCosineLimit),
-                                     CreateEquiDist(-0.5, 1.5, 1, c_NoBound, MaxCosineLimit),
-                                     CreateEquiDist(0, 1000000, 1),
-                                     CreateLogDist(500, 10000, 10, 0, 100000, 0, false),
-                                     AxisSequenceLength, 
-                                     AxisMaterial);
-  m_PdfTrackGood.SetAxisNames("#Delta #alpha [deg]", 
-                              "#alpha_{G} [deg]", 
-                              "d [cm]", 
-                              "E_{e}", 
-                              NameAxisSequenceLength, 
-                              NameAxisMaterial);
-  m_PdfTrackBad = MResponseMatrixO6("MC: Track (bad)", 
-                                    CreateEquiDist(-0.5, 1.5, 36, c_NoBound, MaxCosineLimit),
-                                    CreateEquiDist(-0.5, 1.5, 1, c_NoBound, MaxCosineLimit),
-                                    CreateEquiDist(0, 1000000, 1),
-                                    CreateLogDist(500, 10000, 10, 0, 100000, 0, false),
-                                    AxisSequenceLength, 
-                                    AxisMaterial);
-  m_PdfTrackBad.SetAxisNames("#Delta cos#alpha [deg]", 
-                             "cos#alpha_{G} [deg]", 
-                             "d [cm]", 
-                             "E_{e}", 
-                             NameAxisSequenceLength, 
-                             NameAxisMaterial);
-
-  
-  // Compton scatter distance:
-  m_PdfComptonScatterProbabilityGood = MResponseMatrixO4("MC: Compton distance (good)", 
-                                        AxisScatterProbability,
-                                        AxisTotalEnergyDistances, 
-                                        AxisSequenceLength, 
-                                        AxisMaterial);
-  m_PdfComptonScatterProbabilityGood.SetAxisNames(NameAxisScatterProbability, 
-                                 NameAxisTotalEnergyDistances, 
-                                 NameAxisSequenceLength, 
-                                 NameAxisMaterial);
-  m_PdfComptonScatterProbabilityBad = MResponseMatrixO4("MC: Compton distance (bad)", 
-                                       AxisScatterProbability, 
-                                       AxisTotalEnergyDistances, 
-                                       AxisSequenceLength, 
-                                       AxisMaterial);
-  m_PdfComptonScatterProbabilityBad.SetAxisNames(NameAxisScatterProbability, 
-                                NameAxisTotalEnergyDistances, 
-                                NameAxisSequenceLength, 
-                                NameAxisMaterial);
-
-
-  // Lastdistance:
-  m_PdfPhotoAbsorptionProbabilityGood = MResponseMatrixO4("MC: Photo distance (good)", 
-                                            AxisScatterProbability, 
-                                            AxisTotalEnergyDistances, 
-                                            AxisSequenceLength, 
-                                            AxisMaterial);
-  m_PdfPhotoAbsorptionProbabilityGood.SetAxisNames(NameAxisScatterProbability, 
-                                     NameAxisTotalEnergyDistances, 
-                                     NameAxisSequenceLength, 
-                                     NameAxisMaterial);
-  m_PdfPhotoAbsorptionProbabilityBad = MResponseMatrixO4("MC: Photo distance (bad)", 
-                                           AxisScatterProbability, 
-                                           AxisTotalEnergyDistances, 
-                                           AxisSequenceLength, 
-                                           AxisMaterial);
-  m_PdfPhotoAbsorptionProbabilityBad.SetAxisNames(NameAxisScatterProbability, 
-                                    NameAxisTotalEnergyDistances, 
-                                    NameAxisSequenceLength, 
-                                    NameAxisMaterial);
-
-
-  // CentralCompton:
-  
-  // Assymetries would be best handled if -1 .. 1
-  //vector<float> AxisDifferenceComptonScatterAngle = 
-  //  CreateLogDist(1E-3, 2, 18, 0.0000001, MaxCosineLimit);
-  vector<float> AxisDifferenceComptonScatterAngle; 
-  vector<float> A = CreateLogDist(0.003, 2, 14, c_NoBound, MaxCosineLimit);
-  for (unsigned int i = A.size()-1; i < A.size(); --i) {
-    AxisDifferenceComptonScatterAngle.push_back(-A[i]);
-  }
-  for (unsigned int i = 0; i < A.size(); ++i) {
-    AxisDifferenceComptonScatterAngle.push_back(A[i]);
-  }
-  MString NameAxisDifferenceComptonScatterAngle = "cos#varphi_{E} - cos#varphi_{G}";
-
-  vector<float> AxisComptonScatterAngle;
-  AxisComptonScatterAngle = CreateEquiDist(-1.4, 1.2, 13, -MaxCosineLimit, c_NoBound);
-  MString NameAxisComptonScatterAngle = NameAxisComptonScatterAngleStart;
-
-
-  vector<float> AxisDistance = 
-    CreateLogDist(0.2, 10, 7, 0.01, 100, 0, false); 
-  MString NameAxisDistance = "Distance [cm]";
-
-  vector<float> AxisTotalEnergy = CreateLogDist(100, MaxEnergy, 4, 1, 10000, 0, false);
-  //CreateLogDist(1, 10000, 1); //, 1, 10000, 0, false);
-  //mimp<<"No total energy bins!"<<show;
-  MString NameAxisTotalEnergy = "E_{tot} [keV]";
-
-  m_PdfComptonGood = MResponseMatrixO6("MC: Central (good)", 
-                                       AxisDifferenceComptonScatterAngle,
-                                       AxisComptonScatterAngle, 
-                                       AxisDistance,
-                                       AxisTotalEnergy,
-                                       AxisSequenceLength, 
-                                       AxisMaterial);
-  m_PdfComptonGood.SetAxisNames(NameAxisDifferenceComptonScatterAngle, 
-                                NameAxisComptonScatterAngle, 
-                                NameAxisDistance, 
-                                NameAxisTotalEnergy, 
-                                NameAxisSequenceLength, 
-                                NameAxisMaterial);
-  m_PdfComptonBad = MResponseMatrixO6("MC: Central (bad)", 
-                                      AxisDifferenceComptonScatterAngle, 
-                                      AxisComptonScatterAngle,
-                                      AxisDistance,
-                                      AxisTotalEnergy,
-                                      AxisSequenceLength, 
-                                      AxisMaterial);
-  m_PdfComptonBad.SetAxisNames(NameAxisDifferenceComptonScatterAngle, 
-                               NameAxisComptonScatterAngle, 
-                               NameAxisDistance, 
-                               NameAxisTotalEnergy, 
-                               NameAxisSequenceLength, 
-                               NameAxisMaterial);
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Save the responses
-bool MResponseMultipleCompton::Save()
-{
-  MResponseBuilder::Save(); 
-
-  m_GoodBadTable.Write(GetFilePrefix() + ".goodbad" + m_Suffix, true);
-  
-  m_PdfDualGood.Write(GetFilePrefix() + ".dual.good" + m_Suffix, true);
-  m_PdfDualBad.Write(GetFilePrefix() + ".dual.bad" + m_Suffix, true);
-  
-  m_PdfStartGood.Write(GetFilePrefix() + ".start.good" + m_Suffix, true);
-  m_PdfStartBad.Write(GetFilePrefix() + ".start.bad" + m_Suffix, true);
-  
-  m_PdfTrackGood.Write(GetFilePrefix() + ".track.good" + m_Suffix, true);
-  m_PdfTrackBad.Write(GetFilePrefix() + ".track.bad" + m_Suffix, true);
-  
-  m_PdfComptonGood.Write(GetFilePrefix() + ".compton.good" + m_Suffix, true);
-  m_PdfComptonBad.Write(GetFilePrefix() + ".compton.bad" + m_Suffix, true);
-  
-  m_PdfComptonScatterProbabilityGood.Write(GetFilePrefix() + ".comptondistance.good" + m_Suffix, true);
-  m_PdfComptonScatterProbabilityBad.Write(GetFilePrefix() + ".comptondistance.bad" + m_Suffix, true);
-      
-  m_PdfPhotoAbsorptionProbabilityGood.Write(GetFilePrefix() + ".photodistance.good" + m_Suffix, true);
-  m_PdfPhotoAbsorptionProbabilityBad.Write(GetFilePrefix() + ".photodistance.bad" + m_Suffix, true);
-      
-  return true;
-}
-
-  
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Analyze the current event
-bool MResponseMultipleCompton::Analyze() 
-{ 
-  // Initlize next matching event, save if necessary
-  if (MResponseBuilder::Analyze() == false) return false;
-  
-  
-  //g_Verbosity = 1;
-  double Etot = 0;
-  double Eres = 0;
- 
-  
-  for (auto RE: m_ReEvents) {
-    if (RE == nullptr) continue;
-    
-    if (RE->GetNRESEs() <= 1) {
-      mdebug<<"GeneratePdf: Not enough hits!"<<endl;
-      continue;
-    }
-    
-    mdebug<<endl<<endl;
-    mdebug<<RE->ToString()<<endl;
-    
-    if (RE->GetStartPoint() == 0) continue;
-    
-    // Check if complete sequence is ok:
-    bool SequenceOk = true;
-    unsigned int SequenceLength = RE->GetNRESEs();
-    int PreviousPosition = 0;
-    
-    if (SequenceLength > m_MaxNInteractions) continue;
-    
-    if (SequenceLength == 2) {
-      // Look at start:
-      MRESEIterator Iter;
-      Iter.Start(RE->GetStartPoint());
-      Iter.GetNextRESE();
-      Etot = RE->GetEnergy();
-      Eres = RE->GetEnergyResolution();
-      
-      double CosPhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
-      double PhotoDistance = CalculateAbsorptionProbabilityTotal(*Iter.GetCurrent(), *Iter.GetNext(), Iter.GetNext()->GetEnergy());
-      
-      if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
-        mdebug<<"--------> Found GOOD dual Compton event!"<<endl;
-        m_PdfDualGood.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
-      } else {
-        mdebug<<"--------> Found bad dual Compton event!"<<endl;
-        m_PdfDualBad.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
-        SequenceOk = false;
-      }
-    } else {
-      // Look at start:
-      MRESEIterator Iter;
-      Iter.Start(RE->GetStartPoint());
-      Iter.GetNextRESE();
-      Etot = RE->GetEnergy();
-      Eres = RE->GetEnergyResolution();
-      if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
-        mdebug<<"--------> Found GOOD Compton start!"<<endl;
-        m_PdfStartGood.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
-      } else {
-        mdebug<<"--------> Found bad Compton start!"<<endl;
-        m_PdfStartBad.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
-        SequenceOk = false;
-      }
-      
-      // Track at start?
-      if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
-        double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
-        double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
-        if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
-          mdebug<<"--------> Found GOOD Track start!"<<endl;
-          m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
-        } else {
-          mdebug<<"--------> Found bad Track start!"<<endl;
-          m_PdfTrackBad.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
-          SequenceOk = false;
-        }
-      }
-      
-      
-      // Central part of the Compton track
-      Iter.GetNextRESE();
-      while (Iter.GetNext() != 0) {
-        // Add here
-        Etot -= Iter.GetPrevious()->GetEnergy();
-        Eres = sqrt(Eres*Eres - Iter.GetPrevious()->GetEnergyResolution()*Iter.GetPrevious()->GetEnergyResolution());
-        PreviousPosition++;
-        
-        // In the current implementation/simulation the hits have to be in increasing order...
-        if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
-          double ComptonDistance = 
-          CalculateAbsorptionProbabilityCompton(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
-          mdebug<<"Dist C: "<<ComptonDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
-          if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
-            mdebug<<"--------> Found GOOD Distance sequence!"<<endl;
-            // Retrieve the data:
-            m_PdfComptonScatterProbabilityGood.Add(ComptonDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
-          } else {
-            mdebug<<"--------> Found bad Distance sequence!"<<endl;
-            // Retrieve the data:
-            m_PdfComptonScatterProbabilityBad.Add(ComptonDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
-            SequenceOk = false;
-          } // Add good / bad
-        }
-        
-        // Decide if it is good or bad...
-        // In the current implementation/simulation the hits have to be in increasing order...
-        double dPhi = CalculateDCosPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot);
-        double PhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
-        double Lever = CalculateMinLeverArm(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext());
-        int Material = GetMaterial(*Iter.GetCurrent());
-        
-        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
-          mdebug<<"--------> Found GOOD internal Compton sequence!"<<endl;
-          // Retrieve the data:
-          m_PdfComptonGood.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
-          
-        } else {
-          mdebug<<"--------> Found bad internal Compton sequence!"<<endl;
-          // Retrieve the data:
-          m_PdfComptonBad.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
-          SequenceOk = false;
-        } // Add good / bad
-        
-        // Track at central?
-        if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
-          //MRETrack* T = (MRETrack*) Iter.GetCurrent();
-          double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
-          double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
-          if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
-            mdebug<<"--------> Found GOOD Track start (central)!"<<endl;
-            m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
-          } else {
-            mdebug<<"--------> Found bad Track start (central)!"<<endl;
-            m_PdfTrackBad.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
-            SequenceOk = false;
-          }
-        }
-        Iter.GetNextRESE();
-      }
-      
-      Etot -= Iter.GetPrevious()->GetEnergy();
-      Eres = sqrt(Eres*Eres - Iter.GetPrevious()->GetEnergyResolution()*Iter.GetPrevious()->GetEnergyResolution());
-      PreviousPosition++;
-      
-      // Decide if it is good or bad...
-      // In the current implementation/simulation the hits have to be in increasing order...
-      if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
-        double LastDistance = CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
-        mdebug<<"Dist P: "<<LastDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
-        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
-          mdebug<<"--------> Found GOOD Lastdistance sequence!"<<endl;
-          // Retrieve the data:
-          m_PdfPhotoAbsorptionProbabilityGood.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
-                                                  Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
-        } else {
-          mdebug<<"--------> Found bad Lastdistance sequence!"<<endl;
-          // Retrieve the data:
-          m_PdfPhotoAbsorptionProbabilityBad.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
-                                                 Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
-          SequenceOk = false;
-        } // Add good / bad
-      }
-    }
-    
-    if (SequenceOk == false) {
-      m_GoodBadTable.Add(0.5, SequenceLength, 1);
-      //mdebug<<"No good sequence exists"<<endl<<endl<<endl<<endl;
-    } else {
-      m_GoodBadTable.Add(1.5, SequenceLength, 1);
-      mdebug<<"One good sequence exists"<<endl<<endl<<endl<<endl;
-    }
-  } // For each raw event...
-  
-  
-  return true;
-}
-
-  
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Finalize the response generation (i.e. save the data a final time )
-bool MResponseMultipleCompton::Finalize() 
-{ 
-  return MResponseBuilder::Finalize(); 
 }
 
 
@@ -914,7 +445,7 @@ bool MResponseMultipleCompton::IsComptonStart(MRESE& Start, double Etot, double 
   if (StartOriginIds.size() == 0) {
     if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Start has no Sim IDs!"<<endl;
     return false;
-  }
+  } 
   
   // Find the smallest origin ID in the sequence
   int SmallestOriginID = numeric_limits<int>::max();
@@ -1360,6 +891,7 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
       while (true) {
         if (Predeccessor == 1) break; // we reached init
         if (m_SiEvent->GetIAAt(Predeccessor-1)->GetOriginID() == m_SiEvent->GetIAAt(HighestOriginID-1)->GetOriginID()) {
+          /* Old -- not sure why it even should be part of AllSimIds -- on the contrary
           if (m_SiEvent->GetIAAt(Predeccessor-1)->GetProcess() == "COMP") {
             if (find(AllSimIds.begin(), AllSimIds.end(), Predeccessor) != AllSimIds.end()) {
               IsGood = true;
@@ -1368,6 +900,11 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
               mdebug<<"ContainsOnlyComptonDependants: Preceeding Compton IA is missing"<<endl;
               return false;
             }
+          }
+          */
+          if (m_SiEvent->GetIAAt(Predeccessor-1)->GetProcess() == "COMP") {
+            IsGood = true;
+            break;
           }
         }
         --Predeccessor;
@@ -1453,10 +990,26 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
       CleanedSimIDs.push_back(SimIDs[i]);
     }
   }
+  sort(CleanedSimIDs.begin(), CleanedSimIDs.end());
   SimIDs = CleanedSimIDs;
   CleanedSimIDs.clear();
   
-  // (b) Keep only the smallest PHOT IA since we require it to be contained
+  
+  // (b) Keep only the smallest PHOT IA since all susequent ones (excluding the above removed descendents) derive from the same origin
+  for (unsigned int i = SimIDs.size() - 1; i > 0; --i) {
+    if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "PHOT" &&
+      m_SiEvent->GetIAAt(SimIDs[i-1]-1)->GetProcess() == "PHOT" &&   
+      m_SiEvent->GetIAAt(SimIDs[i]-1)->GetOriginID() == m_SiEvent->GetIAAt(SimIDs[i-1])->GetOriginID()) {
+       SimIDs[i] = -1; // remove 
+    }
+  }
+  for (unsigned int i = 0; i < SimIDs.size(); ++i) {
+    if (SimIDs[i] != -1) {
+      CleanedSimIDs.push_back(SimIDs[i]);
+    }
+  }
+  
+  /* Does not cover PHOT originating from e.g. Bremsstrahlung
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
     if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "PHOT") {
       if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetOriginID() == m_SiEvent->GetIAAt(SimIDs[i]-2)->GetOriginID() && m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() != "PHOT") {
@@ -1466,9 +1019,12 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
       CleanedSimIDs.push_back(SimIDs[i]);
     }
   }
+  */
+  
   SimIDs = CleanedSimIDs;
   CleanedSimIDs.clear();
-    
+  
+  
   // (c) Exclude fluoresence COMP
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
     if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "COMP") {
@@ -1482,12 +1038,15 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
   SimIDs = CleanedSimIDs;
   CleanedSimIDs.clear();
   
-  mdebug<<"SimIDs: "; for (int i: SimIDs) mdebug<<i<<" "; mdebug<<endl;
+  if (SimIDs.size() == 0) {
+    mout<<"Error: No sim IDs left. "<<endl;
+    mout<<"Original SimIDs: "; for (int i: AllSimIds) mdebug<<i<<" "; mdebug<<endl;
+  }
   
   // (d) Sanity check - we just should have COMP & PHOT in our list
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
     if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "COMP" && m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "PHOT") {
-      cout<<"Error: We only should have COMP and PHOT IA's at this point and not \""<<m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess()<<"\". Did you use hadronic processes for the simulations?"<<endl;
+      mout<<"Error: We only should have COMP and PHOT IA's at this point and not \""<<m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess()<<"\". Did you use hadronic processes for the simulations?"<<endl;
     }
   }
   
@@ -1531,8 +1090,8 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
 bool MResponseMultipleCompton::IsTotalAbsorbed(const vector<int>& AllSimIds, 
                                                double Energy, double EnergyResolution)
 {
-  massert(AllSimIds.size() > 0);
-
+  massert(AllSimIds.size() > 0);  
+  
   EnergyResolution = 3*EnergyResolution+2;
 
   int MinId = numeric_limits<int>::max();
@@ -1541,7 +1100,7 @@ bool MResponseMultipleCompton::IsTotalAbsorbed(const vector<int>& AllSimIds,
   }
 
   if (MinId == numeric_limits<int>::max()) return false;
-
+  
   double Ideal;
   MSimIA* Top = 0;
   if (m_SiEvent->GetIAAt(MinId-2)->GetOriginID() == m_SiEvent->GetIAAt(MinId-1)->GetOriginID()) {
@@ -1563,7 +1122,7 @@ bool MResponseMultipleCompton::IsTotalAbsorbed(const vector<int>& AllSimIds,
   }
 
   if (fabs(Ideal - Energy) > EnergyResolution) {
-      mdebug<<"Is totally absorbed: Not completely absorbed: Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
+      mdebug<<"Is totally absorbed: Not completely absorbed (or if ideal < real, sequence is wrong): Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
     return false;
   } else {
     mdebug<<"Is totally absorbed: Completely absorbed: Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;

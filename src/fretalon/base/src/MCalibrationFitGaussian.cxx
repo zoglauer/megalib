@@ -196,7 +196,7 @@ bool MCalibrationFitGaussian::Fit(TH1D& Histogram, double Min, double Max)
   ROOT::Fit::DataOptions Options; 
   ROOT::Fit::DataRange Range; 
   Range.SetRange(Min, Max);
-  ROOT::Fit::BinData TheData(Options, Range); 
+  ROOT::Fit::BinData TheData(Options, Range);
   ROOT::Fit::FillData(TheData, &Histogram);
 
   ROOT::Fit::Fitter TheFitter; 

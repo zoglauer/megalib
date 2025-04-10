@@ -59,13 +59,15 @@ ClassImp(MGlobal)
 
 
 // Make this part of a future singleton class MGlobal
+MString g_OSType = "Unknown";
+
 unsigned int g_MajorVersion = 100;
 unsigned int g_MinorVersion = 0;
 unsigned int g_Version = 10000;
 MString g_VersionString = "1.00.00";
 
 // Remove year of copyright and replace with (C) by ....
-const MString g_CopyrightYear = "2016";
+const MString g_CopyrightYear = "2024";
 const MString g_Homepage = "http://megalibtoolkit.com";
 const MString g_MEGAlibPath = "$(MEGALIB)";
 
@@ -137,6 +139,20 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   g_Verbosity = 1;
 #endif
 
+  // Find the operating systenm type
+#if defined(_WIN32) || defined(_WIN64)
+  g_OSType = "Windows";
+#elif defined(__linux__)
+  g_OSType = "Linux";
+#elif defined(__APPLE__) && defined(__MACH__)
+  g_OSType = "macOS";
+#elif defined(__FreeBSD__)
+  g_OSType = "FreeBSD";
+#else
+  g_OSType = "Unknown";
+#endif
+
+
   // Load the GUI defaults by initializing the singleton
   MGUIDefaults::GetInstance();
 
@@ -182,8 +198,11 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 
   // Speeds up drawing of canvas if an openGL capable GPU is available and we are not remote
   MString SSHClient(getenv("SSH_CLIENT"));
+  gStyle->SetCanvasPreferGL(false);
   if (SSHClient.IsEmpty()) {
-    gStyle->SetCanvasPreferGL(true);
+    if (g_OSType != "macOS") {
+      gStyle->SetCanvasPreferGL(true);
+    }
   }
   
   // Change the region where the drawing starts in canvases:

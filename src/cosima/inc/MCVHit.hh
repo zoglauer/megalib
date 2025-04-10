@@ -61,9 +61,9 @@ public:
   G4int GetDetectorType() { return m_DetectorType; };
 
   /// Add an origin to the list
-  void AddOrigin(const int TrackId);
+  void AddOrigin(const unsigned int TrackId);
   /// Add several origins to the list
-  void AddOrigins(const set<int>& Origins);
+  void AddOrigins(const set<unsigned int>& Origins);
 
   /// Add an entry to the volume history:
   void AddVolumeHistory(string Name);
@@ -100,9 +100,9 @@ protected:
   G4int m_DetectorType;
 
   /// Array of Id of all tracks which have contributed
-  set<int> m_Origins;
+  set<unsigned int> m_Origins;
   ///
-  int m_LastAddedOrigin;
+  unsigned int m_LastAddedOrigin;
   
   
 

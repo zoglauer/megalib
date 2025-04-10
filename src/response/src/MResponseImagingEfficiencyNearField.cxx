@@ -348,7 +348,7 @@ bool MResponseImagingEfficiencyNearField::Initialize()
   AxisPhi.SetLinear(180/m_AngleBinWidth, 0, 180);
   
   MResponseMatrixAxisSpheric AxisScatteredGammaRayCoordinates("#psi [deg]", "#chi [deg]");
-  AxisScatteredGammaRayCoordinates.SetFISBEL(AngleBins);
+  AxisScatteredGammaRayCoordinates.SetFISBELByNumberOfBins(AngleBins);
   
   
   m_ResponseEmittedXDetectedAnywhere.SetName("ResponseEmittedXDetectedAnywhere");

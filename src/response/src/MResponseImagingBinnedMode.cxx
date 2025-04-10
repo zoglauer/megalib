@@ -58,7 +58,9 @@ MResponseImagingBinnedMode::MResponseImagingBinnedMode() : m_ImagingResponse(tru
   
   m_AngleBinWidth = 5; // deg
   m_AngleBinWidthElectron = 360; // deg
+  m_AngleBinMode = "fisbel"; 
   m_EnergyNBins = 1;
+  m_EnergyBinMode = "lin";
   m_EnergyMinimum = 10; // keV
   m_EnergyMaximum = 2000; // keV
   m_EnergyBinEdges.clear();
@@ -99,17 +101,26 @@ MString MResponseImagingBinnedMode::Description()
 MString MResponseImagingBinnedMode::Options()
 {
   ostringstream out;
-  out<<"             anglebinwidth:           the width of a sky bin at the equator (default: 5 deg)"<<endl;
+  out<<"             anglebinmode:            Use either FISBEL or HEALPix for all spherical coordinates (default: FISBEL)"<<endl;
+  out<<"             anglebinwidth:           Approximate width of a sky bin at the equator (default: 5 deg)"<<endl;
+  out<<"                                      In HEALpix mode, the resolution will be downgraded to the closest order, e.g."<<endl;
+  out<<"                                      14.659 - 29.316 deg --> 29.316 deg (order: 1, bins: 48)"<<endl;
+  out<<"                                       7.330 - 14.658 deg --> 14.658 deg (order: 2, bins: 192)"<<endl;
+  out<<"                                       3.665 -  7.329 deg -->  7.329 deg (order: 3, bins: 768)"<<endl;
+  out<<"                                       1.833 -  3.664 deg -->  3.664 deg (order: 4, bins: 3072)"<<endl;
+  out<<"                                       0.917 -  1.832 deg -->  1.832 deg (order: 5, bins: 12288)"<<endl;
+  out<<"                                       0.459 -  0.916 deg -->  0.916 deg (order: 6, bins: 49152)"<<endl;
   out<<"             emin:                    minimum energy (default: 10 keV; cannot be used in combination with ebinedges)"<<endl;
   out<<"             emax:                    maximum energy (default: 2,000 keV; cannot be used in combination with ebinedges)"<<endl;
   out<<"             ebins:                   number of energy bins between min and max energy (default: 1; cannot be used in combination with ebinedges)"<<endl;
+  out<<"             emode:                   One of: lin (linear), log (logarithmic) (default: lin; cannot be used in combination with ebinedges)"<<endl;
   out<<"             ebinedges:               the energy bin edges as a comma seperated list (default: not used, cannot be used in combination with emin, emax, or ebins)"<<endl;
-  out<<"             anglebinwidthelectron:   the width of a aky bin at the equator (default: 5 deg)"<<endl;
+  out<<"             anglebinwidthelectron:   the width of a spherial bin at the equator for recoil electrons (default: 360 deg - just one overall bin)"<<endl;
   out<<"             dmin:                    minimum distance (default: 0 cm)"<<endl;
   out<<"             dmax:                    maximum distance (default: 1,000 cm)"<<endl;
   out<<"             dbins:                   number of distance bins between min and max distance (default: 1)"<<endl;
-  out<<"             atabsfile:               the atmopheric absorption file name (default: \"\" (i.e. none))"<<endl;
-  out<<"             atabsheight:             altitude for the atmospheric absorption (default: 33500)"<<endl;
+  out<<"             atabsfile:               the atmospheric absorption file name (default: \"\" (i.e. none))"<<endl;
+  out<<"             atabsheight:             altitude for the atmospheric absorption (default: 33500 m)"<<endl;
   
   return MString(out);
 }
@@ -170,7 +181,8 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     
   // Parse
   for (unsigned int i = 0; i < Split2.size(); ++i) {
-    string Value = Split2[i][1].Data();
+    MString MValue = Split2[i][1];
+    string Value = MValue.Data();
     
     if (Split2[i][0] == "emin") {
       m_EnergyMinimum = stod(Value);
@@ -178,6 +190,8 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       m_EnergyMaximum = stod(Value);
     } else if (Split2[i][0] == "ebins") {
       m_EnergyNBins = stod(Value);
+    } else if (Split2[i][0] == "ebinmode") {
+      m_EnergyBinMode = MValue.ToLower();
     } else if (Split2[i][0] == "ebinedges") {
       vector<MString> Edges = MString(Value).Tokenize(",");
       m_EnergyBinEdges.clear();
@@ -185,6 +199,8 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       m_EnergyNBins = 0;
     } else if (Split2[i][0] == "anglebinwidth") {
       m_AngleBinWidth = stod(Value);
+    } else if (Split2[i][0] == "anglebinmode") {
+      m_AngleBinMode = MValue.ToLower();
     } else if (Split2[i][0] == "dmin") {
       m_DistanceMinimum = stod(Value);
     } else if (Split2[i][0] == "dmax") {
@@ -232,6 +248,10 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       mout<<"Error: You need at least one energy bin"<<endl;
       return false;       
     }
+    if (m_EnergyBinMode != "lin" && m_EnergyBinMode != "log") {
+      mout<<"Error: Energy bins only support lin and log modes"<<endl;
+      return false;       
+    }
   }
   if (m_DistanceMinimum < 0 || m_DistanceMaximum < 0) {
     mout<<"Error: All distance values must be non-negative"<<endl;
@@ -251,6 +271,10 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   }
   if (m_AngleBinWidthElectron <= 0) {
     mout<<"Error: You need at give a positive width of the sky bins at the equator for the recoil electron"<<endl;
+    return false;       
+  }
+  if (m_AngleBinMode != "fisbel" && m_AngleBinMode != "healpix") {
+    mout<<"Error: Sky bins only support fisbel and healpix modes"<<endl;
     return false;       
   }
   if (m_AtmosphericAbsorptionFileName != "") {
@@ -277,12 +301,14 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     mout<<"  Minimum energy:                                     "<<m_EnergyMinimum<<endl;
     mout<<"  Maximum energy:                                     "<<m_EnergyMaximum<<endl;
     mout<<"  Number of bins energy:                              "<<m_EnergyNBins<<endl;
+    mout<<"  Energy binning mode:                                "<<m_EnergyBinMode<<endl;
   }
   mout<<"  Width of sky bins at equator:                       "<<m_AngleBinWidth<<endl;
+  mout<<"  Sky bins binning mode:                              "<<m_AngleBinMode<<endl;
   mout<<"  Minimum distance:                                   "<<m_DistanceMinimum<<endl;
   mout<<"  Maximum distance:                                   "<<m_DistanceMaximum<<endl;
   mout<<"  Number of bins distance:                            "<<m_DistanceNBins<<endl;
-  mout<<"  Width of sky bins at equator for recoild electron:  "<<m_AngleBinWidthElectron<<endl;
+  mout<<"  Width of sky bins at equator for recoil electron:  "<<m_AngleBinWidthElectron<<endl;
   if (m_UseAtmosphericAbsorption == true) {
     mout<<"  Atmospheric absorption file name:                   "<<m_AtmosphericAbsorptionFileName<<endl;
     mout<<"  Atmospheric absorption altitude:                    "<<m_Altitude<<endl;
@@ -298,45 +324,70 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
 
 //! Initialize the response matrices and their generation
 bool MResponseImagingBinnedMode::Initialize()
-{
+{  
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Initialize() == false) return false;
 
-  int AngleBins = 4*c_Pi*c_Deg*c_Deg / m_AngleBinWidth / m_AngleBinWidth;
-  if (AngleBins < 1) AngleBins = 1;
-  int AngleBinsElectron = 4*c_Pi*c_Deg*c_Deg / m_AngleBinWidthElectron / m_AngleBinWidthElectron;
-  if (AngleBinsElectron < 1) AngleBinsElectron = 1;
-  
+  // Cast the reader for easier information extraction
+  MFileEvents* Reader = nullptr;
+  if (m_SiReader != nullptr) {
+    Reader = dynamic_cast<MFileEvents*>(m_SiReader);
+  } else if (m_TraReader != nullptr) {
+    Reader = dynamic_cast<MFileEvents*>(m_TraReader);
+  }
+
   MResponseMatrixAxis AxisEnergyInitial("Initial energy [keV]");
   if (m_EnergyBinEdges.size() > 0) {
     AxisEnergyInitial.SetBinEdges(m_EnergyBinEdges);
   } else {
-    AxisEnergyInitial.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    if (m_EnergyBinMode == "log") {
+      AxisEnergyInitial.SetLogarithmic(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    } else {
+      AxisEnergyInitial.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    }
   }
   
   MResponseMatrixAxisSpheric AxisSkyCoordinates("#nu [deg]", "#lambda [deg]");
-  AxisSkyCoordinates.SetFISBEL(AngleBins);
 
+  if (m_AngleBinMode == "fisbel") {
+    AxisSkyCoordinates.SetFISBELByPixelSize(m_AngleBinWidth);
+  } else {
+    AxisSkyCoordinates.SetHEALPixByPixelSize(m_AngleBinWidth);
+    cout<<"Using HEALPix for sky with "<<AxisSkyCoordinates.GetNumberOfBins()<<" bins"<<endl;
+  }
+    
   MResponseMatrixAxis AxisEnergyMeasured("Measured energy [keV]");
   if (m_EnergyBinEdges.size() > 0) {
     AxisEnergyMeasured.SetBinEdges(m_EnergyBinEdges);
   } else {
-    AxisEnergyMeasured.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    if (m_EnergyBinMode == "log") {
+      AxisEnergyMeasured.SetLogarithmic(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    } else {
+      AxisEnergyMeasured.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+    }
   }
   
   MResponseMatrixAxis AxisPhi("#phi [deg]");
   AxisPhi.SetLinear(180/m_AngleBinWidth, 0, 180);
   
   MResponseMatrixAxisSpheric AxisScatteredGammaRayCoordinates("#psi [deg]", "#chi [deg]");
-  AxisScatteredGammaRayCoordinates.SetFISBEL(AngleBins);
+  if (m_AngleBinMode == "fisbel") {
+    AxisScatteredGammaRayCoordinates.SetFISBELByPixelSize(m_AngleBinWidth);
+  } else {
+    AxisScatteredGammaRayCoordinates.SetHEALPixByPixelSize(m_AngleBinWidth);
+    cout<<"Using HEALPix for scattered gamma ray with "<<AxisScatteredGammaRayCoordinates.GetNumberOfBins()<<" bins"<<endl;
+  }
   
   MResponseMatrixAxisSpheric AxisRecoilElectronCoordinates("#sigma [deg]", "#tau [deg]");
-  AxisRecoilElectronCoordinates.SetFISBEL(AngleBinsElectron);
-  
+  if (m_AngleBinMode == "fisbel") {
+    AxisRecoilElectronCoordinates.SetFISBELByPixelSize(m_AngleBinWidthElectron);
+  } else {
+    AxisRecoilElectronCoordinates.SetHEALPixByPixelSize(m_AngleBinWidthElectron);
+    cout<<"Using HEALPix for recoil electron with "<<AxisRecoilElectronCoordinates.GetNumberOfBins()<<" bins"<<endl;
+  }
+    
   MResponseMatrixAxis AxisDistance("Distance [cm]");
   AxisDistance.SetLinear(m_DistanceNBins, m_DistanceMinimum, m_DistanceMaximum);
-  
-  
   
   m_ImagingResponse.SetName("10D imaging response");
   m_ImagingResponse.AddAxis(AxisEnergyInitial);
@@ -346,30 +397,38 @@ bool MResponseImagingBinnedMode::Initialize()
   m_ImagingResponse.AddAxis(AxisScatteredGammaRayCoordinates);
   m_ImagingResponse.AddAxis(AxisRecoilElectronCoordinates);
   m_ImagingResponse.AddAxis(AxisDistance);
-  if (m_SiReader != nullptr) {
-    m_ImagingResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
-  }   
+  if (Reader != nullptr) {
+    m_ImagingResponse.SetFarFieldStartArea(Reader->GetSimulationStartAreaFarField());
+    m_ImagingResponse.SetSpectralType(Reader->GetSpectralType());
+    m_ImagingResponse.SetBeamType(Reader->GetBeamType());
+  }
 
   m_Exposure.SetName("Exposure");
   m_Exposure.AddAxis(AxisEnergyInitial);
   m_Exposure.AddAxis(AxisSkyCoordinates);
-  if (m_SiReader != nullptr) {
-    m_Exposure.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  if (Reader != nullptr) {
+    m_Exposure.SetFarFieldStartArea(Reader->GetSimulationStartAreaFarField());
+    m_Exposure.SetSpectralType(Reader->GetSpectralType());
+    m_Exposure.SetBeamType(Reader->GetBeamType());
   }
 
   m_EnergyResponse4D.SetName("Energy response 4D");
   m_EnergyResponse4D.AddAxis(AxisEnergyInitial);
   m_EnergyResponse4D.AddAxis(AxisSkyCoordinates);
   m_EnergyResponse4D.AddAxis(AxisEnergyMeasured);
-  if (m_SiReader != nullptr) {
-    m_EnergyResponse4D.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  if (Reader != nullptr) {
+    m_EnergyResponse4D.SetFarFieldStartArea(Reader->GetSimulationStartAreaFarField());
+    m_EnergyResponse4D.SetSpectralType(Reader->GetSpectralType());
+    m_EnergyResponse4D.SetBeamType(Reader->GetBeamType());
   }
 
   m_EnergyResponse2D.SetName("Energy response 2D");
   m_EnergyResponse2D.AddAxis(AxisEnergyInitial);
   m_EnergyResponse2D.AddAxis(AxisEnergyMeasured);
-  if (m_SiReader != nullptr) {
-    m_EnergyResponse2D.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  if (Reader != nullptr) {
+    m_EnergyResponse2D.SetFarFieldStartArea(Reader->GetSimulationStartAreaFarField());
+    m_EnergyResponse2D.SetSpectralType(Reader->GetSpectralType());
+    m_EnergyResponse2D.SetBeamType(Reader->GetBeamType());
   }
 
   if (m_UseAtmosphericAbsorption == true) {
@@ -392,21 +451,50 @@ bool MResponseImagingBinnedMode::Analyze()
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
   
-  // We need to have at least an "INIT" in the simulation file per event 
-  if (m_SiEvent->GetNIAs() == 0) {
-    return true;
-  }
+  MPhysicalEvent* Event = nullptr;
+  MVector IdealOriginDir;
+  double EnergyInitial;
+  if (m_Mode == MResponseBuilderReadMode::SimFile || m_Mode == MResponseBuilderReadMode::SimEventByEvent) {
+    // We need to have at least an "INIT" in the simulation file per event 
+    if (m_SiEvent->GetNIAs() == 0) {
+      return true;
+    }
   
-  // We require a successful reconstruction 
-  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
-  if (REList->HasOnlyOptimumEvents() == false) {
-    return true;
-  }
+    // We require a successful reconstruction 
+    MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
+    if (REList->HasOnlyOptimumEvents() == false) {
+      return true;
+    }
     
-  // ... leading to an event
-  MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
-  if (Event == nullptr) {
-    return true;
+    // ... leading to an event
+    Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
+    if (Event == nullptr) {
+      return true;
+    }
+    
+    // and thew origin information
+    IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
+    EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+    
+  } else if (m_Mode == MResponseBuilderReadMode::TraFile) {
+    Event = m_TraEvent;
+    if (Event == nullptr) {
+      return true;
+    }
+    IdealOriginDir = -Event->GetOIDirection();
+    if (IdealOriginDir == g_VectorNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }
+    EnergyInitial = Event->GetOIEnergy();
+    if (IdealOriginDir == g_DoubleNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }    
+    
+  } else {
+    cout<<"Unknown mode in MResponseImagingBinnedMode::Analyze"<<endl;
+    return false;
   }
   
   // ... which needs to be a Compton event
@@ -428,8 +516,8 @@ bool MResponseImagingBinnedMode::Analyze()
   if (m_UseAtmosphericAbsorption == true) {
     // Deselect gamma rays based on the transmission probability 
     
-    double OriginAzimuth = (-m_SiEvent->GetIAAt(0)->GetSecondaryDirection()).Theta() * c_Deg;
-    double OriginEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+    double OriginAzimuth = IdealOriginDir.Theta() * c_Deg;
+    double OriginEnergy = EnergyInitial;
     
     double P = m_AtmosphericAbsorption.GetTransmissionProbability(m_Altitude, OriginAzimuth, OriginEnergy);
    
@@ -465,14 +553,12 @@ bool MResponseImagingBinnedMode::Analyze()
   
   double Distance = Compton->FirstLeverArm();
   
-  // Now get the origin information
-  MVector IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
+  // Now enhance the origin information
   IdealOriginDir = Rotation*IdealOriginDir;
   double Lambda = IdealOriginDir.Phi()*c_Deg;
   while (Lambda < -180) Lambda += 360.0;
   while (Lambda > +180) Lambda -= 360.0;
   double Nu = IdealOriginDir.Theta()*c_Deg;
-  double EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
   
   // And fill the matrices
   m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi, Sigma, Tau, Distance } );

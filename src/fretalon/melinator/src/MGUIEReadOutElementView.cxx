@@ -47,7 +47,7 @@ MGUIEReadOutElementView::MGUIEReadOutElementView(const TGWindow* Parent) :
   m_Parent = (TGWindow *) Parent;
   
   // Since we do not create the element in the constructor, 
-  // we have initialze some pointers:
+  // we have to initialize some pointers:
   m_Container = new TGCompositeFrame(GetViewPort(), 50, 50);
   SetContainer(m_Container);
   

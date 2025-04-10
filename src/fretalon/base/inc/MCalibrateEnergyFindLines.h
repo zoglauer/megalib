@@ -60,6 +60,16 @@ class MCalibrateEnergyFindLines : public MCalibrateEnergy
   //! Set the selected temperature window
   void SetTemperatureWindow(double Min, double Max) { m_TemperatureMin = Min; m_TemperatureMax = Max; }
   
+  //! Set the prior
+  void SetBayesianBlockPrior(unsigned int Prior) { m_Prior = Prior; }
+
+  //! Set the number of bins which are excluded from peak finding at low energies
+  //! to avoid noise peaks
+  void SetNumberOfExcludedBinsAtLowEnergies(unsigned int Bins) { m_ExcludeFirstNumberOfBins = Bins; }
+
+  //! Set the minimum number of counts in accepted peaks
+  void SetMinimumNumberOfPeakCounts(unsigned int Counts) { m_MinimumPeakCounts = Counts; }
+
   //! Perform the calibration
   virtual bool Calibrate();
   
@@ -108,7 +118,16 @@ class MCalibrateEnergyFindLines : public MCalibrateEnergy
   //! The selected temperature window maximum
   double m_TemperatureMax;
   
-  
+  // User adjustable flags
+
+  //! The prior for the Bayesian block binning
+  unsigned int m_Prior;
+  //! Ignore peaks found in the first X number of bins
+  unsigned int m_ExcludeFirstNumberOfBins;
+  //! Minimum number of counts in accepted peak
+  unsigned int m_MinimumPeakCounts;
+
+
 #ifdef ___CLING___
  public:
   ClassDef(MCalibrateEnergyFindLines, 0) // no description

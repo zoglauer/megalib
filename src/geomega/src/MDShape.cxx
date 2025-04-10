@@ -68,6 +68,9 @@ MDShape::MDShape(const MString& Name)
   m_Name = Name;
   m_Geo = nullptr;
   m_IsValidated = false;
+
+  m_Scaler = 1.0;
+  m_ScalingAxis = "";
 }
 
 
@@ -219,20 +222,29 @@ MVector MDShape::GetRandomPositionInside()
   TGeoBBox* BBox = (TGeoBBox*) m_Geo; // All geometries are derived from TGeoBBox!
   
   MVector R;
-  
-  int Counter = 0;
+
+  unsigned long Counter = 0;
   do {
     R.SetX((2.0*gRandom->Rndm()-1.0)*BBox->GetDX() + BBox->GetOrigin()[0]);
     R.SetY((2.0*gRandom->Rndm()-1.0)*BBox->GetDY() + BBox->GetOrigin()[1]);
     R.SetZ((2.0*gRandom->Rndm()-1.0)*BBox->GetDZ() + BBox->GetOrigin()[2]);
 
     Counter++;
-    if (Counter > 1 && Counter%100 == 0) {
-      mout<<"   ***  Warning  ***  in shape "<<m_Type<<endl;
+
+    if (Counter > 10000000) {
+      mout<<"   ***  FATAL ERROR  ***  in shape "<<m_Type<<endl;
       mout<<"GetRandomPositionInside() required more than "<<Counter<<" trials."<<endl;
-      mout<<"You might want to ask the developers to write an optimized version of GetRandomPositionInside() for type "<<m_Type<<endl;
+      mout<<"There is likely something wrong with your shape, especially when it is a boolean one. You have: "<<m_Type<<endl;
+      abort();
+      return g_VectorNotDefined;
     }
   } while (IsInside(R) == false);
+
+  if (Counter > 10000) {
+    mout<<"   ***  Warning  ***  in shape "<<m_Type<<endl;
+    mout<<"GetRandomPositionInside() required more than "<<Counter<<" trials."<<endl;
+    mout<<"You might want to ask the developers to write an optimized version of GetRandomPositionInside() for type "<<m_Type<<endl;
+  }
 
   return R;
 }
@@ -241,12 +253,46 @@ MVector MDShape::GetRandomPositionInside()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShape::Scale(const double Scale)
+bool MDShape::Scale(const double Scale, const MString Axes)
 {
-  // Scale this shape by a factor of Scale
+  // Base class: Call this one first in derived classed
+  // Performs sanity checks on scaling, and saves data
+
+  if (IsScaled() == true) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"The shape is already scaled."<<endl;
+    return false;
+  }
+
+  for (unsigned int c = 0; c < Axes.Length(); ++c) {
+    char C = Axes[c];
+    if (C != 'X' && C != 'Y' && C != 'Z') {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+      mout<<"The scaling axis can only contain X, Y, or Z, and not \""<<C<<"\"."<<endl;
+      return false;
+    }
+  }
+
+  if (Scale == 1.0) return true;
 
   m_Scaler = Scale;
-  Validate();
+  m_ScalingAxis = Axes;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! True if we are scaled
+bool MDShape::IsScaled() const
+{
+  if (m_ScalingAxis != "") {
+    return true;
+  }
+
+  return false;
 }
 
 

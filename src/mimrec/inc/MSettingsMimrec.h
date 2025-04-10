@@ -101,6 +101,18 @@ class MSettingsMimrec : public MSettings, public MSettingsEventSelections, publi
   int GetHistBinsPolarization() const { return m_HistBinsPolarization; }
   void SetHistBinsPolarization(int HistBinsPolarization) { m_HistBinsPolarization = HistBinsPolarization; } 
 
+  // Log binning
+  bool GetOptimizeBinningARMGamma() const { return m_OptimizeBinningARMGamma; }
+  void SetOptimizeBinningARMGamma(bool OptimizeBinningARMGamma) { m_OptimizeBinningARMGamma = OptimizeBinningARMGamma; }
+
+  unsigned int GetNumberOfFitsARMGamma() const { return m_NumberOfFitsARMGamma; }
+  void SetNumberOfFitsARMGamma(unsigned int NumberOfFitsARMGamma) { m_NumberOfFitsARMGamma = NumberOfFitsARMGamma; }
+
+  unsigned int GetFitFunctionIDARMGamma() const { return m_FitFunctionIDARMGamma; }
+  void SetFitFunctionIDARMGamma(unsigned int FitFunctionIDARMGamma) { m_FitFunctionIDARMGamma = FitFunctionIDARMGamma; }
+
+  bool GetUseUnbinnedFittingARMGamma() const { return m_UseUnbinnedFittingARMGamma; }
+  void SetUseUnbinnedFittingARMGamma(bool UseUnbinnedFittingARMGamma) { m_UseUnbinnedFittingARMGamma = UseUnbinnedFittingARMGamma; }
 
 
   // protected members:
@@ -135,6 +147,12 @@ class MSettingsMimrec : public MSettings, public MSettingsEventSelections, publi
   int m_HistBinsARMElectron;
   int m_HistBinsSpectrum;
   int m_HistBinsPolarization;
+
+  //
+  bool m_OptimizeBinningARMGamma;
+  unsigned int m_NumberOfFitsARMGamma;
+  unsigned int m_FitFunctionIDARMGamma;
+  bool m_UseUnbinnedFittingARMGamma;
 
   // Polarization:
   MString m_PolarizationBackgroundFileName;

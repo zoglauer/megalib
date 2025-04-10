@@ -229,17 +229,33 @@ double MDShapeBRIK::GetVolume()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeBRIK::Scale(const double Factor)
+bool MDShapeBRIK::Scale(const double Factor, const MString Axes)
 {
-  // Scale this shape by Factor
 
-  m_Dx *= Factor;
-  m_Dy *= Factor;
-  m_Dz *= Factor;
+  // Don't do anything if the scaling has already been applied
+  if (Factor == m_Scaler && Axes == m_ScalingAxis) return true;
+
+  // Base class handles sanity checks and storing data
+  if (MDShape::Scale(Factor, Axes) == false) return false;
+  // If there was no scaling return true;
+  if (IsScaled() == false) return true;
+
+
+  // Now scale
+  if (m_ScalingAxis.Contains("X") == true) {
+    m_Dx *= m_Scaler;
+  }
+  if (m_ScalingAxis.Contains("Y") == true) {
+    m_Dy *= m_Scaler;
+  }
+  if (m_ScalingAxis.Contains("Z") == true) {
+    m_Dz *= m_Scaler;
+  }
   
+
+  // And validate
   m_IsValidated = false;
-  
-  Validate();
+  return Validate();
 }
 
 

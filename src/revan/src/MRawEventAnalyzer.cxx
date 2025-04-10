@@ -26,7 +26,7 @@
 // During the analysis of one event, different ordering possibilties are stored
 // in the m_RawEvents member. After loading the event it contains only one
 // expression of the event: only single hits. After the track analysis also the
-// possibilties for different tracks in the one raw event are stored as
+// possibilities for different tracks in the one raw event are stored as
 // different expressions in the m_RawEvents member.
 //
 // After all analysis is done the most likely expression is the chosen one.
@@ -51,6 +51,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MTimer.h"
 #include "MERCoincidence.h"
+#include "MERStripPairing.h"
 #include "MERHitClusterizer.h"
 #include "MEREventClusterizer.h"
 #include "MEREventClusterizerDistance.h"
@@ -143,6 +144,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
 
   m_FilenameOut = "";
   m_PhysFile = nullptr;
+  m_RootFile = nullptr;
 
   m_Geometry = nullptr; 
   m_RawEvents = new MRawEventIncarnationList();
@@ -227,6 +229,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_RejectAllBadEvents = true;
 
   m_TimeLoad = 0;
+  m_TimeStripPairing = 0;
   m_TimeEventClusterize = 0;
   m_TimeHitClusterize = 0;
   m_TimeTrack = 0;
@@ -236,6 +239,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_IsBatch = false;
 
   m_Coincidence = nullptr;
+  m_StripPairer = nullptr;
   m_EventClusterizer = nullptr;
   m_HitClusterizer = nullptr;
   m_Tracker = nullptr;
@@ -258,6 +262,7 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
 
   delete m_Reader;
   delete m_PhysFile;
+  if(m_RootFile) delete m_RootFile;
 
   m_RawEvents->DeleteAll();
   delete m_RawEvents;
@@ -267,6 +272,7 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
   delete m_EventStore;
 
   delete m_Coincidence;
+  delete m_StripPairer;
   delete m_EventClusterizer;
   delete m_HitClusterizer;
   delete m_Tracker;
@@ -437,10 +443,15 @@ bool MRawEventAnalyzer::SetInputModeFile(MString Filename)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MRawEventAnalyzer::SetOutputModeFile(MString Filename)
+bool MRawEventAnalyzer::SetOutputModeFile(MString Filename, bool rootOutput)
 {
   delete m_PhysFile;
   m_PhysFile = nullptr;
+
+  if(m_RootFile) {
+    delete m_RootFile;
+    m_RootFile = nullptr;
+  }
 
   if (Filename == "") {
     mout<<"MRawEventAnalyzer: No output file name given!"<<endl;
@@ -456,9 +467,30 @@ bool MRawEventAnalyzer::SetOutputModeFile(MString Filename)
     return false;
   }
 
+  if(rootOutput) {
+    m_RootFile = new MFileEventsRoot(m_FilenameOut, MFile::c_Create);
+  }
+
+	if (m_Reader != nullptr) {
+    TransferFileInformation(m_Reader);
+  }
+
   return true;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MRawEventAnalyzer::TransferFileInformation(MFileEvents* External)
+{
+  if (m_PhysFile != nullptr && External != nullptr) {
+    m_PhysFile->TransferInformation(External);
+    m_PhysFile->SetFileType("TRA");
+  }
+
+  return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -478,6 +510,20 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
   MRERawEvent* RE = new MRERawEvent(m_Geometry);
 
   for (MString L: Lines) {
+    // A tiny hack, since, by design, the core revan library does not know anything about the simulation info:
+    if (m_SaveOI == true) {
+      if (L[0] == 'I' && L[1] == 'A') {
+        if (L[3] == 'I' && L[4] == 'N' && L[5] == 'I' && L[6] == 'T') {
+          double x, y, z, dx, dy, dz, px, py, pz, e;
+          if (sscanf(L.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf", &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+            ostringstream out;
+            out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+            L = out.str().c_str();
+          }
+        }
+      }
+    }
+
     if (RE->ParseLine(L, Version) == 1) {
       delete RE;
       cout<<"Parsing of line failed: "<<L<<endl;
@@ -488,6 +534,11 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
   if (NeedsNoising == true) {
     m_Noising->Analyze(RE);
   }
+  if (RE->GetNRESEs() == 0) {
+    delete RE;
+    return false;
+  }
+
   m_EventStore->AddRawEvent(RE);
 
   return true;
@@ -605,7 +656,8 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   mdebug<<endl;
   mdebug<<"ER - Event: "<<RE->GetEventID()<<endl;
   mdebug<<endl;
-
+  mdebug<<RE->ToString()<<endl;
+  mdebug<<endl;
   
   
   // Store the inital coincident event:
@@ -653,6 +705,44 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     SelectionsPassed = false;
   }
 
+
+
+  // Section Pre-B: Strip pairing:
+  
+  if (SelectionsPassed == true) { // && m_EventClusteringAlgorithm > c_EventClusteringAlgoNone) {
+    Timer.Start();
+    
+    if (m_StripPairer == nullptr) {
+      merr<<"Strip pairing pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+      return c_AnalysisUndefinedError;
+    }
+    
+    m_StripPairer->Analyze(m_RawEvents);
+    
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
+    
+    // Update the resolutions here:
+    for (unsigned int r = 0; r < m_RawEvents->Size(); ++r) {
+      MRawEventIncarnations* REI = m_RawEvents->Get(r);
+      for (int re = 0; re < REI->GetNRawEvents(); ++re) {
+        MRERawEvent* RE = REI->GetRawEventAt(re);
+        for (int rese = 0; rese < RE->GetNRESEs(); ++rese) {
+        
+          //cout<<"Before: "<<RE->GetRESEAt(rese)->ToString()<<endl;
+          MREHit* Hit = dynamic_cast<MREHit*>(RE->GetRESEAt(rese));
+          if (Hit != nullptr) {
+            Hit->UpdateVolumeSequence(m_Geometry);
+            Hit->RetrieveResolutions(m_Geometry);
+          }
+          //cout<<"After: "<<RE->GetRESEAt(rese)->ToString()<<endl;
+        }
+      }
+    }
+      
+    
+    m_TimeStripPairing += Timer.ElapsedTime();
+  }
+  
   
   
   // Section B: Event clustering:
@@ -783,7 +873,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     
     Event = m_RawEvents->GetOptimumPhysicalEvent();
   } else {
-    mdebug<<"We have a best rey events..."<<endl;
+    mdebug<<"We have a best try events..."<<endl;
     
     Event = m_RawEvents->GetBestTryPhysicalEvent();
     
@@ -801,6 +891,12 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     if (m_PhysFile != nullptr) {
       if (m_PhysFile->AddEvent(Event) == false) {
         merr<<"Saving of the event failed!"<<show;
+        return c_AnalysisSavingEventFailed;
+      }
+    }
+    if (m_RootFile) {
+      if (m_RootFile->AddEvent(Event) == false) {
+        merr<<"Adding event to ROOT file failed!"<<show;
         return c_AnalysisSavingEventFailed;
       }
     }
@@ -974,9 +1070,10 @@ void MRawEventAnalyzer::JoinStatistics(const MRawEventAnalyzer& A)
 bool MRawEventAnalyzer::PostAnalysis()
 {
   // No more events available
-  if (m_PhysFile != nullptr) {
-    m_PhysFile->SetObservationTime(m_Reader->GetObservationTime());
-  }
+  
+  if (m_PhysFile != nullptr && m_Reader != nullptr) {
+    TransferFileInformation(m_Reader);
+  } 
 
 
   ostringstream out;
@@ -1021,6 +1118,11 @@ bool MRawEventAnalyzer::PostAnalysis()
     out<<endl;
     out<<"----------------------------------------------------------------------------"<<endl;
     m_Reader->Close();
+  } else if ( m_Noising != nullptr) {
+    out<<endl;
+    out<<m_Noising->ToString();
+    out<<endl;
+    out<<"----------------------------------------------------------------------------"<<endl;
   }
   out<<endl;
   out<<"Event statistics for all triggered (!) events:"<<endl;
@@ -1071,6 +1173,19 @@ bool MRawEventAnalyzer::PostAnalysis()
       }
     }
     out<<"    Total ................................................ "<<setw(Width)<<Total<<endl;
+    if (m_RootFile) {//For ROOT file footer
+      m_RootFile->NEvents = m_NEvents;
+      m_RootFile->NPassedEventSelection = m_NPassedEventSelection;
+      m_RootFile->NGoodEvents = m_NGoodEvents;
+      m_RootFile->NPhotoEvents = m_NPhotoEvents;
+      m_RootFile->NComptonEvents = m_NComptonEvents;
+      m_RootFile->NDecayEvents = m_NDecayEvents;
+      m_RootFile->NPairEvents = m_NPairEvents;
+      m_RootFile->NMuonEvents = m_NMuonEvents;
+      m_RootFile->NPETEvents = m_NPETEvents;
+      m_RootFile->NMultiEvents = m_NMultiEvents;
+      m_RootFile->RejectedEvents = Total;
+    }
   } else {
     out<<endl;
     out<<"  No events available"<<endl;
@@ -1081,9 +1196,30 @@ bool MRawEventAnalyzer::PostAnalysis()
 
 
   if (m_PhysFile != nullptr) {
-    m_PhysFile->CloseEventList();
     m_PhysFile->AddFooter(out.str().c_str());
+    m_PhysFile->WriteFooter();
     m_PhysFile->Close();
+  }
+  if (m_RootFile) {// Fill ROOT file footer
+    strncpy(m_RootFile->Date, T.GetSQLString().Data(), 1023)[1023]='\0';
+    strncpy(m_RootFile->OriginalFile, m_Filename.Data(), 1023)[1023]='\0';
+    strncpy(m_RootFile->GeometryFile, m_Geometry->GetFileName().Data(), 1023)[1023]='\0';
+    if(m_HitClusterizer) strncpy(m_RootFile->HitClusterizer, m_HitClusterizer->ToString().Data(), 1023)[1023]='\0';
+    if(m_Tracker) strncpy(m_RootFile->Tracker, m_Tracker->ToString().Data(), 1023)[1023]='\0';
+    if(m_CSR) strncpy(m_RootFile->CSR, m_CSR->ToString().Data(), 1023)[1023]='\0';
+    if(m_Decay) strncpy(m_RootFile->Decay, m_Decay->ToString().Data(), 1023)[1023]='\0';
+    if(m_Reader) strncpy(m_RootFile->ERNoising, m_Reader->GetERNoising()->ToString().Data(), 1023)[1023]='\0';
+    m_RootFile->AddFooter();
+//    m_RootFile->ObservationTime = (char*)m_Reader->GetObservationTime().GetString(); Deal with later
+   // m_RootFile->Date = (char*)T.GetSQLString().Data();
+   // m_RootFile->OriginalFile = (char*)m_Filename.Data();
+   // m_RootFile->GeometryFile = (char*)m_Geometry->GetFileName().Data();
+   // m_RootFile->HitClusterizer = (char*)m_HitClusterizer->ToString().Data();
+   // m_RootFile->Tracker = (char*)m_Tracker->ToString().Data();
+   // m_RootFile->CSR = (char*)m_CSR->ToString().Data();
+   // m_RootFile->Decay = (char*)m_Decay->ToString().Data();
+   // m_RootFile->ERNoising = (char*)m_Reader->GetERNoising()->ToString().Data();
+    //m_RootFile->AddFooter();
   }
 
   mout<<out.str().c_str()<<endl;
@@ -1174,7 +1310,6 @@ bool MRawEventAnalyzer::PreAnalysis()
   }
 
 
-
   // Coincidence
   if (Return == true) {
     delete m_Coincidence;
@@ -1190,7 +1325,15 @@ bool MRawEventAnalyzer::PreAnalysis()
   }
   
   
-  // Event clustering
+  // Strip pairing
+  if (Return == true) {
+    delete m_StripPairer;
+    m_StripPairer = nullptr;
+    m_StripPairer = new MERStripPairing();
+  }
+  
+  
+    // Event clustering
   if (Return == true) {
     delete m_EventClusterizer;
     m_EventClusterizer = nullptr;
@@ -1403,6 +1546,11 @@ bool MRawEventAnalyzer::PreAnalysis()
       m_PhysFile->SetVersion(1);
       m_PhysFile->SetGeometryFileName(m_Geometry->GetFileName());
       m_PhysFile->WriteHeader();
+    }
+    if (m_RootFile) {
+      m_RootFile->m_version = 1;
+      strncpy(m_RootFile->m_geometry, m_Geometry->GetFileName().Data(), 1023)[1023]='\0';
+      m_RootFile->AddHeader();
     }
   }
 

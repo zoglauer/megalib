@@ -57,7 +57,10 @@ class MMelinator
   
   //! Set the ID of the selected detector (use all detectors when negative)
   void SetSelectedTemperatureWindow(double Min, double Max) { m_SelectedTemperatureMin = Min; m_SelectedTemperatureMax = Max; }
-  
+
+  //! Set the ID of the selected detector side (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  void SetSelectedDetectorSide(int SelectedDetectorSide) { m_SelectedDetectorSide = SelectedDetectorSide; }
+
   //! Load the calibration data containing the given isotopes and eventually merge files with identical data groups
   //! Return false if an error occurred
   //! This function performs parallel loading of all given files
@@ -71,6 +74,14 @@ class MMelinator
     if (m_HistogramBinningModeValue != HistogramBinningModeValue) { m_HistogramBinningModeValue = HistogramBinningModeValue; m_HistogramChanged = true; }
   }
   
+  //! Set the peak finding Bayesian block prior
+  void SetPeakFindingPrior(unsigned int PeakFindingPrior) { m_PeakFindingPrior = PeakFindingPrior; }
+  //! Set the peak finding number of bins excluded at lower energies
+  void SetPeakFindingExcludeFirstNumberOfBins(unsigned int PeakFindingExcludeFirstNumberOfBins) { m_PeakFindingExcludeFirstNumberOfBins = PeakFindingExcludeFirstNumberOfBins; }
+  //! Set the peak finding minimum number of counts in a peak
+  void SetPeakFindingMinimumPeakCounts(unsigned int PeakFindingMinimumPeakCounts) { m_PeakFindingMinimumPeakCounts = PeakFindingMinimumPeakCounts; }
+
+
   //! Set the peak parametrization method
   void SetPeakParametrizationMethod(unsigned int Method) { m_PeakParametrizationMethod = Method; }
   
@@ -167,6 +178,8 @@ class MMelinator
   bool CalibrateParallel(unsigned int ThreadID);
   //! This function is executed by the parallel loading threads
   bool LoadParallel(unsigned int ThreadID);
+  //! The function is executed by the parallel spectrum creation threads
+  bool CreateSpectrumParallel(unsigned int ThreadID, unsigned int CollectionID, unsigned int DataGroupID);
   
   
   // protected methods:
@@ -199,7 +212,10 @@ class MMelinator
   double m_SelectedTemperatureMin;
   //! The selected temperature window maximum
   double m_SelectedTemperatureMax;
-  
+
+  //! The selected detector side (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  int m_SelectedDetectorSide;
+
   //! The group IDs
   vector<unsigned int> m_GroupIDs;
   //! The calibration file names
@@ -226,7 +242,14 @@ class MMelinator
   unsigned int m_HistogramCollection;
   //! The current histograms
   vector<TH1D*> m_Histograms;
- 
+
+  //! Peak finding: Bayesian block prior
+  unsigned int m_PeakFindingPrior;
+  //! Peak finding: the number of bins excluded at lower energies
+  unsigned int m_PeakFindingExcludeFirstNumberOfBins;
+  //! Peak finding: the minimum number of counts in a peak
+  unsigned int m_PeakFindingMinimumPeakCounts;
+
   //! The peak parametrization method in during calibration of the lines
   unsigned int m_PeakParametrizationMethod;
   
@@ -287,21 +310,32 @@ class MMelinatorThreadCaller
 {
  public:
   //! Standard constructor
-  MMelinatorThreadCaller(MMelinator* M, unsigned int ThreadID) {
+  //! ID1 and ID2 can be any ID/index we need to pass on
+  MMelinatorThreadCaller(MMelinator* M, unsigned int ThreadID, unsigned int ID1 = 0, unsigned int ID2 = 0) {
     m_Melinator = M;
     m_ThreadID = ThreadID;
+    m_ID1 = ID1;
+    m_ID2 = ID2;
   }
 
   //! Return the calling class
   MMelinator* GetThreadCaller() { return m_Melinator; }
   //! Return the thread ID
   unsigned int GetThreadID() { return m_ThreadID; }
+  //! Return ID1
+  unsigned int GetID1() { return m_ID1; }
+  //! Return ID2
+  unsigned int GetID2() { return m_ID2; }
 
  private:
   //! Store the calling class for retrieval
   MMelinator* m_Melinator;
   //! ID of the worker thread
   unsigned int m_ThreadID;
+  //! Special ID/index
+  unsigned int m_ID1;
+  //! Special ID/index
+  unsigned int m_ID2;
 };
 
 
@@ -313,6 +347,9 @@ void MMelinatorCallParallelCalibrationThread(void* address);
 
 //! Thread entry point for the parallel calibration
 void MMelinatorCallParallelLoadingThread(void* address);
+
+//! Thread entry point for the parallel spectrum creation
+void MMelinatorCallParallelSpectrumCreationThread(void* address);
 
 //! Streamify the read-out data
 std::ostream& operator<<(std::ostream& os, const MMelinator& R);

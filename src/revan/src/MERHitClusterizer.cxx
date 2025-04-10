@@ -188,6 +188,9 @@ bool MERHitClusterizer::Analyze(MRawEventIncarnations* List)
   // Analyze the raw event...
   MERConstruction::Analyze(List);
 
+  //auto V = g_Verbosity;
+  //g_Verbosity = 5;
+
   mdebug<<"Starting cluster search..."<<endl;
   mdebug<<m_List->ToString()<<endl;
 
@@ -215,6 +218,8 @@ bool MERHitClusterizer::Analyze(MRawEventIncarnations* List)
   mdebug<<"Result of cluster search:"<<endl;
   mdebug<<m_List->ToString()<<endl;
   
+  //g_Verbosity = V;
+
   return true;
 }
 
@@ -317,6 +322,7 @@ void MERHitClusterizer::FindClustersInAdjacentVoxels(MRERawEvent* RE, double Sig
   MRESE* RESE = 0;
   MRECluster* Cluster = 0;
 
+
   mdebug<<"FindClustersInAdjacentVoxels for detector "<<Detector<<endl;
 
   // Main subelement loop
@@ -330,8 +336,10 @@ void MERHitClusterizer::FindClustersInAdjacentVoxels(MRERawEvent* RE, double Sig
         continue;
       }
       // if we have a positive cluster-test
+      //mdebug<<"Adjacent: Testing "<<RE->GetRESEAt(h)->GetID()<<" & "<<RE->GetRESEAt(l)->GetID()<<" Sigma: "<<Sigma<<" Level: "<<Level<<endl;
       if (RE->GetRESEAt(h)->AreAdjacent(RE->GetRESEAt(l), Sigma, Level) == true) {
-          
+        //mdebug<<"Adjacent: "<<RE->GetRESEAt(h)->GetID()<<" & "<<RE->GetRESEAt(l)->GetID()<<endl;
+
         // Coalesce 2 hits to a cluster
         if (RE->GetRESEAt(h)->GetType() == MRESE::c_Hit 
             && RE->GetRESEAt(l)->GetType() == MRESE::c_Hit) {

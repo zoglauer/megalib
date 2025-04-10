@@ -170,25 +170,63 @@ double MDShapeUnion::GetVolume()
   // Return the volume of this cylinder
 
   return m_Geo->Capacity();
+
+  /* We could do that too, but for unions, it is not so critial than for subtractions and intersections.
+  // Since the accuracy is only 1%, run it 16 times to get 4 times better precision
+  const unsigned int Runs = 16;
+  double Sum = 0.0;
+  for (unsigned int i = 0; i < Runs; ++i) {
+    Sum += m_Geo->Capacity();
+  }
+
+  return Sum / Runs;
+  */
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeUnion::Scale(const double Factor)
+bool MDShapeUnion::Scale(const double Factor, const MString Axes)
 {
-  // Scale this shape by Factor
+  //! Scale the axes given in Axes by a factor Scaler
 
-  m_Scaler = Factor;
+  // Don't do anything if the scaling has already been applied
+  if (Factor == m_Scaler && Axes == m_ScalingAxis) return true;
+
+  // Base class handles sanity checks and storing data
+  if (MDShape::Scale(Factor, Axes) == false) return false;
+  // If there was no scaling return true;
+  if (IsScaled() == false) return true;
+
+
+  // Scale
+  if (m_SubShapes[0]->IsScaled() == true) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"Trying to scale already scaled augend: "<<m_SubShapes[0]->GetName()<<endl;
+    return false;
+  }
+
+  if (m_SubShapes[1]->IsScaled() == true) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"Trying to scale already scaled addend: "<<m_SubShapes[1]->GetName()<<endl;
+    return false;
+  }
+
+  if (m_Orientation->IsScaled() == true) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<endl;
+    mout<<"Trying to scale already scaled orientation: "<<m_Orientation->GetName()<<endl;
+    return false;
+  }
+
+  m_SubShapes[0]->Scale(m_Scaler, m_ScalingAxis);
+  m_SubShapes[1]->Scale(m_Scaler, m_ScalingAxis);
+  m_Orientation->Scale(m_Scaler, m_ScalingAxis);
   
-  //if (m_Augend->GetScaler() != Factor) m_Augend->Scale(Factor);
-  //if (m_Addend->GetScaler() != Factor) m_Addend->Scale(Factor);
-  //if (m_Orientation->GetScaler() != Factor) m_Orientation->Scale(Factor);
-  
+
+  // Validate
   m_IsValidated = false;
-  
-  Validate();
+  return Validate();
 }
 
 

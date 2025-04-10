@@ -73,9 +73,12 @@ MResponseMultipleComptonTMVA::MResponseMultipleComptonTMVA()
   
   m_ResponseNameSuffix = "tmva";
   m_MaxNEvents = 10000000; // 10 Mio
-  m_MaxNInteractions = 5;
+  m_MaxNInteractions = 7;
   m_MethodsString = "BDTD";
-  
+
+  m_EnergyMinimum = 100; // keV
+  m_EnergyMaximum = 10000; // keV
+
   SetDefaultOptions();
 }
 
@@ -148,6 +151,8 @@ MString MResponseMultipleComptonTMVA::Options()
   ostringstream out;
   out<<"             methods:               the selected TMVA methods (default: BDTD)"<<endl;
   out<<"             maxia:                 the maximum number of interactions (default: 5)"<<endl;
+  out<<"             emin:                  minimum energy (default: 100 keV)"<<endl;
+  out<<"             emax:                  maximum energy (default: 10000 keV)"<<endl;
   out<<"             mlp_options:           MLP options (default: ["<<m_MLPOptionsDefault<<"])"<<endl;
   out<<"             bdtd_options:          BDTD options (default: ["<<m_BDTDOptionsDefault<<"])"<<endl;
   out<<"             pdefoamboost_options:  PDE foam boost options (default: ["<<m_PDEFoamBoostOptionsDefault<<"])"<<endl;
@@ -268,6 +273,10 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
       m_MethodsString = Value;
     } else if (Split2[i][0] == "maxia") {
       m_MaxNInteractions = stoi(Value);
+    } else if (Split2[i][0] == "emin") {
+      m_EnergyMinimum = stod(Value);
+    } else if (Split2[i][0] == "emax") {
+      m_EnergyMaximum = stod(Value);
     } else if (Split2[i][0] == "mlp_options") {
       m_MLPOptions = Value;
     } else if (Split2[i][0] == "bdtd_options") {
@@ -295,6 +304,8 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
   mout<<"Choosen options for Compton event reconstruction using TMVA:"<<endl;
   mout<<"  TMVA methods:                            "<<m_MethodsString<<endl;
   mout<<"  Maximum number of interactions:          "<<m_MaxNInteractions<<endl;
+  mout<<"  Minimum energy:                          "<<m_EnergyMinimum<<endl;
+  mout<<"  Maximum energy:                          "<<m_EnergyMaximum<<endl;
   if (m_MLPOptions != m_MLPOptionsDefault) {
     mout<<"  MLP options:                             "<<m_MLPOptions<<endl; 
   }
@@ -420,6 +431,9 @@ bool MResponseMultipleComptonTMVA::Initialize()
   for (unsigned int s: m_SequenceLengths) {
     out<<s<<" ";
   }
+  out<<endl;
+  out<<"# Energy window"<<endl;
+  out<<"EW "<<m_EnergyMinimum<<" "<<m_EnergyMaximum<<endl;
   out<<endl;
   out<<endl;
   out<<"# Trained Algorithms (e.g. MLP, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU)"<<endl;

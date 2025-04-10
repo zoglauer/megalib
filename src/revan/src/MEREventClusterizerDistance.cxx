@@ -179,8 +179,10 @@ bool MEREventClusterizerDistance::Analyze(MRawEventIncarnationList* List)
     //  cout<<r<<": "<<RESEs.size()<<endl; 
     //}
     
-    remove_if(RESEs.begin(), RESEs.end(), [](vector<MRESE*> V){return V.size() == 0;});
-    
+    // remove_if(RESEs.begin(), RESEs.end(), [](vector<MRESE*> V){return V.size() == 0;});
+    // AZ 2024-11-13: Fixed a warning that we actually have to use erase to do the erase...
+    RESEs.erase(remove_if(RESEs.begin(), RESEs.end(), [](vector<MRESE*> V){ return V.size() == 0; }), RESEs.end());
+
     //for (unsigned int r = 0; r < RESEs.size(); ++r) {
     //  cout<<r<<": "<<RESEs.size()<<endl; 
     //}

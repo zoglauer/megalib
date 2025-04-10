@@ -152,7 +152,19 @@ MDShape* MDVolume::GetShape()
 {
   // Return a pointer to the shape (BRIK, SPHE) of the material or
   // zero if there is none
+  
+  return m_Shape;
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+const MDShape* MDVolume::GetShape() const
+{
+  // Return a pointer to the shape (BRIK, SPHE) of the material or
+  // zero if there is none
+  
   return m_Shape;
 }
 
@@ -1775,7 +1787,7 @@ double MDVolume::DistanceInsideOut(MVector Pos)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
+bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags)
 {
   // Pos is in the mothers coordinate system.
   // So translate and rotate the position into this volumes coordinate system
@@ -1804,7 +1816,7 @@ bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
   for (i = 0; i < i_max; i++) {
     //cout<<"Checking daughters... of "<<m_Name<<endl;
     Pos = OldPos;
-    if (GetDaughterAt(i)->Noise(Pos, Energy, Time) == true) {
+    if (GetDaughterAt(i)->Noise(Pos, Energy, Time, Flags) == true) {
       //cout<<"Noised!!! Pos in "<<m_Name<<": "<<Pos.X()<<"!"<<Pos.Y()<<"!"<<Pos.Z()<<endl;
       // OK it had been noised
       // So rotate/translate back and return:
@@ -1830,15 +1842,15 @@ bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
       MDDetector* D = m_Detector->FindNamedDetector(*VS);
       if (D != 0) {
         //cout<<"Named detector found"<<endl;
-        D->Noise(Pos, Energy, Time, this);
+        D->Noise(Pos, Energy, Time, Flags, this);
       } else {
         //cout<<"No named detector found"<<endl;
-        m_Detector->Noise(Pos, Energy, Time, this);
+        m_Detector->Noise(Pos, Energy, Time, Flags, this);
       }
       delete VS;
     } else {
       //cout<<"Noise: we have NO named detectors"<<endl;
-      m_Detector->Noise(Pos, Energy, Time, this);
+      m_Detector->Noise(Pos, Energy, Time, Flags, this);
     }
     // Rotate back:
     if (m_IsRotated == true) {
@@ -1939,16 +1951,25 @@ bool MDVolume::ApplyPulseShape(double Time, MVector& Pos, double& Energy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolume::Scale(const double Factor)
+bool MDVolume::Scale(const double Factor, const MString Axes)
 {
   // Scale this volume and all daughter volumes correctly
 
+  if (Factor == 1.0 || Axes == "") return true;
+
   if (m_CloneTemplate != 0 &&
       m_CloneTemplate->IsCloneTemplateVolumeWritten() == false) {
-    m_Shape->Scale(Factor);
-    m_CloneTemplate->SetCloneTemplateVolumeWritten(true);
+    if (m_Shape->Scale(Factor, Axes) == true) {
+      m_CloneTemplate->SetCloneTemplateVolumeWritten(true);
+    } else {
+      // Error message alreday printed
+      return false;
+    }
   } else if (IsClone() == false) {
-    m_Shape->Scale(Factor);
+    if (m_Shape->Scale(Factor, Axes) == false) {
+      // Error message alreday handled
+      return false;
+    }
   }
   // The position of this volume is unchanged!
 
@@ -1956,7 +1977,8 @@ bool MDVolume::Scale(const double Factor)
   vector<MDVolume*>::iterator Daughters;
   for (Daughters = m_Daughters.begin(); Daughters != m_Daughters.end(); ++Daughters) {
     (*Daughters)->SetPosition((*Daughters)->GetPosition()*Factor);
-    if ((*Daughters)->Scale(Factor) == false) {
+    if ((*Daughters)->Scale(Factor, Axes) == false) {
+      // Error message already printed
       return false;
     }
   }
@@ -2318,6 +2340,34 @@ MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Place
   //mout<<m_Name<<" Pos: "<<Position<<endl;
 
   return Position;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<MVector> MDVolume::GetCenterLocations(const MString& VolumeName)
+{
+  //! Return the center locations of all volumes named VolumeName
+
+  vector<MVector> Positions;
+
+  for (unsigned int d = 0; d < GetNDaughters(); ++d) {
+    if (GetDaughterAt(d)->GetName() == VolumeName) {
+      Positions.push_back(GetDaughterAt(d)->GetPosition());
+    } else {
+      // Get the locations
+      vector<MVector> Interim = GetDaughterAt(d)->GetCenterLocations(VolumeName);
+      // Rotate them into this volume and add them to the main vector
+      for (MVector& P: Interim) {
+        P = m_InvertedRotMatrix*P;
+        P += m_Position;
+        Positions.push_back(P);
+      }
+    }
+  }
+
+  return Positions;
 }
 
 

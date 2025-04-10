@@ -318,13 +318,13 @@ bool MDTriggerMap::IsVetoing(MDDetector* D) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDTriggerMap::AddHit(MDVolumeSequence& VS) 
+bool MDTriggerMap::AddHit(const MDVolumeSequence& VS) 
 {
   bool Return = false;
 
   mdebug<<m_Name<<": trying to add hit...";
 
-  MDDetector* Detector = VS.GetDetector();
+  const MDDetector* Detector = VS.GetDetector();
   if (Detector == nullptr) {
     mout<<"   *** ERROR **** in "<<m_Name<<endl;
     mout<<"Volume sequence has no detector!"<<endl;
@@ -362,13 +362,13 @@ bool MDTriggerMap::AddHit(MDVolumeSequence& VS)
 
 
 //! Returns true if the hit could be added 
-bool MDTriggerMap::AddGuardRingHit(MDVolumeSequence& VS) 
+bool MDTriggerMap::AddGuardRingHit(const MDVolumeSequence& VS) 
 { 
   bool Return = false;
   
   mdebug<<m_Name<<": trying to add guard ring hit...";
   
-  MDDetector* Detector = VS.GetDetector();
+  const MDDetector* Detector = VS.GetDetector();
   if (Detector == nullptr) {
     mout<<"   *** ERROR **** in "<<m_Name<<endl;
     mout<<"Volume sequence has no detector!"<<endl;
@@ -379,7 +379,7 @@ bool MDTriggerMap::AddGuardRingHit(MDVolumeSequence& VS)
     mout<<"Detector "<<Detector->GetName()<<" has not guard ring, but presumablby a guard ring hit"<<endl;
     return false;
   }  
-  MDGuardRing* GuardRingDetector = Detector->GetGuardRing();
+  const MDGuardRing* GuardRingDetector = Detector->GetGuardRing();
   if (GuardRingDetector == nullptr) {
     mout<<"   *** ERROR **** in "<<m_Name<<endl;
     mout<<"Detector "<<Detector->GetName()<<" has not guard ring, but presumablby a guard ring hit"<<endl;

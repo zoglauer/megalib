@@ -148,24 +148,38 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   // Prepare the array for ROOT
   m_ROOTParameters.resize(NPar(), 0);
    
-  // SEt up the fitter
+  // Set up the fitter
   ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 
-  ROOT::Fit::BinData TheData;
-  TheData.Initialize(Points.size(), 1, ROOT::Fit::BinData::kValueError);
+  // Locally store the data - we need it later
+  vector<double> X;
+  vector<double> Y;
+  vector<double> dY;
   for (unsigned int p = 0; p < Points.size(); ++p) {
     double FWHM = Points[p].GetEnergyFWHM();
     // If we do not yet have a FWHM use a dummy linear calibration through zero
-    if (FWHM == 0.0) {
+    if (FWHM < 1E-10) {
       FWHM = Points[p].GetFWHM() * Points[p].GetEnergy() / Points[p].GetPeak();
     }
     if (m_Type == MCalibrationModelType::c_LineWidth) {
       if (fabs(Points[p].GetEnergy() - 511) < 0.1) continue; // Always exclude any 511 line, since it is larger than usual (positron range)
-      TheData.Add(Points[p].GetEnergy(), FWHM, 0.1*FWHM); // Arbitrary width...
+      X.push_back(Points[p].GetEnergy());
+      Y.push_back(FWHM);
+      dY.push_back(0.1*FWHM); // Arbitrary width...
     } else {
-      TheData.Add(Points[p].GetPeak(), Points[p].GetEnergy(), FWHM/2.35);
+      X.push_back(Points[p].GetPeak());
+      Y.push_back(Points[p].GetEnergy());
+      dY.push_back(FWHM/2.35);
     }
   }
+
+  // Fill the fitting data set
+  ROOT::Fit::BinData TheData;
+  TheData.Initialize(Points.size(), 1, ROOT::Fit::BinData::kValueError);
+  for (unsigned int d = 0; d < X.size(); ++d) {
+    TheData.Add(X[d], Y[d], dY[d]);
+  }
+
 
   ROOT::Fit::Fitter TheFitter; 
   TheFitter.Config().SetMinimizer("Minuit2", "Migrad");
@@ -175,7 +189,7 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   InitializeFitParameters(TheFitter);
   
   // Fit
-  if (g_Verbosity >= c_Info) cout<<"Round 1 of line fitting started"<<endl;
+  if (g_Verbosity >= c_Info) cout<<endl<<"Round 1 of line fitting started"<<endl;
   bool ReturnCode = TheFitter.Fit(TheData);
   ROOT::Fit::FitResult& TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter.Result());
 
@@ -202,7 +216,7 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   if (ReturnCode == false) {
     // Try a different fitting approach 
     
-    if (g_Verbosity >= c_Info) cout<<"Round 2 of line fitting started"<<endl;
+    if (g_Verbosity >= c_Info) cout<<endl<<"Round 2 of line fitting started"<<endl;
     ROOT::Fit::Fitter TheFitter2; 
     TheFitter2.Config().SetMinimizer("Minuit2", "Minimize");
     if (g_Verbosity >= c_Info) TheFitter2.Config().MinimizerOptions().SetPrintLevel(2);
@@ -226,7 +240,7 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
       }
       if (ReturnCode == true) {
         TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter2.Result()); 
-        if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 2."<<endl;
+        if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 2 (chisquare: "<<TheFitResult.Chi2()<<")"<<endl;
       }
     } else {
       if (g_Verbosity >= c_Info) cout<<"Unable to fit calibration model in round 2."<<endl;
@@ -239,7 +253,7 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   if (ReturnCode == false) {
     // Try a different fitting approach 
     
-    if (g_Verbosity >= c_Info) cout<<"Round 3 of line fitting started"<<endl;
+    if (g_Verbosity >= c_Info) cout<<endl<<"Round 3 of line fitting started"<<endl;
     ROOT::Fit::Fitter TheFitter3; 
     TheFitter3.Config().SetMinimizer("Fumili");
     if (g_Verbosity >= c_Info) TheFitter3.Config().MinimizerOptions().SetPrintLevel(2);
@@ -284,17 +298,24 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
     m_Fit = new TF1("", this, 0, 1.1*Points.back().GetPeak(), NPar());
     TThread::UnLock();
     
-    m_Fit->SetChisquare(TheFitResult.Chi2());
-    m_Fit->SetNDF(TheFitResult.Ndf());
     m_Fit->SetNumberFitPoints(TheData.Size());
-
     m_Fit->SetParameters( &(TheFitResult.Parameters().front()) ); 
     if (int(TheFitResult.Errors().size()) >= m_Fit->GetNpar()) { 
       m_Fit->SetParErrors( &(TheFitResult.Errors().front()) );
     }
 
+    // Let's do our own chi-square calculation, since it needs to be uniform over all fit approaches and independent of fit errors
+    double Chisquare = 0;
+    for (unsigned int d = 0; d < X.size(); ++d) {
+      Chisquare += (m_Fit->Eval(X[d]) - Y[d])*(m_Fit->Eval(X[d]) - Y[d]) / (dY[d]*dY[d]);
+    }
+    m_Fit->SetChisquare(Chisquare);
+    m_Fit->SetNDF(TheFitResult.Ndf());
+
+
     if (m_Fit->GetNDF() > 0) {
       m_FitQuality = m_Fit->GetChisquare()/m_Fit->GetNDF(); // Used to determine the quality of fit, thus critically important    
+      //if (g_Verbosity >= c_Info) cout<<"Fit quality: "<<m_FitQuality<<" (chi-square: "<<m_Fit->GetChisquare()<<", NDF: "<<m_Fit->GetNDF()<<")"<<endl;
     } else {
       m_FitQuality = 0; 
     }

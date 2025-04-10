@@ -22,6 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MBinnerSpherical.h"
 
 // Forward declarations:
 
@@ -30,7 +31,7 @@
 
 //! FISBEL: Fixed Integral Square Bins in Equi-longitude..?
 //! This is just the binner, it does not store any data itself
-class MBinnerFISBEL
+class MBinnerFISBEL : public MBinnerSpherical
 {
   // public interface:
  public:
@@ -45,10 +46,10 @@ class MBinnerFISBEL
   //! Set the binning
   void Set(vector<unsigned int>& LongitudeBins, vector<double>& LatitudeBinEdges, unsigned int NumberOfBins, double LongitudeShift = 0);
   
-  //! Check if we have equal bins
-  bool operator ==(const MBinnerFISBEL& Binner) const;
-  //! ... or not
-  bool operator !=(const MBinnerFISBEL& Binner) const { return !operator==(Binner); }
+  // //! Check if we have equal bins
+  // bool operator ==(const MBinnerFISBEL& Binner) const;
+  // //! ... or not
+  // bool operator !=(const MBinnerFISBEL& Binner) const { return !operator==(Binner); }
   
   //! Find a bin
   //! Theta (= latitude) and phi (= longitude) are in (mathematical) spherical coordinates
@@ -68,7 +69,13 @@ class MBinnerFISBEL
   
   //! Get the latitude bin edges (in degree)
   vector<double> GetLatitudeBinEdges() const { return m_LatitudeBinEdges; } 
-  
+
+  //! Return the minimum axis values [min theta, min phi]
+  vector<double> GetMinima() const;
+
+  //! Return the minimum axis values [max theta, max phi]
+  vector<double> GetMaxima() const;
+
   //! Get the bin center (returns: theta, phi in radians)
   //! Can throw: MExceptionIndexOutOfBounds
   vector<double> GetBinCenters(unsigned int Bin) const;
@@ -82,6 +89,9 @@ class MBinnerFISBEL
   
   //! Return axis bins edges for external drawing (1st array: longitude/phi, 2nd array: latitude/theta)
   vector<vector<double>> GetDrawingAxisBinEdges() const;
+
+  //! Write the content to a stream
+  void Write(MString name, ostringstream& out) const;
   
   // protected methods:
  protected:

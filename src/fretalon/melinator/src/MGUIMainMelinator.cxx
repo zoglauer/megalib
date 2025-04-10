@@ -26,6 +26,7 @@
 using namespace std;
 
 // ROOT libs:
+#include <TSystem.h>
 #include <KeySymbols.h>
 #include <TApplication.h>
 #include <TGPicture.h>
@@ -42,6 +43,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MTimer.h"
 #include "MGUIDefaults.h"
 #include "MFile.h"
 #include "MMath.h"
@@ -107,6 +109,9 @@ void MGUIMainMelinator::Create()
 
   double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
   
+  int ScrollBarWidth = 50;
+  int ControlColumnWidth = 225 + ScrollBarWidth;
+
   // Give it a default size
   Resize(FontScaler*1200, 250 + FontScaler*600);
   
@@ -125,10 +130,14 @@ void MGUIMainMelinator::Create()
   TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, FontScaler*3, 0);
   TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsRight, FontScaler*10, 0, 0, 0);
   TGLayoutHints* ButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 2, 2, FontScaler*3, 3);
+
+  TGLayoutHints* CenterYLeftLayout = new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 0, 0, 0, 0);
+  TGLayoutHints* CenterYRightEntryLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 0, 0, 0, 0);
+
   
   //TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 2, 2, 2, 3);
 
-  TGLayoutHints* GroupLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 2, 2, 5, 5);
+  TGLayoutHints* GroupLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 2, 2 + ScrollBarWidth, 5, 5);
   
   // We have three main columns - the control column on the left, data column in the center, and selection on the right 
 
@@ -140,9 +149,7 @@ void MGUIMainMelinator::Create()
 
 
   // Left column: control column
-  
-  int ControlColumnWidth = 225;
-  
+
   TGLayoutHints* ControlColumnLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandY, 5, 0, 0, 0);
   TGVerticalFrame* ControlColumn = new TGVerticalFrame(Columns, ControlColumnWidth, ControlColumnWidth); //, kRaisedFrame);
   Columns->AddFrame(ControlColumn, ControlColumnLayout);
@@ -168,7 +175,8 @@ void MGUIMainMelinator::Create()
   MenuFiles->AddEntry("Save", c_Save);
   MenuFiles->AddSeparator();
   MenuFiles->AddLabel("Configuration file");
-  MenuFiles->AddEntry("Open", c_LoadConfig);
+  //MenuFiles->AddEntry("Open", c_LoadConfig);
+  MenuFiles->AddEntry("Open -> use command line at launch", c_LoadConfig);
   MenuFiles->AddEntry("Save As", c_SaveConfig);
   MenuFiles->AddSeparator();
   MenuFiles->AddLabel("Geometry file");
@@ -217,9 +225,22 @@ void MGUIMainMelinator::Create()
   ControlColumn->AddFrame(SubTitle, SubTitleLayout);
 
   
+
+  // Options section
+
+  TGLayoutHints* OptionsLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandY, 5, 0, 0, 0);
+  TGCanvas* OptionsCanvas = new TGCanvas(Columns, ControlColumnWidth, ControlColumnWidth, 0);
+
+  TGVerticalFrame* OptionsFrame = new TGVerticalFrame(OptionsCanvas->GetViewPort(), ControlColumnWidth, ControlColumnWidth, 0);
+  OptionsCanvas->SetContainer(OptionsFrame);
+  OptionsCanvas->SetScrolling(TGCanvas::kCanvasScrollVertical);
+
+  ControlColumn->AddFrame(OptionsCanvas, OptionsLayout);
+
+
   //  Section: Main spectrum
-  TGGroupFrame* HistogramGroup = new TGGroupFrame(ControlColumn, "Options for Main Spectrum", kVerticalFrame);
-  ControlColumn->AddFrame(HistogramGroup, GroupLayout);
+  TGGroupFrame* HistogramGroup = new TGGroupFrame(OptionsFrame, "Display of spectrum", kVerticalFrame);
+  OptionsFrame->AddFrame(HistogramGroup, GroupLayout);
   
   
   TGHorizontalFrame* ADCFrame = new TGHorizontalFrame(HistogramGroup);
@@ -273,7 +294,7 @@ void MGUIMainMelinator::Create()
   m_HistogramBinningModeValue->SetLimits(TGNumberFormat::kNELLimitMinMax, 1, 1000000); 
   BinningValueFrame->AddFrame(m_HistogramBinningModeValue, TopLeftLayout);
   
-  m_HistogramBinningModeValueLabel = new TGLabel(BinningValueFrame, "To be determined later");
+  m_HistogramBinningModeValueLabel = new TGLabel(BinningValueFrame, "   TBD later   ");
   BinningValueFrame->AddFrame(m_HistogramBinningModeValueLabel, TopLeftTextLayout);
   
   OnSwitchHistogramBinningMode(m_Settings->GetHistogramBinningMode());
@@ -305,11 +326,57 @@ void MGUIMainMelinator::Create()
   HistogramGroup->AddFrame(m_UpdateHistogramButton, TopExpandXLayout);
   
 
+
+
+  // Section: Peak finding
+  TGGroupFrame* PeakFindingGroup = new TGGroupFrame(OptionsFrame, "Peak finding options", kVerticalFrame);
+  OptionsFrame->AddFrame(PeakFindingGroup, GroupLayout);
+
+  TGHorizontalFrame* PeakFindingPriorFrame = new TGHorizontalFrame(PeakFindingGroup);
+  PeakFindingGroup->AddFrame(PeakFindingPriorFrame, TopLeftLayout);
+
+  TGLabel* PeakFindingPriorLabel = new TGLabel(PeakFindingPriorFrame, "Bayesian block prior:  ");
+  PeakFindingPriorLabel->SetWrapLength(FontScaler*150);
+  PeakFindingPriorFrame->AddFrame(PeakFindingPriorLabel, CenterYLeftLayout);
+
+  m_PeakFindingPrior = new TGNumberEntry(PeakFindingPriorFrame, m_Settings->GetPeakFindingPrior());
+  m_PeakFindingPrior->SetLimits(TGNumberFormat::kNELLimitMinMax, 1, 1000000);
+  m_PeakFindingPrior->SetWidth(FontScaler*70);
+  PeakFindingPriorFrame->AddFrame(m_PeakFindingPrior, CenterYRightEntryLayout);
+
+
+  TGHorizontalFrame* PeakFindingExcludeFirstNumberOfBinsFrame = new TGHorizontalFrame(PeakFindingGroup);
+  PeakFindingGroup->AddFrame(PeakFindingExcludeFirstNumberOfBinsFrame, TopLeftLayout);
+
+  TGLabel* PeakFindingExcludeFirstNumberOfBinsLabel = new TGLabel(PeakFindingExcludeFirstNumberOfBinsFrame, "Number of low-energy bins to exclude:  ");
+  PeakFindingExcludeFirstNumberOfBinsLabel->SetWrapLength(FontScaler*150);
+  PeakFindingExcludeFirstNumberOfBinsFrame->AddFrame(PeakFindingExcludeFirstNumberOfBinsLabel, CenterYLeftLayout);
+
+  m_PeakFindingExcludeFirstNumberOfBins = new TGNumberEntry(PeakFindingExcludeFirstNumberOfBinsFrame, m_Settings->GetPeakFindingExcludeFirstNumberOfBins());
+  m_PeakFindingExcludeFirstNumberOfBins->SetLimits(TGNumberFormat::kNELLimitMinMax, 1, 1000000);
+  m_PeakFindingExcludeFirstNumberOfBins->SetWidth(FontScaler*70);
+  PeakFindingExcludeFirstNumberOfBinsFrame->AddFrame(m_PeakFindingExcludeFirstNumberOfBins, CenterYRightEntryLayout);
+
+
+  TGHorizontalFrame* PeakFindingMinimumPeakCountsFrame = new TGHorizontalFrame(PeakFindingGroup);
+  PeakFindingGroup->AddFrame(PeakFindingMinimumPeakCountsFrame, TopLeftLayout);
+
+  TGLabel* PeakFindingMinimumPeakCountsLabel = new TGLabel(PeakFindingMinimumPeakCountsFrame, "Minimum counts in peak:  ");
+  PeakFindingMinimumPeakCountsLabel->SetWrapLength(FontScaler*150);
+  PeakFindingMinimumPeakCountsFrame->AddFrame(PeakFindingMinimumPeakCountsLabel, CenterYLeftLayout);
+
+  m_PeakFindingMinimumPeakCounts = new TGNumberEntry(PeakFindingMinimumPeakCountsFrame, m_Settings->GetPeakFindingMinimumPeakCounts());
+  m_PeakFindingMinimumPeakCounts->SetLimits(TGNumberFormat::kNELLimitMinMax, 1, 1000000);
+  m_PeakFindingMinimumPeakCounts->SetWidth(FontScaler*70);
+  PeakFindingMinimumPeakCountsFrame->AddFrame(m_PeakFindingMinimumPeakCounts, CenterYRightEntryLayout);
+
+
+
+
   
   //  Section: Secondary spectrum
-  TGGroupFrame* PeakGroup = new TGGroupFrame(ControlColumn, "Options for Peak Spectrum", kVerticalFrame);
-  ControlColumn->AddFrame(PeakGroup, GroupLayout);
-
+  TGGroupFrame* PeakGroup = new TGGroupFrame(OptionsFrame, "Display of peak spectrum", kVerticalFrame);
+  OptionsFrame->AddFrame(PeakGroup, GroupLayout);
   
   TGHorizontalFrame* PeakBinningModeFrame = new TGHorizontalFrame(PeakGroup);
   PeakGroup->AddFrame(PeakBinningModeFrame, TopLeftLayout);
@@ -342,7 +409,7 @@ void MGUIMainMelinator::Create()
   m_PeakHistogramBinningModeValue->SetLimits(TGNumberFormat::kNELLimitMinMax, 1, 1000000); 
   PeakBinningValueFrame->AddFrame(m_PeakHistogramBinningModeValue, TopLeftLayout);
   
-  m_PeakHistogramBinningModeValueLabel = new TGLabel(PeakBinningValueFrame, "To be determined later");
+  m_PeakHistogramBinningModeValueLabel = new TGLabel(PeakBinningValueFrame, "  TBD later");
   PeakBinningValueFrame->AddFrame(m_PeakHistogramBinningModeValueLabel, TopLeftTextLayout);
   
   OnSwitchPeakHistogramBinningMode(m_Settings->GetPeakHistogramBinningMode());
@@ -373,8 +440,8 @@ void MGUIMainMelinator::Create()
   
   
   // Peak parametrization section
-  TGGroupFrame* FitGroup = new TGGroupFrame(ControlColumn, "Peak parametrization options", kVerticalFrame);
-  ControlColumn->AddFrame(FitGroup, GroupLayout);
+  TGGroupFrame* FitGroup = new TGGroupFrame(OptionsFrame, "Peak parametrization options", kVerticalFrame);
+  OptionsFrame->AddFrame(FitGroup, GroupLayout);
 
   TGHorizontalFrame* PeakParametrizationMethodFrame = new TGHorizontalFrame(FitGroup);
   FitGroup->AddFrame(PeakParametrizationMethodFrame, TopLeftLayout);
@@ -403,8 +470,8 @@ void MGUIMainMelinator::Create()
   
   
   // Calibration model determination section
-  TGGroupFrame* CalibrationModel = new TGGroupFrame(ControlColumn, "Calibration model options", kVerticalFrame);
-  ControlColumn->AddFrame(CalibrationModel, GroupLayout);
+  TGGroupFrame* CalibrationModel = new TGGroupFrame(OptionsFrame, "Calibration model options", kVerticalFrame);
+  OptionsFrame->AddFrame(CalibrationModel, GroupLayout);
 
   m_CalibrationModelZeroCrossing = new TGCheckButton(CalibrationModel, "Energy assignment only: Assume the energy calibration crosses (0/0)", c_CalibrationModelZeroCrossing);
   m_CalibrationModelZeroCrossing->Associate(this);
@@ -499,9 +566,7 @@ void MGUIMainMelinator::Create()
 
   m_SpectrumCanvas = new MGUIEReadOutUnitsCanvas(this, "SpectrumCanvas", MainDataView);
   MainDataView->AddFrame(m_SpectrumCanvas, CanvasLayout);
-  
- 
- 
+
     
   // The calibration view:
   TGHorizontalFrame* CalibrationView = new TGHorizontalFrame(DataColumn, 100, 100); //, kRaisedFrame);
@@ -901,7 +966,7 @@ void MGUIMainMelinator::CloseWindow()
 
 
 //! Update the setting with the GUI data
-bool MGUIMainMelinator::Update()
+bool MGUIMainMelinator::UpdateSettings()
 {
   m_Settings->SetHistogramMin(m_HistogramRangeMin->GetNumber());
   m_Settings->SetHistogramMax(m_HistogramRangeMax->GetNumber());
@@ -920,6 +985,10 @@ bool MGUIMainMelinator::Update()
   m_Settings->SetPeakHistogramBinningMode(m_PeakHistogramBinningMode->GetSelected());
   m_Settings->SetPeakHistogramBinningModeValue(m_PeakHistogramBinningModeValue->GetNumber());
   
+  m_Settings->SetPeakFindingPrior(m_PeakFindingPrior->GetNumber());
+  m_Settings->SetPeakFindingExcludeFirstNumberOfBins(m_PeakFindingExcludeFirstNumberOfBins->GetNumber());
+  m_Settings->SetPeakFindingMinimumPeakCounts(m_PeakFindingMinimumPeakCounts->GetNumber());
+
   m_Settings->SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
   if (m_PeakParametrizationMethod->GetSelected() == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) {
     m_Settings->SetPeakParametrizationMethodFittingBackgroundModel(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected());
@@ -947,7 +1016,7 @@ bool MGUIMainMelinator::Update()
 //! Close the applictaion
 bool MGUIMainMelinator::OnExit()
 {
-  Update();
+  UpdateSettings();
   m_Settings->Write(); // Update alreday writes, but it is logical that we write here too so keep it
   
   //m_Interface->Exit();
@@ -973,9 +1042,9 @@ bool MGUIMainMelinator::OnSwitchHistogramBinningMode(unsigned int ID)
     m_HistogramBinningModeValueLabel->SetText("ERROR");
   }
 
-  MapSubwindows();
-  MapWindow();  
-  Layout();  
+  //MapSubwindows();
+  MapWindow();
+  //Layout();
   
   return true;
 }
@@ -1267,7 +1336,12 @@ bool MGUIMainMelinator::OnLoadLast()
    
   m_Melinator.Clear();
   m_Melinator.SetSelectedDetectorID(m_Settings->GetSelectedDetectorID());
+  m_Melinator.SetSelectedDetectorSide(m_Settings->GetSelectedDetectorSide());
   m_Melinator.SetSelectedTemperatureWindow(m_Settings->GetMinimumTemperature(), m_Settings->GetMaximumTemperature());
+  m_Melinator.SetPeakFindingPrior(m_Settings->GetPeakFindingPrior());
+  m_Melinator.SetPeakFindingExcludeFirstNumberOfBins(m_Settings->GetPeakFindingExcludeFirstNumberOfBins());
+  m_Melinator.SetPeakFindingMinimumPeakCounts(m_Settings->GetPeakFindingMinimumPeakCounts());
+
   
   MString FileName;
   MString IsotopeName;
@@ -1279,7 +1353,7 @@ bool MGUIMainMelinator::OnLoadLast()
   vector<unsigned int> AllGroupIDs;
   
   MIsotopeStore Store;
-  if (Store.Load("$(MEGALIB)/resource/libraries/Calibration.isotopes") == false) {
+  if (Store.Load("$(MEGALIB)/resource/libraries/Calibration.isotopes", true) == false) {
     merr<<"Unable to load calibration isotopes..."<<show;
     return false;
   }
@@ -1526,12 +1600,43 @@ bool MGUIMainMelinator::OnToggleResults()
 
 
 //! Update all graphs
+void MGUIMainMelinator::UpdateMelinator()
+{
+  UpdateSettings();
+
+  m_Melinator.SetPeakFindingPrior(m_Settings->GetPeakFindingPrior());
+  m_Melinator.SetPeakFindingExcludeFirstNumberOfBins(m_Settings->GetPeakFindingExcludeFirstNumberOfBins());
+  m_Melinator.SetPeakFindingMinimumPeakCounts(m_Settings->GetPeakFindingMinimumPeakCounts());
+
+  if (m_Melinator.GetNumberOfCollections() > 0) {
+    m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
+    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) {
+      m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
+    }
+
+    if (m_CalibrationModelZeroCrossing->GetState() == kButtonDown) {
+      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing);
+    } else {
+      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_Linear);
+    }
+    m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
+    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel->GetSelected());
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel->GetSelected());
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Update all graphs
 bool MGUIMainMelinator::UpdateDisplay(unsigned int Collection, unsigned int Line, bool ActiveResultIsEnergy)
 {
   UpdateCollection(Collection, Line);
   UpdateLineFit(Collection, Line);
   UpdateCalibration(Collection, ActiveResultIsEnergy);
-  
+
   return true;
 }
 
@@ -1542,7 +1647,8 @@ bool MGUIMainMelinator::UpdateDisplay(unsigned int Collection, unsigned int Line
 //! Set the active collection and put it to the screen
 void MGUIMainMelinator::UpdateCollection(unsigned int Collection, unsigned int Line)
 {
-  Update();
+
+  UpdateSettings();
   
   if (Collection < m_Melinator.GetNumberOfCollections()) {
     m_ActiveCollection = Collection;
@@ -1563,8 +1669,9 @@ void MGUIMainMelinator::UpdateCollection(unsigned int Collection, unsigned int L
     
     m_Melinator.SetHistogramProperties(m_Settings->GetHistogramMin(), m_Settings->GetHistogramMax(), 
       m_Settings->GetHistogramBinningMode(), m_Settings->GetHistogramBinningModeValue());
+
     m_Melinator.DrawSpectrum(*(m_SpectrumCanvas->GetCanvas()), m_ActiveCollection, Line);
-    
+
     OnXAxis(m_Settings->GetHistogramLogX());
     OnYAxis(m_Settings->GetHistogramLogY());
 
@@ -1693,7 +1800,10 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection, bool DrawEner
   
   // RMS with outlier detection:
   MMath M;
-  vector<bool> IsOutlier = M.ModifiedThomsonTauTest(FitQualities, 0.01, KnownOutliers);
+  vector<bool> IsOutlier = KnownOutliers;
+  if (FitQualities.size() >= 3) {
+    IsOutlier = M.ModifiedThomsonTauTest(FitQualities, 0.01, KnownOutliers);
+  }
   
   unsigned int GoodEntries = 0;
   double RMS = 0;
@@ -1767,23 +1877,9 @@ void MGUIMainMelinator::SwitchToLine(double X)
 //! Fit the current histogram
 bool MGUIMainMelinator::OnFit()
 {
-  if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
-    m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
-    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) {
-      m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
-    }
-    
-    if (m_CalibrationModelZeroCrossing->GetState() == kButtonDown) {
-      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing);
-    } else {
-      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_Linear);      
-    }
-    m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
-    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
-      m_Melinator.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel->GetSelected());
-      m_Melinator.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel->GetSelected());
-    }
+  UpdateMelinator();
 
+  if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
     m_Melinator.Calibrate(m_ActiveCollection, false);
     OnUpdateHistogram();
   }
@@ -1798,23 +1894,9 @@ bool MGUIMainMelinator::OnFit()
 //! Fit the current histogram
 bool MGUIMainMelinator::OnFitWithDiagnostics()
 {
-  if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
-    m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
-    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) {
-      m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
-    }
+  UpdateMelinator();
 
-    if (m_CalibrationModelZeroCrossing->GetState() == kButtonDown) {
-      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing);
-    } else {
-      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_Linear);      
-    }
-    m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
-    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
-      m_Melinator.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel->GetSelected());
-      m_Melinator.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel->GetSelected());
-    }
-    
+  if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
     m_Melinator.Calibrate(m_ActiveCollection, true);
     OnUpdateHistogram();
   }
@@ -1829,23 +1911,9 @@ bool MGUIMainMelinator::OnFitWithDiagnostics()
 //! Fit the current histogram
 bool MGUIMainMelinator::OnFitAll()
 {
-  if (m_Melinator.GetNumberOfCollections() > 0) {
-    m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
-    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) {
-      m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
-    }
+  UpdateMelinator();
 
-    if (m_CalibrationModelZeroCrossing->GetState() == kButtonDown) {
-      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing);
-    } else {
-      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_Linear);      
-    }
-    m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
-    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
-      m_Melinator.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel->GetSelected());
-      m_Melinator.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel->GetSelected());
-    }
-    
+  if (m_Melinator.GetNumberOfCollections() > 0) {
     m_Melinator.Calibrate(false);
     OnUpdateHistogram();
   }
@@ -1860,6 +1928,9 @@ bool MGUIMainMelinator::OnFitAll()
 //! Load a configuration file from disk
 bool MGUIMainMelinator::OnLoadConfiguration()
 {
+  //! Loading can leave the app in an inconsistent state, thus not do it now
+
+  /*
   const char** Types = new const char*[4];
   Types[0] = "Configuration file";
   Types[1] = "*.cfg";
@@ -1876,7 +1947,8 @@ bool MGUIMainMelinator::OnLoadConfiguration()
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
     m_Interface->LoadConfiguration(MString(Info.fFilename));
-  } 
+  }
+  */
 
   return true;
 }
@@ -1903,7 +1975,7 @@ bool MGUIMainMelinator::OnSaveConfiguration()
   
   // Get the filename and store all the data in the settings...
   if ((char *) Info.fFilename != 0) {
-    Update();
+    UpdateSettings();
     m_Interface->SaveConfiguration(MString(Info.fFilename));
   } 
 

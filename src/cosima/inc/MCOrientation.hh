@@ -84,6 +84,9 @@ class MCOrientation
   //! Get the orientation
   bool GetOrientation(double Time, double& XThetaLat, double& XPhiLong, double& ZThetaLat, double& ZPhiLong) const;
   
+  //! Get the Earth coordinates
+  bool GetEarthCoordinate(double Time, double& Alt, double& Lat, double& Long) const;
+  
   //! Perform the orientation for the given time for a position and a direction from local to oriented coordiante system
   bool OrientPositionAndDirection(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;  
   //! Perform the invers orientation for the given time for a position and a direction from oriented to local coordiante system
@@ -143,6 +146,13 @@ class MCOrientation
   vector<double> m_ZThetaLat;
   //! The z-Axis phi / longitude
   vector<double> m_ZPhiLong;
+  
+  //! The Earth altitude
+  vector<double> m_EarthAlt;
+  //! The Earth  lat in galactic coordinate
+  vector<double> m_EarthLat;
+  //! The Earth  lat in galactic coordinate
+  vector<double> m_EarthLong;
   
   //! The translation
   vector<MVector> m_Translations;
