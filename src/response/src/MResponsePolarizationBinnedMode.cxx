@@ -69,7 +69,8 @@ MResponsePolarizationBinnedMode::MResponsePolarizationBinnedMode() : m_Polarizat
   m_DistanceMinimum = 0; // cm
   m_DistanceMaximum = 1000; // cm
   m_PolarizationAngleNBins = 19; //deg
-  
+  m_PolarizationMode = "relativez";
+
   m_UseAtmosphericAbsorption = false;
   m_AtmosphericAbsorptionFileName = "";
   m_Altitude = 33500;
@@ -122,6 +123,7 @@ MString MResponsePolarizationBinnedMode::Options()
   out<<"             dmax:                    maximum distance (default: 1,000 cm)"<<endl;
   out<<"             dbins:                   number of distance bins between min and max distance (default: 1)"<<endl;
   out<<"             pbins:                   number of polarization bins bins between min and max distance (default: 18)"<<endl;
+  out<<"             pmode:                   Either relativex, relativey, or relativez (default: relativez)"<<endl;
   out<<"             atabsfile:               the atmopheric absorption file name (default: \"\" (i.e. none))"<<endl;
   out<<"             atabsheight:             altitude for the atmospheric absorption (default: 33500)"<<endl;
   
@@ -212,6 +214,8 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
       m_DistanceNBins = stod(Value);
     } else if (Split2[i][0] == "pbins") {
       m_PolarizationAngleNBins = stod(Value);
+    } else if (Split2[i][0] == "pmode") {
+      m_PolarizationMode = MValue.ToLower();
     } else if (Split2[i][0] == "anglebinwidthelectron") {
       m_AngleBinWidthElectron = stod(Value);
     } else if (Split2[i][0] == "atabsfilename") {
@@ -270,10 +274,16 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
     mout<<"Error: You need at least one distance bin"<<endl;
     return false;       
   }
+  
   if (m_PolarizationAngleNBins <= 0) {
     mout<<"Error: You need at least one polarizaton angle bin"<<endl;
     return false;       
   }
+  if (m_PolarizationMode != "relativex" && m_PolarizationMode != "relativey" &&m_PolarizationMode != "relativez") {
+    mout<<"Error: The polarization mode only supports relativex, relaticey, relativez modes"<<endl;
+    return false;
+  }
+
   if (m_AngleBinWidth <= 0) {
     mout<<"Error: You need at give a positive width of the sky bins at the equator"<<endl;
     return false;       
@@ -558,16 +568,42 @@ bool MResponsePolarizationBinnedMode::Analyze()
   IdealPolDir = Rotation*IdealPolDir;
   
   MVector PolAngleReferenceDir = IdealOriginDir;
-  if (IdealOriginDir[0] == 0 && IdealOriginDir[1] == 0) {
-    PolAngleReferenceDir.SetXYZ(1.0, 0.0, 0.0);
-  } else {
-    PolAngleReferenceDir[2] = 0;
-    PolAngleReferenceDir.Unitize();
+  if (m_PolarizationMode == "relativex") {
+    if (IdealOriginDir[1] == 0 && IdealOriginDir[2] == 0) {
+      PolAngleReferenceDir.SetXYZ(0.0, 0.0, 1.0);
+    } else {
+      PolAngleReferenceDir[0] = 0;
+      PolAngleReferenceDir.Unitize();
 
-    MVector RotationAxis = PolAngleReferenceDir.Cross(IdealOriginDir);
-    double RotationAngle = IdealOriginDir.Angle(MVector(0, 0, 1));
+      MVector RotationAxis = PolAngleReferenceDir.Cross(IdealOriginDir);
+      double RotationAngle = IdealOriginDir.Angle(MVector(1, 0, 0));
   
-    PolAngleReferenceDir.RotateAroundVector(RotationAxis, RotationAngle);
+      PolAngleReferenceDir.RotateAroundVector(RotationAxis, RotationAngle);
+    }
+  } else if (m_PolarizationMode == "relativey") {
+    if (IdealOriginDir[0] == 0 && IdealOriginDir[2] == 0) {
+      PolAngleReferenceDir.SetXYZ(0.0, 0.0, 1.0);
+    } else {
+      PolAngleReferenceDir[1] = 0;
+      PolAngleReferenceDir.Unitize();
+
+      MVector RotationAxis = PolAngleReferenceDir.Cross(IdealOriginDir);
+      double RotationAngle = IdealOriginDir.Angle(MVector(0, 1, 0));
+
+      PolAngleReferenceDir.RotateAroundVector(RotationAxis, RotationAngle);
+    }
+  } else if (m_PolarizationMode == "relativez") {
+    if (IdealOriginDir[0] == 0 && IdealOriginDir[1] == 0) {
+      PolAngleReferenceDir.SetXYZ(1.0, 0.0, 0.0);
+    } else {
+      PolAngleReferenceDir[2] = 0;
+      PolAngleReferenceDir.Unitize();
+
+      MVector RotationAxis = PolAngleReferenceDir.Cross(IdealOriginDir);
+      double RotationAngle = IdealOriginDir.Angle(MVector(0, 0, 1));
+
+      PolAngleReferenceDir.RotateAroundVector(RotationAxis, RotationAngle);
+    }
   }
   
   // https://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors
