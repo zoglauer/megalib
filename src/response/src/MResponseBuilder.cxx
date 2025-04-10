@@ -152,7 +152,7 @@ bool MResponseBuilder::Initialize()
 
     // ... and initialize it
     if (m_ReReader->PreAnalysis() == false) {
-      merr<<"Unable to initialize event reconstruction."<<endl;
+      merr<<"Unable to initialize event reconstruction."<<endl;     
       return false;
     }
   
