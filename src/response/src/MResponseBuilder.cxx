@@ -147,12 +147,14 @@ bool MResponseBuilder::Initialize()
       }
     }
 
+    // We only want the sequences here:
+    m_ReReader->SetCSROnlyCreateSequences(true);
+
     // ... and initialize it
     if (m_ReReader->PreAnalysis() == false) {
       merr<<"Unable to initialize event reconstruction."<<endl;     
       return false;
     }
-  
   
     // Load the mimrec configuration file ...
     if (m_MimrecSettingsFileName != g_StringNotDefined && m_MimrecSettingsFileName != "") {
@@ -303,10 +305,14 @@ bool MResponseBuilder::SetEvent(const MString String, bool NeedsNoising, int Ver
 {
   // Set and verify the simulation file name
 
+  auto Verbosity = g_Verbosity;
+  g_Verbosity = 0;
+
   m_Mode = MResponseBuilderReadMode::SimEventByEvent;
 
   if (m_ReReader->AddRawEvent(String, NeedsNoising, Version) == false) {
     cout<<"Unable to add raw event"<<endl;
+    g_Verbosity = Verbosity;
     return false;
   }
   
@@ -326,6 +332,7 @@ bool MResponseBuilder::SetEvent(const MString String, bool NeedsNoising, int Ver
   
   if (m_ReEvent == nullptr) {
     cout<<"We have no good raw event"<<endl;
+    g_Verbosity = Verbosity;
     return false;
   }
   
@@ -335,9 +342,12 @@ bool MResponseBuilder::SetEvent(const MString String, bool NeedsNoising, int Ver
   }
   if (m_SiEvent->ParseEvent(String, Version) == false) {
     cout<<"Unable to add event to sivan"<<endl;
+    g_Verbosity = Verbosity;
     return false;
   }
   
+  g_Verbosity = Verbosity;
+
   return true;
 }
 
@@ -523,6 +533,9 @@ bool MResponseBuilder::InitializeNextSimEvent()
 {
   // Initialize the next sivan/revan matching event for response creation
   
+  auto Verbosity = g_Verbosity;
+  g_Verbosity = 0;
+
   unsigned int ERReturnCode;
 
  
@@ -563,8 +576,9 @@ bool MResponseBuilder::InitializeNextSimEvent()
       if (m_ReReader->GetRawEventList() != nullptr) {
         MRawEventIncarnationList* REIL = m_ReReader->GetRawEventList();
         for (unsigned int i = 0; i < REIL->Size(); ++i) {
-          if (REIL->Get(i)->GetNRawEvents() > 0) {
-            m_ReEvents.push_back(REIL->Get(i)->GetRawEventAt(0)); // why not the optimum event?
+          // TODO: Test performance if we just pick one random sequence
+          for (int r = 0; r < REIL->Get(i)->GetNRawEvents(); ++r) {
+            m_ReEvents.push_back(REIL->Get(i)->GetRawEventAt(r));
           }
         }
       }
@@ -651,6 +665,8 @@ bool MResponseBuilder::InitializeNextSimEvent()
   }
   //mout<<"Response: Match Sivan ID="<<m_SivanEventID<<"  Revan ID="<<m_RevanEventID<<endl;
   
+  g_Verbosity = Verbosity;
+
   return MoreEvents;  
 }
 

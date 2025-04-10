@@ -54,6 +54,17 @@ class MDOrientation
   //! Set the name of the orientation
   void SetName(const MString& Name) { m_Name = Name; }
 
+  //! Scale this shape by Factor, optionally give the axis.
+  //! The options for the latter are "X", "Y", "Z", and any combination thereof
+  //! For anything but "XYZ", the daughter volumes are not allowed to have orientations
+  virtual bool Scale(const double Scaler, const MString Axes = "XYZ");
+  //! Get the current scale factor
+  double GetScaler() const { return m_Scaler; }
+  //! Get scaler axid
+  MString GetScalingAxis() const { return m_ScalingAxis; }
+  //! True if we are scaled
+  bool IsScaled() const;
+
   //! Validate the data and create the shape 
   bool Validate();  
   
@@ -86,7 +97,7 @@ class MDOrientation
   //! Return the inverted rotation matrix
   MRotation GetInvRotationMatrix() const { return m_InvertedRotMatrix; }
   //! The if we have a rotation
-  bool IsRotated() const;
+  bool IsRotated() const { return m_IsRotated; }
 
   //! Dump content into a string
   MString ToString() const;
@@ -126,6 +137,11 @@ class MDOrientation
 
   //! The whole thing as ROOT matrix
   TGeoMatrix* m_RootMatrix;
+
+  //! The scale factor
+  double m_Scaler;
+  //! The scaling axis "X", "Y", "Z", and any combination thereof
+  MString m_ScalingAxis;
 
 #ifdef ___CLING___
  public:

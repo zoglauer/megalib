@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  galatea
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 24.04
+Kernel:                                    6.8.0-45-generic
+ 
+CPUModel:                                  AMD Ryzen 9 9950X 16-Core Processor
+CPUName:                                   Ryzen 9 9950X
+CPUSockets:                                1
+CPUCoresPerSocket:                         16
+CPUThreadsPerCore:                         2
+Cores:                                     16
+Threads:                                   32
+ 
+ROOTVersion:                               6.28/12
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            4.00.00
+MEGAlibGitHash:                            d9afacb2657c07307742f51f9abdd54261709acc 2024-07-23
+MEGAlibOptimization:                       
+ 
+# Cosima
+DurationCosimaSingle:                      12.482
+EventsPerSecondCosimaSingle:               8011.536
+DurationCosimaMultiple:                    20.526
+EventsPerSecondCosimaMultiple:             155899.834
+ 
+# Revan
+DurationRevanSingle:                       5.411
+EventsPerSecondRevanSingle:                18480.872
+DurationRevanMultiple:                     5.094
+EventsPerSecondRevanMultiple:              628190.027
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             6.013
+EventsPerSecondResponseCreatorSingle:      16630.633
+DurationResponseCreatorMultiple:           12.838
+EventsPerSecondResponseCreatorMultiple:    249260.009
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               24.462
+EventsPerSecondMimrecImagingSingle:        4087.973
+DurationMimrecImagingMultiple:             4.330
+EventsPerSecondMimrecImagingMultiple:      23094.688
+ 
