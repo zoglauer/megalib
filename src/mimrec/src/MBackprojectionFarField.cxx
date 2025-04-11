@@ -103,7 +103,6 @@ void MBackprojectionFarField::PrepareBackprojection()
   // Make some initial computations, compute the center of each bin, 
   // create an image with the sensitivities
 
-
   delete [] m_xBin;
   m_xBin = new double[m_NImageBins];
   delete [] m_yBin;
@@ -113,7 +112,7 @@ void MBackprojectionFarField::PrepareBackprojection()
 
   for (unsigned int x1 = 0; x1 < m_x1NBins; ++x1) { // phi!
     for (unsigned int x2 = 0; x2 < m_x2NBins; ++x2) { //theta!
-      ToCartesean(m_x2BinCenter[x2], m_x1BinCenter[x1], m_x3BinCenter[0], 
+      ToCartesean(m_x2BinCenter[x2], m_x1BinCenter[x1], m_x3BinCenter[0], // TODO: Clean  this up!!!
                   m_xBin[x1+x2*m_x1NBins], m_yBin[x1+x2*m_x1NBins], m_zBin[x1+x2*m_x1NBins]);
     }
   }
@@ -205,63 +204,6 @@ void MBackprojectionFarField::RotateImagingSystemDetectorSystem(double &x, doubl
   x = P.X();
   y = P.Y();
   z = P.Z();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MBackprojectionFarField::ToSpherical(double x, double y, double z, 
-                                          double &t, double &p, double &r)
-{
-  // Transfer Cartesian Coordinates to Spherical
-
-  // Now transform:
-  r =  sqrt(x*x + y*y + z*z);
-
-  if (x == 0.0 && y == 0.0) {
-    p = 0.0;
-  } else {
-    if (x != 0) {
-      p = atan2(y, x);
-    } else { 
-      if (y > 0) {
-        p = c_Pi/2;
-      } else {
-        p = -c_Pi/2;
-      }
-    }
-  }
-
-  if (x == 0.0 && y == 0.0 && z == 0.0) {
-    t = 0.0;
-  } else {
-    if (z != 0) {
-      t = atan2(sqrt(x*x + y*y), z);
-    } else { 
-      if (sqrt(x*x + y*y) > 0) {
-        t = c_Pi/2;
-      } else {
-        t = -c_Pi/2;
-      }
-    }
-  }
-
-  return;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MBackprojectionFarField::ToCartesean(double t, double p, double r, 
-                                        double &x, double &y, double &z)
-{
-  // Transfer Spherical Coordinates to Cartesean
-
-  x = r * sin(t) * cos(p);
-  y = r * sin(t) * sin(p);
-  z = r * cos(t);
 }
 
 

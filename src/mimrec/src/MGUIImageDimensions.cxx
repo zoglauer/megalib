@@ -93,7 +93,7 @@ void MGUIImageDimensions::Create()
 
 
   if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
-    AddSubTitle("Image setup in spherical detector coordinates"); 
+    AddSubTitle("Image setup in far-field 2D spherical detector coordinates");
 
     TGLabel* CoordinatesLabel = new TGLabel(this, "Enter the minimum and maximum axis dimensions and the number of bins:");
     AddFrame(CoordinatesLabel, AxisLayoutLabel);
@@ -104,13 +104,13 @@ void MGUIImageDimensions::Create()
                                             false,
                                             MString("Minimum [deg]: "),
                                             MString("Maximum [deg]: "),
-                                            m_GUIData->GetThetaMin(), 
+                                            m_GUIData->GetThetaMin(),
                                             m_GUIData->GetThetaMax(),
                                             true,
                                             0.0,
                                             180.0);
     AddFrame(m_ThetaDimension, DimensionLayout);
-  
+
     m_ThetaBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsTheta(), true, 1);
     AddFrame(m_ThetaBins, BinLayout);
 
@@ -119,14 +119,14 @@ void MGUIImageDimensions::Create()
                                           false,
                                           MString("Minimum [deg]: "),
                                           MString("Maximum [deg]: "),
-                                          m_GUIData->GetPhiMin(), 
+                                          m_GUIData->GetPhiMin(),
                                           m_GUIData->GetPhiMax(),
                                           true);
     AddFrame(m_PhiDimension, DimensionLayout);
-    
+
     m_PhiBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsPhi(), true, 1);
     AddFrame(m_PhiBins, BinLayout);
-    
+
 
     TGLabel* AxisRotationLabel = new TGLabel(this, "Enter the coordinates of the X- and Z-axis of a new rotated, coordinate system\nin the coordinates of the default system. Sources will be located at different\npositions compared to the default detector coordinate system.\nTo go back to unrotated use: X=(1/0/0) and Z=(0/0/1)");
     AddFrame(AxisRotationLabel, AxisLayoutLabel);
@@ -149,7 +149,7 @@ void MGUIImageDimensions::Create()
     TGHorizontalFrame* ProjectionFrame = new TGHorizontalFrame(this);
     TGLayoutHints* ProjectionFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler, 20*m_FontScaler);
     AddFrame(ProjectionFrame, ProjectionFrameLayout);
-        
+
     TGLabel* ProjectionLabel = new TGLabel(ProjectionFrame, "Set the type of the spherical projection (None, Hammer):");
     TGLayoutHints* ProjectionLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
     ProjectionFrame->AddFrame(ProjectionLabel, ProjectionLabelLayout);
@@ -164,7 +164,94 @@ void MGUIImageDimensions::Create()
     TGLayoutHints* ProjectionLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
     ProjectionFrame->AddFrame(m_ProjectionSpheric, ProjectionLayout);
 
-    
+
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_SphericNearField3D) {
+    AddSubTitle("Image setup in near-field 3D spherical detector coordinates");
+
+    TGLabel* CoordinatesLabel = new TGLabel(this, "Enter the minimum and maximum axis dimensions and the number of bins:");
+    AddFrame(CoordinatesLabel, AxisLayoutLabel);
+
+
+    m_ThetaDimension = new MGUIEMinMaxEntry(this,
+                                            MString("Theta:"),
+                                            false,
+                                            MString("Minimum [deg]: "),
+                                            MString("Maximum [deg]: "),
+                                            m_GUIData->GetThetaMin(),
+                                            m_GUIData->GetThetaMax(),
+                                            true,
+                                            0.0,
+                                            180.0);
+    AddFrame(m_ThetaDimension, DimensionLayout);
+
+    m_ThetaBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsTheta(), true, 1);
+    AddFrame(m_ThetaBins, BinLayout);
+
+    m_PhiDimension = new MGUIEMinMaxEntry(this,
+                                          MString("Phi:"),
+                                          false,
+                                          MString("Minimum [deg]: "),
+                                          MString("Maximum [deg]: "),
+                                          m_GUIData->GetPhiMin(),
+                                          m_GUIData->GetPhiMax(),
+                                          true);
+    AddFrame(m_PhiDimension, DimensionLayout);
+
+    m_PhiBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsPhi(), true, 1);
+    AddFrame(m_PhiBins, BinLayout);
+
+
+    m_RadiusDimension = new MGUIEMinMaxEntry(this,
+                                             MString("Radius:"),
+                                             false,
+                                             MString("Minimum [cm]: "),
+                                             MString("Maximum [cm]: "),
+                                             m_GUIData->GetRadiusMin(),
+                                             m_GUIData->GetRadiusMax(),
+                                             true);
+    AddFrame(m_RadiusDimension, DimensionLayout);
+
+    m_RadiusBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsRadius(), true, 1);
+    AddFrame(m_RadiusBins, BinLayout);
+
+
+    TGLabel* AxisRotationLabel = new TGLabel(this, "Enter the coordinates of the X- and Z-axis of a new rotated, coordinate system\nin the coordinates of the default system. Sources will be located at different\npositions compared to the default detector coordinate system.\nTo go back to unrotated use: X=(1/0/0) and Z=(0/0/1)");
+    AddFrame(AxisRotationLabel, AxisLayoutLabel);
+
+    m_XAxis = new MGUIEEntryList(this, "New X-axis vector:", MGUIEEntryList::c_SingleLine);
+    m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().X(), true);
+    m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().Y(), true);
+    m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().Z(), true);
+    m_XAxis->Create();
+    AddFrame(m_XAxis, AxisLayoutFirst);
+
+    m_ZAxis = new MGUIEEntryList(this, "New Z-axis vector:", MGUIEEntryList::c_SingleLine);
+    m_ZAxis->Add("", m_GUIData->GetImageRotationZAxis().X(), true);
+    m_ZAxis->Add("", m_GUIData->GetImageRotationZAxis().Y(), true);
+    m_ZAxis->Add("", m_GUIData->GetImageRotationZAxis().Z(), true);
+    m_ZAxis->Create();
+    AddFrame(m_ZAxis, AxisLayoutLast);
+
+
+    TGHorizontalFrame* ProjectionFrame = new TGHorizontalFrame(this);
+    TGLayoutHints* ProjectionFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler, 20*m_FontScaler);
+    AddFrame(ProjectionFrame, ProjectionFrameLayout);
+
+    TGLabel* ProjectionLabel = new TGLabel(ProjectionFrame, "Set the type of the spherical projection (None, Hammer):");
+    TGLayoutHints* ProjectionLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
+    ProjectionFrame->AddFrame(ProjectionLabel, ProjectionLabelLayout);
+
+    m_ProjectionSpheric = new TGComboBox(ProjectionFrame);
+    m_ProjectionSpheric->AddEntry("No Projection", static_cast<int>(MImageProjection::c_None));
+    m_ProjectionSpheric->AddEntry("Hammer projection", static_cast<int>(MImageProjection::c_Hammer));
+    m_ProjectionSpheric->Associate(this);
+    m_ProjectionSpheric->Select(static_cast<int>(m_GUIData->GetSphericalProjection()));
+    m_ProjectionSpheric->SetHeight(m_FontScaler*18);
+    m_ProjectionSpheric->SetWidth(m_FontScaler*140);
+    TGLayoutHints* ProjectionLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
+    ProjectionFrame->AddFrame(m_ProjectionSpheric, ProjectionLayout);
+
+
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     AddSubTitle("Image setup in Galactic coordinates"); 
 
@@ -290,12 +377,12 @@ bool MGUIImageDimensions::OnApply()
 
     if (m_ThetaDimension->CheckRange(0.0, 180.0, 0.0, 180.0, true) == false) return false;
     if (m_PhiDimension->CheckRange(-360.0, 360.0, -360.0, 360.0, true) == false) return false;
-    
+
     if (m_PhiDimension->GetMaxValue() - m_PhiDimension->GetMinValue() > 360) {
       mgui<<"The phi axis is not allowed to show more than 360 degrees."<<error;
       return false;
     }
-    
+
     if (m_ThetaBins->IsInt(0, 1000000) == false) return false;
     if (m_PhiBins->IsInt(0, 1000000) == false) return false;
 
@@ -307,17 +394,17 @@ bool MGUIImageDimensions::OnApply()
       mgui<<"The phi axis must have at least one bin."<<error;
       return false;
     }
-    
+
     MVector XAxis(m_XAxis->GetAsDouble(0), m_XAxis->GetAsDouble(1), m_XAxis->GetAsDouble(2));
     XAxis.Unitize();
     MVector ZAxis(m_ZAxis->GetAsDouble(0), m_ZAxis->GetAsDouble(1), m_ZAxis->GetAsDouble(2));
     ZAxis.Unitize();
-    
+
     if (XAxis.IsOrthogonal(ZAxis) == false) {
       mgui<<"The image rotation vectors must be orthogonal."<<error;
       return false;
     }
-    
+
     if (m_XAxis->IsModified() == true || m_ZAxis->IsModified() == true) {
       m_GUIData->SetImageRotationXAxis(XAxis);
       m_GUIData->SetImageRotationZAxis(ZAxis);
@@ -340,7 +427,82 @@ bool MGUIImageDimensions::OnApply()
     if (m_PhiBins->IsModified() == true) {
       m_GUIData->SetBinsPhi(m_PhiBins->GetAsInt());
     }
-    
+
+    if (m_ProjectionSpheric->GetSelected() != static_cast<int>(m_GUIData->GetSphericalProjection())) {
+      m_GUIData->SetSphericalProjection(static_cast<MImageProjection>(m_ProjectionSpheric->GetSelected()));
+    }
+
+  // Near-field 3D spheric
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_SphericNearField3D) {
+
+    if (m_ThetaDimension->CheckRange(0.0, 180.0, 0.0, 180.0, true) == false) return false;
+    if (m_PhiDimension->CheckRange(-360.0, 360.0, -360.0, 360.0, true) == false) return false;
+    if (m_RadiusDimension->CheckRange(0.0, numeric_limits<double>::max(), 0.0, numeric_limits<double>::max(), true) == false) return false;
+
+    if (m_PhiDimension->GetMaxValue() - m_PhiDimension->GetMinValue() > 360) {
+      mgui<<"The phi axis is not allowed to show more than 360 degrees."<<error;
+      return false;
+    }
+
+    if (m_ThetaBins->IsInt(0, 1000000) == false) return false;
+    if (m_PhiBins->IsInt(0, 1000000) == false) return false;
+    if (m_RadiusBins->IsInt(0, 1000000) == false) return false;
+
+    if (m_ThetaBins->GetAsInt() == 0) {
+      mgui<<"The theta axis must have at least one bin."<<error;
+      return false;
+    }
+    if (m_PhiBins->GetAsInt() == 0) {
+      mgui<<"The phi axis must have at least one bin."<<error;
+      return false;
+    }
+    if (m_RadiusBins->GetAsInt() == 0) {
+      mgui<<"The radius axis must have at least one bin."<<error;
+      return false;
+    }
+
+    MVector XAxis(m_XAxis->GetAsDouble(0), m_XAxis->GetAsDouble(1), m_XAxis->GetAsDouble(2));
+    XAxis.Unitize();
+    MVector ZAxis(m_ZAxis->GetAsDouble(0), m_ZAxis->GetAsDouble(1), m_ZAxis->GetAsDouble(2));
+    ZAxis.Unitize();
+
+    if (XAxis.IsOrthogonal(ZAxis) == false) {
+      mgui<<"The image rotation vectors must be orthogonal."<<error;
+      return false;
+    }
+
+    if (m_XAxis->IsModified() == true || m_ZAxis->IsModified() == true) {
+      m_GUIData->SetImageRotationXAxis(XAxis);
+      m_GUIData->SetImageRotationZAxis(ZAxis);
+    }
+
+    if (m_ThetaDimension->IsModified() == true) {
+      m_GUIData->SetThetaMin(m_ThetaDimension->GetMinValue());
+      m_GUIData->SetThetaMax(m_ThetaDimension->GetMaxValue());
+    }
+
+    if (m_PhiDimension->IsModified() == true) {
+      m_GUIData->SetPhiMin(m_PhiDimension->GetMinValue());
+      m_GUIData->SetPhiMax(m_PhiDimension->GetMaxValue());
+    }
+
+    if (m_RadiusDimension->IsModified() == true) {
+      m_GUIData->SetRadiusMin(m_RadiusDimension->GetMinValue());
+      m_GUIData->SetRadiusMax(m_RadiusDimension->GetMaxValue());
+    }
+
+    if (m_ThetaBins->IsModified() == true) {
+      m_GUIData->SetBinsTheta(m_ThetaBins->GetAsInt());
+    }
+
+    if (m_PhiBins->IsModified() == true) {
+      m_GUIData->SetBinsPhi(m_PhiBins->GetAsInt());
+    }
+
+    if (m_RadiusBins->IsModified() == true) {
+      m_GUIData->SetBinsRadius(m_RadiusBins->GetAsInt());
+    }
+
     if (m_ProjectionSpheric->GetSelected() != static_cast<int>(m_GUIData->GetSphericalProjection())) {
       m_GUIData->SetSphericalProjection(static_cast<MImageProjection>(m_ProjectionSpheric->GetSelected()));
     }

@@ -76,8 +76,11 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_ThetaMax = 180;
   m_PhiMin = -180;
   m_PhiMax = 180;
+  m_RadiusMin = 100;
+  m_RadiusMax = 110;
   m_BinsTheta = 90;
   m_BinsPhi = 180;
+  m_BinsRadius = 1;
   m_SphericalProjection = MImageProjection::c_None;
 
   // Dimensions galactic
@@ -220,6 +223,8 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "SphericalThetaBins", m_BinsTheta);
   new MXmlNode(aNode, "SphericalPhi", m_PhiMin, m_PhiMax);
   new MXmlNode(aNode, "SphericalPhiBins", m_BinsPhi);
+  new MXmlNode(aNode, "SphericalRadius", m_RadiusMin, m_RadiusMax);
+  new MXmlNode(aNode, "SphericalRadiusBins", m_BinsRadius);
   new MXmlNode(aNode, "SphericalProjection", static_cast<int>(m_SphericalProjection));
 
   // Menu Dimensions - Galactic
@@ -375,6 +380,13 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
     }
     if ((bNode = aNode->GetNode("SphericalPhiBins")) != 0) {
       m_BinsPhi = bNode->GetValueAsInt();
+    }
+    if ((bNode = aNode->GetNode("SphericalRadius")) != 0) {
+      m_RadiusMin = bNode->GetMinValueAsDouble();
+      m_RadiusMax = bNode->GetMaxValueAsDouble();
+    }
+    if ((bNode = aNode->GetNode("SphericalRadiusBins")) != 0) {
+      m_BinsRadius = bNode->GetValueAsInt();
     }
     if ((bNode = aNode->GetNode("SphericalProjection")) != 0) {
       m_SphericalProjection = static_cast<MImageProjection>(bNode->GetValueAsInt());

@@ -91,10 +91,11 @@ void MGUICoordinateSystem::Create()
   
   m_System = new MGUIERBList(m_MainPanel, "Coordinate-System:", false);
   m_System->Add("Galactic");
-  m_System->Add("Spherical");
-  m_System->Add("Cartesian 2D");
-  m_System->Add("Cartesian 3D");
-  
+  m_System->Add("Spherical far field");
+  m_System->Add("Cartesian near field 2D");
+  m_System->Add("Cartesian near field 3D");
+  m_System->Add("Spherical near field 3D");
+
   if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     m_System->SetSelected(0);
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
@@ -103,6 +104,8 @@ void MGUICoordinateSystem::Create()
     m_System->SetSelected(2);
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     m_System->SetSelected(3);
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_SphericNearField3D) {
+    m_System->SetSelected(4);
   } else {
     m_System->SetSelected(0);
   }
@@ -132,7 +135,9 @@ bool MGUICoordinateSystem::OnApply()
     if (m_GUIData->GetCoordinateSystem() != MCoordinateSystem::c_Cartesian2D) m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_Cartesian2D);
   } else if (m_System->GetSelected() == 3) {
     if (m_GUIData->GetCoordinateSystem() != MCoordinateSystem::c_Cartesian3D) m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_Cartesian3D);
-  } 
+  } else if (m_System->GetSelected() == 4) {
+    if (m_GUIData->GetCoordinateSystem() != MCoordinateSystem::c_SphericNearField3D) m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_SphericNearField3D);
+  }
 
   return true;
 }

@@ -67,6 +67,8 @@ class MGUIImageDimensions : public MGUIDialog
   MGUIEEntry* m_ThetaBins;
   MGUIEMinMaxEntry* m_PhiDimension;
   MGUIEEntry* m_PhiBins;
+  MGUIEMinMaxEntry* m_RadiusDimension;
+  MGUIEEntry* m_RadiusBins;
 
   TGComboBox* m_ProjectionSpheric;
 

@@ -99,6 +99,12 @@ class MBackprojection : public MProjection, public MViewPort
     }
   }
 
+  //! Conversion from Cartesian (x, y, z) to Spherical coordiantes (thea, phi, radius)
+  void ToSpherical(double x, double y, double z, double &t, double &p, double &r);
+  //! Conversion from Spherical coordiantes (thea, phi, radius) to Cartesian (x, y, z)
+  void ToCartesean(double t, double p, double r, double &x, double &y, double &z);
+
+
   // protected members:
  protected:
 

@@ -31,7 +31,7 @@
 
 //! Definition of the coordinate system IDs
 enum class MCoordinateSystem : int { 
-  c_Unknown = 0, c_Galactic = 1, c_Spheric = 2, c_Cartesian2D = 3, c_Cartesian3D = 4 
+  c_Unknown = 0, c_Galactic = 1, c_Spheric = 2, c_Cartesian2D = 3, c_Cartesian3D = 4, c_SphericNearField3D = 5
 };
 
 //! I/O for MCoordinateSystem

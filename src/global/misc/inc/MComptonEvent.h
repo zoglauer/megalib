@@ -25,6 +25,7 @@ using namespace std;
 #include "MCoordinateSystem.h"
 #include "MPhysicalEvent.h"
 #include "MPhysicalEventHit.h"
+#include "MGPSToWorld.h"
 
 // Forward declarations:
 
@@ -345,6 +346,12 @@ class MComptonEvent : public MPhysicalEvent
   //! The coincidence window
   MTime m_CoincidenceWindow;
   
+  //! Hack
+public:
+  MVector m_GPSTranslation;
+  MRotation m_GPSRotation;
+  MRotation m_GPSInverseRotation;
+
   // private members:
  private:
 

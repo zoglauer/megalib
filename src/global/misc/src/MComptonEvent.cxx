@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 using namespace std;
 
@@ -1386,6 +1387,25 @@ int MComptonEvent::ParseLine(const char* Line, bool Fast)
     } else {
       if (m_CoincidenceWindow.Set(MString(Line), 3) == false) {
         Ret = 1;
+      }
+    }
+  } else if (Line[0] == 'C' && Line[1] == 'C') {
+    if (Line[3] == 'A' && Line[4] == 'S') {
+      double Lat, Long, Yaw, Pitch, Roll, Time;
+      double Alt = 33500; // meters
+      // CC AS -51.701056 130.49906 222.87427 -0.80273987 -0.68872184 1463812560.000000000
+      if (sscanf(Line, "CC AS %lf %lf %lf %lf %lf %lf", &Lat, &Long, &Yaw, &Pitch, &Roll, &Time) != 6) {
+        mout<<"Unable to parse CC AS of event "<<m_Id<<"!"<<endl;
+        Ret = 1;
+      } else {
+        MGPSToWorld GPS(Lat, Long, Alt, Yaw, Pitch, Roll);
+        m_GPSTranslation = 100*GPS.position_ecef; // 100 to switch to cm
+        m_GPSRotation = GPS.rotation_ecef;
+        m_GPSInverseRotation = m_GPSRotation.GetInvers();
+
+        //cout<<"Input: Lat: "<<Lat<<"  Long: "<<Long<<"  Alt: "<<Alt<<endl;
+        //cout<<"GPS Translation: "<<m_GPSTranslation<<" --> r="<<setprecision(10)<<m_GPSTranslation.Mag()<<" (should be ~641,813,700 cm = ~6,410 km = ~6,410,100 m)"<<endl;
+
       }
     }
   } else {

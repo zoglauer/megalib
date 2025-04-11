@@ -125,11 +125,20 @@ class MSettingsImaging : public MSettingsInterface
   double GetPhiMax() const { return m_PhiMax; }
   void SetPhiMax(double PhiMax) { m_PhiMax = PhiMax; m_BackprojectionModified = true; }
 
+  double GetRadiusMin() const { return m_RadiusMin; }
+  void SetRadiusMin(double RadiusMin) { m_RadiusMin = RadiusMin; m_BackprojectionModified = true; }
+
+  double GetRadiusMax() const { return m_RadiusMax; }
+  void SetRadiusMax(double RadiusMax) { m_RadiusMax = RadiusMax; m_BackprojectionModified = true; }
+
   int GetBinsTheta() const { return m_BinsTheta; }
   void SetBinsTheta(int BinsTheta) { m_BinsTheta = BinsTheta; m_BackprojectionModified = true; }
 
   int GetBinsPhi() const { return m_BinsPhi; }
   void SetBinsPhi(int BinsPhi) { m_BinsPhi = BinsPhi; m_BackprojectionModified = true; }
+
+  int GetBinsRadius() const { return m_BinsRadius; }
+  void SetBinsRadius(int BinsRadius) { m_BinsRadius = BinsRadius; m_BackprojectionModified = true; }
 
   MImageProjection GetSphericalProjection() const { return m_SphericalProjection; }
   void SetSphericalProjection(MImageProjection SphericalProjection) { m_SphericalProjection = SphericalProjection; }
@@ -315,9 +324,13 @@ class MSettingsImaging : public MSettingsInterface
   double m_PhiMin;
   double m_PhiMax;
 
+  double m_RadiusMin;
+  double m_RadiusMax;
+
   int m_BinsTheta;
   int m_BinsPhi;
-  
+  int m_BinsRadius;
+
   MImageProjection m_SphericalProjection;
 
   // Image dimensions galactic

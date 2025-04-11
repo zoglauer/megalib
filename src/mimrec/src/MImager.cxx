@@ -47,6 +47,7 @@ using namespace std;
 #include "MBackprojection.h"
 #include "MBackprojectionFarField.h"
 #include "MBackprojectionNearField.h"
+#include "MBackprojectionNearFieldSpheric.h"
 #include "MBPDataSparseImage.h"
 #include "MBPDataSparseImageOneByte.h"
 #include "MPhysicalEvent.h"
@@ -118,6 +119,9 @@ MImager::MImager(MCoordinateSystem CoordinateSystem, unsigned int NThreads)
     }
     else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D || m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
       m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionNearField(m_CoordinateSystem)));
+    }
+    else if (m_CoordinateSystem == MCoordinateSystem::c_SphericNearField3D) {
+      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionNearFieldSpheric(m_CoordinateSystem)));
     }
     else {
       mgui<<"Unknown coordinate system."<<endl;
@@ -213,6 +217,9 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
     else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D || m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
       m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionNearField(m_CoordinateSystem)));
     }
+    else if (m_CoordinateSystem == MCoordinateSystem::c_SphericNearField3D) {
+      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionNearFieldSpheric(m_CoordinateSystem)));
+    }
     else {
       mgui<<"Unknown coordinate system."<<endl;
       mgui<<"I will use a spherical coordinate system!"<<error;
@@ -271,6 +278,26 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
                 Settings->GetZMin(),
                 Settings->GetZMax(),
                 Settings->GetBinsZ());
+  } else if (Settings->GetCoordinateSystem() == MCoordinateSystem::c_SphericNearField3D) {
+    MVector XAxis = Settings->GetImageRotationXAxis();
+    MVector ZAxis = Settings->GetImageRotationZAxis();
+    if (XAxis.IsOrthogonal(ZAxis) == false) {
+      merr<<"Spherical coordiantes: The axes of the fixed additional rotation are not orthogonal! Aborting imaging!"<<show;
+      return false;
+    }
+
+    SetViewport(Settings->GetPhiMin()*c_Rad,
+                Settings->GetPhiMax()*c_Rad,
+                Settings->GetBinsPhi(),
+                Settings->GetThetaMin()*c_Rad,
+                Settings->GetThetaMax()*c_Rad,
+                Settings->GetBinsTheta(),
+                Settings->GetRadiusMin(),
+                Settings->GetRadiusMax(),
+                Settings->GetBinsRadius(),
+                Settings->GetImageRotationXAxis(),
+                Settings->GetImageRotationZAxis());
+    SetProjection(Settings->GetSphericalProjection());
   } else {
     merr<<"Unknown coordinate system ID: "<<Settings->GetCoordinateSystem()<<error;
     return false;
@@ -818,6 +845,21 @@ MImage* MImager::CreateImage(MString Title, double* Data)
                          "Intensity [a.u.]",
                          m_Palette,
                          m_DrawMode);
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_SphericNearField3D) {
+    Image = new MImageSpheric(Title,
+                              Data,
+                              "Phi [deg]",
+                              m_x1Min*c_Deg,
+                              m_x1Max*c_Deg,
+                              m_x1NBins,
+                              "Theta [deg]",
+                              m_x2Min*c_Deg,
+                              m_x2Max*c_Deg,
+                              m_x2NBins,
+                              "Intensity [a.u.]",
+                              m_Palette,
+                              m_DrawMode);
+    dynamic_cast<MImageSpheric*>(Image)->SetProjection(m_Projection);
   } else {
     merr<<"Unknown coordinate system ID: "<<m_CoordinateSystem<<fatal;
   }

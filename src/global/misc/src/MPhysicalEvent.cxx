@@ -516,6 +516,7 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
     }
     */
 
+    Ret = 2; // Not parsed
   } else if (Line[0] == 'O' && Line[1] == 'I') {
     if (Fast == true) {
       char* p;

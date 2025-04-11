@@ -106,6 +106,7 @@ FILES := MGlobal \
 	MXmlAttribute \
 	MXmlDocument \
 	MUnitTest \
+	MGPSToWorld \
 
 
 #----------------------------------------------------------------

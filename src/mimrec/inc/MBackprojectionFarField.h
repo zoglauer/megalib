@@ -70,11 +70,6 @@ class MBackprojectionFarField : public MBackprojection
   virtual void RotateDetectorSystemImagingSystem(double &x, double &y, double &z);
   virtual void RotateImagingSystemDetectorSystem(double &x, double &y, double &z);
 
-  void ToSpherical(double x, double y, double z,
-                   double &t, double &p, double &r);
-  void ToCartesean(double t, double p, double r,
-                   double &x, double &y, double &z);
-
 
   //! Optimized version of calculating an angle
   //! This function is absolutely time critical!

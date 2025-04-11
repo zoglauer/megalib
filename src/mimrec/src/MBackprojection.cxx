@@ -146,5 +146,61 @@ bool MBackprojection::Assimilate(MPhysicalEvent* Event)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MBackprojection::ToSpherical(double x, double y, double z,
+                                  double &t, double &p, double &r)
+{
+  // Transfer Cartesian Coordinates to Spherical
+
+  // Now transform:
+  r =  sqrt(x*x + y*y + z*z);
+
+  if (x == 0.0 && y == 0.0) {
+    p = 0.0;
+  } else {
+    if (x != 0) {
+      p = atan2(y, x);
+    } else {
+      if (y > 0) {
+        p = c_Pi/2;
+      } else {
+        p = -c_Pi/2;
+      }
+    }
+  }
+
+  if (x == 0.0 && y == 0.0 && z == 0.0) {
+    t = 0.0;
+  } else {
+    if (z != 0) {
+      t = atan2(sqrt(x*x + y*y), z);
+    } else {
+      if (sqrt(x*x + y*y) > 0) {
+        t = c_Pi/2;
+      } else {
+        t = -c_Pi/2;
+      }
+    }
+  }
+
+  return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MBackprojection::ToCartesean(double t, double p, double r,
+                                  double &x, double &y, double &z)
+{
+  // Transfer Spherical Coordinates to Cartesean
+
+  x = r * sin(t) * cos(p);
+  y = r * sin(t) * sin(p);
+  z = r * cos(t);
+}
+
 // MBackprojection: the end...
 ////////////////////////////////////////////////////////////////////////////////

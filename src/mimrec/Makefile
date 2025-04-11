@@ -33,6 +33,7 @@ FILES := MSettingsMimrec \
 	MBackprojection \
 	MBackprojectionFarField \
 	MBackprojectionNearField \
+	MBackprojectionNearFieldSpheric \
 	MEventSelector \
 	MLMLAlgorithms \
 	MLMLClassicEM \

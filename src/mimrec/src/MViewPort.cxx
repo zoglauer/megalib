@@ -81,7 +81,7 @@ MViewPort::~MViewPort()
 
 
 bool MViewPort::SetDimensions(double x1Min, double x1Max, unsigned int x1NBins, 
-                              double x2Min, double x2Max, unsigned  int x2NBins,
+                              double x2Min, double x2Max, unsigned int x2NBins,
                               double x3Min, double x3Max, unsigned int x3NBins,
                               MVector xAxis, MVector zAxis)
 {

@@ -207,8 +207,8 @@ void MImageSpheric::Display(TCanvas* Canvas)
   }
   m_Canvas = Canvas;
 
-  int xSize = 1400;
-  int ySize = 700;
+  int xSize = 1000;
+  int ySize = 1000;
   
   double xImageSize = (m_xMax-m_xMin);
   double yImageSize = (m_yMax-m_yMin);
@@ -311,7 +311,7 @@ void MImageSpheric::DisplayProjectionNone()
 
     m_YAxis = new TGaxis(gPad->GetUxmin(),
                          gPad->GetUymax(),
-                         0.9999*gPad->GetUxmin(),
+                         0.99999*gPad->GetUxmin(),
                          gPad->GetUymin(),
                          Hist->GetYaxis()->GetXmin(),
                          Hist->GetYaxis()->GetXmax(),
@@ -319,7 +319,7 @@ void MImageSpheric::DisplayProjectionNone()
     m_YAxis->ImportAxisAttributes(Hist->GetYaxis());
     m_YAxis->CenterTitle(true);
     m_YAxis->SetTitle(m_yTitle);
-    m_YAxis->SetLabelOffset(-0.015f);
+    m_YAxis->SetLabelOffset(-0.06f);
     m_YAxis->SetLabelSize(0.035f);
     m_YAxis->SetTitleOffset(-1.9f);
     m_YAxis->SetTitleSize(0.04f);
