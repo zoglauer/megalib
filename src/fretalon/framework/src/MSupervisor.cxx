@@ -777,6 +777,11 @@ bool MSupervisor::Analyze(bool TestRun)
         break;
       }
       mout<<"Initialization of module "<<GetModule(m)->GetName()<<" failed"<<endl;
+
+      // Finalize already initialized modules since threads are already running:
+      for (unsigned int r = 0; r <= m; ++r) {
+        GetModule(r)->Finalize();
+      }
       m_IsAnalysisRunning = false;
       return false;
     }
@@ -892,19 +897,15 @@ bool MSupervisor::Analyze(bool TestRun)
             TimeAssemblyExitedStartModule.Now();
           }
           MReadOutAssembly* ROA = M->GetAnalyzedReadOutAssembly();
-          if (ROA->IsFilteredOut() == true) {
-            //cout<<"ROA "<<ROA->GetID()<<" has been filterered out"<<endl;
-            delete ROA;
+          // Do not deleting filtered events, because it would triggers the timeout below
+          if (m < Modules.size()-1) {
+            //cout<<"Adding ROA "<<ROA->GetID()<<" to module "<<Modules[m+1][0]->GetName()<<endl;
+            Modules[m+1][0]->AddReadOutAssembly(ROA);
+            // Remark: the modules share their queue, so it does not matter to which we add the event
           } else {
-            if (m < Modules.size()-1) {
-              //cout<<"Adding ROA "<<ROA->GetID()<<" to module "<<Modules[m+1][0]->GetName()<<endl;
-              Modules[m+1][0]->AddReadOutAssembly(ROA); 
-              // Remark: the modules share their queue, so it does not matter to which we add the event
-            } else {
-              if (m == Modules.size()-1) {
-                //cout<<"ROA "<<ROA->GetID()<<" passed through all modules"<<endl;
-                delete ROA;
-              }
+            if (m == Modules.size()-1) {
+              //cout<<"ROA "<<ROA->GetID()<<" passed through all modules"<<endl;
+              delete ROA;
             }
           }
         }
@@ -1104,7 +1105,7 @@ void MSupervisor::View()
 void MSupervisor::Exit()
 {
   // Prepare to exit the application
-  
+
   if (m_IsAnalysisRunning == true) {
     m_SoftInterrupt = true;
     m_HardInterrupt = true;

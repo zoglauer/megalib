@@ -340,7 +340,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int 
       // cout<<"Combined: "<<m_ROD->ToString()<<" vs. "<<m_ROD->GetCombinedType()<<endl;
       
       if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) m_ROE->GetDetectorID() == SelectedDetectorID)) {
-        if (SelectedDetectorSide < 0 || SelectedDetectorSide >= 2 || (dynamic_cast<MReadOutElementDoubleStrip*>(m_ROE) != nullptr && (int) dynamic_cast<MReadOutElementDoubleStrip*>(m_ROE)->IsPositiveStrip() == SelectedDetectorSide)) {
+        if (SelectedDetectorSide < 0 || SelectedDetectorSide >= 2 || (dynamic_cast<MReadOutElementDoubleStrip*>(m_ROE) != nullptr && (int) dynamic_cast<MReadOutElementDoubleStrip*>(m_ROE)->IsLowVoltageStrip() == SelectedDetectorSide)) {
           MReadOut RO(*m_ROE, *m_ROD);
           ROS.AddReadOut(RO);
           //cout<<"Added: "<<RO.ToString()<<endl;

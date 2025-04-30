@@ -62,8 +62,8 @@ class MDShapeCONE : public MDShape
 
   double GetVolume();
 
-  //! Scale this shape by Factor
-  virtual void Scale(const double Factor);
+  //! Scale the axes given in Axes by a factor Scaler
+  virtual bool Scale(const double Scaler, const MString Axes = "XYZ");
 
   //! Return a unique position within the volume of the detector (center if possible)
   virtual MVector GetUniquePosition() const;

@@ -56,50 +56,55 @@ class MFunction
   //! Set the basic data from a 1D ResponseMatrix
   bool Set(const MResponseMatrixO1& Response);
 
-  //! Set the basic data from two vector
+  //! Set the basic data from two vectors
   bool Set(const vector<double>& X, const vector<double>& Y, unsigned int InterpolationType = c_InterpolationLinLin);
 
+  //! Set the basic data from two vectors
+  bool Set(const vector<long double>& X, const vector<long double>& Y, unsigned int InterpolationType = c_InterpolationLinLin);
+
   //! Add a data point
-  bool Add(const double x, const double y);
+  bool Add(const long double x, const long double y);
 
   //! Multiple the x-axis by some value
-  void ScaleX(double Scaler);
+  void ScaleX(long double Scaler);
 
   //! Scale the content by some value
-  void ScaleY(double Scaler);
+  void ScaleY(long double Scaler);
 
-  //! Evaluate the data for a specific x value 
-  double Evaluate(double x) const; 
-  double Eval(double x) const; // deprecated
+  //! Evaluate the data for a specific x value
+  long double Evaluate(long double x) const;
+
+  //! Deprectad - Evaluate the data for a specific x value
+  long double Eval(long double x) const;
 
   //! Integrate all the data from min to max
-  double Integrate() const;
+  long double Integrate() const;
 
   //! Integrate the data from min to max
-  double Integrate(double XMin, double XMax) const;
+  long double Integrate(long double XMin, long double XMax) const;
 
   //! Return a random number distributed as the underlying function
-  double GetRandom();
+  long double GetRandom();
 
   //! Return a random number distributed as the underlying function times the x-value
   //! This is helpfull in case the function is a profile of a radial 2D function
-  double GetRandomTimesX();
+  long double GetRandomTimesX();
 
   //! Return the size of the array
-  double GetSize() const { return m_X.size(); } 
+  long double GetSize() const { return m_X.size(); }
 
   //! Get the minimum x-value
-  double GetXMin() const;
+  long double GetXMin() const;
   //! Get the maximum x-value
-  double GetXMax() const;
+  long double GetXMax() const;
   //! Get the minimum y-value
-  double GetYMin() const;
+  long double GetYMin() const;
   //! Get the maximum y-value
-  double GetYMax() const;
+  long double GetYMax() const;
 
   //! Find the x value starting from Start which would be achieved after integrating until Integral
   //! If we go beyond x_max, x_max is returned if we are not cyclic, otherwise we continue at x_0
-  double FindX(double XStart, double Integral, bool Cyclic);
+  long double FindX(long double XStart, long double Integral, bool Cyclic);
   
   //! ID representing an unknown interpolation
   static const unsigned int c_InterpolationUnknown;
@@ -128,9 +133,9 @@ class MFunction
   //! Get the number of data points
   unsigned int GetNDataPoints() const { return m_X.size(); }
   //! Get the x value of the data point
-  double GetDataPointX(unsigned int n) const { return m_X.at(n); }
+  long double GetDataPointX(unsigned int n) const { return m_X.at(n); }
   //! Get the y value of the data point
-  double GetDataPointY(unsigned int n) const { return m_Y.at(n); }
+  long double GetDataPointY(unsigned int n) const { return m_Y.at(n); }
 
   //! Save the data:
   bool Save(const MString FileName, const MString Keyword = "DP");
@@ -138,14 +143,14 @@ class MFunction
 
   // protected methods:
  protected:
-  //! Create the splines for interpolation
-  void CreateSplines();
-
   //! The interpolation stage of the GetRandom() function
-  double GetRandomInterpolate(double Itot);
+  long double GetRandomInterpolate(long double Itot);
 
   //! Implementation of Lambert's W function branches 0 and -1
-  double LambertW(double x, int Branch);
+  long double LambertW(long double x, int Branch);
+
+  //! Check the dynamic range and give a warning message otherwise
+  void CheckDynamicRange();
 
   // private methods:
  private:
@@ -159,23 +164,16 @@ class MFunction
   unsigned int m_InterpolationType;
 
   //! The x-axis data
-  vector<double> m_X;
-  //! The x-axis data starting at 0
-  vector<double> m_XZero;
+  vector<long double> m_X;
   //! The y-axis data
-  vector<double> m_Y;
+  vector<long double> m_Y;
 
   //! True if the minimum y-value is non-negative
   bool m_YNonNegative;
 
-  //! The 3-spline 
-  TSpline3* m_Spline3;
-  //! The 5-spline
-  TSpline5* m_Spline5;
-
   // For random number generation:
   //! The function as cumulative distribution:
-  vector<double> m_Cumulative;
+  vector<long double> m_Cumulative;
   
 
 #ifdef ___CLING___

@@ -51,7 +51,7 @@ class MDShapeUnion : public MDShape
   //! Parse some tokenized text
   bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
 
-  //!
+  //! Not implemented
   MVector GetSize() { return MVector(); }
 
   //! Dump the content as a string
@@ -68,10 +68,11 @@ class MDShapeUnion : public MDShape
   MDOrientation* GetOrientationAddend() const { return m_Orientation; }
 
   //! Get the volume of this shape
+  //! Attention: For boolean volumes it is sampled thus only correct to >1%
   double GetVolume();
 
-  //! Scale this shape by Factor
-  virtual void Scale(const double Factor);
+  //! Scale the axes given in Axes by a factor Scaler
+  virtual bool Scale(const double Scaler, const MString Axes = "XYZ");
 
   //! Return a unique position within the volume of the detector (center if possible)
   virtual MVector GetUniquePosition() const;

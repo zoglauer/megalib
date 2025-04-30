@@ -352,8 +352,7 @@ if [[ ${LHEASOFT} != "" ]] && ( [[ -f ${LHEASOFT}/lib/libcfitsio.a ]] || [[ -f $
   echo "Found cfitsio library in ${LHEASOFT}/lib";
   FitsIOFound=0  
 else
-  locate libcfitsio &> /dev/null
-  if [[ "$?" == "0" ]]; then
+  if [[ "$(pkgconf --libs cfitsio)" == *cfitsio* ]]; then
     echo "Found exiting cfitsio in a system path";
     FitsIOFound=0
   fi
