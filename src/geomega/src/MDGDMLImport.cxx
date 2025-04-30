@@ -22,6 +22,7 @@
 // Standard libs:
 
 // ROOT libs:
+#include "TSystem.h"
 #include "TList.h"
 #include "TGeoBBox.h"
 #include "TGeoNode.h"

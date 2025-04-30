@@ -32,6 +32,7 @@
 #include <TGFrame.h>
 #include <TGClient.h>
 #include <TGResourcePool.h>
+#include <TSystem.h>
 
 // MEGAlib libs:
 #include "MStreams.h"

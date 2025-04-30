@@ -22,7 +22,8 @@
 // Standard libs:
 
 // ROOT libs:
-#include <TGPicture.h>
+#include "TSystem.h"
+#include "TGPicture.h"
 
 // MEGAlib libs:
 #include "MStreams.h"

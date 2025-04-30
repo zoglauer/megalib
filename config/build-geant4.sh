@@ -467,7 +467,7 @@ PATCHAPPLIED="Patch not applied"
 if [[ ${PATCH} == on ]]; then
   echo "Patching..."
   if [ -f "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" ]; then
-    patch -p1 < ${MEGALIB}/resource/patches/${GEANT4CORE}.patch
+    patch -p1 -l < ${MEGALIB}/resource/patches/${GEANT4CORE}.patch
     PATCHMD5=`openssl md5 "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" | awk -F" " '{ print $2 }'`
     PATCHAPPLIED="Patch applied ${PATCHMD5}"
     echo "Applied patch: ${MEGALIB}/resource/patches/${GEANT4CORE}.patch"

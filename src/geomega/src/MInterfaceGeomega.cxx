@@ -34,6 +34,7 @@ using namespace std;
 
 // ROOT libs:
 #include "TROOT.h"
+#include "TSystem.h"
 #include "MString.h"
 #include "TCanvas.h"
 #include "TView.h"
