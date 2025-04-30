@@ -801,6 +801,8 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
+      // This comes from a failed merge...
+      /*
       } else if (T->IsTokenAt(1, "Reconstruction", true) == true) {
         if (T->GetNTokens() == 4) {
           Run->SetRevanConfigurationFileName(T->GetTokenAtAsString(2));
@@ -810,6 +812,7 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
+      */
       } else if (T->IsTokenAt(1, "Triggers", true) == true ||
                  T->IsTokenAt(1, "Trigger", true) == true ||
                  T->IsTokenAt(1, "NTrigger", true) == true ||
