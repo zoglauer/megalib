@@ -170,10 +170,6 @@ void MGUIMainMelinator::Create()
   MenuFiles->AddEntry("Choose files and isotopes", c_ChooseCalibrationFiles);
   MenuFiles->AddEntry("Load files", c_LoadLast);
   MenuFiles->AddSeparator();
-  MenuFiles->AddLabel("Calibration result");
-  MenuFiles->AddEntry("Save As...", c_SaveAs);
-  MenuFiles->AddEntry("Save", c_Save);
-  MenuFiles->AddSeparator();
   MenuFiles->AddLabel("Configuration file");
   //MenuFiles->AddEntry("Open", c_LoadConfig);
   MenuFiles->AddEntry("Open -> use command line at launch", c_LoadConfig);
@@ -184,7 +180,18 @@ void MGUIMainMelinator::Create()
   MenuFiles->AddSeparator();
   MenuFiles->AddEntry("Exit", c_Exit);
   MenuFiles->Associate(this);
-  MenuBar->AddPopup("Files", MenuFiles, MenuBarItemLayoutLeft);
+  MenuBar->AddPopup("Input", MenuFiles, MenuBarItemLayoutLeft);
+
+  TGPopupMenu* MenuResults = new TGPopupMenu(gClient->GetRoot());
+  MenuResults->AddLabel("Calibration file");
+  MenuResults->AddEntry("Save As...", c_SaveAs);
+  MenuResults->AddEntry("Save", c_Save);
+  MenuResults->AddSeparator();
+  MenuResults->AddLabel("Calibration report");
+  MenuResults->AddEntry("Create and Show", c_ShowReport);
+  //MenuResults->AddSeparator();
+  MenuResults->Associate(this);
+  MenuBar->AddPopup("Output", MenuResults, MenuBarItemLayoutLeft);
 
   TGPopupMenu* MenuInfo = new TGPopupMenu(fClient->GetRoot());
   MenuInfo->AddEntry("About", c_About);
@@ -933,6 +940,10 @@ bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Param
         Status = OnSaveAs();
         break;
 
+      case c_ShowReport:
+        Status = OnShowReport();
+        break;
+
       case c_About:
         Status = OnAbout();
         break;
@@ -1437,6 +1448,22 @@ bool MGUIMainMelinator::OnSaveAs()
   } else {
     return true;
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Actions when the show report button has been pressed
+bool MGUIMainMelinator::OnShowReport()
+{
+  bool Return = m_Melinator.CreateReport();
+
+  if (Return == false) {
+    mgui<<"Unable to create calibration report"<<error;
+  }
+
+  return Return;
 }
 
 
