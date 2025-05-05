@@ -1585,6 +1585,9 @@ bool MMelinator::CreateReport()
 
   double MaxADCs = 5000;
   double MaxEnergy = 500;
+  double ThresholdMaxEnergy = 35;
+  double OverflowMinEnergy = 1750;
+  double OverflowMaxEnergy = 3000;
   MString OutputFileName = "MelinatorReport.pdf";
 
 
@@ -1604,8 +1607,10 @@ bool MMelinator::CreateReport()
 
   // If we have double-sided strips make one histogram per detector and side
   map<pair<unsigned int, bool>, MString> TitlesMap;
-  map<pair<unsigned int, bool>, TH2D*> RawADCsMap;
-  map<pair<unsigned int, bool>, TH2D*> FittedEnergiesMap;
+  map<pair<unsigned int, bool>, TH2D*> ADCsMap;
+  map<pair<unsigned int, bool>, TH2D*> EnergiesMap;
+  map<pair<unsigned int, bool>, TH2D*> ThresholdsMap;
+  map<pair<unsigned int, bool>, TH2D*> OverflowsMap;
   // Outer map: detector ID, side; inner map: rog, isotope
   map<pair<unsigned int, bool>, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>> FWHMesMap;
   map<pair<unsigned int, bool>, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>> ResidualsMap;
@@ -1628,8 +1633,8 @@ bool MMelinator::CreateReport()
       if (m_CalibrationStore.GetReadOutElement(c).IsOfType("doublesidedstrip") == true) {
         MReadOutElementDoubleStrip& ROE_DS = static_cast<MReadOutElementDoubleStrip&>(ROE);
         pair<unsigned int, bool> DetectorAndSide = { ROE_DS.GetDetectorID(), ROE_DS.IsLowVoltageStrip() };
-        auto MapIter = RawADCsMap.find(DetectorAndSide);
-        if (MapIter == RawADCsMap.end()) {
+        auto MapIter = ADCsMap.find(DetectorAndSide);
+        if (MapIter == ADCsMap.end()) {
           MString Name = "Detector ";
           Name += ROE_DS.GetDetectorID();
           if (ROE_DS.IsLowVoltageStrip() == true) {
@@ -1640,15 +1645,25 @@ bool MMelinator::CreateReport()
 
           TitlesMap[DetectorAndSide] = Name;
 
-          RawADCsMap[DetectorAndSide] = new TH2D("", "ADC spectrum", MaxADCs/2, 0, MaxADCs, MaxStripID+1, -0.5, MaxStripID + 0.5);
-          RawADCsMap[DetectorAndSide]->SetXTitle("ADC units");
-          RawADCsMap[DetectorAndSide]->SetYTitle("Strip ID");
-          RawADCsMap[DetectorAndSide]->SetContour(99);
+          ADCsMap[DetectorAndSide] = new TH2D("", "ADC spectrum", MaxADCs/2, 0, MaxADCs, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          ADCsMap[DetectorAndSide]->SetXTitle("ADC units");
+          ADCsMap[DetectorAndSide]->SetYTitle("Strip ID");
+          ADCsMap[DetectorAndSide]->SetContour(99);
 
-          FittedEnergiesMap[DetectorAndSide] = new TH2D("", "Energy spectrum", MaxEnergy/2, 0, MaxEnergy, MaxStripID+1, -0.5, MaxStripID + 0.5);
-          FittedEnergiesMap[DetectorAndSide]->SetXTitle("Energy [keV]");
-          FittedEnergiesMap[DetectorAndSide]->SetYTitle("Strip ID");
-          FittedEnergiesMap[DetectorAndSide]->SetContour(99);
+          EnergiesMap[DetectorAndSide] = new TH2D("", "Energy spectrum", MaxEnergy/2, 0, MaxEnergy, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          EnergiesMap[DetectorAndSide]->SetXTitle("Energy [keV]");
+          EnergiesMap[DetectorAndSide]->SetYTitle("Strip ID");
+          EnergiesMap[DetectorAndSide]->SetContour(99);
+
+          ThresholdsMap[DetectorAndSide] = new TH2D("", "Thresholds", ThresholdMaxEnergy, 0, ThresholdMaxEnergy, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          ThresholdsMap[DetectorAndSide]->SetXTitle("Energy [keV]");
+          ThresholdsMap[DetectorAndSide]->SetYTitle("Strip ID");
+          ThresholdsMap[DetectorAndSide]->SetContour(99);
+
+          OverflowsMap[DetectorAndSide] = new TH2D("", "Overflows", (OverflowMaxEnergy - OverflowMinEnergy)/10, OverflowMinEnergy, OverflowMaxEnergy, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          OverflowsMap[DetectorAndSide]->SetXTitle("Energy [keV]");
+          OverflowsMap[DetectorAndSide]->SetYTitle("Strip ID");
+          OverflowsMap[DetectorAndSide]->SetContour(99);
         }
 
         MCalibration& C = m_CalibrationStore.GetCalibration(c);
@@ -1687,12 +1702,16 @@ bool MMelinator::CreateReport()
     MReadOutElement& ROE = m_CalibrationStore.GetReadOutElement(c);
     TH2D* CurrentHistEnergy = nullptr;
     TH2D* CurrentHistADCs = nullptr;
+    TH2D* CurrentHistThresholds = nullptr;
+    TH2D* CurrentHistOverflows = nullptr;
     unsigned int CurrentStripID = 0;
     if (m_CalibrationStore.GetReadOutElement(c).IsOfType("doublesidedstrip") == true) {
       MReadOutElementDoubleStrip& ROE_DS = static_cast<MReadOutElementDoubleStrip&>(ROE);
       pair<unsigned int, bool> DetectorAndSide = { ROE_DS.GetDetectorID(), ROE_DS.IsLowVoltageStrip() };
-      CurrentHistEnergy = FittedEnergiesMap[DetectorAndSide];
-      CurrentHistADCs = RawADCsMap[DetectorAndSide];
+      CurrentHistEnergy = EnergiesMap[DetectorAndSide];
+      CurrentHistADCs = ADCsMap[DetectorAndSide];
+      CurrentHistThresholds = ThresholdsMap[DetectorAndSide];
+      CurrentHistOverflows = OverflowsMap[DetectorAndSide];
       CurrentStripID = ROE_DS.GetStripID();
     }
     MCalibrationSpectrum& CS = dynamic_cast<MCalibrationSpectrum&>(m_CalibrationStore.GetCalibration(c));
@@ -1713,6 +1732,8 @@ bool MMelinator::CreateReport()
           AllRawADCs->Fill(ADCs, c);
           if (CurrentHistEnergy != nullptr) {
             CurrentHistEnergy->Fill(Energy, CurrentStripID);
+            CurrentHistOverflows->Fill(Energy, CurrentStripID);
+            CurrentHistThresholds->Fill(Energy, CurrentStripID);
             CurrentHistADCs->Fill(ADCs, CurrentStripID);
           }
         }
@@ -1755,8 +1776,10 @@ bool MMelinator::CreateReport()
 
   bool FoundHist = false;
   auto IterTitles = TitlesMap.begin();
-  auto IterEnergy = FittedEnergiesMap.begin();
-  auto IterADCs = RawADCsMap.begin();
+  auto IterEnergies = EnergiesMap.begin();
+  auto IterADCs = ADCsMap.begin();
+  auto IterThresholds = ThresholdsMap.begin();
+  auto IterOverflows = OverflowsMap.begin();
   auto IterFWHMes = FWHMesMap.begin();
   auto IterResiduals = ResidualsMap.begin();
 
@@ -1855,7 +1878,7 @@ bool MMelinator::CreateReport()
   TitleCanvas->Print(OutputFileName + "(");
 
 
-  while (IterTitles != TitlesMap.end() && IterEnergy != FittedEnergiesMap.end() && IterADCs != RawADCsMap.end() && IterFWHMes != FWHMesMap.end() && IterResiduals != ResidualsMap.end()) {
+  while (IterTitles != TitlesMap.end() && IterEnergies != EnergiesMap.end() && IterADCs != ADCsMap.end() && IterThresholds != ThresholdsMap.end() && IterOverflows != OverflowsMap.end() && IterFWHMes != FWHMesMap.end() && IterResiduals != ResidualsMap.end()) {
 
     // Page 1: Spectra
 
@@ -1890,7 +1913,7 @@ bool MMelinator::CreateReport()
     EnergyPad->Draw();
     EnergyPad->cd();
     EnergyPad->SetLogz();
-    IterEnergy->second->Draw("colz");
+    IterEnergies->second->Draw("colz");
 
     SpectrumPages->cd();
     SpectrumPages->Update();
@@ -1898,7 +1921,48 @@ bool MMelinator::CreateReport()
     SpectrumPages->Print(OutputFileName);   // middle pages
 
 
-    // Page 2+ is lines:
+    // Page 2: Thresholds & Overflows
+
+    TCanvas* ThresholdsPages = new TCanvas("", "", 850, 1100);
+    ThresholdsPages->SetLogz();
+    ThresholdsPages->cd();
+
+    TPad* ThresholdsTitlePad = new TPad("padTitle", "Title", 0.0, 0.9, 1.0, 1.0);
+    ThresholdsTitlePad->Draw();
+    ThresholdsTitlePad->cd();
+
+    TPaveText* ThresholdsTitle = new TPaveText(0.0, 0.0, 1.0, 1.0, "brNDC");
+    ThresholdsTitle->AddText(IterTitles->second);
+    ThresholdsTitle->SetFillColor(0);     // No background color
+    ThresholdsTitle->SetBorderSize(0);    // No border
+    ThresholdsTitle->SetLineColor(0);     // Remove outline
+    ThresholdsTitle->SetTextFont(TextFont);
+    ThresholdsTitle->SetTextSize(0.4);
+    ThresholdsTitle->Draw();
+
+    ThresholdsPages->cd();
+
+    TPad* ThresholdsPad = new TPad("ThresholdsPad", "ThresholdsPad", 0.0, 0.45, 1.0, 0.9);
+    ThresholdsPad->Draw();
+    ThresholdsPad->cd();
+    ThresholdsPad->SetLogz();
+    IterThresholds->second->Draw("colz");
+
+    ThresholdsPages->cd();
+
+    TPad* OverflowsPad = new TPad("OverflowsPad", "OverflowsPad", 0.0, 0.0, 1.0, 0.45);
+    OverflowsPad->Draw();
+    OverflowsPad->cd();
+    OverflowsPad->SetLogz();
+    IterOverflows->second->Draw("colz");
+
+    ThresholdsPages->cd();
+    ThresholdsPages->Update();
+
+    ThresholdsPages->Print(OutputFileName);   // middle pages
+
+
+    // Page 3+ is lines:
 
     auto IterFWHMesInner = IterFWHMes->second.begin();
     auto IterResidualsInner = IterResiduals->second.begin();
@@ -1951,8 +2015,10 @@ bool MMelinator::CreateReport()
     FoundHist = true;
 
     ++IterTitles;
-    ++IterEnergy;
+    ++IterEnergies;
     ++IterADCs;
+    ++IterThresholds;
+    ++IterOverflows;
     ++IterFWHMes;
     ++IterResiduals;
   }
