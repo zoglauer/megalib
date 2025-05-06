@@ -122,6 +122,24 @@ MMelinator::MMelinator()
   m_CalibrationModelEnergyAssignmentMethod = MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing;
   m_CalibrationModelDeterminationMethod = MCalibrateEnergyDetermineModel::c_CalibrationModelStepWise;
   
+  m_ReportFileName = "MelinatorReport.pdf";
+
+  m_ReportADCHistogramMinimum = 0;
+  m_ReportADCHistogramMaximum = 10000;
+  m_ReportADCHistogramBins = 1000;
+
+  m_ReportEnergyHistogramMinimum = 0;
+  m_ReportEnergyHistogramMaximum = 2000;
+  m_ReportEnergyHistogramBins = 500;
+
+  m_ReportThresholdHistogramMinimum = 0;
+  m_ReportThresholdHistogramMaximum = 40;
+  m_ReportThresholdHistogramBins = 40;
+
+  m_ReportOverflowHistogramMinimum = 1500;
+  m_ReportOverflowHistogramMaximum = 2500;
+  m_ReportOverflowHistogramBins = 100;
+
   m_NThreads = thread::hardware_concurrency();
   if (m_NThreads < 1) m_NThreads = 1;
   
@@ -1527,6 +1545,23 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
 //! Save the calibration in e-cal format
 bool MMelinator::Save(MString FileName)
 {
+  if (m_CalibrationStore.GetNumberOfElements() == 0) {
+    mgui<<"You need to run the calibration first, before saving the results."<<error;
+    return true; // True: No subsequent error messages required
+  } else {
+    bool FoundOne = false;
+    for (unsigned int c = 0; c < m_CalibrationStore.GetNumberOfElements(); ++c) {
+      if (dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))) != nullptr) {
+        FoundOne = true;
+        break;
+      }
+    }
+    if (FoundOne == false) {
+      mgui<<"You need to run the calibration first, before saving the results."<<error;
+      return true; // True: No subsequent error messages required
+    }
+  }
+
   ofstream out;
   out.open(FileName);
   if (out.is_open() == false) {
@@ -1581,25 +1616,32 @@ bool MMelinator::Save(MString FileName)
 //! Create a calibration report
 bool MMelinator::CreateReport()
 {
-  // Create a calibration report
-
-  double MaxADCs = 5000;
-  double MaxEnergy = 500;
-  double ThresholdMaxEnergy = 35;
-  double OverflowMinEnergy = 1750;
-  double OverflowMaxEnergy = 3000;
-  MString OutputFileName = "MelinatorReport.pdf";
-
+  if (m_CalibrationStore.GetNumberOfElements() == 0) {
+    mgui<<"You need to run the calibration first, before creating a report."<<error;
+    return true; // True: No subsequent error messages required
+  } else {
+    bool FoundOne = false;
+    for (unsigned int c = 0; c < m_CalibrationStore.GetNumberOfElements(); ++c) {
+      if (dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))) != nullptr) {
+        FoundOne = true;
+        break;
+      }
+    }
+    if (FoundOne == false) {
+      mgui<<"You need to run the calibration first, before creating a report."<<error;
+      return true; // True: No subsequent error messages required
+    }
+  }
 
   // Section 1: Create histograms
 
-  TH2D* AllFittedEnergies = new TH2D("Fitted", "Fitted", MaxEnergy/2, 0, MaxEnergy, m_CalibrationStore.GetNumberOfElements()+1, -0.5, m_CalibrationStore.GetNumberOfElements() + 0.5);
+  TH2D* AllFittedEnergies = new TH2D("Fitted", "Fitted", m_ReportEnergyHistogramBins, m_ReportEnergyHistogramMinimum, m_ReportEnergyHistogramMaximum, m_CalibrationStore.GetNumberOfElements()+1, -0.5, m_CalibrationStore.GetNumberOfElements() + 0.5);
   AllFittedEnergies->SetXTitle("Energy [keV]");
   AllFittedEnergies->SetYTitle("ReadOutUnit ID");
   AllFittedEnergies->SetContour(99);
 
 
-  TH2D* AllRawADCs = new TH2D("RawADCs", "RawADCs", MaxADCs/4, 0, MaxADCs, m_CalibrationStore.GetNumberOfElements()+1, -0.5, m_CalibrationStore.GetNumberOfElements() + 0.5);
+  TH2D* AllRawADCs = new TH2D("RawADCs", "RawADCs", m_ReportADCHistogramBins, m_ReportADCHistogramMinimum, m_ReportADCHistogramMaximum, m_CalibrationStore.GetNumberOfElements()+1, -0.5, m_CalibrationStore.GetNumberOfElements() + 0.5);
   AllRawADCs->SetXTitle("ADCs [rou's]");
   AllRawADCs->SetYTitle("ReadOutUnit ID");
   AllRawADCs->SetContour(99);
@@ -1645,28 +1687,29 @@ bool MMelinator::CreateReport()
 
           TitlesMap[DetectorAndSide] = Name;
 
-          ADCsMap[DetectorAndSide] = new TH2D("", "ADC spectrum", MaxADCs/2, 0, MaxADCs, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          ADCsMap[DetectorAndSide] = new TH2D("", "ADC spectrum", m_ReportADCHistogramBins, m_ReportADCHistogramMinimum, m_ReportADCHistogramMaximum, MaxStripID+1, -0.5, MaxStripID + 0.5);
           ADCsMap[DetectorAndSide]->SetXTitle("ADC units");
           ADCsMap[DetectorAndSide]->SetYTitle("Strip ID");
           ADCsMap[DetectorAndSide]->SetContour(99);
 
-          EnergiesMap[DetectorAndSide] = new TH2D("", "Energy spectrum", MaxEnergy/2, 0, MaxEnergy, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          EnergiesMap[DetectorAndSide] = new TH2D("", "Energy spectrum", m_ReportEnergyHistogramBins, m_ReportEnergyHistogramMinimum, m_ReportEnergyHistogramMaximum, MaxStripID+1, -0.5, MaxStripID + 0.5);
           EnergiesMap[DetectorAndSide]->SetXTitle("Energy [keV]");
           EnergiesMap[DetectorAndSide]->SetYTitle("Strip ID");
           EnergiesMap[DetectorAndSide]->SetContour(99);
 
-          ThresholdsMap[DetectorAndSide] = new TH2D("", "Thresholds", ThresholdMaxEnergy, 0, ThresholdMaxEnergy, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          ThresholdsMap[DetectorAndSide] = new TH2D("", "Thresholds", m_ReportThresholdHistogramBins, m_ReportThresholdHistogramMinimum, m_ReportThresholdHistogramMaximum, MaxStripID+1, -0.5, MaxStripID + 0.5);
           ThresholdsMap[DetectorAndSide]->SetXTitle("Energy [keV]");
           ThresholdsMap[DetectorAndSide]->SetYTitle("Strip ID");
           ThresholdsMap[DetectorAndSide]->SetContour(99);
 
-          OverflowsMap[DetectorAndSide] = new TH2D("", "Overflows", (OverflowMaxEnergy - OverflowMinEnergy)/10, OverflowMinEnergy, OverflowMaxEnergy, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          OverflowsMap[DetectorAndSide] = new TH2D("", "Overflows", m_ReportOverflowHistogramBins, m_ReportOverflowHistogramMinimum, m_ReportOverflowHistogramMaximum, MaxStripID+1, -0.5, MaxStripID + 0.5);
           OverflowsMap[DetectorAndSide]->SetXTitle("Energy [keV]");
           OverflowsMap[DetectorAndSide]->SetYTitle("Strip ID");
           OverflowsMap[DetectorAndSide]->SetContour(99);
         }
 
         MCalibration& C = m_CalibrationStore.GetCalibration(c);
+        if (dynamic_cast<MCalibrationSpectrum*>(&C) == nullptr) continue;
         MCalibrationSpectrum& CS = static_cast<MCalibrationSpectrum&>(C);
         for (unsigned int g = 0; g < CS.GetNumberOfReadOutDataGroups(); ++g) {
           for (unsigned int i = 0; i < m_Isotopes[g].size(); ++i) {
@@ -1714,6 +1757,7 @@ bool MMelinator::CreateReport()
       CurrentHistOverflows = OverflowsMap[DetectorAndSide];
       CurrentStripID = ROE_DS.GetStripID();
     }
+    if (dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))) == nullptr) continue;
     MCalibrationSpectrum& CS = dynamic_cast<MCalibrationSpectrum&>(m_CalibrationStore.GetCalibration(c));
     MCalibrationModel& M = CS.GetEnergyModel();
 
@@ -1875,7 +1919,7 @@ bool MMelinator::CreateReport()
   }
 
 
-  TitleCanvas->Print(OutputFileName + "(");
+  TitleCanvas->Print(m_ReportFileName + "(");
 
 
   while (IterTitles != TitlesMap.end() && IterEnergies != EnergiesMap.end() && IterADCs != ADCsMap.end() && IterThresholds != ThresholdsMap.end() && IterOverflows != OverflowsMap.end() && IterFWHMes != FWHMesMap.end() && IterResiduals != ResidualsMap.end()) {
@@ -1918,7 +1962,7 @@ bool MMelinator::CreateReport()
     SpectrumPages->cd();
     SpectrumPages->Update();
 
-    SpectrumPages->Print(OutputFileName);   // middle pages
+    SpectrumPages->Print(m_ReportFileName);   // middle pages
 
 
     // Page 2: Thresholds & Overflows
@@ -1959,7 +2003,7 @@ bool MMelinator::CreateReport()
     ThresholdsPages->cd();
     ThresholdsPages->Update();
 
-    ThresholdsPages->Print(OutputFileName);   // middle pages
+    ThresholdsPages->Print(m_ReportFileName);   // middle pages
 
 
     // Page 3+ is lines:
@@ -2002,11 +2046,7 @@ bool MMelinator::CreateReport()
       LineFitPages->cd();
       LineFitPages->Update();
 
-      if (next(IterFWHMesInner) == IterFWHMes->second.end() && next(IterTitles) == TitlesMap.end()) {
-        LineFitPages->Print(OutputFileName + ")");  // close PDF
-      } else {
-        LineFitPages->Print(OutputFileName);   // middle pages
-      }
+      LineFitPages->Print(m_ReportFileName);   // middle pages
 
       ++IterFWHMesInner;
       ++IterResidualsInner;
@@ -2023,10 +2063,24 @@ bool MMelinator::CreateReport()
     ++IterResiduals;
   }
 
+  TCanvas* EndPageCanvas = new TCanvas("EndPage", "EndPage", 850, 1100);
+  EndPageCanvas->cd();
+
+  TPaveText* TheEnd = new TPaveText(0.1, 0.75, 0.9, 0.9, "NDC");
+  TheEnd->AddText("The End");
+  TheEnd->SetTextFont(62);
+  TheEnd->SetTextSize(0.02);
+  TheEnd->SetFillColor(0);
+  TheEnd->SetBorderSize(0);
+  TheEnd->SetLineColor(0);
+  TheEnd->Draw();
+
+  EndPageCanvas->Print(m_ReportFileName + ")");  // close PDF
+
   gROOT->SetBatch(false);
 
 
-  int Return = gSystem->Exec(MString("") + "[ -x \"$(command -v xdg-open)\" ] && xdg-open " + OutputFileName + " || { [ -x \"$(command -v open)\" ] && open " + OutputFileName + "; }");
+  int Return = gSystem->Exec(MString("") + "[ -x \"$(command -v xdg-open)\" ] && xdg-open " + m_ReportFileName + " || { [ -x \"$(command -v open)\" ] && open " + m_ReportFileName + "; }");
 
   if (Return != 0) {
     mgui<<"Failed to open PDF. Return code: "<<Return<<error;
