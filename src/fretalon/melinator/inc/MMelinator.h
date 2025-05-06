@@ -164,6 +164,27 @@ class MMelinator
   //! Save the calibration in e-cal format
   bool Save(MString FileName);
 
+  //! Set the basic properties of the report
+  void SetReportProperties(MString FileName,
+                           double ADCMinimum, double ADCMaximum, unsigned int ADCBins,
+                           double EnergyMinimum, double EnergyMaximum, unsigned int EnergyBins,
+                           double ThresholdMinimum, double ThresholdMaximum, unsigned int ThresholdBins,
+                           double OverflowMinimum, double OverflowMaximum, unsigned int OverflowBins) {
+    m_ReportFileName = FileName;
+    m_ReportADCHistogramMinimum = ADCMinimum;
+    m_ReportADCHistogramMaximum = ADCMaximum;
+    m_ReportADCHistogramBins = ADCBins;
+    m_ReportEnergyHistogramMinimum = EnergyMinimum;
+    m_ReportEnergyHistogramMaximum = EnergyMaximum;
+    m_ReportEnergyHistogramBins = EnergyBins;
+    m_ReportThresholdHistogramMinimum = ThresholdMinimum;
+    m_ReportThresholdHistogramMaximum = ThresholdMaximum;
+    m_ReportThresholdHistogramBins = ThresholdBins;
+    m_ReportOverflowHistogramMinimum = OverflowMinimum;
+    m_ReportOverflowHistogramMaximum = OverflowMaximum;
+    m_ReportOverflowHistogramBins = OverflowBins;
+  };
+
   //! Create a calibration report
   bool CreateReport();
 
@@ -207,7 +228,7 @@ class MMelinator
   MReadOutStore m_Store;
   //! The storage for all calibrations
   MCalibrationStore m_CalibrationStore;
-  
+
   //! The selected detector ID (negative means all detectors)
   int m_SelectedDetectorID;
   
@@ -295,7 +316,39 @@ class MMelinator
   //! Time to determine model
   double m_TimeToDetermineModel;
   
-  
+
+  //! Set the report file
+  MString m_ReportFileName;
+
+  //! The minimum value of the ADC histogram in the report
+  double m_ReportADCHistogramMinimum;
+  //! The maximum value of the ADC histogram in the report
+  double m_ReportADCHistogramMaximum;
+  //! The number of bins of the ADC histogram in the report
+  unsigned int m_ReportADCHistogramBins;
+
+  //! The minimum value of the Energy histogram in the report
+  double m_ReportEnergyHistogramMinimum;
+  //! The maximum value of the Energy histogram in the report
+  double m_ReportEnergyHistogramMaximum;
+  //! The number of bins of the Energy histogram in the report
+  unsigned int m_ReportEnergyHistogramBins;
+
+  //! The minimum value of the Threshold histogram in the report
+  double m_ReportThresholdHistogramMinimum;
+  //! The maximum value of the Threshold histogram in the report
+  double m_ReportThresholdHistogramMaximum;
+  //! The number of bins of the Threshold histogram in the report
+  unsigned int m_ReportThresholdHistogramBins;
+
+  //! The minimum value of the Overflow histogram in the report
+  double m_ReportOverflowHistogramMinimum;
+  //! The maximum value of the Overflow histogram in the report
+  double m_ReportOverflowHistogramMaximum;
+  //! The number of bins of the Overflow histogram in the report
+  unsigned int m_ReportOverflowHistogramBins;
+
+
   
 #ifdef ___CLING___
  public:

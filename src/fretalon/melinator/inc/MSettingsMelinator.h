@@ -164,13 +164,73 @@ class MSettingsMelinator : public MSettings
 
   //! Set the minimum allowed detector temperature
   void SetMinimumTemperature(double MinimumTemperature) { m_MinimumTemperature = MinimumTemperature; }
-  //! Get the minimum allowed detector temperate
+  //! Get the minimum allowed detector temperature
   double GetMinimumTemperature() const { return m_MinimumTemperature; }
-  //! Set the minimum allowed detector temperature
+  //! Set the maximum allowed detector temperature
   void SetMaximumTemperature(double MaximumTemperature) { m_MaximumTemperature = MaximumTemperature; }
-  //! Get the minimum allowed detector temperate
+  //! Get the maximum allowed detector temperature
   double GetMaximumTemperature() const { return m_MaximumTemperature; }
   
+
+  //! Set the report file name
+  void SetReportFileName(const MString& ReportFileName) { m_ReportFileName = ReportFileName; }
+  //! Get the report file name
+  MString GetReportFileName() const { return m_ReportFileName; }
+
+  //! Set the minimum value of the ADC histogram in the report
+  void SetReportADCHistogramMinimum(double ReportADCHistogramMinimum) { m_ReportADCHistogramMinimum = ReportADCHistogramMinimum; }
+  //! Get the minimum value of the ADC histogram in the report
+  double GetReportADCHistogramMinimum() const { return m_ReportADCHistogramMinimum; }
+  //! Set the maximum value of the ADC histogram in the report
+  void SetReportADCHistogramMaximum(double ReportADCHistogramMaximum) { m_ReportADCHistogramMaximum = ReportADCHistogramMaximum; }
+  //! Get the maximum value of the ADC histogram in the report
+  double GetReportADCHistogramMaximum() const { return m_ReportADCHistogramMaximum; }
+  //! Set the number of bins of the ADC histogram in the report
+  void SetReportADCHistogramBins(unsigned int ReportADCHistogramBins) { m_ReportADCHistogramBins = ReportADCHistogramBins; }
+  //! Get the number of bins of the ADC histogram in the report
+  unsigned int GetReportADCHistogramBins() const { return m_ReportADCHistogramBins; }
+
+  //! Set the minimum value of the Energy histogram in the report
+  void SetReportEnergyHistogramMinimum(double ReportEnergyHistogramMinimum) { m_ReportEnergyHistogramMinimum = ReportEnergyHistogramMinimum; }
+  //! Get the minimum value of the Energy histogram in the report
+  double GetReportEnergyHistogramMinimum() const { return m_ReportEnergyHistogramMinimum; }
+  //! Set the maximum value of the Energy histogram in the report
+  void SetReportEnergyHistogramMaximum(double ReportEnergyHistogramMaximum) { m_ReportEnergyHistogramMaximum = ReportEnergyHistogramMaximum; }
+  //! Get the maximum value of the Energy histogram in the report
+  double GetReportEnergyHistogramMaximum() const { return m_ReportEnergyHistogramMaximum; }
+  //! Set the number of bins of the Energy histogram in the report
+  void SetReportEnergyHistogramBins(unsigned int ReportEnergyHistogramBins) { m_ReportEnergyHistogramBins = ReportEnergyHistogramBins; }
+  //! Get the number of bins of the Energy histogram in the report
+  unsigned int GetReportEnergyHistogramBins() const { return m_ReportEnergyHistogramBins; }
+
+  //! Set the minimum value of the Threshold histogram in the report
+  void SetReportThresholdHistogramMinimum(double ReportThresholdHistogramMinimum) { m_ReportThresholdHistogramMinimum = ReportThresholdHistogramMinimum; }
+  //! Get the minimum value of the Threshold histogram in the report
+  double GetReportThresholdHistogramMinimum() const { return m_ReportThresholdHistogramMinimum; }
+  //! Set the maximum value of the Threshold histogram in the report
+  void SetReportThresholdHistogramMaximum(double ReportThresholdHistogramMaximum) { m_ReportThresholdHistogramMaximum = ReportThresholdHistogramMaximum; }
+  //! Get the maximum value of the Threshold histogram in the report
+  double GetReportThresholdHistogramMaximum() const { return m_ReportThresholdHistogramMaximum; }
+  //! Set the number of bins of the Threshold histogram in the report
+  void SetReportThresholdHistogramBins(unsigned int ReportThresholdHistogramBins) { m_ReportThresholdHistogramBins = ReportThresholdHistogramBins; }
+  //! Get the number of bins of the Threshold histogram in the report
+  unsigned int GetReportThresholdHistogramBins() const { return m_ReportThresholdHistogramBins; }
+
+  //! Set the minimum value of the Overflow histogram in the report
+  void SetReportOverflowHistogramMinimum(double ReportOverflowHistogramMinimum) { m_ReportOverflowHistogramMinimum = ReportOverflowHistogramMinimum; }
+  //! Get the minimum value of the Overflow histogram in the report
+  double GetReportOverflowHistogramMinimum() const { return m_ReportOverflowHistogramMinimum; }
+  //! Set the maximum value of the Overflow histogram in the report
+  void SetReportOverflowHistogramMaximum(double ReportOverflowHistogramMaximum) { m_ReportOverflowHistogramMaximum = ReportOverflowHistogramMaximum; }
+  //! Get the maximum value of the Overflow histogram in the report
+  double GetReportOverflowHistogramMaximum() const { return m_ReportOverflowHistogramMaximum; }
+  //! Set the number of bins of the Overflow histogram in the report
+  void SetReportOverflowHistogramBins(unsigned int ReportOverflowHistogramBins) { m_ReportOverflowHistogramBins = ReportOverflowHistogramBins; }
+  //! Get the number of bins of the Overflow histogram in the report
+  unsigned int GetReportOverflowHistogramBins() const { return m_ReportOverflowHistogramBins; }
+
+
+
   
 // protected members:
  protected:
@@ -231,20 +291,52 @@ class MSettingsMelinator : public MSettings
   //! Fitting model of the FWHM calibration model determination method
   unsigned int m_CalibrationModelDeterminationMethodFittingFWHMModel;
   
-  //! Set the save as file
+  //! Set the save as file name
   MString m_SaveAsFileName;
   
-  //! Set the single detector to use (negative means use all)
+  //! The single detector to use (negative means use all)
   int m_SelectedDetectorID;
-  //! Set the detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
+  //! The detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
   int m_SelectedDetectorSide;
 
-  //! Set the minimum allowed detector temperature
+  //! The minimum allowed detector temperature
   double m_MinimumTemperature;
-  //! Set the maximum allowed detector temperature
+  //! The maximum allowed detector temperature
   double m_MaximumTemperature;
   
-  
+
+  //! Set the report file
+  MString m_ReportFileName;
+
+  //! The minimum value of the ADC histogram in the report
+  double m_ReportADCHistogramMinimum;
+  //! The maximum value of the ADC histogram in the report
+  double m_ReportADCHistogramMaximum;
+  //! The number of bins of the ADC histogram in the report
+  unsigned int m_ReportADCHistogramBins;
+
+  //! The minimum value of the Energy histogram in the report
+  double m_ReportEnergyHistogramMinimum;
+  //! The maximum value of the Energy histogram in the report
+  double m_ReportEnergyHistogramMaximum;
+  //! The number of bins of the Energy histogram in the report
+  unsigned int m_ReportEnergyHistogramBins;
+
+  //! The minimum value of the Threshold histogram in the report
+  double m_ReportThresholdHistogramMinimum;
+  //! The maximum value of the Threshold histogram in the report
+  double m_ReportThresholdHistogramMaximum;
+  //! The number of bins of the Threshold histogram in the report
+  unsigned int m_ReportThresholdHistogramBins;
+
+  //! The minimum value of the Overflow histogram in the report
+  double m_ReportOverflowHistogramMinimum;
+  //! The maximum value of the Overflow histogram in the report
+  double m_ReportOverflowHistogramMaximum;
+  //! The number of bins of the Overflow histogram in the report
+  unsigned int m_ReportOverflowHistogramBins;
+
+
 #ifdef ___CLING___
  public:
   ClassDef(MSettingsMelinator, 0) // no description
