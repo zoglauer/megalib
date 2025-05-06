@@ -50,6 +50,7 @@ using namespace std;
 #include "MGUIAbout.h"
 #include "MGUIGeometry.h"
 #include "MGUILoadCalibration.h"
+#include "MGUIReportCreation.h"
 #include "MGUIEFileSelector.h"
 #include "MIsotope.h"
 #include "MIsotopeStore.h"
@@ -1457,6 +1458,28 @@ bool MGUIMainMelinator::OnSaveAs()
 //! Actions when the show report button has been pressed
 bool MGUIMainMelinator::OnShowReport()
 {
+  bool OKPressed = false;
+  new MGUIReportCreation(gClient->GetRoot(), this, m_Settings, OKPressed);
+  if (OKPressed == false) {
+    return false;
+  }
+
+  m_Melinator.SetReportProperties(
+    m_Settings->GetReportFileName(),
+    m_Settings->GetReportADCHistogramMinimum(),
+    m_Settings->GetReportADCHistogramMaximum(),
+    m_Settings->GetReportADCHistogramBins(),
+    m_Settings->GetReportEnergyHistogramMinimum(),
+    m_Settings->GetReportEnergyHistogramMaximum(),
+    m_Settings->GetReportEnergyHistogramBins(),
+    m_Settings->GetReportThresholdHistogramMinimum(),
+    m_Settings->GetReportThresholdHistogramMaximum(),
+    m_Settings->GetReportThresholdHistogramBins(),
+    m_Settings->GetReportOverflowHistogramMinimum(),
+    m_Settings->GetReportOverflowHistogramMaximum(),
+    m_Settings->GetReportOverflowHistogramBins()
+  );
+
   bool Return = m_Melinator.CreateReport();
 
   if (Return == false) {
