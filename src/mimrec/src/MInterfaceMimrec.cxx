@@ -5387,7 +5387,6 @@ void MInterfaceMimrec::Polarization()
 
         if (fabs(PairEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
           /*
-        if (fabs(PairEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = PairEvent->GetElectronDirection() + PairEvent->GetPositronDirection();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
