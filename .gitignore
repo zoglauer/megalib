@@ -10,6 +10,17 @@ bin/realta
 bin/revan
 bin/sivan
 bin/spectralyze
+bin/AspectOptimizerStep1
+bin/CompareHistograms
+bin/DistanceOptimizerForEventClusterizer
+bin/SimBinaryConverter
+bin/TH1_summer_cpp
+bin/ThresholdCalculation
+bin/TraMerger
+bin/UTARMFitter
+bin/UTCosimaInputSpectra
+bin/photopeak_depth_distribution
+bin/xyscanner
 
 BackgroundMixer
 ConvertACTtools
@@ -75,6 +86,7 @@ configure_lastgoodoptions
 source-megalib.sh
 SetupOptions.txt
 new-source-megalib.sh
+config/Configuration.txt
 
 # doc directory:
 Peoples.txt

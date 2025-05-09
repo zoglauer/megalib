@@ -60,10 +60,10 @@ class MResponseMatrixO1 : public MResponseMatrixOx
 
   void Init();
 
-  bool operator==(const MResponseMatrixO1& ResponseMatrixO1);  
-  MResponseMatrixO1& operator+=(const MResponseMatrixO1& ResponseMatrixO1);  
-  MResponseMatrixO1& operator-=(const MResponseMatrixO1& ResponseMatrixO1);  
-  MResponseMatrixO1& operator/=(const MResponseMatrixO1& ResponseMatrixO1);  
+  bool operator==(const MResponseMatrixO1& ResponseMatrixO1);
+  MResponseMatrixO1& operator+=(const MResponseMatrixO1& ResponseMatrixO1);
+  MResponseMatrixO1& operator-=(const MResponseMatrixO1& ResponseMatrixO1);
+  MResponseMatrixO1& operator/=(const MResponseMatrixO1& ResponseMatrixO1);
 
   MResponseMatrixO1& operator+=(const float& Value);  
   MResponseMatrixO1& operator*=(const float& Value);  
