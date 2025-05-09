@@ -12,7 +12,6 @@
 # Base definitions:
 #
 
-
 PROGRAM := revan
 
 MAIN  := MRevanMain

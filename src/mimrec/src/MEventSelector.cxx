@@ -1621,17 +1621,12 @@ void MEventSelector::SetTimeFile(MString TimeFile)
 
   m_TimeGTI.Reset(true);
 
-//<<<<<<< HEAD
   if (m_TimeMode == 2) {  
     if (MFile::Exists(m_TimeFile) == true) {
       if (m_TimeGTI.Load(m_TimeFile) == false) {
         cout<<"Error: Unable to load GTI file! Using all open one!"<<endl;
       }
     } else {
-//=======
-//  if (MFile::Exists(m_TimeFile) == true) {
-//    if (m_TimeGTI.Load(m_TimeFile) == false) {
-//>>>>>>> 683f76f6 (Pair dev (#2))
       cout<<"Error: Unable to load GTI file! Using all open one!"<<endl;
     }
   }
