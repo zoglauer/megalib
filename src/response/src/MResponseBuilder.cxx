@@ -463,7 +463,7 @@ bool MResponseBuilder::InitializeNextMatchingEvent()
         MRawEventIncarnationList* REIL = m_ReReader->GetRawEventList();
         for (unsigned int i = 0; i < REIL->Size(); ++i) {
           // TODO: Test performance if we just pick one random sequence
-          for (unsigned int r = 0; r < REIL->Get(i)->GetNRawEvents(); ++r) {
+          for (int r = 0; r < REIL->Get(i)->GetNRawEvents(); ++r) {
             m_ReEvents.push_back(REIL->Get(i)->GetRawEventAt(r));
           }
         }
