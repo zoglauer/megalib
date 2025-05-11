@@ -114,8 +114,8 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! This exception is thrown when a parmeter is out of range and 
-//! the error cannot be reconvered gracefully
+//! This exception is thrown when a parameter is out of range and
+//! the error cannot be recovered gracefully
 class MExceptionParameterOutOfRange : public MException
 {
 public:
@@ -178,6 +178,72 @@ private:
 public:
   ClassDef(MExceptionIndexOutOfBounds, 1)
 #endif  
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when an value cannot be found (e.g. in a map or vector) and
+//! the error cannot be recovered gracefully
+//! This class would ideal for using templeates, but ROOT does not allow that
+class MExceptionValueNotFound : public MException
+{
+public:
+  //! Default constructor
+  MExceptionValueNotFound() : MException() {
+    m_Description = "Value not found!";
+  }
+  //! Constructor giving the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
+  MExceptionValueNotFound(double& Value, const MString& Where) : MException() {
+    Set(Value, Where);
+  }
+  //! Constructor giving the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
+  MExceptionValueNotFound(int& Value, const MString& Where) : MException() {
+    Set(Value, Where);
+  }
+  //! Constructor giving the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
+  MExceptionValueNotFound(unsigned int& Value, const MString& Where) : MException() {
+    Set(Value, Where);
+  }
+  //! Constructor giving the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
+  MExceptionValueNotFound(MString& Value, const MString& Where) : MException() {
+    Set(Value, Where);
+  }
+  //! Default destructor
+  virtual ~MExceptionValueNotFound() throw() {}
+  //! Set the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
+  void Set(double& Value, const MString& Where) {
+    ostringstream stream;
+    stream<<"The value \'"<<Value<<"\' cannot be found in "<<Where<<"."<<endl;
+    m_Description = stream.str();
+  }
+  //! Set the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
+  void Set(unsigned int& Value, const MString& Where) {
+    ostringstream stream;
+    stream<<"The value \'"<<Value<<"\' cannot be found in "<<Where<<"."<<endl;
+    m_Description = stream.str();
+  }
+  //! Set the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
+  void Set(int& Value, const MString& Where) {
+    ostringstream stream;
+    stream<<"The value \'"<<Value<<"\' cannot be found in "<<Where<<"."<<endl;
+    m_Description = stream.str();
+  }
+  //! Set the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
+  void Set(MString& Value, const MString& Where) {
+    ostringstream stream;
+    stream<<"The value \'"<<Value<<"\' cannot be found in "<<Where<<"."<<endl;
+    m_Description = stream.str();
+  }
+
+private:
+
+
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionValueNotFound, 1)
+#endif
 };
 
 
