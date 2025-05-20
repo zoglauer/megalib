@@ -291,8 +291,9 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
     }
   }
   
-  if (Track->GetCurrentStepNumber() > 10000000) {
+  if (Track->GetCurrentStepNumber() > 10000) {
     merr<<"Geant4 hick-up: The event seems to be stuck 10,000,000 steps! Aborting track!"<<endl;
+    cout<<fixed<<setprecision(10)<<Track->GetPosition()/cm<<":"<<Track->GetKineticEnergy()/keV<<":"<<Step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName()<<endl;
     Track->SetTrackStatus(fStopAndKill);
     return;
   }

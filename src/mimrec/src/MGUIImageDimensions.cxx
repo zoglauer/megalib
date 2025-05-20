@@ -394,9 +394,9 @@ bool MGUIImageDimensions::OnApply()
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
              m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
 
-    if (m_XDimension->CheckRange(-100000.0, 100000.0, -100000.0, 100000000.0, true) == false) return false;
-    if (m_YDimension->CheckRange(-100000.0, 100000.0, -100000.0, 100000000.0, true) == false) return false;
-    if (m_ZDimension->CheckRange(-100000.0, 100000.0, -100000.0, 100000000.0, true) == false) return false;
+    if (m_XDimension->CheckRange(-100000000.0, 100000000.0, -100000000.0, 100000000.0, true) == false) return false;
+    if (m_YDimension->CheckRange(-100000000.0, 100000000.0, -100000000.0, 100000000.0, true) == false) return false;
+    if (m_ZDimension->CheckRange(-100000000.0, 100000000.0, -100000000.0, 100000000.0, true) == false) return false;
     
     if (m_XBins->IsInt(0, 10000) == false) return false;
     if (m_YBins->IsInt(0, 10000) == false) return false;
