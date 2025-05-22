@@ -1606,10 +1606,6 @@ bool MMelinator::CreateReport()
   map<pair<unsigned int, bool>, MString> TitlesMap;
   map<pair<unsigned int, bool>, TH2D*> RawADCsMap;
   map<pair<unsigned int, bool>, TH2D*> FittedEnergiesMap;
-  // Outer map: detector ID, side; inner map: rog, isotope
-  map<pair<unsigned int, bool>, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>> FWHMesMap;
-  map<pair<unsigned int, bool>, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>> ResidualsMap;
-
   if (m_CalibrationStore.GetReadOutElement(0).IsOfType("doublesidedstrip") == true) {
     // Step 1: Maximum strip ID
     unsigned int MaxStripID = 0;
@@ -1650,34 +1646,9 @@ bool MMelinator::CreateReport()
           FittedEnergiesMap[DetectorAndSide]->SetYTitle("Strip ID");
           FittedEnergiesMap[DetectorAndSide]->SetContour(99);
         }
-
-        MCalibration& C = m_CalibrationStore.GetCalibration(c);
-        MCalibrationSpectrum& CS = static_cast<MCalibrationSpectrum&>(C);
-        for (unsigned int g = 0; g < CS.GetNumberOfReadOutDataGroups(); ++g) {
-          for (unsigned int i = 0; i < m_Isotopes[g].size(); ++i) {
-            for (unsigned int l = 0; l < m_Isotopes[g][i].GetNLines(); ++l) {
-              if (m_Isotopes[g][i].GetPrimaryLine() == l || m_Isotopes[g][i].GetSecondaryLine() == l)  {
-                tuple<unsigned int, unsigned int, unsigned int> ROGIDAndIsotope = { g, i, l };
-                // Inefficiency: we loop over everything... but avoiding it is a complicated optimization
-                // Use try_emplace to avoid that
-                FWHMesMap.try_emplace(DetectorAndSide, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>());
-                FWHMesMap[DetectorAndSide].try_emplace(ROGIDAndIsotope, new TH1D("", "FWHMes", MaxStripID+1, -0.5, MaxStripID + 0.5));
-                FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetXTitle("Strip ID");
-                FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetYTitle("FWHM [keV]");
-                FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetLineWidth(2);
-
-                ResidualsMap.try_emplace(DetectorAndSide, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>());
-                ResidualsMap[DetectorAndSide].try_emplace(ROGIDAndIsotope, new TH1D("", "Residuals", MaxStripID+1, -0.5, MaxStripID + 0.5));
-                ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetXTitle("Strip ID");
-                ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetYTitle("Residuals [keV]");
-                ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetLineWidth(2);
-              }
-            }
-          }
-        }
-      } // is // double-sided strip in calibration store
-    } // ROE in calibration store
-  } // double-sided strip
+      }
+    }
+  }
 
 
 
@@ -1695,16 +1666,16 @@ bool MMelinator::CreateReport()
       CurrentHistADCs = RawADCsMap[DetectorAndSide];
       CurrentStripID = ROE_DS.GetStripID();
     }
-    MCalibrationSpectrum& CS = dynamic_cast<MCalibrationSpectrum&>(m_CalibrationStore.GetCalibration(c));
-    MCalibrationModel& M = CS.GetEnergyModel();
+    MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c)));
+    MCalibrationModel& M = C->GetEnergyModel();
 
     unsigned int IDofROC = m_Store.FindReadOutCollection(ROE);
     if (IDofROC == g_UnsignedIntNotDefined) continue;
     MReadOutCollection& ROC = m_Store.GetReadOutCollection(IDofROC);
     for (unsigned int g = 0; g < ROC.GetNumberOfReadOutDataGroups(); ++g) {
-      MReadOutDataGroup& ROG = ROC.GetReadOutDataGroup(g);
-      for (unsigned int d = 0; d < ROG.GetNumberOfReadOutDatas(); ++d) {
-        MReadOutData& ROD = ROG.GetReadOutData(d);
+      MReadOutDataGroup& RODG = ROC.GetReadOutDataGroup(g);
+      for (unsigned int d = 0; d < RODG.GetNumberOfReadOutDatas(); ++d) {
+        MReadOutData& ROD = RODG.GetReadOutData(d);
         MReadOutDataADCValue* ROD_ADC = dynamic_cast<MReadOutDataADCValue*>(ROD.Get(MReadOutDataADCValue::m_TypeID));
         if (ROD_ADC != nullptr) {
           double ADCs = ROD_ADC->GetADCValue();
@@ -1718,36 +1689,8 @@ bool MMelinator::CreateReport()
         }
       }
     }
-
-    if (m_CalibrationStore.GetReadOutElement(c).IsOfType("doublesidedstrip") == true) {
-      MReadOutElementDoubleStrip& ROE_DS = static_cast<MReadOutElementDoubleStrip&>(ROE);
-      pair<unsigned int, bool> DetectorAndSide = { ROE_DS.GetDetectorID(), ROE_DS.IsLowVoltageStrip() };
-
-      for (unsigned int g = 0; g < CS.GetNumberOfReadOutDataGroups(); ++g) {
-        for (unsigned int i = 0; i < m_Isotopes[g].size(); ++i) {
-          for (unsigned int l = 0; l < m_Isotopes[g][i].GetNLines(); ++l) {
-            if (m_Isotopes[g][i].GetPrimaryLine() == l || m_Isotopes[g][i].GetSecondaryLine() == l)  {
-              tuple<unsigned int, unsigned int, unsigned int> ROGIDAndIsotope = { g, i, l };
-
-              // Loop over all spectral point, and find the isotope and the line
-              for (unsigned int ii = 0; ii < CS.GetNumberOfSpectralPoints(g); ++ii) {
-                MCalibrationSpectralPoint& SP = CS.GetSpectralPoint(g, ii);
-                if (SP.GetIsotope() == m_Isotopes[g][i]) {
-                  if (fabs(SP.GetEnergy() - m_Isotopes[g][i].GetLineEnergy(l)) < 0.01 && SP.HasFit() == true) {
-                    FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetTitle(MString("FWHM per strip for ") + m_Isotopes[g][i].GetName() + ", " + SP.GetEnergy() + " keV line"); // I know it is set multiple times...
-                    FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->Fill(CurrentStripID, SP.GetEnergyFWHM());
-                    ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetTitle(MString("Residuals line/fit per strip for ") + m_Isotopes[g][i].GetName() + ", " + SP.GetEnergy() + " keV line"); // I know it is set multiple times...
-                    double Residual = SP.GetEnergy() - M.GetFitValue(SP.GetPeak());
-                    ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->Fill(CurrentStripID, Residual);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
   }
+
 
   // Create the canvases
 
@@ -1757,8 +1700,6 @@ bool MMelinator::CreateReport()
   auto IterTitles = TitlesMap.begin();
   auto IterEnergy = FittedEnergiesMap.begin();
   auto IterADCs = RawADCsMap.begin();
-  auto IterFWHMes = FWHMesMap.begin();
-  auto IterResiduals = ResidualsMap.begin();
 
   TCanvas* TitleCanvas = new TCanvas("Melinator Calibration Report", "Melinator Calibration Report", 850, 1100);
   TitleCanvas->cd();
@@ -1855,13 +1796,10 @@ bool MMelinator::CreateReport()
   TitleCanvas->Print(OutputFileName + "(");
 
 
-  while (IterTitles != TitlesMap.end() && IterEnergy != FittedEnergiesMap.end() && IterADCs != RawADCsMap.end() && IterFWHMes != FWHMesMap.end() && IterResiduals != ResidualsMap.end()) {
-
-    // Page 1: Spectra
-
-    TCanvas* SpectrumPages = new TCanvas("", "", 850, 1100);
-    SpectrumPages->SetLogz();
-    SpectrumPages->cd();
+  while (IterTitles != TitlesMap.end() && IterEnergy != FittedEnergiesMap.end() && IterADCs != RawADCsMap.end()) {
+    TCanvas* C = new TCanvas("", "", 850, 1100);
+    C->SetLogz();
+    C->cd();
 
     TPad* TitlePad = new TPad("padTitle", "Title", 0.0, 0.9, 1.0, 1.0);
     TitlePad->Draw();
@@ -1876,7 +1814,7 @@ bool MMelinator::CreateReport()
     Title->SetTextSize(0.4);
     Title->Draw();
 
-    SpectrumPages->cd();
+    C->cd();
 
     TPad* ADCPad = new TPad("ADCPad", "ADCPad", 0.0, 0.45, 1.0, 0.9);
     ADCPad->Draw();
@@ -1884,7 +1822,7 @@ bool MMelinator::CreateReport()
     ADCPad->SetLogz();
     IterADCs->second->Draw("colz");
 
-    SpectrumPages->cd();
+    C->cd();
 
     TPad* EnergyPad = new TPad("EnergyPad", "EnergyPad", 0.0, 0.0, 1.0, 0.45);
     EnergyPad->Draw();
@@ -1892,60 +1830,13 @@ bool MMelinator::CreateReport()
     EnergyPad->SetLogz();
     IterEnergy->second->Draw("colz");
 
-    SpectrumPages->cd();
-    SpectrumPages->Update();
+    C->cd();
+    C->Update();
 
-    SpectrumPages->Print(OutputFileName);   // middle pages
-
-
-    // Page 2+ is lines:
-
-    auto IterFWHMesInner = IterFWHMes->second.begin();
-    auto IterResidualsInner = IterResiduals->second.begin();
-    while (IterResidualsInner != IterResiduals->second.end() && IterFWHMesInner != IterFWHMes->second.end()) {
-
-      TCanvas* LineFitPages = new TCanvas("", "", 850, 1100);
-      LineFitPages->cd();
-
-      TPad* TitlePadLineFitPages = new TPad("padTitle", "Title", 0.0, 0.9, 1.0, 1.0);
-      TitlePadLineFitPages->Draw();
-      TitlePadLineFitPages->cd();
-
-      TPaveText* TitleLineFitPages = new TPaveText(0.0, 0.0, 1.0, 1.0, "brNDC");
-      TitleLineFitPages->AddText(IterTitles->second);
-      TitleLineFitPages->SetFillColor(0);     // No background color
-      TitleLineFitPages->SetBorderSize(0);    // No border
-      TitleLineFitPages->SetLineColor(0);     // Remove outline
-      TitleLineFitPages->SetTextFont(TextFont);
-      TitleLineFitPages->SetTextSize(0.4);
-      TitleLineFitPages->Draw();
-
-      LineFitPages->cd();
-
-
-      TPad* FWHMPad = new TPad("", "", 0.0, 0.45, 1.0, 0.9);
-      FWHMPad->Draw();
-      FWHMPad->cd();
-      IterFWHMesInner->second->Draw("HIST ");
-
-      LineFitPages->cd();
-
-      TPad* ResidualsPad = new TPad("", "", 0.0, 0.0, 1.0, 0.45);
-      ResidualsPad->Draw();
-      ResidualsPad->cd();
-      IterResidualsInner->second->Draw("HIST ");
-
-      LineFitPages->cd();
-      LineFitPages->Update();
-
-      if (next(IterFWHMesInner) == IterFWHMes->second.end() && next(IterTitles) == TitlesMap.end()) {
-        LineFitPages->Print(OutputFileName + ")");  // close PDF
-      } else {
-        LineFitPages->Print(OutputFileName);   // middle pages
-      }
-
-      ++IterFWHMesInner;
-      ++IterResidualsInner;
+    if (next(IterTitles) == TitlesMap.end()) {
+      C->Print(OutputFileName + ")");  // close PDF
+    } else {
+      C->Print(OutputFileName);   // middle pages
     }
 
     FoundHist = true;
@@ -1953,8 +1844,6 @@ bool MMelinator::CreateReport()
     ++IterTitles;
     ++IterEnergy;
     ++IterADCs;
-    ++IterFWHMes;
-    ++IterResiduals;
   }
 
   gROOT->SetBatch(false);
