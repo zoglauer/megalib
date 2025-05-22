@@ -29,7 +29,6 @@ FILES_UI := \
 	MGUIEReadOutElementView \
 	MGUIEReadOutUnitsCanvas \
 	MGUILoadCalibration \
-	MGUIReportCreation \
 	MInterfaceMelinator \
 
 LIBRARIES := \
