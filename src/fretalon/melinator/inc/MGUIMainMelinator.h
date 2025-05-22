@@ -111,8 +111,6 @@ protected:
   virtual bool OnLoad();
   //! Actions when the save as button has been pressed
   virtual bool OnSaveAs();
-  //! Actions when the show report as button has been pressed
-  virtual bool OnShowReport();
   //! Actions when the next button has been pressed
   virtual bool OnNext();
   //! Actions when the back button has been pressed
@@ -287,7 +285,6 @@ private:
   static const int c_CalibrationModelDeterminationMethodFittingFWHMModel    =  73;
   static const int c_Save                       =  80;
   static const int c_SaveAs                     =  81;
-  static const int c_ShowReport                 =  90;
   static const int c_Remove                     = 400;
   static const int c_Options                    = 500;
   static const int c_Change                     = 600;

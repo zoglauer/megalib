@@ -224,7 +224,6 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
   if (g_Verbosity >= c_Info) cout<<endl<<"Assigning energies via linear method"<<endl;
   
   // Inventory:
-  unsigned int TotalNumberOfGoodPoints = 0;
   bool NoROGHasMoreThanOneGoodSpectralPoint = true;
   if (g_Verbosity >= c_Info) cout<<"Current line inventory: "<<endl;
   for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
@@ -235,7 +234,6 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
       } else {
         if (g_Verbosity >= c_Info) cout<<"Included: "<<m_Results.GetSpectralPoint(r, p)<<endl;
         ++NumberOfGoodPoints;
-        ++TotalNumberOfGoodPoints;
       }
     }
     if (NumberOfGoodPoints > 1) {
@@ -267,47 +265,6 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
     return true;
   }
   
-  // Special case: We have one ROG with one isotope (which has a primary and secondary line) with two spectral points - this handles Ba-133 only calibrations:
-  if (m_Results.GetNumberOfReadOutDataGroups() == 1 && m_Isotopes[0].size() == 1 && m_Isotopes[0][0].GetPrimaryLine() != -1 && m_Isotopes[0][0].GetSecondaryLine() != -1 && TotalNumberOfGoodPoints == 2) {
-
-    if (g_Verbosity >= c_Info) cout<<"Assign energies: Special case with 1 ROG, 1 isotope with 2 spectral point"<<endl;
-
-    unsigned int r = 0; // our single ROG
-    unsigned int i = 0; // our single Isotope
-    int PrimaryLineID = m_Isotopes[r][i].GetPrimaryLine();
-    int SecondaryLineID = m_Isotopes[r][i].GetSecondaryLine();
-
-    vector<unsigned int> GoodSpectralPointIDs;
-    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
-      if (m_Results.GetSpectralPoint(r, p).IsGood() == true) {
-        GoodSpectralPointIDs.push_back(p);
-      }
-    }
-
-    unsigned int plow = 0;
-    unsigned int phigh = 0;
-    if (m_Results.GetSpectralPoint(r, GoodSpectralPointIDs[0]).GetPeak() < m_Results.GetSpectralPoint(r, GoodSpectralPointIDs[1]).GetPeak()) {
-      plow = GoodSpectralPointIDs[0];
-      phigh = GoodSpectralPointIDs[1];
-    } else {
-      plow = GoodSpectralPointIDs[1];
-      phigh = GoodSpectralPointIDs[0];
-    }
-
-    if (m_Isotopes[r][0].GetLineEnergy(PrimaryLineID) < m_Isotopes[r][0].GetLineEnergy(SecondaryLineID)) {
-      m_Results.GetSpectralPoint(r, plow).SetIsotope(m_Isotopes[r][0]);
-      m_Results.GetSpectralPoint(r, plow).SetEnergy(m_Isotopes[r][0].GetLineEnergy(PrimaryLineID));
-      m_Results.GetSpectralPoint(r, phigh).SetIsotope(m_Isotopes[r][0]);
-      m_Results.GetSpectralPoint(r, phigh).SetEnergy(m_Isotopes[r][0].GetLineEnergy(SecondaryLineID));
-    } else {
-      m_Results.GetSpectralPoint(r, plow).SetIsotope(m_Isotopes[r][0]);
-      m_Results.GetSpectralPoint(r, plow).SetEnergy(m_Isotopes[r][0].GetLineEnergy(SecondaryLineID));
-      m_Results.GetSpectralPoint(r, phigh).SetIsotope(m_Isotopes[r][0]);
-      m_Results.GetSpectralPoint(r, phigh).SetEnergy(m_Isotopes[r][0].GetLineEnergy(PrimaryLineID));
-    }
-
-    return true;
-  }
   
   
   // Create a list of spectral points

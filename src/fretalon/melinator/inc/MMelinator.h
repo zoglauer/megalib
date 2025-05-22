@@ -160,13 +160,10 @@ class MMelinator
   
   //! Remove all collection which don't have positive data entries
   //void RemoveCollectionsWithNoPositiveEntries() { m_Store.RemoveCollectionsWithNoPositiveEntries(); }
-
+ 
   //! Save the calibration in e-cal format
   bool Save(MString FileName);
-
-  //! Create a calibration report
-  bool CreateReport();
-
+  
   //! Dump a string
   virtual MString ToString() const;  
   

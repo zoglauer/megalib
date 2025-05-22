@@ -31,10 +31,10 @@ Ba  133    34.987  11.6     E
 Ba  133    35.818   3.58    E
 Ba  133    53.161   2.199   E
 # Ba  133    79.614   2.62    E  this mini line just screws things up in melinator -- we pretend we do not know it...
-Ba  133    80.997  34.06    P 
+Ba  133    80.997  34.06    D 
 Ba  133   276.398   7.164   
 Ba  133   302.853  18.33   
-Ba  133   356.017  62.05    S
+Ba  133   356.017  62.05    
 Ba  133   383.851   8.94
 
 # 137-Cs
