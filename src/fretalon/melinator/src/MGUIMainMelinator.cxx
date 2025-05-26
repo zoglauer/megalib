@@ -111,7 +111,7 @@ void MGUIMainMelinator::Create()
   double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
   
   int ScrollBarWidth = 50;
-  int ControlColumnWidth = 225 + ScrollBarWidth;
+  int ControlColumnWidth = 225*FontScaler + ScrollBarWidth;
 
   // Give it a default size
   Resize(FontScaler*1200, 250 + FontScaler*600);

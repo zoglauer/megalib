@@ -1712,20 +1712,28 @@ bool MMelinator::CreateReport()
         if (dynamic_cast<MCalibrationSpectrum*>(&C) == nullptr) continue;
         MCalibrationSpectrum& CS = static_cast<MCalibrationSpectrum&>(C);
         for (unsigned int g = 0; g < CS.GetNumberOfReadOutDataGroups(); ++g) {
-          for (unsigned int i = 0; i < m_Isotopes[g].size(); ++i) {
-            for (unsigned int l = 0; l < m_Isotopes[g][i].GetNLines(); ++l) {
-              if (m_Isotopes[g][i].GetPrimaryLine() == l || m_Isotopes[g][i].GetSecondaryLine() == l)  {
-                tuple<unsigned int, unsigned int, unsigned int> ROGIDAndIsotope = { g, i, l };
+          unsigned int IsotopeIndex = distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g));
+          for (unsigned int i = 0; i < m_Isotopes[IsotopeIndex].size(); ++i) {
+            for (unsigned int l = 0; l < m_Isotopes[IsotopeIndex][i].GetNLines(); ++l) {
+              if (m_Isotopes[IsotopeIndex][i].GetPrimaryLine() == static_cast<int>(l) || m_Isotopes[IsotopeIndex][i].GetSecondaryLine() == static_cast<int>(l))  {
+                tuple<unsigned int, unsigned int, unsigned int> ROGIDAndIsotope = { IsotopeIndex, i, l };
                 // Inefficiency: we loop over everything... but avoiding it is a complicated optimization
                 // Use try_emplace to avoid that
+
+                MString Name;
+                Name += m_Isotopes[IsotopeIndex][i].GetName();
+                Name += " ";
+                Name += m_Isotopes[IsotopeIndex][i].GetLineEnergy(l);
+                Name += " keV";
+
                 FWHMesMap.try_emplace(DetectorAndSide, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>());
-                FWHMesMap[DetectorAndSide].try_emplace(ROGIDAndIsotope, new TH1D("", "FWHMes", MaxStripID+1, -0.5, MaxStripID + 0.5));
+                FWHMesMap[DetectorAndSide].try_emplace(ROGIDAndIsotope, new TH1D("", MString("FWHMes") + Name, MaxStripID+1, -0.5, MaxStripID + 0.5));
                 FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetXTitle("Strip ID");
                 FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetYTitle("FWHM [keV]");
                 FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetLineWidth(2);
 
                 ResidualsMap.try_emplace(DetectorAndSide, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>());
-                ResidualsMap[DetectorAndSide].try_emplace(ROGIDAndIsotope, new TH1D("", "Residuals", MaxStripID+1, -0.5, MaxStripID + 0.5));
+                ResidualsMap[DetectorAndSide].try_emplace(ROGIDAndIsotope, new TH1D("", MString("Residuals") + Name, MaxStripID+1, -0.5, MaxStripID + 0.5));
                 ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetXTitle("Strip ID");
                 ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetYTitle("Residuals [keV]");
                 ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetLineWidth(2);
@@ -1759,6 +1767,7 @@ bool MMelinator::CreateReport()
     }
     if (dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))) == nullptr) continue;
     MCalibrationSpectrum& CS = dynamic_cast<MCalibrationSpectrum&>(m_CalibrationStore.GetCalibration(c));
+    if (CS.HasEnergyModel() == false) continue;
     MCalibrationModel& M = CS.GetEnergyModel();
 
     unsigned int IDofROC = m_Store.FindReadOutCollection(ROE);
@@ -1789,19 +1798,20 @@ bool MMelinator::CreateReport()
       pair<unsigned int, bool> DetectorAndSide = { ROE_DS.GetDetectorID(), ROE_DS.IsLowVoltageStrip() };
 
       for (unsigned int g = 0; g < CS.GetNumberOfReadOutDataGroups(); ++g) {
-        for (unsigned int i = 0; i < m_Isotopes[g].size(); ++i) {
-          for (unsigned int l = 0; l < m_Isotopes[g][i].GetNLines(); ++l) {
-            if (m_Isotopes[g][i].GetPrimaryLine() == l || m_Isotopes[g][i].GetSecondaryLine() == l)  {
-              tuple<unsigned int, unsigned int, unsigned int> ROGIDAndIsotope = { g, i, l };
+        unsigned int IsotopeIndex = distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g));
+        for (unsigned int i = 0; i < m_Isotopes[IsotopeIndex].size(); ++i) {
+          for (unsigned int l = 0; l < m_Isotopes[IsotopeIndex][i].GetNLines(); ++l) {
+            if (m_Isotopes[IsotopeIndex][i].GetPrimaryLine() == static_cast<int>(l) || m_Isotopes[IsotopeIndex][i].GetSecondaryLine() == static_cast<int>(l))  {
+              tuple<unsigned int, unsigned int, unsigned int> ROGIDAndIsotope = { IsotopeIndex, i, l };
 
               // Loop over all spectral point, and find the isotope and the line
               for (unsigned int ii = 0; ii < CS.GetNumberOfSpectralPoints(g); ++ii) {
                 MCalibrationSpectralPoint& SP = CS.GetSpectralPoint(g, ii);
-                if (SP.GetIsotope() == m_Isotopes[g][i]) {
-                  if (fabs(SP.GetEnergy() - m_Isotopes[g][i].GetLineEnergy(l)) < 0.01 && SP.HasFit() == true) {
-                    FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetTitle(MString("FWHM per strip for ") + m_Isotopes[g][i].GetName() + ", " + SP.GetEnergy() + " keV line"); // I know it is set multiple times...
+                if (SP.GetIsotope() == m_Isotopes[IsotopeIndex][i]) {
+                  if (fabs(SP.GetEnergy() - m_Isotopes[IsotopeIndex][i].GetLineEnergy(l)) < 0.01 && SP.HasFit() == true) {
+                    FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetTitle(MString("FWHM per strip for ") + m_Isotopes[IsotopeIndex][i].GetName() + ", " + SP.GetEnergy() + " keV line"); // I know it is set multiple times...
                     FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->Fill(CurrentStripID, SP.GetEnergyFWHM());
-                    ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetTitle(MString("Residuals line/fit per strip for ") + m_Isotopes[g][i].GetName() + ", " + SP.GetEnergy() + " keV line"); // I know it is set multiple times...
+                    ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetTitle(MString("Residuals line/fit per strip for ") + m_Isotopes[IsotopeIndex][i].GetName() + ", " + SP.GetEnergy() + " keV line"); // I know it is set multiple times...
                     double Residual = SP.GetEnergy() - M.GetFitValue(SP.GetPeak());
                     ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->Fill(CurrentStripID, Residual);
                   }
