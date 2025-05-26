@@ -44,6 +44,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGUIDefaults.h"
+#include "MExceptions.h"
 #include "MStreams.h"
 #include "MFile.h"
 
@@ -152,6 +153,9 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   g_OSType = "Unknown";
 #endif
 
+#ifndef NDEBUG
+  MException::UseAbort();
+#endif
 
   // Load the GUI defaults by initializing the singleton
   MGUIDefaults::GetInstance();
