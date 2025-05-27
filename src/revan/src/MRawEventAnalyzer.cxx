@@ -94,18 +94,39 @@ const int MRawEventAnalyzer::c_HitClusteringAlgoDistance = 1;
 const int MRawEventAnalyzer::c_HitClusteringAlgoAdjacent = 2;
 const int MRawEventAnalyzer::c_HitClusteringAlgoPDF      = 3;
 
-const int MRawEventAnalyzer::c_TrackingAlgoNone            = 0;
-const int MRawEventAnalyzer::c_TrackingAlgoModifiedPearson = 1;
-const int MRawEventAnalyzer::c_TrackingAlgoChiSquare       = 2;
-const int MRawEventAnalyzer::c_TrackingAlgoGas             = 3;
-const int MRawEventAnalyzer::c_TrackingAlgoDirectional     = 4;
-const int MRawEventAnalyzer::c_TrackingAlgoBayesian        = 5;
-const int MRawEventAnalyzer::c_TrackingAlgoRank            = 6;
-const int MRawEventAnalyzer::c_TrackingAlgoPearson         = 7;
+//const int MRawEventAnalyzer::c_TrackingAlgoNone            = 0;
+//const int MRawEventAnalyzer::c_TrackingAlgoModifiedPearson = 1;
+//const int MRawEventAnalyzer::c_TrackingAlgoChiSquare       = 2;
+//const int MRawEventAnalyzer::c_TrackingAlgoGas             = 3;
+//const int MRawEventAnalyzer::c_TrackingAlgoDirectional     = 4;
+//const int MRawEventAnalyzer::c_TrackingAlgoBayesian        = 5;
+//const int MRawEventAnalyzer::c_TrackingAlgoRank            = 6;
+//const int MRawEventAnalyzer::c_TrackingAlgoPearson         = 7;
+
+//namespace MRawEventAnalyzer {
+//Push the "do not change the numbers" constraint to the compiler with enum
+//  enum MRawEventAnalyzer::c_TrackingAlgo { // Also pushed to the header file.
+//    c_TrackingAlgoNone,
+//    c_TrackingAlgoModifiedPearson,
+//    c_TrackingAlgoChiSquare,
+//    c_TrackingAlgoGas,
+//    c_TrackingAlgoDirectional,
+//    c_TrackingAlgoBayesian,
+//    c_TrackingAlgoRank,
+//    c_TrackingAlgoPearson,
+//    c_TrackingAlgoKalman2D,
+//    c_TrackingAlgoKalman3D,
+//    c_TrackingAlgoFirstLayer
+//  };
+
+//  enum c_EventIdAlgo {
+//    c_EventIdDefault, c_EventIdExternal
+//  };
+//}
 
 const int MRawEventAnalyzer::c_PairDefault   = 0;
-const int MRawEventAnalyzer::c_PairKalman3D = 1;
-const int MRawEventAnalyzer::c_PairKalman2D = 2;
+//const int MRawEventAnalyzer::c_PairKalman3D = 1;
+//const int MRawEventAnalyzer::c_PairKalman2D = 2;
 
 const int MRawEventAnalyzer::c_CSRAlgoNone          = 0;
 const int MRawEventAnalyzer::c_CSRAlgoFoM           = 1;
@@ -1347,6 +1368,12 @@ bool MRawEventAnalyzer::PreAnalysis()
           SetSpecialParameters(m_BETFileName) == false) {
         Return = false;
       }
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoKalman3D) {
+      m_Tracker = new MERTrackKalman3D();
+      dynamic_cast<MERTrackKalman3D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoKalman2D) {
+      m_Tracker = new MERTrackKalman2D();
+      dynamic_cast<MERTrackKalman2D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
     } else if (m_TrackingAlgorithm == c_TrackingAlgoNone) {
       // Nothing
     } else {
@@ -1355,13 +1382,7 @@ bool MRawEventAnalyzer::PreAnalysis()
     }
 
     // Pair Algorithm
-    if (m_PairAlgorithm == c_PairKalman3D) {
-      m_Tracker = new MERTrackKalman3D();
-      dynamic_cast<MERTrackKalman3D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
-    } else if (m_PairAlgorithm == c_PairKalman2D) {
-      m_Tracker = new MERTrackKalman2D();
-      dynamic_cast<MERTrackKalman2D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
-    }else if (m_PairAlgorithm == c_PairDefault) {
+    if (m_PairAlgorithm == c_PairDefault) {
       m_Tracker = new MERTrack();
     } else {
       Return = false;

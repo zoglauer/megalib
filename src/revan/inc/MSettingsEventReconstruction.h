@@ -50,6 +50,9 @@ class MSettingsEventReconstruction : public MSettingsInterface
   
   void SetHitClusteringAlgorithm(int ID) { m_HitClusteringAlgorithm = ID; }
   int GetHitClusteringAlgorithm() { return m_HitClusteringAlgorithm; }
+
+  void SetEventIdAlgorithm(int ID) {m_EventIdAlgorithm = ID; }
+  int GetEventIdAlgorithm() { return m_EventIdAlgorithm; }
   
   void SetTrackingAlgorithm(int ID) { m_TrackingAlgorithm = ID; }
   int GetTrackingAlgorithm() { return m_TrackingAlgorithm; }
@@ -294,6 +297,7 @@ class MSettingsEventReconstruction : public MSettingsInterface
   int m_CoincidenceAlgorithm;
   int m_EventClusteringAlgorithm;
   int m_HitClusteringAlgorithm;
+  int m_EventIdAlgorithm;
   int m_TrackingAlgorithm;
   int m_PairAlgorithm;
   int m_CSRAlgorithm;
