@@ -162,22 +162,44 @@ class MRawEventAnalyzer
   //! Set the clustering algorithm: One of c_ClusteringAlgoNone, c_ClusteringAlgoDistance, c_ClusteringAlgoAdjacent;
   void SetHitClusteringAlgorithm(int ID) { m_HitClusteringAlgorithm = ID; }
 
-  static const int c_TrackingAlgoNone;
-  static const int c_TrackingAlgoModifiedPearson;
-  static const int c_TrackingAlgoPearson;
-  static const int c_TrackingAlgoChiSquare;
-  static const int c_TrackingAlgoGas;
-  static const int c_TrackingAlgoDirectional;
-  static const int c_TrackingAlgoBayesian;
-  static const int c_TrackingAlgoRank;
+  enum c_EventIdAlgo {
+    c_EventIdDefault, c_EventIdExternal
+  };
+  //! Set the Event tyep identification algorithm
+  void SetEventIdAlgorithm(int ID) { m_EventIdAlgorithm = ID; }
+
+
+//  static const int c_TrackingAlgoNone;
+//  static const int c_TrackingAlgoModifiedPearson;
+//  static const int c_TrackingAlgoPearson;
+//  static const int c_TrackingAlgoChiSquare;
+//  static const int c_TrackingAlgoGas;
+//  static const int c_TrackingAlgoDirectional;
+//  static const int c_TrackingAlgoBayesian;
+//  static const int c_TrackingAlgoRank;
+//  static const int c_PairKalman3D;
+//  static const int c_PairKalman2D;
+// static const int c_Trackingfirstlayers --
+
+  enum c_TrackingAlgo {
+    c_TrackingAlgoNone,
+    c_TrackingAlgoModifiedPearson,
+    c_TrackingAlgoChiSquare,
+    c_TrackingAlgoGas,
+    c_TrackingAlgoDirectional,
+    c_TrackingAlgoBayesian,
+    c_TrackingAlgoRank,
+    c_TrackingAlgoPearson,
+    c_TrackingAlgoKalman2D,
+    c_TrackingAlgoKalman3D,
+    c_TrackingAlgoFirstLayer
+  };
 
   //! Set the electron tracking algorithm: One of c_TrackingAlgoNone, c_TrackingAlgoModifiedPearson, c_TrackingAlgoPearson,
   //! c_TrackingAlgoChiSquare, c_TrackingAlgoGas, c_TrackingAlgoDirectional, c_TrackingAlgoBayesian, c_TrackingAlgoRank
   void SetTrackingAlgorithm(int ID) { m_TrackingAlgorithm = ID; }
 
   static const int c_PairDefault;
-  static const int c_PairKalman3D;
-  static const int c_PairKalman2D;
 
   //! Set the pair reconstruction algorithm: One of c_PairDefault, c_PairKalman3D or c_PairKalman2D
   void SetPairAlgorithm(int ID) { m_PairAlgorithm = ID; }
@@ -392,6 +414,7 @@ class MRawEventAnalyzer
   int m_CoincidenceAlgorithm;
   int m_EventClusteringAlgorithm;
   int m_HitClusteringAlgorithm;
+  int m_EventIdAlgorithm;
   int m_TrackingAlgorithm;
   int m_PairAlgorithm;
   int m_CSRAlgorithm;

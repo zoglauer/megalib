@@ -1597,7 +1597,7 @@ void MInterfaceRevan::DetectorTypeClusterDistribution(bool Before)
   SetGuiData(Analyzer);
   if (Before == true) {
     Analyzer.SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
-    Analyzer.SetPairAlgorithm(MRawEventAnalyzer::c_PairKalman2D);
+    Analyzer.SetPairAlgorithm(MRawEventAnalyzer::c_PairDefault);
     Analyzer.SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
     Analyzer.SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
   }
@@ -1718,7 +1718,7 @@ void MInterfaceRevan::DetectorTypeHitDistribution(bool Before)
   SetGuiData(Analyzer);
   if (Before == true) {
     Analyzer.SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
-    Analyzer.SetPairAlgorithm(MRawEventAnalyzer::c_PairKalman2D);
+    Analyzer.SetPairAlgorithm(MRawEventAnalyzer::c_PairDefault);
     Analyzer.SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
     Analyzer.SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
   }
@@ -2796,7 +2796,7 @@ void MInterfaceRevan::NumberOfClusters()
   if (Analyzer.SetInputModeFile(m_Data->GetCurrentFileName()) == false) return;
   SetGuiData(Analyzer);
   Analyzer.SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
-  Analyzer.SetPairAlgorithm(MRawEventAnalyzer::c_PairKalman2D);
+  Analyzer.SetPairAlgorithm(MRawEventAnalyzer::c_PairDefault);
   Analyzer.SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
   Analyzer.SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
 

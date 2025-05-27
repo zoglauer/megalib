@@ -86,6 +86,7 @@ void MGUIERAlgorithm::Create()
 
   m_ListLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 10);
 
+  // Coincidence search
   m_CoincidenceList = new MGUIERBList(this, "Coincidence search", true);
   m_CoincidenceList->Add("No coincidence or coincident hits already merged in simulation or hardware (DEFAULT)");
   m_CoincidenceList->Add("Coincidence window");
@@ -93,6 +94,7 @@ void MGUIERAlgorithm::Create()
   m_CoincidenceList->Create();
   AddFrame(m_CoincidenceList, m_ListLayout);
   
+  // Event clustering
   m_EventClusteringList = new MGUIERBList(this, "Find multiple, coincident gamma rays in one event", true);
   m_EventClusteringList->Add("No event clustering (DEFAULT - unless you have the very rare case of pile up)");
   m_EventClusteringList->Add("Event clustering using using interaction distances (alpha)");
@@ -109,6 +111,7 @@ void MGUIERAlgorithm::Create()
   m_EventClusteringList->Create();
   AddFrame(m_EventClusteringList, m_ListLayout);
   
+  // Hit clustering
   m_HitClusteringList = new MGUIERBList(this, "Clustering of neighboring hits", true);
   m_HitClusteringList->Add("No clustering");
   m_HitClusteringList->Add("Clustering by Distance");
@@ -117,7 +120,16 @@ void MGUIERAlgorithm::Create()
   m_HitClusteringList->SetSelected(m_Data->GetHitClusteringAlgorithm());
   m_HitClusteringList->Create();
   AddFrame(m_HitClusteringList, m_ListLayout);
+  
+  // Event identification
+  m_EventIdList = new MGUIERBList(this, "Event type identification", true);
+  m_EventIdList->Add("Default algorithm"); // 0
+  m_EventIdList->Add("External from file (not implemented)"); // 1
+  m_EventIdList->SetSelected(m_Data->GetEventIdAlgorithm());
+  m_EventIdList->Create();
+  AddFrame(m_EventIdList, m_ListLayout);
 
+  // Electron tracking
   m_TrackingList = new MGUIERBList(this, "Electron tracking", true);
   m_TrackingList->Add("No electron tracking"); // 0
   m_TrackingList->Add("Modified Pearson correlation (Figure-of-merit approach)"); // 1
@@ -127,32 +139,36 @@ void MGUIERAlgorithm::Create()
   m_TrackingList->Add("Tracking in gas detector (Figure-of-merit approach)"); // 5
   m_TrackingList->Add("Tracking in direction sensitive strip detector (Figure-of-merit approach)"); // 6
   m_TrackingList->Add("Bayesian electron tracking (Bayesian model selection)"); // 7
-  if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoNone) {
-    m_TrackingList->SetSelected(0);
-  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoModifiedPearson) {
-    m_TrackingList->SetSelected(1);
-  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoPearson) {
-    m_TrackingList->SetSelected(2);
-  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoRank) {
-    m_TrackingList->SetSelected(3);
-  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoChiSquare) {
-    m_TrackingList->SetSelected(4);
-  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoGas) {
-    m_TrackingList->SetSelected(5);
-  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoDirectional) {
-    m_TrackingList->SetSelected(6);
-  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoBayesian) {
-    m_TrackingList->SetSelected(7);
-  } else {
-    m_TrackingList->SetSelected(0);
-  }
+  m_TrackingList->Add("Kalman Filter 2D (work in progress)"); // 8
+  m_TrackingList->Add("Kalman Filter 3D (work in progress)"); // 9
+  m_TrackingList->Add("First two layers (to be implemented)"); // 10
+  m_TrackingList->SetSelected(m_Data->GetTrackingAlgorithm());
+//  if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoNone) {
+//    m_TrackingList->SetSelected(0);
+//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoModifiedPearson) {
+//    m_TrackingList->SetSelected(1);
+//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoPearson) {
+//    m_TrackingList->SetSelected(2);
+//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoRank) {
+//    m_TrackingList->SetSelected(3);
+//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoChiSquare) {
+//    m_TrackingList->SetSelected(4);
+//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoGas) {
+//    m_TrackingList->SetSelected(5);
+//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoDirectional) {
+//    m_TrackingList->SetSelected(6);
+//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoBayesian) {
+//    m_TrackingList->SetSelected(7);
+//  } else {
+//    m_TrackingList->SetSelected(0);
+//  }
   m_TrackingList->Create();
   AddFrame(m_TrackingList, m_ListLayout);
 
   m_PairList = new MGUIERBList(this, "Pair reconstruction", true);
   m_PairList->Add("Default algorithm");  // 0
-  m_PairList->Add("Kalman Filter 3D (work in progress)"); // 1
-  m_PairList->Add("Kalman Filter 2D (work in progress)"); // 2
+  //m_PairList->Add("Kalman Filter 3D (work in progress)"); // 1
+  //m_PairList->Add("Kalman Filter 2D (work in progress)"); // 2
   m_PairList->SetSelected(m_Data->GetPairAlgorithm());
   m_PairList->Create();
   AddFrame(m_PairList, m_ListLayout);
