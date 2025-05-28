@@ -75,6 +75,11 @@ confhelp() {
   echo "--optimization=[off/no, normal/on/yes, strong/hard (requires gcc 4.2 or higher) - first launch default: on]"
   echo "    Compilation optimization for MEGAlib ONLY (Default is normal)"
   echo " "
+  echo "--distcc=[off/no, on/yes]"
+  echo "    If this flag is set and distcc is setup, we will use distcc"
+  echo "    To setup distcc, install it and make sure the following environment variable is exported, e.g.:"
+  echo "    export DISTCC_HOSTS='@remote1/16 @remote2/8 localhost'"
+  echo " "
   echo "--updates=[off/no, on/yes - first launch default: off]"
   echo "    Check periodically for updates. Default is off."
   echo "    Even if set to on, update checks will only be performed, if the user has write access to the MEGAlib installation."
@@ -181,17 +186,9 @@ UPDATES="off"
 PATCH="on"
 CLEANUP="off"
 BRANCH=""
+DISTCC="off"
 # ALLOWROOT="off" - initialized in the beginning not here
-
-MAXTHREADS=1;
-if [[ ${OSTYPE} == *arwin* ]]; then
-  MAXTHREADS=`sysctl -n hw.logicalcpu_max`
-elif [[ ${OSTYPE} == *inux* ]]; then
-  MAXTHREADS=`grep processor /proc/cpuinfo | wc -l`
-fi
-if [ "$?" != "0" ]; then
-  MAXTHREADS=1
-fi
+MAXTHREADS=0
 
 
 # Prelude - Find an old configuration
@@ -245,7 +242,7 @@ for C in "${CMD[@]}"; do
     HEASOFTPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-o*=* ]]; then
     OPT=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-d*=* ]]; then
+  elif [[ ${C} == *-de*=* ]]; then
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-u*=* ]]; then
     UPDATES=`echo ${C} | awk -F"=" '{ print $2 }'`
@@ -261,6 +258,8 @@ for C in "${CMD[@]}"; do
     KEEPMEGALIBASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-keepe* ]]; then
     KEEPENVASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-di* ]]; then
+    DISTCC=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-b* ]]; then
     BRANCH=`echo ${C} | awk -F"=" '{ print $2 }'`
     RELEASE="dev"
@@ -292,6 +291,7 @@ PATCH=`echo ${PATCH} | tr '[:upper:]' '[:lower:]'`
 CLEANUP=`echo ${CLEANUP} | tr '[:upper:]' '[:lower:]'`
 KEEPMEGALIBASIS=`echo ${KEEPMEGALIBASIS} | tr '[:upper:]' '[:lower:]'`
 KEEPENVASIS=`echo ${KEEPENVASIS} | tr '[:upper:]' '[:lower:]'`
+DISTCC=`echo ${DISTCC} | tr '[:upper:]' '[:lower:]'`
 
 
 
@@ -328,6 +328,52 @@ else
   confhelp
   exit 1
 fi
+
+
+if ( [[ ${DISTCC} == of* ]] || [[ ${DISTCC} == n* ]] ); then
+  DISTCC="off"
+  echo " * Do not use distcc"
+elif ( [[ ${DISTCC} == on ]] || [[ ${DISTCC} == y* ]] ); then
+  if [ -n "${DISTCC_HOSTS}" ]; then
+    DISTCC="on"
+    echo " * Using distcc with the following host: ${DISTCC_HOSTS}."
+  else 
+    DISTCC="off"
+    echo " * Distcc requested, but cannot use distcc since it is not installed or not setup."
+  fi
+else
+  echo " "
+  echo "ERROR: Unknown option for distcc: ${DISTCC}"
+  confhelp
+  exit 1
+fi
+
+
+if [ ! -z "${MAXTHREADS##[0-9]*}" ] 2>/dev/null; then
+  echo "ERROR: The maximum number of threads must be a number and not ${MAXTHREADS}!"
+  exit 1
+fi
+if [[ ${MAXTHREADS} == "0" ]]; then
+  if [[ ${DISTCC} == "on" ]]; then
+    DISTCC_JOBS_OUTPUT=$(distcc -j 2>/dev/null)
+    if [[ $? -eq 0 && -n "$DISTCC_JOBS_OUTPUT" && "$DISTCC_JOBS_OUTPUT" -gt 0 ]]; then
+      MAXTHREADS=$(( DISTCC_JOBS_OUTPUT ))
+    fi
+  else 
+    if [[ ${OSTYPE} == *arwin* ]]; then
+      MAXTHREADS=`sysctl -n hw.logicalcpu_max`
+    elif [[ ${OSTYPE} == *inux* ]]; then
+      MAXTHREADS=`grep processor /proc/cpuinfo | wc -l`
+    fi
+    if [ "$?" != "0" ]; then
+      MAXTHREADS=1
+    fi
+  fi
+fi
+if [ ! -z "${MAXTHREADS##[0-9]*}" ] || [ "${MAXTHREADS}" -le 0 ]; then 
+  MAXTHREADS=1
+fi
+echo " * Using this maximum number of threads: ${MAXTHREADS}"
 
 
 if [[ ${BRANCH} != "" ]]; then
@@ -749,7 +795,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-root.sh script..."
-  bash ${MEGALIBDIR}/config/build-root.sh -source=${ENVFILE} -patch=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} --keepenvironmentasis=${KEEPENVASIS} 2>&1 | tee RootBuildLog.txt
+  bash ${MEGALIBDIR}/config/build-root.sh -source=${ENVFILE} -patch=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} --keepenvironmentasis=${KEEPENVASIS} --distcc=${DISTCC} 2>&1 | tee RootBuildLog.txt
   RESULT=${PIPESTATUS[0]}
 
   # If we have a new ROOT dir, copy the build log there
@@ -971,7 +1017,7 @@ mv ${ENVFILE} bin/source-megalib.sh
 
 echo "Storing last good options..."
 rm -f ${MEGALIBDIR}/config/SetupOptions.txt
-SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES} --patch=${PATCH} --cleanup=${CLEANUP} --keepmegalibasis=${KEEPMEGALIBASIS} --keepenvironmentasis=${KEEPENVASIS} --maxthreads=${MAXTHREADS}"
+SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES} --patch=${PATCH} --cleanup=${CLEANUP} --keepmegalibasis=${KEEPMEGALIBASIS} --keepenvironmentasis=${KEEPENVASIS} --maxthreads=${MAXTHREADS} --distcc=${DISTCC}"
 if [[ ${BRANCH} != "" ]]; then
   SETUP+=" --branch=${BRANCH}"
 fi
