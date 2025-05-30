@@ -114,4 +114,5 @@ External
 callgrind.*
 *.rsp
 *.erm
+*.swp
 
