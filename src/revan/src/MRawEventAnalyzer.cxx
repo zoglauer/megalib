@@ -571,7 +571,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   // We have events, we can start the analysis:
 
   // Section A: Coincidence search
-  if (m_CoincidenceAlgorithm != c_CoincidenceAlgoNone) {
+  if (m_CoincidenceAlgorithm == c_CoincidenceAlgoWindow) {
     if (m_Coincidence == nullptr) {
       merr<<"Coincidence pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
       return c_AnalysisUndefinedError;
@@ -594,7 +594,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     }
 
     // Handle coincidences in the same voxel due to coincidence search - this should only happen in the simulation...
-    if (RE != nullptr && m_CoincidenceAlgorithm != c_CoincidenceAlgoNone) {
+    if (RE != nullptr/* && m_CoincidenceAlgorithm == c_CoincidenceAlgoWindow*/) {
       for (int r1 = 0; r1 < RE->GetNRESEs(); ++r1) {
         for (int r2 = r1+1; r2 < RE->GetNRESEs(); ++r2) {
           if (RE->GetRESEAt(r1)->GetPosition().AreEqual(RE->GetRESEAt(r2)->GetPosition(), 0.0000001) == true) {
@@ -610,8 +610,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
         }
       }
     }
-  } // no coincidence search
-  else {
+  } else { // no coincidence search
     RE = m_EventStore->GetRawEventAt(0);
     m_EventStore->RemoveRawEvent(RE);
   }
@@ -804,7 +803,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     
     Event = m_RawEvents->GetOptimumPhysicalEvent();
   } else {
-    mdebug<<"We have a best rey events..."<<endl;
+    mdebug<<"We have a best try event ..."<<endl;
     
     Event = m_RawEvents->GetBestTryPhysicalEvent();
     
@@ -1199,8 +1198,9 @@ bool MRawEventAnalyzer::PreAnalysis()
   // Coincidence
   if (Return == true) {
     delete m_Coincidence;
-    m_Coincidence = new MERCoincidence();
+    m_Coincidence = nullptr;
     if (m_CoincidenceAlgorithm == c_CoincidenceAlgoWindow) {
+      m_Coincidence = new MERCoincidence();
       m_Coincidence->SetCoincidenceWindow(m_CoincidenceWindow);
     } else if (m_CoincidenceAlgorithm == c_CoincidenceAlgoNone) {
       // Nothing

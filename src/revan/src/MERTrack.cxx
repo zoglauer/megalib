@@ -322,7 +322,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
     Timer.Start();
     // Generate a list of possible Compton tracks -
-    // we only want to have sequences now and do not yet care aboput directions!
+    // we only want to have sequences now and do not yet care about directions!
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; e++) {
       RE = m_List->GetRawEventAt(e);
@@ -596,6 +596,7 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
       mdebug<<"Vertex statistics (max: "<<SearchRange<<"): layers used: "<<StopIndex<<", start of 2+ hits: "<<StartIndex<<"  layers with 2+ hits between start and stop: "<<LayersWithAtLeastTwoHitsBetweenStartAndStop<<" ("<<((StopIndex-StartIndex > 0) ? 100.0*LayersWithAtLeastTwoHitsBetweenStartAndStop/(StopIndex-StartIndex) : 0)<<"%)"<<endl;
 
       if (LayersWithAtLeastTwoHitsBetweenStartAndStop > 4 && double (LayersWithAtLeastTwoHitsBetweenStartAndStop)/(StopIndex-StartIndex) > 0.5) {
+        // A.L. Why require that at least half the layers should have two hits?
         Vertex = (*Iterator1);
         VertexDirection = -1;
       }
