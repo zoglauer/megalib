@@ -98,13 +98,22 @@ class MRawEventAnalyzer
   void SetSaveOI(bool SaveOI);
 
   // The return codes of AnalyzeEvent()
-  static const unsigned int c_AnalysisSucess;
-  static const unsigned int c_AnalysisCoincidenceWindowWait;
-  static const unsigned int c_AnalysisEventClusteringFailed;
-  static const unsigned int c_AnalysisNoEventsInStore;
-  static const unsigned int c_AnalysisNoEventsLeftInFile;
-  static const unsigned int c_AnalysisSavingEventFailed;
-  static const unsigned int c_AnalysisUndefinedError;
+  enum c_AnalysisReturn {
+    c_AnalysisSucess,
+    c_AnalysisCoincidenceWindowWait,
+    c_AnalysisEventClusteringFailed,
+    c_AnalysisNoEventsInStore,
+    c_AnalysisNoEventsLeftInFile,
+    c_AnalysisSavingEventFailed,
+    c_AnalysisUndefinedError
+  };
+//  static const unsigned int c_AnalysisSucess;
+//  static const unsigned int c_AnalysisCoincidenceWindowWait;
+//  static const unsigned int c_AnalysisEventClusteringFailed;
+//  static const unsigned int c_AnalysisNoEventsInStore;
+//  static const unsigned int c_AnalysisNoEventsLeftInFile;
+//  static const unsigned int c_AnalysisSavingEventFailed;
+//  static const unsigned int c_AnalysisUndefinedError;
 
   //! Return the next initial raw event from file
   //! Return zero if the input mode is not file or if the ened of the file has been reached
@@ -140,46 +149,37 @@ class MRawEventAnalyzer
 
 
   // Interface for the basic reconstruction algorithms
-  
-  static const int c_CoincidenceAlgoNone;
-  static const int c_CoincidenceAlgoWindow;
+
+  enum c_CoincidenceAlgo {
+    c_CoincidenceAlgoNone,
+    c_CoincidenceAlgoWindow };
   
   //! Set the coincidence algorithm. One of: c_CoincidenceAlgoNone, c_CoincidenceAlgoWindow
   void SetCoincidenceAlgorithm(int ID) { m_CoincidenceAlgorithm = ID; }
-  
-  static const int c_EventClusteringAlgoNone;
-  static const int c_EventClusteringAlgoTMVA;
-  static const int c_EventClusteringAlgoDistance;
+
+  enum c_EventClusteringAlgo {
+    c_EventClusteringAlgoNone,
+    c_EventClusteringAlgoTMVA,
+    c_EventClusteringAlgoDistance };
   
   //! Set the coincidence algorithm. One of: c_EventClusteringAlgoNone, c_EventClusteringAlgoDistance, c_EventClusteringAlgoTMVA
   void SetEventClusteringAlgorithm(int ID) { m_EventClusteringAlgorithm = ID; }
-  
-  static const int c_HitClusteringAlgoNone;
-  static const int c_HitClusteringAlgoDistance;
-  static const int c_HitClusteringAlgoAdjacent;
-  static const int c_HitClusteringAlgoPDF;
+
+  enum c_HitClusteringAlgo {
+    c_HitClusteringAlgoNone,
+    c_HitClusteringAlgoDistance,
+    c_HitClusteringAlgoAdjacent,
+    c_HitClusteringAlgoPDF };
 
   //! Set the clustering algorithm: One of c_ClusteringAlgoNone, c_ClusteringAlgoDistance, c_ClusteringAlgoAdjacent;
   void SetHitClusteringAlgorithm(int ID) { m_HitClusteringAlgorithm = ID; }
 
   enum c_EventIdAlgo {
-    c_EventIdDefault, c_EventIdExternal
-  };
-  //! Set the Event tyep identification algorithm
+    c_EventIdDefault,
+    c_EventIdExternal };
+
+  //! Set the Event type identification algorithm
   void SetEventIdAlgorithm(int ID) { m_EventIdAlgorithm = ID; }
-
-
-//  static const int c_TrackingAlgoNone;
-//  static const int c_TrackingAlgoModifiedPearson;
-//  static const int c_TrackingAlgoPearson;
-//  static const int c_TrackingAlgoChiSquare;
-//  static const int c_TrackingAlgoGas;
-//  static const int c_TrackingAlgoDirectional;
-//  static const int c_TrackingAlgoBayesian;
-//  static const int c_TrackingAlgoRank;
-//  static const int c_PairKalman3D;
-//  static const int c_PairKalman2D;
-// static const int c_Trackingfirstlayers --
 
   enum c_TrackingAlgo {
     c_TrackingAlgoNone,
@@ -199,26 +199,28 @@ class MRawEventAnalyzer
   //! c_TrackingAlgoChiSquare, c_TrackingAlgoGas, c_TrackingAlgoDirectional, c_TrackingAlgoBayesian, c_TrackingAlgoRank
   void SetTrackingAlgorithm(int ID) { m_TrackingAlgorithm = ID; }
 
-  static const int c_PairDefault;
+  enum c_PairAlgo {
+    c_PairDefault };
 
   //! Set the pair reconstruction algorithm: One of c_PairDefault, c_PairKalman3D or c_PairKalman2D
   void SetPairAlgorithm(int ID) { m_PairAlgorithm = ID; }
 
-
-  static const int c_CSRAlgoNone;
-  static const int c_CSRAlgoFoM;
-  static const int c_CSRAlgoFoME;
-  static const int c_CSRAlgoFoMToF;
-  static const int c_CSRAlgoFoMToFAndE;
-  static const int c_CSRAlgoBayesian;
+  enum c_CSRAlgo {
+    c_CSRAlgoNone,
+    c_CSRAlgoFoM,
+    c_CSRAlgoFoME,
+    c_CSRAlgoFoMToF,
+    c_CSRAlgoFoMToFAndE,
+    c_CSRAlgoBayesian };
 
   static const int c_CSRAlgoTMVA;
 
   //! Set the Compton photon tracking algorithm: One of c_CSRAlgoNone, c_CSRAlgoFoM, c_CSRAlgoFoME, c_CSRAlgoFoMToF, c_CSRAlgoBayesian
   void SetCSRAlgorithm(int ID) { m_CSRAlgorithm = ID; }
 
-  static const int c_DecayAlgoNone;
-  static const int c_DecayAlgoStandard;
+  enum c_DecayAlgo {
+    c_DecayAlgoNone,
+    c_DecayAlgoStandard };
 
   //! Set the radioactive decay detection algorithm: One of c_DecayAlgoNone, c_DecayAlgoStandard
   void SetDecayAlgorithm(int ID) { m_DecayAlgorithm = ID; }
@@ -227,9 +229,7 @@ class MRawEventAnalyzer
   // Section: Interface to set all reconstruction options:
   
   // Options coincidence:
-  void SetCoincidenceWindow(double CoincidenceWindow) {
-    m_CoincidenceWindow = CoincidenceWindow;
-  }
+  void SetCoincidenceWindow(double CoincidenceWindow) { m_CoincidenceWindow = CoincidenceWindow; }
 
   // Options for event clustering
   void SetEventClusteringDistanceCutOff(double DistanceCutOff) { m_EventClusteringDistanceCutOff = DistanceCutOff; }
@@ -240,39 +240,18 @@ class MRawEventAnalyzer
   
   
   // Options hit clustering:
-  void SetStandardClusterizerMinDistanceD1(double MinDistance) {
-    m_StandardClusterizerMinDistanceD1 = MinDistance;
-  }
-  void SetStandardClusterizerMinDistanceD2(double MinDistance) {
-    m_StandardClusterizerMinDistanceD2 = MinDistance;
-  }
-  void SetStandardClusterizerMinDistanceD3(double MinDistance) {
-    m_StandardClusterizerMinDistanceD3 = MinDistance;
-  }
-  void SetStandardClusterizerMinDistanceD4(double MinDistance) {
-    m_StandardClusterizerMinDistanceD4 = MinDistance;
-  }
-  void SetStandardClusterizerMinDistanceD5(double MinDistance) {
-    m_StandardClusterizerMinDistanceD5 = MinDistance;
-  }
-  void SetStandardClusterizerMinDistanceD6(double MinDistance) {
-    m_StandardClusterizerMinDistanceD6 = MinDistance;
-  }
-  void SetStandardClusterizerMinDistanceD7(double MinDistance) {
-    m_StandardClusterizerMinDistanceD7 = MinDistance;
-  }
-  void SetStandardClusterizerMinDistanceD8(double MinDistance) {
-    m_StandardClusterizerMinDistanceD8 = MinDistance;
-  }
-  void SetStandardClusterizerCenterIsReference(bool CenterIsReference) {
-    m_StandardClusterizerCenterIsReference = CenterIsReference;
-  }
+  void SetStandardClusterizerMinDistanceD1(double MinDistance) { m_StandardClusterizerMinDistanceD1 = MinDistance; }
+  void SetStandardClusterizerMinDistanceD2(double MinDistance) { m_StandardClusterizerMinDistanceD2 = MinDistance; }
+  void SetStandardClusterizerMinDistanceD3(double MinDistance) { m_StandardClusterizerMinDistanceD3 = MinDistance; }
+  void SetStandardClusterizerMinDistanceD4(double MinDistance) { m_StandardClusterizerMinDistanceD4 = MinDistance; }
+  void SetStandardClusterizerMinDistanceD5(double MinDistance) { m_StandardClusterizerMinDistanceD5 = MinDistance; }
+  void SetStandardClusterizerMinDistanceD6(double MinDistance) { m_StandardClusterizerMinDistanceD6 = MinDistance; }
+  void SetStandardClusterizerMinDistanceD7(double MinDistance) { m_StandardClusterizerMinDistanceD7 = MinDistance; }
+  void SetStandardClusterizerMinDistanceD8(double MinDistance) { m_StandardClusterizerMinDistanceD8 = MinDistance; }
+  void SetStandardClusterizerCenterIsReference(bool CenterIsReference) { m_StandardClusterizerCenterIsReference = CenterIsReference; }
   void SetAdjacentLevel(const int Value) { m_AdjacentLevel = Value; }
   void SetAdjacentSigma(const double Value) { m_AdjacentSigma = Value; }
-
-  void SetPDFClusterizer(MString BaseFileName) {
-    m_PDFClusterizerBaseFileName = BaseFileName;
-  }
+  void SetPDFClusterizer(MString BaseFileName) { m_PDFClusterizerBaseFileName = BaseFileName; }
 
   // Options electron tracking:
   void SetDoTracking(bool Do) { m_DoTracking = Do; if (Do == false) m_TrackingAlgorithm = c_TrackingAlgoNone; }

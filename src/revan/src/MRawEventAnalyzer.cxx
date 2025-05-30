@@ -82,17 +82,17 @@ ClassImp(MRawEventAnalyzer)
 
 // DONT'T CHANGE THE NUMBERS!!
 
-const int MRawEventAnalyzer::c_CoincidenceAlgoNone   = 0;
-const int MRawEventAnalyzer::c_CoincidenceAlgoWindow = 1;
-
-const int MRawEventAnalyzer::c_EventClusteringAlgoNone     = 0;
-const int MRawEventAnalyzer::c_EventClusteringAlgoTMVA     = 1;
-const int MRawEventAnalyzer::c_EventClusteringAlgoDistance = 2;
-
-const int MRawEventAnalyzer::c_HitClusteringAlgoNone     = 0;
-const int MRawEventAnalyzer::c_HitClusteringAlgoDistance = 1;
-const int MRawEventAnalyzer::c_HitClusteringAlgoAdjacent = 2;
-const int MRawEventAnalyzer::c_HitClusteringAlgoPDF      = 3;
+//const int MRawEventAnalyzer::c_CoincidenceAlgoNone   = 0;
+//const int MRawEventAnalyzer::c_CoincidenceAlgoWindow = 1;
+//
+//const int MRawEventAnalyzer::c_EventClusteringAlgoNone     = 0;
+//const int MRawEventAnalyzer::c_EventClusteringAlgoTMVA     = 1;
+//const int MRawEventAnalyzer::c_EventClusteringAlgoDistance = 2;
+//
+//const int MRawEventAnalyzer::c_HitClusteringAlgoNone     = 0;
+//const int MRawEventAnalyzer::c_HitClusteringAlgoDistance = 1;
+//const int MRawEventAnalyzer::c_HitClusteringAlgoAdjacent = 2;
+//const int MRawEventAnalyzer::c_HitClusteringAlgoPDF      = 3;
 
 //const int MRawEventAnalyzer::c_TrackingAlgoNone            = 0;
 //const int MRawEventAnalyzer::c_TrackingAlgoModifiedPearson = 1;
@@ -103,51 +103,30 @@ const int MRawEventAnalyzer::c_HitClusteringAlgoPDF      = 3;
 //const int MRawEventAnalyzer::c_TrackingAlgoRank            = 6;
 //const int MRawEventAnalyzer::c_TrackingAlgoPearson         = 7;
 
-//namespace MRawEventAnalyzer {
-//Push the "do not change the numbers" constraint to the compiler with enum
-//  enum MRawEventAnalyzer::c_TrackingAlgo { // Also pushed to the header file.
-//    c_TrackingAlgoNone,
-//    c_TrackingAlgoModifiedPearson,
-//    c_TrackingAlgoChiSquare,
-//    c_TrackingAlgoGas,
-//    c_TrackingAlgoDirectional,
-//    c_TrackingAlgoBayesian,
-//    c_TrackingAlgoRank,
-//    c_TrackingAlgoPearson,
-//    c_TrackingAlgoKalman2D,
-//    c_TrackingAlgoKalman3D,
-//    c_TrackingAlgoFirstLayer
-//  };
-
-//  enum c_EventIdAlgo {
-//    c_EventIdDefault, c_EventIdExternal
-//  };
-//}
-
-const int MRawEventAnalyzer::c_PairDefault   = 0;
+//const int MRawEventAnalyzer::c_PairDefault   = 0;
 //const int MRawEventAnalyzer::c_PairKalman3D = 1;
 //const int MRawEventAnalyzer::c_PairKalman2D = 2;
 
-const int MRawEventAnalyzer::c_CSRAlgoNone          = 0;
-const int MRawEventAnalyzer::c_CSRAlgoFoM           = 1;
-const int MRawEventAnalyzer::c_CSRAlgoFoME          = 2;
-const int MRawEventAnalyzer::c_CSRAlgoFoMToF        = 3;
-const int MRawEventAnalyzer::c_CSRAlgoBayesian      = 4;
-const int MRawEventAnalyzer::c_CSRAlgoTMVA          = 5;
-const int MRawEventAnalyzer::c_CSRAlgoFoMToFAndE    = 6;
-
-const int MRawEventAnalyzer::c_DecayAlgoNone     = 0;
-const int MRawEventAnalyzer::c_DecayAlgoStandard = 1;
+//const int MRawEventAnalyzer::c_CSRAlgoNone          = 0;
+//const int MRawEventAnalyzer::c_CSRAlgoFoM           = 1;
+//const int MRawEventAnalyzer::c_CSRAlgoFoME          = 2;
+//const int MRawEventAnalyzer::c_CSRAlgoFoMToF        = 3;
+//const int MRawEventAnalyzer::c_CSRAlgoBayesian      = 4;
+//const int MRawEventAnalyzer::c_CSRAlgoTMVA          = 5;
+//const int MRawEventAnalyzer::c_CSRAlgoFoMToFAndE    = 6;
+//
+//const int MRawEventAnalyzer::c_DecayAlgoNone     = 0;
+//const int MRawEventAnalyzer::c_DecayAlgoStandard = 1;
 
 // DONT'T CHANGE THE NUMBERS!!
 
-const unsigned int MRawEventAnalyzer::c_AnalysisSucess                 = 0;
-const unsigned int MRawEventAnalyzer::c_AnalysisCoincidenceWindowWait  = 1;
-const unsigned int MRawEventAnalyzer::c_AnalysisEventClusteringFailed  = 2;
-const unsigned int MRawEventAnalyzer::c_AnalysisNoEventsInStore        = 3;
-const unsigned int MRawEventAnalyzer::c_AnalysisNoEventsLeftInFile     = 4;
-const unsigned int MRawEventAnalyzer::c_AnalysisSavingEventFailed      = 5;
-const unsigned int MRawEventAnalyzer::c_AnalysisUndefinedError         = 6;
+//const unsigned int MRawEventAnalyzer::c_AnalysisSucess                 = 0;
+//const unsigned int MRawEventAnalyzer::c_AnalysisCoincidenceWindowWait  = 1;
+//const unsigned int MRawEventAnalyzer::c_AnalysisEventClusteringFailed  = 2;
+//const unsigned int MRawEventAnalyzer::c_AnalysisNoEventsInStore        = 3;
+//const unsigned int MRawEventAnalyzer::c_AnalysisNoEventsLeftInFile     = 4;
+//const unsigned int MRawEventAnalyzer::c_AnalysisSavingEventFailed      = 5;
+//const unsigned int MRawEventAnalyzer::c_AnalysisUndefinedError         = 6;
 
 
 
