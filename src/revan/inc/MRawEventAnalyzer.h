@@ -211,9 +211,8 @@ class MRawEventAnalyzer
     c_CSRAlgoFoME,
     c_CSRAlgoFoMToF,
     c_CSRAlgoFoMToFAndE,
-    c_CSRAlgoBayesian };
-
-  static const int c_CSRAlgoTMVA;
+    c_CSRAlgoBayesian,
+    c_CSRAlgoTMVA };
 
   //! Set the Compton photon tracking algorithm: One of c_CSRAlgoNone, c_CSRAlgoFoM, c_CSRAlgoFoME, c_CSRAlgoFoMToF, c_CSRAlgoBayesian
   void SetCSRAlgorithm(int ID) { m_CSRAlgorithm = ID; }

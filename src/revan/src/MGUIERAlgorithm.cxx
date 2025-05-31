@@ -66,6 +66,7 @@ MGUIERAlgorithm::~MGUIERAlgorithm()
   delete m_EventClusteringList;
   delete m_HitClusteringList;
   delete m_TrackingList;
+  delete m_EventIdList;
   delete m_CSRList;
   delete m_PairList;
   //delete m_DecayList;
