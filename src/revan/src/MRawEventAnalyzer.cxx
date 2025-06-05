@@ -55,6 +55,7 @@ using namespace std;
 #include "MEREventClusterizer.h"
 #include "MEREventClusterizerDistance.h"
 #include "MEREventClusterizerTMVA.h"
+#include "MEREventId.h"
 #include "MERTrack.h"
 #include "MERTrackPearson.h"
 #include "MERTrackRank.h"
@@ -529,6 +530,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   // Read events if we have reader
   if (m_Reader != nullptr) {
     RE = m_Reader->GetNextEvent();
+    mout << "AL " << RE << show;
     if (RE == nullptr) { // No more events left in file
       ClearStore = true;
       if (m_EventStore->GetNRawEvents() == 0) {
@@ -696,8 +698,30 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     
     m_TimeHitClusterize += Timer.ElapsedTime();  
   }
-  
-  
+
+
+  // Section I: Event type identification
+
+  if (SelectionsPassed) {
+    Timer.Start();
+
+    if (m_EventId == nullptr) {
+      merr << "Event identification pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!" << show;
+      return c_AnalysisUndefinedError;
+    }
+
+    for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+      MRawEventIncarnations* REI = m_RawEvents->Get(i);
+      m_EventId->Analyze(REI);
+    }
+
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
+
+    m_TimeEventId += Timer.ElapsedTime();
+
+  }
+
+
   // Section D: Tracking:
   
   if (SelectionsPassed == true && m_TrackingAlgorithm > c_TrackingAlgoNone) {
@@ -741,7 +765,9 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       }
     }
     
-    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
+
+    m_TimeCSR += Timer.ElapsedTime();
     
   } else {
     mdebug<<"I am not doing CSR!"<<endl;
@@ -1091,6 +1117,7 @@ bool MRawEventAnalyzer::PostAnalysis()
   mout<<"General timings:"<<endl;
   mout<<"Timer Load     "<<m_TimeLoad<<endl;
   mout<<"Timer Cluster  "<<m_TimeClusterize<<endl;
+  mout<<"Timer EventId    "<<m_TimeEventId<<endl;
   mout<<"Timer Track    "<<m_TimeTrack<<endl;
   mout<<"Timer CSR      "<<m_TimeCSR<<endl;
   mout<<"Timer Finalize "<<m_TimeFinalize<<endl;

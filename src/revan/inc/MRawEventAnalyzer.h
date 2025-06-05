@@ -39,6 +39,7 @@ class MDGeometryQuest;
 class MERCoincidence;
 class MEREventClusterizer;
 class MERHitClusterizer;
+class MEREventId;
 class MERTrack;
 class MERCSR;
 class MERDecay;
@@ -107,13 +108,6 @@ class MRawEventAnalyzer
     c_AnalysisSavingEventFailed,
     c_AnalysisUndefinedError
   };
-//  static const unsigned int c_AnalysisSucess;
-//  static const unsigned int c_AnalysisCoincidenceWindowWait;
-//  static const unsigned int c_AnalysisEventClusteringFailed;
-//  static const unsigned int c_AnalysisNoEventsInStore;
-//  static const unsigned int c_AnalysisNoEventsLeftInFile;
-//  static const unsigned int c_AnalysisSavingEventFailed;
-//  static const unsigned int c_AnalysisUndefinedError;
 
   //! Return the next initial raw event from file
   //! Return zero if the input mode is not file or if the ened of the file has been reached
@@ -354,6 +348,8 @@ class MRawEventAnalyzer
   MEREventClusterizer* m_EventClusterizer;
   //! Hit clustering
   MERHitClusterizer* m_HitClusterizer;
+  //! Event type identification
+  MEREventId* m_EventId;
   //! Electron tracking
   MERTrack* m_Tracker;
   //! Compton sequence reconstruction
@@ -486,6 +482,7 @@ class MRawEventAnalyzer
   double m_TimeLoad;
   double m_TimeEventClusterize;
   double m_TimeHitClusterize;
+  double m_TimeEventId;
   double m_TimeTrack;
   double m_TimeCSR;
   double m_TimeFinalize;
