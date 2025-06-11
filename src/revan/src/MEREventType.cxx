@@ -1,5 +1,5 @@
 /*
- * MEREventId.cxx
+ * MEREventType.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,7 +18,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MEREventId
+// MEREventType
 //
 // Base class for event reconstruction tasks, e.g. find clusters, tracks,
 // Compton sequence
@@ -27,7 +27,7 @@
 
 
 // Include the header:
-#include "MEREventId.h"
+#include "MEREventType.h"
 
 // Standard libs:
 #include <list>
@@ -52,7 +52,7 @@ using namespace std;
 
 
 #ifdef ___CLING___
-ClassImp(MEREventId)
+ClassImp(MEREventType)
 #endif
 
 
@@ -61,9 +61,9 @@ ClassImp(MEREventId)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MEREventId::MEREventId()
+MEREventType::MEREventType()
 {
-  // Construct an instance of MEREventId
+  // Construct an instance of MEREventType
 
   m_SearchPairs = true;
   m_SearchMIPs = true;
@@ -88,16 +88,16 @@ MEREventId::MEREventId()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MEREventId::~MEREventId()
+MEREventType::~MEREventType()
 {
-  // Delete this instance of MEREventId
+  // Delete this instance of MEREventType
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MEREventId::SetParameters(bool SearchMIPs,
+bool MEREventType::SetParameters(bool SearchMIPs,
                              bool SearchPairs,
                              bool SearchCompton,
                              bool SearchPhoto,
@@ -156,13 +156,13 @@ bool MEREventId::SetParameters(bool SearchMIPs,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MEREventId::Analyze(MRawEventIncarnations* REList)
+bool MEREventType::Analyze(MRawEventIncarnations* REList)
 {
   // Analyze the raw event...
 
   massert(m_Geometry != 0);
 
-  MERConstruction::Analyze(REList);
+  MERConstruction::Analyze(REList);//Set m_List to REList
 
   // mdebug<<m_List->ToString()<<endl;
 
@@ -171,47 +171,46 @@ bool MEREventId::Analyze(MRawEventIncarnations* REList)
 
   bool Identified = false;
   MRERawEvent* RE = 0;
-  MRawEventIncarnations* List = 0;
-  MRESE* RESE = 0;
-  MRETrack* Track = 0;
+  //MRawEventIncarnations* List = 0;
+  //MRESE* RESE = 0;
+  //MRETrack* Track = 0;
   MTimer Timer;
 
   // Step A: Preparation:
 
   // Step A (bis): Single-site events
-/*
+
   Timer.Start();
-  if (Identified == false && m_SearchPhoto == true) {
+  if (!Identified && m_SearchPhoto) {
     mdebug <<"* Search for single-site events"<<endl;
-    for (int e = 0; e < m_List ///////////////
-    if (RE->GetNRESE() == 1) {
-      if (RE->GetRESEAt(0)->GetType() == MRESE::c_Hit || 
-        RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
-        RE->SetEventType(MRERawEvent::c_PhotoEvent);
-        RE->SetGoodEvent(true);
-      }
+    for (int e = 0; e < m_List->GetNRawEvents(); e++) {
+      RE = m_List->GetRawEventAt(e);
+      CheckForPhoto(RE);
+      Identified = RE->GetEventType() == MRERawEvent::c_PhotoEvent;
     }
   }
   m_TimePhoto += Timer.ElapsedTime();
-*/
+
 
   // Before we do anything we check if we have at least two hits in one of the defines electron trackers
   bool StartTracking = false;
-  for (int e = 0; e < m_List->GetNRawEvents(); e++) {
-    RE = m_List->GetRawEventAt(e);
-    unsigned int NHits = 0;
-    for (int h = 0; h < RE->GetNRESEs(); ++h) {
-      if (IsInTracker(RE->GetRESEAt(h)) == true) {
-        ++NHits;
+  if (!Identified) {
+    for (int e = 0; e < m_List->GetNRawEvents(); e++) {
+      RE = m_List->GetRawEventAt(e);
+      unsigned int NHits = 0;
+      for (int h = 0; h < RE->GetNRESEs(); ++h) {
+        if (IsInTracker(RE->GetRESEAt(h)) == true) {
+          ++NHits;
+        }
       }
-    }
-    //if (NHits > 50) {
-    //  mout<<"Too many hits for tracking: "<<NHits<<endl;
-    //  return true;
-    //}
-    if (NHits >= 2) {
-      StartTracking = true;
-      break;
+      //if (NHits > 50) {
+      //  mout<<"Too many hits for tracking: "<<NHits<<endl;
+      //  return true;
+      //}
+      if (NHits >= 2) {
+        StartTracking = true;
+        break;
+      }
     }
   }
 /*
@@ -226,14 +225,13 @@ bool MEREventId::Analyze(MRawEventIncarnations* REList)
   Timer.Start();
   if (StartTracking && !Identified && m_SearchPairs) {
     mdebug<<"* Search for pairs: Vertex"<<endl;
-    bool HasVertices = false;
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; e++) {
       RE = m_List->GetRawEventAt(e);
-      List = CheckForPair(RE);
-      if (List != 0) {
-        mdebug<<"List: "<<List->GetNRawEvents()<<endl;
-        HasVertices = true;
+      CheckForPair(RE);
+      Identified = RE->GetEventType() == MRERawEvent::c_PairEvent;
+      /*
+      if () {
         m_List->DeleteRawEvent(RE);
         e--;
         e_max--;
@@ -242,7 +240,7 @@ bool MEREventId::Analyze(MRawEventIncarnations* REList)
         }
         delete List;
         mdebug<<"Tracking: Event has vertex!"<<endl;
-      }
+      }*/
     }
     /*
     if (HasVertices == true) {
@@ -263,8 +261,8 @@ bool MEREventId::Analyze(MRawEventIncarnations* REList)
       Identified = true;
       m_List->SetOptimumEvent(RE);
       m_List->SetBestTryEvent(RE);
-    } // pair...
-  }*/
+    } // pair...*/
+  }
   m_TimePairs += Timer.ElapsedTime();
 
 
@@ -276,18 +274,19 @@ bool MEREventId::Analyze(MRawEventIncarnations* REList)
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
       CheckForMips(RE);
+      //Identified = RE->IsGoodEvent();
       // If we have found a MIP then we are done!
       if (RE->GetEventType() == MRERawEvent::c_MipEvent) {
         mdebug<<"Tracking: Successful identification: MIP (probably muon)"<<endl;
         Identified = true;
-        m_List->SetOptimumEvent(RE);
-        m_List->SetBestTryEvent(RE);
+        //m_List->SetOptimumEvent(RE);
+        //m_List->SetBestTryEvent(RE);
       }
       if (RE->GetEventType() == MRERawEvent::c_ShowerEvent) {
         mdebug<<"Tracking: Successful identification: Shower"<<endl;
         Identified = true;
-        m_List->SetOptimumEvent(RE);
-        m_List->SetBestTryEvent(RE);
+        //m_List->SetOptimumEvent(RE);
+        //m_List->SetBestTryEvent(RE);
       }
     }
     mdebug<<"        MIP results:"<<endl;
@@ -297,7 +296,24 @@ bool MEREventId::Analyze(MRawEventIncarnations* REList)
   m_TimeMips += Timer.ElapsedTime();
 
 
-  // Step C: Compton tracks
+  // Step C: Compton events
+  Timer.Start();
+  if (!Identified && m_SearchCompton) {
+    for (int e = 0; e < m_List->GetNRawEvents(); e++) {
+      RE = m_List->GetRawEventAt(e);
+      CheckForCompton(RE);
+      Identified = RE->GetEventType() == MRERawEvent::c_ComptonEvent;
+    }
+  }
+
+  // Step U: unknown
+  if (!Identified) {
+    // Set all to unknown
+    for (int e = 0; e < m_List->GetNRawEvents(); e++) {
+      RE = m_List->GetRawEventAt(e);
+      RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    }
+  }
 
   // implement smtg here
 
@@ -425,10 +441,10 @@ bool MEREventId::Analyze(MRawEventIncarnations* REList)
 
 
   // Step E: Epilog
-
+/*
   mdebug<<"Result of tracking:"<<endl;
   mdebug<<m_List->ToString()<<endl;
-
+*/
 
   return true;
 }
@@ -438,7 +454,7 @@ bool MEREventId::Analyze(MRawEventIncarnations* REList)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MEREventId::IsInTracker(MRESE* R)
+bool MEREventType::IsInTracker(MRESE* R)
 {
   //! Return true, if the RESE happened in a detector in our list
 
@@ -459,7 +475,33 @@ bool MEREventId::IsInTracker(MRESE* R)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEREventId::CheckForPair(MRERawEvent* RE)
+void MEREventType::CheckForPhoto(MRERawEvent* RE)
+{
+  if (RE->GetNRESEs() == 1) {
+    if (RE->GetRESEAt(0)->GetType() == MRESE::c_Hit || 
+      RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
+      RE->SetEventType(MRERawEvent::c_PhotoEvent);
+      //RE->SetGoodEvent(true);
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEREventType::CheckForCompton(MRERawEvent* RE)
+{
+  // If we get there, this is a Compton event by default
+  RE->SetEventType(MRERawEvent::c_ComptonEvent);
+  //RE->SetGoodEvent(true);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEREventType::CheckForPair(MRERawEvent* RE)
 {
   // Check if this event could be a pair:
   //
@@ -473,7 +515,7 @@ void MEREventId::CheckForPair(MRERawEvent* RE)
 
   mdebug<<"Searching for a pair vertex"<<endl;
 
-  MRawEventIncarnations *List = 0;
+//  MRawEventIncarnations *List = 0;
   bool OnlyHitInLayer = false;
   //unsigned int MaximumLayerJump = 2;
   //MRESE* RESE = 0;
@@ -579,15 +621,18 @@ void MEREventId::CheckForPair(MRERawEvent* RE)
         VertexDirection = -1;
       }
     }
-
+    
     if (Vertex != 0) {
+      /*
       if (List == 0) List = new MRawEventIncarnations();
       RE->SetVertex(Vertex);
       RE->SetVertexDirection(VertexDirection);
       MRERawEvent *New = RE->Duplicate();
       RE->SetVertex(0);
       List->AddRawEvent(New);
-      mdebug<<"Search vertex: Found vertex: "<<Vertex->GetID()<<endl;
+      mdebug<<"Search vertex: Found vertex: "<<Vertex->GetID()<<endl;*/
+      RE->SetEventType(MRERawEvent::c_PairEvent);
+      //RE->SetGoodEvent(true);
       break; // Only take first right now
     }
   }
@@ -599,7 +644,7 @@ void MEREventId::CheckForPair(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEREventId::CheckForMips(MRERawEvent* RE)
+void MEREventType::CheckForMips(MRERawEvent* RE)
 {
   // Check if the events structure can be created by a massive interacting
   // particle like myons:
@@ -716,7 +761,7 @@ void MEREventId::CheckForMips(MRERawEvent* RE)
   // a. Definitely a muon
   if (TrackArray.size() == 1) {
     mdebug<<"==> This was fucking easy! Found a muon!"<<endl;
-
+/*
     // a. Integrate the track into this raw event:
     TrackArray[HighestPos]->LinkSequential();
     for (unsigned int i = 0; i < (unsigned int) TrackArray[HighestPos]->GetNRESEs(); ++i) {
@@ -738,15 +783,16 @@ void MEREventId::CheckForMips(MRERawEvent* RE)
     }
 
     // d. This is a good event...
-    RE->SetPhysicalEvent(Muon);
+    RE->SetPhysicalEvent(Muon);*/
     RE->SetEventType(MRERawEvent::c_MipEvent);
-    RE->SetGoodEvent(true);
+    //RE->SetGoodEvent(true);
   }
   // b. A shower
   else if (TrackArray.size() > 1) {
     mdebug<<"==> Found a shower!"<<endl;
     RE->SetEventType(MRERawEvent::c_ShowerEvent);
-
+    //RE->SetGoodEvent(true);
+/*
     // b. Integrate all tracks into this raw event:
     for (unsigned int i = 0; i < TrackArray.size(); ++i) {
       TrackArray[i]->LinkSequential();
@@ -757,7 +803,7 @@ void MEREventId::CheckForMips(MRERawEvent* RE)
       RE->CompressRESEs();
       RE->AddRESE(TrackArray[i]);
       RE->SetGoodEvent(true);
-    }
+    }*/
   }
 
   // return;
@@ -768,7 +814,7 @@ void MEREventId::CheckForMips(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
-MRawEventIncarnations* MEREventId::TrackComptons(MRERawEvent* RE)
+MRawEventIncarnations* MEREventType::TrackComptons(MRERawEvent* RE)
 {
   mdebug<<"Track Compton events..."<<endl;
 
@@ -1128,7 +1174,7 @@ MRawEventIncarnations* MEREventId::TrackComptons(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MEREventId::PostAnalysis()
+bool MEREventType::PostAnalysis()
 {
   /*
   mout<<"Timings of tracking:"<<endl;
@@ -1146,7 +1192,7 @@ bool MEREventId::PostAnalysis()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MEREventId::ToString(bool CoreOnly) const
+MString MEREventType::ToString(bool CoreOnly) const
 {
   // Dump an options string gor the tra file:
 
@@ -1156,12 +1202,13 @@ MString MEREventId::ToString(bool CoreOnly) const
     out<<"# Tracking - FoM options:"<<endl;
     out<<"# "<<endl;
   }
-  out<<"# Search MIPs:                  "<<m_SearchMIPs<<endl;
-  out<<"# Search Pairs:                 "<<m_SearchPairs<<endl;
   out<<"# Search Photos:              "<<m_SearchPhoto<<endl;
+  out<<"# Search Pairs:                 "<<m_SearchPairs<<endl;
+  out<<"# Search MIPs:                  "<<m_SearchMIPs<<endl;
+  out<<"# Search Compton:              "<<m_SearchCompton<<endl;
   //out<<"# Max. number of ambiguities:   "<<m_MaxNAmbiguities<<endl;
   //out<<"# Max. layer jump Compton:      "<<m_ComptonMaxLayerJump<<endl;
-  out<<"# Number of sequences to keep:  "<<m_NSequencesToKeep<<endl;
+  //out<<"# Number of sequences to keep:  "<<m_NSequencesToKeep<<endl;
   //out<<"# Reject pure ambiguities:      "<<m_RejectPureAmbiguities<<endl;
   if (CoreOnly == false) {
     out<<"# "<<endl;
@@ -1172,5 +1219,5 @@ MString MEREventId::ToString(bool CoreOnly) const
 
 
 
-// MEREventId.cxx: the end...
+// MEREventType.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
