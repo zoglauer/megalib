@@ -1,5 +1,5 @@
 /*
- * MEREventId.h
+ * MEREventType.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MEREventId__
-#define __MEREventId__
+#ifndef __MEREventType__
+#define __MEREventType__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -36,12 +36,12 @@ class MRETrack;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MEREventId : public MERConstruction
+class MEREventType : public MERConstruction
 {
   // public interface:
  public:
-  MEREventId();
-  virtual ~MEREventId();
+  MEREventType();
+  virtual ~MEREventType();
 
   //! Global parameters used by all electron tracking algorithms
   virtual bool SetParameters(bool SearchMIPS, 
@@ -111,7 +111,7 @@ class MEREventId : public MERConstruction
 
 #ifdef ___CLING___
  public:
-  ClassDef(MEREventId, 0) // no description
+  ClassDef(MEREventType, 0) // no description
 #endif
 
 };
