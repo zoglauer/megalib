@@ -78,6 +78,9 @@ class MERTrack : public MERConstruction
   //! Return true, if the RESE happened in a detector in our list
   bool IsInTracker(MRESE* R);
 
+  //! Return true if one Raw Event of m_List is of type EventType
+  bool HasOneREOfType(int EventType);
+
   // private methods:
  private:
 

@@ -38,6 +38,7 @@ using namespace std;
 #include "MGUIOptionsCoincidence.h"
 #include "MGUIOptionsEventClustering.h"
 #include "MGUIOptionsHitClustering.h"
+#include "MGUIOptionsEventType.h"
 #include "MGUIOptionsTracking.h"
 #include "MGUIOptionsCSR.h"
 #include "MGUIOptionsDecay.h"
@@ -99,6 +100,7 @@ void MGUIRevanMain::Create()
   m_MenuReconstruction->AddEntry("Coincidence options", c_OptionsCoincidence);
   m_MenuReconstruction->AddEntry("Event clustering options", c_OptionsEventClustering);
   m_MenuReconstruction->AddEntry("Hit clustering options", c_OptionsHitClustering);
+  m_MenuReconstruction->AddEntry("Event type identification", c_OptionsEventType);
   m_MenuReconstruction->AddEntry("Electron tracking options", c_OptionsTracking);
   m_MenuReconstruction->AddEntry("Compton sequencing options", c_OptionsSequencing);
   //m_MenuReconstruction->AddEntry("Decay options", c_OptionsDecay);
@@ -218,10 +220,6 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
         new MGUIOptionsGeneral(gClient->GetRoot(), this, m_Data);
         break;
 
-      case c_OptionsTracking:
-        new MGUIOptionsTracking(gClient->GetRoot(), this, m_Data, m_Interface->GetGeometry());
-        break;
-
       case c_OptionsCoincidence:
         new MGUIOptionsCoincidence(gClient->GetRoot(), this, m_Data);
         break;
@@ -232,6 +230,14 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
         
       case c_OptionsHitClustering:
         new MGUIOptionsHitClustering(gClient->GetRoot(), this, m_Data);
+        break;
+
+      case c_OptionsEventType:
+        new MGUIOptionsEventType(gClient->GetRoot(), this, m_Data, m_Interface->GetGeometry());
+        break;
+
+      case c_OptionsTracking:
+        new MGUIOptionsTracking(gClient->GetRoot(), this, m_Data, m_Interface->GetGeometry());
         break;
         
       case c_OptionsSequencing:
@@ -384,7 +390,7 @@ void MGUIRevanMain::Open()
     Types[8] = "All files";
     Types[9] = "*";
     Types[10] = 0;
-    Types[1] = 0;
+    Types[11] = 0;
   } else {
     Types[0] = "Analyzed events";
     Types[1] = "*.evta";

@@ -35,8 +35,9 @@
 #include "MSettingsSpectralOptions.h"
 #include "MGUISpectralAnalyzer.h"
 
-class MInterfaceRevan;
+#include "MGUIOptionsEventType.h"
 
+class MInterfaceRevan;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -78,6 +79,7 @@ class MGUIRevanMain : public MGUIMain
     c_OptionsCoincidence, 
     c_OptionsEventClustering, 
     c_OptionsHitClustering, 
+    c_OptionsEventType, 
     c_OptionsTracking, 
     c_OptionsSequencing, 
     c_OptionsDecay, 

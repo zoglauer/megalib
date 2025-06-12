@@ -51,8 +51,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
   void SetHitClusteringAlgorithm(int ID) { m_HitClusteringAlgorithm = ID; }
   int GetHitClusteringAlgorithm() { return m_HitClusteringAlgorithm; }
 
-  void SetEventIdAlgorithm(int ID) {m_EventIdAlgorithm = ID; }
-  int GetEventIdAlgorithm() { return m_EventIdAlgorithm; }
+  void SetEventTypeAlgorithm(int ID) {m_EventTypeAlgorithm = ID; }
+  int GetEventTypeAlgorithm() { return m_EventTypeAlgorithm; }
   
   void SetTrackingAlgorithm(int ID) { m_TrackingAlgorithm = ID; }
   int GetTrackingAlgorithm() { return m_TrackingAlgorithm; }
@@ -173,6 +173,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
   void SetDoTracking(bool Do) { m_DoTracking = Do; }
   bool GetDoTracking() { return m_DoTracking; }
 
+  void SetSearchPhoto(bool Search) { m_SearchPhoto = Search; }
+  bool GetSearchPhoto() { return m_SearchPhoto; }
   void SetSearchPairs(bool Search) { m_SearchPairs = Search; }
   bool GetSearchPairs() { return m_SearchPairs; }
   void SetSearchMIPs(bool Search) { m_SearchMIPs = Search; }
@@ -297,7 +299,7 @@ class MSettingsEventReconstruction : public MSettingsInterface
   int m_CoincidenceAlgorithm;
   int m_EventClusteringAlgorithm;
   int m_HitClusteringAlgorithm;
-  int m_EventIdAlgorithm;
+  int m_EventTypeAlgorithm;
   int m_TrackingAlgorithm;
   int m_PairAlgorithm;
   int m_CSRAlgorithm;
@@ -333,16 +335,18 @@ class MSettingsEventReconstruction : public MSettingsInterface
 
   MString m_PDFClusterizerBaseFileName;
 
-  // Electron tracking:
-  bool m_DoTracking;
+  // Event type identification
   bool m_SearchPairs;
   bool m_SearchMIPs;
   bool m_SearchComptons;
+  bool m_SearchPhoto;
+  int m_NLayersForVertexSearch;
 
+  // Electron tracking:
+  bool m_DoTracking;
   int m_MaxComptonJump;
   int m_NTrackSequencesToKeep;
   bool m_RejectPurelyAmbiguousTrackSequences;
-  int m_NLayersForVertexSearch;
   double m_HeightX0;
   double m_SigmaHitPos;
 

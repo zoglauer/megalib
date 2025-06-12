@@ -39,7 +39,7 @@ class MDGeometryQuest;
 class MERCoincidence;
 class MEREventClusterizer;
 class MERHitClusterizer;
-class MEREventId;
+class MEREventType;
 class MERTrack;
 class MERCSR;
 class MERDecay;
@@ -168,12 +168,12 @@ class MRawEventAnalyzer
   //! Set the clustering algorithm: One of c_ClusteringAlgoNone, c_ClusteringAlgoDistance, c_ClusteringAlgoAdjacent;
   void SetHitClusteringAlgorithm(int ID) { m_HitClusteringAlgorithm = ID; }
 
-  enum c_EventIdAlgo {
-    c_EventIdDefault,
-    c_EventIdExternal };
+  enum c_EventTypeAlgo {
+    c_EventTypeDefault,
+    c_EventTypeExternal };
 
   //! Set the Event type identification algorithm
-  void SetEventIdAlgorithm(int ID) { m_EventIdAlgorithm = ID; }
+  void SetEventTypeAlgorithm(int ID) { m_EventTypeAlgorithm = ID; }
 
   enum c_TrackingAlgo {
     c_TrackingAlgoNone,
@@ -246,18 +246,21 @@ class MRawEventAnalyzer
   void SetAdjacentSigma(const double Value) { m_AdjacentSigma = Value; }
   void SetPDFClusterizer(MString BaseFileName) { m_PDFClusterizerBaseFileName = BaseFileName; }
 
-  // Options electron tracking:
-  void SetDoTracking(bool Do) { m_DoTracking = Do; if (Do == false) m_TrackingAlgorithm = c_TrackingAlgoNone; }
+  // Event type identification:
   void SetSearchPairTracks(bool Search) { m_SearchPairTracks = Search; }
   void SetSearchMIPTracks(bool Search) { m_SearchMIPTracks = Search; }
+  void SetSearchPhotoEvent(bool Search) { m_SearchPhotoEvent = Search; }
   void SetSearchComptonTracks(bool Search) { m_SearchComptonTracks = Search; }
+  void SetNLayersForVertexSearch(unsigned int NLayersForVertexSearch) { m_NLayersForVertexSearch = NLayersForVertexSearch; }
+
+  // Options electron tracking:
+  void SetDoTracking(bool Do) { m_DoTracking = Do; if (Do == false) m_TrackingAlgorithm = c_TrackingAlgoNone; }
   void SetKeepAllComptonTracks(bool Keep) { m_KeepAllComptonTracks = Keep; }
   void SetAssumeTrackTopBottom(bool Flag) { m_AssumeTrackTopBottom = Flag; }
   void SetBETFileName(MString FileName) { m_BETFileName = FileName; }
   void SetMaxComptonJump(unsigned int Jump) { m_MaxComptonJump = Jump; }
   void SetNTrackSequencesToKeep(unsigned int Jump) { m_NTrackSequencesToKeep = Jump; }
   void SetRejectPurelyAmbiguousTrackSequences(bool Flag) { m_RejectPurelyAmbiguousTrackSequences = Flag; }
-  void SetNLayersForVertexSearch(unsigned int NLayersForVertexSearch) { m_NLayersForVertexSearch = NLayersForVertexSearch; }
   void SetElectronTrackingDetectorList(vector<MString> DetectorList) { m_ElectronTrackingDetectorList = DetectorList; }
 
   // Options Kalman Filter
@@ -349,9 +352,11 @@ class MRawEventAnalyzer
   //! Hit clustering
   MERHitClusterizer* m_HitClusterizer;
   //! Event type identification
-  MEREventId* m_EventId;
+  MEREventType* m_EventType;
   //! Electron tracking
   MERTrack* m_Tracker;
+  //! Pair reconstruction
+//  MERPair* m_Pair;
   //! Compton sequence reconstruction
   MERCSR* m_CSR;
   //! Decay search
@@ -388,7 +393,7 @@ class MRawEventAnalyzer
   int m_CoincidenceAlgorithm;
   int m_EventClusteringAlgorithm;
   int m_HitClusteringAlgorithm;
-  int m_EventIdAlgorithm;
+  int m_EventTypeAlgorithm;
   int m_TrackingAlgorithm;
   int m_PairAlgorithm;
   int m_CSRAlgorithm;
@@ -418,11 +423,15 @@ class MRawEventAnalyzer
 
   MString m_PDFClusterizerBaseFileName;
 
-  // Electron tracking:
-  bool m_DoTracking;
+  // Event type identification
+  bool m_SearchPhotoEvent;
   bool m_SearchPairTracks;
   bool m_SearchMIPTracks;
   bool m_SearchComptonTracks;
+  unsigned int m_NLayersForVertexSearch;
+  
+  // Electron tracking:
+  bool m_DoTracking;
   bool m_KeepAllComptonTracks;
   bool m_AssumeTrackTopBottom;
   MString m_BETFileName;
@@ -430,7 +439,6 @@ class MRawEventAnalyzer
   unsigned int m_MaxComptonJump;
   unsigned int m_NTrackSequencesToKeep;
   bool m_RejectPurelyAmbiguousTrackSequences;
-  unsigned int m_NLayersForVertexSearch;
 
   vector<MString> m_ElectronTrackingDetectorList;
 
@@ -482,7 +490,7 @@ class MRawEventAnalyzer
   double m_TimeLoad;
   double m_TimeEventClusterize;
   double m_TimeHitClusterize;
-  double m_TimeEventId;
+  double m_TimeEventType;
   double m_TimeTrack;
   double m_TimeCSR;
   double m_TimeFinalize;
