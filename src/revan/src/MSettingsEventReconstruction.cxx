@@ -50,7 +50,7 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_CoincidenceAlgorithm = 0;
   m_EventClusteringAlgorithm = 0;
   m_HitClusteringAlgorithm = 1;
-  m_EventIdAlgorithm = 0;
+  m_EventTypeAlgorithm = 0;
   m_TrackingAlgorithm = 0;
   m_PairAlgorithm = 0;
   m_CSRAlgorithm = 1;
@@ -162,7 +162,7 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "CoincidenceAlgorithm", m_CoincidenceAlgorithm);
   new MXmlNode(Node, "EventClusteringAlgorithm", m_EventClusteringAlgorithm);
   new MXmlNode(Node, "HitClusteringAlgorithm", m_HitClusteringAlgorithm);
-  new MXmlNode(Node, "EventIdAlgorithm", m_EventIdAlgorithm);
+  new MXmlNode(Node, "EventTypeAlgorithm", m_EventTypeAlgorithm);
   new MXmlNode(Node, "TrackingAlgorithm", m_TrackingAlgorithm);
   new MXmlNode(Node, "PairAlgorithm", m_PairAlgorithm);
   new MXmlNode(Node, "CSRAlgorithm", m_CSRAlgorithm);
@@ -260,8 +260,8 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
 //  if ((aNode = Node->GetNode("ClusteringAlgorithm")) != 0) {  // TODO: Delete in 2020
 //    m_HitClusteringAlgorithm = aNode->GetValueAsInt();
 //  }
-  if ((aNode = Node->GetNode("EventIdAlgorithm")) != 0) {
-    m_EventIdAlgorithm = aNode->GetValueAsInt();
+  if ((aNode = Node->GetNode("EventTypeAlgorithm")) != 0) {
+    m_EventTypeAlgorithm = aNode->GetValueAsInt();
   }
   if ((aNode = Node->GetNode("TrackingAlgorithm")) != 0) {
     m_TrackingAlgorithm = aNode->GetValueAsInt();

@@ -191,6 +191,21 @@ bool MERTrack::SetParameters(bool SearchMIPs,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MERTrack::HasOneREOfType(int EventType) {
+  MRERawEvent* RE = nullptr;
+  for (int e = 0; e < m_List->GetNRawEvents(); e++) {
+    RE = m_List->GetRawEventAt(e);
+    if (RE->GetEventType() == EventType) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MERTrack::Analyze(MRawEventIncarnations* REList)
 {
   // Analyze the raw event...
@@ -204,7 +219,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
   mdebug<<"Starting tracking"<<endl;
 
 
-  bool Identified = false;
+  //bool Identified = false;
   MRERawEvent* RE = 0;
   MRawEventIncarnations* List = 0;
   MRESE* RESE = 0;
@@ -239,47 +254,51 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
   }
 
   // Step B: Pairs
-
   Timer.Start();
-  if (m_SearchPairs == true) {
+  if (HasOneREOfType(MRERawEvent::c_PairEvent)) {
     mdebug<<"* Search for pairs: Vertex"<<endl;
     bool HasVertices = false;
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; e++) {
       RE = m_List->GetRawEventAt(e);
-      List = CheckForPair(RE);
-      if (List != 0) {
-        mdebug<<"List: "<<List->GetNRawEvents()<<endl;
-        HasVertices = true;
-        m_List->DeleteRawEvent(RE);
-        e--;
-        e_max--;
-        for (int i = 0; i < List->GetNRawEvents(); i++) {
-          m_List->AddRawEvent(List->GetRawEventAt(i));
+      if (RE->GetEventType() == MRERawEvent::c_PairEvent) {// Iterate only over pair events
+        List = CheckForPair(RE);//Check for vertices
+        if (List) { // if vertices
+          mdebug<<"List: "<<List->GetNRawEvents()<<endl;
+          HasVertices = true;
+          m_List->DeleteRawEvent(RE);
+          e--;
+          e_max--;
+          for (int i = 0; i < List->GetNRawEvents(); i++) {
+            m_List->AddRawEvent(List->GetRawEventAt(i));
+          }
+          delete List;
+          List = nullptr;
+          mdebug<<"Tracking: Event has vertex!"<<endl;
         }
-        delete List;
-        mdebug<<"Tracking: Event has vertex!"<<endl;
-      }
-    }
-    if (HasVertices == true) {
-      // Let's analyze pairs:
-      mdebug<<"* Step: Pair tracking"<<endl;
-      mdebug<<m_List->ToString()<<endl;
-      int e_max = m_List->GetNRawEvents();
-      for (int e = 0; e < e_max; e++) {
-        RE = m_List->GetRawEventAt(e);
-        if (RE->GetVertex() != 0) {
-          TrackPairs(RE);
+        if (HasVertices == true) {
+          // Let's analyze pairs:
+          mdebug<<"* Step: Pair tracking"<<endl;
+          mdebug<<m_List->ToString()<<endl;
+          int e_max = m_List->GetNRawEvents();
+          for (int e = 0; e < e_max; e++) {
+            RE = m_List->GetRawEventAt(e);
+            if (RE->GetVertex() != 0) {
+              TrackPairs(RE);
+            }
+          }
+          mdebug<<"Tracking:  Successful identification: Pair event!"<<endl;
+          mdebug<<"        Pair results:"<<endl;
+          mdebug<<m_List->ToString()<<endl;
+          mdebug<<endl;
+          //Identified = true;
+          m_List->SetOptimumEvent(RE);
+          m_List->SetBestTryEvent(RE);
+        } else { // if no vertices
+          RE->SetEventType(MRERawEvent::c_UnknownEvent); // discard
         }
       }
-      mdebug<<"Tracking:  Successful identification: Pair event!"<<endl;
-      mdebug<<"        Pair results:"<<endl;
-      mdebug<<m_List->ToString()<<endl;
-      mdebug<<endl;
-      Identified = true;
-      m_List->SetOptimumEvent(RE);
-      m_List->SetBestTryEvent(RE);
-    } // pair...
+    } // end for
   }
   m_TimePairs += Timer.ElapsedTime();
 
@@ -287,23 +306,27 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
   // Step C: Mips
 
   Timer.Start();
-  if (Identified == false && m_SearchMIPs == true) {
+  if (HasOneREOfType(MRERawEvent::c_MipEvent) || HasOneREOfType(MRERawEvent::c_ShowerEvent)) {
+  //if (m_SearchMIPs == true) {
     mdebug<<"* Search for MIPs"<<endl;
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
-      CheckForMips(RE);
-      // If we have found a MIP then we are done!
-      if (RE->GetEventType() == MRERawEvent::c_MipEvent) {
-        mdebug<<"Tracking: Successful identification: MIP (probably muon)"<<endl;
-        Identified = true;
-        m_List->SetOptimumEvent(RE);
-        m_List->SetBestTryEvent(RE);
-      }
-      if (RE->GetEventType() == MRERawEvent::c_ShowerEvent) {
-        mdebug<<"Tracking: Successful identification: Shower"<<endl;
-        Identified = true;
-        m_List->SetOptimumEvent(RE);
-        m_List->SetBestTryEvent(RE);
+      if (RE->GetEventType() == MRERawEvent::c_MipEvent || RE->GetEventType() == MRERawEvent::c_ShowerEvent) {// Iterate only over MIP/shower events
+        CheckForMips(RE);
+        // If we have found a MIP then we are done!
+        if (RE->GetEventType() == MRERawEvent::c_MipEvent) {
+          mdebug<<"Tracking: Successful identification: MIP (probably muon)"<<endl;
+          //Identified = true;
+          m_List->SetOptimumEvent(RE);
+          m_List->SetBestTryEvent(RE);
+        } else if (RE->GetEventType() == MRERawEvent::c_ShowerEvent) {
+          mdebug<<"Tracking: Successful identification: Shower"<<endl;
+          //Identified = true;
+          m_List->SetOptimumEvent(RE);
+          m_List->SetBestTryEvent(RE);
+        } else {
+          RE->SetEventType(MRERawEvent::c_UnknownEvent); // discard
+        }
       }
     }
     mdebug<<"        MIP results:"<<endl;
@@ -315,7 +338,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
   // Step C: Compton tracks:
 
-  if (Identified == false && m_SearchComptons == true) {
+  if (HasOneREOfType(MRERawEvent::c_ComptonEvent)) {
     mdebug<<"* Search for Comptons"<<endl;
 
     // Step C.1: Generate the links
@@ -326,19 +349,21 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; e++) {
       RE = m_List->GetRawEventAt(e);
-      List = TrackComptons(RE);
-      if (List != 0) {
-        m_List->DeleteRawEvent(RE);
-        e--;
-        e_max--;
-        for (int i = 0; i < List->GetNRawEvents(); i++) {
-          m_List->AddRawEvent(List->GetRawEventAt(i));
+      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+        List = TrackComptons(RE);
+        if (List != 0) {
+          m_List->DeleteRawEvent(RE);
+          e--;
+          e_max--;
+          for (int i = 0; i < List->GetNRawEvents(); i++) {
+            m_List->AddRawEvent(List->GetRawEventAt(i));
+          }
+          delete List;
+          List = nullptr;
         }
-        delete List;
       }
     }
     m_TimeComptonSequences += Timer.ElapsedTime();
-
 
     // We now accept only events with the maximum possible number of tracks,
     // if the flag is set
@@ -348,10 +373,10 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
       for (int e = 0; e < m_List->GetNRawEvents(); e++) {
         int CurrentN = 0;
         RE = m_List->GetRawEventAt(e);
-        for (int r = 0; r < RE->GetNRESEs(); r++) {
-          RESE = RE->GetRESEAt(r);
-          if (IsInTracker(RESE) == true) {
-            CurrentN++;
+        if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+          for (int r = 0; r < RE->GetNRESEs(); r++) {
+            RESE = RE->GetRESEAt(r);
+            if (IsInTracker(RESE) == true) CurrentN++;
           }
         }
         if (CurrentN < MinN) MinN = CurrentN;
@@ -360,9 +385,11 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
       for (int e = 0; e < m_List->GetNRawEvents(); e++) {
         int CurrentN = 0;
         RE = m_List->GetRawEventAt(e);
-        for (int r = 0; r < RE->GetNRESEs(); r++) {
-          RESE = RE->GetRESEAt(r);
-          if (IsInTracker(RESE) == true) CurrentN++;
+        if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+          for (int r = 0; r < RE->GetNRESEs(); r++) {
+            RESE = RE->GetRESEAt(r);
+            if (IsInTracker(RESE) == true) CurrentN++;
+          }
         }
         if (CurrentN > MinN) {
           m_List->DeleteRawEvent(RE);
@@ -384,21 +411,23 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
+      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
 
-      for (int r = 0; r < RE->GetNRESEs(); r++) {
-        RESE = RE->GetRESEAt(r);
-        IDRESE = RESE->GetID();
-        if (RESE->GetType() == MRESE::c_Track) {
-          Track = (MRETrack *) RESE;
-          if (Track->GetStartPoint() == 0) {
-            massert(Track->GetNEndPoints() == 2);
+        for (int r = 0; r < RE->GetNRESEs(); r++) {
+          RESE = RE->GetRESEAt(r);
+          IDRESE = RESE->GetID();
+          if (RESE->GetType() == MRESE::c_Track) {
+            Track = (MRETrack *) RESE;
+            if (Track->GetStartPoint() == 0) {
+              massert(Track->GetNEndPoints() == 2);
 
-            IDEP = Track->GetEndPointAt(0)->GetID();
-            REdup = RE->Duplicate();
-            ((MRETrack *) (REdup->GetRESE(IDRESE)))->SetStartPoint(((MRETrack *) (REdup->GetRESE(IDRESE)))->GetRESE(IDEP));
-            m_List->AddRawEvent(REdup);
+              IDEP = Track->GetEndPointAt(0)->GetID();
+              REdup = RE->Duplicate();
+              ((MRETrack *) (REdup->GetRESE(IDRESE)))->SetStartPoint(((MRETrack *) (REdup->GetRESE(IDRESE)))->GetRESE(IDEP));
+              m_List->AddRawEvent(REdup);
 
-            Track->SetStartPoint(Track->GetEndPointAt(1));
+              Track->SetStartPoint(Track->GetEndPointAt(1));
+            }
           }
         }
       }
@@ -408,7 +437,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
-      EvaluateTracks(RE);
+      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) EvaluateTracks(RE);
     }
     SortByTrackQualityFactor(m_List);
 
@@ -1005,7 +1034,7 @@ void MERTrack::EliminatePairDeviations(MRERawEvent* RE, MRETrack* Track)
 void MERTrack::CheckForMips(MRERawEvent* RE)
 {
   // Check if the events structure can be created by a massive interacting
-  // particle like myons:
+  // particle like muons:
   //
   // The typical pattern of a MIP is:
   // We have a straight track with serveral hits which, do not belong to the
@@ -1048,7 +1077,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
   }
 
 
-  // We look for straight tripple combinations:
+  // We look for straight triple combinations:
   unsigned int max = D1Hits.size();
   MRESE* iRESE;
   MRESE* jRESE;
@@ -1283,7 +1312,6 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
   if (NAmbiguities <= m_MaxNAmbiguities) {
     // Find ambiguous sequences
     mdebug<<"Testing ambiguous sequences"<<endl;
-
     List->AddRawEvent(RE->Duplicate());
 
     MRESE* RESEmain = 0;

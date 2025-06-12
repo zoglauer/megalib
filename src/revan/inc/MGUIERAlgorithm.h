@@ -60,10 +60,10 @@ class MGUIERAlgorithm : public MGUIDialog
   MGUIERBList* m_CoincidenceList;
   MGUIERBList* m_EventClusteringList;
   MGUIERBList* m_HitClusteringList;
-  MGUIERBList* m_EventIdList;
+  MGUIERBList* m_EventTypeList;
   MGUIERBList* m_TrackingList;
   MGUIERBList* m_CSRList;
-  MGUIERBList* m_PairList;
+//  MGUIERBList* m_PairList;
   //MGUIERBList* m_DecayList;
 
 

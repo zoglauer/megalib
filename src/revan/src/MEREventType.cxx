@@ -1199,7 +1199,7 @@ MString MEREventType::ToString(bool CoreOnly) const
   ostringstream out;
 
   if (CoreOnly == false) {
-    out<<"# Tracking - FoM options:"<<endl;
+    out<<"# Event type - options:"<<endl;
     out<<"# "<<endl;
   }
   out<<"# Search Photos:              "<<m_SearchPhoto<<endl;

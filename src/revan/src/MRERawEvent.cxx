@@ -124,7 +124,6 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   // Some kind of copy constructor
 
   Init();
-
   SetGeometry(RE->GetGeometry());
   SetGoodEvent(RE->IsGoodEvent());
 
@@ -1011,7 +1010,6 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
 
   // This is only an experimental flag --- don't activate it unless you know what you are doing...
   bool UseCenterD2 = false;
-
   if (m_Event != nullptr && m_Event->GetType() != m_EventType) {
     // We had an upgrade...
     delete m_Event;
@@ -1019,7 +1017,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
   }
 
   if (m_Event == nullptr) {
-    if (m_EventType == c_ComptonEvent) {
+    if (m_EventType == c_ComptonEvent && m_Start != nullptr) {
       MComptonEvent* CE = new MComptonEvent();
       double ED1 = 0.0;
       double ED2 = 0.0;
@@ -1115,10 +1113,10 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       }
       
       m_Event = (MPhysicalEvent*) CE;
-    } else if (m_EventType == c_PairEvent) {
+    } else if (m_EventType == c_PairEvent && m_ElectronTrack && m_PositronTrack) {
       // We need to have two tracks:
-      massert(m_ElectronTrack != 0);
-      massert(m_PositronTrack != 0);
+      //massert(m_ElectronTrack != 0);
+      //massert(m_PositronTrack != 0); now in the condition above
 
       MPairEvent* Pair = new MPairEvent();
       
@@ -1153,31 +1151,31 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       m_Event = (MPhysicalEvent*) U;
       m_Event->SetBad(true, GetRejectionReasonAsString(true));
     }
-  }
 
-  m_Event->Set(*dynamic_cast<MRotationInterface*>(this));
-  
-  m_Event->SetAllHitsGood(IsValid());
-  m_Event->SetTime(m_EventTime);
-  m_Event->SetId(m_EventID);
-  m_Event->SetTimeWalk(m_TimeWalk);
-  m_Event->SetDecay(m_Decay);
-  if (m_ExternalBadEventFlag == true) {
-    m_Event->SetBad(m_ExternalBadEventFlag, m_ExternalBadEventString);
-  }
-
-  for (unsigned int m = 0; m < m_Measurements.size(); ++m) {
-    if (m_Measurements[m]->GetType() == MREAM::c_StartInformation) {
-      MREAMStartInformation* Start = dynamic_cast<MREAMStartInformation*>(m_Measurements[m]);
-      m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection(), Start->GetPolarization(), Start->GetEnergy());
+    m_Event->Set(*dynamic_cast<MRotationInterface*>(this));
+    
+    m_Event->SetAllHitsGood(IsValid());
+    m_Event->SetTime(m_EventTime);
+    m_Event->SetId(m_EventID);
+    m_Event->SetTimeWalk(m_TimeWalk);
+    m_Event->SetDecay(m_Decay);
+    if (m_ExternalBadEventFlag == true) {
+      m_Event->SetBad(m_ExternalBadEventFlag, m_ExternalBadEventString);
     }
-  }
-  m_Event->ClearComments(); // Since this info might be added multiple times.
-  for (unsigned int c = 0; c < m_Comments.size(); ++c) {
-    m_Event->AddComment(m_Comments[c]);
-  }
 
-  m_Event->Validate();
+    for (unsigned int m = 0; m < m_Measurements.size(); ++m) {
+      if (m_Measurements[m]->GetType() == MREAM::c_StartInformation) {
+        MREAMStartInformation* Start = dynamic_cast<MREAMStartInformation*>(m_Measurements[m]);
+        m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection(), Start->GetPolarization(), Start->GetEnergy());
+      }
+    }
+    m_Event->ClearComments(); // Since this info might be added multiple times.
+    for (unsigned int c = 0; c < m_Comments.size(); ++c) {
+      m_Event->AddComment(m_Comments[c]);
+    }
+
+    m_Event->Validate();
+  }
 
   return m_Event;
 }

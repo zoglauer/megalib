@@ -55,7 +55,7 @@ using namespace std;
 #include "MEREventClusterizer.h"
 #include "MEREventClusterizerDistance.h"
 #include "MEREventClusterizerTMVA.h"
-#include "MEREventId.h"
+#include "MEREventType.h"
 #include "MERTrack.h"
 #include "MERTrackPearson.h"
 #include "MERTrackRank.h"
@@ -169,6 +169,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_CoincidenceAlgorithm = c_CoincidenceAlgoNone;
   m_EventClusteringAlgorithm = c_EventClusteringAlgoNone;
   m_HitClusteringAlgorithm = c_HitClusteringAlgoAdjacent;
+  m_EventTypeAlgorithm = c_EventTypeDefault;
   m_TrackingAlgorithm = c_TrackingAlgoNone;
   m_PairAlgorithm = c_PairDefault;
   m_CSRAlgorithm = c_CSRAlgoFoM;
@@ -186,11 +187,13 @@ MRawEventAnalyzer::MRawEventAnalyzer()
 
   m_AdjacentLevel = 2;
   m_AdjacentSigma = 0.0;
-
-  m_DoTracking = true;
+  
+  m_SearchPhotoEvent = true;
   m_SearchPairTracks = true;
   m_SearchMIPTracks = false;
   m_SearchComptonTracks = true;
+
+  m_DoTracking = true;
   m_KeepAllComptonTracks = false;
   m_AssumeTrackTopBottom = false;
 
@@ -239,6 +242,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_Coincidence = nullptr;
   m_EventClusterizer = nullptr;
   m_HitClusterizer = nullptr;
+  m_EventType = nullptr;
   m_Tracker = nullptr;
   m_CSR = nullptr;
   m_Decay = nullptr;
@@ -270,6 +274,7 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
   delete m_Coincidence;
   delete m_EventClusterizer;
   delete m_HitClusterizer;
+  delete m_EventType;
   delete m_Tracker;
   delete m_CSR;
   delete m_Decay;
@@ -530,7 +535,6 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   // Read events if we have reader
   if (m_Reader != nullptr) {
     RE = m_Reader->GetNextEvent();
-    mout << "AL " << RE << show;
     if (RE == nullptr) { // No more events left in file
       ClearStore = true;
       if (m_EventStore->GetNRawEvents() == 0) {
@@ -595,7 +599,6 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     RE = m_EventStore->GetRawEventAt(0);
     m_EventStore->RemoveRawEvent(RE);
   }
-
   if (RE == nullptr) {
     merr<<"We don't have a raw event..."<<fatal;
     return c_AnalysisUndefinedError;
@@ -657,7 +660,6 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   
   
   // Section B: Event clustering:
-  
   if (SelectionsPassed == true && m_EventClusteringAlgorithm > c_EventClusteringAlgoNone) {
     Timer.Start();
     
@@ -675,7 +677,6 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   
   
   // Section C: Hit Clustering:
-  
   if (SelectionsPassed == true && m_HitClusteringAlgorithm > c_HitClusteringAlgoNone) {
     Timer.Start();
     
@@ -701,23 +702,22 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
 
 
   // Section I: Event type identification
-
   if (SelectionsPassed) {
     Timer.Start();
 
-    if (m_EventId == nullptr) {
+    if (m_EventType == nullptr) {
       merr << "Event identification pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!" << show;
       return c_AnalysisUndefinedError;
     }
 
     for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
       MRawEventIncarnations* REI = m_RawEvents->Get(i);
-      m_EventId->Analyze(REI);
+      m_EventType->Analyze(REI);
     }
 
     if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
 
-    m_TimeEventId += Timer.ElapsedTime();
+    m_TimeEventType += Timer.ElapsedTime();
 
   }
 
@@ -1021,6 +1021,10 @@ bool MRawEventAnalyzer::PostAnalysis()
     out<<"# "<<endl;
     out<<m_HitClusterizer->ToString();
   }
+  if (m_EventType != nullptr) {
+    out<<"# "<<endl;
+    out<<m_EventType->ToString();
+  }
   if (m_Tracker != nullptr) {
     out<<"# "<<endl;
     out<<m_Tracker->ToString();
@@ -1117,7 +1121,7 @@ bool MRawEventAnalyzer::PostAnalysis()
   mout<<"General timings:"<<endl;
   mout<<"Timer Load     "<<m_TimeLoad<<endl;
   mout<<"Timer Cluster  "<<m_TimeClusterize<<endl;
-  mout<<"Timer EventId    "<<m_TimeEventId<<endl;
+  mout<<"Timer EventType"<<m_TimeEventType<<endl;
   mout<<"Timer Track    "<<m_TimeTrack<<endl;
   mout<<"Timer CSR      "<<m_TimeCSR<<endl;
   mout<<"Timer Finalize "<<m_TimeFinalize<<endl;
@@ -1126,6 +1130,9 @@ bool MRawEventAnalyzer::PostAnalysis()
   
   if (m_HitClusterizer != nullptr) {
     m_HitClusterizer->PostAnalysis();
+  }
+  if (m_EventType != nullptr) {
+    m_EventType->PostAnalysis();
   }
   if (m_Tracker != nullptr) {
     m_Tracker->PostAnalysis();
@@ -1276,6 +1283,83 @@ bool MRawEventAnalyzer::PreAnalysis()
       Return = false;
     }
 
+    // Event type identification
+    delete m_EventType;
+    m_EventType = nullptr;
+    if (m_EventTypeAlgorithm == c_EventTypeDefault) {
+      m_EventType = new MEREventType();
+    } else if (m_EventTypeAlgorithm == c_EventTypeExternal) {
+      merr << "External event type identification not implemented yet!" << show;
+      Return = false;
+    } else {
+      merr<<"Unknown event type algorithm: "<<m_EventTypeAlgorithm<<endl;
+      Return = false;
+    }
+    if (m_EventType) {
+      m_EventType->SetGeometry(m_Geometry);
+      m_EventType->SetParameters( m_SearchMIPTracks,
+                                  m_SearchPairTracks,
+                                  m_SearchComptonTracks,
+                                  m_SearchPhotoEvent,
+                                  m_NLayersForVertexSearch,
+                                  m_ElectronTrackingDetectorList);
+    }
+
+    // Electron tracking
+    delete m_Tracker;
+    m_Tracker = nullptr;
+    if (m_TrackingAlgorithm == c_TrackingAlgoModifiedPearson) {
+      m_Tracker = new MERTrack();
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoPearson) {
+      m_Tracker = new MERTrackPearson();
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoRank) {
+      m_Tracker = new MERTrackRank();
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoChiSquare) {
+      m_Tracker = new MERTrackChiSquare();
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoGas) {
+      m_Tracker = new MERTrackGas();
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoDirectional) {
+      m_Tracker = new MERTrackDirectional();
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoBayesian) {
+      m_Tracker = new MERTrackBayesian();
+      if (dynamic_cast<MERTrackBayesian*>(m_Tracker)->
+          SetSpecialParameters(m_BETFileName) == false) {
+        Return = false;
+      }
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoKalman3D) {
+      m_Tracker = new MERTrackKalman3D();
+      dynamic_cast<MERTrackKalman3D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoKalman2D) {
+      m_Tracker = new MERTrackKalman2D();
+      dynamic_cast<MERTrackKalman2D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoNone) {
+      // Nothing
+    } else {
+      merr<<"Unknown electron tracking algorithm: "<<m_TrackingAlgorithm<<endl;
+      Return = false;
+    }
+
+    if (m_Tracker != nullptr) {
+      m_Tracker->SetGeometry(m_Geometry);
+      m_Tracker->SetParameters(m_SearchMIPTracks,
+                               m_SearchPairTracks,
+                               m_SearchComptonTracks,
+                               m_MaxComptonJump,
+                               m_NTrackSequencesToKeep,
+                               m_RejectPurelyAmbiguousTrackSequences,
+                               m_NLayersForVertexSearch,
+                               m_ElectronTrackingDetectorList);
+    }
+
+/*
+    // Pair Algorithm
+    if (m_PairAlgorithm == c_PairDefault) {
+      m_Tracker = new MERTrack();
+    } else {
+      Return = false;
+    }*/
+
+
     // Compton sequence reconstruction
     delete m_CSR;
     m_CSR = nullptr;
@@ -1352,60 +1436,6 @@ bool MRawEventAnalyzer::PreAnalysis()
       merr<<"Unknown compton sequence reocnstruction algorithm: "<<m_CSRAlgorithm<<endl;
       Return = false;
     }
-
-    // Electron tracking
-    delete m_Tracker;
-    m_Tracker = nullptr;
-    if (m_TrackingAlgorithm == c_TrackingAlgoModifiedPearson) {
-      m_Tracker = new MERTrack();
-    } else if (m_TrackingAlgorithm == c_TrackingAlgoPearson) {
-      m_Tracker = new MERTrackPearson();
-    } else if (m_TrackingAlgorithm == c_TrackingAlgoRank) {
-      m_Tracker = new MERTrackRank();
-    } else if (m_TrackingAlgorithm == c_TrackingAlgoChiSquare) {
-      m_Tracker = new MERTrackChiSquare();
-    } else if (m_TrackingAlgorithm == c_TrackingAlgoGas) {
-      m_Tracker = new MERTrackGas();
-    } else if (m_TrackingAlgorithm == c_TrackingAlgoDirectional) {
-      m_Tracker = new MERTrackDirectional();
-    } else if (m_TrackingAlgorithm == c_TrackingAlgoBayesian) {
-      m_Tracker = new MERTrackBayesian();
-      if (dynamic_cast<MERTrackBayesian*>(m_Tracker)->
-          SetSpecialParameters(m_BETFileName) == false) {
-        Return = false;
-      }
-    } else if (m_TrackingAlgorithm == c_TrackingAlgoKalman3D) {
-      m_Tracker = new MERTrackKalman3D();
-      dynamic_cast<MERTrackKalman3D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
-    } else if (m_TrackingAlgorithm == c_TrackingAlgoKalman2D) {
-      m_Tracker = new MERTrackKalman2D();
-      dynamic_cast<MERTrackKalman2D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
-    } else if (m_TrackingAlgorithm == c_TrackingAlgoNone) {
-      // Nothing
-    } else {
-      merr<<"Unknown electron tracking algorithm: "<<m_TrackingAlgorithm<<endl;
-      Return = false;
-    }
-
-    // Pair Algorithm
-    if (m_PairAlgorithm == c_PairDefault) {
-      m_Tracker = new MERTrack();
-    } else {
-      Return = false;
-    }
-
-    if (m_Tracker != nullptr) {
-      m_Tracker->SetGeometry(m_Geometry);
-      m_Tracker->SetParameters(m_SearchMIPTracks,
-                               m_SearchPairTracks,
-                               m_SearchComptonTracks,
-                               m_MaxComptonJump,
-                               m_NTrackSequencesToKeep,
-                               m_RejectPurelyAmbiguousTrackSequences,
-                               m_NLayersForVertexSearch,
-                               m_ElectronTrackingDetectorList);
-    }
-
 
     // Initialize the Decay searcher:
     delete m_Decay;

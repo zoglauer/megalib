@@ -66,9 +66,9 @@ MGUIERAlgorithm::~MGUIERAlgorithm()
   delete m_EventClusteringList;
   delete m_HitClusteringList;
   delete m_TrackingList;
-  delete m_EventIdList;
+  delete m_EventTypeList;
   delete m_CSRList;
-  delete m_PairList;
+//  delete m_PairList;
   //delete m_DecayList;
   delete m_ListLayout;
 }
@@ -83,7 +83,7 @@ void MGUIERAlgorithm::Create()
 
   // We start with a name and an icon...
   SetWindowName("ER algorithms");
-  AddSubTitle("Choose the reconstruction algorithms");
+  //AddSubTitle("Choose the reconstruction algorithms");
 
   m_ListLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 10);
 
@@ -123,12 +123,12 @@ void MGUIERAlgorithm::Create()
   AddFrame(m_HitClusteringList, m_ListLayout);
   
   // Event identification
-  m_EventIdList = new MGUIERBList(this, "Event type identification", true);
-  m_EventIdList->Add("Default algorithm"); // 0
-  m_EventIdList->Add("External from file (not implemented)"); // 1
-  m_EventIdList->SetSelected(m_Data->GetEventIdAlgorithm());
-  m_EventIdList->Create();
-  AddFrame(m_EventIdList, m_ListLayout);
+  m_EventTypeList = new MGUIERBList(this, "Event type identification", true);
+  m_EventTypeList->Add("Default algorithm"); // 0
+  m_EventTypeList->Add("External from file (not implemented)"); // 1
+  m_EventTypeList->SetSelected(m_Data->GetEventTypeAlgorithm());
+  m_EventTypeList->Create();
+  AddFrame(m_EventTypeList, m_ListLayout);
 
   // Electron tracking
   m_TrackingList = new MGUIERBList(this, "Electron tracking", true);
@@ -165,7 +165,7 @@ void MGUIERAlgorithm::Create()
 //  }
   m_TrackingList->Create();
   AddFrame(m_TrackingList, m_ListLayout);
-
+/*
   m_PairList = new MGUIERBList(this, "Pair reconstruction", true);
   m_PairList->Add("Default algorithm");  // 0
   //m_PairList->Add("Kalman Filter 3D (work in progress)"); // 1
@@ -173,7 +173,7 @@ void MGUIERAlgorithm::Create()
   m_PairList->SetSelected(m_Data->GetPairAlgorithm());
   m_PairList->Create();
   AddFrame(m_PairList, m_ListLayout);
-
+*/
   m_CSRList = new MGUIERBList(this, "Compton tracking", true);
   m_CSRList->Add("No Compton tracking");
   m_CSRList->Add("Classic Compton Sequence Reconstruction without Energy Recovery (Chi-square approach via angles)");
@@ -246,7 +246,7 @@ bool MGUIERAlgorithm::OnApply()
   } else if (m_TrackingList->GetSelected() == 7) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoBayesian);
   }
-  m_Data->SetPairAlgorithm(m_PairList->GetSelected());
+  //m_Data->SetPairAlgorithm(m_PairList->GetSelected());
   m_Data->SetCSRAlgorithm(m_CSRList->GetSelected());
   
   //m_Data->SetDecayAlgorithm(m_DecayList->GetSelected());
