@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <iostream>
+#include <limits>
 using namespace std;
 
 // ROOT libs:
@@ -136,9 +137,16 @@ void MImageSpheric::SetImageArray(double* IA)
   if (m_IA != nullptr) delete [] m_IA;
   m_IA = new double[m_NEntries];
   
+  double Minimum = numeric_limits<double>::max();
   for (int x = 0; x < m_NEntries; ++x) {
     m_IA[x] = IA[x];
+    if (m_IA[x] > 0 && m_IA[x] < Minimum) Minimum = m_IA[x];
   }
+  Minimum = 0.0000001;
+  for (int x = 0; x < m_NEntries; ++x) {
+    if (m_IA[x]== 0) m_IA[x] = Minimum;
+  }
+
   
   if (dynamic_cast<TH2*>(m_Histogram) != nullptr) {
     if (m_Projection == MImageProjection::c_None) {
@@ -220,6 +228,10 @@ void MImageSpheric::Display(TCanvas* Canvas)
     xSize = int(ySize/yImageSize*xImageSize);
     if (xSize < 0.15*ySize) xSize = 0.15*ySize;
   }
+  xSize = 850;
+  ySize = 800;
+
+
   if (gROOT->IsBatch() == false) {
     m_Canvas->SetWindowSize(xSize, ySize);
   } else {
@@ -260,7 +272,7 @@ void MImageSpheric::DisplayProjectionNone()
     Hist->GetXaxis()->CenterTitle();
     Hist->GetXaxis()->SetTickLength(-0.03f);
     Hist->GetXaxis()->SetLabelOffset(0.03f);
-    Hist->GetXaxis()->SetLabelSize(0.035f);
+    Hist->GetXaxis()->SetLabelSize(0.03f);
     if ((int(m_xMax) - int(m_xMin)) % 360 == 0) {
       Hist->GetXaxis()->SetNdivisions(612);
       //Hist->GetXaxis()->SetOption("N+");
@@ -269,10 +281,27 @@ void MImageSpheric::DisplayProjectionNone()
       //Hist->GetXaxis()->SetOption("N+");
     }
 
+
+    Hist->GetYaxis()->SetTitle(m_yTitle);
+    Hist->GetYaxis()->CenterTitle();
+    Hist->GetYaxis()->SetTitleOffset(1.7f);
+    Hist->GetYaxis()->SetTitleSize(0.04f);
+    Hist->GetYaxis()->CenterTitle();
+    Hist->GetYaxis()->SetTickLength(-0.03f);
+    Hist->GetYaxis()->SetLabelOffset(0.03f);
+    Hist->GetYaxis()->SetLabelSize(0.03f);
+    if ((int(m_xMax) - int(m_xMin)) % 360 == 0) {
+      Hist->GetYaxis()->SetNdivisions(612);
+      //Hist->GetXaxis()->SetOption("N+");
+    } else if ((int(m_xMax) - int(m_xMin)) % 60 == 0) {
+      Hist->GetYaxis()->SetNdivisions(606);
+      //Hist->GetXaxis()->SetOption("N+");
+    }
+
     Hist->GetZaxis()->SetTitle(m_vTitle);
     Hist->GetZaxis()->SetTitleOffset(1.2f);
     Hist->GetZaxis()->SetTitleSize(0.04f);
-    Hist->GetZaxis()->SetLabelSize(0.035f);
+    Hist->GetZaxis()->SetLabelSize(0.03f);
 
 
     IsNew = true;
@@ -306,6 +335,7 @@ void MImageSpheric::DisplayProjectionNone()
   if (IsNew == true) {
     Hist->Draw(m_DrawOptionString);
 
+    /*
     // Redraw the new axis
     gPad->Update();
 
@@ -333,8 +363,11 @@ void MImageSpheric::DisplayProjectionNone()
 
     // Draw the new one
     m_YAxis->Draw();
+    */
   }
 
+  m_Canvas->SetGridx();
+  m_Canvas->SetGridy();
   m_Canvas->Update();
 
   return;
