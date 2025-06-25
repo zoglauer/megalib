@@ -89,6 +89,7 @@ MGUIMainMelinator::MGUIMainMelinator(MInterfaceMelinator* Interface,
   m_ActiveCollection = 0;
   m_ActiveLineFit = 0;
   m_ActiveResultIsEnergy = true;
+  m_AnalysisRunning = false;
 }
 
 
@@ -802,6 +803,13 @@ bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Param
   
   bool Status = true;
 
+  // Protection against reentering running analysis:
+  if (m_AnalysisRunning == true) {
+    mout<<"Please wait until the current analysis is done"<<endl;
+    return true;
+  }
+  m_AnalysisRunning = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -959,6 +967,8 @@ bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Param
     break;
   }
   
+  m_AnalysisRunning = false;  
+  
   return Status;
 }
 
@@ -1043,7 +1053,7 @@ bool MGUIMainMelinator::OnExit()
 
 //! Switch the histogram binning mode
 bool MGUIMainMelinator::OnSwitchHistogramBinningMode(unsigned int ID)
-{  
+{ 
   if (ID == MMelinator::c_HistogramBinningModeFixedNumberOfBins) {
     m_HistogramBinningModeValueLabel->SetText("  bins");
   } else if (ID == MMelinator::c_HistogramBinningModeFixedCountsPerBin) {
@@ -1067,7 +1077,7 @@ bool MGUIMainMelinator::OnSwitchHistogramBinningMode(unsigned int ID)
 
 //! Switch the histogram binning mode
 bool MGUIMainMelinator::OnSwitchPeakParametrizationMode(unsigned int ID)
-{    
+{
   if (ID == MCalibrateEnergyFindLines::c_PeakParametrizationMethodBayesianBlockPeak) {
     m_PeakParametrizationOptions->RemoveAll(); // Deletes everyting too 
   } else if (ID == MCalibrateEnergyFindLines::c_PeakParametrizationMethodSmoothedPeak) {
