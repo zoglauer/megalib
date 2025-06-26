@@ -33,6 +33,7 @@
 #include <new>
 #include <map>
 #include <thread>
+#include <iomanip>
 using namespace std;
 
 // ROOT libs:
@@ -1995,7 +1996,6 @@ bool MMelinator::CreateReport()
 
   gROOT->SetBatch(true);
 
-  bool FoundHist = false;
   auto IterTitles = TitlesMap.begin();
   auto IterEnergies = EnergiesMap.begin();
   auto IterADCs = ADCsMap.begin();
@@ -2228,8 +2228,6 @@ bool MMelinator::CreateReport()
       ++IterFWHMesInner;
       ++IterResidualsInner;
     }
-
-    FoundHist = true;
 
     ++IterTitles;
     ++IterEnergies;

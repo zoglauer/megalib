@@ -81,12 +81,9 @@ void MGUIReportCreation::Create()
 
   AddSubTitle("Choose the options for the calibration report:");
 
-  TGLayoutHints* FirstLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler);
   TGLayoutHints* DimensionLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
   TGLayoutHints* BinLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 40*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler);
   
-
-
   m_ADCDimension = new MGUIEMinMaxEntry(this,
                                         MString("ADC histogram:"),
                                         false,
