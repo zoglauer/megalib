@@ -63,6 +63,9 @@ class MCalibrationFitGaussLandau : public MCalibrationFitGaussian
   //! Get the FWHM
   virtual double GetFWHM() const;
 
+  //! Return the data as parsable string
+  virtual MString ToParsableString(const MString& Mode, bool WithDescriptor = false);
+
   // protected methods:
  protected:
   //! Set all fit parameters

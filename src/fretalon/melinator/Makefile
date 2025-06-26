@@ -30,6 +30,7 @@ FILES_UI := \
 	MGUIEReadOutUnitsCanvas \
 	MGUILoadCalibration \
 	MGUIReportCreation \
+	MGUISaveAsSelector \
 	MInterfaceMelinator \
 
 LIBRARIES := \

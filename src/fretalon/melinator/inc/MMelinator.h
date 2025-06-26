@@ -162,7 +162,10 @@ class MMelinator
   //void RemoveCollectionsWithNoPositiveEntries() { m_Store.RemoveCollectionsWithNoPositiveEntries(); }
 
   //! Save the calibration in e-cal format
-  bool Save(MString FileName);
+  bool SaveEcal(MString FileName);
+
+  //! Save all histograms in root format
+  bool SaveHistograms(MString FileName);
 
   //! Set the basic properties of the report
   void SetReportProperties(MString FileName,

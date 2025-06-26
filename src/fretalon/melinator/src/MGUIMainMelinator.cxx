@@ -51,6 +51,7 @@ using namespace std;
 #include "MGUIGeometry.h"
 #include "MGUILoadCalibration.h"
 #include "MGUIReportCreation.h"
+#include "MGUISaveAsSelector.h"
 #include "MGUIEFileSelector.h"
 #include "MIsotope.h"
 #include "MIsotopeStore.h"
@@ -136,6 +137,7 @@ void MGUIMainMelinator::Create()
   TGLayoutHints* CenterYLeftLayout = new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 0, 0, 0, 0);
   TGLayoutHints* CenterYRightEntryLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 0, 0, 0, 0);
 
+  TGLayoutHints* DescriptionLabelLayout =  new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 4+FontScaler*2, 3+FontScaler*2);
   
   //TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 2, 2, 2, 3);
 
@@ -185,13 +187,14 @@ void MGUIMainMelinator::Create()
   MenuBar->AddPopup("Input", MenuFiles, MenuBarItemLayoutLeft);
 
   TGPopupMenu* MenuResults = new TGPopupMenu(gClient->GetRoot());
-  MenuResults->AddLabel("Calibration file");
-  MenuResults->AddEntry("Save As...", c_SaveAs);
-  MenuResults->AddEntry("Save", c_Save);
+  MenuResults->AddLabel("Save As file prefix");
+  MenuResults->AddEntry("Choose general Save As file name prefix", c_SaveAs);
   MenuResults->AddSeparator();
-  MenuResults->AddLabel("Calibration report");
-  MenuResults->AddEntry("Create and Show", c_ShowReport);
-  //MenuResults->AddSeparator();
+  MenuResults->AddLabel("Data to save");
+  MenuResults->AddEntry("Energy calibration (ecal) file", c_SaveEcal);
+  MenuResults->AddEntry("Histograms", c_SaveHistograms);
+  MenuResults->AddEntry("Final report", c_SaveReport);
+  MenuResults->AddEntry("Save all of the above", c_SaveAll);
   MenuResults->Associate(this);
   MenuBar->AddPopup("Output", MenuResults, MenuBarItemLayoutLeft);
 
@@ -544,8 +547,8 @@ void MGUIMainMelinator::Create()
 
   // The buttons itself
   
-  m_MainHistogramLabel = new TGLabel(CanvasControl, "Load some calibration data to display its histogram here...");
-  CanvasControl->AddFrame(m_MainHistogramLabel, TopLeftTextLayout);
+  m_MainHistogramLabel = new TGLabel(CanvasControl, "Combined spectra of read-out element");
+  CanvasControl->AddFrame(m_MainHistogramLabel, DescriptionLabelLayout);
   
   m_ForwardButton = new TGTextButton(CanvasControl, "Next", c_Next); 
   m_ForwardButton->Associate(this);
@@ -589,8 +592,8 @@ void MGUIMainMelinator::Create()
   TGLayoutHints* FitControlLayout =  new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsCenterX, 0, 0, 0, 0);
   FitView->AddFrame(FitControl, FitControlLayout);
   
-  m_FitHistogramLabel = new TGLabel(FitControl, "Fit the data first...");
-  FitControl->AddFrame(m_FitHistogramLabel, TopLeftTextLayout);
+  m_FitHistogramLabel = new TGLabel(FitControl, "Line fits");
+  FitControl->AddFrame(m_FitHistogramLabel, DescriptionLabelLayout);
   
   m_FitForwardButton = new TGTextButton(FitControl, "Next", c_NextFit); 
   m_FitForwardButton->Associate(this);
@@ -606,9 +609,9 @@ void MGUIMainMelinator::Create()
   m_FitBackButton->SetMargins(FontScaler*5, FontScaler*5);
   FitControl->AddFrame(m_FitBackButton, ButtonLayout);
 
-  m_FitToggleButton = new TGTextButton(FitControl, "Toggle", c_ToggleFit); 
+  m_FitToggleButton = new TGTextButton(FitControl, "Toggle line on/off", c_ToggleFit);
   m_FitToggleButton->Associate(this);
-  m_FitToggleButton->SetMinWidth(100);
+  m_FitToggleButton->SetMinWidth(200);
   m_FitToggleButton->SetEnabled(false);
   m_FitToggleButton->SetMargins(FontScaler*5, FontScaler*5);
   FitControl->AddFrame(m_FitToggleButton, ButtonLayout);
@@ -627,13 +630,12 @@ void MGUIMainMelinator::Create()
   TGLayoutHints* ResultsControlLayout =  new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsCenterX, 0, 0, 0, 0);
   ResultsView->AddFrame(ResultsControl, ResultsControlLayout);
   
-  m_ResultsHistogramLabel = new TGLabel(ResultsControl, "Calibration model: none");
-  TGLayoutHints* ResultsLabelLayout =  new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 4+FontScaler*2, 3+FontScaler*2);
-  ResultsControl->AddFrame(m_ResultsHistogramLabel, ResultsLabelLayout);
+  m_ResultsHistogramLabel = new TGLabel(ResultsControl, "Calibration result");
+  ResultsControl->AddFrame(m_ResultsHistogramLabel, DescriptionLabelLayout);
   
-  m_ResultsToggleButton = new TGTextButton(ResultsControl, "Toggle", c_ResultsToggle); 
+  m_ResultsToggleButton = new TGTextButton(ResultsControl, "Toggle Energy/FWHM", c_ResultsToggle);
   m_ResultsToggleButton->Associate(this);
-  m_ResultsToggleButton->SetWidth(100);
+  m_ResultsToggleButton->SetWidth(200);
   //m_ResultsToggleButton->SetEnabled(false);
   m_ResultsToggleButton->SetMargins(FontScaler*5, FontScaler*5);
   ResultsControl->AddFrame(m_ResultsToggleButton, ButtonLayout);
@@ -761,6 +763,13 @@ bool MGUIMainMelinator::HandleKey(Event_t* Event)
   
   // ... and than we do what we need to do...
   
+  // Protection against reentering running analysis:
+  if (m_AnalysisRunning == true) {
+    mout<<"Please wait until the current analysis is done"<<endl;
+    return true;
+  }
+  m_AnalysisRunning = true;
+
   // The following keys need an initialized hardware
   switch ((EKeySym) keysym) {
   case kKey_Escape:
@@ -788,6 +797,8 @@ bool MGUIMainMelinator::HandleKey(Event_t* Event)
     break;
   }
 
+  m_AnalysisRunning = false;
+
   return true;
 }
 
@@ -809,7 +820,7 @@ bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Param
     return true;
   }
   m_AnalysisRunning = true;
-  
+
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -941,16 +952,24 @@ bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Param
         Status = OnLoadLast();
         break;
 
-      case c_Save:
-        Status = OnSave();
-        break;
-
       case c_SaveAs:
         Status = OnSaveAs();
         break;
 
-      case c_ShowReport:
-        Status = OnShowReport();
+      case c_SaveEcal:
+        Status = OnSaveEcal();
+        break;
+
+      case c_SaveReport:
+        Status = OnSaveReport();
+        break;
+
+      case c_SaveHistograms:
+        Status = OnSaveHistograms();
+        break;
+
+      case c_SaveAll:
+        Status = OnSaveAll();
         break;
 
       case c_About:
@@ -1419,13 +1438,29 @@ bool MGUIMainMelinator::OnLoadLast()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Actions when the save button has been pressed
-bool MGUIMainMelinator::OnSave()
+//! Actions when the save as button has been pressed
+bool MGUIMainMelinator::OnSaveAs()
+{
+  bool OKPressed = false;
+  new MGUISaveAsSelector(gClient->GetRoot(), this, m_Settings, OKPressed);
+  if (OKPressed == false) {
+    return false;
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Actions when the save ecal button has been pressed
+bool MGUIMainMelinator::OnSaveEcal()
 {  
-  bool Return = m_Melinator.Save(m_Settings->GetSaveAsFileName());
+  bool Return = m_Melinator.SaveEcal(m_Settings->GetSaveAsFileName());
 
   if (Return == false) {
-    mgui<<"Unable to save file:"<<endl<<m_Settings->GetSaveAsFileName()<<error; 
+    mgui<<"Unable to save file:"<<endl<<m_Settings->GetSaveAsFileName()<<error;
   }
   
   return Return;
@@ -1435,43 +1470,38 @@ bool MGUIMainMelinator::OnSave()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Actions when the save as button has been pressed
-bool MGUIMainMelinator::OnSaveAs()
+//! Actions when the save histograms button has been pressed
+bool MGUIMainMelinator::OnSaveHistograms()
 {
-  const char** Types = new const char*[4];
-  Types[0] = "Energy calibration file";
-  Types[1] = "*.ecal";
-  Types[2] = 0;
-  Types[3] = 0;
-  
+  MString FileName = m_Settings->GetSaveAsFileName();
+  FileName.ReplaceAtEndInPlace(".ecal", ".calhists.root");
 
-  TGFileInfo Info;
-  Info.fFileTypes = (const char **) Types;
-  Info.fIniDir = StrDup(gSystem->DirName(m_Settings->GetSaveAsFileName()));
-  new TGFileDialog(gClient->GetRoot(), this, kFDSave, &Info);
-  
-  delete [] Types;
-  
-  // Get the filename ...
-  if ((char *) Info.fFilename != 0) {
-    m_Settings->SetSaveAsFileName(MString(Info.fFilename));
-    return OnSave();
-  } else {
-    return true;
+  bool Return = m_Melinator.SaveHistograms(FileName);
+
+  if (Return == false) {
+    mgui<<"Unable to save histograms file."<<error;
   }
+
+  return Return;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Actions when the show report button has been pressed
-bool MGUIMainMelinator::OnShowReport()
+//! Actions when the save report button has been pressed
+bool MGUIMainMelinator::OnSaveReport(bool ShowOptions)
 {
-  bool OKPressed = false;
-  new MGUIReportCreation(gClient->GetRoot(), this, m_Settings, OKPressed);
-  if (OKPressed == false) {
-    return false;
+  MString FileName = m_Settings->GetSaveAsFileName();
+  FileName.ReplaceAtEndInPlace(".ecal", ".report.pdf");
+  m_Settings->SetReportFileName(FileName);
+
+  if (ShowOptions == true) {
+    bool OKPressed = false;
+    new MGUIReportCreation(gClient->GetRoot(), this, m_Settings, OKPressed);
+    if (OKPressed == false) {
+      return false;
+    }
   }
 
   m_Melinator.SetReportProperties(
@@ -1494,9 +1524,40 @@ bool MGUIMainMelinator::OnShowReport()
 
   if (Return == false) {
     mgui<<"Unable to create calibration report"<<error;
+    return false;
+  }
+
+  if (ShowOptions == true) {
+    int Return = gSystem->Exec(MString("") + "[ -x \"$(command -v xdg-open)\" ] && xdg-open " + FileName + " || { [ -x \"$(command -v open)\" ] && open " + FileName + "; }");
+
+    if (Return != 0) {
+      mgui<<"Failed to open PDF. Return code: "<<Return<<error;
+    }
   }
 
   return Return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Actions when the save all button has been pressed
+bool MGUIMainMelinator::OnSaveAll()
+{
+  if (OnSaveEcal() == false) {
+    return false;
+  }
+
+  if (OnSaveHistograms() == false) {
+    return false;
+  }
+
+  if (OnSaveReport(false) == false) {
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -1724,7 +1785,7 @@ void MGUIMainMelinator::UpdateCollection(unsigned int Collection, unsigned int L
       m_ForwardButton->SetEnabled(true);
     }
     
-    m_MainHistogramLabel->SetText(MString("Spectrum for ") + m_Melinator.GetCollection(m_ActiveCollection).GetReadOutElement().ToString());
+    m_MainHistogramLabel->SetText(MString("Read-out element: ") + m_Melinator.GetCollection(m_ActiveCollection).GetReadOutElement().ToString());
     Layout();
     
     m_Melinator.SetHistogramProperties(m_Settings->GetHistogramMin(), m_Settings->GetHistogramMax(), 
@@ -1784,16 +1845,7 @@ void MGUIMainMelinator::UpdateLineFit(unsigned int Collection, unsigned int Line
     
     m_Melinator.DrawLineFit(*(m_FitCanvas->GetCanvas()), Collection, m_ActiveLineFit, 
       m_Settings->GetPeakHistogramBinningMode(), m_Settings->GetPeakHistogramBinningModeValue());
-    
-    MCalibrationSpectralPoint P = m_Melinator.GetCalibrationSpectralPoint(Collection, m_ActiveLineFit);
-    ostringstream Text;
-    if (P.IsGood()) {
-      MIsotope I = P.GetIsotope();
-      Text<<I.GetName()<<" ("<<fixed<<setprecision(1)<<P.GetEnergy()<<" keV at "<<fixed<<setprecision(1)<<P.GetPeak()<<" rou's)";      
-    } else {
-      Text<<"Excluded line at "<<fixed<<setprecision(1)<<P.GetPeak()<<" rou's";
-    }
-    m_FitHistogramLabel->SetText(Text.str().c_str());
+
     Layout();
     
   } else {
@@ -1802,7 +1854,7 @@ void MGUIMainMelinator::UpdateLineFit(unsigned int Collection, unsigned int Line
     m_FitToggleButton->SetEnabled(false);
     m_FitCanvas->GetCanvas()->Clear(); 
     m_FitCanvas->GetCanvas()->Update();
-    m_FitHistogramLabel->SetText("Fit display");
+    //m_FitHistogramLabel->SetText("Fit display");
     Layout();
   }
 }
@@ -1815,30 +1867,13 @@ void MGUIMainMelinator::UpdateLineFit(unsigned int Collection, unsigned int Line
 void MGUIMainMelinator::UpdateCalibration(unsigned int Collection, bool DrawEnergyCalibration) 
 {
   m_Melinator.DrawCalibration(*(m_ResultsCanvas->GetCanvas()), Collection, DrawEnergyCalibration);
-  
-  if (m_Melinator.HasEnergyCalibrationModel(Collection) == true && m_Melinator.HasFWHMCalibrationModel(Collection) == true) {
 
-    if (DrawEnergyCalibration == true) {
-      MCalibrationModel& M = m_Melinator.GetEnergyCalibrationModel(Collection);
-      ostringstream Text;
-      Text<<"Energy calibration model: "<<M.GetName();
-      m_ResultsHistogramLabel->SetText(Text.str().c_str());
-    } else {
-      MCalibrationModel& M = m_Melinator.GetFWHMCalibrationModel(Collection);
-      ostringstream Text;      
-      Text<<"FWHM calibration model: "<<M.GetName();
-      m_ResultsHistogramLabel->SetText(Text.str().c_str());
-    }
-
-    Layout();
+  if (DrawEnergyCalibration == true) {
+    m_ResultsHistogramLabel->SetText("Calibration result: energy");
   } else {
-    if (DrawEnergyCalibration == true) {
-      m_ResultsHistogramLabel->SetText("Energy calibration model: interpolation");
-    } else {
-      m_ResultsHistogramLabel->SetText("FWHM calibration model: interpolation");
-    }
-    Layout();
+    m_ResultsHistogramLabel->SetText("Calibration result: FWHM");
   }
+  Layout();
   
   // Update the calibration also updates the coloring of the buttons:
   

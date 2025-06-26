@@ -99,13 +99,17 @@ class MCalibrationSpectralPoint
   
   //! Dump a string
   MString ToString() const;
-  
+
+  //! Return the data as parsable string
+  virtual MString ToParsableString(const MString& Mode, bool WithDescriptor = false);
+
+
   // protected methods:
  protected:
 
+
   // private methods:
  private:
-
 
 
   // protected members:

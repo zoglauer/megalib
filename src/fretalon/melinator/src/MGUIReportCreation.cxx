@@ -84,13 +84,6 @@ void MGUIReportCreation::Create()
   TGLayoutHints* FirstLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler);
   TGLayoutHints* DimensionLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
   TGLayoutHints* BinLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 40*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler);
-
-
-  m_FileName = new MGUIEFileSelector(this, "Save report as...", m_Settings->GetReportFileName());
-  m_FileName->SetFileType("Report file", "*.pdf");
-  //FileName->ChangeOptions(kFixedWidth);
-  //FileName->SetWidth(m_FontScaler*500);
-  AddFrame(m_FileName, FirstLayout);
   
 
 
@@ -212,8 +205,6 @@ bool MGUIReportCreation::OnApply()
 
   if (m_OverflowDimension->CheckRange(0.0, 100000.0, 0.0, 100000.0, true) == false) return false;
   if (m_OverflowBins->IsInt(1, 100000) == false) return false;
-
-  m_Settings->SetReportFileName(m_FileName->GetFileName());
 
   m_Settings->SetReportADCHistogramMinimum(m_ADCDimension->GetMinValue());
   m_Settings->SetReportADCHistogramMaximum(m_ADCDimension->GetMaxValue());

@@ -125,7 +125,10 @@ class MCalibrationFit : public ROOT::Math::IParamFunction
   //! Peak shape: Gauss-Landau
   static const unsigned int c_PeakShapeModelGaussLandau = 2;
   
-  
+  //! Return the data as parsable string
+  virtual MString ToParsableString(const MString& Mode, bool WithDescriptor = false);
+
+
   // protected methods:
  protected:
   //! Return the number of fit parameters in the background fit
@@ -141,9 +144,9 @@ class MCalibrationFit : public ROOT::Math::IParamFunction
   //! Set all fit parameters
   virtual void SetFitParameters(ROOT::Fit::Fitter& Fitter, TH1D& Hist, double Min, double Max);
   
+
   // private methods:
  private:
-
 
 
   // protected members:

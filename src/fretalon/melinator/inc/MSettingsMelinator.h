@@ -146,11 +146,12 @@ class MSettingsMelinator : public MSettings
   //! Set the FWHM calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
   void SetCalibrationModelDeterminationMethodFittingFWHMModel(unsigned int Model) { m_CalibrationModelDeterminationMethodFittingFWHMModel = Model; } 
   
-  
-  //! Set the save-as file name
+
+  //! Set the save-as ecal file name
   void SetSaveAsFileName(const MString& SaveAsFileName) { m_SaveAsFileName = SaveAsFileName; }
-  //! Get the save-as file name
+  //! Get the save-as ecal file name
   MString GetSaveAsFileName() const { return m_SaveAsFileName; }
+
 
   //! Set the single detector to use (negative means use all)
   void SetSelectedDetectorID(int ID) { m_SelectedDetectorID = ID; }

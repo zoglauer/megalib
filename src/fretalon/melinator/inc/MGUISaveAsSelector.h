@@ -1,5 +1,5 @@
 /*
- * MGUIReportCreation.h
+ * MGUISaveAsSelector.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIReportCreation__
-#define __MGUIReportCreation__
+#ifndef __MGUISaveAsSelector__
+#define __MGUISaveAsSelector__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -33,15 +33,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! GUI dialog showing the options for loading ans classifying the calibration file
-class MGUIReportCreation : public MGUIDialog
+//! GUI dialog to select the default file name for ecal, fits, and report
+class MGUISaveAsSelector : public MGUIDialog
 {
   // Public Interface:
  public:
   //! Default constructor
-  MGUIReportCreation(const TGWindow* Parent, const TGWindow* Main, MSettingsMelinator* Settings, bool& OKPressed);
+  MGUISaveAsSelector(const TGWindow* Parent, const TGWindow* Main, MSettingsMelinator* Settings, bool& OKPressed);
   //! Default destructor
-  virtual ~MGUIReportCreation();
+  virtual ~MGUISaveAsSelector();
 
   
   // protected methods:
@@ -67,30 +67,13 @@ class MGUIReportCreation : public MGUIDialog
   //! The settings file
   MSettingsMelinator* m_Settings;
 
-  //! ADC histogram: display min & max
-  MGUIEMinMaxEntry* m_ADCDimension;
-  //! ADC histogram: number of bins
-  MGUIEEntry* m_ADCBins;
-
-  //! Energy histogram: display min & max
-  MGUIEMinMaxEntry* m_EnergyDimension;
-  //! Energy histogram: number of bins
-  MGUIEEntry* m_EnergyBins;
-
-  //! Threshold histogram: display min & max
-  MGUIEMinMaxEntry* m_ThresholdDimension;
-  //! Threshold histogram: number of bins
-  MGUIEEntry* m_ThresholdBins;
-
-  //! Overflow histogram: display min & max
-  MGUIEMinMaxEntry* m_OverflowDimension;
-  //! Overflow histogram: number of bins
-  MGUIEEntry* m_OverflowBins;
+  //! The report file name
+  MGUIEFileSelector* m_FileName;
 
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIReportCreation, 0)
+  ClassDef(MGUISaveAsSelector, 0)
 #endif
 
 };

@@ -36,6 +36,7 @@
 using namespace std;
 
 // ROOT libs:
+#include "TROOT.h"
 #include "TObject.h"
 #include "TList.h"
 #include "TBox.h"
@@ -587,13 +588,15 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   
   Canvas.SetLeftMargin(0.1);
   Canvas.SetRightMargin(0.05);
-  Canvas.SetTopMargin(0.05);
+  Canvas.SetTopMargin(0.10);
   Canvas.SetBottomMargin(0.14);
   
 
   if (m_HistogramChanged == true) {
 
-    for (auto H: m_Histograms) delete H;
+    for (auto H: m_Histograms) {
+      delete H;
+    }
     m_Histograms.clear();
     
 
@@ -716,7 +719,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   }
 
   for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
-    if (m_Histograms[h] == 0) continue;
+    if (m_Histograms[h] == nullptr) continue;
     
     if (h == 0) {
       m_Histograms[h]->DrawCopy("HIST");
@@ -764,12 +767,12 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   
   double ySizeMin = 0.84 - 0.075*m_Histograms.size();
   if (ySizeMin < 0.5) ySizeMin = 0.5;
-  TLegend* Legend = new TLegend(0.8, ySizeMin, 0.94, 0.94, NULL, "brNDC");
+  TLegend* Legend = new TLegend(0.8, ySizeMin, 0.94, 0.88, NULL, "brNDC");
   Legend->SetHeader("Isotope list:");
   
   // Final draw so that everything is on top of each other:
   for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
-    if (m_Histograms[h] == 0) continue;
+    if (m_Histograms[h] == nullptr) continue;
     m_Histograms[h]->DrawCopy("SAME");
     MString Names;
     unsigned int IsotopeIndex = distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), h));
@@ -789,10 +792,19 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   
   // Draw the axis of the first histogram again:
   for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
-    if (m_Histograms[h] == 0) continue;
+    if (m_Histograms[h] == nullptr) continue;
     m_Histograms[h]->DrawCopy("AXIS SAME");
     break;
   }
+
+  if (m_Histograms.size() > 0) {
+    MString SummaryText = MString("Spectrum for ") + C.GetReadOutElement().ToString();
+    TLatex* Summary = new TLatex();
+    Summary->SetNDC();  // Use NDC coordinates
+    Summary->SetTextAlign(22);
+    Summary->DrawLatex(0.5, 0.95, SummaryText);
+  }
+
 
   Canvas.Update();
   m_HistogramChanged = false;
@@ -923,7 +935,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
   MReadOutCollection& Coll = GetCollection(Collection);
   
   //Canvas.SetBit(kNoContextMenu);
-  Canvas.SetBit(kCannotPick);
+  //Canvas.SetBit(kCannotPick);
   Canvas.Clear();
   Canvas.cd();
   Canvas.SetGridx();
@@ -932,7 +944,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
 
   Canvas.SetLeftMargin(0.17);
   Canvas.SetRightMargin(0.05);
-  Canvas.SetTopMargin(0.05);
+  Canvas.SetTopMargin(0.10);
   Canvas.SetBottomMargin(0.12);
 
   unsigned int LineID = 0;
@@ -951,7 +963,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
             
             Spectrum->SetFillStyle(0);
             //Spectrum->SetAxisRange(P.GetLowEdge(), P.GetHighEdge());
-            Spectrum->SetMaximum(1.1*Spectrum->GetMaximum());
+            Spectrum->SetMaximum(1.2*Spectrum->GetMaximum());
             
             //Spectrum->GetXaxis()->SetLabelOffset(0.0);
             Spectrum->GetXaxis()->SetLabelSize(0.05);
@@ -975,9 +987,33 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
               F.Draw("SAME");
             }
             
-            TLine* Line = new TLine(P.GetPeak(), Spectrum->GetMaximum(), P.GetPeak(), Spectrum->GetMinimum());
+            TLine* Line = new TLine(P.GetPeak(), 0.85*Spectrum->GetMaximum(), P.GetPeak(), Spectrum->GetMinimum());
             Line->SetLineWidth(3);
             Line->Draw("SAME");
+
+            if (P.HasFit() && P.IsGood()) {
+              ostringstream FitQualityString;
+              FitQualityString<<"#chi^{2}/ndf = "<<fixed<<setprecision(3)<<P.GetFit().GetReducedChisquare();
+              TLatex* FitQualityLabel1 = new TLatex(P.GetLowEdge() + 0.05*(P.GetHighEdge() - P.GetLowEdge()), 0.935*Spectrum->GetMaximum(), FitQualityString.str().c_str());
+              FitQualityLabel1->SetTextAlign(11);
+              FitQualityLabel1->Draw("SAME");
+              TLatex* FitQualityLabel2 = new TLatex(P.GetLowEdge() + 0.05*(P.GetHighEdge() - P.GetLowEdge()), 0.885*Spectrum->GetMaximum(), "(for unbinned fit)");
+              FitQualityLabel2->SetTextSize(0.04);
+              FitQualityLabel2->SetTextAlign(11);
+              FitQualityLabel2->Draw("SAME");
+            }
+
+            ostringstream Text;
+            if (P.IsGood()) {
+              MIsotope I = P.GetIsotope();
+              Text<<I.GetName()<<" ("<<fixed<<setprecision(1)<<P.GetEnergy()<<" keV at "<<fixed<<setprecision(1)<<P.GetPeak()<<" rou's)";
+            } else {
+              Text<<"Excluded line at "<<fixed<<setprecision(1)<<P.GetPeak()<<" rou's";
+            }
+            TLatex* Summary = new TLatex(0.5*(P.GetLowEdge() + P.GetHighEdge()), 1.05*Spectrum->GetMaximum(), Text.str().c_str());
+            Summary->SetTextAlign(22);
+            Summary->Draw("SAME");
+
           }
           ++LineID;
         }
@@ -1026,7 +1062,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool 
 
   Canvas.SetLeftMargin(0.17);
   Canvas.SetRightMargin(0.17);
-  Canvas.SetTopMargin(0.05);
+  Canvas.SetTopMargin(0.10);
   Canvas.SetBottomMargin(0.12);
   
   
@@ -1159,8 +1195,34 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool 
       Zero->Draw("SAME");
     }
     
+    ostringstream Text;
+    if (UseEnergy == true) {
+      Text<<"Energy Model: "<<Model.GetName();
+    } else {
+      Text<<"FWHM Model: "<<Model.GetName();
+    }
+    TLatex* ModelName = new TLatex(0.5*(0 + MaximumX), 1.05*1.1*MaximumY, Text.str().c_str());
+    ModelName->SetTextAlign(22);
+    ModelName->Draw("SAME");
+
+    ostringstream FitQualityString;
+    FitQualityString<<"#chi^{2}/ndf = "<<fixed<<setprecision(3)<<Model.GetFitQuality();
+    TLatex* FitQualityLabel = new TLatex(0.05*(0 + MaximumX), 1.025*MaximumY, FitQualityString.str().c_str());
+    FitQualityLabel->SetTextAlign(11);
+    FitQualityLabel->Draw("SAME");
+
+  } else {
+    ostringstream Text;
+    if (UseEnergy == true) {
+      Text<<"Energy Model: interpolation";
+    } else {
+      Text<<"FWHM Model: interpolation";
+    }
+    TLatex* ModelName = new TLatex(0.5*(0 + MaximumX), 1.05*Graph->GetMaximum(), Text.str().c_str());
+    ModelName->SetTextAlign(22);
+    ModelName->Draw("SAME");
   }
-  
+
   Canvas.Update();
 }
 
@@ -1543,7 +1605,7 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
 
 
 //! Save the calibration in e-cal format
-bool MMelinator::Save(MString FileName)
+bool MMelinator::SaveEcal(MString FileName)
 {
   if (m_CalibrationStore.GetNumberOfElements() == 0) {
     mgui<<"You need to run the calibration first, before saving the results."<<error;
@@ -1580,7 +1642,15 @@ bool MMelinator::Save(MString FileName)
     }
     out<<endl;
   }
-  out<<" "<<endl;
+  out<<endl;
+  out<<"# Keyword description"<<endl;
+  out<<"# CL - calibration points: the fit parameters plus uncertainty for each calibration point"<<endl;
+  out<<"# CP - calibration points: the data points going into the calibration"<<endl;
+  out<<"#    pawk = ADCs, Energy in keV, FWHM of energy in keV for each point"<<endl;
+  out<<"# CM - calibration model energy: the energy calibration model"<<endl;
+  out<<"# CR - calibration model fwhm: the FWHM calibration model"<<endl;
+  out<<endl;
+  out<<endl;
   out<<"TYPE ECAL"<<endl;
   out<<" "<<endl;
   //out<<"CF doublesidedstrip pointsadctokev"<<endl;
@@ -1594,6 +1664,10 @@ bool MMelinator::Save(MString FileName)
       out<<endl;
       out<<"# ROU: "<<ROE.ToParsableString(true)<<endl;
       out<<"# "<<C->ToParsableString("peakparametrization", true)<<endl;
+      vector<MCalibrationSpectralPoint> Points = C->GetUniquePoints();
+      for (unsigned int s = 0; s < Points.size(); ++s) {
+        out<<"CL "<<ROE.ToParsableString(true)<<"  "<<C->ToParsableString("peakparametrizationshort", false)<<"  "<<s<<" "<<Points[s].ToParsableString("param+error", true)<<endl;
+      }
       out<<"CP "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("pakw", true)<<endl;
       if (C->HasEnergyModel() == true) {
         out<<"CM "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("energymodel", true)<<endl;
@@ -1605,6 +1679,99 @@ bool MMelinator::Save(MString FileName)
   }
   
   out.close();
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Create a ROOT file with all the histograms
+bool MMelinator::SaveHistograms(MString FileName)
+{
+  TFile* File = new TFile(FileName, "RECREATE");
+
+  MGUIProgressBar Progress("Status", "Status of histogram creation");
+  Progress.SetMinMax(0, GetNumberOfCollections());
+
+  for (unsigned int c = 0; c < GetNumberOfCollections(); ++c) {
+    gSystem->ProcessEvents(); // For an unknown reason, I really need 2 ProcessEvents here...
+    Progress.SetValue(c);
+    gSystem->ProcessEvents(); // Added for smoother UI updates...
+    if (Progress.TestCancel() == true) break;
+
+    const MReadOutElement& ROE = GetCollection(c).GetReadOutElement();
+    MString DetName = MString("Detector_") + ROE.GetDetectorID();
+    MString SideName = "";
+    MString StripName = "";
+    if (ROE.IsOfType("singlessidedstrip") == true) {
+      StripName = MString("Strip_") + static_cast<const MReadOutElementStrip&>(ROE).GetStripID();
+    } else if (ROE.IsOfType("doublesidedstrip") == true) {
+      SideName = MString("Side_") + (static_cast<const MReadOutElementDoubleStrip&>(ROE).IsLowVoltageStrip() ? "LV" : "HV");
+      StripName = MString("Strip_") + static_cast<const MReadOutElementDoubleStrip&>(ROE).GetStripID();
+    }
+
+    TDirectory* CurrentDir = File;
+    TDirectory* NewDir = nullptr;
+    NewDir = CurrentDir->GetDirectory(DetName);
+    if (NewDir == nullptr) NewDir = File->mkdir(DetName);
+    CurrentDir->cd(NewDir->GetPath());
+    CurrentDir = NewDir;
+
+    if (SideName != "") {
+      NewDir = CurrentDir->GetDirectory(SideName);
+      if (NewDir == nullptr) NewDir = CurrentDir->mkdir(SideName);
+      CurrentDir->cd(NewDir->GetPath());
+      CurrentDir = NewDir;
+    }
+
+    if (StripName != "") {
+      NewDir = CurrentDir->GetDirectory(StripName);
+      if (NewDir == nullptr) NewDir = CurrentDir->mkdir(StripName);
+      CurrentDir->cd(NewDir->GetPath());
+      CurrentDir = NewDir;
+    }
+
+    gROOT->SetBatch(true);
+    TCanvas SpectralCanvas;
+    DrawSpectrum(SpectralCanvas, c, -1);
+    SpectralCanvas.SetName("Spectrum");
+    SpectralCanvas.Write();
+
+    TCanvas CalibrationEnergyCanvas;
+    DrawCalibration(CalibrationEnergyCanvas, c, true);
+    CalibrationEnergyCanvas.SetName("CalibrationEnergy");
+    CalibrationEnergyCanvas.Write();
+
+    TCanvas CalibrationFWHMCanvas;
+    DrawCalibration(CalibrationFWHMCanvas, c, false);
+    CalibrationFWHMCanvas.SetName("CalibrationFWHM");
+    CalibrationFWHMCanvas.Write();
+
+    for (unsigned int s = 0; s < GetNumberOfCalibrationSpectralPoints(c); ++s) {
+      MCalibrationSpectralPoint P = GetCalibrationSpectralPoint(c, s);
+      MIsotope I = P.GetIsotope();
+      ostringstream Text;
+      Text<<"LineFit_"<<I.GetName()<<"_"<<fixed<<setprecision(1)<<P.GetEnergy()<<"keV";
+      TCanvas LineFitCanvas;
+      DrawLineFit(LineFitCanvas, c, s, c_HistogramBinningModeFixedNumberOfBins, 50);
+      LineFitCanvas.SetName(Text.str().c_str());
+      LineFitCanvas.Write();
+    }
+    gROOT->SetBatch(false);
+  }
+
+  // ROOT bug I guess:
+  // After File->Close() the histograms stored in m_Histograms are no longer available
+  // My guess is that ROOT deletes them?
+  // Anyway, this has to be here for ROOT 6.34 or we crash.
+  // If ROOT does not delete them, this here is a memory leak.
+  m_Histograms.clear();
+  m_HistogramChanged = true;
+
+  // Save and close
+  File->Close();
 
   return true;
 }
@@ -2088,22 +2255,6 @@ bool MMelinator::CreateReport()
   EndPageCanvas->Print(m_ReportFileName + ")");  // close PDF
 
   gROOT->SetBatch(false);
-
-
-  int Return = gSystem->Exec(MString("") + "[ -x \"$(command -v xdg-open)\" ] && xdg-open " + m_ReportFileName + " || { [ -x \"$(command -v open)\" ] && open " + m_ReportFileName + "; }");
-
-  if (Return != 0) {
-    mgui<<"Failed to open PDF. Return code: "<<Return<<error;
-  }
-
-  if (FoundHist == false) {
-    TCanvas* C = new TCanvas();
-    C->SetLogz();
-    C->cd();
-    AllFittedEnergies->Draw("colz");
-    C->Update();
-  }
-
 
   return true;
 }
