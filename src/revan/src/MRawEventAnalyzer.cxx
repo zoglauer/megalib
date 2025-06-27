@@ -749,7 +749,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   
   // Section E: Compton sequence reconstruction       
   
-  if (SelectionsPassed == true && m_CSRAlgorithm > c_CSRAlgoNone && m_RawEvents->HasOnlyOptimumEvents() == false) { // Only continue if we have not yet found a good event
+  if (SelectionsPassed == true && m_CSRAlgorithm > c_CSRAlgoNone) {
     
     Timer.Start();
     
