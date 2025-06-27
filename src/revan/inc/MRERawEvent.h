@@ -113,7 +113,7 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! Restart the iterator
   bool ResetIterator(MRESE *RESE = 0);
   //! Return the next RESE in the iterator, nullptr when done
-  MRESE* GetNextRESE();;
+  MRESE* GetNextRESE();
   
   
   //! Set the start point of the event
@@ -172,19 +172,19 @@ class MRERawEvent : public MRESE, public MRotationInterface
 
 
   // Interface to the event quality
-
-  
-  
   void SetGoodEvent(bool GoodEvent = true);
   bool IsGoodEvent();
-  
-  bool IsValid();
   
   void SetRejectionReason(int Reason);
   int GetRejectionReason();
   static MString GetRejectionReasonAsString(int r, bool Short = false);
   MString GetRejectionReasonAsString(bool Short = false);
+
+  bool IsValid();
   
+  // Interface to the event reconstruction status
+  void SetEventReconstructed(bool ReconstructedEvent = true);
+  bool IsEventReconstructed();
   
   //! Return the clustering quality factor
   double GetClusteringQualityFactor() const { return m_ClusteringQualityFactor; }
@@ -314,6 +314,9 @@ class MRERawEvent : public MRESE, public MRotationInterface
  private:
   //! True if this is a good event
   bool m_GoodEvent;
+
+  //! True if this event went through an event reconstruction algorithm
+  bool m_EventReconstructed;
 
   //! The time this event happened
   MTime m_EventTime;
