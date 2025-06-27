@@ -115,44 +115,52 @@ bool MERCSR::Analyze(MRawEventIncarnations* List)
 
   MERConstruction::Analyze(List);
 
+  int e_max = m_List->GetNRawEvents();
+  MRERawEvent* RE = nullptr;
+  mout << "AL t" << m_CreateOnlyPermutations << show;
   if (m_CreateOnlyPermutations == true) {
     m_List->SetOptimumEvent(nullptr);
 
-    int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; ++e) {
-      MRERawEvent* RE = m_List->GetRawEventAt(e);
-      MRawEventIncarnations* NewList = CreateOnlyPermutations(RE);
-      if (NewList != 0) {
-        m_List->DeleteRawEvent(RE);
-        e--;
-        e_max--;
-        for (int i = 0; i < NewList->GetNRawEvents(); ++i) {
-          m_List->AddRawEvent(NewList->GetRawEventAt(i));
+      RE = m_List->GetRawEventAt(e);
+      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {// Iterate only over Compton events
+        MRawEventIncarnations* NewList = CreateOnlyPermutations(RE);
+        if (NewList != 0) {
+          m_List->DeleteRawEvent(RE);
+          e--;
+          e_max--;
+          for (int i = 0; i < NewList->GetNRawEvents(); ++i) {
+            m_List->AddRawEvent(NewList->GetRawEventAt(i));
+          }
+          delete NewList;
         }
-        delete NewList;
-      }        
+      }
     }
   } else {
     // Loop over all raw events and calculate all sequences:
-    int e_max = m_List->GetNRawEvents();
+    //int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; ++e) {
-      FindComptonSequence(m_List->GetRawEventAt(e));
+      RE = m_List->GetRawEventAt(e);
+      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {// Iterate only over Compton events
+        FindComptonSequence(RE);
+      }
     }
     
     // Select the raw event with the best quality factor as the good one:
     int NGoodEvents = 0;
     double BestQualityFactor = c_CSRFailed;
     for (int e = m_List->GetNRawEvents()-1; e >= 0; e--) {
-      if (m_List->GetRawEventAt(e)->IsGoodEvent() == true) {
-        if (m_List->GetRawEventAt(e)->GetEventType() == MRERawEvent::c_ComptonEvent) {
-          if (m_List->GetRawEventAt(e)->GetComptonQualityFactor() < BestQualityFactor) {
-            BestQualityFactor = m_List->GetRawEventAt(e)->GetComptonQualityFactor();
-            m_List->SetOptimumEvent(m_List->GetRawEventAt(e));
-            m_List->SetBestTryEvent(m_List->GetRawEventAt(e));
+      RE = m_List->GetRawEventAt(e);
+      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+        if (RE->IsGoodEvent() == true) {
+          if (RE->GetComptonQualityFactor() < BestQualityFactor) {
+            BestQualityFactor = RE->GetComptonQualityFactor();
+            m_List->SetOptimumEvent(RE);
+            m_List->SetBestTryEvent(RE);
           }
-        } else if (m_List->GetRawEventAt(e)->GetEventType() == MRERawEvent::c_PhotoEvent) {
-          m_List->SetOptimumEvent(m_List->GetRawEventAt(e));
-          m_List->SetBestTryEvent(m_List->GetRawEventAt(e));
+        } else if (RE->GetEventType() == MRERawEvent::c_PhotoEvent) {//A.L. This doesn’t happen anymore - need to reimplement somewhere else
+          m_List->SetOptimumEvent(RE);
+          m_List->SetBestTryEvent(RE);
         }
         NGoodEvents++;
       }
@@ -189,10 +197,14 @@ MRawEventIncarnations* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
   if (RE->GetNRESEs() > m_MaxNInteractions) {
     mout<<"BCT - Sequence: Too Many hits: "<<RE->GetNRESEs()<<" > "<<m_MaxNInteractions<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyHitsCSR);
+    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventReconstructed(true);
     return 0;
   } else if (RE->GetNRESEs() == 0) {
     mout<<"BCT - Sequence: Event without hits"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionNoHits);
+    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventReconstructed(true);
     return 0; 
   }
 
@@ -246,6 +258,8 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   if (RE->GetNRESEs() > m_MaxNInteractions) {
     mout<<"CSR - Sequence: Too Many hits: "<<RE->GetNRESEs()<<" > "<<m_MaxNInteractions<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyHitsCSR);
+    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventReconstructed(true);
     return;
   } else if (RE->GetNRESEs() == 1) {
     mout<<"CSR - Sequence: Only single hit event!"<<endl;
@@ -254,13 +268,18 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
         RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
       RE->SetEventType(MRERawEvent::c_PhotoEvent);
       RE->SetGoodEvent(true);
+      RE->SetEventReconstructed(true);
     } else {
       RE->SetRejectionReason(MRERawEvent::c_RejectionOneTrackOnly);
+      RE->SetEventType(MRERawEvent::c_UnknownEvent);
+      RE->SetEventReconstructed(true);
     }
     return; 
   } else if (RE->GetNRESEs() == 0) {
     mout<<"CSR - Sequence: Event without hits"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionNoHits);
+    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventReconstructed(true);
     return; 
   }
 
@@ -287,8 +306,10 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   }
 
   if (NGoodSequences == 0) {
-    RE->SetRejectionReason(MRERawEvent::c_RejectionCSRNoGoodCombination);
     mout<<"CSR - Sequence: None of the sequences is valid!"<<endl;
+    RE->SetRejectionReason(MRERawEvent::c_RejectionCSRNoGoodCombination);
+    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventReconstructed(true);
     return;    
   }
 
@@ -308,8 +329,10 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
 
   // Test if we have at least one good sequence:
   if (BestQualityFactor == c_CSRFailed) {
-    RE->SetRejectionReason(MRERawEvent::c_RejectionCSRNoGoodCombination);
     mout<<"CSR - Sequence: None of the sequences is valid!"<<endl;
+    RE->SetRejectionReason(MRERawEvent::c_RejectionCSRNoGoodCombination);
+    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventReconstructed(true);
     return;    
   }
 
@@ -327,7 +350,7 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
       BestSequence[i]->AddLink(BestSequence[i+1]);
     }
   }
-  // m_List->SetBestEvent(RE); // Problem wenn mehrere RE zu vergleichen sind...
+  // m_List->SetBestEvent(RE); // Problem wenn mehrere RE zu vergleichen sind... (Problem when several REs are to be compared...)
 
 
   // Check if the threshold is ok:
@@ -336,6 +359,8 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
     RE->SetRejectionReason(MRERawEvent::c_RejectionCSRThreshold);
     mout<<"CSR - Sequence: Teststatistics ("<<BestQualityFactor
         <<") out of threshold ("<<m_QualityFactorMin<<" - "<<m_QualityFactorMax<<")"<<endl;
+    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventReconstructed(true);
     return;
   }
 
@@ -346,6 +371,8 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
     RE->SetRejectionReason(MRERawEvent::c_RejectionEventStartNotD1);
     mout<<"CSR - Sequence: Event starts in not in D1/D5 but in "<<BestSequence[0]->GetDetector()<<endl;
     mout<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
+    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventReconstructed(true);
     return;
   }
  
@@ -361,14 +388,17 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
     RE->SetRejectionReason(MRERawEvent::c_RejectionElectronDirectionBad);
     mout<<"CSR - Sequence: Electron direction test failed!"<<endl;
     mout<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
+    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventReconstructed(true);
     return;
   }
 
   mout<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
     
   RE->SetComptonQualityFactors(BestQualityFactor, SecondBestQualityFactor);
-  RE->SetEventType(MRERawEvent::c_ComptonEvent);
+  //RE->SetEventType(MRERawEvent::c_ComptonEvent);
   RE->SetGoodEvent(true);      
+  RE->SetEventReconstructed(true);
 }
 
 
