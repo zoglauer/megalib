@@ -126,6 +126,7 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   Init();
   SetGeometry(RE->GetGeometry());
   SetGoodEvent(RE->IsGoodEvent());
+  SetEventReconstructed(RE->IsEventReconstructed());
 
   if (RE->GetStartPoint() != 0) {
     int id = RE->GetStartPoint()->GetID();
@@ -213,8 +214,6 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   m_TrackQualityFactor = RE->m_TrackQualityFactor;
 
   m_PairQualityFactor = RE->m_PairQualityFactor;
-
-  m_GoodEvent = RE->m_GoodEvent;
   
   m_CoincidenceWindow = RE->m_CoincidenceWindow;
   
@@ -281,8 +280,10 @@ void MRERawEvent::Init()
   m_VertexDirection = 0;
   
   m_SubElementType = MRESE::c_Event;
-  m_GoodEvent = false;
 
+  m_EventReconstructed = false;
+
+  m_GoodEvent = false;
   m_ExternalBadEventFlag = false;
   m_ExternalBadEventString = "";
 
@@ -463,6 +464,7 @@ void MRERawEvent::SetOriginInformation(MVector Position, MVector Direction, MVec
 MString MRERawEvent::ToString(bool WithLink, int Level)
 {
   //
+  massert(m_EventReconstructed);
 
   const int Length = 5000;
   char *Text = new char[Length];
@@ -545,6 +547,24 @@ bool MRERawEvent::IsValid()
   }
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRERawEvent::SetEventReconstructed(bool ReconstructedEvent)
+{
+  m_EventReconstructed = ReconstructedEvent;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MRERawEvent::IsEventReconstructed()
+{
+  return m_EventReconstructed;
 }
 
 
@@ -998,6 +1018,7 @@ void MRERawEvent::SetPhysicalEvent(MPhysicalEvent* Event)
   m_GoodEvent = true;
   delete m_Event;
   m_Event = Event;
+  m_EventReconstructed = true;
 }
 
 
@@ -1007,6 +1028,7 @@ void MRERawEvent::SetPhysicalEvent(MPhysicalEvent* Event)
 MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
 {
   // Return a pointer to the physical event...
+  if (!m_EventReconstructed) return nullptr;
 
   // This is only an experimental flag --- don't activate it unless you know what you are doing...
   bool UseCenterD2 = false;
@@ -1017,7 +1039,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
   }
 
   if (m_Event == nullptr) {
-    if (m_EventType == c_ComptonEvent && m_Start != nullptr) {
+    if (m_EventType == c_ComptonEvent) {
       MComptonEvent* CE = new MComptonEvent();
       double ED1 = 0.0;
       double ED2 = 0.0;
@@ -1113,7 +1135,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       }
       
       m_Event = (MPhysicalEvent*) CE;
-    } else if (m_EventType == c_PairEvent && m_ElectronTrack && m_PositronTrack) {
+    } else if (m_EventType == c_PairEvent) {
       // We need to have two tracks:
       //massert(m_ElectronTrack != 0);
       //massert(m_PositronTrack != 0); now in the condition above
@@ -1155,8 +1177,10 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
     m_Event->Set(*dynamic_cast<MRotationInterface*>(this));
     
     m_Event->SetAllHitsGood(IsValid());
-    m_Event->SetTime(m_EventTime);
     m_Event->SetId(m_EventID);
+    mout << "AL settime2" << show;
+    m_Event->SetTime(m_EventTime);
+    mout << "AL settime2=" << m_Event->GetTime() << show;
     m_Event->SetTimeWalk(m_TimeWalk);
     m_Event->SetDecay(m_Decay);
     if (m_ExternalBadEventFlag == true) {
@@ -1176,6 +1200,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
 
     m_Event->Validate();
   }
+  mout << "AL GPE addr=" << m_Event << " evtid=" << m_EventID << " time=" << m_EventTime << " type=" << GetEventTypeAsString() << " rec=" << IsEventReconstructed() << "/ ";
 
   return m_Event;
 }
@@ -1214,7 +1239,7 @@ MString MRERawEvent::ToEvtaString(const int Precision, const int Version)
 MString MRERawEvent::ToCompactString()
 {
   //
-
+  massert(m_EventReconstructed);
   if (IsGoodEvent() == false) {
     return MString("");
   }
