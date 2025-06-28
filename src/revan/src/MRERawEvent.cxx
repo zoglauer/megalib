@@ -715,6 +715,9 @@ void MRERawEvent::SetRejectionReason(int Reason)
   if (m_RejectionReason != c_RejectionNone) {
     m_IsValid = false;
   }
+  // If rejected after event type identification
+  m_EventType = c_UnknownEvent;
+  m_EventReconstructed = true;
 }
 
 

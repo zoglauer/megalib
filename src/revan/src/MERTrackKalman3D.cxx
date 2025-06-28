@@ -1208,7 +1208,8 @@ void MERTrackKalman3D::TrackPairs(MRERawEvent* RE)
   //RE->SetTrackQualityFactor(ChiT1+ChiT2);
   RE->SetPairQualityFactor(ChiT1+ChiT2);
   RE->SetGoodEvent(true);
-  RE->SetEventType(MRERawEvent::c_PairEvent);
+  //RE->SetEventType(MRERawEvent::c_PairEvent);
+  RE->SetEventReconstructed(true);
 
 }
 // MERTrackKalman3D.cxx: the end...

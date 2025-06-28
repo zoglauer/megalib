@@ -197,14 +197,10 @@ MRawEventIncarnations* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
   if (RE->GetNRESEs() > m_MaxNInteractions) {
     mout<<"BCT - Sequence: Too Many hits: "<<RE->GetNRESEs()<<" > "<<m_MaxNInteractions<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyHitsCSR);
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
-    RE->SetEventReconstructed(true);
     return 0;
   } else if (RE->GetNRESEs() == 0) {
     mout<<"BCT - Sequence: Event without hits"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionNoHits);
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
-    RE->SetEventReconstructed(true);
     return 0; 
   }
 
@@ -258,12 +254,10 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   if (RE->GetNRESEs() > m_MaxNInteractions) {
     mout<<"CSR - Sequence: Too Many hits: "<<RE->GetNRESEs()<<" > "<<m_MaxNInteractions<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyHitsCSR);
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
-    RE->SetEventReconstructed(true);
     return;
   } else if (RE->GetNRESEs() == 1) {
     mout<<"CSR - Sequence: Only single hit event!"<<endl;
-    //RE->SetRejectionReason(MRERawEvent::c_RejectionSingleSiteEvent);
+    //RE->SetRejectionReason(MRERawEvent::c_RejectionSingleSiteEvent); // We could use that after event type identification?
     if (RE->GetRESEAt(0)->GetType() == MRESE::c_Hit || 
         RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
       RE->SetEventType(MRERawEvent::c_PhotoEvent);
@@ -271,15 +265,11 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
       RE->SetEventReconstructed(true);
     } else {
       RE->SetRejectionReason(MRERawEvent::c_RejectionOneTrackOnly);
-      RE->SetEventType(MRERawEvent::c_UnknownEvent);
-      RE->SetEventReconstructed(true);
     }
     return; 
   } else if (RE->GetNRESEs() == 0) {
     mout<<"CSR - Sequence: Event without hits"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionNoHits);
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
-    RE->SetEventReconstructed(true);
     return; 
   }
 
@@ -308,8 +298,6 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   if (NGoodSequences == 0) {
     mout<<"CSR - Sequence: None of the sequences is valid!"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionCSRNoGoodCombination);
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
-    RE->SetEventReconstructed(true);
     return;    
   }
 
@@ -331,8 +319,6 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   if (BestQualityFactor == c_CSRFailed) {
     mout<<"CSR - Sequence: None of the sequences is valid!"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionCSRNoGoodCombination);
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
-    RE->SetEventReconstructed(true);
     return;    
   }
 
@@ -359,8 +345,6 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
     RE->SetRejectionReason(MRERawEvent::c_RejectionCSRThreshold);
     mout<<"CSR - Sequence: Teststatistics ("<<BestQualityFactor
         <<") out of threshold ("<<m_QualityFactorMin<<" - "<<m_QualityFactorMax<<")"<<endl;
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
-    RE->SetEventReconstructed(true);
     return;
   }
 
@@ -371,8 +355,6 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
     RE->SetRejectionReason(MRERawEvent::c_RejectionEventStartNotD1);
     mout<<"CSR - Sequence: Event starts in not in D1/D5 but in "<<BestSequence[0]->GetDetector()<<endl;
     mout<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
-    RE->SetEventReconstructed(true);
     return;
   }
  
@@ -388,8 +370,6 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
     RE->SetRejectionReason(MRERawEvent::c_RejectionElectronDirectionBad);
     mout<<"CSR - Sequence: Electron direction test failed!"<<endl;
     mout<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
-    RE->SetEventReconstructed(true);
     return;
   }
 
