@@ -482,7 +482,7 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
     if (EstimatedFirst < 0) {
       merr<<"ERROR: We missed some condition during handling of two-site events... Bug!"<<endl;
       RE->SetEventType(MRERawEvent::c_UnknownEvent);
-      RE->SetReconstructedEvent(true);
+      RE->SetEventReconstructed(true);
       return;
     }
     
@@ -540,7 +540,7 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
   if (IsGood == false) {
     mdebug<<"CSR-CS - Dual hit: Bad Compton event"<<endl;				
   }
-  RE->SetReconstructedEvent(true);
+  RE->SetEventReconstructed(true);
   return;
 }
 
@@ -564,7 +564,7 @@ void MERCSRChiSquare::FindComptonSequence(MRERawEvent* RE)
     RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyHitsCSR);
     return;
   } else if (RE->GetNRESEs() == 2) {
-    FindComptonSequenceDualHitEvent(RE);//Sets ReconstructedEvent to true
+    FindComptonSequenceDualHitEvent(RE);//Sets Event Reconstructed to true
     return;
   } else if (RE->GetNRESEs() == 1) {
     mdebug<<"CSR-CS - Sequence: Only single hit event!"<<endl;
@@ -572,7 +572,7 @@ void MERCSRChiSquare::FindComptonSequence(MRERawEvent* RE)
     if (RE->GetRESEAt(0)->GetType() == MRESE::c_Hit || RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
       RE->SetEventType(MRERawEvent::c_PhotoEvent);
       RE->SetGoodEvent(true);
-      RE->SetReconstructedEvent(true);
+      RE->SetEventReconstructed(true);
     } else {
       RE->SetRejectionReason(MRERawEvent::c_RejectionOneTrackOnly);
     }
@@ -680,7 +680,7 @@ void MERCSRChiSquare::FindComptonSequence(MRERawEvent* RE)
   RE->SetComptonQualityFactors(BestQualityFactor, SecondBestQualityFactor);
   //RE->SetEventType(MRERawEvent::c_ComptonEvent);
   RE->SetGoodEvent(true);
-  RE->SetReconstructedEvent(true);
+  RE->SetEventReconstructed(true);
 }
 
 

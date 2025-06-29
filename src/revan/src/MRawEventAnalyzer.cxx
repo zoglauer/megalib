@@ -722,6 +722,21 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   }
 
 
+  // Section P: Photo events
+
+  if (SelectionsPassed) {
+    for (unsigned int i = 0; i < m_RawEvents->Size(); i++) {
+      MRawEventIncarnations* REI = m_RawEvents->Get(i);
+      for (int e = 0; e < REI->GetNRawEvents(); e++) {
+        MRERawEvent* RE = REI->GetRawEventAt(e);
+        if (RE->GetEventType() == MRERawEvent::c_PhotoEvent) {
+          RE->SetEventReconstructed(true);
+        }
+      }
+    }
+  }
+
+
   // Section D: Tracking:
   
   if (SelectionsPassed == true && m_TrackingAlgorithm > c_TrackingAlgoNone) {
