@@ -1530,7 +1530,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
   m_MimrecSettings.Read(ConfigurationFile);
   m_EventSelector.SetSettings(&m_MimrecSettings);
   m_EventSelector.SetGeometry(&m_Geometry);
-  
+  cout<<"Coordinate system : "<<m_MimrecSettings.GetSourceCoordinates()<<endl;
   return true;
 }
 
@@ -1832,10 +1832,32 @@ bool SensitivityOptimizer::Analyze()
                                     double xx = m_PosTheta[x]; 
                                     double xy = m_PosPhi[y];
                                     double xz = 1000000000.0;
-                                    MMath::SphericToCartesean(xx, xy, xz);
-                                    MVector Position(xx, xy, xz);
                                     
-                                    S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
+				    
+				    MVector Position(0.0, 0.0, 1.0); 
+
+                                    // Put the correct Position and coord system for the source
+                                     if (m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+                                             Position.SetMagThetaPhi(xz, xx*c_Rad, xy*c_Rad);
+                                        } else if (m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
+                                             Position.SetMagThetaPhi(xz, (xx+90)*c_Rad, xy*c_Rad);
+                                        } else if (m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+                                                   m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
+                                             MMath::SphericToCartesean(xx, xy, xz);
+                                             MVector Position(xx, xy, xz);
+                                        } else {
+                                             merr<<"Unknown coordinate system ID: "<<m_MimrecSettings.GetCoordinateSystem()<<fatal;
+                                        }
+
+				    
+				    
+				     S.SetSourceWindow(true, Position, m_MimrecSettings.GetSourceCoordinates());
+				    //MMath::SphericToCartesean(xx, xy, xz);
+                                    //MVector Position(xx, xy, xz);
+				    
+				    
+                                    //S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
+                                   
 
                                     double ARMMin = m_MimrecSettings.GetSourceARMMin();
                                     double ARMMax = m_MimrecSettings.GetSourceARMMax();
@@ -1946,10 +1968,30 @@ bool SensitivityOptimizer::Analyze()
                             double xx = m_PosTheta[x]; 
                             double xy = m_PosPhi[y];
                             double xz = 1000000000.0;
-                            MMath::SphericToCartesean(xx, xy, xz);
-                            MVector Position(xx, xy, xz);
                             
-                            S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
+			    MVector Position(0.0, 0.0, 1.0); 
+
+                                    // Put the correct Position and coord system for the source
+                                     if (m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+                                             Position.SetMagThetaPhi(xz, xx*c_Rad, xy*c_Rad);
+                                        } else if (m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
+                                             Position.SetMagThetaPhi(xz, (xx+90)*c_Rad, xy*c_Rad);
+                                        } else if (m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+                                                   m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
+                                             MMath::SphericToCartesean(xx, xy, xz);
+                                             MVector Position(xx, xy, xz);
+                                        } else {
+                                             merr<<"Unknown coordinate system ID: "<<m_MimrecSettings.GetCoordinateSystem()<<fatal;
+                                        }
+
+				    
+				    
+		            S.SetSourceWindow(true, Position, m_MimrecSettings.GetSourceCoordinates());
+			    
+			    //MMath::SphericToCartesean(xx, xy, xz);
+                            //MVector Position(xx, xy, xz);
+                            
+                            //S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
                             
                             double ARMMin = m_MimrecSettings.GetSourceARMMin();
                             double ARMMax = m_MimrecSettings.GetSourceARMMax();
@@ -2045,10 +2087,31 @@ bool SensitivityOptimizer::Analyze()
                             double xx = m_PosTheta[x]; 
                             double xy = m_PosPhi[y];
                             double xz = 1000000000.0;
-                            MMath::SphericToCartesean(xx, xy, xz);
-                            MVector Position(xx, xy, xz);
                             
-                            S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
+			    
+			   MVector Position(0.0, 0.0, 1.0); 
+
+                                    // Put the correct Position and coord system for the source
+                                     if (m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+                                             Position.SetMagThetaPhi(xz, xx*c_Rad, xy*c_Rad);
+                                        } else if (m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
+                                             Position.SetMagThetaPhi(xz, (xx+90)*c_Rad, xy*c_Rad);
+                                        } else if (m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+                                                   m_MimrecSettings.GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
+                                             MMath::SphericToCartesean(xx, xy, xz);
+                                             MVector Position(xx, xy, xz);
+                                        } else {
+                                             merr<<"Unknown coordinate system ID: "<<m_MimrecSettings.GetCoordinateSystem()<<fatal;
+                                        }
+
+				    
+				    
+		            S.SetSourceWindow(true, Position, m_MimrecSettings.GetSourceCoordinates());
+			    
+			    //MMath::SphericToCartesean(xx, xy, xz);
+                            //MVector Position(xx, xy, xz);
+                            
+                            //S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
                             S.SetSourceARM(0, m_ARMorRadius[a]);
                             S.SetBeamRadius(m_BRA[b]);
                             S.SetBeamDepth(m_BDE[c]);
