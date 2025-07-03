@@ -211,13 +211,16 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   }
   
   if (LoadLast == true) {
-    m_Gui->OnLoadLast();
+    //m_Gui->OnLoadLast();
+    m_Gui->ProcessMessage(257, m_Gui->c_LoadLast, 0);
   }
   if (Parametrize == true) {
-    m_Gui->OnFitAll();
+    //m_Gui->OnFitAll();
+    m_Gui->ProcessMessage(259, m_Gui->c_FitAll, 0);
   }
   if (Automatic == true) {
-    m_Gui->OnSave();
+    //m_Gui->OnSaveEcal();
+    m_Gui->ProcessMessage(257, m_Gui->c_SaveAll, 0);
     Exit();
   }
   

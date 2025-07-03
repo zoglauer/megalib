@@ -214,7 +214,14 @@ bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
     for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
       if (m_Results.GetSpectralPoint(r, p).IsGood() == true) {
         MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(r, p);
-        P.SetEnergyFWHM(m_Results.GetEnergyModel().GetFitValue(P.GetPeak() + 0.5*P.GetFWHM()) - m_Results.GetEnergyModel().GetFitValue(P.GetPeak() - 0.5*P.GetFWHM()));
+        if (P.HasFit() == true) {
+          MCalibrationFit& Fit = P.GetFit();
+          double FWHM = Fit.GetFWHM();
+          P.SetEnergyFWHM(m_Results.GetEnergyModel().GetFitValue(P.GetPeak() + 0.5*FWHM) - m_Results.GetEnergyModel().GetFitValue(P.GetPeak() - 0.5*FWHM));
+        }
+
+        // We cannot do this, since the old FWHM was estimated and set before the fit
+        //P.SetEnergyFWHM(m_Results.GetEnergyModel().GetFitValue(P.GetPeak() + 0.5*P.GetFWHM()) - m_Results.GetEnergyModel().GetFitValue(P.GetPeak() - 0.5*P.GetFWHM()));
       }
     }
   }

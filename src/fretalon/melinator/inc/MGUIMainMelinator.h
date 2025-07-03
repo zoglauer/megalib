@@ -73,8 +73,8 @@ public:
   virtual bool OnLoadLast();
   //! Parmetrize all data
   virtual bool OnFitAll();
-  //! Actions when the save button has been pressed
-  virtual bool OnSave();
+  //! Actions when the save all button has been pressed
+  virtual bool OnSaveAll();
 
   // protected members:
 protected:
@@ -111,6 +111,12 @@ protected:
   virtual bool OnLoad();
   //! Actions when the save as button has been pressed
   virtual bool OnSaveAs();
+  //! Actions when the save ecal file button has been pressed
+  virtual bool OnSaveEcal();
+  //! Actions when the save histograms button has been pressed
+  virtual bool OnSaveHistograms();
+  //! Actions when the save report button has been pressed
+  virtual bool OnSaveReport(bool ShowOptions = true);
   //! Actions when the next button has been pressed
   virtual bool OnNext();
   //! Actions when the back button has been pressed
@@ -148,6 +154,53 @@ protected:
   //! Action when one of the ROE buttons was pressed
   virtual bool OnToggleResults();
   
+public:
+  // IDs:
+  static const int c_Start                      =   1;
+  static const int c_Exit                       =   2;
+  static const int c_LoadConfig                 =   3;
+  static const int c_SaveConfig                 =   4;
+  static const int c_Geometry                   =   5;
+  static const int c_About                      =   6;
+  static const int c_ChooseCalibrationFiles     =   7;
+  static const int c_LoadLast                   =   8;
+  static const int c_UpdateHistogram            =   9;
+  static const int c_UpdatePeakHistogram        =  10;
+  static const int c_FitAll                     =  11;
+  static const int c_HistogramBinningMode       =  12;
+  static const int c_PeakHistogramBinningMode   =  13;
+  static const int c_HistogramLogX              =  14;
+  static const int c_HistogramLogY              =  15;
+  static const int c_NextFit                    =  16;
+  static const int c_PreviousFit                =  17;
+  static const int c_ToggleFit                  =  18;
+  static const int c_PeakParametrizationMethod                        =  50;
+  static const int c_PeakParametrizationMethodFittingBackgroundModel  =  51;
+  static const int c_PeakParametrizationMethodFittingEnergyLossModel  =  52;
+  static const int c_PeakParametrizationMethodFittingPeakShapeModel   =  53;
+  static const int c_CalibrationModelZeroCrossing                           =  70;
+  static const int c_CalibrationModelDeterminationMethod                    =  71;
+  static const int c_CalibrationModelDeterminationMethodFittingEnergyModel  =  72;
+  static const int c_CalibrationModelDeterminationMethodFittingFWHMModel    =  73;
+  static const int c_SaveAs                     =  80;
+  static const int c_SaveEcal                   =  90;
+  static const int c_SaveReport                 =  91;
+  static const int c_SaveHistograms             =  92;
+  static const int c_SaveAll                    =  99;
+  static const int c_Remove                     = 400;
+  static const int c_Options                    = 500;
+  static const int c_Change                     = 600;
+  static const int c_Back                       = 601;
+  static const int c_Next                       = 602;
+  static const int c_Fit                        = 603;
+  static const int c_FitWithDiagnostics         = 604;
+  static const int c_BinsByCounts               = 700;
+  static const int c_BinsByBins                 = 701;
+  static const int c_ResultsToggle              = 800;
+  static const int c_ROEButtons                 = 1000;
+  // Nothing beyond that allowed
+
+
   // private members:
 private:
   //! Reference to all interface functions
@@ -163,6 +216,8 @@ private:
   unsigned int m_ActiveLineFit;
   //! The active results view
   bool m_ActiveResultIsEnergy;
+  //! True if any analysis is ongoing
+  bool m_AnalysisRunning;
   
   //! The label of the main histogram
   TGLabel* m_MainHistogramLabel;
@@ -256,47 +311,6 @@ private:
   MGUIEReadOutElementView* m_MainSelectionCanvas;
   
   
-  // IDs:
-  static const int c_Start                      =   1;
-  static const int c_Exit                       =   2;
-  static const int c_LoadConfig                 =   3;
-  static const int c_SaveConfig                 =   4;
-  static const int c_Geometry                   =   5;
-  static const int c_About                      =   6;
-  static const int c_ChooseCalibrationFiles     =   7;
-  static const int c_LoadLast                   =   8;
-  static const int c_UpdateHistogram            =   9;
-  static const int c_UpdatePeakHistogram        =  10;
-  static const int c_FitAll                     =  11;
-  static const int c_HistogramBinningMode       =  12;
-  static const int c_PeakHistogramBinningMode   =  13;
-  static const int c_HistogramLogX              =  14;
-  static const int c_HistogramLogY              =  15;
-  static const int c_NextFit                    =  16;
-  static const int c_PreviousFit                =  17;
-  static const int c_ToggleFit                  =  18;
-  static const int c_PeakParametrizationMethod                        =  50;
-  static const int c_PeakParametrizationMethodFittingBackgroundModel  =  51;
-  static const int c_PeakParametrizationMethodFittingEnergyLossModel  =  52;
-  static const int c_PeakParametrizationMethodFittingPeakShapeModel   =  53;
-  static const int c_CalibrationModelZeroCrossing                           =  70;
-  static const int c_CalibrationModelDeterminationMethod                    =  71;
-  static const int c_CalibrationModelDeterminationMethodFittingEnergyModel  =  72;
-  static const int c_CalibrationModelDeterminationMethodFittingFWHMModel    =  73;
-  static const int c_Save                       =  80;
-  static const int c_SaveAs                     =  81;
-  static const int c_Remove                     = 400;
-  static const int c_Options                    = 500;
-  static const int c_Change                     = 600;
-  static const int c_Back                       = 601;
-  static const int c_Next                       = 602;
-  static const int c_Fit                        = 603;
-  static const int c_FitWithDiagnostics         = 604;
-  static const int c_BinsByCounts               = 700;
-  static const int c_BinsByBins                 = 701;
-  static const int c_ResultsToggle              = 800;
-  static const int c_ROEButtons                 = 1000;
-  // Nothing beyond that allowed
 
 #ifdef ___CLING___
 public:

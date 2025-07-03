@@ -59,7 +59,7 @@ MCalibrationSpectralPoint::~MCalibrationSpectralPoint()
 //! Bad design since a new fit can be set any time...
 const MCalibrationFit& MCalibrationSpectralPoint::GetFit() const 
 { 
-  if (m_Fit == 0) {
+  if (m_Fit == nullptr) {
     throw MExceptionObjectDoesNotExist("Fit does not exist!");
   }
   
@@ -74,7 +74,7 @@ const MCalibrationFit& MCalibrationSpectralPoint::GetFit() const
 //! Bad design since a new fit can be set any time...
 MCalibrationFit& MCalibrationSpectralPoint::GetFit() 
 { 
-  if (m_Fit == 0) {
+  if (m_Fit == nullptr) {
     throw MExceptionObjectDoesNotExist("Fit does not exist!");
   }
   
@@ -90,15 +90,36 @@ MString MCalibrationSpectralPoint::ToString() const
 {
   ostringstream os;
   if (IsGood() == true) {
-    os<<"Good "; 
+    os<<"Good ";
   } else {
-    os<<"Bad "; 
+    os<<"Bad ";
   }
   os<<"peak at "<<m_Peak<<" ["<<m_LowEdge<<", "<<m_HighEdge<<"] with ~"<<m_Counts<<" counts";
   if (IsGood() == true) {
     os<<", corresponding to an energy of "<<m_Energy<<" keV with a FWHM of "<<GetEnergyFWHM()<<" keV";
   }
   return os.str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Convert to a string
+MString MCalibrationSpectralPoint::ToParsableString(const MString& Mode, bool WithDescriptor)
+{
+  ostringstream out;
+
+  if (Mode == "param" || Mode == "param+error") {
+    if (m_Fit != nullptr) {
+      out<<m_Fit->ToParsableString(Mode, WithDescriptor);
+    }
+  } else {
+    throw MExceptionUnknownMode(Mode);
+    return "";
+  }
+
+  return out.str();
 }
 
 

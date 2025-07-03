@@ -137,6 +137,9 @@ confhelp() {
   echo "--cleanup=[off/no, on/yes - default: off]"
   echo "    Remove intermediate build files"
   echo " "
+  echo "--distcc=[off/no, on/yes]"
+  echo "    If this flag is set and distcc is setup, we will use distcc"
+  echo " "
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -167,6 +170,7 @@ DEBUGSTRING=""
 DEBUGOPTIONS=""
 PATCH="off"
 CLEANUP="off"
+DISTCC="off"
 KEEPENVASIS="off"
 WANTEDVERSION=""
 
@@ -178,7 +182,7 @@ for C in ${CMD}; do
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-m*=* ]]; then
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-d*=* ]]; then
+  elif [[ ${C} == *-de*=* ]]; then
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-p*=* ]]; then
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
@@ -188,6 +192,8 @@ for C in ${CMD}; do
     WANTEDVERSION=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-k*=* ]]; then
     KEEPENVASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-di*=* ]]; then
+    DISTCC=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -286,6 +292,34 @@ elif ( [[ ${CLEANUP} == on ]] || [[ ${CLEANUP} == y* ]] ); then
 else
   echo " "
   echo "ERROR: Unknown option for clean up: ${CLEANUP}"
+  confhelp
+  exit 1
+fi
+
+
+DISTCC=`echo ${DISTCC} | tr '[:upper:]' '[:lower:]'`
+if ( [[ ${DISTCC} == of* ]] || [[ ${DISTCC} == n* ]] ); then
+  DISTCC="off"
+  echo " * Don't use distcc"
+elif ( [[ ${DISTCC} == on ]] || [[ ${DISTCC} == y* ]] ); then
+  type distcc >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo " * Distcc requested, but not installed. Performing local compile."
+    DISTCC="off"
+  else
+    if [ -n "${DISTCC_HOSTS}" ]; then
+      DISTCC="on"
+      export CC="distcc $(which gcc)"
+      export CXX="distcc $(which g++)"
+      echo " * Using distcc with the following host: ${DISTCC_HOSTS}."
+    else 
+      DISTCC="off"
+      echo " * Distcc requested, but not setup. Performing local compile."
+    fi
+  fi
+else
+  echo " "
+  echo "ERROR: Unknown option for distcc: ${DISTCC}"
   confhelp
   exit 1
 fi
@@ -583,16 +617,27 @@ fi
 
 
 CORES=1;
-if [[ ${OSTYPE} == darwin* ]]; then
-  CORES=`sysctl -n hw.logicalcpu_max`
-elif [[ ${OSTYPE} == linux* ]]; then
-  CORES=`grep processor /proc/cpuinfo | wc -l`
+if [[ ${DISTCC} == "on" ]]; then
+  DISTCC_JOBS_OUTPUT=$(distcc -j 2>/dev/null)
+  if [[ $? -eq 0 && -n "$DISTCC_JOBS_OUTPUT" && "$DISTCC_JOBS_OUTPUT" -gt 0 ]]; then
+    CORES=$(( DISTCC_JOBS_OUTPUT )) # Ensure it's treated as a number
+  fi
+else
+  if [[ ${OSTYPE} == darwin* ]]; then
+    CORES=`sysctl -n hw.logicalcpu_max`
+  elif [[ ${OSTYPE} == linux* ]]; then
+    CORES=`grep processor /proc/cpuinfo | wc -l`
+  fi
 fi
-if [ "$?" != "0" ]; then
+if [ "$?" != "0" ] || [ -z "$CORES" ] || [ "$CORES" -le 0 ]; then # Check if CORES is empty or non-positive
   CORES=1
 fi
 if [ "${CORES}" -gt "${MAXTHREADS}" ]; then
   CORES=${MAXTHREADS}
+fi
+# Final check to ensure CORES is at least 1
+if [ "${CORES}" -le "0" ]; then
+    CORES=1
 fi
 echo "Using this number of cores for compilation: ${CORES}"
 

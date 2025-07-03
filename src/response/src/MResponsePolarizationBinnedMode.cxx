@@ -35,6 +35,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MExceptions.h"
 #include "MResponseMatrixAxis.h"
 #include "MResponseMatrixAxisSpheric.h"
 
@@ -68,7 +69,8 @@ MResponsePolarizationBinnedMode::MResponsePolarizationBinnedMode() : m_Polarizat
   m_DistanceMinimum = 0; // cm
   m_DistanceMaximum = 1000; // cm
   m_PolarizationAngleNBins = 19; //deg
-  
+  m_PolarizationMode = "relativez";
+
   m_UseAtmosphericAbsorption = false;
   m_AtmosphericAbsorptionFileName = "";
   m_Altitude = 33500;
@@ -121,6 +123,7 @@ MString MResponsePolarizationBinnedMode::Options()
   out<<"             dmax:                    maximum distance (default: 1,000 cm)"<<endl;
   out<<"             dbins:                   number of distance bins between min and max distance (default: 1)"<<endl;
   out<<"             pbins:                   number of polarization bins bins between min and max distance (default: 18)"<<endl;
+  out<<"             pmode:                   Either relativex, relativey, or relativez (default: relativez)"<<endl;
   out<<"             atabsfile:               the atmopheric absorption file name (default: \"\" (i.e. none))"<<endl;
   out<<"             atabsheight:             altitude for the atmospheric absorption (default: 33500)"<<endl;
   
@@ -211,6 +214,8 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
       m_DistanceNBins = stod(Value);
     } else if (Split2[i][0] == "pbins") {
       m_PolarizationAngleNBins = stod(Value);
+    } else if (Split2[i][0] == "pmode") {
+      m_PolarizationMode = MValue.ToLower();
     } else if (Split2[i][0] == "anglebinwidthelectron") {
       m_AngleBinWidthElectron = stod(Value);
     } else if (Split2[i][0] == "atabsfilename") {
@@ -269,10 +274,16 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
     mout<<"Error: You need at least one distance bin"<<endl;
     return false;       
   }
+  
   if (m_PolarizationAngleNBins <= 0) {
     mout<<"Error: You need at least one polarizaton angle bin"<<endl;
     return false;       
   }
+  if (m_PolarizationMode != "relativex" && m_PolarizationMode != "relativey" &&m_PolarizationMode != "relativez") {
+    mout<<"Error: The polarization mode only supports relativex, relaticey, relativez modes"<<endl;
+    return false;
+  }
+
   if (m_AngleBinWidth <= 0) {
     mout<<"Error: You need at give a positive width of the sky bins at the equator"<<endl;
     return false;       
@@ -429,24 +440,68 @@ bool MResponsePolarizationBinnedMode::Analyze()
 { 
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
+ 
+  MPhysicalEvent* Event = nullptr;
+  MVector IdealOriginDir;
+  MVector IdealPolDir;
+  double EnergyInitial;
+  if (m_Mode == MResponseBuilderReadMode::SimFile || m_Mode == MResponseBuilderReadMode::SimEventByEvent) {
+
+    // This should never happen, but in case the analysis failed more badly:
+    if (m_SiEvent == nullptr) {
+      throw MExceptionPointerIsInvalid("m_SiEvent", m_SiEvent);
+      return false;
+    }
+
+    // We need to have at least an "INIT" in the simulation file per event
+    if (m_SiEvent->GetNIAs() == 0) {
+      return true;
+    }
   
-  // We need to have at least an "INIT" in the simulation file per event 
-  if (m_SiEvent->GetNIAs() == 0) {
-    return true;
-  }
-  
-  // We require a successful reconstruction 
-  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
-  if (REList->HasOnlyOptimumEvents() == false) {
-    return true;
-  }
+    // We require a successful reconstruction
+    MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
+    if (REList->HasOnlyOptimumEvents() == false) {
+      return true;
+    }
     
-  // ... leading to an event
-  MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
-  if (Event == nullptr) {
-    return true;
+    // ... leading to an event
+    Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
+    if (Event == nullptr) {
+      return true;
+    }
+
+    // and thew origin information
+    IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
+    EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+    IdealPolDir = m_SiEvent->GetIAAt(0)->GetSecondaryPolarisation();
+
+  } else if (m_Mode == MResponseBuilderReadMode::TraFile) {
+    Event = m_TraEvent;
+    if (Event == nullptr) {
+      return true;
+    }
+    IdealOriginDir = -Event->GetOIDirection();
+    if (IdealOriginDir == g_VectorNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }
+    EnergyInitial = Event->GetOIEnergy();
+    if (IdealOriginDir == g_DoubleNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }
+    IdealPolDir = Event->GetOIPolarization();
+    if (IdealPolDir == g_VectorNotDefined) {
+      mout<<"You have a tra event without origin information"<<endl;
+      return true;
+    }
+
+  } else {
+    cout<<"Unknown mode in MResponseImagingBinnedMode::Analyze"<<endl;
+    return false;
   }
-  
+
+
   // ... which needs to be a Compton event
   if (Event->GetType() != MPhysicalEvent::c_Compton) {
     return true;
@@ -504,27 +559,51 @@ bool MResponsePolarizationBinnedMode::Analyze()
   double Distance = Compton->FirstLeverArm();
   
   // Now get the origin information
-  MVector IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
   IdealOriginDir = Rotation*IdealOriginDir;
   double Lambda = IdealOriginDir.Phi()*c_Deg;
   while (Lambda < -180) Lambda += 360.0;
   while (Lambda > +180) Lambda -= 360.0;
   double Nu = IdealOriginDir.Theta()*c_Deg;
-  double EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
-  MVector IdealPolDir = m_SiEvent->GetIAAt(0)->GetSecondaryPolarisation();
+
   IdealPolDir = Rotation*IdealPolDir;
   
   MVector PolAngleReferenceDir = IdealOriginDir;
-  if (IdealOriginDir[0] == 0 && IdealOriginDir[1] == 0) {
-    PolAngleReferenceDir.SetXYZ(1.0, 0.0, 0.0);
-  } else {
-    PolAngleReferenceDir[2] = 0;
-    PolAngleReferenceDir.Unitize();
+  if (m_PolarizationMode == "relativex") {
+    if (IdealOriginDir[1] == 0 && IdealOriginDir[2] == 0) {
+      PolAngleReferenceDir.SetXYZ(0.0, 0.0, 1.0);
+    } else {
+      PolAngleReferenceDir[0] = 0;
+      PolAngleReferenceDir.Unitize();
 
-    MVector RotationAxis = PolAngleReferenceDir.Cross(IdealOriginDir);
-    double RotationAngle = IdealOriginDir.Angle(MVector(0, 0, 1));
+      MVector RotationAxis = PolAngleReferenceDir.Cross(IdealOriginDir);
+      double RotationAngle = IdealOriginDir.Angle(MVector(1, 0, 0));
   
-    PolAngleReferenceDir.RotateAroundVector(RotationAxis, RotationAngle);
+      PolAngleReferenceDir.RotateAroundVector(RotationAxis, RotationAngle);
+    }
+  } else if (m_PolarizationMode == "relativey") {
+    if (IdealOriginDir[0] == 0 && IdealOriginDir[2] == 0) {
+      PolAngleReferenceDir.SetXYZ(0.0, 0.0, 1.0);
+    } else {
+      PolAngleReferenceDir[1] = 0;
+      PolAngleReferenceDir.Unitize();
+
+      MVector RotationAxis = PolAngleReferenceDir.Cross(IdealOriginDir);
+      double RotationAngle = IdealOriginDir.Angle(MVector(0, 1, 0));
+
+      PolAngleReferenceDir.RotateAroundVector(RotationAxis, RotationAngle);
+    }
+  } else if (m_PolarizationMode == "relativez") {
+    if (IdealOriginDir[0] == 0 && IdealOriginDir[1] == 0) {
+      PolAngleReferenceDir.SetXYZ(1.0, 0.0, 0.0);
+    } else {
+      PolAngleReferenceDir[2] = 0;
+      PolAngleReferenceDir.Unitize();
+
+      MVector RotationAxis = PolAngleReferenceDir.Cross(IdealOriginDir);
+      double RotationAngle = IdealOriginDir.Angle(MVector(0, 0, 1));
+
+      PolAngleReferenceDir.RotateAroundVector(RotationAxis, RotationAngle);
+    }
   }
   
   // https://stackoverflow.com/questions/14066933/direct-way-of-computing-clockwise-angle-between-2-vectors

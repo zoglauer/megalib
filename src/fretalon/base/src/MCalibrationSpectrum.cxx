@@ -176,7 +176,7 @@ void MCalibrationSpectrum::RemoveAllBadSpectralPoints()
 //! Mode: model - show the model (none, poly2, poly3, poly2gauss, etc.)
 MString MCalibrationSpectrum::ToParsableString(const MString& Mode, bool WithDescriptor)
 {
-  if (Mode != "pak" && Mode != "pakw" && Mode != "energymodel" && Mode != "fwhmmodel" && Mode != "peakparametrization") {
+  if (Mode != "pak" && Mode != "pakw" && Mode != "energymodel" && Mode != "fwhmmodel" && Mode != "peakparametrization" && Mode != "peakparametrizationshort") {
     throw MExceptionUnknownMode(Mode);
     return "";
   }
@@ -203,7 +203,7 @@ MString MCalibrationSpectrum::ToParsableString(const MString& Mode, bool WithDes
     out<<Points.size()<<" ";
 
     for (unsigned int p = 0; p < Points.size(); ++p) {
-      out<<Points[p].GetPeak()<<" "<<Points[p].GetEnergy()<<" "<<Points[p].GetEnergyFWHM()<<" "; 
+      out<<Points[p].GetPeak()<<" "<<Points[p].GetEnergy()<<" "<<Points[p].GetEnergyFWHM()<<"  ";
     }     
   } else if (Mode == "energymodel") {
     if (HasEnergyModel() == true) {
@@ -222,39 +222,80 @@ MString MCalibrationSpectrum::ToParsableString(const MString& Mode, bool WithDes
     if (Points.size() == 0) {
       out<<"Unknown";
     } else {
-      if (Points[0].HasFit() == false) { 
+      if (Points[0].HasFit() == false) {
         out<<"BayesianBlock";
       } else {
         MCalibrationFit& Fit = Points[0].GetFit();
         out<<"FittedPeak";
         if (Fit.GetBackgroundModel() == MCalibrationFit::c_BackgroundModelNone) {
-          out<<" BM:None";
+          out<<" BackgroundModel:None";
         } else if (Fit.GetBackgroundModel() == MCalibrationFit::c_BackgroundModelFlat) {
-          out<<" BM:Flat";
+          out<<" BackgroundModel:Flat";
         } else if (Fit.GetBackgroundModel() == MCalibrationFit::c_BackgroundModelLinear) {
-          out<<" BM:Linear";
+          out<<" BackgroundModel:Linear";
         } else {
-          out<<" BM:Unknown";
+          out<<" BackgroundModel:Unknown";
         }
-      
+
         if (Fit.GetEnergyLossModel() == MCalibrationFit::c_EnergyLossModelNone) {
-          out<<" ELM:None";
+          out<<" EnergyLossModel:None";
         } else if (Fit.GetEnergyLossModel() == MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunction) {
-          out<<" ELM:GaussianConvolvedDeltaFunction";
+          out<<" EnergyLossModel:GaussianConvolvedDeltaFunction";
         } else if (Fit.GetEnergyLossModel() == MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay) {
-          out<<" ELM:GaussianConvolvedDeltaFunctionWithExponentialDecay";
+          out<<" EnergyLossModel:GaussianConvolvedDeltaFunctionWithExponentialDecay";
         } else {
-          out<<" ELM:Unknown";
+          out<<" EnergyLossModel:Unknown";
         }
-      
+
         if (Fit.GetPeakShapeModel() == MCalibrationFit::c_PeakShapeModelNone) {
-          out<<" PSM:None";
+          out<<" PeakShapeModel:None";
         } else if (Fit.GetPeakShapeModel() == MCalibrationFit::c_PeakShapeModelGaussian) {
-          out<<" PSM:Gaussian";
+          out<<" PeakShapeModel:Gaussian";
         } else if (Fit.GetPeakShapeModel() == MCalibrationFit::c_PeakShapeModelGaussLandau) {
-          out<<" PSM:GaussLandau";
+          out<<" PeakShapeModel:GaussLandau";
         } else {
-          out<<" PSM:Unknown";
+          out<<" PeakShapeModel:Unknown";
+        }
+      }
+    }
+  } else if (Mode == "peakparametrizationshort") {
+    out<<"M:";
+    if (Points.size() == 0) {
+      out<<"X";
+    } else {
+      if (Points[0].HasFit() == false) {
+        out<<"BB";
+      } else {
+        MCalibrationFit& Fit = Points[0].GetFit();
+        out<<"PF";
+        if (Fit.GetBackgroundModel() == MCalibrationFit::c_BackgroundModelNone) {
+          out<<"-B:X";
+        } else if (Fit.GetBackgroundModel() == MCalibrationFit::c_BackgroundModelFlat) {
+          out<<"-B:F";
+        } else if (Fit.GetBackgroundModel() == MCalibrationFit::c_BackgroundModelLinear) {
+          out<<"-B:L";
+        } else {
+          out<<"-B:?";
+        }
+
+        if (Fit.GetEnergyLossModel() == MCalibrationFit::c_EnergyLossModelNone) {
+          out<<"-L:X";
+        } else if (Fit.GetEnergyLossModel() == MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunction) {
+          out<<"-L:GCDF";
+        } else if (Fit.GetEnergyLossModel() == MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay) {
+          out<<"-L:GCDFED";
+        } else {
+          out<<"-L:?";
+        }
+
+        if (Fit.GetPeakShapeModel() == MCalibrationFit::c_PeakShapeModelNone) {
+          out<<"-P:N";
+        } else if (Fit.GetPeakShapeModel() == MCalibrationFit::c_PeakShapeModelGaussian) {
+          out<<"-P:G";
+        } else if (Fit.GetPeakShapeModel() == MCalibrationFit::c_PeakShapeModelGaussLandau) {
+          out<<"-P:GL";
+        } else {
+          out<<"-P:?";
         }
       }
     }

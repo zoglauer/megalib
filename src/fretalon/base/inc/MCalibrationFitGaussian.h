@@ -69,6 +69,9 @@ class MCalibrationFitGaussian : public MCalibrationFit
   //! Get the FWHM
   virtual double GetFWHM() const { return 2.35482*m_GaussianSigma; }
 
+  //! Return the data as parsable string
+  virtual MString ToParsableString(const MString& Mode, bool WithDescriptor = false);
+
   // protected methods:
  protected:
   //! Set all fit parameters

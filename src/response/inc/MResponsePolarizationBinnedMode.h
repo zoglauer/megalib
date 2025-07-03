@@ -95,9 +95,12 @@ class MResponsePolarizationBinnedMode : public MResponseBuilder
   double m_DistanceMinimum;
   //! Maximum energy range
   double m_DistanceMaximum;
-  //! Number of distance bins
-  unsigned int m_PolarizationAngleNBins;
   
+  //! Number of polarization bins
+  unsigned int m_PolarizationAngleNBins;
+  //! The polarization mode
+  MString m_PolarizationMode;
+
   //! The Polarization response 
   MResponseMatrixON m_PolarizationResponse;
   
