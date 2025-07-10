@@ -263,14 +263,37 @@ const MPhysicalEventHit& MPhysicalEvent::GetHit(unsigned int i) const
 
 
 ////////////////////////////////////////////////////////////////////////////////
-
+MString MPhysicalEvent::GetTypeStringCode(int evtype)
+{
+  switch (evtype) {
+    case c_Compton:
+      return MString("CO");
+    case c_Pair:
+      return MString("PA");
+    case c_Photo:
+      return MString("PH");
+    case c_Muon:
+      return MString("MU");
+    case c_Decay:
+      return MString("DY");
+    case c_PET:
+      return MString("PT");
+    case c_Multi:
+      return MString("MT");
+    case c_Unidentifiable:
+      return MString("UN");
+    default:
+      massert(false);
+      return MString("Unkown");
+  }
+}
 
 MString MPhysicalEvent::ToTraString() const
 {
   //! Stream the content into a tra-file compatible string
 
   ostringstream S;
-  switch (m_EventType) {
+/*  switch (m_EventType) {
   case c_Compton:
     S<<"ET CO"<<endl;
     break;
@@ -299,7 +322,8 @@ MString MPhysicalEvent::ToTraString() const
     massert(false);
     S<<"ET Unkown"<<endl;
     break;
-  }
+  }*/
+  S<<"ET "<<GetTypeStringCode(m_EventType)<<endl;
   S<<"ID "<<m_Id<<endl;
   S<<"TI "<<m_Time.GetLongIntsString()<<endl;
   if (m_TimeWalk != -1) {
@@ -391,7 +415,22 @@ bool MPhysicalEvent::ParseDelayed(bool Fast)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-
+int MPhysicalEvent::ParseET(const char* type)
+{
+  if (type[0] == 'C' && type[1] == 'O') return c_Compton;
+  else if (type[0] == 'C' && type[1] == 'O') return c_Compton;
+  else if (type[0] == 'P' && type[1] == 'A') return c_Pair;
+  else if (type[0] == 'P' && type[1] == 'H') return c_Photo;
+  else if (type[0] == 'M' && type[1] == 'U') return c_Muon;
+  else if (type[0] == 'D' && type[1] == 'Y') return c_Decay;
+  else if (type[0] == 'P' && type[1] == 'T') return c_PET;
+  else if (type[0] == 'M' && type[1] == 'T') return c_Multi;
+  else if (type[0] == 'U' && type[1] == 'N') return c_Unidentifiable;
+  else {
+    mout<<"int MPhysicalEvent::ParseET: Unkown event type..."<<endl;
+    return c_Unknown;
+  }
+}
 
 int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
 {
@@ -403,7 +442,14 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
   int Ret = 0;
   
   if (Line[0] == 'E' && Line[1] == 'T') {
-    if (Line[3] == 'C' && Line[4] == 'O') {
+    int type = ParseET(&Line[3]);//skips "ET "
+    if (m_EventType != type) {
+      mout << "int MPhysicalEvent::ParseLine: Event is no "
+            << GetTypeStringCode(type) << " as suggested but a "
+            << GetTypeString() << "!" << endl;
+      Ret = 1;
+    }
+/*    if (Line[3] == 'C' && Line[4] == 'O') {
       if (m_EventType != c_Compton) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Compton event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
@@ -446,7 +492,7 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
     } else {
       cout<<"int MPhysicalEvent::ParseLine: Unkown event type..."<<endl;
       Ret = 1;
-    }
+    }*/
   } else if (Line[0] == 'T' && Line[1] == 'I') {
     if (Fast == true) {
       if (m_Time.Set(Line) == false) {
