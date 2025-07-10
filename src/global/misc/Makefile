@@ -52,6 +52,7 @@ FILES := MGlobal \
 	MFileEvents \
 	MFileEventsRawa \
 	MFileEventsTra \
+  MFileEventsType \
 	MFileManager \
 	MFileResponse \
 	MFileInfo \

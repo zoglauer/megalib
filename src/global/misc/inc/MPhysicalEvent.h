@@ -57,6 +57,7 @@ class MPhysicalEvent : public MRotationInterface
   virtual MString ToTraString() const;
   //! Parse the content of the stream
   virtual int ParseLine(const char* Line, bool Fast = false);
+  static int ParseET(const char* type);
   //! Parse the content of the stream
   virtual bool ParseDelayed(bool Fast = false);
 
@@ -72,6 +73,7 @@ class MPhysicalEvent : public MRotationInterface
   int GetEventType() const { return m_EventType; }
   //! Return the type of this event as string 
   MString GetTypeString() const;
+  static MString GetTypeStringCode(int evtype);
   
   void SetTime(const MTime Time) { m_Time = Time; }
   MTime GetTime() const { return m_Time; }
