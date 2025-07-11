@@ -252,7 +252,6 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
     mdebug<<"Not enough hits in tracker!"<<endl;
     return true;
   }
-  //mout << "AL cktime e=" << e << " id=" << ->GetEventId() << " time=" << RE->GetTime() << show;
 
   // Step B: Pairs
   Timer.Start();
@@ -303,7 +302,6 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
     } // end for
   }
   m_TimePairs += Timer.ElapsedTime();
-  mout << "AL endPA" << show;
 
 
   // Step C: Mips
@@ -314,7 +312,6 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
     mdebug<<"* Search for MIPs"<<endl;
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
-      mout << "AL cfmtm=" << RE->GetTime() << show;
       if (RE->GetEventType() == MRERawEvent::c_MipEvent || RE->GetEventType() == MRERawEvent::c_ShowerEvent) {// Iterate only over MIP/shower events
         CheckForMips(RE);
         // If we have found a MIP then we are done!
@@ -339,7 +336,6 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
     mdebug<<endl;
   }
   m_TimeMips += Timer.ElapsedTime();
-  if(m_List->HasOptimumEvent()) mout << "AL endMU pid=" <<  m_List->GetOptimumEvent()->GetPhysicalEvent()->GetId() << " ptype=" << m_List->GetOptimumEvent()->GetPhysicalEvent()->GetTypeString() << show;
 
 
   // Step C: Compton tracks:
@@ -357,9 +353,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
       RE = m_List->GetRawEventAt(e);
       if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
         //RE->SetEventType(MRERawEvent::c_UnknownEvent);
-        mout << "AL -a" << show;
         List = TrackComptons(RE);
-        mout << "AL -b" << show;
         //RE->SetEventType(MRERawEvent::c_ComptonEvent);
         if (List != 0) {
           m_List->DeleteRawEvent(RE);
@@ -371,7 +365,6 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
           delete List;
           List = nullptr;
         }
-        mout << "AL -c" << show;
       }
     }
     m_TimeComptonSequences += Timer.ElapsedTime();
@@ -392,7 +385,6 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
         }
         if (CurrentN < MinN) MinN = CurrentN;
       }
-      mout << "AL -d" << show;
 
       for (int e = 0; e < m_List->GetNRawEvents(); e++) {
         int CurrentN = 0;
@@ -408,7 +400,6 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
           e--;
         }
       }
-      mout << "AL -e" << show;
       mdebug<<"Keeping "<<m_List->GetNRawEvents()<<" possibilities for further processing."<<endl;
     }
 
@@ -425,7 +416,6 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
       if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
-        mout << "AL -f" << show;
         for (int r = 0; r < RE->GetNRESEs(); r++) {
           RESE = RE->GetRESEAt(r);
           IDRESE = RESE->GetID();
@@ -443,7 +433,6 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
             }
           }
         }
-        mout << "AL -g" << show;
       }
     }
 
@@ -451,9 +440,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
-      mout << "AL -h" << show;
       if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) EvaluateTracks(RE);
-      mout << "AL -i" << show;
     }
     SortByTrackQualityFactor(m_List);
 
@@ -478,11 +465,9 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
       m_List->DeleteRawEvent(RE);
       e--;
     }
-    mout << "AL nRE=" << m_List->GetNRawEvents() << show;
 
     m_TimeComptonDirections += Timer.ElapsedTime();
   }
-  mout << "AL tr=" << StartTracking << " type=" << m_List->GetRawEventAt(0)->GetEventTypeAsString() << " rec=" << m_List->GetRawEventAt(0)->IsEventReconstructed() /*<< " ptype=" << m_List->GetRawEventAt(0)->GetPhysicalEvent()->GetTypeString()*/ << show;
 
 
   // Step E: Epilog
@@ -1180,9 +1165,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
     // b. Store the new event:
     MMuonEvent* Muon = new MMuonEvent(); // is later stored as m_Event!
     Muon->SetId(RE->GetEventId());
-    //mout << "AL settime" << show;
     Muon->SetTime(RE->GetEventTime());
-    //mout << "AL settime=" << Muon->GetTime() << show;
     Muon->SetEnergy(RE->GetEnergy());
     Muon->SetDirection(TrackArray[HighestPos]->GetAverageDirection());
     Muon->SetCenterOfGravity(TrackArray[HighestPos]->GetCenterOfGravity());
@@ -1196,7 +1179,6 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
     RE->SetPhysicalEvent(Muon);
     //RE->SetEventType(MRERawEvent::c_MipEvent);
     RE->SetGoodEvent(true);
-    mout << "AL muon id=" << Muon->GetId() << " time=" << Muon->GetTime() << " type=" << Muon->GetType() << show;
   }
   // b. A shower
   else if (TrackArray.size() > 1) {

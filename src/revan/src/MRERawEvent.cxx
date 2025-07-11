@@ -1181,9 +1181,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
     
     m_Event->SetAllHitsGood(IsValid());
     m_Event->SetId(m_EventID);
-    mout << "AL settime2" << show;
     m_Event->SetTime(m_EventTime);
-    mout << "AL settime2=" << m_Event->GetTime() << show;
     m_Event->SetTimeWalk(m_TimeWalk);
     m_Event->SetDecay(m_Decay);
     if (m_ExternalBadEventFlag == true) {
@@ -1203,7 +1201,6 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
 
     m_Event->Validate();
   }
-  mout << "AL GPE addr=" << m_Event << " evtid=" << m_EventID << " time=" << m_EventTime << " type=" << GetEventTypeAsString() << " rec=" << IsEventReconstructed() << "/ ";
 
   return m_Event;
 }
