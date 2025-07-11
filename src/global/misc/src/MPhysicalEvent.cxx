@@ -418,7 +418,6 @@ bool MPhysicalEvent::ParseDelayed(bool Fast)
 int MPhysicalEvent::ParseET(const char* type)
 {
   if (type[0] == 'C' && type[1] == 'O') return c_Compton;
-  else if (type[0] == 'C' && type[1] == 'O') return c_Compton;
   else if (type[0] == 'P' && type[1] == 'A') return c_Pair;
   else if (type[0] == 'P' && type[1] == 'H') return c_Photo;
   else if (type[0] == 'M' && type[1] == 'U') return c_Muon;
