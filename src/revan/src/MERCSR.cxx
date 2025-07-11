@@ -117,7 +117,6 @@ bool MERCSR::Analyze(MRawEventIncarnations* List)
 
   int e_max = m_List->GetNRawEvents();
   MRERawEvent* RE = nullptr;
-  mout << "AL t" << m_CreateOnlyPermutations << show;
   if (m_CreateOnlyPermutations == true) {
     m_List->SetOptimumEvent(nullptr);
 
