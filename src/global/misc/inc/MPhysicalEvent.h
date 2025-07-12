@@ -74,6 +74,11 @@ class MPhysicalEvent : public MRotationInterface
   //! Return the type of this event as string 
   MString GetTypeString() const;
   static MString GetTypeStringCode(int evtype);
+  //! Set event type probability
+  void SetTypeProbability(double evtTypeProbability)
+        { m_EventTypeProbability = evtTypeProbability; }
+  //! Get event type probability
+  double GetTypeProbability() { return m_EventTypeProbability; }
   
   void SetTime(const MTime Time) { m_Time = Time; }
   MTime GetTime() const { return m_Time; }
@@ -167,6 +172,7 @@ class MPhysicalEvent : public MRotationInterface
  protected:
   //! Type of the event 
   int m_EventType;
+  double m_EventTypeProbability;
 
   //! The time this event occurred
   MTime m_Time;

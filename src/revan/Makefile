@@ -33,6 +33,7 @@ FILES := MGeometryRevan \
 	MEREventClusterizerDataSet \
 	MERHitClusterizer \
   MEREventType \
+  MEREventTypeExternal \
 	MERTrack \
 	MERTrackPearson \
 	MERTrackRank \

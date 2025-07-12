@@ -708,6 +708,24 @@ MString MRERawEvent::GetEventTypeAsString()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MRERawEvent::GetEventTypeProbability()
+{
+  return m_EventTypeProbability;
+}  
+
+ 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRERawEvent::SetEventTypeProbability(double typeProbability)
+{
+  m_EventTypeProbability = typeProbability;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MRERawEvent::SetRejectionReason(int Reason)
 {
   m_RejectionReason = Reason;
@@ -992,6 +1010,13 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"The energy is outside of what the event clustering was trained for";
     }
     break;
+  case c_RejectionNotEnoughHitsInTracker:
+    if (Short == true) {
+      out<<"NotEnoughHitsTracker";
+    } else {
+      out<<"Not enough hits in tracker";
+    }
+    break;
   default:
     if (Short == true) {
       out<<"";
@@ -1198,7 +1223,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
     for (unsigned int c = 0; c < m_Comments.size(); ++c) {
       m_Event->AddComment(m_Comments[c]);
     }
-
+    m_Event->SetTypeProbability(m_EventTypeProbability);
     m_Event->Validate();
   }
 

@@ -76,12 +76,14 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
 
   m_PDFClusterizerBaseFileName = "";
 
-  // Electron tracking
+  // Event type identification
   m_DoTracking = true;
   m_SearchPairs = true;
   m_SearchMIPs = true;
   m_SearchComptons = true;
+  m_EventTypeFileName = "";
 
+  // Electron tracking
   m_MaxComptonJump = 2;
   m_NTrackSequencesToKeep = 1;
   m_RejectPurelyAmbiguousTrackSequences = false;
@@ -190,6 +192,7 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "SearchPairs", m_SearchPairs);
   new MXmlNode(Node, "SearchMIPs", m_SearchMIPs);
   new MXmlNode(Node, "SearchComptons", m_SearchComptons);
+  new MXmlNode(Node, "EventTypeFileName", m_EventTypeFileName);
   new MXmlNode(Node, "MaxComptonJump", m_MaxComptonJump);
   new MXmlNode(Node, "NTrackSequencesToKeep", m_NTrackSequencesToKeep);
   new MXmlNode(Node, "RejectPurelyAmbiguousTrackSequences", m_RejectPurelyAmbiguousTrackSequences);
@@ -327,6 +330,9 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("PDFClusterizerBaseFileName")) != 0) {
     m_PDFClusterizerBaseFileName = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("EventTypeFileName")) != 0) {
+    m_EventTypeFileName = aNode->GetValueAsString();
   }
   if ((aNode = Node->GetNode("DoTracking")) != 0) {
     m_DoTracking = aNode->GetValueAsBoolean();

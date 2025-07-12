@@ -55,7 +55,6 @@ MFileEventsType::MFileEventsType() : MFileEvents()
 {
   // Construct an instance of MFileEventsType
   m_Geometry = nullptr;
-  m_GeometryFileName = MString("None");
   m_Version = 0;
 /*
   m_Geometry = Geometry;
@@ -105,7 +104,7 @@ bool MFileEventsType::Open(MString FileName, unsigned int Way, bool IsBinary)
 ////////////////////////////////////////////////////////////////////////////////
 void MFileEventsType::Reset()
 {
-  m_EventId = -1;
+  m_EventId = c_NoId;
   m_EventType = MRERawEvent::c_UnknownEvent;
   m_EventTypeProbability = 0.;
 
