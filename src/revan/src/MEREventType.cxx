@@ -170,7 +170,7 @@ bool MEREventType::Analyze(MRawEventIncarnations* REList)
 
 
   bool Identified = false;
-  MRERawEvent* RE = 0;
+  MRERawEvent* RE = nullptr;
   //MRawEventIncarnations* List = 0;
   //MRESE* RESE = 0;
   //MRETrack* Track = 0;

@@ -252,6 +252,7 @@ class MRawEventAnalyzer
   void SetSearchPhotoEvent(bool Search) { m_SearchPhotoEvent = Search; }
   void SetSearchComptonTracks(bool Search) { m_SearchComptonTracks = Search; }
   void SetNLayersForVertexSearch(unsigned int NLayersForVertexSearch) { m_NLayersForVertexSearch = NLayersForVertexSearch; }
+  void SetEventTypeFileName(MString etpFileName) { m_EventTypeFileName = etpFileName; }
 
   // Options electron tracking:
   void SetDoTracking(bool Do) { m_DoTracking = Do; if (Do == false) m_TrackingAlgorithm = c_TrackingAlgoNone; }
@@ -429,6 +430,7 @@ class MRawEventAnalyzer
   bool m_SearchMIPTracks;
   bool m_SearchComptonTracks;
   unsigned int m_NLayersForVertexSearch;
+  MString m_EventTypeFileName;
   
   // Electron tracking:
   bool m_DoTracking;

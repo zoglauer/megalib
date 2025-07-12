@@ -85,6 +85,10 @@ class MRERawEvent : public MRESE, public MRotationInterface
   void SetEventType(int Type);
   //! Get the event type as string
   MString GetEventTypeAsString();
+
+  //! Event type probability
+  double GetEventTypeProbability();
+  void SetEventTypeProbability(double typeProbability);
   
   //! Set origin information
   void SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy);
@@ -290,6 +294,7 @@ class MRERawEvent : public MRESE, public MRotationInterface
   static const int c_RejectionEventClusteringUnresolvedHits      = 33;
   static const int c_RejectionEventClusteringNoOrigins           = 34;
   static const int c_RejectionEventClusteringEnergyOutOfBounds   = 35;
+  static const int c_RejectionNotEnoughHitsInTracker             = 36;
 
   
   static const double c_NoQualityFactor;
@@ -326,6 +331,8 @@ class MRERawEvent : public MRESE, public MRotationInterface
   unsigned long m_EventID;
   //! The type (Compton, etc.)
   int m_EventType;
+  //! Probability this type is the right one
+  double m_EventTypeProbability;
   //! The rejection reason, if any
   int m_RejectionReason;
 

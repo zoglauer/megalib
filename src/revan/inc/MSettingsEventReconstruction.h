@@ -170,6 +170,9 @@ class MSettingsEventReconstruction : public MSettingsInterface
     return m_PDFClusterizerBaseFileName;
   }
 
+  void SetEventTypeFileName(MString etpFileName) { m_EventTypeFileName = etpFileName; }
+  MString GetEventTypeFileName() const { return m_EventTypeFileName; }
+
   void SetDoTracking(bool Do) { m_DoTracking = Do; }
   bool GetDoTracking() { return m_DoTracking; }
 
@@ -341,6 +344,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
   bool m_SearchComptons;
   bool m_SearchPhoto;
   int m_NLayersForVertexSearch;
+
+  MString m_EventTypeFileName;
 
   // Electron tracking:
   bool m_DoTracking;

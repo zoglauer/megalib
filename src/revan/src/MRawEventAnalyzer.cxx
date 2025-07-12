@@ -56,6 +56,7 @@ using namespace std;
 #include "MEREventClusterizerDistance.h"
 #include "MEREventClusterizerTMVA.h"
 #include "MEREventType.h"
+#include "MEREventTypeExternal.h"
 #include "MERTrack.h"
 #include "MERTrackPearson.h"
 #include "MERTrackRank.h"
@@ -310,6 +311,7 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetCoincidenceAlgorithm(S->GetCoincidenceAlgorithm());
   SetEventClusteringAlgorithm(S->GetEventClusteringAlgorithm());
   SetHitClusteringAlgorithm(S->GetHitClusteringAlgorithm());
+  SetEventTypeAlgorithm(S->GetEventTypeAlgorithm());
   SetTrackingAlgorithm(S->GetTrackingAlgorithm());
   SetPairAlgorithm(S->GetPairAlgorithm());
   SetCSRAlgorithm(S->GetCSRAlgorithm());
@@ -340,8 +342,12 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
 
   SetPDFClusterizer(S->GetPDFClusterizerBaseFileName());
 
+  // Event type identification
+  SetSearchPhotoEvent(S->GetSearchPhoto());
+  SetEventTypeFileName(S->GetEventTypeFileName());
+
   // electron tracking
-  SetSearchPairTracks(S->GetSearchPairs());
+  SetSearchPairTracks(S->GetSearchPairs());//also in use in default event type identification
   SetSearchMIPTracks(S->GetSearchMIPs());
   SetSearchComptonTracks(S->GetSearchComptons());
 
@@ -1303,14 +1309,6 @@ bool MRawEventAnalyzer::PreAnalysis()
     m_EventType = nullptr;
     if (m_EventTypeAlgorithm == c_EventTypeDefault) {
       m_EventType = new MEREventType();
-    } else if (m_EventTypeAlgorithm == c_EventTypeExternal) {
-      merr << "External event type identification not implemented yet!" << show;
-      Return = false;
-    } else {
-      merr<<"Unknown event type algorithm: "<<m_EventTypeAlgorithm<<endl;
-      Return = false;
-    }
-    if (m_EventType) {
       m_EventType->SetGeometry(m_Geometry);
       m_EventType->SetParameters( m_SearchMIPTracks,
                                   m_SearchPairTracks,
@@ -1318,6 +1316,12 @@ bool MRawEventAnalyzer::PreAnalysis()
                                   m_SearchPhotoEvent,
                                   m_NLayersForVertexSearch,
                                   m_ElectronTrackingDetectorList);
+    } else if (m_EventTypeAlgorithm == c_EventTypeExternal) {
+      m_EventType = new MEREventTypeExternal();
+      dynamic_cast<MEREventTypeExternal*>(m_EventType)->SetParameters( m_EventTypeFileName );
+    } else {
+      merr<<"Unknown event type algorithm: "<<m_EventTypeAlgorithm<<endl;
+      Return = false;
     }
 
     // Electron tracking
