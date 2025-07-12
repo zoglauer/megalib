@@ -122,10 +122,10 @@ void MGUIERAlgorithm::Create()
   m_HitClusteringList->Create();
   AddFrame(m_HitClusteringList, m_ListLayout);
   
-  // Event identification
+  // Event type identification
   m_EventTypeList = new MGUIERBList(this, "Event type identification", true);
   m_EventTypeList->Add("Default algorithm"); // 0
-  m_EventTypeList->Add("External from file (not implemented)"); // 1
+  m_EventTypeList->Add("External from file"); // 1
   m_EventTypeList->SetSelected(m_Data->GetEventTypeAlgorithm());
   m_EventTypeList->Create();
   AddFrame(m_EventTypeList, m_ListLayout);
@@ -217,8 +217,9 @@ bool MGUIERAlgorithm::OnApply()
 {
   // The Apply button has been pressed
 
+  // Coincidences
   m_Data->SetCoincidenceAlgorithm(m_CoincidenceList->GetSelected());
-  
+  // Event clustering
   if (m_EventClusteringList->GetSelected() == 0) {
     m_Data->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoNone);
   } else if (m_EventClusteringList->GetSelected() == 1) {
@@ -226,9 +227,15 @@ bool MGUIERAlgorithm::OnApply()
   } else if (m_EventClusteringList->GetSelected() == 2) {
     m_Data->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoTMVA);
   }
-    
+  // Hit clustering
   m_Data->SetHitClusteringAlgorithm(m_HitClusteringList->GetSelected());
-  
+  // Event type identification
+  if (m_EventTypeList->GetSelected() == 0) {
+    m_Data->SetEventTypeAlgorithm(MRawEventAnalyzer::c_EventTypeDefault);
+  } else if (m_EventTypeList->GetSelected() == 1) {
+    m_Data->SetEventTypeAlgorithm(MRawEventAnalyzer::c_EventTypeExternal);
+  }
+  // Tracking
   if (m_TrackingList->GetSelected() == 0) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   } else if (m_TrackingList->GetSelected() == 1) {
@@ -246,11 +253,12 @@ bool MGUIERAlgorithm::OnApply()
   } else if (m_TrackingList->GetSelected() == 7) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoBayesian);
   }
+  // Pair
   //m_Data->SetPairAlgorithm(m_PairList->GetSelected());
+  // Compton
   m_Data->SetCSRAlgorithm(m_CSRList->GetSelected());
-  
+  // Decay
   //m_Data->SetDecayAlgorithm(m_DecayList->GetSelected());
-  
   m_Data->SetDecayAlgorithm(0);
 
   return true;
