@@ -250,6 +250,9 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
   if (StartTracking == false) {
     mdebug<<"Not enough hits in tracker!"<<endl;
+    RE->SetEventType(MRERawEvent::c_UnknownEvent); // discard
+    RE->SetRejectionReason(MRERawEvent::c_RejectionNotEnoughHitsInTracker);
+    RE->SetEventReconstructed(true);
     return true;
   }
 
