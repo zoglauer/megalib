@@ -481,7 +481,6 @@ void MEREventType::CheckForPhoto(MRERawEvent* RE)
     if (RE->GetRESEAt(0)->GetType() == MRESE::c_Hit || 
       RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
       RE->SetEventType(c_PhotoEvent);
-      //RE->SetGoodEvent(true);
     }
   }
 }
@@ -494,7 +493,6 @@ void MEREventType::CheckForCompton(MRERawEvent* RE)
 {
   // If we get there, this is a Compton event by default
   RE->SetEventType(c_ComptonEvent);
-  //RE->SetGoodEvent(true);
 }
 
 
