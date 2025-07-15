@@ -122,7 +122,7 @@ bool MERCSR::Analyze(MRawEventIncarnations* List)
 
     for (int e = 0; e < e_max; ++e) {
       RE = m_List->GetRawEventAt(e);
-      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {// Iterate only over Compton events
+      if (RE->GetEventType() == c_ComptonEvent) {// Iterate only over Compton events
         MRawEventIncarnations* NewList = CreateOnlyPermutations(RE);
         if (NewList != 0) {
           m_List->DeleteRawEvent(RE);
@@ -140,7 +140,7 @@ bool MERCSR::Analyze(MRawEventIncarnations* List)
     //int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; ++e) {
       RE = m_List->GetRawEventAt(e);
-      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {// Iterate only over Compton events
+      if (RE->GetEventType() == c_ComptonEvent) {// Iterate only over Compton events
         FindComptonSequence(RE);
       }
     }
@@ -150,14 +150,14 @@ bool MERCSR::Analyze(MRawEventIncarnations* List)
     double BestQualityFactor = c_CSRFailed;
     for (int e = m_List->GetNRawEvents()-1; e >= 0; e--) {
       RE = m_List->GetRawEventAt(e);
-      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+      if (RE->GetEventType() == c_ComptonEvent) {
         if (RE->IsGoodEvent() == true) {
           if (RE->GetComptonQualityFactor() < BestQualityFactor) {
             BestQualityFactor = RE->GetComptonQualityFactor();
             m_List->SetOptimumEvent(RE);
             m_List->SetBestTryEvent(RE);
           }
-        } else if (RE->GetEventType() == MRERawEvent::c_PhotoEvent) {//A.L. This doesn’t happen anymore - need to reimplement somewhere else
+        } else if (RE->GetEventType() == c_PhotoEvent) {//A.L. This doesn’t happen anymore - need to reimplement somewhere else
           m_List->SetOptimumEvent(RE);
           m_List->SetBestTryEvent(RE);
         }
@@ -259,7 +259,7 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
     //RE->SetRejectionReason(MRERawEvent::c_RejectionSingleSiteEvent); // We could use that after event type identification?
     if (RE->GetRESEAt(0)->GetType() == MRESE::c_Hit || 
         RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
-      RE->SetEventType(MRERawEvent::c_PhotoEvent);
+      RE->SetEventType(c_PhotoEvent);
       RE->SetGoodEvent(true);
       RE->SetEventReconstructed(true);
     } else {
@@ -375,7 +375,7 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   mout<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
     
   RE->SetComptonQualityFactors(BestQualityFactor, SecondBestQualityFactor);
-  //RE->SetEventType(MRERawEvent::c_ComptonEvent);
+  //RE->SetEventType(c_ComptonEvent);
   RE->SetGoodEvent(true);      
   RE->SetEventReconstructed(true);
 }

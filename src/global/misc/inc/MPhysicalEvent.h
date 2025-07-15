@@ -39,6 +39,23 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//! Definition of all events type in a single place
+// The namespace wrapper allow for easy import in other classes
+namespace n_EventTypeWrapper {
+  enum c_EventTypeEnum {
+    c_UnknownEvent = -1,
+    c_ComptonEvent = 0,
+    c_PairEvent = 1,
+    c_MuonEvent,
+    c_ShowerEvent,
+    c_PhotoEvent,
+    c_DecayEvent,
+    c_PETEvent,
+    c_MultiEvent,
+    c_UnidentifiableEvent = 100
+  };
+};
+using namespace n_EventTypeWrapper;
 
 class MPhysicalEvent : public MRotationInterface
 {
@@ -144,16 +161,6 @@ class MPhysicalEvent : public MRotationInterface
   //! Convert content to a descriptive string of the event
   virtual MString ToString() const;
 
-  static const int c_Unknown;
-  static const int c_Compton;
-  static const int c_Pair;
-  static const int c_Muon;
-  static const int c_Shower;
-  static const int c_Photo;
-  static const int c_Decay;
-  static const int c_PET;
-  static const int c_Multi;
-  static const int c_Unidentifiable;
 
 
   // protected methods:

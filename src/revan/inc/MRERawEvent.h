@@ -251,12 +251,15 @@ class MRERawEvent : public MRESE, public MRotationInterface
   // The event types:
    
   // TODO: Need to be moved in own class and be identical to what is in MPhysicalEvent
+  // Done
+  //using namespace MPhysicalEvent::n_EventTypeWrapper;
+  /*
   static const int c_UnknownEvent;
   static const int c_ComptonEvent;
   static const int c_PairEvent;
-  static const int c_MipEvent;
+  static const int c_MuonEvent;
   static const int c_ShowerEvent;
-  static const int c_PhotoEvent;
+  static const int c_PhotoEvent;*/
 
   static const int c_RejectionNone                               =  0;
   static const int c_RejectionTooManyHitsCSR                     =  1;

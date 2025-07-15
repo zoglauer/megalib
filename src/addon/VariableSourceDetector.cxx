@@ -236,7 +236,7 @@ bool MVariableSourceDetectionTester::Analyze()
     // Hitting Ctrl-C raises this flag
     if (m_Interrupt == true) return false;
     
-    if (Event->GetType() == MPhysicalEvent::c_Compton) {
+    if (Event->GetType() == c_ComptonEvent) {
       ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
       Hist->Fill(ComptonEvent->Ei());

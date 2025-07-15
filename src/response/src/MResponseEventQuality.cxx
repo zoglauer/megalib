@@ -136,7 +136,7 @@ bool MResponseEventQuality::Analyze()
   }
   
   // ... which needs to be a Compton event
-  if (Event->GetType() != MPhysicalEvent::c_Compton) {
+  if (Event->GetType() != c_ComptonEvent) {
     return true;
   }
   

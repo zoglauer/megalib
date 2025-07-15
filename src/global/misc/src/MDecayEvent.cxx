@@ -52,7 +52,7 @@ MDecayEvent::MDecayEvent()
 {
   // standard constructor
 
-  m_EventType = c_Decay;
+  m_EventType = c_DecayEvent;
 
   Reset();
 }
@@ -125,7 +125,7 @@ bool MDecayEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MDecayEvent::Assimilate(const MDecayEventData *DecayEventData)
 
-  if (Event->GetType() == MPhysicalEvent::c_Decay) {
+  if (Event->GetType() == c_DecayEvent) {
     return Assimilate((MDecayEvent *) Event);
   } else {
     return false; 

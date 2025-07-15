@@ -702,7 +702,7 @@ void MERTrackKalman2D::TrackPairs(MRERawEvent* RE)
     //RE->SetTrackQualityFactor((ChiT1y+ChiT2y)/100);
     RE->SetPairQualityFactor((ChiT1y+ChiT2y));
     RE->SetGoodEvent(true);
-    //RE->SetEventType(MRERawEvent::c_PairEvent);
+    //RE->SetEventType(c_PairEvent);
     RE->SetEventReconstructed(true);
 
   } else{

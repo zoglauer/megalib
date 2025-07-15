@@ -49,18 +49,18 @@ ClassImp(MPhysicalEvent)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-const int MPhysicalEvent::c_Unknown        = -1;
-const int MPhysicalEvent::c_Compton        =  0;
-const int MPhysicalEvent::c_Pair           =  1;
-const int MPhysicalEvent::c_Muon           =  2;
-const int MPhysicalEvent::c_Shower         =  3;
-const int MPhysicalEvent::c_Photo          =  4;
-const int MPhysicalEvent::c_Decay          =  5;
-const int MPhysicalEvent::c_PET            =  6;
-const int MPhysicalEvent::c_Multi          =  7;
-const int MPhysicalEvent::c_Unidentifiable =  100;
-
+/*
+const int c_UnknownEventEvent        = -1;
+const int c_ComptonEventEvent        =  0;
+const int c_PairEventEvent           =  1;
+const int c_MuonEventEvent           =  2;
+const int c_ShowerEvent         =  3;
+const int c_PhotoEventEvent          =  4;
+const int c_DecayEventEvent          =  5;
+const int c_PETEventEvent            =  6;
+const int c_MultiEventEvent          =  7;
+const int MPhysicalEvent::c_UnidentifiableEvent =  100;
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -69,7 +69,7 @@ MPhysicalEvent::MPhysicalEvent() : MRotationInterface(), m_Time(0)
 {
   // default constructor
 
-  m_EventType = c_Unknown;
+  m_EventType = c_UnknownEvent;
 
   Reset();
 }
@@ -92,23 +92,23 @@ MString MPhysicalEvent::GetTypeString() const
   // Return the event type:
   
   MString String;
-  if (m_EventType == c_Compton) {
+  if (m_EventType == c_ComptonEvent) {
     String = "Compton";
-  } else if  (m_EventType == c_Pair) {
+  } else if  (m_EventType == c_PairEvent) {
     String = "Pair";
-  } else if  (m_EventType == c_Muon) {
+  } else if  (m_EventType == c_MuonEvent) {
     String = "Muon";
-  } else if  (m_EventType == c_Shower) {
+  } else if  (m_EventType == c_ShowerEvent) {
     String = "Shower";
-  } else if  (m_EventType == c_Photo) {
+  } else if  (m_EventType == c_PhotoEvent) {
     String = "Photo";
-  } else if  (m_EventType == c_Decay) {
+  } else if  (m_EventType == c_DecayEvent) {
     String = "Decay";
-  } else if  (m_EventType == c_PET) {
+  } else if  (m_EventType == c_PETEvent) {
     String = "PET";
-  } else if  (m_EventType == c_Multi) {
+  } else if  (m_EventType == c_MultiEvent) {
     String = "Multi";
-  } else if  (m_EventType == c_Unidentifiable) {
+  } else if  (m_EventType == c_UnidentifiableEvent) {
     String = "Unidentifiable";
   } else {
     String = "Unknown"; 
@@ -266,21 +266,21 @@ const MPhysicalEventHit& MPhysicalEvent::GetHit(unsigned int i) const
 MString MPhysicalEvent::GetTypeStringCode(int evtype)
 {
   switch (evtype) {
-    case c_Compton:
+    case c_ComptonEvent:
       return MString("CO");
-    case c_Pair:
+    case c_PairEvent:
       return MString("PA");
-    case c_Photo:
+    case c_PhotoEvent:
       return MString("PH");
-    case c_Muon:
+    case c_MuonEvent:
       return MString("MU");
-    case c_Decay:
+    case c_DecayEvent:
       return MString("DY");
-    case c_PET:
+    case c_PETEvent:
       return MString("PT");
-    case c_Multi:
+    case c_MultiEvent:
       return MString("MT");
-    case c_Unidentifiable:
+    case c_UnidentifiableEvent:
       return MString("UN");
     default:
       massert(false);
@@ -294,28 +294,28 @@ MString MPhysicalEvent::ToTraString() const
 
   ostringstream S;
 /*  switch (m_EventType) {
-  case c_Compton:
+  case c_ComptonEvent:
     S<<"ET CO"<<endl;
     break;
-  case c_Pair:
+  case c_PairEvent:
     S<<"ET PA"<<endl;
     break;
-  case c_Photo:
+  case c_PhotoEvent:
     S<<"ET PH"<<endl;
     break;
-  case c_Muon:
+  case c_MuonEvent:
     S<<"ET MU"<<endl;
     break;
-  case c_Decay:
+  case c_DecayEvent:
     S<<"ET DY"<<endl;
     break;
-  case c_PET:
+  case c_PETEvent:
     S<<"ET PT"<<endl;
     break;
-  case c_Multi:
+  case c_MultiEvent:
     S<<"ET MT"<<endl;
     break;
-  case c_Unidentifiable:
+  case c_UnidentifiableEvent:
     S<<"ET UN"<<endl;
     break;
   default:
@@ -417,17 +417,17 @@ bool MPhysicalEvent::ParseDelayed(bool Fast)
 ////////////////////////////////////////////////////////////////////////////////
 int MPhysicalEvent::ParseET(const char* type)
 {
-  if (type[0] == 'C' && type[1] == 'O') return c_Compton;
-  else if (type[0] == 'P' && type[1] == 'A') return c_Pair;
-  else if (type[0] == 'P' && type[1] == 'H') return c_Photo;
-  else if (type[0] == 'M' && type[1] == 'U') return c_Muon;
-  else if (type[0] == 'D' && type[1] == 'Y') return c_Decay;
-  else if (type[0] == 'P' && type[1] == 'T') return c_PET;
-  else if (type[0] == 'M' && type[1] == 'T') return c_Multi;
-  else if (type[0] == 'U' && type[1] == 'N') return c_Unidentifiable;
+  if (type[0] == 'C' && type[1] == 'O') return c_ComptonEvent;
+  else if (type[0] == 'P' && type[1] == 'A') return c_PairEvent;
+  else if (type[0] == 'P' && type[1] == 'H') return c_PhotoEvent;
+  else if (type[0] == 'M' && type[1] == 'U') return c_MuonEvent;
+  else if (type[0] == 'D' && type[1] == 'Y') return c_DecayEvent;
+  else if (type[0] == 'P' && type[1] == 'T') return c_PETEvent;
+  else if (type[0] == 'M' && type[1] == 'T') return c_MultiEvent;
+  else if (type[0] == 'U' && type[1] == 'N') return c_UnidentifiableEvent;
   else {
     mout<<"int MPhysicalEvent::ParseET: Unkown event type..."<<endl;
-    return c_Unknown;
+    return c_UnknownEvent;
   }
 }
 
@@ -449,42 +449,42 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
       Ret = 1;
     }
 /*    if (Line[3] == 'C' && Line[4] == 'O') {
-      if (m_EventType != c_Compton) {
+      if (m_EventType != c_ComptonEvent) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Compton event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'P' && Line[4] == 'A') {
-      if (m_EventType != c_Pair) {
+      if (m_EventType != c_PairEvent) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Pair event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'P' && Line[4] == 'H') {
-      if (m_EventType != c_Photo) {
+      if (m_EventType != c_PhotoEvent) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Photo event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'M' && Line[4] == 'U') {
-      if (m_EventType != c_Muon) {
+      if (m_EventType != c_MuonEvent) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Muon event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'D' && Line[4] == 'Y') {
-      if (m_EventType != c_Decay) {
+      if (m_EventType != c_DecayEvent) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Decay event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'P' && Line[4] == 'T') {
-      if (m_EventType != c_PET) {
+      if (m_EventType != c_PETEvent) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no PET event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'M' && Line[4] == 'T') {
-      if (m_EventType != c_Multi) {
+      if (m_EventType != c_MultiEvent) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Multi event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'U' && Line[4] == 'N') {
-      if (m_EventType != c_Unidentifiable) {
+      if (m_EventType != c_UnidentifiableEvent) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Unidentifiable event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }

@@ -186,7 +186,7 @@ bool MEREventType::Analyze(MRawEventIncarnations* REList)
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
       CheckForPhoto(RE);
-      Identified = RE->GetEventType() == MRERawEvent::c_PhotoEvent;
+      Identified = RE->GetEventType() == c_PhotoEvent;
     }
   }
   m_TimePhoto += Timer.ElapsedTime();
@@ -229,7 +229,7 @@ bool MEREventType::Analyze(MRawEventIncarnations* REList)
     for (int e = 0; e < e_max; e++) {
       RE = m_List->GetRawEventAt(e);
       CheckForPair(RE);
-      Identified = RE->GetEventType() == MRERawEvent::c_PairEvent;
+      Identified = RE->GetEventType() == c_PairEvent;
       /*
       if () {
         m_List->DeleteRawEvent(RE);
@@ -276,13 +276,13 @@ bool MEREventType::Analyze(MRawEventIncarnations* REList)
       CheckForMips(RE);
       //Identified = RE->IsGoodEvent();
       // If we have found a MIP then we are done!
-      if (RE->GetEventType() == MRERawEvent::c_MipEvent) {
+      if (RE->GetEventType() == c_MuonEvent) {
         mdebug<<"Tracking: Successful identification: MIP (probably muon)"<<endl;
         Identified = true;
         //m_List->SetOptimumEvent(RE);
         //m_List->SetBestTryEvent(RE);
       }
-      if (RE->GetEventType() == MRERawEvent::c_ShowerEvent) {
+      if (RE->GetEventType() == c_ShowerEvent) {
         mdebug<<"Tracking: Successful identification: Shower"<<endl;
         Identified = true;
         //m_List->SetOptimumEvent(RE);
@@ -302,7 +302,7 @@ bool MEREventType::Analyze(MRawEventIncarnations* REList)
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
       CheckForCompton(RE);
-      Identified = RE->GetEventType() == MRERawEvent::c_ComptonEvent;
+      Identified = RE->GetEventType() == c_ComptonEvent;
     }
   }
 
@@ -311,7 +311,7 @@ bool MEREventType::Analyze(MRawEventIncarnations* REList)
     // Set all to unknown
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
-      RE->SetEventType(MRERawEvent::c_UnknownEvent);
+      RE->SetEventType(c_UnknownEvent);
     }
   }
 
@@ -480,7 +480,7 @@ void MEREventType::CheckForPhoto(MRERawEvent* RE)
   if (RE->GetNRESEs() == 1) {
     if (RE->GetRESEAt(0)->GetType() == MRESE::c_Hit || 
       RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
-      RE->SetEventType(MRERawEvent::c_PhotoEvent);
+      RE->SetEventType(c_PhotoEvent);
       //RE->SetGoodEvent(true);
     }
   }
@@ -493,7 +493,7 @@ void MEREventType::CheckForPhoto(MRERawEvent* RE)
 void MEREventType::CheckForCompton(MRERawEvent* RE)
 {
   // If we get there, this is a Compton event by default
-  RE->SetEventType(MRERawEvent::c_ComptonEvent);
+  RE->SetEventType(c_ComptonEvent);
   //RE->SetGoodEvent(true);
 }
 
@@ -631,7 +631,7 @@ void MEREventType::CheckForPair(MRERawEvent* RE)
       RE->SetVertex(0);
       List->AddRawEvent(New);
       mdebug<<"Search vertex: Found vertex: "<<Vertex->GetID()<<endl;*/
-      RE->SetEventType(MRERawEvent::c_PairEvent);
+      RE->SetEventType(c_PairEvent);
       //RE->SetGoodEvent(true);
       break; // Only take first right now
     }
@@ -784,13 +784,13 @@ void MEREventType::CheckForMips(MRERawEvent* RE)
 
     // d. This is a good event...
     RE->SetPhysicalEvent(Muon);*/
-    RE->SetEventType(MRERawEvent::c_MipEvent);
+    RE->SetEventType(c_MuonEvent);
     //RE->SetGoodEvent(true);
   }
   // b. A shower
   else if (TrackArray.size() > 1) {
     mdebug<<"==> Found a shower!"<<endl;
-    RE->SetEventType(MRERawEvent::c_ShowerEvent);
+    RE->SetEventType(c_ShowerEvent);
     //RE->SetGoodEvent(true);
 /*
     // b. Integrate all tracks into this raw event:

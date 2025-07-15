@@ -685,7 +685,7 @@ void MGUIControlCenter::StartControlLoop()
         
         if (Event->GetPhysicalEvent() != 0) { 
           m_FullSpectrum->Add(Event->GetPhysicalEvent()->GetEnergy(), 1);
-          if (Event->GetPhysicalEvent()->GetEventType() == MPhysicalEvent::c_Compton) {
+          if (Event->GetPhysicalEvent()->GetEventType() == c_ComptonEvent) {
             m_ARM->Add(((MComptonEvent *) (Event->GetPhysicalEvent()))->
                        GetARMGamma(MVector(m_GUIDataImaging->GetARMGammaX(),
                                             m_GUIDataImaging->GetARMGammaY(),

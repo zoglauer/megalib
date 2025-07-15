@@ -53,7 +53,7 @@ MPhotoEvent::MPhotoEvent()
 {
   // standard constructor
 
-  m_EventType = c_Photo;
+  m_EventType = c_PhotoEvent;
 
   Reset();
 }
@@ -125,7 +125,7 @@ bool MPhotoEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MPhotoEvent::Assimilate(const MPhotoEventData *PhotoEventData)
 
-  if (Event->GetType() == MPhysicalEvent::c_Photo) {
+  if (Event->GetType() == c_PhotoEvent) {
     return Assimilate(dynamic_cast<MPhotoEvent*>(Event));
   } else {
     merr<<"Trying to assimilate a non photo event!"<<endl; 

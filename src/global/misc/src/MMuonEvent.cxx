@@ -52,7 +52,7 @@ MMuonEvent::MMuonEvent()
 {
   // standard constructor
 
-  m_EventType = c_Muon;
+  m_EventType = c_MuonEvent;
 
   Reset();
 }
@@ -126,7 +126,7 @@ bool MMuonEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MMuonEvent::Assimilate(const MMuonEventData *MuonEventData)
 
-  if (Event->GetType() == MPhysicalEvent::c_Muon) {
+  if (Event->GetType() == c_MuonEvent) {
     return Assimilate((MMuonEvent *) Event);
   } else {
     merr<<"Trying to assimilate a non muon event!"<<endl; 

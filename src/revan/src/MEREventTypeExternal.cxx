@@ -86,7 +86,7 @@ bool MEREventTypeExternal::Analyze(MRawEventIncarnations* List)
       RE->SetEventTypeProbability( m_FileEventsType->GetEventTypeProbability() );
     } else {
       merr << "MEREventTypeExternal: No event type found for event ID " << RE->GetEventId() << endl;
-      RE->SetEventType( MRERawEvent::c_UnknownEvent );
+      RE->SetEventType( c_UnknownEvent );
       RE->SetEventTypeProbability( 0. );
     }
   }

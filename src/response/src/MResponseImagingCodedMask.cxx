@@ -117,7 +117,7 @@ bool MResponseImagingCodedMask::CreateResponse()
       Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
       if (Event != 0) {
         if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
-          if (Event->GetType() == MPhysicalEvent::c_Photo) {
+          if (Event->GetType() == c_PhotoEvent) {
             Photo = (MPhotoEvent*) Event;
 
             // First compute the y-Axis vector:

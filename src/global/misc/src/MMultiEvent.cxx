@@ -58,7 +58,7 @@ ClassImp(MMultiEvent)
 //! Default constructor
 MMultiEvent::MMultiEvent()
 {
-  m_EventType = c_Multi;
+  m_EventType = c_MultiEvent;
 
   Reset();
 }
@@ -114,7 +114,7 @@ bool MMultiEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MMultiEvent::Assimilate(const MMultiEventData *MultiEventData)
 
-  if (Event->GetType() == MPhysicalEvent::c_Multi) {
+  if (Event->GetType() == c_MultiEvent) {
     return Assimilate(dynamic_cast<MMultiEvent*>(Event));
   } else {
     merr<<"Trying to assimilate a non-Multi event!"<<endl; 

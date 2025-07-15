@@ -221,7 +221,7 @@ bool MStandardAnalysis::Analyze()
     // Only accept Comptons within the selected ranges...
     if (m_Selector.IsQualifiedEvent(Event) == true) {
       if (Event->GetEnergy() >= EnergyMean - SigmaWindow*EnergySigma && Event->GetEnergy() <= EnergyMean + SigmaWindow*EnergySigma) {
-        if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        if (Event->GetType() == c_ComptonEvent) {
           ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
           double ARMValue = ComptonEvent->GetARMGamma(m_Position)*c_Deg;
@@ -290,7 +290,7 @@ bool MStandardAnalysis::Analyze()
     // Only accept Comptons within the selected ranges...
     if (m_Selector.IsQualifiedEvent(Event) == true) {
       if (Event->GetEnergy() >= EnergyMean - SigmaWindow*EnergySigma && Event->GetEnergy() <= EnergyMean + SigmaWindow*EnergySigma) {
-        if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        if (Event->GetType() == c_ComptonEvent) {
           ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
           ARMHistR2->Fill(ComptonEvent->GetARMGamma(m_Position)*c_Deg);
@@ -356,7 +356,7 @@ bool MStandardAnalysis::Analyze()
       ++CountsSelected;
       if (Event->GetEnergy() >= EnergyMean - SigmaWindow*EnergySigma && Event->GetEnergy() <= EnergyMean + SigmaWindow*EnergySigma) {
         ++CountsSelectedPhotoPeak;
-        if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        if (Event->GetType() == c_ComptonEvent) {
           ++CountsSelectedComptonPhotoPeak;
           ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
           double ARMValue = ComptonEvent->GetARMGamma(m_Position)*c_Deg;

@@ -137,8 +137,8 @@ bool MBackprojection::Assimilate(MPhysicalEvent* Event)
   if (MProjection::Assimilate(Event) == false) return false;
 
   // Let the response get the event data:
-  if (Event->GetType() == MPhysicalEvent::c_Compton || 
-      Event->GetType() == MPhysicalEvent::c_Pair) {
+  if (Event->GetType() == c_ComptonEvent || 
+      Event->GetType() == c_PairEvent) {
     if (m_Response->AnalyzeEvent(Event) == false) return false;
   }
 

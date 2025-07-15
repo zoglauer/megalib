@@ -279,9 +279,9 @@ bool MBackprojectionFarField::Assimilate(MPhysicalEvent *Event)
 
   if (MBackprojection::Assimilate(Event) == false) return false;
   
-  if (Event->GetType() == MPhysicalEvent::c_Compton || 
-      Event->GetType() == MPhysicalEvent::c_Pair || 
-      Event->GetType() == MPhysicalEvent::c_Photo) {
+  if (Event->GetType() == c_ComptonEvent || 
+      Event->GetType() == c_PairEvent || 
+      Event->GetType() == c_PhotoEvent) {
     return true;
   } else {
     return false;
@@ -302,11 +302,11 @@ bool MBackprojectionFarField::Backproject(MPhysicalEvent* Event, double* Image, 
 
   if (Assimilate(Event) == false) return false;
 
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == c_ComptonEvent) {
     return BackprojectionCompton(Image, Bins, NUsedBins, Maximum);
-  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
+  } else if (Event->GetType() == c_PairEvent) {
     return BackprojectionPair(Image, Bins, NUsedBins, Maximum);
-  } else if (Event->GetType() == MPhysicalEvent::c_Photo) {
+  } else if (Event->GetType() == c_PhotoEvent) {
     return BackprojectionPhoto(Image, Bins, NUsedBins, Maximum);
   } else {
     cout<<"Error: Unknown event type for imaging: "<<Event->GetType()<<". Skipping event."<<endl;

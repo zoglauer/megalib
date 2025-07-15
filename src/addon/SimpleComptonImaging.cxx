@@ -216,7 +216,7 @@ bool SimpleComptonImaging::Analyze()
   MPhysicalEvent* Event = 0;
   MComptonEvent* ComptonEvent = 0;
   while ((Event = EventFile->GetNextEvent()) != 0) {
-    if (Event->GetType() == MPhysicalEvent::c_Compton) {
+    if (Event->GetType() == c_ComptonEvent) {
       ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
       Ee = ComptonEvent->Ee();

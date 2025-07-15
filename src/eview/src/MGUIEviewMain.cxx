@@ -1353,7 +1353,7 @@ bool MGUIEviewMain::SelectAndDraw(MRERawEvent* RE)
   
   // Add the compton sequence
   if (ShowLinks == true) {
-    if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+    if (RE->GetEventType() == c_ComptonEvent) {
       MRESE* Before = RE->GetStartPoint();
       MRESE* Next = Before->GetLinkAt(0);
       MRESE* After = 0;
@@ -1371,7 +1371,7 @@ bool MGUIEviewMain::SelectAndDraw(MRERawEvent* RE)
   // Add the origins:
   if (ShowOrigin == true) {
     cout<<"Type: "<<RE->GetEventType()<<endl;
-    if (RE->GetEventType() == MRERawEvent::c_MipEvent) {
+    if (RE->GetEventType() == c_MuonEvent) {
       MMuonEvent* Muon = (MMuonEvent*) RE->GetPhysicalEvent();
 
       MVector Direction = Muon->GetDirection();
@@ -1386,7 +1386,7 @@ bool MGUIEviewMain::SelectAndDraw(MRERawEvent* RE)
         (-5-Muon->GetCenterOfGravity().Z())*(1.0/Direction.Z());
       m_Geometry->AddLink(Start, Stop, 0.03, ColorOrigin);
       cout<<"Adding: "<<Start.X()<<"!"<<Start.Y()<<"!"<<Start.Z()<<" --  "<<Stop.X()<<"!"<<Stop.Y()<<"!"<<Stop.Z()<<endl;
-    } else if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+    } else if (RE->GetEventType() == c_ComptonEvent) {
       cout<<"Compton origin missing"<<endl;
     }
   }

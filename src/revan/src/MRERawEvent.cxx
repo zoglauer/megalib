@@ -81,14 +81,14 @@ ClassImp(MRERawEvent)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-const int MRERawEvent::c_UnknownEvent = MPhysicalEvent::c_Unknown;
-const int MRERawEvent::c_ComptonEvent = MPhysicalEvent::c_Compton;
-const int MRERawEvent::c_PairEvent    = MPhysicalEvent::c_Pair;
-const int MRERawEvent::c_MipEvent     = MPhysicalEvent::c_Muon;
-const int MRERawEvent::c_ShowerEvent  = MPhysicalEvent::c_Shower;
-const int MRERawEvent::c_PhotoEvent   = MPhysicalEvent::c_Photo;
-
+/*
+const int c_UnknownEvent = c_UnknownEvent;
+const int c_ComptonEvent = c_ComptonEvent;
+const int c_PairEvent    = c_PairEvent;
+const int c_MuonEvent     = c_MuonEvent;
+const int c_ShowerEvent  = c_ShowerEvent;
+const int c_PhotoEvent   = c_PhotoEvent;
+*/
 const double MRERawEvent::c_NoQualityFactor = numeric_limits<double>::max()/3;
 const double MRERawEvent::c_NoScore = numeric_limits<double>::max()/3; // remove later
 
@@ -165,19 +165,19 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
 
 
   if (RE->GetPhysicalEvent() != 0) {
-    if (m_EventType == MRERawEvent::c_ComptonEvent) {
+    if (m_EventType == c_ComptonEvent) {
       m_Event = new MComptonEvent();
       m_Event->Assimilate(RE->GetPhysicalEvent());
-    } else if (m_EventType == MRERawEvent::c_PairEvent) {
+    } else if (m_EventType == c_PairEvent) {
       m_Event = new MPairEvent();
       m_Event->Assimilate(RE->GetPhysicalEvent());
-    } else if (m_EventType == MRERawEvent::c_MipEvent) {
+    } else if (m_EventType == c_MuonEvent) {
       m_Event = new MMuonEvent();
       m_Event->Assimilate(RE->GetPhysicalEvent());
-    } else if (m_EventType == MRERawEvent::c_PhotoEvent) {
+    } else if (m_EventType == c_PhotoEvent) {
       m_Event = new MPhotoEvent();
       m_Event->Assimilate(RE->GetPhysicalEvent());
-    } else if (m_EventType == MRERawEvent::c_UnknownEvent) {
+    } else if (m_EventType == c_UnknownEvent) {
       m_Event = new MUnidentifiableEvent();
       m_Event->Assimilate(RE->GetPhysicalEvent());
     } else {
@@ -693,7 +693,7 @@ MString MRERawEvent::GetEventTypeAsString()
     return "Compton";
   } else if (m_EventType == c_PairEvent) {
     return "Pair";
-  } else if (m_EventType == c_MipEvent) {
+  } else if (m_EventType == c_MuonEvent) {
     return "MIP";
   } else if (m_EventType == c_ShowerEvent) {
     return "Shower";
@@ -1190,7 +1190,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       Photo->SetPosition(GetRESEAt(0)->GetPosition());
 
       m_Event = (MPhysicalEvent*) Photo;
-      // } else if (m_EventType == c_MipEvent) {
+      // } else if (m_EventType == c_MuonEvent) {
       //mout<<"Do not store muons"<<endl;
       //} else if (m_EventType == c_ShowerEvent) {
       //mout<<"Do not store showers"<<endl;

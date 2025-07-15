@@ -136,7 +136,7 @@ bool MERDecay::Analyze(MRawEventIncarnations* List)
     RE = m_List->GetRawEventAt(e);
     massert(RE != 0);
 
-    if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+    if (RE->GetEventType() == c_ComptonEvent) {
 
       // Check all combinations - execpt the total event: 
       if (m_Mode == c_AllButOneCombination) {

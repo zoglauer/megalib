@@ -473,7 +473,7 @@ bool MResponseBuilder::InitializeNextMatchingEvent()
       
       
       // Decide future:
-      if (m_ReEvent != nullptr && m_ReEvent->GetEventType() != MRERawEvent::c_PairEvent) {
+      if (m_ReEvent != nullptr && m_ReEvent->GetEventType() != c_PairEvent) {
         if (m_ReEvent->GetEventID() < m_RevanEventID) {
           m_RevanLevel++; 
         }
