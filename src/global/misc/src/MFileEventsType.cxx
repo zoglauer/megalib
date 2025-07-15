@@ -95,7 +95,7 @@ bool MFileEventsType::Open(MString FileName, unsigned int Way, bool IsBinary)
 void MFileEventsType::Reset()
 {
   m_EventId = c_NoId;
-  m_EventType = MPhysicalEvent::c_Unknown;
+  m_EventType = c_UnknownEvent;
   m_EventTypeProbability = 0.;
 
   m_IsFirstEvent = true;
@@ -147,7 +147,7 @@ bool MFileEventsType::GetNextEvent()
   // Reset data fields
   unsigned int status = 0; //3 LSB for id, et, tp
   m_EventId = c_NoId;
-  m_EventType = MPhysicalEvent::c_Unknown;
+  m_EventType = c_UnknownEvent;
   m_EventTypeProbability = 0.;
 
   // Resume reading file

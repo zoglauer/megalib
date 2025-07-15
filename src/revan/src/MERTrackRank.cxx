@@ -92,7 +92,7 @@ bool MERTrackRank::EvaluateTracks(MRERawEvent* RE)
     if (RE->GetVertex() != 0) {
       mimp<<"Hacked sanity check..."<<endl; 
       RE->SetPairQualityFactor(1-QF);
-      RE->SetEventType(MRERawEvent::c_PairEvent);
+      RE->SetEventType(c_PairEvent);
       RE->SetGoodEvent(true);
     } else {
       RE->SetTrackQualityFactor(QF);

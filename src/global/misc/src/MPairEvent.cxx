@@ -58,7 +58,7 @@ MPairEvent::MPairEvent()
 {
   // standard constructor
 
-  m_EventType = c_Pair;
+  m_EventType = c_PairEvent;
 
   Reset();
 }
@@ -163,7 +163,7 @@ bool MPairEvent::Assimilate(MPairEvent* PairEventData)
 
 bool MPairEvent::Assimilate(MPhysicalEvent* Event)
 {
-  if (Event->GetType() == MPhysicalEvent::c_Pair) {
+  if (Event->GetType() == c_PairEvent) {
     return Assimilate(dynamic_cast<MPairEvent*>(Event));
   } else {
     return false;

@@ -1535,7 +1535,7 @@ vector<float> ResponseToXSPEC::SpectrumFromTra(MResponseMatrixO2 Rsp, vector<flo
 	MPhysicalEvent* Event;
 
 	while ((Event = EventFile.GetNextEvent()) != 0){
-		if (Event->GetType() == MPhysicalEvent::c_Compton || Event->GetType() == MPhysicalEvent::c_Photo){
+		if (Event->GetType() == c_ComptonEvent || Event->GetType() == c_PhotoEvent){
 			if (MimrecEventSelector.IsQualifiedEvent(Event) == true){
 				double E = Event->GetEnergy();
 
@@ -1614,7 +1614,7 @@ vector<float> ResponseToXSPEC::BkgSpecFromTra(MResponseMatrixO2 Rsp, vector<floa
 	MPhysicalEvent* Event;
 
 	while ((Event = EventFile.GetNextEvent()) != 0){
-		if (Event->GetType() == MPhysicalEvent::c_Compton || Event->GetType() == MPhysicalEvent::c_Photo){
+		if (Event->GetType() == c_ComptonEvent || Event->GetType() == c_PhotoEvent){
 			if (MimrecEventSelector.IsQualifiedEvent(Event) == true){
 				double E = Event->GetEnergy();
 

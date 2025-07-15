@@ -96,15 +96,15 @@ bool MProjection::Assimilate(MPhysicalEvent* Event)
   m_PET = nullptr;
   m_Multi = nullptr;
 
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == c_ComptonEvent) {
     m_C = dynamic_cast<MComptonEvent*>(Event);
-  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
+  } else if (Event->GetType() == c_PairEvent) {
     m_P = dynamic_cast<MPairEvent*>(Event);
-  } else if (Event->GetType() == MPhysicalEvent::c_Photo) {
+  } else if (Event->GetType() == c_PhotoEvent) {
     m_Photo = dynamic_cast<MPhotoEvent*>(Event);
-  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+  } else if (Event->GetType() == c_PETEvent) {
     m_PET = dynamic_cast<MPETEvent*>(Event);
-  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+  } else if (Event->GetType() == c_MultiEvent) {
     m_Multi = dynamic_cast<MMultiEvent*>(Event);
   } else {
     cout<<"Unhandled event type: "<<Event->GetTypeString()<<endl;

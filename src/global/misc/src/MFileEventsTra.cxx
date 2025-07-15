@@ -68,7 +68,7 @@ MFileEventsTra::MFileEventsTra() : MFileEvents()
 {
   // Construct an instance of MFileEventsTra
 
-  m_EventType = MPhysicalEvent::c_Unknown;
+  m_EventType = c_UnknownEvent;
 
   m_FileType = "tra";
 
@@ -350,7 +350,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
     }
   }
 
-  m_EventType = MPhysicalEvent::c_Unknown;
+  m_EventType = c_UnknownEvent;
 
   // Read until we reach a CO or PA or <to be continued>
   MString Line;
@@ -361,54 +361,54 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
     if (Line[0] == 'E' && Line[1] == 'T') {
       if (Line.Length() < 5) {
         cout<<"Error reading event type"<<endl;
-        m_EventType = MPhysicalEvent::c_Unknown;
+        m_EventType = c_UnknownEvent;
         break;
       }
       if (Line[3] == 'C' && Line[4] == 'O') {
         MComptonEvent* P = new MComptonEvent();
         P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
-        m_EventType = MPhysicalEvent::c_Compton;
+        m_EventType = c_ComptonEvent;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'P' && Line[4] == 'A') {
         MPairEvent* P = new MPairEvent();
         P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
-        m_EventType = MPhysicalEvent::c_Pair;
+        m_EventType = c_PairEvent;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'P' && Line[4] == 'H') {
         MPhotoEvent* P = new MPhotoEvent();
         P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
-        m_EventType = MPhysicalEvent::c_Photo;
+        m_EventType = c_PhotoEvent;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'M' && Line[4] == 'U') {
         MMuonEvent* P = new MMuonEvent();
         P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
-        m_EventType = MPhysicalEvent::c_Muon;
+        m_EventType = c_MuonEvent;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'P' && Line[4] == 'T') {
         MPETEvent* P = new MPETEvent();
         P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
-        m_EventType = MPhysicalEvent::c_Muon;
+        m_EventType = c_MuonEvent;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'M' && Line[4] == 'T') {
         MMultiEvent* P = new MMultiEvent();
         P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
-        m_EventType = MPhysicalEvent::c_Muon;
+        m_EventType = c_MuonEvent;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'U' && Line[4] == 'N') {
         MUnidentifiableEvent* P = new MUnidentifiableEvent();
         P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
-        m_EventType = MPhysicalEvent::c_Unidentifiable;
+        m_EventType = c_UnidentifiableEvent;
         Phys = (MPhysicalEvent*) P;
         break;
       } else {
         cout<<"Unknown event"<<endl;
-        m_EventType = MPhysicalEvent::c_Unknown;
+        m_EventType = c_UnknownEvent;
         break;
       }
     } else if (Line[0] == 'N' && Line[1] == 'F') {

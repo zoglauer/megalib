@@ -132,7 +132,7 @@ bool MResponseImagingEfficiency::Analyze()
     MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
     if (Event != 0) {
       if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
-        if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        if (Event->GetType() == c_ComptonEvent) {
           MComptonEvent* Compton = (MComptonEvent*) Event;
           
           if (Compton->IsKinematicsOK() == false) return true;

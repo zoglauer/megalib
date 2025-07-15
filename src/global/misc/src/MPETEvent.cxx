@@ -52,7 +52,7 @@ ClassImp(MPETEvent)
 //! Default constructor
 MPETEvent::MPETEvent()
 {
-  m_EventType = c_PET;
+  m_EventType = c_PETEvent;
 
   Reset();
 }
@@ -146,7 +146,7 @@ bool MPETEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MPETEvent::Assimilate(const MPETEventData *PETEventData)
 
-  if (Event->GetType() == MPhysicalEvent::c_PET) {
+  if (Event->GetType() == c_PETEvent) {
     return Assimilate(dynamic_cast<MPETEvent*>(Event));
   } else {
     merr<<"Trying to assimilate a non-PET event!"<<endl; 

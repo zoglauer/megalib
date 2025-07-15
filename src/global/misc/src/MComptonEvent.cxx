@@ -56,7 +56,7 @@ MComptonEvent::MComptonEvent() : MPhysicalEvent(), m_CoincidenceWindow(0)
 {
   // standard constructor
 
-  m_EventType = c_Compton;
+  m_EventType = c_ComptonEvent;
 
   Reset();
 }
@@ -665,7 +665,7 @@ bool MComptonEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MComptonEvent::Assimilate(const MComptonEventData *ComptonEventData)
   
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == c_ComptonEvent) {
     return Assimilate(dynamic_cast<MComptonEvent*>(Event));
   } else {
     return false; 

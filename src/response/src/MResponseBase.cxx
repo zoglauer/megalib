@@ -256,7 +256,7 @@ bool MResponseBase::InitializeNextMatchingEvent()
       if (m_ReEvents.size() > 0) m_ReEvent = m_ReEvents[0];
 
       // Decide future:
-      if (m_ReEvent != 0 && m_ReEvent->GetEventType() != MRERawEvent::c_PairEvent) {
+      if (m_ReEvent != 0 && m_ReEvent->GetEventType() != c_PairEvent) {
         if (m_ReEvent->GetEventID() < m_RevanEventID) {
           m_RevanLevel++; 
         }

@@ -538,9 +538,9 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
 //   double Radius = 1.27;
 //   MVector Pos;
-//   if (Event->GetType() == MPhysicalEvent::c_Compton ||
-//       Event->GetType() == MPhysicalEvent::c_Pair) {
-//     if (Event->GetType() == MPhysicalEvent::c_Compton) {
+//   if (Event->GetType() == c_ComptonEvent ||
+//       Event->GetType() == c_PairEvent) {
+//     if (Event->GetType() == c_ComptonEvent) {
 //       Pos = ((MComptonEvent *) Event)->C1();
 //     } else {
 //       Pos = ((MPairEvent *) Event)->GetPairCreationIA();
@@ -575,7 +575,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 //   // Second hit has to be in bottom calorimeters:
 //   MVector BottomCenter(0, 0, 6.3);
 //   MVector BottomDim(9, 8, 6); //4);
-//   if (Event->GetType() == MPhysicalEvent::c_Compton) {
+//   if (Event->GetType() == c_ComptonEvent) {
 //     MVector Pos = ((MComptonEvent *) Event)->C2();
 //     Pos -= BottomCenter;
 //     if (fabs(Pos[0]) - BottomDim[0] > 0 || fabs(Pos[1]) - BottomDim[1] > 0 || fabs(Pos[2]) - BottomDim[2] > 0) {
@@ -607,7 +607,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
   // Only start in certain detectors - needs an active geometry
   if (m_Geometry != 0) {
     if (m_ExcludedFirstIADetectors.size() > 0) {
-      if (Event->GetType() == MPhysicalEvent::c_Compton || Event->GetType() == MPhysicalEvent::c_Pair || Event->GetType() == MPhysicalEvent::c_Photo) {
+      if (Event->GetType() == c_ComptonEvent || Event->GetType() == c_PairEvent || Event->GetType() == c_PhotoEvent) {
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Event->GetPosition(), true, false);
         if (V.GetDetector() == 0) {
           cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
@@ -626,7 +626,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       }
     }
     if (m_ExcludedSecondIADetectors.size() > 0) {
-      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+      if (Event->GetType() == c_ComptonEvent) {
         MComptonEvent* C = (MComptonEvent *) Event;
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(C->C2(), true, false);
         if (V.GetDetector() == 0) {
@@ -721,9 +721,9 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     Return = false;
   }
   if (m_UseBeam == true) {
-    if (Event->GetType() == MPhysicalEvent::c_Photo ||
-        Event->GetType() == MPhysicalEvent::c_Compton ||
-        Event->GetType() == MPhysicalEvent::c_Pair) {
+    if (Event->GetType() == c_PhotoEvent ||
+        Event->GetType() == c_ComptonEvent ||
+        Event->GetType() == c_PairEvent) {
       MVector Position = Event->GetPosition();
       // The same equations appear in MResponseMultipleComptonLens
       double Radius = (Position - m_BeamFocalSpot).Cross(m_BeamStart - m_BeamFocalSpot).Mag()/(m_BeamStart - m_BeamFocalSpot).Mag();
@@ -740,9 +740,9 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     }
   }
   if (m_UseBox == true) {
-    if (Event->GetType() == MPhysicalEvent::c_Photo ||
-        Event->GetType() == MPhysicalEvent::c_Compton || 
-        Event->GetType() == MPhysicalEvent::c_Pair) {
+    if (Event->GetType() == c_PhotoEvent ||
+        Event->GetType() == c_ComptonEvent || 
+        Event->GetType() == c_PairEvent) {
       MVector Position = Event->GetPosition();
 
       if (m_BoxFirstIAMin.AtLeastOneSmaller(Position) == true || m_BoxFirstIAMax.AtLeastOneLarger(Position) == true) {
@@ -754,7 +754,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
         Return = false;
       }
       
-      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+      if (Event->GetType() == c_ComptonEvent) {
         Position = dynamic_cast<MComptonEvent*>(Event)->C2();
         if (m_BoxSecondIAMin.AtLeastOneSmaller(Position) == true || m_BoxSecondIAMax.AtLeastOneLarger(Position) == true) {
           if (DumpOutput == true) {
@@ -810,7 +810,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
   // Compton events:
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == c_ComptonEvent) {
     MComptonEvent *C = (MComptonEvent *) Event;
 
     // Deselect bottom calorimeters in MPE prototype
@@ -995,7 +995,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
-  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
+  } else if (Event->GetType() == c_PairEvent) {
     MPairEvent* Pair = (MPairEvent*) Event;
 
     if (m_UsePairs == false) {
@@ -1058,7 +1058,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
-  } else if (Event->GetType() == MPhysicalEvent::c_Photo) {
+  } else if (Event->GetType() == c_PhotoEvent) {
     //MPhotoEvent* Photo = (MPhotoEvent*) Event;
 
     if (m_UsePhotos == false) {
@@ -1068,19 +1068,19 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       m_NRejectedUsePhotos++;
       Return = false;
     }
-  } else if (Event->GetType() == MPhysicalEvent::c_Muon) {
+  } else if (Event->GetType() == c_MuonEvent) {
     if (DumpOutput == true) {
       cout<<"ID "<<Event->GetId()<<": Unwanted muon event!"<<endl;
     }
     m_NRejectedUseMuons++;
     Return = false;
-  } else if (Event->GetType() == MPhysicalEvent::c_Decay) {
+  } else if (Event->GetType() == c_DecayEvent) {
     if (DumpOutput == true) {
       cout<<"ID "<<Event->GetId()<<": Unwanted decay event!"<<endl;
     }
     m_NRejectedUseDecays++;
     Return = false;
-  } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
+  } else if (Event->GetType() == c_UnidentifiableEvent) {
     if (m_UseUnidentifiables == false) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Unwanted unidentifiable event!"<<endl;
@@ -1088,7 +1088,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       m_NRejectedUseUnidentifiables++;
       Return = false;
     }
-  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+  } else if (Event->GetType() == c_PETEvent) {
     if (m_UsePETs == false) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Unwanted PET event!"<<endl;
@@ -1096,7 +1096,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       m_NRejectedUsePETs++;
       Return = false;
     }
-  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+  } else if (Event->GetType() == c_MultiEvent) {
     if (m_UseMulties == false) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Unwanted multi event!"<<endl;
@@ -1151,7 +1151,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
 
 
   // Compton events:
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == c_ComptonEvent) {
     MComptonEvent *C = (MComptonEvent *) Event;
 
 
@@ -1239,7 +1239,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
-  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
+  } else if (Event->GetType() == c_PairEvent) {
     MPairEvent* Pair = (MPairEvent*) Event;
 
     if (m_UsePairs == false) {
@@ -1271,25 +1271,25 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
-  } else if (Event->GetType() == MPhysicalEvent::c_Photo) {
+  } else if (Event->GetType() == c_PhotoEvent) {
     //MPhotoEvent* Photo = (MPhotoEvent*) Event;
 
     if (m_UsePhotos == false) {
       return false;
     }
-  } else if (Event->GetType() == MPhysicalEvent::c_Muon) {
+  } else if (Event->GetType() == c_MuonEvent) {
     return false;
-  } else if (Event->GetType() == MPhysicalEvent::c_Decay) {
+  } else if (Event->GetType() == c_DecayEvent) {
     return false;
-  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+  } else if (Event->GetType() == c_PETEvent) {
     if (m_UsePETs == false) {
       return false;
     }
-  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+  } else if (Event->GetType() == c_MultiEvent) {
     if (m_UseMulties == false) {
       return false;
     }
-  } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
+  } else if (Event->GetType() == c_UnidentifiableEvent) {
     if (m_UseUnidentifiables == false) {
       return false;
     }
@@ -1326,9 +1326,9 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
   if (m_UseBeam == true) {
-    if (Event->GetType() == MPhysicalEvent::c_Photo ||
-        Event->GetType() == MPhysicalEvent::c_Compton ||
-        Event->GetType() == MPhysicalEvent::c_Pair) {
+    if (Event->GetType() == c_PhotoEvent ||
+        Event->GetType() == c_ComptonEvent ||
+        Event->GetType() == c_PairEvent) {
       MVector Position = Event->GetPosition();
       // The same equations appear in MResponseMultipleComptonLens
       double Radius = (Position - m_BeamFocalSpot).Cross(m_BeamStart - m_BeamFocalSpot).Mag()/(m_BeamStart - m_BeamFocalSpot).Mag();
@@ -1341,16 +1341,16 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
   }
   
   if (m_UseBox == true) {
-    if (Event->GetType() == MPhysicalEvent::c_Photo ||
-        Event->GetType() == MPhysicalEvent::c_Compton || 
-        Event->GetType() == MPhysicalEvent::c_Pair) {
+    if (Event->GetType() == c_PhotoEvent ||
+        Event->GetType() == c_ComptonEvent || 
+        Event->GetType() == c_PairEvent) {
       MVector Position = Event->GetPosition();
 
       if (m_BoxFirstIAMin.AtLeastOneSmaller(Position) == true || m_BoxFirstIAMax.AtLeastOneLarger(Position) == true) {
         return false;
       }
       
-      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+      if (Event->GetType() == c_ComptonEvent) {
         Position = dynamic_cast<MComptonEvent*>(Event)->C2();
         if (m_BoxSecondIAMin.AtLeastOneSmaller(Position) == true || m_BoxSecondIAMax.AtLeastOneLarger(Position) == true) {
           return false;
@@ -1391,7 +1391,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
   // Only start in certain detectors - needs an active geometry
   if (m_Geometry != 0) {
     if (m_ExcludedFirstIADetectors.size() > 0) {
-      if (Event->GetType() == MPhysicalEvent::c_Compton || Event->GetType() == MPhysicalEvent::c_Pair || Event->GetType() == MPhysicalEvent::c_Photo) {
+      if (Event->GetType() == c_ComptonEvent || Event->GetType() == c_PairEvent || Event->GetType() == c_PhotoEvent) {
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Event->GetPosition(), true, false);
         if (V.GetDetector() == 0) {
           cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
@@ -1405,7 +1405,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
       }
     }
     if (m_ExcludedSecondIADetectors.size() > 0) {
-      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+      if (Event->GetType() == c_ComptonEvent) {
         MComptonEvent* C = (MComptonEvent*) Event;
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(C->C2(), true, false);
         if (V.GetDetector() == 0) {

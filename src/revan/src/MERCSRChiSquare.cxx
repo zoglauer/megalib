@@ -145,7 +145,7 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
   
   if (RE->GetNRESEs() != 2) {
     merr<<"FindComptonSequenceDualHitEvent called with "<<RE->GetNRESEs()<<" hits instead of exactly 2!"<<endl;
-    RE->SetEventType(MRERawEvent::c_UnknownEvent);
+    RE->SetEventType(c_UnknownEvent);
     RE->SetEventReconstructed(true);
     return;
   }
@@ -481,7 +481,7 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
   if (IsGood == true) {
     if (EstimatedFirst < 0) {
       merr<<"ERROR: We missed some condition during handling of two-site events... Bug!"<<endl;
-      RE->SetEventType(MRERawEvent::c_UnknownEvent);
+      RE->SetEventType(c_UnknownEvent);
       RE->SetEventReconstructed(true);
       return;
     }
@@ -511,7 +511,7 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
       
       if (IsGood == true) {
         mdebug<<"CSR-CS - Dual hit: Good Compton event"<<endl;
-        RE->SetEventType(MRERawEvent::c_ComptonEvent);
+        RE->SetEventType(c_ComptonEvent);
         if (m_TypeTestStatistics == c_TSSimple) {
           if (QualityFactor1 < 0) {
             RE->SetComptonQualityFactors(0, 1);
@@ -570,7 +570,7 @@ void MERCSRChiSquare::FindComptonSequence(MRERawEvent* RE)
     mdebug<<"CSR-CS - Sequence: Only single hit event!"<<endl;
     //RE->SetRejectionReason(MRERawEvent::c_RejectionSingleSiteEvent);
     if (RE->GetRESEAt(0)->GetType() == MRESE::c_Hit || RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
-      RE->SetEventType(MRERawEvent::c_PhotoEvent);
+      RE->SetEventType(c_PhotoEvent);
       RE->SetGoodEvent(true);
       RE->SetEventReconstructed(true);
     } else {
@@ -678,7 +678,7 @@ void MERCSRChiSquare::FindComptonSequence(MRERawEvent* RE)
   mdebug<<"CSR-CS - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
   
   RE->SetComptonQualityFactors(BestQualityFactor, SecondBestQualityFactor);
-  //RE->SetEventType(MRERawEvent::c_ComptonEvent);
+  //RE->SetEventType(c_ComptonEvent);
   RE->SetGoodEvent(true);
   RE->SetEventReconstructed(true);
 }

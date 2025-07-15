@@ -265,7 +265,7 @@ bool MEarthHorizon::IsEventFromEarth(MPhysicalEvent* Event, bool DumpOutput) con
 //! Return true if the event originates from Earth via intersection test
 bool MEarthHorizon::IsEventFromEarthByIntersectionTest(MPhysicalEvent* Event, bool DumpOutput) const
 {
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == c_ComptonEvent) {
     MComptonEvent* C = dynamic_cast<MComptonEvent*>(Event);
 
     double Phi = C->Phi();
@@ -287,7 +287,7 @@ bool MEarthHorizon::IsEventFromEarthByIntersectionTest(MPhysicalEvent* Event, bo
       }
       return true;
     }
-  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
+  } else if (Event->GetType() == c_PairEvent) {
     MPairEvent* P = dynamic_cast<MPairEvent*>(Event); 
     double AxisDist = m_PositionEarth.Angle(P->GetOrigin());
     
@@ -311,7 +311,7 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
 {
   massert(Event != 0);
 
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == c_ComptonEvent) {
     MComptonEvent* C = dynamic_cast<MComptonEvent*>(Event);
 
     // Take care of scatter angles larger than 90 deg:
@@ -472,7 +472,7 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
         }
       }
     } 
-  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
+  } else if (Event->GetType() == c_PairEvent) {
     MPairEvent* P = dynamic_cast<MPairEvent*>(Event); 
     double AxisDist = m_PositionEarth.Angle(P->GetOrigin());
     

@@ -78,11 +78,11 @@ bool MBackprojectionNearField::Assimilate(MPhysicalEvent* Event)
   }
 
   // Those are the event types we handle:
-  if (Event->GetType() == MPhysicalEvent::c_Compton ||
-    Event->GetType() == MPhysicalEvent::c_Pair ||
-    Event->GetType() == MPhysicalEvent::c_Photo ||
-    Event->GetType() == MPhysicalEvent::c_PET ||
-    Event->GetType() == MPhysicalEvent::c_Multi) {
+  if (Event->GetType() == c_ComptonEvent ||
+    Event->GetType() == c_PairEvent ||
+    Event->GetType() == c_PhotoEvent ||
+    Event->GetType() == c_PETEvent ||
+    Event->GetType() == c_MultiEvent) {
     return true;
   }
 
@@ -101,13 +101,13 @@ bool MBackprojectionNearField::Backproject(MPhysicalEvent* Event, double* Image,
 
   if (MBackprojectionNearField::Assimilate(Event) == false) return false;
 
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == c_ComptonEvent) {
     return BackprojectionCompton(Image, Bins, NUsedBins, Maximum);
-  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
+  } else if (Event->GetType() == c_PairEvent) {
     return BackprojectionPair(Image, Bins, NUsedBins, Maximum);
-  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+  } else if (Event->GetType() == c_PETEvent) {
     return BackprojectionPET(Image, Bins, NUsedBins, Maximum);
-  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+  } else if (Event->GetType() == c_MultiEvent) {
     return BackprojectionMulti(Image, Bins, NUsedBins, Maximum);
   } else  {
     cout<<"Near-field backprojection does not work for this event type: "<<Event->GetTypeString()<<endl;
@@ -579,7 +579,7 @@ bool MBackprojectionNearField::BackprojectionMulti(double* SparseImage, int* Spa
   bool First = true;
   for (unsigned int i = 0; i < Multi->GetNumberOfEvents(); ++i) {
     // It is not working for photo...
-    if (Multi->GetEvent(i)->GetType() == MPhysicalEvent::c_Photo) continue;
+    if (Multi->GetEvent(i)->GetType() == c_PhotoEvent) continue;
     
     Assimilate(Multi->GetEvent(i));
     NUsedBins = 0;

@@ -133,7 +133,7 @@ bool MResponseConeShapes::AnalyzeEvent(MPhysicalEvent* Event)
   //if (Passes++ < 10) return false;
   //if (Passes > 80) return false;
 
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == c_ComptonEvent) {
     MComptonEvent* Compton = dynamic_cast<MComptonEvent*>(Event);
     m_Ei = Compton->Ei();
     m_Phi = Compton->Phi()*c_Deg;

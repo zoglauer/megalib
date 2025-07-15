@@ -716,7 +716,7 @@ bool TraFitsConverter::ToFits()
     }
     
     
-    if (Event->GetType() == MPhysicalEvent::c_Compton) {
+    if (Event->GetType() == c_ComptonEvent) {
       C = dynamic_cast<MComptonEvent*>(Event);
       ID.push_back(C->GetId());
       TYPE.push_back(2);
@@ -923,7 +923,7 @@ bool TraFitsConverter::ToFits()
       QUAL2.push_back(C->ComptonQualityFactor2());
       
       
-    } else if (Event->GetType() == MPhysicalEvent::c_Photo) {
+    } else if (Event->GetType() == c_PhotoEvent) {
       S = dynamic_cast<MPhotoEvent*>(Event);
       ID.push_back(S->GetId());
       TYPE.push_back(1);

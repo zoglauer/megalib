@@ -735,7 +735,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       MRawEventIncarnations* REI = m_RawEvents->Get(i);
       for (int e = 0; e < REI->GetNRawEvents(); e++) {
         MRERawEvent* RE = REI->GetRawEventAt(e);
-        if (RE->GetEventType() == MRERawEvent::c_PhotoEvent) {
+        if (RE->GetEventType() == c_PhotoEvent) {
           RE->SetEventReconstructed(true);
         }
       }
@@ -852,10 +852,10 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     }
     mdebug<<Event->ToString()<<endl;
     m_NGoodEvents++;
-    if (Event->GetType() == MPhysicalEvent::c_Photo) {
+    if (Event->GetType() == c_PhotoEvent) {
       mdebug<<"ER - Good photo event..."<<endl;
       m_NPhotoEvents++;
-    } else if (Event->GetType() == MPhysicalEvent::c_Compton) {
+    } else if (Event->GetType() == c_ComptonEvent) {
       if (Event->IsDecay() == true) {
         mdebug<<"ER - Compton event - probably decay..."<<endl;
         m_NDecayEvents++;
@@ -863,19 +863,19 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
         mdebug<<"ER - Good Compton event..."<<endl;
       }
       m_NComptonEvents++;
-    } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
+    } else if (Event->GetType() == c_PairEvent) {
       mdebug<<"ER - Good pair event..."<<endl;
       m_NPairEvents++;
-    } else if (Event->GetType() == MPhysicalEvent::c_Muon) {
+    } else if (Event->GetType() == c_MuonEvent) {
       mdebug<<"ER - Good muon event..."<<endl;
       m_NMuonEvents++;
-    } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+    } else if (Event->GetType() == c_PETEvent) {
       mdebug<<"ER - Good PET event..."<<endl;
       m_NPETEvents++;
-    } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+    } else if (Event->GetType() == c_MultiEvent) {
       mdebug<<"ER - Good multi event..."<<endl;
       m_NMultiEvents++;
-    } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
+    } else if (Event->GetType() == c_UnidentifiableEvent) {
       mdebug<<"ER - Undefinable event..."<<endl;
       m_NUnidentifiableEvents++;
     } else {

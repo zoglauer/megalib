@@ -52,7 +52,7 @@ MUnidentifiableEvent::MUnidentifiableEvent()
 {
   // standard constructor
 
-  m_EventType = c_Unidentifiable;
+  m_EventType = c_UnidentifiableEvent;
 
   Reset();
 }
@@ -113,7 +113,7 @@ bool MUnidentifiableEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MUnidentifiableEvent::Assimilate(const MUnidentifiableEventData *UnidentifiableEventData)
 
-  if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
+  if (Event->GetType() == c_UnidentifiableEvent) {
     return Assimilate((MUnidentifiableEvent *) Event);
   } else {
     return false; 

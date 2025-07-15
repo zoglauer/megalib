@@ -250,7 +250,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
   if (StartTracking == false) {
     mdebug<<"Not enough hits in tracker!"<<endl;
-    RE->SetEventType(MRERawEvent::c_UnknownEvent); // discard
+    RE->SetEventType(c_UnknownEvent); // discard
     RE->SetRejectionReason(MRERawEvent::c_RejectionNotEnoughHitsInTracker);
     RE->SetEventReconstructed(true);
     return true;
@@ -258,13 +258,13 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
   // Step B: Pairs
   Timer.Start();
-  if (HasOneREOfType(MRERawEvent::c_PairEvent)) {
+  if (HasOneREOfType(c_PairEvent)) {
     mdebug<<"* Search for pairs: Vertex"<<endl;
     bool HasVertices = false;
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; e++) {
       RE = m_List->GetRawEventAt(e);
-      if (RE->GetEventType() == MRERawEvent::c_PairEvent) {// Iterate only over pair events
+      if (RE->GetEventType() == c_PairEvent) {// Iterate only over pair events
         List = CheckForPair(RE);//Check for vertices
         if (List) { // if vertices
           mdebug<<"List: "<<List->GetNRawEvents()<<endl;
@@ -298,7 +298,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
           m_List->SetOptimumEvent(RE);
           m_List->SetBestTryEvent(RE);
         } else { // if no vertices
-          RE->SetEventType(MRERawEvent::c_UnknownEvent); // discard
+          RE->SetEventType(c_UnknownEvent); // discard
         }
         RE->SetEventReconstructed(true);
       }
@@ -310,26 +310,26 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
   // Step C: Mips
 
   Timer.Start();
-  if (HasOneREOfType(MRERawEvent::c_MipEvent) || HasOneREOfType(MRERawEvent::c_ShowerEvent)) {
+  if (HasOneREOfType(c_MuonEvent) || HasOneREOfType(c_ShowerEvent)) {
   //if (m_SearchMIPs == true) {
     mdebug<<"* Search for MIPs"<<endl;
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
-      if (RE->GetEventType() == MRERawEvent::c_MipEvent || RE->GetEventType() == MRERawEvent::c_ShowerEvent) {// Iterate only over MIP/shower events
+      if (RE->GetEventType() == c_MuonEvent || RE->GetEventType() == c_ShowerEvent) {// Iterate only over MIP/shower events
         CheckForMips(RE);
         // If we have found a MIP then we are done!
-        if (RE->GetEventType() == MRERawEvent::c_MipEvent) {
+        if (RE->GetEventType() == c_MuonEvent) {
           mdebug<<"Tracking: Successful identification: MIP (probably muon)"<<endl;
           //Identified = true;
           m_List->SetOptimumEvent(RE);
           m_List->SetBestTryEvent(RE);
-        } else if (RE->GetEventType() == MRERawEvent::c_ShowerEvent) {
+        } else if (RE->GetEventType() == c_ShowerEvent) {
           mdebug<<"Tracking: Successful identification: Shower"<<endl;
           //Identified = true;
           m_List->SetOptimumEvent(RE);
           m_List->SetBestTryEvent(RE);
         } else {
-          RE->SetEventType(MRERawEvent::c_UnknownEvent); // discard
+          RE->SetEventType(c_UnknownEvent); // discard
         }
         RE->SetEventReconstructed(true);
       }
@@ -343,7 +343,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
   // Step C: Compton tracks:
   // IsEventReconstructed stays false until CSR is performed
-  if (HasOneREOfType(MRERawEvent::c_ComptonEvent)) {
+  if (HasOneREOfType(c_ComptonEvent)) {
     mdebug<<"* Search for Comptons"<<endl;
 
     // Step C.1: Generate the links
@@ -354,10 +354,10 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; e++) {
       RE = m_List->GetRawEventAt(e);
-      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
-        //RE->SetEventType(MRERawEvent::c_UnknownEvent);
+      if (RE->GetEventType() == c_ComptonEvent) {
+        //RE->SetEventType(c_UnknownEvent);
         List = TrackComptons(RE);
-        //RE->SetEventType(MRERawEvent::c_ComptonEvent);
+        //RE->SetEventType(c_ComptonEvent);
         if (List != 0) {
           m_List->DeleteRawEvent(RE);
           e--;
@@ -380,7 +380,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
       for (int e = 0; e < m_List->GetNRawEvents(); e++) {
         int CurrentN = 0;
         RE = m_List->GetRawEventAt(e);
-        if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+        if (RE->GetEventType() == c_ComptonEvent) {
           for (int r = 0; r < RE->GetNRESEs(); r++) {
             RESE = RE->GetRESEAt(r);
             if (IsInTracker(RESE) == true) CurrentN++;
@@ -392,7 +392,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
       for (int e = 0; e < m_List->GetNRawEvents(); e++) {
         int CurrentN = 0;
         RE = m_List->GetRawEventAt(e);
-        if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+        if (RE->GetEventType() == c_ComptonEvent) {
           for (int r = 0; r < RE->GetNRESEs(); r++) {
             RESE = RE->GetRESEAt(r);
             if (IsInTracker(RESE) == true) CurrentN++;
@@ -418,7 +418,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
-      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) {
+      if (RE->GetEventType() == c_ComptonEvent) {
         for (int r = 0; r < RE->GetNRESEs(); r++) {
           RESE = RE->GetRESEAt(r);
           IDRESE = RESE->GetID();
@@ -443,7 +443,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
-      if (RE->GetEventType() == MRERawEvent::c_ComptonEvent) EvaluateTracks(RE);
+      if (RE->GetEventType() == c_ComptonEvent) EvaluateTracks(RE);
     }
     SortByTrackQualityFactor(m_List);
 
@@ -1180,13 +1180,13 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
 
     // d. This is a good event...
     RE->SetPhysicalEvent(Muon);
-    //RE->SetEventType(MRERawEvent::c_MipEvent);
+    //RE->SetEventType(c_MuonEvent);
     RE->SetGoodEvent(true);
   }
   // b. A shower
   else if (TrackArray.size() > 1) {
     mdebug<<"==> Found a shower!"<<endl;
-    RE->SetEventType(MRERawEvent::c_ShowerEvent);
+    RE->SetEventType(c_ShowerEvent);
 
     // b. Integrate all tracks into this raw event:
     for (unsigned int i = 0; i < TrackArray.size(); ++i) {
@@ -1688,7 +1688,7 @@ bool MERTrack::EvaluatePairs(MRERawEvent* RE)
     RE->SetGoodEvent(false);
   } else {
     mdebug<<"Pair found..."<<endl;
-    RE->SetEventType(MRERawEvent::c_PairEvent);
+    RE->SetEventType(c_PairEvent);
     RE->SetGoodEvent(true);
   }
 
