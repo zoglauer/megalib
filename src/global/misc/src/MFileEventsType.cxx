@@ -51,16 +51,11 @@ const long MFileEventsType::c_NoId = -1;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MFileEventsType::MFileEventsType() : MFileEvents()
+MFileEventsType::MFileEventsType(MString GeometryFileName) : MFileEvents()
 {
   // Construct an instance of MFileEventsType
-  m_Geometry = nullptr;
   m_Version = 0;
-/*
-  m_Geometry = Geometry;
-  if (Geometry == 0) {
-    merr<<"Geometry pointer is zero! Aborting!"<<fatal;
-  }*/
+  m_GeometryFileName = GeometryFileName;
   Reset();
 }
 
@@ -91,11 +86,6 @@ bool MFileEventsType::Open(MString FileName, unsigned int Way, bool IsBinary)
   if (MFileEvents::Open(FileName, Way, IsBinary) == false) {
     return false;
   }
-  /* We don’t really use Geometry I think - to be removed?
-  if (m_Geometry->IsScanned() == false) {
-    merr<<"We do not have a properly initialized geometry!"<<endl;
-    return false;
-  }*/
   
   Reset();
   return true;
@@ -105,7 +95,7 @@ bool MFileEventsType::Open(MString FileName, unsigned int Way, bool IsBinary)
 void MFileEventsType::Reset()
 {
   m_EventId = c_NoId;
-  m_EventType = MRERawEvent::c_UnknownEvent;
+  m_EventType = MPhysicalEvent::c_Unknown;
   m_EventTypeProbability = 0.;
 
   m_IsFirstEvent = true;
@@ -157,7 +147,7 @@ bool MFileEventsType::GetNextEvent()
   // Reset data fields
   unsigned int status = 0; //3 LSB for id, et, tp
   m_EventId = c_NoId;
-  m_EventType = MRERawEvent::c_UnknownEvent;
+  m_EventType = MPhysicalEvent::c_Unknown;
   m_EventTypeProbability = 0.;
 
   // Resume reading file
