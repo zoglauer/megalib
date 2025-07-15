@@ -23,7 +23,6 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MFileEvents.h"
-#include "MRERawEvent.h"
 
 // Forward declarations:
 
@@ -35,7 +34,7 @@ class MFileEventsType : public MFileEvents
 {
   // public interface:
  public:
-  MFileEventsType();
+  MFileEventsType(MString GeometryFileName="None");
   virtual ~MFileEventsType();
 
   virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read, bool IsBinary = false);
@@ -54,7 +53,6 @@ class MFileEventsType : public MFileEvents
 
   // private members:
  private:
-  MGeometryRevan* m_Geometry;
   MString m_GeometryFileName;
 
   long m_EventId;
