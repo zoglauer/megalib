@@ -78,6 +78,7 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
 
   // Event type identification
   m_DoTracking = true;
+  m_SearchPhoto = true;
   m_SearchPairs = true;
   m_SearchMIPs = true;
   m_SearchComptons = true;
@@ -190,6 +191,7 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
 
   new MXmlNode(Node, "DoTracking", m_DoTracking);
   new MXmlNode(Node, "SearchPairs", m_SearchPairs);
+  new MXmlNode(Node, "SearchPhoto", m_SearchPhoto);
   new MXmlNode(Node, "SearchMIPs", m_SearchMIPs);
   new MXmlNode(Node, "SearchComptons", m_SearchComptons);
   new MXmlNode(Node, "EventTypeFileName", m_EventTypeFileName);
@@ -336,6 +338,9 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("DoTracking")) != 0) {
     m_DoTracking = aNode->GetValueAsBoolean();
+  }
+  if ((aNode = Node->GetNode("SearchPhoto")) != 0) {
+    m_SearchPhoto = aNode->GetValueAsBoolean();
   }
   if ((aNode = Node->GetNode("SearchPairs")) != 0) {
     m_SearchPairs = aNode->GetValueAsBoolean();
