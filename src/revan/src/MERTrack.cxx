@@ -249,11 +249,15 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
   }
 
   if (StartTracking == false) {
-    mdebug<<"Not enough hits in tracker!"<<endl;
-    RE->SetEventType(c_UnknownEvent); // discard
-    RE->SetRejectionReason(MRERawEvent::c_RejectionNotEnoughHitsInTracker);
-    RE->SetEventReconstructed(true);
-    return true;
+    for (int e = 0; e < m_List->GetNRawEvents(); e++) {
+      RE = m_List->GetRawEventAt(e);
+      if (RE->GetEventType() == c_PairEvent) {// Iterate only over pair events
+        mdebug<<"Not enough hits in tracker!"<<endl;
+        RE->SetEventType(c_UnknownEvent); // discard
+        RE->SetRejectionReason(MRERawEvent::c_RejectionNotEnoughHitsInTracker);
+        RE->SetEventReconstructed(true);
+      }
+    }
   }
 
   // Step B: Pairs

@@ -143,26 +143,32 @@ void MGUIERAlgorithm::Create()
   m_TrackingList->Add("Kalman Filter 2D (work in progress)"); // 8
   m_TrackingList->Add("Kalman Filter 3D (work in progress)"); // 9
   m_TrackingList->Add("First two layers (to be implemented)"); // 10
-  m_TrackingList->SetSelected(m_Data->GetTrackingAlgorithm());
-//  if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoNone) {
-//    m_TrackingList->SetSelected(0);
-//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoModifiedPearson) {
-//    m_TrackingList->SetSelected(1);
-//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoPearson) {
-//    m_TrackingList->SetSelected(2);
-//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoRank) {
-//    m_TrackingList->SetSelected(3);
-//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoChiSquare) {
-//    m_TrackingList->SetSelected(4);
-//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoGas) {
-//    m_TrackingList->SetSelected(5);
-//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoDirectional) {
-//    m_TrackingList->SetSelected(6);
-//  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoBayesian) {
-//    m_TrackingList->SetSelected(7);
-//  } else {
-//    m_TrackingList->SetSelected(0);
-//  }
+  if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoNone) {
+    m_TrackingList->SetSelected(0);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoModifiedPearson) {
+    m_TrackingList->SetSelected(1);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoPearson) {
+    m_TrackingList->SetSelected(2);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoRank) {
+    m_TrackingList->SetSelected(3);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoChiSquare) {
+    m_TrackingList->SetSelected(4);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoGas) {
+    m_TrackingList->SetSelected(5);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoDirectional) {
+    m_TrackingList->SetSelected(6);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoBayesian) {
+    m_TrackingList->SetSelected(7);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoKalman2D) {
+    m_TrackingList->SetSelected(8);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoKalman3D) {
+    m_TrackingList->SetSelected(9);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoFirstLayer) {
+    merr << "First two layers tracking is not implemented yet! No tracking algorithm selected." << endl;
+    m_TrackingList->SetSelected(0);
+  } else {
+    m_TrackingList->SetSelected(0);
+  }
   m_TrackingList->Create();
   AddFrame(m_TrackingList, m_ListLayout);
 /*
@@ -252,6 +258,14 @@ bool MGUIERAlgorithm::OnApply()
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoDirectional);
   } else if (m_TrackingList->GetSelected() == 7) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoBayesian);
+  } else if (m_TrackingList->GetSelected() == 8) {
+    m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoKalman2D);
+  } else if (m_TrackingList->GetSelected() == 9) {
+    m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoKalman3D);
+  } else if (m_TrackingList->GetSelected() == 10) {
+    merr << "First two layers tracking is not implemented yet! No tracking algorithm selected." << endl;
+    m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
+    //m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoFirstLayer);
   }
   // Pair
   //m_Data->SetPairAlgorithm(m_PairList->GetSelected());

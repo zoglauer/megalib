@@ -727,6 +727,8 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
 
   }
 
+  //mout << "AL evtid=" << m_RawEvents->Get(0)->GetRawEventAt(0)->GetEventId() << " evtype=" << m_RawEvents->Get(0)->GetRawEventAt(0)->GetEventTypeAsString() << endl;
+
 
   // Section P: Photo events
 
@@ -766,6 +768,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     mdebug<<"I am not doing Tracking!"<<endl;
   }
   
+  //mout << "AL evtid=" << m_RawEvents->Get(0)->GetRawEventAt(0)->GetEventId() << " evtype=" << m_RawEvents->Get(0)->GetRawEventAt(0)->GetEventTypeAsString() << endl;
   
   
   // Section E: Compton sequence reconstruction       
