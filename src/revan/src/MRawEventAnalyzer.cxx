@@ -738,7 +738,10 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       for (int e = 0; e < REI->GetNRawEvents(); e++) {
         MRERawEvent* RE = REI->GetRawEventAt(e);
         if (RE->GetEventType() == c_PhotoEvent) {
+          // Use a MERConstruction class dedicated to Photo events?
+          RE->SetGoodEvent(true);
           RE->SetEventReconstructed(true);
+          REI->SetBestTryEvent(RE);
         }
       }
     }
@@ -747,25 +750,40 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
 
   // Section D: Tracking:
   
-  if (SelectionsPassed == true && m_TrackingAlgorithm > c_TrackingAlgoNone) {
-    Timer.Start();
-    
-    if (m_Tracker == nullptr) {
-      merr<<"Tracker pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
-      return c_AnalysisUndefinedError;
+  if (SelectionsPassed == true) {
+    if (m_TrackingAlgorithm > c_TrackingAlgoNone) {
+      Timer.Start();
+      
+      if (m_Tracker == nullptr) {
+        merr<<"Tracker pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+        return c_AnalysisUndefinedError;
+      }
+      
+      for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+        MRawEventIncarnations* REI = m_RawEvents->Get(i);
+        m_Tracker->Analyze(REI);
+      }
+      
+      if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
+      
+      m_TimeTrack += Timer.ElapsedTime();
+      
+    } else {
+      mdebug<<"I am not doing Tracking!"<<endl;
+      // Set all Pair and Mip events an unknown
+      for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+        MRawEventIncarnations* REI = m_RawEvents->Get(i);
+        for (int e = 0; e < REI->GetNRawEvents(); e++) {
+          MRERawEvent* RE = REI->GetRawEventAt(e);
+          if (RE->GetEventType() == c_PairEvent || RE->GetEventType() == c_MuonEvent || RE->GetEventType() == c_ShowerEvent) {
+            RE->SetEventType(c_UnknownEvent);
+            RE->SetGoodEvent(true);
+            RE->SetEventReconstructed(true);
+            REI->SetBestTryEvent(RE);
+          }
+        }
+      }
     }
-    
-    for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
-      MRawEventIncarnations* REI = m_RawEvents->Get(i);
-      m_Tracker->Analyze(REI);
-    }
-    
-    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
-    
-    m_TimeTrack += Timer.ElapsedTime();
-    
-  } else {
-    mdebug<<"I am not doing Tracking!"<<endl;
   }
   
   //mout << "AL evtid=" << m_RawEvents->Get(0)->GetRawEventAt(0)->GetEventId() << " evtype=" << m_RawEvents->Get(0)->GetRawEventAt(0)->GetEventTypeAsString() << endl;
@@ -773,49 +791,83 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   
   // Section E: Compton sequence reconstruction       
   
-  if (SelectionsPassed == true && m_CSRAlgorithm > c_CSRAlgoNone) {
-    
-    Timer.Start();
-    
-    if (m_CSR == nullptr) {
-      merr<<"CSR pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
-      return c_AnalysisUndefinedError;
-    }
-    
-    for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
-      MRawEventIncarnations* REI = m_RawEvents->Get(i);
-      if (REI->HasOptimumEvent() == false) {
-        m_CSR->Analyze(REI);
+  if (SelectionsPassed == true) {
+    if (m_CSRAlgorithm > c_CSRAlgoNone) {
+      
+      Timer.Start();
+      
+      if (m_CSR == nullptr) {
+        merr<<"CSR pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+        return c_AnalysisUndefinedError;
+      }
+      
+      for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+        MRawEventIncarnations* REI = m_RawEvents->Get(i);
+        if (REI->HasOptimumEvent() == false) {
+          m_CSR->Analyze(REI);
+        }
+      }
+      
+      if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
+
+      m_TimeCSR += Timer.ElapsedTime();
+      
+    } else {
+      mdebug<<"I am not doing CSR!"<<endl;
+      // Set all Compton events an unknown
+      for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+        MRawEventIncarnations* REI = m_RawEvents->Get(i);
+        for (int e = 0; e < REI->GetNRawEvents(); e++) {
+          MRERawEvent* RE = REI->GetRawEventAt(e);
+          if (RE->GetEventType() == c_ComptonEvent || RE->GetEventType() == c_PhotoEvent) {
+            // Adrien to Andreas:
+            // Photo events here because historically they were identified in the CSR method.
+            // So no CSR algorithm meant Photo events are of type Unknown in the Tra file
+            // We may not want to keep that behavior in the future
+            RE->SetEventType(c_UnknownEvent);
+            RE->SetGoodEvent(true);
+            RE->SetEventReconstructed(true);
+            REI->SetBestTryEvent(RE);
+          }
+        }
       }
     }
-    
-    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
-
-    m_TimeCSR += Timer.ElapsedTime();
-    
-  } else {
-    mdebug<<"I am not doing CSR!"<<endl;
   }
   
   
   
   // Section F: Decay algorithm
-  if (SelectionsPassed == true && m_DecayAlgorithm > c_DecayAlgoNone) {
-    
-    if (m_Decay == nullptr) {
-      merr<<"Decay pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
-      return c_AnalysisUndefinedError;
+  if (SelectionsPassed == true) {
+    if (m_DecayAlgorithm > c_DecayAlgoNone) {
+      
+      if (m_Decay == nullptr) {
+        merr<<"Decay pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+        return c_AnalysisUndefinedError;
+      }
+      
+      for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+        MRawEventIncarnations* REI = m_RawEvents->Get(i);
+        m_Decay->Analyze(REI);
+      }
+      
+      if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
+      
+    } else {
+      mdebug<<"I am not doing Decay!"<<endl;
+      // Set all Decay events an unknown
+      for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+        MRawEventIncarnations* REI = m_RawEvents->Get(i);
+        for (int e = 0; e < REI->GetNRawEvents(); e++) {
+          MRERawEvent* RE = REI->GetRawEventAt(e);
+          if (RE->GetEventType() == c_DecayEvent) {
+            RE->SetEventType(c_UnknownEvent);
+            RE->SetGoodEvent(true);
+            RE->SetEventReconstructed(true);
+            REI->SetBestTryEvent(RE);
+          }
+        }
+      }
     }
-    
-    for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
-      MRawEventIncarnations* REI = m_RawEvents->Get(i);
-      m_Decay->Analyze(REI);
-    }
-    
-    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
-    
-  } else {
-    mdebug<<"I am not doing Decay!"<<endl;
   }
   
   
