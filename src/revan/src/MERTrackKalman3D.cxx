@@ -1140,8 +1140,8 @@ void MERTrackKalman3D::TrackPairs(MRERawEvent* RE)
       if (Electron->ComputeMinDistance(RE->GetRESEAt(r)) < Positron->ComputeMinDistance(RE->GetRESEAt(r))) {
         Electron->AddRESE(RE->GetRESEAt(r));
       } else {
-	Positron->AddRESE(RE->GetRESEAt(r));
-	}
+        Positron->AddRESE(RE->GetRESEAt(r));
+      }
     }
   }
 
