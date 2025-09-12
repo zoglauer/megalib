@@ -412,6 +412,22 @@ fi
 
 
 
+# Check for libtorch (conda install only)
+echo ""
+echo "(g) Torch libraries (optional)"
+echo ""
+
+TorchFound=0
+
+if [[ ${CONDA_PREFIX} != "" ]] && [[ -f ${CONDA_PREFIX}/include/torch/csrc/api/include/torch/torch.h ]] && [[ -f ${CONDA_PREFIX}/include/torch/script.h ]]; then
+  echo "Found a pytorch install in a conda environment."
+  TorchFound=1
+else
+  echo "-> Did not find a pytorch install in the current conda environment."
+  echo "   Torch is not a mandatory part of MEGAlib. The installation will proceed without it."
+fi
+
+
 
 # Part 5:
 # Setup the make environment
@@ -517,8 +533,13 @@ echo " " >> config/Makefile.options
 echo "GEANT4INSTALLED  := ${Geant4Found}" >> config/Makefile.options
 echo "HEASOFTINSTALLED := ${FitsIOFound}" >> config/Makefile.options
 echo "MPIINSTALLED     := ${MPIFound}" >> config/Makefile.options
+echo "TORCHINSTALLED   := ${TorchFound}" >> config/Makefile.options
 echo " " >> config/Makefile.options
-
+if ( [ $TorchFound -eq 1 ] ); then
+  echo "CXXFLAGS += -I ${CONDA_PREFIX}/include/torch/csrc/api/include -I ${CONDA_PREFIX}/include" >> config/Makefile.options
+  echo "LDFLAGS += -L ${CONDA_PREFIX}/lib -ltorch -ltorch_cpu -lc10 -Wl,-rpath,${CONDA_PREFIX}/lib" >> config/Makefile.options
+  echo " " >> config/Makefile.options
+fi
 echo "# " >> config/Makefile.options
 echo "# Section B: Compiler optimizations" >> config/Makefile.options
 echo "# " >> config/Makefile.options
