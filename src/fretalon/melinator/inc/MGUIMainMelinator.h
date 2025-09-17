@@ -163,6 +163,8 @@ private:
   unsigned int m_ActiveLineFit;
   //! The active results view
   bool m_ActiveResultIsEnergy;
+  //! True if any analysis is ongoing
+  bool m_AnalysisRunning;
   
   //! The label of the main histogram
   TGLabel* m_MainHistogramLabel;

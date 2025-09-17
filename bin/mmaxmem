@@ -1,0 +1,77 @@
+#! /bin/bash
+
+echo ""
+echo "mmaxmem - MEGAlib's memory monitor"
+echo ""
+
+
+
+help() {
+  echo ""
+  echo "mmaxmem - script for MEGAlib";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "This script keeps track of the maximum memory used by a process."
+  echo "";
+  echo "Usage:";
+  echo "    mmaxmem [program name] [optional command line arguments]";
+  echo "";
+  echo "Example:";
+  echo "    mmaxmem mimrec";
+  echo "";
+}
+
+
+# Make sure there's at least one argument
+if [ $# -lt 1 ]; then
+  help
+  exit 1
+fi
+
+# Check for help flag
+if [[ "$1" == "*-h*" ]]; then
+  help
+  exit 0
+fi
+
+OS=$(uname)
+
+RSS_KB=0
+MAX_RSS_KB=0
+
+# Start the command in the background
+"$@" &> /dev/null &
+APPPID=$!
+APPNAME=$*
+sleep 0.2
+
+echo "Monitoring memory usage of program ${APPNAME} with ${APPPID} ..."
+echo ""
+
+while true; do
+  if ps -p "${APPPID}" > /dev/null 2>&1; then
+    if [[ "${OS}" == *inux* ]]; then
+      RSS_KB=$(awk '/VmRSS/ {print $2}' /proc/${APPPID}/status 2>/dev/null)
+    elif [[ "${OS}" == *arwin* ]]; then
+      RSS_KB=$(ps -o rss= -p "${APPPID}" | awk '{print $1}')
+    else
+      echo "Unsupported OS: \"${OS}\""
+      exit 1
+    fi
+
+    if [[ "${RSS_KB}" =~ ^[0-9]+$ ]]; then
+      if [ "${RSS_KB}" -gt "${MAX_RSS_KB}" ]; then
+        MAX_RSS_KB=${RSS_KB}
+      fi
+      CURRENT_MB=$(awk "BEGIN {printf \"%.2f\", ${RSS_KB}/1024}")
+      MAX_MB=$(awk "BEGIN {printf \"%.2f\", ${MAX_RSS_KB}/1024}")
+      echo -ne "Current: ${CURRENT_MB} MB\tMax: ${MAX_MB} MB\r"
+    fi
+    sleep 1.0
+  else
+    echo -e "\nProcess ${APPPID} has exited."
+    MAX_MB=$(awk "BEGIN {printf \"%.2f\", ${MAX_RSS_KB}/1024}")
+    echo "Maximum RSS memory used: ${MAX_MB} MB"
+    break
+  fi
+done

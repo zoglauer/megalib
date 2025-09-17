@@ -166,6 +166,8 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"             Create the scatter-angle distributions. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"         --sequence-length:"<<endl;
   Usage<<"             Create the sequence length plots. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"         --location-first-interaction:"<<endl;
+  Usage<<"             Create histograms on the detector locations of the first interaction."<<endl;
   Usage<<"      -x --extract:"<<endl;
   Usage<<"             Extract events using the given event selection to the file given by -o"<<endl;
   Usage<<"      -e --event-selections:"<<endl;
@@ -364,8 +366,12 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       DistanceDistribution();
       return KeepAlive;
     } else if (Option == "--sequence-length") {
-      cout<<"Command-line parser: Generating Compton-sequence length plot..."<<endl;  
+      cout<<"Command-line parser: Generating Compton-sequence length plot..."<<endl;
       SequenceLengths();
+      return KeepAlive;
+    } else if (Option == "--location-first-interaction") {
+      cout<<"Command-line parser: Generating Compton-sequence length plot..."<<endl;
+      LocationOfInitialInteraction();
       return KeepAlive;
     } else if (Option == "--extract" || Option == "-x") {
       cout<<"Command-line parser: Extracting events..."<<endl;  
@@ -6184,8 +6190,8 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
   // Step 2: Create the histograms
   DetermineAxis(xMin, xMax, yMin, yMax, zMin, zMax, Positions);
   
-  TH3D* xyzHist = new TH3D("SpacialHitDistributionXYZ", 
-                        "Spacial hit distribution xyz", 
+  TH3D* xyzHist = new TH3D("SpatialHitDistributionXYZ",
+                        "Spatial hit distribution xyz",
                         MaxNBins, xMin, +xMax,
                         MaxNBins, yMin, +yMax, 
                         MaxNBins, zMin, +zMax);
@@ -6194,22 +6200,22 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
   xyzHist->GetYaxis()->SetTitle("y [cm]");
   xyzHist->GetZaxis()->SetTitle("z [cm]");
 
-  TH1D* xHist = new TH1D("SpacialHitDistributionX", 
-       "Spacial hit distribution x", 
+  TH1D* xHist = new TH1D("SpatialHitDistributionX",
+       "Spatial hit distribution x",
        MaxNBins, xMin, +xMax);
   xHist->SetBit(kCanDelete);
   xHist->GetXaxis()->SetTitle("x [cm]");
   xHist->GetYaxis()->SetTitle("counts");
 
-  TH1D* yHist = new TH1D("SpacialHitDistributionY", 
-       "Spacial hit distribution y", 
+  TH1D* yHist = new TH1D("SpatialHitDistributionY",
+       "Spatial hit distribution y",
        MaxNBins, yMin, +yMax);
   yHist->SetBit(kCanDelete);
   yHist->GetXaxis()->SetTitle("y [cm]");
   yHist->GetYaxis()->SetTitle("counts");
 
-  TH1D* zHist = new TH1D("SpacialHitDistributionZ", 
-       "Spacial hit distribution z", 
+  TH1D* zHist = new TH1D("SpatialHitDistributionZ",
+       "Spatial hit distribution z",
        MaxNBins, zMin, +zMax);
   zHist->SetBit(kCanDelete);
   zHist->GetXaxis()->SetTitle("z [cm]");
@@ -6259,25 +6265,25 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
 
   // Step 5: Show the histograms
 
-  TCanvas* xyzCanvas = new TCanvas();
-  xyzCanvas->cd();
+  TCanvas* Canvas = new TCanvas();
+  Canvas->Divide(2, 2);
+
+  Canvas->cd(4);
   xyzHist->Draw();
-  xyzCanvas->Update();
 
-  TCanvas* xCanvas = new TCanvas();
-  xCanvas->cd();
+  Canvas->cd(1);
   xHist->Draw();
-  xCanvas->Update();
 
-  TCanvas* yCanvas = new TCanvas();
-  yCanvas->cd();
+  Canvas->cd(2);
   yHist->Draw();
-  yCanvas->Update();
 
-  TCanvas* zCanvas = new TCanvas();
-  zCanvas->cd();
+  Canvas->cd(3);
   zHist->Draw();
-  zCanvas->Update();
+
+  Canvas->Update();
+  if (m_OutputFileName.IsEmpty() == false) {
+    Canvas->SaveAs(m_OutputFileName);
+  }
 
   // Dump the info:
   map<MString, int>::iterator Iter;

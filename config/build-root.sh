@@ -5,43 +5,51 @@
 #
 # Please see the MEGAlib software license and documentation for more informations.
 
-CONFIGUREOPTIONS=" "
+# Need an array here
+CONFIGUREOPTIONS=( )
 # Install path relative to the build path --- simply one up in this script
-CONFIGUREOPTIONS+=" -DCMAKE_INSTALL_PREFIX=.."
+CONFIGUREOPTIONS+=("-DCMAKE_INSTALL_PREFIX=..")
 # Make sure we ignore some default paths of macport.
 type port >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then
   PORTPATH=$(which port)
   PORTPATH=${PORTPATH%/bin/port}
-  CONFIGUREOPTIONS+=" -DCMAKE_IGNORE_PATH=${PORTPATH};${PORTPATH}/bin;${PORTPATH}/include;${PORTPATH}/include/libxml2;${PORTPATH}/include/unicode"
+  CONFIGUREOPTIONS+=("-DCMAKE_IGNORE_PATH=${PORTPATH};${PORTPATH}/bin;${PORTPATH}/include;${PORTPATH}/include/libxml2;${PORTPATH}/include/unicode")
 fi
 # Until ROOT 6.24: C++ 11
-CONFIGUREOPTIONS+=" -DCMAKE_CXX_STANDARD=17"
+CONFIGUREOPTIONS+=("-DCMAKE_CXX_STANDARD=17")
 # We want a minimal system and enable what we really need:
-#CONFIGUREOPTIONS+=" -Dgminimal=ON"
+# No, not any longer true: CONFIGUREOPTIONS+=("-Dgminimal=ON")
 # Open GL -- needed by geomega
-CONFIGUREOPTIONS+=" -Dopengl=ON"
-# Mathmore -- needed for fitting, e.g. ARMs"
-CONFIGUREOPTIONS+=" -Dmathmore=ON"
+CONFIGUREOPTIONS+=("-Dopengl=ON")
+# Mathmore -- needed for fitting, e.g. ARMs
+CONFIGUREOPTIONS+=("-Dmathmore=ON")
 # Minuit2 -- needed for parallel fitting with melinator
-# Minuit 2 is default startin g ROOT 6.30: CONFIGUREOPTIONS+=" -Dminuit2=ON"
+# Minuit 2 is default starting ROOT 6.30: CONFIGUREOPTIONS+=("-Dminuit2=ON")
 # XFT -- needed for smoothed fonts
-CONFIGUREOPTIONS+=" -Dxft=ON"
+CONFIGUREOPTIONS+=("-Dxft=ON")
 # Afterimage -- support to draw images in pads and save as png, etc.
-CONFIGUREOPTIONS+=" -Dasimage=ON"
+CONFIGUREOPTIONS+=("-Dasimage=ON")
 # Stuff for linking, paths in so files, versioning etc
-CONFIGUREOPTIONS+=" -Dexplicitlink=ON -Drpath=ON -Dsoversion=ON"
+CONFIGUREOPTIONS+=("-Dexplicitlink=ON" "-Drpath=ON" "-Dsoversion=ON")
 # enable builtin glew
-CONFIGUREOPTIONS+=" -Dbuiltin_glew=ON"
+CONFIGUREOPTIONS+=("-Dbuiltin_glew=ON")
+# Stick with ROOT 6 for the time being
+CONFIGUREOPTIONS+=("-Droot7=OFF")
+# macOS specific fixes:
+if [[ $(uname -s) == *arwin ]]; then
+  SDKPATH=$(xcrun --show-sdk-path)
+  CONFIGUREOPTIONS+=("-DCMAKE_OSX_SYSROOT=${SDKPATH}" "-DCMAKE_CXX_FLAGS=-isysroot ${SDKPATH}")
+fi
 
 # In case you have trouble with anything related to freetype, try to comment in this option
-# CONFIGUREOPTIONS+=" -Dbuiltin-freetype=ON"
+# CONFIGUREOPTIONS+=("-Dbuiltin-freetype=ON")
 
 # In case you get strange error messages concerning jpeg, png, tiff
-# CONFIGUREOPTIONS+=" -Dasimage=OFF -Dastiff=OFF -Dbuiltin_afterimage=OFF"
+# CONFIGUREOPTIONS+=("-Dasimage=OFF" "-Dastiff=OFF" "-Dbuiltin_afterimage=OFF")
 
 # In case you have trouble with zlib (gz... something error messages)
-# CONFIGUREOPTIONS+=" -Dbuiltin_zlib=ON -Dbuiltin_lzma=ON"
+# CONFIGUREOPTIONS+=("-Dbuiltin_zlib=ON" "-Dbuiltin_lzma=ON")
 
 # By default we build with python 3:
 type python3 >/dev/null 2>&1
@@ -52,7 +60,7 @@ if [[ $? -eq 0 ]]; then
       echo "ERROR: You cannot use a python version installed via (ana)conda with ROOT."
       exit 1
     else
-      CONFIGUREOPTIONS+=" -DPYTHON_EXECUTABLE:FILEPATH=${PPATH} -Dpython3=ON"
+      CONFIGUREOPTIONS+=("-DPYTHON_EXECUTABLE:FILEPATH=${PPATH}" "-Dpython3=ON")
     fi
   fi
 fi
@@ -60,18 +68,18 @@ fi
 # Enable cuda if available
 type nvcc >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then
-  CONFIGUREOPTIONS+=" -Dcuda=ON"
+  CONFIGUREOPTIONS+=("-Dcuda=ON")
 fi
 
 # In case ROOT complains about your python version
-# CONFIGUREOPTIONS+=" -Dpython=OFF"
-# CONFIGUREOPTIONS+=" -Dpython3=OFF"
+# CONFIGUREOPTIONS+=("-Dpython=OFF")
+# CONFIGUREOPTIONS+=("-Dpython3=OFF")
 
 # Switching off things we do not need right now but which are on by default
-CONFIGUREOPTIONS+=" -Dalien=OFF -Dbonjour=OFF -Dcastor=OFF -Ddavix=OFF -Dfortran=OFF -Dfitsio=OFF -Dchirp=OFF -Ddcache=OFF -Dgfal=OFF -Dglite=off -Dhdfs=OFF -Dkerb5=OFF -Dldap=OFF -Dmonalisa=OFF -Dodbc=OFF -Doracle=OFF -Dpch=OFF -Dpgsql=OFF -Dpythia6=OFF -Dpythia8=OFF -Drfio=OFF -Dsapdb=OFF -Dshadowpw=OFF -Dsqlite=OFF -Dsrp=OFF -Dssl=OFF -Dxrootd=OFF"
+CONFIGUREOPTIONS+=("-Dalien=OFF" "-Dbonjour=OFF" "-Dcastor=OFF" "-Ddavix=OFF" "-Dfortran=OFF" "-Dfitsio=OFF" "-Dchirp=OFF" "-Ddcache=OFF" "-Dgfal=OFF" "-Dglite=off" "-Dhdfs=OFF" "-Dkerb5=OFF" "-Dldap=OFF" "-Dmonalisa=OFF" "-Dodbc=OFF" "-Doracle=OFF" "-Dpch=OFF" "-Dpgsql=OFF" "-Dpythia6=OFF" "-Dpythia8=OFF" "-Drfio=OFF" "-Dsapdb=OFF" "-Dshadowpw=OFF" "-Dsqlite=OFF" "-Dsrp=OFF" "-Dssl=OFF" "-Dxrootd=OFF")
 
 # Explictly add gcc -- cmake seems to sometimes digg up other compilers on the system, not the default one...
-# CONFIGUREOPTIONS+=" -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_CXX_COMPILER=$(which g++)"
+# CONFIGUREOPTIONS+=("-DCMAKE_C_COMPILER=$(which gcc)" "-DCMAKE_CXX_COMPILER=$(which g++)")
 
 # The compiler
 COMPILEROPTIONS=`gcc --version | head -n 1`
@@ -137,6 +145,9 @@ confhelp() {
   echo "--cleanup=[off/no, on/yes - default: off]"
   echo "    Remove intermediate build files"
   echo " "
+  echo "--distcc=[off/no, on/yes]"
+  echo "    If this flag is set and distcc is setup, we will use distcc"
+  echo " "
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -167,6 +178,7 @@ DEBUGSTRING=""
 DEBUGOPTIONS=""
 PATCH="off"
 CLEANUP="off"
+DISTCC="off"
 KEEPENVASIS="off"
 WANTEDVERSION=""
 
@@ -178,7 +190,7 @@ for C in ${CMD}; do
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-m*=* ]]; then
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-d*=* ]]; then
+  elif [[ ${C} == *-de*=* ]]; then
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-p*=* ]]; then
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
@@ -188,6 +200,8 @@ for C in ${CMD}; do
     WANTEDVERSION=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-k*=* ]]; then
     KEEPENVASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-di*=* ]]; then
+    DISTCC=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -286,6 +300,34 @@ elif ( [[ ${CLEANUP} == on ]] || [[ ${CLEANUP} == y* ]] ); then
 else
   echo " "
   echo "ERROR: Unknown option for clean up: ${CLEANUP}"
+  confhelp
+  exit 1
+fi
+
+
+DISTCC=`echo ${DISTCC} | tr '[:upper:]' '[:lower:]'`
+if ( [[ ${DISTCC} == of* ]] || [[ ${DISTCC} == n* ]] ); then
+  DISTCC="off"
+  echo " * Don't use distcc"
+elif ( [[ ${DISTCC} == on ]] || [[ ${DISTCC} == y* ]] ); then
+  type distcc >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo " * Distcc requested, but not installed. Performing local compile."
+    DISTCC="off"
+  else
+    if [ -n "${DISTCC_HOSTS}" ]; then
+      DISTCC="on"
+      export CC="distcc $(which gcc)"
+      export CXX="distcc $(which g++)"
+      echo " * Using distcc with the following host: ${DISTCC_HOSTS}."
+    else 
+      DISTCC="off"
+      echo " * Distcc requested, but not setup. Performing local compile."
+    fi
+  fi
+else
+  echo " "
+  echo "ERROR: Unknown option for distcc: ${DISTCC}"
   confhelp
   exit 1
 fi
@@ -573,8 +615,8 @@ export ROOTSYS=${ROOTDIR}
 #  export CPLUS_INCLUDE_PATH=`xcrun --show-sdk-path`/usr/include
 #  export LIBRARY_PATH=$LIBRARY_PATH:`xcrun --show-sdk-path`/usr/lib
 #fi
-echo "Configure command: cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}"
-cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}
+echo "Configure command: cmake ${CONFIGUREOPTIONS[@]} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}"
+cmake "${CONFIGUREOPTIONS[@]}" ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring (cmake'ing) ROOT!"
   exit 1
@@ -583,16 +625,27 @@ fi
 
 
 CORES=1;
-if [[ ${OSTYPE} == darwin* ]]; then
-  CORES=`sysctl -n hw.logicalcpu_max`
-elif [[ ${OSTYPE} == linux* ]]; then
-  CORES=`grep processor /proc/cpuinfo | wc -l`
+if [[ ${DISTCC} == "on" ]]; then
+  DISTCC_JOBS_OUTPUT=$(distcc -j 2>/dev/null)
+  if [[ $? -eq 0 && -n "$DISTCC_JOBS_OUTPUT" && "$DISTCC_JOBS_OUTPUT" -gt 0 ]]; then
+    CORES=$(( DISTCC_JOBS_OUTPUT )) # Ensure it's treated as a number
+  fi
+else
+  if [[ ${OSTYPE} == darwin* ]]; then
+    CORES=`sysctl -n hw.logicalcpu_max`
+  elif [[ ${OSTYPE} == linux* ]]; then
+    CORES=`grep processor /proc/cpuinfo | wc -l`
+  fi
 fi
-if [ "$?" != "0" ]; then
+if [ "$?" != "0" ] || [ -z "$CORES" ] || [ "$CORES" -le 0 ]; then # Check if CORES is empty or non-positive
   CORES=1
 fi
 if [ "${CORES}" -gt "${MAXTHREADS}" ]; then
   CORES=${MAXTHREADS}
+fi
+# Final check to ensure CORES is at least 1
+if [ "${CORES}" -le "0" ]; then
+    CORES=1
 fi
 echo "Using this number of cores for compilation: ${CORES}"
 
