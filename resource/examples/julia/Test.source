@@ -1,0 +1,23 @@
+# Example run for Cosima
+
+# Global parameters
+Version         1
+Geometry        Test.geo.setup
+
+# Physics list
+PhysicsListEM               LivermorePol
+
+# Output formats
+StoreSimulationInfo         all
+
+# Run & source parameters
+Run SpaceSim
+SpaceSim.FileName           Test
+SpaceSim.Triggers           20000
+
+SpaceSim.Source Source
+Source.ParticleType           1
+Source.Beam                   FarFieldPointSource 0 0
+Source.Spectrum               Mono 511
+Source.Flux                   1.0
+
