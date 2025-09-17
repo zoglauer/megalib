@@ -34,6 +34,7 @@ FILES := MGeometryRevan \
 	MERHitClusterizer \
   MEREventType \
   MEREventTypeExternal \
+  MEREventTypeTorch \
 	MERTrack \
 	MERTrackPearson \
 	MERTrackRank \
@@ -162,7 +163,7 @@ $(DICTIONARY): $(HEADERS)
 	@echo "Generating $(DICTIONARYNAME)_LinkDef.h ..."
 	@$(BN)/generatelinkdef -o $(LINKDEF) -i $(HEADERS)
 	@echo "Generating dictionary $(DICTIONARYNAME).cxx..."
-	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
+	@rootcling -f $@ -I$(IN) $(TORCHCFLAGS) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
 	@mv $(ROOTPCM) $(LB)
 
 $(SHAREDLIB): $(DICTIONARYOBJECT) $(OBJECTS)

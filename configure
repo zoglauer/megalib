@@ -535,11 +535,6 @@ echo "HEASOFTINSTALLED := ${FitsIOFound}" >> config/Makefile.options
 echo "MPIINSTALLED     := ${MPIFound}" >> config/Makefile.options
 echo "TORCHINSTALLED   := ${TorchFound}" >> config/Makefile.options
 echo " " >> config/Makefile.options
-if ( [ $TorchFound -eq 1 ] ); then
-  echo "CXXFLAGS += -I ${CONDA_PREFIX}/include/torch/csrc/api/include -I ${CONDA_PREFIX}/include" >> config/Makefile.options
-  echo "LDFLAGS += -L ${CONDA_PREFIX}/lib -ltorch -ltorch_cpu -lc10 -Wl,-rpath,${CONDA_PREFIX}/lib" >> config/Makefile.options
-  echo " " >> config/Makefile.options
-fi
 echo "# " >> config/Makefile.options
 echo "# Section B: Compiler optimizations" >> config/Makefile.options
 echo "# " >> config/Makefile.options
