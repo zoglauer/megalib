@@ -22,6 +22,25 @@ Response:
 
 
 
+Version 4.01/4.02
+=================
+
+This is mostly a compatibility, bug fix, and minor updates release.
+The main development towards MEGAlib 5.0 is happening in the branch develop-cosi.
+However, as of Septmeber 2025, this branch contains a few features which only work with COSI.
+
+General:
++ Default ROOT version is 6.36
++ Updates to run on all the latest OS'es
+
+Mimrec:
++ New ARM fitting tool
+
+Fretalon / Melinator:
++ Many updates to Melinator to improve the energy calibration
+
+
+
 Version 4.00
 ============
 

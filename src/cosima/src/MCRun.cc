@@ -502,11 +502,18 @@ void MCRun::DumpRunStatistics(double CPUTime)
   cout<<"Summary for run "<<m_Name<<endl;
   cout<<endl;
   cout<<"Total number of generated particles:     "<<m_NGeneratedParticles<<endl;
-  for (unsigned int i = 0; i < m_SourceList.size(); ++i) {
-    int Length = m_SourceList[i]->GetName().Length();
-    cout<<"  Source "<<m_SourceList[i]->GetName()<<": ";
+  vector<MCSource*> SortedSourceList = m_SourceList;
+  sort(SortedSourceList.begin(), SortedSourceList.end(), [](MCSource* A, MCSource* B) {
+    if (A->GetNGeneratedParticles() == B->GetNGeneratedParticles()) {
+      return A->GetName() < B->GetName();
+    }
+    return A->GetNGeneratedParticles() > B->GetNGeneratedParticles();
+  });
+  for (unsigned int i = 0; i < SortedSourceList.size(); ++i) {
+    int Length = SortedSourceList[i]->GetName().Length();
+    cout<<"  Source "<<SortedSourceList[i]->GetName()<<": ";
     for (int l = Length+11; l < 41; ++l) cout<<" ";
-    cout<<m_SourceList[i]->GetNGeneratedParticles()<<endl;
+    cout<<SortedSourceList[i]->GetNGeneratedParticles()<<endl;
   }
   cout<<endl;
   cout<<"Total CPU time spent in run:             "<<CPUTime<<" sec"<<endl;
