@@ -80,7 +80,7 @@ clean:
 $(FITS): $(BN)/%: %.cxx
 ifeq "$(strip $(HEASOFTINSTALLED))" "0"
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	$(LD) $(LDFLAGS) $(CXXFLAGS) $(HEACFLAGS) $(DEFINES) $< $(MLIBS) $(GLIBS) $(LIBS) $(HEALIBS) -o $@
+	$(LD) $(LDFLAGS) $(CXXFLAGS) $(HEALPIXCFLAGS) $(HEACFLAGS) $(DEFINES) $< $(MLIBS) $(GLIBS) $(LIBS) $(HEALIBS) -o $@
 endif
 
 $(MPI): $(BN)/%: %.cxx
@@ -92,7 +92,7 @@ endif
 $(PRGSX): $(BN)/%: %.cxx
 ifeq ($(wildcard $(SR)/mimrec/src), $(SR)/mimrec/src)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	$(LD) $(LDFLAGS) $(CXXFLAGS) $(DEFINES) $< $(MLIBS) $(GLIBS) $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(CXXFLAGS) $(HEALPIXCFLAGS) $(DEFINES) $< $(MLIBS) $(GLIBS) $(LIBS) -o $@
 endif
 
 $(PRGSN): $(BN)/%: %.cxx
