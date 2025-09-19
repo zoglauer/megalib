@@ -51,6 +51,7 @@ ifeq ("$(shell pkg-config --exists healpix_cxx 1>&2 2> /dev/null; echo $$?)", "0
 	HEALPIXCFLAGS += $(shell pkg-config --cflags healpix_cxx)
 	HEALPIXCFLAGS := $(filter-out -fopenmp, $(HEALPIXCFLAGS))
 	HEALPIXLIBS += $(shell pkg-config --libs healpix_cxx)
+	LIBS += $(HEALPIXLIBS)
 endif
 
 
