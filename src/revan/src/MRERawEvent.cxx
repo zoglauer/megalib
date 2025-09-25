@@ -1017,6 +1017,13 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"Not enough hits in tracker";
     }
     break;
+  case c_RejectionNoExternalEventType:
+    if (Short == true) {
+      out<<"NoExternalEventType";
+    } else {
+      out<<"No External Event Type Provided";
+    }
+    break;
   default:
     if (Short == true) {
       out<<"";
