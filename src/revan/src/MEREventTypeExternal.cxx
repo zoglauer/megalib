@@ -74,21 +74,29 @@ bool MEREventTypeExternal::Analyze(MRawEventIncarnations* List)
   }
 
   // Read file
-  streampos filePos = m_FileEventsType->GetFilePosition(); // Position at start of REI
   MRERawEvent* RE = nullptr;  
   for (int e = 0; e < m_List->GetNRawEvents(); e++) {
-    m_FileEventsType->Seek(filePos);// Rewind to position at start of REI
     RE = m_List->GetRawEventAt(e);
-    while(m_FileEventsType->GetNextEvent() && m_FileEventsType->GetEventId() != RE->GetEventId()) {}
+    mout << "Looking for event id=" << RE->GetEventId() << endl;
+    while(m_FileEventsType->GetNextEvent() && m_FileEventsType->GetEventId() != RE->GetEventId()) {
+      mout << " - Got event id=" <<  m_FileEventsType->GetEventId() << " at pos=" << m_FileEventsType->GetFilePosition() << endl;
+    }
     mout << "evtid=" << m_FileEventsType->GetEventId() << endl;
+    if (m_FileEventsType->GetEventId() == -1) {//If reached end of file
+       m_FileEventsType->Rewind(false);
+    }
     if (m_FileEventsType->GetEventId() == RE->GetEventId()) { // if found matching ID
       RE->SetEventType( m_FileEventsType->GetEventType() );
       RE->SetEventTypeProbability( m_FileEventsType->GetEventTypeProbability() );
     } else {
-      merr << "MEREventTypeExternal: No event type found for event ID " << RE->GetEventId() << endl;
+      mout << "MEREventTypeExternal: No event type found for event ID " << RE->GetEventId() << endl;
       RE->SetEventType( c_UnknownEvent );
       RE->SetEventTypeProbability( 0. );
+      RE->SetEventReconstructed();
+      RE->SetRejectionReason(MRERawEvent::c_RejectionNoExternalEventType);// TBC of course!!!!!
     }
+    //m_FileEventsType->Rewind(false);
+    //m_FileEventsType->Seek(filePos);// Be kind, Rewind to position at start of REI
   }
   return true;
 }
