@@ -77,11 +77,11 @@ bool MEREventTypeExternal::Analyze(MRawEventIncarnations* List)
   MRERawEvent* RE = nullptr;  
   for (int e = 0; e < m_List->GetNRawEvents(); e++) {
     RE = m_List->GetRawEventAt(e);
-    mout << "Looking for event id=" << RE->GetEventId() << endl;
+    //mout << "Looking for event id=" << RE->GetEventId() << endl;
     while(m_FileEventsType->GetNextEvent() && m_FileEventsType->GetEventId() != RE->GetEventId()) {
-      mout << " - Got event id=" <<  m_FileEventsType->GetEventId() << " at pos=" << m_FileEventsType->GetFilePosition() << endl;
+      //mout << " - Got event id=" <<  m_FileEventsType->GetEventId() << " at pos=" << m_FileEventsType->GetFilePosition() << endl;
     }
-    mout << "evtid=" << m_FileEventsType->GetEventId() << endl;
+    //mout << "evtid=" << m_FileEventsType->GetEventId() << endl;
     if (m_FileEventsType->GetEventId() == -1) {//If reached end of file
        m_FileEventsType->Rewind(false);
     }
