@@ -40,7 +40,7 @@ class MEREventTypeExternal : public MEREventType
 
   //! Global parameters used by all electron tracking algorithms
   virtual void SetParameters(MString EventTypeFileName);
-  bool Analyze(MRawEventIncarnations* List);
+  bool Analyze(MRawEventIncarnations* List, bool quick);
 
   bool PostAnalysis();
   MString ToString(bool CoreOnly = false) const;
