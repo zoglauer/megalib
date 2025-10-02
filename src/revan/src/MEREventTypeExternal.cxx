@@ -93,7 +93,7 @@ bool MEREventTypeExternal::Analyze(MRawEventIncarnations* List, bool quick = tru
       RE->SetEventType( c_UnknownEvent );
       RE->SetEventTypeProbability( 0. );
       RE->SetEventReconstructed();
-      RE->SetRejectionReason(MRERawEvent::c_RejectionNoExternalEventType);// TBC of course!!!!!
+      RE->SetRejectionReason(MRERawEvent::c_RejectionNoExternalEventType);
     }
   }
   return true;

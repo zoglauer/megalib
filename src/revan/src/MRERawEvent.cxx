@@ -1021,7 +1021,7 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
     if (Short == true) {
       out<<"NoExternalEventType";
     } else {
-      out<<"No External Event Type Provided";
+      out<<"The etp file does not contain an event type for this event ID";
     }
     break;
   default:

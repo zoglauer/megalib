@@ -770,7 +770,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       
     } else {
       mdebug<<"I am not doing Tracking!"<<endl;
-      // Set all Pair and Mip events an unknown
+      // Set all Pair and Mip events as unknown
       for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
         MRawEventIncarnations* REI = m_RawEvents->Get(i);
         for (int e = 0; e < REI->GetNRawEvents(); e++) {
