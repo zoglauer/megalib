@@ -45,7 +45,7 @@ ClassImp(MSubModule)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSubModule::MSubModule()
+MSubModule::MSubModule() : m_Name("Unnamed sub-module")
 {
   // Construct an instance of MSubModule
 }

@@ -85,7 +85,8 @@ class MSubModule
   
   // protected members:
  protected:
-
+  //! A name of the module
+  MString m_Name;
 
   
   // private members:
