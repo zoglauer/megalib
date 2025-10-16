@@ -1,0 +1,11 @@
+--- a/geant4_v11.2.2-source/source/externals/g4tools/include/tools/wroot/columns.icc	2025-09-25 15:33:21
++++ b/geant4_v11.2.2-source/source/externals/g4tools/include/tools/wroot/columns.icc	2025-09-25 15:34:48
+@@ -399,7 +399,7 @@
+   protected:
+     std_vector_column_ref(const std_vector_column_ref& a_from)
+     :icol(a_from)
+-    ,m_branch(a_from.m_barnch)
++    ,m_branch(a_from.m_branch)
+     ,m_ref(a_from.m_ref)
+     ,m_leaf(0)
+     ,m_leaf_count(0)

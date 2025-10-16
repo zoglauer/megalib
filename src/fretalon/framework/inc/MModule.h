@@ -47,7 +47,14 @@ void* MModuleKickstartThread(void* ClassDerivedFromMModule);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//! This is the base class for all modules. It provides
+//! + Logic to determine which services it provides
+//! + Which modules must preceed it
+//! + Multi-threading capabilities
+//! + Read-out assembly handling and queuing
+//! + Xml reading and writing of the configuration files
+//! + Expo generation and handling
+//! + and general analysis task management features
 class MModule
 {
   // public interface:
@@ -115,7 +122,7 @@ class MModule
   //! Initialize the module
   //! When overwritten, the base-class'es Initialize() has to be called *at the very end* of the 
   //! Initilize() function of the derived class, since in multi-threaded mode it 
-  //! starts the thraeds
+  //! starts the threads
   virtual bool Initialize();
 
   //! Finalize the module

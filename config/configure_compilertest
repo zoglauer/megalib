@@ -69,7 +69,7 @@ int main()
 
 #echo "${CODE}"
 
-echo "${CODE}" | ${COMPILER} -o compilertest -x c++ -
+echo "${CODE}" | ${COMPILER} -std=c++17 -o compilertest -x c++ -
 STATUS=""
 if [[ -f compilertest ]]; then
   STATUS=`./compilertest`
