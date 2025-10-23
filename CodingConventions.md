@@ -1,10 +1,10 @@
 # Coding conventions
 
-by Andreas & ChatGPT
+for MEGAlib
 
 ## Automatic formatting
 
-Nuclearizer uses clang-format to automatically format the code:
+clang-format can be used to automatically format the code:
 
 To format a file do the following:
 
