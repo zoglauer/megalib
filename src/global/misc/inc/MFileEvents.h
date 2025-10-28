@@ -39,9 +39,15 @@ class MFileEvents : public MFile
   virtual ~MFileEvents();
 
   //! The Open method has to be derived to initialize the include file:
-  virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read, bool IsBinary = false);
+  virtual bool Open(MString FileName, unsigned int Way, bool IsBinary);
 
-  //! Update the progress dialog GUI -- allow to skip a certain amount of updates  
+  //! The Open method has to be derived to initialize the include file:
+  virtual bool Open(MString FileName, unsigned int Way) { return Open(FileName, Way, false); }
+
+  //! The Open method has to be derived to initialize the include file:
+  virtual bool Open(MString FileName) { return Open(FileName, MFile::c_Read, false); }
+
+  //! Update the progress dialog GUI -- allow to skip a certain amount of updates
   virtual bool UpdateProgress(unsigned int UpdatesToSkip = 0);
 
   //! Rewind to the beginning of the file
