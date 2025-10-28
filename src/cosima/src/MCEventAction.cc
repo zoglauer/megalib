@@ -459,7 +459,7 @@ void MCEventAction::AbortEvent()
 void MCEventAction::EndOfEventAction(const G4Event* Event)
 {
   // Let's store the events...
-  G4int h;
+  size_t h;
   G4String Text;
   
   MCRun& Run = m_RunParameters.GetCurrentRun();

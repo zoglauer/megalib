@@ -326,7 +326,7 @@ G4bool MCVoxel3DSD::PostProcessHits(const G4Step* Step)
   H->SetADCCounts(Energy/keV);
   H->SetPosition(Position);
   H->SetDetectorName(DetectorName);
-  for (int v =  Hist->GetHistoryDepth()-1; v >= 0; v--) {
+  for (int v = Hist->GetHistoryDepth()-1; v >= 0; v--) {
     H->AddVolumeHistory(Hist->GetVolume(v)->GetName());
   }  
   H->AddOrigin(((MCTrackInformation*) 
@@ -338,7 +338,7 @@ G4bool MCVoxel3DSD::PostProcessHits(const G4Step* Step)
   // Check if there is already a hit in the voxel of this layer:
   bool Added = false;
   if (m_DiscretizeHits == true) {
-    for (int h = 0; h < m_HitCollection->entries(); h++) {
+    for (size_t h = 0; h < m_HitCollection->entries(); h++) {
       if (*(*m_HitCollection)[h] == *H) {
         *(*m_HitCollection)[h] += *H;
         Added = true;
