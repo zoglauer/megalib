@@ -50,8 +50,12 @@ class MFile
   //! Close the file and reset all data to default values
   virtual void Reset();
 
-  //! Open the file for reading or writing
-  virtual bool Open(MString FileName, unsigned int Way = c_Read, bool IsBinary = false);
+  //! Open the file for reading or writing in binary or ASCII mode
+  virtual bool Open(MString FileName, unsigned int Way, bool IsBinary);
+  //! Open the file for reading or writing - this assumes we are always in ASCII mode
+  virtual bool Open(MString FileName, unsigned int Way) { return Open(FileName, Way, false); }
+  //! Open the file for reading - this assumes we are always read in ASCII mode
+  virtual bool Open(MString FileName) { return Open(FileName, c_Read, false); }
   //! Close the file
   virtual bool Close();
   //! Rewind the file
