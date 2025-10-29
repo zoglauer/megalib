@@ -190,27 +190,36 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   vector<MReadOutData*> RODs;
   for (auto Name: RODNames) {
     MReadOutData* ROD = MFretalonRegistry::Instance().GetReadOutData(Name);
-    if (ROD == 0) {
+    if (ROD == nullptr) {
       cout<<"Error in file: "<<m_FileName<<":"<<endl;
       cout<<"No read-out data of type "<<Name<<" is registered!"<<endl;
+      Close();
       return false;
     }
     RODs.push_back(ROD);
   }
   
-  m_ROD = 0; // should already been 0 before
+  m_ROD = nullptr; // Should alreday be nullptr, thus no memory leak here, or not? What happens id we reuse this class?
   for (auto ROD: RODs) {
     MReadOutData* NewROD = ROD->Clone();
     NewROD->SetWrapped(m_ROD);
     m_ROD = NewROD;
   }
   
+  // But if we are still nullptr
+  if (m_ROD == nullptr) {
+    cout<<"Error in file: "<<m_FileName<<":"<<endl;
+    cout<<"Data was not found!"<<endl;
+    Close();
+    return false;
+  }
+
+
   // Now do the sanity checks:
   if (m_FileType != "dat" && m_FileType != "roa") {
     mout<<"Error while opening file "<<m_FileName<<": "<<endl;
     mout<<"The file type must be \"dat\" or \"roa\" (case is ignored) - you have \""<<m_FileType<<"\""<<endl; 
     Close();
-    Error = true;
     return false;
   }
   
