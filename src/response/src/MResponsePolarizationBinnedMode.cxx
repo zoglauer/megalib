@@ -124,8 +124,8 @@ MString MResponsePolarizationBinnedMode::Options()
   out<<"             dbins:                   number of distance bins between min and max distance (default: 1)"<<endl;
   out<<"             pbins:                   number of polarization bins bins between min and max distance (default: 18)"<<endl;
   out<<"             pmode:                   Either relativex, relativey, or relativez (default: relativez)"<<endl;
-  out<<"             atabsfile:               the atmopheric absorption file name (default: \"\" (i.e. none))"<<endl;
-  out<<"             atabsheight:             altitude for the atmospheric absorption (default: 33500)"<<endl;
+  out<<"             atabsfilename:               the atmopheric absorption file name (default: \"\" (i.e. none))"<<endl;
+  out<<"             atabsaltitude:             altitude for the atmospheric absorption (default: 33500)"<<endl;
   
   return MString(out);
 }
