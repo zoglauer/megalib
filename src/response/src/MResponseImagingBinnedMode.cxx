@@ -119,8 +119,8 @@ MString MResponseImagingBinnedMode::Options()
   out<<"             dmin:                    minimum distance (default: 0 cm)"<<endl;
   out<<"             dmax:                    maximum distance (default: 1,000 cm)"<<endl;
   out<<"             dbins:                   number of distance bins between min and max distance (default: 1)"<<endl;
-  out<<"             atabsfile:               the atmospheric absorption file name (default: \"\" (i.e. none))"<<endl;
-  out<<"             atabsheight:             altitude for the atmospheric absorption (default: 33500 m)"<<endl;
+  out<<"             atabsfilename:               the atmospheric absorption file name (default: \"\" (i.e. none))"<<endl;
+  out<<"             atabsaltitude:             altitude for the atmospheric absorption (default: 33500 m)"<<endl;
   
   return MString(out);
 }
