@@ -187,7 +187,7 @@ G4bool MCAngerCameraSD::PostProcessHits(const G4Step* Step)
   // Check if there is already a hit in the strips and this layer:
   bool Added = false;
   if (m_DiscretizeHits == true) {
-    for (size_t h = 0; h < MCAngerCameraSD::m_HitCollection->entries(); h++) {
+    for (G4int h = 0; h < MCAngerCameraSD::m_HitCollection->entries(); h++) {
       if (*(*MCAngerCameraSD::m_HitCollection)[h] == *H) {
         *(*MCAngerCameraSD::m_HitCollection)[h] += *H;
         Added = true;
