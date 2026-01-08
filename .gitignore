@@ -65,6 +65,15 @@ feeder
 sphereworldsimulator
 neuralnettester
 RevanAnalyzer
+CompareHistograms
+DistanceOptimizerForEventClusterizer
+ResponseToXSPEC
+SimBinaryConverter
+TraFitsConverter
+TraMerger
+UTARMFitter
+UTCosimaInputSpectra
+
 
 #config directory:
 Makefile.options
@@ -75,6 +84,7 @@ configure_lastgoodoptions
 source-megalib.sh
 SetupOptions.txt
 new-source-megalib.sh
+Configuration.txt
 
 # doc directory:
 Peoples.txt

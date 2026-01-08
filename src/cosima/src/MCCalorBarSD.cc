@@ -224,7 +224,7 @@ G4bool MCCalorBarSD::PostProcessHits(const G4Step* Step)
   // Check if there is already a hit in the strips and this layer:
   bool Added = false;
   if (m_DiscretizeHits == true) {
-    for (size_t h = 0; h < MCCalorBarSD::m_HitCollection->entries(); h++) {
+    for (G4int h = 0; h < MCCalorBarSD::m_HitCollection->entries(); h++) {
       if (*(*MCCalorBarSD::m_HitCollection)[h] == *H) {
         *(*MCCalorBarSD::m_HitCollection)[h] += *H;
         Added = true;
