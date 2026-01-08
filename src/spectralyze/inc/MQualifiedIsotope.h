@@ -39,7 +39,7 @@ class MQualifiedIsotope : public MIsotope
   virtual ~MQualifiedIsotope();
 
   //! Add line parameters:
-  void AddLine(double Energy, double BranchingRatio, const MString& Flags);
+  void AddLine(double Energy, double BranchingRatio, const MString& Flags, bool ExcludeExcludedLines = false);
   //! Set line found
   void SetLineFound(unsigned int l, bool Found);
   //! Get line found
