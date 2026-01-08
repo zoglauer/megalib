@@ -27,6 +27,7 @@
 #include "MString.h"
 
 // Standard libs:
+#include <cmath>
 #include <locale>
 #include <iomanip>
 using namespace std;
