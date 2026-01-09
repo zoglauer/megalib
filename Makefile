@@ -13,6 +13,9 @@
 
 MAKE += -s
 
+MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-builtin-variables
+
 SHELL	:=/bin/bash
 
 # Basic directories
@@ -49,23 +52,20 @@ endif
 CXXFLAGS    += -I$(IN)
 LDFLAGS     += -L$(LB)
 
-#MAKEFLAGS += --no-builtin-rules
 
 #------------------------------------------------------------------------------
 # Commands:
 
 CMD :=
 
-#.NOPARALLEL:
-.EXPORT_ALL_VARIABLES: all copy miw geo geolib
+.EXPORT_ALL_VARIABLES: all 
 .SILENT:
-.NOTPARALLEL: info glo geo spe miw rev siv res mim evi meg her bm cal fre add cos 
+.NOTPARALLEL:
 .SUFFIXES:
-.SUFFIXES: .cxx .h .o .so
+.PHONY: all info link glo geolib geo spelib spe revlib rev sivlib siv res mimlib mim evi rea fre add cos clean
 
-all: info link only combine
-
-only: info glo geo spe rev siv res mim evi rea fre add cos 
+all: info link glo geo spe rev siv res mim evi rea fre add cos
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(shell cat $(LB)/AllObjects.txt) $(GLIBS) $(LIBS) -o $(LB)/libMEGAlib.so
 
 
 #------------------------------------------------------------------------------
@@ -76,25 +76,17 @@ GEANT4VERSIONOK := $(shell bash $(CF)/configure_geant4versiontest )
 
 
 #------------------------------------------------------------------------------
-# Combine all .o files
-
-# Attention: This is done every time, and doesn't seem to be preventable, since I do not know which headers and source files have changed
-combine: only link
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(shell cat $(LB)/AllObjects.txt) $(GLIBS) $(LIBS) -o $(LB)/libMEGAlib.so
-
-
-#------------------------------------------------------------------------------
 # Global library:
 
 info:
 ifneq ($(strip $(ROOTVERSIONOK)),)
 	echo "$(ROOTVERSIONOK)"
-	exit 1;		
+	exit 1
 endif
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
 ifneq ($(strip $(GEANT4VERSIONOK)),)
 	echo "$(GEANT4VERSIONOK)"
-	exit 1;		
+	exit 1
 endif
 endif
 	echo "Starting MEGAlib compilation in mode: $(CMODE)"
@@ -123,21 +115,6 @@ add: link glo geolib spelib revlib sivlib mimlib mim rev
 clean_addon:
 	@$(MAKE) clean_add -C src
 
-
-#------------------------------------------------------------------------------
-# Megalyze
-
-megaylze: info meg
-	@$(BN)/megalyze $(CMD)
-
-megalyze: info meg
-	@$(BN)/megalyze $(CMD)
-
-meg: link glo
-	@$(MAKE) meg -C src
-
-clean_megalyze:
-	@$(MAKE) clean_meg -C src
 
 
 #------------------------------------------------------------------------------
@@ -265,7 +242,7 @@ else
 	@echo "Geant4 not installed, cannot launch cosima..."
 endif
 
-cos: link glo geolib sivlib
+cos: link glo geolib sivlib revlib
 	@$(MAKE) cos -C src
 
 clean_cosima:
@@ -285,22 +262,6 @@ clean_response:
 
 
 #------------------------------------------------------------------------------
-# Herty:
-
-herty: info her
-	@$(BN)/herty
-
-herlib: link glo
-	@$(MAKE) herlib -C src
-
-her: link glo geolib
-	@$(MAKE) her -C src
-
-clean_herty:
-	@$(MAKE) clean_her -C src
-
-
-#------------------------------------------------------------------------------
 # Realta:
 
 realta: info rea 
@@ -311,50 +272,6 @@ rea: link glo rev mim spe siv geolib spelib
 
 clean_realta:
 	@$(MAKE) clean_rea -C src
-
-
-
-#------------------------------------------------------------------------------
-# MIWorks:
-
-miworks: info glo miw
-	@$(BN)/miworks $(CMD)
-
-miw: link glo
-	@$(MAKE) miw -C src
-
-clean_miworks:
-	@$(MAKE) clean_miw -C src
-
-
-
-#------------------------------------------------------------------------------
-# BeamMonitor:
-
-
-beammonitor: info bm
-	@$(BN)/BeamMonitor $(CMD)
-
-bm: link glo meg
-	@$(MAKE) bm -C src
-
-clean_bm:
-	@$(MAKE) clean_bm -C src
-
-
-
-#------------------------------------------------------------------------------
-# Calibration:
-
-calibration: info cal
-	@$(BN)/CalibCsISingle $(CMD)
-
-cal: link glo meg 
-	@$(MAKE) cal -C src
-
-clean_cal:
-	@$(MAKE) clean_cal -C src
-
 
 
 #------------------------------------------------------------------------------
