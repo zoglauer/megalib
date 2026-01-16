@@ -81,6 +81,11 @@ CONFIGUREOPTIONS+=("-Dalien=OFF" "-Dbonjour=OFF" "-Dcastor=OFF" "-Ddavix=OFF" "-
 # Explictly add gcc -- cmake seems to sometimes digg up other compilers on the system, not the default one...
 # CONFIGUREOPTIONS+=("-DCMAKE_C_COMPILER=$(which gcc)" "-DCMAKE_CXX_COMPILER=$(which g++)")
 
+# Turn off runtime modules on macOS
+if [[ ${OSTYPE} == *arwin* ]]; then
+  CONFIGUREOPTIONS+=("-Druntime_cxxmodules=OFF")
+fi
+
 # The compiler
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
