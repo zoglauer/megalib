@@ -95,14 +95,16 @@ void MModuleReadOutAssemblyQueues::EnableSorting(bool Sorted)
   lock_guard<mutex> IncomingLock(m_IncomingEventsMutex);
   lock_guard<mutex> OutgoingLock(m_OutgoingEventsMutex);
 
-  if (m_IncomingEvents.begin() != m_IncomingEvents.end() ||
-      m_OutgoingEvents.begin() != m_OutgoingEvents.end()) {
-    if (g_Verbosity >= c_Error) {
-      cout<<"Error in MModuleReadOutAssemblyQueues::EnableSorting:"<<endl;
-      cout<<"You cannot change the sorting mode while events are in the queue!"<<endl;
+  if (m_SortedQueue != Sorted) {
+    if (m_IncomingEvents.begin() != m_IncomingEvents.end() ||
+        m_OutgoingEvents.begin() != m_OutgoingEvents.end()) {
+      if (g_Verbosity >= c_Error) {
+        cout<<"Error in MModuleReadOutAssemblyQueues::EnableSorting:"<<endl;
+        cout<<"You cannot change the sorting mode while events are in the queue!"<<endl;
+      }
+    } else {
+      m_SortedQueue = Sorted;
     }
-  } else {
-    m_SortedQueue = Sorted; 
   }
 }
 
