@@ -49,6 +49,7 @@ using namespace std;
 #include "TGMsgBox.h"
 #include "TSystem.h"
 #include "TLine.h"
+#include "TLatex.h"
 
 
 // MEGAlib libs:
@@ -507,13 +508,16 @@ void MInterfaceRevan::GenerateSpectra()
   bool ByDetectorType = m_Data->GetSpectrumSortByDetectorType();
   bool ByNamedDetector = m_Data->GetSpectrumSortByNamedDetector();
   bool ByDetector = m_Data->GetSpectrumSortByDetector();
-  
+
   bool Combine = m_Data->GetSpectrumCombine();
-  
+
+  bool PrintTotalDeposit = m_Data->GetSpectrumTotalDeposit();
+
   bool OutputScreen = m_Data->GetSpectrumOutputToScreen();
   bool OutputFile = m_Data->GetSpectrumOutputToFile();
   
   vector<TH1D*> AllSpectra;
+  map<TH1D*, double> EnergyCounter;
   
   
   // Step 1: Let's create all the histograms:
@@ -589,9 +593,11 @@ void MInterfaceRevan::GenerateSpectra()
       if (ByInstrument == true) {
         if (Combine == true) {
           SpectrumBeforeByInstrument->Fill(Before->GetEnergy());
+          EnergyCounter[SpectrumBeforeByInstrument] += Before->GetEnergy();
         } else {
           for (int r = 0; r < Before->GetNRESEs(); ++r) {
             SpectrumBeforeByInstrument->Fill(Before->GetRESEAt(r)->GetEnergy());
+            EnergyCounter[SpectrumBeforeByInstrument] += Before->GetRESEAt(r)->GetEnergy();
           }
         }
       }
@@ -610,6 +616,7 @@ void MInterfaceRevan::GenerateSpectra()
               AllSpectra.push_back(H);
             }
             SpectrumBeforeByDetectorType[E.first]->Fill(E.second);
+            EnergyCounter[SpectrumBeforeByDetectorType[E.first]] += E.second;
           }        
         } else {
           for (int r = 0; r < Before->GetNRESEs(); ++r) {
@@ -621,6 +628,7 @@ void MInterfaceRevan::GenerateSpectra()
               AllSpectra.push_back(H);
             }
             SpectrumBeforeByDetectorType[DetectorType]->Fill(Before->GetRESEAt(r)->GetEnergy());
+            EnergyCounter[SpectrumBeforeByDetectorType[DetectorType]] += Before->GetRESEAt(r)->GetEnergy();
           }
         }
       }
@@ -640,6 +648,7 @@ void MInterfaceRevan::GenerateSpectra()
               AllSpectra.push_back(H);
             }
             SpectrumBeforeByNamedDetector[E.first]->Fill(E.second);
+            EnergyCounter[SpectrumBeforeByNamedDetector[E.first]] += E.second;
           }
         } else {
           for (int r = 0; r < Before->GetNRESEs(); ++r) {
@@ -651,6 +660,7 @@ void MInterfaceRevan::GenerateSpectra()
               AllSpectra.push_back(H);
             }
             SpectrumBeforeByNamedDetector[Name]->Fill(Before->GetRESEAt(r)->GetEnergy());
+            EnergyCounter[SpectrumBeforeByNamedDetector[Name]] += Before->GetRESEAt(r)->GetEnergy();
           }
         }
       } // By named detector
@@ -674,6 +684,7 @@ void MInterfaceRevan::GenerateSpectra()
               AllSpectra.push_back(H);
             }
             SpectrumBeforeByDetector[E.first]->Fill(E.second);
+            EnergyCounter[SpectrumBeforeByDetector[E.first]] += E.second;
           }
         } else {
           for (int r = 0; r < Before->GetNRESEs(); ++r) {
@@ -687,6 +698,7 @@ void MInterfaceRevan::GenerateSpectra()
               AllSpectra.push_back(H);
             }
             SpectrumBeforeByDetector[Position]->Fill(Before->GetRESEAt(r)->GetEnergy());
+            EnergyCounter[SpectrumBeforeByDetector[Position]] += Before->GetRESEAt(r)->GetEnergy();
           }
         }
       } // By detector
@@ -703,9 +715,11 @@ void MInterfaceRevan::GenerateSpectra()
         if (ByInstrument == true) {
           if (Combine == true) {
             SpectrumAfterByInstrument->Fill(After->GetEnergy());
+            EnergyCounter[SpectrumAfterByInstrument] += After->GetEnergy();
           } else {
             for (int r = 0; r < After->GetNRESEs(); ++r) {
               SpectrumAfterByInstrument->Fill(After->GetRESEAt(r)->GetEnergy());
+              EnergyCounter[SpectrumAfterByInstrument] += After->GetRESEAt(r)->GetEnergy();
             }
           }
         }
@@ -724,10 +738,7 @@ void MInterfaceRevan::GenerateSpectra()
                 AllSpectra.push_back(H);
               }
               SpectrumAfterByDetectorType[E.first]->Fill(E.second);
-              if (E.second > 2000) {
-                cout<<E.second<<endl;
-                cout<<After->ToString()<<endl;
-              }
+              EnergyCounter[SpectrumAfterByDetectorType[E.first]] += E.second;
             }        
           } else {
             for (int r = 0; r < After->GetNRESEs(); ++r) {
@@ -739,6 +750,7 @@ void MInterfaceRevan::GenerateSpectra()
                 AllSpectra.push_back(H);
               }
               SpectrumAfterByDetectorType[DetectorType]->Fill(After->GetRESEAt(r)->GetEnergy());
+              EnergyCounter[SpectrumAfterByDetectorType[DetectorType]] += After->GetRESEAt(r)->GetEnergy();
             }
           }      
         }
@@ -758,6 +770,7 @@ void MInterfaceRevan::GenerateSpectra()
                 AllSpectra.push_back(H);
               }
               SpectrumAfterByNamedDetector[E.first]->Fill(E.second);
+              EnergyCounter[SpectrumAfterByNamedDetector[E.first]] += E.second;
             }
           } else {
             for (int r = 0; r < After->GetNRESEs(); ++r) {
@@ -769,6 +782,7 @@ void MInterfaceRevan::GenerateSpectra()
                 AllSpectra.push_back(H);
               }
               SpectrumAfterByNamedDetector[Name]->Fill(After->GetRESEAt(r)->GetEnergy());
+              EnergyCounter[SpectrumAfterByNamedDetector[Name]] += After->GetRESEAt(r)->GetEnergy();
             }
           }
         } // By named detector
@@ -791,6 +805,7 @@ void MInterfaceRevan::GenerateSpectra()
                 AllSpectra.push_back(H);
               }
               SpectrumAfterByDetector[E.first]->Fill(E.second);
+              EnergyCounter[SpectrumAfterByDetector[E.first]] += E.second;
             }
           } else {
             for (int r = 0; r < After->GetNRESEs(); ++r) {
@@ -804,6 +819,7 @@ void MInterfaceRevan::GenerateSpectra()
                 AllSpectra.push_back(H);
               }
               SpectrumAfterByDetector[Position]->Fill(After->GetRESEAt(r)->GetEnergy());
+              EnergyCounter[SpectrumAfterByDetector[Position]] += After->GetRESEAt(r)->GetEnergy();
             }
           }
         } // By detector
@@ -822,7 +838,7 @@ void MInterfaceRevan::GenerateSpectra()
     Hist->SetStats(false);
     Hist->SetFillColor(8);
     Hist->GetXaxis()->SetTitle("Energy [keV]");
-    Hist->GetYaxis()->SetTitle("counts/keV"); 
+    Hist->GetYaxis()->SetTitle("counts/keV");
   }
   
    
@@ -874,24 +890,37 @@ void MInterfaceRevan::GenerateSpectra()
         mgui<<"We only display up to "<<MaxCanvases<<" individual spectra"<<info;
         break;
       }
-      
+
       // Convert to cts/keV
       for (int b = 1; b <= Hist->GetXaxis()->GetNbins(); ++b) {
         if (Hist->GetBinContent(b) > 0) {
           Hist->SetBinContent(b, Hist->GetBinContent(b)/Hist->GetBinWidth(b));
         }
       }
-      
+
       TCanvas* C = new TCanvas();
       C->cd();
       if (xLog == true) C->SetLogx();
       Hist->Draw();
       C->Update();
+
+      if (PrintTotalDeposit == true) {
+        ostringstream out;
+        out<<"Total energy deposit: "<<EnergyCounter[Hist]<<" keV";
+        TLatex* L = new TLatex(0.975*xMax, 0.975*Hist->GetMaximum(), out.str().c_str());
+        L->SetTextFont(42);
+        L->SetTextAlign(32);
+        L->SetTextSize(0.03);
+        L->SetLineWidth(2);
+        L->Draw();
+        C->Update();
+      }
     }
   }  
   
-  
   delete [] xBins;
+
+  return;
 }
 
 

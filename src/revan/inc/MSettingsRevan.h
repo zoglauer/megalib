@@ -69,9 +69,12 @@ class MSettingsRevan : public MSettings, public MSettingsEventReconstruction, pu
   bool GetSpectrumOutputToScreen() const { return m_SpectrumOutputToScreen; }
   void SetSpectrumOutputToFile(bool Value) { m_SpectrumOutputToFile = Value; }
   bool GetSpectrumOutputToFile() const { return m_SpectrumOutputToFile; }
-  
+
   void SetSpectrumCombine(bool Value) { m_SpectrumCombine = Value; }
   bool GetSpectrumCombine() const { return m_SpectrumCombine; }
+
+  void SetSpectrumTotalDeposit(bool Value) { m_SpectrumTotalDeposit = Value; }
+  bool GetSpectrumTotalDeposit() const { return m_SpectrumTotalDeposit; }
 
   void SetSpectrumBins(int Value) { m_SpectrumBins = Value; }
   int GetSpectrumBins() const { return m_SpectrumBins; }
@@ -104,6 +107,8 @@ class MSettingsRevan : public MSettings, public MSettingsEventReconstruction, pu
   
   bool m_SpectrumCombine;
   
+  bool m_SpectrumTotalDeposit;
+
   bool m_SpectrumOutputToScreen;
   bool m_SpectrumOutputToFile;
   

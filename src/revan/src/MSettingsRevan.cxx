@@ -68,6 +68,8 @@ MSettingsRevan::MSettingsRevan(bool AutoLoad) : MSettings("RevanConfigurationFil
   
   m_SpectrumCombine = true;
   
+  m_SpectrumTotalDeposit = false;
+
   m_SpectrumOutputToScreen = true;
   m_SpectrumOutputToFile = false;
   
@@ -116,9 +118,11 @@ bool MSettingsRevan::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "SpectrumSortByDetectorType", m_SpectrumSortByDetectorType);
   new MXmlNode(Node, "SpectrumSortByNamedDetector", m_SpectrumSortByNamedDetector);
   new MXmlNode(Node, "SpectrumSortByDetector", m_SpectrumSortByDetector);
-  
+
   new MXmlNode(Node, "SpectrumCombine", m_SpectrumCombine);
-  
+
+  new MXmlNode(Node, "SpectrumTotalDeposit", m_SpectrumTotalDeposit);
+
   new MXmlNode(Node, "SpectrumOutputToScreen", m_SpectrumOutputToScreen);
   new MXmlNode(Node, "SpectrumOutputToFile", m_SpectrumOutputToFile);
 
@@ -187,11 +191,15 @@ bool MSettingsRevan::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("SpectrumOutputToFile")) != 0) {
     m_SpectrumOutputToFile = aNode->GetValueAsBoolean();
   }
-  
+
   if ((aNode = Node->GetNode("SpectrumCombine")) != 0) {
     m_SpectrumCombine = aNode->GetValueAsBoolean();
   }
-  
+
+  if ((aNode = Node->GetNode("SpectrumTotalDeposit")) != 0) {
+    m_SpectrumTotalDeposit = aNode->GetValueAsBoolean();
+  }
+
   if ((aNode = Node->GetNode("SpectrumBins")) != 0) {
     m_SpectrumBins = aNode->GetValueAsInt();
   }
