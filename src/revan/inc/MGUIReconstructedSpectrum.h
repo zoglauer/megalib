@@ -69,8 +69,10 @@ class MGUIReconstructedSpectrum : public MGUIDialog
   MGUIECBList* m_BeforeAfter;
   //! The checkbutton list of the included detectors
   MGUIECBList* m_Detectors;
-  //! A radiobutton list for determined if the hits should be combined or not
+  //! A checkbutton list for determined if the hits should be combined or not
   MGUIECBList* m_Combinations;
+  //! A checkbutton list to choose additional information to be displayed
+  MGUIECBList* m_AdditionalInfo;
   //! The checkbutton list of the output location
   MGUIECBList* m_Output;
   

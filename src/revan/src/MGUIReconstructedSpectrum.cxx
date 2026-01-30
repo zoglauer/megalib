@@ -113,7 +113,13 @@ void MGUIReconstructedSpectrum::Create()
   m_Combinations->Create();
   m_Combinations->Associate(this);
   AddFrame(m_Combinations, StandardLayout);
-  
+
+  m_AdditionalInfo = new MGUIECBList(this, "Select if you want to print the following additional information:");
+  m_AdditionalInfo->Add("Total energy deposit shown in spectrum", m_Data->GetSpectrumTotalDeposit());
+  m_AdditionalInfo->Create();
+  m_AdditionalInfo->Associate(this);
+  AddFrame(m_AdditionalInfo, StandardLayout);
+
   m_Output = new MGUIECBList(this, "Select where the output should go:");
   m_Output->Add("To screen", m_Data->GetSpectrumOutputToScreen());          
   m_Output->Add("To file (will be written in the same directory as the input file)", m_Data->GetSpectrumOutputToFile());          
@@ -201,8 +207,10 @@ bool MGUIReconstructedSpectrum::OnApply()
   m_Data->SetSpectrumSortByDetectorType(m_Detectors->IsSelected(1));
   m_Data->SetSpectrumSortByNamedDetector(m_Detectors->IsSelected(2));
   m_Data->SetSpectrumSortByDetector(m_Detectors->IsSelected(3));
-  
+
   m_Data->SetSpectrumCombine(m_Combinations->IsSelected(0));
+
+  m_Data->SetSpectrumTotalDeposit(m_AdditionalInfo->IsSelected(0));
 
   m_Data->SetSpectrumOutputToScreen(m_Output->IsSelected(0));
   m_Data->SetSpectrumOutputToFile(m_Output->IsSelected(1));
