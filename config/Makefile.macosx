@@ -20,12 +20,12 @@ ROOTGLIBS     := $(shell root-config --glibs)
 
 # Compiler & linker options:
 CXX           := c++
-CXXFLAGS      := $(OPT) -std=c++14 -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-unused-but-set-variable -Wno-overloaded-virtual -Wno-tautological-undefined-compare -Wno-deprecated-declarations
+CXXFLAGS      := $(OPT) -std=c++17 -Xpreprocessor -fopenmp -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-unused-but-set-variable -Wno-overloaded-virtual -Wno-tautological-undefined-compare -Wno-deprecated-declarations -I$(shell brew --prefix libomp)/include 
 DEFINES       := -UHARDWARE
 LD            := c++
 LDFLAGS       := $(OPT) -Xlinker -flat_namespace -D___MACOSX___
 SOFLAGS       := -dynamiclib -undefined dynamic_lookup
-LIBS          := $(ROOTGLIBS) -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA
+LIBS          := -L$(shell brew --prefix libomp)/lib $(ROOTGLIBS) -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA -lomp
 GLIBS         := 
 DEPFLAGS      := -M
 
