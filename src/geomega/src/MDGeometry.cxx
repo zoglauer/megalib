@@ -1252,6 +1252,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Find the master keyword, volumes, material, detectors
   //
 
+
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
@@ -1259,7 +1260,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       Typo("Parsing of the line failed.");
       return false;
     }
-       
+
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Let's scan for first order keywords:
@@ -1758,8 +1759,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       AddDetector(new MDVoxel3D(Tokenizer.GetTokenAt(1)));
       continue;
     }
-
   }
+
 
   // Now we can do some basic evaluation of the input:
 
@@ -4466,46 +4467,35 @@ bool MDGeometry::NameExists(MString Name)
   // Since all new names pass through this function (because we have to check
   // if it already exists), we can make sure that we are case insensitive!
 
-  for (unsigned int i = 0; i < GetNVolumes(); i++) {
-    if (Name.AreIdentical(m_VolumeList[i]->GetName(), true)) {
-      Typo("A volume of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetVolume(Name) != nullptr) {
+    Typo("A volume of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    if (Name.AreIdentical(m_MaterialList[i]->GetName(), true)) {
-      Typo("A material of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetMaterial(Name) != nullptr) {
+    Typo("A material of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < GetNDetectors(); i++) {
-    if (Name.AreIdentical(m_DetectorList[i]->GetName(), true)) {
-      Typo("A detector of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetDetector(Name) != nullptr) {
+    Typo("A detector of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < GetNTriggers(); i++) {
-    if (Name.AreIdentical(m_TriggerList[i]->GetName(), true)) {
-      Typo("A trigger of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetTrigger(Name) != nullptr) {
+    Typo("A trigger of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < GetNVectors(); i++) {
-    if (Name.AreIdentical(m_VectorList[i]->GetName(), true)) {
-      Typo("A vector of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetVector(Name) != nullptr) {
+    Typo("A vector of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < m_Constants.size(); i++) {
-    if (Name.AreIdentical(m_Constants[i].m_Constant, true)) {
-      Typo("A constant of this name (case insensitive) already exists!");
-      return true;
-    }
+  auto Iter = m_ConstantsMap.find(Name);
+  if (Iter != m_ConstantsMap.end()) {
+    Typo("A constant of this name already exists!");
+    return false;
   }
 
   return false;
