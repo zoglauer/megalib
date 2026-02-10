@@ -191,16 +191,19 @@ void MDGeometry::Reset()
     delete m_VolumeList[i];
   }
   m_VolumeList.clear();
+  m_VolumeMap.clear();
 
   for (unsigned int i = 0; i < m_MaterialList.size(); ++i) {
     delete m_MaterialList[i];
   }
   m_MaterialList.clear();
+  m_MaterialMap.clear();
 
   for (unsigned int i = 0; i < m_DetectorList.size(); ++i) {
     delete m_DetectorList[i];
   }
   m_DetectorList.clear();
+  m_DetectorMap.clear();
 
   m_NDetectorTypes.clear();
   m_NDetectorTypes.resize(MDDetector::c_MaxDetector+1);
@@ -209,21 +212,25 @@ void MDGeometry::Reset()
     delete m_TriggerList[i];
   }
   m_TriggerList.clear();
+  m_TriggerMap.clear();
 
   for (unsigned int i = 0; i < m_ShapeList.size(); ++i) {
     delete m_ShapeList[i];
   }
   m_ShapeList.clear();
+  m_ShapeMap.clear();
 
   for (unsigned int i = 0; i < m_OrientationList.size(); ++i) {
     delete m_OrientationList[i];
   }
   m_OrientationList.clear();
+  m_OrientationMap.clear();
 
   for (unsigned int i = 0; i < m_VectorList.size(); ++i) {
     delete m_VectorList[i];
   }
   m_VectorList.clear();
+  m_VectorMap.clear();
 
   m_Constants.clear();
   m_ConstantsMap.clear();
@@ -1844,7 +1851,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (analyzing \"Copies\") finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+    mout<<"Stage "<<Stage<<" (creating copies) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
 
@@ -2716,6 +2723,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   } // end third loop...
 
 
+
+  ++Stage;
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
+    mout<<"Stage "<<Stage<<" (filling the volumes, materials, etc.) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+  }
 
 
 
@@ -3639,7 +3651,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (analyzing all properties) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+    mout<<"Stage "<<Stage<<" (filling detectors) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
   if (m_WorldVolume == 0) {
@@ -4909,6 +4921,7 @@ void MDGeometry::AddVolume(MDVolume* Volume)
   // Add a volume to the list
 
   m_VolumeList.push_back(Volume);
+  m_VolumeMap[Volume->GetName().Data()] = Volume;
 }
 
 
@@ -4946,6 +4959,13 @@ MDVolume* MDGeometry::GetVolume(const MString& Name)
 {
   // Return the volume with name Name or 0 if it does not exist
 
+  auto I = m_VolumeMap.find(Name.Data());
+  if (I != m_VolumeMap.end()) {
+    return I->second;
+  }
+  return nullptr;
+
+  /* old code
   // This function is not reentrant!!!!
 
   // ---> begin extremely time critical
@@ -4989,6 +5009,7 @@ MDVolume* MDGeometry::GetVolume(const MString& Name)
   // <--- end extremely time critical
 
   return 0;
+  */
 }
 
 
@@ -5029,6 +5050,7 @@ void MDGeometry::AddDetector(MDDetector* Detector)
   // Add a volume to the list
 
   m_DetectorList.push_back(Detector);
+  m_DetectorMap[Detector->GetName().Data()] = Detector;
 }
 
 
@@ -5055,13 +5077,11 @@ MDDetector* MDGeometry::GetDetector(const MString& Name)
 {
   // Return the detector with name Name or 0 if it does not exist
 
-  for (unsigned int i = 0; i < GetNDetectors(); i++) {
-    if (Name == m_DetectorList[i]->GetName()) {
-      return m_DetectorList[i];
-    }
+  auto I = m_DetectorMap.find(Name.Data());
+  if (I != m_DetectorMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5172,6 +5192,7 @@ void MDGeometry::AddShape(MDShape* Shape)
   // Add a shape to the list
 
   m_ShapeList.push_back(Shape);
+  m_ShapeMap[Shape->GetName().Data()] = Shape;
 }
 
 
@@ -5198,13 +5219,11 @@ MDShape* MDGeometry::GetShape(const MString& Name)
 {
   // Return the shape with name Name or 0 if it does not exist
 
-  for (unsigned int i = 0; i < GetNShapes(); i++) {
-    if (Name == m_ShapeList[i]->GetName()) {
-      return m_ShapeList[i];
-    }
+  auto I = m_ShapeMap.find(Name.Data());
+  if (I != m_ShapeMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5244,6 +5263,7 @@ void MDGeometry::AddOrientation(MDOrientation* Orientation)
   // Add an orientation to the list
 
   m_OrientationList.push_back(Orientation);
+  m_OrientationMap[Orientation->GetName().Data()] = Orientation;
 }
 
 
@@ -5270,13 +5290,11 @@ MDOrientation* MDGeometry::GetOrientation(const MString& Name)
 {
   // Return the orientation with name Name or 0 if it does not exist
 
-  for (unsigned int i = 0; i < GetNOrientations(); i++) {
-    if (Name == m_OrientationList[i]->GetName()) {
-      return m_OrientationList[i];
-    }
+  auto I = m_OrientationMap.find(Name.Data());
+  if (I != m_OrientationMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5316,6 +5334,7 @@ void MDGeometry::AddMaterial(MDMaterial* Material)
   // Add a material to the list
 
   m_MaterialList.push_back(Material);
+  m_MaterialMap[Material->GetName().Data()] = Material;
 }
 
 
@@ -5342,13 +5361,11 @@ MDMaterial* MDGeometry::GetMaterial(const MString& Name)
 {
   // Return the material with name Name or 0 if it does not exist
 
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    if (Name == m_MaterialList[i]->GetName()) {
-      return m_MaterialList[i];
-    }
+  auto I = m_MaterialMap.find(Name.Data());
+  if (I != m_MaterialMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5389,6 +5406,7 @@ void MDGeometry::AddTrigger(MDTrigger* Trigger)
   // Add a material to the list
 
   m_TriggerList.push_back(Trigger);
+  m_TriggerMap[Trigger->GetName().Data()] = Trigger;
 }
 
 
@@ -5415,14 +5433,11 @@ MDTrigger* MDGeometry::GetTrigger(const MString& Name)
 {
   // Return the material with name Name or 0 if it does not exist
 
-  unsigned int i;
-  for (i = 0; i < GetNTriggers(); i++) {
-    if (Name == m_TriggerList[i]->GetName()) {
-      return m_TriggerList[i];
-    }
+  auto I = m_TriggerMap.find(Name.Data());
+  if (I != m_TriggerMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5478,6 +5493,7 @@ void MDGeometry::AddVector(MDVector* Vector)
   // Add a vector to the list
 
   m_VectorList.push_back(Vector);
+  m_VectorMap[Vector->GetName().Data()] = Vector;
 }
 
 
@@ -5504,14 +5520,11 @@ MDVector* MDGeometry::GetVector(const MString& Name)
 {
   // Return the vector with name Name or 0 if it does not exist
 
-  unsigned int i;
-  for (i = 0; i < GetNVectors(); i++) {
-    if (Name == m_VectorList[i]->GetName()) {
-      return m_VectorList[i];
-    }
+  auto I = m_VectorMap.find(Name.Data());
+  if (I != m_VectorMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
