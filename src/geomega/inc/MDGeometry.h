@@ -49,6 +49,29 @@ using std::vector;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Helper class to evaluate constants
+class MConstantEvaluator
+{
+ public:
+  //! The constant
+  MString m_Constant;
+  //! The constant
+  MString m_Text;
+  //! Length if the value
+  unsigned int m_TextLength;
+  //! Is it a number
+  bool m_IsNumber;
+  //! Is it maths
+  bool m_IsMaths;
+  //! Is it found in other constants
+  bool m_IsPartOfOtherConstants;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! A MEGAlib geometry
 class MDGeometry
 {
   // public interface:
@@ -262,12 +285,13 @@ class MDGeometry
   vector<MDVector*> m_VectorList;
 
   //! A list of all constants
-  vector<MString> m_ConstantList;
-  //! A map of all constants and their companions
-  map<MString, MString> m_ConstantMap;
+  vector<MConstantEvaluator> m_Constants;
+  //! A map of all constants
+  map<MString, MString> m_ConstantsMap;
   //! A list of all not allowed constants
   vector<MString> m_BlockedConstants;
-  
+
+
   //! The different detector types
   vector<int> m_NDetectorTypes; 
 
