@@ -101,33 +101,33 @@ MDDebugInfo& MDDebugInfo::operator=(const MDDebugInfo& DebugInfo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDDebugInfo::Replace(MString Old, MString New, bool WholeWordsOnly)
+void MDDebugInfo::Replace(const MString& Old, const MString& New, bool WholeWordsOnly)
 {
   // Replace some text
 
   if (WholeWordsOnly == true) {
     // This algorithm also appears in MDGeometry::ReplaceWholeWords
     if (m_Text.Length() > 0) {
-      size_t Pos = 0;
+      size_t Pos = m_Text.Index(Old);
       while ((Pos = m_Text.Index(Old, Pos)) != MString::npos) {
         if (m_Text.Length() > Pos + Old.Length()) {
-          if (isalnum(m_Text[Pos + Old.Length()]) != 0 || 
+          if (isalnum(m_Text[Pos + Old.Length()]) != 0 ||
               m_Text[Pos + Old.Length()] == '_') {
             Pos += Old.Length();
             continue;
           }
         }
         if (Pos > 0) {
-          if (isalnum(m_Text[Pos - 1]) != 0 || 
+          if (isalnum(m_Text[Pos - 1]) != 0 ||
               m_Text[Pos - 1] == '_') {
             Pos += Old.Length();
             continue;
-          }        
+          }
         }
         m_Text.Replace(Pos, Old.Length(), New);
         Pos += New.Length();
       }
-    } 
+    }
   } else {
     m_Text.ReplaceAll(Old, New);
   }

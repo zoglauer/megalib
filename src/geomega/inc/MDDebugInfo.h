@@ -57,7 +57,7 @@ class MDDebugInfo
   bool Contains(MString Text) { return m_Text.Contains(Text); }
 
   //! Replace some strings...
-  void Replace(MString Old, MString New, bool WholeWordsOnly = false);
+  void Replace(const MString& Old, const MString& New, bool WholeWordsOnly = false);
   //! Replace some text with a number
   void ReplaceFirst(MString Old, double New);
   //! Return the text

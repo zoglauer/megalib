@@ -500,7 +500,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     
   }
 
-  if (FileContent.size() == 0) {
+  size_t FileContentSize = FileContent.size();
+  if (FileContentSize == 0) {
     mgui<<"File is \""<<m_FileName<<"\" empty or binary!"<<error;
     return false;
   }
@@ -692,29 +693,38 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mout<<"Stage "<<Stage<<" (analyzing maths) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
+
+  if (FileContentSize > 2000) {
 #ifdef _OPENMP
     std::cout << "OpenMP is ENABLED. Max threads: " << omp_get_max_threads() << std::endl;
 #else
     std::cout << "OpenMP is DISABLED (The compiler is ignoring your pragmas!)" << std::endl;
 #endif
 
-  #pragma omp parallel
-  {
-    #pragma omp single
+    #pragma omp parallel
     {
-      for (auto& Content : FileContent) {
-        // Get the specific memory address of this list element
-        auto* pContent = &Content;
+      #pragma omp single
+      {
+        for (auto& Content : FileContent) {
+          // We need a pointer here for openMPI to work reliably
+          auto* pContent = &Content;
 
-        #pragma omp task firstprivate(pContent) shared(m_Constants)
-        {
-          // Operate via the pointer
-          for (const auto& Constant : m_Constants) {
-            pContent->Replace(Constant.m_Constant, Constant.m_Text, true);
+          #pragma omp task firstprivate(pContent) shared(m_Constants)
+          {
+            for (const auto& Constant : m_Constants) {
+              pContent->Replace(Constant.m_Constant, Constant.m_Text, true);
+            }
           }
         }
+        #pragma omp taskwait
       }
-      #pragma omp taskwait
+    }
+  } else {
+    for (auto& Content : FileContent) {
+      auto* pContent = &Content;
+      for (const auto& Constant : m_Constants) {
+        pContent->Replace(Constant.m_Constant, Constant.m_Text, true);
+      }
     }
   }
 
@@ -3797,11 +3807,6 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     ++AxesIter;
   }
   m_WorldVolume->ResetCloneTemplateFlags();
-
-  ++Stage;
-  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (generating clones) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
-  }
 
   for (unsigned int i = 0; i < GetNVolumes(); i++) {
     if (m_VolumeList[i] != 0) {
