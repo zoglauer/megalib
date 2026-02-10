@@ -35,6 +35,8 @@
 #include <cctype>
 #include <cmath>
 #include <iterator>
+#include <algorithm>
+#include <omp.h>
 using namespace std;
 
 // ROOT libs:
@@ -683,13 +685,51 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mout<<"Stage "<<Stage<<" (analyzing maths) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
+#ifdef _OPENMP
+    std::cout << "OpenMP is ENABLED. Max threads: " << omp_get_max_threads() << std::endl;
+#else
+    std::cout << "OpenMP is DISABLED (The compiler is ignoring your pragmas!)" << std::endl;
+#endif
+
+  #pragma omp parallel
+  {
+    #pragma omp single
+    {
+      for (auto& Content : FileContent) {
+        // Get the specific memory address of this list element
+        auto* pContent = &Content;
+
+        #pragma omp task firstprivate(pContent) shared(m_Constants)
+        {
+          // Operate via the pointer
+          for (const auto& Constant : m_Constants) {
+            pContent->Replace(Constant.m_Constant, Constant.m_Text, true);
+          }
+        }
+      }
+      #pragma omp taskwait
+    }
+  }
 
   // Do the final replace:
+  /*
+  std::for_each(std::execution::par, FileContent.begin(), FileContent.end(), [&](auto& Content) {
+    MTokenizer& Tokenizer = Content.GetTokenizer(false);
+    if (Tokenizer.GetNTokens() > 0) {
+      for (const auto& Constant : m_Constants) {
+        Content.Replace(Constant.m_Constant, Constant.m_Text, true);
+      }
+    }
+  });
+  */
+
+  /*
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
     
     if (Tokenizer.GetNTokens() == 0) continue;
+
 
     MString Init = Tokenizer.GetTokenAt(0);
     if (Init == "Volume" ||
@@ -719,10 +759,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       continue;
     }
 
+
     for (unsigned int l1 = 0; l1 < m_Constants.size(); ++l1) {
       (*ContentIter).Replace(m_Constants[l1].m_Constant, m_Constants[l1].m_Text, true);
     }
   }
+  */
 
 
   ++Stage;
