@@ -103,7 +103,7 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, con
   m_SaveEvents = false;
   m_TransmitEvents = false;
   m_RelegateEvents = false;
-  m_ReconstructEvents = false;  
+  m_ReconstructEvents = false;
 }
 
 
@@ -389,7 +389,7 @@ void MCEventAction::SetRelegator(void (Relegator)(MSimEvent*))
 void MCEventAction::BeginOfEventAction(const G4Event*)
 {
   ++m_ID;  
-    
+  
   mdebug<<"Starting event "<<m_ID<< "... Please stand by..."<<endl;
   
   if (m_TimerStarted == false) {
@@ -431,7 +431,7 @@ void MCEventAction::AddIA(G4String ProcessID,
                           G4ThreeVector SecDir,
                           G4ThreeVector SecPol,
                           double SecKin)
-{  
+{
   MSimIA* IA = new MSimIA();
   IA->SetProcess(ProcessID);
   IA->SetDetectorType(DetectorID);
