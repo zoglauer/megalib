@@ -124,6 +124,11 @@ public:
   bool DiscretizeHits() const { return m_DiscretizeHits; }
   /// Return the watched volumes list
   vector<MString> GetStoreSimulationInfoWatchedVolumes() const { return m_StoreSimulationInfoWatchedVolumes; }
+  /// Return true if you want to set a maximum number of IA per event (e.g 10000)
+  bool AllowMaxNbofIAs() const { return m_AllowMaxNbofIAs; }
+  /// Return the maximum number of IA allowed by event
+  int MaxNIAs() const { return m_MaxNIAs; }
+  
   
   /// Set the pre-trigger mode (either store everything, only events with hits, or fully pretriggered events)
   void SetPreTriggerMode(const int PreTriggerMode) { m_PreTriggerMode = PreTriggerMode; }
@@ -259,6 +264,12 @@ private:
 
   /// The activation time constant: The time during which decays are consindered coincident
   double m_DetectorTimeConstant;
+  
+  ///If you want to set a maximum number of IA
+  bool m_AllowMaxNbofIAs;
+  /// Maximum number of IA for an event
+  int m_MaxNIAs;
+  
 };
 
 #endif
