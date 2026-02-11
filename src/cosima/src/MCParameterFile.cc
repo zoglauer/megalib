@@ -75,8 +75,8 @@ MCParameterFile::MCParameterFile() : MParser(' ', true),
                                      m_CrossSectionFileDirectory(""),
                                      m_ActiveRun(0),
                                      m_DetectorTimeConstant(1*ns),
-				     m_AllowMaxNbofIAs(false),
-				     m_MaxNIAs(1000000)
+				                     m_AllowMaxNbofIAs(false),
+				                     m_MaxNIAs(1000000)
 {
   // Intentionally left blank
 }
