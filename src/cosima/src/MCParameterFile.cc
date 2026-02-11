@@ -74,7 +74,9 @@ MCParameterFile::MCParameterFile() : MParser(' ', true),
                                      m_CreateCrossSectionFiles(false),
                                      m_CrossSectionFileDirectory(""),
                                      m_ActiveRun(0),
-                                     m_DetectorTimeConstant(1*ns)
+                                     m_DetectorTimeConstant(1*ns),
+				     m_AllowMaxNbofIAs(false),
+				     m_MaxNIAs(1000000)
 {
   // Intentionally left blank
 }
@@ -328,8 +330,8 @@ bool MCParameterFile::Parse()
           return false;	
         } else if  (Mode == "activationdelayeddecay") {
           m_DecayMode = c_DecayModeActivationDelayedDecay;
-	  Typo(i, "Cannot use this activation option for this current MEGAlib branch. Please use the option Buildup");
-          return false;		
+	  //Typo(i, "Cannot use this activation option for this current MEGAlib branch. Please use the option Buildup");
+          //return false;		
         } else {
           Typo(i, "Cannot parse token DecayMode correctly:"
                " Unknown Decay mode!");
@@ -392,6 +394,18 @@ bool MCParameterFile::Parse()
         mdebug<<"Storing simulation info of ionization: "<<((m_StoreSimulationInfoIonization == true) ? "true" : "false")<<endl;
       } else {
         Typo(i, "Cannot parse token StoreSimulationInfoIonization correctly:"
+             " Number of tokens is not correct!");
+        return false;
+      }
+    } else if (T->IsTokenAt(0, "AllowMaxNbofIAs", true) == true) {
+      if (T->GetNTokens() == 3) {
+        m_AllowMaxNbofIAs = T->GetTokenAtAsBoolean(1);
+        if (m_AllowMaxNbofIAs == true) {
+          m_MaxNIAs = T->GetTokenAtAsInt(2);
+        }
+        mdebug<<"Allow a maximum number of "<< m_MaxNIAs <<" IA per events : "<<((m_StoreSimulationInfoIonization == true) ? "true" : "false")<<endl;
+      } else {
+        Typo(i, "Cannot parse token AllowMaxNbofIAs correctly:"
              " Number of tokens is not correct!");
         return false;
       }
