@@ -46,6 +46,7 @@ using namespace std;
 #include <TView.h>
 #include <TROOT.h>
 #include <TSystem.h>
+#include <TStyle.h>
 #include <TObjString.h>
 #include <TMath.h>
 #include <TGeoOverlap.h>
@@ -4561,21 +4562,18 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
     }
   }
 
-
   m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
   //m_Geometry->CloseGeometry(); // we do not close the geometry,
-  //m_Geometry->SetMultiThread(true); // This crashes it...
-  m_Geometry->SetVisLevel(1000);
-  m_Geometry->SetNsegments(40);
-  m_Geometry->SetVisDensity(-1.0);
-  //m_Geometry->Voxelize("ALL");
+  m_Geometry->SetVisLevel(1);
+  m_Geometry->SetNsegments(4);
+  m_Geometry->SetVisDensity(0.1);
 
   // Make sure we use the correct geometry for interactions
   gGeoManager = m_Geometry;
   if (Mode.ToLower() == "raytrace") {
     if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Raytrace();
   } else {
-    if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw(Mode);
+    if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw("ogl");
   }
 
   if (m_Geometry->GetListOfNavigators() == nullptr) {
@@ -4586,7 +4584,7 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
   if (RestoreView == true && m_ViewValid == true) {
     TView* View = m_GeoView->GetView();
     View->SetRange(&m_ViewRangeMin[0], &m_ViewRangeMax[0]);
-    
+
     int Reply = 0;
     View->SetView(m_ViewRotationTheta, m_ViewRotationPhi, m_ViewRotationPsi, Reply);
     
