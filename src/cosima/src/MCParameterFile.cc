@@ -330,8 +330,8 @@ bool MCParameterFile::Parse()
           return false;	
         } else if  (Mode == "activationdelayeddecay") {
           m_DecayMode = c_DecayModeActivationDelayedDecay;
-	  //Typo(i, "Cannot use this activation option for this current MEGAlib branch. Please use the option Buildup");
-          //return false;		
+	  Typo(i, "Cannot use this activation option for this current MEGAlib branch. Please use the option Buildup");
+          return false;		
         } else {
           Typo(i, "Cannot parse token DecayMode correctly:"
                " Unknown Decay mode!");
