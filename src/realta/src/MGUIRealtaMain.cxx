@@ -46,10 +46,15 @@ using namespace std;
 #include <TBox.h>
 #include <TObject.h>
 #include <TList.h>
+#include <TASImage.h>
+#include <TGResourcePool.h>
 
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MFile.h"
+#include "MGUIEText.h"
+#include "MGUIDefaults.h"
+
 #include "MDGeometryQuest.h"
 #include "MGUIAbout.h"
 #include "MGUIGeometry.h"
@@ -139,13 +144,16 @@ void MGUIRealtaMain::Create()
 {
   // Create the main window
 
+  double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+  // Give it a default size
+  Resize(1200*FontScaler, 800*FontScaler);
+
   // We start with a name and an icon...
   SetWindowName("Realta - Real-time analysis for MEGAlib");  
 
 
   // In the beginning we build the menus and define their layout, ... 
   TGLayoutHints* MenuBarItemLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
-  TGLayoutHints* MenuBarItemRightLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 0, 0, 0, 0);
   
   // We continue with the menu bar and its layout ...
   TGLayoutHints* MenuBarLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 0, 0);
@@ -211,40 +219,65 @@ void MGUIRealtaMain::Create()
   TGPopupMenu* MenuInfo = new TGPopupMenu(fClient->GetRoot());
   MenuInfo->AddEntry("About", c_About);
   MenuInfo->Associate(this);
-  MenuBar->AddPopup("Info", MenuInfo, MenuBarItemRightLayout);
+  MenuBar->AddPopup("Info", MenuInfo, MenuBarItemLeftLayout);
   
   AddFrame(MenuBar, MenuBarLayout);
 
   
   // The columns
-  TGLayoutHints* ColumnsLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 10, 10, 10, 10);
-  TGHorizontalFrame* Columns = new TGHorizontalFrame(this, 150, 1500); //, kRaisedFrame);
+  TGLayoutHints* ColumnsLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 10*FontScaler, 10*FontScaler, 10*FontScaler, 10*FontScaler);
+  TGHorizontalFrame* Columns = new TGHorizontalFrame(this, 150*FontScaler, 1500*FontScaler); //, kRaisedFrame);
   AddFrame(Columns, ColumnsLayout);
 
-  TGLayoutHints* ColumnLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandY | kLHintsExpandX, 10, 10, 10, 10);
+  TGLayoutHints* ColumnLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandY | kLHintsExpandX, 10*FontScaler, 10*FontScaler, 10*FontScaler, 10*FontScaler);
 
   
   // The status column
   
-  int StatusColumnWidth = 250;
+  int StatusColumnWidth = 250*FontScaler;
   
-  TGLayoutHints* StatusColumnLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandY, 10, 10, 10, 10);
+  TGLayoutHints* StatusColumnLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandY, 10*FontScaler, 10*FontScaler, 10*FontScaler, 10*FontScaler);
   TGVerticalFrame* StatusColumn = new TGVerticalFrame(Columns, StatusColumnWidth, StatusColumnWidth); //, kRaisedFrame);
   Columns->AddFrame(StatusColumn, StatusColumnLayout);
   
+  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 2*FontScaler, 2*FontScaler, 30*FontScaler, 2*FontScaler);
 
-  
-  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 2, 2, 30, 2);
-  
+  TGLayoutHints* TextLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 2*FontScaler, 2*FontScaler, 2*FontScaler, 2*FontScaler);
+
  
   // Title:
-  MString TitleIconName(g_MEGAlibPath + "/resource/icons/realta/Realta.xpm");
+  MString TitleIconName(g_MEGAlibPath + "/resource/icons/realta/Realta.png");
   MFile::ExpandFileName(TitleIconName);
   
-  TGLayoutHints* TitleIconLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 2, 2, 10, 2);
+  TGLayoutHints* TitleIconLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 2*FontScaler, 2*FontScaler, 10*FontScaler, 2*FontScaler);
   if (MFile::Exists(TitleIconName) == true) {
-    const TGPicture* TitlePicture = fClient->GetPicture(TitleIconName);
-    if (TitlePicture == 0) {
+    // We have to blend the image with the current background to handle the 8-bit alpha channel
+    TASImage* Image = new TASImage(TitleIconName);
+    if (Image == nullptr || Image->IsZombie() == true || Image->GetWidth() == 0) {
+      mgui << "Failed to open image " << TitleIconName << error;
+      return;
+    }
+
+    // Scale first
+    unsigned int IconWidth = 250*FontScaler;
+    unsigned int IconHeight = (unsigned int)((double) Image->GetHeight() * IconWidth / Image->GetWidth());
+    Image->Scale(IconWidth, IconHeight);
+
+    // Get background color
+    Color_t BackgroundColorIndex = TColor::GetColor(gClient->GetResourcePool()->GetFrameBgndColor());
+    TColor* BackgroundColor = gROOT->GetColor(BackgroundColorIndex);
+    if (BackgroundColor == nullptr) {
+      mgui << "Failed get background color" << error;
+      return;
+    }
+
+    // Blend
+    TASImage* BlendedImage = new TASImage(Image->GetWidth(), Image->GetHeight());
+    BlendedImage->FillRectangle(BackgroundColor->AsHexString(), 0, 0, BlendedImage->GetWidth(), BlendedImage->GetHeight());
+    BlendedImage->Merge(Image, "alphablend");
+
+    const TGPicture* TitlePicture = gClient->GetPicturePool()->GetPicture("BlendedImage", BlendedImage->GetPixmap(), 0);
+    if (TitlePicture == nullptr) {
       mgui<<"Can't find picture "<<TitleIconName<<"! Aborting!"<<error;
       return;
     }
@@ -259,44 +292,42 @@ void MGUIRealtaMain::Create()
     StatusColumn->AddFrame(Title, TitleIconLayout);
   }
 
-  TGLabel* RealtaTitle = new TGLabel(StatusColumn, "Real-time Analysis for MEGAlib");
-  StatusColumn->AddFrame(RealtaTitle, TitleIconLayout);
+  MGUIEText* RealtaSubTitle = new MGUIEText(StatusColumn, "Real-time analysis for MEGAlib", MGUIEText::c_Centered, false, true);
+  TGLayoutHints* RealtaSubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 2*FontScaler, 2*FontScaler, 2*FontScaler, 2*FontScaler);
+  StatusColumn->AddFrame(RealtaSubTitle, RealtaSubTitleLayout);
 
   
   // Connection status
-  TGLabel* ConnectionTitle = new TGLabel(StatusColumn, "Connection status:");
+  MGUIEText* ConnectionTitle = new MGUIEText(StatusColumn, "Connection status", MGUIEText::c_Centered, true);
   StatusColumn->AddFrame(ConnectionTitle, SubTitleLayout);
   
-  TGLayoutHints* ConnectionStatusLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 2, 2, 2, 2);
   m_ConnectionStatus = new TGLabel(StatusColumn, "NOT CONNECTED!");
-  StatusColumn->AddFrame(m_ConnectionStatus, ConnectionStatusLayout);
+  StatusColumn->AddFrame(m_ConnectionStatus, TextLeftLayout);
 
   
   // Rates
-
-  TGLabel* RatesTitle = new TGLabel(StatusColumn, "Triggered event rate");
+  MGUIEText* RatesTitle = new MGUIEText(StatusColumn, "Triggered event rate", MGUIEText::c_Centered, true);
   StatusColumn->AddFrame(RatesTitle, SubTitleLayout);
   
-  TGLayoutHints* CountRateCanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 2, 2, 2, 2);
   m_CountRateCanvas = new TRootEmbeddedCanvas("CountRateCanvas", StatusColumn, StatusColumnWidth, 3*StatusColumnWidth/4);
-  StatusColumn->AddFrame(m_CountRateCanvas, CountRateCanvasLayout);
+  StatusColumn->AddFrame(m_CountRateCanvas, TextLeftLayout);
   
   
   // Threads
-  TGLabel* ThreadsTitle = new TGLabel(StatusColumn, "Thread utilization");
+  MGUIEText* ThreadsTitle = new MGUIEText(StatusColumn, "Thread utilization", MGUIEText::c_Centered, true);
   StatusColumn->AddFrame(ThreadsTitle, SubTitleLayout);
 
-  TGHorizontalFrame* ThreadsFrame = new TGHorizontalFrame(StatusColumn, 100, 30);
-  TGLayoutHints* ThreadFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 1, 1, 1, 1);
+  TGHorizontalFrame* ThreadsFrame = new TGHorizontalFrame(StatusColumn, 100*FontScaler, 30*FontScaler);
+  TGLayoutHints* ThreadFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 1*FontScaler, 1*FontScaler, 1*FontScaler, 1*FontScaler);
   StatusColumn->AddFrame(ThreadsFrame, ThreadFrameLayout);
 
-  TGLayoutHints* UsageLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 1, 1, 1);
-  TGLayoutHints* UsageLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 3, 1, 1, 1);
+  TGLayoutHints* UsageLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 1*FontScaler, 1*FontScaler, 1*FontScaler, 1*FontScaler);
+  TGLayoutHints* UsageLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 3*FontScaler, 1*FontScaler, 1*FontScaler, 1*FontScaler);
 
   
   // Label
-  TGVerticalFrame* ThreadLabelsFrame = new TGVerticalFrame(ThreadsFrame, 100, 300); //, kRaisedFrame);
-  TGLayoutHints* ThreadLabelsFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 1, 1, 1);
+  TGVerticalFrame* ThreadLabelsFrame = new TGVerticalFrame(ThreadsFrame, 100*FontScaler, 300*FontScaler); //, kRaisedFrame);
+  TGLayoutHints* ThreadLabelsFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 1*FontScaler, 1*FontScaler, 1*FontScaler, 1*FontScaler);
   ThreadsFrame->AddFrame(ThreadLabelsFrame, ThreadLabelsFrameLayout);
 
   TGLabel* TransmissionThreadCpuUsageLabel = new TGLabel(ThreadLabelsFrame, "Receiving:");
@@ -322,8 +353,8 @@ void MGUIRealtaMain::Create()
 
   
   // Usage
-  TGVerticalFrame* ThreadUsageFrame = new TGVerticalFrame(ThreadsFrame, 100, 30); //, kRaisedFrame);
-  TGLayoutHints* ThreadUsageFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 1, 1, 1, 1);
+  TGVerticalFrame* ThreadUsageFrame = new TGVerticalFrame(ThreadsFrame, 100*FontScaler, 30*FontScaler); //, kRaisedFrame);
+  TGLayoutHints* ThreadUsageFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 1*FontScaler, 1*FontScaler, 1*FontScaler, 1*FontScaler);
   ThreadsFrame->AddFrame(ThreadUsageFrame, ThreadUsageFrameLayout);
 
   m_TransmissionThreadCpuUsage = new TGLabel(ThreadUsageFrame, "CPU: 0.0 %    ");
@@ -349,8 +380,8 @@ void MGUIRealtaMain::Create()
 
   
   // IDs
-  TGVerticalFrame* ThreadEventIDFrame = new TGVerticalFrame(ThreadsFrame, 100, 30); //, kRaisedFrame);
-  TGLayoutHints* ThreadEventIDFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 1, 1, 1, 1);
+  TGVerticalFrame* ThreadEventIDFrame = new TGVerticalFrame(ThreadsFrame, 100*FontScaler, 30*FontScaler); //, kRaisedFrame);
+  TGLayoutHints* ThreadEventIDFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 1*FontScaler, 1*FontScaler, 1*FontScaler, 1*FontScaler);
   ThreadsFrame->AddFrame(ThreadEventIDFrame, ThreadEventIDFrameLayout);
 
   m_TransmissionThreadLastEventID = new TGLabel(ThreadEventIDFrame, "ID: 0          ");
@@ -380,30 +411,26 @@ void MGUIRealtaMain::Create()
   // The general view column
   
     
-  TGVerticalFrame* GeneralColumn = new TGVerticalFrame(Columns, 100, 100); //, kRaisedFrame);
+  TGVerticalFrame* GeneralColumn = new TGVerticalFrame(Columns, 100*FontScaler, 100*FontScaler); //, kRaisedFrame);
   Columns->AddFrame(GeneralColumn, ColumnLayout);
 
   
-  TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 2);
+  TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 2*FontScaler, 2*FontScaler, 2*FontScaler, 2*FontScaler);
 
-  m_SpectrumCanvas = new TRootEmbeddedCanvas("SpectrumCanvas", GeneralColumn, 100, 100);
+  m_SpectrumCanvas = new TRootEmbeddedCanvas("SpectrumCanvas", GeneralColumn, 100*FontScaler, 100*FontScaler);
   GeneralColumn->AddFrame(m_SpectrumCanvas, CanvasLayout);
 
-  m_ImageCanvas = new TRootEmbeddedCanvas("ImageCanvas", GeneralColumn, 100, 100);
+  m_ImageCanvas = new TRootEmbeddedCanvas("ImageCanvas", GeneralColumn, 100*FontScaler, 100*FontScaler);
   GeneralColumn->AddFrame(m_ImageCanvas, CanvasLayout);
 
   
   
   // The status bar
-  TGStatusBar* StatusBar = new TGStatusBar(this, 100, 10);
+  TGStatusBar* StatusBar = new TGStatusBar(this, 100*FontScaler, 10*FontScaler);
   TGLayoutHints* StatusBarLayout = new TGLayoutHints(kLHintsBottom | kLHintsExpandX, 0, 0, 0, 0);
 
   AddFrame(StatusBar, StatusBarLayout);
 
-  
-  
-  // PositionWindow(GetDefaultWidth(), GetDefaultHeight());
-  // PositionWindow(640, 480, kFALSE);
 
   // and bring it to the screen.
   MapSubwindows();

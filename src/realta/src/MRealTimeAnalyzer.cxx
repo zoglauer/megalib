@@ -547,6 +547,9 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
 {
   //! The transmission loop
 
+  // To make sure we don't add a fake time if there are events with time'
+  bool FoundEventWithTime = false;
+
   // Load geometry:
   m_TransmissionGeometry = new MGeometryRevan();
 
@@ -664,8 +667,8 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
       
       // Split message into lines
       vector<MString> Tokens = Message.Tokenize("\n");
-      // cout<<"Message size: "<<Message.Length()<<endl;
-      //if (Tokens.size() > 0) cout<<"Last message: "<<Tokens.back()<<endl;
+      //cout<<"Message size: "<<Message.Length()<<endl;
+      // if (Tokens.size() > 0) cout<<"Last message: "<<Tokens.back()<<endl;
 
       // Save the events directly to file -- remove all EN's
       if (SaveEvents == true) {
@@ -709,7 +712,7 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
             StartIndex = i+1;
             break;
           } else {
-            RE->ParseLine(Tokens[i], 25);
+            RE->ParseLine(Tokens[i], 200);
             StartIndex = i+1;
           }
         }
@@ -722,6 +725,16 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
           }
         }
         
+        if (RE->GetEventTime() == 0) {
+          if (FoundEventWithTime == true) {
+            cout<<"Error found event without time"<<endl;
+          } else {
+            MTime Now(0);
+            Now.Now();
+            RE->SetEventTime(Now);
+          }
+        }
+
         // If we have events, check the time timing 
         if (m_Events.empty() == false && (
               RE->GetEventTime() > m_Events.front()->GetTime() + 5*InitializationCutOff ||
@@ -775,8 +788,10 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
             } else {
               if (EventIter == m_Events.end()) {
                 m_Events.push_back(Event);
+                //cout<<"Added to back of queue"<<endl;
               } else {
                 // insert before!
+                //cout<<"Inserted in queue"<<endl;
                 m_Events.insert(EventIter, Event);
               }
             }
@@ -1471,8 +1486,8 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
   CountRate->SetMinimum(0);
   CountRate->SetLabelSize(0.06f, "XY");
   CountRate->SetTitleSize(0.06f, "XY");
-  CountRate->SetFillColor(kViolet+6);
-  CountRate->SetLineColor(kViolet+10);
+  CountRate->SetFillColor(kSpring+7);
+  CountRate->SetLineColor(kGreen+2);
 
   // Make it atomic...
   // no delete for the time being...
@@ -1488,8 +1503,8 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
   Spectrum->SetXTitle("Energy in keV");
   Spectrum->SetYTitle("cts/sec/keV");
   Spectrum->SetMinimum(0);
-  Spectrum->SetFillColor(kViolet+6);
-  Spectrum->SetLineColor(kViolet+10);
+  Spectrum->SetFillColor(kSpring+7);
+  Spectrum->SetLineColor(kGreen+2);
 
   // Set it in one step...
   // no delete for the time being...

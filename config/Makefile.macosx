@@ -24,7 +24,7 @@ DEFINES       := -UHARDWARE
 LD            := c++
 LDFLAGS       := $(OPT) -Xlinker -flat_namespace -D___MACOSX___
 SOFLAGS       := -dynamiclib -undefined dynamic_lookup
-LIBS          := $(ROOTGLIBS) -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA
+LIBS          := $(ROOTGLIBS) -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA -lASImage
 GLIBS         := 
 DEPFLAGS      := -M
 
