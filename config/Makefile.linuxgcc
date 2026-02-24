@@ -47,7 +47,7 @@ DEFINES       := -UHARDWARE
 LD            := g++
 LDFLAGS       := $(OPT) -D___LINUX___
 SOFLAGS       := -shared
-LIBS          := $(ROOTLIBS) $(HEALIBS) $(HEALPIXLIBS) -lpthread -lThread -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA
+LIBS          := $(ROOTLIBS) $(HEALIBS) $(HEALPIXLIBS) -lpthread -lThread -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA -lASImage
 GLIBS         := $(ROOTGLIBS)
 DEPFLAGS      := -MM
 
