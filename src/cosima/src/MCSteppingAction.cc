@@ -912,7 +912,30 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
               DoNotStart = true;
             }
           }
-        }
+        } else if (m_DecayMode == MCParameterFile::c_DecayModeBuildUpAndSaveActivation) {
+	  if (IsInitialParticleFromBuildUpSource == true) {
+            // Simulate primaries now:
+            Keep = true;
+            Store = false;
+            FutureEvent = false;
+            DoNotStart = false;
+          } else {
+            // Delay secondary decays to the future:
+            if (TimeDelay > m_DetectorTimeConstant) {
+              Keep = false;
+              Store = true;
+              FutureEvent = true;
+              DoNotStart = false;
+            } else {
+              Keep = true;
+              Store = false;
+              FutureEvent = false;
+              DoNotStart = false;
+            }
+          }
+	
+	
+	}
         //cout<<"  P:"<<int(IsPrimaryDecay)<<"  K:"<<int(Keep)<<"  S:"<<int(Store)<<"  F:"<<int(FutureEvent)<<endl;
         //cout<<"Handling: "<<dynamic_cast<G4Ions*>(Track->GetDefinition())->GetParticleName()<<endl;
         
