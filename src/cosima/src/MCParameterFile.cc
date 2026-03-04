@@ -43,6 +43,7 @@ const int MCParameterFile::c_DecayModeIgnore                  = 1;
 const int MCParameterFile::c_DecayModeBuildUp                 = 2;
 const int MCParameterFile::c_DecayModeActivationBuildUp       = 3;
 const int MCParameterFile::c_DecayModeActivationDelayedDecay  = 4;
+const int MCParameterFile::c_DecayModeBuildUpAndSaveActivation = 5;
 
 const int MCParameterFile::c_PreTriggerEverything             = 0;
 const int MCParameterFile::c_PreTriggerEveryEventWithHits     = 1;
@@ -320,6 +321,8 @@ bool MCParameterFile::Parse()
           m_DecayMode = c_DecayModeNormal;
         } else if  (Mode == "buildup" || Mode == "build-up") {
           m_DecayMode = c_DecayModeBuildUp;  
+        } else if  (Mode == "buildupandsave") {
+          m_DecayMode = c_DecayModeBuildUpAndSaveActivation;  
         } else if  (Mode == "ignore") {
           m_DecayMode = c_DecayModeIgnore;  
         } else if  (Mode == "activationbuildup") {
