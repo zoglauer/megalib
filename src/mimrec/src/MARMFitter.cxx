@@ -217,7 +217,7 @@ void MARMFitter::AddEvent(MComptonEvent* ComptonEvent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Optimize binning - check sif the binning is OK, otherwise check for a better one
+//! Optimize binning - checks if the binning is OK, otherwise check for a better one
 bool MARMFitter::OptimizeBinning()
 {
   if (m_IsBinningOptimized == true) return true;
@@ -1102,14 +1102,15 @@ void MARMFitter::CalculateARMMetrics()
 
 void MARMFitter::ParallelFitting(int FitID, std::condition_variable& CV)
 {
+  vector<double> ARMValues;
   { // lock the mutex while we wait
     std::unique_lock<std::mutex> Lock(m_Mutex);
     CV.wait(Lock, [this]() { return m_NumberOfRunningThreads < m_MaximumNumberOfThreads; }); // the condition_variable releases the lock while waiting.
     ++m_NumberOfRunningThreads;
     //cout<<"Fit "<<FitID<<endl;
+    ARMValues = BootstrapARMValues();
   }
 
-  vector<double> ARMValues = BootstrapARMValues();
   PerformFit(FitID, ARMValues);
 
   { // lock the mutex while we wait

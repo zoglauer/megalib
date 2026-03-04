@@ -23,6 +23,7 @@
 #include "MSettings.h"
 #include "MSettingsEventSelections.h"
 #include "MSettingsImaging.h"
+#include "MSettingsResolutions.h"
 #include "MSettingsEventReconstruction.h"
 #include "MSettingsSpectralOptions.h"
 
@@ -32,7 +33,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MSettingsRealta : public MSettings, public MSettingsEventSelections, public MSettingsImaging, public MSettingsEventReconstruction, public MSettingsSpectralOptions
+class MSettingsRealta : public MSettings, public MSettingsEventSelections, public MSettingsImaging, public MSettingsResolutions, public MSettingsEventReconstruction, public MSettingsSpectralOptions
 {
   // public Session:
  public:
@@ -40,6 +41,11 @@ class MSettingsRealta : public MSettings, public MSettingsEventSelections, publi
   MSettingsRealta(bool AutoLoad = true);
   //! default destructor
   virtual ~MSettingsRealta();
+
+  //! Two sub-classes have coordiante systems - make sure to call the right one here:
+  virtual MCoordinateSystem GetCoordinateSystem() const { return MSettingsImaging::GetCoordinateSystem(); }
+  //! Set the coorfdianet system in both sub classes
+  virtual void SetCoordinateSystem(MCoordinateSystem CoordinateSystem) { MSettingsImaging::SetCoordinateSystem(CoordinateSystem); MSettingsResolutions::SetCoordinateSystem(CoordinateSystem);  }
 
   //! Get the name of the host
   MString GetHostName() const { return m_HostName; }

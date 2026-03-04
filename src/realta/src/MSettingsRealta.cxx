@@ -44,7 +44,7 @@ ClassImp(MSettingsRealta)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSettingsRealta::MSettingsRealta(bool AutoLoad) : MSettings("RealtaConfigurationFile"), MSettingsEventSelections(), MSettingsImaging(), MSettingsEventReconstruction(), MSettingsSpectralOptions()
+MSettingsRealta::MSettingsRealta(bool AutoLoad) : MSettings("RealtaConfigurationFile"), MSettingsEventSelections(), MSettingsImaging(), MSettingsResolutions(), MSettingsEventReconstruction(), MSettingsSpectralOptions()
 {
   // Default constructor
   
@@ -96,6 +96,7 @@ bool MSettingsRealta::WriteXml(MXmlNode* Node)
   MSettings::WriteXml(Node);
   MSettingsEventSelections::WriteXml(Node);
   MSettingsImaging::WriteXml(Node);
+  MSettingsResolutions::WriteXml(Node);
   MSettingsEventReconstruction::WriteXml(Node);
   MSettingsSpectralOptions::WriteXml(Node);
 
@@ -130,47 +131,49 @@ bool MSettingsRealta::ReadXml(MXmlNode* Node)
   MSettings::ReadXml(Node);
   MSettingsEventSelections::ReadXml(Node);
   MSettingsImaging::ReadXml(Node);
+  MSettingsResolutions::ReadXml(Node);
   MSettingsEventReconstruction::ReadXml(Node);
   MSettingsSpectralOptions::ReadXml(Node);
 
-  MXmlNode* aNode = 0;
-  if ((aNode = Node->GetNode("HostName")) != 0) {
+  MXmlNode* aNode = nullptr;
+
+  if ((aNode = Node->GetNode("HostName")) != nullptr) {
     m_HostName = aNode->GetValueAsString();
   }
-  if ((aNode = Node->GetNode("Port")) != 0) {
+  if ((aNode = Node->GetNode("Port")) != nullptr) {
     m_Port = aNode->GetValueAsInt();
   }
-  if ((aNode = Node->GetNode("ConnectOnStart")) != 0) {
+  if ((aNode = Node->GetNode("ConnectOnStart")) != nullptr) {
     m_ConnectOnStart = aNode->GetValueAsBoolean();
   }
-  if ((aNode = Node->GetNode("DoIdentification")) != 0) {
+  if ((aNode = Node->GetNode("DoIdentification")) != nullptr) {
     m_DoIdentification = aNode->GetValueAsBoolean();
   }
-  if ((aNode = Node->GetNode("DoCoincidence")) != 0) {
+  if ((aNode = Node->GetNode("DoCoincidence")) != nullptr) {
     m_DoCoincidence = aNode->GetValueAsBoolean();
   }
-  if ((aNode = Node->GetNode("TransceiverMode")) != 0) {
+  if ((aNode = Node->GetNode("TransceiverMode")) != nullptr) {
     m_TransceiverMode = aNode->GetValueAsUnsignedInt();
   }
-  if ((aNode = Node->GetNode("AccumulationTime")) != 0) {
+  if ((aNode = Node->GetNode("AccumulationTime")) != nullptr) {
     m_AccumulationTime = aNode->GetValueAsDouble();
   }
-  if ((aNode = Node->GetNode("AccumulationFileName")) != 0) {
+  if ((aNode = Node->GetNode("AccumulationFileName")) != nullptr) {
     m_AccumulationFileName = aNode->GetValueAsString();
   }
-  if ((aNode = Node->GetNode("AccumulationFileNameAddDateAndTime")) != 0) {
+  if ((aNode = Node->GetNode("AccumulationFileNameAddDateAndTime")) != nullptr) {
     m_AccumulationFileNameAddDateAndTime = aNode->GetValueAsBoolean();
   }
-  if ((aNode = Node->GetNode("BinsCountRate")) != 0) {
+  if ((aNode = Node->GetNode("BinsCountRate")) != nullptr) {
     m_BinsCountRate = aNode->GetValueAsInt();
   }
-  if ((aNode = Node->GetNode("BinsSpectrum")) != 0) {
+  if ((aNode = Node->GetNode("BinsSpectrum")) != nullptr) {
     m_BinsSpectrum = aNode->GetValueAsInt();
   }
-  if ((aNode = Node->GetNode("MinimumSpectrum")) != 0) {
+  if ((aNode = Node->GetNode("MinimumSpectrum")) != nullptr) {
     m_MinimumSpectrum = aNode->GetValueAsDouble();
   }
-  if ((aNode = Node->GetNode("MaximumSpectrum")) != 0) {
+  if ((aNode = Node->GetNode("MaximumSpectrum")) != nullptr) {
     m_MaximumSpectrum = aNode->GetValueAsDouble();
   }
     

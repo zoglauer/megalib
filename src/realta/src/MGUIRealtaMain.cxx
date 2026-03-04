@@ -81,6 +81,8 @@ using namespace std;
 #include "MGUIImageDimensions.h"
 #include "MGUIImageOptions.h"
 
+#include "MGUIARMExtended.h"
+
 #include "MGUISpectralAnalyzer.h"
 
 #include "MSettingsMimrec.h"
@@ -123,7 +125,7 @@ MGUIRealtaMain::MGUIRealtaMain() : TGMainFrame(gClient->GetRoot(), 800, 800)
   m_Analyzer = new MRealTimeAnalyzer();
   m_Analyzer->SetSettings(m_Settings);
   if (m_Settings->GetConnectOnStart() == true) {
-    m_Analyzer->Connect();  
+    m_Analyzer->Connect();
   }
 }
 
@@ -203,7 +205,11 @@ void MGUIRealtaMain::Create()
   MenuSettings->AddEntry("Response type selection", c_Response);
   MenuSettings->AddEntry("Response parameter (for the above selected type)", c_FitParameter);
   MenuSettings->AddSeparator();
-  MenuSettings->AddLabel("Spectral indentification settings");
+  MenuSettings->AddLabel("ARM settings");
+  MenuSettings->AddSeparator();
+  MenuSettings->AddEntry("ARM options", c_ARM);
+  MenuSettings->AddSeparator();
+  MenuSettings->AddLabel("Spectral indentification  settings");
   MenuSettings->AddSeparator();
   MenuSettings->AddEntry("Spectralyzer options", c_Spectralyze);
   MenuSettings->Associate(this);
@@ -415,16 +421,21 @@ void MGUIRealtaMain::Create()
   Columns->AddFrame(GeneralColumn, ColumnLayout);
 
   
-  TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 2*FontScaler, 2*FontScaler, 2*FontScaler, 2*FontScaler);
+  TGLayoutHints* CanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 0*FontScaler, 0*FontScaler, 0*FontScaler, 0*FontScaler);
 
   m_SpectrumCanvas = new TRootEmbeddedCanvas("SpectrumCanvas", GeneralColumn, 100*FontScaler, 100*FontScaler);
   GeneralColumn->AddFrame(m_SpectrumCanvas, CanvasLayout);
 
-  m_ImageCanvas = new TRootEmbeddedCanvas("ImageCanvas", GeneralColumn, 100*FontScaler, 100*FontScaler);
-  GeneralColumn->AddFrame(m_ImageCanvas, CanvasLayout);
+  TGHorizontalFrame* ImageARMRow = new TGHorizontalFrame(GeneralColumn, 100*FontScaler, 100*FontScaler); //, kRaisedFrame);
+  GeneralColumn->AddFrame(ImageARMRow, ColumnLayout);
 
-  
-  
+  m_ImageCanvas = new TRootEmbeddedCanvas("ImageCanvas", ImageARMRow, 100*FontScaler, 100*FontScaler);
+  ImageARMRow->AddFrame(m_ImageCanvas, CanvasLayout);
+
+  m_ARMCanvas = new TRootEmbeddedCanvas("ImageCanvas", ImageARMRow, 100*FontScaler, 100*FontScaler);
+  ImageARMRow->AddFrame(m_ARMCanvas, CanvasLayout);
+
+
   // The status bar
   TGStatusBar* StatusBar = new TGStatusBar(this, 100*FontScaler, 10*FontScaler);
   TGLayoutHints* StatusBarLayout = new TGLayoutHints(kLHintsBottom | kLHintsExpandX, 0, 0, 0, 0);
@@ -436,7 +447,7 @@ void MGUIRealtaMain::Create()
   MapSubwindows();
   MapWindow();  
   Layout();
- 
+
   return;
 }
 
@@ -450,6 +461,7 @@ Bool_t MGUIRealtaMain::ProcessMessage(Long_t Message, Long_t Parameter1,
   // Process the messages for this application
 
   //cout<<"Message: "<<Message<<", "<<Parameter1<<", "<<Parameter2<<", "<<c_About<<endl;
+  bool IgnoredBool;
 
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
@@ -536,7 +548,11 @@ Bool_t MGUIRealtaMain::ProcessMessage(Long_t Message, Long_t Parameter1,
       case c_Response:
         new MGUIResponseSelection(gClient->GetRoot(), this, m_Settings);
         break;
-        
+
+      case c_ARM:
+        new MGUIARMExtended(gClient->GetRoot(), this, m_Settings, IgnoredBool);
+        break;
+
       case c_Spectralyze:
         new MGUISpectralAnalyzer(gClient->GetRoot(), this, m_Settings);
         break;
@@ -772,6 +788,8 @@ void MGUIRealtaMain::DoControlLoop()
 {
   // This is the main GUI loop
   
+  cout<<"Control loop"<<endl;
+
   bool AnImageShown = false;
   MTimer CanvasTimer;
   MTimer ThreadTimer;
@@ -939,7 +957,7 @@ void MGUIRealtaMain::DoControlLoop()
           AnImageShown = true;
         }
       }
-      
+
       gSystem->ProcessEvents();
       shared_ptr<MImage> Image = m_Analyzer->GetImage();
       if (Image != nullptr) {
@@ -949,7 +967,7 @@ void MGUIRealtaMain::DoControlLoop()
         TObject* O = 0;
         while ((O = Next())) {
           if (TString("TPad") == O->ClassName()) {
-            FoundInteraction = true; 
+            FoundInteraction = true;
           }
         }
         if (FoundInteraction == false) {
@@ -959,6 +977,29 @@ void MGUIRealtaMain::DoControlLoop()
           AnImageShown = true;
         }
       }
+
+
+      gSystem->ProcessEvents();
+      shared_ptr<MARMFitter> ARMFitter = m_Analyzer->GetARMFitter();
+      if (ARMFitter != nullptr) {
+        // The whole thing here is to prevent a crash when we are interacting with the canvas during an draw
+        TIter Next(m_ARMCanvas->GetCanvas()->GetListOfPrimitives());
+        bool FoundInteraction = false;
+        TObject* O = 0;
+        while ((O = Next())) {
+          if (TString("TPad") == O->ClassName()) {
+            FoundInteraction = true;
+          }
+        }
+        if (FoundInteraction == false) {
+          m_ARMCanvas->GetCanvas()->cd();
+          ARMFitter->Draw();
+          m_ARMCanvas->GetCanvas()->Update();
+          AnImageShown = true;
+        }
+      }
+
+
       gSystem->ProcessEvents();
 
       ostringstream usage;

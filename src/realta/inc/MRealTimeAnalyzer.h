@@ -35,6 +35,7 @@ using namespace std;
 #include "MImageSpheric.h"
 #include "MImagerExternallyManaged.h"
 #include "MQualifiedIsotope.h"
+#include "MARMFitter.h"
 
 // Forward declarations:
 
@@ -102,6 +103,8 @@ class MRealTimeAnalyzer
   TH1D* GetSpectrumHistogram() { return m_Spectrum; }
   //! Get image
   shared_ptr<MImage> GetImage() { return m_Image; }
+  //! Get the ARM fitter
+  shared_ptr<MARMFitter> GetARMFitter() { return atomic_load(&m_ARMFitter); }
   //! Get a COPY of the isotope list
   vector<MQualifiedIsotope> GetIsotopes();
   //! Get the current list of the minima of the energy windows
@@ -274,7 +277,9 @@ class MRealTimeAnalyzer
   TH1D* m_Spectrum;
   //! The current image
   shared_ptr<MImage> m_Image;
-  
+  //! The current ARM fitter - will be replaced occationally
+  shared_ptr<MARMFitter> m_ARMFitter;
+
   //! The current list of the minima of the energy windows
   vector<double> m_SpectrumMin;
   //! The current list of the maxima of the energy windows

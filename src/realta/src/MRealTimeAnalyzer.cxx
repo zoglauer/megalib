@@ -30,6 +30,8 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <memory>
+#include <atomic>
 using namespace std;
 
 // ROOT libs:
@@ -154,7 +156,7 @@ int MRealTimeAnalyzer::m_ThreadId = 0;
 MRealTimeAnalyzer::MRealTimeAnalyzer()
 {
   // Construct an instance of MRealTimeAnalyzer
-  
+
   m_NEvents = 0;
   m_MaxNEvents = 1000000;
  
@@ -213,6 +215,7 @@ MRealTimeAnalyzer::MRealTimeAnalyzer()
   m_Spectrum = nullptr;
   m_CountRate = nullptr;
   m_Image = nullptr;
+  atomic_store(&m_ARMFitter, make_shared<MARMFitter>());
   
   m_Settings = nullptr;
 }
@@ -1606,36 +1609,63 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
 
     vector<MBPData*> Backprojections;
 
-    list<MRealTimeEvent*>::iterator Event = EventHorizon.base();
+    list<MRealTimeEvent*>::iterator EventIter = EventHorizon.base();
     EventHorizonTime = (*EventHorizon)->GetTime().GetAsDouble();
+
+
+    auto ARMFitter = std::make_shared<MARMFitter>();
+    ARMFitter->SetNumberOfBins(m_Settings->GetHistBinsARMGamma());
+    ARMFitter->SetMaximumARMValue(m_Settings->GetTPDistanceTrans());
+    ARMFitter->SetFitFunction(m_Settings->GetFitFunctionIDARMGamma());
+    ARMFitter->UseBinnedFitting(!m_Settings->GetUseUnbinnedFittingARMGamma());
+    ARMFitter->UseOptimizedBinning(m_Settings->GetOptimizeBinningARMGamma());
+
+    MVector TestPosition(0.0, 0.0, 1.0);
+    // Get the data of the ARM-"Test"-Position
+    if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+      TestPosition.SetMagThetaPhi(c_FarAway, m_Settings->GetTPTheta()*c_Rad, m_Settings->GetTPPhi()*c_Rad);
+    } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
+      TestPosition.SetMagThetaPhi(c_FarAway, (m_Settings->GetTPGalLatitude()+90)*c_Rad, m_Settings->GetTPGalLongitude()*c_Rad);
+    } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+               m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
+      TestPosition.SetXYZ(m_Settings->GetTPX(), m_Settings->GetTPY(), m_Settings->GetTPZ());
+    } else {
+      merr<<"Unknown coordinate system ID: "<<m_Settings->GetCoordinateSystem()<<fatal;
+    }
+
 
     int NEventsCountRate = 0;
     int NEventsSpectrum = 0;
     int NBackprojections = 0;
-    while (Event != m_Events.end() && EventHorizonTime - (*Event)->GetTime().GetAsDouble() < AccumulationTime && EventHorizonTime - (*Event)->GetTime().GetAsDouble() >= 0) {
+    while (EventIter != m_Events.end() && EventHorizonTime - (*EventIter)->GetTime().GetAsDouble() < AccumulationTime && EventHorizonTime - (*EventIter)->GetTime().GetAsDouble() >= 0) {
       if (m_StopThreads == true) break;
-      LatestTime = (*Event)->GetTime().GetAsDouble();
+      MRealTimeEvent* Event = (*EventIter);
+      LatestTime = Event->GetTime().GetAsDouble();
       // The count rate histogram is always filled 
-      InternalCountRate->Fill(EventHorizonTime - (*Event)->GetTime().GetAsDouble());
+      InternalCountRate->Fill(EventHorizonTime - Event->GetTime().GetAsDouble());
       ++NEventsCountRate;
 
       // The spectrum is filled as soon as we are within the energy window and 
-      if ((*Event)->IsCoincident() == true && (*Event)->IsMerged() == false && (*Event)->GetCoincidentRawEvent() != 0) {
-        if ((*Event)->GetCoincidentRawEvent()->GetEnergy() >= Emin && (*Event)->GetCoincidentRawEvent()->GetEnergy() <= Emax) {
-          InternalSpectrum->Fill((*Event)->GetCoincidentRawEvent()->GetEnergy());
+      if (Event->IsCoincident() == true && Event->IsMerged() == false && Event->GetCoincidentRawEvent() != 0) {
+        if (Event->GetCoincidentRawEvent()->GetEnergy() >= Emin && Event->GetCoincidentRawEvent()->GetEnergy() <= Emax) {
+          InternalSpectrum->Fill(Event->GetCoincidentRawEvent()->GetEnergy());
           ++NEventsSpectrum;
         }
       }
 
-      // The image is only filled if *all* event selections are fullfilled
-      if ((*Event)->GetPhysicalEvent() != 0 && Selector.IsQualifiedEvent((*Event)->GetPhysicalEvent(), false) == true) {
+      // The image and ARM is only filled if *all* event selections are fullfilled
+      if (Event->GetPhysicalEvent() != 0 && Selector.IsQualifiedEvent(Event->GetPhysicalEvent(), false) == true) {
         // And fill...
-        if ((*Event)->GetBackprojection() != 0) {
-          Backprojections.push_back((*Event)->GetBackprojection());
+        if (Event->GetBackprojection() != 0) {
+          Backprojections.push_back(Event->GetBackprojection());
           ++NBackprojections;
         }
+        MComptonEvent* CE = dynamic_cast<MComptonEvent*>(Event->GetPhysicalEvent());
+        if (CE != nullptr) {
+          ARMFitter->AddARMValue(CE->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg);
+        }
       }
-      Event++;
+      EventIter++;
     }
     //cout<<"Events in histogramming: "<<NEvents<<endl;
 
@@ -1655,12 +1685,14 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
     if (m_StopThreads == true) break;
 
     // The deconvolution part:
-     vector<MImage*> Images = Imager->Deconvolve(Backprojections);
+    vector<MImage*> Images = Imager->Deconvolve(Backprojections);
 
+    // The ARM part
+    ARMFitter->Fit(m_Settings->GetNumberOfFitsARMGamma());
 
     // Now update everything:
-    if (Event != m_Events.end()) {
-      m_HistogrammingThreadFirstEventID = (*Event)->GetID();
+    if (EventIter != m_Events.end()) {
+      m_HistogrammingThreadFirstEventID = (*EventIter)->GetID();
     } else {
       m_HistogrammingThreadFirstEventID = m_Events.back()->GetID();
     }
@@ -1685,6 +1717,11 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
       for (unsigned int i = 0; i < Images.size() - 1; ++i) {
         delete Images[i];
       }
+    }
+
+    if (ARMFitter->WasFittingSuccessful() == true) {
+      // Store / Publish the ARMfitter for drawing
+      std::atomic_store(&m_ARMFitter, ARMFitter);
     }
 
     ostringstream si;
@@ -1981,9 +2018,6 @@ void MRealTimeAnalyzer::OneCleanUpLoop()
     
   cout<<"Cleanup thread finished!"<<endl;
 }
-
-
-
 
 
 // MRealTimeAnalyzer.cxx: the end...

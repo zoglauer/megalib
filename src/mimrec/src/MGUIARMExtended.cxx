@@ -52,7 +52,7 @@ ClassImp(MGUIARMExtended)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIARMExtended::MGUIARMExtended(const TGWindow* p, const TGWindow* main, MSettingsMimrec* Data, bool& OkPressed)
+MGUIARMExtended::MGUIARMExtended(const TGWindow* p, const TGWindow* main, MSettingsResolutions* Data, bool& OkPressed)
   : MGUIDialog(p, main), m_OkPressed(OkPressed)
 {
   // standard constructor

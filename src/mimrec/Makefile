@@ -21,6 +21,7 @@ LIBRARY := Mimrec
 FILES := MSettingsMimrec \
 	MSettingsImaging \
 	MSettingsEventSelections \
+	MSettingsResolutions \
 	MBPData \
 	MBPDataImage \
 	MBPDataImageOneByte \

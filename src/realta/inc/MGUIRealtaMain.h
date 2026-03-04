@@ -31,6 +31,7 @@
 #include "MSettingsRealta.h"
 #include "MRealTimeAnalyzer.h"
 #include "MDGeometryQuest.h"
+#include "MARMFitter.h"
 
 // Forward declarations:
 
@@ -107,10 +108,12 @@ class MGUIRealtaMain : public TGMainFrame
   
   //! The canvas for showing the count rates
   TRootEmbeddedCanvas* m_CountRateCanvas;
-  //! The canvas for showing the count rates
+  //! The canvas for showing the spectrum
   TRootEmbeddedCanvas* m_SpectrumCanvas;
-  //! The canvas for showing the count rates
+  //! The canvas for showing the reconstructed images
   TRootEmbeddedCanvas* m_ImageCanvas;
+  //! The canvas for showing the ARM
+  TRootEmbeddedCanvas* m_ARMCanvas;
 
   //! The CPU usage of the transmission thread
   TGLabel* m_TransmissionThreadCpuUsage;
@@ -169,6 +172,7 @@ class MGUIRealtaMain : public TGMainFrame
                    c_LikelihoodAlgorithm, 
                    c_Response, 
                    c_FitParameter,
+                   c_ARM,
                    c_Spectralyze,
                    c_About,
                    c_Connect,

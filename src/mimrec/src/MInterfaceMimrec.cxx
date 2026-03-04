@@ -750,7 +750,11 @@ bool MInterfaceMimrec::InitializeEventLoader(MString File)
   if (File.IsEmpty() == true) {
     File = m_Settings->GetCurrentFileName();
   }
-  
+  if (File.IsEmpty() == true) {
+    mgui<<"Please choose a *.tra file first"<<error;
+    return false;
+  }
+
   if (m_EventFile != nullptr) delete m_EventFile;
   m_EventFile = new MFileEventsTra();
   

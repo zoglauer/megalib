@@ -103,8 +103,8 @@ class MSettingsImaging : public MSettingsInterface
 
   // Menu Coordinate-system
 
-  MCoordinateSystem GetCoordinateSystem() const { return m_CoordinateSystem; }
-  void SetCoordinateSystem(MCoordinateSystem CoordinateSystem) { m_CoordinateSystem = CoordinateSystem; m_BackprojectionModified = true; }
+  virtual MCoordinateSystem GetCoordinateSystem() const { return m_CoordinateSystem; }
+  virtual void SetCoordinateSystem(MCoordinateSystem CoordinateSystem) { m_CoordinateSystem = CoordinateSystem; m_BackprojectionModified = true; }
 
   // Menu Dimensions - spherical
   MVector GetImageRotationXAxis() const { return m_ImageRotationXAxis; }

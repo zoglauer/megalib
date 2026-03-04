@@ -28,7 +28,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MGUIDialog.h"
-#include "MSettingsMimrec.h"
+#include "MSettingsResolutions.h"
 #include "MGUIEEntry.h"
 
 // Forward declarations:
@@ -42,7 +42,7 @@ class MGUIARMExtended : public MGUIDialog
   // Public Interface:
  public:
   //! Standard constructor
-  MGUIARMExtended(const TGWindow* Parent, const TGWindow* Main, MSettingsMimrec* Data, bool& OkPressed);
+  MGUIARMExtended(const TGWindow* Parent, const TGWindow* Main, MSettingsResolutions* Data, bool& OkPressed);
   //! Default destructor
   virtual ~MGUIARMExtended();
 
@@ -67,7 +67,7 @@ class MGUIARMExtended : public MGUIDialog
   // private members:
  private:
   //! The user settings data
-  MSettingsMimrec* m_Settings;
+  MSettingsResolutions* m_Settings;
 
   //! The return message that OK was pressed
   bool& m_OkPressed;
