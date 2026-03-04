@@ -156,6 +156,8 @@ public:
   static const int c_DecayModeActivationBuildUp;
   /// The decay mode delayed decay for 2-stage activation simulations
   static const int c_DecayModeActivationDelayedDecay;
+  /// The decay mode build-up + buildup for 2-stage activation simulations
+  static const int c_DecayModeBuildUpAndSaveActivation;
 
   /// Pretriggering is off
   static const int c_PreTriggerEverything;
