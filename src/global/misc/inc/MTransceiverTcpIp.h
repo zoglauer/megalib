@@ -20,6 +20,7 @@
 #include <sstream>
 #include <string>
 #include <list>
+#include <atomic>
 using namespace std;
 
 // ROOT libs:
@@ -165,13 +166,13 @@ class MTransceiverTcpIp
   MTimer m_TimeSinceLastConnection;
 
   //! The thread where the receiving and transmitting happens
-  TThread *m_TransceiverThread;     
+  TThread* m_TransceiverThread;
   //! Unique Id for the thread...
   static int m_ThreadId;
-  //! Flag indicating to stop the thread
-  bool m_StopThread;
-  //! Flag indicating that the thread is running
-  bool m_IsThreadRunning;
+  //! Flag indicating to stop the thread - accessed in multiple threads
+  atomic<bool> m_StopThread;
+  //! Flag indicating that the thread is running - accessed in multiple threads
+  atomic<bool> m_IsThreadRunning;
   //! Mutex to prevent multiple socket initializations
   TMutex m_SocketMutex;
 
@@ -204,8 +205,8 @@ class MTransceiverTcpIp
   //! Counter for the resets
   unsigned long m_NResets;
   
-  //! True if a connection is established
-  bool m_IsConnected;
+  //! True if a connection is established - accessed in multiple threads
+  atomic<bool> m_IsConnected;
   //! True if this tranceiver tries to connect
   bool m_WishConnection;
   

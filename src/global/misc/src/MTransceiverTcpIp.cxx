@@ -336,7 +336,7 @@ void MTransceiverTcpIp::TransceiverLoop()
   } else {
     TextMessageLength = 1024*1024; // it's 2011, no need to be humble...    
   }
-  char* TextMessage= new char[TextMessageLength+1];
+  vector<char> TextMessage(TextMessageLength + 1, '\0');
   MString RawMessage;
   MString Message;
  
@@ -500,15 +500,15 @@ void MTransceiverTcpIp::TransceiverLoop()
     // Add the object to the list:
     if (m_Mode == c_ModeASCIIText) {
       Socket->SetOption(kNoBlock, 1); // don't block!
-      Status = Socket->Recv(TextMessage, TextMessageLength);
-      Message = TextMessage;
+      Status = Socket->Recv(TextMessage.data(), TextMessageLength);
+      Message = TextMessage.data();
       //cout<<"Receive text"<<endl;
       //cout<<Message<<endl;
     } else if (m_Mode == c_ModeRawEventList) {
       do {
         Socket->SetOption(kNoBlock, 1); // don't block!
         for (unsigned int c = 0; c < TextMessageLength+1; ++c) TextMessage[c] = '\0'; // TextMessage is one larger then TextMessageLength!
-        Status = Socket->RecvRaw(TextMessage, TextMessageLength);
+        Status = Socket->RecvRaw(TextMessage.data(), TextMessageLength);
         for (unsigned int c = 0; c < TextMessageLength; ++c) {
           if (TextMessage[c] == '\0') { 
             break; 
