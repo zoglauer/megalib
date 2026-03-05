@@ -33,7 +33,11 @@ endif
 # HEALPix
 HEALPIXFLAGS  :=
 HEALPIXLIBS   :=
-ifeq ("$(shell pkg-config --exists healpix_cxx 1>&2 2> /dev/null; echo $$?)", "0")
+ifeq ("$(shell PKG_CONFIG_PATH=$(HEALPIX)/lib/pkgconfig pkg-config --exists healpix_cxx 1>&2 2> /dev/null; echo $$?)", "0")
+	HEALPIXCFLAGS += $(shell PKG_CONFIG_PATH=$(HEALPIX)/lib/pkgconfig pkg-config --cflags healpix_cxx)
+        HEALPIXCFLAGS := $(filter-out -fopenmp, $(HEALPIXCFLAGS))
+	HEALPIXLIBS += $(shell PKG_CONFIG_PATH=$(HEALPIX)/lib/pkgconfig pkg-config --libs healpix_cxx)
+else ifeq ("$(shell pkg-config --exists healpix_cxx 1>&2 2> /dev/null; echo $$?)", "0")
         HEALPIXCFLAGS += $(shell pkg-config --cflags healpix_cxx)
         HEALPIXCFLAGS := $(filter-out -fopenmp, $(HEALPIXCFLAGS))
         HEALPIXLIBS += $(shell pkg-config --libs healpix_cxx)
