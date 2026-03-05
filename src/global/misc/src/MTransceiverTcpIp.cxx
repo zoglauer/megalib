@@ -28,11 +28,15 @@
 
 // Standard libs:
 #include <limits>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <chrono>
+#include <csignal>
 using namespace std;
 
 // ROOT libs:
 #include <TServerSocket.h>
-#include <TThread.h>
 #include <TMessage.h>
 #include <TClass.h>
 #include <TRandom.h>
@@ -52,18 +56,6 @@ ClassImp(MTransceiverTcpIp)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-void* StartTransceiverThread(void* Transceiver)
-{
-  ((MTransceiverTcpIp *) Transceiver)->TransceiverLoop();
-  return 0;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MTransceiverTcpIp::m_ThreadId = 0;
 
 const unsigned int MTransceiverTcpIp::c_ModeASCIIText = 0;
 const unsigned int MTransceiverTcpIp::c_ModeRawEventList = 1;
@@ -101,8 +93,6 @@ MTransceiverTcpIp::MTransceiverTcpIp(MString Name, MString Host, unsigned int Po
   m_WishClient = true;
 
   m_IsThreadRunning = false;
-
-  m_TransceiverThread = 0;
    
   m_Verbosity = 2;
 }
@@ -118,8 +108,8 @@ MTransceiverTcpIp::~MTransceiverTcpIp()
   if (m_IsConnected == true) {
     Disconnect();
   }
-  if (m_TransceiverThread != 0) {
-    StopTransceiving();  
+  if (m_TransceiverThread.joinable()) {
+    StopTransceiving();
   }
 }
 
@@ -131,19 +121,19 @@ void MTransceiverTcpIp::ClearBuffers()
 {
   //! Clear the send and receive buffers
 
-  m_SendMutex.Lock();
+  {
+    lock_guard<mutex> lock(m_SendMutex);
   
-  m_StringsToSend.clear();
-  m_NStringsToSend = 0;
+    m_StringsToSend.clear();
+    m_NStringsToSend = 0;
+  }
   
-  m_SendMutex.UnLock();
-  
-  m_ReceiveMutex.Lock();
+  {
+    lock_guard<mutex> lock(m_ReceiveMutex);
 
-  m_StringsToReceive.clear();
-  m_NStringsToReceive = 0;
-
-  m_ReceiveMutex.UnLock();
+    m_StringsToReceive.clear();
+    m_NStringsToReceive = 0;
+  }
 }
 
 
@@ -165,7 +155,7 @@ bool MTransceiverTcpIp::Connect(bool WaitForConnection, double TimeOut)
     if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Waiting for connection to "<<m_Host<<":"<<m_Port<<endl; 
     MTimer Passed;
     while (Passed.GetElapsed() <= TimeOut && m_IsConnected == false) {
-      gSystem->Sleep(10);
+      this_thread::sleep_for(chrono::milliseconds(10));
     }
     if (m_IsConnected == false) {
       StopTransceiving();
@@ -194,7 +184,7 @@ bool MTransceiverTcpIp::Disconnect(bool WaitForDisconnection, double TimeOut)
       if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Waiting disconnection!"<<endl;
       MTimer Passed;
       while (Passed.GetElapsed() <= TimeOut && m_IsConnected == true) {
-        gSystem->Sleep(10);
+        this_thread::sleep_for(chrono::milliseconds(10));
       }
       if (m_IsConnected == true) {
         if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Disconnection from "<<m_Host<<":"<<m_Port<<" failed!"<<endl;
@@ -218,28 +208,17 @@ void MTransceiverTcpIp::StartTransceiving()
 {
   // Starts the multithreaded TransceiverLoop
 
-  if (m_TransceiverThread != 0) return;
+  if (m_TransceiverThread.joinable()) return;
 
   m_StopThread = false;
-  
-  m_ThreadId++;
-  const int Length = 100;
-  char Name[Length];
-  snprintf(Name, Length, "Transceiver #%i", m_ThreadId);
-
   m_IsThreadRunning = false;
-  m_TransceiverThread = 
-    new TThread(Name, 
-                (void(*) (void *)) &StartTransceiverThread, 
-                (void*) this);
-  m_TransceiverThread->SetPriority(TThread::kHighPriority);
-  m_TransceiverThread->Run();
-  
+
+  m_TransceiverThread = thread(&MTransceiverTcpIp::TransceiverLoop, this);
+
   while (m_IsThreadRunning == false) {
-    // Never do this in a thread! gSystem->ProcessEvents();
-    gSystem->Sleep(10);
+    this_thread::sleep_for(chrono::milliseconds(10));
   }
-  if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Transceiver thread running!"<<endl;    
+  if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Transceiver thread running!"<<endl;
 }
 
 
@@ -249,14 +228,14 @@ void MTransceiverTcpIp::StartTransceiving()
 void MTransceiverTcpIp::StopTransceiving()
 {
   m_StopThread = true;
-  
+
   while (m_IsThreadRunning == true) {
-    // Never do this in a thread! gSystem->ProcessEvents();
-    gSystem->Sleep(10);
+    this_thread::sleep_for(chrono::milliseconds(10));
   }
-    
-  //m_TransceiverThread->Kill();
-  m_TransceiverThread = 0;
+
+  if (m_TransceiverThread.joinable()) {
+    m_TransceiverThread.join();
+  }
   m_IsThreadRunning = false;
 }
 
@@ -268,23 +247,23 @@ bool MTransceiverTcpIp::Send(const MString& String)
 {
   // Now put the events into a list
 
-  m_SendMutex.Lock();
-  
-  // Add it to the end of the queue
-  m_StringsToSend.push_back(MString(String.Data())); // make sure we don't use the string copy mechanism    
-  m_NStringsToSend++;
+  {
+    lock_guard<mutex> lock(m_SendMutex);
 
-  // If we have more than N events we remove the oldest from the buffer...
-  if (m_NStringsToSend > m_MaxBufferSize) {
-    m_StringsToSend.pop_front();
-    m_NLostStrings++;
-    m_NStringsToSend--;
-    if (m_NLostStrings == 1 || m_NLostStrings == 10 || m_NLostStrings == 100 || m_NLostStrings == 1000 ||  m_NLostStrings == 10000 || m_NLostStrings % 100000 == 0) { 
-      if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<": Error: Buffer overflow: Packets/Events have been lost (total loss: "<<m_NLostStrings<<")"<<endl;
+    // Add it to the end of the queue
+    m_StringsToSend.push_back(MString(String.Data())); // make sure we don't use the string copy mechanism
+    m_NStringsToSend++;
+
+    // If we have more than N events we remove the oldest from the buffer...
+    if (m_NStringsToSend > m_MaxBufferSize) {
+      m_StringsToSend.pop_front();
+      m_NLostStrings++;
+      m_NStringsToSend--;
+      if (m_NLostStrings == 1 || m_NLostStrings == 10 || m_NLostStrings == 100 || m_NLostStrings == 1000 ||  m_NLostStrings == 10000 || m_NLostStrings % 100000 == 0) {
+        if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<": Error: Buffer overflow: Packets/Events have been lost (total loss: "<<m_NLostStrings<<")"<<endl;
+      }
     }
   }
-  
-  m_SendMutex.UnLock();
   
   return true;
 }
@@ -297,17 +276,17 @@ bool MTransceiverTcpIp::Receive(MString& String)
 {
   // Check if an object is in the received strings list:
 
-  m_ReceiveMutex.Lock();
+  {
+    lock_guard<mutex> lock(m_ReceiveMutex);
 
-  if (m_NStringsToReceive > 0) {
-    m_NStringsToReceive--;
-    String = m_StringsToReceive.front();
-    m_StringsToReceive.pop_front();
-    m_ReceiveMutex.UnLock();
-    return true;
+    if (m_NStringsToReceive > 0) {
+      m_NStringsToReceive--;
+      String = m_StringsToReceive.front();
+      m_StringsToReceive.pop_front();
+      return true;
+    }
   }
-  m_ReceiveMutex.UnLock();
-  
+
   return false;
 }
 
@@ -320,6 +299,9 @@ void MTransceiverTcpIp::TransceiverLoop()
   // Main thread loop for connecting, receiving and sending data 
   // Since thread safety is a problem, this code is not object oriented but
   // Spaghetti style...
+
+  // For macOS we have to ignore SIGPIPE
+  signal(SIGPIPE, SIG_IGN);
 
   if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": thread running!"<<endl;    
 
@@ -408,9 +390,10 @@ void MTransceiverTcpIp::TransceiverLoop()
         if (m_WishClient == true) {
           int Level = gErrorIgnoreLevel;
           gErrorIgnoreLevel = kFatal;
-          m_SocketMutex.Lock(); // socket initilization is not reentrant as of 5.34.22 (bu bug report is submitted)!
-          Socket = new TSocket(m_Host, m_Port); //, 10000000);
-          m_SocketMutex.UnLock();
+          {
+            lock_guard<mutex> lock(m_SocketMutex);
+            Socket = new TSocket(m_Host, m_Port); //, 10000000);
+          }
           gErrorIgnoreLevel = Level;
           
           if (Socket->IsValid() == true) {
@@ -425,7 +408,7 @@ void MTransceiverTcpIp::TransceiverLoop()
             Socket = 0;
             ++m_NResets;
             if (m_WishServer == false) {
-              gSystem->Sleep(SleepAmount);
+              this_thread::sleep_for(chrono::milliseconds(SleepAmount));
               continue;
             }
           }
@@ -435,10 +418,11 @@ void MTransceiverTcpIp::TransceiverLoop()
         if (m_WishServer == true && m_IsConnected == false) {
 
           if (ServerSocket == nullptr) {
-            m_SocketMutex.Lock();
-            ServerSocket = new TServerSocket(m_Port, true, 10000000);
-            ServerSocket->SetOption(kNoBlock,1);
-            m_SocketMutex.UnLock();
+            {
+              lock_guard<mutex> lock(m_SocketMutex);
+              ServerSocket = new TServerSocket(m_Port, true, 10000000);
+              ServerSocket->SetOption(kNoBlock,1);
+            }
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Created server socket"<<endl;
           }
 
@@ -541,7 +525,7 @@ void MTransceiverTcpIp::TransceiverLoop()
       
       Socket->Close("force");
       delete Socket;
-      Socket = 0;
+      Socket = nullptr;
       
       m_IsConnected = false;
       
@@ -553,21 +537,21 @@ void MTransceiverTcpIp::TransceiverLoop()
     } 
     // If status > 0, we got a message
     else {
-      m_ReceiveMutex.Lock();
+      {
+        lock_guard<mutex> lock(m_ReceiveMutex);
       
-      //cout<<"Received:"<<endl;
-      //cout<<Message<<endl;
+        // cout<<"Received:"<<endl;
+        // cout<<Message<<endl;
       
-      if (m_NStringsToReceive < m_MaxBufferSize) {
-        m_StringsToReceive.push_back(Message);
-        m_NReceivedStrings++;
-        m_NStringsToReceive++;
-      } else {
-        m_NReceivedStrings++;
-        m_NLostStrings++;
-      } 
-        
-      m_ReceiveMutex.UnLock();
+        if (m_NStringsToReceive < m_MaxBufferSize) {
+          m_StringsToReceive.push_back(Message);
+          m_NReceivedStrings++;
+          m_NStringsToReceive++;
+        } else {
+          m_NReceivedStrings++;
+          m_NLostStrings++;
+        }
+      }
         
       SleepAllowed = false; // because we might have to receive more events...
     }
@@ -580,9 +564,10 @@ void MTransceiverTcpIp::TransceiverLoop()
     // Create a message out of the first entry of the list and send the event...
     if (m_NStringsToSend > 0) {
 
-      m_SendMutex.Lock();
-      Message = m_StringsToSend.front().Data(); // Make sure we don't copy the string...
-      m_SendMutex.UnLock();
+      {
+        lock_guard<mutex> lock(m_SendMutex);
+        Message = m_StringsToSend.front().Data(); // Make sure we don't copy the string...
+      }
       
       Socket->SetOption(kNoBlock, 0); // Not sure about this...
       if (m_Mode == c_ModeASCIIText) {
@@ -599,16 +584,17 @@ void MTransceiverTcpIp::TransceiverLoop()
 
         Socket->Close("force");
         delete Socket;
-        Socket = 0;
+        Socket = nullptr;
         
         m_IsConnected = false;
         m_IsServer = false;
       } else {
-        m_SendMutex.Lock();
-        m_NStringsToSend--;
-        m_StringsToSend.pop_front();
-        m_NSentStrings++;
-        m_SendMutex.UnLock();
+        {
+          lock_guard<mutex> lock(m_SendMutex);
+          m_NStringsToSend--;
+          m_StringsToSend.pop_front();
+          m_NSentStrings++;
+        }
 
         SleepAllowed = false; // No sleep because we might have more work to do (i.e. send more events)
 
@@ -622,7 +608,7 @@ void MTransceiverTcpIp::TransceiverLoop()
     // Thus sleep...
     
     if (m_StopThread == false && SleepAllowed == true) {
-      gSystem->Sleep(SleepAmount);
+      this_thread::sleep_for(chrono::milliseconds(SleepAmount));
     }
 
     continue;

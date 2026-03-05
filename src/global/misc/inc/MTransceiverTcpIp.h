@@ -20,12 +20,12 @@
 #include <sstream>
 #include <string>
 #include <list>
+#include <thread>
+#include <mutex>
 #include <atomic>
 using namespace std;
 
 // ROOT libs:
-#include "TThread.h"
-#include "TMutex.h"
 #include "TSocket.h"
 
 
@@ -35,12 +35,6 @@ using namespace std;
 #include "MTimer.h"
 
 // Forward declarations:
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void* StartTransceiverThread(void* ObjectReceiver);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -166,15 +160,13 @@ class MTransceiverTcpIp
   MTimer m_TimeSinceLastConnection;
 
   //! The thread where the receiving and transmitting happens
-  TThread* m_TransceiverThread;
-  //! Unique Id for the thread...
-  static int m_ThreadId;
+  thread m_TransceiverThread;
   //! Flag indicating to stop the thread - accessed in multiple threads
   atomic<bool> m_StopThread;
   //! Flag indicating that the thread is running - accessed in multiple threads
   atomic<bool> m_IsThreadRunning;
   //! Mutex to prevent multiple socket initializations
-  TMutex m_SocketMutex;
+  mutex m_SocketMutex;
 
   
   //! List of objects still waiting for sending
@@ -182,14 +174,14 @@ class MTransceiverTcpIp
   //! number of objects still waiting for sending
   unsigned int m_NStringsToSend;
   //! A mutex for the send queue
-  TMutex m_SendMutex;
+  mutex m_SendMutex;
 
   //! List of objects which have been received and which are still in the buffer
   list<MString> m_StringsToReceive;
   //! list of objects which have been received and which are still in the buffer
   unsigned int m_NStringsToReceive;
   //! A mutex for the receive queue
-  TMutex m_ReceiveMutex;
+  mutex m_ReceiveMutex;
 
   //! The maximum buffer size:
   unsigned int m_MaxBufferSize;
