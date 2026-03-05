@@ -326,8 +326,8 @@ void MTransceiverTcpIp::TransceiverLoop()
   m_IsThreadRunning = true;
 
   int Status = 0;
-  TServerSocket* ServerSocket = 0;    // A server
-  TSocket* Socket = 0;                // A full-duplex connection to another host
+  TServerSocket* ServerSocket = nullptr;    // A server
+  TSocket* Socket = nullptr;                // A full-duplex connection to another host
   bool SleepAllowed = true;
 
   unsigned int TextMessageLength;
@@ -359,10 +359,10 @@ void MTransceiverTcpIp::TransceiverLoop()
       if (Socket->IsValid() == false || Socket->TestBit(TSocket::kBrokenConn)) {
         if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Found a broken connection... Resetting!"<<endl;
         
-        if (Socket != 0) {
+        if (Socket != nullptr) {
           Socket->Close("force");
           delete Socket;
-          Socket = 0;
+          Socket = nullptr;
           ++m_NResets;
         }
         
@@ -378,13 +378,18 @@ void MTransceiverTcpIp::TransceiverLoop()
     if (m_StopThread == true) {
       if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Stopping thread...!"<<endl;
 
-      if (Socket != 0) {
+      if (Socket != nullptr) {
         Socket->Close("force");
         delete Socket;
-        Socket = 0;
+        Socket = nullptr;
         ++m_NResets;
       }
 
+      if (ServerSocket != nullptr) {
+        ServerSocket->Close("force");
+        delete ServerSocket;
+        ServerSocket = nullptr;
+      }
       m_IsConnected = false;
       m_IsServer = false;
       
@@ -429,26 +434,38 @@ void MTransceiverTcpIp::TransceiverLoop()
         // If we where unable to connect as client try as server:
         if (m_WishServer == true && m_IsConnected == false) {
 
-          m_SocketMutex.Lock(); // socket initilization is not reentrant as of 5.34.22 (bu bug report is submitted)!
-          ServerSocket = new TServerSocket(m_Port, true, 10000000);
-          ServerSocket->SetOption(kNoBlock,1);
-          m_SocketMutex.UnLock();
+          if (ServerSocket == nullptr) {
+            m_SocketMutex.Lock();
+            ServerSocket = new TServerSocket(m_Port, true, 10000000);
+            ServerSocket->SetOption(kNoBlock,1);
+            m_SocketMutex.UnLock();
+            if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Created server socket"<<endl;
+          }
+
+          if (ServerSocket->IsValid() == false) {
+            cout<<"Transceiver "<<m_Name<<": Invalid server socket..."<<endl;
+            ServerSocket->Close("force");
+            delete ServerSocket;
+            ServerSocket = nullptr;
+            gSystem->Sleep(SleepAmount);
+            continue;
+           }
 
           // Wait for a client to connect - we add a random amount to make sure that two instances of this class can connect at same point in time
           gSystem->Sleep(10*SleepAmount + gRandom->Integer(10*SleepAmount));
           Socket = ServerSocket->Accept();
-        
-          ServerSocket->Close("force");
-          delete ServerSocket;
 
-
-          if (long(Socket) > 0) {
+          if (Socket != nullptr && (long)Socket > 0 && Socket->IsValid() == true) {
             Socket->SetOption(kNoBlock, 1);
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection established as server!"<<endl;
             m_IsServer = true;
-            m_IsConnected = true;  
+            m_IsConnected = true;
+            // We are connected, thus we can delete:
+            ServerSocket->Close("force");
+            delete ServerSocket;
+            ServerSocket = nullptr;
           } else {
-            Socket = 0; // Since it can be negative... yes...
+            Socket = nullptr; // Since it can be negative... yes...
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as server, trying again later..."<<endl;
             gSystem->Sleep(SleepAmount);
             continue;
@@ -467,7 +484,7 @@ void MTransceiverTcpIp::TransceiverLoop()
 
       Socket->Close("force");
       delete Socket;
-      Socket = 0;
+      Socket = nullptr;
       ++m_NResets;
 
       m_IsConnected = false;
