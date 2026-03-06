@@ -157,6 +157,11 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   MException::UseAbort();
 #endif
 
+  if (g_OSType == "macOS") {
+    // We don't want sockets to send SIGPIPE's
+    signal(SIGPIPE, SIG_IGN);
+  }
+
   // Load the GUI defaults by initializing the singleton
   MGUIDefaults::GetInstance();
 

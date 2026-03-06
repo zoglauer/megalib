@@ -103,9 +103,9 @@ class MTransceiverTcpIp
   void SetMaximumBufferSize(unsigned int MaxBufferSize) { m_MaxBufferSize = MaxBufferSize; }
 
   //! Get the number of events still to be sent
-  unsigned int GetNStringsToSend() const { return m_NStringsToSend; }
+  unsigned int GetNStringsToSend() const { return m_StringsToSend.size(); }
   //! Get the number of events still to be receive (i.e. which are in the receive buffer)
-  unsigned int GetNStringsToReceive() const { return m_NStringsToReceive; }
+  unsigned int GetNStringsToReceive() const { return m_StringsToReceive.size(); }
 
   //! Get the number of sent bytes
   unsigned long GetNSentStrings() const { return m_NSentStrings; }
@@ -169,15 +169,11 @@ class MTransceiverTcpIp
   
   //! List of objects still waiting for sending
   list<MString> m_StringsToSend;
-  //! number of objects still waiting for sending
-  unsigned int m_NStringsToSend;
   //! A mutex for the send queue
   mutex m_SendMutex;
 
   //! List of objects which have been received and which are still in the buffer
   list<MString> m_StringsToReceive;
-  //! list of objects which have been received and which are still in the buffer
-  unsigned int m_NStringsToReceive;
   //! A mutex for the receive queue
   mutex m_ReceiveMutex;
 

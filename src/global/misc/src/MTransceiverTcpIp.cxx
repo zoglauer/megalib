@@ -74,9 +74,6 @@ MTransceiverTcpIp::MTransceiverTcpIp(MString Name, MString Host, unsigned int Po
 
   if (m_Mode != c_ModeRawEventList && m_Mode != c_ModeASCIIText) m_Mode = c_ModeASCIIText;
 
-  m_NStringsToSend = 0;
-  m_NStringsToReceive = 0;
-
   m_NLostStrings = 0;
   
   m_NReceivedStrings = 0; 
@@ -108,9 +105,10 @@ MTransceiverTcpIp::~MTransceiverTcpIp()
   if (m_IsConnected == true) {
     Disconnect();
   }
-  if (m_TransceiverThread.joinable()) {
-    StopTransceiving();
-  }
+  // Disconnect already calls StopTransceiving
+  //if (m_TransceiverThread.joinable()) {
+  //  StopTransceiving();
+  //}
 }
 
 
@@ -122,17 +120,15 @@ void MTransceiverTcpIp::ClearBuffers()
   //! Clear the send and receive buffers
 
   {
-    lock_guard<mutex> lock(m_SendMutex);
+    scoped_lock lock(m_SendMutex);
   
     m_StringsToSend.clear();
-    m_NStringsToSend = 0;
   }
   
   {
-    lock_guard<mutex> lock(m_ReceiveMutex);
+    scoped_lock lock(m_ReceiveMutex);
 
     m_StringsToReceive.clear();
-    m_NStringsToReceive = 0;
   }
 }
 
@@ -248,17 +244,15 @@ bool MTransceiverTcpIp::Send(const MString& String)
   // Now put the events into a list
 
   {
-    lock_guard<mutex> lock(m_SendMutex);
+    scoped_lock lock(m_SendMutex);
 
     // Add it to the end of the queue
     m_StringsToSend.push_back(MString(String.Data())); // make sure we don't use the string copy mechanism
-    m_NStringsToSend++;
 
     // If we have more than N events we remove the oldest from the buffer...
-    if (m_NStringsToSend > m_MaxBufferSize) {
+    if (m_StringsToSend.size() > m_MaxBufferSize) {
       m_StringsToSend.pop_front();
       m_NLostStrings++;
-      m_NStringsToSend--;
       if (m_NLostStrings == 1 || m_NLostStrings == 10 || m_NLostStrings == 100 || m_NLostStrings == 1000 ||  m_NLostStrings == 10000 || m_NLostStrings % 100000 == 0) {
         if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<": Error: Buffer overflow: Packets/Events have been lost (total loss: "<<m_NLostStrings<<")"<<endl;
       }
@@ -277,10 +271,9 @@ bool MTransceiverTcpIp::Receive(MString& String)
   // Check if an object is in the received strings list:
 
   {
-    lock_guard<mutex> lock(m_ReceiveMutex);
+    scoped_lock lock(m_ReceiveMutex);
 
-    if (m_NStringsToReceive > 0) {
-      m_NStringsToReceive--;
+    if (m_StringsToReceive.size() > 0) {
       String = m_StringsToReceive.front();
       m_StringsToReceive.pop_front();
       return true;
@@ -299,9 +292,6 @@ void MTransceiverTcpIp::TransceiverLoop()
   // Main thread loop for connecting, receiving and sending data 
   // Since thread safety is a problem, this code is not object oriented but
   // Spaghetti style...
-
-  // For macOS we have to ignore SIGPIPE
-  signal(SIGPIPE, SIG_IGN);
 
   if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": thread running!"<<endl;    
 
@@ -391,7 +381,7 @@ void MTransceiverTcpIp::TransceiverLoop()
           int Level = gErrorIgnoreLevel;
           gErrorIgnoreLevel = kFatal;
           {
-            lock_guard<mutex> lock(m_SocketMutex);
+            scoped_lock lock(m_SocketMutex);
             Socket = new TSocket(m_Host, m_Port); //, 10000000);
           }
           gErrorIgnoreLevel = Level;
@@ -419,7 +409,7 @@ void MTransceiverTcpIp::TransceiverLoop()
 
           if (ServerSocket == nullptr) {
             {
-              lock_guard<mutex> lock(m_SocketMutex);
+              scoped_lock lock(m_SocketMutex);
               ServerSocket = new TServerSocket(m_Port, true, 10000000);
               ServerSocket->SetOption(kNoBlock,1);
             }
@@ -538,15 +528,14 @@ void MTransceiverTcpIp::TransceiverLoop()
     // If status > 0, we got a message
     else {
       {
-        lock_guard<mutex> lock(m_ReceiveMutex);
+        scoped_lock lock(m_ReceiveMutex);
       
         // cout<<"Received:"<<endl;
         // cout<<Message<<endl;
       
-        if (m_NStringsToReceive < m_MaxBufferSize) {
+        if (m_StringsToReceive.size() < m_MaxBufferSize) {
           m_StringsToReceive.push_back(Message);
           m_NReceivedStrings++;
-          m_NStringsToReceive++;
         } else {
           m_NReceivedStrings++;
           m_NLostStrings++;
@@ -562,10 +551,10 @@ void MTransceiverTcpIp::TransceiverLoop()
     // Send data:
 
     // Create a message out of the first entry of the list and send the event...
-    if (m_NStringsToSend > 0) {
+    if (m_StringsToSend.size() > 0) {
 
       {
-        lock_guard<mutex> lock(m_SendMutex);
+        scoped_lock lock(m_SendMutex);
         Message = m_StringsToSend.front().Data(); // Make sure we don't copy the string...
       }
       
@@ -590,8 +579,7 @@ void MTransceiverTcpIp::TransceiverLoop()
         m_IsServer = false;
       } else {
         {
-          lock_guard<mutex> lock(m_SendMutex);
-          m_NStringsToSend--;
+          scoped_lock lock(m_SendMutex);
           m_StringsToSend.pop_front();
           m_NSentStrings++;
         }
