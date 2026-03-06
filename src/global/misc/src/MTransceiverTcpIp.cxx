@@ -431,12 +431,12 @@ void MTransceiverTcpIp::TransceiverLoop()
             ServerSocket->Close("force");
             delete ServerSocket;
             ServerSocket = nullptr;
-            gSystem->Sleep(SleepAmount);
+            this_thread::sleep_for(chrono::milliseconds(SleepAmount));
             continue;
            }
 
           // Wait for a client to connect - we add a random amount to make sure that two instances of this class can connect at same point in time
-          gSystem->Sleep(10*SleepAmount + gRandom->Integer(10*SleepAmount));
+          this_thread::sleep_for(chrono::milliseconds(10*SleepAmount + gRandom->Integer(10*SleepAmount)));
           Socket = ServerSocket->Accept();
 
           if (Socket != nullptr && (long)Socket > 0 && Socket->IsValid() == true) {
@@ -451,14 +451,14 @@ void MTransceiverTcpIp::TransceiverLoop()
           } else {
             Socket = nullptr; // Since it can be negative... yes...
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as server, trying again later..."<<endl;
-            gSystem->Sleep(SleepAmount);
+            this_thread::sleep_for(chrono::milliseconds(SleepAmount));
             continue;
           }
         } 
       } 
       // Case: We are not connected and do not want to be connected... SLEEP!
       else {
-        gSystem->Sleep(SleepAmount);
+        this_thread::sleep_for(chrono::milliseconds(SleepAmount));
         continue;
       }
     }
