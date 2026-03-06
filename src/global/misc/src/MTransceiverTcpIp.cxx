@@ -37,7 +37,6 @@ using namespace std;
 
 // ROOT libs:
 #include <TServerSocket.h>
-#include <TMessage.h>
 #include <TClass.h>
 #include <TRandom.h>
 
@@ -72,6 +71,7 @@ MTransceiverTcpIp::MTransceiverTcpIp(MString Name, MString Host, unsigned int Po
   m_Host = Host;
   m_Port = Port;
   m_Mode = Mode;
+
   if (m_Mode != c_ModeRawEventList && m_Mode != c_ModeASCIIText) m_Mode = c_ModeASCIIText;
 
   m_NStringsToSend = 0;

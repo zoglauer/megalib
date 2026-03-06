@@ -28,7 +28,6 @@ using namespace std;
 // ROOT libs:
 #include "TSocket.h"
 
-
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MTransceiver.h"
@@ -53,6 +52,10 @@ class MTransceiverTcpIp
   MTransceiverTcpIp(MString Name = "A transceiver", MString HostName = "localhost", unsigned int Port = 9090, unsigned int Mode = c_ModeASCIIText);
   //! Default desctructor
   virtual ~MTransceiverTcpIp();
+  //! No copy constructor
+  MTransceiverTcpIp(const MTransceiverTcpIp&) = delete;
+  //! No assignment constructor
+  MTransceiverTcpIp& operator=(const MTransceiverTcpIp&) = delete;
 
   //! Set the name of the transceiver
   void SetName(MString Name) { m_Name = Name; }
@@ -128,13 +131,8 @@ class MTransceiverTcpIp
   void StopTransceiving();
 
   
-  
   // private methods:
  private:
-  //! Degenerate copy constructor --- when cannot copy construct this class
-  //MTransceiverTcpIp(const MTransceiverTcpIp&);
-  //! Degenerate assignment operator --- we cannot copy this class
-  //MTransceiverTcpIp& operator=(const MTransceiverTcpIp&);
   
 
   // protected members:
@@ -187,9 +185,9 @@ class MTransceiverTcpIp
   unsigned int m_MaxBufferSize;
 
   //! Counter for the number of received strings, etc.
-  unsigned int m_NReceivedStrings;
+  atomic<unsigned int> m_NReceivedStrings;
   //! Counter for the number of sent strings, etc.
-  unsigned int m_NSentStrings;
+  atomic<unsigned int> m_NSentStrings;
 
   //! Counter for the number of lost strings due to buffer overflow
   unsigned int m_NLostStrings;
@@ -197,18 +195,18 @@ class MTransceiverTcpIp
   //! Counter for the resets
   unsigned long m_NResets;
   
-  //! True if a connection is established - accessed in multiple threads
+  //! True if a connection is established
   atomic<bool> m_IsConnected;
   //! True if this tranceiver tries to connect
-  bool m_WishConnection;
+  atomic<bool> m_WishConnection;
   
   //! True if this connection is intended as server
-  bool m_WishServer;
+  atomic<bool> m_WishServer;
   //! True if this connection is intended as client
-  bool m_WishClient;
+  atomic<bool> m_WishClient;
 
   //! True if this is a server
-  bool m_IsServer;
+  atomic<bool> m_IsServer;
   
   
 #ifdef ___CLING___
