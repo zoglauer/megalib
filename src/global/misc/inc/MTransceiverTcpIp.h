@@ -19,7 +19,7 @@
 // Standard libs:
 #include <sstream>
 #include <string>
-#include <list>
+#include <deque>
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -168,12 +168,12 @@ class MTransceiverTcpIp
 
   
   //! List of objects still waiting for sending
-  list<MString> m_StringsToSend;
+  deque<MString> m_StringsToSend;
   //! A mutex for the send queue
   mutex m_SendMutex;
 
   //! List of objects which have been received and which are still in the buffer
-  list<MString> m_StringsToReceive;
+  deque<MString> m_StringsToReceive;
   //! A mutex for the receive queue
   mutex m_ReceiveMutex;
 
@@ -186,10 +186,10 @@ class MTransceiverTcpIp
   atomic<unsigned int> m_NSentStrings;
 
   //! Counter for the number of lost strings due to buffer overflow
-  unsigned int m_NLostStrings;
+  atomic<unsigned long> m_NLostStrings;
 
   //! Counter for the resets
-  unsigned long m_NResets;
+  atomic<unsigned long> m_NResets;
   
   //! True if a connection is established
   atomic<bool> m_IsConnected;

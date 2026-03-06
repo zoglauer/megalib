@@ -158,7 +158,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 #endif
 
   if (g_OSType == "macOS") {
-    // We don't want sockets to send SIGPIPE's
+    // We don't want sockets to send SIGPIPE's and crash MEGAlib or a thread
     signal(SIGPIPE, SIG_IGN);
   }
 

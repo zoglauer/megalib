@@ -298,8 +298,15 @@ void MTransceiverTcpIp::TransceiverLoop()
   m_IsThreadRunning = true;
 
   int Status = 0;
-  TServerSocket* ServerSocket = nullptr;    // A server
-  TSocket* Socket = nullptr;                // A full-duplex connection to another host
+
+  // The server
+  auto ServerDeleter = [](TSocket* S) { if (S) { S->Close("force"); delete S; } };
+  unique_ptr<TServerSocket, decltype(ServerDeleter)> ServerSocket(nullptr, ServerDeleter);
+
+  // A full-duplex connection to another host
+  auto SocketDeleter = [](TSocket* S) { if (S) { S->Close("force"); delete S; } };
+  unique_ptr<TSocket, decltype(SocketDeleter)> Socket(nullptr, SocketDeleter);
+
   bool SleepAllowed = true;
 
   unsigned int TextMessageLength;
@@ -332,9 +339,7 @@ void MTransceiverTcpIp::TransceiverLoop()
         if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Found a broken connection... Resetting!"<<endl;
         
         if (Socket != nullptr) {
-          Socket->Close("force");
-          delete Socket;
-          Socket = nullptr;
+          Socket.reset(); // delete in unique_ptr speak
           ++m_NResets;
         }
         
@@ -351,16 +356,12 @@ void MTransceiverTcpIp::TransceiverLoop()
       if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Stopping thread...!"<<endl;
 
       if (Socket != nullptr) {
-        Socket->Close("force");
-        delete Socket;
-        Socket = nullptr;
+        Socket.reset(); // delete in unique_ptr speak
         ++m_NResets;
       }
 
       if (ServerSocket != nullptr) {
-        ServerSocket->Close("force");
-        delete ServerSocket;
-        ServerSocket = nullptr;
+        ServerSocket.reset(); // delete in unique_ptr speak
       }
       m_IsConnected = false;
       m_IsServer = false;
@@ -378,13 +379,16 @@ void MTransceiverTcpIp::TransceiverLoop()
         
         // Try to (re-) connect as client:
         if (m_WishClient == true) {
-          int Level = gErrorIgnoreLevel;
-          gErrorIgnoreLevel = kFatal;
           {
             scoped_lock lock(m_SocketMutex);
-            Socket = new TSocket(m_Host, m_Port); //, 10000000);
+
+            int Level = gErrorIgnoreLevel;
+            gErrorIgnoreLevel = kFatal;
+
+            Socket.reset(new TSocket(m_Host, m_Port)); // new TSocket is / or was not re-entrant
+
+            gErrorIgnoreLevel = Level;
           }
-          gErrorIgnoreLevel = Level;
           
           if (Socket->IsValid() == true) {
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection established as client!"<<endl;
@@ -393,9 +397,7 @@ void MTransceiverTcpIp::TransceiverLoop()
             m_IsConnected = true;
           } else {
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as client..."<<endl;
-            Socket->Close("force");
-            delete Socket;
-            Socket = 0;
+            Socket.reset(); // delete in unique_ptr speak
             ++m_NResets;
             if (m_WishServer == false) {
               this_thread::sleep_for(chrono::milliseconds(SleepAmount));
@@ -410,7 +412,7 @@ void MTransceiverTcpIp::TransceiverLoop()
           if (ServerSocket == nullptr) {
             {
               scoped_lock lock(m_SocketMutex);
-              ServerSocket = new TServerSocket(m_Port, true, 10000000);
+              ServerSocket.reset(new TServerSocket(m_Port, true, 10000000));  // new TServerSocket is / or was not re-entrant
               ServerSocket->SetOption(kNoBlock,1);
             }
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Created server socket"<<endl;
@@ -418,28 +420,24 @@ void MTransceiverTcpIp::TransceiverLoop()
 
           if (ServerSocket->IsValid() == false) {
             cout<<"Transceiver "<<m_Name<<": Invalid server socket..."<<endl;
-            ServerSocket->Close("force");
-            delete ServerSocket;
-            ServerSocket = nullptr;
+            ServerSocket.reset(); // delete in unique_ptr speak
             this_thread::sleep_for(chrono::milliseconds(SleepAmount));
             continue;
            }
 
           // Wait for a client to connect - we add a random amount to make sure that two instances of this class can connect at same point in time
           this_thread::sleep_for(chrono::milliseconds(10*SleepAmount + gRandom->Integer(10*SleepAmount)));
-          Socket = ServerSocket->Accept();
+          TSocket* RawSocket = ServerSocket->Accept();
 
-          if (Socket != nullptr && (long)Socket > 0 && Socket->IsValid() == true) {
+          if (RawSocket != nullptr && (long)RawSocket > 0 && RawSocket->IsValid() == true) {
+            Socket.reset(RawSocket);
             Socket->SetOption(kNoBlock, 1);
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection established as server!"<<endl;
             m_IsServer = true;
             m_IsConnected = true;
             // We are connected, thus we can delete:
-            ServerSocket->Close("force");
-            delete ServerSocket;
-            ServerSocket = nullptr;
+            ServerSocket.reset(); // delete in unique_ptr speak
           } else {
-            Socket = nullptr; // Since it can be negative... yes...
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as server, trying again later..."<<endl;
             this_thread::sleep_for(chrono::milliseconds(SleepAmount));
             continue;
@@ -456,9 +454,7 @@ void MTransceiverTcpIp::TransceiverLoop()
     else if (m_IsConnected == true && m_WishConnection == false) {
       if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": No longer wishing connection..."<<endl;
 
-      Socket->Close("force");
-      delete Socket;
-      Socket = nullptr;
+      Socket.reset(); // delete in unique_ptr speak
       ++m_NResets;
 
       m_IsConnected = false;
@@ -513,9 +509,8 @@ void MTransceiverTcpIp::TransceiverLoop()
         cout<<"Transceiver "<<m_Name<<": Error: Unknown connection problem! Status: "<<Status<<", error code:"<<Socket->GetErrorCode()<<endl;        
       }
       
-      Socket->Close("force");
-      delete Socket;
-      Socket = nullptr;
+      Socket.reset(); // delete in unique_ptr speak
+      ++m_NResets;
       
       m_IsConnected = false;
       
@@ -571,9 +566,7 @@ void MTransceiverTcpIp::TransceiverLoop()
       if (Status < 0) {
         cout<<"Transceiver "<<m_Name<<": Sending failed with status "<<Status<<" and error code "<<Socket->GetErrorCode()<<endl;
 
-        Socket->Close("force");
-        delete Socket;
-        Socket = nullptr;
+        Socket.reset(); // delete in unique_ptr speak
         
         m_IsConnected = false;
         m_IsServer = false;
