@@ -37,7 +37,6 @@ using namespace std;
 
 // ROOT libs:
 #include <TServerSocket.h>
-#include <TClass.h>
 #include <TRandom.h>
 
 // MIWorks libs:
@@ -104,11 +103,9 @@ MTransceiverTcpIp::~MTransceiverTcpIp()
 
   if (m_IsConnected == true) {
     Disconnect();
+  } else if (m_TransceiverThread.joinable()) {
+    StopTransceiving();
   }
-  // Disconnect already calls StopTransceiving
-  //if (m_TransceiverThread.joinable()) {
-  //  StopTransceiving();
-  //}
 }
 
 
@@ -438,6 +435,10 @@ void MTransceiverTcpIp::TransceiverLoop()
             // We are connected, thus we can delete:
             ServerSocket.reset(); // delete in unique_ptr speak
           } else {
+            if (RawSocket != nullptr && (long)RawSocket > 0) {
+              RawSocket->Close("force");
+              delete RawSocket;
+            }
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as server, trying again later..."<<endl;
             this_thread::sleep_for(chrono::milliseconds(SleepAmount));
             continue;
