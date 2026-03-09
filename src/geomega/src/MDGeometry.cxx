@@ -4564,7 +4564,7 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
 
   m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
   //m_Geometry->CloseGeometry(); // we do not close the geometry,
-  m_Geometry->SetVisLevel(1);
+  //m_Geometry->SetVisLevel(1);
   m_Geometry->SetNsegments(20);
   m_Geometry->SetVisDensity(0.1);
 
