@@ -164,7 +164,7 @@ void MGUIERAlgorithm::Create()
   } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoKalman3D) {
     m_TrackingList->SetSelected(9);
   } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoFirstLayer) {
-    merr << "First two layers tracking is not implemented yet! No tracking algorithm selected." << endl;
+    merr << "Tracking method implementation in progress." << endl;
     m_TrackingList->SetSelected(0);
   } else {
     m_TrackingList->SetSelected(0);
