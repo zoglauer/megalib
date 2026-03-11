@@ -163,9 +163,9 @@ void MGUIERAlgorithm::Create()
     m_TrackingList->SetSelected(8);
   } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoKalman3D) {
     m_TrackingList->SetSelected(9);
-  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoFirstLayer) {
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoFirstTwoLayers) {
     merr << "Tracking method implementation in progress." << endl;
-    m_TrackingList->SetSelected(0);
+    m_TrackingList->SetSelected(10);
   } else {
     m_TrackingList->SetSelected(0);
   }
@@ -264,7 +264,7 @@ bool MGUIERAlgorithm::OnApply()
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoKalman3D);
   } else if (m_TrackingList->GetSelected() == 10) {
     merr << "Be patient! Under development." << endl;
-    m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
+    m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoFirstTwoLayers);
     //m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoFirstLayer);
   }
   // Pair
