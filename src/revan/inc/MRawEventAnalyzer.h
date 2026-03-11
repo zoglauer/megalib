@@ -186,6 +186,7 @@ class MRawEventAnalyzer
     c_TrackingAlgoPearson,
     c_TrackingAlgoKalman2D,
     c_TrackingAlgoKalman3D,
+    c_TrackingAlgoFirstTwoLayers,
     c_TrackingAlgoFirstLayer
   };
 
