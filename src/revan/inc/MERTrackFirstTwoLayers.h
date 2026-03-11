@@ -20,7 +20,7 @@ class MERTrackFirstTwoLayers : public MERTrack
 
  #ifdef ___CINT___
  public:
-  ClassDef(MERTrackKalman2D, 0) // no description
+  ClassDef(MERTrackFirstTwoLayers, 0) // no description
 #endif
 
 };
