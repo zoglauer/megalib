@@ -32,8 +32,8 @@ FILES := MGeometryRevan \
 	MEREventClusterizerTMVA \
 	MEREventClusterizerDataSet \
 	MERHitClusterizer \
-  MEREventType \
-  MEREventTypeExternal \
+    MEREventType \
+    MEREventTypeExternal \
 	MERTrack \
 	MERTrackPearson \
 	MERTrackRank \
@@ -43,6 +43,7 @@ FILES := MGeometryRevan \
 	MERTrackChiSquare \
 	MERTrackKalman3D \
 	MERTrackKalman2D \
+	MERTrackFirstTwoLayers \
 	MERCSR \
 	MERCSRChiSquare \
 	MERCSREnergyRecovery \
@@ -81,7 +82,7 @@ FILES_UI := \
 	MGUIOptionsCoincidence \
 	MGUIOptionsHitClustering \
 	MGUIOptionsEventClustering \
-  MGUIOptionsEventType \
+    MGUIOptionsEventType \
 	MGUIOptionsTracking \
 	MGUIOptionsCSR \
 	MGUIOptionsDecay \
