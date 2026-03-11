@@ -67,6 +67,7 @@ using namespace std;
 #include "MERTrackKalman3D.h"
 #include "MERTrackKalman2D.h"
 #include "MERCSRChiSquare.h"
+#include "MERTrackFirstTwoLayers.h" 
 #include "MERCSRToF.h"
 #include "MERCSREnergyRecovery.h"
 #include "MERCSRToFWithEnergyRecovery.h"
@@ -1406,6 +1407,8 @@ bool MRawEventAnalyzer::PreAnalysis()
     } else if (m_TrackingAlgorithm == c_TrackingAlgoKalman2D) {
       m_Tracker = new MERTrackKalman2D();
       dynamic_cast<MERTrackKalman2D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoFirstTwoLayers) {
+      m_Tracker = new MERTrackFirstTwoLayers(); // this is the new method for pair reconstruction
     } else if (m_TrackingAlgorithm == c_TrackingAlgoNone) {
       // Nothing
     } else {
