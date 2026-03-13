@@ -402,7 +402,7 @@ bool MResponsePolarizationBinnedMode::Initialize()
   MResponseMatrixAxis AxisDistance("Distance [cm]");
   AxisDistance.SetLinear(m_DistanceNBins, m_DistanceMinimum, m_DistanceMaximum);
   
-  MResponseMatrixAxis AxisPolarizationAngle("Polarization Angle [deg]");
+  MResponseMatrixAxis AxisPolarizationAngle("Polarization Angle [deg] "+m_PolarizationMode);
   AxisPolarizationAngle.SetLinear(m_PolarizationAngleNBins, 0, 180);
   
   
