@@ -42,6 +42,7 @@
 #include "MGUIResponseParameterPRM.h"
 #include "MGUIARM.h"
 #include "MGUIARMExtended.h"
+#include "MGUILineFitter.h"
 #include "MGUISignificance.h"
 #include "MGUIExposure.h"
 #include "MGUIAnimation.h"
@@ -557,7 +558,7 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_ResponseLineFitter:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_Spectrum, OKPressed);
+        new MGUILineFitter(gClient->GetRoot(), this, m_Data, OKPressed);
         if (OKPressed == true) {
           m_Interface->LineFitter();
         }

@@ -3872,7 +3872,7 @@ void MInterfaceMimrec::LineFitter()
 
   MLineFitter Fitter;
   Fitter.SetNumberOfBins(100);
-  Fitter.SetEnergyRange(490, 530);
+  Fitter.SetEnergyRange(509, 530);
 
 
   bool FoundEvents = false;
@@ -3894,6 +3894,7 @@ void MInterfaceMimrec::LineFitter()
 
   if (FoundEvents == false) {
     mgui<<"No events passed the event selections."<<error;
+    return;
   }
 
   Fitter.Fit(1);

@@ -77,7 +77,7 @@ MLineFitter::MLineFitter()
   m_NumberOfBins = 100;
   m_MaximumEnergyValue = 10000;
   m_MinimumEnergyValue = 0;
-  m_LineFitFunction = MLineFitFunctionID::c_AsymmetricGaussLorentzLorentz;
+  m_LineFitFunction = MLineFitFunctionID::c_Gauss;
 
   m_OptimizeBinning = false;
   m_IsBinningOptimized = false;
@@ -1076,11 +1076,16 @@ bool MLineFitter::Fit(unsigned int NumberOfFits)
   unsigned int NEvents = 0;
   TH1D* Hist = new TH1D("", "", m_NumberOfBins, m_MinimumEnergyValue, m_MaximumEnergyValue);
   for (double V: m_OriginalEnergyValues) {
-    if (V >= -15 && V <= 15) {
+    if (V >= m_MinimumEnergyValue && V <= m_MaximumEnergyValue) {
       Hist->Fill(V);
       NEvents++;
     }
   }
+  if (NEvents == 0) {
+    merr<<"No events for the fit!"<<endl;
+    return false;
+  }
+
   m_MinHeight = 0;
   if (m_UnbinnedFitting == false) {
     m_MaxHeight = 1.25 * Hist->GetMaximum();
@@ -1089,13 +1094,23 @@ bool MLineFitter::Fit(unsigned int NumberOfFits)
   }
   m_GuessHeight = 0.5*m_MaxHeight;
 
+  //cout<<"Height: min:"<<m_MinHeight<<" max:"<<m_MaxHeight<<" guess: "<<m_GuessHeight<<endl;
+
+
+  double RMS = Hist->GetRMS();
+
   m_MinWidth = 0.25*Hist->GetRMS();
   m_MaxWidth = m_MaximumEnergyValue;
   m_GuessWidth = Hist->GetRMS();
 
+  //cout<<"Width: min: "<<m_MinWidth<<" max: "<<m_MaxWidth<<" guess: "<<m_GuessWidth<<endl;
+
+
   double MaxX = Hist->GetBinCenter(Hist->GetMaximumBin());
-  m_GuessMaximumLow = MaxX - 0.5*Hist->GetRMS();
-  m_GuessMaximumHigh = MaxX + 0.5*Hist->GetRMS();
+  m_GuessMaximumLow = MaxX - 0.5*RMS;
+  m_GuessMaximumHigh = MaxX + 0.5*RMS;
+
+  //cout<<"Width: "<<m_GuessMaximumLow<<":"<<m_GuessMaximumHigh<<endl;
 
 
   // Right size the result storage
@@ -1292,9 +1307,9 @@ void MLineFitter::Draw()
     MString Text("FWHM of fit function: ");
     if (m_BootStrappedFWHMSamples.size() == 1) {
       Text += MString(m_FinalFWHM, 3u);
-      Text += "#circ";
+      Text += " keV";
     } else {
-      Text += MString(m_FinalFWHM, m_FinalFWHMUncertainty, "#circ", true);
+      Text += MString(m_FinalFWHM, m_FinalFWHMUncertainty, " keV", true);
     }
 
     TLatex* Latex = new TLatex();

@@ -66,6 +66,7 @@ FILES_UI := \
 	MGUIHistogramData \
 	MGUIARM \
 	MGUIARMExtended \
+	MGUILineFitter \
 	MGUIAnimation \
 	MGUICoordinateSystem \
 	MGUIEventSelection \
