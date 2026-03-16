@@ -115,8 +115,12 @@ class MInterfaceMimrec : public MInterface
   //! The resolution measure for PET events
   void ResolutionMeasurePET();
 
+  //! Create an energy spectrum
   void EnergySpectra();
   
+  //! Fit a spectral line
+  void LineFitter();
+
   //! The spectral analyzer
   void SpectralAnalyzer();
   

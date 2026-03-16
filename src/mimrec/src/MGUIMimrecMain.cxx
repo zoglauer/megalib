@@ -156,6 +156,7 @@ void MGUIMimrecMain::Create()
   MenuGeneral->AddLabel("General options");
   MenuGeneral->AddSeparator();
   MenuGeneral->AddEntry("Energy spectra", c_ResponseSpectrum);
+  MenuGeneral->AddEntry("Line fitter", c_ResponseLineFitter);
   MenuGeneral->AddEntry("Light curve (time distribution)", c_ResponseTime);
   MenuGeneral->AddEntry("Location of initial interaction", c_ResponseLocationOfInitialInteraction);  
   MenuGeneral->AddEntry("Pointing in galactic coordinates", c_ResponsePointingInGalacticCoordinates);  
@@ -229,6 +230,7 @@ void MGUIMimrecMain::Create()
   MenuResponse->AddLabel("General for all event types");
   MenuResponse->AddSeparator();
   MenuResponse->AddEntry("Energy spectra", c_ResponseSpectrum);
+  MenuResponse->AddEntry("Line fitter", c_ResponseLineFitter);
   MenuResponse->AddEntry("Light curve (time distribution)", c_ResponseTime);
   MenuResponse->AddPopup("All general options", MenuGeneral);
   MenuResponse->AddSeparator();
@@ -551,6 +553,13 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_Spectrum, OKPressed);
         if (OKPressed == true) {
           m_Interface->EnergySpectra();
+        }
+        break;
+
+      case c_ResponseLineFitter:
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_Spectrum, OKPressed);
+        if (OKPressed == true) {
+          m_Interface->LineFitter();
         }
         break;
 

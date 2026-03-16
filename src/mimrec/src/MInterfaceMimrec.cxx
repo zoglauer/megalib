@@ -75,6 +75,7 @@ using namespace std;
 #include "MResponseEnergyLeakage.h"
 #include "MBinnerBayesianBlocks.h"
 #include "MARMFitter.h"
+#include "MLineFitter.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3862,14 +3863,59 @@ void MInterfaceMimrec::ARMElectron()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MInterfaceMimrec::EnergySpectra()
+void MInterfaceMimrec::LineFitter()
 {
-  // Display the energy-spectrum of all acceptable events 
+  // Perform a single line fit
 
   // Start with the event file loader first (just in case something goes wrong here)
   if (InitializeEventLoader() == false) return;
 
-  
+  MLineFitter Fitter;
+  Fitter.SetNumberOfBins(100);
+  Fitter.SetEnergyRange(490, 530);
+
+
+  bool FoundEvents = false;
+  MPhysicalEvent* Event = nullptr;
+  // ... loop over all events and save a count in the belonging bin ...
+  while ((Event = GetNextEvent()) != nullptr) {
+
+    // Only accept Comptons within the selected ranges...
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
+      Fitter.AddEnergyValue(Event->GetEnergy());
+      FoundEvents = true;
+    }
+
+    delete Event;
+  }
+
+  // Close the event loader
+  FinalizeEventLoader();
+
+  if (FoundEvents == false) {
+    mgui<<"No events passed the event selections."<<error;
+  }
+
+  Fitter.Fit(1);
+
+  if (Fitter.WasFittingSuccessful() == true) {
+    // Draw the histogram
+    TCanvas* FitterCanvas = new TCanvas();
+    FitterCanvas->SetTitle("Line fitter");
+    FitterCanvas->cd();
+    Fitter.Draw();
+    FitterCanvas->Modified();
+    FitterCanvas->Update();
+    if (m_OutputFileName.IsEmpty() == false) {
+      FitterCanvas->SaveAs(m_OutputFileName);
+    }
+
+    // Dump the results
+    mout<<Fitter.ToString()<<endl;
+  }
+
+
+  /*
   bool xLog = m_Settings->GetLogBinningSpectrum();
   double xMin = GetTotalEnergyMin();
   double xMax = GetTotalEnergyMax();
@@ -3966,51 +4012,7 @@ void MInterfaceMimrec::EnergySpectra()
   // Close the event loader
   FinalizeEventLoader();
   
-//   // %%%%%%%%%%%%%%%%%%%%%%%% Write Spectra as ASCII %%%%%%%%%%
 
-//   // Get the base file name of the tra file:
-//   MString AsciiSpectrumNameFull(m_Settings->GetCurrentFileName());
-//   MString AsciiSpectrumName(gSystem->BaseName(AsciiSpectrumNameFull.Data()));
-
-
-//   AsciiSpectrumName.Remove(AsciiSpectrumName.Length()-4, 4);
-//   AsciiSpectrumName.Append(".ASCIIspectrum.dat");
-  
-//   std::ofstream ASCIIout(AsciiSpectrumName, ios::out);
-  
-//   for (int b = 1; b <= (Hist->GetNbinsX() + 1); ++b)
-//     {
-//       ASCIIout << (Hist->GetBinLowEdge(b)) << " \t" ;
-//       if (b <= Hist->GetNbinsX()) 
-//  {
-//    ASCIIout << (Hist->GetBinContent(b)) << endl;
-//  } 
-//       else 
-//  {
-//    ASCIIout << "0.0 \n";
-//  }
-      
-//     }
-  
-//   ASCIIout.close();
-  
-//   cout << "Wrote ASCII spectrum to " <<  AsciiSpectrumName << endl;
-
-//   // %%%%%%%%% End Write spectra as ASCII %%%%%%%%%%%%%%%%%%%%%
-
-
-//   // Normalize to counts/keV
-//   for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
-//     Hist->SetBinContent(b, Hist->GetBinContent(b)/Hist->GetBinWidth(b));
-//   }
-  
-  /*
-  TCanvas* Canvas2 = new TCanvas();
-  Canvas2->cd();
-  TH1D* HistBayes = Bayes.GetNormalizedHistogram("count rate", "Energy", "[keV]");
-  HistBayes->Draw();
-  Canvas2->Update();
-  */
   
   // Normalize
   for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
@@ -4027,20 +4029,6 @@ void MInterfaceMimrec::EnergySpectra()
   Canvas->Update();
 
  
-  //TF1 *L = new TF1("TrippleGauss", TrippleGauss, 0.01*xMin, 0.99*xMax, 10);
-//   TF1 *L = new TF1("TrippleGauss", TrippleGauss, 300, 900, 10);
-
-//   L->SetParameters(1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-
-//   L->SetParNames("Offset", "Sigma1", "Mean1", "Height1", 
-//                  "Sigma2", "Mean2", "Height2",
-//                  "Sigma3", "Mean3", "Height3");
-//   Hist->Fit("TrippleGauss", "Rw");
-  
-  //Hist->SetStats(false);
-  //Canvas->cd();
-  //Hist->SetMinimum(0);
-  //Hist->Draw();
   Canvas->Update(); 
   if (m_OutputFileName.IsEmpty() == false) {
     Canvas->SaveAs(m_OutputFileName);
@@ -4057,16 +4045,7 @@ void MInterfaceMimrec::EnergySpectra()
   if (InsideWindow+OutsideWindow == 0) {
     mout<<"No events passed event selections. Use \"Show event selections\" in the mimrec UI to diagnose"<<show;
   }
-
-//   if (m_Settings->GetStoreImages() == true) {
-//     // Get the base file name of the tra file:
-//     MString Name = m_Settings->GetCurrentFileName();
-//     Name.Remove(Name.Length()-4, 4);
-
-//     Canvas->SaveAs(Name + ".Spectrum.gif");
-//     Canvas->SaveAs(Name + ".Spectrum.eps");
-//     Canvas->SaveAs(Name + ".Spectrum.root");
-//   }
+  */
 
   return;
 }

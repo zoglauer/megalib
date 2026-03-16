@@ -55,6 +55,7 @@ FILES := MSettingsMimrec \
 	MEarthHorizon \
 	MStandardAnalysis \
 	MARMFitter \
+	MLineFitter \
 	MVariableSourceDetector \
 
 LIBRARY_UI := MimrecGui
