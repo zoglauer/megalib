@@ -12,6 +12,8 @@ class MERTrackFirstTwoLayers : public MERTrack
   MERTrackFirstTwoLayers();
   virtual ~MERTrackFirstTwoLayers();
 
+  virtual void TrackPairs(MRERawEvent* RE);
+
   // protected methods:
  protected:
 
@@ -21,8 +23,11 @@ class MERTrackFirstTwoLayers : public MERTrack
  #ifdef ___CINT___
  public:
   ClassDef(MERTrackFirstTwoLayers, 0) // no description
-#endif
+ #endif
 
 };
 
+
 #endif
+
+// def funcs for mertrack to interact w rest of megalib
