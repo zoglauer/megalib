@@ -30,6 +30,7 @@
 #include <limits>
 #include <iostream>
 #include <algorithm>
+#include <type_traits>
 using namespace std;
 
 // ROOT libs:
@@ -96,7 +97,7 @@ void MResponseMatrix::Clear()
   m_NumberOfSimulatedEvents = 0;
   m_FarFieldStartArea = 0;
   m_SpectralType = "";
-  m_SpectralParameters.clear();
+  m_BeamType = "";
   m_Hash = 0;
   m_PolarizationMode = "";
 }
@@ -124,10 +125,10 @@ void MResponseMatrix::WriteHeader(ostringstream& out)
   out<<"SA "<<m_FarFieldStartArea<<endl;
   out<<endl;
   out<<"# The spectral parameters (empty if not set)"<<endl;
-  out<<"SM "<<m_SpectralType;
-  for (unsigned int p = 0; p < m_SpectralParameters.size(); ++p) {
-    out<<" "<<m_SpectralParameters[p];
-  }
+  out<<"SP "<<m_SpectralType<<endl;
+  out<<endl;
+  out<<"# The beam parameters (empty if not set)"<<endl;
+  out<<"BE "<<m_BeamType<<endl;
   out<<endl;
   out<<"# The polarization mode (empty if not set)"<<endl;
   out<<"PO "<<m_PolarizationMode<<endl;
@@ -138,7 +139,7 @@ void MResponseMatrix::WriteHeader(ostringstream& out)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMatrix::Read(MString FileName)
+bool MResponseMatrix::Read(MString FileName, const bool MultiThreaded)
 {
   // Read the data from file directly into this matrix
 
@@ -159,9 +160,10 @@ bool MResponseMatrix::Read(MString FileName)
   SetHash(Parser.GetHash());
   SetSimulatedEvents(Parser.GetSimulatedEvents());
   SetFarFieldStartArea(Parser.GetFarFieldStartArea());
-  SetSpectrum(Parser.GetSpectralType(), Parser.GetSpectralParameters());
+  SetSpectralType(Parser.GetSpectralType());
+  SetBeamType(Parser.GetBeamType());
 
-  Ok = ReadSpecific(Parser, Type, Version);
+  Ok = ReadSpecific(Parser, Type, Version, MultiThreaded);
 
   if (g_Verbosity == c_Chatty) {  
     mdebug<<"File \""<<FileName<<"\" with "<<GetNBins()
