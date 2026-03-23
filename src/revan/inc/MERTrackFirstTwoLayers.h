@@ -12,6 +12,7 @@ class MERTrackFirstTwoLayers : public MERTrack
   MERTrackFirstTwoLayers();
   virtual ~MERTrackFirstTwoLayers();
 
+  // don't fully understand this part
   virtual void TrackPairs(MRERawEvent* RE);
 
   // protected methods:

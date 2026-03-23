@@ -8,7 +8,6 @@
 #include <functional>
 using namespace std;
 
-
 // MEGAlib libs:
 #include "MRESE.h"
 #include "MRETrack.h"
@@ -22,7 +21,7 @@ MERTrackFirstTwoLayers::MERTrackFirstTwoLayers() : MERTrack()
 {
   // Construct an instance of MERTrackFirstTwoLayers
   // printing a statement to make sure it runs (it does!)
-  cout << "Running new tracker" << endl;
+  mout << "Running new tracker" << endl;
 }
 
 MERTrackFirstTwoLayers::~MERTrackFirstTwoLayers()
@@ -36,7 +35,7 @@ MERTrackFirstTwoLayers::~MERTrackFirstTwoLayers()
 // calls the TrackPairs method which is used in the MERTrack class -> MUST CHANGE FOR MY ACTUAL RECONSTRUCTION
 void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
 {
-  cout << "Event " << RE->GetEventID() << endl;
+  mout << "Event " << RE->GetEventID() << endl;
 
   MERTrack::TrackPairs(RE);
 }
