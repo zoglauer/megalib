@@ -60,7 +60,7 @@ class MResponseMatrix
   unsigned int GetOrder() const { return m_Order; }
 
   //! Read the data from file
-  virtual bool Read(MString FileName, const bool MultiThreaded = false);
+  virtual bool Read(MString FileName);
   //! Write all data to file
   virtual bool Write(MString FileName, bool Stream = false) = 0;
 
@@ -68,22 +68,24 @@ class MResponseMatrix
   void SetSimulatedEvents(long SimulatedEvents) { m_NumberOfSimulatedEvents = SimulatedEvents; }
   // Get he number of simulated events which generated this response
   long GetSimulatedEvents() const { return m_NumberOfSimulatedEvents; }
-  
+
+ // The polarization mode used for the response
+  void SetPolarizationMode(MString polarizationmode) { m_PolarizationMode = polarizationmode; }
+  // Get the polarization mode
+  MString GetPolarizationMode() const { return m_PolarizationMode; }
+
   //! Set the start area of far-field simulations
   void SetFarFieldStartArea(double Area) { m_FarFieldStartArea = Area; }
   //! Get the start are aof far-field simulations
   double GetFarFieldStartArea() const { return m_FarFieldStartArea; }
-
-  //! Set the spectral type
-  void SetSpectralType(MString SpectralType) { m_SpectralType = SpectralType; }
+  
+  //! Set the spectrum
+  void SetSpectrum(MString SpectralType, vector<double> SpectralParameters) { m_SpectralType = SpectralType, m_SpectralParameters = SpectralParameters; }
   //! Get the spectral type
   MString GetSpectralType() const { return m_SpectralType; }
-
-  //! Set the beam type
-  void SetBeamType(MString BeamType) { m_BeamType = BeamType; }
-  //! Get the beam type
-  MString GetBeamType() const { return m_BeamType; }
-
+  //! Get the spectral parameters
+  vector<double> GetSpectralParameters() const { return m_SpectralParameters; }
+  
   virtual unsigned long GetNBins() const = 0;
   virtual float GetMaximum() const = 0;
   virtual float GetMinimum() const = 0;
@@ -105,7 +107,7 @@ class MResponseMatrix
   void WriteHeader(ostringstream& out);
   
   //! Read the class specific info from the file
-  virtual bool ReadSpecific(MFileResponse&, const MString&, const int, const bool) { return true; }
+  virtual bool ReadSpecific(MFileResponse&, const MString&, const int) { return true; };
   
   // private methods:
  private:
@@ -127,8 +129,11 @@ class MResponseMatrix
   //! The spectral type (Linear, Mono, Powerlaw)
   MString m_SpectralType;
 
-  //! The beam type
-  MString m_BeamType;
+  //! The polarization mode (relativex, relativey, or relativez)
+  MString m_PolarizationMode;
+
+  //! The spectral parameters (depend on type)
+  vector<double> m_SpectralParameters;
 
   //! A hash value --- this value is not calculated but has to be set from outside or read in via file
   unsigned long m_Hash;
