@@ -1408,7 +1408,7 @@ bool MRawEventAnalyzer::PreAnalysis()
       m_Tracker = new MERTrackKalman2D();
       dynamic_cast<MERTrackKalman2D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
     } else if (m_TrackingAlgorithm == c_TrackingAlgoFirstTwoLayers) {
-      m_Tracker = new MERTrackFirstTwoLayers(); // this is the new method for pair reconstruction
+      m_Tracker = new MERTrackFirstTwoLayers(m_Geometry); // this is the new method for pair reconstruction
     } else if (m_TrackingAlgorithm == c_TrackingAlgoNone) {
       // Nothing
     } else {
