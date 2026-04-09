@@ -41,6 +41,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! MEGAlib's string class
 class MString
 {
   // public interface:
@@ -55,17 +56,27 @@ class MString
   MString(const string& S) { m_String = S; }
   //! Initilaize with ostringstream
   MString(const ostringstream& S) { m_String = S.str(); }
+  //! Initialize with C string
   MString(const char* S) { if (S!= nullptr) m_String = S; }
   //! Copy first n characters of S
   MString(const char* S, unsigned int N) { if (S != nullptr) m_String = string(S, N); /* slower: m_String.assign(S, N); */ }
+  //! Initialize with a single character
   MString(const char S) { m_String = S; }
+  //! Initialize with a short integer
   MString(const short i) { operator+=(i); }
+  //! Initialize with an unsigned short integer
   MString(const unsigned short i) { operator+=(i); }
+  //! Initialize with an integer
   MString(const int i) { operator+=(i); }
+  //! Initialize with an unsigned integer
   MString(const unsigned int i) { operator+=(i); }
+  //! Initialize with a long integer
   MString(const long i) { operator+=(i); }
+  //! Initialize with an unsigned long integer
   MString(const unsigned long i) { operator+=(i); }
+  //! Initialize with a float
   MString(const float i) { operator+=(i); }
+  //! Initialize with a double
   MString(const double i) { operator+=(i); }
   //! Constrcut with double of given precision
   MString(const double i, unsigned int Precision);
@@ -77,13 +88,18 @@ class MString
   virtual ~MString() {}
 
   // Move
+  //! Move assignment operator
   MString& operator=(MString&& String) { m_String = std::move(String.m_String); return *this; }
 
   // Assignment:
+  //! Copy assignment operator
   MString& operator=(const MString& S) { m_String = S.m_String; return *this; }
+  //! Assign from a single character
   MString& operator=(char S) { m_String = S; return *this; }
+  //! Assign from a C string
   MString& operator=(const char* S) { if (S != nullptr) m_String = S; return *this; }
   //MString& operator=(const TString& S) { m_String = S; return *this; }
+  //! Assign from a C++ string
   MString& operator=(const string& S) { m_String = S; return *this; }
 
   //MString& Format(const char* Format, ...);
@@ -91,16 +107,24 @@ class MString
   //char& operator[](size_t i) { return m_String[i]; }
   //char operator[](size_t i) const { return m_String[i]; }
 
+  //! Access a character by integer index
   char& operator[](int i) { return m_String[i]; }
+  //! Access a character by integer index
   char operator[](int i) const { return m_String[i]; }
 
+  //! Access a character by unsigned integer index
   char& operator[](unsigned int i) { return m_String[i]; }
+  //! Access a character by unsigned integer index
   char operator[](unsigned int i) const { return m_String[i]; }
 
+  //! Access a character by long integer index
   char& operator[](long i) { return m_String[i]; }
+  //! Access a character by long integer index
   char operator[](long i) const { return m_String[i]; }
 
+  //! Access a character by unsigned long integer index
   char& operator[](unsigned long i) { return m_String[i]; }
+  //! Access a character by unsigned long integer index
   char operator[](unsigned long i) const { return m_String[i]; }
 
 
@@ -142,16 +166,23 @@ class MString
   
   // Conversion:
 
+  //! Convert to a const C string
   operator const char*() const { return m_String.c_str(); }
   // operator string() const { return m_String; } // VC++ 10 has problem with this
+  //! Convert to ROOT TString
   operator TString() const { return TString(m_String); }
 
   //! To C++ string
   string ToString() const { return m_String; }
+  //! Convert to integer
   int ToInt() const { return atoi(m_String.c_str()); }
+  //! Convert to unsigned integer
   unsigned int ToUnsignedInt() const { return (unsigned int) stoul(m_String.c_str()); }
+  //! Convert to long integer
   long ToLong() const { return stol(m_String.c_str()); }
+  //! Convert to unsigned long integer
   unsigned long ToUnsignedLong() const { return stoul(m_String.c_str()); }
+  //! Convert to double
   double ToDouble() const { return atof(m_String.c_str()); }
 
 
@@ -169,28 +200,49 @@ class MString
   //! Remove all content and thus set the size to zero
   void Clear() { m_String.clear(); }
 
+  //! Append a C string in place
   void AppendInPlace(const char* S) { m_String += S; }
+  //! Append a C string
   MString& Append(const char* S) { m_String += S; return *this; }
+  //! Append another MString in place
   void AppendInPlace(MString& S) { m_String += S.m_String; }
+  //! Append another MString
   MString& Append(MString& S) { m_String += S.m_String; return *this; }
+  //! Prepend a C string in place
   void PrependInPlace(const char* S) { m_String.insert(0, S); }
+  //! Prepend a C string
   MString& Prepend(const char* S) { m_String.insert(0, S); return *this; }
+  //! Prepend another MString in place
   void PrependInPlace(MString& S) { m_String.insert(0, S.m_String); }
+  //! Prepend another MString
   MString& Prepend(MString& S) { m_String.insert(0, S.m_String); return *this; }
 
+  //! Append a character
   MString& operator+=(char S) { m_String += S; return *this; }
+  //! Append a C string
   MString& operator+=(const char* S) { m_String += S; return *this; }
+  //! Append another MString
   MString& operator+=(const MString& S) { m_String += S.m_String; return *this; }
+  //! Append a C++ string
   MString& operator+=(const string& S) { m_String += S; return *this; }
-  MString& operator+=(short N) { ostringstream out; out<<N; m_String += out.str(); return *this; }
-  MString& operator+=(unsigned short N) { ostringstream out; out<<N; m_String += out.str(); return *this; }
-  MString& operator+=(int N) { ostringstream out; out<<N; m_String += out.str(); return *this; }
-  MString& operator+=(unsigned int N) { ostringstream out; out<<N; m_String += out.str(); return *this; }
-  MString& operator+=(long N) { ostringstream out; out<<N; m_String += out.str(); return *this; }
-  MString& operator+=(unsigned long N) { ostringstream out; out<<N; m_String += out.str(); return *this; }
-  MString& operator+=(float N) { ostringstream out; out.precision(8); out<<N; m_String += out.str(); return *this; }
-  MString& operator+=(double N) { ostringstream out; out.precision(15); out<<N; m_String += out.str(); return *this; }
-  MString& operator+=(long double N) { ostringstream out; (sizeof(long double) == 128) ? out.precision(31) : out.precision(15); out<<N; m_String += out.str(); return *this; }
+  //! Append a short integer
+  MString& operator+=(short N) { ostringstream out; out << N; m_String += out.str(); return *this; }
+  //! Append an unsigned short integer
+  MString& operator+=(unsigned short N) { ostringstream out; out << N; m_String += out.str(); return *this; }
+  //! Append an integer
+  MString& operator+=(int N) { ostringstream out; out << N; m_String += out.str(); return *this; }
+  //! Append an unsigned integer
+  MString& operator+=(unsigned int N) { ostringstream out; out << N; m_String += out.str(); return *this; }
+  //! Append a long integer
+  MString& operator+=(long N) { ostringstream out; out << N; m_String += out.str(); return *this; }
+  //! Append an unsigned long integer
+  MString& operator+=(unsigned long N) { ostringstream out; out << N; m_String += out.str(); return *this; }
+  //! Append a float
+  MString& operator+=(float N) { ostringstream out; out.precision(8); out << N; m_String += out.str(); return *this; }
+  //! Append a double
+  MString& operator+=(double N) { ostringstream out; out.precision(15); out << N; m_String += out.str(); return *this; }
+  //! Append a long double
+  MString& operator+=(long double N) { ostringstream out; (sizeof(long double) == 128) ? out.precision(31) : out.precision(15); out << N; m_String += out.str(); return *this; }
 
 
   //! Remove all characters from Start to the End
@@ -228,16 +280,26 @@ class MString
   //! Remove all occurances of From and return the new string
   MString& RemoveAll(const MString& From);
 
+  //! Strip matching characters from the front in place
   void StripFrontInPlace(const char S = ' ') { while (Length() > 0 && m_String[0] == S) m_String.erase(0, 1); }
+  //! Strip matching characters from the front
   MString& StripFront(const char S = ' ') { StripFrontInPlace(S); return *this; }
+  //! Strip matching characters from the back in place
   void StripBackInPlace(const char S = ' ') { while (Length() > 0 && m_String[Length()-1] == S) m_String.erase(Length()-1, 1); }
+  //! Strip matching characters from the back
   MString& StripBack(const char S = ' ') { StripBackInPlace(S); return *this; }
+  //! Strip matching characters from front and back in place
   void StripInPlace(const char S = ' ') { StripFront(S); StripBack(S); }
+  //! Strip matching characters from front and back
   MString& Strip(const char S = ' ') { StripInPlace(S); return *this; }
 
+  //! Convert all letters to lower case in place
   void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::tolower(static_cast<unsigned char>(m_String[p])); }
+  //! Convert all letters to lower case
   MString& ToLower() { ToLowerInPlace(); return *this; }
+  //! Convert all letters to upper case in place
   void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::toupper(static_cast<unsigned char>(m_String[p])); }
+  //! Convert all letters to upper case
   MString& ToUpper() { ToUpperInPlace(); return *this; }
 
 
@@ -270,7 +332,7 @@ class MString
   //! General type test (use for int, long, etc.)
   template <typename T> bool Is() const;
 
-  //! For compatibility with ???
+  //! For compatibility with std::string
   static const size_t npos;
 
   // protected methods:
