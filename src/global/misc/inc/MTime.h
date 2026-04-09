@@ -28,24 +28,25 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//! A time class with nanosecond precision relative to the Unix epoch
 class MTime
 {
   // public interface:
  public:
   //! Default constructor, set the time to NOW
   MTime();
-  //! Extracts the time from a string -- deprecated! -- don't use since there vis no error catching done! 
-  explicit MTime(MString SQLString, int Format);
+  //! Extract the time from a formatted string
+  //! Deprecated: this parser has limited error handling
+  explicit MTime(MString String, int Format);
   //! Set the time as two long integers -- the time is counted since Epoch
   MTime(long int LinuxTime, long int NanoSeconds = 0);
-  //! Set the time as two intergers -- the time is counted since Epoch
+  //! Set the time as two integers -- the time is counted since Epoch
   MTime(int LinuxTime, int NanoSeconds = 0);
   //! Set the time as two unsigned integers -- the time is counted since Epoch
   MTime(unsigned int LinuxTime, unsigned int NanoSeconds = 0);
   //! Set the time elements (years, days, etc) individually
-  MTime(unsigned int m_Year, unsigned int m_Month, unsigned int m_Day, unsigned int m_Hour = 0, 
-        unsigned int m_Minute = 0, unsigned int m_Second = 0, unsigned int m_NanoSecond = 0);
+  MTime(unsigned int Year, unsigned int Month, unsigned int Day, unsigned int Hour = 0,
+        unsigned int Minute = 0, unsigned int Second = 0, unsigned int NanoSecond = 0);
   //! Set the time as a double -- the time is counted since Epoch
   MTime(double Time);
   //! Copy constructor
@@ -57,14 +58,22 @@ class MTime
 
   // TODO: Some of these function return false by default! Before next alpha release switch it!
   
+  //! Set the time to the current system time
   bool Now();
-  bool Set(unsigned int m_Year, unsigned int m_Month, unsigned int m_Day, unsigned int m_Hour = 0, 
-             unsigned int m_Minute = 0, unsigned int m_Second = 0, unsigned int m_NanoSecond = 0);
+  //! Set the time from calendar fields
+  bool Set(unsigned int Year, unsigned int Month, unsigned int Day, unsigned int Hour = 0,
+           unsigned int Minute = 0, unsigned int Second = 0, unsigned int NanoSecond = 0);
+  //! Set the time from seconds and nanoseconds since the epoch
   bool Set(const long int LinuxTime, const long int NanoSeconds = 0);
+  //! Set the time from seconds and nanoseconds since the epoch
   bool Set(const int LinuxTime, const int NanoSeconds = 0);
+  //! Set the time from seconds and nanoseconds since the epoch
   bool Set(const unsigned int LinuxTime, const unsigned int NanoSeconds = 0);
+  //! Set the time from separate seconds and nanoseconds given as doubles
   bool Set(const double Seconds, const double NanoSeconds);
+  //! Set the time from seconds since the epoch
   bool Set(double Time);
+  //! Set the time from another MTime instance
   bool Set(const MTime& Time);
   //! Set a string in MEGAlib TI format: TI 123456789.123456789
   //! Starts the conversion at character I
@@ -95,55 +104,64 @@ class MTime
   //! Get the years in the time
   unsigned int GetYears();
 
-
-  // The operators
-  
+  //! Assignment operator
   MTime& operator=(const MTime& Time);
-  MTime& operator*=(const double& Const);
+  //! Scale the time by a constant in place
+  MTime& operator*=(const double& Constant);
+  //! Add another time in place
   MTime& operator+=(const MTime& Time);
+  //! Subtract another time in place
   MTime& operator-=(const MTime& Time);
+  //! Return the sum of two times
   MTime operator+(const MTime& Time);
+  //! Return the difference of two times
   MTime operator-(const MTime& Time);
-  MTime operator*(const double& v);
-  MTime operator/(const double& v);
+  //! Return the time scaled by a constant
+  MTime operator*(const double& Value);
+  //! Return the time divided by a constant
+  MTime operator/(const double& Value);
+  //! Return true if two times differ
   bool operator!=(const MTime& Time) const;
+  //! Return true if two times are identical
   bool operator==(const MTime& Time) const;
+  //! Return true if this time is later than or equal to Time
   bool operator>=(const MTime& Time) const;
+  //! Return true if this time is earlier than or equal to Time
   bool operator<=(const MTime& Time) const;
+  //! Return true if this time is later than Time
   bool operator>(const MTime& Time) const;
+  //! Return true if this time is earlier than Time
   bool operator<(const MTime& Time) const;
 
   
-  // Conversions
-
-  // Convert into a double 
+  //! Convert the time into seconds since the epoch as a double
   double GetAsDouble() const;
   //! Return the days since the epoch 1970-01-01
   unsigned int GetDaysSinceEpoch();
   //! Get the seconds since epoch in double format (should be renamed: GetSecondsSinceEpoch())
   double GetAsSeconds() const;
-  //! Get as years in the form 2008.45345 
+  //! Get the time as a fractional year, e.g. 2008.45345
   double GetAsYears();
   //! Return the seconds since epoch
   long int GetAsSystemSeconds();
   //! Convert into Julian days
   double GetAsJulianDay();
 
-  // Return in Format: 76751347.238477
+  //! Return as a human-readable "Seconds since epoch" string
   MString GetString();
-  // Return in Format: 15.05.2002 13:15:23:123456789
+  //! Return in format: 15.05.2002 13:15:23:123456789
   MString GetUTCString();
-  // Return in Format: 1997-01-15 20:16:28
+  //! Return in format: 1997-01-15 20:16:28
   MString GetSQLString();
-  // Return in Format: 1997-01-15_20:16:28
+  //! Return in format: 1997-01-15_20:16:28
   MString GetSQLUString();
-  // Return in Format: 19970115_201628
+  //! Return in format: 19970115_201628
   MString GetShortString();
-  // Return in Format: 1164864276.623883519
+  //! Return in format: 1164864276.623883519
   MString GetLongIntsString() const;
-  // Return as fits date string: 31/12/94
+  //! Return as FITS date string: 31/12/94
   MString GetFitsDateString();
-  // Return as fits time string: 15:45:57
+  //! Return as FITS time string: 15:45:57
   MString GetFitsTimeString();
   
   
@@ -155,9 +173,8 @@ class MTime
 
   enum Format { FormatLowerLimit = 0, Short, UTC, SQL, SQLU, LongInts, MEGAlib, FormatUpperLimit };
 
-
-  // protected methods:
- protected:
+protected:
+  //! Normalize the seconds and nanoseconds representation
   void Normalize();
 
   // private methods:
@@ -170,9 +187,11 @@ class MTime
 
 
   // private members:
- private:
+private:
+  //! Seconds since the Unix epoch
   long int m_Seconds;
-  long int m_NanoSeconds; 
+  //! Nanoseconds relative to m_Seconds
+  long int m_NanoSeconds;
 
 
 #ifdef ___CLING___
@@ -182,6 +201,7 @@ class MTime
 
 };
 
+//! Stream a time to an output stream
 std::ostream& operator<<(std::ostream& os, const MTime& Time);
 
 
