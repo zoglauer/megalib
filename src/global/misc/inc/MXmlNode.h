@@ -33,39 +33,40 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! An XML node used by the lightweight MEGAlib XML writer/reader
 class MXmlNode : public MXmlData
 {
   // public interface:
  public:
   //! Default constructor
   MXmlNode();
-  //! Constructor -- no values
+  //! Constructor without a value
   MXmlNode(MXmlNode* MotherNode, const MString& Name);
-  //! Constructor -- content is string
+  //! Constructor with a string value
   MXmlNode(MXmlNode* MotherNode, const MString& Name, const MString& Value);
-  //! Constructor -- content is integer
+  //! Constructor with an integer value
   MXmlNode(MXmlNode* MotherNode, const MString& Name, int Value);
-  //! Constructor -- content is long
+  //! Constructor with a long value
   MXmlNode(MXmlNode* MotherNode, const MString& Name, long Value);
-  //! Constructor -- content is unsigned integer
+  //! Constructor with an unsigned integer value
   MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned int Value);
-  //! Constructor -- content is long
+  //! Constructor with an unsigned long value
   MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned long Value);
-  //! Constructor -- content is double
+  //! Constructor with a double value
   MXmlNode(MXmlNode* MotherNode, const MString& Name, double Value);
-  //! Constructor -- content is a vector
+  //! Constructor with a vector value
   MXmlNode(MXmlNode* MotherNode, const MString& Name, MVector Value);
-  //! Constructor -- content is a time
+  //! Constructor with a time value
   MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& Value);
-  //! Constructor -- content is a boolean
+  //! Constructor with a boolean value
   MXmlNode(MXmlNode* MotherNode, const MString& Name, bool Value);
-  //! Constructor -- content is an integer min/max-value
+  //! Constructor with integer min/max values
   MXmlNode(MXmlNode* MotherNode, const MString& Name, int ValueMin, int ValueMax);
-  //! Constructor -- content is a long min/max-value
+  //! Constructor with long min/max values
   MXmlNode(MXmlNode* MotherNode, const MString& Name, long ValueMin, long ValueMax);
-  //! Constructor content is a double min/max-value
+  //! Constructor with double min/max values
   MXmlNode(MXmlNode* MotherNode, const MString& Name, double ValueMin, double ValueMax);
-  //! Constructor content is a time min/max-value
+  //! Constructor with time min/max values
   MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& ValueMin, const MTime& ValueMax);
   //! Default destructor
   virtual ~MXmlNode();
@@ -109,11 +110,11 @@ class MXmlNode : public MXmlData
   MXmlAttribute* GetAttribute(unsigned int i);
   //! Return a given attribute
   MXmlAttribute* GetAttribute(const MString& Name);
-  //! Add a attribute
+  //! Add an attribute
   void AddAttribute(MXmlAttribute* Attribute);
 
 
-  //! Returns the XML text
+  //! Return the XML text
   virtual MString ToString(unsigned int Indent = 0);
 
 
@@ -132,9 +133,9 @@ class MXmlNode : public MXmlData
   // protected members:
  protected:
   //! All sub nodes
-  vector<MXmlNode*> m_Nodes; 
+  vector<MXmlNode*> m_Nodes;
   //! All attributes
-  vector<MXmlAttribute*> m_Attributes; 
+  vector<MXmlAttribute*> m_Attributes;
 
 
   // private members:

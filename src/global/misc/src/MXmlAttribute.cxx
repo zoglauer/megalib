@@ -55,9 +55,9 @@ MXmlAttribute::MXmlAttribute() : MXmlData()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name) : MXmlData(Name)
+MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, const MString& Name) : MXmlData(Name)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddAttribute(this);
@@ -68,9 +68,9 @@ MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name) : MXmlData(Name
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name, MString Value) : MXmlData(Name, Value)
+MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, const MString& Name, const MString& Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddAttribute(this);
@@ -81,9 +81,9 @@ MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name, MString Value) 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name, int Value) : MXmlData(Name, Value)
+MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, const MString& Name, int Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddAttribute(this);
@@ -94,9 +94,9 @@ MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name, int Value) : MX
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name, unsigned int Value) : MXmlData(Name, Value)
+MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, const MString& Name, unsigned int Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddAttribute(this);
@@ -107,9 +107,9 @@ MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name, unsigned int Va
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name, double Value) : MXmlData(Name, Value)
+MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, const MString& Name, double Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddAttribute(this);
@@ -120,9 +120,9 @@ MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name, double Value) :
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, MString Name, bool Value) : MXmlData(Name, Value)
+MXmlAttribute::MXmlAttribute(MXmlNode* MotherNode, const MString& Name, bool Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddAttribute(this);
@@ -144,7 +144,7 @@ MXmlAttribute::~MXmlAttribute()
 
 MString MXmlAttribute::ToString()
 {
-  //! Returns the XML text
+  // Return the XML text
 
   MString Xml;
   Xml += m_Name;

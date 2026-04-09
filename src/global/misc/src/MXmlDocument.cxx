@@ -54,7 +54,7 @@ MXmlDocument::MXmlDocument()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlDocument::MXmlDocument(MString Name)
+MXmlDocument::MXmlDocument(const MString& Name)
 {
   // Construct an instance of MXmlDocument
 
@@ -76,7 +76,7 @@ MXmlDocument::~MXmlDocument()
 
 bool MXmlDocument::Load(MString FileName)
 {
-  //! Load an xml document
+  // Load an XML document
 
   Clear();
 
@@ -84,7 +84,7 @@ bool MXmlDocument::Load(MString FileName)
 
   ifstream in(FileName); 
   if (in.is_open() == false) { 
-    cout<<"Xml parser: Error opening file: "<<FileName<<endl; 
+    mout<<"Xml parser: Error opening file: "<<FileName<<endl;
     return false; 
   } 
  
@@ -99,7 +99,7 @@ bool MXmlDocument::Load(MString FileName)
   size_t End;
   while ((Begin = AllContent.Index("<!--", 0)) != MString::npos) {
     if (AllContent.Index(">", Begin) < AllContent.Index("-->", Begin)) {
-      cout<<"Xml parser: Error with comments!"<<endl; 
+      mout<<"Xml parser: Error with comments!"<<endl;
       return false; 
     }
     End = AllContent.Index("-->", Begin);
@@ -107,7 +107,7 @@ bool MXmlDocument::Load(MString FileName)
   }
   while ((Begin = AllContent.Index("<?", 0)) != MString::npos) {
     if (AllContent.Index(">", Begin) < AllContent.Index("?>", Begin)) {
-      cout<<"Xml parser: Error with <? ... ?>!"<<endl; 
+      mout<<"Xml parser: Error with <? ... ?>!"<<endl;
       return false; 
     }
     End = AllContent.Index("?>", Begin);
@@ -169,7 +169,7 @@ bool MXmlDocument::Load(MString FileName)
 
 bool MXmlDocument::Save(MString FileName)
 {
-  //! Save an Xml ldocument
+  // Save an XML document
 
   ofstream out;
   out.open(FileName);

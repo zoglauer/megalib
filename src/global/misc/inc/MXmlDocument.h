@@ -32,20 +32,21 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! A lightweight XML document wrapper for MEGAlib-written XML files
 class MXmlDocument : public MXmlNode
 {
   // public interface:
  public:
   //! Default constructor
   MXmlDocument();
-  //! Default constructor
-  MXmlDocument(MString Name);
+  //! Constructor with the document root name
+  MXmlDocument(const MString& Name);
   //! Default destructor
   virtual ~MXmlDocument();
 
-  //! Load an xml document
+  //! Load an XML document
   bool Load(MString FileName);
-  //! Save an Xml ldocument
+  //! Save an XML document
   bool Save(MString FileName);
 
   // protected methods:
