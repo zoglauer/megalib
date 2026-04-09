@@ -261,11 +261,11 @@ bool MTimer::HasTimedOut(double Seconds)
 
   if (m_HasTimedOut == true) return true;
 
-  if (m_TimeOut <= duration<double>(0)) return false;
-
   if (Seconds == -1) Seconds = m_TimeOut.count();
 
-  if ((Now() - m_StartTime).count() > Seconds) return true;
+  if (Seconds <= 0) return false;
+
+  if (GetElapsedTime().count() > Seconds) return true;
 
   return false;
 }
