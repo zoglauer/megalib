@@ -69,6 +69,7 @@ X, DataPoint, IsNonZero
 - Document all classes and all member functions and variables in the header
 
 - Use single-line comments (//) to explain logic within methods.
+- Do not write directly to `cout` or `cerr` in MEGAlib code. Use the MEGAlib stream classes such as `mout`, `mlog`, `merr`, or `mgui` instead, so output can be redirected or disabled consistently.
 
 
 ## Formatting
@@ -197,10 +198,10 @@ X, DataPoint, IsNonZero
     m_X ++;  // Incorrect
   ```
 
-- **cout etc.**: White spaces before and after <<, >> are OK but not enforced
+- **MEGAlib streams**: White spaces before and after <<, >> are OK but not enforced
   ```cpp
-    cout<<"Var: "<<V<<endl;        // OK
-    cout << "Var: " << V << endl;  // OK
+    merr<<"Var: "<<V<<endl;        // OK
+    merr << "Var: " << V << endl;  // OK
   ```
 
 ### 7. **Trailing Whitespace**
@@ -284,7 +285,7 @@ X, DataPoint, IsNonZero
      try {
        int Result = Divide(x, y); // Some division function
      } catch (const std::exception& e) {
-       cout<<"Error: "<<e.what()<<endl;
+       merr<<"Error: "<<e.what()<<endl;
      }
      ```
    - The class MExceptions has a wide range of useful exceptions
