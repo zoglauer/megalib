@@ -292,6 +292,15 @@ bool UTVector::TestRotationsAndRelations()
 
   Passed = EvaluateNear("DistanceToLine()", "point to x-axis", "DistanceToLine returns the perpendicular distance", MVector(0.0, 1.0, 0.0).DistanceToLine(MVector(0.0, 0.0, 0.0), MVector(1.0, 0.0, 0.0)), 1.0, 1e-12) && Passed;
 
+  MVector ZAxis(0.3, 0.4, sqrt(1.0 - 0.3*0.3 - 0.4*0.4));
+  MVector XAxis = ZAxis.Orthogonal();
+  XAxis.Unitize();
+  MVector YAxis = ZAxis.Cross(XAxis);
+  YAxis.Unitize();
+  Passed = EvaluateNear("Orthogonal()/Cross()", "orientation basis", "Orthogonal plus Cross can build a right-handed detector basis with perpendicular axes", XAxis.Dot(YAxis), 0.0, 1e-12) && Passed;
+  Passed = EvaluateNear("Orthogonal()/Cross()", "orientation basis", "The derived Y axis is perpendicular to Z", YAxis.Dot(ZAxis), 0.0, 1e-12) && Passed;
+  Passed = EvaluateNear("Orthogonal()/Cross()", "orientation basis", "All basis vectors are normalized for orientation-style use", XAxis.Mag(), 1.0, 1e-12) && Passed;
+
   return Passed;
 }
 

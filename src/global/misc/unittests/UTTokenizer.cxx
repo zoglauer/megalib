@@ -183,6 +183,13 @@ bool UTTokenizer::TestTypedAccessors()
   MTime Time = TimeTokenizer.GetTokenAtAsTime(1);
   Passed = EvaluateTrue("GetTokenAtAsTime()", "time token", "GetTokenAtAsTime parses TI-style time tokens", Time.GetLongIntsString() == "12.250000000") && Passed;
 
+  MTokenizer TimeTokenizerPrecise(' ', false);
+  TimeTokenizerPrecise.Analyze("GTI 12.500000000 18.250000000");
+  MTime StartTime = TimeTokenizerPrecise.GetTokenAtAsTime(1);
+  MTime StopTime = TimeTokenizerPrecise.GetTokenAtAsTime(2);
+  Passed = EvaluateTrue("GetTokenAtAsTime()", "gti start token", "GetTokenAtAsTime parses plain GTI-style numeric start tokens", StartTime.GetLongIntsString() == "12.500000000") && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsTime()", "gti stop token", "GetTokenAtAsTime parses plain GTI-style numeric stop tokens", StopTime.GetLongIntsString() == "18.250000000") && Passed;
+
   MTokenizer NegativeUnsigned(' ', false);
   NegativeUnsigned.Analyze("-1");
   mout.Enable(false);
@@ -283,6 +290,7 @@ bool UTTokenizer::TestMathsAndDiagnostics()
   Passed = EvaluateTrue("CheckMaths()", "atan", "CheckMaths accepts atan expressions", MTokenizer::CheckMaths("{atan(1)}")) && Passed;
   Passed = EvaluateTrue("CheckMaths()", "ln", "CheckMaths accepts ln expressions", MTokenizer::CheckMaths("{ln(e)}")) && Passed;
   Passed = EvaluateTrue("CheckMaths()", "mixed functions", "CheckMaths accepts mixed supported functions", MTokenizer::CheckMaths("{ceil(atan(1)+sqrt(9)+exp(0))}")) && Passed;
+  Passed = EvaluateTrue("CheckMaths()", "geometry style formula", "CheckMaths accepts nested geometry-style expressions", MTokenizer::CheckMaths("{sqrt((3*3)+(4*4))}")) && Passed;
   mout.Enable(false);
   Passed = EvaluateFalse("CheckMaths()", "unknown symbol", "CheckMaths rejects unknown math identifiers", MTokenizer::CheckMaths("{unknownsymbol}")) && Passed;
   mout.Enable(true);
@@ -303,6 +311,10 @@ bool UTTokenizer::TestMathsAndDiagnostics()
   Passed = EvaluateTrue("EvaluateMaths()", "mixed functions", "EvaluateMaths succeeds on mixed supported functions", MTokenizer::EvaluateMaths(MixedMathToken)) && Passed;
   Passed = EvaluateTrue("EvaluateMaths()", "mixed function result", "EvaluateMaths returns the expected mixed-function result", MixedMathToken.BeginsWith("5.0000000000000000e+00")) && Passed;
 
+  MString GeometryMathToken = "{sqrt((3*3)+(4*4))}";
+  Passed = EvaluateTrue("EvaluateMaths()", "geometry style formula", "EvaluateMaths succeeds on nested geometry-style expressions", MTokenizer::EvaluateMaths(GeometryMathToken)) && Passed;
+  Passed = EvaluateTrue("EvaluateMaths()", "geometry style result", "EvaluateMaths returns the expected nested geometry-style result", GeometryMathToken.BeginsWith("5.0000000000000000e+00")) && Passed;
+
   MString NotMath = "1+2";
   Passed = EvaluateFalse("EvaluateMaths()", "plain token", "EvaluateMaths returns false for non-math tokens", MTokenizer::EvaluateMaths(NotMath)) && Passed;
 
@@ -310,6 +322,11 @@ bool UTTokenizer::TestMathsAndDiagnostics()
   Passed = EvaluateTrue("Analyze()", "math token", "Analyze evaluates braced math expressions when AllowMaths is true", MathTokenizer.Analyze("alpha {1+2}")) && Passed;
   Passed = Evaluate("GetTokenAt()", "math token", "Analyze replaces math expressions by their evaluated value", MathTokenizer.GetTokenAt(1), MString("3.0000000000000000e+00")) && Passed;
   Passed = EvaluateTrue("CheckAllMaths()", "evaluated token list", "CheckAllMaths succeeds for a token list without invalid math", MathTokenizer.CheckAllMaths()) && Passed;
+
+  MTokenizer OptionTokenizer(':', false);
+  Passed = EvaluateTrue("Analyze()", "response-style options", "Analyze supports response-style option strings split by colons", OptionTokenizer.Analyze("Mode:File=test.root:Methods=BDT,MLP", false)) && Passed;
+  Passed = EvaluateNear("GetNTokens()", "response-style options", "Response-style option strings split into the expected number of tokens", OptionTokenizer.GetNTokens(), 3.0, 1e-12) && Passed;
+  Passed = Evaluate("GetTokenAt()", "response-style options", "Response-style option parsing preserves key/value fragments", OptionTokenizer.GetTokenAt(1), MString("File=test.root")) && Passed;
 
   MTokenizer InvalidMathList;
   InvalidMathList.Analyze("alpha {unknownsymbol}", false);

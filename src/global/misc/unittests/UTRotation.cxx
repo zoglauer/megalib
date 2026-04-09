@@ -203,6 +203,15 @@ bool UTRotation::TestInversionAndValidation()
   Passed = EvaluateNear("GetDeterminant()", "reflection", "A simple reflection has determinant -1", Reflection.GetDeterminant(), -1.0, 1e-12) && Passed;
   Passed = EvaluateFalse("IsRotation()", "reflection", "IsRotation rejects reflections with determinant -1", Reflection.IsRotation()) && Passed;
 
+  MVector XAxis(0.0, 1.0, 0.0);
+  MVector ZAxis(0.0, 0.0, 1.0);
+  MVector YAxis = ZAxis.Cross(XAxis);
+  MRotation BasisRotation(XAxis.X(), YAxis.X(), ZAxis.X(),
+                          XAxis.Y(), YAxis.Y(), ZAxis.Y(),
+                          XAxis.Z(), YAxis.Z(), ZAxis.Z());
+  Passed = EvaluateTrue("IsRotation()", "axis basis", "Axis-basis rotations built from X, Y=ZxX, Z are proper rotations", BasisRotation.IsRotation()) && Passed;
+  Passed = EvaluateTrue("GetInvers()", "axis basis", "Axis-basis rotations invert correctly for cached inverse workflows", (BasisRotation.GetInvers() * (BasisRotation * MVector(2.0, 3.0, 4.0))).AreEqual(MVector(2.0, 3.0, 4.0), 1e-12)) && Passed;
+
   return Passed;
 }
 

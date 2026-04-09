@@ -244,10 +244,37 @@ bool UTParser::TestStreamingHelpers()
   Passed = EvaluateNear("GetFloat()", "second float", "GetFloat() parses the second float token", Value, 2.75, 1e-6) && Passed;
   Passed = EvaluateFalse("GetFloat()", "end of file", "GetFloat() returns false at end of file", FloatParser.GetFloat(Value)) && Passed;
 
+  MString ResponseStyleFileName = "/tmp/UTParser_response_style.txt";
+  {
+    ofstream Out(ResponseStyleFileName.Data());
+    Out<<"AXIS BIN=4 TYPE=linear"<<endl;
+    Out<<"VALUES"<<endl;
+    Out<<"1.0 2.5"<<endl;
+    Out<<"3.75"<<endl;
+  }
+
+  UTParser_Test ResponseParser(' ', false);
+  Passed = EvaluateTrue("Open()", "response-style streaming", "Opening a parser for response-style streaming succeeds", ResponseParser.Open(ResponseStyleFileName, MFile::c_Read)) && Passed;
+  MTokenizer Header;
+  Passed = EvaluateTrue("TokenizeLine()", "response-style streaming", "Fast tokenization works in response-style streaming loops", ResponseParser.TokenizeLine(Header, true)) && Passed;
+  Passed = Evaluate("GetTokenAt()", "response-style streaming", "Fast tokenization preserves the response-style keyword", Header.GetTokenAt(0), MString("AXIS")) && Passed;
+  Passed = Evaluate("GetTokenAt()", "response-style streaming", "Fast tokenization preserves later key/value tokens", Header.GetTokenAt(2), MString("TYPE=linear")) && Passed;
+  Passed = EvaluateTrue("TokenizeLine()", "response-style values marker", "Fast tokenization can read the values marker before switching to float streaming", ResponseParser.TokenizeLine(Header, true)) && Passed;
+  Passed = Evaluate("GetTokenAt()", "response-style values marker", "Fast tokenization preserves the values marker token", Header.GetTokenAt(0), MString("VALUES")) && Passed;
+  Passed = EvaluateTrue("GetFloat()", "response-style float first", "GetFloat reads the first numeric token from a response-style file", ResponseParser.GetFloat(Value)) && Passed;
+  Passed = EvaluateNear("GetFloat()", "response-style float first", "The first response-style numeric token is parsed correctly", Value, 1.0, 1e-6) && Passed;
+  Passed = EvaluateTrue("GetFloat()", "response-style float second", "GetFloat continues through multi-line numeric content", ResponseParser.GetFloat(Value)) && Passed;
+  Passed = EvaluateNear("GetFloat()", "response-style float second", "The second response-style numeric token is parsed correctly", Value, 2.5, 1e-6) && Passed;
+  Passed = EvaluateTrue("GetFloat()", "response-style float third", "GetFloat reads the third numeric token from the stream", ResponseParser.GetFloat(Value)) && Passed;
+  Passed = EvaluateNear("GetFloat()", "response-style float third", "The third response-style numeric token is parsed correctly", Value, 3.75, 1e-6) && Passed;
+  Passed = EvaluateFalse("GetFloat()", "response-style end", "GetFloat reaches end-of-file cleanly in response-style streaming", ResponseParser.GetFloat(Value)) && Passed;
+  ResponseParser.Close();
+
   Parser.Close();
   FloatParser.Close();
   MFile::Remove(TokenFileName);
   MFile::Remove(FloatFileName);
+  MFile::Remove(ResponseStyleFileName);
 
   return Passed;
 }

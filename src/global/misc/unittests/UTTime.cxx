@@ -247,6 +247,10 @@ bool UTTime::TestParsingAndFormatting()
   Passed = EvaluateTrue("MTime(MString, UTC)", "UTC string", "The deprecated UTC parser still constructs the expected time",
                         UTC.GetLongIntsString() == "0.000000123") && Passed;
 
+  MTime UTCRoundTrip(2001, 2, 3, 4, 5, 6, 789000000);
+  MTime ParsedUTC(UTCRoundTrip.GetUTCString(), MTime::UTC);
+  Passed = EvaluateTrue("MTime(MString, UTC)", "UTC round-trip", "UTC parsing round-trips strings produced by GetUTCString()", ParsedUTC == UTCRoundTrip) && Passed;
+
   MTime SQL("1970-01-01 00:00:00", MTime::SQL);
   Passed = EvaluateTrue("MTime(MString, SQL)", "SQL string", "The deprecated SQL parser still constructs the expected time",
                         SQL.GetLongIntsString() == "0.000000000") && Passed;
@@ -318,6 +322,11 @@ bool UTTime::TestCalendarAndConversions()
   MTime LeapYearMiddle(2000, 7, 2, 12, 0, 0, 0);
   Passed = EvaluateTrue("GetAsYears()", "middle of leap year", "GetAsYears stays within the expected calendar year bounds",
                         LeapYearMiddle.GetAsYears() > 2000.49 && LeapYearMiddle.GetAsYears() < 2000.51) && Passed;
+
+  MTime OneDayLater(1970, 1, 2, 0, 0, 0, 0);
+  mout.Enable(false);
+  Passed = EvaluateNear("GetDaysSinceEpoch()", "one day later", "GetDaysSinceEpoch increments for later calendar dates", OneDayLater.GetDaysSinceEpoch(), 1.0, 1e-12) && Passed;
+  mout.Enable(true);
 
   mout.Enable(false);
   unsigned int DaysSinceEpoch = Epoch.GetDaysSinceEpoch();
