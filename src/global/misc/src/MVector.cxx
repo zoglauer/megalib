@@ -66,16 +66,16 @@ MVector::MVector(const MVector& V) : m_X(V.m_X), m_Y(V.m_Y), m_Z(V.m_Z)
 
 MVector::~MVector() 
 {  
-// Itentionally left blank
+  // Intentionally left blank
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MVector::operator[] (int i) const 
+double MVector::operator[](int i) const 
 {
-  //! Basic set and get components by index 0..2
+  // Basic set and get components by index 0..2
 
   switch(i) {
   case 0:
@@ -96,9 +96,9 @@ double MVector::operator[] (int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double& MVector::operator[] (int i) 
+double& MVector::operator[](int i) 
 {
-  //! Basic set and get components by index 0..2 as reference!
+  // Basic set and get components by index 0..2 as reference
 
   switch(i) {
   case 0:

@@ -56,7 +56,7 @@ const size_t MString::npos = string::npos;
 
 istream& operator>>(istream& in, MString& S) 
 { 
-  in>>S.GetStringRef(); 
+  in >> S.GetStringRef(); 
   return in; 
 }
 
@@ -66,7 +66,7 @@ istream& operator>>(istream& in, MString& S)
 
 ostream& operator<<(ostream& out, const MString& S) 
 { 
-  out<<S.GetString(); 
+  out << S.GetString(); 
   return out; 
 }
 
@@ -76,10 +76,10 @@ ostream& operator<<(ostream& out, const MString& S)
 
 MString::MString(const double D, unsigned int Precision)
 {
-  //! Construct with double of given precision
+  // Construct with double of given precision
 
   ostringstream in;
-  in<<setprecision(Precision)<<D;
+  in << setprecision(Precision) << D;
 
   m_String = in.str();
 }
@@ -90,8 +90,8 @@ MString::MString(const double D, unsigned int Precision)
 
 MString::MString(double Value, double Uncertainty, MString Units, bool Latex)
 {
-  //! Construct from value, uncertainty, unit using scientific rounding
-  //! Will be something like (12.345, 1.872, "mm") -> "(12.3 +- 1.9) mm"
+  // Construct from value, uncertainty, unit using scientific rounding
+  // Will be something like (12.345, 1.872, "mm") -> "(12.3 +- 1.9) mm"
 
   if (Uncertainty <= 0) {
     ostringstream Out;
@@ -130,15 +130,15 @@ MString::MString(double Value, double Uncertainty, MString Units, bool Latex)
   ostringstream out;
   if (Units != "") {
     if (Latex == true) {
-      out<<"("<<Value<<" #pm "<<Uncertainty<<") "<<Units;
+      out << "(" << Value << " #pm " << Uncertainty << ") " << Units;
     } else {
-      out<<"("<<Value<<" ± "<<Uncertainty<<") "<<Units;
+      out << "(" << Value << " ± " << Uncertainty << ") " << Units;
     }
   } else {
     if (Latex == true) {
-      out<<Value<<" #pm "<<Uncertainty;
+      out << Value << " #pm " << Uncertainty;
     } else {
-      out<<Value<<" ± "<<Uncertainty;
+      out << Value << " ± " << Uncertainty;
     }
   }
 
@@ -222,7 +222,7 @@ vector<MString> MString::Tokenize(const MString& Delimeter, bool IgnoreEmpty)  c
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return the string between two strings
+// Return the string between two strings
 MString MString::Extract(MString Before, MString After)
 {
   size_t BeforeStart = Index(Before);
