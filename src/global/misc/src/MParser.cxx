@@ -63,7 +63,7 @@ MParser::MParser(char Separator, bool AllowComposed) : MFile()
 MParser::~MParser()
 {
   // Delete this instance of MParser
-  
+
   for (unsigned int l = 0; l < m_Lines.size(); ++l) { 
     delete m_Lines[l];
   }
@@ -159,7 +159,7 @@ bool MParser::AddLine(MString Line)
 
 MTokenizer* MParser::GetTokenizerAt(unsigned int LineNumber)
 {
-  // Return the line with nume LineNumber
+  // Return the tokenizer at line number LineNumber
 
   if (m_Way != c_Read) {
     merr<<"Only valid if file is in read-mode!"<<endl;
@@ -180,10 +180,8 @@ MTokenizer* MParser::GetTokenizerAt(unsigned int LineNumber)
 
 MString MParser::GetLine(unsigned int LineNumber)
 {
-  //! READ-MODE ONLY: Return the line as text
+  // READ-MODE ONLY: Return the line as text
 
-  MString Line;
-  
   if (m_Way != c_Read) {
     merr<<"Only valid if file is in read-mode!"<<endl;
     massert(m_Way == c_Read);
@@ -204,7 +202,7 @@ MString MParser::GetLine(unsigned int LineNumber)
 
 bool MParser::InsertLineBefore(MString Line, unsigned int LineNumber)
 {
-  // Insert Before position i
+  // Insert a line before position LineNumber
 
   if (LineNumber > GetNLines()) {
     massert(LineNumber <= GetNLines());
@@ -267,22 +265,7 @@ bool MParser::TokenizeLine(MTokenizer& T, bool Fast)
   MString Line;
   if (ReadLine(Line) == false) return false;
   if (IsGood() == false && Line == "") return false;
-  /*
-  char c;
-  MString Line;
-  while (true) {
-    Get(c);
-    if (IsGood() == false) {
-      return false;
-    }
-    if (c != '\n' && c != '\0') {
-      Line += c;
-    } else {
-      break;
-    }
-  }
-  */
-  
+
   if (Fast == true) {
     T.AnalyzeFast(Line);    
   } else {

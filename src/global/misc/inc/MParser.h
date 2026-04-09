@@ -34,61 +34,54 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//! A tokenizing file parser built on top of MFile
 class MParser : public MFile
 {
   // public interface:
  public:
-  //! Construct a object of type MTokenizer and analyse the tokens
-  //! Separator is the separator between keywords
-  //! When AllowComposed == true, then elements with "." such as "Sphere.Source" 
-  //! are split in the two tokens "Sphere" and "Source", otherwise it is one token 
+  //! Standard constructor defining the token separator and composed-token handling
   explicit MParser(char Separator = ' ', bool AllowComposed = false);
-  // Default destructor
+  //! Default destructor
   virtual ~MParser();
 
-  //! Open the file
-  //! If in READ-MODE: read the data into tokens and calls Parse()
-  //! If in WRITE-MODE: nothing else
+  //! Open the file and, in read mode, tokenize all lines and call Parse()
   virtual bool Open(MString FileName, unsigned int Way = 1);
 
   //! Return the number of lines in the file
   unsigned int GetNLines();
 
-  //! Removes the specified line 
-  bool RemoveLine(unsigned int Line);
+  //! Remove the specified stored line
+  bool RemoveLine(unsigned int LineNumber);
   //! Inserts and tokenizes a line before the given line number
-  bool InsertLineBefore(MString Line, unsigned int i);
+  bool InsertLineBefore(MString Line, unsigned int LineNumber);
 
   //! READ-MODE ONLY: Return the tokenized lines
-  MTokenizer* GetTokenizerAt(unsigned int Line);
+  MTokenizer* GetTokenizerAt(unsigned int LineNumber);
   //! READ-MODE ONLY: Return the line as text
-  MString GetLine(unsigned int Line);
+  MString GetLine(unsigned int LineNumber);
 
-  //! READ-MODE ONLY: Special!!
+  //! READ-MODE ONLY: Special handling for streamed parsers
   //! Some derived classes do not read the whole file during Open()
   //! An example is the response class, which can have large data files requiring optimization
   //! This reads and tokenizes one line of the file
-  //! The fast mode assumes all token are seperated by a space only (no maths, no . mode)
-  bool TokenizeLine(MTokenizer& T, bool Fast = false);
-  //! READ-MODE ONLY: Special!!
+  //! The fast mode assumes all tokens are separated by spaces only (no maths, no composed-token mode)
+  bool TokenizeLine(MTokenizer& Tokenizer, bool Fast = false);
+  //! READ-MODE ONLY: Special handling for streamed parsers
   //! Some derived classes do not read the whole file during Open()
   //! An example is the response class, which can have large data files requiring optimization
   //! This reads one single float from the file
-  bool GetFloat(float& f);
+  bool GetFloat(float& Float);
 
 
   //! READ-MODE ONLY: Adds and tokenizes a line at the end
   virtual bool AddLine(MString Line);
 
-  //! Dump a type message related to the given line
-  void Typo(int Line, MString Error); 
+  //! Dump an error message related to the given line
+  void Typo(int LineNumber, MString Error); 
 
   // protected methods:
  protected:
-  //! Parse the tokenized data
-  //! Derived classes can perform all the parsing here
-  //! This function is called during Open()
+  //! Parse the tokenized data after Open() has loaded it in read mode
   virtual bool Parse();
 
 
@@ -101,8 +94,8 @@ class MParser : public MFile
   vector<MTokenizer*> m_Lines;
   //! The separator of the tokens e.g. a space
   char m_Separator;
-  //! When true, then elements with "." such as "Sphere.Source" 
-  //! are split in the two tokens "Sphere" and "Source", otherwise it is one token 
+  //! When true, then elements with "." such as "Sphere.Source"
+  //! are split into the two tokens "Sphere" and "Source", otherwise it remains one token
   bool m_AllowComposed;
 
 
