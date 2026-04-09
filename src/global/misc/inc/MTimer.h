@@ -37,9 +37,9 @@ class MTimer
 {
   // public interface:
  public:
-  // Default constructor
+  //! Default constructor
   MTimer(bool Start = true);
-  //! Standard constructor with time
+  //! Standard constructor with a timeout in seconds
   MTimer(double TimeOutSeconds);
   //! Copy constructor
   MTimer(const MTimer& Timer);
@@ -62,23 +62,23 @@ class MTimer
   //! Continue the timer
   void Continue();
 
-  //! Get the elapsed time in seconds
+  //! Return the elapsed time in seconds
   double GetElapsed();
-  //! Get the elapsed time in seconds
+  //! Return the elapsed time in seconds
   double ElapsedTime() { return GetElapsed(); }
   
-  //! Set a time out time
+  //! Set a timeout in seconds
   void SetTimeOut(double TimeOutSeconds = -1);
-  //! Get the timeout
+  //! Return the timeout in seconds
   double GetTimeOut();
   //! Check if the timer has timed out -- if we do not have a timeout we will return always false
   bool HasTimedOut(double Seconds = -1);
 
   // protected methods:
  protected:
-  //! Get the time now 
-  time_point<steady_clock> Now();  
-  //! Get the elapsed time 
+  //! Return the current steady-clock time point
+  time_point<steady_clock> Now();
+  //! Return the elapsed time as a duration
   duration<double> GetElapsedTime();
 
   // protected members:

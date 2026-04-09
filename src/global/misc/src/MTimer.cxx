@@ -67,7 +67,7 @@ MTimer::MTimer(bool Start)
 
 MTimer::MTimer(double TimeOut)
 {
-  // Standard constrcutor
+  // Standard constructor
 
   m_StartTime = Now();
   m_ElapsedTime = duration<double>(0);
@@ -108,7 +108,7 @@ MTimer::~MTimer()
 
 MTimer& MTimer::operator=(const MTimer& Timer)
 {
-  // Copy constructor
+  // Copy operator
  
   if (this != &Timer) {
     m_StartTime = Timer.m_StartTime;
@@ -127,7 +127,7 @@ MTimer& MTimer::operator=(const MTimer& Timer)
 
 void MTimer::Clear()
 {
-  // (Re-) Start the timer
+  // Pause the timer and reset all stored values
   
   m_IsPaused = true;
 
@@ -143,7 +143,7 @@ void MTimer::Clear()
 
 void MTimer::Start()
 {
-  // (Re-) Start the timer
+  // Start the timer from zero
   
   m_StartTime = Now();
   m_HasTimedOut = false;
@@ -157,7 +157,7 @@ void MTimer::Start()
 
 void MTimer::Reset()
 {
-  // (Re-) Start the timer --- same as start
+  // Reset the timer and start it again
 
   Start();
 }
@@ -168,7 +168,7 @@ void MTimer::Reset()
 
 void MTimer::Pause()
 {
-  // (Re-) Start the timer
+  // Pause the timer
   
   if (m_IsPaused == true) return;
   
@@ -205,8 +205,8 @@ time_point<steady_clock> MTimer::Now()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MTimer::SetTimeOut(double TimeOut) 
-{ 
+void MTimer::SetTimeOut(double TimeOut)
+{
   // Set the timeout
   // If timeout <= 0 then we never timeout
   
@@ -257,7 +257,7 @@ duration<double> MTimer::GetElapsedTime()
 
 bool MTimer::HasTimedOut(double Seconds)
 {
-  // Convert the time to seconds and return as double
+  // Return true if the timer exceeded the requested timeout in seconds
 
   if (m_HasTimedOut == true) return true;
 
