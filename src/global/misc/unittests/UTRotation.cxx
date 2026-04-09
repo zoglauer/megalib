@@ -39,6 +39,8 @@ private:
   bool TestInversionAndValidation();
   //! Test angle getters and formatting helpers
   bool TestAnglesAndFormatting();
+  //! Test additional edge cases and numerical corner cases
+  bool TestEdgeCases();
 };
 
 
@@ -54,6 +56,7 @@ bool UTRotation::Run()
   AllPassed = TestMultiplication() && AllPassed;
   AllPassed = TestInversionAndValidation() && AllPassed;
   AllPassed = TestAnglesAndFormatting() && AllPassed;
+  AllPassed = TestEdgeCases() && AllPassed;
 
   Summarize();
 
@@ -223,6 +226,85 @@ bool UTRotation::TestAnglesAndFormatting()
   ostringstream Out;
   Out << Identity;
   Passed = Evaluate("operator<<", "identity", "Stream output formats the full 3x3 matrix", MString(Out.str()), MString("(1/0/0, 0/1/0, 0/0/1)")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test additional edge cases and numerical corner cases
+bool UTRotation::TestEdgeCases()
+{
+  bool Passed = true;
+
+  MRotation RotatePiX(c_Pi, MVector(1.0, 0.0, 0.0));
+  Passed = EvaluateTrue("MRotation(angle, axis)", "180 deg around x", "A 180 degree x rotation flips y and z",
+                        (RotatePiX * MVector(0.0, 1.0, 2.0)).AreEqual(MVector(0.0, -1.0, -2.0), 1e-12)) && Passed;
+
+  MRotation RotatePiY(c_Pi, MVector(0.0, 1.0, 0.0));
+  Passed = EvaluateTrue("MRotation(angle, axis)", "180 deg around y", "A 180 degree y rotation flips x and z",
+                        (RotatePiY * MVector(1.0, 0.0, 2.0)).AreEqual(MVector(-1.0, 0.0, -2.0), 1e-12)) && Passed;
+
+  MRotation RotatePiZ(c_Pi, MVector(0.0, 0.0, 1.0));
+  Passed = EvaluateTrue("MRotation(angle, axis)", "180 deg around z", "A 180 degree z rotation flips x and y",
+                        (RotatePiZ * MVector(1.0, 2.0, 0.0)).AreEqual(MVector(-1.0, -2.0, 0.0), 1e-12)) && Passed;
+
+  MRotation RotateTiny(1.0e-9, MVector(0.0, 0.0, 1.0));
+  Passed = EvaluateTrue("MRotation(angle, axis)", "tiny angle", "A very small rotation angle still produces a valid rotation matrix", RotateTiny.IsRotation(1e-9)) && Passed;
+
+  MRotation AlmostRotation(cos(1.0e-7), -sin(1.0e-7), 0.0,
+                           sin(1.0e-7),  cos(1.0e-7), 0.0,
+                           0.0,          0.0,         1.0 + 5.0e-7);
+  Passed = EvaluateTrue("IsRotation()", "within tolerance", "IsRotation accepts small numerical deviations within tolerance", AlmostRotation.IsRotation(1e-6)) && Passed;
+  Passed = EvaluateFalse("IsRotation()", "outside tolerance", "IsRotation rejects the same matrix once the tolerance is tightened", AlmostRotation.IsRotation(1e-8)) && Passed;
+
+  MRotation Singular(1.0, 2.0, 3.0,
+                     2.0, 4.0, 6.0,
+                     0.0, 0.0, 1.0);
+  Passed = EvaluateNear("GetDeterminant()", "singular matrix", "A matrix with dependent rows has determinant zero", Singular.GetDeterminant(), 0.0, 1e-12) && Passed;
+
+  streambuf* OldBuffer = cerr.rdbuf();
+  ostringstream ErrorCapture;
+  cerr.rdbuf(ErrorCapture.rdbuf());
+  MRotation SingularInverse = Singular.GetInvers();
+  cerr.rdbuf(OldBuffer);
+
+  Passed = EvaluateTrue("GetInvers()", "singular matrix", "GetInvers returns the identity matrix when inversion fails", SingularInverse == MRotation()) && Passed;
+  Passed = EvaluateTrue("GetInvers()", "singular matrix warning", "GetInvers emits a warning for singular matrices",
+                        ErrorCapture.str().find("determinant is zero") != string::npos) && Passed;
+
+  MRotation SingularInPlace = Singular;
+  OldBuffer = cerr.rdbuf();
+  ostringstream ErrorCaptureInPlace;
+  cerr.rdbuf(ErrorCaptureInPlace.rdbuf());
+  SingularInPlace.Invert();
+  cerr.rdbuf(OldBuffer);
+  Passed = EvaluateTrue("Invert()", "singular matrix", "Invert falls back to the identity matrix for singular matrices", SingularInPlace == MRotation()) && Passed;
+  Passed = EvaluateTrue("Invert()", "singular matrix warning", "Invert forwards the singular inversion warning",
+                        ErrorCaptureInPlace.str().find("determinant is zero") != string::npos) && Passed;
+
+  MRotation RotateA(c_Pi / 7.0, MVector(1.0, 0.0, 0.0));
+  MRotation RotateB(c_Pi / 5.0, MVector(0.0, 1.0, 0.0));
+  MRotation RotateC(c_Pi / 3.0, MVector(0.0, 0.0, 1.0));
+  MRotation LeftAssociative = (RotateA * RotateB) * RotateC;
+  MRotation RightAssociative = RotateA * (RotateB * RotateC);
+  Passed = EvaluateTrue("operator*(rotation, rotation)", "associativity", "Matrix multiplication is associative within numerical precision",
+                        (LeftAssociative * MVector(1.0, 2.0, 3.0)).AreEqual(RightAssociative * MVector(1.0, 2.0, 3.0), 1e-12)) && Passed;
+
+  MRotation RotateCopy = RotateA;
+  RotateCopy *= MRotation();
+  Passed = EvaluateTrue("operator*=(rotation)", "right identity", "Multiplication by the identity on the right leaves the matrix unchanged", RotateCopy == RotateA) && Passed;
+
+  MRotation LeftIdentity = MRotation() * RotateB;
+  Passed = EvaluateTrue("operator*(rotation, rotation)", "left identity", "Multiplication by the identity on the left leaves the matrix unchanged", LeftIdentity == RotateB) && Passed;
+
+  MRotation Reflection(-1.0, 0.0, 0.0,
+                       0.0, 1.0, 0.0,
+                       0.0, 0.0, 1.0);
+  Passed = EvaluateNear("GetThetaX()", "reflection", "GetThetaX handles a reflected x axis", Reflection.GetThetaX(), c_Pi / 2.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetPhiX()", "reflection", "GetPhiX returns pi for a reflected x axis", Reflection.GetPhiX(), c_Pi, 1e-12) && Passed;
 
   return Passed;
 }
