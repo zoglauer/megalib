@@ -35,17 +35,13 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/** 
- * A 3x3 rotation matrix
- *
- * The component layout is the following:
- *  | XX YX ZX |
- *  | XY YY ZY |
- *  | XZ YZ ZZ |
- *
- */
-
-class MRotation {
+//! A 3x3 rotation matrix
+//! The component layout is:
+//! | XX YX ZX |
+//! | XY YY ZY |
+//! | XZ YZ ZZ |
+class MRotation
+{
   
   // public interface:
 public:
@@ -55,24 +51,24 @@ public:
   MRotation(double XX, double YX, double ZX, double XY, double YY, double ZY, double XZ, double YZ, double ZZ) :
     m_XX(XX), m_XY(XY), m_XZ(XZ), m_YX(YX), m_YY(YY), m_YZ(YZ), m_ZX(ZX), m_ZY(ZY), m_ZZ(ZZ) {} 
   //! Constructor --- rotate unity matrix by an angle (in rad) along a vector
-  MRotation(double Angle, const MVector& Vector) { Set(Angle, Vector); } 
+  MRotation(double Angle, const MVector& Vector) { Set(Angle, Vector); }
   //! Copy constructor
-  MRotation(const MRotation& R) { Set(R); } 
+  MRotation(const MRotation& R) { Set(R); }
   //! Default destructor
   ~MRotation() {}
   
   //! Set the identity matrix
-  void SetIdentity() { m_XX = 1.0; m_YX = 0.0; m_ZX = 0.0; m_XY = 0.0; m_YY = 1.0; m_ZY = 0.0; m_XZ = 0.0; m_YZ = 0.0; m_ZZ = 1.0; } 
+  void SetIdentity() { m_XX = 1.0; m_YX = 0.0; m_ZX = 0.0; m_XY = 0.0; m_YY = 1.0; m_ZY = 0.0; m_XZ = 0.0; m_YZ = 0.0; m_ZZ = 1.0; }
   //! Set a matrix by rotating the identity matrix by an angle (in rad) along a vector
-  void Set(double Angle, const MVector& Vector); 
+  void Set(double Angle, const MVector& Vector);
   //! Set the matrix elements
-  void Set(double XX, double YX, double ZX, double XY, double YY, double ZY, double XZ, double YZ, double ZZ) { 
+  void Set(double XX, double YX, double ZX, double XY, double YY, double ZY, double XZ, double YZ, double ZZ) {
     m_XX = XX; m_YX = YX; m_ZX = ZX; m_XY = XY; m_YY = YY; m_ZY = ZY; m_XZ = XZ; m_YZ = YZ; m_ZZ = ZZ; 
   }
-  //! Set the matric from another matrix
-  void Set(const MRotation& R) { 
-    m_XX = R.m_XX; m_YX = R.m_YX; m_ZX = R.m_ZX; m_XY = R.m_XY; m_YY = R.m_YY; m_ZY = R.m_ZY; m_XZ = R.m_XZ; m_YZ = R.m_YZ; m_ZZ = R.m_ZZ; 
-  } 
+  //! Set the matrix from another matrix
+  void Set(const MRotation& Rotation) {
+    m_XX = Rotation.m_XX; m_YX = Rotation.m_YX; m_ZX = Rotation.m_ZX; m_XY = Rotation.m_XY; m_YY = Rotation.m_YY; m_ZY = Rotation.m_ZY; m_XZ = Rotation.m_XZ; m_YZ = Rotation.m_YZ; m_ZZ = Rotation.m_ZZ;
+  }
   
   //! Return the top row, left component
   double GetXX() const { return m_XX; }
@@ -117,7 +113,7 @@ public:
   //! Return the bottom row, right component
   double GetZZ() const { return m_ZZ; }
   //! Set the bottom row, right component
-  void SetZZ(double ZZ) { m_ZZ = ZZ; }  
+  void SetZZ(double ZZ) { m_ZZ = ZZ; }
   
   //! Return the x-Vector
   MVector GetX() const { return MVector(m_XX, m_XY, m_XZ); }
@@ -126,35 +122,35 @@ public:
   //! Return the z-Vector
   MVector GetZ() const { return MVector(m_ZX, m_ZY, m_ZZ); }
   
-  //! Return the polar angle of the x-axis in an unrotated coordiante system 
+  //! Return the polar angle of the x-axis in an unrotated coordinate system
   double GetThetaX() const;
-  //! Return the azimuthal angle of the x-axis in an unrotated coordiante system 
+  //! Return the azimuthal angle of the x-axis in an unrotated coordinate system
   double GetPhiX() const;
-  //! Return the polar angle of the y-axis in an unrotated coordiante system 
+  //! Return the polar angle of the y-axis in an unrotated coordinate system
   double GetThetaY() const;
-  //! Return the azimuthal angle of the y-axis in an unrotated coordiante system 
+  //! Return the azimuthal angle of the y-axis in an unrotated coordinate system
   double GetPhiY() const;
-  //! Return the polar angle of the z-axis in an unrotated coordiante system 
+  //! Return the polar angle of the z-axis in an unrotated coordinate system
   double GetThetaZ() const;
-  //! Return the azimuthal angle of the z-axis in an unrotated coordiante system 
+  //! Return the azimuthal angle of the z-axis in an unrotated coordinate system
   double GetPhiZ() const;
   
-  //! Assignments
-  MRotation& operator= (const MRotation& R) { 
-    m_XX = R.m_XX; m_YX = R.m_YX; m_ZX = R.m_ZX; m_XY = R.m_XY; m_YY = R.m_YY; m_ZY = R.m_ZY; m_XZ = R.m_XZ; m_YZ = R.m_YZ; m_ZZ = R.m_ZZ; 
-    return *this; 
+  //! Assignment operator
+  MRotation& operator=(const MRotation& Rotation) {
+    m_XX = Rotation.m_XX; m_YX = Rotation.m_YX; m_ZX = Rotation.m_ZX; m_XY = Rotation.m_XY; m_YY = Rotation.m_YY; m_ZY = Rotation.m_ZY; m_XZ = Rotation.m_XZ; m_YZ = Rotation.m_YZ; m_ZZ = Rotation.m_ZZ;
+    return *this;
   }
   
-  //! Multiply this rotation with a number 
-  MRotation& operator*= (double N) { 
-    m_XX *= N; m_YX *= N; m_ZX *= N; m_XY *= N; m_YY *= N; m_ZY *= N; m_XZ *= N; m_YZ *= N; m_ZZ *= N; 
-    return *this; 
+  //! Multiply this rotation with a scalar
+  MRotation& operator*=(double Scalar) {
+    m_XX *= Scalar; m_YX *= Scalar; m_ZX *= Scalar; m_XY *= Scalar; m_YY *= Scalar; m_ZY *= Scalar; m_XZ *= Scalar; m_YZ *= Scalar; m_ZZ *= Scalar;
+    return *this;
   }
-  //! Multiply with another materix from the right:
-  MRotation& operator*= (const MRotation& R);
+  //! Multiply with another matrix from the right
+  MRotation& operator*=(const MRotation& Rotation);
   
-  // Check for equality
-  bool operator== (const MRotation& R);
+  //! Return true if two matrices are identical
+  bool operator==(const MRotation& Rotation);
 
   
   //! Invert the matrix
@@ -163,8 +159,8 @@ public:
   MRotation GetInvers() const;
   
   //! Return the determinant (Rule of Sarrus)
-  double GetDeterminant() const { 
-    return m_XX*m_YY*m_ZZ + m_YX*m_ZY*m_XZ + m_ZX*m_XY*m_YZ - m_XZ*m_YY*m_ZX - m_YZ*m_ZY*m_XX - m_ZZ*m_XY*m_YX; 
+  double GetDeterminant() const {
+    return m_XX*m_YY*m_ZZ + m_YX*m_ZY*m_XZ + m_ZX*m_XY*m_YZ - m_XZ*m_YY*m_ZX - m_YZ*m_ZY*m_XX - m_ZZ*m_XY*m_YX;
   }
   
   //! Return true if the matrix really is (within tolerances) a rotation matrix
@@ -172,24 +168,24 @@ public:
   bool IsRotation(double Tolerance = 1E-6) const;
   
   //! Perform an additional rotation by an angle around a vector
-  MRotation& Rotate(const double Angle, const MVector& Vector);
+  MRotation& Rotate(double Angle, const MVector& Vector);
 
   //! Rotate a vector
-  void Rotate(MVector& R) {
-    double X = m_XX*R.m_X + m_YX*R.m_Y + m_ZX*R.m_Z;
-    double Y = m_XY*R.m_X + m_YY*R.m_Y + m_ZY*R.m_Z;
-    double Z = m_XZ*R.m_X + m_YZ*R.m_Y + m_ZZ*R.m_Z;
+  void Rotate(MVector& Vector) {
+    double X = m_XX*Vector.m_X + m_YX*Vector.m_Y + m_ZX*Vector.m_Z;
+    double Y = m_XY*Vector.m_X + m_YY*Vector.m_Y + m_ZY*Vector.m_Z;
+    double Z = m_XZ*Vector.m_X + m_YZ*Vector.m_Y + m_ZZ*Vector.m_Z;
     
-    R.m_X = X;
-    R.m_Y = Y;
-    R.m_Z = Z;
+    Vector.m_X = X;
+    Vector.m_Y = Y;
+    Vector.m_Z = Z;
   }
 
   
   // protected methods:
 protected:
-  //! Return the determinant of a 2x2 matrix (used by Invert)
-  //! The matrixs looks like:  | XX YX | 
+  //! Return the determinant of a 2x2 matrix used by Invert
+  //! The matrix looks like:   | XX YX |
   //!                          | XY YY |
   double GetSubDeterminant(double XX, double YX, double XY, double YY) const { return XX*YY - XY*YX; }
   
@@ -199,23 +195,23 @@ protected:
   
   // private members:
 private:
-  //! top row, left 
+  //! Top row, left
   double m_XX;
-  //! center row, left 
+  //! Center row, left
   double m_XY;
-  //! bottom row, left 
+  //! Bottom row, left
   double m_XZ;
-  //! top row, center 
+  //! Top row, center
   double m_YX;
-  //! center row, center 
+  //! Center row, center
   double m_YY;
-  //! bottom row, center 
+  //! Bottom row, center
   double m_YZ;
-  //! top row, right 
+  //! Top row, right
   double m_ZX;
-  //! center row, right 
+  //! Center row, right
   double m_ZY;
-  //! bottom row, right 
+  //! Bottom row, right
   double m_ZZ;
   
 };
@@ -224,13 +220,13 @@ private:
 
 // Several external functions:
 
-// A streamer for the vector
+//! Stream a rotation to an output stream
 ostream& operator<<(ostream& out, const MRotation& V);
 
-// Multiply with vector from right
-MVector operator* (const MRotation& L, const MVector& R);
-// Multiply with rotation matrix from right
-MRotation operator* (const MRotation& L, const MRotation& R);
+//! Multiply a matrix with a vector from the right
+MVector operator*(const MRotation& L, const MVector& R);
+//! Multiply two matrices
+MRotation operator*(const MRotation& L, const MRotation& R);
 
 
 
