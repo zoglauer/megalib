@@ -248,7 +248,9 @@ if [ "${MTMP_ROOTPATH}" != "${MTMP_NODEFAULT}" ]; then
   fi
    
   # Has to come before HEADAS since both have a libMinuit.so
-  source ${MTMP_ROOTPATH}/bin/thisroot.sh
+  MTMP_HERE=`pwd`
+  cd ${MTMP_ROOTPATH}
+  source bin/thisroot.sh
+  cd ${MTMP_HERE}
 fi
-
 

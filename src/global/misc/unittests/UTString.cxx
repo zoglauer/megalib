@@ -343,9 +343,30 @@ bool UTString::TestTokenizeAndExtract()
   Passed = EvaluateSize("Tokenize()", "abc with empty delimiter", "Tokenize with an empty delimiter returns the full string as one token", EmptyDelimiter.size(), 1) && Passed;
   Passed = Evaluate("Tokenize()", "abc with empty delimiter", "Tokenize with an empty delimiter preserves the string content", EmptyDelimiter[0], MString("abc")) && Passed;
 
+  vector<MString> PathTokens = MString("/tmp/data/example.tra").Tokenize("/", true);
+  Passed = EvaluateSize("Tokenize()", "/tmp/data/example.tra", "Path-style tokenization drops the leading empty token by default", PathTokens.size(), 3) && Passed;
+  Passed = Evaluate("Tokenize()", "/tmp/data/example.tra", "Path-style tokenization preserves the base file name", PathTokens[2], MString("example.tra")) && Passed;
+
+  vector<MString> VersionTokens = MString("3.2.1").Tokenize(".", true);
+  Passed = EvaluateSize("Tokenize()", "3.2.1", "Version-style tokenization splits on dots", VersionTokens.size(), 3) && Passed;
+  Passed = Evaluate("Tokenize()", "3.2.1", "Version-style tokenization preserves the middle component", VersionTokens[1], MString("2")) && Passed;
+
+  vector<MString> OptionTokens = MString("Method=Fast:Bins=16").Tokenize(":", true);
+  Passed = EvaluateSize("Tokenize()", "Method=Fast:Bins=16", "Option-style tokenization splits on colons", OptionTokens.size(), 2) && Passed;
+  Passed = Evaluate("Tokenize()", "Method=Fast:Bins=16", "Option-style tokenization preserves key/value fragments", OptionTokens[1], MString("Bins=16")) && Passed;
+
+  vector<MString> AssignmentTokens = MString("Bins=16").Tokenize("=", true);
+  Passed = EvaluateSize("Tokenize()", "Bins=16", "Assignment-style tokenization splits on equals", AssignmentTokens.size(), 2) && Passed;
+  Passed = Evaluate("Tokenize()", "Bins=16", "Assignment-style tokenization preserves the value fragment", AssignmentTokens[1], MString("16")) && Passed;
+
+  vector<MString> LineTokens = MString("line1\nline2\nline3").Tokenize("\n", true);
+  Passed = EvaluateSize("Tokenize()", "line1\\nline2\\nline3", "Newline tokenization splits multi-line text", LineTokens.size(), 3) && Passed;
+  Passed = Evaluate("Tokenize()", "line1\\nline2\\nline3", "Newline tokenization preserves later lines", LineTokens[2], MString("line3")) && Passed;
+
   Passed = Evaluate("Extract()", "prefix[start]suffix", "Extract returns the text between delimiters", MString("prefix[start]suffix").Extract("[", "]"), MString("start")) && Passed;
   Passed = Evaluate("Extract()", "missing before delimiter", "Extract returns an empty string if the opening delimiter is absent", MString("prefixstart]suffix").Extract("[", "]"), MString("")) && Passed;
   Passed = Evaluate("Extract()", "missing after delimiter", "Extract returns an empty string if the closing delimiter is absent", MString("prefix[startsuffix").Extract("[", "]"), MString("")) && Passed;
+  Passed = Evaluate("Extract()", "prefix.id17.tra", "Extract supports filename-style delimiter pairs", MString("prefix.id17.tra").Extract(".id", ".tra"), MString("17")) && Passed;
   Passed = Evaluate("Extract()", "empty opening delimiter", "Extract with an empty opening delimiter starts at the beginning of the string", MString("prefix]suffix").Extract("", "]"), MString("prefix")) && Passed;
   Passed = Evaluate("Extract()", "empty closing delimiter", "Extract with an empty closing delimiter returns an empty string", MString("prefix[suffix").Extract("[", ""), MString("")) && Passed;
   Passed = Evaluate("Extract()", "both delimiters empty", "Extract with two empty delimiters returns an empty string", MString("prefix").Extract("", ""), MString("")) && Passed;
@@ -366,6 +387,8 @@ bool UTString::TestReadingAndTypeChecks()
   MString Line;
   Line.ReadLine(SingleLine);
   Passed = Evaluate("ReadLine()", "first line\\nsecond line", "ReadLine reads exactly one line", Line, MString("first line")) && Passed;
+  Line.ReadLine(SingleLine);
+  Passed = Evaluate("ReadLine()", "second line", "ReadLine can be used repeatedly on the same stream", Line, MString("second line")) && Passed;
 
   istringstream WordStream("alpha beta");
   MString Word;

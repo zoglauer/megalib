@@ -41,6 +41,8 @@ private:
   bool TestXmlNodeAndAttribute();
   //! Test document save/load round-tripping for MEGAlib XML
   bool TestXmlRoundTrip();
+  //! Test settings-style repeated loading on the same document
+  bool TestXmlReload();
 };
 
 
@@ -55,6 +57,7 @@ bool UTXml::Run()
   AllPassed = TestXmlData() && AllPassed;
   AllPassed = TestXmlNodeAndAttribute() && AllPassed;
   AllPassed = TestXmlRoundTrip() && AllPassed;
+  AllPassed = TestXmlReload() && AllPassed;
 
   Summarize();
 
@@ -280,6 +283,47 @@ bool UTXml::TestXmlRoundTrip()
   }
 
   ::remove(FileName.Data());
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test settings-style repeated loading on the same document
+bool UTXml::TestXmlReload()
+{
+  bool Passed = true;
+
+  MXmlDocument First(MString("Settings"));
+  new MXmlAttribute(&First, MString("version"), MString("1"));
+  new MXmlNode(&First, MString("GeometryFileName"), MString("first.geo.setup"));
+  MXmlNode* FirstHistory = new MXmlNode(&First, MString("DataFileHistory"));
+  new MXmlNode(FirstHistory, MString("DataFileHistoryItem"), MString("first.tra"));
+  new MXmlNode(FirstHistory, MString("DataFileHistoryItem"), MString("second.tra"));
+
+  MXmlDocument Second(MString("Settings"));
+  new MXmlAttribute(&Second, MString("version"), MString("2"));
+  new MXmlNode(&Second, MString("GeometryFileName"), MString("second.geo.setup"));
+  new MXmlNode(&Second, MString("DataFileName"), MString("current.tra"));
+
+  MString FirstFileName = "/tmp/UTXml_reload_first.xml";
+  MString SecondFileName = "/tmp/UTXml_reload_second.xml";
+  Passed = EvaluateTrue("Save()", "reload first", "The first settings-style xml document can be saved", First.Save(FirstFileName)) && Passed;
+  Passed = EvaluateTrue("Save()", "reload second", "The second settings-style xml document can be saved", Second.Save(SecondFileName)) && Passed;
+
+  MXmlDocument Loaded;
+  Passed = EvaluateTrue("Load()", "reload first", "The first settings-style xml document can be loaded", Loaded.Load(FirstFileName)) && Passed;
+  Passed = EvaluateTrue("Load()", "reload second", "The same document object can be reused for a second load", Loaded.Load(SecondFileName)) && Passed;
+  Passed = Evaluate("GetAttribute(name)", "reload second", "Reloading updates root attributes instead of keeping stale ones", Loaded.GetAttribute("version")->GetValueAsString(), MString("2")) && Passed;
+  Passed = Evaluate("GetNode(name)", "reload second", "Reloading updates existing node values", Loaded.GetNode("GeometryFileName")->GetValueAsString(), MString("second.geo.setup")) && Passed;
+  Passed = Evaluate("GetNode(name)", "reload second", "Reloading keeps new nodes from the replacement document", Loaded.GetNode("DataFileName")->GetValueAsString(), MString("current.tra")) && Passed;
+  Passed = EvaluateTrue("GetNode(name)", "reload second", "Reloading clears nodes that only existed in the first document", Loaded.GetNode("DataFileHistory") == 0) && Passed;
+  Passed = EvaluateNear("GetNNodes()", "reload second", "Reloading replaces the root child set instead of accumulating it", Loaded.GetNNodes(), 2.0, 1e-12) && Passed;
+
+  ::remove(FirstFileName.Data());
+  ::remove(SecondFileName.Data());
 
   return Passed;
 }

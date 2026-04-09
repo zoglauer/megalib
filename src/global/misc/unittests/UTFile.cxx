@@ -239,6 +239,27 @@ bool UTFile::TestAsciiIO()
   Passed = EvaluateFalse("IsOpen()", "reset", "Reset closes the file", File.IsOpen()) && Passed;
   Passed = Evaluate("GetFileName()", "reset", "Reset clears the stored file name", File.GetFileName(), MString("")) && Passed;
 
+  MString ScanFileName = "/tmp/UTFile_scan.txt";
+  MFile::Remove(ScanFileName);
+  {
+    ofstream Out(ScanFileName.Data());
+    Out<<"SE"<<endl;
+    Out<<"ID 1"<<endl;
+    Out<<"SE"<<endl;
+    Out<<"ID 2"<<endl;
+  }
+  Passed = EvaluateTrue("Open()", "scan file", "ASCII scan files can be opened for repeated scanning", File.Open(ScanFileName, MFile::c_Read, false)) && Passed;
+  Passed = EvaluateTrue("ReadLine(MString)", "scan first line", "Scan files can be read line by line", File.ReadLine(Line)) && Passed;
+  Passed = EvaluateNear("GetUncompressedFilePosition()", "scan first line", "The uncompressed file position advances after reading one line", File.GetUncompressedFilePosition() > 0 ? 1.0 : 0.0, 1.0, 1e-12) && Passed;
+  while (File.ReadLine(Line) == true) {
+  }
+  Passed = EvaluateNear("GetUncompressedFilePosition()", "scan eof", "The uncompressed file position remains valid after scanning to EOF", File.GetUncompressedFilePosition() > 0 ? 1.0 : 0.0, 1.0, 1e-12) && Passed;
+  Passed = EvaluateTrue("Close()", "scan file", "Scan files can be closed after reaching EOF", File.Close()) && Passed;
+  Passed = EvaluateTrue("Open()", "reopen scan file", "The same MFile object can be reopened for a fresh scan", File.Open(ScanFileName, MFile::c_Read, false)) && Passed;
+  Passed = EvaluateTrue("ReadLine(MString)", "reopen scan first line", "Reopening restores reading from the beginning", File.ReadLine(Line)) && Passed;
+  Passed = Evaluate("ReadLine(MString)", "reopen scan first line", "Reopened scan files start at the first line again", Line, MString("SE")) && Passed;
+  Passed = EvaluateTrue("Close()", "reopen scan file", "Reopened scan files can be closed again", File.Close()) && Passed;
+
   MString EmptyFileName = "/tmp/UTFile_empty.txt";
   MFile::Remove(EmptyFileName);
   MFile EmptyFile;
@@ -259,6 +280,7 @@ bool UTFile::TestAsciiIO()
   MFile::Remove(FloatFileName);
   MFile::Remove(DelimiterFileName);
   MFile::Remove(EmptyFileName);
+  MFile::Remove(ScanFileName);
 
   return Passed;
 }
