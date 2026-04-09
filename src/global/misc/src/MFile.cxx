@@ -174,7 +174,7 @@ int MFile::GetVersion() const
 
 void MFile::SetCompressionLevel(unsigned int CompressionLevel)
 {
-  //! Set the compression level
+  // Set the compression level
 
   m_CompressionLevel = CompressionLevel;
   if (m_CompressionLevel < 1) m_CompressionLevel = 1;
@@ -248,7 +248,7 @@ bool MFile::Exists(MString FileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return true if the file was removed successfully
+// Return true if the file was removed successfully
 bool MFile::Remove(MString FileName)
 {
   MFile::ExpandFileName(FileName);
@@ -510,7 +510,7 @@ bool MFile::Close()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-  //! Return true is the file is good
+  // Return true if the file is good
 bool MFile::IsGood()
 {
   m_FileMutex.Lock();
@@ -526,7 +526,7 @@ bool MFile::IsGood()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-  //! Return true is the file is good
+  // Return true if the file is good
 bool MFile::IsGoodNoLock()
 {
   bool IsGood = false;
@@ -563,7 +563,7 @@ void MFile::Clear()
 
 void MFile::Seek(streampos Pos)
 {
-  //! Seek the given position
+  // Seek the given position
 
   m_FileMutex.Lock();
 
@@ -580,7 +580,7 @@ void MFile::Seek(streampos Pos)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-  //! Seek the given position
+  // Seek the given position
 void MFile::Seek(streamoff Offset, ios_base::seekdir Way)
 {
   m_FileMutex.Lock();
@@ -604,7 +604,7 @@ void MFile::Seek(streamoff Offset, ios_base::seekdir Way)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Write some text and clear the stream
+// Write a new line
 void MFile::WriteLine()
 {
   m_FileMutex.Lock();
@@ -622,7 +622,7 @@ void MFile::WriteLine()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Write some text and clear the stream
+// Write some text
 void MFile::Write(const ostringstream& S)
 {
   m_FileMutex.Lock();
@@ -640,7 +640,7 @@ void MFile::Write(const ostringstream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Write some text and clear the stream
+// Write some text followed by a new line
 void MFile::WriteLine(const ostringstream& S)
 {
   m_FileMutex.Lock();
@@ -659,7 +659,7 @@ void MFile::WriteLine(const ostringstream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Write some text
+// Write some text
 void MFile::Write(const MString& S)
 {
   m_FileMutex.Lock();
@@ -677,7 +677,7 @@ void MFile::Write(const MString& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Write some text
+// Write some text followed by a new line
 void MFile::WriteLine(const MString& S)
 {
   m_FileMutex.Lock();
@@ -695,7 +695,7 @@ void MFile::WriteLine(const MString& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Write some text
+// Write a double value
 void MFile::Write(const double d)
 {
   m_FileMutex.Lock();
@@ -716,7 +716,7 @@ void MFile::Write(const double d)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Write some text
+// Write a single character
 void MFile::Write(const char c)
 {
   m_FileMutex.Lock();
@@ -733,7 +733,7 @@ void MFile::Write(const char c)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Write binary
+// Write binary data
 void MFile::Write(MBinaryStore& Store)
 {
   m_FileMutex.Lock();
@@ -754,13 +754,13 @@ void MFile::Write(MBinaryStore& Store)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Flush all written text
+// Flush all written text
 void MFile::Flush()
 {
   m_FileMutex.Lock();
 
   if (m_WasZipped == true) {
-    // We do not want to do this, since it degrades perfromance...
+    // We do not want to do this, since it degrades performance...
   } else {
     m_File<<flush;
   }
@@ -774,7 +774,7 @@ void MFile::Flush()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Get one character
+// Get one character
 bool MFile::Get(char& c)
 {
   m_FileMutex.Lock();
@@ -790,7 +790,7 @@ bool MFile::Get(char& c)
     if (i == -1) {
       if (gzeof(m_ZipFile) == 0) {
         int ErrorCode = 0;
-        cout<<"Error in MFile::Get(char& c): "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
+        mout<<"Error in MFile::Get(char& c): "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
       }
       m_FileMutex.UnLock();
       return false;
@@ -813,7 +813,7 @@ bool MFile::Get(char& c)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Get one float
+// Get one float
 bool MFile::Get(float& f)
 {
   m_FileMutex.Lock();
@@ -832,7 +832,7 @@ bool MFile::Get(float& f)
       if (i == -1) {
         if (gzeof(m_ZipFile) == 0) {
           int ErrorCode = 0;
-          cout<<"Error: "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
+          mout<<"Error: "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
         }
         m_FileMutex.UnLock();
         return false;
@@ -860,7 +860,7 @@ bool MFile::Get(float& f)
 
 bool MFile::ReadLine(MString& String)
 {
-  //! Read one line
+  // Read one line
 
   m_FileMutex.Lock();
 
@@ -884,8 +884,8 @@ bool MFile::ReadLine(MString& String)
       if (Return == Z_NULL) {
         if (gzeof(m_ZipFile) == 0) {
           int ErrorCode;
-          cout<<"Error reading compressed file: "<<endl;
-          cout<<"   "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
+          mout<<"Error reading compressed file: "<<endl;
+          mout<<"   "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
         }
         m_FileMutex.UnLock();
         return false;
@@ -920,7 +920,7 @@ bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
     return false;
   }
 
-  //! Read one line
+  // Read one line
   if (m_WasZipped == true) {
     for (streamsize i = 0; i < Size; ++i) {
       int c = gzgetc(m_ZipFile);
@@ -946,7 +946,7 @@ bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
 
 bool MFile::Read(MBinaryStore& Store, unsigned int CharactersToRead)
 {
-  //! Read CharactersToRead (or until end of file)  - returns false if before the read IsGood() would return false
+  // Read CharactersToRead characters, or stop at end of file
 
   m_FileMutex.Lock();
 
@@ -955,7 +955,7 @@ bool MFile::Read(MBinaryStore& Store, unsigned int CharactersToRead)
     return false;
   }
 
-  //! Read one line
+  // Read binary data
   if (m_WasZipped == true) {
     for (unsigned int i = 0; i < CharactersToRead; ++i) {
       int c = gzgetc(m_ZipFile);
@@ -1000,9 +1000,9 @@ void MFile::ShowProgressNoLock(bool Show)
 
   if (Show == true) {
     if (gClient == 0 || gClient->GetRoot() == 0 || gROOT->IsBatch() == true) {
-      cout<<"Can't show progress bar, because you do not have a GUI"<<endl;
+      mout<<"Can't show progress bar, because you do not have a GUI"<<endl;
     } else if (TThread::SelfId() != g_MainThreadID) {
-      cout<<"Can't show progress bar, since this is not the main thread"<<endl;      
+      mout<<"Can't show progress bar, since this is not the main thread"<<endl;
     } else {
       if (m_OwnProgress == true) {
         delete m_Progress;
@@ -1066,7 +1066,7 @@ bool MFile::IsShowProgress()
 
 void MFile::SetProgress(MGUIProgressBar* Progress, int Level)
 {
-  // Take over a progressbar
+  // Take over a progress bar
 
   m_ProgressMutex.Lock();
   
@@ -1217,7 +1217,7 @@ MString MFile::RelativeFileName(MString RelFileName, MString AbsFileName)
 
 MString MFile::GetBaseName(const MString& Name)
 {
-  //! Return the base name of a file
+  // Return the base name of a file
 
   if (Name.Length() == 0) return Name;
   if (Name.Length() == 1 && Name[0] == '/') return Name;
@@ -1232,7 +1232,7 @@ MString MFile::GetBaseName(const MString& Name)
 
 MString MFile::GetWorkingDirectory()
 {
-  //! Return the current working directory
+  // Return the current working directory
 
   return gSystem->GetWorkingDirectory();  
 }
@@ -1272,7 +1272,7 @@ streampos MFile::GetUncompressedFileLength(bool Redetermine)
 
       Length = 0;
       if (CompressedTotal > 1000000) {
-        cout<<"Handling a larger compressed file... this might take a while to initialize..."<<endl;
+        mout<<"Handling a larger compressed file... this might take a while to initialize..."<<endl;
         // Get the uncompressed file size after stepping ahead the compressed total ...
         double Uncompressed = gzseek(m_ZipFile, CompressedTotal, SEEK_SET);
         // ... and the compressed position
