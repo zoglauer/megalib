@@ -18,9 +18,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MTime in nanosecond precision - if supported by system 
+// MTime in nanosecond precision - if supported by system
 //
-// This class is able to represent a time span and a calender time, depending
+// This class is able to represent a time span and a calendar time, depending
 // on the construction and executed operation
 //
 // Examples:
@@ -220,7 +220,7 @@ MTime::~MTime()
 bool MTime::Now()
 {
   // Set the value to the current time
-  // The behaviour is encapsulted into the MSystem class, due to differneces
+  // The behaviour is encapsulated into the MSystem class, due to differences
   // between Windows and Linux
 
   MSystem::GetTime(m_Seconds, m_NanoSeconds);
@@ -344,10 +344,10 @@ bool MTime::Set(const unsigned int Seconds, const unsigned int NanoSeconds)
 
 bool MTime::Set(const double Seconds, const double NanoSeconds)
 {
-  //
+  // Set the time from two double values representing seconds and nanoseconds
 
   Set(Seconds);
-  MTime Temp(NanoSeconds/1000000000);
+  MTime Temp(NanoSeconds / 1000000000);
   *this += Temp;
 
   return false;
@@ -376,7 +376,7 @@ bool MTime::Set(double Time)
 bool MTime::Set(const char* Line)
 {
   // This is the fast, unsafe, no-error checks version:
-  // If you want it save use the MString version
+  // If you want it safe use the MString version
 
   char* Text = strdup(Line);
   size_t Size = strlen(Text);
@@ -392,7 +392,7 @@ bool MTime::Set(const char* Line)
 
     while (Stop < Size && isdigit(Text[Stop])) ++Stop;
     if (Stop < Size) Text[Stop] = '\0';
-    m_Seconds = atoi(Text+Start);
+    m_Seconds = atoi(Text + Start);
     if (m_Seconds == numeric_limits<int>::max()) {
       mout<<"Seconds in MTime are maxed out... time is probably wrong: "<<Line<<endl;
     }
@@ -409,8 +409,8 @@ bool MTime::Set(const char* Line)
       // Count digits:
       int Digits = Stop - Start;
       if (Digits > 9) Digits = 9;
-      Text[Start+Digits] = '\0';
-      m_NanoSeconds = atoi(Text+Start);
+      Text[Start + Digits] = '\0';
+      m_NanoSeconds = atoi(Text + Start);
       if (Digits < 9) {
         m_NanoSeconds *= int(pow(10.0, 9.0 - Digits));
       } else if (Digits > 9) {
@@ -445,7 +445,7 @@ bool MTime::Set(const MString& String, unsigned int I)
     return false;
   }
   
-  // Split and 
+  // Split the value into seconds and fractional seconds
   MTokenizer T('.', true);
   T.Analyze(NewString);
   if (T.GetNTokens() == 1) {
@@ -501,7 +501,7 @@ void MTime::Normalize()
 
 double MTime::GetElapsedSeconds()
 {
-  // Return the number of seconds which are ellapsed since MTime
+  // Return the number of seconds which are elapsed since MTime
 
   MTime Now;
 
@@ -514,7 +514,7 @@ double MTime::GetElapsedSeconds()
 
 unsigned int MTime::GetNanoSeconds()
 {
-  // Return the seconds
+  // Return the nanoseconds
 
   return m_NanoSeconds;
 }
@@ -585,8 +585,8 @@ unsigned int MTime::GetDaysSinceEpoch()
   while (Year > 1970) {
     Year--;
     MTime NewTime(Year, 12, 31, 23, 59, 30);
-    time_t Seconds = (long int) NewTime.GetAsSeconds();
-    tp = *gmtime(&Seconds);
+    time_t LastSecondOfYear = (long int) NewTime.GetAsSeconds();
+    tp = *gmtime(&LastSecondOfYear);
     Days += tp.tm_yday;
   }
 
@@ -696,11 +696,15 @@ double MTime::GetAsJulianDay()
   int Second = tp.tm_sec;
   int NanoSecond = m_NanoSeconds;
 
-  double JDDay, JDFraction;
+  double JDDay;
+  double JDFraction;
 
   // Now transform to julian day:
   bool reform;
-  long a, b=0, c, d;
+  long a;
+  long b = 0;
+  long c;
+  long d;
   double x1;
 
   if (Month < 3) {
@@ -755,7 +759,7 @@ MString MTime::GetString()
 {
   // Return in Format: 76751347.238477
 
-  const int Length= 100;
+  const int Length = 100;
   char Text[Length];
   double Time = GetAsSeconds();
   snprintf(Text, Length, "Seconds since epoch: %10.6f", Time);
@@ -775,7 +779,7 @@ MString MTime::GetLongIntsString() const
   int Precision = 9;
   
   long Nanos = m_NanoSeconds;
-  Nanos /= (long) pow(10.0, 9-Precision);
+  Nanos /= (long) pow(10.0, 9 - Precision);
   
   ostringstream out;
   out<<((Nanos < 0 && m_Seconds == 0) ? "-" : "")<<m_Seconds;
@@ -922,13 +926,13 @@ MTime& MTime::operator+=(const MTime& T)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MTime& MTime::operator*=(const double& T)
+MTime& MTime::operator*=(const double& Constant)
 {
-  if (numeric_limits<long>::max() < double(m_NanoSeconds)*T) {
+  if (numeric_limits<long>::max() < double(m_NanoSeconds) * Constant) {
     merr<<"Overflow in MTime..."<<endl;
-  } 
+  }
   
-  Set(m_Seconds*T, m_NanoSeconds*T);
+  Set(m_Seconds * Constant, m_NanoSeconds * Constant);
   return *this;
 }
 
@@ -955,14 +959,14 @@ MTime MTime::operator+(const MTime& T)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MTime MTime::operator*(const double& v)
+MTime MTime::operator*(const double& Value)
 {
-  if (numeric_limits<long>::max() < double(m_NanoSeconds)*v) {
+  if (numeric_limits<long>::max() < double(m_NanoSeconds) * Value) {
     merr<<"Overflow in MTime..."<<endl;
-  } 
+  }
   
   MTime Time;
-  Time.Set(m_Seconds*v, m_NanoSeconds*v);
+  Time.Set(m_Seconds * Value, m_NanoSeconds * Value);
 
   return Time;
 }
@@ -970,10 +974,10 @@ MTime MTime::operator*(const double& v)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MTime MTime::operator/(const double& v)
+MTime MTime::operator/(const double& Value)
 {
   MTime Time;
-  Time.Set(double(m_Seconds)/v, double(m_NanoSeconds)/v);
+  Time.Set(double(m_Seconds) / Value, double(m_NanoSeconds) / Value);
   
   return Time;
 }
