@@ -33,57 +33,57 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 
-//! A quaternion 
+//! A quaternion
 class MQuaternion
 {
-  public:
+public:
   //! Default constructor - a new quaternion with all elements equal zero
   MQuaternion();
   //! Standard constructor - quaternion initialized by elements
   MQuaternion(const double W, const double X, const double Y, const double Z);
   //! Construct a quaternion for a rotation matrix
   MQuaternion(const MRotation& Rotation);
-  //! Copy Constructor
-  MQuaternion(const MQuaternion& Q); 
-  //! Default Destructor
+  //! Copy constructor
+  MQuaternion(const MQuaternion& Quaternion);
+  //! Default destructor
   virtual ~MQuaternion();
   
   //! Assignment operator
-  MQuaternion& operator=(const MQuaternion& Q);
+  MQuaternion& operator=(const MQuaternion& Quaternion);
 
-  //! Addition operator, return a new quaternion created by the addition of Q and this instance
-  MQuaternion operator+(const MQuaternion& Q) const;
-  //! Subtraction operator, return a new quaternion created by the the subtraction of Q from this instance
-  MQuaternion operator-(const MQuaternion& Q) const;
-  //! Division operator, return a new quaternion by dividing this quaternion by Q
-  MQuaternion operator*(const MQuaternion& Q) const;
-  //! Division operator, return a new quaternion by dividing this quaternion by Q
-  MQuaternion operator/(const MQuaternion& Q) const;
+  //! Addition operator, return a new quaternion created by adding Quaternion to this instance
+  MQuaternion operator+(const MQuaternion& Quaternion) const;
+  //! Subtraction operator, return a new quaternion created by subtracting Quaternion from this instance
+  MQuaternion operator-(const MQuaternion& Quaternion) const;
+  //! Multiplication operator, return a new quaternion created by multiplying this quaternion with Quaternion
+  MQuaternion operator*(const MQuaternion& Quaternion) const;
+  //! Division operator, return a new quaternion created by dividing this quaternion by Quaternion
+  MQuaternion operator/(const MQuaternion& Quaternion) const;
   
-  //! Addition operator, add Q to this instance
-  MQuaternion& operator+=(const MQuaternion& Q);
-  //! Subtraction operator, subtract Q from this instance
-  MQuaternion& operator-=(const MQuaternion& Q);
-  //! Multiplication operator - multiply this quaternion by Q
-  MQuaternion& operator*=(const MQuaternion& Q);
-  //! Division operator - divide this quaternion by Q
-  MQuaternion& operator/=(const MQuaternion& Q);
+  //! Addition operator, add Quaternion to this instance
+  MQuaternion& operator+=(const MQuaternion& Quaternion);
+  //! Subtraction operator, subtract Quaternion from this instance
+  MQuaternion& operator-=(const MQuaternion& Quaternion);
+  //! Multiplication operator, multiply this quaternion by Quaternion
+  MQuaternion& operator*=(const MQuaternion& Quaternion);
+  //! Division operator, divide this quaternion by Quaternion
+  MQuaternion& operator/=(const MQuaternion& Quaternion);
   
 
   //! Return true if the quaternions are not equal
-  bool operator != (const MQuaternion& Q) const;
+  bool operator!=(const MQuaternion& Quaternion) const;
   //! Return true if the quaternions are equal
-  bool operator == (const MQuaternion& Q) const;
+  bool operator==(const MQuaternion& Quaternion) const;
   
-  //! Returns a new vector, which is the negative of this one
+  //! Return a new quaternion, which is the negative of this one
   MQuaternion operator-() const { return MQuaternion(-m_W, -m_X, -m_Y, -m_Z); }
   
-  //! Get the Norm of the quaternion
+  //! Return the norm of the quaternion
   double GetNorm() const;
-  //! Get the magnitude of the quaternion
+  //! Return the magnitude of the quaternion
   double GetMagnitude() const;
-  //! Return a new quaternion by scaling this quaternion with S
-  MQuaternion GetScale(const double S) const;
+  //! Return a new quaternion by scaling this quaternion with Scalar
+  MQuaternion GetScale(const double Scalar) const;
   //! Return the inverse of this quaternion
   MQuaternion GetInverse() const;
   //! Return the conjugate of this quaternion
@@ -94,25 +94,28 @@ class MQuaternion
   MRotation GetRotation() const;
 
   
-  //! Dot product between Q1 and Q2
-  double GetDotProduct(const MQuaternion& Q1, const MQuaternion& Q2) const { return Q1.m_W*Q2.m_W + Q1.m_X*Q2.m_X + Q1.m_Y*Q2.m_Y + Q1.m_Z*Q2.m_Z; }
+  //! Return the dot product between Quaternion1 and Quaternion2
+  double GetDotProduct(const MQuaternion& Quaternion1, const MQuaternion& Quaternion2) const
+  {
+    return Quaternion1.m_W * Quaternion2.m_W + Quaternion1.m_X * Quaternion2.m_X +
+           Quaternion1.m_Y * Quaternion2.m_Y + Quaternion1.m_Z * Quaternion2.m_Z;
+  }
   
-  //! Linear Interpolation between two quaternions, T is the distance between Q1 and Q2 in [0, 1]
-  MQuaternion GetLerp(const MQuaternion& Q1, const MQuaternion& Q2, const double T) const;
-  //! Spherical linear interpolation between two quaternions, T is the distance between Q1 and Q2 in [0, 1]
-  MQuaternion GetSlerp(const MQuaternion& Q1, const MQuaternion& Q2, const double T) const;
+  //! Return the linear interpolation between Quaternion1 and Quaternion2, with T in [0, 1]
+  MQuaternion GetLerp(const MQuaternion& Quaternion1, const MQuaternion& Quaternion2, const double T) const;
+  //! Return the spherical linear interpolation between Quaternion1 and Quaternion2, with T in [0, 1]
+  MQuaternion GetSlerp(const MQuaternion& Quaternion1, const MQuaternion& Quaternion2, const double T) const;
  
   //! Get the W component of the quaternion
-  double GetW() const { return m_W ;}
+  double GetW() const { return m_W; }
   //! Get the X component of the quaternion
   double GetX() const { return m_X; }
-  //! Get the Y component of th quaternion
+  //! Get the Y component of the quaternion
   double GetY() const { return m_Y; }
   //! Get the Z component of the quaternion
   double GetZ() const { return m_Z; }
 
-	
- private:
+private:
   //! Angle component of the quaternion
   double m_W;
   //! X component of the quaternion
@@ -125,9 +128,8 @@ class MQuaternion
 
 };
 
-// IO
+//! Stream a quaternion to an output stream
 std::ostream& operator<<(std::ostream& os, const MQuaternion& Q);
 
 
 #endif
-

@@ -48,7 +48,7 @@ ClassImp(MQuaternion)
 ///////////////////////////////////////////////////////////////
 
 
-MQuaternion::MQuaternion(void)
+MQuaternion::MQuaternion()
 {
   m_X = 0.0;
   m_Y = 0.0;
@@ -72,12 +72,12 @@ MQuaternion::MQuaternion(const double W, const double X, const double Y, const d
 ///////////////////////////////////////////////////////////////////
 
 
-MQuaternion::MQuaternion(const MQuaternion& Q)
+MQuaternion::MQuaternion(const MQuaternion& Quaternion)
 {
-  m_W = Q.m_W;
-  m_X = Q.m_X;
-  m_Y = Q.m_Y;
-  m_Z = Q.m_Z;
+  m_W = Quaternion.m_W;
+  m_X = Quaternion.m_X;
+  m_Y = Quaternion.m_Y;
+  m_Z = Quaternion.m_Z;
 } 
 
 
@@ -90,27 +90,27 @@ MQuaternion::MQuaternion(const MRotation& Rotation)
   if (Trace > 0) {
     double Scale = 2.0 * sqrt(Trace + 1.0);
     m_W = 0.25 * Scale;
-    m_X = ( Rotation.GetYZ() - Rotation.GetZY() ) / Scale;
-    m_Y = ( Rotation.GetZX() - Rotation.GetXZ() ) / Scale;
-    m_Z = ( Rotation.GetXY() - Rotation.GetYX() ) / Scale;
+    m_X = (Rotation.GetYZ() - Rotation.GetZY()) / Scale;
+    m_Y = (Rotation.GetZX() - Rotation.GetXZ()) / Scale;
+    m_Z = (Rotation.GetXY() - Rotation.GetYX()) / Scale;
   } else {
-    if ( Rotation.GetXX() > Rotation.GetYY() && Rotation.GetXX() > Rotation.GetZZ() ) {
-      double Scale = 2.0 * sqrt( 1.0 + Rotation.GetXX() - Rotation.GetYY() - Rotation.GetZZ());
-      m_W = (Rotation.GetYZ() - Rotation.GetZY() ) / Scale;
+    if (Rotation.GetXX() > Rotation.GetYY() && Rotation.GetXX() > Rotation.GetZZ()) {
+      double Scale = 2.0 * sqrt(1.0 + Rotation.GetXX() - Rotation.GetYY() - Rotation.GetZZ());
+      m_W = (Rotation.GetYZ() - Rotation.GetZY()) / Scale;
       m_X = 0.25 * Scale;
-      m_Y = (Rotation.GetYX() + Rotation.GetXY() ) / Scale;
-      m_Z = (Rotation.GetZX() + Rotation.GetXZ() ) / Scale;
+      m_Y = (Rotation.GetYX() + Rotation.GetXY()) / Scale;
+      m_Z = (Rotation.GetZX() + Rotation.GetXZ()) / Scale;
     } else if (Rotation.GetYY() > Rotation.GetZZ()) {
-      double Scale = 2.0 * sqrt( 1.0 + Rotation.GetYY() - Rotation.GetXX() - Rotation.GetZZ());
-      m_W = (Rotation.GetZX() - Rotation.GetXZ() ) / Scale;
-      m_X = (Rotation.GetXY() + Rotation.GetYX() ) / Scale;
+      double Scale = 2.0 * sqrt(1.0 + Rotation.GetYY() - Rotation.GetXX() - Rotation.GetZZ());
+      m_W = (Rotation.GetZX() - Rotation.GetXZ()) / Scale;
+      m_X = (Rotation.GetXY() + Rotation.GetYX()) / Scale;
       m_Y = 0.25 * Scale;
-      m_Z = (Rotation.GetZY() + Rotation.GetYZ() ) / Scale;
+      m_Z = (Rotation.GetZY() + Rotation.GetYZ()) / Scale;
     } else {
-      double Scale = 2.0 * sqrt( 1.0 + Rotation.GetZZ() - Rotation.GetXX() - Rotation.GetYY() );
-      m_W = (Rotation.GetXY() - Rotation.GetYX() ) / Scale;
-      m_X = (Rotation.GetZX() + Rotation.GetXZ() ) / Scale;
-      m_Y = (Rotation.GetZY() + Rotation.GetYZ() ) / Scale;
+      double Scale = 2.0 * sqrt(1.0 + Rotation.GetZZ() - Rotation.GetXX() - Rotation.GetYY());
+      m_W = (Rotation.GetXY() - Rotation.GetYX()) / Scale;
+      m_X = (Rotation.GetZX() + Rotation.GetXZ()) / Scale;
+      m_Y = (Rotation.GetZY() + Rotation.GetYZ()) / Scale;
       m_Z = 0.25 * Scale;
     }
   }
@@ -122,125 +122,125 @@ MQuaternion::MQuaternion(const MRotation& Rotation)
 
 MQuaternion::~MQuaternion()
 {
-  //Destructor
+  // Destructor
 }
 
 
 /////////////////////////////////////////////////////////////////////
 
 
-MQuaternion& MQuaternion::operator = (const MQuaternion& Q)
+MQuaternion& MQuaternion::operator=(const MQuaternion& Quaternion)
 {
-  m_W = Q.m_W;
-  m_X = Q.m_X;
-  m_Y = Q.m_Y;
-  m_Z = Q.m_Z;
+  m_W = Quaternion.m_W;
+  m_X = Quaternion.m_X;
+  m_Y = Quaternion.m_Y;
+  m_Z = Quaternion.m_Z;
   
-  return (*this);
+  return *this;
 }
 
 
 /////////////////////////////////////////////////////////////////////
 
 
-//! Addition operator, return a new quaternion created by the addition of Q and this instance
-MQuaternion MQuaternion::operator+(const MQuaternion& Q) const
+//! Addition operator, return a new quaternion created by the addition of Quaternion and this instance
+MQuaternion MQuaternion::operator+(const MQuaternion& Quaternion) const
 {
-  return MQuaternion(m_W + Q.m_W, m_X + Q.m_X, m_Y + Q.m_Y, m_Z + Q.m_Z);
+  return MQuaternion(m_W + Quaternion.m_W, m_X + Quaternion.m_X, m_Y + Quaternion.m_Y, m_Z + Quaternion.m_Z);
 }
 
  
 /////////////////////////////////////////////////////////////////////
 
  
-//! Subtraction operator, return a new quaternion created by the the subtraction of Q from this instance
-MQuaternion MQuaternion::operator-(const MQuaternion& Q) const
+//! Subtraction operator, return a new quaternion created by the subtraction of Quaternion from this instance
+MQuaternion MQuaternion::operator-(const MQuaternion& Quaternion) const
 {
-  return MQuaternion(m_W - Q.m_W, m_X - Q.m_X, m_Y - Q.m_Y, m_Z - Q.m_Z);
+  return MQuaternion(m_W - Quaternion.m_W, m_X - Quaternion.m_X, m_Y - Quaternion.m_Y, m_Z - Quaternion.m_Z);
 }
 
 
 //////////////////////////////////////////////////////////////////////
 
 
-//! Division operator, return a new quaternion by dividing this quaternion by Q
-MQuaternion MQuaternion::operator*(const MQuaternion& Q) const
+//! Multiplication operator, return a new quaternion by multiplying this quaternion with Quaternion
+MQuaternion MQuaternion::operator*(const MQuaternion& Quaternion) const
 {
-  return MQuaternion(m_W*Q.m_W - m_X*Q.m_X - m_Y*Q.m_Y - m_Z*Q.m_Z, 
-                     m_W*Q.m_X + m_X*Q.m_W + m_Y*Q.m_Z - m_Z*Q.m_Y,                          
-                     m_W*Q.m_Y + m_Y*Q.m_W + m_Z*Q.m_X - m_X*Q.m_Z,
-                     m_W*Q.m_Z + m_Z*Q.m_W + m_X*Q.m_Y - m_Y*Q.m_X);
+  return MQuaternion(m_W * Quaternion.m_W - m_X * Quaternion.m_X - m_Y * Quaternion.m_Y - m_Z * Quaternion.m_Z,
+                     m_W * Quaternion.m_X + m_X * Quaternion.m_W + m_Y * Quaternion.m_Z - m_Z * Quaternion.m_Y,
+                     m_W * Quaternion.m_Y + m_Y * Quaternion.m_W + m_Z * Quaternion.m_X - m_X * Quaternion.m_Z,
+                     m_W * Quaternion.m_Z + m_Z * Quaternion.m_W + m_X * Quaternion.m_Y - m_Y * Quaternion.m_X);
 }
 
  
 /////////////////////////////////////////////////////////////////////
 
 
-//! Division operator, return a new quaternion by dividing this quaternion by Q
-MQuaternion MQuaternion::operator/(const MQuaternion& Q) const
+//! Division operator, return a new quaternion by dividing this quaternion by Quaternion
+MQuaternion MQuaternion::operator/(const MQuaternion& Quaternion) const
 {
-  return ((*this) * (Q.GetInverse()));
+  return (*this) * Quaternion.GetInverse();
 }
 
 
 ////////////////////////////////////////////////////////////////////
 
 
-//! Addition operator, add Q to this instance
-MQuaternion& MQuaternion::operator+=(const MQuaternion& Q)
+//! Addition operator, add Quaternion to this instance
+MQuaternion& MQuaternion::operator+=(const MQuaternion& Quaternion)
 {
-  m_W += Q.m_W;
-  m_X += Q.m_X;
-  m_Y += Q.m_Y;
-  m_Z += Q.m_Z;
+  m_W += Quaternion.m_W;
+  m_X += Quaternion.m_X;
+  m_Y += Quaternion.m_Y;
+  m_Z += Quaternion.m_Z;
 
-  return (*this);
+  return *this;
 }
 
 
 //////////////////////////////////////////////////////////////////
 
 
-//! Subtraction operator, subtract Q from this instance
-MQuaternion& MQuaternion::operator-=(const MQuaternion& Q)
+//! Subtraction operator, subtract Quaternion from this instance
+MQuaternion& MQuaternion::operator-=(const MQuaternion& Quaternion)
 {
-  m_W -= Q.m_W;
-  m_X -= Q.m_X;
-  m_Y -= Q.m_Y;
-  m_Z -= Q.m_Z;
+  m_W -= Quaternion.m_W;
+  m_X -= Quaternion.m_X;
+  m_Y -= Quaternion.m_Y;
+  m_Z -= Quaternion.m_Z;
 
-  return (*this);
+  return *this;
 }
 
 
 /////////////////////////////////////////////////////////////////
 
 
-//! Multiplication operator - multiply this quaternion by Q
-MQuaternion& MQuaternion::operator*=(const MQuaternion& Q)
+//! Multiplication operator - multiply this quaternion by Quaternion
+MQuaternion& MQuaternion::operator*=(const MQuaternion& Quaternion)
 {
-  double w_val = m_W*Q.m_W - m_X*Q.m_X - m_Y*Q.m_Y - m_Z*Q.m_Z;
-  double x_val = m_W*Q.m_X + m_X*Q.m_W + m_Y*Q.m_Z - m_Z*Q.m_Y; 
-  double y_val = m_W*Q.m_Y + m_Y*Q.m_W + m_Z*Q.m_X - m_X*Q.m_Z;
-  double z_val = m_W*Q.m_Z + m_Z*Q.m_W + m_X*Q.m_Y - m_Y*Q.m_X; 
+  double WValue = m_W * Quaternion.m_W - m_X * Quaternion.m_X - m_Y * Quaternion.m_Y - m_Z * Quaternion.m_Z;
+  double XValue = m_W * Quaternion.m_X + m_X * Quaternion.m_W + m_Y * Quaternion.m_Z - m_Z * Quaternion.m_Y;
+  double YValue = m_W * Quaternion.m_Y + m_Y * Quaternion.m_W + m_Z * Quaternion.m_X - m_X * Quaternion.m_Z;
+  double ZValue = m_W * Quaternion.m_Z + m_Z * Quaternion.m_W + m_X * Quaternion.m_Y - m_Y * Quaternion.m_X;
   
-  m_W = w_val;
-  m_X = x_val;
-  m_Y = y_val;
-  m_Z = z_val;
+  m_W = WValue;
+  m_X = XValue;
+  m_Y = YValue;
+  m_Z = ZValue;
 
-  return (*this);
+  return *this;
 }
 
 
 //////////////////////////////////////////////////////////////////
 
 
-//! Division operator - divide this quaternion by Q
-MQuaternion& MQuaternion::operator/=(const MQuaternion& Q)
+//! Division operator - divide this quaternion by Quaternion
+MQuaternion& MQuaternion::operator/=(const MQuaternion& Quaternion)
 {
-  (*this) = (*this)*Q.GetInverse();
-  return (*this);
+  (*this) = (*this) * Quaternion.GetInverse();
+  return *this;
 }
 
 
@@ -248,19 +248,21 @@ MQuaternion& MQuaternion::operator/=(const MQuaternion& Q)
 
 
 //! Return true if the quaternions are not equal
-bool MQuaternion::operator!=(const MQuaternion& Q) const
+bool MQuaternion::operator!=(const MQuaternion& Quaternion) const
 {
-  return (m_W != Q.m_W || m_X != Q.m_X || m_Y != Q.m_Y || m_Z != Q.m_Z) ? true : false;
+  return (m_W != Quaternion.m_W || m_X != Quaternion.m_X ||
+          m_Y != Quaternion.m_Y || m_Z != Quaternion.m_Z) ? true : false;
 }
 
 
 //////////////////////////////////////////////////////////////////
 
 
-//! Return true if the quaternions are  equal
-bool MQuaternion::operator==(const MQuaternion& Q) const
+//! Return true if the quaternions are equal
+bool MQuaternion::operator==(const MQuaternion& Quaternion) const
 {
-  return (m_W == Q.m_W && m_X == Q.m_X && m_Y == Q.m_Y && m_Z == Q.m_Z) ? true : false;
+  return (m_W == Quaternion.m_W && m_X == Quaternion.m_X &&
+          m_Y == Quaternion.m_Y && m_Z == Quaternion.m_Z) ? true : false;
 }  
 
 
@@ -270,7 +272,7 @@ bool MQuaternion::operator==(const MQuaternion& Q) const
 //! Get the Norm of the quaternion
 double MQuaternion::GetNorm() const
 {
-  return (m_W*m_W + m_X*m_X + m_Y*m_Y + m_Z*m_Z);  
+  return m_W * m_W + m_X * m_X + m_Y * m_Y + m_Z * m_Z;
 }
 
 
@@ -287,10 +289,10 @@ double MQuaternion::GetMagnitude() const
 ///////////////////////////////////////////////////////////////////
 
 
-//! Return a new quaternion by scaling this quaternion with S
-MQuaternion MQuaternion::GetScale(const double S) const
+//! Return a new quaternion by scaling this quaternion with Scalar
+MQuaternion MQuaternion::GetScale(const double Scalar) const
 {
-  return MQuaternion(m_W*S, m_X*S, m_Y*S, m_Z*S);
+  return MQuaternion(m_W * Scalar, m_X * Scalar, m_Y * Scalar, m_Z * Scalar);
 }
 
 
@@ -305,7 +307,7 @@ MQuaternion MQuaternion::GetInverse() const
     return MQuaternion();
   }
   
-  return GetConjugate().GetScale(1/GetNorm());
+  return GetConjugate().GetScale(1 / GetNorm());
 }
 
 
@@ -326,7 +328,7 @@ MQuaternion MQuaternion::GetConjugate() const
 MQuaternion MQuaternion::GetUnitQuaternion() const
 {
   if (GetMagnitude() > 0) {
-    return GetScale(1/GetMagnitude());
+    return GetScale(1 / GetMagnitude());
   } else {
     merr<<"Magnitude of the quaternion is zero -> cannot get unit quaternion"<<endl;
     return MQuaternion();
@@ -340,50 +342,50 @@ MQuaternion MQuaternion::GetUnitQuaternion() const
 //! Return a rotation matrix
 MRotation MQuaternion::GetRotation() const
 {  
-  double Scale = m_W*m_W + m_X*m_X + m_Y*m_Y + m_Z*m_Z;
+  double Scale = m_W * m_W + m_X * m_X + m_Y * m_Y + m_Z * m_Z;
   if (Scale == 0) {
     merr<<"Magnitude of the quaternion is zero -> cannot convert it to a rotation "<<endl;
     return MRotation();
   }
-  Scale = 1.0/Scale;
+  Scale = 1.0 / Scale;
   
-  return MRotation(1 - 2*Scale*(m_Y*m_Y + m_Z*m_Z), 2*Scale*(m_X*m_Y - m_W*m_Z), 2*Scale*(m_X*m_Z + m_W*m_Y),
-                  2*Scale*(m_X*m_Y + m_W*m_Z), 1 - 2*Scale*(m_X*m_X + m_Z*m_Z), 2*Scale*(m_Y*m_Z - m_W*m_X), 
-                  2*Scale*(m_X*m_Z - m_W*m_Y), 2*Scale*(m_Y*m_Z + m_W*m_X), 1 - 2*Scale*(m_X*m_X + m_Y*m_Y));
+  return MRotation(1 - 2 * Scale * (m_Y * m_Y + m_Z * m_Z), 2 * Scale * (m_X * m_Y - m_W * m_Z), 2 * Scale * (m_X * m_Z + m_W * m_Y),
+                   2 * Scale * (m_X * m_Y + m_W * m_Z), 1 - 2 * Scale * (m_X * m_X + m_Z * m_Z), 2 * Scale * (m_Y * m_Z - m_W * m_X),
+                   2 * Scale * (m_X * m_Z - m_W * m_Y), 2 * Scale * (m_Y * m_Z + m_W * m_X), 1 - 2 * Scale * (m_X * m_X + m_Y * m_Y));
 }
 
 
 ////////////////////////////////////////////////////////////////////////////
 
 
-//! Linear Interpolation between two quaternions, T is the distance between Q1 and Q2 in [0, 1]
-MQuaternion MQuaternion::GetLerp(const MQuaternion& Q1, const MQuaternion& Q2, double T) const
+//! Linear interpolation between two quaternions, T is the distance between Quaternion1 and Quaternion2 in [0, 1]
+MQuaternion MQuaternion::GetLerp(const MQuaternion& Quaternion1, const MQuaternion& Quaternion2, double T) const
 { 
-  return (Q1.GetScale(1-T) + Q2.GetScale(T)).GetUnitQuaternion(); 
+  return (Quaternion1.GetScale(1 - T) + Quaternion2.GetScale(T)).GetUnitQuaternion(); 
 }
 
 
 ////////////////////////////////////////////////////////////////////////////
 
 
-//! Spherical linear interpolation between two quaternions, T is the distance between Q1 and Q2 in [0, 1]
-MQuaternion MQuaternion::GetSlerp(const MQuaternion& Q1, const MQuaternion& Q2, double T) const
+//! Spherical linear interpolation between two quaternions, T is the distance between Quaternion1 and Quaternion2 in [0, 1]
+MQuaternion MQuaternion::GetSlerp(const MQuaternion& Quaternion1, const MQuaternion& Quaternion2, double T) const
 {
-  MQuaternion Q3;
-  double Dot = GetDotProduct(Q1, Q2);
+  MQuaternion Quaternion3;
+  double Dot = GetDotProduct(Quaternion1, Quaternion2);
   if (Dot < 0) {
     Dot = -Dot;
-    Q3 = -Q2;
+    Quaternion3 = -Quaternion2;
   } else {
-    Q3 = Q2;
+    Quaternion3 = Quaternion2;
   }
   
   if (Dot < 0.95) {
     double Angle = acos(Dot);
-    return (Q1.GetScale(sin(Angle*(1-T))) + Q3.GetScale(sin(Angle*T))).GetScale(1/sin(Angle));
+    return (Quaternion1.GetScale(sin(Angle * (1 - T))) + Quaternion3.GetScale(sin(Angle * T))).GetScale(1 / sin(Angle));
   } else {
-    // Linear interpolation in case of small angles                                                           
-    return GetLerp(Q1, Q3, T);
+    // Linear interpolation in case of small angles
+    return GetLerp(Quaternion1, Quaternion3, T);
   }
 }
 
