@@ -83,7 +83,7 @@ class MXmlData
   //! Return the value of the node as unsigned int
   unsigned int GetValueAsUnsignedInt() const { return atoi(m_Value); }
   //! Return the value of the node as unsigned long
-  unsigned int GetValueAsUnsignedLong() const { return strtoul(m_Value, NULL, 0); }
+  unsigned long GetValueAsUnsignedLong() const { return strtoul(m_Value, NULL, 0); }
   //! Return the value of the node as double
   double GetValueAsDouble() const { return atof(m_Value); }
   //! Return the value of the node as boolean
