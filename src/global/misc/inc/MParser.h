@@ -78,7 +78,7 @@ class MParser : public MFile
   bool GetFloat(float& f);
 
 
-  //! WRITE-MODE ONLY: Adds and tokenizes a line at the end
+  //! READ-MODE ONLY: Adds and tokenizes a line at the end
   virtual bool AddLine(MString Line);
 
   //! Dump a type message related to the given line
