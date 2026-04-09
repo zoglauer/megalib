@@ -31,6 +31,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MStreams.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,6 +78,8 @@ bool MXmlDocument::Load(MString FileName)
 {
   //! Load an xml document
 
+  Clear();
+
   MString AllContent;
 
   ifstream in(FileName); 
@@ -122,9 +125,35 @@ bool MXmlDocument::Load(MString FileName)
   m_Name = AllContent.GetSubString(FirstBegin+1, FirstEnd-FirstBegin-1);
 
   // Make sure to ignore attributes
+  MString Attributes("");
   size_t FirstAttribute = m_Name.First(' ');
   if (FirstAttribute != MString::npos) {
+    Attributes = m_Name.GetSubString(FirstAttribute+1, m_Name.Length() - FirstAttribute - 1);
     m_Name = m_Name.GetSubString(0, FirstAttribute);
+  }
+
+  Attributes = Attributes.Strip();
+  size_t Equal = MString::npos;
+  while ((Equal = Attributes.Index("=")) != MString::npos) {
+    MString AttributeName = Attributes.GetSubString(0, Equal);
+    AttributeName = AttributeName.Strip();
+
+    size_t FirstQuote = Attributes.Index("\"");
+    if (FirstQuote == MString::npos) {
+      mout<<"Xml parser: Error with root attributes!"<<endl;
+      return false;
+    }
+    size_t SecondQuote = Attributes.Index("\"", FirstQuote+1);
+    if (SecondQuote == MString::npos) {
+      mout<<"Xml parser: Error with root attributes!"<<endl;
+      return false;
+    }
+    MString AttributeValue = Attributes.GetSubString(FirstQuote+1, SecondQuote-FirstQuote-1);
+
+    new MXmlAttribute(this, AttributeName, AttributeValue);
+
+    Attributes = Attributes.GetSubString(SecondQuote+1, Attributes.Length() - SecondQuote - 1);
+    Attributes = Attributes.Strip();
   }
 
   size_t LastBegin = AllContent.Index(MString("</") + m_Name + MString(">"));
