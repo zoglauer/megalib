@@ -53,7 +53,7 @@ ClassImp(MTokenizer)
 
 MTokenizer::MTokenizer()
 {
-  // Construct a object of type MTokenizer
+  // Construct an object of type MTokenizer
 
   Init();
 }
@@ -64,10 +64,10 @@ MTokenizer::MTokenizer()
 
 MTokenizer::MTokenizer(const char Separator, const bool AllowComposed)
 {
-  // Construct a object of type MTokenizer and analyse the token
+  // Construct an object of type MTokenizer and analyze the token
   // Separator is the separator between keywords
-  // When AllowComposed == true, then elements with "." such as "Sphere.Source" 
-  // are split in the two tokens "Sphere" and "Source", otherwise it is one token 
+  // When AllowComposed == true, then elements with "." such as "Sphere.Source"
+  // are split in the two tokens "Sphere" and "Source", otherwise it is one token
 
   Init();
   m_Separator = Separator;
@@ -80,10 +80,10 @@ MTokenizer::MTokenizer(const char Separator, const bool AllowComposed)
 
 MTokenizer::MTokenizer(const MString& Text, const char Separator, const bool AllowComposed)
 {
-  // Construct a object of type MTokenizer and analyse the token
+  // Construct an object of type MTokenizer and analyze the token
   // Separator is the separator between keywords
-  // When AllowComposed == true, then elements with "." such as "Sphere.Source" 
-  // are split in the two tokens "Sphere" and "Source", otherwise it is one token 
+  // When AllowComposed == true, then elements with "." such as "Sphere.Source"
+  // are split in the two tokens "Sphere" and "Source", otherwise it is one token
 
   Init();
   m_Separator = Separator;
@@ -98,7 +98,7 @@ MTokenizer::MTokenizer(const MString& Text, const char Separator, const bool All
 
 MTokenizer::~MTokenizer()
 {
-  // default destructor
+  // Default destructor
 }
 
 
@@ -107,7 +107,7 @@ MTokenizer::~MTokenizer()
 
 void MTokenizer::Init()
 {
-  // Action common to all constructors:
+  // Actions common to all constructors
 
   m_Composited = false;
   m_AllowComposed = true;
@@ -140,7 +140,7 @@ void MTokenizer::AllowComposed(const bool Composed)
 
 void MTokenizer::Reset()
 {
-  // Action common to all constructors:
+  // Actions common to all constructors
 
   m_Tokens.clear();
   m_Composited = false;
@@ -152,7 +152,7 @@ void MTokenizer::Reset()
 
 MString MTokenizer::GetText() const
 {
-  // Return the base text which has been analysed
+  // Return the base text which has been analyzed
 
   return m_Text;
 }
@@ -179,12 +179,12 @@ MString MTokenizer::GetTokenAt(const unsigned int i) const
   if (i < m_Tokens.size()) {
     return m_Tokens[i];
   } else {
-    mlog<<"MString MTokenizer::GetTokenAt(int i): "<<endl;
+    mout<<"MString MTokenizer::GetTokenAt(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return MString("");
   }
@@ -228,18 +228,18 @@ MString MTokenizer::GetTokenAfterAsString(const unsigned int i) const
 
 double MTokenizer::GetTokenAtAsDouble(const unsigned int i) const
 {
-  // Return the token at position i as double 
+  // Return the token at position i as double
 
 
   if (i < m_Tokens.size()) {
     return atof(m_Tokens[i]);
   } else {
-    mlog<<"MString MTokenizer::GetTokenAtAsDouble(int i): "<<endl;
+    mout<<"MString MTokenizer::GetTokenAtAsDouble(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     abort();
     return 0;
@@ -252,18 +252,18 @@ double MTokenizer::GetTokenAtAsDouble(const unsigned int i) const
 
 float MTokenizer::GetTokenAtAsFloat(const unsigned int i) const
 {
-  // Return the token at position i as double 
+  // Return the token at position i as float
 
 
   if (i < m_Tokens.size()) {
     return atof(m_Tokens[i]);
   } else {
-    mlog<<"MString MTokenizer::GetTokenAtAsFloat(int i): "<<endl;
+    mout<<"MString MTokenizer::GetTokenAtAsFloat(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return 0;
   }
@@ -281,12 +281,12 @@ int MTokenizer::GetTokenAtAsInt(const unsigned int i) const
   if (i < m_Tokens.size()) {
     return int(atof(m_Tokens[i])); // atoi(m_Tokens[i]); is not working in cases such as 2.35e+02
   } else {
-    mlog<<"int MTokenizer::GetTokenAtAsInt(int i): "<<endl;
+    mout<<"int MTokenizer::GetTokenAtAsInt(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return 0;
   }
@@ -309,12 +309,12 @@ unsigned int MTokenizer::GetTokenAtAsUnsignedIntFast(const unsigned int i) const
     }
     return val;
   } else {
-    mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
+    mout<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return 0;
   }
@@ -331,18 +331,18 @@ unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const unsigned int i) const
   if (i < m_Tokens.size()) {
     int Value = int(atof(m_Tokens[i]));
     if (Value < 0) {
-      mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i)"<<endl;
-      mlog<<"Value is negative!!!"<<endl;
+      mout<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i)"<<endl;
+      mout<<"Value is negative!!!"<<endl;
       return 0;
     }
     return (unsigned int) Value;
   } else {
-    mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
+    mout<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return 0;
   }
@@ -354,17 +354,17 @@ unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const unsigned int i) const
 
 long MTokenizer::GetTokenAtAsLong(const unsigned int i) const
 {
-  // Return the token at position i as long integer
+  // Return the token at position i as unsigned long integer
 
   if (i < m_Tokens.size()) {
     return atol(m_Tokens[i]);
   } else {
-    mlog<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
+    mout<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return 0;
   }
@@ -379,14 +379,14 @@ unsigned long MTokenizer::GetTokenAtAsUnsignedLong(const unsigned int i) const
   // Return the token at position i as long integer
 
   if (i < m_Tokens.size()) {
-    return strtoul(m_Tokens[i], NULL, 0);
+    return strtoul(m_Tokens[i].Data(), NULL, 0);
   } else {
-    mlog<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
+    mout<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return 0;
   }
@@ -398,7 +398,7 @@ unsigned long MTokenizer::GetTokenAtAsUnsignedLong(const unsigned int i) const
 
 TArrayI MTokenizer::GetTokenAtAsIntArray(const unsigned int i) const
 {
-  // Return all tokens from position i to end as integer array
+  // Return all tokens from position i to the end as integer array
 
   if (i < m_Tokens.size()) {
     TArrayI A(m_Tokens.size() - i);
@@ -407,12 +407,12 @@ TArrayI MTokenizer::GetTokenAtAsIntArray(const unsigned int i) const
     }
     return A;
   } else {
-    mlog<<"TArrayI MTokenizer::GetTokenAtAsIntArray(int i): "<<endl;
+    mout<<"TArrayI MTokenizer::GetTokenAtAsIntArray(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return TArrayI(0);
   }
@@ -424,7 +424,7 @@ TArrayI MTokenizer::GetTokenAtAsIntArray(const unsigned int i) const
 
 TArrayD MTokenizer::GetTokenAtAsDoubleArray(const unsigned int i) const
 {
-  // Return all tokens from position i to end as integer array
+  // Return all tokens from position i to the end as double array
 
   if (i < m_Tokens.size()) {
     TArrayD A(m_Tokens.size() - i);
@@ -433,12 +433,12 @@ TArrayD MTokenizer::GetTokenAtAsDoubleArray(const unsigned int i) const
     }
     return A;
   } else {
-    mlog<<"TArrayD MTokenizer::GetTokenAtAsDoubleArray(int i): "<<endl;
+    mout<<"TArrayD MTokenizer::GetTokenAtAsDoubleArray(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return TArrayD(0);
   }
@@ -450,7 +450,7 @@ TArrayD MTokenizer::GetTokenAtAsDoubleArray(const unsigned int i) const
 
 vector<double> MTokenizer::GetTokenAtAsDoubleVector(const unsigned int i) const
 {
-  // Return all tokens from position i to end as integer array
+  // Return all tokens from position i to the end as vector of doubles
 
   vector<double> A;
   if (i < m_Tokens.size()) {
@@ -459,12 +459,12 @@ vector<double> MTokenizer::GetTokenAtAsDoubleVector(const unsigned int i) const
     }
     return A;
   } else {
-    mlog<<"vector<double> MTokenizer::GetTokenAtAsDoubleVector(int i): "<<endl;
+    mout<<"vector<double> MTokenizer::GetTokenAtAsDoubleVector(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return A;
   }
@@ -476,7 +476,7 @@ vector<double> MTokenizer::GetTokenAtAsDoubleVector(const unsigned int i) const
 
 vector<float> MTokenizer::GetTokenAtAsFloatVector(const unsigned int i) const
 {
-  // Return all tokens from position i to end as integer array
+  // Return all tokens from position i to the end as vector of floats
 
   vector<float> A;
   if (i < m_Tokens.size()) {
@@ -485,12 +485,12 @@ vector<float> MTokenizer::GetTokenAtAsFloatVector(const unsigned int i) const
     }
     return A;
   } else {
-    mlog<<"vector<float> MTokenizer::GetTokenAtAsFloatVector(int i): "<<endl;
+    mout<<"vector<float> MTokenizer::GetTokenAtAsFloatVector(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return A;
   }
@@ -502,7 +502,7 @@ vector<float> MTokenizer::GetTokenAtAsFloatVector(const unsigned int i) const
 
 vector<int> MTokenizer::GetTokenAtAsIntVector(const unsigned int i) const
 {
-  // Return all tokens from position i to end as integer array
+  // Return all tokens from position i to the end as vector of ints
 
   vector<int> A;
   if (i < m_Tokens.size()) {
@@ -511,12 +511,12 @@ vector<int> MTokenizer::GetTokenAtAsIntVector(const unsigned int i) const
     }
     return A;
   } else {
-    mlog<<"vector<int> MTokenizer::GetTokenAtAsIntVector(int i): "<<endl;
+    mout<<"vector<int> MTokenizer::GetTokenAtAsIntVector(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return A;
   }
@@ -528,7 +528,7 @@ vector<int> MTokenizer::GetTokenAtAsIntVector(const unsigned int i) const
 
 vector<unsigned int> MTokenizer::GetTokenAtAsUnsignedIntVector(const unsigned int i) const
 {
-  // Return all tokens from position i to end as integer array
+  // Return all tokens from position i to the end as vector of unsigned ints
 
   vector<unsigned int> A;
   if (i < m_Tokens.size()) {
@@ -537,12 +537,12 @@ vector<unsigned int> MTokenizer::GetTokenAtAsUnsignedIntVector(const unsigned in
     }
     return A;
   } else {
-    mlog<<"vector<unsigned int> MTokenizer::GetTokenAtAsUnsignedIntVector(int i): "<<endl;
+    mout<<"vector<unsigned int> MTokenizer::GetTokenAtAsUnsignedIntVector(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return A;
   }
@@ -554,7 +554,7 @@ vector<unsigned int> MTokenizer::GetTokenAtAsUnsignedIntVector(const unsigned in
 
 vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool StringsAreInQuotationMarks) const
 {
-  //! Return the token AT AND AFTER i as vector of strings --- return empty array in case of error
+  // Return the tokens at and after i as vector of strings
   
   vector<MString> A;
   if (i < m_Tokens.size()) {
@@ -568,8 +568,8 @@ vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool 
         MString Current = GetTokenAtAsString(j);
         if (Started == false) {
           if (Current.BeginsWith("\"") == false) {
-            mlog<<"The string tokens are not correctly enclosed in quotation marks! You will be missing data!"<<endl;
-            mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+            mout<<"The string tokens are not correctly enclosed in quotation marks! You will be missing data!"<<endl;
+            mout<<"The text line was: \""<<m_Text<<"\""<<endl;
             A.clear();
             return A;
           } else {
@@ -589,20 +589,20 @@ vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool 
         }
       }  
       if (Started == true) {
-        mlog<<"The string tokens are not correctly enclosed in quotation marks! You will be missing data!"<<endl;
-        mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+        mout<<"The string tokens are not correctly enclosed in quotation marks! You will be missing data!"<<endl;
+        mout<<"The text line was: \""<<m_Text<<"\""<<endl;
         A.clear();
         return A;
       }
     }
     return A;
   } else {
-    mlog<<"vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool StringsAreInQuotationMarks) const: "<<endl;
+    mout<<"vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool StringsAreInQuotationMarks) const: "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return A;
   }  
@@ -626,12 +626,12 @@ bool MTokenizer::GetTokenAtAsBoolean(const unsigned int i) const
     }
     return (Token.ToInt() == 0) ? false : true;
   } else {
-    mlog<<"bool MTokenizer::GetTokenAtAsBoolean(int i): "<<endl;
+    mout<<"bool MTokenizer::GetTokenAtAsBoolean(int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return false;
   }
@@ -643,19 +643,19 @@ bool MTokenizer::GetTokenAtAsBoolean(const unsigned int i) const
 
 MTime MTokenizer::GetTokenAtAsTime(const unsigned int i) const
 {
-  //! Return the token at i as MTime --- return MTime(0) in case of error
+  // Return the token at i as MTime --- return MTime(0) in case of error
 
   if (i < m_Tokens.size()) {
     MTime Time;
     Time.Set(m_Tokens[i]);
     return Time;
   } else {
-    mlog<<"bool MTokenizer::GetTokenAtAsTime(const unsigned int i): "<<endl;
+    mout<<"bool MTokenizer::GetTokenAtAsTime(const unsigned int i): "<<endl;
     if (m_Tokens.size() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
-      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+      mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
-      mlog<<"The Tokenizer is empty!"<<endl;
+      mout<<"The Tokenizer is empty!"<<endl;
     }
     return MTime(0);
   }
@@ -682,7 +682,7 @@ bool MTokenizer::IsTokenAt(const unsigned int i, const MString& Token, bool cons
       return (Token == m_Tokens[i]) ? true : false;
     }
   } else {
-    merr<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")"<<endl;
+    mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")"<<endl;
     mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     return false;
   }
@@ -694,7 +694,7 @@ bool MTokenizer::IsTokenAt(const unsigned int i, const MString& Token, bool cons
 
 bool MTokenizer::IsComposited() const
 {
-  // Return true if the first token was composited, i.e. like "ACS.Material"
+  // Return true if the first token was composed, i.e. like "ACS.Material"
 
   return m_Composited;
 }
@@ -770,10 +770,10 @@ bool MTokenizer::AnalyzeFast(MString Text)
 bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
 {
   // Split the Text into its tokens
-  // White space is the prime delimiter, then the first token is splitted
+  // White space is the primary delimiter, then the first token is split
   // by a point as delimiter
-  // Text surrounded by [...] is one token - splitted tokens are not recognized
-  // Text surrounded by {...} is considered as equation - splitted tokens are not recognized
+  // Text surrounded by [...] is one token, split tokens are not recognized
+  // Text surrounded by {...} is considered an equation, split tokens are not recognized
 
   //cout<<Text<<endl;
 
@@ -853,7 +853,7 @@ bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
     } else if (TokenLength > 0 && pToken[0] == '{' && pToken[TokenLength-1] == '}') {
       if (AllowMaths == true) {
         if (EvaluateMaths(Token) == false) {
-          merr<<"Unable to scan math token \""<<Token<<"\"correctly! It might contain text or evaluate to nan or inf."<<endl;
+          mout<<"Unable to scan math token \""<<Token<<"\"correctly! It might contain text or evaluate to nan or inf."<<endl;
           return false;
         }
       }
@@ -871,8 +871,8 @@ bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
           m_Tokens.push_back(Token.GetSubString(0, Token.First('.')));
           // after the dot ...
           m_Tokens.push_back(Token.GetSubString(Token.First('.')+1, Token.Length()));
-          // This was a composited first token
-          m_Composited = false;
+          // This was a composed first token
+          m_Composited = true;
         } else {
           m_Tokens.push_back(Token);
           //mlog<<"Added: "<<Token<<endl;
@@ -893,8 +893,8 @@ bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
   //cout<<ToString()<<endl;
 
   if (MathMatch != 0) {
-    merr<<"There was an error with the math environment. The number of { and } do not match!"<<endl;
-    merr<<pText<<show;
+    mout<<"There was an error with the math environment. The number of { and } do not match!"<<endl;
+    mout<<pText<<show;
     return false;
   }
 
@@ -907,7 +907,7 @@ bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
 
 bool MTokenizer::CheckAllMaths()
 {
-  //! Check all tokens if the maths is OK
+  // Check all tokens if the maths is OK
 
   for (unsigned int t = 0; t < GetNTokens(); ++t) {
     if (CheckMaths(m_Tokens[t]) == false) {
@@ -924,7 +924,7 @@ bool MTokenizer::CheckAllMaths()
 
 bool MTokenizer::CheckMaths(const MString& Token) 
 {
-  //! Check all tokens if the maths is OK
+  // Check all tokens if the maths is OK
   
   if (Token.BeginsWith("{") && Token.EndsWith("}")) {
     // Remove all maths content
@@ -986,7 +986,7 @@ bool MTokenizer::CheckMaths(const MString& Token)
     T.RemoveAllInPlace("e");
         
     if (T != "") {
-      cout<<"MTokenizer::CheckMaths: Unidentifiable maths object: "<<T<<endl;
+      mout<<"MTokenizer::CheckMaths: Unidentifiable maths object: "<<T<<endl;
       return false;
     }
   }
