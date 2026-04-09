@@ -84,10 +84,14 @@ bool MParser::Open(MString FileName, unsigned int Way)
 
   Rewind();
   if (Way == c_Read) {
+    for (unsigned int l = 0; l < m_Lines.size(); ++l) {
+      delete m_Lines[l];
+    }
+    m_Lines.clear();
 
     MString Line;
-    while (IsGood() == true) {
-      if (ReadLine(Line) == false) break;
+    while (ReadLine(Line) == true) {
+      if (IsGood() == false && Line == "") break;
       AddLine(Line);
     }
  
@@ -183,12 +187,12 @@ MString MParser::GetLine(unsigned int LineNumber)
   if (m_Way != c_Read) {
     merr<<"Only valid if file is in read-mode!"<<endl;
     massert(m_Way == c_Read);
-    return 0;
+    return MString("");
   }
 
   if (LineNumber >= GetNLines()) {
     merr<<"Index out of bounds"<<endl;
-    return 0;
+    return MString("");
   }   
   
   return m_Lines[LineNumber]->GetText();
@@ -262,6 +266,7 @@ bool MParser::TokenizeLine(MTokenizer& T, bool Fast)
 
   MString Line;
   if (ReadLine(Line) == false) return false;
+  if (IsGood() == false && Line == "") return false;
   /*
   char c;
   MString Line;
@@ -301,9 +306,7 @@ bool MParser::GetFloat(float& f)
     return false;
   }
 
-  Get(f);
-
-  return true;
+  return Get(f);
 }
 
 
