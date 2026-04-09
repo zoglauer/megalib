@@ -33,28 +33,29 @@ class MXmlNode;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! An XML attribute used by the lightweight MEGAlib XML writer/reader
 class MXmlAttribute : public MXmlData
 {
   // public interface:
  public:
   //! Default constructor
   MXmlAttribute();
-  //! Constructor -- no values
-  MXmlAttribute(MXmlNode* MotherNode, MString Name);
-  //! Constructor -- content is string
-  MXmlAttribute(MXmlNode* MotherNode, MString Name, MString Value);
+  //! Constructor without a value
+  MXmlAttribute(MXmlNode* MotherNode, const MString& Name);
+  //! Constructor with a string value
+  MXmlAttribute(MXmlNode* MotherNode, const MString& Name, const MString& Value);
   //! Constructor -- content is integer
-  MXmlAttribute(MXmlNode* MotherNode, MString Name, int Value);
+  MXmlAttribute(MXmlNode* MotherNode, const MString& Name, int Value);
   //! Constructor -- content is unsigned integer
-  MXmlAttribute(MXmlNode* MotherNode, MString Name, unsigned int Value);
+  MXmlAttribute(MXmlNode* MotherNode, const MString& Name, unsigned int Value);
   //! Constructor -- content is double
-  MXmlAttribute(MXmlNode* MotherNode, MString Name, double Value);
+  MXmlAttribute(MXmlNode* MotherNode, const MString& Name, double Value);
   //! Constructor -- content is a boolean
-  MXmlAttribute(MXmlNode* MotherNode, MString Name, bool Value);
+  MXmlAttribute(MXmlNode* MotherNode, const MString& Name, bool Value);
   //! Default destructor
   virtual ~MXmlAttribute();
 
-  //! Returns the XML text
+  //! Return the XML text
   virtual MString ToString();
 
 
