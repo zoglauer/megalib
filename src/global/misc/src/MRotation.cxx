@@ -54,10 +54,10 @@ ClassImp(MRotation)
 bool MRotation::IsRotation(double Tolerance) const
 {
   double Det = GetDeterminant();
-  if (fabs(Det) - 1 > Tolerance) return false;
+  if (fabs(Det - 1.0) > Tolerance) return false;
   
   MRotation Inv = GetInvers();
-  MRotation Unity = Inv*(*this);
+  MRotation Unity = Inv * (*this);
   
   if (fabs(Unity.GetXX() - 1) > Tolerance || 
       fabs(Unity.GetYY() - 1) > Tolerance || 
@@ -104,7 +104,7 @@ MRotation MRotation::GetInvers() const
     New.SetXZ(GetSubDeterminant(m_XY, m_YY, m_XZ, m_YZ));
     New.SetYZ(GetSubDeterminant(m_YX, m_XX, m_YZ, m_XZ));
     New.SetZZ(GetSubDeterminant(m_XX, m_YX, m_XY, m_YY));
-    New *= Det;
+    New *= 1.0 / Det;
   }
   
   return New;
@@ -123,33 +123,33 @@ void MRotation::Set(const double Angle, const MVector& Vector)
     return;
   }
 
-  double sina = sin(Angle);
-  double cosa = cos(Angle);
+  double SinAngle = sin(Angle);
+  double CosAngle = cos(Angle);
   
-  double x = Vector.GetX()/Length;
-  double y = Vector.GetY()/Length;
-  double z = Vector.GetZ()/Length;
+  double X = Vector.GetX() / Length;
+  double Y = Vector.GetY() / Length;
+  double Z = Vector.GetZ() / Length;
 
-  m_XX = cosa + (1-cosa)*x*x;
-  m_XY = (1-cosa)*x*y + z*sina;
-  m_XZ = (1-cosa)*x*z - y*sina;
-  m_YX = (1-cosa)*x*y - z*sina;
-  m_YY = cosa + (1-cosa)*y*y;
-  m_YZ = (1-cosa)*y*z + x*sina;
-  m_ZX = (1-cosa)*x*z + y*sina;
-  m_ZY = (1-cosa)*y*z - x*sina;
-  m_ZZ = cosa + (1-cosa)*z*z;
+  m_XX = CosAngle + (1 - CosAngle) * X * X;
+  m_XY = (1 - CosAngle) * X * Y + Z * SinAngle;
+  m_XZ = (1 - CosAngle) * X * Z - Y * SinAngle;
+  m_YX = (1 - CosAngle) * X * Y - Z * SinAngle;
+  m_YY = CosAngle + (1 - CosAngle) * Y * Y;
+  m_YZ = (1 - CosAngle) * Y * Z + X * SinAngle;
+  m_ZX = (1 - CosAngle) * X * Z + Y * SinAngle;
+  m_ZY = (1 - CosAngle) * Y * Z - X * SinAngle;
+  m_ZZ = CosAngle + (1 - CosAngle) * Z * Z;
 }
 
 
 /******************************************************************************
  * Perform an additional rotation by an angle around a vector
  */
-MRotation& MRotation::Rotate(const double Angle, const MVector& Vector)
+MRotation& MRotation::Rotate(double Angle, const MVector& Vector)
 {
   MRotation R(Angle, Vector);
    
-  (*this) = R*(*this); 
+  (*this) = R * (*this); 
   
   return *this;
 }
@@ -212,21 +212,21 @@ double MRotation::GetPhiZ() const
 /******************************************************************************
  * Multiply with another materix from the right:
  */
-MRotation& MRotation::operator*= (const MRotation& R)
+MRotation& MRotation::operator*=(const MRotation& Rotation)
 {
   MRotation New;
 
-  New.SetXX(m_XX*R.GetXX() + m_YX*R.GetXY() + m_ZX*R.GetXZ());
-  New.SetYX(m_XX*R.GetYX() + m_YX*R.GetYY() + m_ZX*R.GetYZ());
-  New.SetZX(m_XX*R.GetZX() + m_YX*R.GetZY() + m_ZX*R.GetZZ());
+  New.SetXX(m_XX * Rotation.GetXX() + m_YX * Rotation.GetXY() + m_ZX * Rotation.GetXZ());
+  New.SetYX(m_XX * Rotation.GetYX() + m_YX * Rotation.GetYY() + m_ZX * Rotation.GetYZ());
+  New.SetZX(m_XX * Rotation.GetZX() + m_YX * Rotation.GetZY() + m_ZX * Rotation.GetZZ());
 
-  New.SetXY(m_XY*R.GetXX() + m_YY*R.GetXY() + m_ZY*R.GetXZ());
-  New.SetYY(m_XY*R.GetYX() + m_YY*R.GetYY() + m_ZY*R.GetYZ());
-  New.SetZY(m_XY*R.GetZX() + m_YY*R.GetZY() + m_ZY*R.GetZZ());
+  New.SetXY(m_XY * Rotation.GetXX() + m_YY * Rotation.GetXY() + m_ZY * Rotation.GetXZ());
+  New.SetYY(m_XY * Rotation.GetYX() + m_YY * Rotation.GetYY() + m_ZY * Rotation.GetYZ());
+  New.SetZY(m_XY * Rotation.GetZX() + m_YY * Rotation.GetZY() + m_ZY * Rotation.GetZZ());
 
-  New.SetXZ(m_XZ*R.GetXX() + m_YZ*R.GetXY() + m_ZZ*R.GetXZ());
-  New.SetYZ(m_XZ*R.GetYX() + m_YZ*R.GetYY() + m_ZZ*R.GetYZ());
-  New.SetZZ(m_XZ*R.GetZX() + m_YZ*R.GetZY() + m_ZZ*R.GetZZ());
+  New.SetXZ(m_XZ * Rotation.GetXX() + m_YZ * Rotation.GetXY() + m_ZZ * Rotation.GetXZ());
+  New.SetYZ(m_XZ * Rotation.GetYX() + m_YZ * Rotation.GetYY() + m_ZZ * Rotation.GetYZ());
+  New.SetZZ(m_XZ * Rotation.GetZX() + m_YZ * Rotation.GetZY() + m_ZZ * Rotation.GetZZ());
   
   Set(New);
   
@@ -237,9 +237,11 @@ MRotation& MRotation::operator*= (const MRotation& R)
 /******************************************************************************
  * Check for equality
  */
-bool MRotation::operator== (const MRotation& R)
+bool MRotation::operator==(const MRotation& Rotation)
 {
-  if (m_XX == R.m_XX && m_YX == R.m_YX && m_ZX == R.m_ZX && m_XY == R.m_XY && m_YY == R.m_YY && m_ZY == R.m_ZY && m_XZ == R.m_XZ && m_YZ == R.m_YZ && m_ZZ == R.m_ZZ) {
+  if (m_XX == Rotation.m_XX && m_YX == Rotation.m_YX && m_ZX == Rotation.m_ZX &&
+      m_XY == Rotation.m_XY && m_YY == Rotation.m_YY && m_ZY == Rotation.m_ZY &&
+      m_XZ == Rotation.m_XZ && m_YZ == Rotation.m_YZ && m_ZZ == Rotation.m_ZZ) {
     return true;
   } else {
     return false;
@@ -259,32 +261,32 @@ ostream& operator<<(ostream& out, const MRotation& V)
 /******************************************************************************
  * Multiply with vector from right
  */
-MVector operator* (const MRotation& L, const MVector& R)
+MVector operator*(const MRotation& L, const MVector& R)
 {
-  return MVector(L.GetXX()*R.GetX() + L.GetYX()*R.GetY() + L.GetZX()*R.GetZ(),
-                 L.GetXY()*R.GetX() + L.GetYY()*R.GetY() + L.GetZY()*R.GetZ(),
-                 L.GetXZ()*R.GetX() + L.GetYZ()*R.GetY() + L.GetZZ()*R.GetZ());
+  return MVector(L.GetXX() * R.GetX() + L.GetYX() * R.GetY() + L.GetZX() * R.GetZ(),
+                 L.GetXY() * R.GetX() + L.GetYY() * R.GetY() + L.GetZY() * R.GetZ(),
+                 L.GetXZ() * R.GetX() + L.GetYZ() * R.GetY() + L.GetZZ() * R.GetZ());
 }
 
  
 /******************************************************************************
  * Multiply with matrix from right
  */
-MRotation operator* (const MRotation& L, const MRotation& R)
+MRotation operator*(const MRotation& L, const MRotation& R)
 {
   MRotation New;
   
-  New.SetXX(L.GetXX()*R.GetXX() + L.GetYX()*R.GetXY() + L.GetZX()*R.GetXZ());
-  New.SetYX(L.GetXX()*R.GetYX() + L.GetYX()*R.GetYY() + L.GetZX()*R.GetYZ());
-  New.SetZX(L.GetXX()*R.GetZX() + L.GetYX()*R.GetZY() + L.GetZX()*R.GetZZ());
+  New.SetXX(L.GetXX() * R.GetXX() + L.GetYX() * R.GetXY() + L.GetZX() * R.GetXZ());
+  New.SetYX(L.GetXX() * R.GetYX() + L.GetYX() * R.GetYY() + L.GetZX() * R.GetYZ());
+  New.SetZX(L.GetXX() * R.GetZX() + L.GetYX() * R.GetZY() + L.GetZX() * R.GetZZ());
 
-  New.SetXY(L.GetXY()*R.GetXX() + L.GetYY()*R.GetXY() + L.GetZY()*R.GetXZ());
-  New.SetYY(L.GetXY()*R.GetYX() + L.GetYY()*R.GetYY() + L.GetZY()*R.GetYZ());
-  New.SetZY(L.GetXY()*R.GetZX() + L.GetYY()*R.GetZY() + L.GetZY()*R.GetZZ());
+  New.SetXY(L.GetXY() * R.GetXX() + L.GetYY() * R.GetXY() + L.GetZY() * R.GetXZ());
+  New.SetYY(L.GetXY() * R.GetYX() + L.GetYY() * R.GetYY() + L.GetZY() * R.GetYZ());
+  New.SetZY(L.GetXY() * R.GetZX() + L.GetYY() * R.GetZY() + L.GetZY() * R.GetZZ());
 
-  New.SetXZ(L.GetXZ()*R.GetXX() + L.GetYZ()*R.GetXY() + L.GetZZ()*R.GetXZ());
-  New.SetYZ(L.GetXZ()*R.GetYX() + L.GetYZ()*R.GetYY() + L.GetZZ()*R.GetYZ());
-  New.SetZZ(L.GetXZ()*R.GetZX() + L.GetYZ()*R.GetZY() + L.GetZZ()*R.GetZZ());
+  New.SetXZ(L.GetXZ() * R.GetXX() + L.GetYZ() * R.GetXY() + L.GetZZ() * R.GetXZ());
+  New.SetYZ(L.GetXZ() * R.GetYX() + L.GetYZ() * R.GetYY() + L.GetZZ() * R.GetYZ());
+  New.SetZZ(L.GetXZ() * R.GetZX() + L.GetYZ() * R.GetZY() + L.GetZZ() * R.GetZZ());
   
   return New;
 }
