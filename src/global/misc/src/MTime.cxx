@@ -98,22 +98,22 @@ MTime::MTime(MString String, int Format)
 
   switch (Format) {
   case UTC:
-    Result = sscanf(String, "%02u.%02u.%04d %02u:%02u:%02u:%09u", 
-        &Years, &Months, &Days, &Hours, &Minutes, &Seconds, &NanoSeconds);
-    if (Result != 6) Result = -1; // Means: we have an error
+    Result = sscanf(String, "%02d.%02d.%04d %02d:%02d:%02d:%09d",
+        &Days, &Months, &Years, &Hours, &Minutes, &Seconds, &NanoSeconds);
+    if (Result != 7) Result = -1; // Means: we have an error
     break;
   case SQL:
-    Result = sscanf(String, "%04d-%02u-%02u %02u:%02u:%02u", 
+    Result = sscanf(String, "%04d-%02d-%02d %02d:%02d:%02d",
         &Years, &Months, &Days, &Hours, &Minutes, &Seconds);
     if (Result != 6) Result = -1; // Means: we have an error
     break;
   case SQLU:
-    Result = sscanf(String, "%04d-%02u-%02u_%02u:%02u:%02u", 
+    Result = sscanf(String, "%04d-%02d-%02d_%02d:%02d:%02d",
         &Years, &Months, &Days, &Hours, &Minutes, &Seconds);
     if (Result != 6) Result = -1; // Means: we have an error
     break;
   case Short:
-    Result = sscanf(String, "%04d%02u%02u_%02u%02u%02u", 
+    Result = sscanf(String, "%04d%02d%02d_%02d%02d%02d",
         &Years, &Months, &Days, &Hours, &Minutes, &Seconds);
     if (Result != 6) Result = -1; // Means: we have an error
     break;
@@ -248,7 +248,7 @@ bool MTime::Set(unsigned int Year, unsigned int Month, unsigned int Day,
   struct tm tp;
 
   if (Year < 70) Year += 100;
-  if (Year > 1970) Year -= 1900;
+  if (Year >= 1970) Year -= 1900;
   tp.tm_year = Year;
   if (Month <= 0) {
     tp.tm_yday = Day;
@@ -261,7 +261,7 @@ bool MTime::Set(unsigned int Year, unsigned int Month, unsigned int Day,
   tp.tm_sec = Second;
   tp.tm_isdst = 0; // GMT: no daylight savings!
 
-  m_Seconds = mktime(&tp);
+  m_Seconds = timegm(&tp);
 
   if (m_Seconds == -1) {
     merr<<"Invalid time!!"<<endl;
@@ -529,7 +529,7 @@ unsigned int MTime::GetSeconds()
 
   time_t Time = m_Seconds;
   struct tm tp;
-  tp = *localtime(&Time);
+  tp = *gmtime(&Time);
 
   return tp.tm_sec;
 }
@@ -544,7 +544,7 @@ unsigned int MTime::GetMinutes()
 
   time_t Time = m_Seconds;
   struct tm tp;
-  tp = *localtime(&Time);
+  tp = *gmtime(&Time);
 
   return tp.tm_min;
 }
@@ -559,7 +559,7 @@ unsigned int MTime::GetHours()
 
   time_t Time = m_Seconds;
   struct tm tp;
-  tp = *localtime(&Time);
+  tp = *gmtime(&Time);
 
   return tp.tm_hour;
 }
@@ -577,7 +577,7 @@ unsigned int MTime::GetDaysSinceEpoch()
 
   time_t Time = m_Seconds;
   struct tm tp;
-  tp = *localtime(&Time);
+  tp = *gmtime(&Time);
 
   unsigned int Days = tp.tm_yday;
 
@@ -586,7 +586,7 @@ unsigned int MTime::GetDaysSinceEpoch()
     Year--;
     MTime NewTime(Year, 12, 31, 23, 59, 30);
     time_t Seconds = (long int) NewTime.GetAsSeconds();
-    tp = *localtime(&Seconds);
+    tp = *gmtime(&Seconds);
     Days += tp.tm_yday;
   }
 
@@ -603,7 +603,7 @@ unsigned int MTime::GetDays()
 
   time_t Time = m_Seconds;
   struct tm tp;
-  tp = *localtime(&Time);
+  tp = *gmtime(&Time);
 
   return tp.tm_mday;
 }
@@ -617,7 +617,7 @@ unsigned int MTime::GetMonths()
 
   time_t Time = m_Seconds;
   struct tm tp;
-  tp = *localtime(&Time);
+  tp = *gmtime(&Time);
 
   return tp.tm_mon+1;
 }
@@ -632,7 +632,7 @@ unsigned int MTime::GetYears()
 
   time_t Time = m_Seconds;
   struct tm tp;
-  tp = *localtime(&Time);
+  tp = *gmtime(&Time);
 
   return tp.tm_year+1900;
 }
@@ -686,7 +686,7 @@ double MTime::GetAsJulianDay()
 
   time_t Time = m_Seconds;
   struct tm tp;
-  tp = *localtime(&Time);
+  tp = *gmtime(&Time);
 
   int Year = tp.tm_year+1900;
   int Month = tp.tm_mon+1;
@@ -993,7 +993,7 @@ MTime MTime::operator-(const MTime& T)
 
 bool MTime::operator!=(const MTime& T) const
 {
-  return ((m_Seconds != T.m_Seconds) && (m_NanoSeconds != T.m_NanoSeconds));
+  return ((m_Seconds != T.m_Seconds) || (m_NanoSeconds != T.m_NanoSeconds));
 }
 
 
