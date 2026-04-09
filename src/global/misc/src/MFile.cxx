@@ -1414,10 +1414,11 @@ streampos MFile::GetUncompressedFilePosition()
     return 0;
   }
 
-  streampos Pos;
+  streampos Pos = 0;
   if (m_WasZipped == true) {
     Pos = (streampos) gztell(m_ZipFile);
   } else {
+    m_File.clear();
     Pos = m_File.tellg();
   }
 
