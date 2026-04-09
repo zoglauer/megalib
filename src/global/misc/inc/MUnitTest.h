@@ -98,7 +98,7 @@ class MUnitTest
   }
 
   //! Evaluate if a callable throws the expected exception type
-  template <typename TException, typename T> bool EvaluateException(MString Function, T Input, MString Description, T Callable)
+  template <typename TException, typename TInput, typename TCallable> bool EvaluateException(MString Function, TInput Input, MString Description, TCallable Callable)
   {
     try {
       Callable();

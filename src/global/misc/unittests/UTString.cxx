@@ -16,6 +16,7 @@
 // Standard lib:
 #include <limits>
 #include <sstream>
+#include <string>
 using namespace std;
 
 
@@ -44,6 +45,8 @@ private:
   bool TestReadingAndTypeChecks();
   //! Test numeric conversion and formatting helpers
   bool TestNumericConversions();
+  //! Test edge cases and defensive behavior
+  bool TestEdgeCases();
 };
 
 
@@ -61,6 +64,7 @@ bool UTString::Run()
   AllPassed = TestTokenizeAndExtract() && AllPassed;
   AllPassed = TestReadingAndTypeChecks() && AllPassed;
   AllPassed = TestNumericConversions() && AllPassed;
+  AllPassed = TestEdgeCases() && AllPassed;
 
   Summarize();
 
@@ -115,6 +119,17 @@ bool UTString::TestConstructionAndAssignment()
   MoveAssigned = std::move(MoveAssignedSource);
   Passed = Evaluate("operator=(MString&&)", "assigned", "Move assignment transfers the string content", MoveAssigned, MString("assigned")) && Passed;
 
+  Passed = Evaluate("Data()", "alpha", "Data returns a C string view of the content", MString(FromCString.Data()), MString("alpha")) && Passed;
+  Passed = Evaluate("ToString()", "alpha", "ToString returns a std::string copy", MString(FromCString.ToString()), MString("alpha")) && Passed;
+
+  MString StringRef("delta");
+  StringRef.GetStringRef() = "epsilon";
+  Passed = Evaluate("GetStringRef()", "delta -> epsilon", "GetStringRef exposes a mutable std::string reference", StringRef, MString("epsilon")) && Passed;
+
+  MString ClearString("to be cleared");
+  ClearString.Clear();
+  Passed = EvaluateTrue("Clear()", "to be cleared", "Clear removes all content", ClearString.IsEmpty()) && Passed;
+
   return Passed;
 }
 
@@ -142,12 +157,20 @@ bool UTString::TestAccessAndSearch()
   Passed = Evaluate("First()", "alphabet", "First returns npos if the character is absent", static_cast<size_t>(String.First('z')), MString::npos) && Passed;
   Passed = Evaluate("Last()", "alphabet", "Last returns npos if the character is absent", static_cast<size_t>(String.Last('z')), MString::npos) && Passed;
   Passed = Evaluate("Index()", "alphabet", "Index returns npos if the substring is absent", static_cast<size_t>(String.Index("zz")), MString::npos) && Passed;
+  Passed = Evaluate("Index(..., Start)", "abracadabra from 1", "Index honors the nonzero start position", static_cast<long>(MString("abracadabra").Index("abra", 1)), 7L) && Passed;
+  Passed = Evaluate("FindFirst()", "abracadabra", "FindFirst returns the first substring occurrence", static_cast<long>(MString("abracadabra").FindFirst("abra")), 0L) && Passed;
   Passed = Evaluate("FindFirst()", "alphabet", "FindFirst returns npos if the substring is absent", static_cast<size_t>(String.FindFirst("zz")), MString::npos) && Passed;
   Passed = Evaluate("FindLast()", "abracadabra", "FindLast finds the last substring occurrence", static_cast<long>(MString("abracadabra").FindLast("abra")), 7L) && Passed;
   Passed = Evaluate("FindLast()", "alphabet", "FindLast returns npos if the substring is absent", static_cast<size_t>(String.FindLast("zz")), MString::npos) && Passed;
   Passed = EvaluateTrue("AreIdentical()", "CaseSensitive", "AreIdentical succeeds for identical strings", MString("Case").AreIdentical("Case")) && Passed;
   Passed = EvaluateTrue("AreIdentical()", "IgnoreCase", "AreIdentical(ignore case) succeeds for case-only differences", MString("Case").AreIdentical("cASE", true)) && Passed;
   Passed = EvaluateFalse("AreIdentical()", "IgnoreCase mismatch", "AreIdentical(ignore case) rejects different text", MString("Case").AreIdentical("cash", true)) && Passed;
+
+  MString Indexed("abc");
+  Indexed[0] = 'x';
+  Passed = Evaluate("operator[]", "abc", "Non-const operator[] allows indexed mutation", Indexed, MString("xbc")) && Passed;
+  const MString ConstIndexed("xyz");
+  Passed = Evaluate("operator[] const", "xyz", "Const operator[] returns the requested character", ConstIndexed[1], 'y') && Passed;
 
   return Passed;
 }
@@ -174,6 +197,24 @@ bool UTString::TestModification()
   String.Replace(4, 4, "fix");
   Passed = Evaluate("Replace(size_t, size_t, const MString&)", "pre_tail", "Replace swaps a segment in place", String, MString("pre_fix")) && Passed;
 
+  MString AppendInPlace("core");
+  AppendInPlace.AppendInPlace("_tail");
+  Passed = Evaluate("AppendInPlace(const char*)", "core + _tail", "AppendInPlace extends the string at the end", AppendInPlace, MString("core_tail")) && Passed;
+
+  MString AppendObject("core");
+  MString Tail("_tail");
+  AppendObject.AppendInPlace(Tail);
+  Passed = Evaluate("AppendInPlace(MString&)", "core + _tail", "AppendInPlace with MString appends object content", AppendObject, MString("core_tail")) && Passed;
+
+  MString PrependInPlace("tail");
+  PrependInPlace.PrependInPlace("pre_");
+  Passed = Evaluate("PrependInPlace(const char*)", "pre_ + tail", "PrependInPlace inserts content at the beginning", PrependInPlace, MString("pre_tail")) && Passed;
+
+  MString PrependObject("tail");
+  MString Prefix("pre_");
+  PrependObject.PrependInPlace(Prefix);
+  Passed = Evaluate("PrependInPlace(MString&)", "pre_ + tail", "PrependInPlace with MString inserts object content at the beginning", PrependObject, MString("pre_tail")) && Passed;
+
   MString AllStrings("one two two three");
   AllStrings.ReplaceAll("two", "2");
   Passed = Evaluate("ReplaceAll()", "one two two three", "ReplaceAll updates all matching substrings", AllStrings, MString("one 2 2 three")) && Passed;
@@ -197,21 +238,69 @@ bool UTString::TestModification()
   StripFront.StripFront('_');
   Passed = Evaluate("StripFront()", "__abc__", "StripFront removes the chosen leading character", StripFront, MString("abc__")) && Passed;
 
+  MString StripFrontInPlace("__abc__");
+  StripFrontInPlace.StripFrontInPlace('_');
+  Passed = Evaluate("StripFrontInPlace()", "__abc__", "StripFrontInPlace removes the chosen leading character", StripFrontInPlace, MString("abc__")) && Passed;
+
   MString StripBack("__abc__");
   StripBack.StripBack('_');
   Passed = Evaluate("StripBack()", "__abc__", "StripBack removes the chosen trailing character", StripBack, MString("__abc")) && Passed;
+
+  MString StripBackInPlace("__abc__");
+  StripBackInPlace.StripBackInPlace('_');
+  Passed = Evaluate("StripBackInPlace()", "__abc__", "StripBackInPlace removes the chosen trailing character", StripBackInPlace, MString("__abc")) && Passed;
+
+  MString StripInPlace("__abc__");
+  StripInPlace.StripInPlace('_');
+  Passed = Evaluate("StripInPlace()", "__abc__", "StripInPlace removes the chosen leading and trailing character", StripInPlace, MString("abc")) && Passed;
 
   MString Lower("AbC123");
   Lower.ToLower();
   Passed = Evaluate("ToLower()", "AbC123", "ToLower converts ASCII letters to lower case", Lower, MString("abc123")) && Passed;
 
+  MString LowerInPlace("AbC123");
+  LowerInPlace.ToLowerInPlace();
+  Passed = Evaluate("ToLowerInPlace()", "AbC123", "ToLowerInPlace converts ASCII letters to lower case", LowerInPlace, MString("abc123")) && Passed;
+
   MString Upper("AbC123");
   Upper.ToUpper();
   Passed = Evaluate("ToUpper()", "AbC123", "ToUpper converts ASCII letters to upper case", Upper, MString("ABC123")) && Passed;
 
+  MString UpperInPlace("AbC123");
+  UpperInPlace.ToUpperInPlace();
+  Passed = Evaluate("ToUpperInPlace()", "AbC123", "ToUpperInPlace converts ASCII letters to upper case", UpperInPlace, MString("ABC123")) && Passed;
+
   MString RemoveLast("abcdef");
   RemoveLast.RemoveLast(2);
   Passed = Evaluate("RemoveLast()", "abcdef", "RemoveLast truncates from the end", RemoveLast, MString("abcd")) && Passed;
+
+  MString RemoveInPlaceAll("abcdef");
+  RemoveInPlaceAll.RemoveInPlace(3);
+  Passed = Evaluate("RemoveInPlace(size_t)", "abcdef", "RemoveInPlace(start) removes all characters from start to the end", RemoveInPlaceAll, MString("abc")) && Passed;
+
+  MString RemoveInPlaceRange("abcdef");
+  RemoveInPlaceRange.RemoveInPlace(2, 2);
+  Passed = Evaluate("RemoveInPlace(size_t, size_t)", "abcdef", "RemoveInPlace(start, size) removes a range", RemoveInPlaceRange, MString("abef")) && Passed;
+
+  MString RemoveLastInPlace("abcdef");
+  RemoveLastInPlace.RemoveLastInPlace(2);
+  Passed = Evaluate("RemoveLastInPlace()", "abcdef", "RemoveLastInPlace truncates from the end", RemoveLastInPlace, MString("abcd")) && Passed;
+
+  MString ReplaceInPlaceString("abcdef");
+  ReplaceInPlaceString.ReplaceInPlace(2, 2, "ZZ");
+  Passed = Evaluate("ReplaceInPlace()", "abcdef", "ReplaceInPlace swaps a segment in place", ReplaceInPlaceString, MString("abZZef")) && Passed;
+
+  MString ReplaceAllInPlaceString("one two two");
+  ReplaceAllInPlaceString.ReplaceAllInPlace("two", "2");
+  Passed = Evaluate("ReplaceAllInPlace()", "one two two", "ReplaceAllInPlace updates all matching substrings", ReplaceAllInPlaceString, MString("one 2 2")) && Passed;
+
+  MString ReplaceAtEndInPlaceString("file.txt");
+  ReplaceAtEndInPlaceString.ReplaceAtEndInPlace(".txt", ".dat");
+  Passed = Evaluate("ReplaceAtEndInPlace()", "file.txt", "ReplaceAtEndInPlace rewrites a matching suffix", ReplaceAtEndInPlaceString, MString("file.dat")) && Passed;
+
+  MString RemoveAllInPlaceString("one two two");
+  RemoveAllInPlaceString.RemoveAllInPlace("two");
+  Passed = Evaluate("RemoveAllInPlace()", "one two two", "RemoveAllInPlace removes all matching substrings", RemoveAllInPlaceString, MString("one  ")) && Passed;
 
   MString OverlapReplace("aaaa");
   OverlapReplace.ReplaceAll("aa", "b");
@@ -250,9 +339,16 @@ bool UTString::TestTokenizeAndExtract()
   Passed = EvaluateSize("Tokenize()", "a,,b,c,", "Tokenize drops empty fields by default", Compact.size(), 3) && Passed;
   Passed = Evaluate("Tokenize()", "a,,b,c,", "Tokenize returns the expected compact tokens", Compact[2], MString("c")) && Passed;
 
+  vector<MString> EmptyDelimiter = MString("abc").Tokenize("", false);
+  Passed = EvaluateSize("Tokenize()", "abc with empty delimiter", "Tokenize with an empty delimiter returns the full string as one token", EmptyDelimiter.size(), 1) && Passed;
+  Passed = Evaluate("Tokenize()", "abc with empty delimiter", "Tokenize with an empty delimiter preserves the string content", EmptyDelimiter[0], MString("abc")) && Passed;
+
   Passed = Evaluate("Extract()", "prefix[start]suffix", "Extract returns the text between delimiters", MString("prefix[start]suffix").Extract("[", "]"), MString("start")) && Passed;
   Passed = Evaluate("Extract()", "missing before delimiter", "Extract returns an empty string if the opening delimiter is absent", MString("prefixstart]suffix").Extract("[", "]"), MString("")) && Passed;
   Passed = Evaluate("Extract()", "missing after delimiter", "Extract returns an empty string if the closing delimiter is absent", MString("prefix[startsuffix").Extract("[", "]"), MString("")) && Passed;
+  Passed = Evaluate("Extract()", "empty opening delimiter", "Extract with an empty opening delimiter starts at the beginning of the string", MString("prefix]suffix").Extract("", "]"), MString("prefix")) && Passed;
+  Passed = Evaluate("Extract()", "empty closing delimiter", "Extract with an empty closing delimiter returns an empty string", MString("prefix[suffix").Extract("[", ""), MString("")) && Passed;
+  Passed = Evaluate("Extract()", "both delimiters empty", "Extract with two empty delimiters returns an empty string", MString("prefix").Extract("", ""), MString("")) && Passed;
 
   return Passed;
 }
@@ -270,6 +366,11 @@ bool UTString::TestReadingAndTypeChecks()
   MString Line;
   Line.ReadLine(SingleLine);
   Passed = Evaluate("ReadLine()", "first line\\nsecond line", "ReadLine reads exactly one line", Line, MString("first line")) && Passed;
+
+  istringstream WordStream("alpha beta");
+  MString Word;
+  WordStream >> Word;
+  Passed = Evaluate("operator>>", "alpha beta", "operator>> reads one whitespace-delimited token", Word, MString("alpha")) && Passed;
 
   istringstream AllLines("first\nsecond");
   MString Full;
@@ -341,6 +442,102 @@ bool UTString::TestNumericConversions()
 
   MString NegativeUncertainty(12.0, -1.0, "mm");
   Passed = EvaluateFalse("MString(double, double, MString, bool)", "12.0 +/- -1.0 mm", "Negative uncertainty should produce a finite formatted string", NegativeUncertainty.Contains("nan") || NegativeUncertainty.Contains("inf")) && Passed;
+
+  MString HashA("hash me");
+  MString HashB("hash me");
+  MString HashC("different");
+  Passed = Evaluate("GetHash()", "equal strings", "GetHash returns the same value for equal strings", HashA.GetHash(), HashB.GetHash()) && Passed;
+  Passed = EvaluateFalse("GetHash()", "different strings", "GetHash distinguishes simple different strings", HashA.GetHash() == HashC.GetHash()) && Passed;
+
+  ostringstream Out;
+  Out << MString("stream");
+  Passed = Evaluate("operator<<", "stream", "operator<< writes the string content to a stream", MString(Out.str()), MString("stream")) && Passed;
+
+  const char* AsCString = MString("text");
+  Passed = Evaluate("operator const char*()", "text", "operator const char* exposes the string as a C string", MString(AsCString), MString("text")) && Passed;
+
+  TString RootString = MString("root");
+  Passed = Evaluate("operator TString()", "root", "operator TString converts to a ROOT TString", MString(RootString.Data()), MString("root")) && Passed;
+
+  MString NumericAppend("n=");
+  NumericAppend += 5;
+  NumericAppend += ",u=";
+  NumericAppend += static_cast<unsigned int>(7);
+  NumericAppend += ",l=";
+  NumericAppend += static_cast<long>(9);
+  NumericAppend += ",ul=";
+  NumericAppend += static_cast<unsigned long>(11);
+  NumericAppend += ",f=";
+  NumericAppend += 1.5f;
+  NumericAppend += ",d=";
+  NumericAppend += 2.25;
+  Passed = EvaluateTrue("operator+=", "mixed numeric appends", "operator+= appends numeric values in sequence", NumericAppend.BeginsWith("n=5,u=7,l=9,ul=11,f=1.5,d=2.25")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test edge cases and defensive behavior
+bool UTString::TestEdgeCases()
+{
+  bool Passed = true;
+
+  MString ReplaceAllEmpty("abc");
+  ReplaceAllEmpty.ReplaceAll("", "x");
+  Passed = Evaluate("ReplaceAll()", "empty from pattern", "ReplaceAll is a no-op if the source pattern is empty", ReplaceAllEmpty, MString("abc")) && Passed;
+
+  MString RemoveAllEmpty("abc");
+  RemoveAllEmpty.RemoveAll("");
+  Passed = Evaluate("RemoveAll()", "empty from pattern", "RemoveAll is a no-op if the source pattern is empty", RemoveAllEmpty, MString("abc")) && Passed;
+
+  MString ReplaceAtEndEmpty("abc");
+  ReplaceAtEndEmpty.ReplaceAtEnd("", "x");
+  Passed = Evaluate("ReplaceAtEnd()", "empty suffix pattern", "ReplaceAtEnd with an empty suffix appends the replacement", ReplaceAtEndEmpty, MString("abcx")) && Passed;
+
+  MString RemoveTooLarge("abc");
+  RemoveTooLarge.Remove(99);
+  Passed = Evaluate("Remove(size_t)", "start > length", "Remove(start) is a no-op if start is outside the string", RemoveTooLarge, MString("abc")) && Passed;
+
+  MString RemoveRangeTooLarge("abc");
+  RemoveRangeTooLarge.Remove(99, 3);
+  Passed = Evaluate("Remove(size_t, size_t)", "start > length", "Remove(start, size) is a no-op if start is outside the string", RemoveRangeTooLarge, MString("abc")) && Passed;
+
+  MString ReplaceTooLarge("abc");
+  ReplaceTooLarge.Replace(99, 1, "x");
+  Passed = Evaluate("Replace()", "start > length", "Replace is a no-op if start is outside the string", ReplaceTooLarge, MString("abc")) && Passed;
+
+  MString RemoveLastTooLarge("abc");
+  RemoveLastTooLarge.RemoveLast(99);
+  Passed = Evaluate("RemoveLast()", "size > length", "RemoveLast removes the whole string if the size exceeds the length", RemoveLastTooLarge, MString("")) && Passed;
+
+  MString RemoveLastInPlaceTooLarge("abc");
+  RemoveLastInPlaceTooLarge.RemoveLastInPlace(99);
+  Passed = Evaluate("RemoveLastInPlace()", "size > length", "RemoveLastInPlace removes the whole string if the size exceeds the length", RemoveLastInPlaceTooLarge, MString("")) && Passed;
+
+  istringstream EmptyStream;
+  MString EmptyLine("preset");
+  EmptyLine.ReadLine(EmptyStream);
+  Passed = Evaluate("ReadLine()", "empty stream", "ReadLine clears the string when no line can be read", EmptyLine, MString("")) && Passed;
+
+  Passed = EvaluateTrue("IsNumber()", "+12", "IsNumber accepts an explicit plus sign", MString("+12").IsNumber()) && Passed;
+  Passed = EvaluateTrue("IsNumber()", ".5", "IsNumber accepts fractional numbers without a leading zero", MString(".5").IsNumber()) && Passed;
+  Passed = EvaluateTrue("IsNumber()", "1.", "IsNumber accepts numbers with a trailing decimal point", MString("1.").IsNumber()) && Passed;
+  Passed = EvaluateFalse("IsNumber()", "nan", "IsNumber rejects nan text", MString("nan").IsNumber()) && Passed;
+  Passed = EvaluateFalse("IsNumber()", "inf", "IsNumber rejects inf text", MString("inf").IsNumber()) && Passed;
+
+  Passed = EvaluateException<std::invalid_argument>("ToUnsignedInt()", "invalid input", "ToUnsignedInt throws on non-numeric input", []() { MString("abc").ToUnsignedInt(); }) && Passed;
+  Passed = EvaluateException<std::out_of_range>("ToUnsignedInt()", "overflow", "ToUnsignedInt throws on overflow", []() { MString("999999999999999999999999").ToUnsignedInt(); }) && Passed;
+  Passed = EvaluateException<std::invalid_argument>("ToUnsignedLong()", "invalid input", "ToUnsignedLong throws on non-numeric input", []() { MString("abc").ToUnsignedLong(); }) && Passed;
+  Passed = EvaluateException<std::out_of_range>("ToUnsignedLong()", "overflow", "ToUnsignedLong throws on overflow", []() { MString("999999999999999999999999").ToUnsignedLong(); }) && Passed;
+
+  MString Long("start");
+  for (unsigned int i = 0; i < 100; ++i) {
+    Long += "x";
+  }
+  Passed = Evaluate("operator+=", "long append", "Repeated append operations preserve all characters", static_cast<unsigned int>(Long.Length()), 105U) && Passed;
 
   return Passed;
 }
