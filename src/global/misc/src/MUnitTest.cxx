@@ -38,8 +38,9 @@ ClassImp(MUnitTest)
 
 
 //! Default constructor
-MUnitTest::MUnitTest()
+MUnitTest::MUnitTest(const MString& Name)
 {
+  m_Name = Name;
   m_NumberOfPassedTests = 0;
   m_NumberOfFailedTests = 0;
   
@@ -60,6 +61,7 @@ MUnitTest::~MUnitTest()
 
 void MUnitTest::Summarize()
 {
+  cout<<"Unit test: "<<m_Name<<endl;
   cout<<"Passed tests: "<<m_NumberOfPassedTests<<endl;
   cout<<"Failed tests: "<<m_NumberOfFailedTests<<endl;
 }

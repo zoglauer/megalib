@@ -119,12 +119,16 @@ LINKDEF:=$(LB)/$(DICTIONARYNAME)_LinkDef.h
 ROOTMAP:=$(LB)/lib$(LIBRARY).rootmap
 ROOTPCM:=lib$(LIBRARY)_rdict.pcm
 
+CXX_UT := $(wildcard unittests/*.cxx)
+EXE_UT := $(patsubst %.cxx,%,$(CXX_UT))
+EXE_UT := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
+
 
 #----------------------------------------------------------------
 # Commands:
 #
 
-all: $(SHAREDLIB)
+all: $(SHAREDLIB) $(EXE_UT)
 
 link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
@@ -138,6 +142,7 @@ clean:
 	@rm -f *~
 	@rm -f \#*
 	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
+	@rm -f $(EXE_UT)
 
 #----------------------------------------------------------------
 # Dependencies:
@@ -162,6 +167,10 @@ $(OBJECTS): $(LB)/%.o: src/%.cxx inc/%.h
 $(DICTIONARYOBJECT): $(DICTIONARY)
 	@echo "Compiling dictionary ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(EXE_UT): $(BN)/%: unittests/%.cxx $(SHAREDLIB)
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
+	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< $(SHAREDLIB) $(GLIBS) $(LIBS) -o $@
 
 #
 #----------------------------------------------------------------
