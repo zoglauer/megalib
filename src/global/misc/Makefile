@@ -47,7 +47,6 @@ FILES := MGlobal \
 	MStreams \
 	MFitFunctions \
 	MInterface \
-	MCSVFunctionLoader \
 	MFile \
 	MFileEvents \
 	MFileEventsTra \
