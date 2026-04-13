@@ -488,19 +488,21 @@ bool MFileEvents::OpenNextFile(const MString& Line)
 
   // Temporarily store the progress info:
   bool Progress = IsShowProgress();
+  MTime ObservationTime = GetObservationTime(); // preserve the original observation time
+  MString OriginalFileName = m_OriginalFileName; // preserve the original file name
 
   Close();
 
   // We need to wait after Close() to assign the new file name!
   m_FileName = FileName;
 
-  MTime ObservationTime = GetObservationTime(); // preserve the original observation time
-  MString OriginalFileName = m_OriginalFileName; // preserve the original file name
   if (Open(m_FileName) == false) {
     return false;
   }
+  MTime NewObservationTime = GetObservationTime();
   m_OriginalFileName = OriginalFileName;
-  m_ObservationTime += ObservationTime;
+  m_ObservationTime = ObservationTime + NewObservationTime;
+  m_HasObservationTime = true;
 
   // Reset the progress info:
   ShowProgress(Progress);
