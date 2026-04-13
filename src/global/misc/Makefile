@@ -52,7 +52,6 @@ FILES := MGlobal \
 	MFileEventsTra \
 	MFileManager \
 	MFileResponse \
-	MFileHistograms \
 	MImage \
 	MImage2D \
 	MImage3D \
