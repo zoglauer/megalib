@@ -50,7 +50,6 @@ FILES := MGlobal \
 	MCSVFunctionLoader \
 	MFile \
 	MFileEvents \
-	MFileEventsRawa \
 	MFileEventsTra \
 	MFileManager \
 	MFileResponse \
