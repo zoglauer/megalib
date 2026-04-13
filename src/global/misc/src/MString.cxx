@@ -93,26 +93,6 @@ MString::MString(double Value, double Uncertainty, MString Units, bool Latex)
   //! Construct from value, uncertainty, unit using scientific rounding
   //! Will be something like (12.345, 1.872, "mm") -> "(12.3 +- 1.9) mm"
 
-  if (Uncertainty <= 0) {
-    ostringstream Out;
-    if (Units != "") {
-      if (Latex == true) {
-        Out << Value << " #pm " << Uncertainty << " " << Units;
-      } else {
-        Out << Value << " ± " << Uncertainty << " " << Units;
-      }
-    } else {
-      if (Latex == true) {
-        Out << Value << " #pm " << Uncertainty;
-      } else {
-        Out << Value << " ± " << Uncertainty;
-      }
-    }
-
-    m_String = Out.str();
-    return;
-  }
-
   // Find at which position the first digit is, e.g.:
   // 187.2 = 2, 3.23 = 0, 0.348 = -1, etc.
   int RoundOffDigit = int(log10(Uncertainty));
@@ -172,7 +152,7 @@ bool MString::AreIdentical(const MString& S, bool IgnoreCase) const
   if (IgnoreCase == true) {
     size_t Size = m_String.size();
     for (unsigned int l = Size-1; l < Size; --l) {
-      if (tolower(static_cast<unsigned char>(m_String[l])) != tolower(static_cast<unsigned char>(S[l]))) return false;
+      if (tolower(m_String[l]) != tolower(S[l])) return false;
     }
     return true;
   } else {
@@ -190,14 +170,6 @@ bool MString::AreIdentical(const MString& S, bool IgnoreCase) const
 
 vector<MString> MString::Tokenize(const MString& Delimeter, bool IgnoreEmpty)  const
 { 
-  if (Delimeter.Length() == 0) {
-    vector<MString> Tokens;
-    if (IgnoreEmpty == false || IsEmpty() == false) {
-      Tokens.push_back(*this);
-    }
-    return Tokens;
-  }
-
   MString S;
   vector<MString> T;
   size_t OldPos = 0; 
@@ -209,7 +181,7 @@ vector<MString> MString::Tokenize(const MString& Delimeter, bool IgnoreEmpty)  c
     }
     OldPos = NewPos + Delimeter.Length();
   }
-  if (Length() > OldPos || (IgnoreEmpty == false && OldPos == Length())) {
+  if (Length() > OldPos) {
     S = MString(m_String.substr(OldPos, Length() - OldPos));
     if (IgnoreEmpty == false || (IgnoreEmpty == true && S != "")) { 
       T.push_back(S);
@@ -225,12 +197,8 @@ vector<MString> MString::Tokenize(const MString& Delimeter, bool IgnoreEmpty)  c
 //! Return the string between two strings
 MString MString::Extract(MString Before, MString After)
 {
-  size_t BeforeStart = Index(Before);
-  if (BeforeStart == string::npos) return "";
-
-  size_t PosBefore = BeforeStart + Before.Length();
+  size_t PosBefore = Index(Before) + Before.Length();
   size_t PosAfter = Index(After, PosBefore);
-  if (PosAfter == string::npos) return "";
   
   return GetSubString(PosBefore, PosAfter-PosBefore);
 }
@@ -396,7 +364,7 @@ bool MString::IsNumber() const
   while (!In.eof() && !In.fail()) {
     c = In.get();
     if (In.eof()) return true;
-    if (isspace(static_cast<unsigned char>(c)) == 0) return false;
+    if (c != ' ') return false;
   }
   
   // If nothing is left and the string is still good, then we are good

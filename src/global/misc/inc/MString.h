@@ -25,8 +25,6 @@
 #include <cstdio>
 #include <sstream>
 #include <iostream>
-#include <limits>
-#include <type_traits>
 using namespace std;
 
 // ROOT libs:
@@ -151,7 +149,7 @@ class MString
   int ToInt() const { return atoi(m_String.c_str()); }
   unsigned int ToUnsignedInt() const { return (unsigned int) stoul(m_String.c_str()); }
   long ToLong() const { return stol(m_String.c_str()); }
-  unsigned long ToUnsignedLong() const { return stoul(m_String.c_str()); }
+  unsigned long ToUnsignedLong() const { return (unsigned int) stoul(m_String.c_str()); }
   double ToDouble() const { return atof(m_String.c_str()); }
 
 
@@ -235,9 +233,9 @@ class MString
   void StripInPlace(const char S = ' ') { StripFront(S); StripBack(S); }
   MString& Strip(const char S = ' ') { StripInPlace(S); return *this; }
 
-  void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::tolower(static_cast<unsigned char>(m_String[p])); }
+  void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::tolower(m_String[p]); }
   MString& ToLower() { ToLowerInPlace(); return *this; }
-  void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::toupper(static_cast<unsigned char>(m_String[p])); }
+  void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::toupper(m_String[p]); }
   MString& ToUpper() { ToUpperInPlace(); return *this; }
 
 
@@ -335,12 +333,6 @@ inline MString operator+(double N, const MString& S2) { ostringstream out; out<<
 
 template <typename T> bool MString::Is() const
 {
-  if (std::is_unsigned<T>::value == true) {
-    for (size_t i = 0; i < m_String.size(); ++i) {
-      if (m_String[i] == '-') return false;
-    }
-  }
-
   istringstream In(m_String);
   T x;
   In>>x;
