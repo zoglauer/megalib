@@ -41,10 +41,6 @@ class MException : public exception
 public:
   // Default constructor
   MException() : m_Description("No description of the exception available.") {
-    if (m_Abort == true) {
-      cout<<what()<<endl<<flush;
-      abort();
-    }
   }
   //! Default destructor
   virtual ~MException() throw() {}
@@ -58,6 +54,13 @@ public:
   }
   
 protected:
+  //! Abort the program if exception abort mode is enabled
+  void AbortIfRequested() const {
+    if (m_Abort == true) {
+      cout<<what()<<endl<<flush;
+      abort();
+    }
+  }
   //! Flag storing the global variable if exception should abort the program instead of being thrown
   static bool m_Abort;
   //! The description of the error message
@@ -83,6 +86,7 @@ public:
     ostringstream out;
     out<<"Test failed: "<<Description<<": "<<Value1<<" "<<Test<<" "<<Value2<<endl;
     m_Description = out.str();
+    AbortIfRequested();
   }
   /*
   //! Constructor giving the minium array index, its size, and the accessing index to the array 
@@ -122,10 +126,12 @@ public:
   //! Default constructor
   MExceptionParameterOutOfRange() : MException() {
     m_Description = "Index out of bounds!"; 
+    AbortIfRequested();
   }
   //! Constructor giving the minium array index, its size, and the accessing index to the array 
   MExceptionParameterOutOfRange(double Value, double Min, double Max, MString Name) : MException() {
     SetMinSizeIndex(Value, Min, Max, Name);
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionParameterOutOfRange() throw() {}
@@ -157,10 +163,12 @@ public:
   //! Default constructor
   MExceptionIndexOutOfBounds() : MException() {
     m_Description = "Index out of bounds!"; 
+    AbortIfRequested();
   }
   //! Constructor giving the minium array index, its size, and the accessing index to the array 
   MExceptionIndexOutOfBounds(unsigned int Min, unsigned int Size, unsigned int Index) : MException() {
     SetMinSizeIndex(Min, Size, Index);
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionIndexOutOfBounds() throw() {}
@@ -193,22 +201,27 @@ public:
   //! Default constructor
   MExceptionValueNotFound() : MException() {
     m_Description = "Value not found!";
+    AbortIfRequested();
   }
   //! Constructor giving the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
   MExceptionValueNotFound(double& Value, const MString& Where) : MException() {
     Set(Value, Where);
+    AbortIfRequested();
   }
   //! Constructor giving the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
   MExceptionValueNotFound(int& Value, const MString& Where) : MException() {
     Set(Value, Where);
+    AbortIfRequested();
   }
   //! Constructor giving the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
   MExceptionValueNotFound(unsigned int& Value, const MString& Where) : MException() {
     Set(Value, Where);
+    AbortIfRequested();
   }
   //! Constructor giving the not found value and a descriptor where the value cannot be found, e.g. "vector of strip IDs"
   MExceptionValueNotFound(MString& Value, const MString& Where) : MException() {
     Set(Value, Where);
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionValueNotFound() throw() {}
@@ -258,12 +271,14 @@ public:
   //! Default constructor
   MExceptionEmptyArray() : MException() {
     m_Description = "The array has no elements!"; 
+    AbortIfRequested();
   }
   //! Constructor giving the minium array index, its size, and the accessing index to the array 
   MExceptionEmptyArray(MString Name) : MException() {
     ostringstream stream;
     stream<<"The array \""<<Name<<"\" has no elements."<<endl; 
     m_Description = stream.str();
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionEmptyArray() throw() {}
@@ -289,17 +304,21 @@ public:
   //! Default constructor
   MExceptionValueOutOfBounds() : MException() {
     m_Description = "Value out of bounds!"; 
+    AbortIfRequested();
   }
   //! Constructor giving the minimum and maximum and the given value 
   MExceptionValueOutOfBounds(double Value) : MException() {
-    m_Description = "Value out of bounds: ";
-    m_Description += Value;
+    ostringstream stream;
+    stream<<"Value out of bounds: "<<Value;
+    m_Description = stream.str();
+    AbortIfRequested();
   }
   //! Constructor giving the minimum and maximum and the given value 
   MExceptionValueOutOfBounds(double Min, double Max, double Value) : MException() {
     ostringstream stream;
     stream<<"Value out of bounds - allowed: ["<<Min<<".."<<Max<<"] - your's: "<<Value<<endl; 
     m_Description = stream.str();
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionValueOutOfBounds() throw() {}
@@ -324,6 +343,7 @@ public:
   //! Default constructor
   MExceptionDivisionByZero() : MException() {
     m_Description = "Division by zero!";
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionDivisionByZero() throw() {}
@@ -345,6 +365,7 @@ public:
   //! Default constructor
   MExceptionNumberNotFinite() : MException() {
     m_Description = "Number not finite!";
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionNumberNotFinite() throw() {}
@@ -367,10 +388,12 @@ public:
   //! Default constructor
   MExceptionObjectDoesNotExist() : MException() {
     m_Description = "Object/Key not found in the list/vector/array/etc. !"; 
+    AbortIfRequested();
   }
   //! Standard constructor
   MExceptionObjectDoesNotExist(const MString& Name) : MException() {
     SetName(Name);
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionObjectDoesNotExist() throw() {}
@@ -400,6 +423,7 @@ public:
   //! Default constructor
   MExceptionObjectsNotIdentical() : MException() {
     m_Description = "Objects not identical!";
+    AbortIfRequested();
   }
   //! Standard constructor
   MExceptionObjectsNotIdentical(const MString& Name1, const MString& Name2) : MException() {
@@ -410,6 +434,7 @@ public:
     } else {
       m_Description = "Objects not identical!";
     }
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionObjectsNotIdentical() throw() {}
@@ -432,18 +457,21 @@ public:
   //! Default constructor
   MExceptionUnknownMode() : MException() {
     m_Description = "Unknown mode!"; ;
+    AbortIfRequested();
   }
   //! Standard constructor
   MExceptionUnknownMode(const MString& Mode) : MException() {
     ostringstream stream;
     stream<<"Unknown mode "<<Mode<<"!"<<endl;
     m_Description = stream.str();
+    AbortIfRequested();
   }
   //! Standard constructor
   MExceptionUnknownMode(const MString& Type, int i) : MException() {
     ostringstream stream;
     stream<<"Unknown "<<Type<<" mode "<<i<<"!"<<endl;     
     m_Description = stream.str();
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionUnknownMode() throw() {}
@@ -466,17 +494,19 @@ public:
   //! Default constructor
   MExceptionNeverReachThatLineOfCode() : MException() {
     m_Description = "We should have never reached that line of code!"; 
+    AbortIfRequested();
   }
   //! Standard constructor
   MExceptionNeverReachThatLineOfCode(const MString& Description) : MException() {
     ostringstream stream;
-    if (Description == "") {
+    if (Description != "") {
       stream<<"We should have never reached that line of code: "<<endl;
       stream<<Description<<endl;
     } else {
       stream<<"We should have never reached that line of code!"<<endl;        
     }
     m_Description = stream.str();
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionNeverReachThatLineOfCode() throw() {}
@@ -501,10 +531,12 @@ public:
   //! Default constructor
   MExceptionArbitrary() : MException() {
     m_Description = "An exception was triggered!"; 
+    AbortIfRequested();
   }
   //! Standard constructor
   MExceptionArbitrary(const MString& Description) : MException() {
     SetDescription(Description);
+    AbortIfRequested();
   }
   //! Default destructor
   virtual ~MExceptionArbitrary() throw() {}
@@ -513,7 +545,7 @@ public:
     if (Description != "") {
       ostringstream stream;
       stream<<"An exception was triggered: "<<endl;
-      stream<<m_Description<<endl;
+      stream<<Description<<endl;
       m_Description = stream.str();
     }
   }
