@@ -34,6 +34,7 @@ using namespace std;
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MExceptions.h"
 #include "MStreams.h"
 #include "MSystem.h"
 
@@ -65,7 +66,7 @@ MJulianDay::MJulianDay(bool Now)
     time_t tloc = (time_t) Seconds;  // There might be problems on 64 bit systems
 
     struct tm *tp;
-    tp = localtime(&tloc);
+    tp = gmtime(&tloc);
     
     CalculateJD(tp->tm_year + 1900, tp->tm_mon + 1, tp->tm_mday, tp->tm_hour, tp->tm_min, tp->tm_sec, NanoSeconds);
   }
@@ -142,10 +143,8 @@ bool MJulianDay::CalculateJD(int Year, int Month, int Day,
   double JDDay, JDFraction;
 
   // Check if everything is ok:
-  if (Month <= 0 || Month >= 12) {
-    Fatal("MJulianDay::SetJD", 
-            "No valid month: %d (allowed: 0..12)", Month);
-    return false;
+  if (Month <= 0 || Month > 12) {
+    throw MExceptionParameterOutOfRange(Month, 1, 12, "UTCMonth");
   }
   if (Day <= 0) {
     Warning("MJulianDay::SetJD", 
@@ -511,19 +510,15 @@ double MJulianDay::GetAsNanoSeconds()
 {
   // Warning: Value has to be small enough to suit into one double!
   if (m_Day > 10 || m_Day < -10) {
-    Error("double MJulianDay::GetAsNanoSeconds()",
-          "GetAsNanoSeconds: Only valid for values < 10 days!"
-          "Otherwise you loose your microsecond precision!");
+    mout<<"GetAsNanoSeconds: Only valid for values < 10 days! Otherwise you loose your microsecond precision!"<<endl;
   }
-  
-  return (m_Day + m_Fraction)*24*60*60*1000000000;
 
   // Round to nanoseconds
   // OK since no better accurancy needed and actual accuarany is 100x larger
   if ((m_Day + m_Fraction) >= 0) {
-    return (double)(int) ((m_Day + m_Fraction)*24*60*60*1000000000 + 0.5);
+    return (double)(long long) ((m_Day + m_Fraction)*24*60*60*1000000000 + 0.5);
   } else {
-    return (double)(int) ((m_Day + m_Fraction)*24*60*60*1000000000 - 0.5);
+    return (double)(long long) ((m_Day + m_Fraction)*24*60*60*1000000000 - 0.5);
   }
 }
 
