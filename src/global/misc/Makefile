@@ -55,7 +55,6 @@ FILES := MGlobal \
 	MImage \
 	MImage2D \
 	MImage3D \
-	MImageContainer \
 	MMath \
 	MPairEvent \
 	MSystem \
