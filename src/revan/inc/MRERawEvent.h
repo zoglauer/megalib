@@ -302,7 +302,7 @@ class MRERawEvent : public MRESE, public MRotationInterface
   static const int c_RejectionPairEventNoVertex                  = 38;
   static const int c_RejectionMuonNoTrack                        = 39;
 
-  
+
   static const double c_NoQualityFactor;
   static const double c_NoScore;
 
