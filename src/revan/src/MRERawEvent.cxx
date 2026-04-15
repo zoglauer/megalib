@@ -1024,6 +1024,13 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"The etp file does not contain an event type for this event ID";
     }
     break;
+  case c_RejectionNoVertexFound:
+    if (Short == true) {
+      out<<"NoVertexFound";
+    } else {
+      out<<"No vertex found";
+    }
+    break;
   default:
     if (Short == true) {
       out<<"";

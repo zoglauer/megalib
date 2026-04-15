@@ -1,5 +1,6 @@
 // MERTrackFirstTwoLayers.cxx
 #include "MERTrackFirstTwoLayers.h"
+#include "MRETrack.h" // included for MERTrack instantiation
 
 #include <iostream>
 #include <vector>
@@ -15,14 +16,22 @@ using namespace std;
 ClassImp(MERTrackFirstTwoLayers)
 #endif
 
+// normalization helper functions -- don't see this anywhere in MVector??
+static MVector Normalize(const MVector& v)
+{
+    double mag = v.Mag();
+    if (mag == 0.0) return {0,0,0};
+    return v / mag;
+}
+
 //////////////////////////////////////////
-// OUTER CLASS - MERTrackFirstTwoLayers
+// OUTER CLASS - MERTrackFirstTwoLayers 
 //////////////////////////////////////////
 
 MERTrackFirstTwoLayers::MERTrackFirstTwoLayers(MGeometryRevan* geom)
     : MERTrack(), m_Geometry(geom), m_Theta(0.0), m_Phi(0.0)
 {
-    mout << "Running new MERTrackFirstTwoLayers tracker" << endl;
+    mout << "Running new geometric reconstruction algorithm!" << endl;
 }
 
 //////////////////////////////////////////
@@ -33,19 +42,16 @@ MERTrackFirstTwoLayers::~MERTrackFirstTwoLayers() {}
 // VERTEX CLASS
 //////////////////////////////////////////
 
-MERTrackFirstTwoLayers::Vertex::Vertex(MRESE* rese_in,
-                                        MGeometryRevan* geom,
-                                        std::vector<MRESE*> allRESEs,
-                                        MVector* position)
-    : rese(rese_in), Geometry(geom), AllRESEs(allRESEs),
+MERTrackFirstTwoLayers::Vertex::Vertex(MRESE* rese_in, MGeometryRevan* geom, std::vector<MRESE*> allRESEs, MVector* position): 
+      rese(rese_in), Geometry(geom), AllRESEs(allRESEs),
       electron_dir({0,0,0}), positron_dir({0,0,0}), gamma_dir({0,0,0}),
       electron_energy(0.0), positron_energy(0.0),
       vertex_type("unknown"), EventID(-1)
 {
     if (position != nullptr) {
-        x = position->x;
-        y = position->y;
-        z = position->z;
+        x = position->X();
+        y = position->Y();
+        z = position->Z();
         id = (rese != nullptr) ? rese->GetID() : -1;
     } else {
         MVector pos = rese->GetPosition();
@@ -73,12 +79,12 @@ MVector MERTrackFirstTwoLayers::Vertex::ComputeGammaDirection()
     if (electron_energy == 0.0 && positron_energy == 0.0)
         throw std::runtime_error("Track directions/energies are zero.");
 
-    MVector d1 = electron_dir.normalized();
-    MVector d2 = positron_dir.normalized();
+    MVector d1 = Normalize(electron_dir);
+    MVector d2 = Normalize(positron_dir);
 
     MVector weighted_sum = d1 * electron_energy + d2 * positron_energy;
     gamma_dir = (weighted_sum / (electron_energy + positron_energy)) * (-1.0);
-    gamma_dir = gamma_dir.normalized();
+    gamma_dir = Normalize(gamma_dir);
 
     return gamma_dir;
 }
@@ -94,16 +100,16 @@ MVector MERTrackFirstTwoLayers::InitialVector(double theta_deg, double phi_deg)
     MVector v = { std::sin(theta) * std::cos(phi),
                std::sin(theta) * std::sin(phi),
                std::cos(theta) };
-    return v.normalized();
+    return Normalize(v);
 }
 
 //////////////////////////////////////////
 
 MVector MERTrackFirstTwoLayers::ProjectToLayer(const MVector& pos, const MVector& dir, double z_target)
 {
-    double t = (z_target - pos.z) / dir.z;
-    return { pos.x + t * dir.x,
-             pos.y + t * dir.y,
+    double t = (z_target - pos.Z()) / dir.Z();
+    return { pos.X() + t * dir.X(),
+             pos.Y() + t * dir.Y(),
              z_target };
 }
 
@@ -111,7 +117,7 @@ MVector MERTrackFirstTwoLayers::ProjectToLayer(const MVector& pos, const MVector
 
 double MERTrackFirstTwoLayers::DistanceToVirtual(const MVector& pos, const MVector& virtual_pt)
 {
-    return (pos - virtual_pt).norm();
+    return (pos - virtual_pt).Mag();
 }
 
 //////////////////////////////////////////
@@ -186,7 +192,7 @@ MERTrackFirstTwoLayers::VertexFinder::BestHitPairing(
     const MVector& B1, const MVector& B2)
 {
     auto dist = [](const MVector& a, const MVector& b) {
-        return std::sqrt(std::pow(a.x-b.x,2) + std::pow(a.y-b.y,2) + std::pow(a.z-b.z,2));
+        return std::sqrt(std::pow(a.X()-b.X(),2) + std::pow(a.Y()-b.Y(),2) + std::pow(a.Z()-b.Z(),2));
     };
 
     double d11 = dist(A1, B1), d12 = dist(A1, B2);
@@ -202,17 +208,17 @@ MVector MERTrackFirstTwoLayers::VertexFinder::CalculatingVertexPosition(
     const MVector& p1, const MVector& v1_in,
     const MVector& p2, const MVector& v2_in)
 {
-    // Point of closest approach between two lines defined by (p1, v1) and (p2, v2)
-    MVector v1 = v1_in.normalized();
-    MVector v2 = v2_in.normalized();
+    MVector v1 = Normalize(v1_in);
+    MVector v2 = Normalize(v2_in);
 
-    MVector w0 = { p1.x - p2.x, p1.y - p2.y, p1.z - p2.z };
+    MVector w0 = { p1.X() - p2.X(), p1.Y() - p2.Y(), p1.Z() - p2.Z() };
 
-    double a = MVector::dot(v1, v1);
-    double b = MVector::dot(v1, v2);
-    double c = MVector::dot(v2, v2);
-    double d = MVector::dot(v1, w0);
-    double e = MVector::dot(v2, w0);
+    MVector obj;
+    double a = v1*v1;
+    double b = v1*v2;
+    double c = v2*v2;
+    double d = v1*w0;
+    double e = v2*w0;
 
     double denom = a*c - b*b;
 
@@ -248,7 +254,7 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE, double theta
     const int LayerRequirement     = 5;
     const int SearchRange          = 30;
     const int SearchLayersFor2Hit  = 5;
-    const double interlayerdistance = 1.5; // cm
+    const double interlayerdistance = 1.5; // cm -- this is specific to AMEGO-X!!!
 
     // filtering RESEs
     std::vector<MRESE*> RESEs;
@@ -341,7 +347,7 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE, double theta
 
         if (selected_distance == 1) {
             // 1ht-2ht: pick the two closest hits to the projected point
-            MERTrackFirstTwoLayers::SelectTwoClosestHits(selected_layer_hits, projected_point, hit1, hit2);
+            MERTrackFirstTwoLayers::SelectTwoClosestHits(selected_layer_hits, projected_point, hit1, hit2, 5.0);
         } else {
             // 1ht-1ht: multiple single hits before two-hit layer; just take first two
             std::vector<MRESE*> layer_hits_below;
@@ -368,8 +374,8 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE, double theta
             // Typical 1ht-2ht:
             MVector p1 = hit1->GetPosition();
             MVector p2 = hit2->GetPosition();
-            vtx.electron_dir = (MVector{p1.X(), p1.Y(), p1.Z()} - vtx_pos).normalized();
-            vtx.positron_dir = (MVector{p2.X(), p2.Y(), p2.Z()} - vtx_pos).normalized();
+            vtx.electron_dir = Normalize(MVector{p1.X(), p1.Y(), p1.Z()} - vtx_pos);
+            vtx.positron_dir = Normalize(MVector{p2.X(), p2.Y(), p2.Z()} - vtx_pos);
             vtx.electron_energy = hit1->GetEnergy();
             vtx.positron_energy = hit2->GetEnergy();
             vtx.vertex_type = "type_1ht2ht";
@@ -386,14 +392,14 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE, double theta
                 MVector first_pos  = { fp.X(), fp.Y(), fp.Z() };
                 MVector second_pos = { sp.X(), sp.Y(), sp.Z() };
 
-                MVector best_track      = (vtx_pos - first_pos).normalized();
-                MVector alternate_track = (second_pos - vtx_pos).normalized();
+                MVector best_track      = Normalize(vtx_pos - first_pos);
+                MVector alternate_track = Normalize(second_pos - vtx_pos);
 
                 // Handle degenerate cases where a hit coincides with the vertex
                 auto allclose = [](const MVector& a, const MVector& b) {
-                    return std::fabs(a.x-b.x) < 1e-6 &&
-                           std::fabs(a.y-b.y) < 1e-6 &&
-                           std::fabs(a.z-b.z) < 1e-6;
+                    return std::fabs(a.X()-b.X()) < 1e-6 &&
+                           std::fabs(a.Y()-b.Y()) < 1e-6 &&
+                           std::fabs(a.Z()-b.Z()) < 1e-6;
                 };
 
                 MVector track;
@@ -476,24 +482,23 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE, double theta
         MVector v1 = q1 - p1;
         MVector v2 = q2 - p2;
 
-        // Point of closest approach → vertex position
+        // Point of closest approach is declared to be the vertex position
         MVector vertex_point = CalculatingVertexPosition(p1, v1, p2, v2);
 
         // Check for parallel tracks (CalculatingVertexPosition returns {0,0,0} sentinel)
-        if (vertex_point.x == 0.0 && vertex_point.y == 0.0 && vertex_point.z == 0.0) return Vertices;
+        if (vertex_point.X() == 0.0 && vertex_point.Y() == 0.0 && vertex_point.Z() == 0.0) return Vertices;
 
         Vertex vtx(nullptr, Geometry, {hit1lay1, hit2lay1, hit1lay2, hit2lay2}, &vertex_point);
         vtx.EventID = RE->GetEventID();
 
-        vtx.electron_dir = v1.normalized();
-        vtx.positron_dir = v2.normalized();
+        vtx.electron_dir = Normalize(v1);
+        vtx.positron_dir = Normalize(v2);
         vtx.electron_energy = hit1lay1->GetEnergy() + hit1lay2->GetEnergy();
         vtx.positron_energy = hit2lay1->GetEnergy() + hit2lay2->GetEnergy();
         vtx.vertex_type = "type_2ht2ht";
 
         vtx.gamma_dir = vtx.ComputeGammaDirection();
         Vertices.push_back(vtx);
-    }
 
     return Vertices;
 }
@@ -508,6 +513,7 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
 
     if (RE->GetNRESEs() == 0) {
         mout << "No RESEs, skipping." << endl;
+        RE->SetRejectionReason(MRERawEvent::c_RejectionNotEnoughHitsInTracker);
         return;
     }
 
@@ -516,6 +522,7 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
 
     if (vertices.empty()) {
         mout << "No vertex found for event " << RE->GetEventID() << endl;
+        RE->SetRejectionReason(MRERawEvent::c_RejectionNoVertexFound);
         return;
     }
 
@@ -552,8 +559,8 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
     }
 
     // ── Set directions (MEGAlib uses MVector, negate z convention matches Kalman) ──
-    MVector eDir(best.electron_dir.x, best.electron_dir.y, best.electron_dir.z);
-    MVector pDir(best.positron_dir.x, best.positron_dir.y, best.positron_dir.z);
+    MVector eDir(best.electron_dir.X(), best.electron_dir.Y(), best.electron_dir.Z());
+    MVector pDir(best.positron_dir.X(), best.positron_dir.Y(), best.positron_dir.Z());
 
     Electron->SetFixedDirection(eDir);
     Positron->SetFixedDirection(pDir);
@@ -562,9 +569,9 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
     Electron->SetEnergy(best.electron_energy);
     Positron->SetEnergy(best.positron_energy);
 
-    // ── Quality factor: no chi-square in our method, use 1.0 as neutral value ──
-    Electron->SetQualityFactor(1.0);
-    Positron->SetQualityFactor(1.0);
+    // quality factor... what value should be put here? 
+    //Electron->SetQualityFactor(1.0);
+    //Positron->SetQualityFactor(1.0);
 
     // ── Write back to the raw event ───────────────────────────────────────────
     RE->SetElectronTrack(Electron);
@@ -577,7 +584,7 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
          << " | type: "    << best.vertex_type
          << " | vertex z: " << best.GetZPosition()
          << " | gamma dir: ("
-         << best.gamma_dir.x << ", "
-         << best.gamma_dir.y << ", "
-         << best.gamma_dir.z << ")" << endl;
+         << best.gamma_dir.X() << ", "
+         << best.gamma_dir.Y() << ", "
+         << best.gamma_dir.Z() << ")" << endl;
 }
