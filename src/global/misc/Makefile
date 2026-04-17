@@ -47,19 +47,14 @@ FILES := MGlobal \
 	MStreams \
 	MFitFunctions \
 	MInterface \
-	MCSVFunctionLoader \
 	MFile \
 	MFileEvents \
-	MFileEventsRawa \
 	MFileEventsTra \
 	MFileManager \
 	MFileResponse \
-	MFileInfo \
-	MFileHistograms \
 	MImage \
 	MImage2D \
 	MImage3D \
-	MImageContainer \
 	MMath \
 	MPairEvent \
 	MSystem \

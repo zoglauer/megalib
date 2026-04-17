@@ -377,7 +377,7 @@ bool MStreamBuffer::Disconnect(MString FileName)
   }
   m_FileStream.resize(m_FileStream.size()-1);
   m_FileNames.resize(m_FileNames.size()-1);
-  m_FileTimePrefix.resize(m_FileNames.size()-1);
+  m_FileTimePrefix.resize(m_FileTimePrefix.size()-1);
 
   return true;
 }
