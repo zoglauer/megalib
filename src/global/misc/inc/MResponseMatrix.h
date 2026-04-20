@@ -70,7 +70,7 @@ class MResponseMatrix
   long GetSimulatedEvents() const { return m_NumberOfSimulatedEvents; }
 
   // The polarization mode used for the response
-  void SetPolarizationMode(MString polarizationmode) { m_PolarizationMode = polarizationmode; }
+  void SetPolarizationMode(const MString& polarizationmode) { m_PolarizationMode = polarizationmode; }
   // Get the polarization mode
   MString GetPolarizationMode() const { return m_PolarizationMode; }
 
