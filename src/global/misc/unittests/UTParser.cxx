@@ -183,10 +183,10 @@ bool UTParser::TestLineAccess()
   Passed = EvaluateNear("GetNLines()", "remove line", "Removing a line reduces the stored line count", Parser.GetNLines(), 3.0, 1e-12) && Passed;
   Passed = Evaluate("GetLine()", "remove line", "After removal the original second line is visible again", Parser.GetLine(1), MString("Sphere.Source value")) && Passed;
 
-  merr.Enable(false);
+  __merr.Enable(false);
   Passed = EvaluateTrue("GetTokenizerAt()", "out of bounds", "Out-of-bounds tokenizer access returns null", Parser.GetTokenizerAt(99) == 0) && Passed;
   Passed = Evaluate("GetLine()", "out of bounds", "Out-of-bounds line access returns an empty string", Parser.GetLine(99), MString("")) && Passed;
-  merr.Enable(true);
+  __merr.Enable(true);
 
   mlog.Enable(false);
   Parser.Typo(0, "test typo");
@@ -360,9 +360,9 @@ bool UTParser::TestEdgeCases()
 
   UTParser_Test AddLineParser(' ', true);
   Passed = EvaluateTrue("Open()", "add line read mode", "Opening a parser in read mode for AddLine() contract testing succeeds", AddLineParser.Open(AddLineFileName, MFile::c_Read)) && Passed;
-  merr.Enable(false);
+  __merr.Enable(false);
   Passed = EvaluateTrue("AddLine()", "read mode", "AddLine() is a read-mode helper and succeeds there", AddLineParser.AddLine("stored line")) && Passed;
-  merr.Enable(true);
+  __merr.Enable(true);
   Passed = EvaluateNear("GetNLines()", "add line read mode", "AddLine() appends one more tokenized line in read mode", AddLineParser.GetNLines(), 3.0, 1e-12) && Passed;
   Passed = Evaluate("GetLine()", "add line read mode", "AddLine() stores the appended text at the end", AddLineParser.GetLine(2), MString("stored line")) && Passed;
   AddLineParser.Close();
