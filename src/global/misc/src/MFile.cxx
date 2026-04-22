@@ -383,7 +383,7 @@ bool MFile::Open(MString FileName, unsigned int Way, bool IsBinary)
   // Check if it exists and is readable in case we read
   if (Way == c_Read) {
     if (Exists(m_FileName) == false) {
-      mgui<<"This file does not exist: \""<<m_FileName<<"\""<<endl;
+      mgui<<"File not found: \""<<m_FileName<<"\""<<endl;
       return false;
     }
   }

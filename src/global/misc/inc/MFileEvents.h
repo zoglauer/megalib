@@ -83,6 +83,18 @@ class MFileEvents : public MFile
   
   //! Set the observation time 
   void SetObservationTime(MTime ObservationTime) { m_ObservationTime = ObservationTime; m_HasObservationTime = true; }
+  //! Return true if we have a start observation time
+  bool HasStartObservationTime() const { return m_HasStartObservationTime; }
+  //! Return the start observation time
+  MTime GetStartObservationTime() const { return m_StartObservationTime; }
+  //! Set the start observation time
+  void SetStartObservationTime(MTime ObservationTime) { m_StartObservationTime = ObservationTime; m_HasStartObservationTime = true; }
+  //! Return true if we have an end observation time
+  bool HasEndObservationTime() const { return m_HasEndObservationTime; }
+  //! Return the end observation time
+  MTime GetEndObservationTime() const { return m_EndObservationTime; }
+  //! Set the end observation time
+  void SetEndObservationTime(MTime ObservationTime) { m_EndObservationTime = ObservationTime; m_HasEndObservationTime = true; }
 
   // protected methods:
  protected:
@@ -142,6 +154,11 @@ class MFileEvents : public MFile
 
   //! The original file name (different from m_FileName in case ofjumping from file to file via NF keyword)
   MString m_OriginalFileName;
+
+  //! True if a TE keyword should only be interpreted as footer TE after an EN line
+  bool m_FooterTENeedsEN;
+  //! True if we have already seen the EN line of the footer
+  bool m_FooterENSeen;
  
   //! Has a start observation time
   bool m_HasStartObservationTime;

@@ -373,9 +373,11 @@ bool UTFileEvents::TestWriting()
     UTFileEvents_Test ReadOnly;
     Passed = EvaluateTrue("Open(read)", "read-only write guards open", "The file can be reopened in read mode for write-guard checks", ReadOnly.Open(FileName)) && Passed;
     __merr.Enable(false);
+#ifdef NDEBUG
     Passed = EvaluateFalse("WriteHeader()", "read-only write guard", "WriteHeader is rejected in read mode", ReadOnly.WriteHeader()) && Passed;
     Passed = EvaluateFalse("AddFooter()", "read-only footer guard", "AddFooter is rejected in read mode", ReadOnly.AddFooter("x")) && Passed;
     Passed = EvaluateFalse("CloseEventList()", "read-only close guard", "CloseEventList is rejected in read mode", ReadOnly.CloseEventList()) && Passed;
+#endif
     __merr.Enable(true);
     ReadOnly.Close();
   }

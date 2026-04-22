@@ -49,6 +49,9 @@ class MFileEventsSim : public MFileEvents
   //! The Open method has to be derived to initialize the include file:
   virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read, bool IsBinary = false);
 
+  //! Write a sim-specific header
+  virtual bool WriteHeader();
+
   //! Return the next event
   MSimEvent* GetNextEvent(bool Analyze = true);
 

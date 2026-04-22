@@ -73,6 +73,9 @@ MFileEvents::MFileEvents() : MFile()
 
   m_OriginalFileName = "";
 
+  m_FooterTENeedsEN = false;
+  m_FooterENSeen = false;
+
   m_HasStartObservationTime = false;
   m_HasEndObservationTime = false;
 
@@ -119,6 +122,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     
     m_HasStartObservationTime = false;
     m_HasEndObservationTime = false;
+    m_FooterENSeen = false;
 
     m_ObservationTime = 0.0;
     m_HasObservationTime = false;
@@ -171,7 +175,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
           Tokens.Analyze(Line);
           if (Tokens.GetNTokens() < 2) {
             mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-            mout<<"Unable to read geometry name."<<endl;
+            mout<<"Unable to read geometry file name from header."<<endl;
           } else {
             m_GeometryFileName = Tokens.GetTokenAfterAsString(1);
             FoundGeometry = true;
@@ -184,7 +188,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
           Tokens.Analyze(Line);
           if (Tokens.GetNTokens() < 2) {
             mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-            mout<<"Unable to read geometry name."<<endl;
+            mout<<"Unable to read MEGAlib version."<<endl;
           } else {
             m_MEGAlibVersion = Tokens.GetTokenAfterAsString(1);
             FoundMEGAlibVersion = true;
@@ -239,6 +243,10 @@ bool MFileEvents::ReadFooter(bool Continue)
   // Read the footer of the file
 
   streampos Position = GetUncompressedFilePosition();
+  bool FoundFooterStart = false;
+  bool FoundFooterEndTime = false;
+  MTime LastEventTime = 0.0;
+  bool HasLastEventTime = false;
   
   if (Continue == false) {
     MFile::Rewind(!m_IsIncludeFile);
@@ -257,7 +265,60 @@ bool MFileEvents::ReadFooter(bool Continue)
     NLinesRead++;
     if (Line.Length() < 2) continue;
 
-    ParseFooter(Line);
+    if (Line[0] == 'E' && Line[1] == 'N') {
+      FoundFooterStart = true;
+      m_FooterENSeen = true;
+      continue;
+    }
+
+    if ((m_FooterTENeedsEN == false || FoundFooterStart == true) && Line[0] == 'T' && Line[1] == 'E') {
+      MTokenizer Tokens;
+      Tokens.Analyze(Line);
+      if (Tokens.GetNTokens() != 2) {
+        mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+        mout<<"Unable to read TE keyword"<<endl;
+        return false;
+      } else {
+        m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
+        m_HasEndObservationTime = true;
+        if (m_HasStartObservationTime == true) {
+          m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+        } else {
+          m_ObservationTime = m_EndObservationTime;
+        }
+        m_HasObservationTime = true;
+        FoundFooterEndTime = true;
+      }
+    }
+
+    if (FoundFooterStart == false && Line[0] == 'T' && Line[1] == 'I') {
+      MTokenizer Tokens;
+      Tokens.Analyze(Line);
+      if (Tokens.GetNTokens() < 2) {
+        mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+        mout<<"Unable to read TI keyword"<<endl;
+        return false;
+      } else {
+        LastEventTime = Tokens.GetTokenAtAsDouble(1);
+        HasLastEventTime = true;
+      }
+    }
+
+    // Forward all footer lines to subclass parsers so class-specific footer
+    // state such as TS in sim files is available through ReadFooter() too.
+    if (m_FooterTENeedsEN == false || m_FooterENSeen == true || (Line[0] == 'T' && Line[1] == 'I')) {
+      ParseFooter(Line);
+    }
+  }
+
+  if (FoundFooterEndTime == false && HasLastEventTime == true) {
+    m_EndObservationTime = LastEventTime;
+    if (m_HasStartObservationTime == true) {
+      m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+    } else {
+      m_ObservationTime = m_EndObservationTime;
+    }
+    m_HasObservationTime = true;
   }
 
 
@@ -288,7 +349,11 @@ bool MFileEvents::ParseFooter(const MString& Line)
       return false;
     } else {
       m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
-      m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+      if (m_HasStartObservationTime == true) {
+        m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+      } else {
+        m_ObservationTime = m_EndObservationTime;
+      }
       m_HasObservationTime = true;
     }
   }
@@ -302,7 +367,11 @@ bool MFileEvents::ParseFooter(const MString& Line)
     } else {
       m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
       m_HasEndObservationTime = true;
-      m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+      if (m_HasStartObservationTime == true) {
+        m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+      } else {
+        m_ObservationTime = m_EndObservationTime;
+      }
       m_HasObservationTime = true;
     }
   }
@@ -336,15 +405,44 @@ bool MFileEvents::Rewind(bool)
 
 MTime MFileEvents::GetObservationTime()
 {
+  if (m_IncludeFileUsed == false && m_NOpenedIncludeFiles == 0) {
+    if (m_HasObservationTime == false) {
+      if (m_HasStartObservationTime == true && m_HasEndObservationTime == true) {
+        m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+      } else {
+        ReadFooter();
+      }
+    }
+
+    return m_ObservationTime;
+  }
+
+  MTime ObservationTime = m_ObservationTime;
+
+  // If we already have an accumulated observation time from previously closed
+  // include files, do not derive a second value from the current master file.
   if (m_HasObservationTime == false) {
+    bool HasObservationTime = m_HasObservationTime;
+    bool HasEndObservationTime = m_HasEndObservationTime;
+    MTime EndObservationTime = m_EndObservationTime;
+
     if (m_HasStartObservationTime == true && m_HasEndObservationTime == true) {
-      m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+      ObservationTime += m_EndObservationTime - m_StartObservationTime;
     } else {
-      ReadFooter();
+      if (ReadFooter() == true && m_HasObservationTime == true) {
+        ObservationTime += m_ObservationTime;
+      }
+      m_HasObservationTime = HasObservationTime;
+      m_HasEndObservationTime = HasEndObservationTime;
+      m_EndObservationTime = EndObservationTime;
     }
   }
 
-  return m_ObservationTime;
+  if (m_IncludeFileUsed == true) {
+    ObservationTime += m_IncludeFile->GetObservationTime();
+  }
+
+  return ObservationTime;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -663,7 +761,12 @@ bool MFileEvents::CloseIncludeFile()
     m_ObservationTime += m_IncludeFile->GetObservationTime();
     m_HasObservationTime = true;
     m_IncludeFile->Close();
+    if (m_NOpenedIncludeFiles > 0) {
+      --m_NOpenedIncludeFiles;
+    }
   }
+
+  m_IncludeFileUsed = false;
 
   return true;
 }

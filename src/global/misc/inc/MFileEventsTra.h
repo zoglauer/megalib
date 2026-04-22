@@ -44,6 +44,12 @@ class MFileEventsTra : public MFileEvents
   //! The Open method has to be derived to initialize the include file:
   virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read, bool IsBinary = false);
 
+  //! Write a tra-specific header
+  virtual bool WriteHeader();
+
+  //! Close the tra event list
+  virtual bool CloseEventList();
+
   //! Close the file and kill the thread (if it (still) exists)
   virtual bool Close();
 
@@ -55,6 +61,8 @@ class MFileEventsTra : public MFileEvents
   
   //! If you want this class to be multi-threaded, call this function
   bool StartThread();
+
+  MTime GetObservationTime();
 
   MPhysicalEvent* GetNextEvent();
 

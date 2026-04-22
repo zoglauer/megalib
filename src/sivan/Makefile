@@ -75,12 +75,16 @@ ROOTPCM_UI:=lib$(LIBRARY_UI)_rdict.pcm
 OBJECT_MAIN:=$(patsubst %, $(LB)/%.o, $(MAIN))
 EXECUTABLE:=$(BN)/$(PROGRAM)
 
+CXX_UT := $(wildcard unittests/*.cxx)
+EXE_UT := $(patsubst %.cxx,%,$(CXX_UT))
+EXE_UT := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
+
 
 #----------------------------------------------------------------
 # Commands:
 #
 
-all: $(EXECUTABLE)
+all: $(EXECUTABLE) $(EXE_UT)
 
 lib: $(SHAREDLIB) 
 
@@ -98,6 +102,7 @@ clean:
 	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
 	@rm -f $(OBJECTS_UI) $(SHAREDLIB_UI) $(DICTIONARY_UI) $(DICTIONARYOBJECT_UI) $(LINKDEF_UI) $(ROOTMAP_UI) $(LB)/$(ROOTPCM_UI)
 	@rm -f $(OBJECTS_MAIN) $(EXECUTABLE)
+	@rm -f $(EXE_UT)
 
 	
 #----------------------------------------------------------------
@@ -153,6 +158,10 @@ $(OBJECT_MAIN): $(LB)/%.o: src/%.cxx inc/%.h
 $(EXECUTABLE): $(SHAREDLIB_UI) $(SHAREDLIB) $(OBJECT_MAIN)
 	@echo "Linking $(subst $(BN)/,,$@) ..."
 	@$(LD) $(LDFLAGS) $(OBJECT_MAIN) $(SHAREDLIB_UI) $(SHAREDLIB) $(LIBRARIES) $(GLIBS) $(LIBS) -o $(EXECUTABLE)
+
+$(EXE_UT): $(BN)/%: unittests/%.cxx $(SHAREDLIB)
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
+	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< $(SHAREDLIB) $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
 
 	
 #
