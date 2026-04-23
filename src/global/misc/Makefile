@@ -50,7 +50,6 @@ FILES := MGlobal \
 	MFile \
 	MFileEvents \
 	MFileEventsTra \
-	MFileManager \
 	MFileResponse \
 	MImage \
 	MImage2D \
