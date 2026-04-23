@@ -135,6 +135,11 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_Decay = E->m_Decay;
   m_Bad = E->m_Bad;
   m_BadString = E->m_BadString;
+  m_Hits = E->m_Hits;
+  m_OIPosition = E->m_OIPosition;
+  m_OIDirection = E->m_OIDirection;
+  m_OIPolarization = E->m_OIPolarization;
+  m_OIEnergy = E->m_OIEnergy;
   m_Comments = E->m_Comments;
 
   return true;
@@ -178,6 +183,7 @@ void MPhysicalEvent::Reset()
   m_OIEnergy = g_DoubleNotDefined;
 
   m_Lines.clear();
+  m_Hits.clear();
   m_Comments.clear();
 }
 
@@ -296,7 +302,6 @@ MString MPhysicalEvent::ToTraString() const
     S<<"ET UN"<<endl;
     break;
   default:
-    massert(false);
     S<<"ET Unkown"<<endl;
     break;
   }

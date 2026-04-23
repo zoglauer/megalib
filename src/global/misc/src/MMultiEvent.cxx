@@ -181,9 +181,9 @@ MString MMultiEvent::ToTraString() const
   T += MPhysicalEvent::ToTraString();
 
   for (unsigned int i = 0; i < m_Events.size(); ++i) {
-    T += "SI";
+    T += "SI\n";
     T += m_Events[i]->ToTraString();
-    T += "SF";
+    T += "SF\n";
   }
 
   return T;
@@ -196,15 +196,12 @@ MString MMultiEvent::ToTraString() const
 bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
 {
   // Stream data from and to a file than ROOT...
-
   bool Return = true;
   
   if (Read == true) {
     // That's copy and paste from MPhysicalEvent:
-
     Reset();
     int Ret = 0;
-    
     if (ReadDelayed == true) {
       MString Line;
       while (File.IsGood() == true) {
@@ -215,20 +212,26 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
         }
         m_Lines.push_back(Line);
       }
+      return false;
     } else {
       // Doing it purely in C is faster than using strings
       const int LineLength = 1000;
       char LineBuffer[LineLength];
+      bool SelfParsed = false;
       while (File.ReadLine(LineBuffer, LineLength, '\n')) {
         // First do the normal parse line - nothing is happening if we have anything specific for this class
         
         //cout<<LineBuffer<<endl;
         
         Ret = 2;
-        if (LineBuffer[0] != 'E' && LineBuffer[1] != 'T') {
+        if (LineBuffer[0] == 'E' && LineBuffer[1] == 'T') {
+          if (SelfParsed == false) {
+            Ret = ParseLine(LineBuffer, Fast);
+            SelfParsed = true;
+          }
+        } else {
           Ret = ParseLine(LineBuffer, Fast);
         }
-        //cout<<"Ret: "<<Ret<<endl;
         if (Ret == 2) {
           // Nothing got parsed, thus look what we can do here:
           MString Line(LineBuffer);
@@ -285,7 +288,7 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
       
       // end of file reached ... so return false
       return false;
-    }     
+    }
 
   } else {
     // Write Multi specific infos:

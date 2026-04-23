@@ -190,7 +190,7 @@ bool MPETEvent::Validate()
   if (m_PositionResolution2[2] < 0) return false;
   
   if (m_TimingResolution1 < 0) return false;
-  if (m_TimingResolution1 < 0) return false;
+  if (m_TimingResolution2 < 0) return false;
   
   m_IsGoodEvent = true;
 
