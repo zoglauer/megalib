@@ -31,7 +31,9 @@ PRG_UT     := $(patsubst unittests/%,$(BN)/%,$(PRG_UT))
 # Commands:
 #
 
-all: $(PRG) $(PRG_UT)
+all: $(PRG)
+
+unittests: $(PRG_UT)
 
 lib: $(SOBJ) 
 
@@ -47,6 +49,7 @@ clean:
 	@rm -f \#*
 	@rm -f $(PRG)
 	@rm -f $(OBJ_FILES) $(SOBJ)
+	@rm -f $(PRG_UT)
 
 
 #----------------------------------------------------------------

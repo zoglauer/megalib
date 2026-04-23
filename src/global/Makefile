@@ -12,6 +12,9 @@ all:
 	$(MAKE) -C misc
 	$(MAKE) -C gui
 
+unittests:
+	$(MAKE) unittests -C misc
+
 link:
 	@$(MAKE) link -C gui
 	@$(MAKE) link -C misc
@@ -40,6 +43,5 @@ clean_neuralnet:
 
 #
 #----------------------------------------------------------------
-
 
 

@@ -62,7 +62,7 @@ CMD :=
 .SILENT:
 .NOTPARALLEL:
 .SUFFIXES:
-.PHONY: all info link glo geolib geo spelib spe revlib rev sivlib siv res mimlib mim evi rea fre add cos clean
+.PHONY: all info link glo geolib geo spelib spe revlib rev sivlib siv res mimlib mim evi rea fre add cos unittests clean
 
 all: info link glo geo spe rev siv res mim evi rea fre add cos
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(shell cat $(LB)/AllObjects.txt) $(GLIBS) $(LIBS) -o $(LB)/libMEGAlib.so
@@ -262,6 +262,13 @@ clean_response:
 
 
 #------------------------------------------------------------------------------
+# Unit tests:
+
+unittests: info link glo geo spe rev siv res mim evi rea fre add cos
+	@$(MAKE) unittests -C src
+
+
+#------------------------------------------------------------------------------
 # Realta:
 
 realta: info rea 
@@ -329,5 +336,4 @@ TAROPT="
 
 #
 #------------------------------------------------------------------------------
-
 

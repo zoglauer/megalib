@@ -133,7 +133,9 @@ EXE_UT := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
 # Commands:
 #
 
-all: $(EXECUTABLE) $(EXE_UT)
+all: $(EXECUTABLE)
+
+unittests: $(EXE_UT)
 
 lib: $(SHAREDLIB) 
 
@@ -216,5 +218,4 @@ $(EXE_UT): $(BN)/%: unittests/%.cxx $(SHAREDLIB)
 	
 #
 #----------------------------------------------------------------
-
 

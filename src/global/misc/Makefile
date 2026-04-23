@@ -128,7 +128,9 @@ EXE_UT := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
 # Commands:
 #
 
-all: $(SHAREDLIB) $(EXE_UT)
+all: $(SHAREDLIB)
+
+unittests: $(EXE_UT)
 
 link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
