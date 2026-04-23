@@ -155,6 +155,22 @@ bool UTXml::TestXmlNodeAndAttribute()
   Passed = EvaluateNear("GetValueAsVector()", "vector z", "Vector Z components are reconstructed correctly", Point.Z(), 3.0, 1e-12) && Passed;
 
   Passed = EvaluateTrue("GetValueAsTime()", "time node", "Time child values are reconstructed correctly", Root.GetNode("When")->GetValueAsTime().GetLongIntsString() == "5.600000000") && Passed;
+  MString ExpectedRootText =
+    "<Root version=\"1\" enabled=\"true\">\n"
+    "  <Title>Example</Title>\n"
+    "  <Count>7</Count>\n"
+    "  <Range>\n"
+    "    <Min>2</Min>\n"
+    "    <Max>5</Max>\n"
+    "  </Range>\n"
+    "  <Point>\n"
+    "    <X>1</X>\n"
+    "    <Y>2</Y>\n"
+    "    <Z>3</Z>\n"
+    "  </Point>\n"
+    "  <When>5.600000000</When>\n"
+    "</Root>";
+  Passed = Evaluate("ToString()", "full serialization", "Representative XML nodes serialize deterministically", Root.ToString(), ExpectedRootText) && Passed;
 
   Passed = EvaluateTrue("ToString()", "attribute serialization", "Attributes are written into the opening tag", Root.ToString().Contains("version=\"1\"")) && Passed;
   Passed = EvaluateTrue("ToString()", "child serialization", "Child nodes are serialized into xml text", Root.ToString().Contains("<Title>Example</Title>")) && Passed;
@@ -277,6 +293,34 @@ bool UTXml::TestXmlRoundTrip()
     }
 
     Passed = EvaluateNear("GetNNodes()", "round trip root count", "The root node count survives round-tripping", Loaded.GetNNodes(), 7.0, 1e-12) && Passed;
+    MString ExpectedLoadedText =
+      "<Config version=\"2\">\n"
+      "  <Name>Detector</Name>\n"
+      "  <Enabled>true</Enabled>\n"
+      "  <Threshold>12.5</Threshold>\n"
+      "  <Bounds>\n"
+      "    <Min>1.25</Min>\n"
+      "    <Max>9.5</Max>\n"
+      "  </Bounds>\n"
+      "  <TimeWindow>\n"
+      "    <Min>3.400000000</Min>\n"
+      "    <Max>7.800000000</Max>\n"
+      "  </TimeWindow>\n"
+      "  <Group kind=\"primary\">\n"
+      "    <Item>A</Item>\n"
+      "    <Item>B</Item>\n"
+      "    <Position>\n"
+      "      <X>-1</X>\n"
+      "      <Y>0.5</Y>\n"
+      "      <Z>2.25</Z>\n"
+      "    </Position>\n"
+      "  </Group>\n"
+      "  <ExtraGroup>\n"
+      "    <Item>Nested</Item>\n"
+      "    <Label>Inner</Label>\n"
+      "  </ExtraGroup>\n"
+      "</Config>";
+    Passed = Evaluate("ToString()", "round trip exact text", "Serializing a loaded document reproduces the exact deterministic XML text", Loaded.ToString(), ExpectedLoadedText) && Passed;
     Passed = EvaluateTrue("ToString()", "round trip text", "Serializing a loaded document still contains nested content", Loaded.ToString().Contains("<Position>")) && Passed;
   } else {
     Passed = Evaluate("GetName()", "round trip", "The document root name survives a save/load round trip", Loaded.GetName(), MString("Config")) && Passed;

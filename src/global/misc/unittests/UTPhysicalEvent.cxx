@@ -139,6 +139,8 @@ bool UTPhysicalEvent::TestBaseEvent()
   Passed = EvaluateTrue("AllHitsGood()", "set/get", "SetAllHitsGood(true) updates the flag", Event.AllHitsGood()) && Passed;
 
   MString Tra = Event.ToTraString();
+  MString ExpectedTra = MString("ET Unkown\nID 42\nTI ") + Event.GetTime().GetLongIntsString() + "\nTW 7\nBD bad event\nDC\nOI 1 2 3 4 5 6 7 8 9 10\nCC comment\n";
+  Passed = Evaluate("ToTraString()", "base exact", "The base tra-string serialization is deterministic for representative event metadata", Tra, ExpectedTra) && Passed;
   Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string starts with an event type line", Tra.BeginsWith("ET")) && Passed;
   Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string contains the id", Tra.Contains("ID 42")) && Passed;
   Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string contains the time", Tra.Contains("TI")) && Passed;

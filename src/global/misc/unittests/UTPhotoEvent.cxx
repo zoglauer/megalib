@@ -178,6 +178,15 @@ bool UTPhotoEvent::TestHelpers()
   Event.SetPosition(MVector(1.0, 2.0, 3.0));
   Event.SetWeight(0.5);
   Passed = EvaluateTrue("Validate()", "helpers", "The seeded photo helper validates", Event.Validate()) && Passed;
+  Passed = Evaluate("ParseLine()", "helpers energy", "ParseLine stores photo energies from representative PE lines", Event.ParseLine("PE 8.25", false), 0) && Passed;
+  Passed = Evaluate("GetEnergy()", "helpers energy", "ParseLine stores the parsed photo energy", Event.GetEnergy(), 8.25) && Passed;
+  Passed = Evaluate("ParseLine()", "helpers position", "ParseLine stores photo positions from representative PP lines", Event.ParseLine("PP 4 5 6", false), 0) && Passed;
+  Passed = Evaluate("GetPosition()", "helpers position", "ParseLine stores the parsed photo position", Event.GetPosition(), MVector(4.0, 5.0, 6.0)) && Passed;
+  Passed = Evaluate("ParseLine()", "helpers weight", "ParseLine stores photo weights from representative PW lines", Event.ParseLine("PW 0.75", false), 0) && Passed;
+  Passed = Evaluate("GetWeight()", "helpers weight", "ParseLine stores the parsed photo weight", Event.GetWeight(), 0.75) && Passed;
+  Event.SetEnergy(7.5);
+  Event.SetPosition(MVector(1.0, 2.0, 3.0));
+  Event.SetWeight(0.5);
 
   Passed = Evaluate("Data()", "helpers", "Data() returns the concrete photo pointer", Event.Data(), dynamic_cast<MPhysicalEvent*>(&Event)) && Passed;
   Passed = Evaluate("ToString()", "helpers", "The photo string representation is formatted deterministically", Event.ToString(), MString("The data of the Photo-event:\nEnergy: 7.500\nPosition: 1.000, 2.000, 3.000\nWeight: 0.500\n")) && Passed;
@@ -212,6 +221,8 @@ bool UTPhotoEvent::TestRoundTrips()
   Passed = EvaluateTrue("Validate()", "seeded photo", "The seeded photo event validates", Event.Validate()) && Passed;
 
   MString Tra = Event.ToTraString();
+  MString ExpectedTra = MString("ET PH\nID 0\nTI ") + Event.GetTime().GetLongIntsString() + "\nPE 5\nPP 1 2 3\nPW 0.25\n";
+  Passed = Evaluate("ToTraString()", "photo tra exact", "The tra-string serialization is deterministic for a representative photo event", Tra, ExpectedTra) && Passed;
   MPhotoEvent ParsedTra;
   Passed = EvaluateTrue("ParseTraString()", "photo tra", "The tra-string round-trips through ParseLine", ParseTraString(ParsedTra, Tra)) && Passed;
   Passed = Evaluate("ParsedTra.GetId()", "photo tra", "The tra round-trip preserves the event id", ParsedTra.GetId(), Event.GetId()) && Passed;

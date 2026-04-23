@@ -230,6 +230,7 @@ bool UTFileEvents::TestOpenAndMetadata()
   Passed = EvaluateTrue("MFileEvents::Open(read)", "metadata open", "The event file opens in read mode", File.Open(FileName)) && Passed;
   Passed = Evaluate("GetFileType()", "metadata type", "The event file type is parsed from the header", File.GetFileType(), MString("tra")) && Passed;
   Passed = Evaluate("GetVersion()", "metadata version", "The event file version is parsed from the header", File.GetVersion(), 42) && Passed;
+  Passed = Evaluate("GetGeometryFileName()", "metadata geometry exact", "The geometry file name is parsed deterministically from the header", File.GetGeometryFileName(), MString("./geom/test.geo.setup")) && Passed;
   Passed = EvaluateTrue("GetGeometryFileName()", "metadata geometry", "The geometry file name is parsed from the header", File.GetGeometryFileName().EndsWith("geom/test.geo.setup")) && Passed;
   Passed = Evaluate("GetMEGAlibVersion()", "metadata MEGAlib version", "The MEGAlib version string is parsed from the header", File.GetMEGAlibVersion(), MString("9.9.9")) && Passed;
   Passed = Evaluate("HasStartObservationTime()", "metadata start flag", "A TB line marks the start observation time as available", File.HasStartObservationTime(), true) && Passed;
@@ -336,6 +337,7 @@ bool UTFileEvents::TestWriting()
 
   UTFileEvents_Test File;
   File.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+  Passed = Evaluate("SetGeometryFileName()", "geometry expansion exact", "SetGeometryFileName stores the exact expanded geometry path", File.GetGeometryFileName(), GetTempDirectory() + "/geometry.setup") && Passed;
   Passed = EvaluateTrue("SetGeometryFileName()", "geometry expansion", "SetGeometryFileName stores the expanded geometry path", File.GetGeometryFileName().EndsWith("/tmp/UTFileEvents/geometry.setup")) && Passed;
   File.SetObservationTime(MTime(123.5));
   Passed = EvaluateTrue("Open(write)", "write open", "The write test file opens successfully", File.Open(FileName, MFile::c_Write)) && Passed;
@@ -413,6 +415,8 @@ bool UTFileEvents::TestFileTreeHelpers()
     bool OpenNext = File.TestOpenNextFile("NF second.tra");
     mout.Enable(true);
     Passed = EvaluateTrue("OpenNextFile()", "open next", "OpenNextFile switches to the referenced next file", OpenNext) && Passed;
+    Passed = Evaluate("OpenNextFile()", "open next file name exact", "OpenNextFile updates the current file name to the exact next file path", File.GetFileName(), SecondFile) && Passed;
+    Passed = Evaluate("OpenNextFile()", "open next original file name exact", "OpenNextFile preserves the exact original root file name across NF transitions", File.GetOriginalFileName(), FirstFile) && Passed;
     Passed = EvaluateTrue("OpenNextFile()", "open next file name", "OpenNextFile updates the current file name to the next file", File.GetFileName().EndsWith("second.tra")) && Passed;
     Passed = EvaluateTrue("OpenNextFile()", "open next original file name", "OpenNextFile preserves the original root file name across NF transitions", File.GetOriginalFileName().EndsWith("first.tra")) && Passed;
     Passed = Evaluate("GetVersion()", "open next version", "OpenNextFile reparses header metadata from the next file", File.GetVersion(), 2) && Passed;
@@ -422,6 +426,8 @@ bool UTFileEvents::TestFileTreeHelpers()
     bool OpenThird = File.TestOpenNextFile("NF third.tra");
     mout.Enable(true);
     Passed = EvaluateTrue("OpenNextFile() second", "open third", "A second OpenNextFile call switches to the third file in the chain", OpenThird) && Passed;
+    Passed = Evaluate("OpenNextFile() second", "open third file name exact", "The second OpenNextFile call updates the current file name to the exact third file path", File.GetFileName(), ThirdFile) && Passed;
+    Passed = Evaluate("OpenNextFile() second", "open third original file name exact", "The original root file name remains the exact first file path across multiple NF transitions", File.GetOriginalFileName(), FirstFile) && Passed;
     Passed = EvaluateTrue("OpenNextFile() second", "open third file name", "The second OpenNextFile call updates the current file name to the third file", File.GetFileName().EndsWith("third.tra")) && Passed;
     Passed = EvaluateTrue("OpenNextFile() second", "open third original file name", "The original root file name remains unchanged across multiple NF transitions", File.GetOriginalFileName().EndsWith("first.tra")) && Passed;
     Passed = Evaluate("OpenNextFile() second", "open third version", "A second OpenNextFile call reparses the header metadata from the third file", File.GetVersion(), 3) && Passed;
@@ -439,6 +445,7 @@ bool UTFileEvents::TestFileTreeHelpers()
     Passed = Evaluate("IsIncludeFileUsed()", "open include used", "Opening an include file marks the include-file state as used", File.IsIncludeFileUsed(), true) && Passed;
     Passed = EvaluateTrue("GetIncludeFile()", "open include pointer", "The include-file helper exists and is open", File.GetIncludeFile() != nullptr && File.GetIncludeFile()->IsOpen()) && Passed;
     if (File.GetIncludeFile() != nullptr) {
+      Passed = Evaluate("GetIncludeFile()->GetFileName()", "open include file name exact", "The include file points at the exact requested include file", File.GetIncludeFile()->GetFileName(), IncludeFile) && Passed;
       Passed = EvaluateTrue("GetIncludeFile()->GetFileName()", "open include file name", "The include file points at the requested include file", File.GetIncludeFile()->GetFileName().EndsWith("include.tra")) && Passed;
     }
     Passed = EvaluateTrue("CloseIncludeFile()", "close include", "CloseIncludeFile closes the active include file cleanly", File.TestCloseIncludeFile()) && Passed;
@@ -456,6 +463,7 @@ bool UTFileEvents::TestFileTreeHelpers()
     bool Created = File.TestCreateNextFile();
     mout.Enable(true);
     Passed = EvaluateTrue("CreateNextFile()", "create next", "CreateNextFile closes the current file and opens the next split file", Created) && Passed;
+    Passed = Evaluate("CreateNextFile()", "create next file name exact", "CreateNextFile advances to the exact numbered split file path", File.GetFileName(), GetTempDirectory() + "/first.id1.tra") && Passed;
     Passed = EvaluateTrue("CreateNextFile()", "create next file name", "CreateNextFile advances to a numbered split file", File.GetFileName().Contains(".id1.tra")) && Passed;
     Passed = EvaluateTrue("Exists(split file)", "create next split exists", "The newly created split file exists on disk", MFile::Exists(File.GetFileName())) && Passed;
     File.Close();
@@ -473,6 +481,7 @@ bool UTFileEvents::TestFileTreeHelpers()
     Passed = Evaluate("IsIncludeFileUsed()", "create include used", "Creating an include file marks the include-file state as used", File.IsIncludeFileUsed(), true) && Passed;
     Passed = EvaluateTrue("GetIncludeFile()", "create include pointer", "Creating an include file opens the include helper", File.GetIncludeFile() != nullptr && File.GetIncludeFile()->IsOpen()) && Passed;
     if (File.GetIncludeFile() != nullptr) {
+      Passed = Evaluate("GetIncludeFile()->GetFileName()", "create include file name exact", "The created include file uses the exact first numbered include path", File.GetIncludeFile()->GetFileName(), GetTempDirectory() + "/first.id2.tra") && Passed;
       Passed = EvaluateTrue("GetIncludeFile()->GetFileName()", "create include file name", "The created include file uses the numbered include naming scheme", File.GetIncludeFile()->GetFileName().Contains(".id2.tra")) && Passed;
     }
     mout.Enable(false);
@@ -480,6 +489,7 @@ bool UTFileEvents::TestFileTreeHelpers()
     mout.Enable(true);
     Passed = EvaluateTrue("CreateIncludeFile() second", "create include reuse", "A second CreateIncludeFile call rotates the include file to the next numbered include", CreatedAgain) && Passed;
     if (File.GetIncludeFile() != nullptr) {
+      Passed = Evaluate("CreateIncludeFile() second", "create include reuse file name exact", "The rotated include file advances to the exact next numbered include path", File.GetIncludeFile()->GetFileName(), GetTempDirectory() + "/first.id3.tra") && Passed;
       Passed = EvaluateTrue("CreateIncludeFile() second", "create include reuse file name", "The rotated include file advances to the next numbered include file", File.GetIncludeFile()->GetFileName().Contains(".id3.tra")) && Passed;
     }
     File.Close();

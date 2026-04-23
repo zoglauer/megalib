@@ -265,6 +265,8 @@ bool UTFileEventsTra::TestOpenAndGuards()
     Passed = EvaluateTrue("Close()", "guards close", "The written tra file closes cleanly", Writer.Close()) && Passed;
 
     MString Text = ReadTextFile(FileName);
+    MString ExpectedTail = MString("SE\nET UN\nID 7\nTI 5.500000000\nPE 12.5\nCC extra\nEN\n\nTE 9.000000000\n\n");
+    Passed = EvaluateTrue("AddEvent()", "guards exact event tail", "The written tra file ends with the exact deterministic event payload and trailer", Text.EndsWith(ExpectedTail)) && Passed;
     Passed = EvaluateTrue("AddEvent()", "guards event content", "The file contains the unidentifiable-event markers", Text.Contains("ET UN") && Text.Contains("PE 12.5")) && Passed;
     Passed = EvaluateTrue("AddText()", "guards text content", "The file contains the appended raw text", Text.Contains("CC extra")) && Passed;
 

@@ -97,6 +97,9 @@ bool UTUnidentifiableEvent::TestBasics()
 
   Event.SetEnergy(12.5);
   Passed = Evaluate("GetEnergy()", "set/get", "SetEnergy stores the deposited energy", Event.GetEnergy(), 12.5) && Passed;
+  Passed = Evaluate("ParseLine()", "set/get parse", "ParseLine stores deposited energies from representative PE lines", Event.ParseLine("PE 14.5", false), 0) && Passed;
+  Passed = Evaluate("GetEnergy()", "set/get parse", "ParseLine stores the parsed deposited energy", Event.GetEnergy(), 14.5) && Passed;
+  Event.SetEnergy(12.5);
   Passed = EvaluateTrue("Validate()", "set/get", "Unidentifiable events validate successfully", Event.Validate()) && Passed;
   Passed = EvaluateFalse("IsGoodEvent()", "set/get", "Unidentifiable events remain marked as not good", Event.IsGoodEvent()) && Passed;
   Passed = Evaluate("Data()", "set/get", "Data() returns the concrete event pointer", Event.Data(), dynamic_cast<MPhysicalEvent*>(&Event)) && Passed;
@@ -126,6 +129,8 @@ bool UTUnidentifiableEvent::TestRoundTrips()
   Passed = EvaluateTrue("Validate()", "seeded unidentifiable", "The seeded unidentifiable event validates", Event.Validate()) && Passed;
 
   MString Tra = Event.ToTraString();
+  MString ExpectedTra = MString("ET UN\nID 7\nTI ") + Event.GetTime().GetLongIntsString() + "\nPE 12.5\n";
+  Passed = Evaluate("ToTraString()", "unidentifiable tra exact", "The tra-string serialization is deterministic for a representative unidentifiable event", Tra, ExpectedTra) && Passed;
   MUnidentifiableEvent ParsedTra;
   Passed = EvaluateTrue("ParseTraString()", "unidentifiable tra", "The tra-string round-trips through ParseLine", ParseTraString(ParsedTra, Tra)) && Passed;
   Passed = Evaluate("ParsedTra.GetId()", "unidentifiable tra", "The tra round-trip preserves the event id", ParsedTra.GetId(), Event.GetId()) && Passed;

@@ -116,6 +116,16 @@ bool UTMultiEvent::TestRoundTrips()
   Passed = EvaluateTrue("Validate()", "seeded multi", "The seeded multi event validates", Event.Validate()) && Passed;
 
   MString Tra = Event.ToTraString();
+  MString ZeroTime = Event.GetTime().GetLongIntsString();
+  MString ExpectedTra =
+    MString("ET MT\nID 0\nTI ") + ZeroTime + "\n"
+    "SI\n"
+    "ET UN\nID 0\nTI " + ZeroTime + "\nPE 4\n"
+    "SF\n"
+    "SI\n"
+    "ET UN\nID 0\nTI " + ZeroTime + "\nPE 3\n"
+    "SF\n";
+  Passed = Evaluate("ToTraString()", "multi tra exact", "The multi-event tra-string is deterministic for representative child events", Tra, ExpectedTra) && Passed;
   Passed = EvaluateTrue("ToTraString()", "multi tra", "The tra string contains the multi-event separators", Tra.Contains("SI") && Tra.Contains("SF")) && Passed;
   MFile File;
   MString FileName = "/tmp/UTMultiEvent.tra";

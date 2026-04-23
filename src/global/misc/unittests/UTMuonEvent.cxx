@@ -178,6 +178,15 @@ bool UTMuonEvent::TestHelpers()
   Event.SetDirection(MVector(1.0, 0.0, 0.0));
   Event.SetCenterOfGravity(MVector(0.0, 1.0, 0.0));
   Passed = EvaluateTrue("Validate()", "helpers", "The seeded muon helper validates", Event.Validate()) && Passed;
+  Passed = Evaluate("ParseLine()", "helpers energy", "ParseLine stores muon energies from representative ME lines", Event.ParseLine("ME 6.5", false), 0) && Passed;
+  Passed = Evaluate("GetEnergy()", "helpers energy", "ParseLine stores the parsed muon energy", Event.GetEnergy(), 6.5) && Passed;
+  Passed = Evaluate("ParseLine()", "helpers direction", "ParseLine stores muon directions from representative MD lines", Event.ParseLine("MD 0 1 0", false), 0) && Passed;
+  Passed = Evaluate("GetDirection()", "helpers direction", "ParseLine stores the parsed muon direction", Event.GetDirection(), MVector(0.0, 1.0, 0.0)) && Passed;
+  Passed = Evaluate("ParseLine()", "helpers center of gravity", "ParseLine stores muon centers of gravity from representative MG lines", Event.ParseLine("MG 1 2 3", false), 0) && Passed;
+  Passed = Evaluate("GetCenterOfGravity()", "helpers center of gravity", "ParseLine stores the parsed muon center of gravity", Event.GetCenterOfGravity(), MVector(1.0, 2.0, 3.0)) && Passed;
+  Event.SetEnergy(4.5);
+  Event.SetDirection(MVector(1.0, 0.0, 0.0));
+  Event.SetCenterOfGravity(MVector(0.0, 1.0, 0.0));
 
   Passed = Evaluate("Data()", "helpers", "Data() returns the concrete muon pointer", Event.Data(), dynamic_cast<MPhysicalEvent*>(&Event)) && Passed;
   Passed = Evaluate("ToString()", "helpers", "The muon string representation is formatted deterministically", Event.ToString(), MString("The data of the Muon-event:\nEnergy: 4.500\nDirection: 1.000, 0.000, 0.000\nCenterOfGravity: 0.000, 1.000, 0.000\n")) && Passed;
@@ -212,6 +221,8 @@ bool UTMuonEvent::TestRoundTrips()
   Passed = EvaluateTrue("Validate()", "seeded muon", "The seeded muon event validates", Event.Validate()) && Passed;
 
   MString Tra = Event.ToTraString();
+  MString ExpectedTra = MString("ET MU\nID 0\nTI ") + Event.GetTime().GetLongIntsString() + "\nME 2.5\nMD 1 0 0\nMG 0 1 0\n";
+  Passed = Evaluate("ToTraString()", "muon tra exact", "The tra-string serialization is deterministic for a representative muon event", Tra, ExpectedTra) && Passed;
   MMuonEvent ParsedTra;
   Passed = EvaluateTrue("ParseTraString()", "muon tra", "The tra-string round-trips through ParseLine", ParseTraString(ParsedTra, Tra)) && Passed;
   Passed = Evaluate("ParsedTra.GetId()", "muon tra", "The tra round-trip preserves the event id", ParsedTra.GetId(), Event.GetId()) && Passed;

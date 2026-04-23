@@ -345,6 +345,7 @@ bool UTTokenizer::TestMathsAndDiagnostics()
   MTokenizer Description;
   Description.Analyze("one two");
   Passed = Evaluate("ToCompactString()", "compact string", "ToCompactString joins tokens with separators", Description.ToCompactString(), MString("one | two")) && Passed;
+  Passed = Evaluate("ToString()", "diagnostics exact", "ToString prints the exact diagnostic text for a representative token list", Description.ToString(), MString("Tokenizer content (2 Tokens):\nToken 0: \"one\"\nToken 1: \"two\"\n")) && Passed;
   Passed = EvaluateTrue("ToString()", "diagnostics", "ToString lists the token content", Description.ToString().Contains("Tokenizer content (2 Tokens):")) && Passed;
 
   return Passed;
