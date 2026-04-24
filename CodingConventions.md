@@ -291,7 +291,9 @@ X, DataPoint, IsNonZero
    - The class MExceptions has a wide range of useful exceptions
    - 
 
-### 10. **Avoid Global Variables**
-   - Global variables make your code harder to debug and test. Use local variables or pass parameters to functions instead.
+### 10. **Avoid Polluting the Top-Level Namespace**
+   - Do not add global variables, file-scope helper functions, global utility functions, or other names in the top-level namespace unless there is a strong reason.
+   - Prefer class member functions and variables or other narrowly scoped solutions so helper logic stays attached to the owning type and does not leak into the global namespace.
+
 
 ### More to follow
