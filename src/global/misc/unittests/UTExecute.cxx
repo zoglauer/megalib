@@ -10,60 +10,110 @@
 
 
 // Standard libs:
-#include <algorithm>
 #include <cstdlib>
 #include <dirent.h>
-#include <iostream>
 #include <map>
 #include <set>
-#include <string>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
 using namespace std;
 
+// MEGAlib:
+#include "MStreams.h"
+#include "MString.h"
+
+
+//! Execute all unit tests or the requested subset
+class UTExecute
+{
+public:
+  //! Default constructor
+  UTExecute() {}
+  //! Default destructor
+  virtual ~UTExecute() {}
+
+  //! Execute the requested tests
+  int Execute(int argc, char** argv);
+
+private:
+  //! Return true if the text begins with the prefix
+  bool BeginsWith(const MString& Text, const MString& Prefix) const;
+  //! Return true if the text ends with the suffix
+  bool EndsWith(const MString& Text, const MString& Suffix) const;
+  //! Remove the directory from the path
+  MString StripDirectory(const MString& Path) const;
+  //! Remove a known source-file extension
+  MString StripExtension(const MString& Name) const;
+  //! Determine the bin directory from argv[0]
+  MString GetBinDirectory(const char* Argv0) const;
+  //! Return true if the path points to an executable file
+  bool IsExecutableFile(const MString& Path) const;
+  //! Normalize one command-line request
+  MString NormalizeRequest(const MString& Input) const;
+  //! Resolve one command-line request to a discovered test name
+  MString ResolveRequest(const MString& Input) const;
+  //! Discover all available UT* executables in the bin directory
+  bool DiscoverTests();
+  //! Build the list of tests which should be run
+  bool BuildRequestedTests(int argc, char** argv, vector<MString>& RequestedTests) const;
+  //! Run one test executable
+  int RunTest(const MString& TestName) const;
+
+  //! The bin directory containing the test executables
+  MString m_BinDirectory;
+  //! All discovered unit tests and their paths
+  map<MString, MString> m_AllTests;
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static bool BeginsWith(const string& Text, const string& Prefix)
+bool UTExecute::BeginsWith(const MString& Text, const MString& Prefix) const
 {
-  return Text.size() >= Prefix.size() && Text.compare(0, Prefix.size(), Prefix) == 0;
+  return Text.BeginsWith(Prefix);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static bool EndsWith(const string& Text, const string& Suffix)
+bool UTExecute::EndsWith(const MString& Text, const MString& Suffix) const
 {
-  return Text.size() >= Suffix.size() &&
-         Text.compare(Text.size() - Suffix.size(), Suffix.size(), Suffix) == 0;
+  return Text.EndsWith(Suffix);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static string StripDirectory(const string& Path)
+MString UTExecute::StripDirectory(const MString& Path) const
 {
-  string::size_type Slash = Path.find_last_of("/\\");
-  if (Slash == string::npos) {
+  size_t Slash = Path.Last('/');
+  size_t Backslash = Path.Last('\\');
+  size_t NPos = string::npos;
+
+  if (Slash == NPos && Backslash == NPos) {
     return Path;
   }
 
-  return Path.substr(Slash + 1);
+  if (Slash == NPos || (Backslash != NPos && Backslash > Slash)) {
+    Slash = Backslash;
+  }
+
+  return Path.GetSubString(Slash + 1);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static string StripExtension(const string& Name)
+MString UTExecute::StripExtension(const MString& Name) const
 {
   if (EndsWith(Name, ".cxx") == true) {
-    return Name.substr(0, Name.size() - 4);
+    return Name.GetSubString(0, Name.Length() - 4);
   }
 
   return Name;
@@ -73,19 +123,24 @@ static string StripExtension(const string& Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static string GetBinDirectory(const char* Argv0)
+MString UTExecute::GetBinDirectory(const char* Argv0) const
 {
-  string Executable = Argv0 != nullptr ? Argv0 : "";
-  if (Executable.find('/') != string::npos || Executable.find('\\') != string::npos) {
-    string::size_type Slash = Executable.find_last_of("/\\");
-    if (Slash != string::npos) {
-      return Executable.substr(0, Slash);
+  MString Executable = Argv0 != nullptr ? Argv0 : "";
+  if (Executable.Contains("/") == true || Executable.Contains("\\") == true) {
+    size_t Slash = Executable.Last('/');
+    size_t Backslash = Executable.Last('\\');
+    size_t NPos = string::npos;
+    if (Slash == NPos || (Backslash != NPos && Backslash > Slash)) {
+      Slash = Backslash;
+    }
+    if (Slash != NPos) {
+      return Executable.GetSubString(0, Slash);
     }
   }
 
   char Cwd[4096];
   if (getcwd(Cwd, sizeof(Cwd)) != nullptr) {
-    return string(Cwd) + "/bin";
+    return MString(Cwd) + "/bin";
   }
 
   return "bin";
@@ -95,10 +150,10 @@ static string GetBinDirectory(const char* Argv0)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static bool IsExecutableFile(const string& Path)
+bool UTExecute::IsExecutableFile(const MString& Path) const
 {
   struct stat Info;
-  if (stat(Path.c_str(), &Info) != 0) {
+  if (stat(Path.Data(), &Info) != 0) {
     return false;
   }
 
@@ -106,14 +161,14 @@ static bool IsExecutableFile(const string& Path)
     return false;
   }
 
-  return access(Path.c_str(), X_OK) == 0;
+  return access(Path.Data(), X_OK) == 0;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static string NormalizeRequest(const string& Input)
+MString UTExecute::NormalizeRequest(const MString& Input) const
 {
   return StripExtension(StripDirectory(Input));
 }
@@ -122,45 +177,49 @@ static string NormalizeRequest(const string& Input)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static string ResolveRequest(const string& Input, const map<string, string>& AllTests)
+MString UTExecute::ResolveRequest(const MString& Input) const
 {
-  string Name = NormalizeRequest(Input);
-  vector<string> Candidates;
+  MString Name = NormalizeRequest(Input);
+  vector<MString> Candidates;
 
   if (BeginsWith(Name, "UT") == true) {
     Candidates.push_back(Name);
   } else {
     Candidates.push_back("UT" + Name);
-    if (BeginsWith(Name, "M") == true && Name.size() > 1) {
-      Candidates.push_back("UT" + Name.substr(1));
+    if (BeginsWith(Name, "M") == true && Name.Length() > 1) {
+      Candidates.push_back("UT" + Name.GetSubString(1));
     }
   }
 
-  for (vector<string>::const_iterator It = Candidates.begin(); It != Candidates.end(); ++It) {
-    if (AllTests.find(*It) != AllTests.end()) {
+  for (vector<MString>::const_iterator It = Candidates.begin(); It != Candidates.end(); ++It) {
+    if (m_AllTests.find(*It) != m_AllTests.end()) {
       return *It;
     }
   }
 
-  return Candidates.empty() == false ? Candidates.front() : Name;
+  if (Candidates.empty() == false) {
+    return Candidates.front();
+  }
+
+  return Name;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static map<string, string> DiscoverTests(const string& BinDirectory)
+bool UTExecute::DiscoverTests()
 {
-  map<string, string> Tests;
+  m_AllTests.clear();
 
-  DIR* Directory = opendir(BinDirectory.c_str());
+  DIR* Directory = opendir(m_BinDirectory.Data());
   if (Directory == nullptr) {
-    return Tests;
+    return false;
   }
 
   dirent* Entry = nullptr;
   while ((Entry = readdir(Directory)) != nullptr) {
-    string Name = Entry->d_name;
+    MString Name = Entry->d_name;
     if (BeginsWith(Name, "UT") == false) {
       continue;
     }
@@ -168,40 +227,111 @@ static map<string, string> DiscoverTests(const string& BinDirectory)
       continue;
     }
 
-    string Path = BinDirectory + "/" + Name;
+    MString Path = m_BinDirectory + "/" + Name;
     if (IsExecutableFile(Path) == false) {
       continue;
     }
 
-    Tests[Name] = Path;
+    m_AllTests[Name] = Path;
   }
 
   closedir(Directory);
-  return Tests;
+  return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static int RunTest(const string& TestName, const string& TestPath)
+bool UTExecute::BuildRequestedTests(int argc, char** argv, vector<MString>& RequestedTests) const
 {
-  cout<<endl;
-  cout<<"RUN "<<TestName<<endl;
+  RequestedTests.clear();
 
-  int Status = system(TestPath.c_str());
+  if (argc == 1) {
+    for (map<MString, MString>::const_iterator It = m_AllTests.begin(); It != m_AllTests.end(); ++It) {
+      RequestedTests.push_back(It->first);
+    }
+    return true;
+  }
+
+  set<MString> Seen;
+  for (int a = 1; a < argc; ++a) {
+    MString Requested = ResolveRequest(argv[a]);
+    if (Seen.insert(Requested).second == false) {
+      continue;
+    }
+
+    if (m_AllTests.find(Requested) == m_AllTests.end()) {
+      merr<<"Unknown unit test request: "<<argv[a]<<" -> "<<Requested<<show;
+      return false;
+    }
+
+    RequestedTests.push_back(Requested);
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int UTExecute::RunTest(const MString& TestName) const
+{
+  mout<<endl;
+  mout<<"RUN "<<TestName<<show;
+
+  map<MString, MString>::const_iterator Test = m_AllTests.find(TestName);
+  if (Test == m_AllTests.end()) {
+    mout<<"FAIL "<<TestName<<show;
+    return 1;
+  }
+
+  int Status = system(Test->second.Data());
   if (Status == -1) {
-    cout<<"FAIL "<<TestName<<endl;
+    mout<<"FAIL "<<TestName<<show;
     return 1;
   }
 
   if (WIFEXITED(Status) != 0 && WEXITSTATUS(Status) == 0) {
-    cout<<"PASS "<<TestName<<endl;
+    mout<<"PASS "<<TestName<<show;
     return 0;
   }
 
-  cout<<"FAIL "<<TestName<<endl;
+  mout<<"FAIL "<<TestName<<show;
   return 1;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int UTExecute::Execute(int argc, char** argv)
+{
+  m_BinDirectory = GetBinDirectory(argc > 0 ? argv[0] : nullptr);
+  if (DiscoverTests() == false || m_AllTests.empty() == true) {
+    merr<<"No unit test executables found in "<<m_BinDirectory<<show;
+    return 1;
+  }
+
+  vector<MString> RequestedTests;
+  if (BuildRequestedTests(argc, argv, RequestedTests) == false) {
+    return 1;
+  }
+
+  int Failed = 0;
+  int Total = 0;
+  for (vector<MString>::const_iterator It = RequestedTests.begin(); It != RequestedTests.end(); ++It) {
+    ++Total;
+    Failed += RunTest(*It);
+  }
+
+  mout<<endl;
+  mout<<"Summary:"<<endl;
+  mout<<"  Executed: "<<Total<<endl;
+  mout<<"  Failed: "<<Failed<<show;
+
+  return Failed == 0 ? 0 : 1;
 }
 
 
@@ -210,47 +340,6 @@ static int RunTest(const string& TestName, const string& TestPath)
 
 int main(int argc, char** argv)
 {
-  string BinDirectory = GetBinDirectory(argc > 0 ? argv[0] : nullptr);
-  map<string, string> AllTests = DiscoverTests(BinDirectory);
-
-  if (AllTests.empty() == true) {
-    cerr<<"No unit test executables found in "<<BinDirectory<<endl;
-    return 1;
-  }
-
-  vector<string> RequestedTests;
-  if (argc == 1) {
-    for (map<string, string>::const_iterator It = AllTests.begin(); It != AllTests.end(); ++It) {
-      RequestedTests.push_back(It->first);
-    }
-  } else {
-    set<string> Seen;
-    for (int a = 1; a < argc; ++a) {
-      string Requested = ResolveRequest(argv[a], AllTests);
-      if (Seen.insert(Requested).second == false) {
-        continue;
-      }
-
-      if (AllTests.find(Requested) == AllTests.end()) {
-        cerr<<"Unknown unit test request: "<<argv[a]<<" -> "<<Requested<<endl;
-        return 1;
-      }
-
-      RequestedTests.push_back(Requested);
-    }
-  }
-
-  int Failed = 0;
-  int Total = 0;
-  for (vector<string>::const_iterator It = RequestedTests.begin(); It != RequestedTests.end(); ++It) {
-    ++Total;
-    Failed += RunTest(*It, AllTests[*It]);
-  }
-
-  cout<<endl;
-  cout<<"Summary:"<<endl;
-  cout<<"  Executed: "<<Total<<endl;
-  cout<<"  Failed: "<<Failed<<endl;
-
-  return Failed == 0 ? 0 : 1;
+  UTExecute Execute;
+  return Execute.Execute(argc, argv);
 }
