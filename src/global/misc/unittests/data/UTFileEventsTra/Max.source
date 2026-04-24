@@ -1,0 +1,46 @@
+# Max is my default COSI-like quick sim. This is the source for it
+
+# Global parameters
+Version                   1
+Geometry                  $(MEGALIB)/resource/examples/geomega/special/Max.geo.setup
+
+# Physics list
+PhysicsListEM             LivermorePol
+
+# Output formats
+StoreSimulationInfo       all
+StoreMaximumEnergyLoss    30.0
+
+# Run & source parameters
+Run SpaceSim_1sec
+SpaceSim_1sec.FileName         ObsTime_1sec_complete
+SpaceSim_1sec.Time             1.0
+
+SpaceSim_1sec.Source Maxi_1sec
+Maxi_1sec.ParticleType         1
+Maxi_1sec.Beam                 FarFieldPointSource 0 0
+Maxi_1sec.Spectrum             Mono 511
+Maxi_1sec.Flux                 1.0
+
+
+Run SpaceSim_2sec
+SpaceSim_2sec.FileName         ObsTime_2sec_complete
+SpaceSim_2sec.Time             2.0
+
+SpaceSim_2sec.Source Maxi_2sec
+Maxi_2sec.ParticleType         1
+Maxi_2sec.Beam                 FarFieldPointSource 0 0
+Maxi_2sec.Spectrum             Mono 511
+Maxi_2sec.Flux                 1.0
+
+
+Run SpaceSim_4sec
+SpaceSim_4sec.FileName         ObsTime_4sec_complete
+SpaceSim_4sec.Time             4.0
+
+SpaceSim_4sec.Source Maxi_4sec
+Maxi_4sec.ParticleType         1
+Maxi_4sec.Beam                 FarFieldPointSource 0 0
+Maxi_4sec.Spectrum             Mono 511
+Maxi_4sec.Flux                 1.0
+
