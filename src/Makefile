@@ -25,6 +25,7 @@ glo:
 
 unittests:
 	$(MAKE) unittests -C global
+	$(MAKE) unittests -C spectralyze
 	$(MAKE) unittests -C mimrec
 	$(MAKE) unittests -C revan
 	$(MAKE) unittests -C sivan
@@ -308,5 +309,4 @@ clean:
 
 #
 #----------------------------------------------------------------
-
 

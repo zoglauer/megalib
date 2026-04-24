@@ -66,8 +66,11 @@ MQualifiedIsotope::~MQualifiedIsotope()
 //! Add line parameters:
 void MQualifiedIsotope::AddLine(double Energy, double BranchingRatio, const MString& Flags, bool ExcludeExcludedLines) 
 { 
-  MIsotope::AddLine(Energy, BranchingRatio, Flags);
-  m_LineFound.push_back(false);
+  unsigned int NLinesBefore = GetNLines();
+  MIsotope::AddLine(Energy, BranchingRatio, Flags, ExcludeExcludedLines);
+  if (GetNLines() > NLinesBefore) {
+    m_LineFound.push_back(false);
+  }
 }
 
 
