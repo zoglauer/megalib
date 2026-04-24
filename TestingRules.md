@@ -96,6 +96,6 @@ MEGAlib requires four test tiers. Every change is covered by at least one applic
 2. A missing test binary is a failure.
 3. A test binary exiting non-zero is a failure.
 4. A silently skipped test is a failure.
-5. In directories that use the standard unit-test makefile pattern, adding a `unittests/*.cxx` source file is sufficient to register a new unit test.
-6. End-to-end and physics validation tests live outside the unit test harness and have their own runner. A change that touches simulation, reconstruction, or imaging must run the relevant end-to-end tier before merge.
-
+5. Unit-test source files, binaries, and suite names use the `UT<ClassNameWithoutLeadingM>` convention, e.g. `MIsotope` -> `UTIsotope.cxx`, `bin/UTIsotope`, and `MUnitTest("UTIsotope")`.
+6. In directories that use the standard unit-test makefile pattern, adding a `unittests/*.cxx` source file is sufficient to register a new unit test.
+7. End-to-end and physics validation tests live outside the unit test harness and have their own runner. A change that touches simulation, reconstruction, or imaging must run the relevant end-to-end tier before merge.
