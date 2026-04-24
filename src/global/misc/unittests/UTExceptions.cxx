@@ -226,6 +226,7 @@ bool UTExceptions::TestEdgeCases()
   {
     MExceptionValueOutOfBounds Exception(3.5);
     Passed = EvaluateTrue("MExceptionValueOutOfBounds(value)", "single value", "The single-value constructor includes the offending value in the message", MString(Exception.what()).Contains("3.5")) && Passed;
+    Passed = Evaluate("MExceptionValueOutOfBounds(value)", "single value exact", "The single-value constructor formats the full deterministic message", MString(Exception.what()), MString("Value out of bounds: 3.5")) && Passed;
   }
 
   {
@@ -243,6 +244,7 @@ bool UTExceptions::TestEdgeCases()
   {
     MExceptionNeverReachThatLineOfCode Exception("Extra context");
     Passed = EvaluateTrue("MExceptionNeverReachThatLineOfCode(description)", "custom detail", "A custom never-reach exception includes the supplied description", MString(Exception.what()).Contains("Extra context")) && Passed;
+    Passed = Evaluate("MExceptionNeverReachThatLineOfCode(description)", "custom detail exact", "A custom never-reach exception formats the full deterministic message", MString(Exception.what()), MString("We should have never reached that line of code: \nExtra context\n")) && Passed;
   }
 
   {

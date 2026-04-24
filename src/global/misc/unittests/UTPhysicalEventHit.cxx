@@ -111,6 +111,12 @@ bool UTPhysicalEventHit::TestCopyAndAssign()
   Passed = Evaluate("operator=", "assign", "The assignment operator preserves the energy", Assigned.GetEnergy(), Original.GetEnergy()) && Passed;
   Passed = Evaluate("operator=", "assign", "The assignment operator preserves the time", Assigned.GetTime().GetAsDouble(), Original.GetTime().GetAsDouble()) && Passed;
 
+  MPhysicalEventHit& SelfAlias = Assigned;
+  Assigned = SelfAlias;
+  Passed = Evaluate("operator=", "self assign", "Self-assignment preserves the position", Assigned.GetPosition(), Original.GetPosition()) && Passed;
+  Passed = Evaluate("operator=", "self assign", "Self-assignment preserves the energy", Assigned.GetEnergy(), Original.GetEnergy()) && Passed;
+  Passed = Evaluate("operator=", "self assign", "Self-assignment preserves the time", Assigned.GetTime().GetAsDouble(), Original.GetTime().GetAsDouble()) && Passed;
+
   return Passed;
 }
 
@@ -124,4 +130,3 @@ int main()
   UTPhysicalEventHit Test;
   return Test.Run() ? 0 : 1;
 }
-

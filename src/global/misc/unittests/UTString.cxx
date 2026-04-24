@@ -495,6 +495,7 @@ bool UTString::TestNumericConversions()
   NumericAppend += ",d=";
   NumericAppend += 2.25;
   Passed = EvaluateTrue("operator+=", "mixed numeric appends", "operator+= appends numeric values in sequence", NumericAppend.BeginsWith("n=5,u=7,l=9,ul=11,f=1.5,d=2.25")) && Passed;
+  Passed = Evaluate("operator+=", "mixed numeric appends exact", "operator+= formats the representative mixed numeric append sequence deterministically", NumericAppend, MString("n=5,u=7,l=9,ul=11,f=1.5,d=2.25")) && Passed;
 
   return Passed;
 }
