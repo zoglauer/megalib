@@ -46,7 +46,13 @@ ClassImp(MReadOutAssembly)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MReadOutAssembly::MReadOutAssembly() : MReadOutSequence()
+atomic<unsigned long> MReadOutAssembly::s_NextAssemblyID(0);
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MReadOutAssembly::MReadOutAssembly() : MReadOutSequence(), m_AssemblyID(++s_NextAssemblyID)
 {
   // Construct an instance of MReadOutAssembly
   
