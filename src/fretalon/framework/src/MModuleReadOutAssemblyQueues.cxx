@@ -80,6 +80,7 @@ void MModuleReadOutAssemblyQueues::Clear()
   
   for (MReadOutAssembly* ROA: m_OutgoingEvents) delete ROA;
   m_OutgoingEvents.clear();
+  m_SortingOrder.clear();
 
   m_SortedQueue = false;
 }
@@ -117,6 +118,14 @@ bool MModuleReadOutAssemblyQueues::AddIncoming(MReadOutAssembly* Event)
   //! Add an event to the incoming event list
 
   lock_guard<mutex> IncomingLock(m_IncomingEventsMutex);
+
+  if (Event == nullptr) {
+    if (g_Verbosity >= c_Error) {
+      cout<<"Error in MModuleReadOutAssemblyQueues::AddIncoming:"<<endl;
+      cout<<"You cannot add nullptr to the incoming queue!"<<endl;
+    }
+    return false;
+  }
   
   m_IncomingEvents.push_back(Event);
   
