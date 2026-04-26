@@ -156,7 +156,7 @@ MReadOutAssembly* MModuleReadOutAssemblyQueues::GetIncoming()
       lock_guard<mutex> OutgoingLock(m_OutgoingEventsMutex);
   
       m_OutgoingEvents.push_back(nullptr);
-      m_SortingOrder.push_back(E->GetID());
+      m_SortingOrder.push_back(E->GetAssemblyID());
     }
   }
   
@@ -175,7 +175,7 @@ bool MModuleReadOutAssemblyQueues::AddOutgoing(MReadOutAssembly* Event)
   
   if (m_SortedQueue == true) {
     // Find the ID in the sorted list...
-    unsigned long ID = Event->GetID();
+    unsigned long ID = Event->GetAssemblyID();
     deque<unsigned long>::reverse_iterator Iter = find(m_SortingOrder.rbegin(), m_SortingOrder.rend(), ID);
     if (Iter == m_SortingOrder.rend()) {
       if (g_Verbosity >= c_Error) {

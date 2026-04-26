@@ -92,7 +92,7 @@ class MModuleReadOutAssemblyQueues
   //! A mutex protecting the incoming event list
   mutex m_IncomingEventsMutex;
   
-  //! The sorting order for the outgoing events -- by event ID!
+  //! The sorting order for the outgoing events -- by assembly ID!
   deque<unsigned long> m_SortingOrder;  
   //! The outgoing event list
   deque<MReadOutAssembly*> m_OutgoingEvents; 

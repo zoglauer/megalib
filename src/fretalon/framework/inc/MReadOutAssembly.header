@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <atomic>
 #include <vector>
 using namespace std;
 
@@ -62,6 +63,8 @@ class MReadOutAssembly : public MReadOutSequence
   bool HasAnalysisProgress(uint64_t Progress) const { return (m_AnalysisProgress & Progress) == Progress ? true : false; }
   //! Return the analysis progress flag
   uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
+  //! Return the unique assembly identifier
+  unsigned long GetAssemblyID() const { return m_AssemblyID; }
 
 
   //! Parse some content from a line
@@ -86,6 +89,10 @@ class MReadOutAssembly : public MReadOutSequence
 
   // private members:
  private:
+  //! Unique assembly identifier counter
+  static atomic<unsigned long> s_NextAssemblyID;
+  //! Unique assembly identifier
+  unsigned long m_AssemblyID;
   //! The analysis progress 
   uint64_t m_AnalysisProgress;
   
