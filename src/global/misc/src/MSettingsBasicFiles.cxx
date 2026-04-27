@@ -35,7 +35,7 @@ using namespace std;
 
 // MEGAlib:
 #include "MGlobal.h"
-#include "MAssert.h"
+#include "MExceptions.h"
 #include "MStreams.h"
 #include "MFile.h"
 
@@ -221,9 +221,11 @@ unsigned int MSettingsBasicFiles::GetNFileHistories()
 
 MString MSettingsBasicFiles::GetFileHistoryAt(unsigned int i)
 {
-  massert(i < GetNFileHistories());
+  if (i < GetNFileHistories()) {
+    return m_FileHistory[i];
+  }
 
-  return m_FileHistory[i];
+  throw MExceptionIndexOutOfBounds(0, GetNFileHistories(), i);
 }
 
 
@@ -276,9 +278,11 @@ unsigned int MSettingsBasicFiles::GetNGeometryHistories()
 
 MString MSettingsBasicFiles::GetGeometryHistoryAt(unsigned int i)
 {
-  massert(i < GetNGeometryHistories());
+  if (i < GetNGeometryHistories()) {
+    return m_GeometryHistory[i];
+  }
 
-  return m_GeometryHistory[i];
+  throw MExceptionIndexOutOfBounds(0, GetNGeometryHistories(), i);
 }
 
 

@@ -250,7 +250,7 @@ bool MSettings::Change(MString NewField)
   for (MString S: NodeNames) {
     MXmlNode* Node = Iter->GetNode(S);
     if (Node == nullptr) {
-      cout<<"Error: Unable to find node "<<S<<" under node "<<Iter->GetName()<<endl;
+      merr<<"Error: Unable to find node "<<S<<" under node "<<Iter->GetName()<<endl;
       return false;
     }
     Iter = Node;
