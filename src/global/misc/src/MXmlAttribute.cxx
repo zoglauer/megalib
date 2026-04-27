@@ -146,10 +146,16 @@ MString MXmlAttribute::ToString()
 {
   // Return the XML text
 
+  MString Value = m_Value;
+  Value.ReplaceAll("&", "&amp;");
+  Value.ReplaceAll("\"", "&quot;");
+  Value.ReplaceAll("<", "&lt;");
+  Value.ReplaceAll(">", "&gt;");
+
   MString Xml;
   Xml += m_Name;
   Xml += "=\"";
-  Xml += m_Value;
+  Xml += Value;
   Xml += "\"";
 
   return Xml;

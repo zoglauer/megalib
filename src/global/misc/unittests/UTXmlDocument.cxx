@@ -1,5 +1,5 @@
 /*
- * UTXml.cxx
+ * UTXmlDocument.cxx
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,111 +9,51 @@
  */
 
 
-// MEGAlib:
-#include "MXmlData.h"
-#include "MXmlAttribute.h"
-#include "MXmlNode.h"
-#include "MXmlDocument.h"
-#include "MUnitTest.h"
-#include "MStreams.h"
-
 // Standard libs:
 #include <cstdio>
+#include <fstream>
 using namespace std;
 
+// MEGAlib:
+#include "MStreams.h"
+#include "MUnitTest.h"
+#include "MXmlAttribute.h"
+#include "MXmlDocument.h"
+#include "MXmlNode.h"
 
-//! Unit test class for the MXml helper classes
-class UTXml : public MUnitTest
+
+//! Unit test class for MXmlDocument
+class UTXmlDocument : public MUnitTest
 {
 public:
-  //! Default constructor
-  UTXml() : MUnitTest("UTXml") {}
-  //! Default destructor
-  virtual ~UTXml() {}
+  UTXmlDocument() : MUnitTest("UTXmlDocument") {}
+  virtual ~UTXmlDocument() {}
 
-  //! Run all tests
   virtual bool Run();
 
 private:
-  //! Test the shared MXmlData value conversions
-  bool TestXmlData();
-  //! Test node and attribute construction helpers
-  bool TestXmlNodeAndAttribute();
-  //! Test document save/load round-tripping for MEGAlib XML
+  bool WriteTextFile(const MString& FileName, const MString& Content) const;
   bool TestXmlRoundTrip();
-  //! Test settings-style repeated loading on the same document
   bool TestXmlReload();
+  bool TestXmlLoadEdges();
+  bool TestXmlRegressionBugs();
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Run all tests
-bool UTXml::Run()
+bool UTXmlDocument::Run()
 {
-  bool AllPassed = true;
+  bool Passed = true;
 
-  AllPassed = TestXmlData() && AllPassed;
-  AllPassed = TestXmlNodeAndAttribute() && AllPassed;
-  AllPassed = TestXmlRoundTrip() && AllPassed;
-  AllPassed = TestXmlReload() && AllPassed;
+  Passed = TestXmlRoundTrip() && Passed;
+  Passed = TestXmlReload() && Passed;
+  Passed = TestXmlLoadEdges() && Passed;
+  Passed = TestXmlRegressionBugs() && Passed;
 
   Summarize();
 
-  return AllPassed;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Test the shared MXmlData value conversions
-bool UTXml::TestXmlData()
-{
-  bool Passed = true;
-
-  MXmlData Empty;
-  Passed = Evaluate("GetName()", "default constructor", "The default xml data name is empty", Empty.GetName(), MString("")) && Passed;
-  Passed = Evaluate("GetValue()", "default constructor", "The default xml data value is empty", Empty.GetValue(), MString("")) && Passed;
-
-  MXmlData StringData(MString("Name"), MString("Value"));
-  Passed = Evaluate("GetName()", "string value", "The string constructor stores the name", StringData.GetName(), MString("Name")) && Passed;
-  Passed = Evaluate("GetValueAsString()", "string value", "The string constructor stores the value", StringData.GetValueAsString(), MString("Value")) && Passed;
-
-  MTime TimeValue(12, 345678901);
-  MXmlData TimeData("Time", TimeValue);
-  Passed = Evaluate("GetValueAsString()", "time value", "The time constructor stores the long integer representation", TimeData.GetValueAsString(), MString("12.345678901")) && Passed;
-  Passed = EvaluateTrue("GetValueAsTime()", "time value", "Time values round-trip through MXmlData", TimeData.GetValueAsTime().GetLongIntsString() == "12.345678901") && Passed;
-
-  MXmlData IntData("Integer", -42);
-  Passed = EvaluateNear("GetValueAsInt()", "int value", "Integer values are converted back correctly", IntData.GetValueAsInt(), -42.0, 1e-12) && Passed;
-
-  MXmlData LongData("Long", 1234567890L);
-  Passed = EvaluateNear("GetValueAsLong()", "long value", "Long values are converted back correctly", LongData.GetValueAsLong(), 1234567890.0, 1e-12) && Passed;
-
-  MXmlData UnsignedIntData("UnsignedInt", static_cast<unsigned int>(17));
-  Passed = EvaluateNear("GetValueAsUnsignedInt()", "unsigned int value", "Unsigned integer values are converted back correctly", UnsignedIntData.GetValueAsUnsignedInt(), 17.0, 1e-12) && Passed;
-
-  MXmlData UnsignedLongData("UnsignedLong", static_cast<unsigned long>(4294967296UL));
-  Passed = EvaluateNear("GetValueAsUnsignedLong()", "unsigned long value", "Unsigned long values preserve values above UINT_MAX", UnsignedLongData.GetValueAsUnsignedLong(), 4294967296.0, 1e-12) && Passed;
-
-  MXmlData DoubleData("Double", 3.125);
-  Passed = EvaluateNear("GetValueAsDouble()", "double value", "Double values are converted back correctly", DoubleData.GetValueAsDouble(), 3.125, 1e-12) && Passed;
-
-  MXmlData TrueData("True", true);
-  Passed = EvaluateTrue("GetValueAsBoolean()", "true value", "Boolean true is parsed correctly", TrueData.GetValueAsBoolean()) && Passed;
-
-  MXmlData UpperTrueData(MString("UpperTrue"), MString("TRUE"));
-  Passed = EvaluateTrue("GetValueAsBoolean()", "upper true value", "Upper-case TRUE is parsed correctly", UpperTrueData.GetValueAsBoolean()) && Passed;
-
-  MXmlData FalseData("False", false);
-  Passed = EvaluateFalse("GetValueAsBoolean()", "false value", "Boolean false is parsed correctly", FalseData.GetValueAsBoolean()) && Passed;
-
-  FalseData.Clear();
-  Passed = Evaluate("Clear()", "reset name", "Clear resets the name", FalseData.GetName(), MString("")) && Passed;
-  Passed = Evaluate("Clear()", "reset value", "Clear resets the value", FalseData.GetValue(), MString("")) && Passed;
-
   return Passed;
 }
 
@@ -121,75 +61,20 @@ bool UTXml::TestXmlData()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Test node and attribute construction helpers
-bool UTXml::TestXmlNodeAndAttribute()
+bool UTXmlDocument::WriteTextFile(const MString& FileName, const MString& Content) const
 {
-  bool Passed = true;
-
-  MXmlNode Root(0, MString("Root"));
-  new MXmlAttribute(&Root, MString("version"), MString("1"));
-  new MXmlAttribute(&Root, MString("enabled"), true);
-  new MXmlNode(&Root, MString("Title"), MString("Example"));
-  new MXmlNode(&Root, MString("Count"), 7);
-  new MXmlNode(&Root, MString("Range"), 2, 5);
-  new MXmlNode(&Root, MString("Point"), MVector(1.0, 2.0, 3.0));
-  new MXmlNode(&Root, MString("When"), MTime(5, 600000000));
-
-  Passed = EvaluateNear("GetNAttributes()", "attribute count", "Attributes are added to the mother node", Root.GetNAttributes(), 2.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetNNodes()", "node count", "Child nodes are added to the mother node", Root.GetNNodes(), 5.0, 1e-12) && Passed;
-  Passed = Evaluate("GetAttribute(name)", "attribute lookup", "Attributes can be retrieved by name", Root.GetAttribute("version")->GetValueAsString(), MString("1")) && Passed;
-  Passed = EvaluateTrue("GetAttribute(index)", "attribute lookup", "Attributes can be retrieved by index", Root.GetAttribute(1) != 0) && Passed;
-  Passed = EvaluateTrue("GetAttribute(missing)", "missing attribute", "Missing attributes return null", Root.GetAttribute("missing") == 0) && Passed;
-
-  Passed = Evaluate("GetNode(name)", "node lookup", "Nodes can be retrieved by name", Root.GetNode("Title")->GetValueAsString(), MString("Example")) && Passed;
-  Passed = EvaluateTrue("GetNode(index)", "node lookup", "Nodes can be retrieved by index", Root.GetNode(0) != 0) && Passed;
-  Passed = EvaluateTrue("GetNode(missing)", "missing node", "Missing nodes return null", Root.GetNode("missing") == 0) && Passed;
-
-  Passed = EvaluateNear("GetValueAsInt()", "int node", "Integer child values are parsed correctly", Root.GetNode("Count")->GetValueAsInt(), 7.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetMinValueAsInt()", "min/max int", "Integer min values are parsed correctly", Root.GetNode("Range")->GetMinValueAsInt(), 2.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetMaxValueAsInt()", "min/max int", "Integer max values are parsed correctly", Root.GetNode("Range")->GetMaxValueAsInt(), 5.0, 1e-12) && Passed;
-
-  MVector Point = Root.GetNode("Point")->GetValueAsVector();
-  Passed = EvaluateNear("GetValueAsVector()", "vector x", "Vector X components are reconstructed correctly", Point.X(), 1.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetValueAsVector()", "vector y", "Vector Y components are reconstructed correctly", Point.Y(), 2.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetValueAsVector()", "vector z", "Vector Z components are reconstructed correctly", Point.Z(), 3.0, 1e-12) && Passed;
-
-  Passed = EvaluateTrue("GetValueAsTime()", "time node", "Time child values are reconstructed correctly", Root.GetNode("When")->GetValueAsTime().GetLongIntsString() == "5.600000000") && Passed;
-  MString ExpectedRootText =
-    "<Root version=\"1\" enabled=\"true\">\n"
-    "  <Title>Example</Title>\n"
-    "  <Count>7</Count>\n"
-    "  <Range>\n"
-    "    <Min>2</Min>\n"
-    "    <Max>5</Max>\n"
-    "  </Range>\n"
-    "  <Point>\n"
-    "    <X>1</X>\n"
-    "    <Y>2</Y>\n"
-    "    <Z>3</Z>\n"
-    "  </Point>\n"
-    "  <When>5.600000000</When>\n"
-    "</Root>";
-  Passed = Evaluate("ToString()", "full serialization", "Representative XML nodes serialize deterministically", Root.ToString(), ExpectedRootText) && Passed;
-
-  Passed = EvaluateTrue("ToString()", "attribute serialization", "Attributes are written into the opening tag", Root.ToString().Contains("version=\"1\"")) && Passed;
-  Passed = EvaluateTrue("ToString()", "child serialization", "Child nodes are serialized into xml text", Root.ToString().Contains("<Title>Example</Title>")) && Passed;
-  Passed = EvaluateTrue("ToString()", "empty node serialization", "Empty nodes use the self-closing tag form", MXmlNode(0, MString("Empty")).ToString() == "<Empty />") && Passed;
-
-  mout.Enable(false);
-  Passed = EvaluateNear("GetValueAsVector()", "non-vector node", "Non-vector nodes return a default vector", Root.GetNode("Count")->GetValueAsVector().Mag(), 0.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetMinValueAsInt()", "non-range node", "Non-range nodes return zero for min values", Root.GetNode("Count")->GetMinValueAsInt(), 0.0, 1e-12) && Passed;
-  mout.Enable(true);
-
-  return Passed;
+  ofstream Out(FileName.Data());
+  if (Out.is_open() == false) return false;
+  Out<<Content;
+  Out.close();
+  return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Test document save/load round-tripping for MEGAlib XML
-bool UTXml::TestXmlRoundTrip()
+bool UTXmlDocument::TestXmlRoundTrip()
 {
   bool Passed = true;
 
@@ -211,7 +96,7 @@ bool UTXml::TestXmlRoundTrip()
   new MXmlNode(ExtraGroup, MString("Item"), MString("Nested"));
   new MXmlNode(ExtraGroup, MString("Label"), MString("Inner"));
 
-  MString FileName = "/tmp/UTXml_roundtrip.xml";
+  MString FileName = "/tmp/UTXmlDocument_roundtrip.xml";
   Passed = EvaluateTrue("Save()", "round trip", "Documents can be saved to disk", Document.Save(FileName)) && Passed;
 
   MXmlDocument Loaded;
@@ -335,8 +220,7 @@ bool UTXml::TestXmlRoundTrip()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Test settings-style repeated loading on the same document
-bool UTXml::TestXmlReload()
+bool UTXmlDocument::TestXmlReload()
 {
   bool Passed = true;
 
@@ -352,8 +236,8 @@ bool UTXml::TestXmlReload()
   new MXmlNode(&Second, MString("GeometryFileName"), MString("second.geo.setup"));
   new MXmlNode(&Second, MString("DataFileName"), MString("current.tra"));
 
-  MString FirstFileName = "/tmp/UTXml_reload_first.xml";
-  MString SecondFileName = "/tmp/UTXml_reload_second.xml";
+  MString FirstFileName = "/tmp/UTXmlDocument_reload_first.xml";
+  MString SecondFileName = "/tmp/UTXmlDocument_reload_second.xml";
   Passed = EvaluateTrue("Save()", "reload first", "The first settings-style xml document can be saved", First.Save(FirstFileName)) && Passed;
   Passed = EvaluateTrue("Save()", "reload second", "The second settings-style xml document can be saved", Second.Save(SecondFileName)) && Passed;
 
@@ -376,8 +260,131 @@ bool UTXml::TestXmlReload()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool UTXmlDocument::TestXmlLoadEdges()
+{
+  bool Passed = true;
+
+  MXmlDocument Default;
+  Passed = Evaluate("GetName()", "default constructor", "The default xml document name is empty", Default.GetName(), MString("")) && Passed;
+  Passed = Evaluate("GetNNodes()", "default constructor", "The default xml document has no child nodes", Default.GetNNodes(), 0U) && Passed;
+
+  {
+    MXmlDocument Missing;
+    mout.Enable(false);
+    Passed = Evaluate("Load()", "missing file", "Loading a missing XML file fails cleanly", Missing.Load("/tmp/UTXmlDocument_does_not_exist.xml"), false) && Passed;
+    mout.Enable(true);
+  }
+
+  {
+    MString EmptyFileName = "/tmp/UTXmlDocument_empty.xml";
+    Passed = EvaluateTrue("WriteTextFile()", "empty file", "An empty XML file can be written", WriteTextFile(EmptyFileName, "")) && Passed;
+    MXmlDocument Empty;
+    Passed = Evaluate("Load()", "empty file", "Loading an existing empty XML file currently succeeds", Empty.Load(EmptyFileName), true) && Passed;
+    Passed = Evaluate("GetName()", "empty file", "Loading an empty XML file leaves the root name empty", Empty.GetName(), MString("")) && Passed;
+    Passed = Evaluate("GetNNodes()", "empty file", "Loading an empty XML file leaves the document without child nodes", Empty.GetNNodes(), 0U) && Passed;
+    ::remove(EmptyFileName.Data());
+  }
+
+  {
+    MString BrokenAttributeFileName = "/tmp/UTXmlDocument_broken_attribute.xml";
+    Passed = EvaluateTrue("WriteTextFile()", "broken attribute file", "A malformed XML file with a broken root attribute can be written", WriteTextFile(BrokenAttributeFileName, "<Config version=2></Config>\n")) && Passed;
+    MXmlDocument Broken;
+    mout.Enable(false);
+    Passed = Evaluate("Load()", "broken attribute file", "Loading XML with malformed root attributes fails", Broken.Load(BrokenAttributeFileName), false) && Passed;
+    mout.Enable(true);
+    ::remove(BrokenAttributeFileName.Data());
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTXmlDocument::TestXmlRegressionBugs()
+{
+  bool Passed = true;
+
+  {
+    MXmlDocument Document("Config");
+    new MXmlNode(&Document, "Text", MString("A&B<C>"));
+    MString FileName = "/tmp/UTXmlDocument_special_text.xml";
+    Passed = EvaluateTrue("Save()", "special text setup", "A representative document with XML-special text characters can be saved", Document.Save(FileName)) && Passed;
+
+    MXmlDocument Loaded;
+    Passed = Evaluate("Load()", "special text round trip", "Documents written with XML-special text characters should load successfully", Loaded.Load(FileName), true) && Passed;
+    if (Loaded.GetNode("Text") != 0) {
+      Passed = Evaluate("GetValueAsString()", "special text round trip", "XML-special text characters should survive a save/load round trip unchanged", Loaded.GetNode("Text")->GetValueAsString(), MString("A&B<C>")) && Passed;
+    } else {
+      Passed = EvaluateTrue("GetNode(name)", "special text round trip", "The special-text node should still be present after loading", false) && Passed;
+    }
+    ::remove(FileName.Data());
+  }
+
+  {
+    MXmlDocument Document("Config");
+    new MXmlAttribute(&Document, "label", MString("A&B\"C"));
+    MString FileName = "/tmp/UTXmlDocument_special_attribute.xml";
+    Passed = EvaluateTrue("Save()", "special attribute setup", "A representative document with XML-special attribute characters can be saved", Document.Save(FileName)) && Passed;
+
+    MXmlDocument Loaded;
+    Passed = Evaluate("Load()", "special attribute round trip", "Documents written with XML-special attribute characters should load successfully", Loaded.Load(FileName), true) && Passed;
+    if (Loaded.GetAttribute("label") != 0) {
+      Passed = Evaluate("GetValueAsString()", "special attribute round trip", "XML-special attribute characters should survive a save/load round trip unchanged", Loaded.GetAttribute("label")->GetValueAsString(), MString("A&B\"C")) && Passed;
+    } else {
+      Passed = EvaluateTrue("GetAttribute(name)", "special attribute round trip", "The special attribute should still be present after loading", false) && Passed;
+    }
+    ::remove(FileName.Data());
+  }
+
+  {
+    MXmlDocument Document("Config");
+    MXmlNode* Outer = new MXmlNode(&Document, "A");
+    new MXmlNode(Outer, "A", MString("Inner"));
+    MString FileName = "/tmp/UTXmlDocument_nested_same_name.xml";
+    Passed = EvaluateTrue("Save()", "nested same-name setup", "A representative document with nested same-name nodes can be saved", Document.Save(FileName)) && Passed;
+
+    MXmlDocument Loaded;
+    __merr.Enable(false);
+    Passed = Evaluate("Load()", "nested same-name round trip", "Documents with nested same-name nodes should load successfully", Loaded.Load(FileName), true) && Passed;
+    __merr.Enable(true);
+    if (Loaded.GetNode("A") != 0 && Loaded.GetNode("A")->GetNode("A") != 0) {
+      Passed = Evaluate("GetValueAsString()", "nested same-name round trip", "Nested same-name nodes should survive a save/load round trip", Loaded.GetNode("A")->GetNode("A")->GetValueAsString(), MString("Inner")) && Passed;
+    } else {
+      Passed = EvaluateTrue("GetNode(name)", "nested same-name round trip", "The nested same-name child node should still be present after loading", false) && Passed;
+    }
+    ::remove(FileName.Data());
+  }
+
+  {
+    MString FileName = "/tmp/UTXmlDocument_parse_failure.xml";
+    Passed = EvaluateTrue("WriteTextFile()", "parse failure setup", "A malformed XML file that triggers a node-parse failure can be written", WriteTextFile(FileName, "<Config><Child></Child>text<Other></Other></Config>\n")) && Passed;
+
+    MXmlDocument Loaded;
+    mout.Enable(false);
+    __merr.Enable(false);
+    Passed = Evaluate("Load()", "parse failure propagation", "Load should return false when node parsing fails", Loaded.Load(FileName), false) && Passed;
+    __merr.Enable(true);
+    mout.Enable(true);
+    ::remove(FileName.Data());
+  }
+
+  {
+    MXmlDocument Document("Config");
+    new MXmlNode(&Document, "Name", "Value");
+    Passed = Evaluate("Save()", "unwritable target", "Save should return false when the target file cannot be created", Document.Save("/tmp/UTXmlDocument_missing_directory/output.xml"), false) && Passed;
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 int main()
 {
-  UTXml Test;
+  UTXmlDocument Test;
   return Test.Run() == true ? 0 : 1;
 }

@@ -295,6 +295,12 @@ void MXmlNode::Clear()
 {
   // Reset the node
 
+  for (unsigned int n = 0; n < m_Nodes.size(); ++n) {
+    delete m_Nodes[n];
+  }
+  for (unsigned int a = 0; a < m_Attributes.size(); ++a) {
+    delete m_Attributes[a];
+  }
   MXmlData::Clear();
   m_Nodes.clear();
   m_Attributes.clear();
@@ -585,7 +591,11 @@ MString MXmlNode::ToString(unsigned int Indent)
       Xml += "\n";
       Xml += Ind;
     } else {
-      Xml += m_Value;
+      MString Value = m_Value;
+      Value.ReplaceAll("&", "&amp;");
+      Value.ReplaceAll("<", "&lt;");
+      Value.ReplaceAll(">", "&gt;");
+      Xml += Value;
     } 
     Xml += "</";
     Xml += m_Name;
@@ -695,7 +705,15 @@ bool MXmlNode::Parse(MString Text)
       size_t LastBegin = FirstEnd;
       size_t SecondBegin = FirstEnd;
       while (true) {
-        SecondBegin = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+        size_t WithAttributes = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+        size_t WithoutAttributes = Text.Index(MString("<") + Name + MString(">"), SecondBegin+1);
+        if (WithAttributes == MString::npos) {
+          SecondBegin = WithoutAttributes;
+        } else if (WithoutAttributes == MString::npos) {
+          SecondBegin = WithAttributes;
+        } else {
+          SecondBegin = min(WithAttributes, WithoutAttributes);
+        }
         if (SecondBegin != MString::npos) {
           if (IsClosed(Text.GetSubString(SecondBegin)) == false) break;
         } else {
@@ -709,7 +727,15 @@ bool MXmlNode::Parse(MString Text)
         while (SecondBegin < LastBegin) {
           ++NBegins;
           while (true) {
-            SecondBegin = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+            size_t WithAttributes = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+            size_t WithoutAttributes = Text.Index(MString("<") + Name + MString(">"), SecondBegin+1);
+            if (WithAttributes == MString::npos) {
+              SecondBegin = WithoutAttributes;
+            } else if (WithoutAttributes == MString::npos) {
+              SecondBegin = WithAttributes;
+            } else {
+              SecondBegin = min(WithAttributes, WithoutAttributes);
+            }
             if (SecondBegin != MString::npos) {
               if (IsClosed(Text.GetSubString(SecondBegin)) == false) break;
             } else {
@@ -725,9 +751,11 @@ bool MXmlNode::Parse(MString Text)
         merr<<"Xml: Parse error in node \""<<m_Name<<"\" with "<<Attributes<<" --- cannot find: "<<MString("</") + Name + MString(">")<<endl;
         return false;
       }
-    
+      
       // And parse the new node
-      Node->Parse(Text.GetSubString(FirstEnd+1, LastBegin-FirstEnd-1));
+      if (Node->Parse(Text.GetSubString(FirstEnd+1, LastBegin-FirstEnd-1)) == false) {
+        return false;
+      }
       Text = Text.Replace(0, LastBegin+LastSize, "");
       
     } else {
@@ -755,6 +783,10 @@ bool MXmlNode::Parse(MString Text)
         return false;
       }
       MString AttributeValue = Attributes.GetSubString(FirstQuote+1, SecondQuote-FirstQuote-1);
+      AttributeValue.ReplaceAll("&quot;", "\"");
+      AttributeValue.ReplaceAll("&lt;", "<");
+      AttributeValue.ReplaceAll("&gt;", ">");
+      AttributeValue.ReplaceAll("&amp;", "&");
       
       new MXmlAttribute(Node, AttributeName, AttributeValue);
       
@@ -769,6 +801,9 @@ bool MXmlNode::Parse(MString Text)
       merr<<"Xml: Parse error in node \""<<m_Name<<"\" --- node has text and sub-nodes. Remaining text: "<<Text<<endl;
       return false;      
     } else {
+      Text.ReplaceAll("&lt;", "<");
+      Text.ReplaceAll("&gt;", ">");
+      Text.ReplaceAll("&amp;", "&");
       m_Value = Text;
     }
   }

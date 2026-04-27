@@ -149,6 +149,10 @@ bool MXmlDocument::Load(MString FileName)
       return false;
     }
     MString AttributeValue = Attributes.GetSubString(FirstQuote+1, SecondQuote-FirstQuote-1);
+    AttributeValue.ReplaceAll("&quot;", "\"");
+    AttributeValue.ReplaceAll("&lt;", "<");
+    AttributeValue.ReplaceAll("&gt;", ">");
+    AttributeValue.ReplaceAll("&amp;", "&");
 
     new MXmlAttribute(this, AttributeName, AttributeValue);
 
@@ -158,7 +162,9 @@ bool MXmlDocument::Load(MString FileName)
 
   size_t LastBegin = AllContent.Index(MString("</") + m_Name + MString(">"));
 
-  Parse(AllContent.GetSubString(FirstEnd+1, LastBegin-FirstEnd-1));
+  if (Parse(AllContent.GetSubString(FirstEnd+1, LastBegin-FirstEnd-1)) == false) {
+    return false;
+  }
 
   return true;
 }
@@ -173,7 +179,14 @@ bool MXmlDocument::Save(MString FileName)
 
   ofstream out;
   out.open(FileName);
+  if (out.is_open() == false) {
+    return false;
+  }
   out<<ToString()<<endl;
+  if (out.good() == false) {
+    out.close();
+    return false;
+  }
   out.close();
 
   return true;
