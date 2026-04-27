@@ -302,6 +302,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
           m_List->SetOptimumEvent(RE);
           m_List->SetBestTryEvent(RE);
         } else { // if no vertices
+          RE->SetRejectionReason(MRERawEvent::c_RejectionPairEventNoVertex);
           RE->SetEventType(c_UnknownEvent); // discard
         }
         RE->SetEventReconstructed(true);
@@ -333,6 +334,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
           m_List->SetOptimumEvent(RE);
           m_List->SetBestTryEvent(RE);
         } else {
+          RE->SetRejectionReason(MRERawEvent::c_RejectionMuonNoTrack);
           RE->SetEventType(c_UnknownEvent); // discard
         }
         RE->SetEventReconstructed(true);
