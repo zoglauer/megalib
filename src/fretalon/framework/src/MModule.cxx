@@ -310,7 +310,9 @@ bool MModule::DoSingleAnalysis()
     if (FullfillsRequirements(E) == true && E->IsFilteredOut() == false) {
       AnalyzeEvent(E);
     }
-    ++m_NAnalyzedEvents; // Analyzed actually just means passed through...
+    if (!(m_IsStartModule == true && m_IsFinished == true)) {
+      ++m_NAnalyzedEvents; // Analyzed actually just means passed through...
+    }
     if (m_IsStartModule == true && m_IsFinished == true) { // Case: We couldn't read any more events'
       delete E;
       E = 0;
