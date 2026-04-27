@@ -89,6 +89,7 @@ const int c_MuonEvent     = c_MuonEvent;
 const int c_ShowerEvent  = c_ShowerEvent;
 const int c_PhotoEvent   = c_PhotoEvent;
 */
+
 const double MRERawEvent::c_NoQualityFactor = numeric_limits<double>::max()/3;
 const double MRERawEvent::c_NoScore = numeric_limits<double>::max()/3; // remove later
 

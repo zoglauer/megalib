@@ -251,7 +251,7 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE, double theta
 {
     std::vector<Vertex> Vertices;
 
-    const int LayerRequirement     = 5;
+    const int LayerRequirement     = 4; // using 4 as the standard requirement (lowest value allowed)
     const int SearchRange          = 30;
     const int SearchLayersFor2Hit  = 5;
     const double interlayerdistance = 1.5; // cm -- this is specific to AMEGO-X!!!

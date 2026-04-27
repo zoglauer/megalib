@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TOOLS_GENERAL="glances"
-TOOLS_PYTHON="py38-gnureadline py38-jupyter py38-metakernel py38-numpy python38"
+TOOLS_PYTHON="py313-gnureadline py313-jupyter py313-metakernel py313-numpy python313"
 TOOLS_ROOT="cmake OpenBLAS davix expat giflib git gl2ps gmp graphviz gsl jpeg libgcc libpng libxml2 lz4 lzma openssl pcre tbb tiff vdt xrootd xxhashlib xz"
 TOOLS_GEANT4="cmake pkgconfig zlib"
 TOOLS_MEGALIB="doxygen imagemagick cfitsio openmpi"
@@ -25,11 +25,11 @@ echo " "
 echo "Starting installation. This will require sudo priviledges. Feel free to take a look at the source code if you are cautious."
 
 for TOOL in ${TOOLS_GENERAL} ${TOOLS_ROOT} ${TOOLS_GEANT4} ${TOOLS_MEGALIB} ${TOOLS_PYTHON}; do
-  sudo port -N install ${TOOL}
+ port -N install ${TOOL}
 done
 
-sudo port select --set python python38
-sudo port select --set python3 python38
+ port select --set python python313
+ port select --set python3 python313
 
 
 exit 1
