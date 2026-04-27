@@ -522,7 +522,7 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
 
     if (vertices.empty()) {
         mout << "No vertex found for event " << RE->GetEventID() << endl;
-        RE->SetRejectionReason(MRERawEvent::c_RejectionNoVertexFound);
+        RE->SetRejectionReason(MRERawEvent::c_RejectionPairEventNoVertex);
         return;
     }
 
