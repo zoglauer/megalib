@@ -925,64 +925,63 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           if (Nucleus->GetExcitationEnergy() > 1*keV) {
             //cout<<"Alignment > 1 keV"<<endl;
             const G4LevelManager* M = G4NuclearLevelData::GetInstance()->GetLevelManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
-	    bool IsValid =true ;// IsValid() method no longer available for G4LevelManager, always true for now , need to check 
+	          bool IsValid =true ;// IsValid() method no longer available for G4LevelManager, always true for now , need to check 
             if (IsValid == true) {
               const G4NucLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
               if (Level != 0) {
                 G4IonTable* Table = G4IonTable::GetIonTable();
+		            if(Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::no_Float)!=-1001){ 
+                Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::no_Float));}
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_X)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_X)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Y)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Y)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Z)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Z)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_U)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_U)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_V)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_V)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_W)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_W)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_R)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_R)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_S)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_S)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_A)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_A)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_B)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_B)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_C)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_C)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_D)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_D)); }
+                
+                else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_E)!=-1001)
+                { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_E)); }
 		
-		 if(Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::no_Float)!=-1001){ 
-    Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::no_Float));}
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_X)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_X)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Y)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Y)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Z)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_Z)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_U)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_U)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_V)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_V)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_W)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_W)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_R)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_R)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_S)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_S)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_T)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_A)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_A)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_B)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_B)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_C)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_C)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_D)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_D)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_E)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()),G4Ions::G4FloatLevelBase::plus_E)); }
-		
-    else { cout<<"Isotope not found from MCSteppingAction"<<endl;
-           cout<< Nucleus->GetAtomicNumber() << Nucleus->GetAtomicMass()<< M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())<<endl;
-           Nucleus = nullptr;
-    }	 	
+                else { cout<<"Isotope not found from MCSteppingAction"<<endl;
+                       cout<< Nucleus->GetAtomicNumber() << Nucleus->GetAtomicMass()<< M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())<<endl;
+                       Nucleus = nullptr;
+                }	 	
 		
                // Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())));
               }
@@ -991,60 +990,58 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
             //cout<<"Alignment < 1 keV"<<endl;
             G4IonTable* Table = G4IonTable::GetIonTable();
             //Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0));
-	    
-	    
-	    if(Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::no_Float)!=-1001){ 
-    Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::no_Float));}
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_X)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_X)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Y)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Y)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Z)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Z)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_U)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_U)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_V)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_V)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_W)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_W)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_R)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_R)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_S)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_S)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_A)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_A)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_B)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_B)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_C)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_C)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_D)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_D)); }
-    
-    else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_E)!=-1001)
-    { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_E)); }
-		
-    else { cout<<"Isotope not found from MCSteppingAction"<<endl;
-           cout<< "Z : "<<Nucleus->GetAtomicNumber()<< "A :"<< Nucleus->GetAtomicMass()<<"E : " <<0.0<<endl;
-           Nucleus = nullptr;
-    }	 	
+        	  if(Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::no_Float)!=-1001){ 
+            Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::no_Float));}
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_X)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_X)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Y)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Y)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Z)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_Z)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_U)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_U)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_V)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_V)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_W)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_W)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_R)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_R)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_S)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_S)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_T)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_A)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_A)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_B)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_B)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_C)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_C)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_D)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_D)); }
+            
+            else if( Table->GetLifeTime(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_E)!=-1001)
+            { Nucleus = dynamic_cast<G4Ions*>( Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0,G4Ions::G4FloatLevelBase::plus_E)); }
+            
+            else { cout<<"Isotope not found from MCSteppingAction"<<endl;
+                   cout<< "Z : "<<Nucleus->GetAtomicNumber()<< "A :"<< Nucleus->GetAtomicMass()<<"E : " <<0.0<<endl;
+                   Nucleus = nullptr;
+            }	 	
 	    
 	    
           }
