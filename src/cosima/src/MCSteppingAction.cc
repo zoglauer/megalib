@@ -98,6 +98,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   }
   m_StoreIonization = RunParameters.StoreSimulationInfoIonization();
 
+  m_SelectProcessID = RunParameters.GetSelectedInteractionProcess();//Defaults to -1 in MCParameterFile
+
   m_WatchedVolumes = RunParameters.GetStoreSimulationInfoWatchedVolumes();
   m_WatchedVolumesLog.clear();
   for (auto S: m_WatchedVolumes) {
@@ -301,6 +303,12 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
   if (Step->GetPostStepPoint()->GetProcessDefinedStep() != 0) {
     G4String ProcessName = Step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName();
     int ProcessID = GetProcessId(ProcessName);
+
+    if (m_SelectProcessID >= 0 && m_InteractionId == 1 && ProcessID != c_ProcessIDUncovered && ProcessID != c_ProcessIDTransportation && ProcessID != c_ProcessIDIonization && ProcessID != m_SelectProcessID) {
+      EventAction->AbortEvent();
+      Track->SetTrackStatus(fKillTrackAndSecondaries);
+      return;
+    }
 
       /*
       for (int ss = (int) fpSteppingManager->GetSecondary()->size()-1; 

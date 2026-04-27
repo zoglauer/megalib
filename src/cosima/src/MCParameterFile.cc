@@ -25,6 +25,7 @@ using namespace std;
 #include "MCPhysicsList.hh"
 #include "MCVHit.hh"
 #include "MCIsotopeStore.hh"
+#include "MCSteppingAction.hh"
 
 // MEGAlib:
 #include "MGlobal.h"
@@ -51,8 +52,12 @@ const int MCParameterFile::c_PreTriggerFull                   = 2;
 /******************************************************************************
  * Default constructor - the parsing of the file takes place in Parse()
  */
-MCParameterFile::MCParameterFile() : MParser(' ', true), 
+MCParameterFile::MCParameterFile() : MParser(' ', true),
+                                     m_RunList({}),
+                                     m_ActivatorList({}),
+                                     m_GeometryFileName(""),
                                      m_DefaultRangeCut(0.005*mm),
+                                     m_RegionList({}),
                                      m_PhysicsListEM(MCPhysicsList::c_EMLivermore), 
                                      m_PhysicsListHD(MCPhysicsList::c_HDNone), 
                                      m_DecayMode(c_DecayModeIgnore),
@@ -64,10 +69,13 @@ MCParameterFile::MCParameterFile() : MParser(' ', true),
                                      m_StoreSimulationInfo(MSimEvent::c_StoreSimulationInfoAll),
                                      m_StoreSimulationInfoVersion(MSimEvent::GetOutputVersion()),
                                      m_StoreSimulationInfoIonization(false),
+                                     m_SelectedInteractionProcess(-1),
                                      m_StoreOneHitPerEvent(false),
                                      m_StoreMinimumEnergy(-1E+40*keV),
                                      m_StoreMaximumEnergyLoss(1E+40*keV),
                                      m_DiscretizeHits(true),
+                                     m_StoreSimulationInfoWatchedVolumes({}),
+                                     m_BlackAbsorbers({}),
                                      m_CheckForOverlaps(false),
                                      m_OverlapCheckResolution(1000),
                                      m_OverlapCheckTolerance(1*um),
@@ -406,6 +414,14 @@ bool MCParameterFile::Parse()
         Typo(i, "Cannot parse token StoreSimulationWatchedVolumes correctly:"
              " Number of tokens is not correct!");
         return false;
+        }
+    } else if (T->IsTokenAt(0, "SelectInteractionProcess", true)) {
+      if (T->GetNTokens() == 2) {
+        if (T->IsTokenAt(1, "Compton", true) || T->IsTokenAt(1, "compton", true)) {
+          m_SelectedInteractionProcess = MCSteppingAction::c_ProcessIDCompton;
+        } else if (T->IsTokenAt(1, "Pair", true) || T->IsTokenAt(1, "pair", true)) {
+          m_SelectedInteractionProcess = MCSteppingAction::c_ProcessIDPair;
+        }
       }
     } else if (T->IsTokenAt(0, "FileFormat", true) == true) {
       if (T->GetNTokens() == 2) {

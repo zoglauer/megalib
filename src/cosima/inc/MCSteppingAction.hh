@@ -108,6 +108,9 @@ private:
   /// True, if the ionization info (IA IONI) should be stored or not 
   bool m_StoreIonization;
 
+  /// ProcessID of the only one event type that should be simulated (-1 to disable)
+  int m_SelectProcessID;
+
   /// List of watched volumes
   vector<MString> m_WatchedVolumes;
   /// List of watched volumes with attached "Log"
