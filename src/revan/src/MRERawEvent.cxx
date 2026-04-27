@@ -1024,6 +1024,20 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"The etp file does not contain an event type for this event ID";
     }
     break;
+  case c_RejectionPairEventNoVertex:
+    if (Short == true) {
+      out<<"PairEventNoVertex";
+    } else {
+      out<<"Pair event has no identifiable vertices";
+    }
+    break;
+  case c_RejectionMuonNoTrack:
+    if (Short == true) {
+      out<<"MuonNoTrack";
+    } else {
+      out<<"Muon or Shower event has no identifiable track";
+    }
+    break;
   default:
     if (Short == true) {
       out<<"";

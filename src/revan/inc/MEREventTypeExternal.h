@@ -39,11 +39,11 @@ class MEREventTypeExternal : public MEREventType
   virtual ~MEREventTypeExternal();
 
   //! Global parameters used by all electron tracking algorithms
-  virtual void SetParameters(MString EventTypeFileName);
-  bool Analyze(MRawEventIncarnations* List, bool quick);
+  virtual void SetSpecialParameters(MString EventTypeFileName);
+  virtual bool Analyze(MRawEventIncarnations* List);
 
-  bool PostAnalysis();
-  MString ToString(bool CoreOnly = false) const;
+  virtual bool PostAnalysis();
+  virtual MString ToString(bool CoreOnly = false) const;
 
 
   // protected members:

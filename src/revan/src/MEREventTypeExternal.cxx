@@ -51,7 +51,7 @@ MEREventTypeExternal::~MEREventTypeExternal()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void MEREventTypeExternal::SetParameters(MString EventTypeFileName)
+void MEREventTypeExternal::SetSpecialParameters(MString EventTypeFileName)
 {
   m_EventTypeFileName = EventTypeFileName;
 }
@@ -64,7 +64,7 @@ bool MEREventTypeExternal::PostAnalysis()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool MEREventTypeExternal::Analyze(MRawEventIncarnations* List, bool quick = true)
+bool MEREventTypeExternal::Analyze(MRawEventIncarnations* List)
 {
   massert(m_FileEventsType);
   MERConstruction::Analyze(List);
@@ -77,14 +77,17 @@ bool MEREventTypeExternal::Analyze(MRawEventIncarnations* List, bool quick = tru
   MRERawEvent* RE = nullptr;  
   for (int e = 0; e < m_List->GetNRawEvents(); e++) {
     RE = m_List->GetRawEventAt(e);
-    if (quick) {
-      m_FileEventsType->GetNextEvent(); 
-    } else {
+    //if (quick) {
+    while(m_FileEventsType->GetNextEvent() && m_FileEventsType->GetEventId() < RE->GetEventId() )
+    {
+      //mout << "AL " << m_FileEventsType->GetEventId() << " " << RE->GetEventId() << endl; // mdebug message??
+    }
+    /*} else {
       while(m_FileEventsType->GetNextEvent() && m_FileEventsType->GetEventId() != RE->GetEventId()) {}
       if (m_FileEventsType->GetEventId() == -1) {//If reached end of file
          m_FileEventsType->Rewind(false);
       }
-    }
+    }*/
     if (m_FileEventsType->GetEventId() == RE->GetEventId()) { // if found matching ID
       RE->SetEventType( m_FileEventsType->GetEventType() );
       RE->SetEventTypeProbability( m_FileEventsType->GetEventTypeProbability() );

@@ -159,7 +159,6 @@ bool MEREventType::SetParameters(bool SearchMIPs,
 bool MEREventType::Analyze(MRawEventIncarnations* REList)
 {
   // Analyze the raw event...
-
   massert(m_Geometry != 0);
 
   MERConstruction::Analyze(REList);//Set m_List to REList

@@ -1373,7 +1373,7 @@ bool MRawEventAnalyzer::PreAnalysis()
                                   m_ElectronTrackingDetectorList);
     } else if (m_EventTypeAlgorithm == c_EventTypeExternal) {
       m_EventType = new MEREventTypeExternal();
-      dynamic_cast<MEREventTypeExternal*>(m_EventType)->SetParameters( m_EventTypeFileName );
+      dynamic_cast<MEREventTypeExternal*>(m_EventType)->SetSpecialParameters( m_EventTypeFileName );
     } else {
       merr<<"Unknown event type algorithm: "<<m_EventTypeAlgorithm<<endl;
       Return = false;
