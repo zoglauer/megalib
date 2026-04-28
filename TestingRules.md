@@ -28,6 +28,10 @@ MEGAlib requires four test tiers. Every change is covered by at least one applic
 7. Use inverse or round-trip checks when they validate a helper more directly than forward computation.
 8. For floating-point comparisons, use an explicit tolerance. Never use `==` on floats. Document the tolerance in a comment if non-obvious.
 9. For stochastic functions, use a fixed seed and assert against a golden expected value.
+10. For stateful classes, add direct tests that reuse the same object across multiple operations. This includes repeated reads, parses, loads, resets, and clears.
+11. For owning classes, add lifecycle tests for copy constructor, assignment operator, clear/reset, and destruction semantics. Verify copied state is independent and metadata is preserved.
+12. For I/O classes, test failure paths on reused objects and verify failed operations do not leave stale state behind.
+13. Public API consistency is part of unit testing: every declared public function should be linkable and testable, or explicitly marked unsupported/deprecated.
 
 ## Monte Carlo and Stochastic Code
 1. Every MC test fixes the random seed explicitly. No reliance on default seeding.
@@ -63,6 +67,7 @@ MEGAlib requires four test tiers. Every change is covered by at least one applic
 5. Do not make network calls in unit or integration tests.
 6. Freeze or inject clocks; do not read wall-clock time directly.
 7. Flaky tests are bugs. Fix or quarantine them. Do not add retries.
+8. When a class owns dynamic resources, include at least one test that exercises reassignment or reinitialization, not just single-use success paths.
 
 ## Assertions and Diagnostics
 1. Failure messages must show expected vs. actual without requiring a rerun.
