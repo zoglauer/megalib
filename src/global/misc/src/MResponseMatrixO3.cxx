@@ -231,6 +231,30 @@ void MResponseMatrixO3::SetAxis(vector<float> x1Axis, vector<float> x2Axis,
 {
   // Set the axes
 
+  if (x1Axis.size() == 0) {
+    merr<<"Size of axis 1 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x1Axis) == false) {
+    merr<<"Axes 1 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x2Axis.size() == 0) {
+    merr<<"Size of axis 2 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x2Axis) == false) {
+    merr<<"Axes 2 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
   if (x3Axis.size() == 0) {
     merr<<"Size of axis 3 is zero!"<<endl;
     massert(false);
@@ -343,7 +367,7 @@ void MResponseMatrixO3::SetMatrix(unsigned int b, MResponseMatrixO2 R)
 {
   // Set a whole sub matrix
 
-  massert(b < m_AxisO3.size());
+  massert(b < m_AxesO2.size());
   m_AxesO2[b] = R;
 }
 
@@ -371,6 +395,9 @@ unsigned int MResponseMatrixO3::GetAxisBins(unsigned int order) const
   massert(order >= 1 && order <= 3);
 
   if (order == 3) {
+    if (m_AxisO3.size() == 0) {
+      return 0;
+    }
     return m_AxisO3.size()-1;
   } else {
     massert(m_AxisO3.size() > 0);
@@ -874,18 +901,22 @@ bool MResponseMatrixO3::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO3") {
-//     while (Parser.TokenizeLine(T, true) == true) {
-//       if (T.GetNTokens() == 0) continue;
-//       if (T.GetTokenAt(0) == "R2") {
-//         if (T.GetNTokens() == 4) {
-//           Set(T.GetTokenAtAsFloat(1), T.GetTokenAtAsFloat(2), T.GetTokenAtAsFloat(3));
-//         } else {
-//           mout<<"MResponseMatrixO3: Wrong number of arguments for token R2!"<<endl;
-//           Ok = false;
-//           break;
-//         }
-//       }
-//     }
+    merr<<"MResponseMatrixO3: Non-stream reading is not supported!"<<endl;
+    /*
+    while (Parser.TokenizeLine(T, true) == true) {
+      if (T.GetNTokens() == 0) continue;
+      if (T.GetTokenAt(0) == "R2") {
+        if (T.GetNTokens() == 4) {
+          Set(T.GetTokenAtAsFloat(1), T.GetTokenAtAsFloat(2), T.GetTokenAtAsFloat(3));
+        } else {
+          mout<<"MResponseMatrixO3: Wrong number of arguments for token R2!"<<endl;
+          Ok = false;
+          break;
+        }
+      }
+    }
+    */
+    Ok = false;
   } else if (Type == "ResponseMatrixO3Stream") {
     vector<float> x1Axis;
     vector<float> x2Axis;
@@ -968,6 +999,41 @@ bool MResponseMatrixO3::Write(MString FileName, bool Stream)
 
   massert(GetNBins() > 0);
 
+  if (Stream == false) {
+    merr<<"MResponseMatrixO3: Non-stream writing is not supported!"<<endl;
+    /*
+    MFileResponse File;
+    if (File.Open(FileName, MFile::c_Write) == false) return false;
+
+    MTimer Timer;
+    mdebug<<"Started writting file \""<<FileName<<"\" ... This way take a while ..."<<endl;
+
+    ostringstream s;
+    WriteHeader(s);
+    File.Write(s);
+
+    unsigned int x1, x1_max = GetAxisBins(1);
+    unsigned int x2, x2_max = GetAxisBins(2);
+    unsigned int x3, x3_max = GetAxisBins(3);
+
+    s<<"Type ResponseMatrixO3"<<endl;
+    for (x3 = 0; x3 < x3_max; ++x3) {
+      for (x2 = 0; x2 < x2_max; ++x2) {
+        for (x1 = 0; x1 < x1_max; ++x1) {
+          s<<"R3 "<<GetAxisContent(x1, 1)<<" "<<GetAxisContent(x2, 2)<<" "<<
+            GetAxisContent(x3, 3)<<" "<<GetBinContent(x1, x2, x3)<<endl;
+          File.Write(s);
+        }
+      }
+    }
+
+    mdebug<<"File \""<<FileName<<"\" with "<<x1_max*x2_max*x3_max
+          <<" entries written in "<<Timer.ElapsedTime()<<" sec"<<endl;
+    File.Close();
+    */
+    return false;
+  }
+
   MFileResponse File;
   if (File.Open(FileName, MFile::c_Write) == false) return false;
 
@@ -982,61 +1048,48 @@ bool MResponseMatrixO3::Write(MString FileName, bool Stream)
   unsigned int x2, x2_max = GetAxisBins(2); 
   unsigned int x3, x3_max = GetAxisBins(3); 
 
-  if (Stream == false) {
-    s<<"Type ResponseMatrixO3"<<endl;
-    for (x3 = 0; x3 < x3_max; ++x3) {
-      for (x2 = 0; x2 < x2_max; ++x2) {
-        for (x1 = 0; x1 < x1_max; ++x1) {
-          s<<"R3 "<<GetAxisContent(x1, 1)<<" "<<GetAxisContent(x2, 2)<<" "<<
-            GetAxisContent(x3, 3)<<" "<<GetBinContent(x1, x2, x3)<<endl;
-          File.Write(s);
-        }
-      }
-    }
-  } else {
-    s<<"Type ResponseMatrixO3Stream"<<endl;
-    // Write x1-axis
-    s<<"A1 ";
-    File.Write(s);
-    for (x1 = 0; x1 <= x1_max; ++x1) {
-      File.Write(GetAxisContent(x1, 1));
-    }
-    s<<endl;
-    s<<"N1 "<<GetAxisName(1)<<endl;
-    File.Write(s);
-    // Write x2-axis
-    s<<"A2 ";
-    File.Write(s);
-    for (x2 = 0; x2 <= x2_max; ++x2) {
-      File.Write(GetAxisContent(x2, 2));
-    }
-    s<<endl;
-    s<<"N2 "<<GetAxisName(2)<<endl;
-    File.Write(s);
-    // Write x3-axis
-    s<<"A3 ";
-    File.Write(s);
-    for (x3 = 0; x3 <= x3_max; ++x3) {
-      File.Write(GetAxisContent(x3, 3));
-    }
-    s<<endl;
-    s<<"N3 "<<GetAxisName(3)<<endl;
-    File.Write(s);
-
-    // Write content stream
-    s<<"StartStream "<<GetNBins()<<endl;
-    File.Write(s);
-    for (x3 = 0; x3 < x3_max; ++x3) {
-      for (x2 = 0; x2 < x2_max; ++x2) {
-        for (x1 = 0; x1 < x1_max; ++x1) {
-          File.Write(GetBinContent(x1, x2, x3));
-        }
-      }
-    }
-    s<<endl;
-    s<<"StopStream"<<endl;
-    File.Write(s);
+  s<<"Type ResponseMatrixO3Stream"<<endl;
+  // Write x1-axis
+  s<<"A1 ";
+  File.Write(s);
+  for (x1 = 0; x1 <= x1_max; ++x1) {
+    File.Write(GetAxisContent(x1, 1));
   }
+  s<<endl;
+  s<<"N1 "<<GetAxisName(1)<<endl;
+  File.Write(s);
+  // Write x2-axis
+  s<<"A2 ";
+  File.Write(s);
+  for (x2 = 0; x2 <= x2_max; ++x2) {
+    File.Write(GetAxisContent(x2, 2));
+  }
+  s<<endl;
+  s<<"N2 "<<GetAxisName(2)<<endl;
+  File.Write(s);
+  // Write x3-axis
+  s<<"A3 ";
+  File.Write(s);
+  for (x3 = 0; x3 <= x3_max; ++x3) {
+    File.Write(GetAxisContent(x3, 3));
+  }
+  s<<endl;
+  s<<"N3 "<<GetAxisName(3)<<endl;
+  File.Write(s);
+
+  // Write content stream
+  s<<"StartStream "<<GetNBins()<<endl;
+  File.Write(s);
+  for (x3 = 0; x3 < x3_max; ++x3) {
+    for (x2 = 0; x2 < x2_max; ++x2) {
+      for (x1 = 0; x1 < x1_max; ++x1) {
+        File.Write(GetBinContent(x1, x2, x3));
+      }
+    }
+  }
+  s<<endl;
+  s<<"StopStream"<<endl;
+  File.Write(s);
   
   mdebug<<"File \""<<FileName<<"\" with "<<x1_max*x2_max*x3_max
         <<" entries written in "<<Timer.ElapsedTime()<<" sec"<<endl;

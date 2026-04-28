@@ -292,12 +292,16 @@ void MResponseMatrixO1::Set(float x, float Value)
   Iter = find(m_AxisO1.begin(), m_AxisO1.end(), x);
   
   if (Iter != m_AxisO1.end()) {
-    (*Iter) = Value;
+    unsigned int Position = Iter - m_AxisO1.begin();
+    if (Position < m_Values.size()) {
+      m_Values[Position] = Value;
+    }
   } else {
     Iter = find_if(m_AxisO1.begin(), m_AxisO1.end(), greater_than<float>(x));
     if (Iter != m_AxisO1.end()) {
+      unsigned int Position = Iter - m_AxisO1.begin();
       m_AxisO1.insert(Iter, x);
-      m_Values.insert(m_Values.begin()+(Iter-m_AxisO1.begin()), Value);
+      m_Values.insert(m_Values.begin()+Position, Value);
     } else {
       m_AxisO1.push_back(x);
       m_Values.push_back(Value);
@@ -342,6 +346,10 @@ unsigned long MResponseMatrixO1::GetNBins() const
 {
   // Return the number of bins
 
+  if (m_AxisO1.size() == 0) {
+    return 0;
+  }
+
   return m_AxisO1.size()-1;
 }
 
@@ -354,6 +362,10 @@ unsigned int MResponseMatrixO1::GetAxisBins(unsigned int order) const
   // Return the number of bins for the main axis O2
 
   massert(order == 1);
+
+  if (m_AxisO1.size() == 0) {
+    return 0;
+  }
 
   return m_AxisO1.size()-1;
 }
@@ -776,7 +788,7 @@ bool MResponseMatrixO1::Write(MString FileName, bool Stream)
   
   if (Stream == false) {
     s<<"Type ResponseMatrixO1"<<endl;
-    for (unsigned int i = 0; i < m_AxisO1.size()-1; ++i) {  // ? für *.rsp?
+    for (unsigned int i = 0; i < m_AxisO1.size()-1; ++i) {  // ? for *.rsp?
       s<<"R1 "<<m_AxisO1[i]<<" "<<m_Values[i]<<endl;
       File.Write(s);
     }
@@ -908,13 +920,17 @@ void MResponseMatrixO1::Smooth(unsigned int Times)
 
 TGraph* MResponseMatrixO1::GenerateGraph()
 {
-  float* Bins = new float[m_AxisO1.size()];
-  float* Values = new float[m_AxisO1.size()];
-  for (unsigned int i = 0; i < m_AxisO1.size(); ++i) {
-    Bins[i] = m_AxisO1[i];
+  if (m_Values.size() == 0) {
+    return new TGraph();
+  }
+
+  float* Bins = new float[m_Values.size()];
+  float* Values = new float[m_Values.size()];
+  for (unsigned int i = 0; i < m_Values.size(); ++i) {
+    Bins[i] = GetAxisBinCenter(i);
     Values[i] = m_Values[i];
   }
-  TGraph* DisplayGraph = new TGraph(m_AxisO1.size(), Bins, Values);
+  TGraph* DisplayGraph = new TGraph(m_Values.size(), Bins, Values);
   delete[] Bins;
   delete[] Values;
   return DisplayGraph;

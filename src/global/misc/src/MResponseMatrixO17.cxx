@@ -257,6 +257,198 @@ void MResponseMatrixO17::SetAxis(vector<float> x1Axis, vector<float> x2Axis,
 {
   // Set the axes
 
+  if (x1Axis.size() == 0) {
+    merr<<"Size of axis 1 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x1Axis) == false) {
+    merr<<"Axes 1 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x2Axis.size() == 0) {
+    merr<<"Size of axis 2 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x2Axis) == false) {
+    merr<<"Axes 2 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x3Axis.size() == 0) {
+    merr<<"Size of axis 3 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x3Axis) == false) {
+    merr<<"Axes 3 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x4Axis.size() == 0) {
+    merr<<"Size of axis 4 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x4Axis) == false) {
+    merr<<"Axes 4 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x5Axis.size() == 0) {
+    merr<<"Size of axis 5 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x5Axis) == false) {
+    merr<<"Axes 5 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x6Axis.size() == 0) {
+    merr<<"Size of axis 6 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x6Axis) == false) {
+    merr<<"Axes 6 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x7Axis.size() == 0) {
+    merr<<"Size of axis 7 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x7Axis) == false) {
+    merr<<"Axes 7 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x8Axis.size() == 0) {
+    merr<<"Size of axis 8 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x8Axis) == false) {
+    merr<<"Axes 8 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x9Axis.size() == 0) {
+    merr<<"Size of axis 9 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x9Axis) == false) {
+    merr<<"Axes 9 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x10Axis.size() == 0) {
+    merr<<"Size of axis 10 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x10Axis) == false) {
+    merr<<"Axes 10 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x11Axis.size() == 0) {
+    merr<<"Size of axis 11 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x11Axis) == false) {
+    merr<<"Axes 11 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x12Axis.size() == 0) {
+    merr<<"Size of axis 12 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x12Axis) == false) {
+    merr<<"Axes 12 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x13Axis.size() == 0) {
+    merr<<"Size of axis 13 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x13Axis) == false) {
+    merr<<"Axes 13 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x14Axis.size() == 0) {
+    merr<<"Size of axis 14 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x14Axis) == false) {
+    merr<<"Axes 14 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x15Axis.size() == 0) {
+    merr<<"Size of axis 15 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x15Axis) == false) {
+    merr<<"Axes 15 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x16Axis.size() == 0) {
+    merr<<"Size of axis 16 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x16Axis) == false) {
+    merr<<"Axes 16 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
   if (x17Axis.size() == 0) {
     merr<<"Size of axis 17 is zero!"<<endl;
     massert(false);
@@ -404,7 +596,7 @@ void MResponseMatrixO17::SetMatrix(unsigned int b, MResponseMatrixO16 R)
 {
   // Set a whole sub matrix
 
-  massert(b < m_AxisO17.size());
+  massert(b < m_AxesO16.size());
   m_AxesO16[b] = R;
 }
 
@@ -432,6 +624,9 @@ unsigned int MResponseMatrixO17::GetAxisBins(unsigned int order) const
   massert(order >= 1 && order <= m_Order);
 
   if (order == m_Order) {
+    if (m_AxisO17.size() == 0) {
+      return 0;
+    }
     return m_AxisO17.size()-1;
   } else {
     massert(m_AxisO17.size() > 0);
@@ -1556,18 +1751,23 @@ bool MResponseMatrixO17::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO17") {
-//     while (Parser.TokenizeLine(T, true) == true) {
-//       if (T.GetNTokens() == 0) continue;
-//       if (T.GetTokenAt(0) == "R2") {
-//         if (T.GetNTokens() == 4) {
-//           Set(T.GetTokenAtAsFloat(1), T.GetTokenAtAsFloat(2), T.GetTokenAtAsFloat(3));
-//         } else {
-//           mout<<"MResponseMatrixO17: Wrong number of arguments for token R2!"<<endl;
-//           Ok = false;
-//           break;
-//         }
-//       }
-//     }
+    merr<<"MResponseMatrixO17: Non-stream reading is not supported!"<<endl;
+    /*
+    while (Parser.TokenizeLine(T, true) == true) {
+      if (T.GetNTokens() == 0) continue;
+      if (T.GetTokenAt(0) == "R2") {
+        if (T.GetNTokens() == 4) {
+          Set(T.GetTokenAtAsFloat(1), T.GetTokenAtAsFloat(2), T.GetTokenAtAsFloat(3));
+        } else {
+          mout<<"MResponseMatrixO17: Wrong number of arguments for token R2!"<<endl;
+          Ok = false;
+          break;
+        }
+      }
+    }
+
+    */
+    Ok = false;
   } else if (Type == "ResponseMatrixO17Stream") {
     vector<float> x1Axis;
     vector<float> x2Axis;
@@ -1812,6 +2012,8 @@ bool MResponseMatrixO17::Write(MString FileName, bool Stream)
   unsigned int x17, x17_max = GetAxisBins(17); 
 
   if (Stream == false) {
+    merr<<"MResponseMatrixO17: Non-stream writing is not supported!"<<endl;
+    /*
     s<<"Type ResponseMatrixO"<<m_Order<<endl;
     for (x17 = 0; x17 < x17_max; ++x17) {
       for (x16 = 0; x16 < x16_max; ++x16) {
@@ -1831,16 +2033,16 @@ bool MResponseMatrixO17::Write(MString FileName, bool Stream)
                                   for (x2 = 0; x2 < x2_max; ++x2) {
                                     for (x1 = 0; x1 < x1_max; ++x1) {
                                       s<<"R"<<m_Order<<" "
-                                       <<GetAxisContent(x1, 1)<<" "<<GetAxisContent(x2, 2)<<" "
-                                       <<GetAxisContent(x3, 3)<<" "<<GetAxisContent(x4, 4)<<" "
-                                       <<GetAxisContent(x5, 5)<<" "<<GetAxisContent(x6, 6)<<" "
-                                       <<GetAxisContent(x7, 7)<<" "<<GetAxisContent(x8, 8)<<" "
-                                       <<GetAxisContent(x9, 9)<<" "<<GetAxisContent(x10, 10)<<" "
-                                       <<GetAxisContent(x11, 11)<<" "<<GetAxisContent(x12, 12)<<" "
-                                       <<GetAxisContent(x13, 13)<<" "<<GetAxisContent(x14, 14)<<" "
-                                       <<GetAxisContent(x15, 15)<<" "<<GetAxisContent(x16, 16)<<" "
-                                       <<GetAxisContent(x17, 17)<<" "
-                                       <<" "<<GetBinContent(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17)<<endl;
+                                        <<GetAxisContent(x1, 1)<<" "<<GetAxisContent(x2, 2)<<" "
+                                        <<GetAxisContent(x3, 3)<<" "<<GetAxisContent(x4, 4)<<" "
+                                        <<GetAxisContent(x5, 5)<<" "<<GetAxisContent(x6, 6)<<" "
+                                        <<GetAxisContent(x7, 7)<<" "<<GetAxisContent(x8, 8)<<" "
+                                        <<GetAxisContent(x9, 9)<<" "<<GetAxisContent(x10, 10)<<" "
+                                        <<GetAxisContent(x11, 11)<<" "<<GetAxisContent(x12, 12)<<" "
+                                        <<GetAxisContent(x13, 13)<<" "<<GetAxisContent(x14, 14)<<" "
+                                        <<GetAxisContent(x15, 15)<<" "<<GetAxisContent(x16, 16)<<" "
+                                        <<GetAxisContent(x17, 17)<<" "
+                                        <<" "<<GetBinContent(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17)<<endl;
                                       File.Write(s);
                                     }
                                   }
@@ -1859,6 +2061,9 @@ bool MResponseMatrixO17::Write(MString FileName, bool Stream)
         }
       }
     }
+
+    */
+    return false;
   } else {
     s<<"Type ResponseMatrixO"<<m_Order<<"Stream"<<endl;
     // Write x1-axis
@@ -2355,7 +2560,7 @@ void MResponseMatrixO17::Show(float x1, float x2, float x3, float x4,
       for (unsigned int i = 0; i <= GetAxisBins(axes[2]); ++i) {
         x3Bins[i] = GetAxisContent(i, axes[2]);
       }
-      Hist = new TH3D(m_Name+"_RM16", m_Name+"_RM16", 
+      Hist = new TH3D(m_Name+"_RM17", m_Name+"_RM17",
                       GetAxisBins(axes[0]), x1Bins, 
                       GetAxisBins(axes[1]), x2Bins, 
                       GetAxisBins(axes[2]), x3Bins);

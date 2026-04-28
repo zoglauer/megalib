@@ -234,6 +234,54 @@ void MResponseMatrixO5::SetAxis(vector<float> x1Axis, vector<float> x2Axis,
 {
   // Set the axes
 
+  if (x1Axis.size() == 0) {
+    merr<<"Size of axis 1 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x1Axis) == false) {
+    merr<<"Axes 1 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x2Axis.size() == 0) {
+    merr<<"Size of axis 2 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x2Axis) == false) {
+    merr<<"Axes 2 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x3Axis.size() == 0) {
+    merr<<"Size of axis 3 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x3Axis) == false) {
+    merr<<"Axes 3 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (x4Axis.size() == 0) {
+    merr<<"Size of axis 4 is zero!"<<endl;
+    massert(false);
+    return;
+  }
+
+  if (IsIncreasing(x4Axis) == false) {
+    merr<<"Axes 4 is not in increasing order!"<<endl;
+    massert(false);
+    return;
+  }
+
   if (x5Axis.size() == 0) {
     merr<<"Size of axis 5 is zero!"<<endl;
     massert(false);
@@ -350,7 +398,7 @@ void MResponseMatrixO5::SetMatrix(unsigned int b, MResponseMatrixO4 R)
 {
   // Set a whole sub matrix
 
-  massert(b < m_AxisO5.size());
+  massert(b < m_AxesO4.size());
   m_AxesO4[b] = R;
 }
 
@@ -378,6 +426,9 @@ unsigned int MResponseMatrixO5::GetAxisBins(unsigned int order) const
   massert(order >= 1 && order <= 5);
 
   if (order == 5) {
+    if (m_AxisO5.size() == 0) {
+      return 0;
+    }
     return m_AxisO5.size()-1;
   } else {
     massert(m_AxisO5.size() > 0);
@@ -965,18 +1016,23 @@ bool MResponseMatrixO5::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO5") {
-//     while (Parser.TokenizeLine(T, true) == true) {
-//       if (T.GetNTokens() == 0) continue;
-//       if (T.GetTokenAt(0) == "R2") {
-//         if (T.GetNTokens() == 4) {
-//           Set(T.GetTokenAtAsFloat(1), T.GetTokenAtAsFloat(2), T.GetTokenAtAsFloat(3));
-//         } else {
-//           mout<<"MResponseMatrixO5: Wrong number of arguments for token R2!"<<endl;
-//           Ok = false;
-//           break;
-//         }
-//       }
-//     }
+    merr<<"MResponseMatrixO5: Non-stream reading is not supported!"<<endl;
+    /*
+    while (Parser.TokenizeLine(T, true) == true) {
+      if (T.GetNTokens() == 0) continue;
+      if (T.GetTokenAt(0) == "R2") {
+        if (T.GetNTokens() == 4) {
+          Set(T.GetTokenAtAsFloat(1), T.GetTokenAtAsFloat(2), T.GetTokenAtAsFloat(3));
+        } else {
+          mout<<"MResponseMatrixO5: Wrong number of arguments for token R2!"<<endl;
+          Ok = false;
+          break;
+        }
+      }
+    }
+
+    */
+    Ok = false;
   } else if (Type == "ResponseMatrixO5Stream") {
     vector<float> x1Axis;
     vector<float> x2Axis;
@@ -1093,6 +1149,8 @@ bool MResponseMatrixO5::Write(MString FileName, bool Stream)
   unsigned int x5, x5_max = GetAxisBins(5); 
 
   if (Stream == false) {
+    merr<<"MResponseMatrixO5: Non-stream writing is not supported!"<<endl;
+    /*
     s<<"Type ResponseMatrixO5"<<endl;
     for (x5 = 0; x5 < x5_max; ++x5) {
       for (x4 = 0; x4 < x4_max; ++x4) {
@@ -1100,14 +1158,17 @@ bool MResponseMatrixO5::Write(MString FileName, bool Stream)
           for (x2 = 0; x2 < x2_max; ++x2) {
             for (x1 = 0; x1 < x1_max; ++x1) {
               s<<"R5 "<<GetAxisContent(x1, 1)<<" "<<GetAxisContent(x2, 2)<<" "
-               <<GetAxisContent(x3, 3)<<" "<<GetAxisContent(x4, 4)<<" "<<GetAxisContent(x5, 5)
-               <<" "<<GetBinContent(x1, x2, x3, x4, x5)<<endl;
+                <<GetAxisContent(x3, 3)<<" "<<GetAxisContent(x4, 4)<<" "<<GetAxisContent(x5, 5)
+                <<" "<<GetBinContent(x1, x2, x3, x4, x5)<<endl;
               File.Write(s);
             }
           }
         }
       }
     }
+
+    */
+    return false;
   } else {
     s<<"Type ResponseMatrixO5Stream"<<endl;
     // Write x1-axis
