@@ -44,7 +44,6 @@
 #include "Math/WrappedMultiTF1.h"
 #include "Fit/BinData.h"
 #include "Fit/UnBinData.h"
-#include "HFitInterface.h"
 #include "Fit/Fitter.h"
 #include "TLatex.h"
 #include "TStyle.h"
@@ -72,7 +71,7 @@ MARMFitter::MARMFitter()
   ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(250000);
 
   std::random_device RD; // <-- should use MEGAlib global
-  std::mt19937 m_MersenneTwister(RD());
+  m_MersenneTwister.seed(RD());
 
   m_NumberOfBins = 101;
   m_MaxARMValue = 180;
@@ -818,18 +817,31 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
     ROOT::Fit::UnBinData UnbinnedData(CleanedData.size(), CleanedData.data(), Range);
     Fitter.LikelihoodFit(UnbinnedData, true);
   } else {
-    //cout<<"Binned fit"<<endl;
     DataOptions.fIntegral = true;
-    DataOptions.fUseRange =true;
-    ROOT::Fit::BinData BinnedData(DataOptions, Range);
-    // Easiest option to fill the binned data set is via a histogram:
-    TH1D* D = new TH1D("", "", m_NumberOfBins, -m_MaxARMValue, m_MaxARMValue);
-    for (auto& V: CleanedData) D->Fill(V);
-    for (int b = 1; b <= D->GetNbinsX(); ++b) D->SetBinError(b, sqrt(D->GetBinContent(b)));
-    ROOT::Fit::FillData(BinnedData, D);
-    delete D;
+    DataOptions.fUseRange = true;
+
+    // Bin the data directly into a counts vector — one entry per bin over [-m_MaxARMValue, m_MaxARMValue]
+    double BinWidth = 2.0 * m_MaxARMValue / m_NumberOfBins;
+    vector<double> BinCounts(m_NumberOfBins, 0.0);
+    for (auto& V: CleanedData) {
+      int Bin = static_cast<int>((V + m_MaxARMValue) / BinWidth);
+      if (Bin >= 0 && Bin < static_cast<int>(m_NumberOfBins)) {
+        BinCounts[Bin]++;
+      }
+    }
+
+    // Fill BinData directly: bin center, bin content, half-bin-width (required by fIntegral), Poisson error.
+    // Empty bins are skipped, consistent with the default DataOptions.fUseEmpty = false.
+    // kCoordError is required to store both x (bin half-width) and y (Poisson) errors,
+    // which ROOT needs to integrate the fit function over each bin (fIntegral = true).
+    ROOT::Fit::BinData BinnedData(DataOptions, Range, m_NumberOfBins, 1, ROOT::Fit::BinData::kCoordError);
+    for (unsigned int b = 0; b < m_NumberOfBins; ++b) {
+      if (BinCounts[b] == 0) continue;
+      double BinCenter = -m_MaxARMValue + (b + 0.5) * BinWidth;
+      BinnedData.Add(BinCenter, BinCounts[b], 0.5 * BinWidth, sqrt(BinCounts[b]));
+    }
+
     Fitter.LikelihoodFit(BinnedData, true);
-    //Fitter.LeastSquareFit(BinnedData);
   }
 
   // Retrieve results
@@ -936,11 +948,13 @@ vector<double> MARMFitter::BootstrapARMValues()
 {
   std::uniform_int_distribution<> Distributor(0, m_OriginalARMValues.size() - 1);
 
-  // Bootstrapping: sample with replacement
+  // Bootstrapping: sample with replacement.
+  // m_MersenneTwister is shared across threads, so all draws must be made under the mutex.
   vector<double> ARMValues;
   ARMValues.reserve(m_OriginalARMValues.size());
   for (size_t i = 0; i < m_OriginalARMValues.size(); ++i) {
-    int D = Distributor(m_MersenneTwister);
+    int D;
+    { std::unique_lock<std::mutex> Lock(m_Mutex); D = Distributor(m_MersenneTwister); }
     ARMValues.push_back(m_OriginalARMValues[D]);
   }
 
@@ -1162,6 +1176,7 @@ bool MARMFitter::Fit(unsigned int NumberOfFits)
   double MaxX = Hist->GetBinCenter(Hist->GetMaximumBin());
   m_GuessMaximumLow = MaxX - 0.5*Hist->GetRMS();
   m_GuessMaximumHigh = MaxX + 0.5*Hist->GetRMS();
+  delete Hist;
 
 
   // Right size the result storage
@@ -1298,7 +1313,7 @@ double MARMFitter::Get95p5PercentContainmentUsingAllData() const
 //! Return the 99.7% containment for all events
 double MARMFitter::Get99p7PercentContainmentUsingAllData() const
 {
-  return m_FitSuccessful ? m_Containment3SigmaUsingAllData : g_UnsignedIntNotDefined;
+  return m_FitSuccessful ? m_Containment3SigmaUsingAllData : g_DoubleNotDefined;
 }
 
 
