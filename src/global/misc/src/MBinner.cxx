@@ -89,7 +89,7 @@ void MBinner::Clear()
 //! If Maximum <= Minimum no changes will take place to the data
 void MBinner::SetMinMax(double Minimum, double Maximum, bool Adapt) 
 { 
-  if (m_Maximum <= m_Minimum) return;
+  if (Maximum <= Minimum) return;
   
   m_Minimum = Minimum;
   m_Maximum = Maximum;

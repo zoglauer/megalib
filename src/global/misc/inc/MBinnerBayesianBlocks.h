@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MBinner.h"
+#include "MExceptions.h"
 
 // Forward declarations:
 
@@ -44,7 +45,13 @@ class MBinnerBayesianBlocks : public MBinner
   virtual ~MBinnerBayesianBlocks();
   
   //! Set the minimum bin width
-  void SetMinimumBinWidth(double MinimumBinWidth) { m_MinimumBinWidth = MinimumBinWidth; }
+  void SetMinimumBinWidth(double MinimumBinWidth)
+  {
+    if (MinimumBinWidth <= 0) {
+      throw MExceptionTestFailed("The minimum bin width must be larger than 0", MinimumBinWidth, "<=", 0);
+    }
+    m_MinimumBinWidth = MinimumBinWidth;
+  }
   
   //! Set the minimum counts per bin
   void SetMinimumCountsPerBin(double MinimumCountsPerBin) { m_MinimumCountsPerBin = MinimumCountsPerBin; }

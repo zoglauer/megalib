@@ -300,9 +300,9 @@ vector<double> MBinnerFISBEL::GetBinCenters(unsigned int Bin) const
   
   // We always have one bin at bottom and top, which need to be handled differently:
   if (Bin == 0) {
-    Return = { 0, 0 };
+    Return = { 0, m_LongitudeShift };
   } else if (Bin == m_NumberOfBins - 1) {
-    Return = { c_Pi, 0 };
+    Return = { c_Pi, m_LongitudeShift };
   } else {
     
     //cout<<"m_NumberOfBinsBeforeLatitudeBin: "<<m_NumberOfBinsBeforeLatitudeBin.size()<<endl;

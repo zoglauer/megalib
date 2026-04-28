@@ -1,0 +1,109 @@
+/*
+ * UTBinnerBayesianBlocks.cxx
+ *
+ * Copyright (C) by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ * Please see the source-file for the copyright-notice.
+ *
+ */
+
+// Standard libs:
+#include <fcntl.h>
+#include <unistd.h>
+
+// MEGAlib:
+#include "MBinnerBayesianBlocks.h"
+#include "MExceptions.h"
+#include "MUnitTest.h"
+
+
+//! Unit test class for MBinnerBayesianBlocks
+class UTBinnerBayesianBlocks : public MUnitTest
+{
+public:
+  UTBinnerBayesianBlocks() : MUnitTest("UTBinnerBayesianBlocks") {}
+  virtual ~UTBinnerBayesianBlocks() {}
+
+  virtual bool Run();
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTBinnerBayesianBlocks::Run()
+{
+  bool Passed = true;
+  Passed = EvaluateException<MExceptionTestFailed>("SetMinimumBinWidth()", "zero width", "A representative zero minimum bin width is rejected immediately", [&](){ MBinnerBayesianBlocks Invalid; Invalid.SetMinimumBinWidth(0.0); }) && Passed;
+
+  int SavedStdout = dup(STDOUT_FILENO);
+  int DevNull = open("/dev/null", O_WRONLY);
+  if (DevNull >= 0) {
+    dup2(DevNull, STDOUT_FILENO);
+    close(DevNull);
+  }
+
+  MBinnerBayesianBlocks Representative;
+  Representative.SetMinMax(0.0, 10.0, false);
+  Representative.SetMinimumBinWidth(2.0);
+  Representative.AddUnsorted(vector<double>{1.0, 2.0, 8.0, 9.0});
+  Passed = EvaluateTrue("GetBinEdges()", "representative output", "The Bayesian-block binner creates at least one representative bin edge", Representative.GetBinEdges().size() >= 2) && Passed;
+  Passed = EvaluateNear("GetBinEdges()", "representative first edge", "The Bayesian-block binner keeps the representative minimum edge", Representative.GetBinEdges().front(), 0.0, 1e-12) && Passed;
+  Passed = Evaluate("GetBinnedData()", "representative output", "The Bayesian-block binner creates one representative content entry per bin", Representative.GetBinnedData().size(), Representative.GetBinEdges().size() - 1) && Passed;
+  Passed = EvaluateNear("GetBinnedData()", "representative sum", "The Bayesian-block binner preserves the representative total counts", Representative.GetBinnedData()[0], 4.0, 1e-12) && Passed;
+
+  MBinnerBayesianBlocks WideBins;
+  WideBins.SetMinMax(0.0, 10.0, false);
+  WideBins.SetMinimumBinWidth(20.0);
+  WideBins.AddUnsorted(vector<double>{1.0, 2.0, 3.0});
+  Passed = EvaluateTrue("SetMinimumBinWidth()", "large width", "A large representative minimum bin width still produces a non-empty bin-edge vector", WideBins.GetBinEdges().size() >= 1) && Passed;
+  Passed = EvaluateNear("SetMinimumBinWidth()", "large width last edge", "A large representative minimum bin width pushes the last edge beyond the requested maximum", WideBins.GetBinEdges().back(), 20.0, 1e-12) && Passed;
+
+  MBinnerBayesianBlocks LowPrior;
+  LowPrior.SetMinMax(0.0, 10.0, false);
+  LowPrior.SetMinimumBinWidth(1.0);
+  LowPrior.SetPrior(0.0);
+  LowPrior.AddUnsorted(vector<double>{1.0, 1.1, 1.2, 8.0, 8.1, 8.2});
+
+  MBinnerBayesianBlocks HighPrior;
+  HighPrior.SetMinMax(0.0, 10.0, false);
+  HighPrior.SetMinimumBinWidth(1.0);
+  HighPrior.SetPrior(100.0);
+  HighPrior.AddUnsorted(vector<double>{1.0, 1.1, 1.2, 8.0, 8.1, 8.2});
+  Passed = Evaluate("SetPrior()", "representative monotonicity", "A larger representative prior does not create more bins than a smaller prior", HighPrior.GetBinEdges().size() <= LowPrior.GetBinEdges().size(), true) && Passed;
+
+  MBinnerBayesianBlocks MinimumCounts;
+  MinimumCounts.SetMinMax(0.0, 10.0, false);
+  MinimumCounts.SetMinimumBinWidth(1.0);
+  MinimumCounts.SetMinimumCountsPerBin(3.0);
+  MinimumCounts.AddUnsorted(vector<double>{1.0, 1.1, 1.2, 8.0});
+  Passed = EvaluateTrue("SetMinimumCountsPerBin()", "representative merged bins", "The minimum-counts setting produces representative bins with at least the requested counts", MinimumCounts.GetBinnedData().size() >= 1) && Passed;
+  if (MinimumCounts.GetBinnedData().size() > 0) {
+    Passed = Evaluate("SetMinimumCountsPerBin()", "representative merged bins", "The first representative Bayesian block satisfies the minimum counts after merging", MinimumCounts.GetBinnedData()[0] >= 3.0, true) && Passed;
+  }
+
+  MBinnerBayesianBlocks Adapted;
+  Adapted.SetMinMax(0.0, 10.0, true);
+  Adapted.SetMinimumBinWidth(1.0);
+  Adapted.AddUnsorted(vector<double>{2.0, 2.1, 7.9, 8.0});
+  Passed = EvaluateNear("SetMinMax()", "adapted minimum", "Adaptive Bayesian-block binning keeps the representative in-range minimum", Adapted.GetBinEdges().front(), 2.0, 1e-12) && Passed;
+
+  if (SavedStdout >= 0) {
+    dup2(SavedStdout, STDOUT_FILENO);
+    close(SavedStdout);
+  }
+
+  Summarize();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+  UTBinnerBayesianBlocks Test;
+  return Test.Run() == true ? 0 : 1;
+}

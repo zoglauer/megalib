@@ -267,7 +267,7 @@ void MBinnerBayesianBlocks::Histogram()
   }
     
   // Step 8: Finally fill the data array
-  m_BinnedData.resize(m_BinEdges.size()+1, 0);
+  m_BinnedData.resize(m_BinEdges.size()-1, 0);
   for (list<MBinnedData>::iterator I = m_Values.begin(); I != m_Values.end(); ++I) {
     for (unsigned int e = 0; e < m_BinEdges.size(); ++e) {
       if (m_BinEdges[e] > (*I).m_AxisValue) {

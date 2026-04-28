@@ -98,6 +98,7 @@ bool MResponseMatrixAxis::operator==(const MResponseMatrixAxis& Axis) const
 void MResponseMatrixAxis::SetBinEdges(vector<double> BinEdges) 
 { 
   m_BinEdges = BinEdges;
+  m_IsLogarithmic = false;
   
   if (m_BinEdges.size() <= 1) { 
     m_NumberOfBins = 0; 
@@ -113,6 +114,9 @@ void MResponseMatrixAxis::SetBinEdges(vector<double> BinEdges)
 //! Set the axis in linear mode
 void MResponseMatrixAxis::SetLinear(unsigned long NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
+  if (NBins == 0) {
+    throw MExceptionTestFailed("The number of bins must be larger than 0", NBins, "<=", 0); 
+  }
   if (Min >= Max) {
     throw MExceptionTestFailed("Minimum is larger or equal Maximum", Min, ">=", Max); 
   }
@@ -124,6 +128,7 @@ void MResponseMatrixAxis::SetLinear(unsigned long NBins, double Min, double Max,
   }
   
   m_BinEdges.clear();
+  m_IsLogarithmic = false;
   
   if (UnderFlowMin != g_DoubleNotDefined) {
     m_BinEdges.push_back(UnderFlowMin);
@@ -166,6 +171,9 @@ void MResponseMatrixAxis::SetLinear(unsigned long NBins, double Min, double Max,
 //! Set the axis in logarithmic mode
 void MResponseMatrixAxis::SetLogarithmic(unsigned long NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
+  if (NBins == 0) {
+    throw MExceptionTestFailed("The number of bins must be larger than 0", NBins, "<=", 0); 
+  }
   if (Min <= 0) {
     throw MExceptionTestFailed("The minimum must be larger than 0", Min, "<=", 0); 
   }
