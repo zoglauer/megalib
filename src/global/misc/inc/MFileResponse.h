@@ -45,6 +45,9 @@ class MFileResponse : public MParser
   //! Default destructor
   virtual ~MFileResponse();
 
+  //! Clear all parsed header state
+  void Clear();
+
   //! Read a response matrix
   MResponseMatrix* Read(MString FileName);
   //! We cannot use the base class version here

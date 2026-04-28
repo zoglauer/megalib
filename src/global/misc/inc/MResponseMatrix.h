@@ -39,8 +39,12 @@ class MResponseMatrix
   MResponseMatrix();
   //! Standard constreuctor with name
   MResponseMatrix(MString Name);
+  //! Copy constructor
+  MResponseMatrix(const MResponseMatrix& M);
   //! Default destructor
   virtual ~MResponseMatrix();
+  //! Assignment operator
+  MResponseMatrix& operator=(const MResponseMatrix& M);
 
   //! Clear all data
   virtual void Clear();

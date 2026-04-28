@@ -81,12 +81,24 @@ MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsSparse) : MResp
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(const MResponseMatrixON& M)
+MResponseMatrixON::MResponseMatrixON(const char* Name, bool IsSparse) : MResponseMatrix(MString(Name)), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsSparse)
+{
+  // extended constructor for string literals
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMatrixON::MResponseMatrixON(const MResponseMatrixON& M) : MResponseMatrix(M)
 {
   // copy constructor
   
   m_NumberOfBins = M.m_NumberOfBins;
-  m_Axes = M.m_Axes;
+  m_Axes.clear();
+  for (auto A: M.m_Axes) {
+    m_Axes.push_back(A->Clone());
+  }
   m_NumberOfAxes = M.m_NumberOfAxes;
   m_IsSparse = M.m_IsSparse;
   m_Values = M.m_Values;
@@ -307,8 +319,15 @@ MResponseMatrixON& MResponseMatrixON::operator=(const MResponseMatrixON& M)
   // Assignment operator
   
   if (this != &M) { // no self-assignments
+    for (auto A: m_Axes) {
+      delete A;
+    }
+    m_Axes.clear();
+    MResponseMatrix::operator=(M);
     m_NumberOfBins = M.m_NumberOfBins;
-    m_Axes = M.m_Axes;
+    for (auto A: M.m_Axes) {
+      m_Axes.push_back(A->Clone());
+    }
     m_NumberOfAxes = M.m_NumberOfAxes;
     m_IsSparse = M.m_IsSparse;
     m_Values = M.m_Values;
@@ -1300,6 +1319,16 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
   bool Ok = true;
 
   MTimer Timer;
+
+  for (auto A: m_Axes) {
+    delete A;
+  }
+  m_Axes.clear();
+  m_NumberOfAxes = 0;
+  m_NumberOfBins = 0;
+  m_Values.clear();
+  m_ValuesSparse.clear();
+  m_BinsSparse.clear();
 
 
   MTokenizer T;

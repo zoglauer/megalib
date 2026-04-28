@@ -78,9 +78,43 @@ MResponseMatrix::MResponseMatrix(MString Name) : m_Name(Name), m_Order(0), m_Num
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MResponseMatrix::MResponseMatrix(const MResponseMatrix& M) :
+  m_Name(M.m_Name),
+  m_Order(M.m_Order),
+  m_NumberOfSimulatedEvents(M.m_NumberOfSimulatedEvents),
+  m_FarFieldStartArea(M.m_FarFieldStartArea),
+  m_SpectralType(M.m_SpectralType),
+  m_SpectralParameters(M.m_SpectralParameters),
+  m_Hash(M.m_Hash)
+{
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MResponseMatrix::~MResponseMatrix()
 {
   // default destructor
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMatrix& MResponseMatrix::operator=(const MResponseMatrix& M)
+{
+  if (this != &M) {
+    m_Name = M.m_Name;
+    m_Order = M.m_Order;
+    m_NumberOfSimulatedEvents = M.m_NumberOfSimulatedEvents;
+    m_FarFieldStartArea = M.m_FarFieldStartArea;
+    m_SpectralType = M.m_SpectralType;
+    m_SpectralParameters = M.m_SpectralParameters;
+    m_Hash = M.m_Hash;
+  }
+
+  return *this;
 }
 
 

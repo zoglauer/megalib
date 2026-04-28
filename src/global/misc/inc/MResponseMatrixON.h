@@ -44,9 +44,12 @@ class MResponseMatrixON : public MResponseMatrix
   // public interface:
  public:
   //! Default constructor
-  MResponseMatrixON(bool IsSparse = false);
+  //! Explicit to avoid accidental conversion of string literals to the sparse flag
+  explicit MResponseMatrixON(bool IsSparse = false);
   //! Default constructor with response name
   MResponseMatrixON(const MString& Name, bool IsSparse = false);
+  //! Overload for string literals to avoid resolution to the sparse-flag constructor
+  MResponseMatrixON(const char* Name, bool IsSparse = false);
   //! Default copy constructor
   MResponseMatrixON(const MResponseMatrixON&);
   //! Default destructor
