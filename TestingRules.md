@@ -32,6 +32,7 @@ MEGAlib requires four test tiers. Every change is covered by at least one applic
 11. For owning classes, add lifecycle tests for copy constructor, assignment operator, clear/reset, and destruction semantics. Verify copied state is independent and metadata is preserved.
 12. For I/O classes, test failure paths on reused objects and verify failed operations do not leave stale state behind.
 13. Public API consistency is part of unit testing: every declared public function should be linkable and testable, or explicitly marked unsupported/deprecated.
+14. Do not only test trivial, symmetric, or axis-point inputs. For every function, add several representative nontrivial interior-domain test cases when applicable.
 
 ## Monte Carlo and Stochastic Code
 1. Every MC test fixes the random seed explicitly. No reliance on default seeding.
