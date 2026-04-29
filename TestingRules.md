@@ -66,7 +66,7 @@ MEGAlib requires four test tiers. Every change is covered by at least one applic
 3. Restore any global state, singleton, static, or environment variable the test mutates. This includes ROOT's global state (`gROOT`, `gDirectory`, `gRandom`) and MEGAlib globals.
 4. Use temp directories for filesystem work. Never touch the real user filesystem.
 5. Do not make network calls in unit or integration tests.
-6. Freeze or inject clocks; do not read wall-clock time directly.
+6. Prefer freezing or injecting clocks instead of reading wall-clock time directly. If the public API itself measures real time and no injection seam exists, wall-clock tests are allowed only as a last resort. Such tests must use coarse, stable assertions and document why a fake clock could not be used.
 7. Flaky tests are bugs. Fix or quarantine them. Do not add retries.
 8. When a class owns dynamic resources, include at least one test that exercises reassignment or reinitialization, not just single-use success paths.
 
