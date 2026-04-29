@@ -20,21 +20,6 @@ using namespace std;
 #include "MUnitTest.h"
 
 
-//! Test helper exposing protected MSettings functionality
-class UTSettings_Test : public MSettings
-{
-public:
-  UTSettings_Test() : MSettings("UTSettingsRoot") {}
-  virtual ~UTSettings_Test() {}
-
-  bool TestReadXml(MXmlNode* Node) { return ReadXml(Node); }
-  bool TestWriteXml(MXmlNode* Node) { return WriteXml(Node); }
-  void SetDefaultSettingsFileName(const MString& FileName) { m_DefaultSettingsFileName = FileName; }
-  void SetMasterNodeName(const MString& Name) { m_NameMasterNode = Name; }
-  MString GetMasterNodeName() const { return m_NameMasterNode; }
-};
-
-
 //! Unit test class for MSettings
 class UTSettings : public MUnitTest
 {
@@ -43,6 +28,26 @@ public:
   virtual ~UTSettings() {}
 
   virtual bool Run();
+
+  //! Test helper exposing protected MSettings functionality
+  class SettingsTest : public MSettings
+  {
+  public:
+    SettingsTest() : MSettings("UTSettingsRoot") {}
+    virtual ~SettingsTest() {}
+
+    bool TestReadXml(MXmlNode* Node) { return ReadXml(Node); }
+    bool TestWriteXml(MXmlNode* Node) { return WriteXml(Node); }
+    void SetDefaultSettingsFileName(const MString& FileName) { m_DefaultSettingsFileName = FileName; }
+    void SetMasterNodeName(const MString& Name) { m_NameMasterNode = Name; }
+    MString GetMasterNodeName() const { return m_NameMasterNode; }
+  };
+  //! Return the binary path used for child-process checks
+  static MString& BinaryPath()
+  {
+    static MString Path;
+    return Path;
+  }
 
 private:
   bool PrepareTempDirectory() const;
@@ -53,8 +58,6 @@ private:
   bool TestReadWriteFiles();
   bool TestChange();
 };
-
-MString g_UTSettingsBinary;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,7 +110,7 @@ bool UTSettings::TestDefaultsAndSetters()
 {
   bool Passed = true;
 
-  UTSettings_Test Settings;
+  SettingsTest Settings;
   Passed = Evaluate("GetMasterNodeName()", "default", "The representative test settings use the configured master node name", Settings.GetMasterNodeName(), MString("UTSettingsRoot")) && Passed;
   Passed = Evaluate("GetVersion()", "default", "The default settings version is initialized to 2", Settings.GetVersion(), 2U) && Passed;
   Passed = Evaluate("GetMEGAlibVersion()", "default", "The default MEGAlib version tracks the current global version", Settings.GetMEGAlibVersion(), static_cast<unsigned int>(g_Version)) && Passed;
@@ -138,7 +141,7 @@ bool UTSettings::TestXmlRoundTrip()
   WriteTextFile(DataFile, "data");
   WriteTextFile(GeometryFile, "geometry");
 
-  UTSettings_Test Settings;
+  SettingsTest Settings;
   Settings.SetVersion(19);
   Settings.SetMEGAlibVersion(77);
   Settings.SetCurrentFileName(DataFile);
@@ -157,7 +160,7 @@ bool UTSettings::TestXmlRoundTrip()
   new MXmlNode(&ReadDocument, "DataFileName", DataFile);
   new MXmlNode(&ReadDocument, "GeometryFileName", GeometryFile);
 
-  UTSettings_Test ReadBack;
+  SettingsTest ReadBack;
   Passed = Evaluate("ReadXml()", "direct xml", "ReadXml accepts a representative XML document", ReadBack.TestReadXml(&ReadDocument), true) && Passed;
   Passed = Evaluate("GetVersion()", "direct xml", "ReadXml restores the representative settings version", ReadBack.GetVersion(), 5U) && Passed;
   Passed = Evaluate("GetMEGAlibVersion()", "direct xml", "ReadXml restores the representative MEGAlib version", ReadBack.GetMEGAlibVersion(), 9U) && Passed;
@@ -188,7 +191,7 @@ bool UTSettings::TestReadWriteFiles()
   MString NonXmlFile = "/tmp/UTSettings/non_xml.cfg";
   MString EmptyFile = "/tmp/UTSettings/empty.cfg";
 
-  UTSettings_Test Settings;
+  SettingsTest Settings;
   Settings.SetCurrentFileName(DataFile);
   Settings.SetGeometryFileName(GeometryFile);
   Settings.SetVersion(21);
@@ -207,43 +210,43 @@ bool UTSettings::TestReadWriteFiles()
   Passed = Evaluate("Write()", "default file", "Write() succeeds for the configured default settings file", Settings.Write(), true) && Passed;
   Passed = EvaluateTrue("Exists()", "default file", "Write() creates the configured default settings file", MFile::Exists(DefaultFile)) && Passed;
 
-  UTSettings_Test ReadBack;
+  SettingsTest ReadBack;
   Passed = Evaluate("Read(MString)", "explicit file", "Read(MString) restores a previously written representative settings file", ReadBack.Read(ExplicitFile + ".cfg"), true) && Passed;
   Passed = Evaluate("GetVersion()", "explicit file", "Read(MString) restores the stored settings version", ReadBack.GetVersion(), 21U) && Passed;
   Passed = Evaluate("GetMEGAlibVersion()", "explicit file", "Read(MString) restores the stored MEGAlib version", ReadBack.GetMEGAlibVersion(), static_cast<unsigned int>(g_Version)) && Passed;
   Passed = Evaluate("GetCurrentFileName()", "explicit file", "Read(MString) restores the inherited current data file name", ReadBack.GetCurrentFileName(), DataFile) && Passed;
   Passed = Evaluate("GetGeometryFileName()", "explicit file", "Read(MString) restores the inherited geometry file name", ReadBack.GetGeometryFileName(), GeometryFile) && Passed;
 
-  UTSettings_Test MissingDefault;
+  SettingsTest MissingDefault;
   MissingDefault.SetDefaultSettingsFileName("/tmp/UTSettings/does_not_exist.cfg");
   DisableDefaultStreams();
   Passed = Evaluate("Read()", "missing default", "Read() on a missing default settings file fails cleanly", MissingDefault.Read(), false) && Passed;
   EnableDefaultStreams();
 
-  UTSettings_Test ExplicitDefaultRead;
+  SettingsTest ExplicitDefaultRead;
   ExplicitDefaultRead.SetDefaultSettingsFileName(DefaultFile);
   Passed = Evaluate("Read(MString)", "empty file name fallback", "Read(MString) falls back to the configured default settings file when given an empty file name", ExplicitDefaultRead.Read(""), true) && Passed;
   Passed = Evaluate("GetVersion()", "empty file name fallback", "Read(MString) with an empty file name reads from the configured default settings file", ExplicitDefaultRead.GetVersion(), 21U) && Passed;
 
-  UTSettings_Test UndefinedDefaultRead;
+  SettingsTest UndefinedDefaultRead;
   UndefinedDefaultRead.SetDefaultSettingsFileName(DefaultFile);
   Passed = Evaluate("Read(MString)", "undefined file name fallback", "Read(MString) falls back to the configured default settings file when given g_StringNotDefined", UndefinedDefaultRead.Read(g_StringNotDefined), true) && Passed;
   Passed = Evaluate("GetVersion()", "undefined file name fallback", "Read(MString) with g_StringNotDefined reads from the configured default settings file", UndefinedDefaultRead.GetVersion(), 21U) && Passed;
 
   Passed = EvaluateTrue("WriteTextFile()", "wrong root file", "A settings file with the wrong root node can be written", WriteTextFile(WrongRootFile, "<WrongRoot><Version>1</Version></WrongRoot>\n")) && Passed;
-  UTSettings_Test WrongRoot;
+  SettingsTest WrongRoot;
   DisableDefaultStreams();
   Passed = Evaluate("Read(MString)", "wrong root", "Read(MString) rejects settings files with the wrong root node", WrongRoot.Read(WrongRootFile), false) && Passed;
   EnableDefaultStreams();
 
   Passed = EvaluateTrue("WriteTextFile()", "non xml file", "A legacy non-XML settings file can be written", WriteTextFile(NonXmlFile, "Version=1\n")) && Passed;
-  UTSettings_Test NonXml;
+  SettingsTest NonXml;
   DisableDefaultStreams();
   Passed = Evaluate("Read(MString)", "non xml file", "Read(MString) treats legacy non-XML settings files as a default-state success", NonXml.Read(NonXmlFile), true) && Passed;
   EnableDefaultStreams();
 
   Passed = EvaluateTrue("WriteTextFile()", "empty file", "An empty settings file can be written", WriteTextFile(EmptyFile, "")) && Passed;
-  UTSettings_Test Empty;
+  SettingsTest Empty;
   DisableDefaultStreams();
   Passed = Evaluate("Read(MString)", "empty file", "Read(MString) rejects empty settings files", Empty.Read(EmptyFile), false) && Passed;
   EnableDefaultStreams();
@@ -266,7 +269,7 @@ bool UTSettings::TestChange()
   Passed = EvaluateTrue("WriteTextFile()", "change current file", "A representative current file for change() can be written", WriteTextFile(DataFile, "data")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "change geometry file", "A representative geometry file for change() can be written", WriteTextFile(GeometryFile, "geometry")) && Passed;
 
-  UTSettings_Test Settings;
+  SettingsTest Settings;
   Settings.SetCurrentFileName(DataFile);
   Settings.SetGeometryFileName(GeometryFile);
   Settings.SetVersion(3);
@@ -283,7 +286,7 @@ bool UTSettings::TestChange()
 
   {
     MString LogFileName = "/tmp/UTSettings_change_missing_node.log";
-    MString Command = MString("\"") + g_UTSettingsBinary + "\" --change-missing-node > " + LogFileName + " 2>&1";
+    MString Command = MString("\"") + BinaryPath() + "\" --change-missing-node > " + LogFileName + " 2>&1";
     int Status = system(Command.Data());
     Passed = EvaluateTrue("Change()", "missing node status", "Change() returns failure for a missing dotted-path node", Status == 0) && Passed;
 
@@ -293,7 +296,7 @@ bool UTSettings::TestChange()
   }
 
   {
-    UTSettings_Test Malformed;
+    SettingsTest Malformed;
     Malformed.SetVersion(3);
     Passed = Evaluate("Change()", "missing equal status", "Change() currently accepts malformed input without an equals sign when the node itself exists", Malformed.Change("Version"), true) && Passed;
     Passed = Evaluate("GetVersion()", "missing equal result", "Malformed change input without an equals sign rewrites the Version node and reads back as zero", Malformed.GetVersion(), 0U) && Passed;
@@ -308,14 +311,14 @@ bool UTSettings::TestChange()
 
 int main(int argc, char** argv)
 {
-  g_UTSettingsBinary = argc > 0 ? argv[0] : "";
-  if (g_UTSettingsBinary.IsEmpty() == true) {
-    g_UTSettingsBinary = "bin/UTSettings";
+  UTSettings::BinaryPath() = argc > 0 ? argv[0] : "";
+  if (UTSettings::BinaryPath().IsEmpty() == true) {
+    UTSettings::BinaryPath() = "bin/UTSettings";
   }
 
   if (argc >= 2) {
     MString Argument = argv[1];
-    UTSettings_Test Settings;
+    UTSettings::SettingsTest Settings;
     Settings.SetVersion(3);
     if (Argument == "--change-missing-node") {
       return Settings.Change("MissingNode.Value=7") == false ? 0 : 1;

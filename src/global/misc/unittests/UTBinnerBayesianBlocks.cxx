@@ -8,10 +8,6 @@
  *
  */
 
-// Standard libs:
-#include <fcntl.h>
-#include <unistd.h>
-
 // MEGAlib:
 #include "MBinnerBayesianBlocks.h"
 #include "MExceptions.h"
@@ -36,12 +32,7 @@ bool UTBinnerBayesianBlocks::Run()
   bool Passed = true;
   Passed = EvaluateException<MExceptionTestFailed>("SetMinimumBinWidth()", "zero width", "A representative zero minimum bin width is rejected immediately", [&](){ MBinnerBayesianBlocks Invalid; Invalid.SetMinimumBinWidth(0.0); }) && Passed;
 
-  int SavedStdout = dup(STDOUT_FILENO);
-  int DevNull = open("/dev/null", O_WRONLY);
-  if (DevNull >= 0) {
-    dup2(DevNull, STDOUT_FILENO);
-    close(DevNull);
-  }
+  DisableDefaultStreams();
 
   MBinnerBayesianBlocks Representative;
   Representative.SetMinMax(0.0, 10.0, false);
@@ -88,10 +79,7 @@ bool UTBinnerBayesianBlocks::Run()
   Adapted.AddUnsorted(vector<double>{2.0, 2.1, 7.9, 8.0});
   Passed = EvaluateNear("SetMinMax()", "adapted minimum", "Adaptive Bayesian-block binning keeps the representative in-range minimum", Adapted.GetBinEdges().front(), 2.0, 1e-12) && Passed;
 
-  if (SavedStdout >= 0) {
-    dup2(SavedStdout, STDOUT_FILENO);
-    close(SavedStdout);
-  }
+  EnableDefaultStreams();
 
   Summarize();
 

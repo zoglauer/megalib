@@ -108,6 +108,13 @@ bool UTMuonEvent::TestBasics()
   Passed = Evaluate("GetCenterOfGravity()", "muon", "The muon center of gravity is stored", Event.GetCenterOfGravity(), MVector(0.0, 1.0, 0.0)) && Passed;
   Passed = EvaluateTrue("Validate()", "muon", "A positive-energy muon event validates successfully", Event.Validate()) && Passed;
 
+  MMuonEvent Interior;
+  Passed = EvaluateTrue("Assimilate(Direction,CoG,Energy)", "muon interior", "A representative interior muon event can be created from non-axis-aligned inputs", Interior.Assimilate(MVector(0.2, -0.3, 0.4), MVector(-1.5, 2.25, 0.75), 7.75)) && Passed;
+  Passed = Evaluate("GetEnergy()", "muon interior", "Interior muon energies are stored exactly", Interior.GetEnergy(), 7.75) && Passed;
+  Passed = Evaluate("GetDirection()", "muon interior", "Interior muon directions are stored exactly", Interior.GetDirection(), MVector(0.2, -0.3, 0.4)) && Passed;
+  Passed = Evaluate("GetCenterOfGravity()", "muon interior", "Interior muon centers of gravity are stored exactly", Interior.GetCenterOfGravity(), MVector(-1.5, 2.25, 0.75)) && Passed;
+  Passed = EvaluateTrue("Validate()", "muon interior", "Representative interior muon events validate successfully", Interior.Validate()) && Passed;
+
   MPhysicalEvent* Duplicate = Event.Duplicate();
   Passed = Evaluate("Duplicate()->GetEnergy()", "muon", "Duplicate preserves the muon energy", Duplicate->GetEnergy(), Event.GetEnergy()) && Passed;
   Passed = Evaluate("Duplicate()->GetType()", "muon", "Duplicate preserves the muon type", Duplicate->GetType(), Event.GetType()) && Passed;
@@ -246,7 +253,5 @@ bool UTMuonEvent::TestRoundTrips()
 int main()
 {
   UTMuonEvent Test;
-  Test.Run();
-
-  return 0;
+  return Test.Run() == true ? 0 : 1;
 }

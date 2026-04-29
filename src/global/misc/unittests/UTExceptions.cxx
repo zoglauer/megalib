@@ -13,16 +13,11 @@
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
-#include <sys/wait.h>
 using namespace std;
 
 // MEGAlib:
 #include "MExceptions.h"
 #include "MUnitTest.h"
-
-
-MString g_UTExceptionsBinary = "";
-
 
 //! Unit test class for the exception hierarchy
 class UTExceptions : public MUnitTest
@@ -35,7 +30,19 @@ public:
 
   //! Run all tests
   virtual bool Run();
-
+  //! Return the binary path used for child-process checks
+  static MString& BinaryPath()
+  {
+    static MString Path = "";
+    return Path;
+  }
+  //! Helper entry point for the abort-check child process
+  static int AbortCheck()
+  {
+    MException::UseAbort(true);
+    new MExceptionUnknownMode("abort-check");
+    return 1;
+  }
 private:
   //! Test the base class and polymorphic throwing behavior
   bool TestBaseBehavior();
@@ -294,11 +301,9 @@ bool UTExceptions::TestUsagePatterns()
   {
     MException::UseAbort(false);
 
-    ostringstream Command;
-    Command<<"\""<<g_UTExceptionsBinary<<"\" --abort-check > /tmp/UTExceptions_abort_check.log 2>&1";
-    int Status = system(Command.str().c_str());
+    int Status = RunChildProcess(BinaryPath(), "--abort-check", "/tmp/UTExceptions_abort_check.log");
 
-    Passed = EvaluateTrue("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with a non-zero status", Status != 0) && Passed;
+    Passed = EvaluateTrue("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with a non-zero status", Status != 0 && Status != -1) && Passed;
 
     ifstream In("/tmp/UTExceptions_abort_check.log");
     ostringstream Output;
@@ -317,27 +322,16 @@ bool UTExceptions::TestUsagePatterns()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static int UTExceptions_AbortCheck()
-{
-  MException::UseAbort(true);
-  new MExceptionUnknownMode("abort-check");
-  return 1;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 int main(int argc, char** argv)
 {
   if (argc > 1) {
     MString Argument = argv[1];
     if (Argument == "--abort-check") {
-      return UTExceptions_AbortCheck();
+      return UTExceptions::AbortCheck();
     }
   }
 
-  g_UTExceptionsBinary = argv[0];
+  UTExceptions::BinaryPath() = argv[0];
   UTExceptions Test;
   return Test.Run() == true ? 0 : 1;
 }

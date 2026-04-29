@@ -9,9 +9,7 @@
  */
 
 // Standard libs:
-#include <fcntl.h>
 #include <sys/wait.h>
-#include <unistd.h>
 using namespace std;
 
 // ROOT:
@@ -26,68 +24,6 @@ using namespace std;
 #include "MUnitTest.h"
 
 
-class UTResponseMatrixONSupport
-{
-public:
-  static int GetCanvasCount()
-  {
-    return gROOT != 0 && gROOT->GetListOfCanvases() != 0 ? gROOT->GetListOfCanvases()->GetSize() : 0;
-  }
-
-  static void CleanupCanvases(int TargetCount)
-  {
-    while (gROOT != 0 && gROOT->GetListOfCanvases() != 0 && gROOT->GetListOfCanvases()->GetSize() > TargetCount) {
-      TCanvas* Canvas = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->Last());
-      if (Canvas == 0) {
-        break;
-      }
-      delete Canvas;
-    }
-  }
-
-  static bool RunChildExpectingSuccess(const MString& Argument)
-  {
-    pid_t Child = fork();
-    if (Child == 0) {
-      int DevNull = open("/dev/null", O_WRONLY);
-      if (DevNull >= 0) {
-        dup2(DevNull, STDOUT_FILENO);
-        dup2(DevNull, STDERR_FILENO);
-        close(DevNull);
-      }
-      execl("bin/UTResponseMatrixON", "bin/UTResponseMatrixON", Argument.Data(), static_cast<char*>(0));
-      _exit(127);
-    }
-
-    if (Child < 0) return false;
-
-    int Status = 0;
-    if (waitpid(Child, &Status, 0) < 0) return false;
-
-    return WIFEXITED(Status) && WEXITSTATUS(Status) == 0;
-  }
-
-  static int SilenceStdout()
-  {
-    int SavedStdout = dup(STDOUT_FILENO);
-    int DevNull = open("/dev/null", O_WRONLY);
-    if (DevNull >= 0) {
-      dup2(DevNull, STDOUT_FILENO);
-      close(DevNull);
-    }
-    return SavedStdout;
-  }
-
-  static void RestoreStdout(int SavedStdout)
-  {
-    if (SavedStdout >= 0) {
-      dup2(SavedStdout, STDOUT_FILENO);
-      close(SavedStdout);
-    }
-  }
-};
-
-
 //! Unit test class for MResponseMatrixON
 class UTResponseMatrixON : public MUnitTest
 {
@@ -96,6 +32,13 @@ public:
   virtual ~UTResponseMatrixON() {}
 
   virtual bool Run();
+
+  //! Return the current number of ROOT canvases
+  static int GetCanvasCount();
+  //! Delete canvases until the requested count is reached
+  static void CleanupCanvases(int TargetCount);
+  //! Run a child process and require success
+  static bool RunChildExpectingSuccess(const MString& Argument);
 };
 
 
@@ -108,10 +51,10 @@ bool UTResponseMatrixON::Run()
 
   system("mkdir -p /tmp/UTResponseMatrixON");
 
-  Passed = EvaluateTrue("CopyConstructor()", "representative process", "Copy constructing and destroying a representative MResponseMatrixON succeeds", UTResponseMatrixONSupport::RunChildExpectingSuccess("--copy-constructor")) && Passed;
-  Passed = EvaluateTrue("AssignmentOperator()", "representative process", "Assigning and destroying a representative MResponseMatrixON succeeds", UTResponseMatrixONSupport::RunChildExpectingSuccess("--assignment-operator")) && Passed;
-  Passed = EvaluateTrue("CopyConstructor()", "clear independence process", "A representative copy remains usable after the original is cleared", UTResponseMatrixONSupport::RunChildExpectingSuccess("--copy-after-clear")) && Passed;
-  Passed = EvaluateTrue("AssignmentOperator()", "clear independence process", "A representative assigned matrix remains usable after the original is cleared", UTResponseMatrixONSupport::RunChildExpectingSuccess("--assignment-after-clear")) && Passed;
+  Passed = EvaluateTrue("CopyConstructor()", "representative process", "Copy constructing and destroying a representative MResponseMatrixON succeeds", RunChildExpectingSuccess("--copy-constructor")) && Passed;
+  Passed = EvaluateTrue("AssignmentOperator()", "representative process", "Assigning and destroying a representative MResponseMatrixON succeeds", RunChildExpectingSuccess("--assignment-operator")) && Passed;
+  Passed = EvaluateTrue("CopyConstructor()", "clear independence process", "A representative copy remains usable after the original is cleared", RunChildExpectingSuccess("--copy-after-clear")) && Passed;
+  Passed = EvaluateTrue("AssignmentOperator()", "clear independence process", "A representative assigned matrix remains usable after the original is cleared", RunChildExpectingSuccess("--assignment-after-clear")) && Passed;
 
   MResponseMatrixON Default;
   Passed = Evaluate("GetOrder()", "default constructor", "The default ON matrix starts with order zero", Default.GetOrder(), 0U) && Passed;
@@ -191,9 +134,9 @@ bool UTResponseMatrixON::Run()
   Matrix.Set(3UL, 0.0f);
   Passed = Evaluate("InRange()", "axis values in range", "InRange accepts representative axis values inside all ranges", Matrix.InRange(vector<double>{0.5, 1.5}), true) && Passed;
   {
-    int SavedStdout = UTResponseMatrixONSupport::SilenceStdout();
+    DisableDefaultStreams();
     Passed = Evaluate("InRange()", "axis values out of range", "InRange rejects representative axis values outside the configured ranges", Matrix.InRange(vector<double>{-0.5, 1.5}), false) && Passed;
-    UTResponseMatrixONSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
   }
   Passed = Evaluate("InRange()", "axis bins in range", "InRange accepts representative axis bins inside all ranges", Matrix.InRange(vector<unsigned long>{1, 0}), true) && Passed;
   Passed = Evaluate("InRange()", "axis bins out of range", "InRange rejects representative axis bins outside the configured ranges", Matrix.InRange(vector<unsigned long>{2, 0}), false) && Passed;
@@ -216,9 +159,9 @@ bool UTResponseMatrixON::Run()
   Passed = EvaluateNear("GetMinimum()", "representative values", "GetMinimum returns the representative minimum bin content", Matrix.GetMinimum(), 0.0, 1e-6) && Passed;
   Passed = EvaluateNear("GetSum()", "representative values", "GetSum returns the representative total matrix content", Matrix.GetSum(), 17.0, 1e-6) && Passed;
   {
-    int SavedStdout = UTResponseMatrixONSupport::SilenceStdout();
+    DisableDefaultStreams();
     Passed = EvaluateNear("GetInterpolated()", "representative values", "GetInterpolated falls back to the representative containing-bin value", Matrix.GetInterpolated(vector<double>{0.5, 1.5}), 8.0, 1e-6) && Passed;
-    UTResponseMatrixONSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
   }
 
   MResponseMatrixON BulkMatrix = Matrix;
@@ -288,11 +231,11 @@ bool UTResponseMatrixON::Run()
 
   MString SparseFile = "/tmp/UTResponseMatrixON/representative_sparse.rsp";
   {
-    int SavedStdout = UTResponseMatrixONSupport::SilenceStdout();
+    DisableDefaultStreams();
     Passed = Evaluate("Write()", "representative sparse round trip", "Writing the representative sparse ON matrix succeeds", CollapseSource.Write(SparseFile, false), true) && Passed;
     MResponseMatrixON SparseReadBack;
     Passed = Evaluate("Read()", "representative sparse round trip", "Reading the representative sparse ON matrix succeeds", SparseReadBack.Read(SparseFile), true) && Passed;
-    UTResponseMatrixONSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
     Passed = EvaluateNear("Read()", "representative sparse round trip content", "The representative sparse ON matrix content survives a round trip", SparseReadBack.Get(vector<unsigned long>{1, 1}), 4.0, 1e-6) && Passed;
   }
 
@@ -302,20 +245,20 @@ bool UTResponseMatrixON::Run()
   StreamMatrix.Set(vector<unsigned long>{0, 0}, 2.0f);
   MString StreamFile = "/tmp/UTResponseMatrixON/representative_stream.rsp";
   {
-    int SavedStdout = UTResponseMatrixONSupport::SilenceStdout();
+    DisableDefaultStreams();
     Passed = Evaluate("Write()", "representative stream round trip", "Writing the representative stream ON matrix succeeds", StreamMatrix.Write(StreamFile, true), true) && Passed;
     MResponseMatrixON StreamReadBack;
     Passed = Evaluate("Read()", "representative stream round trip", "Reading the representative stream ON matrix succeeds", StreamReadBack.Read(StreamFile), true) && Passed;
-    UTResponseMatrixONSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
     Passed = EvaluateNear("Read()", "representative stream round trip content", "The representative stream ON matrix content survives a round trip", StreamReadBack.Get(vector<unsigned long>{0, 0}), 2.0, 1e-6) && Passed;
   }
 
   MResponseMatrixON ReusedRead("ReusedRead");
   {
-    int SavedStdout = UTResponseMatrixONSupport::SilenceStdout();
+    DisableDefaultStreams();
     Passed = Evaluate("Read()", "reused read first file", "Reading the first representative ON file into the same object succeeds", ReusedRead.Read(StreamFile), true) && Passed;
     Passed = Evaluate("Read()", "reused read second file", "Reading a second representative ON file into the same object succeeds", ReusedRead.Read(SparseFile), true) && Passed;
-    UTResponseMatrixONSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
   }
   Passed = Evaluate("GetNumberOfAxes()", "reused read second file", "Reading a second ON file into the same object replaces the representative axes", ReusedRead.GetNumberOfAxes(), 2U) && Passed;
   Passed = EvaluateNear("Read()", "reused read second file content", "Reading a second ON file into the same object replaces the representative bin content", ReusedRead.Get(vector<unsigned long>{1, 1}), 4.0, 1e-6) && Passed;
@@ -332,12 +275,12 @@ bool UTResponseMatrixON::Run()
   {
     bool WasBatch = gROOT->IsBatch();
     gROOT->SetBatch(true);
-    int BeforeCanvases = UTResponseMatrixONSupport::GetCanvasCount();
-    int SavedStdout = UTResponseMatrixONSupport::SilenceStdout();
+    int BeforeCanvases = GetCanvasCount();
+    DisableDefaultStreams();
     CollapseSource.ShowSlice(vector<float>{MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY}, true, "Representative slice");
-    UTResponseMatrixONSupport::RestoreStdout(SavedStdout);
-    Passed = Evaluate("ShowSlice()", "representative display", "ShowSlice creates a representative ROOT canvas", UTResponseMatrixONSupport::GetCanvasCount(), BeforeCanvases + 1) && Passed;
-    UTResponseMatrixONSupport::CleanupCanvases(BeforeCanvases);
+    EnableDefaultStreams();
+    Passed = Evaluate("ShowSlice()", "representative display", "ShowSlice creates a representative ROOT canvas", GetCanvasCount(), BeforeCanvases + 1) && Passed;
+    CleanupCanvases(BeforeCanvases);
     gROOT->SetBatch(WasBatch);
   }
 
@@ -348,6 +291,37 @@ bool UTResponseMatrixON::Run()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+int UTResponseMatrixON::GetCanvasCount()
+{
+  return gROOT != 0 && gROOT->GetListOfCanvases() != 0 ? gROOT->GetListOfCanvases()->GetSize() : 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void UTResponseMatrixON::CleanupCanvases(int TargetCount)
+{
+  while (gROOT != 0 && gROOT->GetListOfCanvases() != 0 && gROOT->GetListOfCanvases()->GetSize() > TargetCount) {
+    TCanvas* Canvas = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->Last());
+    if (Canvas == 0) {
+      break;
+    }
+    delete Canvas;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTResponseMatrixON::RunChildExpectingSuccess(const MString& Argument)
+{
+  int Status = RunChildProcess("bin/UTResponseMatrixON", Argument, "/dev/null");
+  return WIFEXITED(Status) && WEXITSTATUS(Status) == 0;
+}
 
 
 int main(int argc, char** argv)

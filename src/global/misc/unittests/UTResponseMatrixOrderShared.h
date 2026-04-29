@@ -13,9 +13,7 @@
 
 // Standard libs:
 #include <cstdlib>
-#include <fcntl.h>
 #include <sys/wait.h>
-#include <unistd.h>
 
 // MEGAlib:
 #include "MFile.h"
@@ -37,27 +35,10 @@ inline bool PrepareResponseMatrixTempDirectory()
 
 inline bool RunAssertingUnitTest(const MString& Executable, const MString& Argument)
 {
-  pid_t Child = fork();
-  if (Child == 0) {
-    int Log = open("/tmp/UTResponseMatrix/response_matrix_assert.log", O_WRONLY | O_CREAT | O_TRUNC, 0666);
-    if (Log >= 0) {
-      dup2(Log, STDOUT_FILENO);
-      dup2(Log, STDERR_FILENO);
-      close(Log);
-    }
-    execl(Executable.Data(), Executable.Data(), Argument.Data(), static_cast<char*>(0));
-    _exit(127);
-  }
-
-  if (Child < 0) {
+  int Status = MUnitTest::RunChildProcess(Executable, Argument, "/tmp/UTResponseMatrix/response_matrix_assert.log");
+  if (Status < 0) {
     return false;
   }
-
-  int Status = 0;
-  if (waitpid(Child, &Status, 0) < 0) {
-    return false;
-  }
-
   return WIFSIGNALED(Status) || (WIFEXITED(Status) && WEXITSTATUS(Status) != 0);
 }
 

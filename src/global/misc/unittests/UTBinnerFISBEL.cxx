@@ -12,35 +12,10 @@
 #include <TCanvas.h>
 #include <TROOT.h>
 
-// Standard libs:
-#include <fcntl.h>
-#include <unistd.h>
-
 // MEGAlib:
 #include "MBinnerFISBEL.h"
 #include "MExceptions.h"
 #include "MUnitTest.h"
-
-
-class UTBinnerFISBELSupport
-{
-public:
-  static int GetCanvasCount()
-  {
-    return gROOT != 0 && gROOT->GetListOfCanvases() != 0 ? gROOT->GetListOfCanvases()->GetSize() : 0;
-  }
-
-  static void CleanupCanvases(int TargetCount)
-  {
-    while (gROOT != 0 && gROOT->GetListOfCanvases() != 0 && gROOT->GetListOfCanvases()->GetSize() > TargetCount) {
-      TCanvas* Canvas = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->Last());
-      if (Canvas == 0) {
-        break;
-      }
-      delete Canvas;
-    }
-  }
-};
 
 
 //! Unit test class for MBinnerFISBEL
@@ -51,6 +26,12 @@ public:
   virtual ~UTBinnerFISBEL() {}
 
   virtual bool Run();
+
+private:
+  //! Return the current number of ROOT canvases
+  static int GetCanvasCount();
+  //! Delete canvases until the requested count is reached
+  static void CleanupCanvases(int TargetCount);
 };
 
 
@@ -107,26 +88,42 @@ bool UTBinnerFISBEL::Run()
   {
     bool WasBatch = gROOT->IsBatch();
     gROOT->SetBatch(true);
-    int BeforeCanvases = UTBinnerFISBELSupport::GetCanvasCount();
-    int SavedStdout = dup(STDOUT_FILENO);
-    int DevNull = open("/dev/null", O_WRONLY);
-    if (DevNull >= 0) {
-      dup2(DevNull, STDOUT_FILENO);
-      close(DevNull);
-    }
+    int BeforeCanvases = GetCanvasCount();
+    DisableDefaultStreams();
     Single.View(vector<double>{1.0});
-    if (SavedStdout >= 0) {
-      dup2(SavedStdout, STDOUT_FILENO);
-      close(SavedStdout);
-    }
-    Passed = Evaluate("View()", "representative display", "View creates a representative ROOT canvas", UTBinnerFISBELSupport::GetCanvasCount(), BeforeCanvases + 1) && Passed;
-    UTBinnerFISBELSupport::CleanupCanvases(BeforeCanvases);
+    EnableDefaultStreams();
+    Passed = Evaluate("View()", "representative display", "View creates a representative ROOT canvas", GetCanvasCount(), BeforeCanvases + 1) && Passed;
+    CleanupCanvases(BeforeCanvases);
     gROOT->SetBatch(WasBatch);
   }
 
   Summarize();
 
   return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int UTBinnerFISBEL::GetCanvasCount()
+{
+  return gROOT != 0 && gROOT->GetListOfCanvases() != 0 ? gROOT->GetListOfCanvases()->GetSize() : 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void UTBinnerFISBEL::CleanupCanvases(int TargetCount)
+{
+  while (gROOT != 0 && gROOT->GetListOfCanvases() != 0 && gROOT->GetListOfCanvases()->GetSize() > TargetCount) {
+    TCanvas* Canvas = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->Last());
+    if (Canvas == 0) {
+      break;
+    }
+    delete Canvas;
+  }
 }
 
 

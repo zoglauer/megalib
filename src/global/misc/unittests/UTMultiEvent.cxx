@@ -94,6 +94,20 @@ bool UTMultiEvent::TestBasics()
   Passed = Evaluate("Duplicate()->GetEnergy()", "multi", "Duplicate preserves the total energy", Duplicate->GetEnergy(), Event.GetEnergy()) && Passed;
   delete Duplicate;
 
+  MMultiEvent Interior;
+  MUnidentifiableEvent* ThreeQuarter = new MUnidentifiableEvent();
+  ThreeQuarter->SetEnergy(3.75);
+  Interior.Add(ThreeQuarter);
+  MUnidentifiableEvent* FiveHalf = new MUnidentifiableEvent();
+  FiveHalf->SetEnergy(5.5);
+  Interior.Add(FiveHalf);
+  MUnidentifiableEvent* EightEighth = new MUnidentifiableEvent();
+  EightEighth->SetEnergy(8.125);
+  Interior.Add(EightEighth);
+  Passed = EvaluateTrue("Validate()", "multi interior", "Representative interior multi events with three sub-events validate successfully", Interior.Validate()) && Passed;
+  Passed = EvaluateSize("GetNumberOfEvents()", "multi interior", "Representative interior multi events store all sub-events", Interior.GetNumberOfEvents(), 3U) && Passed;
+  Passed = Evaluate("GetEnergy()", "multi interior", "Representative interior multi-event energies sum across all sub-events", Interior.GetEnergy(), 17.375) && Passed;
+
   return Passed;
 }
 
@@ -199,7 +213,5 @@ bool UTMultiEvent::TestHelpers()
 int main()
 {
   UTMultiEvent Test;
-  Test.Run();
-
-  return 0;
+  return Test.Run() == true ? 0 : 1;
 }

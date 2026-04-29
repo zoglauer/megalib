@@ -45,75 +45,24 @@ private:
   //! Count non-overlapping occurrences of a pattern
   unsigned int CountOccurrences(const MString& Text, const MString& Pattern) const;
 
+  //! Emit a deprecated warning from a stable source location
+  static void EmitDeprecatedDuplicate();
+  //! Emit a second deprecated warning from a different source location
+  static void EmitDeprecatedUnique();
+  //! Emit an implementation-limit warning from a stable source location
+  static void EmitImplementationDuplicate();
+  //! Emit a second implementation-limit warning from a different source location
+  static void EmitImplementationUnique();
+  //! Emit a merr message using the production macro
+  static void EmitMerrShow();
+  //! Emit mdebug messages at all verbosity levels
+  static void EmitDebugSeries();
+
   //! Test the direct MStreams wrapper API
   bool TestStreams();
   //! Test global streams and macros as they are used in MEGAlib
   bool TestGlobalStreamsAndMacros();
 };
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Emit a deprecated warning from a stable source location
-void UTStreams_EmitDeprecatedDuplicate()
-{
-  mdep<<"Deprecated duplicate"<<show;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Emit a second deprecated warning from a different source location
-void UTStreams_EmitDeprecatedUnique()
-{
-  mdep<<"Deprecated unique"<<show;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Emit an implementation-limit warning from a stable source location
-void UTStreams_EmitImplementationDuplicate()
-{
-  mimp<<"Implementation duplicate"<<show;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Emit a second implementation-limit warning from a different source location
-void UTStreams_EmitImplementationUnique()
-{
-  mimp<<"Implementation unique"<<show;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Emit a merr message using the production macro
-void UTStreams_EmitMerrShow()
-{
-  merr<<"Macro problem"<<show;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Emit mdebug messages at all verbosity levels
-void UTStreams_EmitDebugSeries()
-{
-  mdebug1<<"Debug1"<<endl;
-  mdebug2<<"Debug2"<<endl;
-  mdebug3<<"Debug3"<<endl;
-  mdebug4<<"Debug4"<<endl;
-  mdebug5<<"Debug5"<<endl;
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -125,6 +74,70 @@ MString UTStreams::CreateFileName(const MString& Suffix) const
   ostringstream FileName;
   FileName<<"/tmp/UTStreams_"<<Suffix<<"_"<<getpid()<<".txt";
   return FileName.str().c_str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Emit a deprecated warning from a stable source location
+void UTStreams::EmitDeprecatedDuplicate()
+{
+  mdep<<"Deprecated duplicate"<<show;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Emit a second deprecated warning from a different source location
+void UTStreams::EmitDeprecatedUnique()
+{
+  mdep<<"Deprecated unique"<<show;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Emit an implementation-limit warning from a stable source location
+void UTStreams::EmitImplementationDuplicate()
+{
+  mimp<<"Implementation duplicate"<<show;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Emit a second implementation-limit warning from a different source location
+void UTStreams::EmitImplementationUnique()
+{
+  mimp<<"Implementation unique"<<show;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Emit a merr message using the production macro
+void UTStreams::EmitMerrShow()
+{
+  merr<<"Macro problem"<<show;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Emit mdebug messages at all verbosity levels
+void UTStreams::EmitDebugSeries()
+{
+  mdebug1<<"Debug1"<<endl;
+  mdebug2<<"Debug2"<<endl;
+  mdebug3<<"Debug3"<<endl;
+  mdebug4<<"Debug4"<<endl;
+  mdebug5<<"Debug5"<<endl;
 }
 
 
@@ -322,7 +335,7 @@ bool UTStreams::TestGlobalStreamsAndMacros()
 
   {
     Passed = EvaluateTrue("__merr.Connect()", "global merr", "The internal error stream can connect to a file", __merr.Connect(MerrFileName, false, false)) && Passed;
-    UTStreams_EmitMerrShow();
+    EmitMerrShow();
     __merr.Disconnect(MerrFileName);
 
     MString Content = ReadFile(MerrFileName);
@@ -339,9 +352,9 @@ bool UTStreams::TestGlobalStreamsAndMacros()
   {
     g_Verbosity = 1;
     Passed = EvaluateTrue("__mdep.Connect()", "deprecated file", "The deprecated stream can connect to a file", __mdep.Connect(MdepFileName, false, false)) && Passed;
-    UTStreams_EmitDeprecatedDuplicate();
-    UTStreams_EmitDeprecatedDuplicate();
-    UTStreams_EmitDeprecatedUnique();
+    EmitDeprecatedDuplicate();
+    EmitDeprecatedDuplicate();
+    EmitDeprecatedUnique();
     __mdep.Disconnect(MdepFileName);
 
     MString Content = ReadFile(MdepFileName);
@@ -353,9 +366,9 @@ bool UTStreams::TestGlobalStreamsAndMacros()
   {
     g_Verbosity = 1;
     Passed = EvaluateTrue("__mimp.Connect()", "implementation file", "The implementation-limit stream can connect to a file", __mimp.Connect(MimpFileName, false, false)) && Passed;
-    UTStreams_EmitImplementationDuplicate();
-    UTStreams_EmitImplementationDuplicate();
-    UTStreams_EmitImplementationUnique();
+    EmitImplementationDuplicate();
+    EmitImplementationDuplicate();
+    EmitImplementationUnique();
     __mimp.Disconnect(MimpFileName);
 
     MString Content = ReadFile(MimpFileName);
@@ -367,9 +380,9 @@ bool UTStreams::TestGlobalStreamsAndMacros()
   {
     Passed = EvaluateTrue("mlog.Connect()", "global mlog", "The global log stream can connect to a file", mlog.Connect(MlogFileName, false, false)) && Passed;
     g_Verbosity = 0;
-    UTStreams_EmitDebugSeries();
+    EmitDebugSeries();
     g_Verbosity = 5;
-    UTStreams_EmitDebugSeries();
+    EmitDebugSeries();
     mlog.Disconnect(MlogFileName);
 
     MString Content = ReadFile(MlogFileName);

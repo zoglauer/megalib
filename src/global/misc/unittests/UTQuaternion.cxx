@@ -198,11 +198,11 @@ bool UTQuaternion::TestNormAndInverse()
                         AreEqual(Unit, Q.GetScale(1.0 / sqrt(30.0)), 1e-12)) && Passed;
 
   MQuaternion Zero;
-  __merr.Enable(false);
+  DisableDefaultStreams();
   MQuaternion ZeroInverse = Zero.GetInverse();
   MQuaternion ZeroUnit = Zero.GetUnitQuaternion();
   MRotation ZeroRotation = Zero.GetRotation();
-  __merr.Enable(true);
+  EnableDefaultStreams();
 
   Passed = EvaluateTrue("GetInverse()", "zero quaternion", "GetInverse returns the default quaternion for zero norm", ZeroInverse == MQuaternion()) && Passed;
   Passed = EvaluateTrue("GetUnitQuaternion()", "zero quaternion", "GetUnitQuaternion returns the default quaternion for zero magnitude", ZeroUnit == MQuaternion()) && Passed;
@@ -242,6 +242,17 @@ bool UTQuaternion::TestRotationConversion()
   MQuaternion FromRotateY(RotateY);
   Passed = EvaluateTrue("MQuaternion(const MRotation&)", "180 deg around y", "The alternative conversion branch also preserves the represented rotation",
                         (FromRotateY.GetRotation() * MVector(1.0, 0.0, 0.0)).AreEqual(RotateY * MVector(1.0, 0.0, 0.0), 1e-12)) && Passed;
+
+  MVector InteriorAxis(1.0, 2.0, 3.0);
+  InteriorAxis.Unitize();
+  MRotation InteriorRotation(0.73, InteriorAxis);
+  MQuaternion InteriorQuaternion(InteriorRotation);
+  Passed = EvaluateTrue("MQuaternion(const MRotation&)", "interior axis-angle", "Constructing from a representative interior rotation preserves the represented rotation",
+                        (InteriorQuaternion.GetRotation() * MVector(0.5, -1.0, 2.0)).AreEqual(InteriorRotation * MVector(0.5, -1.0, 2.0), 1e-12)) && Passed;
+
+  MQuaternion InteriorRoundTrip = InteriorQuaternion.GetRotation();
+  Passed = EvaluateTrue("GetRotation()", "interior axis-angle", "Quaternion-to-rotation conversion preserves a representative interior rotation",
+                        AreEquivalentRotations(InteriorRoundTrip.GetUnitQuaternion(), InteriorQuaternion.GetUnitQuaternion(), 1e-12)) && Passed;
 
   return Passed;
 }
@@ -283,6 +294,22 @@ bool UTQuaternion::TestInterpolationAndFormatting()
   MQuaternion ShortPath = Identity.GetSlerp(RotateZQuarter, SameRotationDifferentSign, 0.5);
   Passed = EvaluateTrue("GetSlerp()", "sign ambiguity", "GetSlerp handles the quaternion sign ambiguity when both endpoints represent the same rotation",
                         AreEquivalentRotations(ShortPath, RotateZQuarter, 1e-12)) && Passed;
+
+  MVector AxisA(1.0, -1.0, 2.0);
+  AxisA.Unitize();
+  MVector AxisB(-2.0, 1.0, 1.0);
+  AxisB.Unitize();
+  MQuaternion InteriorA(MRotation(0.4, AxisA));
+  MQuaternion InteriorB(MRotation(1.1, AxisB));
+  MQuaternion InteriorLerp = Identity.GetLerp(InteriorA, InteriorB, 0.35);
+  Passed = EvaluateNear("GetLerp()", "interior magnitude", "GetLerp returns a normalized representative interior interpolation", InteriorLerp.GetMagnitude(), 1.0, 1e-12) && Passed;
+  Passed = EvaluateTrue("GetLerp()", "interior interpolation", "GetLerp produces a representative interior interpolation distinct from both endpoints",
+                        AreEquivalentRotations(InteriorLerp, InteriorA, 1e-12) == false && AreEquivalentRotations(InteriorLerp, InteriorB, 1e-12) == false) && Passed;
+
+  MQuaternion InteriorSlerp = Identity.GetSlerp(InteriorA, InteriorB, 0.35);
+  Passed = EvaluateNear("GetSlerp()", "interior magnitude", "GetSlerp returns a normalized representative interior interpolation", InteriorSlerp.GetMagnitude(), 1.0, 1e-12) && Passed;
+  Passed = EvaluateTrue("GetSlerp()", "interior interpolation", "GetSlerp produces a representative interior interpolation distinct from both endpoints",
+                        AreEquivalentRotations(InteriorSlerp, InteriorA, 1e-12) == false && AreEquivalentRotations(InteriorSlerp, InteriorB, 1e-12) == false) && Passed;
 
   ostringstream Out;
   Out << MQuaternion(1.0, 2.0, 3.0, 4.0);

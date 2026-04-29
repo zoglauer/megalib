@@ -22,27 +22,6 @@ using namespace std;
 #include "MUnitTest.h"
 
 
-class UTBinnerSupport
-{
-public:
-  static int GetCanvasCount()
-  {
-    return gROOT != 0 && gROOT->GetListOfCanvases() != 0 ? gROOT->GetListOfCanvases()->GetSize() : 0;
-  }
-
-  static void CleanupCanvases(int TargetCount)
-  {
-    while (gROOT != 0 && gROOT->GetListOfCanvases() != 0 && gROOT->GetListOfCanvases()->GetSize() > TargetCount) {
-      TCanvas* Canvas = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->Last());
-      if (Canvas == 0) {
-        break;
-      }
-      delete Canvas;
-    }
-  }
-};
-
-
 //! Unit test class for MBinner
 class UTBinner : public MUnitTest
 {
@@ -51,6 +30,12 @@ public:
   virtual ~UTBinner() {}
 
   virtual bool Run();
+
+private:
+  //! Return the current number of ROOT canvases
+  static int GetCanvasCount();
+  //! Delete canvases until the requested count is reached
+  static void CleanupCanvases(int TargetCount);
 };
 
 
@@ -144,10 +129,10 @@ bool UTBinner::Run()
   {
     bool WasBatch = gROOT->IsBatch();
     gROOT->SetBatch(true);
-    int BeforeCanvases = UTBinnerSupport::GetCanvasCount();
+    int BeforeCanvases = GetCanvasCount();
     Default.DrawNormalizedHistogram("RepresentativeDraw", "Axis", "Rate");
-    Passed = Evaluate("DrawNormalizedHistogram()", "representative display", "DrawNormalizedHistogram creates a representative ROOT canvas", UTBinnerSupport::GetCanvasCount(), BeforeCanvases + 1) && Passed;
-    UTBinnerSupport::CleanupCanvases(BeforeCanvases);
+    Passed = Evaluate("DrawNormalizedHistogram()", "representative display", "DrawNormalizedHistogram creates a representative ROOT canvas", GetCanvasCount(), BeforeCanvases + 1) && Passed;
+    CleanupCanvases(BeforeCanvases);
     gROOT->SetBatch(WasBatch);
   }
 
@@ -158,6 +143,30 @@ bool UTBinner::Run()
   Summarize();
 
   return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int UTBinner::GetCanvasCount()
+{
+  return gROOT != 0 && gROOT->GetListOfCanvases() != 0 ? gROOT->GetListOfCanvases()->GetSize() : 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void UTBinner::CleanupCanvases(int TargetCount)
+{
+  while (gROOT != 0 && gROOT->GetListOfCanvases() != 0 && gROOT->GetListOfCanvases()->GetSize() > TargetCount) {
+    TCanvas* Canvas = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->Last());
+    if (Canvas == 0) {
+      break;
+    }
+    delete Canvas;
+  }
 }
 
 

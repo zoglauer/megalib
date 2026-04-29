@@ -243,9 +243,9 @@ bool UTFileEventsTra::TestOpenAndGuards()
 
   {
     MFileEventsTra File;
-    mgui.Enable(false);
+    DisableDefaultStreams();
     bool Opened = File.Open(GetTempDirectory() + "/invalid.txt");
-    mgui.Enable(true);
+    EnableDefaultStreams();
     Passed = EvaluateFalse("Open(invalid extension)", "invalid extension", "Files without tra extension are rejected", Opened) && Passed;
   }
 
@@ -273,10 +273,10 @@ bool UTFileEventsTra::TestOpenAndGuards()
     MFileEventsTra Reader;
     Passed = EvaluateTrue("Open(read)", "guards open read", "The file reopens in read mode", Reader.Open(FileName)) && Passed;
 #ifdef NDEBUG
-    __merr.Enable(false);
+    DisableDefaultStreams();
     Passed = EvaluateFalse("AddText()", "guards read add text", "AddText is rejected in read mode", Reader.AddText("CC fail\n")) && Passed;
     Passed = EvaluateFalse("AddEvent()", "guards read add event", "AddEvent is rejected in read mode", Reader.AddEvent(&Event)) && Passed;
-    __merr.Enable(true);
+    EnableDefaultStreams();
 #endif
     Reader.Close();
   }
@@ -377,7 +377,9 @@ bool UTFileEventsTra::TestIncludeFiles()
   {
     MFileEventsTra Reader;
     Passed = EvaluateTrue("Open(read)", "include reader open", "The main tra file opens in read mode", Reader.Open(MainFile)) && Passed;
+    DisableDefaultStreams();
     MPhysicalEvent* Physical = Reader.GetNextEvent();
+    EnableDefaultStreams();
     Passed = EvaluateTrue("GetNextEvent()", "include first event", "GetNextEvent follows the include-file directive and returns the child event", Physical != nullptr) && Passed;
     if (Physical != nullptr) {
       Passed = Evaluate("GetId()", "include event id", "The event id from the include file is returned", Physical->GetId(), 3L) && Passed;
@@ -482,8 +484,10 @@ bool UTFileEventsTra::TestParserModesAndThreading()
   {
     MFileEventsTra Reader;
     Passed = EvaluateTrue("Open(read threaded)", "mode threaded open", "The file opens for threaded reading", Reader.Open(FileName)) && Passed;
+    DisableDefaultStreams();
     Passed = EvaluateTrue("StartThread()", "mode start thread", "The reader thread starts successfully", Reader.StartThread()) && Passed;
     MPhysicalEvent* Physical = Reader.GetNextEvent();
+    EnableDefaultStreams();
     Passed = EvaluateTrue("GetNextEvent() threaded", "mode threaded event", "Threaded reading returns the stored event", Physical != nullptr) && Passed;
     if (Physical != nullptr) {
       Passed = Evaluate("GetId() threaded", "mode threaded id", "Threaded reading preserves the event id", Physical->GetId(), 9L) && Passed;

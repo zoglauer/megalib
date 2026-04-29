@@ -19,28 +19,6 @@
 using namespace std;
 
 
-//! Test parser exposing Parse() behavior
-class UTParser_Test : public MParser
-{
-public:
-  //! Default constructor
-  UTParser_Test(char Separator = ' ', bool AllowComposed = false) : MParser(Separator, AllowComposed), m_ParseCalls(0), m_ParseResult(true) {}
-
-  //! Number of Parse() calls
-  int m_ParseCalls;
-  //! Parse() return value
-  bool m_ParseResult;
-
-protected:
-  //! Count parse calls and return the configured result
-  virtual bool Parse()
-  {
-    ++m_ParseCalls;
-    return m_ParseResult;
-  }
-};
-
-
 //! Unit test class for the MParser helper
 class UTParser : public MUnitTest
 {
@@ -54,6 +32,27 @@ public:
   virtual bool Run();
 
 private:
+  //! Test parser exposing Parse() behavior
+  class ParserTest : public MParser
+  {
+  public:
+    //! Default constructor
+    ParserTest(char Separator = ' ', bool AllowComposed = false) : MParser(Separator, AllowComposed), m_ParseCalls(0), m_ParseResult(true) {}
+
+    //! Number of Parse() calls
+    int m_ParseCalls;
+    //! Parse() return value
+    bool m_ParseResult;
+
+  protected:
+    //! Count parse calls and return the configured result
+    virtual bool Parse()
+    {
+      ++m_ParseCalls;
+      return m_ParseResult;
+    }
+  };
+
   //! Test opening and parsing files
   bool TestOpenAndParse();
   //! Test stored line access and mutation helpers
@@ -100,28 +99,26 @@ bool UTParser::TestOpenAndParse()
     Out<<"# comment"<<endl;
   }
 
-  UTParser_Test Parser(' ', true);
+  ParserTest Parser(' ', true);
   Passed = EvaluateTrue("Open()", "read mode", "Opening a parser in read mode succeeds on valid files", Parser.Open(FileName, MFile::c_Read)) && Passed;
   Passed = EvaluateNear("Parse()", "read mode", "Parse is called exactly once during read-mode opening", Parser.m_ParseCalls, 1.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetNLines()", "read mode", "All lines are tokenized and stored during read-mode opening", Parser.GetNLines(), 3.0, 1e-12) && Passed;
 
-  UTParser_Test WriteParser(' ', true);
+  ParserTest WriteParser(' ', true);
   Passed = EvaluateTrue("Open()", "write mode", "Opening a parser in write mode succeeds", WriteParser.Open("/tmp/UTParser_write.txt", MFile::c_Write)) && Passed;
   Passed = EvaluateNear("Parse()", "write mode", "Parse is not called during write-mode opening", WriteParser.m_ParseCalls, 0.0, 1e-12) && Passed;
   Passed = EvaluateTrue("Close()", "write mode", "Write-mode parser files can be closed", WriteParser.Close()) && Passed;
 
-  UTParser_Test FailingParser(' ', true);
+  ParserTest FailingParser(' ', true);
   FailingParser.m_ParseResult = false;
-  mlog.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Open()", "parse failure", "Open returns false when Parse() fails", FailingParser.Open(FileName, MFile::c_Read)) && Passed;
-  mlog.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateNear("Parse()", "parse failure", "Parse is still invoked when it reports failure", FailingParser.m_ParseCalls, 1.0, 1e-12) && Passed;
 
-  mgui.Enable(false);
-  mlog.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Open()", "missing file", "Opening a missing parser input file fails", Parser.Open("/tmp/UTParser_missing.txt", MFile::c_Read)) && Passed;
-  mlog.Enable(true);
-  mgui.Enable(true);
+  EnableDefaultStreams();
 
   Parser.Close();
   FailingParser.Close();
@@ -148,7 +145,7 @@ bool UTParser::TestLineAccess()
     Out<<"# comment"<<endl;
   }
 
-  UTParser_Test Parser(' ', true);
+  ParserTest Parser(' ', true);
   Passed = EvaluateTrue("Open()", "line access", "Opening a parser for line access succeeds", Parser.Open(FileName, MFile::c_Read)) && Passed;
 
   Passed = Evaluate("GetLine()", "first line", "GetLine returns the original first line text", Parser.GetLine(0), MString("alpha beta")) && Passed;
@@ -183,14 +180,14 @@ bool UTParser::TestLineAccess()
   Passed = EvaluateNear("GetNLines()", "remove line", "Removing a line reduces the stored line count", Parser.GetNLines(), 3.0, 1e-12) && Passed;
   Passed = Evaluate("GetLine()", "remove line", "After removal the original second line is visible again", Parser.GetLine(1), MString("Sphere.Source value")) && Passed;
 
-  __merr.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateTrue("GetTokenizerAt()", "out of bounds", "Out-of-bounds tokenizer access returns null", Parser.GetTokenizerAt(99) == 0) && Passed;
   Passed = Evaluate("GetLine()", "out of bounds", "Out-of-bounds line access returns an empty string", Parser.GetLine(99), MString("")) && Passed;
-  __merr.Enable(true);
+  EnableDefaultStreams();
 
-  mlog.Enable(false);
+  DisableDefaultStreams();
   Parser.Typo(0, "test typo");
-  mlog.Enable(true);
+  EnableDefaultStreams();
 
   Parser.Close();
   MFile::Remove(FileName);
@@ -214,7 +211,7 @@ bool UTParser::TestStreamingHelpers()
     Out<<"Sphere.Source value"<<endl;
   }
 
-  UTParser_Test Parser(' ', true);
+  ParserTest Parser(' ', true);
   Passed = EvaluateTrue("Open()", "tokenize line", "Opening a parser for TokenizeLine() succeeds", Parser.Open(TokenFileName, MFile::c_Read)) && Passed;
 
   MTokenizer Slow;
@@ -235,7 +232,7 @@ bool UTParser::TestStreamingHelpers()
     Out<<"1.5 2.75"<<endl;
   }
 
-  UTParser_Test FloatParser;
+  ParserTest FloatParser;
   Passed = EvaluateTrue("Open()", "float streaming", "Opening a parser for GetFloat() succeeds", FloatParser.Open(FloatFileName, MFile::c_Read)) && Passed;
   float Value = 0.0F;
   Passed = EvaluateTrue("GetFloat()", "first float", "GetFloat() reads the first float token", FloatParser.GetFloat(Value)) && Passed;
@@ -253,7 +250,7 @@ bool UTParser::TestStreamingHelpers()
     Out<<"3.75"<<endl;
   }
 
-  UTParser_Test ResponseParser(' ', false);
+  ParserTest ResponseParser(' ', false);
   Passed = EvaluateTrue("Open()", "response-style streaming", "Opening a parser for response-style streaming succeeds", ResponseParser.Open(ResponseStyleFileName, MFile::c_Read)) && Passed;
   MTokenizer Header;
   Passed = EvaluateTrue("TokenizeLine()", "response-style streaming", "Fast tokenization works in response-style streaming loops", ResponseParser.TokenizeLine(Header, true)) && Passed;
@@ -288,7 +285,7 @@ bool UTParser::TestEdgeCases()
 {
   bool Passed = true;
 
-  UTParser_Test NamedParser;
+  ParserTest NamedParser;
   NamedParser.SetFileName("relative/test.par");
   Passed = Evaluate("GetFileName()", "set name", "SetFileName() updates the inherited parser file name", NamedParser.GetFileName(), MString("relative/test.par")) && Passed;
 
@@ -300,7 +297,7 @@ bool UTParser::TestEdgeCases()
     Out<<"third"<<endl;
   }
 
-  UTParser_Test EmptyParser(' ', true);
+  ParserTest EmptyParser(' ', true);
   Passed = EvaluateTrue("Open()", "empty lines", "Opening a parser with genuine empty lines succeeds", EmptyParser.Open(EmptyFileName, MFile::c_Read)) && Passed;
   Passed = EvaluateNear("GetNLines()", "empty lines", "Genuine empty lines inside the file are preserved", EmptyParser.GetNLines(), 3.0, 1e-12) && Passed;
   Passed = Evaluate("GetLine()", "empty lines", "A genuine empty line remains empty after parsing", EmptyParser.GetLine(1), MString("")) && Passed;
@@ -308,7 +305,7 @@ bool UTParser::TestEdgeCases()
   EmptyParser.Rewind();
   MTokenizer EmptyLineTokenizer;
   Passed = EvaluateTrue("TokenizeLine()", "empty line", "TokenizeLine() returns true for a real empty line inside the file", EmptyParser.TokenizeLine(EmptyLineTokenizer, false)) && Passed;
-  Passed = EvaluateNear("GetNTokens()", "empty line", "A real empty line tokenizes to zero tokens", EmptyLineTokenizer.GetNTokens(), 1.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetNTokens()", "empty line", "A real empty line currently tokenizes into one empty token", EmptyLineTokenizer.GetNTokens(), 1.0, 1e-12) && Passed;
   EmptyParser.Close();
   MFile::Remove(EmptyFileName);
 
@@ -319,7 +316,7 @@ bool UTParser::TestEdgeCases()
     Out<<"gamma delta"<<endl;
   }
 
-  UTParser_Test RewindParser(' ', true);
+  ParserTest RewindParser(' ', true);
   Passed = EvaluateTrue("Open()", "rewind", "Opening a parser for rewind testing succeeds", RewindParser.Open(RewindFileName, MFile::c_Read)) && Passed;
   MTokenizer RewindTokenizer;
   Passed = EvaluateTrue("TokenizeLine()", "rewind first pass", "The first line can be tokenized before rewinding", RewindParser.TokenizeLine(RewindTokenizer, false)) && Passed;
@@ -341,7 +338,7 @@ bool UTParser::TestEdgeCases()
     Out<<"three"<<endl;
   }
 
-  UTParser_Test ReopenParser(' ', true);
+  ParserTest ReopenParser(' ', true);
   Passed = EvaluateTrue("Open()", "reopen first", "Opening the first parser input succeeds", ReopenParser.Open(FirstFileName, MFile::c_Read)) && Passed;
   Passed = EvaluateNear("GetNLines()", "reopen first", "The first file contributes its expected line count", ReopenParser.GetNLines(), 2.0, 1e-12) && Passed;
   Passed = EvaluateTrue("Open()", "reopen second", "Reopening the same parser on a second file succeeds", ReopenParser.Open(SecondFileName, MFile::c_Read)) && Passed;
@@ -358,11 +355,11 @@ bool UTParser::TestEdgeCases()
     Out<<"second line"<<endl;
   }
 
-  UTParser_Test AddLineParser(' ', true);
+  ParserTest AddLineParser(' ', true);
   Passed = EvaluateTrue("Open()", "add line read mode", "Opening a parser in read mode for AddLine() contract testing succeeds", AddLineParser.Open(AddLineFileName, MFile::c_Read)) && Passed;
-  __merr.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateTrue("AddLine()", "read mode", "AddLine() is a read-mode helper and succeeds there", AddLineParser.AddLine("stored line")) && Passed;
-  __merr.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateNear("GetNLines()", "add line read mode", "AddLine() appends one more tokenized line in read mode", AddLineParser.GetNLines(), 3.0, 1e-12) && Passed;
   Passed = Evaluate("GetLine()", "add line read mode", "AddLine() stores the appended text at the end", AddLineParser.GetLine(2), MString("stored line")) && Passed;
   AddLineParser.Close();

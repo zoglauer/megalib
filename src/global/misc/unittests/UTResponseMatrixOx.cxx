@@ -13,20 +13,6 @@
 #include "UTResponseMatrixOrderShared.h"
 
 
-//! Test helper exposing protected MResponseMatrixOx functionality
-class UTResponseMatrixOx_Test : public MResponseMatrixO1
-{
-public:
-  UTResponseMatrixOx_Test() : MResponseMatrixO1() {}
-  virtual ~UTResponseMatrixOx_Test() {}
-
-  using MResponseMatrixOx::AreIncreasing;
-  using MResponseMatrixOx::FindBin;
-  using MResponseMatrixOx::FindBinCentered;
-  using MResponseMatrixOx::IsIncreasing;
-};
-
-
 //! Unit test class for MResponseMatrixOx
 class UTResponseMatrixOx : public MUnitTest
 {
@@ -35,6 +21,20 @@ public:
   virtual ~UTResponseMatrixOx() {}
 
   virtual bool Run();
+
+private:
+  //! Test helper exposing protected MResponseMatrixOx functionality
+  class ResponseMatrixOxTest : public MResponseMatrixO1
+  {
+  public:
+    ResponseMatrixOxTest() : MResponseMatrixO1() {}
+    virtual ~ResponseMatrixOxTest() {}
+
+    using MResponseMatrixOx::AreIncreasing;
+    using MResponseMatrixOx::FindBin;
+    using MResponseMatrixOx::FindBinCentered;
+    using MResponseMatrixOx::IsIncreasing;
+  };
 };
 
 
@@ -48,7 +48,7 @@ bool UTResponseMatrixOx::Run()
   vector<float> Increasing{0.0f, 1.0f, 2.0f};
   vector<float> NonIncreasing{0.0f, 1.0f, 1.0f};
 
-  UTResponseMatrixOx_Test Matrix;
+  ResponseMatrixOxTest Matrix;
   Passed = Evaluate("AreValuesCentered()", "default constructor", "Representative response matrices are value-centered by default", Matrix.AreValuesCentered(), true) && Passed;
   Matrix.SetValuesCenteredFlag(false);
   Passed = Evaluate("SetValuesCenteredFlag()", "representative flag", "The centered-values flag can be changed explicitly", Matrix.AreValuesCentered(), false) && Passed;
@@ -83,7 +83,7 @@ bool UTResponseMatrixOx::Run()
   Passed = EvaluateTrue("PrepareResponseMatrixTempDirectory()", "read setup", "The temporary response-matrix directory exists for the base-class read test", PrepareResponseMatrixTempDirectory()) && Passed;
   MString FileName = "/tmp/UTResponseMatrix/UTResponseMatrixOx.rsp";
   Passed = Evaluate("Write()", "base read setup", "A representative order-1 matrix can be written for the base-class read test", Matrix.Write(FileName, true), true) && Passed;
-  UTResponseMatrixOx_Test ReadBack;
+  ResponseMatrixOxTest ReadBack;
   Passed = Evaluate("Read()", "base class", "The base response-matrix read implementation initializes the representative derived matrix", ReadBack.Read(FileName), true) && Passed;
   Passed = EvaluateNear("Read()", "base class content", "The base response-matrix read implementation restores the representative first-bin content", ReadBack.GetBinContent(0), 5.0, 1e-6) && Passed;
 

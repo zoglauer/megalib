@@ -162,9 +162,9 @@ bool UTVector::TestComparisonAndArithmetic()
   MVector Divided = B / 2.0;
   Passed = EvaluateTrue("operator/", "(4,5,6) / 2", "Division scales all components", Divided.AreEqual(MVector(2.0, 2.5, 3.0), 1e-12)) && Passed;
 
-  __merr.Enable(false); // Spits out error message
+  DisableDefaultStreams();
   MVector DividedByZero = B / 0.0;
-  __merr.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateTrue("operator/", "(4,5,6) / 0", "Division by zero returns the null vector", DividedByZero.IsNull()) && Passed;
 
   MVector InPlaceScaled = A;
@@ -229,6 +229,12 @@ bool UTVector::TestGeometry()
   Spherical.SetMagThetaPhi(2.0, c_Pi/2.0, 0.0);
   Passed = EvaluateTrue("SetMagThetaPhi()", "r=2, theta=pi/2, phi=0", "SetMagThetaPhi converts spherical coordinates", Spherical.AreEqual(MVector(2.0, 0.0, 0.0), 1e-12)) && Passed;
 
+  MVector InteriorSpherical;
+  InteriorSpherical.SetMagThetaPhi(5.0, c_Pi/3.0, c_Pi/6.0);
+  Passed = EvaluateNear("SetMagThetaPhi()", "interior x", "SetMagThetaPhi converts representative interior spherical x coordinates", InteriorSpherical.X(), 3.75, 1e-12) && Passed;
+  Passed = EvaluateNear("SetMagThetaPhi()", "interior y", "SetMagThetaPhi converts representative interior spherical y coordinates", InteriorSpherical.Y(), 5.0*sqrt(3.0)/4.0, 1e-12) && Passed;
+  Passed = EvaluateNear("SetMagThetaPhi()", "interior z", "SetMagThetaPhi converts representative interior spherical z coordinates", InteriorSpherical.Z(), 2.5, 1e-12) && Passed;
+
   MVector NegativeMagnitude;
   NegativeMagnitude.SetMagThetaPhi(-2.0, c_Pi/2.0, 0.0);
   Passed = EvaluateTrue("SetMagThetaPhi()", "negative magnitude", "SetMagThetaPhi uses the absolute value of the magnitude", NegativeMagnitude.AreEqual(MVector(2.0, 0.0, 0.0), 1e-12)) && Passed;
@@ -241,9 +247,21 @@ bool UTVector::TestGeometry()
   SetTheta.SetTheta(c_Pi/2.0);
   Passed = EvaluateTrue("SetTheta()", "(0,0,1) -> theta=pi/2", "SetTheta preserves magnitude and phi", SetTheta.AreEqual(MVector(1.0, 0.0, 0.0), 1e-12)) && Passed;
 
+  MVector InteriorSetTheta(1.0, 1.0, sqrt(2.0));
+  InteriorSetTheta.SetTheta(c_Pi/3.0);
+  Passed = EvaluateNear("SetTheta()", "interior magnitude", "SetTheta preserves the representative interior vector magnitude", InteriorSetTheta.Mag(), 2.0, 1e-12) && Passed;
+  Passed = EvaluateNear("SetTheta()", "interior phi", "SetTheta preserves the representative interior vector phi", InteriorSetTheta.Phi(), c_Pi/4.0, 1e-12) && Passed;
+  Passed = EvaluateNear("SetTheta()", "interior theta", "SetTheta updates the representative interior vector theta", InteriorSetTheta.Theta(), c_Pi/3.0, 1e-12) && Passed;
+
   MVector SetPhi(1.0, 0.0, 0.0);
   SetPhi.SetPhi(c_Pi/2.0);
   Passed = EvaluateTrue("SetPhi()", "(1,0,0) -> phi=pi/2", "SetPhi preserves magnitude and theta", SetPhi.AreEqual(MVector(0.0, 1.0, 0.0), 1e-12)) && Passed;
+
+  MVector InteriorSetPhi(1.0, 1.0, 1.0);
+  InteriorSetPhi.SetPhi(c_Pi/3.0);
+  Passed = EvaluateNear("SetPhi()", "interior magnitude", "SetPhi preserves the representative interior vector magnitude", InteriorSetPhi.Mag(), sqrt(3.0), 1e-12) && Passed;
+  Passed = EvaluateNear("SetPhi()", "interior theta", "SetPhi preserves the representative interior vector theta", InteriorSetPhi.Theta(), acos(1.0/sqrt(3.0)), 1e-12) && Passed;
+  Passed = EvaluateNear("SetPhi()", "interior phi", "SetPhi updates the representative interior vector phi", InteriorSetPhi.Phi(), c_Pi/3.0, 1e-12) && Passed;
 
   Passed = EvaluateNear("Angle()", "x vs y", "Angle returns pi/2 for orthogonal vectors", MVector(1.0, 0.0, 0.0).Angle(MVector(0.0, 1.0, 0.0)), c_Pi/2.0, 1e-12) && Passed;
   Passed = EvaluateNear("Angle()", "x vs x", "Angle returns zero for identical directions", MVector(1.0, 0.0, 0.0).Angle(MVector(1.0, 0.0, 0.0)), 0.0, 1e-12) && Passed;
@@ -269,26 +287,58 @@ bool UTVector::TestRotationsAndRelations()
   RotateZ.RotateZ(c_Pi/2.0);
   Passed = EvaluateTrue("RotateZ()", "(1,0,0) by pi/2", "RotateZ performs the expected planar rotation", RotateZ.AreEqual(MVector(0.0, 1.0, 0.0), 1e-12)) && Passed;
 
+  MVector RotateZInterior(2.0, 1.0, -3.0);
+  RotateZInterior.RotateZ(c_Pi/6.0);
+  Passed = EvaluateTrue("RotateZ()", "interior vector", "RotateZ performs the expected representative interior planar rotation",
+                        RotateZInterior.AreEqual(MVector(2.0*cos(c_Pi/6.0) - sin(c_Pi/6.0),
+                                                       2.0*sin(c_Pi/6.0) + cos(c_Pi/6.0),
+                                                       -3.0), 1e-12)) && Passed;
+
   MVector RotateY(0.0, 0.0, 1.0);
   RotateY.RotateY(c_Pi/2.0);
   Passed = EvaluateTrue("RotateY()", "(0,0,1) by pi/2", "RotateY performs the expected planar rotation", RotateY.AreEqual(MVector(1.0, 0.0, 0.0), 1e-12)) && Passed;
+
+  MVector RotateYInterior(1.0, -2.0, 3.0);
+  RotateYInterior.RotateY(c_Pi/4.0);
+  Passed = EvaluateTrue("RotateY()", "interior vector", "RotateY performs the expected representative interior planar rotation",
+                        RotateYInterior.AreEqual(MVector(cos(c_Pi/4.0) + 3.0*sin(c_Pi/4.0),
+                                                       -2.0,
+                                                       -sin(c_Pi/4.0) + 3.0*cos(c_Pi/4.0)), 1e-12)) && Passed;
 
   MVector RotateX(0.0, 1.0, 0.0);
   RotateX.RotateX(c_Pi/2.0);
   Passed = EvaluateTrue("RotateX()", "(0,1,0) by pi/2", "RotateX performs the expected planar rotation", RotateX.AreEqual(MVector(0.0, 0.0, 1.0), 1e-12)) && Passed;
 
+  MVector RotateXInterior(-1.0, 2.0, 3.0);
+  RotateXInterior.RotateX(c_Pi/3.0);
+  Passed = EvaluateTrue("RotateX()", "interior vector", "RotateX performs the expected representative interior planar rotation",
+                        RotateXInterior.AreEqual(MVector(-1.0,
+                                                       2.0*cos(c_Pi/3.0) - 3.0*sin(c_Pi/3.0),
+                                                       2.0*sin(c_Pi/3.0) + 3.0*cos(c_Pi/3.0)), 1e-12)) && Passed;
+
   MVector AroundAxis(1.0, 0.0, 0.0);
   AroundAxis.RotateAroundVector(MVector(0.0, 0.0, 1.0), c_Pi/2.0);
   Passed = EvaluateTrue("RotateAroundVector()", "x around z by pi/2", "RotateAroundVector rotates around the given axis", AroundAxis.AreEqual(MVector(0.0, 1.0, 0.0), 1e-12)) && Passed;
+
+  MVector AroundOwnAxis(1.0, 2.0, 3.0);
+  MVector OwnAxis = AroundOwnAxis.Unit();
+  AroundOwnAxis.RotateAroundVector(OwnAxis, c_Pi/5.0);
+  Passed = EvaluateTrue("RotateAroundVector()", "around own axis", "RotateAroundVector keeps a representative interior vector unchanged when rotating around itself", AroundOwnAxis.AreEqual(MVector(1.0, 2.0, 3.0), 1e-12)) && Passed;
 
   MVector Reference(0.0, 0.0, 1.0);
   Reference.RotateReferenceFrame(MVector(1.0, 0.0, 0.0));
   Passed = EvaluateTrue("RotateReferenceFrame()", "z into x frame", "RotateReferenceFrame aligns z with the target direction", Reference.AreEqual(MVector(1.0, 0.0, 0.0), 1e-12)) && Passed;
 
+  MVector ReferenceInterior(0.0, 0.0, 1.0);
+  MVector TargetInterior(1.0, 2.0, 2.0);
+  ReferenceInterior.RotateReferenceFrame(TargetInterior);
+  Passed = EvaluateTrue("RotateReferenceFrame()", "interior target", "RotateReferenceFrame maps z onto the representative interior target direction it is given",
+                        ReferenceInterior.AreEqual(TargetInterior, 1e-12)) && Passed;
+
   Passed = EvaluateTrue("Coplanar()", "z=0 plane", "Coplanar accepts vectors in the same plane", MVector(0.25, 0.25, 0.0).Coplanar(MVector(0.0, 0.0, 0.0), MVector(1.0, 0.0, 0.0), MVector(0.0, 1.0, 0.0))) && Passed;
-  mout.Enable(false); // Spits out error message
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Coplanar()", "non-planar point", "Coplanar rejects vectors outside the plane", MVector(0.0, 0.0, 1.0).Coplanar(MVector(0.0, 0.0, 0.0), MVector(1.0, 0.0, 0.0), MVector(0.0, 1.0, 0.0))) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   Passed = EvaluateNear("DistanceToLine()", "point to x-axis", "DistanceToLine returns the perpendicular distance", MVector(0.0, 1.0, 0.0).DistanceToLine(MVector(0.0, 0.0, 0.0), MVector(1.0, 0.0, 0.0)), 1.0, 1e-12) && Passed;
 

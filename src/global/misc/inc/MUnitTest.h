@@ -130,6 +130,8 @@ class MUnitTest
   
   //! Summarize the test run
   void Summarize();
+  //! Run a child process with one argument and optionally redirect its output to a file
+  static int RunChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName = "");
   
   // protected methods:
  protected:

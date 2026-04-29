@@ -21,18 +21,6 @@ using namespace std;
 #include "MXmlDocument.h"
 
 
-//! Test helper exposing protected MSettingsBasicFiles functionality
-class UTSettingsBasicFiles_Test : public MSettingsBasicFiles
-{
-public:
-  UTSettingsBasicFiles_Test() : MSettingsBasicFiles() {}
-  virtual ~UTSettingsBasicFiles_Test() {}
-
-  bool TestReadXml(MXmlNode* Node) { return ReadXml(Node); }
-  bool TestWriteXml(MXmlNode* Node) { return WriteXml(Node); }
-};
-
-
 //! Unit test class for MSettingsBasicFiles
 class UTSettingsBasicFiles : public MUnitTest
 {
@@ -43,6 +31,17 @@ public:
   virtual bool Run();
 
 private:
+  //! Test helper exposing protected MSettingsBasicFiles functionality
+  class SettingsBasicFilesTest : public MSettingsBasicFiles
+  {
+  public:
+    SettingsBasicFilesTest() : MSettingsBasicFiles() {}
+    virtual ~SettingsBasicFilesTest() {}
+
+    bool TestReadXml(MXmlNode* Node) { return ReadXml(Node); }
+    bool TestWriteXml(MXmlNode* Node) { return WriteXml(Node); }
+  };
+
   bool PrepareTempDirectory() const;
   bool WriteTextFile(const MString& FileName, const MString& Content) const;
 
@@ -105,7 +104,7 @@ bool UTSettingsBasicFiles::TestDefaultsAndSetters()
 
   Passed = EvaluateTrue("PrepareTempDirectory()", "defaults temp dir", "The temporary directory for settings-basic-files tests can be created", PrepareTempDirectory()) && Passed;
 
-  UTSettingsBasicFiles_Test Settings;
+  SettingsBasicFilesTest Settings;
   Passed = Evaluate("GetCurrentFileName()", "default", "The default current file name is empty", Settings.GetCurrentFileName(), MString("")) && Passed;
   Passed = Evaluate("GetGeometryFileName()", "default", "The default geometry file name uses the MEGAlib dummy geometry", Settings.GetGeometryFileName(), MString("$(MEGALIB)/resource/examples/geomega/special/Dummy.geo.setup")) && Passed;
   Passed = Evaluate("GetNFileHistories()", "default", "The default file history is empty", Settings.GetNFileHistories(), 0U) && Passed;
@@ -141,7 +140,7 @@ bool UTSettingsBasicFiles::TestHistories()
 {
   bool Passed = true;
 
-  UTSettingsBasicFiles_Test Settings;
+  SettingsBasicFilesTest Settings;
 
   Settings.AddFileHistory(g_StringNotDefined);
   Passed = Evaluate("GetNFileHistories()", "ignore undefined", "AddFileHistory ignores the undefined sentinel", Settings.GetNFileHistories(), 0U) && Passed;
@@ -199,7 +198,7 @@ bool UTSettingsBasicFiles::TestXmlRoundTrip()
   Passed = EvaluateTrue("WriteTextFile()", "xml old data file", "The representative old data file can be written", WriteTextFile(OldDataFile, "olddata")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "xml old geometry file", "The representative old geometry file can be written", WriteTextFile(OldGeometryFile, "oldgeometry")) && Passed;
 
-  UTSettingsBasicFiles_Test Settings;
+  SettingsBasicFilesTest Settings;
   Settings.SetCurrentFileName(DataFile);
   Settings.SetGeometryFileName(GeometryFile);
   Settings.AddFileHistory(OldDataFile);
@@ -222,7 +221,7 @@ bool UTSettingsBasicFiles::TestXmlRoundTrip()
   new MXmlNode(GeometryHistory, "GeometryFileHistoryItem", GeometryFile);
   new MXmlNode(GeometryHistory, "GeometryFileHistoryItem", "/tmp/UTSettingsBasicFiles/does_not_exist.geo.setup");
 
-  UTSettingsBasicFiles_Test ReadBack;
+  SettingsBasicFilesTest ReadBack;
   Passed = Evaluate("ReadXml()", "direct xml", "ReadXml accepts a representative XML document", ReadBack.TestReadXml(&ReadDocument), true) && Passed;
   Passed = Evaluate("GetCurrentFileName()", "direct xml", "ReadXml restores the representative current data file name", ReadBack.GetCurrentFileName(), DataFile) && Passed;
   Passed = Evaluate("GetGeometryFileName()", "direct xml", "ReadXml restores the representative geometry file name", ReadBack.GetGeometryFileName(), GeometryFile) && Passed;
@@ -243,7 +242,7 @@ bool UTSettingsBasicFiles::TestHistoryBounds()
   bool Passed = true;
 
   {
-    UTSettingsBasicFiles_Test Settings;
+    SettingsBasicFilesTest Settings;
     MString ExceptionText = "";
     try {
       Settings.GetFileHistoryAt(0);
@@ -254,7 +253,7 @@ bool UTSettingsBasicFiles::TestHistoryBounds()
   }
 
   {
-    UTSettingsBasicFiles_Test Settings;
+    SettingsBasicFilesTest Settings;
     MString ExceptionText = "";
     try {
       Settings.GetGeometryHistoryAt(0);

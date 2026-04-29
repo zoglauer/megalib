@@ -120,9 +120,9 @@ bool UTComptonEvent::TestBasics()
   Passed = EvaluateNear("ComputePhiViaEeEg()", "phi=1.0/Eg=500", "The phi/Eg helper round-trips through the inverse relation", MComptonEvent::ComputePhiViaEeEg(MComptonEvent::ComputeEeViaPhiEg(1.0, 500.0), 500.0), 1.0, 1e-12) && Passed;
   Passed = EvaluateNear("ComputeEeViaPhiEi()", "phi=1.0/Ei=600", "The Ee-via-Ei helper returns the expected energy", MComptonEvent::ComputeEeViaPhiEi(1.0, 600.0), 210.32977200995623, 1e-12) && Passed;
   Passed = EvaluateNear("ComputePhiViaEeEg()", "phi=1.0/Ei=600", "The phi/Ei helper round-trips through the inverse relation", MComptonEvent::ComputePhiViaEeEg(MComptonEvent::ComputeEeViaPhiEi(1.0, 600.0), 600.0 - MComptonEvent::ComputeEeViaPhiEi(1.0, 600.0)), 1.0, 1e-12) && Passed;
-  __merr.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateNear("ComputeEgViaThetaEe()", "theta=1.0/Ee=1000", "The Eg helper returns the expected energy", MComptonEvent::ComputeEgViaThetaEe(1.0, 1000.0), 2205.372267724561, 1e-9) && Passed;
-  __merr.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateNear("ComputeEeViaThetaEg()", "theta=1.2/Ee=200", "The Ee helper returns the expected energy", MComptonEvent::ComputeEeViaThetaEg(1.2, 4898.857707326749), 200.0, 1e-12) && Passed;
   Passed = EvaluateNear("ComputeEgViaThetaEe()", "theta=1.2/Ee=200", "The inverse helper returns the expected gamma energy", MComptonEvent::ComputeEgViaThetaEe(1.2, 200.0), 4898.857707326749, 1e-9) && Passed;
   Passed = Evaluate("ComputeEeViaThetaEg()", "no solution", "The helper returns the sentinel when no solution exists", MComptonEvent::ComputeEeViaThetaEg(1.2, 500.0), 9.99E+99) && Passed;
@@ -270,11 +270,25 @@ bool UTComptonEvent::TestAssimilation()
   Passed = EvaluateNear("HitEvent.FirstLeverArm()", "2 hits", "The first lever arm is the hit distance", HitEvent.FirstLeverArm(), 10.0, 1e-12) && Passed;
   Passed = EvaluateNear("HitEvent.AnyLeverArm()", "2 hits", "The lever-arm helper is populated", HitEvent.AnyLeverArm(), 10.0, 1e-12) && Passed;
 
+  vector<MPhysicalEventHit> InteriorHits;
+  MPhysicalEventHit InteriorHit1;
+  InteriorHit1.Set(MVector(-1.5, 2.25, 0.75), MVector(0.05, 0.06, 0.07), 87.5, 0.8, MTime(1.25), MTime(0.005));
+  InteriorHits.push_back(InteriorHit1);
+  MPhysicalEventHit InteriorHit2;
+  InteriorHit2.Set(MVector(3.0, -0.5, 4.25), MVector(0.08, 0.09, 0.1), 143.25, 1.1, MTime(2.75), MTime(0.007));
+  InteriorHits.push_back(InteriorHit2);
+
+  MComptonEvent InteriorHitEvent;
+  Passed = EvaluateTrue("Assimilate(vector<hit>)", "interior hits", "A Compton event can be assimilated from a representative non-axis hit pair", InteriorHitEvent.Assimilate(InteriorHits)) && Passed;
+  Passed = Evaluate("InteriorHitEvent.GetEnergy()", "interior hits", "Interior hit assimilation preserves the summed energy", InteriorHitEvent.GetEnergy(), 230.75) && Passed;
+  Passed = Evaluate("InteriorHitEvent.GetPosition()", "interior hits", "Interior hit assimilation preserves the first interaction position", InteriorHitEvent.GetPosition(), InteriorHit1.GetPosition()) && Passed;
+  Passed = EvaluateNear("InteriorHitEvent.FirstLeverArm()", "interior hits", "Interior hit assimilation preserves the non-axis lever arm", InteriorHitEvent.FirstLeverArm(), (InteriorHit2.GetPosition() - InteriorHit1.GetPosition()).Mag(), 1e-12) && Passed;
+
   MComptonEvent TooFewHits;
   vector<MPhysicalEventHit> OneHit(1, Hit1);
-  __merr.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Assimilate(vector<hit>)", "1 hit", "At least two hits are required", TooFewHits.Assimilate(OneHit)) && Passed;
-  __merr.Enable(true);
+  EnableDefaultStreams();
 
   MComptonEvent LineEvent;
   string Basic = "C;1;2;3;4;5;6;0;0;1;100;500;1;2\n";
@@ -284,6 +298,15 @@ bool UTComptonEvent::TestAssimilation()
   Passed = Evaluate("LineEvent.C1()", "basic line", "The line representation preserves the first interaction", LineEvent.C1(), MVector(1.0, 2.0, 3.0)) && Passed;
   Passed = Evaluate("LineEvent.C2()", "basic line", "The line representation preserves the second interaction", LineEvent.C2(), MVector(4.0, 5.0, 6.0)) && Passed;
   Passed = Evaluate("LineEvent.GetEnergy()", "basic line", "The line representation preserves the total energy", LineEvent.GetEnergy(), 600.0) && Passed;
+
+  MComptonEvent InteriorLineEvent;
+  string InteriorLine = "C;-1.5;2.25;0.75;3.0;-0.5;4.25;0.2;-0.7;0.68;87.5;143.25;1.5;3.5\n";
+  vector<char> InteriorBuffer(InteriorLine.begin(), InteriorLine.end());
+  InteriorBuffer.push_back('\0');
+  Passed = EvaluateTrue("Assimilate(char*)", "interior line", "The compact C-line representation also round-trips representative non-axis coordinates", InteriorLineEvent.Assimilate(InteriorBuffer.data())) && Passed;
+  Passed = Evaluate("InteriorLineEvent.C1()", "interior line", "The interior line preserves the first interaction", InteriorLineEvent.C1(), MVector(-1.5, 2.25, 0.75)) && Passed;
+  Passed = Evaluate("InteriorLineEvent.C2()", "interior line", "The interior line preserves the second interaction", InteriorLineEvent.C2(), MVector(3.0, -0.5, 4.25)) && Passed;
+  Passed = Evaluate("InteriorLineEvent.GetEnergy()", "interior line", "The interior line preserves the total energy", InteriorLineEvent.GetEnergy(), 230.75) && Passed;
 
   return Passed;
 }

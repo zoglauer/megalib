@@ -104,7 +104,7 @@ MJulianDay::MJulianDay(int Year, int Month, int Day, int Hour,
                        int Minute, int Second, int NanoSecond)
 {
   if (CalculateJD(Year, Month, Day, Hour, Minute, Second, NanoSecond) == false) {
-    Warning("MJulianDay:::MJulianDay", "Invalid date! Setting date to zero!");
+    mout<<"MJulianDay:::MJulianDay: Invalid date! Setting date to zero!"<<endl;
     SetJulianDay(0.0, 0.0);
   }
 }
@@ -147,36 +147,29 @@ bool MJulianDay::CalculateJD(int Year, int Month, int Day,
     throw MExceptionParameterOutOfRange(Month, 1, 12, "UTCMonth");
   }
   if (Day <= 0) {
-    Warning("MJulianDay::SetJD", 
-            "No valid day: %d (allowed: 0..31)", Day);
+    mout<<"MJulianDay::SetJD: No valid day: "<<Day<<" (allowed: 0..31)"<<endl;
     return false;
   }
   if (Day > 28 && Day < 32) {
-    Warning("MJulianDay::SetJD", 
-            "No maximum allowed day check for days 28, 29, 30, 31!");
+    mout<<"MJulianDay::SetJD: No maximum allowed day check for days 28, 29, 30, 31!"<<endl;
   }
   if (Day > 31) {
-    Warning("MJulianDay::SetJD", 
-            "No valid day: %d (allowed: 0..31)", Day);
+    mout<<"MJulianDay::SetJD: No valid day: "<<Day<<" (allowed: 0..31)"<<endl;
   }
   if (Hour < 0 || Hour > 23) {
-    Warning("MJulianDay::SetJD", 
-            "No valid hour: %d (allowed: 0..23)", Hour);
+    mout<<"MJulianDay::SetJD: No valid hour: "<<Hour<<" (allowed: 0..23)"<<endl;
     return false;
   }
   if (Minute < 0 || Minute > 59) {
-    Warning("MJulianDay::SetJD", 
-            "No valid minute: %d (allowed: 0..59)", Minute);
+    mout<<"MJulianDay::SetJD: No valid minute: "<<Minute<<" (allowed: 0..59)"<<endl;
     return false;
   }
   if (Second < 0 || Second > 59) {
-    Warning("MJulianDay::SetJD", 
-            "No valid second: %d (allowed: 0..59)", Second);
+    mout<<"MJulianDay::SetJD: No valid second: "<<Second<<" (allowed: 0..59)"<<endl;
     return false;
   }
   if (NanoSecond < 0 || NanoSecond > 999999999) {
-    Warning("MJulianDay::SetJD", 
-            "No valid microsecond: %d (allowed: 0..999999999)", NanoSecond);
+    mout<<"MJulianDay::SetJD: No valid microsecond: "<<NanoSecond<<" (allowed: 0..999999999)"<<endl;
     return false;
   }
 

@@ -95,6 +95,9 @@ bool UTFile::TestStaticHelpers()
   Passed = Evaluate("GetBaseName()", "root path", "GetBaseName keeps the root path unchanged", MFile::GetBaseName("/"), MString("/")) && Passed;
   Passed = Evaluate("RelativeFileName()", "same directory", "RelativeFileName returns a same-directory relative path", MFile::RelativeFileName("/tmp/test/sub/file.tra", "/tmp/test/base.tra"), MString("./sub/file.tra")) && Passed;
   Passed = Evaluate("RelativeFileName()", "parent directory", "RelativeFileName adds parent traversals when needed", MFile::RelativeFileName("/tmp/other/file.tra", "/tmp/test/base.tra"), MString("../other/file.tra")) && Passed;
+  Passed = Evaluate("RelativeFileName()", "nested sibling directory", "RelativeFileName handles representative nested sibling directory traversals", MFile::RelativeFileName("/tmp/project/results/run42/output.tra", "/tmp/project/configs/main/source.cfg"), MString("../../results/run42/output.tra")) && Passed;
+  Passed = Evaluate("GetDirectoryName()", "nested file", "GetDirectoryName preserves representative nested directory structures", MFile::GetDirectoryName("/tmp/project/results/run42/output.tra"), MString("/tmp/project/results/run42")) && Passed;
+  Passed = Evaluate("GetBaseName()", "nested file", "GetBaseName extracts representative nested file names", MFile::GetBaseName("/tmp/project/results/run42/output.tra"), MString("output.tra")) && Passed;
 
   Passed = EvaluateTrue("ProgramExists()", "existing program", "ProgramExists finds shell programs on PATH", MFile::ProgramExists("sh")) && Passed;
   Passed = EvaluateFalse("ProgramExists()", "missing program", "ProgramExists returns false for missing programs", MFile::ProgramExists("definitely_not_a_real_megalib_test_program")) && Passed;
@@ -108,12 +111,10 @@ bool UTFile::TestStaticHelpers()
   Passed = EvaluateTrue("Remove()", "existing file", "Remove deletes existing files", MFile::Remove(TemporaryFile)) && Passed;
   Passed = EvaluateFalse("Exists()", "removed file", "Removed files no longer exist", MFile::Exists(TemporaryFile)) && Passed;
 
-  mout.Enable(false);
-  mgui.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Exists()", "empty file name", "Empty file names are rejected", MFile::Exists("")) && Passed;
   Passed = EvaluateFalse("Remove()", "directory path", "Directories are not removed through MFile::Remove", MFile::Remove("/tmp/")) && Passed;
-  mgui.Enable(true);
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   return Passed;
 }
@@ -157,6 +158,7 @@ bool UTFile::TestAsciiIO()
   Passed = EvaluateTrue("Open()", "ascii read", "ASCII files can be reopened for reading", File.Open(FileName, MFile::c_Read, false)) && Passed;
   Passed = EvaluateTrue("CheckFileExtension()", "matching extension", "The file extension check is case-insensitive", File.CheckFileExtension("TXT")) && Passed;
   Passed = EvaluateFalse("CheckFileExtension()", "non-matching extension", "The file extension check rejects non-matching extensions", File.CheckFileExtension("tra")) && Passed;
+  Passed = EvaluateTrue("CheckFileExtension()", "multi-dot extension", "The file extension check still finds the representative trailing extension after multiple dots", File.CheckFileExtension("txt")) && Passed;
   Passed = EvaluateNear("GetFileLength()", "ascii length", "ASCII file length is tracked correctly", File.GetFileLength(), 17.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetUncompressedFileLength()", "ascii length", "Uncompressed ASCII file length matches the on-disk length", File.GetUncompressedFileLength(), 17.0, 1e-12) && Passed;
 
@@ -190,6 +192,11 @@ bool UTFile::TestAsciiIO()
   Passed = EvaluateNear("GetFilePosition()", "seek current", "Seek(offset, cur) moves relative to the current position", File.GetFilePosition(), 6.0, 1e-12) && Passed;
   Passed = EvaluateTrue("ReadLine(MString)", "seek current", "ReadLine(MString) works after current-relative seeking", File.ReadLine(Line)) && Passed;
   Passed = Evaluate("ReadLine(MString)", "seek current", "Current-relative seeking lands on the expected line", Line, MString("beta")) && Passed;
+
+  Passed = EvaluateTrue("Rewind()", "ascii seek repeated", "Rewind resets the file before repeated representative seek/read cycles", File.Rewind()) && Passed;
+  File.Seek(static_cast<streampos>(0));
+  Passed = EvaluateTrue("ReadLine(MString)", "seek zero", "Seeking to the beginning explicitly still allows reading the first representative line", File.ReadLine(Line)) && Passed;
+  Passed = Evaluate("ReadLine(MString)", "seek zero", "Seeking to the beginning explicitly lands on the expected first line", Line, MString("alpha")) && Passed;
 
   Passed = EvaluateTrue("Rewind()", "ascii read", "Rewind resets the file before end-relative seeks", File.Rewind()) && Passed;
   File.Seek(-6, ios_base::end);
@@ -272,9 +279,9 @@ bool UTFile::TestAsciiIO()
   Passed = EvaluateTrue("IsGood()", "empty file", "Clearing an empty file resets the stream state flags", EmptyFile.IsGood()) && Passed;
   Passed = EvaluateTrue("Close()", "empty file read", "Empty files can be closed after reading", EmptyFile.Close()) && Passed;
 
-  mgui.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Open()", "missing file", "Opening a missing file for reading fails", File.Open("/tmp/UTFile_missing.txt", MFile::c_Read, false)) && Passed;
-  mgui.Enable(true);
+  EnableDefaultStreams();
 
   MFile::Remove(FileName);
   MFile::Remove(FloatFileName);
@@ -367,6 +374,8 @@ bool UTFile::TestGzipIO()
   Passed = Evaluate("ReadLine(MString)", "gzip second line", "The second gzip line round-trips correctly", Line, MString("beta")) && Passed;
   Passed = EvaluateTrue("ReadLine(MString)", "gzip third line", "ReadLine(MString) can read the third gzip line", File.ReadLine(Line)) && Passed;
   Passed = Evaluate("ReadLine(MString)", "gzip third line", "The third gzip line round-trips correctly", Line, MString("3.5")) && Passed;
+  Passed = EvaluateTrue("GetCompressedFilePosition()", "gzip interior position", "Representative gzip reads advance the compressed file position", File.GetFilePosition() > 0.0) && Passed;
+  Passed = EvaluateTrue("GetUncompressedFilePosition()", "gzip interior position", "Representative gzip reads advance the uncompressed file position", File.GetUncompressedFilePosition() > 0.0) && Passed;
 
   Passed = EvaluateTrue("Rewind()", "gzip read", "Gzip files can be rewound", File.Rewind()) && Passed;
   Passed = EvaluateNear("GetFilePosition()", "gzip rewind", "Compressed file position resets near the beginning after rewind", File.GetFilePosition(), 0.0, 1e-12) && Passed;

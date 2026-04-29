@@ -132,6 +132,26 @@ bool UTPETEvent::TestBasics()
   Passed = Evaluate("GetPositionResolution1()", "PET valid", "The first PET position resolution is stored", Event.GetPositionResolution1(), MVector(0.1, 0.2, 0.3)) && Passed;
   Passed = Evaluate("GetPositionResolution2()", "PET valid", "The second PET position resolution is stored", Event.GetPositionResolution2(), MVector(0.4, 0.5, 0.6)) && Passed;
 
+  MPETEvent Interior;
+  Interior.SetEnergy1(300.5);
+  Interior.SetEnergyResolution1(3.25);
+  Interior.SetPosition1(MVector(-1.5, 2.25, 0.75));
+  Interior.SetPositionResolution1(MVector(0.12, 0.23, 0.34));
+  Interior.SetTiming1(1.234);
+  Interior.SetTimingResolution1(0.015);
+  Interior.SetEnergy2(455.25);
+  Interior.SetEnergyResolution2(4.75);
+  Interior.SetPosition2(MVector(3.5, -4.25, 1.125));
+  Interior.SetPositionResolution2(MVector(0.21, 0.32, 0.43));
+  Interior.SetTiming2(2.468);
+  Interior.SetTimingResolution2(0.025);
+  Passed = EvaluateTrue("Validate()", "PET interior", "Representative interior PET inputs validate successfully", Interior.Validate()) && Passed;
+  Passed = Evaluate("GetEnergy()", "PET interior", "Interior PET energies still sum correctly", Interior.GetEnergy(), 755.75) && Passed;
+  Passed = Evaluate("GetPosition1()", "PET interior", "Interior first PET hit positions are stored exactly", Interior.GetPosition1(), MVector(-1.5, 2.25, 0.75)) && Passed;
+  Passed = Evaluate("GetPosition2()", "PET interior", "Interior second PET hit positions are stored exactly", Interior.GetPosition2(), MVector(3.5, -4.25, 1.125)) && Passed;
+  Passed = Evaluate("GetTiming1()", "PET interior", "Interior first PET timings are stored exactly", Interior.GetTiming1(), 1.234) && Passed;
+  Passed = Evaluate("GetTiming2()", "PET interior", "Interior second PET timings are stored exactly", Interior.GetTiming2(), 2.468) && Passed;
+
   MPhysicalEvent* Duplicate = Event.Duplicate();
   Passed = Evaluate("Duplicate()->GetEnergy()", "PET duplicate", "Duplicate preserves the PET energy", Duplicate->GetEnergy(), Event.GetEnergy()) && Passed;
   Passed = Evaluate("Duplicate()->GetType()", "PET duplicate", "Duplicate preserves the PET type", Duplicate->GetType(), Event.GetType()) && Passed;
@@ -192,6 +212,7 @@ bool UTPETEvent::TestCopyAndStream()
   delete Generic;
 
   Passed = EvaluateNear("GetResolutionMeasure()", "PET", "A point on the detector line has zero resolution measure", Event.GetResolutionMeasure(MVector(2.0, 3.0, 4.0)), 0.0, 1e-12) && Passed;
+  Passed = EvaluateTrue("GetResolutionMeasure()", "PET off line", "A representative point away from the detector line has a positive resolution measure", Event.GetResolutionMeasure(MVector(2.0, 3.5, 4.0)) > 0.0) && Passed;
 
   MFile File;
   MString FileName = "/tmp/UTPETEvent.tra";
@@ -243,9 +264,9 @@ bool UTPETEvent::TestHelpers()
   Passed = Evaluate("Data()", "reset", "Data() still returns the concrete pointer after reset", Event.Data(), dynamic_cast<MPhysicalEvent*>(&Event)) && Passed;
   Passed = Evaluate("GetEnergy()", "reset", "Reset clears the PET energies", Event.GetEnergy(), 0.0) && Passed;
 
-  __merr.Enable(false);
+  DisableDefaultStreams();
   Passed = Evaluate("GetResolutionMeasure()", "reject", "The galactic coordinate-system rejection returns the undefined value", Event.GetResolutionMeasure(MVector(1.0, 2.0, 3.0), MCoordinateSystem::c_Galactic), g_DoubleNotDefined) && Passed;
-  __merr.Enable(true);
+  EnableDefaultStreams();
 
   return Passed;
 }
@@ -299,7 +320,5 @@ bool UTPETEvent::TestRoundTrips()
 int main()
 {
   UTPETEvent Test;
-  Test.Run();
-
-  return 0;
+  return Test.Run() == true ? 0 : 1;
 }

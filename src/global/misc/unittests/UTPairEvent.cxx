@@ -131,6 +131,24 @@ bool UTPairEvent::TestBasics()
   Passed = Evaluate("Duplicate()->GetType()", "pair", "Duplicate preserves the pair type", Duplicate->GetType(), Event.GetType()) && Passed;
   delete Duplicate;
 
+  MPairEvent Interior;
+  Interior.SetPairCreationIA(MVector(-1.25, 2.5, 0.75));
+  Interior.SetElectronDirection(MVector(0.2, 0.7, -0.1));
+  Interior.SetPositronDirection(MVector(-0.4, 0.3, 0.5));
+  Interior.SetEnergyElectron(234.5);
+  Interior.SetEnergyErrorElectron(2.25);
+  Interior.SetEnergyPositron(345.75);
+  Interior.SetEnergyErrorPositron(3.5);
+  Interior.SetInitialEnergyDeposit(18.125);
+  Interior.SetTrackQualityFactor(0.625);
+  Passed = EvaluateTrue("Validate()", "pair interior", "Representative interior pair events validate successfully", Interior.Validate()) && Passed;
+  Passed = Evaluate("GetEnergy()", "pair interior", "Representative interior pair energies still sum correctly", Interior.GetEnergy(), 580.25) && Passed;
+  Passed = Evaluate("GetPosition()", "pair interior", "Representative interior pair creation points are stored exactly", Interior.GetPosition(), MVector(-1.25, 2.5, 0.75)) && Passed;
+  Passed = Evaluate("GetEnergyElectron()", "pair interior", "Representative interior electron energies are stored exactly", Interior.GetEnergyElectron(), 234.5) && Passed;
+  Passed = Evaluate("GetEnergyPositron()", "pair interior", "Representative interior positron energies are stored exactly", Interior.GetEnergyPositron(), 345.75) && Passed;
+  Passed = EvaluateTrue("GetOpeningAngle()", "pair interior", "Representative interior pair directions produce a nontrivial positive opening angle", Interior.GetOpeningAngle() > 0.0 && Interior.GetOpeningAngle() < c_Pi) && Passed;
+  Passed = EvaluateTrue("MostProbableDirectionIncomingGamma()", "pair interior", "The incoming gamma direction can also be estimated for representative interior directions", Interior.MostProbableDirectionIncomingGamma()) && Passed;
+
   return Passed;
 }
 
@@ -241,7 +259,5 @@ bool UTPairEvent::TestCopyAndStream()
 int main()
 {
   UTPairEvent Test;
-  Test.Run();
-
-  return 0;
+  return Test.Run() == true ? 0 : 1;
 }

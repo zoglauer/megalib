@@ -108,6 +108,13 @@ bool UTPhotoEvent::TestBasics()
   Passed = Evaluate("GetWeight()", "photo", "The photo-event weight is stored", Event.GetWeight(), 0.25) && Passed;
   Passed = EvaluateTrue("Validate()", "photo", "A positive-energy photo event validates successfully", Event.Validate()) && Passed;
 
+  MPhotoEvent Interior;
+  Passed = EvaluateTrue("Assimilate(MVector,Energy,Weight)", "photo interior", "A representative interior photo event can also be created from nontrivial inputs", Interior.Assimilate(MVector(-1.25, 2.5, 0.375), 7.75, 0.625)) && Passed;
+  Passed = Evaluate("GetEnergy()", "photo interior", "Interior photo energies are stored exactly", Interior.GetEnergy(), 7.75) && Passed;
+  Passed = Evaluate("GetPosition()", "photo interior", "Interior photo positions are stored exactly", Interior.GetPosition(), MVector(-1.25, 2.5, 0.375)) && Passed;
+  Passed = Evaluate("GetWeight()", "photo interior", "Interior photo weights are stored exactly", Interior.GetWeight(), 0.625) && Passed;
+  Passed = EvaluateTrue("Validate()", "photo interior", "Representative interior photo events validate successfully", Interior.Validate()) && Passed;
+
   MPhysicalEvent* Duplicate = Event.Duplicate();
   Passed = Evaluate("Duplicate()->GetEnergy()", "photo", "Duplicate preserves the photo energy", Duplicate->GetEnergy(), Event.GetEnergy()) && Passed;
   Passed = Evaluate("Duplicate()->GetType()", "photo", "Duplicate preserves the photo type", Duplicate->GetType(), Event.GetType()) && Passed;
@@ -246,7 +253,5 @@ bool UTPhotoEvent::TestRoundTrips()
 int main()
 {
   UTPhotoEvent Test;
-  Test.Run();
-
-  return 0;
+  return Test.Run() == true ? 0 : 1;
 }

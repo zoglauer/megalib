@@ -23,84 +23,6 @@ using namespace std;
 #include "MUnitTest.h"
 
 
-//! Test helper exposing protected MFileEvents functionality
-class UTFileEvents_Test : public MFileEvents
-{
-public:
-  //! Default constructor
-  UTFileEvents_Test()
-  {
-    SetFileType("tra");
-    SetVersion(7);
-  }
-
-  //! Default destructor
-  virtual ~UTFileEvents_Test() {}
-
-  //! Open with a recursively compatible include helper
-  virtual bool Open(MString FileName, unsigned int Way, bool IsBinary)
-  {
-    if (m_IncludeFile != nullptr) {
-      delete m_IncludeFile;
-      m_IncludeFile = nullptr;
-    }
-
-    UTFileEvents_Test* Include = new UTFileEvents_Test();
-    Include->SetIsIncludeFile(true);
-    Include->SetFileType(GetFileType());
-    Include->SetVersion(GetVersion());
-    m_IncludeFile = Include;
-    m_IncludeFileUsed = false;
-
-    return MFileEvents::Open(FileName, Way, IsBinary);
-  }
-
-  //! Open ASCII by default
-  virtual bool Open(MString FileName, unsigned int Way)
-  {
-    return Open(FileName, Way, false);
-  }
-
-  //! Open for reading by default
-  virtual bool Open(MString FileName)
-  {
-    return Open(FileName, MFile::c_Read, false);
-  }
-
-  //! Public wrapper for OpenNextFile
-  bool TestOpenNextFile(const MString& Line) { return OpenNextFile(Line); }
-  //! Public wrapper for OpenIncludeFile
-  bool TestOpenIncludeFile(const MString& Line) { return OpenIncludeFile(Line); }
-  //! Public wrapper for CreateNextFile
-  bool TestCreateNextFile() { return CreateNextFile(); }
-  //! Public wrapper for CreateIncludeFile
-  bool TestCreateIncludeFile() { return CreateIncludeFile(); }
-  //! Public wrapper for CreateIncludeFileName
-  MString TestCreateIncludeFileName(const MString& FileName) { return CreateIncludeFileName(FileName); }
-  //! Public wrapper for ReadFooter
-  bool TestReadFooter(bool Continue = false) { return ReadFooter(Continue); }
-  //! Public wrapper for CloseIncludeFile
-  bool TestCloseIncludeFile() { return CloseIncludeFile(); }
-
-  //! Expose the include file usage state
-  bool IsIncludeFileUsed() const { return m_IncludeFileUsed; }
-  //! Expose the include file pointer
-  MFileEvents* GetIncludeFile() const { return m_IncludeFile; }
-  //! Expose start observation flag
-  bool HasStartObservationTime() const { return m_HasStartObservationTime; }
-  //! Expose end observation flag
-  bool HasEndObservationTime() const { return m_HasEndObservationTime; }
-  //! Expose observation flag
-  bool HasObservationTime() const { return m_HasObservationTime; }
-  //! Expose start observation time
-  MTime GetStartObservationTime() const { return m_StartObservationTime; }
-  //! Expose end observation time
-  MTime GetEndObservationTime() const { return m_EndObservationTime; }
-  //! Expose the original file name
-  MString GetOriginalFileName() const { return m_OriginalFileName; }
-};
-
-
 //! Unit test class for MFileEvents
 class UTFileEvents : public MUnitTest
 {
@@ -114,6 +36,83 @@ public:
   virtual bool Run();
 
 private:
+  //! Test helper exposing protected MFileEvents functionality
+  class FileEventsTest : public MFileEvents
+  {
+  public:
+    //! Default constructor
+    FileEventsTest()
+    {
+      SetFileType("tra");
+      SetVersion(7);
+    }
+
+    //! Default destructor
+    virtual ~FileEventsTest() {}
+
+    //! Open with a recursively compatible include helper
+    virtual bool Open(MString FileName, unsigned int Way, bool IsBinary)
+    {
+      if (m_IncludeFile != nullptr) {
+        delete m_IncludeFile;
+        m_IncludeFile = nullptr;
+      }
+
+      FileEventsTest* Include = new FileEventsTest();
+      Include->SetIsIncludeFile(true);
+      Include->SetFileType(GetFileType());
+      Include->SetVersion(GetVersion());
+      m_IncludeFile = Include;
+      m_IncludeFileUsed = false;
+
+      return MFileEvents::Open(FileName, Way, IsBinary);
+    }
+
+    //! Open ASCII by default
+    virtual bool Open(MString FileName, unsigned int Way)
+    {
+      return Open(FileName, Way, false);
+    }
+
+    //! Open for reading by default
+    virtual bool Open(MString FileName)
+    {
+      return Open(FileName, MFile::c_Read, false);
+    }
+
+    //! Public wrapper for OpenNextFile
+    bool TestOpenNextFile(const MString& Line) { return OpenNextFile(Line); }
+    //! Public wrapper for OpenIncludeFile
+    bool TestOpenIncludeFile(const MString& Line) { return OpenIncludeFile(Line); }
+    //! Public wrapper for CreateNextFile
+    bool TestCreateNextFile() { return CreateNextFile(); }
+    //! Public wrapper for CreateIncludeFile
+    bool TestCreateIncludeFile() { return CreateIncludeFile(); }
+    //! Public wrapper for CreateIncludeFileName
+    MString TestCreateIncludeFileName(const MString& FileName) { return CreateIncludeFileName(FileName); }
+    //! Public wrapper for ReadFooter
+    bool TestReadFooter(bool Continue = false) { return ReadFooter(Continue); }
+    //! Public wrapper for CloseIncludeFile
+    bool TestCloseIncludeFile() { return CloseIncludeFile(); }
+
+    //! Expose the include file usage state
+    bool IsIncludeFileUsed() const { return m_IncludeFileUsed; }
+    //! Expose the include file pointer
+    MFileEvents* GetIncludeFile() const { return m_IncludeFile; }
+    //! Expose start observation flag
+    bool HasStartObservationTime() const { return m_HasStartObservationTime; }
+    //! Expose end observation flag
+    bool HasEndObservationTime() const { return m_HasEndObservationTime; }
+    //! Expose observation flag
+    bool HasObservationTime() const { return m_HasObservationTime; }
+    //! Expose start observation time
+    MTime GetStartObservationTime() const { return m_StartObservationTime; }
+    //! Expose end observation time
+    MTime GetEndObservationTime() const { return m_EndObservationTime; }
+    //! Expose the original file name
+    MString GetOriginalFileName() const { return m_OriginalFileName; }
+  };
+
   //! Test read-side metadata parsing and observation-time handling
   bool TestOpenAndMetadata();
   //! Test footer parsing variants used by derived event readers
@@ -226,7 +225,7 @@ bool UTFileEvents::TestOpenAndMetadata()
 
   Passed = EvaluateTrue("WriteTextFile(metadata)", "metadata file", "The metadata test file can be written", WriteTextFile(FileName, Content)) && Passed;
 
-  UTFileEvents_Test File;
+  FileEventsTest File;
   Passed = EvaluateTrue("MFileEvents::Open(read)", "metadata open", "The event file opens in read mode", File.Open(FileName)) && Passed;
   Passed = Evaluate("GetFileType()", "metadata type", "The event file type is parsed from the header", File.GetFileType(), MString("tra")) && Passed;
   Passed = Evaluate("GetVersion()", "metadata version", "The event file version is parsed from the header", File.GetVersion(), 42) && Passed;
@@ -270,7 +269,7 @@ bool UTFileEvents::TestFooterParsing()
 
     Passed = EvaluateTrue("WriteTextFile(footer_ti)", "footer TI file", "The TI fallback footer file can be written", WriteTextFile(FileName, Content)) && Passed;
 
-    UTFileEvents_Test File;
+    FileEventsTest File;
     Passed = EvaluateTrue("Open(read)", "footer TI open", "The TI fallback footer file opens successfully", File.Open(FileName)) && Passed;
     Passed = EvaluateNear("GetObservationTime()", "footer TI observation time", "If TE is missing, the last TI line is used to determine the observation time", File.GetObservationTime().GetAsDouble(), 30.0, 1e-12) && Passed;
     Passed = Evaluate("HasObservationTime()", "footer TI observation flag", "The TI fallback still marks the observation time as available", File.HasObservationTime(), true) && Passed;
@@ -290,7 +289,7 @@ bool UTFileEvents::TestFooterParsing()
 
     Passed = EvaluateTrue("WriteTextFile(footer_continue)", "footer continue file", "The continue-mode footer file can be written", WriteTextFile(FileName, Content)) && Passed;
 
-    UTFileEvents_Test File;
+    FileEventsTest File;
     Passed = EvaluateTrue("Open(read)", "footer continue open", "The continue-mode footer file opens successfully", File.Open(FileName)) && Passed;
     MString Line;
     while (File.ReadLine(Line) == true) {
@@ -312,7 +311,7 @@ bool UTFileEvents::TestFooterParsing()
 
     Passed = EvaluateTrue("WriteTextFile(footer_override)", "footer override file", "The observation-time override file can be written", WriteTextFile(FileName, Content)) && Passed;
 
-    UTFileEvents_Test File;
+    FileEventsTest File;
     Passed = EvaluateTrue("Open(read)", "footer override open", "The override file opens successfully", File.Open(FileName)) && Passed;
     File.SetObservationTime(MTime(123.0));
     Passed = EvaluateNear("SetObservationTime()", "footer override observation time", "An explicitly set observation time is returned without reading the footer again", File.GetObservationTime().GetAsDouble(), 123.0, 1e-12) && Passed;
@@ -335,7 +334,7 @@ bool UTFileEvents::TestWriting()
 
   MString FileName = GetTempDirectory() + "/write.tra";
 
-  UTFileEvents_Test File;
+  FileEventsTest File;
   File.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
   Passed = Evaluate("SetGeometryFileName()", "geometry expansion exact", "SetGeometryFileName stores the exact expanded geometry path", File.GetGeometryFileName(), GetTempDirectory() + "/geometry.setup") && Passed;
   Passed = EvaluateTrue("SetGeometryFileName()", "geometry expansion", "SetGeometryFileName stores the expanded geometry path", File.GetGeometryFileName().EndsWith("/tmp/UTFileEvents/geometry.setup")) && Passed;
@@ -356,7 +355,7 @@ bool UTFileEvents::TestWriting()
 
   {
     MString BinaryFileName = GetTempDirectory() + "/write_binary.tra";
-    UTFileEvents_Test BinaryFile;
+    FileEventsTest BinaryFile;
     BinaryFile.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
     Passed = EvaluateTrue("Open(write,binary)", "binary open", "The binary write test file opens successfully", BinaryFile.Open(BinaryFileName, MFile::c_Write, true)) && Passed;
     Passed = EvaluateTrue("WriteHeader() binary", "binary header", "WriteHeader writes the binary stream marker when the file is binary", BinaryFile.WriteHeader()) && Passed;
@@ -365,22 +364,22 @@ bool UTFileEvents::TestWriting()
     MString BinaryText = ReadTextFile(BinaryFileName);
     Passed = EvaluateTrue("WriteHeader() binary", "binary marker content", "The binary header contains the STARTBINARYSTREAM marker", BinaryText.Contains("STARTBINARYSTREAM")) && Passed;
 
-    UTFileEvents_Test BinaryReader;
+    FileEventsTest BinaryReader;
     Passed = EvaluateTrue("Open(read) binary header", "binary reader open", "A file with STARTBINARYSTREAM can be reopened in read mode", BinaryReader.Open(BinaryFileName)) && Passed;
     Passed = Evaluate("IsBinary()", "binary reader flag", "Opening a file with STARTBINARYSTREAM marks the event file as binary", BinaryReader.IsBinary(), true) && Passed;
     BinaryReader.Close();
   }
 
   {
-    UTFileEvents_Test ReadOnly;
+    FileEventsTest ReadOnly;
     Passed = EvaluateTrue("Open(read)", "read-only write guards open", "The file can be reopened in read mode for write-guard checks", ReadOnly.Open(FileName)) && Passed;
-    __merr.Enable(false);
+    DisableDefaultStreams();
 #ifdef NDEBUG
     Passed = EvaluateFalse("WriteHeader()", "read-only write guard", "WriteHeader is rejected in read mode", ReadOnly.WriteHeader()) && Passed;
     Passed = EvaluateFalse("AddFooter()", "read-only footer guard", "AddFooter is rejected in read mode", ReadOnly.AddFooter("x")) && Passed;
     Passed = EvaluateFalse("CloseEventList()", "read-only close guard", "CloseEventList is rejected in read mode", ReadOnly.CloseEventList()) && Passed;
 #endif
-    __merr.Enable(true);
+    EnableDefaultStreams();
     ReadOnly.Close();
   }
 
@@ -409,11 +408,11 @@ bool UTFileEvents::TestFileTreeHelpers()
   Passed = EvaluateTrue("WriteTextFile(include)", "include helper file", "The include helper file can be written", WriteTextFile(IncludeFile, "Type tra\nVersion 3\nGeometry geo.setup\nTB 30\nSE 3\nTE 41\n")) && Passed;
 
   {
-    UTFileEvents_Test File;
+    FileEventsTest File;
     Passed = EvaluateTrue("Open(read)", "open-next open", "The first helper file opens successfully", File.Open(FirstFile)) && Passed;
-    mout.Enable(false);
+    DisableDefaultStreams();
     bool OpenNext = File.TestOpenNextFile("NF second.tra");
-    mout.Enable(true);
+    EnableDefaultStreams();
     Passed = EvaluateTrue("OpenNextFile()", "open next", "OpenNextFile switches to the referenced next file", OpenNext) && Passed;
     Passed = Evaluate("OpenNextFile()", "open next file name exact", "OpenNextFile updates the current file name to the exact next file path", File.GetFileName(), SecondFile) && Passed;
     Passed = Evaluate("OpenNextFile()", "open next original file name exact", "OpenNextFile preserves the exact original root file name across NF transitions", File.GetOriginalFileName(), FirstFile) && Passed;
@@ -422,9 +421,9 @@ bool UTFileEvents::TestFileTreeHelpers()
     Passed = Evaluate("GetVersion()", "open next version", "OpenNextFile reparses header metadata from the next file", File.GetVersion(), 2) && Passed;
     Passed = EvaluateNear("OpenNextFile()", "open next observation time", "OpenNextFile preserves the original observation time when switching to the next file", File.GetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
 
-    mout.Enable(false);
+    DisableDefaultStreams();
     bool OpenThird = File.TestOpenNextFile("NF third.tra");
-    mout.Enable(true);
+    EnableDefaultStreams();
     Passed = EvaluateTrue("OpenNextFile() second", "open third", "A second OpenNextFile call switches to the third file in the chain", OpenThird) && Passed;
     Passed = Evaluate("OpenNextFile() second", "open third file name exact", "The second OpenNextFile call updates the current file name to the exact third file path", File.GetFileName(), ThirdFile) && Passed;
     Passed = Evaluate("OpenNextFile() second", "open third original file name exact", "The original root file name remains the exact first file path across multiple NF transitions", File.GetOriginalFileName(), FirstFile) && Passed;
@@ -436,11 +435,11 @@ bool UTFileEvents::TestFileTreeHelpers()
   }
 
   {
-    UTFileEvents_Test File;
+    FileEventsTest File;
     Passed = EvaluateTrue("Open(read)", "open-include open", "The helper file opens successfully for include-file tests", File.Open(FirstFile)) && Passed;
-    mout.Enable(false);
+    DisableDefaultStreams();
     bool OpenInclude = File.TestOpenIncludeFile("IN include.tra");
-    mout.Enable(true);
+    EnableDefaultStreams();
     Passed = EvaluateTrue("OpenIncludeFile()", "open include", "OpenIncludeFile opens the referenced include file", OpenInclude) && Passed;
     Passed = Evaluate("IsIncludeFileUsed()", "open include used", "Opening an include file marks the include-file state as used", File.IsIncludeFileUsed(), true) && Passed;
     Passed = EvaluateTrue("GetIncludeFile()", "open include pointer", "The include-file helper exists and is open", File.GetIncludeFile() != nullptr && File.GetIncludeFile()->IsOpen()) && Passed;
@@ -455,13 +454,13 @@ bool UTFileEvents::TestFileTreeHelpers()
   }
 
   {
-    UTFileEvents_Test File;
+    FileEventsTest File;
     File.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "create-next open", "The main file opens in write mode for next-file creation", File.Open(FirstFile, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "create-next header", "The initial file header can be written before creating a next file", File.WriteHeader()) && Passed;
-    mout.Enable(false);
+    DisableDefaultStreams();
     bool Created = File.TestCreateNextFile();
-    mout.Enable(true);
+    EnableDefaultStreams();
     Passed = EvaluateTrue("CreateNextFile()", "create next", "CreateNextFile closes the current file and opens the next split file", Created) && Passed;
     Passed = Evaluate("CreateNextFile()", "create next file name exact", "CreateNextFile advances to the exact numbered split file path", File.GetFileName(), GetTempDirectory() + "/first.id1.tra") && Passed;
     Passed = EvaluateTrue("CreateNextFile()", "create next file name", "CreateNextFile advances to a numbered split file", File.GetFileName().Contains(".id1.tra")) && Passed;
@@ -470,13 +469,13 @@ bool UTFileEvents::TestFileTreeHelpers()
   }
 
   {
-    UTFileEvents_Test File;
+    FileEventsTest File;
     File.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "create-include open", "The main file opens in write mode for include-file creation", File.Open(FirstFile, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "create-include header", "The initial header can be written before creating an include file", File.WriteHeader()) && Passed;
-    mout.Enable(false);
+    DisableDefaultStreams();
     bool Created = File.TestCreateIncludeFile();
-    mout.Enable(true);
+    EnableDefaultStreams();
     Passed = EvaluateTrue("CreateIncludeFile()", "create include", "CreateIncludeFile creates and opens the first include file", Created) && Passed;
     Passed = Evaluate("IsIncludeFileUsed()", "create include used", "Creating an include file marks the include-file state as used", File.IsIncludeFileUsed(), true) && Passed;
     Passed = EvaluateTrue("GetIncludeFile()", "create include pointer", "Creating an include file opens the include helper", File.GetIncludeFile() != nullptr && File.GetIncludeFile()->IsOpen()) && Passed;
@@ -484,9 +483,9 @@ bool UTFileEvents::TestFileTreeHelpers()
       Passed = Evaluate("GetIncludeFile()->GetFileName()", "create include file name exact", "The created include file uses the exact first numbered include path", File.GetIncludeFile()->GetFileName(), GetTempDirectory() + "/first.id2.tra") && Passed;
       Passed = EvaluateTrue("GetIncludeFile()->GetFileName()", "create include file name", "The created include file uses the numbered include naming scheme", File.GetIncludeFile()->GetFileName().Contains(".id2.tra")) && Passed;
     }
-    mout.Enable(false);
+    DisableDefaultStreams();
     bool CreatedAgain = File.TestCreateIncludeFile();
-    mout.Enable(true);
+    EnableDefaultStreams();
     Passed = EvaluateTrue("CreateIncludeFile() second", "create include reuse", "A second CreateIncludeFile call rotates the include file to the next numbered include", CreatedAgain) && Passed;
     if (File.GetIncludeFile() != nullptr) {
       Passed = Evaluate("CreateIncludeFile() second", "create include reuse file name exact", "The rotated include file advances to the exact next numbered include path", File.GetIncludeFile()->GetFileName(), GetTempDirectory() + "/first.id3.tra") && Passed;
@@ -496,7 +495,7 @@ bool UTFileEvents::TestFileTreeHelpers()
   }
 
   {
-    UTFileEvents_Test File;
+    FileEventsTest File;
     Passed = Evaluate("CreateIncludeFileName()", "name helper", "CreateIncludeFileName creates the first numbered include-file name", File.TestCreateIncludeFileName("/tmp/base.tra"), MString("/tmp/base.id1.tra")) && Passed;
   }
 
@@ -523,11 +522,11 @@ bool UTFileEvents::TestCountingAndRewind()
   Passed = EvaluateTrue("WriteTextFile(main)", "count main file", "The main counting file can be written", WriteTextFile(MainFile, "Type tra\nVersion 1\nGeometry geo.setup\nSE 1\nSE 2\nIN count_include.tra\nNF count_next.tra\n")) && Passed;
 
   {
-    UTFileEvents_Test File;
+    FileEventsTest File;
     Passed = EvaluateTrue("Open(read)", "count open", "The counting file opens successfully", File.Open(MainFile)) && Passed;
-    mout.Enable(false);
+    DisableDefaultStreams();
     int Count = File.GetNEvents(false);
-    mout.Enable(true);
+    EnableDefaultStreams();
     Passed = Evaluate("GetNEvents(false)", "count exact", "GetNEvents(false) falls back to full counting across include and next files when needed", Count, 6) && Passed;
     Passed = EvaluateTrue("Rewind()", "count rewind", "Rewind succeeds after event counting changed the active file state", File.Rewind()) && Passed;
 
@@ -541,7 +540,7 @@ bool UTFileEvents::TestCountingAndRewind()
     MString SimpleFile = GetTempDirectory() + "/simple_count.tra";
     Passed = EvaluateTrue("WriteTextFile(simple)", "simple count file", "The direct-count file can be written", WriteTextFile(SimpleFile, "Type tra\nVersion 1\nGeometry geo.setup\nSE 11\nSE 12\nSE 13\n")) && Passed;
 
-    UTFileEvents_Test File;
+    FileEventsTest File;
     Passed = EvaluateTrue("Open(read)", "simple count open", "The direct-count file opens successfully", File.Open(SimpleFile)) && Passed;
     Passed = Evaluate("GetNEvents(false)", "simple count exact", "GetNEvents(false) returns the highest direct SE event id when no recursion is needed", File.GetNEvents(false), 13) && Passed;
     Passed = Evaluate("GetNEvents(true)", "simple count total", "GetNEvents(true) counts the number of SE records directly", File.GetNEvents(true), 3) && Passed;

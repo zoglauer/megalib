@@ -93,6 +93,17 @@ bool UTTime::TestConstructionAndSetters()
   Passed = EvaluateTrue("GetUTCString()", "epoch calendar", "The calendar constructor exposes the expected UTC string",
                         Calendar.GetUTCString() == "01.01.1970 00:00:00:123456789") && Passed;
 
+  MTime InteriorCalendar(2011, 7, 8, 9, 10, 11, 345678901);
+  Passed = EvaluateTrue("GetUTCString()", "interior calendar", "The calendar constructor exposes the expected representative interior UTC string",
+                        InteriorCalendar.GetUTCString() == "08.07.2011 09:10:11:345678901") && Passed;
+  Passed = EvaluateNear("GetYears()", "interior calendar", "The representative interior calendar year accessor returns the expected year", InteriorCalendar.GetYears(), 2011.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetMonths()", "interior calendar", "The representative interior calendar month accessor returns the expected month", InteriorCalendar.GetMonths(), 7.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetDays()", "interior calendar", "The representative interior calendar day accessor returns the expected day", InteriorCalendar.GetDays(), 8.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetHours()", "interior calendar", "The representative interior calendar hour accessor returns the expected hour", InteriorCalendar.GetHours(), 9.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetMinutes()", "interior calendar", "The representative interior calendar minute accessor returns the expected minute", InteriorCalendar.GetMinutes(), 10.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetSeconds()", "interior calendar", "The representative interior calendar second accessor returns the expected second", InteriorCalendar.GetSeconds(), 11.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetNanoSeconds()", "interior calendar", "The representative interior calendar nanosecond accessor returns the expected nanoseconds", InteriorCalendar.GetNanoSeconds(), 345678901.0, 1e-12) && Passed;
+
   MTime Copy(Calendar);
   Passed = EvaluateTrue("MTime(const MTime&)", "copy", "Copy construction preserves the stored time", Copy == Calendar) && Passed;
 
@@ -224,10 +235,10 @@ bool UTTime::TestParsingAndFormatting()
   Passed = EvaluateTrue("GetLongIntsString()", "with sec suffix", "Set(MString) stores the parsed seconds and nanoseconds",
                         FromString.GetLongIntsString() == "7.250000000") && Passed;
 
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Set(MString)", "not a number", "Set(MString) rejects invalid input", FromString.Set(MString("TI nonsense"))) && Passed;
   Passed = EvaluateFalse("Set(MString)", "too many separators", "Set(MString) rejects more than one fractional separator", FromString.Set(MString("1.2.3"))) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   MTime FromChar;
   Passed = EvaluateTrue("Set(const char*)", "plain digits", "Set(const char*) parses seconds and fractional digits", FromChar.Set("TI 9.5")) && Passed;
@@ -263,9 +274,21 @@ bool UTTime::TestParsingAndFormatting()
   Passed = EvaluateTrue("MTime(MString, Short)", "short string", "The deprecated short parser still constructs the expected time",
                         Short.GetLongIntsString() == "0.000000000") && Passed;
 
-  mout.Enable(false);
+  MTime InteriorUTC("08.07.2011 09:10:11:345678901", MTime::UTC);
+  Passed = EvaluateTrue("MTime(MString, UTC)", "interior UTC string", "The UTC parser constructs the expected representative interior time",
+                        InteriorUTC.GetLongIntsString() == "1310116211.345678901") && Passed;
+
+  MTime InteriorSQL("2011-07-08 09:10:11", MTime::SQL);
+  Passed = EvaluateTrue("MTime(MString, SQL)", "interior SQL string", "The SQL parser constructs the expected representative interior time",
+                        InteriorSQL.GetUTCString() == "08.07.2011 09:10:11:000000000") && Passed;
+
+  MTime InteriorShort("20110708_091011", MTime::Short);
+  Passed = EvaluateTrue("MTime(MString, Short)", "interior short string", "The short parser constructs the expected representative interior time",
+                        InteriorShort.GetUTCString() == "08.07.2011 09:10:11:000000000") && Passed;
+
+  DisableDefaultStreams();
   MTime Invalid("wrong", MTime::SQL);
-  mout.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateTrue("MTime(MString, Format)", "invalid format", "Invalid formatted input falls back to the epoch",
                         Invalid.GetLongIntsString() == "0.000000000") && Passed;
 
@@ -319,18 +342,23 @@ bool UTTime::TestCalendarAndConversions()
   Passed = EvaluateNear("GetSeconds()", "epoch", "GetSeconds returns the calendar second", Epoch.GetSeconds(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetNanoSeconds()", "epoch", "GetNanoSeconds returns the stored nanoseconds", Epoch.GetNanoSeconds(), 123456789.0, 1e-12) && Passed;
 
+  MTime Interior(2011, 7, 8, 9, 10, 11, 345678901);
+  Passed = EvaluateNear("GetAsSeconds()", "interior", "GetAsSeconds returns the expected representative interior Unix time", Interior.GetAsSeconds(), 1310116211.345678901, 1e-9) && Passed;
+  Passed = EvaluateNear("GetAsDouble()", "interior", "GetAsDouble matches the representative interior Unix time", Interior.GetAsDouble(), 1310116211.345678901, 1e-9) && Passed;
+  Passed = EvaluateNear("GetAsSystemSeconds()", "interior", "GetAsSystemSeconds truncates to the representative interior whole seconds", Interior.GetAsSystemSeconds(), 1310116211.0, 1e-12) && Passed;
+
   MTime LeapYearMiddle(2000, 7, 2, 12, 0, 0, 0);
   Passed = EvaluateTrue("GetAsYears()", "middle of leap year", "GetAsYears stays within the expected calendar year bounds",
                         LeapYearMiddle.GetAsYears() > 2000.49 && LeapYearMiddle.GetAsYears() < 2000.51) && Passed;
 
   MTime OneDayLater(1970, 1, 2, 0, 0, 0, 0);
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateNear("GetDaysSinceEpoch()", "one day later", "GetDaysSinceEpoch increments for later calendar dates", OneDayLater.GetDaysSinceEpoch(), 1.0, 1e-12) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
-  mout.Enable(false);
+  DisableDefaultStreams();
   unsigned int DaysSinceEpoch = Epoch.GetDaysSinceEpoch();
-  mout.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateNear("GetDaysSinceEpoch()", "epoch", "GetDaysSinceEpoch returns zero for the epoch", DaysSinceEpoch, 0.0, 1e-12) && Passed;
 
   Passed = EvaluateNear("BusyWait()", "zero microseconds", "BusyWait returns zero", MTime::BusyWait(0), 0.0, 1e-12) && Passed;

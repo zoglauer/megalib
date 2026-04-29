@@ -142,11 +142,11 @@ bool UTTokenizer::TestConstructionAndTokenization()
   Passed = EvaluateNear("GetNTokens()", "nested braces in token", "Nested math braces stay combined when math evaluation is disabled", Brackets.GetNTokens(), 2.0, 1e-12) && Passed;
   Passed = Evaluate("GetTokenAt()", "nested braces in token", "The nested math token is preserved verbatim", Brackets.GetTokenAt(0), MString("{sin({1+2})}")) && Passed;
 
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = Evaluate("GetTokenAt()", "out of bounds", "Out-of-bounds string access returns an empty string", Basic.GetTokenAt(99), MString("")) && Passed;
   Passed = Evaluate("GetTokenAtAsString()", "out of bounds", "Out-of-bounds string conversion returns an empty string", Basic.GetTokenAtAsString(99), MString("")) && Passed;
   Passed = Evaluate("GetTokenAfterAsString()", "out of bounds", "Out-of-bounds trailing-string access returns an empty string", Basic.GetTokenAfterAsString(99), MString("")) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   return Passed;
 }
@@ -192,16 +192,16 @@ bool UTTokenizer::TestTypedAccessors()
 
   MTokenizer NegativeUnsigned(' ', false);
   NegativeUnsigned.Analyze("-1");
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateNear("GetTokenAtAsUnsignedInt()", "negative token", "Negative unsigned conversion returns zero", NegativeUnsigned.GetTokenAtAsUnsignedInt(0), 0.0, 1e-12) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateNear("GetTokenAtAsInt()", "out of bounds", "Out-of-bounds numeric conversion returns zero", Types.GetTokenAtAsInt(99), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetTokenAtAsUnsignedIntFast()", "out of bounds", "Out-of-bounds fast unsigned conversion returns zero", Types.GetTokenAtAsUnsignedIntFast(99), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetTokenAtAsUnsignedLong()", "out of bounds", "Out-of-bounds unsigned long conversion returns zero", Types.GetTokenAtAsUnsignedLong(99), 0.0, 1e-12) && Passed;
   Passed = EvaluateFalse("GetTokenAtAsBoolean()", "out of bounds", "Out-of-bounds boolean conversion returns false", Types.GetTokenAtAsBoolean(99)) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   return Passed;
 }
@@ -258,15 +258,15 @@ bool UTTokenizer::TestContainerAccessors()
 
   MTokenizer BrokenQuotes;
   BrokenQuotes.Analyze("hello \"broken string");
-  mout.Enable(false);
+  DisableDefaultStreams();
   vector<MString> InvalidQuoted = BrokenQuotes.GetTokenAtAsStringVector(1, true);
-  mout.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateSize("GetTokenAtAsStringVector()", "broken quotes", "Malformed quoted strings return an empty vector", InvalidQuoted.size(), 0) && Passed;
 
-  mout.Enable(false);
+  DisableDefaultStreams();
   vector<int> InvalidIntVector = Numbers.GetTokenAtAsIntVector(99);
   vector<MString> InvalidStringVector = Strings.GetTokenAtAsStringVector(99, false);
-  mout.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateSize("GetTokenAtAsIntVector()", "out of bounds", "Out-of-bounds integer vector conversion returns an empty vector", InvalidIntVector.size(), 0) && Passed;
   Passed = EvaluateSize("GetTokenAtAsStringVector()", "out of bounds", "Out-of-bounds string vector conversion returns an empty vector", InvalidStringVector.size(), 0) && Passed;
 
@@ -291,9 +291,9 @@ bool UTTokenizer::TestMathsAndDiagnostics()
   Passed = EvaluateTrue("CheckMaths()", "ln", "CheckMaths accepts ln expressions", MTokenizer::CheckMaths("{ln(e)}")) && Passed;
   Passed = EvaluateTrue("CheckMaths()", "mixed functions", "CheckMaths accepts mixed supported functions", MTokenizer::CheckMaths("{ceil(atan(1)+sqrt(9)+exp(0))}")) && Passed;
   Passed = EvaluateTrue("CheckMaths()", "geometry style formula", "CheckMaths accepts nested geometry-style expressions", MTokenizer::CheckMaths("{sqrt((3*3)+(4*4))}")) && Passed;
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("CheckMaths()", "unknown symbol", "CheckMaths rejects unknown math identifiers", MTokenizer::CheckMaths("{unknownsymbol}")) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   MString MathToken = "{1+2}";
   Passed = EvaluateTrue("EvaluateMaths()", "simple math", "EvaluateMaths succeeds on valid expressions", MTokenizer::EvaluateMaths(MathToken)) && Passed;
@@ -330,17 +330,17 @@ bool UTTokenizer::TestMathsAndDiagnostics()
 
   MTokenizer InvalidMathList;
   InvalidMathList.Analyze("alpha {unknownsymbol}", false);
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("CheckAllMaths()", "invalid token list", "CheckAllMaths fails when any token contains invalid math", InvalidMathList.CheckAllMaths()) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   MTokenizer NoMath;
   Passed = EvaluateTrue("Analyze(..., false)", "preserve math token", "Analyze can preserve math expressions when AllowMaths is false", NoMath.Analyze("alpha {1+2}", false)) && Passed;
   Passed = Evaluate("GetTokenAt()", "preserve math token", "AllowMaths = false keeps the original math token", NoMath.GetTokenAt(1), MString("{1+2}")) && Passed;
 
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Analyze()", "unbalanced math", "Analyze rejects mismatched math braces", NoMath.Analyze("alpha {1+2")) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   MTokenizer Description;
   Description.Analyze("one two");

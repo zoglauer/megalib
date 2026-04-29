@@ -16,18 +16,6 @@
 #include "MXmlNode.h"
 
 
-//! Test helper exposing protected MXmlNode parser helpers
-class UTXmlNode_Test : public MXmlNode
-{
-public:
-  UTXmlNode_Test() : MXmlNode() {}
-  virtual ~UTXmlNode_Test() {}
-
-  bool TestParse(const MString& Text) { return Parse(Text); }
-  bool TestIsClosed(const MString& Text) { return IsClosed(Text); }
-};
-
-
 //! Unit test class for MXmlNode
 class UTXmlNode : public MUnitTest
 {
@@ -36,6 +24,18 @@ public:
   virtual ~UTXmlNode() {}
 
   virtual bool Run();
+
+private:
+  //! Test helper exposing protected MXmlNode parser helpers
+  class XmlNodeTest : public MXmlNode
+  {
+  public:
+    XmlNodeTest() : MXmlNode() {}
+    virtual ~XmlNodeTest() {}
+
+    bool TestParse(const MString& Text) { return Parse(Text); }
+    bool TestIsClosed(const MString& Text) { return IsClosed(Text); }
+  };
 };
 
 
@@ -135,13 +135,13 @@ bool UTXmlNode::Run()
   Passed = Evaluate("ToString()", "indented serialization", "Representative XML nodes honor explicit indentation", Root.ToString(2).GetSubString(0, 7), MString("  <Root")) && Passed;
   Passed = EvaluateTrue("ToString()", "empty node serialization", "Empty nodes use the self-closing tag form", MXmlNode(0, MString("Empty")).ToString() == "<Empty />") && Passed;
 
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateNear("GetValueAsVector()", "non-vector node", "Non-vector nodes return a default vector", Root.GetNode("Count")->GetValueAsVector().Mag(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetMinValueAsInt()", "non-range node", "Non-range nodes return zero for min values", Root.GetNode("Count")->GetMinValueAsInt(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetMaxValueAsLong()", "non-range node", "Non-range nodes return zero for long max values", Root.GetNode("Count")->GetMaxValueAsLong(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetMinValueAsDouble()", "non-range node", "Non-range nodes return zero for double min values", Root.GetNode("Count")->GetMinValueAsDouble(), 0.0, 1e-12) && Passed;
   Passed = EvaluateTrue("GetMaxValueAsTime()", "non-range node", "Non-range nodes return zero time for time max values", Root.GetNode("Count")->GetMaxValueAsTime().GetLongIntsString() == "0.000000000") && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   {
     MXmlNode RootWithValue(0, "HasValue", "text");
@@ -160,7 +160,7 @@ bool UTXmlNode::Run()
   }
 
   {
-    UTXmlNode_Test Parsed;
+    XmlNodeTest Parsed;
     Parsed.SetName("Parent");
     Passed = Evaluate("TestParse()", "representative child list", "Parse accepts representative nested XML content", Parsed.TestParse("<Child flag=\"1\">Value</Child><Empty />"), true) && Passed;
     Passed = Evaluate("GetNNodes()", "representative child list", "Parse creates the expected number of child nodes", Parsed.GetNNodes(), 2U) && Passed;
@@ -171,11 +171,11 @@ bool UTXmlNode::Run()
   }
 
   {
-    UTXmlNode_Test Parsed;
+    XmlNodeTest Parsed;
     Parsed.SetName("Parent");
-    __merr.Enable(false);
+    DisableDefaultStreams();
     Passed = Evaluate("TestParse()", "mixed text and subnodes", "Parse rejects XML content that mixes text and child nodes", Parsed.TestParse("<Child></Child>text<Other></Other>"), false) && Passed;
-    __merr.Enable(true);
+    EnableDefaultStreams();
   }
 
   {

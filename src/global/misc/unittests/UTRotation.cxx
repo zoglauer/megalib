@@ -164,6 +164,18 @@ bool UTRotation::TestMultiplication()
   Identity.Rotate(Vector);
   Passed = EvaluateTrue("Rotate(MVector&)", "identity", "Rotate(MVector&) leaves a vector unchanged for the identity matrix", Vector.AreEqual(MVector(1.0, -2.0, 3.0), 1e-12)) && Passed;
 
+  MVector InteriorAxis(1.0, 2.0, 3.0);
+  InteriorAxis.Unitize();
+  MRotation InteriorRotation(0.731, InteriorAxis);
+  MVector InteriorInput(0.25, -0.5, 1.75);
+  MVector InteriorOutput = InteriorRotation * InteriorInput;
+  Passed = EvaluateNear("operator*(rotation, vector)", "interior axis magnitude", "Representative non-axis-aligned rotations preserve vector magnitude", InteriorOutput.Mag(), InteriorInput.Mag(), 1e-12) && Passed;
+  Passed = EvaluateTrue("operator*(rotation, vector)", "interior axis changed", "Representative non-axis-aligned rotations change a non-axis-aligned input vector", InteriorOutput.AreEqual(InteriorInput, 1e-12) == false) && Passed;
+
+  MRotation InteriorAdditional;
+  InteriorAdditional.Rotate(0.731, InteriorAxis);
+  Passed = EvaluateTrue("Rotate(angle, axis)", "interior axis", "Rotate(angle, axis) also handles representative non-axis-aligned rotations", (InteriorAdditional * InteriorInput).AreEqual(InteriorOutput, 1e-12)) && Passed;
+
   return Passed;
 }
 
@@ -211,6 +223,13 @@ bool UTRotation::TestInversionAndValidation()
   Passed = EvaluateTrue("IsRotation()", "axis basis", "Axis-basis rotations built from X, Y=ZxX, Z are proper rotations", BasisRotation.IsRotation()) && Passed;
   Passed = EvaluateTrue("GetInvers()", "axis basis", "Axis-basis rotations invert correctly for cached inverse workflows", (BasisRotation.GetInvers() * (BasisRotation * MVector(2.0, 3.0, 4.0))).AreEqual(MVector(2.0, 3.0, 4.0), 1e-12)) && Passed;
 
+  MVector InteriorAxis(1.0, 2.0, 3.0);
+  InteriorAxis.Unitize();
+  MRotation InteriorRotation(0.731, InteriorAxis);
+  Passed = EvaluateNear("GetDeterminant()", "interior rotation", "Representative non-axis-aligned rotations still have determinant +1", InteriorRotation.GetDeterminant(), 1.0, 1e-12) && Passed;
+  Passed = EvaluateTrue("IsRotation()", "interior rotation", "IsRotation accepts representative non-axis-aligned rotations", InteriorRotation.IsRotation()) && Passed;
+  Passed = EvaluateTrue("GetInvers()", "interior rotation", "Representative non-axis-aligned rotations invert correctly", (InteriorRotation.GetInvers() * (InteriorRotation * MVector(0.25, -0.5, 1.75))).AreEqual(MVector(0.25, -0.5, 1.75), 1e-12)) && Passed;
+
   return Passed;
 }
 
@@ -234,6 +253,14 @@ bool UTRotation::TestAnglesAndFormatting()
   ostringstream Out;
   Out << Identity;
   Passed = Evaluate("operator<<", "identity", "Stream output formats the full 3x3 matrix", MString(Out.str()), MString("(1/0/0, 0/1/0, 0/0/1)")) && Passed;
+
+  MVector InteriorAxis(1.0, 2.0, 3.0);
+  InteriorAxis.Unitize();
+  MRotation InteriorRotation(0.731, InteriorAxis);
+  Passed = EvaluateNear("GetThetaX()", "interior rotation", "GetThetaX returns a representative interior polar angle for non-axis-aligned rotations", InteriorRotation.GetThetaX(), 1.8777023633776777, 1e-4) && Passed;
+  Passed = EvaluateNear("GetPhiX()", "interior rotation", "GetPhiX returns a representative interior azimuth for non-axis-aligned rotations", InteriorRotation.GetPhiX(), 0.6432605226467148, 1e-4) && Passed;
+  Passed = EvaluateNear("GetThetaZ()", "interior rotation", "GetThetaZ returns a representative interior polar angle for non-axis-aligned rotations", InteriorRotation.GetThetaZ(), 0.4305113296353004, 1e-4) && Passed;
+  Passed = EvaluateNear("GetPhiZ()", "interior rotation", "GetPhiZ returns a representative interior azimuth for non-axis-aligned rotations", InteriorRotation.GetPhiZ(), -0.16592858392263796, 1e-4) && Passed;
 
   return Passed;
 }

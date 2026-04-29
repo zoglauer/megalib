@@ -20,22 +20,6 @@ using namespace std;
 #include "MUnitTest.h"
 
 
-//! Test helper exposing protected MSettingsGlobal functionality
-class UTSettingsGlobal_Test : public MSettingsGlobal
-{
-public:
-  UTSettingsGlobal_Test() : MSettingsGlobal() {}
-  virtual ~UTSettingsGlobal_Test() {}
-
-  bool TestReadXml(MXmlNode* Node) { return ReadXml(Node); }
-  bool TestWriteXml(MXmlNode* Node) { return WriteXml(Node); }
-  void SetTestSettingsFileName(const MString& FileName) { m_SettingsFileName = FileName; }
-  MString GetTestSettingsFileName() const { return m_SettingsFileName; }
-  void SetTestMasterNodeName(const MString& Name) { m_NameMasterNode = Name; }
-  MString GetTestMasterNodeName() const { return m_NameMasterNode; }
-};
-
-
 //! Unit test class for MSettingsGlobal
 class UTSettingsGlobal : public MUnitTest
 {
@@ -46,6 +30,21 @@ public:
   virtual bool Run();
 
 private:
+  //! Test helper exposing protected MSettingsGlobal functionality
+  class SettingsGlobalTest : public MSettingsGlobal
+  {
+  public:
+    SettingsGlobalTest() : MSettingsGlobal() {}
+    virtual ~SettingsGlobalTest() {}
+
+    bool TestReadXml(MXmlNode* Node) { return ReadXml(Node); }
+    bool TestWriteXml(MXmlNode* Node) { return WriteXml(Node); }
+    void SetTestSettingsFileName(const MString& FileName) { m_SettingsFileName = FileName; }
+    MString GetTestSettingsFileName() const { return m_SettingsFileName; }
+    void SetTestMasterNodeName(const MString& Name) { m_NameMasterNode = Name; }
+    MString GetTestMasterNodeName() const { return m_NameMasterNode; }
+  };
+
   bool PrepareTempDirectory() const;
   bool WriteTextFile(const MString& FileName, const MString& Content) const;
 
@@ -104,7 +103,7 @@ bool UTSettingsGlobal::TestDefaultsAndSetters()
 {
   bool Passed = true;
 
-  UTSettingsGlobal_Test Settings;
+  SettingsGlobalTest Settings;
   Passed = Evaluate("GetLicenseHash()", "default", "The default license hash is zero", Settings.GetLicenseHash(), 0L) && Passed;
   Passed = Evaluate("GetChangeLogHash()", "default", "The default changelog hash is zero", Settings.GetChangeLogHash(), 0L) && Passed;
   Passed = Evaluate("GetFontScaler()", "default", "The default font scaler is normal", Settings.GetFontScaler(), MString("normal")) && Passed;
@@ -128,7 +127,7 @@ bool UTSettingsGlobal::TestXmlRoundTrip()
 {
   bool Passed = true;
 
-  UTSettingsGlobal_Test Settings;
+  SettingsGlobalTest Settings;
   Settings.SetLicenseHash(11);
   Settings.SetChangeLogHash(22);
   Settings.SetFontScaler("huge");
@@ -144,7 +143,7 @@ bool UTSettingsGlobal::TestXmlRoundTrip()
   new MXmlNode(&ReadDocument, "ChangeLogHash", 202L);
   new MXmlNode(&ReadDocument, "FontScaler", MString("large"));
 
-  UTSettingsGlobal_Test ReadBack;
+  SettingsGlobalTest ReadBack;
   Passed = Evaluate("ReadXml()", "direct xml", "ReadXml accepts a representative XML document", ReadBack.TestReadXml(&ReadDocument), true) && Passed;
   Passed = Evaluate("GetLicenseHash()", "direct xml", "ReadXml restores the representative license hash", ReadBack.GetLicenseHash(), 101L) && Passed;
   Passed = Evaluate("GetChangeLogHash()", "direct xml", "ReadXml restores the representative changelog hash", ReadBack.GetChangeLogHash(), 202L) && Passed;
@@ -167,7 +166,7 @@ bool UTSettingsGlobal::TestReadWriteFiles()
   MString WrongRootFile = "/tmp/UTSettingsGlobal/wrong_root.cfg";
   MString EmptyFile = "/tmp/UTSettingsGlobal/empty.cfg";
 
-  UTSettingsGlobal_Test Settings;
+  SettingsGlobalTest Settings;
   Settings.SetTestSettingsFileName(SettingsFile);
   Settings.SetLicenseHash(333);
   Settings.SetChangeLogHash(444);
@@ -175,27 +174,27 @@ bool UTSettingsGlobal::TestReadWriteFiles()
   Passed = Evaluate("Write()", "representative file", "Write() stores the representative global settings file", Settings.Write(), true) && Passed;
   Passed = EvaluateTrue("Exists()", "representative file", "Write() creates the representative global settings file", MFile::Exists(SettingsFile)) && Passed;
 
-  UTSettingsGlobal_Test ReadBack;
+  SettingsGlobalTest ReadBack;
   ReadBack.SetTestSettingsFileName(SettingsFile);
   Passed = Evaluate("Read()", "representative file", "Read() restores a previously written representative file", ReadBack.Read(), true) && Passed;
   Passed = Evaluate("GetLicenseHash()", "representative file", "Read() restores the stored license hash", ReadBack.GetLicenseHash(), 333L) && Passed;
   Passed = Evaluate("GetChangeLogHash()", "representative file", "Read() restores the stored changelog hash", ReadBack.GetChangeLogHash(), 444L) && Passed;
   Passed = Evaluate("GetFontScaler()", "representative file", "Read() restores the stored font scaler", ReadBack.GetFontScaler(), MString("huge")) && Passed;
 
-  UTSettingsGlobal_Test Missing;
+  SettingsGlobalTest Missing;
   Missing.SetTestSettingsFileName("/tmp/UTSettingsGlobal/does_not_exist.cfg");
   Passed = Evaluate("Read()", "missing file", "Read() treats a missing global settings file as a clean default-state success", Missing.Read(), true) && Passed;
   Passed = Evaluate("GetLicenseHash()", "missing file", "A missing global settings file leaves the default license hash intact", Missing.GetLicenseHash(), 0L) && Passed;
 
   Passed = EvaluateTrue("WriteTextFile()", "wrong root file", "A global settings file with the wrong XML root can be written", WriteTextFile(WrongRootFile, "<NotMEGAlib><LicenseHash>1</LicenseHash></NotMEGAlib>\n")) && Passed;
-  UTSettingsGlobal_Test WrongRoot;
+  SettingsGlobalTest WrongRoot;
   WrongRoot.SetTestSettingsFileName(WrongRootFile);
   DisableDefaultStreams();
   Passed = Evaluate("Read()", "wrong root", "Read() rejects global settings files with the wrong XML root", WrongRoot.Read(), false) && Passed;
   EnableDefaultStreams();
 
   Passed = EvaluateTrue("WriteTextFile()", "empty file", "An empty global settings file can be written", WriteTextFile(EmptyFile, "")) && Passed;
-  UTSettingsGlobal_Test Empty;
+  SettingsGlobalTest Empty;
   Empty.SetTestSettingsFileName(EmptyFile);
   DisableDefaultStreams();
   Passed = Evaluate("Read()", "empty file", "Read() rejects an existing empty global settings file", Empty.Read(), false) && Passed;

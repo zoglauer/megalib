@@ -155,6 +155,23 @@ bool UTGTI::TestLoadAndIsGood()
   Passed = EvaluateTrue("IsGood()", "second good interval", "A representative time in the second good interval is accepted", GTI.IsGood(MTime(35))) && Passed;
   Passed = EvaluateFalse("IsGood()", "after second interval", "Times after the second good interval are rejected", GTI.IsGood(MTime(41))) && Passed;
 
+  MString FractionalFile = "/tmp/UTGTI/fractional.gti";
+  MString FractionalContent =
+    "GT 10.25 20.75\n"
+    "BT 13.5 14.25\n"
+    "EN\n";
+  Passed = EvaluateTrue("WriteTextFile()", "fractional file", "A representative GTI file with fractional boundaries can be written", WriteTextFile(FractionalFile, FractionalContent)) && Passed;
+
+  MGTI FractionalGTI;
+  Passed = EvaluateTrue("Load()", "fractional file", "Load() accepts representative GTI files with fractional boundaries", FractionalGTI.Load(FractionalFile)) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional before interval", "Fractional times before a representative good interval are rejected", FractionalGTI.IsGood(MTime(10.249))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional interval start", "Fractional good interval starts remain inclusive", FractionalGTI.IsGood(MTime(10.25))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional bad interval start", "Fractional bad interval starts are excluded", FractionalGTI.IsGood(MTime(13.5))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional bad interval stop", "Fractional bad interval stops are excluded", FractionalGTI.IsGood(MTime(14.25))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional after bad interval", "Fractional times after the representative bad interval but inside the good interval are accepted", FractionalGTI.IsGood(MTime(14.5))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional interval stop", "Fractional good interval stops remain inclusive", FractionalGTI.IsGood(MTime(20.75))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional after interval", "Fractional times after the representative good interval are rejected", FractionalGTI.IsGood(MTime(20.751))) && Passed;
+
   return Passed;
 }
 

@@ -31,6 +31,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MExceptions.h"
 #include "MStreams.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -142,10 +143,11 @@ double MIsotope::GetLineEnergy(unsigned int i) const
 //! Return the line exclude flag
 bool MIsotope::GetLineExcludeFlag(unsigned int i) const
 {
-  if (i < m_LineExcludeFlags.size()) return m_LineExcludeFlags[i];
-  
-  merr<<"Index out of bounds: i="<<i<<" vs. size()="<<m_LineExcludeFlags.size()<<fatal;
-  return 0;
+  if (i >= m_LineExcludeFlags.size()) {
+    throw MExceptionIndexOutOfBounds(0, m_LineExcludeFlags.size(), i);
+  }
+
+  return m_LineExcludeFlags[i];
 }
 
 
@@ -186,10 +188,11 @@ int MIsotope::GetDefaultLine() const
 //! Return the line branching ratio
 double MIsotope::GetLineBranchingRatio(unsigned int i) const
 {
-  if (i < m_LineBranchingRatios.size()) return m_LineBranchingRatios[i];
+  if (i >= m_LineBranchingRatios.size()) {
+    throw MExceptionIndexOutOfBounds(0, m_LineBranchingRatios.size(), i);
+  }
 
-  merr<<"Index out of bounds: i="<<i<<" vs. size()="<<m_LineBranchingRatios.size()<<fatal;
-  return 0;
+  return m_LineBranchingRatios[i];
 }
 
 

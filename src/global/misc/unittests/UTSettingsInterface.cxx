@@ -16,22 +16,6 @@
 #include "MXmlDocument.h"
 
 
-//! Concrete test helper for MSettingsInterface
-class UTSettingsInterface_Test : public MSettingsInterface
-{
-public:
-  UTSettingsInterface_Test() : MSettingsInterface() {}
-  virtual ~UTSettingsInterface_Test() {}
-
-  void TestModify(int Level) { Modify(Level); }
-  MString TestCleanPath(MString Path) { return CleanPath(Path); }
-
-protected:
-  virtual bool ReadXml(MXmlNode* Node) { return Node != nullptr; }
-  virtual bool WriteXml(MXmlNode* Node) { return Node != nullptr; }
-};
-
-
 //! Unit test class for MSettingsInterface
 class UTSettingsInterface : public MUnitTest
 {
@@ -42,6 +26,21 @@ public:
   virtual bool Run();
 
 private:
+  //! Concrete test helper for MSettingsInterface
+  class SettingsInterfaceTest : public MSettingsInterface
+  {
+  public:
+    SettingsInterfaceTest() : MSettingsInterface() {}
+    virtual ~SettingsInterfaceTest() {}
+
+    void TestModify(int Level) { Modify(Level); }
+    MString TestCleanPath(MString Path) { return CleanPath(Path); }
+
+  protected:
+    virtual bool ReadXml(MXmlNode* Node) { return Node != nullptr; }
+    virtual bool WriteXml(MXmlNode* Node) { return Node != nullptr; }
+  };
+
   bool TestModificationLevel();
   bool TestCleanPath();
 };
@@ -70,7 +69,7 @@ bool UTSettingsInterface::TestModificationLevel()
 {
   bool Passed = true;
 
-  UTSettingsInterface_Test Settings;
+  SettingsInterfaceTest Settings;
   Passed = Evaluate("GetModificationLevel()", "default", "The default modification level is zero", Settings.GetModificationLevel(false), 0) && Passed;
 
   Settings.TestModify(2);
@@ -94,7 +93,7 @@ bool UTSettingsInterface::TestCleanPath()
 {
   bool Passed = true;
 
-  UTSettingsInterface_Test Settings;
+  SettingsInterfaceTest Settings;
 
   MString ExpandedMegalib = "$(MEGALIB)";
   Passed = EvaluateTrue("ExpandFileName()", "$(MEGALIB)", "The MEGAlib environment path can be expanded for the CleanPath test", MFile::ExpandFileName(ExpandedMegalib)) && Passed;

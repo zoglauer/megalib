@@ -9,10 +9,8 @@
  */
 
 // Standard libs:
-#include <fcntl.h>
 #include <fstream>
 #include <sstream>
-#include <unistd.h>
 using namespace std;
 
 // MEGAlib:
@@ -42,28 +40,6 @@ bool UTFileResponse::Run()
   bool Passed = true;
 
   system("mkdir -p /tmp/UTFileResponse");
-
-  auto SilenceOutput = []() {
-    int SavedStdout = dup(STDOUT_FILENO);
-    int SavedStderr = dup(STDERR_FILENO);
-    int DevNull = open("/dev/null", O_WRONLY);
-    if (DevNull >= 0) {
-      dup2(DevNull, STDOUT_FILENO);
-      dup2(DevNull, STDERR_FILENO);
-      close(DevNull);
-    }
-    return pair<int, int>(SavedStdout, SavedStderr);
-  };
-  auto RestoreOutput = [](pair<int, int> Saved) {
-    if (Saved.first >= 0) {
-      dup2(Saved.first, STDOUT_FILENO);
-      close(Saved.first);
-    }
-    if (Saved.second >= 0) {
-      dup2(Saved.second, STDERR_FILENO);
-      close(Saved.second);
-    }
-  };
 
   MFileResponse Default;
   Passed = Evaluate("GetName()", "default constructor", "The default response-file parser starts with an undefined representative name", Default.GetName(), g_StringNotDefined) && Passed;
@@ -150,17 +126,17 @@ bool UTFileResponse::Run()
   ON.SetHash(777UL);
   MString ONFile = "/tmp/UTFileResponse/on_sparse.rsp";
   {
-    pair<int, int> Saved = SilenceOutput();
+    DisableDefaultStreams();
     Passed = Evaluate("Write()", "representative ON sparse file", "The representative ON matrix can be written for MFileResponse dispatch", ON.Write(ONFile, false), true) && Passed;
-    RestoreOutput(Saved);
+    EnableDefaultStreams();
   }
 
   MFileResponse ONReader;
   MResponseMatrix* ONReadBack = 0;
   {
-    pair<int, int> Saved = SilenceOutput();
+    DisableDefaultStreams();
     ONReadBack = ONReader.Read(ONFile);
-    RestoreOutput(Saved);
+    EnableDefaultStreams();
   }
   Passed = EvaluateTrue("Read()", "representative ON dispatch", "MFileResponse dispatches the representative ON file to a concrete matrix", ONReadBack != 0) && Passed;
   if (ONReadBack != 0) {
@@ -183,9 +159,9 @@ bool UTFileResponse::Run()
   }
   MFileResponse UnknownReader;
   {
-    pair<int, int> Saved = SilenceOutput();
+    DisableDefaultStreams();
     Passed = EvaluateTrue("Read()", "unknown type", "MFileResponse rejects a representative unknown response type", UnknownReader.Read(UnknownFile) == 0) && Passed;
-    RestoreOutput(Saved);
+    EnableDefaultStreams();
   }
 
   MString MissingCEFile = "/tmp/UTFileResponse/missing_ce.rsp";

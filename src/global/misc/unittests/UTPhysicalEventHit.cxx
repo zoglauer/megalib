@@ -85,6 +85,15 @@ bool UTPhysicalEventHit::TestBasics()
   Passed = Evaluate("GetTime()", "set/get", "The hit time is stored", Hit.GetTime().GetAsDouble(), Time.GetAsDouble()) && Passed;
   Passed = Evaluate("GetTimeUncertainty()", "set/get", "The hit time uncertainty is stored", Hit.GetTimeUncertainty().GetAsDouble(), TimeUncertainty.GetAsDouble()) && Passed;
 
+  MPhysicalEventHit Interior;
+  Interior.Set(MVector(-1.25, 2.5, 0.375), MVector(0.015, 0.025, 0.035), 7.75, 0.45, MTime(12.345), MTime(0.067));
+  Passed = Evaluate("GetPosition()", "interior set/get", "Representative interior hit positions are stored exactly", Interior.GetPosition(), MVector(-1.25, 2.5, 0.375)) && Passed;
+  Passed = Evaluate("GetPositionUncertainty()", "interior set/get", "Representative interior hit position uncertainties are stored exactly", Interior.GetPositionUncertainty(), MVector(0.015, 0.025, 0.035)) && Passed;
+  Passed = Evaluate("GetEnergy()", "interior set/get", "Representative interior hit energies are stored exactly", Interior.GetEnergy(), 7.75) && Passed;
+  Passed = Evaluate("GetEnergyUncertainty()", "interior set/get", "Representative interior hit energy uncertainties are stored exactly", Interior.GetEnergyUncertainty(), 0.45) && Passed;
+  Passed = Evaluate("GetTime()", "interior set/get", "Representative interior hit times are stored exactly", Interior.GetTime().GetAsDouble(), 12.345) && Passed;
+  Passed = Evaluate("GetTimeUncertainty()", "interior set/get", "Representative interior hit time uncertainties are stored exactly", Interior.GetTimeUncertainty().GetAsDouble(), 0.067) && Passed;
+
   return Passed;
 }
 

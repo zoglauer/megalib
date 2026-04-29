@@ -105,6 +105,12 @@ bool UTUnidentifiableEvent::TestBasics()
   Passed = Evaluate("Data()", "set/get", "Data() returns the concrete event pointer", Event.Data(), dynamic_cast<MPhysicalEvent*>(&Event)) && Passed;
   Passed = Evaluate("ToString()", "set/get", "The human-readable description is formatted deterministically", Event.ToString(), MString("The data of the Unidentifiable-event:\nEnergy: 12.500")) && Passed;
 
+  MUnidentifiableEvent Interior;
+  Interior.SetEnergy(37.125);
+  Passed = Evaluate("GetEnergy()", "interior energy", "Representative interior deposited energies are stored exactly", Interior.GetEnergy(), 37.125) && Passed;
+  Passed = EvaluateTrue("Validate()", "interior energy", "Representative interior deposited energies validate successfully", Interior.Validate()) && Passed;
+  Passed = Evaluate("ToString()", "interior energy", "Representative interior deposited energies are formatted deterministically", Interior.ToString(), MString("The data of the Unidentifiable-event:\nEnergy: 37.125")) && Passed;
+
   MPhysicalEvent* Duplicate = Event.Duplicate();
   Passed = Evaluate("Duplicate()->GetEnergy()", "unidentifiable duplicate", "Duplicate preserves the deposited energy", Duplicate->GetEnergy(), Event.GetEnergy()) && Passed;
   Passed = Evaluate("Duplicate()->GetType()", "unidentifiable duplicate", "Duplicate preserves the event type", Duplicate->GetType(), Event.GetType()) && Passed;
@@ -161,7 +167,5 @@ bool UTUnidentifiableEvent::TestRoundTrips()
 int main()
 {
   UTUnidentifiableEvent Test;
-  Test.Run();
-
-  return 0;
+  return Test.Run() == true ? 0 : 1;
 }

@@ -12,6 +12,7 @@
 // MEGAlib:
 #include "MExceptions.h"
 #include "MJulianDay.h"
+#include "MStreams.h"
 #include "MUnitTest.h"
 
 
@@ -90,7 +91,9 @@ bool UTJulianDay::TestConstructionAndAccess()
   }
 
   {
+    DisableDefaultStreams();
     MJulianDay Precise(2000, 2, 29, 12, 34, 56, 123456789);
+    EnableDefaultStreams();
     Passed = Evaluate("GetUTCString()", "leap day", "Leap-day construction round-trips through the UTC string", Precise.GetUTCString(), MString("29.02.2000 12:34:56:123456789")) && Passed;
     Passed = Evaluate("GetUTCYear()", "leap day", "The leap-day year accessor returns the expected year", Precise.GetUTCYear(), 2000) && Passed;
     Passed = Evaluate("GetUTCMonth()", "leap day", "The leap-day month accessor returns the expected month", Precise.GetUTCMonth(), 2) && Passed;
@@ -102,7 +105,23 @@ bool UTJulianDay::TestConstructionAndAccess()
   }
 
   {
+    DisableDefaultStreams();
+    MJulianDay Interior(2011, 7, 8, 9, 10, 11, 345678901);
+    EnableDefaultStreams();
+    Passed = Evaluate("GetUTCString()", "interior date", "A representative interior date round-trips through the UTC string", Interior.GetUTCString(), MString("08.07.2011 09:10:11:345678901")) && Passed;
+    Passed = Evaluate("GetUTCYear()", "interior date", "The representative interior year accessor returns the expected year", Interior.GetUTCYear(), 2011) && Passed;
+    Passed = Evaluate("GetUTCMonth()", "interior date", "The representative interior month accessor returns the expected month", Interior.GetUTCMonth(), 7) && Passed;
+    Passed = Evaluate("GetUTCDay()", "interior date", "The representative interior day accessor returns the expected day", Interior.GetUTCDay(), 8) && Passed;
+    Passed = Evaluate("GetUTCHour()", "interior date", "The representative interior hour accessor returns the expected hour", Interior.GetUTCHour(), 9) && Passed;
+    Passed = Evaluate("GetUTCMinute()", "interior date", "The representative interior minute accessor returns the expected minute", Interior.GetUTCMinute(), 10) && Passed;
+    Passed = Evaluate("GetUTCSecond()", "interior date", "The representative interior second accessor returns the expected second", Interior.GetUTCSecond(), 11) && Passed;
+    Passed = Evaluate("GetUTCNanoSecond()", "interior date", "The representative interior nanosecond accessor returns the expected nanoseconds", Interior.GetUTCNanoSecond(), 345678901) && Passed;
+  }
+
+  {
+    DisableDefaultStreams();
     MJulianDay Original(2020, 5, 6, 7, 8, 9, 10);
+    EnableDefaultStreams();
     MJulianDay Copy(Original);
     Passed = Evaluate("MJulianDay(const MJulianDay&)", "copy equality", "The copy constructor preserves the full Julian day", Copy == Original, true) && Passed;
 
@@ -112,7 +131,9 @@ bool UTJulianDay::TestConstructionAndAccess()
   }
 
   {
+    DisableDefaultStreams();
     MJulianDay Now(true);
+    EnableDefaultStreams();
     Passed = EvaluateTrue("MJulianDay(true)", "current date", "The 'now' constructor creates a positive Julian day", Now.GetAsDays() > 2400000.0) && Passed;
   }
 
@@ -169,6 +190,17 @@ bool UTJulianDay::TestArithmeticAndComparison()
     Passed = EvaluateNear("GetAsNanoSeconds()", "small value", "GetAsNanoSeconds converts short Julian-day intervals into nanoseconds", Fractional.GetAsNanoSeconds(), 3.125 * 86400.0 * 1.0E9, 1.0) && Passed;
   }
 
+  {
+    DisableDefaultStreams();
+    MJulianDay Interior(2011, 7, 8, 9, 10, 11, 345678901);
+    EnableDefaultStreams();
+    MJulianDay InteriorPlusHalfDay = Interior + MJulianDay(0.5);
+    Passed = Evaluate("operator+", "interior half day UTC", "Adding half a day to a representative interior Julian day advances by twelve hours", InteriorPlusHalfDay.GetUTCString(), MString("08.07.2011 21:10:11:345678901")) && Passed;
+
+    MJulianDay InteriorMinusQuarterDay = Interior - MJulianDay(0.25);
+    Passed = Evaluate("operator-", "interior quarter day UTC", "Subtracting a quarter day from a representative interior Julian day rewinds by six hours", InteriorMinusQuarterDay.GetUTCString(), MString("08.07.2011 03:10:11:345678901")) && Passed;
+  }
+
   return Passed;
 }
 
@@ -198,27 +230,37 @@ bool UTJulianDay::TestEdgeCases()
   }
 
   {
+    DisableDefaultStreams();
     MJulianDay InvalidDay(2020, 1, 0, 0, 0, 0, 0);
+    EnableDefaultStreams();
     Passed = EvaluateNear("MJulianDay(UTC)", "invalid day", "An invalid day falls back to the zero Julian day", InvalidDay.GetAsDays(), 0.0, 1e-12) && Passed;
   }
 
   {
+    DisableDefaultStreams();
     MJulianDay InvalidHour(2020, 1, 1, 24, 0, 0, 0);
+    EnableDefaultStreams();
     Passed = EvaluateNear("MJulianDay(UTC)", "invalid hour", "An invalid hour falls back to the zero Julian day", InvalidHour.GetAsDays(), 0.0, 1e-12) && Passed;
   }
 
   {
+    DisableDefaultStreams();
     MJulianDay InvalidMinute(2020, 1, 1, 0, 60, 0, 0);
+    EnableDefaultStreams();
     Passed = EvaluateNear("MJulianDay(UTC)", "invalid minute", "An invalid minute falls back to the zero Julian day", InvalidMinute.GetAsDays(), 0.0, 1e-12) && Passed;
   }
 
   {
+    DisableDefaultStreams();
     MJulianDay InvalidSecond(2020, 1, 1, 0, 0, 60, 0);
+    EnableDefaultStreams();
     Passed = EvaluateNear("MJulianDay(UTC)", "invalid second", "An invalid second falls back to the zero Julian day", InvalidSecond.GetAsDays(), 0.0, 1e-12) && Passed;
   }
 
   {
+    DisableDefaultStreams();
     MJulianDay InvalidNanoSecond(2020, 1, 1, 0, 0, 0, 1000000000);
+    EnableDefaultStreams();
     Passed = EvaluateNear("MJulianDay(UTC)", "invalid nanosecond", "An invalid nanosecond value falls back to the zero Julian day", InvalidNanoSecond.GetAsDays(), 0.0, 1e-12) && Passed;
   }
 
@@ -230,7 +272,9 @@ bool UTJulianDay::TestEdgeCases()
   }
 
   {
+    DisableDefaultStreams();
     MJulianDay GregorianSwitch(1582, 10, 16, 0, 0, 0, 0);
+    EnableDefaultStreams();
     Passed = Evaluate("GetUTCString()", "gregorian switch", "A post-reform date round-trips through the UTC formatter", GregorianSwitch.GetUTCString(), MString("16.10.1582 00:00:00:000000000")) && Passed;
   }
 
