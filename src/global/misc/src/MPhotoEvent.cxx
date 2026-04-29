@@ -237,7 +237,7 @@ int MPhotoEvent::ParseLine(const char* Line, bool Fast)
       m_Energy = strtod(Line+3, NULL);
     } else {
       if (sscanf(Line, "PE %lf", &m_Energy) != 1) {
-        cout<<"Unable to parse PE of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse PE of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -250,7 +250,7 @@ int MPhotoEvent::ParseLine(const char* Line, bool Fast)
     } else {
       if (sscanf(Line, "PP %lf %lf %lf", 
                  &m_Position[0], &m_Position[1], &m_Position[2]) != 3) {
-        cout<<"Unable to parse PP of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse PP of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -259,7 +259,7 @@ int MPhotoEvent::ParseLine(const char* Line, bool Fast)
       m_Weight = strtod(Line+3, NULL);
     } else {
       if (sscanf(Line, "PW %lf", &m_Weight) != 1) {
-        cout<<"Unable to parse PW of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse PW of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }

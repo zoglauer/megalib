@@ -61,9 +61,9 @@ MUnitTest::~MUnitTest()
 
 void MUnitTest::Summarize()
 {
-  cout<<"Unit test: "<<m_Name<<endl;
-  cout<<"Passed tests: "<<m_NumberOfPassedTests<<endl;
-  cout<<"Failed tests: "<<m_NumberOfFailedTests<<endl;
+  mout<<"Unit test: "<<m_Name<<endl;
+  mout<<"Passed tests: "<<m_NumberOfPassedTests<<endl;
+  mout<<"Failed tests: "<<m_NumberOfFailedTests<<endl;
 }
 
 

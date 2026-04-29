@@ -18,6 +18,7 @@
 
 // Include the header:
 #include "MBinnerBayesianBlocks.h"
+#include "MStreams.h"
 
 // Standard libs:
 
@@ -57,9 +58,9 @@ MBinnerBayesianBlocks::~MBinnerBayesianBlocks()
 
 void Print(vector<double>& Array) {
   for (unsigned int i = 0; i < Array.size(); ++i) {
-    cout<<Array[i]<<" ";
+    mout<<Array[i]<<" ";
   }
-  cout<<endl;
+  mout<<endl;
 }
 
 
@@ -68,9 +69,9 @@ void Print(vector<double>& Array) {
 
 void Print(vector<int>& Array) {
   for (unsigned int i = 0; i < Array.size(); ++i) {
-    cout<<Array[i]<<" ";
+    mout<<Array[i]<<" ";
   }
-  cout<<endl;
+  mout<<endl;
 }
 
 
@@ -200,7 +201,7 @@ void MBinnerBayesianBlocks::Histogram()
   
   while (true) {
     if (ChangePointsIndex == 0) {
-      cout<<"Error: Something went wrong with the change points during Baysian Block binning... We had to stop before fully done."<<endl;
+      mout<<"Error: Something went wrong with the change points during Baysian Block binning... We had to stop before fully done."<<endl;
       break;
     }
     ChangePointsIndex -= 1;
@@ -220,7 +221,7 @@ void MBinnerBayesianBlocks::Histogram()
   
   while (true) {
     if (ChangePointsIndex == 0) {
-      cout<<"Error: Something went wrong with the change points during Baysian Block binning... We had to stop before fully done."<<endl;
+      mout<<"Error: Something went wrong with the change points during Baysian Block binning... We had to stop before fully done."<<endl;
       break;
     }
     ChangePointsIndex -= 1;
@@ -254,7 +255,7 @@ void MBinnerBayesianBlocks::Histogram()
             break;
           } else {
             m_BinEdges[i-1] = 0.5*(m_BinEdges[i-1] + m_BinEdges[i]);
-            cout<<"New: "<<m_BinEdges[i-1]<<endl;
+            mout<<"New: "<<m_BinEdges[i-1]<<endl;
             m_BinEdges.erase(m_BinEdges.begin()+i);
             i--;
           }

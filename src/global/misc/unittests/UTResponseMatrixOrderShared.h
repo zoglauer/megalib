@@ -305,11 +305,9 @@ inline void CleanupCanvases(int TargetCount)
 #define RM_HIST_ARGS_17 MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f
 
 #define RM_HISTOGRAM_TESTS_3 \
-    mout.Enable(false); \
-    __merr.Enable(false); \
+    DisableDefaultStreams(); \
     TH1* Histogram = Matrix.GetHistogram(RM_HIST_ARGS_3, false); \
-    __merr.Enable(true); \
-    mout.Enable(true); \
+    EnableDefaultStreams(); \
     Passed = EvaluateTrue("GetHistogram()", "representative histogram", "GetHistogram returns a representative ROOT histogram", Histogram != nullptr) && Passed; \
     if (Histogram != nullptr) { \
       Passed = EvaluateTrue("GetHistogram()", "representative histogram dimensionality", "GetHistogram returns a two-dimensional histogram when the first two axes are selected for display", dynamic_cast<TH2*>(Histogram) != nullptr) && Passed; \
@@ -318,11 +316,9 @@ inline void CleanupCanvases(int TargetCount)
     }
 
 #define RM_HISTOGRAM_TESTS_4 \
-    mout.Enable(false); \
-    __merr.Enable(false); \
+    DisableDefaultStreams(); \
     TH1* Histogram = Matrix.GetHistogram(RM_HIST_ARGS_4, false); \
-    __merr.Enable(true); \
-    mout.Enable(true); \
+    EnableDefaultStreams(); \
     Passed = EvaluateTrue("GetHistogram()", "representative histogram", "GetHistogram returns a representative ROOT histogram", Histogram != nullptr) && Passed; \
     if (Histogram != nullptr) { \
       Passed = EvaluateTrue("GetHistogram()", "representative histogram dimensionality", "GetHistogram returns a two-dimensional histogram when the first two axes are selected for display", dynamic_cast<TH2*>(Histogram) != nullptr) && Passed; \
@@ -331,11 +327,9 @@ inline void CleanupCanvases(int TargetCount)
     }
 
 #define RM_HISTOGRAM_TESTS_5 \
-    mout.Enable(false); \
-    __merr.Enable(false); \
+    DisableDefaultStreams(); \
     TH1* Histogram = Matrix.GetHistogram(RM_HIST_ARGS_5, false); \
-    __merr.Enable(true); \
-    mout.Enable(true); \
+    EnableDefaultStreams(); \
     Passed = EvaluateTrue("GetHistogram()", "representative histogram", "GetHistogram returns a representative ROOT histogram", Histogram != nullptr) && Passed; \
     if (Histogram != nullptr) { \
       Passed = EvaluateTrue("GetHistogram()", "representative histogram dimensionality", "GetHistogram returns a two-dimensional histogram when the first two axes are selected for display", dynamic_cast<TH2*>(Histogram) != nullptr) && Passed; \
@@ -556,16 +550,14 @@ public: \
       bool WasBatch = gROOT->IsBatch(); \
       gROOT->SetBatch(true); \
       int BeforeCanvases = GetCanvasCount(); \
-      mout.Enable(false); \
-      __merr.Enable(false); \
+      DisableDefaultStreams(); \
       Matrix.Show(RM_HIST_ARGS_##ORDER, false); \
-      __merr.Enable(true); \
-      mout.Enable(true); \
+      EnableDefaultStreams(); \
       Passed = Evaluate("Show()", "representative display", "Show creates a ROOT canvas for the representative histogram", GetCanvasCount(), BeforeCanvases + 1) && Passed; \
       CleanupCanvases(BeforeCanvases); \
       gROOT->SetBatch(WasBatch); \
     } \
-    __merr.Enable(false); \
+    DisableDefaultStreams(); \
     Passed = Evaluate("Write()", "non-stream mode", "Writing the representative matrix in non-stream mode is rejected explicitly", Matrix.Write(MString("/tmp/UTResponseMatrix/") + #SUITE + "_text.rsp", false), false) && Passed; \
     MFile File; \
     Passed = Evaluate("Open()", "non-stream read setup", "The representative non-stream response-matrix file can be created", File.Open(MString("/tmp/UTResponseMatrix/") + #SUITE + "_text_read.rsp", MFile::c_Write), true) && Passed; \
@@ -573,7 +565,7 @@ public: \
     File.Close(); \
     MATRIX ReadBackText; \
     Passed = Evaluate("Read()", "non-stream mode", "Reading the representative matrix in non-stream mode is rejected explicitly", ReadBackText.Read(MString("/tmp/UTResponseMatrix/") + #SUITE + "_text_read.rsp"), false) && Passed; \
-    __merr.Enable(true); \
+    EnableDefaultStreams(); \
     Summarize(); \
     return Passed; \
   } \

@@ -735,7 +735,7 @@ bool MFileEvents::CreateIncludeFile()
   out<<"IN "<<MFile::RelativeFileName(NewFileName, m_FileName)<<endl<<flush;
   Write(out);
 
-  cout<<"Changing to new include file "<<MFile::RelativeFileName(NewFileName, m_FileName)<<endl;
+  mout<<"Changing to new include file "<<MFile::RelativeFileName(NewFileName, m_FileName)<<endl;
 
   // Open new file
   if (m_IncludeFile->Open(NewFileName, c_Write) == false) {

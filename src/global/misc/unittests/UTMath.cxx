@@ -8,38 +8,10 @@
  *
  */
 
-// Standard libs:
-#include <fcntl.h>
-#include <unistd.h>
-using namespace std;
-
 // MEGAlib:
 #include "MMath.h"
 #include "MUnitTest.h"
-
-
-class UTMathSupport
-{
-public:
-  static int SilenceStdout()
-  {
-    int SavedStdout = dup(STDOUT_FILENO);
-    int DevNull = open("/dev/null", O_WRONLY);
-    if (DevNull >= 0) {
-      dup2(DevNull, STDOUT_FILENO);
-      close(DevNull);
-    }
-    return SavedStdout;
-  }
-
-  static void RestoreStdout(int SavedStdout)
-  {
-    if (SavedStdout >= 0) {
-      dup2(SavedStdout, STDOUT_FILENO);
-      close(SavedStdout);
-    }
-  }
-};
+using namespace std;
 
 
 //! Unit test class for MMath
@@ -93,7 +65,7 @@ bool UTMath::Run()
     double InteriorPhi = 135.0;
     MMath::GalacticToSpheric(InteriorTheta, InteriorPhi);
     Passed = EvaluateNear("GalacticToSpheric()", "interior case 1 theta", "GalacticToSpheric converts a representative interior latitude", InteriorTheta, 110.0, 1e-12) && Passed;
-    Passed = EvaluateNear("GalacticToSpheric()", "interior case 1 phi", "GalacticToSpheric converts a representative interior longitude", InteriorPhi, 45.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GalacticToSpheric()", "interior case 1 phi", "GalacticToSpheric converts a representative interior longitude", InteriorPhi, -135.0, 1e-12) && Passed;
     MMath::SphericToGalactic(InteriorTheta, InteriorPhi);
     Passed = EvaluateNear("SphericToGalactic()", "interior case 1 theta", "SphericToGalactic reverses a representative interior theta", InteriorTheta, -20.0, 1e-12) && Passed;
     Passed = EvaluateNear("SphericToGalactic()", "interior case 1 phi", "SphericToGalactic reverses a representative interior phi", InteriorPhi, 135.0, 1e-12) && Passed;
@@ -104,7 +76,7 @@ bool UTMath::Run()
     double InteriorPhi = -170.0;
     MMath::GalacticToSpheric(InteriorTheta, InteriorPhi);
     Passed = EvaluateNear("GalacticToSpheric()", "interior case 2 theta", "GalacticToSpheric converts a representative high-latitude interior value", InteriorTheta, 17.5, 1e-12) && Passed;
-    Passed = EvaluateNear("GalacticToSpheric()", "interior case 2 phi", "GalacticToSpheric converts a representative wrapped longitude", InteriorPhi, -260.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GalacticToSpheric()", "interior case 2 phi", "GalacticToSpheric converts a representative wrapped longitude", InteriorPhi, 170.0, 1e-12) && Passed;
     MMath::SphericToGalactic(InteriorTheta, InteriorPhi);
     Passed = EvaluateNear("SphericToGalactic()", "interior case 2 theta", "SphericToGalactic reverses a representative high-latitude interior theta", InteriorTheta, 72.5, 1e-12) && Passed;
     Passed = EvaluateNear("SphericToGalactic()", "interior case 2 phi", "SphericToGalactic reverses a representative wrapped interior phi", InteriorPhi, -170.0, 1e-12) && Passed;
@@ -115,9 +87,9 @@ bool UTMath::Run()
     double InteriorPhi = 120.0;
     double InteriorRadius = 3.5;
     MMath::SphericToCartesean(InteriorTheta, InteriorPhi, InteriorRadius);
-    Passed = EvaluateNear("SphericToCartesean()", "interior case 1 x", "SphericToCartesean converts a representative interior theta/phi pair to Cartesian x", InteriorTheta, 0.9850497869294838, 1e-12) && Passed;
-    Passed = EvaluateNear("SphericToCartesean()", "interior case 1 y", "SphericToCartesean converts a representative interior theta/phi pair to Cartesian y", InteriorPhi, 1.7064425506458136, 1e-12) && Passed;
-    Passed = EvaluateNear("SphericToCartesean()", "interior case 1 z", "SphericToCartesean converts a representative interior theta/phi pair to Cartesian z", InteriorRadius, 2.8670321550114714, 1e-12) && Passed;
+    Passed = EvaluateNear("SphericToCartesean()", "interior case 1 x", "SphericToCartesean converts a representative interior theta/phi pair to Cartesian x", InteriorTheta, -1.0037587636143301, 1e-12) && Passed;
+    Passed = EvaluateNear("SphericToCartesean()", "interior case 1 y", "SphericToCartesean converts a representative interior theta/phi pair to Cartesian y", InteriorPhi, 1.7385611771225393, 1e-12) && Passed;
+    Passed = EvaluateNear("SphericToCartesean()", "interior case 1 z", "SphericToCartesean converts a representative interior theta/phi pair to Cartesian z", InteriorRadius, 2.8670321550114712, 1e-12) && Passed;
 
     MMath::CarteseanToSpheric(InteriorTheta, InteriorPhi, InteriorRadius);
     Passed = EvaluateNear("CarteseanToSpheric()", "interior case 1 theta", "CarteseanToSpheric reconstructs a representative interior theta", InteriorTheta, 35.0, 1e-12) && Passed;
@@ -130,9 +102,9 @@ bool UTMath::Run()
     double InteriorPhi = -40.0;
     double InteriorRadius = 1.7;
     MMath::SphericToCartesean(InteriorTheta, InteriorPhi, InteriorRadius);
-    Passed = EvaluateNear("SphericToCartesean()", "interior case 2 x", "SphericToCartesean converts a representative lower-hemisphere interior theta/phi pair to Cartesian x", InteriorTheta, 1.1091126948997413, 1e-12) && Passed;
-    Passed = EvaluateNear("SphericToCartesean()", "interior case 2 y", "SphericToCartesean converts a representative lower-hemisphere interior theta/phi pair to Cartesian y", InteriorPhi, -0.9307087844854911, 1e-12) && Passed;
-    Passed = EvaluateNear("SphericToCartesean()", "interior case 2 z", "SphericToCartesean converts a representative lower-hemisphere interior theta/phi pair to Cartesian z", InteriorRadius, -0.9257770557617784, 1e-12) && Passed;
+    Passed = EvaluateNear("SphericToCartesean()", "interior case 2 x", "SphericToCartesean converts a representative lower-hemisphere interior theta/phi pair to Cartesian x", InteriorTheta, 1.09218017790945, 1e-12) && Passed;
+    Passed = EvaluateNear("SphericToCartesean()", "interior case 2 y", "SphericToCartesean converts a representative lower-hemisphere interior theta/phi pair to Cartesian y", InteriorPhi, -0.9164479844629555, 1e-12) && Passed;
+    Passed = EvaluateNear("SphericToCartesean()", "interior case 2 z", "SphericToCartesean converts a representative lower-hemisphere interior theta/phi pair to Cartesian z", InteriorRadius, -0.9258863595255462, 1e-12) && Passed;
 
     MMath::CarteseanToSpheric(InteriorTheta, InteriorPhi, InteriorRadius);
     Passed = EvaluateNear("CarteseanToSpheric()", "interior case 2 theta", "CarteseanToSpheric reconstructs a representative lower-hemisphere interior theta", InteriorTheta, 123.0, 1e-12) && Passed;
@@ -145,9 +117,9 @@ bool UTMath::Run()
     double InteriorPhi = 210.0;
     double InteriorRadius = 4.2;
     MMath::SphericToCartesean(InteriorTheta, InteriorPhi, InteriorRadius);
-    Passed = EvaluateNear("SphericToCartesean()", "interior case 3 x", "SphericToCartesean converts a representative third-quadrant interior theta/phi pair to Cartesian x", InteriorTheta, -3.085977923426456, 1e-12) && Passed;
-    Passed = EvaluateNear("SphericToCartesean()", "interior case 3 y", "SphericToCartesean converts a representative third-quadrant interior theta/phi pair to Cartesian y", InteriorPhi, -1.7816889301744826, 1e-12) && Passed;
-    Passed = EvaluateNear("SphericToCartesean()", "interior case 3 z", "SphericToCartesean converts a representative third-quadrant interior theta/phi pair to Cartesian z", InteriorRadius, 2.225197889879566, 1e-12) && Passed;
+    Passed = EvaluateNear("SphericToCartesean()", "interior case 3 x", "SphericToCartesean converts a representative third-quadrant interior theta/phi pair to Cartesian x", InteriorTheta, -3.0846110185904716, 1e-12) && Passed;
+    Passed = EvaluateNear("SphericToCartesean()", "interior case 3 y", "SphericToCartesean converts a representative third-quadrant interior theta/phi pair to Cartesian y", InteriorPhi, -1.780901001928495, 1e-12) && Passed;
+    Passed = EvaluateNear("SphericToCartesean()", "interior case 3 z", "SphericToCartesean converts a representative third-quadrant interior theta/phi pair to Cartesian z", InteriorRadius, 2.2256609097794606, 1e-12) && Passed;
 
     MMath::CarteseanToSpheric(InteriorTheta, InteriorPhi, InteriorRadius);
     Passed = EvaluateNear("CarteseanToSpheric()", "interior case 3 theta", "CarteseanToSpheric reconstructs a representative third-quadrant interior theta", InteriorTheta, 58.0, 1e-12) && Passed;
@@ -169,9 +141,9 @@ bool UTMath::Run()
 
   Passed = EvaluateNear("AngleBetweenTwoVectors()", "orthogonal", "AngleBetweenTwoVectors returns the representative right angle", Math.AngleBetweenTwoVectors(1.0, 0.0, 0.0, 0.0, 1.0, 0.0), c_Pi/2.0, 1e-12) && Passed;
   Passed = EvaluateNear("AngleBetweenTwoVectors()", "zero vector", "AngleBetweenTwoVectors returns zero for representative zero-length input", Math.AngleBetweenTwoVectors(0.0, 0.0, 0.0, 1.0, 0.0, 0.0), 0.0, 1e-12) && Passed;
-  Passed = EvaluateNear("AngleBetweenTwoVectors()", "interior acute", "AngleBetweenTwoVectors returns the representative acute interior angle", Math.AngleBetweenTwoVectors(1.0, 2.0, 3.0, 4.0, 0.5, -1.0), 1.3436261524769253, 1e-12) && Passed;
-  Passed = EvaluateNear("AngleBetweenTwoVectors()", "interior obtuse", "AngleBetweenTwoVectors returns the representative obtuse interior angle", Math.AngleBetweenTwoVectors(-2.0, 1.0, 0.5, 1.5, -3.0, 2.0), 2.1125800146854643, 1e-12) && Passed;
-  Passed = EvaluateNear("AngleBetweenTwoVectors()", "interior nearly parallel", "AngleBetweenTwoVectors returns the representative small interior angle between nearly parallel vectors", Math.AngleBetweenTwoVectors(1.0, 1.0, 0.0, 2.0, 1.8, 0.1), 0.180683842366634, 1e-12) && Passed;
+  Passed = EvaluateNear("AngleBetweenTwoVectors()", "interior acute", "AngleBetweenTwoVectors returns the representative acute interior angle", Math.AngleBetweenTwoVectors(1.0, 2.0, 3.0, 4.0, 0.5, -1.0), 1.4417404882905929, 1e-12) && Passed;
+  Passed = EvaluateNear("AngleBetweenTwoVectors()", "interior obtuse", "AngleBetweenTwoVectors returns the representative obtuse interior angle", Math.AngleBetweenTwoVectors(-2.0, 1.0, 0.5, 1.5, -3.0, 2.0), 2.1637329211810252, 1e-12) && Passed;
+  Passed = EvaluateNear("AngleBetweenTwoVectors()", "interior nearly parallel", "AngleBetweenTwoVectors returns the representative small interior angle between nearly parallel vectors", Math.AngleBetweenTwoVectors(1.0, 1.0, 0.0, 2.0, 1.8, 0.1), 0.06437119817909545, 1e-12) && Passed;
 
   vector<bool> HighOutlier = Math.ModifiedThomsonTauTest(vector<double>{1.0, 1.1, 1.2, 10.0});
   Passed = Evaluate("ModifiedThomsonTauTest()", "high outlier size", "ModifiedThomsonTauTest returns one representative flag per value", HighOutlier.size(), 4UL) && Passed;
@@ -186,48 +158,48 @@ bool UTMath::Run()
   Passed = Evaluate("ModifiedThomsonTauTest()", "known outliers", "ModifiedThomsonTauTest preserves representative known outliers", bool(Preserved[3]), true) && Passed;
 
   {
-    int SavedStdout = UTMathSupport::SilenceStdout();
+    DisableDefaultStreams();
     vector<bool> TooFew = Math.ModifiedThomsonTauTest(vector<double>{1.0, 2.0});
-    UTMathSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
     Passed = Evaluate("ModifiedThomsonTauTest()", "too few values", "ModifiedThomsonTauTest returns representative default flags for too few values", TooFew.size(), 2UL) && Passed;
     Passed = Evaluate("ModifiedThomsonTauTest()", "too few values flags", "ModifiedThomsonTauTest leaves representative too-few-value flags unset", bool(TooFew[0]), false) && Passed;
   }
 
   {
-    int SavedStdout = UTMathSupport::SilenceStdout();
+    DisableDefaultStreams();
     vector<bool> InvalidAlpha = Math.ModifiedThomsonTauTest(vector<double>{1.0, 2.0, 3.0}, 0.0);
-    UTMathSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
     Passed = Evaluate("ModifiedThomsonTauTest()", "invalid alpha", "ModifiedThomsonTauTest returns representative default flags for invalid alpha", InvalidAlpha.size(), 3UL) && Passed;
     Passed = Evaluate("ModifiedThomsonTauTest()", "invalid alpha flags", "ModifiedThomsonTauTest leaves representative invalid-alpha flags unset", bool(InvalidAlpha[1]), false) && Passed;
   }
 
   {
-    int SavedStdout = UTMathSupport::SilenceStdout();
+    DisableDefaultStreams();
     vector<bool> InvalidKnown = Math.ModifiedThomsonTauTest(vector<double>{1.0, 2.0, 3.0}, 0.05, vector<bool>{false});
-    UTMathSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
     Passed = Evaluate("ModifiedThomsonTauTest()", "mismatched outlier mask", "ModifiedThomsonTauTest returns the representative mismatched outlier mask unchanged", InvalidKnown.size(), 1UL) && Passed;
   }
 
   {
-    int SavedStdout = UTMathSupport::SilenceStdout();
+    DisableDefaultStreams();
     vector<bool> AllKnown = Math.ModifiedThomsonTauTest(vector<double>{1.0, 2.0, 3.0}, 0.05, vector<bool>{true, true, true});
-    UTMathSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
     Passed = Evaluate("ModifiedThomsonTauTest()", "all known outliers", "ModifiedThomsonTauTest preserves representative all-known-outlier masks", AllKnown.size(), 3UL) && Passed;
     Passed = Evaluate("ModifiedThomsonTauTest()", "all known outliers first flag", "ModifiedThomsonTauTest leaves representative all-known-outlier entries set", bool(AllKnown[0]), true) && Passed;
   }
 
   {
-    int SavedStdout = UTMathSupport::SilenceStdout();
+    DisableDefaultStreams();
     vector<bool> NanInput = Math.ModifiedThomsonTauTest(vector<double>{1.0, numeric_limits<double>::quiet_NaN(), 3.0});
-    UTMathSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
     Passed = Evaluate("ModifiedThomsonTauTest()", "nan input", "ModifiedThomsonTauTest returns representative default flags for nan input", NanInput.size(), 3UL) && Passed;
     Passed = Evaluate("ModifiedThomsonTauTest()", "nan input flags", "ModifiedThomsonTauTest leaves representative nan-input flags unset", bool(NanInput[1]), false) && Passed;
   }
 
   {
-    int SavedStdout = UTMathSupport::SilenceStdout();
+    DisableDefaultStreams();
     vector<bool> InfInput = Math.ModifiedThomsonTauTest(vector<double>{1.0, numeric_limits<double>::infinity(), 3.0});
-    UTMathSupport::RestoreStdout(SavedStdout);
+    EnableDefaultStreams();
     Passed = Evaluate("ModifiedThomsonTauTest()", "inf input", "ModifiedThomsonTauTest returns representative default flags for infinite input", InfInput.size(), 3UL) && Passed;
     Passed = Evaluate("ModifiedThomsonTauTest()", "inf input flags", "ModifiedThomsonTauTest leaves representative infinite-input flags unset", bool(InfInput[1]), false) && Passed;
   }

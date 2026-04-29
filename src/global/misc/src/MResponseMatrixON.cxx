@@ -704,14 +704,14 @@ vector<unsigned long> MResponseMatrixON::FindBins(vector<double> X) const
       if (m_Axes[a]->InRange(X[Xbin]) == true) {
         Bins.push_back(m_Axes[a]->GetAxisBin(X[Xbin]));
       } else {
-        cout<<m_Name<<": Axis: "<<m_Axes[a]->GetNames()[0]<<" (xbin="<<Xbin<<"/"<<X.size()<<")"<<endl;
+        mout<<m_Name<<": Axis: "<<m_Axes[a]->GetNames()[0]<<" (xbin="<<Xbin<<"/"<<X.size()<<")"<<endl;
         throw MExceptionValueOutOfBounds(X[Xbin]);
       }
     } else if (Dimension == 2) {
       if (m_Axes[a]->InRange(X[Xbin], X[Xbin+1]) == true) {
         Bins.push_back(m_Axes[a]->GetAxisBin(X[Xbin], X[Xbin+1]));
       } else {
-        cout<<X[Xbin]<<":"<<X[Xbin+1]<<endl;
+        mout<<X[Xbin]<<":"<<X[Xbin+1]<<endl;
         throw MExceptionValueOutOfBounds();
       }
     } else {
@@ -755,12 +755,12 @@ bool MResponseMatrixON::InRange(vector<double> X) const
     unsigned int Dimension = m_Axes[a]->GetDimension();
     if (Dimension == 1) {
       if (m_Axes[a]->InRange(X[Xbin]) == false) {
-        cout<<"Response matrix "<<m_Name<<": Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
+        mout<<"Response matrix "<<m_Name<<": Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
         return false;
       }
     } else if (Dimension == 2) {
       if (m_Axes[a]->InRange(X[Xbin], X[Xbin+1]) == false) {
-        cout<<"Response matrix "<<m_Name<<": Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
+        mout<<"Response matrix "<<m_Name<<": Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
         return false;
       }
     } else {
@@ -1044,9 +1044,9 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
   // Return the array-data according to value x1
 
   if (InRange(X) == false) {
-    cout<<"Out of range: ";
-    for (auto x: X) cout<<x<<" ";
-    cout<<endl;
+    mout<<"Out of range: ";
+    for (auto x: X) mout<<x<<" ";
+    mout<<endl;
     return 0;
   }
 
@@ -1133,9 +1133,9 @@ float MResponseMatrixON::Get(vector<double> X) const
   // Return the array-data according to value x
 
   if (InRange(X) == false) {
-    cout<<"Out of range: ";
-    for (auto x: X) cout<<x<<" ";
-    cout<<endl;
+    mout<<"Out of range: ";
+    for (auto x: X) mout<<x<<" ";
+    mout<<endl;
     return 0;
   }
 
@@ -1166,9 +1166,9 @@ float MResponseMatrixON::GetArea(vector<double> X) const
   // Return the area of the bin corresponding to X
 
   if (InRange(X) == false) {
-    cout<<"Out of range: ";
-    for (auto x: X) cout<<x<<" ";
-    cout<<endl;
+    mout<<"Out of range: ";
+    for (auto x: X) mout<<x<<" ";
+    mout<<endl;
     return 0.0;
   }
 
@@ -1560,7 +1560,7 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
     m_Order += m_Axes[a]->GetDimension();
   }
 
-  cout<<"Time spent reading response: "<<Timer.GetElapsed()<<" seconds"<<endl;
+  mout<<"Time spent reading response: "<<Timer.GetElapsed()<<" seconds"<<endl;
 
   // Debugging: Save it
   //MTimer WriteTimer;

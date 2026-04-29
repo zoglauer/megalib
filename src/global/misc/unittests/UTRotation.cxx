@@ -14,9 +14,8 @@
 #include "MUnitTest.h"
 
 // Standard lib:
-#include <sstream>
+#include <fstream>
 using namespace std;
-
 
 //! Unit test class for the MRotation helper
 class UTRotation : public MUnitTest
@@ -274,25 +273,31 @@ bool UTRotation::TestEdgeCases()
                      0.0, 0.0, 1.0);
   Passed = EvaluateNear("GetDeterminant()", "singular matrix", "A matrix with dependent rows has determinant zero", Singular.GetDeterminant(), 0.0, 1e-12) && Passed;
 
-  streambuf* OldBuffer = cerr.rdbuf();
-  ostringstream ErrorCapture;
-  cerr.rdbuf(ErrorCapture.rdbuf());
+  MString SingularInverseLog = "/tmp/UTRotation_singular_inverse.log";
+  __merr.Connect(SingularInverseLog, false);
+  __merr.DumpToStdOut(false);
   MRotation SingularInverse = Singular.GetInvers();
-  cerr.rdbuf(OldBuffer);
+  __merr.DumpToStdOut(true);
+  __merr.Disconnect(SingularInverseLog);
+  ifstream SingularInverseStream(SingularInverseLog.Data());
+  string SingularInverseMessage((istreambuf_iterator<char>(SingularInverseStream)), istreambuf_iterator<char>());
 
   Passed = EvaluateTrue("GetInvers()", "singular matrix", "GetInvers returns the identity matrix when inversion fails", SingularInverse == MRotation()) && Passed;
   Passed = EvaluateTrue("GetInvers()", "singular matrix warning", "GetInvers emits a warning for singular matrices",
-                        ErrorCapture.str().find("determinant is zero") != string::npos) && Passed;
+                        SingularInverseMessage.find("determinant is zero") != string::npos) && Passed;
 
   MRotation SingularInPlace = Singular;
-  OldBuffer = cerr.rdbuf();
-  ostringstream ErrorCaptureInPlace;
-  cerr.rdbuf(ErrorCaptureInPlace.rdbuf());
+  MString SingularInvertLog = "/tmp/UTRotation_singular_invert.log";
+  __merr.Connect(SingularInvertLog, false);
+  __merr.DumpToStdOut(false);
   SingularInPlace.Invert();
-  cerr.rdbuf(OldBuffer);
+  __merr.DumpToStdOut(true);
+  __merr.Disconnect(SingularInvertLog);
+  ifstream SingularInvertStream(SingularInvertLog.Data());
+  string SingularInvertMessage((istreambuf_iterator<char>(SingularInvertStream)), istreambuf_iterator<char>());
   Passed = EvaluateTrue("Invert()", "singular matrix", "Invert falls back to the identity matrix for singular matrices", SingularInPlace == MRotation()) && Passed;
   Passed = EvaluateTrue("Invert()", "singular matrix warning", "Invert forwards the singular inversion warning",
-                        ErrorCaptureInPlace.str().find("determinant is zero") != string::npos) && Passed;
+                        SingularInvertMessage.find("determinant is zero") != string::npos) && Passed;
 
   MRotation RotateA(c_Pi / 7.0, MVector(1.0, 0.0, 0.0));
   MRotation RotateB(c_Pi / 5.0, MVector(0.0, 1.0, 0.0));

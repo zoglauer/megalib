@@ -74,28 +74,6 @@ bool UTResponseMatrix::Run()
 {
   bool Passed = true;
 
-  auto SilenceOutput = []() {
-    int SavedStdout = dup(STDOUT_FILENO);
-    int SavedStderr = dup(STDERR_FILENO);
-    int DevNull = open("/dev/null", O_WRONLY);
-    if (DevNull >= 0) {
-      dup2(DevNull, STDOUT_FILENO);
-      dup2(DevNull, STDERR_FILENO);
-      close(DevNull);
-    }
-    return pair<int, int>(SavedStdout, SavedStderr);
-  };
-  auto RestoreOutput = [](pair<int, int> Saved) {
-    if (Saved.first >= 0) {
-      dup2(Saved.first, STDOUT_FILENO);
-      close(Saved.first);
-    }
-    if (Saved.second >= 0) {
-      dup2(Saved.second, STDERR_FILENO);
-      close(Saved.second);
-    }
-  };
-
   TestResponseMatrix Default;
   Passed = Evaluate("GetName()", "default constructor", "The default response matrix name is set correctly", Default.GetName(), MString("Unnamed response matrix")) && Passed;
   Passed = Evaluate("GetOrder()", "default constructor", "The default response matrix order starts at zero", Default.GetOrder(), 0U) && Passed;
@@ -171,9 +149,9 @@ bool UTResponseMatrix::Run()
   ReadFail.SetReadSpecificResult(false);
   Passed = Evaluate("Read()", "representative failure", "Read returns failure when the representative derived reader fails", ReadFail.Read(TempFile), false) && Passed;
   {
-    pair<int, int> Saved = SilenceOutput();
+    DisableDefaultStreams();
     Passed = Evaluate("Read()", "missing file", "Read returns false for a representative missing response file", ReadFail.Read("/tmp/UTResponseMatrix/does_not_exist.rsp"), false) && Passed;
-    RestoreOutput(Saved);
+    EnableDefaultStreams();
   }
 
   Summarize();

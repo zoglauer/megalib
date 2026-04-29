@@ -311,7 +311,7 @@ void* MFileEventsTra::ThreadedReading()
             Ps.clear();
             TThread::UnLock();
             // Missing: end thread here
-            cout<<"Time reader thread slept: "<<TimeReaderThreadSlept<<" sec (the thread will most likely sleep during worker thread initialization)"<<endl;
+            mout<<"Time reader thread slept: "<<TimeReaderThreadSlept<<" sec (the thread will most likely sleep during worker thread initialization)"<<endl;
             return 0;
           }
           Ps.push_back(P);
@@ -458,7 +458,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
 
     if (Line[0] == 'E' && Line[1] == 'T') {
       if (Line.Length() < 5) {
-        cout<<"Error reading event type"<<endl;
+        mout<<"Error reading event type"<<endl;
         m_EventType = MPhysicalEvent::c_Unknown;
         break;
       }
@@ -505,7 +505,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
         Phys = (MPhysicalEvent*) P;
         break;
       } else {
-        cout<<"Unknown event"<<endl;
+        mout<<"Unknown event"<<endl;
         m_EventType = MPhysicalEvent::c_Unknown;
         break;
       }

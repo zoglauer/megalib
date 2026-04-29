@@ -996,7 +996,7 @@ double MComptonEvent::dPhi()
   
   double dPhiA_Boggs = sqrt(dPhix*dPhix + dPhiy*dPhiy + dPhiz*dPhiz);
   
-  cout<<dPhiA<<" vs. Boggs: "<<dPhiA_Boggs<<endl;
+  mout<<dPhiA<<" vs. Boggs: "<<dPhiA_Boggs<<endl;
   */
   
   m_dPhi = sqrt(dPhiE*dPhiE + dPhiA*dPhiA);
@@ -1242,7 +1242,7 @@ int MComptonEvent::ParseLine(const char* Line, bool Fast)
                  &m_C1[0], &m_C1[1], &m_C1[2], &m_dC1[0], &m_dC1[1], &m_dC1[2], 
                  &m_C2[0], &m_C2[1], &m_C2[2], &m_dC2[0], &m_dC2[1], &m_dC2[2], 
                  &m_De[0], &m_De[1], &m_De[2], &m_dDe[0], &m_dDe[1], &m_dDe[2]) != 18) {
-        cout<<"Unable to parse CD of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse CD of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }

@@ -190,16 +190,16 @@ bool UTSettingsGlobal::TestReadWriteFiles()
   Passed = EvaluateTrue("WriteTextFile()", "wrong root file", "A global settings file with the wrong XML root can be written", WriteTextFile(WrongRootFile, "<NotMEGAlib><LicenseHash>1</LicenseHash></NotMEGAlib>\n")) && Passed;
   UTSettingsGlobal_Test WrongRoot;
   WrongRoot.SetTestSettingsFileName(WrongRootFile);
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = Evaluate("Read()", "wrong root", "Read() rejects global settings files with the wrong XML root", WrongRoot.Read(), false) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   Passed = EvaluateTrue("WriteTextFile()", "empty file", "An empty global settings file can be written", WriteTextFile(EmptyFile, "")) && Passed;
   UTSettingsGlobal_Test Empty;
   Empty.SetTestSettingsFileName(EmptyFile);
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = Evaluate("Read()", "empty file", "Read() rejects an existing empty global settings file", Empty.Read(), false) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   return Passed;
 }

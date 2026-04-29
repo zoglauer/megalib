@@ -270,15 +270,9 @@ bool UTGTI::TestLoadFailure()
   bool Passed = true;
 
   MGTI GTI;
-  mout.Enable(false);
-  mlog.Enable(false);
-  mgui.Enable(false);
-  __merr.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Load()", "missing file", "Load() reports failure for missing GTI files", GTI.Load("/tmp/UTGTI/does_not_exist.gti")) && Passed;
-  __merr.Enable(true);
-  mgui.Enable(true);
-  mlog.Enable(true);
-  mout.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateTrue("Load()", "missing file fallback", "A failed load falls back to the default open interval", GTI.IsGood(MTime(12345))) && Passed;
   Passed = EvaluateFalse("Load()", "missing file fallback upper bound", "The failed-load fallback still keeps the configured upper bound", GTI.IsGood(MTime(2000000001))) && Passed;
 
@@ -288,15 +282,9 @@ bool UTGTI::TestLoadFailure()
   Passed = EvaluateTrue("WriteTextFile()", "missing include file", "A GTI file with a missing include can be written", WriteTextFile(MainFile, "IN does_not_exist.gti\nGT 1 2\nEN\n")) && Passed;
 
   MGTI IncludeFailure;
-  mout.Enable(false);
-  mlog.Enable(false);
-  mgui.Enable(false);
-  __merr.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateFalse("Load()", "missing include", "Load() reports failure when a referenced include file cannot be loaded", IncludeFailure.Load(MainFile)) && Passed;
-  __merr.Enable(true);
-  mgui.Enable(true);
-  mlog.Enable(true);
-  mout.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateFalse("IsGood()", "missing include partial state", "Load() keeps the intervals parsed before the failing include load without falling back to all-open", IncludeFailure.IsGood(MTime(100))) && Passed;
 
   return Passed;

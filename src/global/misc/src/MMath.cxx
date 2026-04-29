@@ -25,6 +25,7 @@
 
 // Include the header:
 #include "MMath.h"
+#include "MStreams.h"
 
 // Standard libs:
 #include <float.h>
@@ -207,31 +208,31 @@ vector<bool> MMath::ModifiedThomsonTauTest(vector<double> Values, double Alpha, 
   }
   
   if (IsOutlier.size() != Values.size()) {
-    cout<<"ERROR in ModifiedThomsonTauTest: Value and outlier arrays dpo not have same size"<<endl;
+    mout<<"ERROR in ModifiedThomsonTauTest: Value and outlier arrays dpo not have same size"<<endl;
     return IsOutlier;
   }
   
   
   // We need at least 3 values
   if (Values.size() < 3) {
-    cout<<"ERROR in ModifiedThomsonTauTest: Need at least 2 values"<<endl;
+    mout<<"ERROR in ModifiedThomsonTauTest: Need at least 2 values"<<endl;
     return IsOutlier;
   }
   
   // Alpha need to be reasonable
   if (Alpha <= 0 || Alpha > 0.5) {
-    cout<<"ERROR in ModifiedThomsonTauTest: Alpha should be between 0.001 and 0.5, a good value is 0.05"<<endl;
+    mout<<"ERROR in ModifiedThomsonTauTest: Alpha should be between 0.001 and 0.5, a good value is 0.05"<<endl;
     return IsOutlier;
   }
   
   // Protection against nan and inf in Values
   for (unsigned int i = 0; i < Values.size(); ++i) {
     if (std::isnan(Values[i])) {
-      cout<<"ERROR in ModifiedThomsonTauTest: Value at index "<<i<<" is nan"<<endl;
+      mout<<"ERROR in ModifiedThomsonTauTest: Value at index "<<i<<" is nan"<<endl;
       return IsOutlier;      
     }
     if (std::isinf(Values[i])) {
-      cout<<"ERROR in ModifiedThomsonTauTest: Value at index "<<i<<" is inf"<<endl;
+      mout<<"ERROR in ModifiedThomsonTauTest: Value at index "<<i<<" is inf"<<endl;
       return IsOutlier;      
     }
   }

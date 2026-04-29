@@ -29,7 +29,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MUnitTest.h"
+#include "MStreams.h"
 
 // Forward declarations:
 
@@ -139,15 +139,33 @@ class MUnitTest
   //! Return the unit test name
   const MString& GetName() const { return m_Name; }
 
+  //! Disable the default MEGAlib output streams for expected noisy test paths
+  void DisableDefaultStreams()
+  {
+    mout.Enable(false);
+    mlog.Enable(false);
+    mgui.Enable(false);
+    __merr.Enable(false);
+  }
+
+  //! Re-enable the default MEGAlib output streams after a noisy test path
+  void EnableDefaultStreams()
+  {
+    mout.Enable(true);
+    mlog.Enable(true);
+    mgui.Enable(true);
+    __merr.Enable(true);
+  }
+
   //! Register and report a failed test
   template <typename T> void RegisterFailure(MString Function, T Input, MString Description, MString Expected, MString Output)
   {
-    cout<<endl;
-    cout<<"FAILED: "<<Function<<"  <-- "<<Input<<endl;
-    cout<<"   Description: "<<Description<<endl;
-    cout<<"   Expected:    "<<Expected<<endl;
-    cout<<"   Output:      "<<Output<<endl;
-    cout<<endl;
+    mout<<endl;
+    mout<<"FAILED: "<<Function<<"  <-- "<<Input<<endl;
+    mout<<"   Description: "<<Description<<endl;
+    mout<<"   Expected:    "<<Expected<<endl;
+    mout<<"   Output:      "<<Output<<endl;
+    mout<<endl;
 
     ++m_NumberOfFailedTests;
   }

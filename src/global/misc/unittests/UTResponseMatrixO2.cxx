@@ -117,11 +117,9 @@ bool UTResponseMatrixO2::Run()
   Passed = Evaluate("Read()", "stream round trip", "Reading the representative matrix written in stream mode succeeds", ReadBack.Read(FileName), true) && Passed;
   Passed = EvaluateNear("GetBinContent()", "stream round trip", "The representative first-bin content survives a stream round trip", ReadBack.GetBinContent(0, 0), 6.0, 1e-6) && Passed;
 
-  mout.Enable(false);
-  __merr.Enable(false);
+  DisableDefaultStreams();
   TH1* Histogram = Matrix.GetHistogram(MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY, false);
-  __merr.Enable(true);
-  mout.Enable(true);
+  EnableDefaultStreams();
   Passed = EvaluateTrue("GetHistogram()", "representative histogram", "GetHistogram returns a representative ROOT histogram", Histogram != nullptr) && Passed;
   if (Histogram != nullptr) {
     Passed = EvaluateTrue("GetHistogram()", "representative histogram dimensionality", "GetHistogram returns a two-dimensional histogram when both axes are selected for display", dynamic_cast<TH2*>(Histogram) != nullptr) && Passed;
@@ -133,17 +131,15 @@ bool UTResponseMatrixO2::Run()
     bool WasBatch = gROOT->IsBatch();
     gROOT->SetBatch(true);
     int BeforeCanvases = GetCanvasCount();
-    mout.Enable(false);
-    __merr.Enable(false);
+    DisableDefaultStreams();
     Matrix.Show(MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY, false);
-    __merr.Enable(true);
-    mout.Enable(true);
+    EnableDefaultStreams();
     Passed = Evaluate("Show()", "representative display", "Show creates a ROOT canvas for the representative histogram", GetCanvasCount(), BeforeCanvases + 1) && Passed;
     CleanupCanvases(BeforeCanvases);
     gROOT->SetBatch(WasBatch);
   }
 
-  __merr.Enable(false);
+  DisableDefaultStreams();
   Passed = Evaluate("Write()", "non-stream mode", "Writing the representative matrix in non-stream mode is rejected explicitly", Matrix.Write("/tmp/UTResponseMatrix/UTResponseMatrixO2_text.rsp", false), false) && Passed;
   MFile File;
   Passed = Evaluate("Open()", "non-stream read setup", "The representative non-stream response-matrix file can be created", File.Open("/tmp/UTResponseMatrix/UTResponseMatrixO2_text_read.rsp", MFile::c_Write), true) && Passed;
@@ -151,7 +147,7 @@ bool UTResponseMatrixO2::Run()
   File.Close();
   MResponseMatrixO2 ReadBackText;
   Passed = Evaluate("Read()", "non-stream mode", "Reading the representative matrix in non-stream mode is rejected explicitly", ReadBackText.Read("/tmp/UTResponseMatrix/UTResponseMatrixO2_text_read.rsp"), false) && Passed;
-  __merr.Enable(true);
+  EnableDefaultStreams();
 
   Summarize();
 

@@ -18,6 +18,7 @@
 
 // Include the header:
 #include "MBinnerFISBEL.h"
+#include "MStreams.h"
 
 // Standard libs:
 #include <vector>
@@ -358,7 +359,7 @@ vector<MVector> MBinnerFISBEL::GetAllBinCenters() const
 //! Show a histogram of the data
 void MBinnerFISBEL::View(vector<double> Data) const
 {
-  cout<<"Long bins: "<<m_LongitudeBins.size()<<": "; for (auto b: m_LongitudeBins) cout<<b<<" "; cout<<endl;
+  mout<<"Long bins: "<<m_LongitudeBins.size()<<": "; for (auto b: m_LongitudeBins) mout<<b<<" "; mout<<endl;
 
   // Create a histogram
 
@@ -374,7 +375,7 @@ void MBinnerFISBEL::View(vector<double> Data) const
   if ( fabs(yAxis[0] + 90) < 0.001 && fabs(yAxis.back() - 90) < 0.001 ) UseAitoff = true;
 
 
-  cout<<"xAxis entries: "<<xAxis.size()<<" (vs. "<<m_NumberOfBins<<" bins)"<<endl;
+  mout<<"xAxis entries: "<<xAxis.size()<<" (vs. "<<m_NumberOfBins<<" bins)"<<endl;
 
   TH2D* Hist = new TH2D("Skyview", "Skyview", xAxis.size()-1, &xAxis[0], yAxis.size()-1, &yAxis[0]);
   Hist->SetXTitle("Longitude [deg]");

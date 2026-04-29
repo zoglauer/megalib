@@ -270,9 +270,9 @@ bool UTXmlDocument::TestXmlLoadEdges()
 
   {
     MXmlDocument Missing;
-    mout.Enable(false);
+    DisableDefaultStreams();
     Passed = Evaluate("Load()", "missing file", "Loading a missing XML file fails cleanly", Missing.Load("/tmp/UTXmlDocument_does_not_exist.xml"), false) && Passed;
-    mout.Enable(true);
+    EnableDefaultStreams();
   }
 
   {
@@ -289,9 +289,9 @@ bool UTXmlDocument::TestXmlLoadEdges()
     MString BrokenAttributeFileName = "/tmp/UTXmlDocument_broken_attribute.xml";
     Passed = EvaluateTrue("WriteTextFile()", "broken attribute file", "A malformed XML file with a broken root attribute can be written", WriteTextFile(BrokenAttributeFileName, "<Config version=2></Config>\n")) && Passed;
     MXmlDocument Broken;
-    mout.Enable(false);
+    DisableDefaultStreams();
     Passed = Evaluate("Load()", "broken attribute file", "Loading XML with malformed root attributes fails", Broken.Load(BrokenAttributeFileName), false) && Passed;
-    mout.Enable(true);
+    EnableDefaultStreams();
     ::remove(BrokenAttributeFileName.Data());
   }
 
@@ -346,9 +346,9 @@ bool UTXmlDocument::TestXmlRegressionBugs()
     Passed = EvaluateTrue("Save()", "nested same-name setup", "A representative document with nested same-name nodes can be saved", Document.Save(FileName)) && Passed;
 
     MXmlDocument Loaded;
-    __merr.Enable(false);
+    DisableDefaultStreams();
     Passed = Evaluate("Load()", "nested same-name round trip", "Documents with nested same-name nodes should load successfully", Loaded.Load(FileName), true) && Passed;
-    __merr.Enable(true);
+    EnableDefaultStreams();
     if (Loaded.GetNode("A") != 0 && Loaded.GetNode("A")->GetNode("A") != 0) {
       Passed = Evaluate("GetValueAsString()", "nested same-name round trip", "Nested same-name nodes should survive a save/load round trip", Loaded.GetNode("A")->GetNode("A")->GetValueAsString(), MString("Inner")) && Passed;
     } else {
@@ -362,11 +362,9 @@ bool UTXmlDocument::TestXmlRegressionBugs()
     Passed = EvaluateTrue("WriteTextFile()", "parse failure setup", "A malformed XML file that triggers a node-parse failure can be written", WriteTextFile(FileName, "<Config><Child></Child>text<Other></Other></Config>\n")) && Passed;
 
     MXmlDocument Loaded;
-    mout.Enable(false);
-    __merr.Enable(false);
+    DisableDefaultStreams();
     Passed = Evaluate("Load()", "parse failure propagation", "Load should return false when node parsing fails", Loaded.Load(FileName), false) && Passed;
-    __merr.Enable(true);
-    mout.Enable(true);
+    EnableDefaultStreams();
     ::remove(FileName.Data());
   }
 

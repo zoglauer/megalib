@@ -207,9 +207,9 @@ bool UTFileResponse::Run()
 
   MFileResponse MissingReader;
   {
-    pair<int, int> Saved = SilenceOutput();
+    DisableDefaultStreams();
     Passed = Evaluate("Open()", "missing file", "Open returns false for a representative missing response file", MissingReader.Open("/tmp/UTFileResponse/does_not_exist.rsp"), false) && Passed;
-    RestoreOutput(Saved);
+    EnableDefaultStreams();
   }
 
   ostringstream Buffer;

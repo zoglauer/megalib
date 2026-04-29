@@ -27,6 +27,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MStreams.h"
 #include "MString.h"
 
 // Forward declarations:
@@ -57,7 +58,7 @@ protected:
   //! Abort the program if exception abort mode is enabled
   void AbortIfRequested() const {
     if (m_Abort == true) {
-      cout<<what()<<endl<<flush;
+      mout<<what()<<endl<<flush;
       abort();
     }
   }

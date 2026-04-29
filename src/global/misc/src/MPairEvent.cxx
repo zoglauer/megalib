@@ -506,7 +506,7 @@ int MPairEvent::ParseLine(const char* Line, bool Fast)
       m_PairCreationIA[2] = strtod(p, NULL);
     } else {
       if (sscanf(Line, "PC %lf %lf %lf", &m_PairCreationIA[0], &m_PairCreationIA[1], &m_PairCreationIA[2]) != 3) {
-        cout<<"Unable to parse PC of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse PC of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -522,7 +522,7 @@ int MPairEvent::ParseLine(const char* Line, bool Fast)
       if (sscanf(Line, "PE %lf %lf %lf %lf %lf", 
                  &m_EnergyElectron, &m_EnergyErrorElectron, 
                  &m_ElectronDirection[0], &m_ElectronDirection[1], &m_ElectronDirection[2]) != 5) {
-        cout<<"Unable to parse PE of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse PE of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -538,7 +538,7 @@ int MPairEvent::ParseLine(const char* Line, bool Fast)
       if (sscanf(Line, "PP %lf %lf %lf %lf %lf", 
                  &m_EnergyPositron, &m_EnergyErrorPositron, 
                  &m_PositronDirection[0], &m_PositronDirection[1], &m_PositronDirection[2]) != 5) {
-        cout<<"Unable to parse PP of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse PP of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -548,7 +548,7 @@ int MPairEvent::ParseLine(const char* Line, bool Fast)
     } else {
       if (sscanf(Line, "PI %lf", 
                  &m_InitialEnergyDeposit) != 1) {
-        cout<<"Unable to parse PI of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse PI of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -558,7 +558,7 @@ int MPairEvent::ParseLine(const char* Line, bool Fast)
     } else {
       if (sscanf(Line, "TQ %lf", 
                  &m_TrackQualityFactor) != 1) {
-        cout<<"Unable to parse TQ of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse TQ of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }

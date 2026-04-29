@@ -93,7 +93,7 @@ MRotation MRotation::GetInvers() const
   
   double Det = GetDeterminant();
   if (Det == 0) {
-    cerr<<"Matrix cannot be inverted, determinant is zero! Returning identity matrix!"<<endl;
+    merr<<"Matrix cannot be inverted, determinant is zero! Returning identity matrix!"<<endl;
   } else {
     New.SetXX(GetSubDeterminant(m_YY, m_ZY, m_YZ, m_ZZ));
     New.SetYX(GetSubDeterminant(m_ZX, m_YX, m_ZZ, m_YZ));

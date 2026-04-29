@@ -216,9 +216,9 @@ bool UTSettings::TestReadWriteFiles()
 
   UTSettings_Test MissingDefault;
   MissingDefault.SetDefaultSettingsFileName("/tmp/UTSettings/does_not_exist.cfg");
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = Evaluate("Read()", "missing default", "Read() on a missing default settings file fails cleanly", MissingDefault.Read(), false) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   UTSettings_Test ExplicitDefaultRead;
   ExplicitDefaultRead.SetDefaultSettingsFileName(DefaultFile);
@@ -232,21 +232,21 @@ bool UTSettings::TestReadWriteFiles()
 
   Passed = EvaluateTrue("WriteTextFile()", "wrong root file", "A settings file with the wrong root node can be written", WriteTextFile(WrongRootFile, "<WrongRoot><Version>1</Version></WrongRoot>\n")) && Passed;
   UTSettings_Test WrongRoot;
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = Evaluate("Read(MString)", "wrong root", "Read(MString) rejects settings files with the wrong root node", WrongRoot.Read(WrongRootFile), false) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   Passed = EvaluateTrue("WriteTextFile()", "non xml file", "A legacy non-XML settings file can be written", WriteTextFile(NonXmlFile, "Version=1\n")) && Passed;
   UTSettings_Test NonXml;
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = Evaluate("Read(MString)", "non xml file", "Read(MString) treats legacy non-XML settings files as a default-state success", NonXml.Read(NonXmlFile), true) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   Passed = EvaluateTrue("WriteTextFile()", "empty file", "An empty settings file can be written", WriteTextFile(EmptyFile, "")) && Passed;
   UTSettings_Test Empty;
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = Evaluate("Read(MString)", "empty file", "Read(MString) rejects empty settings files", Empty.Read(EmptyFile), false) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   return Passed;
 }

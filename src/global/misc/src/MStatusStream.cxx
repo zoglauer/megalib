@@ -137,7 +137,8 @@ void MStatusStream::EndLine()
 { 
   MStr::EndLine();
   if (m_ConnectStdOut == true) {
-    cout<<str();
+    fputs(str().c_str(), stdout);
+    fflush(stdout);
   }
   for (unsigned int i = 0; i < m_Labels.size(); ++i) {
     MString S = GetString();

@@ -160,10 +160,10 @@ bool UTXml::TestXmlNodeAndAttribute()
   Passed = EvaluateTrue("ToString()", "child serialization", "Child nodes are serialized into xml text", Root.ToString().Contains("<Title>Example</Title>")) && Passed;
   Passed = EvaluateTrue("ToString()", "empty node serialization", "Empty nodes use the self-closing tag form", MXmlNode(0, MString("Empty")).ToString() == "<Empty />") && Passed;
 
-  mout.Enable(false);
+  DisableDefaultStreams();
   Passed = EvaluateNear("GetValueAsVector()", "non-vector node", "Non-vector nodes return a default vector", Root.GetNode("Count")->GetValueAsVector().Mag(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetMinValueAsInt()", "non-range node", "Non-range nodes return zero for min values", Root.GetNode("Count")->GetMinValueAsInt(), 0.0, 1e-12) && Passed;
-  mout.Enable(true);
+  EnableDefaultStreams();
 
   return Passed;
 }

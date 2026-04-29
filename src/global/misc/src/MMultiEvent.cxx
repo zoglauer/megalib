@@ -239,7 +239,7 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
           MPhysicalEvent* Phys = nullptr;
           if (Line[0] == 'E' && Line[1] == 'T') {
             if (Line.Length() < 5) {
-              cout<<"Error reading event type"<<endl;
+              mout<<"Error reading event type"<<endl;
             } else if (Line[3] == 'C' && Line[4] == 'O') {
               MComptonEvent* P = new MComptonEvent();
               P->Stream(File, Version, Read, Fast, false);
@@ -269,7 +269,7 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
               P->Stream(File, Version, Read, Fast, false);
               Phys = (MPhysicalEvent*) P;
             } else {
-              cout<<"Unknown event"<<endl;
+              mout<<"Unknown event"<<endl;
             }
           }
           if (Phys != nullptr) {
@@ -313,7 +313,7 @@ bool MMultiEvent::ParseDelayed(bool Fast)
         MPhysicalEvent* Phys = nullptr;
         if (m_Lines[l][0] == 'E' && m_Lines[l][1] == 'T') {
           if (m_Lines[l].Length() < 5) {
-            cout<<"Error reading event type"<<endl;
+            mout<<"Error reading event type"<<endl;
           } else if (m_Lines[l][3] == 'C' && m_Lines[l][4] == 'O') {
             MComptonEvent* P = new MComptonEvent();
             Phys = (MPhysicalEvent*) P;
@@ -336,7 +336,7 @@ bool MMultiEvent::ParseDelayed(bool Fast)
             MUnidentifiableEvent* P = new MUnidentifiableEvent();
             Phys = (MPhysicalEvent*) P;
           } else {
-            cout<<"Unknown event"<<endl;
+            mout<<"Unknown event"<<endl;
           }
         }
         if (Phys != nullptr) {
