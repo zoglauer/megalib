@@ -134,8 +134,8 @@ void MMath::CarteseanToSpheric(double& ThetaIsX, double& PhiIsY, double& RadiusI
   if (ThetaIsX == 0 && PhiIsY > 0) p = c_Pi/2.0;
   if (ThetaIsX == 0 && PhiIsY < 0) p = -c_Pi/2.0;
 
-  ThetaIsX = t;
-  PhiIsY = p;
+  ThetaIsX = t*c_Deg;
+  PhiIsY = p*c_Deg;
   RadiusIsZ = r;
 }
 
@@ -274,7 +274,7 @@ vector<bool> MMath::ModifiedThomsonTauTest(vector<double> Values, double Alpha, 
           DiffLargest = Values[i];
           Largest = i;
         }
-        if (Values[i] > DiffSmallest) {
+        if (Values[i] < DiffSmallest) {
           DiffSmallest = Values[i];
           Smallest = i;
         }
