@@ -43,6 +43,14 @@ bool UTBinnerBayesianBlocks::Run()
   Passed = Evaluate("GetBinnedData()", "representative output", "The Bayesian-block binner creates one representative content entry per bin", Representative.GetBinnedData().size(), Representative.GetBinEdges().size() - 1) && Passed;
   Passed = EvaluateNear("GetBinnedData()", "representative sum", "The Bayesian-block binner preserves the representative total counts", Representative.GetBinnedData()[0], 4.0, 1e-12) && Passed;
 
+  MBinnerBayesianBlocks Interior;
+  Interior.SetMinMax(-1.0, 9.0, false);
+  Interior.SetMinimumBinWidth(1.5);
+  Interior.AddUnsorted(vector<double>{0.125, 0.375, 4.625, 4.875, 7.25});
+  Passed = EvaluateNear("GetBinEdges()", "interior first edge", "The Bayesian-block binner keeps the representative non-round first edge", Interior.GetBinEdges().front(), -1.0, 1e-12) && Passed;
+  Passed = Evaluate("GetBinnedData()", "interior output", "The Bayesian-block binner keeps one representative content entry per non-round interior bin", Interior.GetBinnedData().size(), Interior.GetBinEdges().size() - 1) && Passed;
+  Passed = EvaluateNear("GetBinnedData()", "interior sum", "The Bayesian-block binner preserves the representative non-round total counts", Interior.GetBinnedData()[0], 5.0, 1e-12) && Passed;
+
   MBinnerBayesianBlocks WideBins;
   WideBins.SetMinMax(0.0, 10.0, false);
   WideBins.SetMinimumBinWidth(20.0);
@@ -78,6 +86,12 @@ bool UTBinnerBayesianBlocks::Run()
   Adapted.SetMinimumBinWidth(1.0);
   Adapted.AddUnsorted(vector<double>{2.0, 2.1, 7.9, 8.0});
   Passed = EvaluateNear("SetMinMax()", "adapted minimum", "Adaptive Bayesian-block binning keeps the representative in-range minimum", Adapted.GetBinEdges().front(), 2.0, 1e-12) && Passed;
+
+  MBinnerBayesianBlocks AdaptedInterior;
+  AdaptedInterior.SetMinMax(0.0, 10.0, true);
+  AdaptedInterior.SetMinimumBinWidth(0.5);
+  AdaptedInterior.AddUnsorted(vector<double>{1.125, 1.375, 8.625, 8.875});
+  Passed = EvaluateNear("SetMinMax()", "adapted interior minimum", "Adaptive Bayesian-block binning keeps the representative non-round in-range minimum", AdaptedInterior.GetBinEdges().front(), 1.125, 1e-12) && Passed;
 
   EnableDefaultStreams();
 

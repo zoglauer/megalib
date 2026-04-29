@@ -73,6 +73,10 @@ bool UTBinnerFISBEL::Run()
   Passed = Evaluate("GetNBins()", "four bins", "Create stores the representative four-bin count", FourBins.GetNBins(), 4U) && Passed;
   Passed = Evaluate("GetAllBinCenters()", "four bins", "The four-bin FISBEL binner returns one representative vector per bin", FourBins.GetAllBinCenters().size(), 4UL) && Passed;
   Passed = Evaluate("FindBin()", "equator", "The four-bin FISBEL binner maps a representative equatorial direction into a valid bin", FourBins.FindBin(0.5*c_Pi, 0.25*c_Pi) < FourBins.GetNBins(), true) && Passed;
+  vector<double> InteriorCenter = FourBins.GetBinCenters(1);
+  Passed = EvaluateTrue("GetBinCenters()", "four bins interior theta", "The four-bin FISBEL binner returns a representative non-polar interior theta center", InteriorCenter[0] > 0.0 && InteriorCenter[0] < c_Pi) && Passed;
+  Passed = EvaluateTrue("GetBinCenters()", "four bins interior phi", "The four-bin FISBEL binner returns a representative nontrivial interior phi center", InteriorCenter[1] >= 0.0 && InteriorCenter[1] <= 2.0*c_Pi) && Passed;
+  Passed = Evaluate("FindBin()", "interior direction", "The four-bin FISBEL binner maps a representative nontrivial interior direction into the expected bin", FourBins.FindBin(InteriorCenter[0], InteriorCenter[1]), 1U) && Passed;
 
   vector<unsigned int> LongitudeBins = FourBins.GetLongitudeBins();
   vector<double> LatitudeEdges = FourBins.GetLatitudeBinEdges();

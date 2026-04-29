@@ -45,6 +45,17 @@ bool UTBinnerFixedNumberOfBins::Run()
   Passed = EvaluateNear("GetBinnedData()", "first bin", "The fixed-number binner stores the representative first-bin counts", Default.GetBinnedData()[0], 2.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetBinnedData()", "second bin", "The fixed-number binner stores the representative second-bin counts", Default.GetBinnedData()[1], 1.0, 1e-12) && Passed;
 
+  MBinnerFixedNumberOfBins Interior;
+  Interior.SetNumberOfBins(3);
+  Interior.SetMinMax(-1.5, 4.5, false);
+  Interior.Add(-0.75);
+  Interior.Add(0.25);
+  Interior.Add(2.25);
+  Interior.Add(3.75);
+  Passed = EvaluateNear("GetBinEdges()", "interior first edge", "The fixed-number binner stores the representative non-round first edge", Interior.GetBinEdges()[0], -1.5, 1e-12) && Passed;
+  Passed = EvaluateNear("GetBinEdges()", "interior split edge", "The fixed-number binner stores the representative non-round interior split edge", Interior.GetBinEdges()[1], 0.5, 1e-12) && Passed;
+  Passed = EvaluateNear("GetBinnedData()", "interior middle bin", "The fixed-number binner stores representative non-round interior content in the middle bin", Interior.GetBinnedData()[1], 1.0, 1e-12) && Passed;
+
   MBinnerFixedNumberOfBins Clamped;
   Clamped.SetNumberOfBins(0);
   Clamped.SetMinMax(0.0, 4.0, false);

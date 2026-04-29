@@ -102,10 +102,22 @@ bool UTBinner::Run()
   Weighted.Add(20.0, 3.0);
   Passed = EvaluateNear("Add()", "representative weighted sum", "Add accumulates representative weighted content into the single default bin", Weighted.GetBinnedData()[0], 5.0, 1e-12) && Passed;
 
+  MBinner WeightedInterior;
+  WeightedInterior.SetMinMax(-2.5, 5.5, false);
+  WeightedInterior.Add(1.25, 1.5);
+  WeightedInterior.Add(2.75, 2.25);
+  WeightedInterior.Add(4.5, 0.5);
+  Passed = EvaluateNear("Add()", "interior weighted sum", "Add accumulates representative non-round weighted content into the configured interior range", WeightedInterior.GetBinnedData()[0], 4.25, 1e-12) && Passed;
+
   MBinner Unsorted;
   Unsorted.SetMinMax(0.0, 40.0, false);
   Unsorted.AddUnsorted(vector<double>{30.0, 10.0, 20.0});
   Passed = EvaluateNear("AddUnsorted()", "representative sum", "AddUnsorted accumulates three representative unit entries", Unsorted.GetBinnedData()[0], 3.0, 1e-12) && Passed;
+
+  MBinner UnsortedInterior;
+  UnsortedInterior.SetMinMax(-1.0, 4.0, false);
+  UnsortedInterior.AddUnsorted(vector<double>{2.75, -0.25, 1.125});
+  Passed = EvaluateNear("AddUnsorted()", "interior values", "AddUnsorted also accumulates representative non-round interior values", UnsortedInterior.GetBinnedData()[0], 3.0, 1e-12) && Passed;
 
   MBinner Adapted;
   Adapted.Add(2.0);
@@ -113,6 +125,13 @@ bool UTBinner::Run()
   Adapted.SetMinMax(0.0, 10.0, true);
   Passed = EvaluateNear("SetMinMax()", "adapted minimum", "Adaptive min/max uses the representative in-range minimum", Adapted.GetBinEdges()[0], 2.0, 1e-12) && Passed;
   Passed = EvaluateNear("SetMinMax()", "adapted maximum", "Adaptive min/max uses the representative in-range maximum", Adapted.GetBinEdges()[1], 8.0, 1e-12) && Passed;
+
+  MBinner AdaptedInterior;
+  AdaptedInterior.Add(1.125);
+  AdaptedInterior.Add(7.875);
+  AdaptedInterior.SetMinMax(0.0, 10.0, true);
+  Passed = EvaluateNear("SetMinMax()", "adapted interior minimum", "Adaptive min/max uses the representative non-round in-range minimum", AdaptedInterior.GetBinEdges()[0], 1.125, 1e-12) && Passed;
+  Passed = EvaluateNear("SetMinMax()", "adapted interior maximum", "Adaptive min/max uses the representative non-round in-range maximum", AdaptedInterior.GetBinEdges()[1], 7.875, 1e-12) && Passed;
 
   MBinner AdaptedEmpty;
   AdaptedEmpty.SetMinMax(0.0, 10.0, true);
