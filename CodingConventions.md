@@ -289,7 +289,20 @@ X, DataPoint, IsNonZero
      }
      ```
    - The class MExceptions has a wide range of useful exceptions
-   - 
+   - When validating inputs before throwing, prefer the guard form
+     ```cpp
+     if (i >= Values.size()) {
+       throw MExceptionIndexOutOfBounds(0, Values.size(), i);
+     }
+
+     return Values[i];
+     ```
+     over
+     ```cpp
+     if (i < Values.size()) return Values[i];
+     throw MExceptionIndexOutOfBounds(0, Values.size(), i);
+     ```
+   - This keeps the error path explicit and the normal return path clean.
 
 ### 10. **Avoid Polluting the Top-Level Namespace**
    - Do not add global variables, file-scope helper functions, global utility functions, or other names in the top-level namespace unless there is a strong reason.
