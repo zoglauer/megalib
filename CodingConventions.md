@@ -69,6 +69,49 @@ X, DataPoint, IsNonZero
 - Document all classes and all member functions and variables in the header
 
 - Use single-line comments (//) to explain logic within methods.
+- For non-obvious logic inside methods, document the code in short step-by-step comments directly above the relevant block. The comments should describe the intent of each block, not restate every line.
+  ```cpp
+  bool MString::IsPositiveInteger() const
+  {
+    // Accept a non-negative base-10 integer with optional surrounding
+    // whitespace and an optional leading plus sign. Reject empty strings,
+    // whitespace-only strings, minus signs, decimal points, and trailing text.
+
+    // Strip leading spaces.
+    size_t Begin = 0;
+    while (Begin < m_String.size() && isspace(static_cast<unsigned char>(m_String[Begin])) != 0) {
+      ++Begin;
+    }
+
+    // Strip trailing spaces.
+    size_t End = m_String.size();
+    while (End > Begin && isspace(static_cast<unsigned char>(m_String[End-1])) != 0) {
+      --End;
+    }
+
+    // Reject empty or whitespace-only strings.
+    if (Begin == End) {
+      return false;
+    }
+
+    // Allow one optional leading plus sign.
+    if (m_String[Begin] == '+') {
+      ++Begin;
+      if (Begin == End) {
+        return false;
+      }
+    }
+
+    // The remaining content must be decimal digits only.
+    for (size_t i = Begin; i < End; ++i) {
+      if (isdigit(static_cast<unsigned char>(m_String[i])) == 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+  ```
 - Do not write directly to `cout` or `cerr` in MEGAlib code. Use the MEGAlib stream classes such as `mout`, `mlog`, `merr`, or `mgui` instead, so output can be redirected or disabled consistently.
 
 
