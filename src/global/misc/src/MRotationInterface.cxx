@@ -24,6 +24,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MStreams.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +65,8 @@ void MRotationInterface::Set(MRotationInterface& RO)
   m_GalacticPointingXAxis = RO.m_GalacticPointingXAxis;
   m_GalacticPointingZAxis = RO.m_GalacticPointingZAxis;
   m_HasGalacticPointing = RO.m_HasGalacticPointing; 
+  m_IsGalacticPointingRotationCalculated = false;
+  m_IsGalacticPointingInverseRotationCalculated = false;
 
   m_DetectorRotationXAxis = RO.m_DetectorRotationXAxis;
   m_DetectorRotationZAxis = RO.m_DetectorRotationZAxis;
@@ -72,6 +75,34 @@ void MRotationInterface::Set(MRotationInterface& RO)
   m_HorizonPointingXAxis = RO.m_HorizonPointingXAxis;
   m_HorizonPointingZAxis = RO.m_HorizonPointingZAxis;
   m_HasHorizonPointing = RO.m_HasHorizonPointing;   
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRotationInterface::SetGalacticPointingXAxis(const MVector XAxis)
+{
+  // Set the X axis of the galactic coordinate system
+
+  m_HasGalacticPointing = true;
+  m_IsGalacticPointingRotationCalculated = false;
+  m_IsGalacticPointingInverseRotationCalculated = false;
+  m_GalacticPointingXAxis = XAxis;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRotationInterface::SetGalacticPointingZAxis(const MVector ZAxis)
+{
+  // Set the Z axis of the galactic coordinate system
+
+  m_HasGalacticPointing = true;
+  m_IsGalacticPointingRotationCalculated = false;
+  m_IsGalacticPointingInverseRotationCalculated = false;
+  m_GalacticPointingZAxis = ZAxis;
 }
 
 
@@ -103,7 +134,7 @@ void MRotationInterface::Reset()
 
 
 //! Parse a line
-//! Returns 0, if the line got correctly parsed
+//! Returns 0, if the line got correctly parsed (or ignored)
 //! Returns 1, if the line got not correctly parsed 
 int MRotationInterface::ParseLine(const char* Line, bool Fast)
 {
@@ -138,48 +169,56 @@ int MRotationInterface::ParseLine(const char* Line, bool Fast)
       char* p;
       Longitude = strtod(Line+3, &p);
       Latitude = strtod(p, NULL);
+      SetGalacticPointingXAxis(Longitude, Latitude);
     } else {
       if (sscanf(Line, "GX %lf %lf", &Longitude, &Latitude) != 2) {
         Ret = 1;
+      } else {
+        SetGalacticPointingXAxis(Longitude, Latitude);
       }
     }
-    SetGalacticPointingXAxis(Longitude, Latitude);
   } else if (Line[0] == 'G' && Line[1] == 'Z') {
     double Longitude, Latitude;
     if (Fast == true) {
       char* p;
       Longitude = strtod(Line+3, &p);
       Latitude = strtod(p, NULL);
+      SetGalacticPointingZAxis(Longitude, Latitude);
     } else {
       if (sscanf(Line, "GZ %lf %lf", &Longitude, &Latitude) != 2) {
         Ret = 1;
+      } else {
+        SetGalacticPointingZAxis(Longitude, Latitude);
       }
     }
-    SetGalacticPointingZAxis(Longitude, Latitude);
   } else if (Line[0] == 'H' && Line[1] == 'X') {
     double Azimuth, Elevation;
     if (Fast == true) {
       char* p;
       Azimuth = strtod(Line+3, &p);
       Elevation = strtod(p, NULL);
+      SetHorizonPointingXAxis(Azimuth, Elevation);
     } else {
       if (sscanf(Line, "HX %lf %lf", &Azimuth, &Elevation) != 2) {
         Ret = 1;
+      } else {
+        SetHorizonPointingXAxis(Azimuth, Elevation);
       }
     }
-    SetHorizonPointingXAxis(Azimuth, Elevation);
   } else if (Line[0] == 'H' && Line[1] == 'Z') {
     double Azimuth, Elevation;
     if (Fast == true) {
       char* p;
       Azimuth = strtod(Line+3, &p);
       Elevation = strtod(p, NULL);
+      SetHorizonPointingZAxis(Azimuth, Elevation);
     } else {
       if (sscanf(Line, "HZ %lf %lf", &Azimuth, &Elevation) != 2) {
         Ret = 1;
+      } else {
+        SetHorizonPointingZAxis(Azimuth, Elevation);
       }
     }
-    SetHorizonPointingZAxis(Azimuth, Elevation);
   }
   
   return Ret;
@@ -191,7 +230,7 @@ int MRotationInterface::ParseLine(const char* Line, bool Fast)
 
 //! Stream to a file
 //! Reading has to be done in the derived class 
-bool MRotationInterface::ParseBinary(MBinaryStore& Out, const bool HasGalacticPointing, const bool HasDetectorRotation, const bool HasHorizonPointing, const int BinaryPrecision, const int Version)
+bool MRotationInterface::ParseBinary(MBinaryStore& In, const bool HasGalacticPointing, const bool HasDetectorRotation, const bool HasHorizonPointing, const int BinaryPrecision, const int Version)
 {
   Reset();
   
@@ -199,19 +238,19 @@ bool MRotationInterface::ParseBinary(MBinaryStore& Out, const bool HasGalacticPo
     double Long = 0.0;
     double Lat = 0.0;
     if (BinaryPrecision == 32) {
-      Long = Out.GetFloat();
-      Lat = Out.GetFloat();
+      Long = In.GetFloat();
+      Lat = In.GetFloat();
     } else {
-      Long = Out.GetFloat();
-      Lat = Out.GetFloat();
+      Long = In.GetDouble();
+      Lat = In.GetDouble();
     }
     SetGalacticPointingXAxis(Long, Lat);
     if (BinaryPrecision == 32) {
-      Long = Out.GetFloat();
-      Lat = Out.GetFloat();
+      Long = In.GetFloat();
+      Lat = In.GetFloat();
     } else {
-      Long = Out.GetFloat();
-      Lat = Out.GetFloat();
+      Long = In.GetDouble();
+      Lat = In.GetDouble();
     }
     SetGalacticPointingZAxis(Long, Lat);
     
@@ -221,11 +260,11 @@ bool MRotationInterface::ParseBinary(MBinaryStore& Out, const bool HasGalacticPo
   if (HasDetectorRotation == true) {
     m_HasDetectorRotation = true;
     if (BinaryPrecision == 32) {
-      m_DetectorRotationXAxis = Out.GetVectorFloat();
-      m_DetectorRotationZAxis = Out.GetVectorFloat();
+      m_DetectorRotationXAxis = In.GetVectorFloat();
+      m_DetectorRotationZAxis = In.GetVectorFloat();
     } else {
-      m_DetectorRotationXAxis = Out.GetVectorDouble();
-      m_DetectorRotationZAxis = Out.GetVectorDouble();
+      m_DetectorRotationXAxis = In.GetVectorDouble();
+      m_DetectorRotationZAxis = In.GetVectorDouble();
     }
   }
   
@@ -233,19 +272,19 @@ bool MRotationInterface::ParseBinary(MBinaryStore& Out, const bool HasGalacticPo
     double Long = 0.0;
     double Lat = 0.0;
     if (BinaryPrecision == 32) {
-      Long = Out.GetFloat();
-      Lat = Out.GetFloat();
+      Long = In.GetFloat();
+      Lat = In.GetFloat();
     } else {
-      Long = Out.GetFloat();
-      Lat = Out.GetFloat();
+      Long = In.GetDouble();
+      Lat = In.GetDouble();
     }
     SetHorizonPointingXAxis(Long, Lat);
     if (BinaryPrecision == 32) {
-      Long = Out.GetFloat();
-      Lat = Out.GetFloat();
+      Long = In.GetFloat();
+      Lat = In.GetFloat();
     } else {
-      Long = Out.GetFloat();
-      Lat = Out.GetFloat();
+      Long = In.GetDouble();
+      Lat = In.GetDouble();
     }
     SetHorizonPointingZAxis(Long, Lat);
     
@@ -335,13 +374,16 @@ bool MRotationInterface::Validate()
 {
   //! Check if the data is OK
 
+  bool IsValid = true;
+
   if (m_HasGalacticPointing == true) {
     if (m_GalacticPointingXAxis.Phi() < 0.000001 &&
         m_GalacticPointingXAxis.Theta() < 0.000001 &&
         m_GalacticPointingZAxis.Phi() < 0.000001 &&
         m_GalacticPointingZAxis.Theta() < 0.000001) {
-      cout<<"Error: Event ("<<m_Id<<") has no valid galactic pointing"<<endl;
+      mout<<"Error: Event ("<<m_Id<<") has no valid galactic pointing"<<endl;
       m_HasGalacticPointing = false;
+      IsValid = false;
     }
   }
   
@@ -350,8 +392,9 @@ bool MRotationInterface::Validate()
         m_HorizonPointingXAxis.Theta() < 0.000001 &&
         m_HorizonPointingZAxis.Phi() < 0.000001 &&
         m_HorizonPointingZAxis.Theta() < 0.000001) {
-      cout<<"Error: Event ("<<m_Id<<") has no valid horizon pointing"<<endl;
+      mout<<"Error: Event ("<<m_Id<<") has no valid horizon pointing"<<endl;
       m_HasHorizonPointing = false;
+      IsValid = false;
     }
   }
   
@@ -360,12 +403,13 @@ bool MRotationInterface::Validate()
         m_DetectorRotationXAxis.Theta() < 0.000001 &&
         m_DetectorRotationZAxis.Phi() < 0.000001 &&
         m_DetectorRotationZAxis.Theta() < 0.000001) {
-      cout<<"Error: Event ("<<m_Id<<") has no valid detector rotation"<<endl;
+      mout<<"Error: Event ("<<m_Id<<") has no valid detector rotation"<<endl;
       m_HasDetectorRotation = false;
+      IsValid = false;
     }
   }
   
-  return true;
+  return IsValid;
 }
   
 
@@ -404,8 +448,7 @@ void MRotationInterface::SetGalacticPointingZAxis(const double Longitude, const 
 
 void MRotationInterface::SetDetectorPointingXAxis(const double Phi, const double Theta)
 {
-  // Set the X axis of the LEFT-handed galactic coordinate system:
-  // Left handedness is applied via y-axis
+  // Set the X axis of the right-handed detector coordinate system:
   
   m_HasDetectorRotation = true;
   m_DetectorRotationXAxis.SetMagThetaPhi(1.0, Theta*c_Rad, Phi*c_Rad);
@@ -417,8 +460,7 @@ void MRotationInterface::SetDetectorPointingXAxis(const double Phi, const double
 
 void MRotationInterface::SetDetectorPointingZAxis(const double Phi, const double Theta)
 {
-  // Set the Z axis of the LEFT-handed galactic coordinate system:
-  // Left handedness is applied via y-axis
+  // Set the Z axis of the right-handed detector coordinate system:
   
   m_HasDetectorRotation = true;
   m_DetectorRotationZAxis.SetMagThetaPhi(1.0, Theta*c_Rad, Phi*c_Rad);
@@ -430,7 +472,7 @@ void MRotationInterface::SetDetectorPointingZAxis(const double Phi, const double
 
 void MRotationInterface::SetDetectorRotationXAxis(const MVector Rot)
 {
-  // Set the X axis of the right-handed Cartesian coordinate system:
+  // Set the X axis of the right-handed detector coordinate system:
 
   m_HasDetectorRotation = true;
   m_DetectorRotationXAxis = Rot;
@@ -442,7 +484,7 @@ void MRotationInterface::SetDetectorRotationXAxis(const MVector Rot)
 
 MVector MRotationInterface::GetDetectorRotationXAxis() const
 {
-  // Get the X axis of the right-handed Cartesian coordinate system:
+  // Get the X axis of the right-handed detector coordinate system:
 
   return m_DetectorRotationXAxis;
 }
@@ -453,7 +495,7 @@ MVector MRotationInterface::GetDetectorRotationXAxis() const
 
 void MRotationInterface::SetDetectorRotationZAxis(const MVector Rot)
 {
-  // Set the Z axis of the right-handed Cartesian coordinate system:
+  // Set the Z axis of the right-handed detector coordinate system:
 
   m_HasDetectorRotation = true;
   m_DetectorRotationZAxis = Rot;
@@ -465,7 +507,7 @@ void MRotationInterface::SetDetectorRotationZAxis(const MVector Rot)
 
 MVector MRotationInterface::GetDetectorRotationZAxis() const
 {
-  // Get the Z axis of the right-handed Cartesian coordinate system:
+  // Get the Z axis of the right-handed detector coordinate system:
 
   return m_DetectorRotationZAxis;
 }
@@ -480,15 +522,15 @@ MRotation MRotationInterface::GetHorizonPointingRotationMatrix() const
 
   // Verify that x and z axis are at right angle:
   if (fabs(m_HorizonPointingXAxis.Angle(m_HorizonPointingZAxis) - c_Pi/2.0)*c_Deg > 0.1) {
-    cout<<"Event "<<m_Id<<": Horizon axes are not at right angle, but: "<<m_HorizonPointingXAxis.Angle(m_HorizonPointingZAxis)*c_Deg<<" deg"<<endl;
+    mout<<"Event "<<m_Id<<": Horizon axes are not at right angle, but: "<<m_HorizonPointingXAxis.Angle(m_HorizonPointingZAxis)*c_Deg<<" deg"<<endl;
   }
 
   // First compute the y-Axis vector:
-  MVector m_HorizonPointingYAxis = m_HorizonPointingZAxis.Cross(m_HorizonPointingXAxis);
+  MVector HorizonPointingYAxis = m_HorizonPointingZAxis.Cross(m_HorizonPointingXAxis);
 
-  return MRotation(m_HorizonPointingXAxis.X(), m_HorizonPointingYAxis.X(), m_HorizonPointingZAxis.X(),
-                   m_HorizonPointingXAxis.Y(), m_HorizonPointingYAxis.Y(), m_HorizonPointingZAxis.Y(),
-                   m_HorizonPointingXAxis.Z(), m_HorizonPointingYAxis.Z(), m_HorizonPointingZAxis.Z());
+  return MRotation(m_HorizonPointingXAxis.X(), HorizonPointingYAxis.X(), m_HorizonPointingZAxis.X(),
+                   m_HorizonPointingXAxis.Y(), HorizonPointingYAxis.Y(), m_HorizonPointingZAxis.Y(),
+                   m_HorizonPointingXAxis.Z(), HorizonPointingYAxis.Z(), m_HorizonPointingZAxis.Z());
 }
 
 
@@ -501,15 +543,15 @@ MRotation MRotationInterface::GetDetectorRotationMatrix() const
 
   // Verify that x and z axis are at right angle:
   if (fabs(m_DetectorRotationXAxis.Angle(m_DetectorRotationZAxis) - c_Pi/2.0)*c_Deg > 0.1) {
-    cout<<"Event "<<m_Id<<": DetectorRotation axes are not at right angle, but: "<<m_DetectorRotationXAxis.Angle(m_DetectorRotationZAxis)*c_Deg<<" deg"<<endl;
+    mout<<"Event "<<m_Id<<": DetectorRotation axes are not at right angle, but: "<<m_DetectorRotationXAxis.Angle(m_DetectorRotationZAxis)*c_Deg<<" deg"<<endl;
   }
 
   // First compute the y-Axis vector:
-  MVector m_DetectorRotationYAxis = m_DetectorRotationZAxis.Cross(m_DetectorRotationXAxis);
+  MVector DetectorRotationYAxis = m_DetectorRotationZAxis.Cross(m_DetectorRotationXAxis);
 
-  return MRotation(m_DetectorRotationXAxis.X(), m_DetectorRotationYAxis.X(), m_DetectorRotationZAxis.X(),
-                   m_DetectorRotationXAxis.Y(), m_DetectorRotationYAxis.Y(), m_DetectorRotationZAxis.Y(),
-                   m_DetectorRotationXAxis.Z(), m_DetectorRotationYAxis.Z(), m_DetectorRotationZAxis.Z());
+  return MRotation(m_DetectorRotationXAxis.X(), DetectorRotationYAxis.X(), m_DetectorRotationZAxis.X(),
+                   m_DetectorRotationXAxis.Y(), DetectorRotationYAxis.Y(), m_DetectorRotationZAxis.Y(),
+                   m_DetectorRotationXAxis.Z(), DetectorRotationYAxis.Z(), m_DetectorRotationZAxis.Z());
 }
 
 
@@ -522,15 +564,15 @@ MRotation MRotationInterface::GetDetectorInverseRotationMatrix() const
 
   // Verify that x and z axis are at right angle:
   if (fabs(m_DetectorRotationXAxis.Angle(m_DetectorRotationZAxis) - c_Pi/2.0)*c_Deg > 0.1) {
-    cout<<"Event "<<m_Id<<": DetectorRotation axes are not at right angle, but: "<<m_DetectorRotationXAxis.Angle(m_DetectorRotationZAxis)*c_Deg<<" deg"<<endl;
+    mout<<"Event "<<m_Id<<": DetectorRotation axes are not at right angle, but: "<<m_DetectorRotationXAxis.Angle(m_DetectorRotationZAxis)*c_Deg<<" deg"<<endl;
   }
 
 
   // First compute the y-Axis vector:
-  MVector m_DetectorRotationYAxis = m_DetectorRotationZAxis.Cross(m_DetectorRotationXAxis);
+  MVector DetectorRotationYAxis = m_DetectorRotationZAxis.Cross(m_DetectorRotationXAxis);
 
   return MRotation(m_DetectorRotationXAxis.X(), m_DetectorRotationXAxis.Y(), m_DetectorRotationXAxis.Z(),
-                   m_DetectorRotationYAxis.X(), m_DetectorRotationYAxis.Y(), m_DetectorRotationYAxis.Z(),
+                   DetectorRotationYAxis.X(), DetectorRotationYAxis.Y(), DetectorRotationYAxis.Z(),
                    m_DetectorRotationZAxis.X(), m_DetectorRotationZAxis.Y(), m_DetectorRotationZAxis.Z());
 }
 
@@ -546,20 +588,18 @@ MRotation MRotationInterface::GetGalacticPointingRotationMatrix()
   
   // Verify that x and z axis are at right angle:
   if (fabs(m_GalacticPointingXAxis.Angle(m_GalacticPointingZAxis) - c_Pi/2.0)*c_Deg > 0.1) {
-    cout<<"Event "<<m_Id<<": GalacticPointing axes are not at right angle, but: "<<m_GalacticPointingXAxis.Angle(m_GalacticPointingZAxis)*c_Deg<<" deg"<<endl;
+    mout<<"Event "<<m_Id<<": GalacticPointing axes are not at right angle, but: "<<m_GalacticPointingXAxis.Angle(m_GalacticPointingZAxis)*c_Deg<<" deg"<<endl;
   }
 
   // First compute the y-Axis vector:
-  MVector m_GalacticPointingYAxis = m_GalacticPointingZAxis.Cross(m_GalacticPointingXAxis);
+  MVector GalacticPointingYAxis = m_GalacticPointingZAxis.Cross(m_GalacticPointingXAxis);
 
-  // We need a minus here since the Galactic coordinate system in left-handed!!!!
-  if (m_HasGalacticPointing == true) {
-    m_GalacticPointingYAxis *= -1;
-  }
+  // The galactic coordinate system is left-handed, so the derived y axis is negated.
+  GalacticPointingYAxis *= -1;
 
-  m_GalacticPointingRotation.Set(m_GalacticPointingXAxis.X(), m_GalacticPointingYAxis.X(), m_GalacticPointingZAxis.X(),
-                                 m_GalacticPointingXAxis.Y(), m_GalacticPointingYAxis.Y(), m_GalacticPointingZAxis.Y(),
-                                 m_GalacticPointingXAxis.Z(), m_GalacticPointingYAxis.Z(), m_GalacticPointingZAxis.Z());
+  m_GalacticPointingRotation.Set(m_GalacticPointingXAxis.X(), GalacticPointingYAxis.X(), m_GalacticPointingZAxis.X(),
+                                 m_GalacticPointingXAxis.Y(), GalacticPointingYAxis.Y(), m_GalacticPointingZAxis.Y(),
+                                 m_GalacticPointingXAxis.Z(), GalacticPointingYAxis.Z(), m_GalacticPointingZAxis.Z());
   m_IsGalacticPointingRotationCalculated = true;
   
   return m_GalacticPointingRotation;

@@ -53,8 +53,8 @@ class MRotationInterface
 
   //! Parse a line
   //! Warning: This is for fast parsing: No checks are performed what-so-ever!
-  //! Returns 0, if the line got correctly parsed
-  //! Returns 1, if the line got not correctly parsed
+  //! Returns 0, if the line got correctly parsed (or ignored)
+  //! Returns 1, if the line got not correctly parsed 
   int ParseLine(const char* Line, bool Fast = false);
 
   //! Stream to a file
@@ -62,7 +62,7 @@ class MRotationInterface
   void Stream(ostringstream& S) const;
 
   //! Retrieve the *key* content from binary
-  bool ParseBinary(MBinaryStore& Out, const bool HasGalacticPointing, const bool HasDetectorRotation, const bool HasHorizonPointing, const int BinaryPrecision = 32, const int Version = 25);
+  bool ParseBinary(MBinaryStore& In, const bool HasGalacticPointing, const bool HasDetectorRotation, const bool HasHorizonPointing, const int BinaryPrecision = 32, const int Version = 25);
   //! Convert the *key* content to binary
   bool ToBinary(MBinaryStore& Out, const int BinaryPrecision = 32, const int Version = 25);
   
@@ -76,9 +76,9 @@ class MRotationInterface
   //! Set the z-axis of the galactic coordinate system - input is in degrees
   void SetGalacticPointingZAxis(const double Longitude, const double Latitude);
   //! Set the x-axis of the galactic coordinate system
-  void SetGalacticPointingXAxis(const MVector XAxis) { m_HasGalacticPointing = true; m_GalacticPointingXAxis = XAxis; }
+  void SetGalacticPointingXAxis(const MVector XAxis);
   //! Set the z-axis of the galactic coordinate system
-  void SetGalacticPointingZAxis(const MVector ZAxis) { m_HasGalacticPointing = true; m_GalacticPointingZAxis = ZAxis; }
+  void SetGalacticPointingZAxis(const MVector ZAxis);
 
   //! Get the x-axis of the galactic coordinate system - output is in radians
   MVector GetGalacticPointingXAxis() const { return m_GalacticPointingXAxis; }
