@@ -37,7 +37,6 @@ using namespace std;
 
 // ROOT libs:
 #include <TEnv.h>
-#include <TApplication.h>
 #include <TStyle.h>
 #include <TError.h>
 #include <TSystem.h>
@@ -138,11 +137,6 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   static bool Initialized = false;
   if (Initialized == true) {
     return true;
-  }
-
-  if (gApplication == nullptr) {
-    cout<<"INITIALIZATION ERROR: MGlobal::Initialize requires an existing ROOT TApplication instance"<<endl;
-    return false;
   }
 
 #ifdef DEBUG1
