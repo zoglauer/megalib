@@ -77,7 +77,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Response Manipulator");
+  if (MGlobal::Initialize("Response Manipulator") == false) {
+    return 1;
+  }
 
 
   TApplication ResponseManipulatorApp("MResponseManipulatorApp", 0, 0);

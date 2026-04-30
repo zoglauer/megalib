@@ -598,7 +598,9 @@ int main(int argc, char** argv)
   // signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Converter", "a Converter example program");
+  if (MGlobal::Initialize("Converter", "a Converter example program") == false) {
+    return 1;
+  }
 
   TApplication ConverterApp("ConverterApp", 0, 0);
 

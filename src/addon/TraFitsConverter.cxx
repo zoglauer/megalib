@@ -1891,7 +1891,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
 
   // Initialize global MEGAlib variables, especially mgui, etc.
-  MGlobal::Initialize();
+  if (MGlobal::Initialize() == false) {
+    return 1;
+  }
 
   TApplication TraFitsConverterApp("TraFitsConverterApp", 0, 0);
 

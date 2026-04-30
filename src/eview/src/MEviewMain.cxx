@@ -46,7 +46,9 @@ int main(int argc, char** argv)
   // Main function... the beginning...
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Eview", "an event viewer");
+  if (MGlobal::Initialize("Eview", "an event viewer") == false) {
+    return 1;
+  }
 
   TApplication* Eview = new TApplication("Eview", 0, 0);
 

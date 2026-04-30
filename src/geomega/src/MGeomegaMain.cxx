@@ -49,7 +49,9 @@ int main(int argc, char** argv)
   // Main function... the beginning...
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Geomega", "geometry for MEGAlib");
+  if (MGlobal::Initialize("Geomega", "geometry for MEGAlib") == false) {
+    return 1;
+  }
 
   TApplication* AppGeomega = new TApplication("Geomega", 0, 0);
 

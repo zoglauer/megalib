@@ -383,7 +383,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("MEventTransmitter", "an event transmitter");
+  if (MGlobal::Initialize("MEventTransmitter", "an event transmitter") == false) {
+    return 1;
+  }
 
   g_Prg = new MEventTransmitter();
 

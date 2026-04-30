@@ -3476,7 +3476,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Sensitivity Optimizer");
+  if (MGlobal::Initialize("Sensitivity Optimizer") == false) {
+    return 1;
+  }
 
   TApplication SensitivityOptimizerApp("SensitivityOptimizerApp", 0, 0);
 

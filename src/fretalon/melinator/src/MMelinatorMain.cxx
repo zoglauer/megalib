@@ -53,7 +53,9 @@ int main(int argc, char** argv)
   // Let's try to catch all exceptions...
   try {
     // Initialize global MEGAlib variables, especially mgui, etc.
-    MGlobal::Initialize();
+    if (MGlobal::Initialize() == false) {
+      return 1;
+    }
 
     TApplication* AppMelinator = new TApplication("Melinator", 0, 0);
 

@@ -1180,7 +1180,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
   
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize();
+  if (MGlobal::Initialize() == false) {
+    return 1;
+  }
   
   TApplication BackgroundMixerApp("BackgroundMixerApp", 0, 0);
   

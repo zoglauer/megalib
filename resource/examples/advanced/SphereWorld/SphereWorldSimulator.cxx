@@ -80,7 +80,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
   
   // Initialize global MEGAlib variables, especially mgui, etc.
-  MGlobal::Initialize("Cosima", "the cosmic simulator of MEGAlib");
+  if (MGlobal::Initialize("Cosima", "the cosmic simulator of MEGAlib") == false) {
+    return 1;
+  }
 
   g_Main = new MCMain();
   // Load the program

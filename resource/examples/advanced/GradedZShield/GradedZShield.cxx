@@ -355,7 +355,9 @@ int main(int argc, char** argv)
   // signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("GradedZ", "a GradedZ example program");
+  if (MGlobal::Initialize("GradedZ", "a GradedZ example program") == false) {
+    return 1;
+  }
 
   TApplication GradedZApp("GradedZApp", 0, 0);
 

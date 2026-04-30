@@ -294,7 +294,9 @@ int main(int argc, char** argv)
   // signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("HistogramComparer", "a HistogramComparer example program");
+  if (MGlobal::Initialize("HistogramComparer", "a HistogramComparer example program") == false) {
+    return 1;
+  }
 
   TApplication HistogramComparerApp("HistogramComparerApp", 0, 0);
 

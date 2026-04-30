@@ -231,7 +231,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize();
+  if (MGlobal::Initialize() == false) {
+    return 1;
+  }
 
   TApplication* AppNuclearizer = new TApplication("Nuclearizer", 0, 0);
 

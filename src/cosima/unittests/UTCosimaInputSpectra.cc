@@ -447,7 +447,9 @@ int main(int argc, char** argv)
   TApplication ROOT("ROOT", 0, 0);
 
   // Initialize global MEGAlib variables, especially mgui, etc.
-  MGlobal::Initialize("TestSpectra", "unit test the cosima input spectra");
+  if (MGlobal::Initialize("TestSpectra", "unit test the cosima input spectra") == false) {
+    return 1;
+  }
   __merr.SetHeader("COSIMA-ERROR:");
 
   UTCosimaInputSpectra Test;

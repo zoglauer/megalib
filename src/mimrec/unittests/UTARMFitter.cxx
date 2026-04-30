@@ -334,7 +334,9 @@ int main(int argc, char** argv)
   TApplication ROOT("ROOT", 0, 0);
 
   // Initialize global MEGAlib variables, especially mgui, etc.
-  MGlobal::Initialize("ARMFitter", "unit test the ARM fitting class");
+  if (MGlobal::Initialize("ARMFitter", "unit test the ARM fitting class") == false) {
+    return 1;
+  }
 
   UTARMFitter Test;
   //Test.Run();

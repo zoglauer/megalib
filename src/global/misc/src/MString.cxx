@@ -331,6 +331,51 @@ bool MString::EndsWith(const MString& S) const
   if (Length() < S.Length()) return false;
   return (S == GetSubString(Length()-S.Length(), S.Length()));
 }
+ 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MString::IsPositiveInteger() const
+{
+  // Accept a non-negative base-10 integer with optional surrounding
+  // whitespace and an optional leading plus sign. Reject empty strings,
+  // whitespace-only strings, minus signs, decimal points, and trailing text.
+
+  // Strip leading spaces.
+  size_t Begin = 0;
+  while (Begin < m_String.size() && isspace(static_cast<unsigned char>(m_String[Begin])) != 0) {
+    ++Begin;
+  }
+
+  // Strip trailing spaces.
+  size_t End = m_String.size();
+  while (End > Begin && isspace(static_cast<unsigned char>(m_String[End-1])) != 0) {
+    --End;
+  }
+
+  // Reject empty or whitespace-only strings.
+  if (Begin == End) {
+    return false;
+  }
+
+  // Allow one optional leading plus sign.
+  if (m_String[Begin] == '+') {
+    ++Begin;
+    if (Begin == End) {
+      return false;
+    }
+  }
+
+  // The remaining content must be decimal digits only.
+  for (size_t i = Begin; i < End; ++i) {
+    if (isdigit(static_cast<unsigned char>(m_String[i])) == 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

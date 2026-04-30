@@ -334,7 +334,9 @@ int main(int argc, char** argv)
   // signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("DetectorEffectsEngine", "a DetectorEffectsEngine example program");
+  if (MGlobal::Initialize("DetectorEffectsEngine", "a DetectorEffectsEngine example program") == false) {
+    return 1;
+  }
 
   TApplication DetectorEffectsEngineApp("DetectorEffectsEngineApp", 0, 0);
 

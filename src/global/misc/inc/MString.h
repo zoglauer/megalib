@@ -326,7 +326,11 @@ class MString
   //! Test if the string is a number -- ignores whitespace at beginning and end
   bool IsNumber() const;
 
-  //! Test if the string is a positive integer -- ignores whitespace at beginning and end
+  //! Test if the string is a non-negative base-10 integer.
+  //! Leading and trailing whitespace is ignored.
+  //! An optional leading '+' is allowed.
+  //! Accepted examples: "0", "42", "+7", "  123  "
+  //! Rejected examples: "", "   ", "-", "-7", "7.0", "7x"
   bool IsPositiveInteger() const;
 
   //! General type test (use for int, long, etc.)

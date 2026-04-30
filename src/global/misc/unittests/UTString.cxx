@@ -416,6 +416,14 @@ bool UTString::TestReadingAndTypeChecks()
   Passed = EvaluateTrue("IsNumber()", "1e3", "IsNumber accepts scientific notation", MString("1e3").IsNumber()) && Passed;
   Passed = EvaluateFalse("IsNumber()", "12x", "IsNumber rejects trailing non-whitespace", MString("12x").IsNumber()) && Passed;
   Passed = EvaluateFalse("IsNumber()", "   ", "IsNumber rejects whitespace-only strings", MString("   ").IsNumber()) && Passed;
+  Passed = EvaluateTrue("IsPositiveInteger()", " 12 ", "IsPositiveInteger accepts leading and trailing spaces", MString(" 12 ").IsPositiveInteger()) && Passed;
+  Passed = EvaluateTrue("IsPositiveInteger()", "0", "IsPositiveInteger accepts zero", MString("0").IsPositiveInteger()) && Passed;
+  Passed = EvaluateTrue("IsPositiveInteger()", "+12", "IsPositiveInteger accepts an explicit plus sign", MString("+12").IsPositiveInteger()) && Passed;
+  Passed = EvaluateFalse("IsPositiveInteger()", "-12", "IsPositiveInteger rejects negative integers", MString("-12").IsPositiveInteger()) && Passed;
+  Passed = EvaluateFalse("IsPositiveInteger()", "+", "IsPositiveInteger rejects a plus sign without digits", MString("+").IsPositiveInteger()) && Passed;
+  Passed = EvaluateFalse("IsPositiveInteger()", "12.0", "IsPositiveInteger rejects decimal numbers", MString("12.0").IsPositiveInteger()) && Passed;
+  Passed = EvaluateFalse("IsPositiveInteger()", "12x", "IsPositiveInteger rejects trailing non-whitespace", MString("12x").IsPositiveInteger()) && Passed;
+  Passed = EvaluateFalse("IsPositiveInteger()", "   ", "IsPositiveInteger rejects whitespace-only strings", MString("   ").IsPositiveInteger()) && Passed;
 
   Passed = EvaluateTrue("Is<int>()", "123", "Template type check accepts valid integers", MString("123").Is<int>()) && Passed;
   Passed = EvaluateTrue("Is<int>()", "123 ", "Template type check ignores trailing whitespace", MString("123 ").Is<int>()) && Passed;

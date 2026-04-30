@@ -255,7 +255,9 @@ int main(int argc, char** argv)
   //(void) signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("ShowHistograms", "extract and show histogram from root files");
+  if (MGlobal::Initialize("ShowHistograms", "extract and show histogram from root files") == false) {
+    return 1;
+  }
 
   TApplication ShowHistogramsApp("ShowHistogramsApp", 0, 0);
 

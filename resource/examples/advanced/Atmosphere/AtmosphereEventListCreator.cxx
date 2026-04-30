@@ -299,7 +299,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
 
   // Initialize global MEGAlib variables, especially mgui, etc.
-  MGlobal::Initialize();
+  if (MGlobal::Initialize() == false) {
+    return 1;
+  }
 
   TApplication AtmosphereEventListCreatorApp("AtmosphereEventListCreatorApp", 0, 0);
 

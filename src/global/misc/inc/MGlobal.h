@@ -102,7 +102,6 @@ extern MString g_VersionString;
 
 extern const MString g_MEGAlibPath;
 
-extern const MString g_CopyrightYear;
 extern const MString g_Homepage;
 
 extern const MString g_StringNotDefined;

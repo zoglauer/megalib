@@ -73,7 +73,9 @@ int main(int argc, char** argv)
   TApplication ROOT("ROOT", 0, 0);
 
   // Initialize global MEGAlib variables, especially mgui, etc.
-  MGlobal::Initialize("Cosima", "the cosmic simulator of MEGAlib");
+  if (MGlobal::Initialize("Cosima", "the cosmic simulator of MEGAlib") == false) {
+    return 1;
+  }
   __merr.SetHeader("COSIMA-ERROR:");
 
   g_Main = new MCMain();

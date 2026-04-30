@@ -73,7 +73,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
 
   // Initialize global MEGAlib variables, especially mgui, etc.
-  MGlobal::Initialize("Realta", "real-time analysis");
+  if (MGlobal::Initialize("Realta", "real-time analysis") == false) {
+    return 1;
+  }
 
   // Initialize ROOT
   TApplication* AppRealta = new TApplication("Realta", 0, 0);

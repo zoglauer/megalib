@@ -461,7 +461,9 @@ int main(int argc, char** argv)
   // signal(SIGINT, CatchSignal);
   
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("ConvertPhantom", "a ConvertPhantom example program");
+  if (MGlobal::Initialize("ConvertPhantom", "a ConvertPhantom example program") == false) {
+    return 1;
+  }
   
   TApplication ConvertPhantomApp("ConvertPhantomApp", 0, 0);
   

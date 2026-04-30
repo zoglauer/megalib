@@ -2092,7 +2092,9 @@ int main(int argc, char** argv)
   signal(SIGINT, CatchSignal);
   
   // Initialize global MEGAlib variables, especially mgui, etc.
-  MGlobal::Initialize("Binned imaging test application");
+  if (MGlobal::Initialize("Binned imaging test application") == false) {
+    return 1;
+  }
   
   TApplication BinnedComptonImagingApp("BinnedComptonImagingApp", 0, 0);
 

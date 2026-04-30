@@ -49,7 +49,9 @@ int main(int argc, char** argv)
   // Main function... the beginning...
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Revan", "real event analysis");
+  if (MGlobal::Initialize("Revan", "real event analysis") == false) {
+    return 1;
+  }
 
   TApplication* AppRevan = new TApplication("Revan", 0, 0);
 

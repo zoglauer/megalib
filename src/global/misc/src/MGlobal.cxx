@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <cstdlib>
+#include <cctype>
 #include <limits>
 #include <iostream>
 #include <fstream>
@@ -36,6 +37,7 @@ using namespace std;
 
 // ROOT libs:
 #include <TEnv.h>
+#include <TApplication.h>
 #include <TStyle.h>
 #include <TError.h>
 #include <TSystem.h>
@@ -67,8 +69,6 @@ unsigned int g_MinorVersion = 0;
 unsigned int g_Version = 10000;
 MString g_VersionString = "1.00.00";
 
-// Remove year of copyright and replace with (C) by ....
-const MString g_CopyrightYear = "2024";
 const MString g_Homepage = "http://megalibtoolkit.com";
 const MString g_MEGAlibPath = "$(MEGALIB)";
 
@@ -135,12 +135,21 @@ MGlobal g_Global;
 
 bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 {
+  static bool Initialized = false;
+  if (Initialized == true) {
+    return true;
+  }
+
+  if (gApplication == nullptr) {
+    cout<<"INITIALIZATION ERROR: MGlobal::Initialize requires an existing ROOT TApplication instance"<<endl;
+    return false;
+  }
 
 #ifdef DEBUG1
   g_Verbosity = 1;
 #endif
 
-  // Find the operating systenm type
+  // Find the operating system type
 #if defined(_WIN32) || defined(_WIN64)
   g_OSType = "Windows";
 #elif defined(__linux__)
@@ -165,7 +174,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   __merr.DumpToStdErr(true);
   __merr.DumpToStdOut(false);
 
-  // Initilize some global ROOT variables:
+  // Initialize some global ROOT variables:
   gEnv->SetValue("Gui.BackgroundColor", "#e3dfdf");
 
   // Font smoothing:
@@ -242,15 +251,20 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
     in.close();
     // Now parse:
     vector<MString> Tokens = g_VersionString.Tokenize(".");
-    if (Tokens.size() == 3) {
+    if (Tokens.size() == 3 &&
+        Tokens[0].IsPositiveInteger() == true &&
+        Tokens[1].IsPositiveInteger() == true &&
+        Tokens[2].IsPositiveInteger() == true) {
       g_MajorVersion = Tokens[0].ToInt()*100 + Tokens[1].ToInt();
       g_MinorVersion = Tokens[2].ToInt();
       g_Version = 100*g_MajorVersion + g_MinorVersion;
     } else {
-      cout<<"BAD ERROR: Version could not be parsed correctly: \""<<g_VersionString<<"\""<<endl;
+      cout<<"INITIALIZATION ERROR: Version could not be parsed correctly: \""<<g_VersionString<<"\""<<endl;
+      return false;
     }
   } else {
-    cout<<"BAD ERROR: Cannot open file with version information (i.e. "<<FileName<<")!"<<endl;
+    cout<<"INITIALIZATION ERROR: Cannot open file with version information (i.e. "<<FileName<<")!"<<endl;
+    return false;
   }
 
   // Show the intro
@@ -260,11 +274,15 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 
   // Launch the update check at the end:
 #if defined(___LINUX___) || defined(___MACOSX___)
-  gSystem->Exec("bash ${MEGALIB}/config/configure_updatetest &");
+  MString UpdateScript = "$(MEGALIB)/config/configure_updatetest";
+  MFile::ExpandFileName(UpdateScript);
+  gSystem->Exec(MString("bash \"") + UpdateScript + "\" &");
 #endif
 
   g_Mutex = new TMutex();
   g_MainThreadID = TThread::SelfId();
+
+  Initialized = true;
 
   return true;
 }
@@ -397,7 +415,10 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
     in.close();
     // Now parse:
     vector<MString> Tokens = VersionString.Tokenize(".");
-    if (Tokens.size() == 3) {
+    if (Tokens.size() == 3 &&
+        Tokens[0].IsPositiveInteger() == true &&
+        Tokens[1].IsPositiveInteger() == true &&
+        Tokens[2].IsPositiveInteger() == true) {
       unsigned int NewVersion = Tokens[0].ToInt()*10000 + Tokens[1].ToInt()*100 + Tokens[2].ToInt();
       if (NewVersion > g_Version) {
         MString NewVersion = MString("An updated MEGAlib version (") + VersionString + MString(") is in the repository!");

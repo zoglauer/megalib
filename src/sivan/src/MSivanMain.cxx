@@ -48,7 +48,9 @@ int main(int argc, char** argv)
   // Main function... the beginning...
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Sivan", "simulated event analysis");
+  if (MGlobal::Initialize("Sivan", "simulated event analysis") == false) {
+    return 1;
+  }
 
   TApplication* AppSivan = new TApplication("Sivan", 0, 0);
 

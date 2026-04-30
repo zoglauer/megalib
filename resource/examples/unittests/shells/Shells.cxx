@@ -448,7 +448,9 @@ int main(int argc, char** argv)
   // signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Standalone", "a standalone example program");
+  if (MGlobal::Initialize("Standalone", "a standalone example program") == false) {
+    return 1;
+  }
 
   TApplication ShellsApp("ShellsApp", 0, 0);
 
