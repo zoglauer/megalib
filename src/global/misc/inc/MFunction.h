@@ -145,6 +145,10 @@ class MFunction
  protected:
   //! The interpolation stage of the GetRandom() function
   long double GetRandomInterpolate(long double Itot);
+  //! The interpolation stage of the GetRandomTimesX() function
+  long double GetRandomTimesXInterpolate(long double Itot);
+  //! Integrate x*f(x) from min to max
+  long double IntegrateTimesX(long double XMin, long double XMax) const;
 
   //! Implementation of Lambert's W function branches 0 and -1
   long double LambertW(long double x, int Branch);
@@ -174,6 +178,8 @@ class MFunction
   // For random number generation:
   //! The function as cumulative distribution:
   vector<long double> m_Cumulative;
+  //! The function times x as cumulative distribution:
+  vector<long double> m_CumulativeTimesX;
   
 
 #ifdef ___CLING___

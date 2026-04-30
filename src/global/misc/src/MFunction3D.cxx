@@ -39,6 +39,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MAssert.h"
+#include "MExceptions.h"
 #include "MStreams.h"
 
 
@@ -61,8 +62,28 @@ const unsigned int MFunction3D::c_InterpolationLinear   = 2;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MFunction3D::ComputeAxisDistance(const vector<double>& Axis) const
+{
+  if (Axis.size() < 2) {
+    return 0;
+  }
+
+  double Distance = Axis[1] - Axis[0];
+  for (unsigned int i = 2; i < Axis.size(); ++i) {
+    if (fabs((Axis[i] - Axis[i-1]) - Distance) > 1E-10) {
+      return 0;
+    }
+  }
+
+  return Distance;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MFunction3D::MFunction3D() 
-  : m_InterpolationType(c_InterpolationUnknown), m_XDistance(0), m_YDistance(0), m_ZDistance(0)
+  : m_InterpolationType(c_InterpolationUnknown), m_XDistance(0), m_YDistance(0), m_ZDistance(0), m_Maximum(g_DoubleNotDefined)
 {
   // Construct an instance of MFunction3D
 }
@@ -128,6 +149,12 @@ bool MFunction3D::Set(const MString FileName, const MString KeyWord,
   // Set the basic data, load the file and parse it
 
   m_InterpolationType = InterpolationType;
+  m_X.clear();
+  m_Y.clear();
+  m_Z.clear();
+  m_XDistance = 0;
+  m_YDistance = 0;
+  m_ZDistance = 0;
 
   MParser Parser;
 
@@ -182,10 +209,6 @@ bool MFunction3D::Set(const MString FileName, const MString KeyWord,
       }
     }
   }
-  m_V.clear();
-  m_V.resize(m_X.size()*m_Y.size()*m_Z.size());
-
-
   // Sanity checks:
 
   // We need at least two bins in x and y direction:
@@ -230,6 +253,9 @@ bool MFunction3D::Set(const MString FileName, const MString KeyWord,
     }
   }
 
+  m_V.clear();
+  m_V.resize(m_X.size()*m_Y.size()*m_Z.size());
+
   // Are m_X equidistant?
   bool Equidistant = true;
   double Equidistance = (m_X.back() - m_X.front()) / (m_X.size()-1);
@@ -241,10 +267,10 @@ bool MFunction3D::Set(const MString FileName, const MString KeyWord,
   }
   if (Equidistant == true) {
     m_XDistance = Equidistance;
-    cout<<"X is equidistant"<<endl;
+    // mout<<"X is equidistant"<<endl;
   } else {
     m_XDistance = 0;
-    cout<<"X not equidistant"<<endl;
+    // mout<<"X not equidistant"<<endl;
   }
   // Are m_Y equidistant?
   Equidistant = true;
@@ -259,7 +285,7 @@ bool MFunction3D::Set(const MString FileName, const MString KeyWord,
     m_YDistance = Equidistance;
   } else {
     m_YDistance = 0;
-    cout<<"Y not equidistant"<<endl;
+    // mout<<"Y not equidistant"<<endl;
   }
   // Are m_Z equidistant?
   Equidistant = true;
@@ -274,7 +300,7 @@ bool MFunction3D::Set(const MString FileName, const MString KeyWord,
     m_ZDistance = Equidistance;
   } else {
     m_ZDistance = 0;
-    cout<<"Z not equidistant"<<endl;
+    // mout<<"Z not equidistant"<<endl;
   }
 
 
@@ -340,23 +366,6 @@ bool MFunction3D::Set(const MString FileName, const MString KeyWord,
         if (zPosition < 0) zPosition = 0;
         if (zPosition > (int) m_Z.size()-1) zPosition = (int) (m_Z.size()-1);
 
-
-        if (xPosition < 0 || xPosition > (int) m_X.size()) {
-          mout<<"In the function defined by: "<<FileName<<endl;
-          mout<<"X-axis out of bounds!"<<endl;
-          return false;          
-        }
-        if (yPosition < 0 || yPosition > (int) m_Y.size()) {
-          mout<<"In the function defined by: "<<FileName<<endl;
-          mout<<"Y-axis out of bounds!"<<endl;
-          return false;                    
-        }
-        if (zPosition < 0 || zPosition > (int) m_Z.size()) {
-          mout<<"In the function defined by: "<<FileName<<endl;
-          mout<<"Z-axis out of bounds!"<<endl;
-          return false;                    
-        }
-
         m_V[xPosition + m_X.size()*yPosition + m_X.size()*m_Y.size()*zPosition] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(4);
       }
     }
@@ -365,17 +374,6 @@ bool MFunction3D::Set(const MString FileName, const MString KeyWord,
   // Determine interapolation type:
   if (m_X.size() > 1 && m_InterpolationType == c_InterpolationConstant) {
     m_InterpolationType = c_InterpolationLinear;
-  } 
-
-  if (m_X.size() == 1) {
-    m_InterpolationType = c_InterpolationConstant;
-  } 
-  
-  if (m_X.size() == 0) {
-    m_InterpolationType = c_InterpolationConstant;
-    m_X.push_back(0);
-    m_Y.push_back(0);
-    m_Z.push_back(0);
   } 
 
   // Clean up:
@@ -392,12 +390,53 @@ bool MFunction3D::Set(const vector<double>& X, const vector<double>& Y, const ve
 {
   //! Set the basic data from a 1D ResponseMatrix
 
+  if (X.size() < 2) {
+    mout<<"You need at least 2 x-bins!"<<endl;
+    return false;
+  }
+  if (Y.size() < 2) {
+    mout<<"You need at least 2 y-bins!"<<endl;
+    return false;
+  }
+  if (Z.size() < 2) {
+    mout<<"You need at least 2 z-bins!"<<endl;
+    return false;
+  }
+
+  for (unsigned int i = 1; i < X.size(); ++i) {
+    if (X[i-1] >= X[i]) {
+      mout<<"x values are not in increasing order!"<<endl;
+      return false;
+    }
+  }
+  for (unsigned int i = 1; i < Y.size(); ++i) {
+    if (Y[i-1] >= Y[i]) {
+      mout<<"y values are not in increasing order!"<<endl;
+      return false;
+    }
+  }
+  for (unsigned int i = 1; i < Z.size(); ++i) {
+    if (Z[i-1] >= Z[i]) {
+      mout<<"z values are not in increasing order!"<<endl;
+      return false;
+    }
+  }
+
+  if (V.size() != X.size()*Y.size()*Z.size()) {
+    mout<<"The value vector has the wrong size!"<<endl;
+    return false;
+  }
+
   m_X = X;
   m_Y = Y;
   m_Z = Z;
-  
+
+  m_XDistance = ComputeAxisDistance(m_X);
+  m_YDistance = ComputeAxisDistance(m_Y);
+  m_ZDistance = ComputeAxisDistance(m_Z);
+
   m_V = V;
-  
+
   m_InterpolationType = InterpolationType;
 
   // Clean up:
@@ -414,9 +453,16 @@ void MFunction3D::ScaleX(double Scaler)
 {
   // Multiple the x-axis by some value
 
-   for (unsigned int i = 0; i < m_X.size(); ++i) {
+  if (Scaler <= 0) {
+    merr<<"Scaler needs to be positive"<<show;
+    return;
+  }
+
+  for (unsigned int i = 0; i < m_X.size(); ++i) {
     m_X[i] *= Scaler;
-  }  
+  }
+
+  m_XDistance = ComputeAxisDistance(m_X);
 
   // We clear the cumulative function:
   m_Maximum = g_DoubleNotDefined;
@@ -436,7 +482,9 @@ void MFunction3D::RescaleX(double XMin, double XMax)
   m_X[0] = XMin;
   for (unsigned int i = 1; i < m_X.size(); ++i) {
     m_X[i] = m_X[0] + Scale*(m_X[i]-Zero);
-  }  
+  }
+
+  m_XDistance = ComputeAxisDistance(m_X);
 
   // We clear the cumulative function:
   m_Maximum = g_DoubleNotDefined;
@@ -450,9 +498,16 @@ void MFunction3D::ScaleY(double Scaler)
 {
   // Multiple the y-axis by some value
 
-   for (unsigned int i = 0; i < m_Y.size(); ++i) {
+  if (Scaler <= 0) {
+    merr<<"Scaler needs to be positive"<<show;
+    return;
+  }
+
+  for (unsigned int i = 0; i < m_Y.size(); ++i) {
     m_Y[i] *= Scaler;
-  }  
+  }
+
+  m_YDistance = ComputeAxisDistance(m_Y);
 
   // We clear the cumulative function:
   m_Maximum = g_DoubleNotDefined;
@@ -472,7 +527,9 @@ void MFunction3D::RescaleY(double YMin, double YMax)
   m_Y[0] = YMin;
   for (unsigned int i = 1; i < m_Y.size(); ++i) {
     m_Y[i] = m_Y[0] + Scale*(m_Y[i]-Zero);
-  }  
+  }
+
+  m_YDistance = ComputeAxisDistance(m_Y);
 
   // We clear the cumulative function:
   m_Maximum = g_DoubleNotDefined;
@@ -556,13 +613,15 @@ void MFunction3D::ScaleZ(double Scaler)
   // Scale the z-axis by some value
 
   if (Scaler <= 0) {
-    merr<<"Scaler needs to bne positive"<<show;
+    merr<<"Scaler needs to be positive"<<show;
     return;
   }
 
   for (unsigned int i = 0; i < m_Z.size(); ++i) {
     m_Z[i] *= Scaler;
-  } 
+  }
+
+  m_ZDistance = ComputeAxisDistance(m_Z);
 
   // Clean up:
   m_Maximum = g_DoubleNotDefined;
@@ -582,7 +641,9 @@ void MFunction3D::RescaleZ(double ZMin, double ZMax)
   m_Z[0] = ZMin;
   for (unsigned int i = 1; i < m_Z.size(); ++i) {
     m_Z[i] = m_Z[0] + Scale*(m_Z[i]-Zero);
-  }  
+  }
+
+  m_ZDistance = ComputeAxisDistance(m_Z);
 
   // We clear the cumulative function:
   m_Maximum = g_DoubleNotDefined;
@@ -610,7 +671,7 @@ void MFunction3D::ScaleV(double Scaler)
 
 double MFunction3D::Eval(double x, double y, double z) const
 {
-  mdep<<"MFunction2D::Eval is deprecated, replace with: MFunction2D::Evaluate"<<show;
+  mdep<<"MFunction3D::Eval is deprecated, replace with: MFunction3D::Evaluate"<<show;
   return Evaluate(x, y, z); 
 }
 
@@ -726,6 +787,10 @@ double MFunction3D::GetXMin() const
 {
   //! Get the minimum x-value
 
+  if (m_X.size() == 0) {
+    throw MExceptionEmptyObject("function x values");
+  }
+
   return m_X.front();
 }
 
@@ -736,6 +801,10 @@ double MFunction3D::GetXMin() const
 double MFunction3D::GetXMax() const
 {
   //! Get the maximum x-value
+
+  if (m_X.size() == 0) {
+    throw MExceptionEmptyObject("function x values");
+  }
 
   return m_X.back();
 }
@@ -748,6 +817,10 @@ double MFunction3D::GetYMin() const
 {
   //! Get the minimum y-value
 
+  if (m_Y.size() == 0) {
+    throw MExceptionEmptyObject("function y values");
+  }
+
   return m_Y.front();
 }
 
@@ -758,6 +831,10 @@ double MFunction3D::GetYMin() const
 double MFunction3D::GetYMax() const
 {
   //! Get the maximum y-value
+
+  if (m_Y.size() == 0) {
+    throw MExceptionEmptyObject("function y values");
+  }
 
   return m_Y.back();
 }
@@ -770,6 +847,10 @@ double MFunction3D::GetZMax() const
 {
   //! Get the maximum z-value
 
+  if (m_Z.size() == 0) {
+    throw MExceptionEmptyObject("function z values");
+  }
+
   return m_Z.back();
 }
 
@@ -781,6 +862,10 @@ double MFunction3D::GetZMin() const
 {
   //! Get the minimum z-value
 
+  if (m_Z.size() == 0) {
+    throw MExceptionEmptyObject("function z values");
+  }
+
   return m_Z.front();
 }
 
@@ -791,6 +876,10 @@ double MFunction3D::GetZMin() const
 double MFunction3D::GetVMin() const
 {
   //! Get the minimum z-value
+
+  if (m_V.size() == 0) {
+    throw MExceptionEmptyObject("function values");
+  }
 
   double Min = numeric_limits<double>::max();
   for (unsigned int i = 0; i < m_V.size(); ++i) {
@@ -807,6 +896,10 @@ double MFunction3D::GetVMin() const
 double MFunction3D::GetVMax()
 {
   //! Get the maximum z-value
+
+  if (m_V.size() == 0) {
+    throw MExceptionEmptyObject("function values");
+  }
 
   if (m_Maximum == g_DoubleNotDefined) {
     m_Maximum = -numeric_limits<double>::max();
@@ -827,13 +920,13 @@ int MFunction3D::FindXBin(double x) const
   //! Find the x bin fast (switches between linear search and binary search)
 
   if (m_XDistance == 0) {
-    auto I = lower_bound(m_X.begin(), m_X.end(), x);
+    auto I = upper_bound(m_X.begin(), m_X.end(), x);
     if (I == m_X.begin()) {
       return -1;  // Smaller than the lowest bin edge
     } else if (I == m_X.end()) {
       return m_X.size();  // Greater than or equal to the largest bin edge
     } else {
-      return distance(m_X.begin(), I);
+      return distance(m_X.begin(), I) - 1;
     }
   } else {
     // Equidistant case
@@ -884,16 +977,16 @@ int MFunction3D::FindXBin(double x) const
 
 int MFunction3D::FindYBin(double y) const 
 {
-  //! Find the z bin fast (switches between linear search and binary search)
+  //! Find the y bin fast (switches between linear search and binary search)
 
   if (m_YDistance == 0) {
-    auto I = lower_bound(m_Y.begin(), m_Y.end(), y);
+    auto I = upper_bound(m_Y.begin(), m_Y.end(), y);
     if (I == m_Y.begin()) {
       return -1;  // Smaller than the lowest bin edge
     } else if (I == m_Y.end()) {
       return m_Y.size();  // Greater than or equal to the largest bin edge
     } else {
-      return distance(m_Y.begin(), I);
+      return distance(m_Y.begin(), I) - 1;
     }
   } else {
     // Equidistant case
@@ -947,13 +1040,13 @@ int MFunction3D::FindZBin(double z) const
   //! Find the z bin fast (switches between linear search and binary search)
 
   if (m_ZDistance == 0) {
-    auto I = lower_bound(m_Z.begin(), m_Z.end(), z);
+    auto I = upper_bound(m_Z.begin(), m_Z.end(), z);
     if (I == m_Z.begin()) {
       return -1;  // Smaller than the lowest bin edge
     } else if (I == m_Z.end()) {
       return m_Z.size();  // Greater than or equal to the largest bin edge
     } else {
-      return distance(m_Z.begin(), I);
+      return distance(m_Z.begin(), I) - 1;
     }
   } else {
     // Equidistant case
@@ -1045,7 +1138,7 @@ bool MFunction3D::Save(const MString FileName, const MString Keyword)
   ofstream out;
   out.open(FileName);
   if (out.is_open() == false) {
-    mout<<"Unable to open file \""<<FileName<<"\" for writting."<<endl;
+    mout<<"Unable to open file \""<<FileName<<"\" for writing."<<endl;
     return false;
   }
   
@@ -1071,7 +1164,7 @@ bool MFunction3D::Save(const MString FileName, const MString Keyword)
   for (unsigned int x = 0 ; x < m_X.size(); ++x) {
     for (unsigned int y = 0 ; y < m_Y.size(); ++y) {
       for (unsigned int z = 0 ; z < m_Z.size(); ++z) {
-        out<<Keyword<<" "<<x<<" "<<y<<" "<<z<<" "<<m_V[x + m_X.size()*y + m_X.size()*m_Y.size()*z]<<endl;
+        out<<Keyword<<" "<<m_X[x]<<" "<<m_Y[y]<<" "<<m_Z[z]<<" "<<m_V[x + m_X.size()*y + m_X.size()*m_Y.size()*z]<<endl;
       }
     }
   }

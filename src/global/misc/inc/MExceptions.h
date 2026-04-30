@@ -297,6 +297,64 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! This exception is thrown when an object exists but is empty or uninitialized
+//! for the requested operation
+class MExceptionEmptyObject : public MException
+{
+public:
+  //! Default constructor
+  MExceptionEmptyObject() : MException() {
+    m_Description = "The object is empty!";
+    AbortIfRequested();
+  }
+  //! Standard constructor
+  MExceptionEmptyObject(const MString& Name) : MException() {
+    ostringstream stream;
+    stream<<"The object \""<<Name<<"\" is empty."<<endl;
+    m_Description = stream.str();
+    AbortIfRequested();
+  }
+  //! Default destructor
+  virtual ~MExceptionEmptyObject() throw() {}
+
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionEmptyObject, 1)
+#endif
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when an operation cannot be performed because the
+//! object is currently in an invalid state
+class MExceptionInvalidState : public MException
+{
+public:
+  //! Default constructor
+  MExceptionInvalidState() : MException() {
+    m_Description = "Invalid object state!";
+    AbortIfRequested();
+  }
+  //! Standard constructor
+  MExceptionInvalidState(const MString& Description) : MException() {
+    m_Description = Description + "\n";
+    AbortIfRequested();
+  }
+  //! Default destructor
+  virtual ~MExceptionInvalidState() throw() {}
+
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionInvalidState, 1)
+#endif
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! This exception is thrown when an value is out-of-bounds and 
 //! the error cannot be recovered gracefully
 class MExceptionValueOutOfBounds : public MException

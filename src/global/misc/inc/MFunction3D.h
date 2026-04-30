@@ -143,6 +143,8 @@ class MFunction3D
 
   // private methods:
  private:
+  //! Recompute equidistant bin spacing, or return zero if the axis is not equidistant
+  double ComputeAxisDistance(const vector<double>& Axis) const;
 
   // protected members:
  protected:

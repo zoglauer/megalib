@@ -78,7 +78,7 @@ class MFunction2D
   //! Get the maximum y-value
   double GetYMax() const;
   //! Get the minimum z-value
-  double GetZMin();
+  double GetZMin() const;
   //! Get the maximum z-value
   double GetZMax();
 

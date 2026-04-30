@@ -40,6 +40,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MAssert.h"
+#include "MExceptions.h"
 #include "MStreams.h"
 
 
@@ -63,18 +64,9 @@ MFunction3DSpherical::MFunction3DSpherical() : MFunction3D()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MFunction3DSpherical::MFunction3DSpherical(const MFunction3DSpherical& F)
+MFunction3DSpherical::MFunction3DSpherical(const MFunction3DSpherical& F) : MFunction3D(F)
 {
   // Copy-construct an instance of MFunction3DSpherical
-
-  m_InterpolationType = F.m_InterpolationType;
-
-  m_X = F.m_X;
-  m_Y = F.m_Y;
-  m_Z = F.m_Z;
-  m_V = F.m_V;
-  
-  m_Maximum = F.m_Maximum;
 }
 
 
@@ -93,15 +85,7 @@ MFunction3DSpherical::~MFunction3DSpherical()
 const MFunction3DSpherical& MFunction3DSpherical::operator=(const MFunction3DSpherical& F)
 {
   // Copy-construct an instance of MFunction3DSpherical
-
-  m_InterpolationType = F.m_InterpolationType;
-
-  m_X = F.m_X;
-  m_Y = F.m_Y;
-  m_Z = F.m_Z;
-  m_V = F.m_V;
-  
-  m_Maximum = F.m_Maximum;
+  MFunction3D::operator=(F);
 
   return *this;
 }
@@ -117,17 +101,23 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
   // Set the basic data, load the file and parse it
 
   m_InterpolationType = InterpolationType;
+  m_X.clear();
+  m_Y.clear();
+  m_Z.clear();
+  m_XDistance = 0;
+  m_YDistance = 0;
+  m_ZDistance = 0;
 
   MParser Parser;
 
-  cout<<"Started parsing 3D spherical function file into memory... stand by... this may take some time..."<<endl;
+  // mout<<"Started parsing 3D spherical function file into memory... stand by... this may take some time..."<<endl;
 
   if (Parser.Open(FileName, MFile::c_Read) == false) {
     mout<<"Unable to open file "<<FileName<<endl;
     return false;
   }
 
-  cout<<"Started reading 3D Spherical function (header)... this may take a long time..."<<endl;
+  // mout<<"Started reading 3D Spherical function (header)... this may take a long time..."<<endl;
 
   // Round one: Look for axis and interpolation type:
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
@@ -175,10 +165,7 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
       }
     }
   }
-  m_V.clear();
-  m_V.resize(m_X.size()*m_Y.size()*m_Z.size());
-
-  cout<<"Started reading 3D Spherical function (body)... this may take an even longer time..."<<endl;
+  // mout<<"Started reading 3D Spherical function (body)... this may take an even longer time..."<<endl;
 
   // Sanity checks:
 
@@ -224,6 +211,9 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
     }
   }
 
+  m_V.clear();
+  m_V.resize(m_X.size()*m_Y.size()*m_Z.size());
+
   // Are m_X equidistant?
   bool Equidistant = true;
   double Equidistance = (m_X.back() - m_X.front()) / (m_X.size()-1);
@@ -235,10 +225,10 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
   }
   if (Equidistant == true) {
     m_XDistance = Equidistance;
-    cout<<"X is equidistant"<<endl;
+    // mout<<"X is equidistant"<<endl;
   } else {
     m_XDistance = 0;
-    cout<<"X not equidistant"<<endl;
+    // mout<<"X not equidistant"<<endl;
   }
   // Are m_Y equidistant?
   Equidistant = true;
@@ -253,7 +243,7 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
     m_YDistance = Equidistance;
   } else {
     m_YDistance = 0;
-    cout<<"Y not equidistant"<<endl;
+    // mout<<"Y not equidistant"<<endl;
   }
   // Are m_Z equidistant?
   Equidistant = true;
@@ -268,7 +258,7 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
     m_ZDistance = Equidistance;
   } else {
     m_ZDistance = 0;
-    cout<<"Z not equidistant"<<endl;
+    // mout<<"Z not equidistant"<<endl;
   }
 
   // Round two: Parse the actual data
@@ -280,40 +270,21 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
         mout<<"Wrong number of arguments!"<<endl;
         return false;
       } else {
-//         int x = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
-//         int y = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2);
-//         int z = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(3);
-//         if (x < 0 || x > (int) m_X.size()) {
-//           mout<<"In the function defined by: "<<FileName<<endl;
-//           mout<<"X-axis out of bounds!"<<endl;
-//           return false;
-//         }
-//         if (y < 0 || y > (int) m_Y.size()) {
-//           mout<<"In the function defined by: "<<FileName<<endl;
-//           mout<<"Y-axis out of bounds!"<<endl;
-//           return false;
-//         }
-//         if (z < 0 || z > (int) m_Z.size()) {
-//           mout<<"In the function defined by: "<<FileName<<endl;
-//           mout<<"Z-axis out of bounds!"<<endl;
-//           return false;
-//         }
-
         int xPosition = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
         int yPosition = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2);
         int zPosition = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(3);
 
-        if (xPosition < 0 || xPosition > (int) m_X.size()) {
+        if (xPosition < 0 || xPosition >= (int) m_X.size()) {
           mout<<"In the function defined by: "<<FileName<<endl;
           mout<<"Phi-axis out of bounds: "<<xPosition<<endl;
           return false;
         }
-        if (yPosition < 0 || yPosition > (int) m_Y.size()) {
+        if (yPosition < 0 || yPosition >= (int) m_Y.size()) {
           mout<<"In the function defined by: "<<FileName<<endl;
           mout<<"Theta-axis out of bounds: "<<yPosition<<endl;
           return false;
         }
-        if (zPosition < 0 || zPosition > (int) m_Z.size()) {
+        if (zPosition < 0 || zPosition >= (int) m_Z.size()) {
           mout<<"In the function defined by: "<<FileName<<endl;
           mout<<"Energy-axis out of bounds: "<<zPosition<<endl;
           return false;
@@ -331,22 +302,11 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
     return false;    
   }
   
-  cout<<"Done reading 3D Spherical function (body)!"<<endl;
+  // mout<<"Done reading 3D Spherical function (body)!"<<endl;
 
-  // Determine interapolation type:
+  // Determine interpolation type:
   if (m_X.size() > 1 && m_InterpolationType == c_InterpolationConstant) {
     m_InterpolationType = c_InterpolationLinear;
-  }
-
-  if (m_X.size() == 1) {
-    m_InterpolationType = c_InterpolationConstant;
-  }
-
-  if (m_X.size() == 0) {
-    m_InterpolationType = c_InterpolationConstant;
-    m_X.push_back(0);
-    m_Y.push_back(0);
-    m_Z.push_back(0);
   }
 
   // Clean up:
@@ -446,6 +406,10 @@ void MFunction3DSpherical::GetRandom(double& X, double& Y, double& Z)
   // Return a random number distributed as the underlying function
   // The following is an accurate and safe version but rather slow...
 
+  if (m_X.size() == 0 || m_Y.size() == 0 || m_Z.size() == 0 || m_V.size() == 0) {
+    throw MExceptionEmptyObject("function values");
+  }
+
   if (m_Cumulative.size() == 0) {
     m_Cumulative.resize(m_X.size()*m_Y.size()*m_Z.size());
     for (unsigned int x = 0; x < m_X.size()-1; ++x) {
@@ -468,14 +432,17 @@ void MFunction3DSpherical::GetRandom(double& X, double& Y, double& Z)
     }
   }
 
+  if (m_Cumulative.back() <= 0) {
+    throw MExceptionInvalidState("This function contains no positive values");
+  }
+
 
   // Find a random bin
   double RandomCumulative = gRandom->Rndm()*m_Cumulative.back();
   auto upperBoundIt = upper_bound(m_Cumulative.begin(), m_Cumulative.end(), RandomCumulative);
 
   if (upperBoundIt == m_Cumulative.end()) {
-    cout<<"Error: We should never, ever reach that part of the code..."<<endl;
-    return;
+    throw MExceptionNeverReachThatLineOfCode();
   }
   unsigned long Bin = distance(m_Cumulative.begin(), upperBoundIt);
 
@@ -521,29 +488,6 @@ void MFunction3DSpherical::GetRandom(double& X, double& Y, double& Z)
   } while (Max*gRandom->Rndm() > V);
   //cout<<"Final: "<<X<<":"<<Y<<":"<<Z<<endl;
 
-  /*
-  if (m_Maximum == g_DoubleNotDefined) {
-    m_Maximum = GetVMax();
-  }
-
-  double x_min = GetXMin();
-  double x_diff = GetXMax() - GetXMin();
-  
-  double y_min = cos(m_Y[0]*c_Rad);
-  double y_diff = cos(m_Y[0]*c_Rad) - cos(m_Y.back()*c_Rad);
-  
-  double z_min = GetZMin();
-  double z_diff = GetZMax() - GetZMin();
-  
-  double v = 0;
-  do {
-    X = gRandom->Rndm()*x_diff + x_min;
-    Y = acos(y_min - gRandom->Rndm()*y_diff)*c_Deg;
-    Z = gRandom->Rndm()*z_diff + z_min;
-    
-    v = Evaluate(X, Y, Z);
-  } while (m_Maximum*gRandom->Rndm() > v);
-  */
 }
 
 
@@ -580,7 +524,7 @@ void MFunction3DSpherical::Plot(bool Random)
       unsigned int i_max = 100000;
       for (unsigned int i = 0; i < 100000; ++i) {
         if (i % (i_max/1000) == 0) {
-          cout<<"\rSimulation progress: "<<100.0 * i/i_max<<"     "<<flush;
+          mout<<"\rSimulation progress: "<<100.0 * i/i_max<<"     "<<flush;
           Hist->Draw("colz");
           Canvas->Update();
           gSystem->ProcessEvents();
@@ -592,7 +536,7 @@ void MFunction3DSpherical::Plot(bool Random)
       }
       for (int bx = 1; bx <= Hist->GetXaxis()->GetNbins(); ++bx) {
         for (int by = 1; by <= Hist->GetYaxis()->GetNbins(); ++by) {
-          double Area = c_Pi*(Hist->GetXaxis()->GetBinUpEdge(bx)*c_Rad - Hist->GetXaxis()->GetBinLowEdge(bx)*c_Rad);
+          double Area = Hist->GetXaxis()->GetBinUpEdge(bx)*c_Rad - Hist->GetXaxis()->GetBinLowEdge(bx)*c_Rad;
           Area *= cos(Hist->GetYaxis()->GetBinLowEdge(by)*c_Rad) - cos(Hist->GetYaxis()->GetBinUpEdge(by)*c_Rad);
           for (int bz = 1; bz <= Hist->GetZaxis()->GetNbins(); ++bz) {
             Hist->SetBinContent(bx, by, bz, Hist->GetBinContent(bx, by, bz) / Area / Hist->GetZaxis()->GetBinWidth(bz));
@@ -601,7 +545,7 @@ void MFunction3DSpherical::Plot(bool Random)
       }
       for (int bx = 1; bx <= Hist->GetXaxis()->GetNbins(); ++bx) {
         for (int by = 1; by <= Hist->GetYaxis()->GetNbins(); ++by) {
-          double Area = c_Pi*(Projection->GetXaxis()->GetBinUpEdge(bx)*c_Rad - Projection->GetXaxis()->GetBinLowEdge(bx)*c_Rad);
+          double Area = Projection->GetXaxis()->GetBinUpEdge(bx)*c_Rad - Projection->GetXaxis()->GetBinLowEdge(bx)*c_Rad;
           Area *= cos(Projection->GetYaxis()->GetBinLowEdge(by)*c_Rad) - cos(Projection->GetYaxis()->GetBinUpEdge(by)*c_Rad);
           Projection->SetBinContent(bx, by, Projection->GetBinContent(bx, by) / Area);
         }

@@ -19,6 +19,7 @@
 // Standard libs:
 #include <cmath>
 #include <exception>
+#include <iomanip>
 #include <limits>
 #include <sstream>
 #include <typeinfo>
@@ -52,9 +53,9 @@ class MUnitTest
   {
     if (Output != Truth) {
       ostringstream ExpectedStream;
-      ExpectedStream << Truth;
+      ExpectedStream << setprecision(numeric_limits<long double>::max_digits10) << Truth;
       ostringstream OutputStream;
-      OutputStream << Output;
+      OutputStream << setprecision(numeric_limits<long double>::max_digits10) << Output;
       RegisterFailure(Function, Input, Description, ExpectedStream.str(), OutputStream.str());
       return false;
     }
@@ -80,9 +81,9 @@ class MUnitTest
   {
     if (std::isfinite(Output) == false || std::isfinite(Truth) == false || fabs(Output - Truth) > Tolerance) {
       ostringstream ExpectedStream;
-      ExpectedStream << Truth << " +/- " << Tolerance;
+      ExpectedStream << setprecision(numeric_limits<long double>::max_digits10) << Truth << " +/- " << Tolerance;
       ostringstream OutputStream;
-      OutputStream << Output;
+      OutputStream << setprecision(numeric_limits<long double>::max_digits10) << Output;
       RegisterFailure(Function, Input, Description, ExpectedStream.str(), OutputStream.str());
       return false;
     }

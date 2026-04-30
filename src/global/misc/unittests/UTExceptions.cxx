@@ -160,6 +160,11 @@ bool UTExceptions::TestSpecificMessages()
   }
 
   {
+    MExceptionEmptyObject Exception("function values");
+    Passed = Evaluate("MExceptionEmptyObject(...)", "message", "The empty-object exception lists the empty object name", MString(Exception.what()), MString("The object \"function values\" is empty.\n")) && Passed;
+  }
+
+  {
     MExceptionValueOutOfBounds Exception(1.0, 2.0, 3.0);
     Passed = Evaluate("MExceptionValueOutOfBounds(min,max,value)", "message", "The value-out-of-bounds exception lists allowed interval and value", MString(Exception.what()), MString("Value out of bounds - allowed: [1..2] - your's: 3\n")) && Passed;
   }
@@ -187,6 +192,11 @@ bool UTExceptions::TestSpecificMessages()
   {
     MExceptionUnknownMode Exception("Read");
     Passed = Evaluate("MExceptionUnknownMode(mode)", "message", "The unknown-mode exception includes the mode name", MString(Exception.what()), MString("Unknown mode Read!\n")) && Passed;
+  }
+
+  {
+    MExceptionInvalidState Exception("This function contains no positive values");
+    Passed = Evaluate("MExceptionInvalidState(...)", "message", "The invalid-state exception includes the supplied description", MString(Exception.what()), MString("This function contains no positive values\n")) && Passed;
   }
 
   {
@@ -249,6 +259,16 @@ bool UTExceptions::TestEdgeCases()
   }
 
   {
+    MExceptionEmptyObject Exception;
+    Passed = Evaluate("MExceptionEmptyObject()", "default", "The default empty-object text is available", MString(Exception.what()), MString("The object is empty!")) && Passed;
+  }
+
+  {
+    MExceptionInvalidState Exception;
+    Passed = Evaluate("MExceptionInvalidState()", "default", "The default invalid-state text is available", MString(Exception.what()), MString("Invalid object state!")) && Passed;
+  }
+
+  {
     MExceptionNeverReachThatLineOfCode Exception("Extra context");
     Passed = EvaluateTrue("MExceptionNeverReachThatLineOfCode(description)", "custom detail", "A custom never-reach exception includes the supplied description", MString(Exception.what()).Contains("Extra context")) && Passed;
     Passed = Evaluate("MExceptionNeverReachThatLineOfCode(description)", "custom detail exact", "A custom never-reach exception formats the full deterministic message", MString(Exception.what()), MString("We should have never reached that line of code: \nExtra context\n")) && Passed;
@@ -296,6 +316,16 @@ bool UTExceptions::TestUsagePatterns()
   {
     MExceptionUnknownMode Exception("calibration model determination method", 7);
     Passed = Evaluate("MExceptionUnknownMode(...)", "fretalon usage", "The typed unknown-mode exception matches the fretalon usage pattern", MString(Exception.what()), MString("Unknown calibration model determination method mode 7!\n")) && Passed;
+  }
+
+  {
+    MExceptionEmptyObject Exception("function x values");
+    Passed = Evaluate("MExceptionEmptyObject(...)", "MFunction usage", "The empty-object exception matches the new MFunction empty-state usage pattern", MString(Exception.what()), MString("The object \"function x values\" is empty.\n")) && Passed;
+  }
+
+  {
+    MExceptionInvalidState Exception("This function contains no positive values");
+    Passed = Evaluate("MExceptionInvalidState(...)", "MFunction3DSpherical usage", "The invalid-state exception matches the new spherical random-generation usage pattern", MString(Exception.what()), MString("This function contains no positive values\n")) && Passed;
   }
 
   {
