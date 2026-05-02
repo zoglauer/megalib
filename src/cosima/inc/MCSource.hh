@@ -567,6 +567,20 @@ public:
   /// Id of an Omega particle 
   static const int c_Omega;
 
+	/// Normalize angles between 0 and π (0 to 180 degrees)
+	double NormalizeAngle(double angle) const;
+
+	/// Orthographic projection: returns px and py vectors
+	std::pair<G4ThreeVector, G4ThreeVector> OrthographicProjection(const G4ThreeVector& vec, const G4ThreeVector& ref_vector) const;
+
+	/// Stereographic projection: returns px and py vectors
+	std::pair<G4ThreeVector, G4ThreeVector> StereographicProjection(const G4ThreeVector& vec, const G4ThreeVector& ref_vector) const;
+
+	/// Transform the polarization angle between conventions
+	double TransformPolarizationAngle(double pa_1, const std::pair<G4ThreeVector, G4ThreeVector>& projection1, const std::pair<G4ThreeVector, G4ThreeVector>& projection2) const;
+
+	/// Example function to demonstrate the projections and angle transformations
+	bool ProcessPolarizationTransformation();
 
   // protected methods:
 protected:
@@ -591,7 +605,6 @@ protected:
   bool PerformOrientation(G4ThreeVector& Direction);
   /// Perform an orientation of the vector from local into oriented coordinate system
   bool PerformOrientation(G4ThreeVector& Position, G4ThreeVector& Direction);
-
 
   // protected members:
 protected:
