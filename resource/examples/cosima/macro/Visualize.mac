@@ -15,7 +15,7 @@
 # You must have compiled them into Geant4!
 
 # Use this open statement instead for OpenGL in immediate mode.
-/vis/open OGL
+/vis/open OGLI
 
 # Use this open statement to get an .eps and .prim files
 # suitable for viewing in DAWN.
