@@ -113,10 +113,11 @@ class MBinaryStore
   //! Get time
   MTime GetTimeUInt64();
   
-  //! Add a string
-  void AddString(MString Value, unsigned int NumberOfCharacters);
-  //! Get a string
-  MString GetString(unsigned int NumberOfCharacters);
+  //! Add a fixed-width string field: write exactly FixedWidth characters,
+  //! truncating long input and padding short input with '\0'
+  void AddString(MString Value, unsigned int FixedWidth);
+  //! Get a fixed-width string field containing exactly FixedWidth characters
+  MString GetString(unsigned int FixedWidth);
   //! Add a character
   void AddChar(char Value);
   //! Add an array of characters
@@ -138,7 +139,7 @@ class MBinaryStore
   void Truncate() { m_Array.erase(m_Array.begin(), m_Array.begin()+m_Position); m_Position = 0; }
   
   //! Move the reading position pointer
-  void ProgressPosition(long m_Position);
+  void ProgressPosition(long Position);
   
   // protected methods:
  protected:

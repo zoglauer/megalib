@@ -557,7 +557,7 @@ void MBinaryStore::AddTimeUInt64(const MTime& Time)
   
   uint64_t NanoSeconds = Time.GetInternalSeconds()*1000000000 + Time.GetInternalNanoSeconds();
   
-  AddInt64(NanoSeconds); 
+  AddUInt64(NanoSeconds); 
 }
 
 
@@ -572,7 +572,7 @@ MTime MBinaryStore::GetTimeUInt64()
     return 0; 
   }
   
-  int64_t NanoSeconds = GetInt64(); 
+  uint64_t NanoSeconds = GetUInt64(); 
   
   return MTime((long int) (NanoSeconds / 1000000000), (long int) (NanoSeconds % 1000000000));
 }
@@ -583,14 +583,20 @@ MTime MBinaryStore::GetTimeUInt64()
 
 
 //! Add a string
-void MBinaryStore::AddString(MString Value, unsigned int NumberOfCharacters) 
+void MBinaryStore::AddString(MString Value, unsigned int FixedWidth) 
 { 
-  for (unsigned int i = 0; i < Value.Length(); ++i) { 
+  // Write exactly FixedWidth characters:
+  // Copy as much payload as fits, then pad the remaining field with '\0'.
+  unsigned int CopiedCharacters = Value.Length();
+  if (CopiedCharacters > FixedWidth) {
+    CopiedCharacters = FixedWidth;
+  }
+
+  for (unsigned int i = 0; i < CopiedCharacters; ++i) { 
     AddChar(Value[i]); 
-    NumberOfCharacters--; 
-    if (NumberOfCharacters == 0) break; 
   }  
-  for (unsigned int i = 0; i < NumberOfCharacters; ++i) { 
+
+  for (unsigned int i = CopiedCharacters; i < FixedWidth; ++i) { 
     AddChar('\0'); 
   } 
 }
@@ -600,18 +606,18 @@ void MBinaryStore::AddString(MString Value, unsigned int NumberOfCharacters)
 
 
 //! Get a string
-MString MBinaryStore::GetString(unsigned int NumberOfCharacters)
+MString MBinaryStore::GetString(unsigned int FixedWidth)
 {
-  if (NumberOfCharacters == 0) return MString("");
+  if (FixedWidth == 0) return MString("");
   
-  if (m_Position+NumberOfCharacters-1 >= m_Array.size()) {
-    throw MExceptionIndexOutOfBounds(0, m_Array.size(), m_Position+NumberOfCharacters-1);
+  if (m_Position+FixedWidth-1 >= m_Array.size()) {
+    throw MExceptionIndexOutOfBounds(0, m_Array.size(), m_Position+FixedWidth-1);
     return 0; 
   }
   
   
   MString R;
-  for (unsigned int i = 0; i < NumberOfCharacters; ++i) {
+  for (unsigned int i = 0; i < FixedWidth; ++i) {
     R += GetChar(); 
   }
   return R;
@@ -669,16 +675,17 @@ char MBinaryStore::GetChar()
 //! Move the reading position pointer
 void MBinaryStore::ProgressPosition(long Position)
 {
-  if (m_Position+Position >= m_Array.size()) {
-    throw MExceptionIndexOutOfBounds(0, m_Array.size(), m_Position+Position);
+  int64_t NewPosition = static_cast<int64_t>(m_Position) + Position;
+  if (NewPosition >= static_cast<int64_t>(m_Array.size())) {
+    throw MExceptionIndexOutOfBounds(0, m_Array.size(), NewPosition);
     return;
   }
-  if (m_Position+Position < 0) {
-    throw MExceptionIndexOutOfBounds(0, m_Array.size(), m_Position+Position);
+  if (NewPosition < 0) {
+    throw MExceptionIndexOutOfBounds(0, m_Array.size(), NewPosition);
     return;
   }
   
-  m_Position += Position;
+  m_Position = static_cast<unsigned long>(NewPosition);
 }
 
 
