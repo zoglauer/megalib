@@ -99,6 +99,8 @@ class MImage
 
   //! Get the dimensions of the histogram
   virtual unsigned int GetDimensions() const { return 1; }
+  //! Return the number of entries in the image array
+  virtual int GetNEntries() const { return m_xNBins; }
   
   //! Calculate the average
   double GetAverage();
@@ -143,8 +145,6 @@ class MImage
  protected:
   //! The image array
   double* m_IA;
-  //! Size of the image array
-  int m_NEntries;
 
   //! Title of the histogram
   MString m_Title;
@@ -180,6 +180,9 @@ class MImage
 
   //! True if the histogram should be normalized
   bool m_Normalize;
+
+  //! Stable ID of this image instance used for unique canvas titles
+  int m_ID;
   
   //! counts the distributed IDs
   static int m_IDCounter;  

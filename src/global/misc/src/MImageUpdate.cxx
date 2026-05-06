@@ -48,7 +48,24 @@ ClassImp(MImageUpdate)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MImageUpdate::MImageUpdate()
+MImageUpdate::MImageUpdate() :
+  MImage(),
+  m_NAdds(0),
+  m_DisplayUpdateFrequency(10),
+  m_StorageUpdateFrequency(1),
+  m_NAddsMAC(0),
+  m_NMACStorages(0),
+  m_NAddsFAC(0),
+  m_NFACStorages(0),
+  m_Storage(nullptr),
+  m_DisplayMode(c_History),
+  m_AAH(nullptr),
+  m_FAH(nullptr),
+  m_Canvas(nullptr),
+  m_AdditionalTextType(c_None),
+  m_AdditionalText(nullptr),
+  m_FAC(nullptr),
+  m_MAC(nullptr)
 {
   // Construct an instance of MImageUpdate
 }
@@ -61,7 +78,7 @@ MImageUpdate::MImageUpdate(MString Title, double *IA, int NEntries,
                            MString xTitle, double xMin, double xMax, int xNBins, 
                            unsigned int Mode, unsigned int ShortStorage, unsigned int LongStorage, 
                            int AdditionalText, int Spectrum, int DrawOption) :
-  MImage(Title, IA, NEntries, xTitle, xMin, xMax, xNBins, Spectrum, DrawOption)
+  MImage(Title, IA, xTitle, xMin, xMax, xNBins, "", Spectrum, DrawOption)
 {
   //
 
@@ -87,8 +104,6 @@ MImageUpdate::MImageUpdate(MString Title, double *IA, int NEntries,
   m_Canvas = 0;
   m_AAH = 0;
   m_FAH = 0;
-  m_MAH = 0;
-
 }
 
 
@@ -98,6 +113,34 @@ MImageUpdate::MImageUpdate(MString Title, double *IA, int NEntries,
 MImageUpdate::~MImageUpdate()
 {
   // Delete this instance of MImageUpdate
+
+  if (m_FAC != nullptr) {
+    delete [] m_FAC;
+    m_FAC = nullptr;
+  }
+  if (m_MAC != nullptr) {
+    delete [] m_MAC;
+    m_MAC = nullptr;
+  }
+  if (m_Storage != nullptr) {
+    for (unsigned int i = 0; i < m_NMACStorages; ++i) {
+      delete [] m_Storage[i];
+    }
+    delete [] m_Storage;
+    m_Storage = nullptr;
+  }
+  if (m_AAH != nullptr) {
+    delete m_AAH;
+    m_AAH = nullptr;
+  }
+  if (m_FAH != nullptr) {
+    delete m_FAH;
+    m_FAH = nullptr;
+  }
+  if (m_AdditionalText != nullptr) {
+    delete m_AdditionalText;
+    m_AdditionalText = nullptr;
+  }
 }
 
 
@@ -176,7 +219,7 @@ void MImageUpdate::Add(double x, double Value)
       }
 
       for (Bin = 0; Bin < m_xNBins; Bin++) {
-        m_AAH->SetBinContent(Bin, m_IA[Bin]*Sum);
+        m_AAH->SetBinContent(Bin+1, m_IA[Bin]*Sum);
       }
       
       // Few Adds Chart (FAC):
@@ -197,7 +240,7 @@ void MImageUpdate::Add(double x, double Value)
         }
 
         for (Bin = 0; Bin < m_xNBins; Bin++) {
-          m_FAH->SetBinContent(Bin, m_FAC[Bin]*Sum);
+          m_FAH->SetBinContent(Bin+1, m_FAC[Bin]*Sum);
         }
       } // (m_DisplayMode != c_History)
 
@@ -318,7 +361,7 @@ void MImageUpdate::Add(double *Image)
     }
     
     for (Bin = 0; Bin < m_xNBins; Bin++) {
-      m_AAH->SetBinContent(Bin, m_IA[Bin]*Sum);
+      m_AAH->SetBinContent(Bin+1, m_IA[Bin]*Sum);
     }
         
     // Few Adds Chart (FAC):
@@ -408,14 +451,17 @@ double MImageUpdate::StandardDeviation()
 {
   //
 
-  int i;
+  if (m_xNBins <= 0) {
+    return 0.0;
+  }
+
   double mean = Mean();
   double RMS = 0;
-  for (i = 0; i < m_xNBins; i++) {
-    RMS = (mean - m_IA[i]) * (mean - m_IA[i]);
+  for (int i = 0; i < m_xNBins; ++i) {
+    RMS += (mean - m_IA[i]) * (mean - m_IA[i]);
   } 
   
-  return sqrt(RMS);
+  return sqrt(RMS / m_xNBins);
 }
 
 
@@ -508,8 +554,8 @@ void MImageUpdate::Display(TCanvas *Canvas)
   int x;
 
   // Individualize the canvas:
-  if (m_Canvas != 0) delete m_Canvas;
-  if (Canvas == 0) {
+  if (Canvas == nullptr) {
+    if (m_Canvas != nullptr) delete m_Canvas;
     m_Canvas = new TCanvas();
   } else {
     m_Canvas = Canvas;
@@ -624,15 +670,20 @@ void MImageUpdate::Reset()
   for (x = 0; x < m_xNBins; x++) {
     m_IA[x] = 0.0;
     m_FAC[x] = 0.0;
-    m_AAH->SetBinContent(x, m_IA[x]);
-    m_FAH->SetBinContent(x, m_FAC[x]);
+    if (m_AAH != nullptr) {
+      m_AAH->SetBinContent(x+1, m_IA[x]);
+    }
+    if (m_FAH != nullptr) {
+      m_FAH->SetBinContent(x+1, m_FAC[x]);
+    }
   }
   m_NAdds = 0;
 
-
-  m_Canvas->Modified();
-  m_Canvas->Update();
-  gSystem->ProcessEvents();
+  if (m_Canvas != nullptr) {
+    m_Canvas->Modified();
+    m_Canvas->Update();
+    gSystem->ProcessEvents();
+  }
 }
 
 

@@ -56,7 +56,7 @@ ClassImp(MImageGalactic)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MImageGalactic::MImageGalactic() : MImage2D()
+MImageGalactic::MImageGalactic() : MImage2D(), m_XAxis(nullptr)
 {
   m_Projection = MImageProjection::c_None;
   m_DrawOption = c_COLZ;
@@ -103,6 +103,8 @@ MImageGalactic::MImageGalactic(MString Title, double* IA,
 MImageGalactic::~MImageGalactic()
 {
   // default destructor
+  // ROOT owns the axis primitive via the canvas pad and deletes the actual object.
+  m_XAxis = nullptr;
 }
 
 
@@ -148,10 +150,9 @@ void MImageGalactic::SetImageArray(TH2D* Hist)
   m_yMin = Hist->GetYaxis()->GetXmin();
   m_yMax = Hist->GetYaxis()->GetXmax();
   m_yNBins = Hist->GetYaxis()->GetNbins();
-  m_NEntries = m_xNBins*m_yNBins;
   
   if (m_IA != nullptr) delete [] m_IA;
-  m_IA = new double[m_NEntries];
+  m_IA = new double[GetNEntries()];
   
   for (int bx = 1; bx <= Hist->GetNbinsX(); ++bx) {
     for (int by = 1; by <= Hist->GetNbinsY(); ++by) {
@@ -159,7 +160,7 @@ void MImageGalactic::SetImageArray(TH2D* Hist)
     }
   }
   
-  if (dynamic_cast<TH2*>(m_Histogram) != nullptr) {
+  if (dynamic_cast<TH2*>(m_Histogram) != nullptr && m_Canvas != nullptr) {
     if (m_Projection == MImageProjection::c_None) {
       DisplayProjectionNone();
     } else {
@@ -177,18 +178,29 @@ void MImageGalactic::SetImageArray(double* IA)
   // Copy the data array
   
   if (IA == nullptr) {
-    merr<<"Input array is nullptr!"<<endl;
+    if (m_IA != nullptr) {
+      for (int x = 0; x < GetNEntries(); ++x) {
+        m_IA[x] = 0.0;
+      }
+    }
+    if (dynamic_cast<TH2*>(m_Histogram) != nullptr && m_Canvas != nullptr) {
+      if (m_Projection == MImageProjection::c_None) {
+        DisplayProjectionNone();
+      } else {
+        DisplayProjectionHammer();
+      }
+    }
     return;
   }
   
   if (m_IA != nullptr) delete [] m_IA;
-  m_IA = new double[m_NEntries];
+  m_IA = new double[GetNEntries()];
   
-  for (int x = 0; x < m_NEntries; ++x) {
+  for (int x = 0; x < GetNEntries(); ++x) {
     m_IA[x] = IA[x];
   }
   
-  if (dynamic_cast<TH2*>(m_Histogram) != nullptr) {
+  if (dynamic_cast<TH2*>(m_Histogram) != nullptr && m_Canvas != nullptr) {
     if (m_Projection == MImageProjection::c_None) {
       DisplayProjectionNone();
     } else {
@@ -210,8 +222,14 @@ void MImageGalactic::SetFISBEL(const vector<double>& Data, double LongitudeShift
   B.Create(Data.size(), LongitudeShift*c_Rad);
   
   vector<vector<double>> DrawingAxisEdges = B.GetDrawingAxisBinEdges();
-  
-  
+
+  if (DrawingAxisEdges.size() < 2 ||
+      DrawingAxisEdges[0].size() < 2 ||
+      DrawingAxisEdges[1].size() < 2) {
+    merr<<"Unable to create FISBEL image: invalid binning"<<endl;
+    return;
+  }
+
   m_xMin = DrawingAxisEdges[0].front()*c_Deg;
   m_xMax = DrawingAxisEdges[0].back()*c_Deg;
   m_xNBins = DrawingAxisEdges[0].size() - 1;
@@ -220,10 +238,7 @@ void MImageGalactic::SetFISBEL(const vector<double>& Data, double LongitudeShift
   m_yMax = DrawingAxisEdges[1].back()*c_Deg - 90;
   m_yNBins = DrawingAxisEdges[1].size() - 1;
   
-  m_NEntries = m_xNBins*m_yNBins;
-  
-  if (m_IA != nullptr) delete [] m_IA;
-  m_IA = new double[m_NEntries];
+  double* NewIA = new double[GetNEntries()]();
 
   unsigned int Bin = 0;
   double xDist = (m_xMax - m_xMin) / m_xNBins;
@@ -234,13 +249,17 @@ void MImageGalactic::SetFISBEL(const vector<double>& Data, double LongitudeShift
         Bin = B.FindBin((m_yMin + (y+0.5)*yDist + 90)*c_Rad, (m_xMin + (x+0.5)*xDist)*c_Rad);
       } catch (...) {
         merr<<"Index out of bounds!"<<endl;
+        delete [] NewIA;
         return;
       }
-      m_IA[x + y * m_xNBins] = Data[Bin];
+      NewIA[x + y * m_xNBins] = Data[Bin];
     }
   }
+
+  if (m_IA != nullptr) delete [] m_IA;
+  m_IA = NewIA;
   
-  if (dynamic_cast<TH2*>(m_Histogram) != nullptr) {
+  if (dynamic_cast<TH2*>(m_Histogram) != nullptr && m_Canvas != nullptr) {
     if (m_Projection == MImageProjection::c_None) {
       DisplayProjectionNone();
     } else {
@@ -256,6 +275,11 @@ void MImageGalactic::SetFISBEL(const vector<double>& Data, double LongitudeShift
 void MImageGalactic::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
+
+  if (m_IA == nullptr) {
+    merr<<"Unable to display image: missing galactic image data"<<endl;
+    return;
+  }
 
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
@@ -275,6 +299,11 @@ void MImageGalactic::Display(TCanvas* Canvas)
   
   double xImageSize = (m_xMax-m_xMin);
   double yImageSize = (m_yMax-m_yMin);
+
+  if (xImageSize <= 0 || yImageSize <= 0) {
+    merr<<"Unable to display image: invalid galactic image geometry"<<endl;
+    return;
+  }
   
   if (xImageSize > yImageSize) {
     ySize = int(xSize/xImageSize*yImageSize);
@@ -333,6 +362,7 @@ void MImageGalactic::DisplayProjectionNone()
   } else {
     Hist = dynamic_cast<TH2D*>(m_Histogram);
     Hist->SetTitle(m_Title);
+    Hist->Reset();
   }
 
   double Content = 0.0;
@@ -358,6 +388,8 @@ void MImageGalactic::DisplayProjectionNone()
   }
 
   if (IsNew == true) {
+    m_Canvas->cd();
+
     Hist->Draw(m_DrawOptionString);
 
     // Redraw the new axis
@@ -393,12 +425,16 @@ void MImageGalactic::DisplayProjectionNone()
     m_XAxis->Draw();
   }
 
-  AddNamedSources();
+  if (IsNew == true) {
+    AddNamedSources();
+  }
 
   m_Canvas->Update();
 
   // Make sure everything is updated - just in case we will be multi-threading later
   gSystem->ProcessEvents();
+
+  SetCreated();
 
   return;
 }
@@ -482,8 +518,8 @@ void MImageGalactic::DisplayProjectionHammer()
 
   // Then we get or create the projected histogram
   bool IsNew = false;
-  TH2D* Hist = 0;
-  if (m_Histogram == 0) {
+  TH2D* Hist = nullptr;
+  if (m_Histogram == nullptr) {
     Hist = new TH2D(m_CanvasTitle + "Hist", m_Title, 8*m_xNBins, m_xMin, m_xMax, 8*m_yNBins, m_yMin, m_yMax);
     Hist->SetContour(50);
     Hist->GetXaxis()->SetTitle(m_xTitle);
@@ -496,6 +532,7 @@ void MImageGalactic::DisplayProjectionHammer()
   } else {
     Hist = dynamic_cast<TH2D*>(m_Histogram);
     Hist->SetTitle(m_Title);
+    Hist->Reset();
   }
 
   double CentralMeridian = 0.5*(m_xMax+m_xMin)*c_Rad;
@@ -504,8 +541,8 @@ void MImageGalactic::DisplayProjectionHammer()
   double Lat, Long;
   double x, y;
   int ux, uy;
-  for (int bx = 0; bx < Hist->GetNbinsX(); ++bx) {
-    for (int by = 0; by < Hist->GetNbinsY(); ++by) {
+  for (int bx = 1; bx <= Hist->GetNbinsX(); ++bx) {
+    for (int by = 1; by <= Hist->GetNbinsY(); ++by) {
       x = Hist->GetXaxis()->GetBinCenter(bx)*c_Rad;
       y = Hist->GetYaxis()->GetBinCenter(by)*c_Rad;
 
@@ -525,10 +562,10 @@ void MImageGalactic::DisplayProjectionHammer()
 
 
   // Draw the axes
+  m_Canvas->cd();
   if (IsNew == true) {
     
     // Draw data - CONT0 is not working
-    m_Canvas->cd();
     MString DrawOption = m_DrawOptionString;
     if (m_DrawOptionString == "COLCONT0") {
       DrawOption = "COL";
@@ -573,7 +610,7 @@ void MImageGalactic::DisplayProjectionHammer()
     }
 
 
-    // (C) Draw latitude lines
+    // (C) Draw longitude lines
     for (double Long: xSteps) {
       // Go in one degree steps
       vector<double> xPoly;
@@ -594,7 +631,7 @@ void MImageGalactic::DisplayProjectionHammer()
     }
 
 
-    // (D) Draw longitude grid lines
+    // (D) Draw latitude grid lines
     for (double Lat: ySteps) {
       // Go in one degree steps
       vector<double> xPoly;
@@ -649,7 +686,7 @@ void MImageGalactic::DisplayProjectionHammer()
     double LatPosition = 0.0;
     // Determine ideal longitude first:
     if (fabs(ySteps.front()) < fabs(ySteps.back())) {
-      for (unsigned int i = ySteps.size() - 1; i < ySteps.size(); --i) {
+      for (int i = static_cast<int>(ySteps.size()) - 1; i >= 0; --i) {
         if (LatPosition == 0.0 || LatPosition < -45) {
           LatPosition = ySteps[i];
         }
@@ -667,7 +704,7 @@ void MImageGalactic::DisplayProjectionHammer()
       LatPosition += ySep/2.0;
     }
 
-    // (G) Draw latitude grid axis labels
+    // (G) Draw longitude grid axis labels
     for (unsigned int l = 0; l < xSteps.size(); ++l) {
 
       if (l == 0 && xSteps[l] - m_xMin < 0.3*xSep) continue;
@@ -720,12 +757,16 @@ void MImageGalactic::DisplayProjectionHammer()
   }  
   
   
-  AddNamedSources();
+  if (IsNew == true) {
+    AddNamedSources();
+  }
 
   m_Canvas->Update();
 
   // Make sure everything is updated - just in case we will be multi-threading later
   gSystem->ProcessEvents();
+
+  SetCreated();
 
   return;
 }
@@ -741,6 +782,7 @@ void MImageGalactic::AddNamedSources()
   MPointSourceSelector PSS;
   if (PSS.Open(m_SourceCatalog) == false) {
     mout<<"Error: Unable to open source catalog: "<<m_SourceCatalog<<show;
+    return;
   }
 
   if (PSS.GetNPointSources() == 0) {
@@ -749,8 +791,8 @@ void MImageGalactic::AddNamedSources()
   }
 
 
-  // Test a pointsource:
-  double L = 184.56, B = -5.78;
+  double L = 0.0;
+  double B = 0.0;
 
   double xT, yT;
   unsigned int i;
@@ -787,45 +829,48 @@ void MImageGalactic::AddNamedSources()
         HammerConv(((m_xMax+m_xMin) - L)*c_Rad, B*c_Rad, 0.5*(m_xMax+m_xMin)*c_Rad, xT, yT);
         xT *= c_Deg;
         yT *= c_Deg;
+      } else {
+        merr<<"Unknown image projection mode"<<endl;
+        continue;
       }
 
 
 
       //t->SetNDC(false);
-      TText* WhiteLowRight = new TText();
+      TText WhiteLowRight;
       //WhiteLowRight->SetTextFont(32);
-      WhiteLowRight->SetTextColor(0);
-      WhiteLowRight->SetTextSize(TextSize);
-      WhiteLowRight->SetTextAlign(TextAlign);
-      WhiteLowRight->DrawText(xT + Distance + Shadow, yT + Distance - Shadow, PSS.GetPointSourceAt(i).GetName());
+      WhiteLowRight.SetTextColor(0);
+      WhiteLowRight.SetTextSize(TextSize);
+      WhiteLowRight.SetTextAlign(TextAlign);
+      WhiteLowRight.DrawText(xT + Distance + Shadow, yT + Distance - Shadow, PSS.GetPointSourceAt(i).GetName());
 
-      TText* WhiteLowLeft = new TText();
+      TText WhiteLowLeft;
       //WhiteLowLeft->SetTextFont(32);
-      WhiteLowLeft->SetTextColor(0);
-      WhiteLowLeft->SetTextSize(TextSize);
-      WhiteLowLeft->SetTextAlign(TextAlign);
-      WhiteLowLeft->DrawText(xT + Distance - Shadow, yT + Distance - Shadow, PSS.GetPointSourceAt(i).GetName());
+      WhiteLowLeft.SetTextColor(0);
+      WhiteLowLeft.SetTextSize(TextSize);
+      WhiteLowLeft.SetTextAlign(TextAlign);
+      WhiteLowLeft.DrawText(xT + Distance - Shadow, yT + Distance - Shadow, PSS.GetPointSourceAt(i).GetName());
 
-      TText* WhiteHighLeft = new TText();
+      TText WhiteHighLeft;
       //WhiteHighLeft->SetTextFont(32);
-      WhiteHighLeft->SetTextColor(0);
-      WhiteHighLeft->SetTextSize(TextSize);
-      WhiteHighLeft->SetTextAlign(TextAlign);
-      WhiteHighLeft->DrawText(xT + Distance - Shadow, yT + Distance + Shadow, PSS.GetPointSourceAt(i).GetName());
+      WhiteHighLeft.SetTextColor(0);
+      WhiteHighLeft.SetTextSize(TextSize);
+      WhiteHighLeft.SetTextAlign(TextAlign);
+      WhiteHighLeft.DrawText(xT + Distance - Shadow, yT + Distance + Shadow, PSS.GetPointSourceAt(i).GetName());
 
-      TText* WhiteHighRight = new TText();
+      TText WhiteHighRight;
       //WhiteHighRight->SetTextFont(32);
-      WhiteHighRight->SetTextColor(0);
-      WhiteHighRight->SetTextSize(TextSize);
-      WhiteHighRight->SetTextAlign(TextAlign);
-      WhiteHighRight->DrawText(xT + Distance + Shadow, yT + Distance + Shadow, PSS.GetPointSourceAt(i).GetName());
+      WhiteHighRight.SetTextColor(0);
+      WhiteHighRight.SetTextSize(TextSize);
+      WhiteHighRight.SetTextAlign(TextAlign);
+      WhiteHighRight.DrawText(xT + Distance + Shadow, yT + Distance + Shadow, PSS.GetPointSourceAt(i).GetName());
 
-      TText* Black = new TText();
+      TText Black;
       //Black->SetTextFont(32);
-      Black->SetTextColor(1);
-      Black->SetTextSize(TextSize);
-      Black->SetTextAlign(TextAlign);
-      Black->DrawText(xT + Distance, yT + Distance, PSS.GetPointSourceAt(i).GetName());
+      Black.SetTextColor(1);
+      Black.SetTextSize(TextSize);
+      Black.SetTextAlign(TextAlign);
+      Black.DrawText(xT + Distance, yT + Distance, PSS.GetPointSourceAt(i).GetName());
 
 
       /*

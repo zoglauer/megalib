@@ -32,6 +32,7 @@
 #include "MImage2D.h"
 
 // Standard libs:
+#include <algorithm>
 #include <iostream>
 using namespace std;
 
@@ -59,6 +60,7 @@ MImage2D::MImage2D() : MImage()
 
   // Initialization is mostly done in the MImage constructor
   SetYAxis("y-Axis", 0, 1, 1);
+  SetImageArray(nullptr);
 }
 
 
@@ -69,7 +71,7 @@ MImage2D::MImage2D(MString Title, double* IA,
                    MString xTitle, double xMin, double xMax, int xNBins, 
                    MString yTitle, double yMin, double yMax, int yNBins, 
                    MString vTitle, int Spectrum, int DrawOption) :
-  MImage(Title, IA, xTitle, xMin, xMax, xNBins, vTitle, Spectrum, DrawOption)
+  MImage()
 {
   // Construct an image but do not display it, i.e. save only the data
   // 
@@ -87,9 +89,17 @@ MImage2D::MImage2D(MString Title, double* IA,
   // Spectrum:   spectrum
   // DrawOption: ROOT draw option
 
-  m_NEntries = xNBins*yNBins;
+  if (m_IA != nullptr) {
+    delete [] m_IA;
+    m_IA = nullptr;
+  }
 
+  SetTitle(Title);
+  SetXAxis(xTitle, xMin, xMax, xNBins);
   SetYAxis(yTitle, yMin, yMax, yNBins);
+  SetValueAxisTitle(vTitle);
+  SetSpectrum(Spectrum);
+  SetDrawOption(DrawOption);
   SetImageArray(IA);
 }
 
@@ -129,10 +139,12 @@ void MImage2D::SetImageArray(double* IA)
 {
   // Copy the data array
 
-  if (m_IA != 0) delete [] m_IA;
-  m_IA = new double[m_NEntries];
+  int NEntries = GetNEntries();
 
-  for (int x = 0; x < m_NEntries; x++) {
+  if (m_IA != 0) delete [] m_IA;
+  m_IA = new double[NEntries];
+
+  for (int x = 0; x < NEntries; x++) {
     if (IA != 0) {
       m_IA[x] = IA[x];
     } else {
@@ -140,16 +152,19 @@ void MImage2D::SetImageArray(double* IA)
     }
   }
 
-  if (dynamic_cast<TH2*>(m_Histogram) != 0) {
+  TH2* Histogram = dynamic_cast<TH2*>(m_Histogram);
+  if (Histogram != nullptr && m_Canvas != nullptr) {
     m_Canvas->cd();
 
     double Content = 0;
     for (int x = 1; x <= m_xNBins; ++x) {
       for (int y = 1; y <= m_yNBins; ++y) {
+        // Clear the bin first so skipped non-finite values do not leave stale content behind.
+        Histogram->SetBinContent(x, y, 0.0);
         Content = m_IA[(x-1) + (y-1) * m_xNBins];
         if (!TMath::IsNaN(Content)) {  
           if (TMath::Finite(Content)) {
-            dynamic_cast<TH2*>(m_Histogram)->SetBinContent(x, y, Content);
+            Histogram->SetBinContent(x, y, Content);
           } else {
             merr<<"Image contains Inf ("<<x<<", "<<y<<")"<<show;
           }
@@ -158,7 +173,9 @@ void MImage2D::SetImageArray(double* IA)
         }
       }
     }
-    m_Histogram->Scale(1.0/m_Histogram->GetMaximum());
+    if (m_Normalize == true && m_Histogram->GetMaximum() > 0) {
+      m_Histogram->Scale(1.0/m_Histogram->GetMaximum());
+    }
     m_Histogram->Draw(m_DrawOptionString);
     m_Canvas->Update();
   }
@@ -186,6 +203,11 @@ void MImage2D::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
 
+  if (m_xNBins <= 0 || m_yNBins <= 0 || GetNEntries() <= 0 || m_IA == nullptr) {
+    merr<<"Unable to display image: invalid 2D image geometry or missing image data"<<endl;
+    return;
+  }
+
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
     Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 600, 600);
@@ -200,10 +222,12 @@ void MImage2D::Display(TCanvas* Canvas)
   m_Canvas = Canvas;
 
   if (m_xNBins > m_yNBins) {
-    m_Canvas->SetWindowSize(900, int(900.0/m_xNBins*m_yNBins));
+    m_Canvas->SetWindowSize(900, max(100, int(900.0/m_xNBins*m_yNBins)));
   } else {
-    m_Canvas->SetWindowSize(int(700.0/m_yNBins*m_xNBins), 700);
+    m_Canvas->SetWindowSize(max(100, int(700.0/m_yNBins*m_xNBins)), 700);
   }
+
+  m_Canvas->cd();
 
 
   TH2D* Hist = 0;
@@ -235,11 +259,16 @@ void MImage2D::Display(TCanvas* Canvas)
   } else {
     Hist = dynamic_cast<TH2D*>(m_Histogram);
     Hist->SetTitle(m_Title);
+    Hist->SetXTitle(m_xTitle);
+    Hist->SetYTitle(m_yTitle);
+    Hist->SetZTitle(m_vTitle);
   }
 
   double Content = 0.0;
   for (int x = 1; x <= m_xNBins; ++x) {
     for (int y = 1; y <= m_yNBins; ++y) {
+      // Clear the bin first so skipped non-finite values do not leave stale content behind.
+      Hist->SetBinContent(x, y, 0.0);
       Content = m_IA[(x-1) + (y-1) * m_xNBins];
       if (!TMath::IsNaN(Content)) {
         if (TMath::Finite(Content)) {
@@ -259,6 +288,9 @@ void MImage2D::Display(TCanvas* Canvas)
   }
   
   Hist->Draw(m_DrawOptionString);
+  m_Canvas->Update();
+
+  SetCreated();
 
   return;
 }
@@ -270,12 +302,20 @@ void MImage2D::Display(TCanvas* Canvas)
 //! Determine the maximum and its coordiantes, the vector is filled up to the number of dimensions the histogram has
 void MImage2D::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
 {
-  MaxValue = 0;
-  double xMaxIndex = 0;
-  double yMaxIndex = 0;
+  Coordinate.clear();
+
+  if (GetNEntries() <= 0 || m_IA == nullptr) {
+    MaxValue = 0;
+    return;
+  }
+
+  MaxValue = m_IA[0];
+  int xMaxIndex = 0;
+  int yMaxIndex = 0;
   
   for (int x = 0; x < m_xNBins; ++x) {
     for (int y = 0; y < m_yNBins; ++y) {
+      if (x == 0 && y == 0) continue;
       if (m_IA[x + y * m_xNBins] > MaxValue) {
         MaxValue = m_IA[x + y * m_xNBins];
         xMaxIndex = x;
@@ -283,9 +323,6 @@ void MImage2D::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
       }
     }
   }
-  
-  
-  Coordinate.clear();
   Coordinate.push_back((xMaxIndex + 0.5) * (m_xMax-m_xMin)/m_xNBins + m_xMin);
   Coordinate.push_back((yMaxIndex + 0.5) * (m_yMax-m_yMin)/m_yNBins + m_yMin);
 }

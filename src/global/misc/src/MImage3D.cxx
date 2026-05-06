@@ -75,14 +75,17 @@ MImage3D::MImage3D(MString Title, double* IA,
                    MString yTitle, double yMin, double yMax, int yNBins, 
                    MString zTitle, double zMin, double zMax, int zNBins, 
                    MString vTitle, int Spectrum, int DrawOption) :
-  MImage2D(Title, IA, xTitle, xMin, xMax, xNBins,  
-           yTitle, yMin, yMax, yNBins, vTitle, Spectrum, DrawOption)
+  MImage2D()
 {
   // standard constructor
 
-  m_NEntries = xNBins*yNBins*zNBins;
-
+  SetTitle(Title);
+  SetXAxis(xTitle, xMin, xMax, xNBins);
+  SetYAxis(yTitle, yMin, yMax, yNBins);
   SetZAxis(zTitle, zMin, zMax, zNBins);
+  SetValueAxisTitle(vTitle);
+  SetSpectrum(Spectrum);
+  SetDrawOption(DrawOption);
   SetImageArray(IA);
 
   m_HistXY = nullptr;
@@ -101,6 +104,32 @@ MImage3D::MImage3D(MString Title, double* IA,
 MImage3D::~MImage3D()
 {
   // default destructor
+
+  if (m_HistXY != nullptr) {
+    delete m_HistXY;
+    m_HistXY = nullptr;
+  }
+  if (m_HistXZ != nullptr) {
+    delete m_HistXZ;
+    m_HistXZ = nullptr;
+  }
+  if (m_HistYZ != nullptr) {
+    delete m_HistYZ;
+    m_HistYZ = nullptr;
+  }
+
+  if (m_CanvasXY != nullptr) {
+    delete m_CanvasXY;
+    m_CanvasXY = nullptr;
+  }
+  if (m_CanvasXZ != nullptr) {
+    delete m_CanvasXZ;
+    m_CanvasXZ = nullptr;
+  }
+  if (m_CanvasYZ != nullptr) {
+    delete m_CanvasYZ;
+    m_CanvasYZ = nullptr;
+  }
 }
 
 
@@ -131,10 +160,12 @@ void MImage3D::SetImageArray(double* IA)
   // Fill the image array of this class
   // The assumed fill-mode for the array is: Array[x + y*xNBins+ z*xNBins*yNBins]
 
-  if (m_IA != 0) delete [] m_IA;
-  m_IA = new double[m_NEntries];
+  int NEntries = GetNEntries();
 
-  for (int x = 0; x < m_NEntries; x++) {
+  if (m_IA != 0) delete [] m_IA;
+  m_IA = new double[NEntries];
+
+  for (int x = 0; x < NEntries; x++) {
     if (IA != 0) {
       m_IA[x] = IA[x];
     } else {
@@ -142,22 +173,25 @@ void MImage3D::SetImageArray(double* IA)
     } 
   }
 
-  if (dynamic_cast<TH3D*>(m_Histogram) != 0) {
+  TH3D* Histogram = dynamic_cast<TH3D*>(m_Histogram);
+  if (Histogram != nullptr && m_Canvas != nullptr) {
     m_Canvas->cd();
 
     double Content = 0.0;
     for (int x = 1; x <= m_xNBins; ++x) {
       for (int y = 1; y <= m_yNBins; ++y) {
         for (int z = 1; z <= m_zNBins; ++z) {
+          // Clear the bin first so skipped non-finite values do not leave stale content behind.
+          Histogram->SetBinContent(x, y, z, 0.0);
           Content = m_IA[(x-1) + (y-1)*m_xNBins + (z-1)*m_xNBins*m_yNBins];
           if (!TMath::IsNaN(Content)) {
             if (TMath::Finite(Content)) {
-              ((TH3D*) m_Histogram)->SetBinContent(x, y, z, Content);
+              Histogram->SetBinContent(x, y, z, Content);
             } else {
-              merr<<"Image contains Inf ("<<x<<", "<<y<<")"<<show;
+              merr<<"Image contains Inf ("<<x<<", "<<y<<", "<<z<<")"<<show;
             }
           } else {
-            merr<<"Image contains NaN ("<<x<<", "<<y<<")"<<show;
+              merr<<"Image contains NaN ("<<x<<", "<<y<<", "<<z<<")"<<show;
           }
         }
       }
@@ -165,26 +199,35 @@ void MImage3D::SetImageArray(double* IA)
     m_Histogram->Draw();
     m_Canvas->Update();
     
-    m_CanvasXY->cd();
-    m_HistXY->Reset();
-    m_HistXY->Add(dynamic_cast<TH3D*>(m_Histogram)->Project3D("xy"));    
-    m_HistXY->SetTitle(MString(m_Histogram->GetTitle()) + " - xy-projection");
-    m_HistXY->Draw(m_DrawOptionString);
-    m_CanvasXY->Update();
+    if (m_CanvasXY != nullptr && m_HistXY != nullptr) {
+      m_CanvasXY->cd();
+      delete m_HistXY;
+      m_HistXY = Histogram->Project3D("xy");
+      m_HistXY->SetDirectory(0);
+      m_HistXY->SetTitle(MString(m_Histogram->GetTitle()) + " - xy-projection");
+      m_HistXY->Draw(m_DrawOptionString);
+      m_CanvasXY->Update();
+    }
 
-    m_CanvasXZ->cd();
-    m_HistXZ->Reset();
-    m_HistXZ->Add(dynamic_cast<TH3*>(m_Histogram)->Project3D("xz"));    
-    m_HistXZ->Draw(m_DrawOptionString);
-    m_HistXZ->SetTitle(MString(m_Histogram->GetTitle()) + " - xz-projection");
-    m_CanvasXZ->Update();
+    if (m_CanvasXZ != nullptr && m_HistXZ != nullptr) {
+      m_CanvasXZ->cd();
+      delete m_HistXZ;
+      m_HistXZ = Histogram->Project3D("xz");
+      m_HistXZ->SetDirectory(0);
+      m_HistXZ->Draw(m_DrawOptionString);
+      m_HistXZ->SetTitle(MString(m_Histogram->GetTitle()) + " - xz-projection");
+      m_CanvasXZ->Update();
+    }
 
-    m_CanvasYZ->cd();
-    m_HistYZ->Reset();
-    m_HistYZ->Add(dynamic_cast<TH3*>(m_Histogram)->Project3D("yz"));    
-    m_HistYZ->Draw(m_DrawOptionString);
-    m_HistYZ->SetTitle(MString(m_Histogram->GetTitle()) + " - yz-projection");
-    m_CanvasYZ->Update(); 
+    if (m_CanvasYZ != nullptr && m_HistYZ != nullptr) {
+      m_CanvasYZ->cd();
+      delete m_HistYZ;
+      m_HistYZ = Histogram->Project3D("yz");
+      m_HistYZ->SetDirectory(0);
+      m_HistYZ->Draw(m_DrawOptionString);
+      m_HistYZ->SetTitle(MString(m_Histogram->GetTitle()) + " - yz-projection");
+      m_CanvasYZ->Update();
+    } 
   }
 }
 
@@ -210,6 +253,11 @@ void MImage3D::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas for the first time
 
+  if (m_xNBins <= 0 || m_yNBins <= 0 || m_zNBins <= 0 || GetNEntries() <= 0 || m_IA == nullptr) {
+    merr<<"Unable to display image: invalid 3D image geometry or missing image data"<<endl;
+    return;
+  }
+
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
     Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 600, 600);
@@ -225,7 +273,7 @@ void MImage3D::Display(TCanvas* Canvas)
 
   TH3D* Hist = 0;
   if (m_Histogram == 0) {
-    Hist = new TH3D(m_Title + m_IDCounter, m_Title, m_xNBins, m_xMin, m_xMax, m_yNBins, m_yMin, m_yMax, m_zNBins, m_zMin, m_zMax);
+    Hist = new TH3D(m_Title + m_ID, m_Title, m_xNBins, m_xMin, m_xMax, m_yNBins, m_yMin, m_yMax, m_zNBins, m_zMin, m_zMax);
     m_Histogram = dynamic_cast<TH1*>(Hist);
 
     Hist->SetDirectory(0);
@@ -252,6 +300,8 @@ void MImage3D::Display(TCanvas* Canvas)
   for (int x = 1; x <= m_xNBins; ++x) {
     for (int y = 1; y <= m_yNBins; ++y) {
       for (int z = 1; z <= m_zNBins; ++z) {
+        // Clear the bin first so skipped non-finite values do not leave stale content behind.
+        Hist->SetBinContent(x, y, z, 0.0);
         Content = m_IA[(x-1) + (y-1)*m_xNBins + (z-1)*m_xNBins*m_yNBins];
         if (!TMath::IsNaN(Content)) {
           if (TMath::Finite(Content)) {
@@ -271,57 +321,73 @@ void MImage3D::Display(TCanvas* Canvas)
     Hist->Scale(1.0/Hist->GetMaximum());
   }
 
+  m_Canvas->cd();
   Hist->Draw();
+  m_Canvas->Update();
 
 
   // Create projections, and draw them too:
   
   if (m_HistXY == 0) {
     m_HistXY = Hist->Project3D("xy");
+    m_HistXY->SetDirectory(0);
   } else {
-    m_HistXY->Reset();
-    m_HistXY->Add(Hist->Project3D("xy"));
+    delete m_HistXY;
+    m_HistXY = Hist->Project3D("xy");
+    m_HistXY->SetDirectory(0);
   }
   m_HistXY->SetTitle(MString(Hist->GetTitle()) + " - xy-projection");
   
   if (m_HistXZ == 0) {
     m_HistXZ = Hist->Project3D("xz");
+    m_HistXZ->SetDirectory(0);
   } else {
-    m_HistXZ->Reset();
-    m_HistXZ->Add(Hist->Project3D("xz"));
+    delete m_HistXZ;
+    m_HistXZ = Hist->Project3D("xz");
+    m_HistXZ->SetDirectory(0);
   }
   m_HistXZ->SetTitle(MString(Hist->GetTitle()) + " - xz-projection");
   
   if (m_HistYZ == 0) {
     m_HistYZ = Hist->Project3D("yz");
+    m_HistYZ->SetDirectory(0);
   } else {
-    m_HistYZ->Reset();
-    m_HistYZ->Add(Hist->Project3D("yz"));
+    delete m_HistYZ;
+    m_HistYZ = Hist->Project3D("yz");
+    m_HistYZ->SetDirectory(0);
   }
   m_HistYZ->SetTitle(MString(Hist->GetTitle()) + " - yz-projection");
 
-  if (m_CanvasXY == 0) {
+  if (m_CanvasXY == nullptr) {
     m_CanvasXY = new TCanvas(m_CanvasTitle + "_XY", m_Title + "_XY", 40, 40, 600, 600);
   }
-  m_CanvasXY->cd();
-  m_HistXY->Draw(m_DrawOptionString);
-  m_CanvasXY->Update();
+  if (m_CanvasXY != nullptr && m_HistXY != nullptr) {
+    m_CanvasXY->cd();
+    m_HistXY->Draw(m_DrawOptionString);
+    m_CanvasXY->Update();
+  }
 
-  if (m_CanvasXZ == 0) {
+  if (m_CanvasXZ == nullptr) {
     m_CanvasXZ = new TCanvas(m_CanvasTitle + "_XZ", m_Title + "_XZ", 40, 40, 600, 600);
   }
-  m_CanvasXZ->cd();
-  m_HistXZ->Draw(m_DrawOptionString);
-  m_CanvasXZ->Update();
+  if (m_CanvasXZ != nullptr && m_HistXZ != nullptr) {
+    m_CanvasXZ->cd();
+    m_HistXZ->Draw(m_DrawOptionString);
+    m_CanvasXZ->Update();
+  }
 
-  if (m_CanvasYZ == 0) {
+  if (m_CanvasYZ == nullptr) {
     m_CanvasYZ = new TCanvas(m_CanvasTitle + "_YZ", m_Title + "_YZ", 40, 40, 600, 600);
   }
-  m_CanvasYZ->cd();
-  m_HistYZ->Draw(m_DrawOptionString);
-  m_CanvasYZ->Update(); 
+  if (m_CanvasYZ != nullptr && m_HistYZ != nullptr) {
+    m_CanvasYZ->cd();
+    m_HistYZ->Draw(m_DrawOptionString);
+    m_CanvasYZ->Update();
+  } 
 
   gSystem->ProcessEvents();
+
+  SetCreated();
 
   return;
 }
@@ -333,14 +399,22 @@ void MImage3D::Display(TCanvas* Canvas)
 //! Determine the maximum and its coordiantes, the vector is filled up to the number of dimensions the histogram has
 void MImage3D::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
 {
-  MaxValue = 0;
-  double xMaxIndex = 0;
-  double yMaxIndex = 0;
-  double zMaxIndex = 0;
+  Coordinate.clear();
+
+  if (GetNEntries() <= 0 || m_IA == nullptr) {
+    MaxValue = 0;
+    return;
+  }
+
+  MaxValue = m_IA[0];
+  int xMaxIndex = 0;
+  int yMaxIndex = 0;
+  int zMaxIndex = 0;
   
   for (int x = 0; x < m_xNBins; ++x) {
     for (int y = 0; y < m_yNBins; ++y) {
       for (int z = 0; z < m_zNBins; ++z) {
+        if (x == 0 && y == 0 && z == 0) continue;
         if (m_IA[x + y*m_xNBins + z*m_xNBins*m_yNBins] > MaxValue) {
           MaxValue = m_IA[x + y*m_xNBins + z*m_xNBins*m_yNBins];
           xMaxIndex = x;
@@ -352,7 +426,6 @@ void MImage3D::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
   }
   
   
-  Coordinate.clear();
   Coordinate.push_back((xMaxIndex + 0.5) * (m_xMax-m_xMin)/m_xNBins + m_xMin);
   Coordinate.push_back((yMaxIndex + 0.5) * (m_yMax-m_yMin)/m_yNBins + m_yMin);
   Coordinate.push_back((zMaxIndex + 0.5) * (m_zMax-m_zMin)/m_zNBins + m_zMin);

@@ -62,6 +62,8 @@ class MImage2D : public MImage
 
   //! Get the dimensions of the histogram
   virtual unsigned int GetDimensions() const { return 2; }
+  //! Return the number of entries in the image array
+  virtual int GetNEntries() const { return m_xNBins * m_yNBins; }
   
   //! Determine the maximum, the vector is filled up to the number of dimensions the histogram has
   virtual void DetermineMaximum(double& MaxValue, vector<double>& Coordinate);

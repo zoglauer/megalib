@@ -94,8 +94,8 @@ MImage::MImage()
   Init();
 
   SetTitle("Title here");
-  SetImageArray((double *) 0);
   SetXAxis("x-axis", 0, 1, 1);
+  SetImageArray(nullptr);
   SetValueAxisTitle("Intensity");
   SetSpectrum(c_Rainbow);
   SetDrawOption(c_COLCONTZ);
@@ -121,7 +121,6 @@ MImage::MImage(MString Title, double* IA,
   // DrawOption: ROOT draw option
 
   Init();
-  m_NEntries = xNBins;
 
   SetTitle(Title);
   SetXAxis(xTitle, xMin, xMax, xNBins);
@@ -172,7 +171,6 @@ void MImage::Init()
   m_IA = 0;
   m_Canvas = 0;
   m_Histogram = 0;
-  m_NEntries = 0;
 
   m_Normalize = false;
 
@@ -182,6 +180,7 @@ void MImage::Init()
   } else {
     m_IDCounter++;
   }
+  m_ID = m_IDCounter;
 
   m_IsCreated = false;
 
@@ -236,10 +235,12 @@ void MImage::SetImageArray(double* IA)
 {
   // Copy the data array
 
-  if (m_IA != 0) delete [] m_IA;
-  m_IA = new double[m_NEntries];
+  int NEntries = GetNEntries();
 
-  for (int x = 0; x < m_NEntries; x++) {
+  if (m_IA != 0) delete [] m_IA;
+  m_IA = new double[NEntries];
+
+  for (int x = 0; x < NEntries; x++) {
     if (IA != 0) {
       m_IA[x] = IA[x];
     } else {
@@ -248,8 +249,9 @@ void MImage::SetImageArray(double* IA)
   }
 
   if (m_Histogram != 0) {
+    m_Histogram->Reset();
     double Content = 0.0;
-    for (int x = 0; x < m_xNBins; x++) {
+    for (int x = 0; x < NEntries; x++) {
       Content = m_IA[x];
       if (!TMath::IsNaN(Content)) {
         if (TMath::Finite(Content)) {
@@ -468,7 +470,7 @@ MString MImage::MakeCanvasTitle()
 
   const int Length = 1000;
   char Text[Length];
-  snprintf(Text, Length, "%s - %i", (const char *) m_Title.Data(), MImage::m_IDCounter);
+  snprintf(Text, Length, "%s - %i", (const char *) m_Title.Data(), m_ID);
 
   MString Cleaned = Text;
   Cleaned.ReplaceAll(' ', '_');
@@ -480,7 +482,6 @@ MString MImage::MakeCanvasTitle()
   Cleaned.ReplaceAll('$', '_');
   Cleaned.ReplaceAll('@', '_');
   Cleaned.ReplaceAll('#', '_');
-  Cleaned.ReplaceAll('$', '_');
   Cleaned.ReplaceAll('%', '_');
   Cleaned.ReplaceAll('^', '_');
   Cleaned.ReplaceAll('&', '_');
@@ -529,7 +530,6 @@ void MImage::Display(TCanvas* Canvas)
     m_Histogram->SetDirectory(0);
     m_Histogram->SetXTitle(m_xTitle);
     m_Histogram->SetYTitle(m_vTitle);
-    m_Histogram->SetFillColor(0);
     m_Histogram->SetTitleOffset(float(1.1), "X");
     m_Histogram->SetTitleOffset(float(1.1), "Y");
     m_Histogram->SetLabelSize(float(0.03), "X");
@@ -541,6 +541,7 @@ void MImage::Display(TCanvas* Canvas)
     m_Histogram->SetFillColor(32);
     m_Histogram->SetStats(false);
   } else {
+    m_Histogram->Reset();
     m_Histogram->SetTitle(m_Title);
   }
 
@@ -578,8 +579,16 @@ void MImage::Reset()
 {
   // Reset to default values:
 
-  for (int x = 0; x < m_xNBins; x++) {
-    m_IA[x] = 0;
+  if (m_IA == nullptr) {
+    return;
+  }
+
+  for (int e = 0; e < GetNEntries(); ++e) {
+    m_IA[e] = 0;
+  }
+
+  if (m_Histogram != nullptr) {
+    m_Histogram->Reset();
   }
 }
 
@@ -601,14 +610,15 @@ double MImage::GetAverage()
 {
   //! Calculate the average
 
-  if (m_NEntries == 0) return 0;
+  int NEntries = GetNEntries();
+  if (NEntries == 0) return 0;
 
   double Average = 0.0;
-  for (int e = 0; e < m_NEntries; ++e) {
+  for (int e = 0; e < NEntries; ++e) {
     Average += m_IA[e];
   }
 
-  return Average / m_NEntries;
+  return Average / NEntries;
 }
 
 
@@ -618,17 +628,24 @@ double MImage::GetAverage()
 //! Determine the maximum and its coordiantes, the vector is filled up to the number of dimensions the histogram has
 void MImage::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
 {
-  MaxValue = 0;
-  double MaxIndex = 0;
+  Coordinate.clear();
 
-  for (int e = 0; e < m_NEntries; ++e) {
+  int NEntries = GetNEntries();
+  if (NEntries <= 0 || m_IA == nullptr) {
+    MaxValue = 0;
+    return;
+  }
+
+  MaxValue = m_IA[0];
+  int MaxIndex = 0;
+
+  for (int e = 1; e < NEntries; ++e) {
     if (m_IA[e] > MaxValue) {
       MaxValue = m_IA[e];
       MaxIndex = e;
     }
   }
 
-  Coordinate.clear();
   Coordinate.push_back((MaxIndex+0.5) * (m_xMax-m_xMin)/m_xNBins + m_xMin);
 }
 
@@ -689,14 +706,15 @@ void MImage::ExportFits()
   cout<<"3. "<<endl;
   fits_report_error(stderr, status);
 
-  double Image[m_NEntries];
+  int NEntries = GetNEntries();
+  double Image[NEntries];
 
   for (int i = 0; i < m_yNBins; i++)
     for (int j = 0; j < m_xNBins; j++) {
       Image[j + i*m_yNBins] = m_IA[j + (m_yNBins - i -1) * m_yNBins];
     }
 
-  fits_write_img(fptr, TDOUBLE, 1, m_NEntries, Image, &status);
+  fits_write_img(fptr, TDOUBLE, 1, NEntries, Image, &status);
   cout<<"4. "<<endl;
   fits_report_error(stderr, status);
 

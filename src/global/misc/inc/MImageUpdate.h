@@ -96,7 +96,6 @@ class MImageUpdate : public MImage
   unsigned int m_DisplayMode;              // 0: Summed, 1: Normalized, 2: Averaged
 
   TH1D *m_AAH;                       // "All Adds Histogram"
-  TH1D *m_MAH;                       // "Many Adds Histogram"
   TH1D *m_FAH;                       // "Few Adds Histogram"
 
   TCanvas *m_Canvas;                 // the canvas, where the data is displayed - may be embedded in a TGFrame

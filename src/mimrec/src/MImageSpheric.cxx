@@ -55,7 +55,7 @@ ClassImp(MImageSpheric)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MImageSpheric::MImageSpheric() : MImage2D()
+MImageSpheric::MImageSpheric() : MImage2D(), m_Projection(MImageProjection::c_None), m_YAxis(nullptr)
 {
   // default constructor
 }
@@ -98,6 +98,8 @@ MImageSpheric::MImageSpheric(MString Title, double* IA,
 MImageSpheric::~MImageSpheric()
 {
   // default destructor
+
+  m_YAxis = nullptr;
 }
 
 
@@ -129,14 +131,25 @@ void MImageSpheric::SetImageArray(double* IA)
   // Copy the data array
 
   if (IA == nullptr) {
-    merr<<"Input array is nullptr!"<<endl;
+    if (m_IA != nullptr) {
+      for (int e = 0; e < GetNEntries(); ++e) {
+        m_IA[e] = 0.0;
+      }
+    }
+    if (m_Histogram != nullptr) {
+      if (m_Projection == MImageProjection::c_None) {
+        DisplayProjectionNone();
+      } else {
+        DisplayProjectionHammer();
+      }
+    }
     return;
   }
   
   if (m_IA != nullptr) delete [] m_IA;
-  m_IA = new double[m_NEntries];
+  m_IA = new double[GetNEntries()];
   
-  for (int x = 0; x < m_NEntries; ++x) {
+  for (int x = 0; x < GetNEntries(); ++x) {
     m_IA[x] = IA[x];
   }
   
@@ -194,6 +207,11 @@ void MImageSpheric::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
 
+  if (m_IA == nullptr) {
+    merr<<"Unable to display image: missing spherical image data"<<endl;
+    return;
+  }
+
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
     Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 900, 900);
@@ -233,6 +251,8 @@ void MImageSpheric::Display(TCanvas* Canvas)
   } else {
     DisplayProjectionHammer();
   }
+
+  SetCreated();
 }
 
 
@@ -257,7 +277,6 @@ void MImageSpheric::DisplayProjectionNone()
     Hist->GetXaxis()->CenterTitle();
     Hist->GetXaxis()->SetTitleOffset(1.6f);
     Hist->GetXaxis()->SetTitleSize(0.04f);
-    Hist->GetXaxis()->CenterTitle();
     Hist->GetXaxis()->SetTickLength(-0.03f);
     Hist->GetXaxis()->SetLabelOffset(0.03f);
     Hist->GetXaxis()->SetLabelSize(0.035f);
@@ -279,6 +298,7 @@ void MImageSpheric::DisplayProjectionNone()
   } else {
     Hist = dynamic_cast<TH2D*>(m_Histogram);
     Hist->SetTitle(m_Title);
+    Hist->Reset();
   }
 
   double Content = 0.0;
@@ -349,7 +369,7 @@ void MImageSpheric::DisplayProjectionHammer()
   // Display the image in a canvas
 
   double xMin = m_xMin;
-  double xMax = m_yMax;
+  double xMax = m_xMax;
   
   // Invert coordinates, and make then go fromm -90 to 90:
   double yMin = -(m_yMax-90);
@@ -405,6 +425,7 @@ void MImageSpheric::DisplayProjectionHammer()
   } else {
     Hist = dynamic_cast<TH2D*>(m_Histogram);
     Hist->SetTitle(m_Title);
+    Hist->Reset();
   }
 
   double CentralMeridian = 0.5*(xMax+xMin)*c_Rad;
@@ -413,8 +434,8 @@ void MImageSpheric::DisplayProjectionHammer()
   double Lat, Long;
   double x, y;
   int ux, uy;
-  for (int bx = 0; bx < Hist->GetNbinsX(); ++bx) {
-    for (int by = 0; by < Hist->GetNbinsY(); ++by) {
+  for (int bx = 1; bx <= Hist->GetNbinsX(); ++bx) {
+    for (int by = 1; by <= Hist->GetNbinsY(); ++by) {
       x = Hist->GetXaxis()->GetBinCenter(bx)*c_Rad;
       y = Hist->GetYaxis()->GetBinCenter(by)*c_Rad;
 
