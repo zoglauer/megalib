@@ -33,7 +33,6 @@ using namespace std;
 #include "MGlobal.h"
 #include "MTime.h"
 #include "MTimer.h"
-#include "MTransceiver.h"
 
 // Forward declarations:
 

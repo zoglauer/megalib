@@ -30,7 +30,6 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MTransceiver.h"
 #include "MTimer.h"
 
 // Forward declarations:
