@@ -37,7 +37,7 @@ using namespace std;
 #include <TClass.h>
 #include <TRandom.h>
 
-// MIWorks libs:
+// MEGAlib libs:
 #include "MStreams.h"
 #include "MTimer.h"
 
@@ -56,7 +56,7 @@ ClassImp(MTransceiverTcpIp)
 void* StartTransceiverThread(void* Transceiver)
 {
   ((MTransceiverTcpIp *) Transceiver)->TransceiverLoop();
-  return 0;
+  return nullptr;
 }
 
 
@@ -67,6 +67,7 @@ int MTransceiverTcpIp::m_ThreadId = 0;
 
 const unsigned int MTransceiverTcpIp::c_ModeASCIIText = 0;
 const unsigned int MTransceiverTcpIp::c_ModeRawEventList = 1;
+const unsigned int MTransceiverTcpIp::c_MaxRawMessageLength = 1024*1024;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -97,12 +98,13 @@ MTransceiverTcpIp::MTransceiverTcpIp(MString Name, MString Host, unsigned int Po
   m_IsConnected = false;
   m_WishConnection = false;
   m_IsServer = false;
+  // By default we try client first and fall back to server if needed.
   m_WishServer = true;
   m_WishClient = true;
 
   m_IsThreadRunning = false;
 
-  m_TransceiverThread = 0;
+  m_TransceiverThread = nullptr;
    
   m_Verbosity = 2;
 }
@@ -118,7 +120,7 @@ MTransceiverTcpIp::~MTransceiverTcpIp()
   if (m_IsConnected == true) {
     Disconnect();
   }
-  if (m_TransceiverThread != 0) {
+  if (m_TransceiverThread != nullptr) {
     StopTransceiving();  
   }
 }
@@ -155,6 +157,14 @@ bool MTransceiverTcpIp::Connect(bool WaitForConnection, double TimeOut)
   // Connect to the given host.
   
   if (m_IsConnected == true) return true;
+
+  if (m_WishClient == false && m_WishServer == false) {
+    if (m_Verbosity >= 3) {
+      cout<<"Transceiver "<<m_Name<<": Connection request ignored because both client and server roles are disabled"<<endl;
+    }
+    return false;
+  }
+
   m_WishConnection = true;
   
   if (m_IsThreadRunning == false) {
@@ -168,6 +178,7 @@ bool MTransceiverTcpIp::Connect(bool WaitForConnection, double TimeOut)
       gSystem->Sleep(10);
     }
     if (m_IsConnected == false) {
+      m_WishConnection = false;
       StopTransceiving();
       if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection to "<<m_Host<<":"<<m_Port<<" failed!"<<endl;
       return false;
@@ -218,7 +229,7 @@ void MTransceiverTcpIp::StartTransceiving()
 {
   // Starts the multithreaded TransceiverLoop
 
-  if (m_TransceiverThread != 0) return;
+  if (m_TransceiverThread != nullptr) return;
 
   m_StopThread = false;
   
@@ -254,9 +265,11 @@ void MTransceiverTcpIp::StopTransceiving()
     // Never do this in a thread! gSystem->ProcessEvents();
     gSystem->Sleep(10);
   }
-    
-  //m_TransceiverThread->Kill();
-  m_TransceiverThread = 0;
+
+  if (m_TransceiverThread != nullptr) {
+    delete m_TransceiverThread;
+    m_TransceiverThread = nullptr;
+  }
   m_IsThreadRunning = false;
 }
 
@@ -326,8 +339,8 @@ void MTransceiverTcpIp::TransceiverLoop()
   m_IsThreadRunning = true;
 
   int Status = 0;
-  TServerSocket* ServerSocket = 0;    // A server
-  TSocket* Socket = 0;                // A full-duplex connection to another host
+  TServerSocket* ServerSocket = nullptr;    // A server
+  TSocket* Socket = nullptr;                // A full-duplex connection to another host
   bool SleepAllowed = true;
 
   unsigned int TextMessageLength;
@@ -339,6 +352,8 @@ void MTransceiverTcpIp::TransceiverLoop()
   char* TextMessage= new char[TextMessageLength+1];
   MString RawMessage;
   MString Message;
+  bool MessageComplete = false;
+  bool MessageDropped = false;
  
   int SleepAmount = 20;
   
@@ -348,7 +363,7 @@ void MTransceiverTcpIp::TransceiverLoop()
     // (2) Establish contact to remote host
     // (3) Receive messages
     // (4) Send messages
-    // (5) Sleep if not other tasks have to be done
+    // (5) Sleep if no other tasks have to be done
 
     SleepAllowed = true;
     
@@ -356,13 +371,13 @@ void MTransceiverTcpIp::TransceiverLoop()
     if (m_IsConnected == true) {
       m_TimeSinceLastConnection.Reset();
       
-      if (Socket->IsValid() == false || Socket->TestBit(TSocket::kBrokenConn)) {
+      if (Socket == nullptr || Socket->IsValid() == false || Socket->TestBit(TSocket::kBrokenConn)) {
         if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Found a broken connection... Resetting!"<<endl;
         
-        if (Socket != 0) {
+        if (Socket != nullptr) {
           Socket->Close("force");
           delete Socket;
-          Socket = 0;
+          Socket = nullptr;
           ++m_NResets;
         }
         
@@ -378,11 +393,10 @@ void MTransceiverTcpIp::TransceiverLoop()
     if (m_StopThread == true) {
       if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Stopping thread...!"<<endl;
 
-      if (Socket != 0) {
+      if (Socket != nullptr) {
         Socket->Close("force");
         delete Socket;
-        Socket = 0;
-        ++m_NResets;
+        Socket = nullptr;
       }
 
       m_IsConnected = false;
@@ -398,6 +412,13 @@ void MTransceiverTcpIp::TransceiverLoop()
     
     if (m_IsConnected == false) {
       if (m_WishConnection == true) {
+        if (m_WishClient == false && m_WishServer == false) {
+          if (m_Verbosity >= 3) {
+            cout<<"Transceiver "<<m_Name<<": Connection request ignored because both client and server roles are disabled"<<endl;
+          }
+          gSystem->Sleep(SleepAmount);
+          continue;
+        }
         
         // Try to (re-) connect as client:
         if (m_WishClient == true) {
@@ -417,8 +438,7 @@ void MTransceiverTcpIp::TransceiverLoop()
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as client..."<<endl;
             Socket->Close("force");
             delete Socket;
-            Socket = 0;
-            ++m_NResets;
+            Socket = nullptr;
             if (m_WishServer == false) {
               gSystem->Sleep(SleepAmount);
               continue;
@@ -442,13 +462,14 @@ void MTransceiverTcpIp::TransceiverLoop()
           delete ServerSocket;
 
 
-          if (long(Socket) > 0) {
+          // ROOT returns a negative pointer value on accept failure.
+          if (reinterpret_cast<intptr_t>(Socket) > 0) {
             Socket->SetOption(kNoBlock, 1);
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection established as server!"<<endl;
             m_IsServer = true;
             m_IsConnected = true;  
           } else {
-            Socket = 0; // Since it can be negative... yes...
+            Socket = nullptr; // Since it can be negative... yes...
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as server, trying again later..."<<endl;
             gSystem->Sleep(SleepAmount);
             continue;
@@ -467,8 +488,7 @@ void MTransceiverTcpIp::TransceiverLoop()
 
       Socket->Close("force");
       delete Socket;
-      Socket = 0;
-      ++m_NResets;
+      Socket = nullptr;
 
       m_IsConnected = false;
       m_IsServer = false;
@@ -488,6 +508,8 @@ void MTransceiverTcpIp::TransceiverLoop()
       //cout<<"Receive text"<<endl;
       //cout<<Message<<endl;
     } else if (m_Mode == c_ModeRawEventList) {
+      MessageComplete = false;
+      MessageDropped = false;
       do {
         Socket->SetOption(kNoBlock, 1); // don't block!
         for (unsigned int c = 0; c < TextMessageLength+1; ++c) TextMessage[c] = '\0'; // TextMessage is one larger then TextMessageLength!
@@ -502,6 +524,16 @@ void MTransceiverTcpIp::TransceiverLoop()
         if (EN != MString::npos) {
           Message = RawMessage.GetSubString(0, EN);
           RawMessage = RawMessage.Remove(0, EN+2);
+          if (RawMessage.Length() > 0 && RawMessage[0] == '\n') {
+            RawMessage = RawMessage.Remove(0, 1);
+          }
+          MessageComplete = true;
+          break;
+        }
+        if (RawMessage.Length() > c_MaxRawMessageLength) {
+          cout<<"Transceiver "<<m_Name<<": Error: Raw message exceeded maximum allowed size"<<endl;
+          RawMessage = "";
+          MessageDropped = true;
           break;
         }
         if (Status <= 0) { 
@@ -524,17 +556,23 @@ void MTransceiverTcpIp::TransceiverLoop()
       
       Socket->Close("force");
       delete Socket;
-      Socket = 0;
+      Socket = nullptr;
       
       m_IsConnected = false;
+      m_IsServer = false;
+      ++m_NResets;
       
       continue; // back to the beginning....
     } 
-    // If status == 0 we have either no message received or lost connection
-    else if (Status == -4) {
+    // If status == -4 and no complete raw message was assembled, we have nothing to do
+    else if (Status == -4 && MessageComplete == false) {
       // Empty...
     } 
-    // If status > 0, we got a message
+    // If the raw message exceeded the allowed size, skip it
+    else if (m_Mode == c_ModeRawEventList && MessageDropped == true) {
+      // Empty...
+    }
+    // If status > 0, or a complete raw message was assembled, we got a message
     else {
       m_ReceiveMutex.Lock();
       
@@ -582,15 +620,18 @@ void MTransceiverTcpIp::TransceiverLoop()
 
         Socket->Close("force");
         delete Socket;
-        Socket = 0;
+        Socket = nullptr;
         
         m_IsConnected = false;
         m_IsServer = false;
+        ++m_NResets;
       } else {
         m_SendMutex.Lock();
-        m_NStringsToSend--;
-        m_StringsToSend.pop_front();
-        m_NSentStrings++;
+        if (m_StringsToSend.empty() == false) {
+          m_StringsToSend.pop_front();
+          m_NStringsToSend--;
+          m_NSentStrings++;
+        }
         m_SendMutex.UnLock();
 
         SleepAllowed = false; // No sleep because we might have more work to do (i.e. send more events)
@@ -611,6 +652,7 @@ void MTransceiverTcpIp::TransceiverLoop()
     continue;
   }
   
+  delete [] TextMessage;
   m_IsThreadRunning = false;
 }
 

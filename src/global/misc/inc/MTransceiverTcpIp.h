@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <atomic>
 #include <sstream>
 #include <string>
 #include <list>
@@ -123,6 +124,8 @@ class MTransceiverTcpIp
   static const unsigned int c_ModeASCIIText;
   //! The data is transmitted as raw text as an event list. This requires the event or the event list to be terminated with an "EN"
   static const unsigned int c_ModeRawEventList;
+  //! Maximum size of an unframed raw event list message
+  static const unsigned int c_MaxRawMessageLength;
   
   // protected methods:
  protected:
@@ -168,9 +171,9 @@ class MTransceiverTcpIp
   //! Unique Id for the thread...
   static int m_ThreadId;
   //! Flag indicating to stop the thread
-  bool m_StopThread;
+  std::atomic<bool> m_StopThread;
   //! Flag indicating that the thread is running
-  bool m_IsThreadRunning;
+  std::atomic<bool> m_IsThreadRunning;
   //! Mutex to prevent multiple socket initializations
   TMutex m_SocketMutex;
 
@@ -178,43 +181,43 @@ class MTransceiverTcpIp
   //! List of objects still waiting for sending
   list<MString> m_StringsToSend;
   //! number of objects still waiting for sending
-  unsigned int m_NStringsToSend;
+  std::atomic<unsigned int> m_NStringsToSend;
   //! A mutex for the send queue
   TMutex m_SendMutex;
 
   //! List of objects which have been received and which are still in the buffer
   list<MString> m_StringsToReceive;
   //! list of objects which have been received and which are still in the buffer
-  unsigned int m_NStringsToReceive;
+  std::atomic<unsigned int> m_NStringsToReceive;
   //! A mutex for the receive queue
   TMutex m_ReceiveMutex;
 
   //! The maximum buffer size:
-  unsigned int m_MaxBufferSize;
+  std::atomic<unsigned int> m_MaxBufferSize;
 
   //! Counter for the number of received strings, etc.
-  unsigned int m_NReceivedStrings;
+  std::atomic<unsigned int> m_NReceivedStrings;
   //! Counter for the number of sent strings, etc.
-  unsigned int m_NSentStrings;
+  std::atomic<unsigned int> m_NSentStrings;
 
   //! Counter for the number of lost strings due to buffer overflow
-  unsigned int m_NLostStrings;
+  std::atomic<unsigned int> m_NLostStrings;
 
   //! Counter for the resets
-  unsigned long m_NResets;
+  std::atomic<unsigned long> m_NResets;
   
   //! True if a connection is established
-  bool m_IsConnected;
+  std::atomic<bool> m_IsConnected;
   //! True if this tranceiver tries to connect
-  bool m_WishConnection;
+  std::atomic<bool> m_WishConnection;
   
   //! True if this connection is intended as server
-  bool m_WishServer;
+  std::atomic<bool> m_WishServer;
   //! True if this connection is intended as client
-  bool m_WishClient;
+  std::atomic<bool> m_WishClient;
 
   //! True if this is a server
-  bool m_IsServer;
+  std::atomic<bool> m_IsServer;
   
   
 #ifdef ___CLING___
