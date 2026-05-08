@@ -62,7 +62,6 @@ FILES := MGlobal \
 	MConnection \
 	MTransceiverTcpIpBinary \
 	MTransceiverTcpIp \
-	MTransceiverUDP \
 	MRotationInterface \
 	MPhysicalEvent \
 	MPhysicalEventHit \
