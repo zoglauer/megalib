@@ -355,7 +355,7 @@ void MTransceiverTcpIp::TransceiverLoop()
   bool MessageComplete = false;
   bool MessageDropped = false;
  
-  int SleepAmount = 20;
+  int SleepAmount = 2;
   
   while (true) {
     // This is the main loop of the thread. It consists of five parts:

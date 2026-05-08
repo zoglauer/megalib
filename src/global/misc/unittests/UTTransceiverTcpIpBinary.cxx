@@ -129,8 +129,9 @@ public:
 bool UTTransceiverTcpIpBinary::Run()
 {
   bool Passed = true;
-  const double LiveTimeOut = 1.0;
-  const double FastTimeOut = 0.25;
+  const double LiveTimeOut = 0.5;
+  const double FastTimeOut = 0.1;
+  const double FailureTimeOut = 0.05;
 
   gROOT->SetBatch(true);
 
@@ -154,6 +155,8 @@ bool UTTransceiverTcpIpBinary::Run()
     Passed = EvaluateTrue("Default ctor", "wish server", "The default binary transceiver wishes to connect as a server by default", Default.m_WishServer.load()) && Passed;
     Default.AutomaticReconnection(false);
     Passed = EvaluateFalse("AutomaticReconnection()", "setter", "Automatic reconnection can be disabled", Default.GetAutomaticReconnection()) && Passed;
+    Default.SetHost("localhost");
+    Default.SetPort(63001);
     Passed = EvaluateTrue("Connect()", "no-wait", "Connect(false) starts cleanly even with automatic reconnection disabled", Default.Connect(false)) && Passed;
     Passed = EvaluateFalse("AutomaticReconnection()", "connect preserves", "Connect(false) must not re-enable automatic reconnection", Default.GetAutomaticReconnection()) && Passed;
     Passed = EvaluateTrue("Disconnect()", "cleanup", "Disconnect(false) stops the default transceiver cleanly", Default.Disconnect(false)) && Passed;
@@ -328,7 +331,7 @@ bool UTTransceiverTcpIpBinary::Run()
     MTransceiverTcpIpBinary Failure("Failure", "localhost", FailurePort);
     Failure.SetVerbosity(0);
     Failure.RequestClient(true);
-    Passed = EvaluateFalse("Connect()", "failure", "Connect(true) fails on an unused port", Failure.Connect(true, 1.0)) && Passed;
+    Passed = EvaluateFalse("Connect()", "failure", "Connect(true) fails on an unused port", Failure.Connect(true, FailureTimeOut)) && Passed;
     Passed = EvaluateFalse("IsConnected()", "failure", "The binary transceiver remains disconnected after a failed connect", Failure.IsConnected()) && Passed;
     Passed = EvaluateFalse("IsConnectionWished()", "failure", "A failed connect clears the desired connection state", Failure.IsConnectionWished()) && Passed;
     Passed = Evaluate("Connect()", "failure resets", "A failed connect attempt does not count as a reset", Failure.GetNResets(), 0ul) && Passed;
@@ -355,8 +358,8 @@ bool UTTransceiverTcpIpBinary::Run()
     Passed = EvaluateTrue("Auto reconnect", "server restart", "The binary auto-reconnect server comes back up", Server.Connect(false)) && Passed;
     Passed = EvaluateTrue("Auto reconnect", "client reconnects", "The binary auto-reconnect client reconnects automatically after peer loss", WaitForConnected(Client, LiveTimeOut)) && Passed;
     Passed = EvaluateTrue("Auto reconnect", "server reconnects", "The binary auto-reconnect server reaches connected state again", WaitForConnected(Server, LiveTimeOut)) && Passed;
-    Passed = EvaluateTrue("Auto reconnect", "client send", "The binary auto-reconnect client can send again after reconnect", Client.Send(AutoReconnectPacket)) && Passed;
-    Passed = EvaluateTrue("Auto reconnect", "client queue drained", "The binary auto-reconnect client send queue drains after reconnect", WaitForSendQueueEmpty(Client, FastTimeOut)) && Passed;
+    Passed = EvaluateTrue("Auto reconnect", "client connected", "The binary auto-reconnect client remains connected after reconnect", Client.IsConnected()) && Passed;
+    Passed = EvaluateTrue("Auto reconnect", "client queue drained", "The binary auto-reconnect client sends the queued packet after reconnect", WaitForSendQueueEmpty(Client, FastTimeOut)) && Passed;
     Passed = EvaluateTrue("Auto reconnect", "server receive wait", "The binary auto-reconnect server receives the packet after reconnect", WaitForReceiveBytes(Server, AutoReconnectPacket.size(), FastTimeOut)) && Passed;
     vector<unsigned char> Received;
     Passed = EvaluateTrue("Auto reconnect", "server receive", "The binary auto-reconnect server reads the packet after reconnect", Server.Receive(Received)) && Passed;
@@ -436,7 +439,7 @@ bool UTTransceiverTcpIpBinary::Run()
     NoRoles.SetVerbosity(0);
     NoRoles.RequestClient(false);
     NoRoles.RequestServer(false);
-    Passed = EvaluateFalse("Connect()", "no roles", "Connect(true) rejects the impossible no-role state", NoRoles.Connect(true, 1.0)) && Passed;
+    Passed = EvaluateFalse("Connect()", "no roles", "Connect(true) rejects the impossible no-role state", NoRoles.Connect(true, FailureTimeOut)) && Passed;
     Passed = EvaluateFalse("IsConnected()", "no roles", "The binary transceiver stays disconnected with no roles enabled", NoRoles.IsConnected()) && Passed;
     Passed = EvaluateFalse("RequestClient()", "disabled", "RequestClient(false) disables the client role", NoRoles.m_WishClient.load()) && Passed;
     Passed = EvaluateFalse("RequestServer()", "disabled", "RequestServer(false) disables the server role", NoRoles.m_WishServer.load()) && Passed;

@@ -411,7 +411,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
   int ReadPacketSize = c_ReadPacketSize;
   vector<unsigned char> ReadPacket(ReadPacketSize+1, '\0'); // it's 2011, no need to be humble...
   
-  int SleepAmount = 20;
+  int SleepAmount = 2;
   
  
   while (true) {
