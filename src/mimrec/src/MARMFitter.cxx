@@ -839,6 +839,11 @@ bool MARMFitter::PerformFit(unsigned int FitID, vector<double>& ARMValues)
 
   // Calculate FWHM ...
   double FWHM = MInterface::GetFWHM(FitFunction, -m_MaxARMValue, m_MaxARMValue);
+  if (FWHM == numeric_limits<double>::max()) {
+    cout<<"Unable to determine FWHM for ARM fit "<<FitID<<"."<<endl;
+    delete FitFunction;
+    return false;
+  }
 
   {
     std::unique_lock<std::mutex> Lock(m_Mutex);

@@ -1381,6 +1381,10 @@ void MInterfaceMimrec::ARMGammaClassic()
 
   // Calculate FWHM and its uncertainty using the confidence intervals
   double FWHM = GetFWHM(Fit, -180, 180);
+  if (FWHM == numeric_limits<double>::max()) {
+    cout<<"Unable to determine FWHM"<<endl;
+    FWHM = 0.0;
+  }
   double MinFWHM = -1;
   double MaxFWHM = -1;
 
@@ -3661,7 +3665,12 @@ void MInterfaceMimrec::SPDElectron()
   cout<<endl;
   cout<<"SPD - Characteristics:"<<endl;
   cout<<endl;
-  cout<<"FWHM of fitted function:  "<<GetFWHM(L, -Disk, Disk)<<""<<endl;
+  double FWHM = GetFWHM(L, -Disk, Disk);
+  if (FWHM == numeric_limits<double>::max()) {
+    cout<<"FWHM of fitted function:  unable to determine FWHM"<<endl;
+  } else {
+    cout<<"FWHM of fitted function:  "<<FWHM<<" deg"<<endl;
+  }
   cout<<endl;
   delete L;
   cout<<"Inside: "<<Inside<<endl;
@@ -3847,7 +3856,12 @@ void MInterfaceMimrec::ARMElectron()
   cout<<endl;
   cout<<"ARM - Characteristics:"<<endl;
   cout<<endl;
-  cout<<"Total FWHM of fit:                       "<<GetFWHM(Fit, -180, 180)<<" deg"<<endl;
+  double FWHM = GetFWHM(Fit, -180, 180);
+  if (FWHM == numeric_limits<double>::max()) {
+    cout<<"Total FWHM of fit:                       unable to determine FWHM"<<endl;
+  } else {
+    cout<<"Total FWHM of fit:                       "<<FWHM<<" deg"<<endl;
+  }
   cout<<"Maximum of fit (x position):             "<<Fit->GetMaximumX(-Disk, +Disk)<<" deg"<<endl;
   cout<<endl;
   cout<<"Inside: "<<Inside<<" of "<<NEvents<<endl;

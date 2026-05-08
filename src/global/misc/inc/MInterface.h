@@ -68,7 +68,7 @@ class MInterface
   static bool DetermineAxis(double& xMin, double& xMax, 
                             double& yMin, double& yMax, 
                             double& zMin, double& zMax, 
-                            const vector<MVector>& Positions);
+                            const std::vector<MVector>& Positions);
 
   //! Return an array usable for ROOT histograms
   //! The user must delete the array!

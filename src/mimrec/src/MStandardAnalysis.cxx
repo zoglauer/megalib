@@ -265,6 +265,10 @@ bool MStandardAnalysis::Analyze()
   ARMCanvasR1->Update();
   
   double ARMFWHM = MInterface::GetFWHM(ARMFitR1, -180, 180);
+  if (ARMFWHM == numeric_limits<double>::max()) {
+    cout<<"Unable to determine FWHM"<<endl;
+    return false;
+  }
   
   
   
@@ -327,6 +331,10 @@ bool MStandardAnalysis::Analyze()
   ARMCanvasR2->Update();
   
   ARMFWHM = MInterface::GetFWHM(ARMFitR2, -180, 180);
+  if (ARMFWHM == numeric_limits<double>::max()) {
+    cout<<"Unable to determine FWHM"<<endl;
+    return false;
+  }
 
   
   

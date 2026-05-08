@@ -27,6 +27,7 @@
 #include "MInterface.h"
 
 // Standard libs:
+#include <cmath>
 #include <iostream>
 using namespace std;
 
@@ -63,6 +64,7 @@ MInterface::~MInterface()
 {
   // default destructor
 
+  delete m_Gui;
   delete m_Geometry;
 }
 
@@ -105,6 +107,10 @@ bool MInterface::DetermineAxis(double& xMin, double& xMax,
   zMax = -numeric_limits<double>::max();
   
   for (unsigned int p = 0; p < Positions.size(); ++p) {
+    if (isfinite(Positions[p][0]) == false || isfinite(Positions[p][1]) == false || isfinite(Positions[p][2]) == false) {
+      mout<<"Error: Unable to determine optimized axes since a position contains a non-finite coordinate!"<<endl;
+      return false;
+    }
     if (Positions[p][0] > xMax) xMax = Positions[p][0];
     if (Positions[p][1] > yMax) yMax = Positions[p][1];
     if (Positions[p][2] > zMax) zMax = Positions[p][2];
@@ -147,6 +153,10 @@ bool MInterface::DetermineAxis(double& xMin, double& xMax,
   if (zMin == zMax) {
     zMin -= MinDiff;
     zMax += MinDiff;
+  }
+
+  if (MaxDiff < MinDiff) {
+    MaxDiff = MinDiff;
   }
 
   // make sure we get small numbers:
@@ -216,7 +226,7 @@ double* MInterface::CreateAxisBins(double Min, double Max, int NBins, bool IsLog
   }
   if (NBins < 1) {
     merr<<"Number of bins ("<<NBins<<") must be >= 1! Using 1!"<<show;
-    NBins = 2;
+    NBins = 1;
   }
   if (Min >= Max) {
     merr<<"Minimum ("<<Min<<") must be smaller than maximum ("<<Max<<")! Using Max = Min + 1.0!"<<show;
@@ -251,12 +261,18 @@ double* MInterface::CreateAxisBins(double Min, double Max, int NBins, bool IsLog
 double MInterface::GetFWHM(TF1* Function, double Min, double Max) 
 {
   // Return the FWHM of the function Function within the limits of Min, Max
-  // if an error occurs, return a negative number
-  // if Min=Max, then ignore these values
+  // If an error occurs, return numeric_limits<double>::max()
+  // If Min == Max, use the full function range
 
-  if (Max == Min) {
-    cout<<"Error in MInterface::GetFWHM: Max == Min"<<endl;
-    cout<<"Returning numeric_limits<double>::max()"<<endl;
+  if (Function == nullptr) {
+    mout<<"Error in MInterface::GetFWHM: Function is null"<<endl;
+    mout<<"Returning numeric_limits<double>::max()"<<endl;
+    return numeric_limits<double>::max();
+  }
+
+  if (Min > Max) {
+    mout<<"Error in MInterface::GetFWHM: Min > Max"<<endl;
+    mout<<"Returning numeric_limits<double>::max()"<<endl;
     return numeric_limits<double>::max();
   }
   
@@ -266,8 +282,14 @@ double MInterface::GetFWHM(TF1* Function, double Min, double Max)
   double FWHMmin = 0, FWHMmax = 0;
 
   if (Min == Max) {
-    Min = -1000;
-    Max = +1000;
+    Min = Function->GetXmin();
+    Max = Function->GetXmax();
+  }
+
+  if (Min == Max) {
+    mout<<"Error in MInterface::GetFWHM: Function range is zero width"<<endl;
+    mout<<"Returning numeric_limits<double>::max()"<<endl;
+    return numeric_limits<double>::max();
   }
 
   int NSteps = 100;
@@ -276,7 +298,7 @@ double MInterface::GetFWHM(TF1* Function, double Min, double Max)
   // Stage a:
   xmin = Min;
   xmax = Max;
-  yHighest = DBL_MIN;
+  yHighest = -numeric_limits<double>::max();
   for (x = xmin; x <= xmax; x += xStep) {
     if (Function->Eval(x) > yHighest) {
       yHighest = Function->Eval(x);
@@ -302,7 +324,7 @@ double MInterface::GetFWHM(TF1* Function, double Min, double Max)
   // NSteps /= 2;
   
   if (xHighest == Min) {
-    cout<<"Error in MInterface::GetFWHM: The FWHM is not within the range you have given"<<endl;
+    mout<<"Error in MInterface::GetFWHM: The FWHM is not within the range you have given"<<endl;
     return numeric_limits<double>::max();    
   } else {
     xStep = (xHighest - Min)/NSteps;
@@ -335,7 +357,7 @@ double MInterface::GetFWHM(TF1* Function, double Min, double Max)
 
   // Step three: determine right border
   if (xHighest == Max) {
-    cout<<"Error in MInterface::GetFWHM: The FWHM is not within the range you have given"<<endl;
+    mout<<"Error in MInterface::GetFWHM: The FWHM is not within the range you have given"<<endl;
     return numeric_limits<double>::max();    
   } else {
     xStep = (Max - xHighest)/NSteps;
