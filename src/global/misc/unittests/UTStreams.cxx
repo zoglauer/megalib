@@ -341,11 +341,11 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     MString Content = ReadFile(MerrFileName);
     Passed = EvaluateTrue("merr", "message text", "The merr macro writes the emitted message", Content.Contains("Macro problem")) && Passed;
 #ifdef NDEBUG
-    Passed = EvaluateFalse("merr", "debug file context", "In release builds merr does not prepend debug source context", Content.Contains("UTStreams.cxx")) && Passed;
-    Passed = EvaluateFalse("merr", "debug function context", "In release builds merr does not prepend debug function context", Content.Contains("UTStreams_EmitMerrShow")) && Passed;
+  Passed = EvaluateFalse("merr", "debug file context", "In release builds merr does not prepend debug source context", Content.Contains("UTStreams.cxx")) && Passed;
+  Passed = EvaluateFalse("merr", "debug function context", "In release builds merr does not prepend debug function context", Content.Contains("EmitMerrShow")) && Passed;
 #else
-    Passed = EvaluateTrue("merr", "file context", "The merr macro writes source file context", Content.Contains("UTStreams.cxx")) && Passed;
-    Passed = EvaluateTrue("merr", "function context", "The merr macro writes function context", Content.Contains("UTStreams_EmitMerrShow")) && Passed;
+  Passed = EvaluateTrue("merr", "file context", "The merr macro writes source file context", Content.Contains("UTStreams.cxx")) && Passed;
+  Passed = EvaluateTrue("merr", "function context", "The merr macro writes function context", Content.Contains("EmitMerrShow")) && Passed;
 #endif
   }
 
@@ -417,6 +417,10 @@ bool UTStreams::TestGlobalStreamsAndMacros()
   for (list<MString>::iterator I = FileNames.begin(); I != FileNames.end(); ++I) {
     CleanFile(*I);
   }
+
+  mout.DumpToStdOut(true);
+  mout.DumpToStdErr(true);
+  mout.DumpToGui(true);
 
   return Passed;
 }
