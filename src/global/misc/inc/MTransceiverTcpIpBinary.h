@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <atomic>
 #include <sstream>
 #include <string>
 #include <list>
@@ -75,15 +76,17 @@ class MTransceiverTcpIpBinary
   unsigned int GetPort() { return m_Port; }
   
   //! Request this connection to be a client
-  void RequestClient(bool Client = true) { m_WishClient = Client; if (m_WishClient) m_WishServer = false; } 
+  void RequestClient(bool Client = true) { m_WishClient.store(Client); if (Client == true) m_WishServer.store(false); } 
   //! Request this connection to be a server
-  void RequestServer(bool Server = true) { m_WishServer = Server; if (m_WishServer) m_WishClient = false; } 
+  void RequestServer(bool Server = true) { m_WishServer.store(Server); if (Server == true) m_WishClient.store(false); } 
   
   //! Clear the send and receive buffers
   void ClearBuffers();
   
   //! Turn on or off the automatic reconnect feature - it will be turned on during the next call of Connect
-  void AutomaticReconnection(bool AutomaticReconnection = true) { m_AutomaticReconnection = AutomaticReconnection; }
+  void AutomaticReconnection(bool AutomaticReconnection = true) { m_AutomaticReconnection.store(AutomaticReconnection); }
+  //! Return true if automatic reconnection is enabled
+  bool GetAutomaticReconnection() const { return m_AutomaticReconnection.load(); }
   
   //! Connect. If wait for connection is true, and we ran into time-out, return false, otherwise always true 
   bool Connect(bool WaitForConnection = false, double TimeOut = 60);
@@ -91,7 +94,9 @@ class MTransceiverTcpIpBinary
   bool Disconnect(bool WaitForDisconnection = false, double TimeOut = 60);
  
   //! Return true if we are connected
-  bool IsConnected() { return m_IsConnected; }
+  bool IsConnected() { return m_IsConnected.load(); }
+  //! Return true if a connection is currently requested
+  bool IsConnectionWished() const { return m_WishConnection.load(); }
 
   //! Return the time of the last connection
   MTimer GetTimeSinceLastConnection() const { return m_TimeSinceLastConnection; }
@@ -104,27 +109,30 @@ class MTransceiverTcpIpBinary
   bool Receive(vector<unsigned char>& Bytes);
   //! Receive something with sync word Sync but not more than MaxPackets 
   //! The last package will always be missed since we will not find a new syncword for the last package
-  bool SyncedReceive(vector<unsigned char>& Packet, vector<unsigned char>& Sync, unsigned int MaxPackets = 1000);
+  bool SyncedReceive(vector<unsigned char>& Packet, const vector<unsigned char>& Sync, unsigned int MaxPackets = 1000);
 
   //! Set the maximum buffer size (in strings) after which to loose events
   //! Since we use C++ lists on char's we have an overhead of 16 : 1 on 64-bit systems!
   void SetMaximumBufferSize(unsigned long MaxBufferSize) { m_MaxBufferSize = MaxBufferSize; }
 
   //! Get the number of objects still to be sent
-  unsigned long GetNPacketsToSend() const { return m_NPacketsToSend; }
+  unsigned long GetNPacketsToSend() const { return m_NPacketsToSend.load(); }
   //! Get the number of packets still to be receive (i.e. which are in the receive buffer)
-  unsigned long GetNPacketsToReceive() const { return m_NPacketsToReceive; }
+  unsigned long GetNPacketsToReceive() const { return m_NPacketsToReceive.load(); }
 
   //! Get the number of sent bytes
-  unsigned long GetNSentBytes() const { return m_NSentBytes; }
+  unsigned long GetNSentBytes() const { return m_NSentBytes.load(); }
   //! Get the number of receives bytes
-  unsigned long GetNReceivedBytes() const { return m_NReceivedBytes; }
+  unsigned long GetNReceivedBytes() const { return m_NReceivedBytes.load(); }
 
   //! Get the number of resets
-  unsigned long GetNResets() const { return m_NResets; }
+  unsigned long GetNResets() const { return m_NResets.load(); }
   
   //! The (multithreaded) transceiver loop
   void TransceiverLoop();
+
+  //! Maximum size of a single raw receive chunk
+  static const int c_ReadPacketSize;
 
   
   // protected methods:
@@ -166,60 +174,60 @@ class MTransceiverTcpIpBinary
   //! Unique Id for the thread...
   static int m_ThreadId;
   //! Flag indicating to stop the thread
-  bool m_StopThread;
+  std::atomic<bool> m_StopThread;
   //! Flag indicating that the thread is running
-  bool m_IsThreadRunning;
+  std::atomic<bool> m_IsThreadRunning;
   //! Mutex to prevent multiple socket initializations
   TMutex m_SocketMutex;
   
   //! List of byte packets still waiting for sending
   list<vector<unsigned char>> m_PacketsToSend;
   //! Number of objects still waiting for sending
-  unsigned int m_NPacketsToSend;
+  std::atomic<unsigned int> m_NPacketsToSend;
   //! Number of bytes still waiting for sending
-  unsigned int m_NBytesToSend;
+  std::atomic<unsigned int> m_NBytesToSend;
   //! A mutex for the send queue
   TMutex m_SendMutex;
 
   //! List of packets which have been received and which are still in the buffer
   deque<unsigned char> m_PacketsToReceive;
   //! Number of packets which have been received and which are still in the buffer
-  unsigned int m_NPacketsToReceive;
+  std::atomic<unsigned int> m_NPacketsToReceive;
   //! A mutex for the receive queue
   TMutex m_ReceiveMutex;
 
   //! The maximum buffer size:
-  unsigned long m_MaxBufferSize;
+  std::atomic<unsigned long> m_MaxBufferSize;
 
-  //! Counter for the number of received strings, etc.
-  unsigned long m_NReceivedPackets;
+  //! Counter for the number of received packets
+  std::atomic<unsigned long> m_NReceivedPackets;
   //! Counter for the number of received bytes
-  unsigned long m_NReceivedBytes;
-  //! Counter for the number of sent strings, etc.
-  unsigned long m_NSentPackets;
+  std::atomic<unsigned long> m_NReceivedBytes;
+  //! Counter for the number of sent packets
+  std::atomic<unsigned long> m_NSentPackets;
   //! Counter for the number of sent bytes
-  unsigned long m_NSentBytes;
+  std::atomic<unsigned long> m_NSentBytes;
 
-  //! Counter for the number of lost strings due to buffer overflow
-  unsigned long m_NLostPackets;
+  //! Counter for the number of lost packets due to buffer overflow
+  std::atomic<unsigned long> m_NLostPackets;
 
-  //! Counter for the resets
-  unsigned long m_NResets;
+  //! Counter for unexpected resets
+  std::atomic<unsigned long> m_NResets;
   
   //! True if a connection is established
-  bool m_IsConnected;
+  std::atomic<bool> m_IsConnected;
   //! True if this tranceiver tries to connect
-  bool m_WishConnection;
+  std::atomic<bool> m_WishConnection;
   //! True if we automatically reconnect if we loose connection
-  bool m_AutomaticReconnection;
+  std::atomic<bool> m_AutomaticReconnection;
   
   //! True if this connection is intended as server
-  bool m_WishServer;
+  std::atomic<bool> m_WishServer;
   //! True if this connection is intended as client
-  bool m_WishClient;
+  std::atomic<bool> m_WishClient;
   
   //! True if this is a server
-  bool m_IsServer;
+  std::atomic<bool> m_IsServer;
   
   
 #ifdef ___CLING___
