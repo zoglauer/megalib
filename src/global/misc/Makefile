@@ -59,7 +59,6 @@ FILES := MGlobal \
 	MSystem \
 	MJulianDay \
 	MTokenizer \
-	MConnection \
 	MTransceiverTcpIpBinary \
 	MTransceiverTcpIp \
 	MRotationInterface \
