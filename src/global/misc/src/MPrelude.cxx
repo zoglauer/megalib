@@ -27,12 +27,14 @@
 #include "MPrelude.h"
 
 // Standard libs:
+#include <fstream>
 
 // ROOT libs:
 
 // MEGAlib libs:
 #include "MFile.h"
 #include "MGUIPrelude.h"
+#include "MStreams.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -67,7 +69,9 @@ MPrelude::~MPrelude()
 bool MPrelude::Play()
 {
   // First load the .megalib.cfg file
-  m_Settings.Read();
+  if (m_Settings.Read() == false) {
+    return false;
+  }
 
   // Step 1: Take care of the license file
   MString LicenseFile = "$(MEGALIB)/LICENSE";
@@ -75,18 +79,25 @@ bool MPrelude::Play()
   if (MFile::Exists(LicenseFile) == true) {
     ifstream in;
     in.open(LicenseFile);
-    MString License;
-    License.Read(in);
-    if (License.GetHash() != m_Settings.GetLicenseHash()) {
-      MGUIPrelude* P = new MGUIPrelude("License agreement", 
-                                       "Please read the following license agreement very carefully\n"
-                                       "You have to accept the license agreement to use the software", 
-                                       License, "Accept", "Decline");
-      P->Create();
-      if (P->IsOKed() == false) return false;
-      delete P;     
-      
-      m_Settings.SetLicenseHash(License.GetHash());
+    if (in.is_open() == true) {
+      MString License;
+      License.Read(in);
+      if (License.GetHash() != m_Settings.GetLicenseHash()) {
+        MGUIPrelude* P = new MGUIPrelude("License agreement", 
+                                         "Please read the following license agreement very carefully\n"
+                                         "You have to accept the license agreement to use the software", 
+                                         License, "Accept", "Decline");
+        P->Create();
+        if (P->IsOKed() == false) {
+          delete P;
+          return false;
+        }
+        delete P;     
+        
+        m_Settings.SetLicenseHash(License.GetHash());
+      }
+    } else {
+      merr<<"Unable to open license file \""<<LicenseFile<<"\""<<endl;
     }
   }
 
@@ -96,22 +107,28 @@ bool MPrelude::Play()
   if (MFile::Exists(ChangeLogFile) == true) {
     ifstream in;
     in.open(ChangeLogFile);
-    MString ChangeLog;
-    ChangeLog.Read(in);
-    if (ChangeLog.GetHash() != m_Settings.GetChangeLogHash()) {
-      MGUIPrelude* P = new MGUIPrelude("Change Log", 
-                                       "Please read the following change log file very carefully\n"
-                                       "It contains information about enhancements, bugs, or changes required to run MEGAlib.", 
-                                       ChangeLog, "OK");
-      P->Create();
-      delete P;     
+    if (in.is_open() == true) {
+      MString ChangeLog;
+      ChangeLog.Read(in);
+      if (ChangeLog.GetHash() != m_Settings.GetChangeLogHash()) {
+        MGUIPrelude* P = new MGUIPrelude("Change Log", 
+                                         "Please read the following change log file very carefully\n"
+                                         "It contains information about enhancements, bugs, or changes required to run MEGAlib.", 
+                                         ChangeLog, "OK");
+        P->Create();
+        delete P;     
 
-      m_Settings.SetChangeLogHash(ChangeLog.GetHash());
+        m_Settings.SetChangeLogHash(ChangeLog.GetHash());
+      }
+    } else {
+      merr<<"Unable to open change log file \""<<ChangeLogFile<<"\""<<endl;
     }
   }
 
   // Finally save the global configuration file again
-  m_Settings.Write();
+  if (m_Settings.Write() == false) {
+    return false;
+  }
   
   return true;
 }

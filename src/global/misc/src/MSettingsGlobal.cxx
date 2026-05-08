@@ -92,9 +92,10 @@ bool MSettingsGlobal::Read()
 
   if (Document->GetName() != m_NameMasterNode) {
     mout<<"Error reading configuration file "<<m_SettingsFileName<<endl;
-    mout<<"The loaded configuration file is of type \""<<Document->GetName()<<"\", but expected is: MEGAlib"<<endl;
+    mout<<"The loaded configuration file is of type \""<<Document->GetName()<<"\", but expected is: \""<<m_NameMasterNode<<"\""<<endl;
     mout<<"Starting with the default configuration!"<<endl;
-    return false;    
+    delete Document;
+    return true;
   }
 
   ReadXml(Document);
@@ -117,11 +118,11 @@ bool MSettingsGlobal::Write()
   WriteXml(Document);
 
   // Store the module content
-  Document->Save(m_SettingsFileName);
+  bool Success = Document->Save(m_SettingsFileName);
 
   delete Document;
 
-  return true;
+  return Success;
 }
 
 

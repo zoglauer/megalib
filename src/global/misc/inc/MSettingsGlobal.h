@@ -44,6 +44,7 @@ class MSettingsGlobal
   virtual ~MSettingsGlobal();
 
   //! Read all data from the default/stored file
+  //! This will always return true, since on failure, we just start with an empty configuration
   virtual bool Read();
   //! Write all data to the default/stored file
   virtual bool Write();

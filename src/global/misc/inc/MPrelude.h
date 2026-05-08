@@ -44,14 +44,10 @@ class MPrelude
 
   // protected methods:
  protected:
-  //! Load file
-  void Load(); 
-  //! Save the data file
-  void Save();
+
   
   // private methods:
  private:
-
 
 
   // protected members:

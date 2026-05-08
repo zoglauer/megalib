@@ -10,7 +10,9 @@
 
 
 // Standard libs:
+#include <cerrno>
 #include <fstream>
+#include <sys/stat.h>
 using namespace std;
 
 // MEGAlib:
@@ -77,9 +79,10 @@ bool UTSettingsGlobal::Run()
 bool UTSettingsGlobal::PrepareTempDirectory() const
 {
   MString Directory = "/tmp/UTSettingsGlobal";
-  MString Command = "mkdir -p " + Directory;
-
-  return system(Command.Data()) == 0;
+  if (mkdir(Directory.Data(), 0777) == 0) {
+    return true;
+  }
+  return errno == EEXIST;
 }
 
 
@@ -134,9 +137,17 @@ bool UTSettingsGlobal::TestXmlRoundTrip()
 
   MXmlDocument Document("MEGAlib");
   Passed = Evaluate("WriteXml()", "direct xml", "WriteXml succeeds on a representative XML document", Settings.TestWriteXml(&Document), true) && Passed;
-  Passed = Evaluate("GetNode()", "license", "WriteXml stores the representative license hash", static_cast<long>(Document.GetNode("LicenseHash")->GetValueAsLong()), 11L) && Passed;
-  Passed = Evaluate("GetNode()", "changelog", "WriteXml stores the representative changelog hash", static_cast<long>(Document.GetNode("ChangeLogHash")->GetValueAsLong()), 22L) && Passed;
-  Passed = Evaluate("GetNode()", "font scaler", "WriteXml stores the representative font scaler", Document.GetNode("FontScaler")->GetValueAsString(), MString("huge")) && Passed;
+  MXmlNode* LicenseNode = Document.GetNode("LicenseHash");
+  MXmlNode* ChangeLogNode = Document.GetNode("ChangeLogHash");
+  MXmlNode* FontScalerNode = Document.GetNode("FontScaler");
+  Passed = EvaluateTrue("GetNode()", "license", "WriteXml stores the representative license hash node", LicenseNode != nullptr) && Passed;
+  Passed = EvaluateTrue("GetNode()", "changelog", "WriteXml stores the representative changelog hash node", ChangeLogNode != nullptr) && Passed;
+  Passed = EvaluateTrue("GetNode()", "font scaler", "WriteXml stores the representative font scaler node", FontScalerNode != nullptr) && Passed;
+  if (LicenseNode != nullptr && ChangeLogNode != nullptr && FontScalerNode != nullptr) {
+    Passed = Evaluate("GetNode()", "license", "WriteXml stores the representative license hash", static_cast<long>(LicenseNode->GetValueAsLong()), 11L) && Passed;
+    Passed = Evaluate("GetNode()", "changelog", "WriteXml stores the representative changelog hash", static_cast<long>(ChangeLogNode->GetValueAsLong()), 22L) && Passed;
+    Passed = Evaluate("GetNode()", "font scaler", "WriteXml stores the representative font scaler", FontScalerNode->GetValueAsString(), MString("huge")) && Passed;
+  }
 
   MXmlDocument ReadDocument("MEGAlib");
   new MXmlNode(&ReadDocument, "LicenseHash", 101L);
@@ -190,15 +201,20 @@ bool UTSettingsGlobal::TestReadWriteFiles()
   SettingsGlobalTest WrongRoot;
   WrongRoot.SetTestSettingsFileName(WrongRootFile);
   DisableDefaultStreams();
-  Passed = Evaluate("Read()", "wrong root", "Read() rejects global settings files with the wrong XML root", WrongRoot.Read(), false) && Passed;
+  Passed = Evaluate("Read()", "wrong root", "Read() falls back to default settings when the XML root is wrong", WrongRoot.Read(), true) && Passed;
   EnableDefaultStreams();
 
   Passed = EvaluateTrue("WriteTextFile()", "empty file", "An empty global settings file can be written", WriteTextFile(EmptyFile, "")) && Passed;
   SettingsGlobalTest Empty;
   Empty.SetTestSettingsFileName(EmptyFile);
   DisableDefaultStreams();
-  Passed = Evaluate("Read()", "empty file", "Read() rejects an existing empty global settings file", Empty.Read(), false) && Passed;
+  Passed = Evaluate("Read()", "empty file", "Read() falls back to default settings for an empty global settings file", Empty.Read(), true) && Passed;
   EnableDefaultStreams();
+
+  Passed = EvaluateTrue("MFile::Remove()", "wrong root cleanup", "The wrong-root temporary file can be removed", MFile::Remove(WrongRootFile)) && Passed;
+  Passed = EvaluateTrue("MFile::Remove()", "empty cleanup", "The empty temporary file can be removed", MFile::Remove(EmptyFile)) && Passed;
+  Passed = EvaluateTrue("MFile::Remove()", "settings cleanup", "The representative global-settings file can be removed", MFile::Remove(SettingsFile)) && Passed;
+  Passed = EvaluateTrue("rmdir()", "file temp cleanup", "The global-settings temp directory can be removed", rmdir("/tmp/UTSettingsGlobal") == 0) && Passed;
 
   return Passed;
 }
