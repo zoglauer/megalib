@@ -839,10 +839,13 @@ bool MSupervisor::Analyze(bool TestRun)
   long NumberOfUIUpdates = 0;
   MTime TimeAssemblyExitedStartModule(0);
   
-  // Number of instances per module
-  unsigned int MaxInstances = thread::hardware_concurrency() / 2;
-  if (MaxInstances < 2) MaxInstances = 2;
-  
+  // Number of additional worker threads we want to distribute across all modules once the pipeline is warm.
+  unsigned int NumberOfAdditionalWorkerThreads = 2 * thread::hardware_concurrency() / 3;
+  if (NumberOfAdditionalWorkerThreads < 2) NumberOfAdditionalWorkerThreads = 2;
+
+  const long MinEventsForSpawning = 1000;
+  bool SpawnAllocationDone = false;
+
   // Create a local list of the modules
   vector<vector<MModule*>> Modules;
   for (unsigned int m = 0; m < GetNModules(); ++m) {
@@ -922,16 +925,62 @@ bool MSupervisor::Analyze(bool TestRun)
     // Update the GUI infrequently and check for spawn even less frequently
     if (++NPasses % 100 == 0) {
              
-      // Check & create spawns:
-      if (NPasses % 10000 == 0) {
-        double Last = 0;
-        for (unsigned int m = 0; m < Modules.size(); ++m) {
-          double Now = 0;
-          for (unsigned int s = 0; s < Modules[m].size(); ++s) {
-            Now += Modules[m][s]->GetNumberOfAnalyzedEvents();
+      // Once the last module has processed enough events, do a single global instance allocation.
+      if (m_UseMultiThreading == true && SpawnAllocationDone == false && NPasses % 1000 == 0) {
+        long LastModuleEvents = 0;
+        for (unsigned int s = 0; s < Modules.back().size(); ++s) {
+          LastModuleEvents += Modules.back()[s]->GetNumberOfAnalyzedEvents();
+        }
+
+        if (LastModuleEvents >= MinEventsForSpawning) {
+          vector<unsigned int> TargetInstances(Modules.size(), 1);
+          vector<double> SingleInstanceRate(Modules.size(), 0.0);
+
+          // Measure each module's average active rate over the warmup period.
+          // GetProcessingTime() excludes sleeping, so this reflects actual work time per instance.
+          for (unsigned int m = 0; m < Modules.size(); ++m) {
+            long Events = 0;
+            double ProcessingTime = 0;
+            for (unsigned int s = 0; s < Modules[m].size(); ++s) {
+              Events += Modules[m][s]->GetNumberOfAnalyzedEvents();
+              ProcessingTime += Modules[m][s]->GetProcessingTime();
+            }
+            if (ProcessingTime > 0) {
+              // Processing time is summed over all instances, so Events/ProcessingTime is already
+              // the average per-instance throughput for this module group.
+              SingleInstanceRate[m] = Events / ProcessingTime;
+            }
           }
-          if (Now + 40000*Modules[m].size() < Last) { // I know...
-            if (Modules[m][0]->AllowsMultipleInstances() == true && Modules[m].size() < MaxInstances) {
+
+          unsigned int RemainingInstances = NumberOfAdditionalWorkerThreads;
+
+          // Distribute the remaining worker slots greedily to the currently slowest scalable module.
+          // With approximately linear scaling, a module with single-instance rate r and k assigned
+          // instances has estimated throughput k*r, so the bottleneck score is 1/(k*r).
+          for (unsigned int i = 0; i < RemainingInstances; ++i) {
+            int BestModule = -1;
+            double BestScore = 0;
+            for (unsigned int m = 0; m < Modules.size(); ++m) {
+              if (m_UseMultiThreading == false || Modules[m][0]->AllowsMultipleInstances() == false) {
+                continue;
+              }
+              if (SingleInstanceRate[m] <= 0) {
+                continue;
+              }
+              double Score = 1.0 / (TargetInstances[m] * SingleInstanceRate[m]);
+              if (Score > BestScore) {
+                BestScore = Score;
+                BestModule = m;
+              }
+            }
+            if (BestModule < 0) {
+              break;
+            }
+            ++TargetInstances[BestModule];
+          }
+
+          for (unsigned int m = 0; m < Modules.size(); ++m) {
+            while (Modules[m].size() < TargetInstances[m]) {
               MModule* M = Modules[m][0]->Clone();
               MXmlNode* Node = Modules[m][0]->CreateXmlConfiguration();
               M->ReadXmlConfiguration(Node);
@@ -941,13 +990,15 @@ bool MSupervisor::Analyze(bool TestRun)
               Modules[m][0]->ShareQueues(M);
               if (M->Initialize() == false) {
                 delete M;
+                break;
               } else {
                 Modules[m].push_back(M);
+                cout<<"Spawned module: "<<M->GetName()<<endl<<flush;
               }
-              cout<<"Spawned module: "<<M->GetName()<<endl;
             }
           }
-          Last = Now;
+
+          SpawnAllocationDone = true;
         }
       }
 
@@ -981,7 +1032,7 @@ bool MSupervisor::Analyze(bool TestRun)
     
     // If any module is behind more than MaxBehind the one before and has reached its maximum number of
     // instances, we slow the first modules down
-    int MaxBehind = 200000;
+    int MaxBehind = 100000;
     if (m_UseMultiThreading == true) {
       bool Pause = false;
       for (unsigned int m = 0; m < Modules.size()-1; ++m) {
@@ -992,7 +1043,7 @@ bool MSupervisor::Analyze(bool TestRun)
         for (unsigned int s = 0; s < Modules[m].size(); ++s) {
           Behind += Modules[m][s]->GetNumberOfAnalyzedEvents();
         }
-        if ((Modules[m+1].size() == MaxInstances || Modules[m+1][0]->AllowsMultipleInstances() == false) && Behind > MaxBehind) {
+        if (Behind > MaxBehind) {
           Pause = true;
         }
       }

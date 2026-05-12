@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <atomic>
 #include <vector>
 #include <deque>
 #include <mutex>
@@ -85,14 +86,14 @@ class MModuleReadOutAssemblyQueues
   // protected members:
  protected:
   //! True if we have a sorted queue
-  bool m_SortedQueue;
+  atomic<bool> m_SortedQueue;
    
   //! The incoming event list
   deque<MReadOutAssembly*> m_IncomingEvents;
   //! A mutex protecting the incoming event list
   mutex m_IncomingEventsMutex;
   
-  //! The sorting order for the outgoing events -- by event ID!
+  //! The sorting order for the outgoing events -- by assembly ID!
   deque<unsigned long> m_SortingOrder;  
   //! The outgoing event list
   deque<MReadOutAssembly*> m_OutgoingEvents; 
