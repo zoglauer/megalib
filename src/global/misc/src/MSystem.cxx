@@ -37,6 +37,7 @@ using namespace std;
 #include "TSystem.h"
 
 // MEGAlib libs:
+#include "MFile.h"
 #include "MStreams.h"
 
 #ifdef ___UNIX___
@@ -527,9 +528,7 @@ bool MSystem::GetFileSuffix(MString Filename, MString* Suffix)
 
 bool MSystem::GetFileDirectory(MString Filename, MString* Directory)
 {
-  //  *Directory = MString(Filename.Replace(0, Filename.Last('/'), ""));
-  *Directory = MString(gSystem->BaseName((char *) Filename.Data()));
-
+  *Directory = MFile::GetDirectoryName(Filename);
   return true;
 }
 
@@ -550,18 +549,7 @@ bool MSystem::GetFileWithoutSuffix(MString Filename, MString* NewFilename)
 
 bool MSystem::FileExist(MString Filename)
 {
-  // Return true if the file exists in the current directory (selected in the dialog)
-
-  if (Filename == gSystem->DirName((char *) Filename.Data())) {
-    return false;
-  }
-
-  FILE *File;
-  if ((File = fopen((char *) Filename.Data(), "r")) == NULL)
-    return false;
-
-  fclose(File);
-  return true;
+  return MFile::Exists(Filename);
 }
 
 

@@ -46,8 +46,6 @@ class MSystem
   static bool GetTime(long int& Seconds, long int& NanoSeconds);
   static void BusyWait(int musec);
 
-  int GetProcessMemory();
-
   bool FileExist(MString Filename);
   bool GetFileDirectory(MString Filename, MString* Directory);
   bool GetFileSuffix(MString Filename, MString* Suffix);
