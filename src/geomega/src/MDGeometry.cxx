@@ -5846,7 +5846,9 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
     out<<"     --> No suitable volume found!"<<endl;
 
     // Only print the warning if we did not find anything
-    cout<<out.str()<<endl; // cout instead of mout...
+    if (g_Verbosity >= c_Warning) {
+      cout<<out.str()<<endl; // cout instead of mout...
+    }
   }
 
   return VS;
