@@ -659,9 +659,9 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   }
   
   if (SelectionsPassed == true && (RE->GetEnergy() < m_TotalEnergyMin || RE->GetEnergy() > m_TotalEnergyMax)) {
-    mdebug<<"ER - Selection: Total energy out of limits: "<<RE->GetEnergy()<<" keV is not within ["<<m_TotalEnergyMin<<", "<<m_TotalEnergyMax<<"] keV"<<endl; 
-    RE->SetRejectionReason(MRERawEvent::c_RejectionTotalEnergyOutOfLimits);
-    SelectionsPassed = false;
+   mdebug<<"ER - Selection: Total energy out of limits: "<<RE->GetEnergy()<<" keV is not within ["<<m_TotalEnergyMin<<", "<<m_TotalEnergyMax<<"] keV"<<endl; 
+   RE->SetRejectionReason(MRERawEvent::c_RejectionTotalEnergyOutOfLimits);
+   SelectionsPassed = false;
   }
 
   
@@ -702,7 +702,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       REI->SetBestTryEvent(REI->GetRawEventAt(0));
     }
     
-    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false; 
     
     m_TimeHitClusterize += Timer.ElapsedTime();  
   }
@@ -723,7 +723,6 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     }
 
     if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
-
     m_TimeEventType += Timer.ElapsedTime();
 
   }
@@ -765,7 +764,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
         m_Tracker->Analyze(REI);
       }
       
-      if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
+      if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;  
       
       m_TimeTrack += Timer.ElapsedTime();
       

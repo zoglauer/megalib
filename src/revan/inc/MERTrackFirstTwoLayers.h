@@ -24,20 +24,22 @@ class MERTrackFirstTwoLayers : public MERTrack
 public:
     MERTrackFirstTwoLayers(MGeometryRevan* geom);
     virtual ~MERTrackFirstTwoLayers();
+    virtual bool Analyze(MRawEventIncarnations* REList) override;
     virtual void TrackPairs(MRERawEvent* RE) override;
 
-    void SetIncidentAngles(double theta_deg, double phi_deg) {
-        m_Theta = theta_deg;
-        m_Phi   = phi_deg;
-    }
+    // ── ClusteredHit ──────────────────────────────────────────────────────────────
+    // Carries a (possibly merged) hit's position and energy alongside the
+    // original MRESE* constituents.  Used by ClusteringHitsByAngle and stored
+    // in Vertex::TrackHits so TrackPairs can call AddRESE on real objects.
+    struct ClusteredHit {
+        MVector             position;   // midpoint if merged, original pos otherwise
+        double              energy;     // summed energy of all constituents
+        std::vector<MRESE*> reses;      // original MRESE* objects (1 or more)
+    };
 
 private:
     MGeometryRevan* m_Geometry;
-    double m_Theta;
-    double m_Phi;
 
-    // using MVector instead of defining a struct for vectors
-    static MVector InitialVector(double theta_deg, double phi_deg);
     static MVector ProjectToLayer(const MVector& pos, const MVector& dir, double z_target);
     static double  DistanceToVirtual(const MVector& pos, const MVector& virtual_pt);
     static bool    SelectTwoClosestHits(const std::vector<MRESE*>& hits,
@@ -47,6 +49,16 @@ private:
     static std::vector<MRESE*> GetHitsInLayerBelow(const std::vector<MRESE*>& allHits,
                                                      double vertex_z,
                                                      double layer_thickness = 1.5);
+
+    // Cluster hits in a layer by smallest opening angle from the vertex.
+    // Merges the closest-angle pair iteratively until exactly 2 remain.
+    // Returns an empty vector if the minimum merge angle exceeds max_angle_deg.
+    static std::vector<ClusteredHit> ClusteringHitsByAngle(
+        const std::vector<MRESE*>& hits,
+        const MVector& vertex_pos,
+        double max_angle_deg = 11.0);
+    
+    virtual MRawEventIncarnations* CheckForPair(MRERawEvent* RE) override;
 
     // ── Vertex class ──────────────────────────────────────────────────────────
     class Vertex {
@@ -70,7 +82,15 @@ private:
         double  positron_energy;
         std::string vertex_type;
         int EventID;
+
+        // Flat list of constituent MRESE* objects (used directly for 2ht2ht).
         std::vector<MRESE*> AllRESEs;
+
+        // Per-track ClusteredHit objects (used for 1ht2ht and 1ht1ht).
+        // TrackHits[0] = electron side, TrackHits[1] = positron side.
+        // Each proxy's .reses field holds the original MRESE* constituents
+        // that should be passed to MRETrack::AddRESE.
+        std::vector<ClusteredHit> TrackHits;
 
     private:
         MRESE* rese;
@@ -83,7 +103,8 @@ private:
     // ── VertexFinder class ────────────────────────────────────────────────────
     class VertexFinder {
     public:
-        VertexFinder(MGeometryRevan* geom) : Geometry(geom) {}
+        VertexFinder(MGeometryRevan* geom, const std::vector<MDDetector*>& detList)
+        : Geometry(geom), m_DetectorList(detList) {}
 
         bool IsInTracker(MRESE* rese);
 
@@ -94,12 +115,15 @@ private:
         MVector CalculatingVertexPosition(const MVector& p1, const MVector& v1,
                                            const MVector& p2, const MVector& v2);
 
-        std::vector<Vertex> FindVertices(MRERawEvent* RE, double theta, double phi);
+        std::vector<Vertex> FindVertices(MRERawEvent* RE);
 
         Vertex TopVertex(const std::vector<Vertex>& vertex_list);
-
+        VertexFinder(MGeometryRevan* geom);
     private:
         MGeometryRevan* Geometry;
+        std::vector<MDDetector*> m_DetectorList;
+        double m_InterlayerDistance;
+
     };
 
 #ifdef ___CINT___
@@ -108,4 +132,6 @@ public:
 #endif
 };
 
-#endif // __MERTrackFirstTwoLayers__
+#endif 
+
+// __MERTrackFirstTwoLayers__
