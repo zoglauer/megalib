@@ -31,6 +31,9 @@
 #include <sstream>
 #include <cstdlib>
 #include <ctime>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <unistd.h>
 using namespace std;
 
 // ROOT libs:
@@ -71,6 +74,43 @@ MSystem::MSystem()
 MSystem::~MSystem()
 {
   // standard destructor
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int MSystem::RunChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName)
+{
+  pid_t Child = fork();
+  if (Child == 0) {
+    if (OutputFileName.IsEmpty() == false) {
+      int Log = open(OutputFileName.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+      if (Log >= 0) {
+        dup2(Log, STDOUT_FILENO);
+        dup2(Log, STDERR_FILENO);
+        close(Log);
+      }
+    }
+
+    MString Command = Executable + " " + Argument;
+    execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(0));
+    // If execl() returns, the child failed to start the command. Use _exit()
+    // after fork() to avoid running parent-owned C++ cleanup/stdio flushing.
+    // Exit code 127 is the shell convention for "command could not be run".
+    _exit(127);
+  }
+
+  if (Child < 0) {
+    return -1;
+  }
+
+  int Status = 0;
+  if (waitpid(Child, &Status, 0) < 0) {
+    return -1;
+  }
+
+  return Status;
 }
 
 

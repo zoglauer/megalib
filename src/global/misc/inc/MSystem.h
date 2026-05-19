@@ -53,6 +53,8 @@ class MSystem
   bool GetFileSuffix(MString Filename, MString* Suffix);
   bool GetFileWithoutSuffix(MString Filename, MString* NewFilename);
   
+  //! Run a child process with arguments and optionally redirect its output to a file
+  static int RunChildProcess(const MString& Executable, const MString& Arguments, const MString& OutputFileName = "");
 
   // protected methods:
  protected:
