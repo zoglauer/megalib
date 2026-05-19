@@ -180,7 +180,11 @@ class MFile
   static MString GetBaseName(const MString& Name);
   //! Return the current working directory
   static MString GetWorkingDirectory();
-  
+  //! Return true if the path points to an executable regular file
+  static bool IsExecutable(const MString& Path);
+  //! Create the directory and all parent directories; return true on success or if it already exists
+  static bool CreateDirectory(const MString& Path);
+
 
   //! The file modes: Write to a new file
   static unsigned int c_Write;

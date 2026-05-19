@@ -126,14 +126,15 @@ class MUnitTest
     return false;
   }
   
+  //! Evaluate that two files are identical line by line; stops at and reports the first differing line
+  bool EvaluateFilesIdentical(MString Function, MString Input, MString Description, const MString& GeneratedFile, const MString& ReferenceFile);
+
   //! Run the unit test
   virtual bool Run() = 0;
-  
+
   //! Summarize the test run
   void Summarize();
-  //! Run a child process with one argument and optionally redirect its output to a file
-  static int RunChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName = "");
-  
+
   // protected methods:
  protected:
   //! Register a passed test
@@ -143,8 +144,7 @@ class MUnitTest
   const MString& GetName() const { return m_Name; }
 
   //! Disable the default MEGAlib output streams for expected noisy test paths
-  void DisableDefaultStreams()
-  {
+  void DisableDefaultStreams() {
     mout.Enable(false);
     mlog.Enable(false);
     mgui.Enable(false);
@@ -152,8 +152,7 @@ class MUnitTest
   }
 
   //! Re-enable the default MEGAlib output streams after a noisy test path
-  void EnableDefaultStreams()
-  {
+  void EnableDefaultStreams() {
     mout.Enable(true);
     mlog.Enable(true);
     mgui.Enable(true);
@@ -161,8 +160,7 @@ class MUnitTest
   }
 
   //! Register and report a failed test
-  template <typename T> void RegisterFailure(MString Function, T Input, MString Description, MString Expected, MString Output)
-  {
+  template <typename T> void RegisterFailure(MString Function, T Input, MString Description, MString Expected, MString Output) {
     mout<<endl;
     mout<<"FAILED: "<<Function<<"  <-- "<<Input<<endl;
     mout<<"   Description: "<<Description<<endl;

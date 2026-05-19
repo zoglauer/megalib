@@ -36,6 +36,7 @@
 #include <limits>
 #include <cstdlib>
 #include <cstdio>
+#include <filesystem>
 using namespace std;
 
 
@@ -202,11 +203,9 @@ bool MFile::Exists(MString FileName)
 
   MFile::ExpandFileName(FileName);
   if (FileName.Length() <= 1) return false;
-  if (FileName.EndsWith("/") == true) return false;
-
-  if (FileName == GetDirectoryName(FileName)) { // does not work in all cases..!
-    return false;
-  }
+  
+  std::error_code Error;
+  if (std::filesystem::is_regular_file(FileName.Data(), Error) == false) return false;
 
   // Check if we can open it:
   ifstream in;
@@ -1234,10 +1233,37 @@ MString MFile::GetWorkingDirectory()
 {
   //! Return the current working directory
 
-  return gSystem->GetWorkingDirectory();  
+  return gSystem->GetWorkingDirectory();
 }
 
-  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFile::IsExecutable(const MString& Path)
+{
+  // Return true if Path is a regular file that the current user can execute
+
+  if (MFile::Exists(Path) == false) return false;
+
+  // ROOT returns false when the requested access is available
+  return gSystem->AccessPathName(Path.Data(), kExecutePermission) == false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFile::CreateDirectory(const MString& Path)
+{
+  // Create the directory at Path including all missing parent directories.
+  // Returns true on success and also when the directory already exists.
+
+  if (Path.IsEmpty() == true) return false;
+  return gSystem->mkdir(Path.Data(), kTRUE) == 0;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 

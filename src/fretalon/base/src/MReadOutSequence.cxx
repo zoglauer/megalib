@@ -171,7 +171,8 @@ const MSimIA& MReadOutSequence::GetSimIA(unsigned int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Parse a line - return true if the line was processed (irrelevant if successful)
+//! Parse a line: TI/ID/IA lines are processed, any other line is tolerantly ignored.
+//! Always returns true - an unrecognized line is treated as consumed, not an error.
 bool MReadOutSequence::Parse(MString& Line, int Version)
 {
   if (Line.BeginsWith("TI")) {
