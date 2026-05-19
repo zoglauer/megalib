@@ -18,7 +18,7 @@ using namespace std;
 ClassImp(MERTrackFirstTwoLayers)
 #endif
 
-// normalization helper function
+// normalization function
 static MVector Normalize(const MVector& v)
 {
     double mag = v.Mag();
@@ -149,7 +149,7 @@ MERTrackFirstTwoLayers::ClusteringHitsByAngle(
     const MVector& vertex_pos,
     double max_angle_deg)
 {
-    // Build initial proxy list from raw RESEs
+    // Build initial list from RESEs
     std::vector<ClusteredHit> current;
     current.reserve(hits.size());
     for (MRESE* r : hits) {
@@ -201,7 +201,7 @@ MERTrackFirstTwoLayers::ClusteringHitsByAngle(
         current = std::move(next);
     }
 
-    // If exactly 2 remain, return directly
+    // If exactly 2 remain, return
     if (current.size() == 2) return current;
 
     // Otherwise pick the two with the smallest opening angle (select_best_pair) // REMOVE
@@ -478,7 +478,7 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE)
 
         if (!hits_valid) {nRejectedClustering++; continue;}
 
-        // ── Build vertex ──────────────────────────────────────────────────────
+        // Build vertex 
         std::vector<MRESE*> allRESEs;
         for (MRESE* r : hp1.reses) allRESEs.push_back(r);
         for (MRESE* r : hp2.reses) allRESEs.push_back(r);
@@ -488,7 +488,7 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE)
 
         vtx.TrackHits = { hp1, hp2 };
 
-        // ── Assign track directions and energies ──────────────────────────────
+        //  Assign track directions and energies 
         MVector vtx_pos = vtx.GetPosition();
 
         if (selected_distance == 1) {
@@ -538,7 +538,7 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE)
         vertex_created_for_event = true;
     }
 
-    // ── 2ht-2ht: only attempt if no vertex was found above 
+    // 2ht-2ht: only attempt if no vertex was found above 
     if (!vertex_created_for_event) {
 
         if (RESEs.empty()) return Vertices;
