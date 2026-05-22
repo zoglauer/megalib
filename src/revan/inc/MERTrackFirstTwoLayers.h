@@ -18,6 +18,7 @@
 #include <algorithm>
 
 //////////////////////////////////////////
+// Instantiating the MERTrack class
 
 class MERTrackFirstTwoLayers : public MERTrack
 {
@@ -46,9 +47,6 @@ private:
                                          const MVector& projected_pt,
                                          MRESE*& hit1_out, MRESE*& hit2_out,
                                          double cutoff_cm = 5.0);
-    static std::vector<MRESE*> GetHitsInLayerBelow(const std::vector<MRESE*>& allHits,
-                                                     double vertex_z,
-                                                     double layer_thickness = 1.5);
 
     // Cluster hits in a layer by smallest opening angle from the vertex.
     // Merges the closest-angle pair iteratively until exactly 2 remain.
@@ -63,8 +61,7 @@ private:
     // ── Vertex class ──────────────────────────────────────────────────────────
     class Vertex {
     public:
-        Vertex(MRESE* rese, MGeometryRevan* geom,
-               std::vector<MRESE*> allRESEs, MVector* position = nullptr);
+        Vertex(MRESE* rese, std::vector<MRESE*> allRESEs, MVector* position = nullptr);
 
         MVector ComputeGammaDirection();
         MVector GetPosition()  const;
@@ -94,7 +91,6 @@ private:
 
     private:
         MRESE* rese;
-        MGeometryRevan* Geometry;
         double x, y, z;
         double energy;
         int id;
