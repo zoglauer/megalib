@@ -1451,7 +1451,6 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       double Constant = 0.0;
       if (m_SourcePowerLaw[x]==1.){
         Constant = m_SourceStartPhotons[x]/(log(m_SourcePowerLawEmax[x]/m_SourcePowerLawEmin[x]));
-        mlog<<"Power Law Index of 1 input, doing integration for of -1"<<endl;
       } else {
         Constant = m_SourceStartPhotons[x]*(-m_SourcePowerLaw[x]+1)/(pow(m_SourcePowerLawEmax[x], -m_SourcePowerLaw[x]+1) - 
                                                                          pow(m_SourcePowerLawEmin[x], -m_SourcePowerLaw[x]+1));
@@ -1462,7 +1461,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
           m_SourceStartPhotonsContinuumSensitivityBin[x].push_back(int(Constant*(log(m_EnergyMax[e]/m_EnergyMin[e]))));
         } else{
           m_SourceStartPhotonsContinuumSensitivityBin[x].push_back(int(Constant/(-m_SourcePowerLaw[x]+1)*(pow(m_EnergyMax[e], -m_SourcePowerLaw[x]+1) - 
-          pow(m_EnergyMin[e], -m_SourcePowerLaw[x]+1))));
+                                                                                                          pow(m_EnergyMin[e], -m_SourcePowerLaw[x]+1))));
         }
         mlog<<"Continuum bin: "<<m_EnergyMin[e]<<" - "<<m_EnergyMax[e]<<": Counts: "<<m_SourceStartPhotonsContinuumSensitivityBin[x].back()<<endl;
       }
