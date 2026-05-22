@@ -1448,17 +1448,32 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
 
       // Calculate start photons per bin:
-      double Constant = m_SourceStartPhotons[x]*(-m_SourcePowerLaw[x]+1)/(pow(m_SourcePowerLawEmax[x], -m_SourcePowerLaw[x]+1) - 
+      double Constant = 0.0;
+      if (m_SourcePowerLaw[x]==1.){
+        Constant = m_SourceStartPhotons[x]/(log(m_SourcePowerLawEmax[x]/m_SourcePowerLawEmin[x]));
+      } else {
+        Constant = m_SourceStartPhotons[x]*(-m_SourcePowerLaw[x]+1)/(pow(m_SourcePowerLawEmax[x], -m_SourcePowerLaw[x]+1) - 
                                                                          pow(m_SourcePowerLawEmin[x], -m_SourcePowerLaw[x]+1));
+      }
       mlog<<"Constant: "<<Constant<<" of "<<m_SourceFile[x]<<endl;
       for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-        m_SourceStartPhotonsContinuumSensitivityBin[x].push_back(int(Constant/(-m_SourcePowerLaw[x]+1)*(pow(m_EnergyMax[e], -m_SourcePowerLaw[x]+1) - 
-                                                                                                    pow(m_EnergyMin[e], -m_SourcePowerLaw[x]+1))));
+        if (m_SourcePowerLaw[x]==1.){
+          m_SourceStartPhotonsContinuumSensitivityBin[x].push_back(int(Constant*(log(m_EnergyMax[e]/m_EnergyMin[e]))));
+        } else{
+          m_SourceStartPhotonsContinuumSensitivityBin[x].push_back(int(Constant/(-m_SourcePowerLaw[x]+1)*(pow(m_EnergyMax[e], -m_SourcePowerLaw[x]+1) - 
+                                                                                                          pow(m_EnergyMin[e], -m_SourcePowerLaw[x]+1))));
+        }
         mlog<<"Continuum bin: "<<m_EnergyMin[e]<<" - "<<m_EnergyMax[e]<<": Counts: "<<m_SourceStartPhotonsContinuumSensitivityBin[x].back()<<endl;
       }
       
-      mlog<<"Sanity check: min="<<m_SourcePowerLawEmin[x]<<" max="<<m_SourcePowerLawEmax[x]<<" counts="
+      if (m_SourcePowerLaw[x]==1.){
+        mlog<<"Sanity check: min="<<m_SourcePowerLawEmin[x]<<" max="<<m_SourcePowerLawEmax[x]<<" counts="
+          <<int(Constant*log(m_SourcePowerLawEmax[x]/m_SourcePowerLawEmin[x]))<<endl;
+      } else {
+        mlog<<"Sanity check: min="<<m_SourcePowerLawEmin[x]<<" max="<<m_SourcePowerLawEmax[x]<<" counts="
           <<int(Constant/(-m_SourcePowerLaw[x]+1)*(pow(m_SourcePowerLawEmax[x], -m_SourcePowerLaw[x]+1) - pow(m_SourcePowerLawEmin[x], -m_SourcePowerLaw[x]+1)))<<endl;
+      }
+      
     }
   }
 
