@@ -82,7 +82,7 @@ double MERTrackFirstTwoLayers::Vertex::GetHitEnergy()   const { return energy; }
 MVector MERTrackFirstTwoLayers::Vertex::ComputeGammaDirection()
 {
     if (electron_energy == 0.0 || positron_energy == 0.0)
-        throw std::runtime_error("Track directions/energies are zero.");
+        throw std::runtime_error("Track energies are zero.");
 
     MVector d1 = Normalize(electron_dir);
     MVector d2 = Normalize(positron_dir);
@@ -99,19 +99,13 @@ MVector MERTrackFirstTwoLayers::Vertex::ComputeGammaDirection()
 // STANDALONE FUNCTIONS
 //////////////////////////////////////////
 
-double MERTrackFirstTwoLayers::DistanceToVirtual(const MVector& pos, const MVector& virtual_pt)
-{
-    return (pos - virtual_pt).Mag();
-}
-//////////////////////////////////////////
-
 std::vector<MERTrackFirstTwoLayers::ClusteredHit>
 MERTrackFirstTwoLayers::ClusteringHitsByAngle(
     const std::vector<MRESE*>& hits,
     const MVector& vertex_pos,
     double max_angle_deg)
 {
-    // Build initial list from RESEs
+    // Build initial list from the RESEs
     std::vector<ClusteredHit> current;
     current.reserve(hits.size());
     for (MRESE* r : hits) {
@@ -119,14 +113,14 @@ MERTrackFirstTwoLayers::ClusteringHitsByAngle(
         hp.position = r->GetPosition();
         hp.energy   = r->GetEnergy();
         hp.reses    = { r };
-        current.push_back(std::move(hp));
+        current.push_back(std::move(hp)); // adding to list
     }
 
     if (current.size() < 2) return {};
 
     // Iteratively merge the pair with the smallest opening angle as seen from the vertex until exactly two hits remain
     while (current.size() > 2) {
-        double min_angle = std::numeric_limits<double>::infinity();
+        double min_angle = std::numeric_limits<double>::infinity(); // start at infinity in order to get smaller angles
         int index_i = -1, index_j = -1;
 
         for (int i = 0; i < (int)current.size(); ++i) {
@@ -146,7 +140,7 @@ MERTrackFirstTwoLayers::ClusteringHitsByAngle(
         // Reject event if no valid close pair exists
         if (min_angle > max_angle_deg) return {};   
 
-        // Merge the closest angle pair: midpoint position, summed energy -> CHANGE SUMMED ENERGY THIS IS TEMPORARY
+        // Merge the closest angle pair: midpoint position, summed energy -> CAN CHANGE SUMMED ENERGY THIS IS TEMPORARY
         ClusteredHit merged;
         merged.position = (current[index_i].position + current[index_j].position) * 0.5;
         merged.energy   = current[index_i].energy + current[index_j].energy;
@@ -262,7 +256,7 @@ MVector MERTrackFirstTwoLayers::VertexFinder::CalculatingVertexPosition(
 MERTrackFirstTwoLayers::Vertex
 MERTrackFirstTwoLayers::VertexFinder::TopVertex(const std::vector<Vertex>& vertex_list)
 {
-    // Returns the vertex with the largest z (shallowest layer, since z decreases with depth)
+    // Returns the vertex with the largest z (shallowest layer)
     return *std::max_element(vertex_list.begin(), vertex_list.end(),
         [](const Vertex& a, const Vertex& b){ return a.GetZPosition() < b.GetZPosition(); });
 }
@@ -335,11 +329,9 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE)
             if (StartIndex == 0 && NBelow[dist] > 1)  StartIndex = dist;
             if (StartIndex != 0 && NBelow[dist] >= 2) LayersWithAtLeastTwoHits++;
         }
-        // if (NAbove[1] != 0) { if (debug) mout << "  REJECTED: hit above" << endl; continue; }
 
             if (LayersWithAtLeastTwoHits < LayerRequirement) {nRejectedLayerRequirement++; continue;}
 
-        // Trim StopIndex back to last solid 2-hit layer
         for (int dist = StopIndex; dist > 2; --dist) {
             if (NBelow[dist-1] >= 2 && NBelow[dist-2] >= 2) break;
             StopIndex = dist;
@@ -377,7 +369,7 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE)
         if (selected_distance == 1) {
             // 1ht-2ht: cluster by opening angle from the candidate position
             auto clustered = MERTrackFirstTwoLayers::ClusteringHitsByAngle(
-                selected_layer_hits, vtx_cand, 30.0);
+                selected_layer_hits, vtx_cand, 30.0); // using 30 deg as max angle based on previous analysis
 
             if ((int)clustered.size() >= 2) {
                 hp1 = clustered[0];
@@ -385,8 +377,7 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE)
                 hits_valid = true;
             }
         } else {
-            // 1ht-1ht: multiple single-hit layers before the two-hit layer;
-            // just take the first two hits in that layer directly
+            // 1ht-1ht: multiple single-hit layers before the two-hit layer--just take the first two hits in that layer directly
             std::vector<MRESE*> layer_hits_below;
             for (MRESE* rese : RESEs) {
                 if (Geometry->GetLayerDistance(candidate, rese) == -selected_distance)
@@ -411,7 +402,7 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE)
 
         vtx.TrackHits = { hp1, hp2 };
 
-        //  Assign track directions and energies 
+        // Assign track directions and energies 
         MVector vtx_pos = vtx.GetPosition();
 
         if (selected_distance == 1) {
@@ -525,10 +516,10 @@ MERTrackFirstTwoLayers::VertexFinder::FindVertices(MRERawEvent* RE)
         MVector v1 = q1 - p1;
         MVector v2 = q2 - p2;
 
-        // Point of closest approach → vertex position
+        // Point of closest approach -> vertex position
         MVector vertex_point = CalculatingVertexPosition(p1, v1, p2, v2);
 
-        // Parallel-track sentinel check
+        // Parallel-track check
         if (std::isnan(vertex_point.X()) || std::isnan(vertex_point.Y()) || std::isnan(vertex_point.Z()))
             return Vertices;
 
@@ -596,7 +587,7 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
     mdebug<<(*Iterator1)->GetID()<<": "<<(*Iterator1)->GetPosition().Z()<<endl;
   }
 
-  // For each of the RESE's in the list check if it could be the first of the vertex
+  // For each of the RESEs in the list check if it could be the first of the vertex
   for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
 
     // If it is a single hit, and if it is the only one in its layer:
@@ -623,7 +614,7 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
       Distance = m_Geometry->GetLayerDistance((*Iterator1), (*Iterator2));
       if (Distance > 0 && Distance < int(SearchRange)) NAbove[Distance]++;
       if (Distance < 0 && abs(Distance) < int(SearchRange)) NBelow[abs(Distance)]++;
-      massert(Distance != 0); // In this case the algorithm is broken...
+      massert(Distance != 0);
     }
 
     // Pair starting from top
@@ -638,10 +629,8 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
 
 
       for (unsigned int d = 1; d < SearchRange-1; ++d) {
-        // We stop when we skip 2 layers for the first time
         if (NBelow[d] == 0 && NBelow[d+1] == 0) break;
         StopIndex = d;
-        // Store the index where we have 2 hits for the first time, twice
         if (StartIndex == 0 && NBelow[d] > 1) StartIndex = d;
 
         if (StartIndex != 0) {
@@ -665,7 +654,7 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
       mdebug<<"Vertex statistics (max: "<<SearchRange<<"): layers used: "<<StopIndex<<", start of 2+ hits: "<<StartIndex<<"  layers with 2+ hits between start and stop: "<<LayersWithAtLeastTwoHitsBetweenStartAndStop<<" ("<<((StopIndex-StartIndex > 0) ? 100.0*LayersWithAtLeastTwoHitsBetweenStartAndStop/(StopIndex-StartIndex) : 0)<<"%)"<<endl;
 
       if (LayersWithAtLeastTwoHitsBetweenStartAndStop > 3) {
-        // REMOVED 4+ LAYER REQ AND >50% W/ PAIRS
+        // REMOVED THE ORIGINAL 4+ LAYER REQ AND >50% W/ PAIRS
         Vertex = (*Iterator1);
         VertexDirection = -1;
       }
@@ -679,11 +668,12 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
       RE->SetVertex(0);
       List->AddRawEvent(New);
       mdebug<<"Search vertex: Found vertex: "<<Vertex->GetID()<<endl;
-      break; // Only take first right now
+      break; 
     }
   }
 
   return List;
+}
 
 //////////////////////////////////////////
 // TRACKPAIRS — actually performs the reconstruction
@@ -716,7 +706,7 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
         }
         RE->SetVertexDirection(-1);
 
-    //  Build electron and positron tracks 
+    // Build electron and positron tracks 
     MRETrack* Electron = new MRETrack();
     MRETrack* Positron = new MRETrack();
 
@@ -757,7 +747,7 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
     // Write back to the raw event 
     RE->SetElectronTrack(Electron);
     RE->SetPositronTrack(Positron);
-    //RE->SetPairQualityFactor(1.0);
+    //RE->SetPairQualityFactor(1.0); needed?
     RE->SetGoodEvent(true);
     RE->SetEventReconstructed(true);
 
