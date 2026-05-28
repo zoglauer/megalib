@@ -56,6 +56,15 @@ class MSystem
   //! Run a child process with arguments and optionally redirect its output to a file
   static int RunChildProcess(const MString& Executable, const MString& Arguments, const MString& OutputFileName = "");
 
+  //! Test whether an X11 display is reachable.
+  //! Returns true if the local UNIX socket or remote TCP socket named by
+  //! $DISPLAY accepts a connection, false if DISPLAY is unset, malformed,
+  //! or the socket is missing / not listening / unreachable within ~2 s.
+  //! Does not perform the X11 handshake or verify authentication; the TCP
+  //! probe is non-blocking and bounded by a select() timeout so a stale
+  //! tunnel cannot hang the caller.
+  static bool HasDisplay();
+
   // protected methods:
  protected:
   bool GetMemory();

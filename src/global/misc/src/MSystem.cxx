@@ -29,9 +29,21 @@
 // Standard libs:
 #include <iostream>
 #include <sstream>
+#include <csignal>
 #include <cstdlib>
+#include <cstring>
+#include <cstddef>
+#include <cerrno>
 #include <ctime>
+#include <chrono>
+#include <future>
+#include <memory>
+#include <system_error>
+#include <thread>
 #include <fcntl.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/wait.h>
 #include <unistd.h>
 using namespace std;
@@ -42,9 +54,11 @@ using namespace std;
 // MEGAlib libs:
 #include "MStreams.h"
 
+// Special libs:
 #ifdef ___UNIX___
 #include <sys/time.h>
 #endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -80,6 +94,303 @@ MSystem::~MSystem()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Check whether a usable X11 display is reachable from this process.
+//!
+//! Returns true if the X11 socket named by $DISPLAY accepts a connection,
+//! false otherwise. Three DISPLAY forms are recognised:
+//!
+//!   - ":<n>" or "unix:<n>"       -> /tmp/.X11-unix/X<n> (standard Linux/BSD).
+//!                                   On Linux, the abstract-socket variant
+//!                                   (sun_path[0] = '\0') is tried as a
+//!                                   fallback, matching libX11: some hardened
+//!                                   X server configurations expose only the
+//!                                   abstract socket.
+//!   - "/<absolute path>:<n>"     -> literally "<path>:<n>" (XQuartz on macOS
+//!                                   publishes DISPLAY this way, e.g.
+//!                                   "/private/tmp/com.apple.launchd.XXX/org.xquartz:0")
+//!   - "<host>:<n>" or "<ip>:<n>" -> TCP to (host, 6000 + n). Used by SSH
+//!                                   X11 forwarding, remote sessions, VNC
+//!                                   with X. A non-blocking connect() bounded
+//!                                   by a 2 s select() correctly distinguishes
+//!                                   a live tunnel from a stale one (e.g. a
+//!                                   screen session whose SSH connection has
+//!                                   gone away). Every address returned by
+//!                                   getaddrinfo is tried, not just the
+//!                                   first -- the order can prefer IPv6 even
+//!                                   when (e.g.) SSH only listens on IPv4.
+//!
+//! Why no libX11 / no fork: calling XOpenDisplay can block for many
+//! seconds on a stale DISPLAY, and forking around it is fragile in a
+//! multithreaded parent (inherited locked mutexes, Apple's documented
+//! fork-without-exec restriction). libX11 is also not part of a default
+//! macOS install. A direct connect() probe avoids both problems.
+//!
+//! What this does *not* detect: a successful connect proves only that
+//! the X *socket* is alive. It does not run the X11 protocol handshake
+//! or verify authentication (e.g. a stale .Xauthority); it also cannot
+//! tell an actual X server from an unrelated service squatting on TCP
+//! port 6000 + n. If the caller later passes the display to libX11 /
+//! ROOT and the handshake fails, that failure is the caller's to handle.
+//!
+//! DNS handling: getaddrinfo() has no built-in timeout, so it is run on
+//! a detached background thread and waited on with a 2 s timeout. If
+//! the resolver doesn't answer in time we report no display and let the
+//! thread finish on its own; if its answer arrives after we've given up
+//! the resulting addrinfo* is abandoned (a small, bounded, rare leak).
+bool MSystem::HasDisplay()
+{
+#ifdef ___UNIX___
+  const char* DisplayEnv = getenv("DISPLAY");
+  if (DisplayEnv == nullptr || DisplayEnv[0] == '\0') {
+    cout<<"Display not found: DISPLAY environment variable is unset or empty"<<endl;
+    return false;
+  }
+
+  // Parse [host]:display[.screen]. Empty host or "unix" -> local UNIX
+  // socket; absolute-path host -> XQuartz-style local socket; anything
+  // else -> TCP target.
+  string Display(DisplayEnv);
+  string::size_type Colon = Display.rfind(':');
+  if (Colon == string::npos) {
+    cout<<"Display not found: DISPLAY=\""<<DisplayEnv<<"\" does not contain a ':' separator"<<endl;
+    return false;
+  }
+  string Host = Display.substr(0, Colon);
+  string Rest = Display.substr(Colon + 1);
+  string::size_type Dot = Rest.find('.');
+  string DisplayNumStr = (Dot == string::npos) ? Rest : Rest.substr(0, Dot);
+  char* End = nullptr;
+  long DisplayNum = strtol(DisplayNumStr.c_str(), &End, 10);
+  if (End == DisplayNumStr.c_str() || *End != '\0' || DisplayNum < 0) {
+    cout<<"Display not found: DISPLAY=\""<<DisplayEnv<<"\" has a malformed display number \""<<DisplayNumStr<<"\""<<endl;
+    return false;
+  }
+
+  // -------------------------------------------------------------------
+  // Local UNIX socket path. A blocking connect() is fine here: the
+  // kernel answers immediately for a local socket -- either success or
+  // ECONNREFUSED / ENOENT -- so no timeout machinery is needed.
+  // -------------------------------------------------------------------
+  if (Host.empty() || Host == "unix" || Host[0] == '/') {
+    string SocketPath;
+    if (Host.empty() || Host == "unix") {
+      // Standard /tmp/.X11-unix/X<n> layout.
+      SocketPath = "/tmp/.X11-unix/X" + DisplayNumStr;
+    } else {
+      // Absolute-path host: XQuartz on macOS publishes DISPLAY this way,
+      // e.g. "/private/tmp/com.apple.launchd.XXX/org.xquartz:0". The
+      // actual socket file is the host with the ":<n>" suffix appended.
+      SocketPath = Host + ":" + DisplayNumStr;
+    }
+
+    // Reject paths that would have to be truncated into sun_path; a silent
+    // truncation would connect to the wrong socket or none. (libX11 hits
+    // the same kernel limit, so this is not stricter than Xlib.)
+    sockaddr_un Probe;
+    if (SocketPath.size() + 1 > sizeof(Probe.sun_path)) {
+      cout<<"Display not found: resolved socket path \""<<SocketPath<<"\" is too long for sockaddr_un.sun_path"<<endl;
+      return false;
+    }
+
+    bool LocalOk = false;
+
+    // Attempt 1: filesystem socket at the resolved path.
+    {
+      int Sock = socket(AF_UNIX, SOCK_STREAM, 0);
+      if (Sock < 0) {
+        cout<<"Display not found: failed to create AF_UNIX socket"<<endl;
+        return false;
+      }
+      sockaddr_un Addr;
+      memset(&Addr, 0, sizeof(Addr));
+      Addr.sun_family = AF_UNIX;
+      memcpy(Addr.sun_path, SocketPath.c_str(), SocketPath.size() + 1);
+      socklen_t AddrLen = (socklen_t) (offsetof(sockaddr_un, sun_path)
+                                       + SocketPath.size() + 1);
+      LocalOk = (connect(Sock, reinterpret_cast<sockaddr*>(&Addr), AddrLen) == 0);
+      close(Sock);
+    }
+
+#ifdef __linux__
+    // Attempt 2 (Linux only): abstract socket. The leading NUL byte in
+    // sun_path marks the address as living in the abstract namespace; the
+    // rest of sun_path is the literal abstract name (not NUL-terminated --
+    // the kernel uses AddrLen as the boundary). libX11 falls back to this
+    // when the filesystem socket isn't reachable, and some hardened X
+    // server configurations expose only the abstract socket. Only
+    // meaningful for the standard /tmp/.X11-unix/X<n> form; XQuartz's
+    // launchd-path DISPLAY has no abstract counterpart.
+    if (LocalOk == false && (Host.empty() || Host == "unix")) {
+      int Sock = socket(AF_UNIX, SOCK_STREAM, 0);
+      if (Sock >= 0) {
+        sockaddr_un Addr;
+        memset(&Addr, 0, sizeof(Addr));
+        Addr.sun_family = AF_UNIX;
+        Addr.sun_path[0] = '\0';
+        memcpy(&Addr.sun_path[1], SocketPath.c_str(), SocketPath.size());
+        socklen_t AddrLen = (socklen_t) (offsetof(sockaddr_un, sun_path)
+                                         + 1 + SocketPath.size());
+        LocalOk = (connect(Sock, reinterpret_cast<sockaddr*>(&Addr), AddrLen) == 0);
+        close(Sock);
+      }
+    }
+#endif
+
+    if (LocalOk == false) {
+      cout<<"Display not found: connect() to UNIX socket \""<<SocketPath<<"\" failed"
+#ifdef __linux__
+          <<" (filesystem and abstract)"
+#endif
+          <<endl;
+    }
+    return LocalOk;
+  }
+
+  // -------------------------------------------------------------------
+  // TCP target: hostname or IP literal. Used by SSH X11 forwarding and
+  // remote sessions. Must use a non-blocking connect() bounded by
+  // select() so a stale tunnel can't hang startup; the kernel's TCP SYN
+  // timeout (~75 s on Linux) is far too long for a startup probe.
+  // -------------------------------------------------------------------
+  addrinfo Hints;
+  memset(&Hints, 0, sizeof(Hints));
+  Hints.ai_family = AF_UNSPEC;        // accept IPv4 or IPv6
+  Hints.ai_socktype = SOCK_STREAM;
+
+  char PortStr[16];
+  snprintf(PortStr, sizeof(PortStr), "%ld", 6000 + DisplayNum);
+
+  // getaddrinfo() has no built-in timeout, so a misbehaving DNS resolver
+  // can hang us for many seconds. Run it on a detached background thread
+  // and wait at most 2 s for the answer via a packaged_task + future.
+  // On timeout we report no display and let the thread finish on its
+  // own; if the lookup eventually succeeds in the background, its
+  // addrinfo* result is never consumed and leaks. Rare, bounded, and
+  // acceptable for a startup probe.
+  addrinfo* Resolved = nullptr;
+  {
+    struct ResolverResult { int Rc; addrinfo* Out; };
+    const string ThreadHost = Host;
+    const string ThreadPort = PortStr;
+    const addrinfo ThreadHints = Hints;
+
+    auto Task = make_shared<packaged_task<ResolverResult()>>(
+      [ThreadHost, ThreadPort, ThreadHints]() {
+        ResolverResult R{0, nullptr};
+        R.Rc = getaddrinfo(ThreadHost.c_str(), ThreadPort.c_str(),
+                           &ThreadHints, &R.Out);
+        return R;
+      });
+    future<ResolverResult> Future = Task->get_future();
+    try {
+      thread([Task]() { (*Task)(); }).detach();
+    } catch (const system_error&) {
+      // Thread construction can throw on resource exhaustion (very rare).
+      // Fail closed rather than letting the exception escape startup.
+      cout<<"Display not found: failed to spawn DNS resolver thread"<<endl;
+      return false;
+    }
+
+    if (Future.wait_for(chrono::seconds(2)) != future_status::ready) {
+      cout<<"Display not found: getaddrinfo(\""<<Host<<"\") timed out after 2 s"<<endl;
+      return false;
+    }
+    ResolverResult R = Future.get();
+    if (R.Rc != 0 || R.Out == nullptr) {
+      cout<<"Display not found: getaddrinfo(\""<<Host<<"\") failed"<<endl;
+      return false;
+    }
+    Resolved = R.Out;
+  }
+
+  // Try every address returned by getaddrinfo. The first one isn't
+  // guaranteed to be the one the X server is listening on (SSH X11
+  // forwarding, for instance, commonly listens only on 127.0.0.1 even
+  // when getaddrinfo prefers ::1). A single 2 s wall-clock deadline is
+  // shared across all addresses, so total TCP probe time is bounded
+  // regardless of how many addresses getaddrinfo returned. Both connect()
+  // and select() retry on EINTR until the deadline expires.
+  auto Deadline = chrono::steady_clock::now() + chrono::seconds(2);
+
+  bool Ok = false;
+  for (addrinfo* It = Resolved; It != nullptr && Ok == false; It = It->ai_next) {
+    if (chrono::steady_clock::now() >= Deadline) break;
+
+    int Sock = socket(It->ai_family, It->ai_socktype, It->ai_protocol);
+    if (Sock < 0) continue;
+
+    // Fail closed if fcntl fails: a blocking connect() would reintroduce
+    // the startup hang this function exists to avoid.
+    int Flags = fcntl(Sock, F_GETFL, 0);
+    if (Flags < 0 || fcntl(Sock, F_SETFL, Flags | O_NONBLOCK) < 0) {
+      close(Sock);
+      continue;
+    }
+
+    // Retry connect() on EINTR; EINPROGRESS means "wait via select()".
+    int ConnectResult;
+    do {
+      ConnectResult = connect(Sock, It->ai_addr, It->ai_addrlen);
+    } while (ConnectResult < 0 && errno == EINTR);
+
+    if (ConnectResult == 0) {
+      // Completed synchronously (rare for TCP, but possible on loopback).
+      Ok = true;
+      close(Sock);
+      break;
+    }
+    if (errno != EINPROGRESS) {
+      close(Sock);
+      continue;
+    }
+
+    // Wait for the asynchronous connect against the shared deadline.
+    // Retry select() on EINTR until the deadline expires, so a spurious
+    // signal doesn't falsely report no display.
+    while (true) {
+      auto Remaining = Deadline - chrono::steady_clock::now();
+      if (Remaining <= chrono::steady_clock::duration::zero()) break;
+      auto Secs = chrono::duration_cast<chrono::seconds>(Remaining);
+      auto Usec = chrono::duration_cast<chrono::microseconds>(Remaining - Secs);
+      timeval Timeout;
+      Timeout.tv_sec = (time_t) Secs.count();
+      Timeout.tv_usec = (suseconds_t) Usec.count();
+      fd_set WriteSet;
+      FD_ZERO(&WriteSet);
+      FD_SET(Sock, &WriteSet);
+      int SelectResult = select(Sock + 1, nullptr, &WriteSet, nullptr, &Timeout);
+      if (SelectResult > 0) {
+        // Writable either on success or on async failure; ask SO_ERROR.
+        int SockErr = 0;
+        socklen_t SockErrLen = sizeof(SockErr);
+        if (getsockopt(Sock, SOL_SOCKET, SO_ERROR, &SockErr, &SockErrLen) == 0
+            && SockErr == 0) {
+          Ok = true;
+        }
+        break;
+      }
+      if (SelectResult < 0 && errno == EINTR) continue;
+      break;  // 0 (timeout) or unrecoverable error
+    }
+
+    close(Sock);
+  }
+
+  freeaddrinfo(Resolved);
+  if (Ok == false) {
+    cout<<"Display not found: no resolved TCP address for "<<Host<<":"<<(6000 + DisplayNum)<<" was reachable within 2 s total"<<endl;
+  }
+  return Ok;
+
+#else
+  return true;
+#endif
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 int MSystem::RunChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName)
 {
   pid_t Child = fork();
@@ -105,12 +416,12 @@ int MSystem::RunChildProcess(const MString& Executable, const MString& Argument,
     return -1;
   }
 
-  int Status = 0;
-  if (waitpid(Child, &Status, 0) < 0) {
+  int ChildStatus = 0;
+  if (waitpid(Child, &ChildStatus, 0) < 0) {
     return -1;
   }
 
-  return Status;
+  return ChildStatus;
 }
 
 

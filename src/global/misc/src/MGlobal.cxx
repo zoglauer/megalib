@@ -36,6 +36,7 @@ using namespace std;
 
 // ROOT libs:
 #include <TEnv.h>
+#include <TROOT.h>
 #include <TStyle.h>
 #include <TError.h>
 #include <TSystem.h>
@@ -47,6 +48,7 @@ using namespace std;
 #include "MExceptions.h"
 #include "MStreams.h"
 #include "MFile.h"
+#include "MSystem.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -170,6 +172,11 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 
   // Font smoothing:
   gEnv->SetValue("X11.UseXft", "true");
+
+  if (MSystem::HasDisplay() == false) {
+    cout<<"No X-client available: Using batch mode"<<endl;
+    gROOT->SetBatch(true);
+  }
 
   // Set a common ROOT style for all programs:
   gStyle->SetTitleBorderSize(0);
