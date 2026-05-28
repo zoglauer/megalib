@@ -31,6 +31,7 @@
 #include <sstream>
 #include <csignal>
 #include <cstdlib>
+#include <cerrno>
 #include <ctime>
 #include <dlfcn.h>
 #include <fcntl.h>
@@ -86,6 +87,13 @@ MSystem::~MSystem()
 
 //! Check whether an X11 display can be opened from this process.
 //!
+//! INTERNAL: private to MSystem and friended only to MGlobal. The single
+//! intended caller is MGlobal::Initialize(), which runs before MEGAlib
+//! spawns any worker threads. The Linux implementation fork()s and the
+//! child calls dlopen() / XOpenDisplay(); after fork() in a multithreaded
+//! parent both can deadlock on inherited library/runtime locks, so the
+//! "called early at startup" constraint is a precondition, not advice.
+//!
 //! Linux: tries to open the display in a child process so a stale or
 //! unreachable DISPLAY cannot block startup; the parent polls for the
 //! child's exit for up to 2 s and SIGKILLs the probe if it doesn't
@@ -102,11 +110,10 @@ MSystem::~MSystem()
 //! or call X here. We trust the DISPLAY environment variable instead:
 //! if it is set we assume an X server (typically XQuartz) is available;
 //! otherwise we report no display and let ROOT pick its Cocoa back-end
-//! or batch mode on its own.
-//!
-//! This function is intended to be called early during MGlobal::Initialize(),
-//! before MEGAlib starts worker threads. On Linux that matters because
-//! fork() without exec() is safest before other threads exist.
+//! or batch mode on its own. We deliberately do not dlopen XQuartz to
+//! probe further: requiring XQuartz at runtime is exactly the assumption
+//! we want to avoid. A stale macOS $DISPLAY will therefore still register
+//! as a usable display here; ROOT discovers the failure when it tries.
 bool MSystem::HasDisplay()
 {
 #if defined(___LINUX___)
@@ -174,6 +181,10 @@ bool MSystem::HasDisplay()
     }
 
     if (Result < 0) {
+      // EINTR: signal interruption, not a real failure -- retry on the
+      // next iteration so we don't leave the probe child running while
+      // falsely reporting no display.
+      if (errno == EINTR) continue;
       cout<<"Display not found: failed to wait for display probe"<<endl;
       return false;
     }
@@ -182,7 +193,8 @@ bool MSystem::HasDisplay()
   }
 
   kill(Child, SIGKILL);
-  waitpid(Child, &ChildStatus, 0);
+  // Reap the probe, retrying on EINTR so it never lingers as a zombie.
+  while (waitpid(Child, &ChildStatus, 0) < 0 && errno == EINTR) {}
   cout<<"Display not found: XOpenDisplay probe timed out for DISPLAY=\""<<DisplayEnv<<"\""<<endl;
   return false;
 
