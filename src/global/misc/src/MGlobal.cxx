@@ -159,11 +159,6 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   MException::UseAbort();
 #endif
 
-  if (MSystem::HasDisplay() == false) {
-    cout<<"Switching to batch mode"<<endl;
-    gROOT->SetBatch(true);
-  }
-
   // Load the GUI defaults by initializing the singleton
   MGUIDefaults::GetInstance();
 
@@ -263,6 +258,11 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   // Show the intro
   if (ProgramName != "") {
     ShowIntro(ProgramName, ProgramDescription);
+  }
+
+  if (MSystem::HasDisplay() == false) {
+    cout<<"Switching to batch mode"<<endl<<endl;
+    gROOT->SetBatch(true);
   }
 
   // Launch the update check at the end:
