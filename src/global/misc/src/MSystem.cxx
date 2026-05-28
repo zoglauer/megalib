@@ -32,6 +32,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <ctime>
+#include <dlfcn.h>
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -46,10 +47,6 @@ using namespace std;
 // Special libs:
 #ifdef ___UNIX___
 #include <sys/time.h>
-#endif
-
-#if defined(___LINUX___) || defined(___MACOSX___)
-#include <X11/Xlib.h>
 #endif
 
 
@@ -89,30 +86,65 @@ MSystem::~MSystem()
 
 //! Check whether an X11 display can be opened from this process.
 //!
-//! XOpenDisplay() is the same operation ROOT performs when it creates its GUI
-//! application object. It also delegates all DISPLAY syntax details to Xlib,
-//! including Linux/SSH forwarding and macOS/XQuartz launchd paths. Since
-//! XOpenDisplay() can block in stale screen/SSH/XQuartz environments, the probe
-//! runs in a child process and is bounded with alarm().
+//! Linux: tries to open the display in a child process so a stale or
+//! unreachable DISPLAY cannot block startup; the parent polls for the
+//! child's exit for up to 2 s and SIGKILLs the probe if it doesn't
+//! finish in time. libX11 is loaded at runtime via dlopen, so
+//! libCommonMisc carries no link-time dependency on it -- the library
+//! still works on systems where libX11 is not installed at all
+//! (minimal containers, headless servers, pure-Wayland desktops that
+//! ship without XWayland). Wayland sessions that include XWayland (the
+//! common case) look like ordinary X sessions and succeed via
+//! /tmp/.X11-unix/X<n>.
+//!
+//! macOS: libX11 is not part of a default install (it ships with
+//! XQuartz, whose SDK is not assumed at build time), so we do not link
+//! or call X here. We trust the DISPLAY environment variable instead:
+//! if it is set we assume an X server (typically XQuartz) is available;
+//! otherwise we report no display and let ROOT pick its Cocoa back-end
+//! or batch mode on its own.
 //!
 //! This function is intended to be called early during MGlobal::Initialize(),
-//! before MEGAlib starts worker threads. That matters on macOS, where fork()
-//! without exec() is safest before other threads and framework state exist.
+//! before MEGAlib starts worker threads. On Linux that matters because
+//! fork() without exec() is safest before other threads exist.
 bool MSystem::HasDisplay()
 {
-#if defined(___LINUX___) || defined(___MACOSX___)
+#if defined(___LINUX___)
   const char* DisplayEnv = getenv("DISPLAY");
   if (DisplayEnv == nullptr || DisplayEnv[0] == '\0') {
-    cout<<"Display not found: DISPLAY environment variable is unset or empty"<<endl;
+    // Pure-Wayland session with no XWayland is the most common reason
+    // DISPLAY is empty on a logged-in Linux desktop. Give a useful hint.
+    const char* WaylandEnv = getenv("WAYLAND_DISPLAY");
+    if (WaylandEnv != nullptr && WaylandEnv[0] != '\0') {
+      cout<<"Display not found: only WAYLAND_DISPLAY is set (Wayland session without XWayland); ROOT requires an X server"<<endl;
+    } else {
+      cout<<"Display not found: DISPLAY environment variable is unset or empty"<<endl;
+    }
     return false;
   }
 
   pid_t Child = fork();
   if (Child == 0) {
-    Display* DisplayHandle = XOpenDisplay(nullptr);
-    if (DisplayHandle == nullptr) _exit(1);
+    // Load libX11 at runtime so libCommonMisc has no link-time
+    // dependency on it. Distinct exit codes let the parent give a
+    // useful diagnostic:
+    //   0 = display opened successfully
+    //   1 = XOpenDisplay returned nullptr (server unreachable)
+    //   2 = libX11 is not installed (dlopen failed)
+    //   3 = libX11 loaded but expected symbols are missing
+    void* Lib = dlopen("libX11.so.6", RTLD_LAZY | RTLD_LOCAL);
+    if (Lib == nullptr) _exit(2);
 
-    XCloseDisplay(DisplayHandle);
+    typedef void* (*OpenFn)(const char*);
+    typedef int (*CloseFn)(void*);
+    OpenFn OpenDisplay = (OpenFn) dlsym(Lib, "XOpenDisplay");
+    CloseFn CloseDisplay = (CloseFn) dlsym(Lib, "XCloseDisplay");
+    if (OpenDisplay == nullptr || CloseDisplay == nullptr) _exit(3);
+
+    void* Handle = OpenDisplay(nullptr);
+    if (Handle == nullptr) _exit(1);
+
+    CloseDisplay(Handle);
     _exit(0);
   }
 
@@ -125,9 +157,19 @@ bool MSystem::HasDisplay()
   for (unsigned int i = 0; i < 200; ++i) {
     pid_t Result = waitpid(Child, &ChildStatus, WNOHANG);
     if (Result == Child) {
-      if (WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0) return true;
-
-      cout<<"Display not found: XOpenDisplay failed for DISPLAY=\""<<DisplayEnv<<"\""<<endl;
+      if (WIFEXITED(ChildStatus)) {
+        int Code = WEXITSTATUS(ChildStatus);
+        if (Code == 0) return true;
+        if (Code == 2) {
+          cout<<"Display not found: libX11 is not installed (dlopen of libX11.so.6 failed)"<<endl;
+        } else if (Code == 3) {
+          cout<<"Display not found: libX11 is missing expected symbols (XOpenDisplay / XCloseDisplay)"<<endl;
+        } else {
+          cout<<"Display not found: XOpenDisplay failed for DISPLAY=\""<<DisplayEnv<<"\""<<endl;
+        }
+      } else {
+        cout<<"Display not found: display probe died abnormally for DISPLAY=\""<<DisplayEnv<<"\""<<endl;
+      }
       return false;
     }
 
@@ -143,6 +185,19 @@ bool MSystem::HasDisplay()
   waitpid(Child, &ChildStatus, 0);
   cout<<"Display not found: XOpenDisplay probe timed out for DISPLAY=\""<<DisplayEnv<<"\""<<endl;
   return false;
+
+#elif defined(___MACOSX___)
+  // libX11 is not part of a default macOS install (it ships with XQuartz,
+  // whose SDK is not assumed at build time), so we do not call XOpenDisplay
+  // here. Trust the DISPLAY environment variable: if it is set we assume an
+  // X server (typically XQuartz) is available; otherwise ROOT picks its
+  // Cocoa back-end or batch mode on its own.
+  const char* DisplayEnv = getenv("DISPLAY");
+  if (DisplayEnv == nullptr || DisplayEnv[0] == '\0') {
+    cout<<"Display not found: DISPLAY environment variable is unset or empty"<<endl;
+    return false;
+  }
+  return true;
 
 #else
   return true;
