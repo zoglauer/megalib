@@ -69,14 +69,14 @@ int main(int argc, char** argv)
   // Set a default error handler and catch some signals...
   signal(SIGINT, CatchSignal);
 
-  // Initialize ROOT:
-  TApplication ROOT("ROOT", 0, 0);
-
   // Initialize global MEGAlib variables, especially mgui, etc.
   if (MGlobal::Initialize("Cosima", "the cosmic simulator of MEGAlib") == false) {
     return 1;
   }
   __merr.SetHeader("COSIMA-ERROR:");
+
+  // Initialize ROOT:
+  TApplication ROOT("ROOT", 0, 0);
 
   g_Main = new MCMain();
   

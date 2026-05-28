@@ -29,8 +29,14 @@
 // Standard libs:
 #include <iostream>
 #include <sstream>
+#include <csignal>
 #include <cstdlib>
+#include <cerrno>
 #include <ctime>
+#include <dlfcn.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <unistd.h>
 using namespace std;
 
 // ROOT libs:
@@ -40,9 +46,11 @@ using namespace std;
 #include "MFile.h"
 #include "MStreams.h"
 
+// Special libs:
 #ifdef ___UNIX___
 #include <sys/time.h>
 #endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -72,6 +80,192 @@ MSystem::MSystem()
 MSystem::~MSystem()
 {
   // standard destructor
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Check whether an X11 display can be opened from this process.
+//!
+//! INTERNAL: private to MSystem and friended only to MGlobal. The single
+//! intended caller is MGlobal::Initialize(), which runs before MEGAlib
+//! spawns any worker threads. The Linux implementation fork()s and the
+//! child calls dlopen() / XOpenDisplay(); after fork() in a multithreaded
+//! parent both can deadlock on inherited library/runtime locks, so the
+//! "called early at startup" constraint is a precondition, not advice.
+//!
+//! Linux: tries to open the display in a child process so a stale or
+//! unreachable DISPLAY cannot block startup; the parent polls for the
+//! child's exit for up to 2 s and SIGKILLs the probe if it doesn't
+//! finish in time. libX11 is loaded at runtime via dlopen, so
+//! libCommonMisc carries no link-time dependency on it -- the library
+//! still works on systems where libX11 is not installed at all
+//! (minimal containers, headless servers, pure-Wayland desktops that
+//! ship without XWayland). Wayland sessions that include XWayland (the
+//! common case) look like ordinary X sessions and succeed via
+//! /tmp/.X11-unix/X<n>.
+//!
+//! macOS: libX11 is not part of a default install (it ships with
+//! XQuartz, whose SDK is not assumed at build time), so we do not link
+//! or call X here. We trust the DISPLAY environment variable instead:
+//! if it is set we assume an X server (typically XQuartz) is available;
+//! otherwise we report no display and let ROOT pick its Cocoa back-end
+//! or batch mode on its own. We deliberately do not dlopen XQuartz to
+//! probe further: requiring XQuartz at runtime is exactly the assumption
+//! we want to avoid. A stale macOS $DISPLAY will therefore still register
+//! as a usable display here; ROOT discovers the failure when it tries.
+bool MSystem::HasDisplay()
+{
+#if defined(___LINUX___)
+  const char* DisplayEnv = getenv("DISPLAY");
+  if (DisplayEnv == nullptr || DisplayEnv[0] == '\0') {
+    // Pure-Wayland session with no XWayland is the most common reason
+    // DISPLAY is empty on a logged-in Linux desktop. Give a useful hint.
+    const char* WaylandEnv = getenv("WAYLAND_DISPLAY");
+    if (WaylandEnv != nullptr && WaylandEnv[0] != '\0') {
+      cout<<"Display not found: only WAYLAND_DISPLAY is set (Wayland session without XWayland); ROOT requires an X server"<<endl;
+    } else {
+      cout<<"Display not found: DISPLAY environment variable is unset or empty"<<endl;
+    }
+    return false;
+  }
+
+  pid_t Child = fork();
+  if (Child == 0) {
+    // Load libX11 at runtime so libCommonMisc has no link-time
+    // dependency on it. Distinct exit codes let the parent give a
+    // useful diagnostic:
+    //   0 = display opened successfully
+    //   1 = XOpenDisplay returned nullptr (server unreachable)
+    //   2 = libX11 is not installed (dlopen failed)
+    //   3 = libX11 loaded but expected symbols are missing
+    // libX11 SONAME has been .6 for ~20 years; .7 is purely defensive
+    // in case a future ABI bump ever happens. The unversioned "libX11.so"
+    // is the -dev symlink and only exists where development packages are
+    // installed, so it goes last.
+    static const char* const LibCandidates[] = {
+      "libX11.so.6",
+      "libX11.so.7",
+      "libX11.so",
+      nullptr
+    };
+    void* Lib = nullptr;
+    for (int i = 0; LibCandidates[i] != nullptr; ++i) {
+      Lib = dlopen(LibCandidates[i], RTLD_LAZY | RTLD_LOCAL);
+      if (Lib != nullptr) break;
+    }
+    if (Lib == nullptr) _exit(2);
+
+    typedef void* (*OpenFn)(const char*);
+    typedef int (*CloseFn)(void*);
+    OpenFn OpenDisplay = (OpenFn) dlsym(Lib, "XOpenDisplay");
+    CloseFn CloseDisplay = (CloseFn) dlsym(Lib, "XCloseDisplay");
+    if (OpenDisplay == nullptr || CloseDisplay == nullptr) _exit(3);
+
+    void* Handle = OpenDisplay(nullptr);
+    if (Handle == nullptr) _exit(1);
+
+    CloseDisplay(Handle);
+    _exit(0);
+  }
+
+  if (Child < 0) {
+    cout<<"Display not found: failed to fork display probe"<<endl;
+    return false;
+  }
+
+  int ChildStatus = 0;
+  for (unsigned int i = 0; i < 200; ++i) {
+    pid_t Result = waitpid(Child, &ChildStatus, WNOHANG);
+    if (Result == Child) {
+      if (WIFEXITED(ChildStatus)) {
+        int Code = WEXITSTATUS(ChildStatus);
+        if (Code == 0) return true;
+        if (Code == 2) {
+          cout<<"Display not found: libX11 is not installed (no libX11.so.{6,7,*} could be dlopen'd)"<<endl;
+        } else if (Code == 3) {
+          cout<<"Display not found: libX11 is missing expected symbols (XOpenDisplay / XCloseDisplay)"<<endl;
+        } else {
+          cout<<"Display not found: XOpenDisplay failed for DISPLAY=\""<<DisplayEnv<<"\""<<endl;
+        }
+      } else {
+        cout<<"Display not found: display probe died abnormally for DISPLAY=\""<<DisplayEnv<<"\""<<endl;
+      }
+      return false;
+    }
+
+    if (Result < 0) {
+      // EINTR: signal interruption, not a real failure -- retry on the
+      // next iteration so we don't leave the probe child running while
+      // falsely reporting no display.
+      if (errno == EINTR) continue;
+      cout<<"Display not found: failed to wait for display probe"<<endl;
+      return false;
+    }
+
+    usleep(10000);
+  }
+
+  kill(Child, SIGKILL);
+  // Reap the probe, retrying on EINTR so it never lingers as a zombie.
+  while (waitpid(Child, &ChildStatus, 0) < 0 && errno == EINTR) {}
+  cout<<"Display not found: XOpenDisplay probe timed out for DISPLAY=\""<<DisplayEnv<<"\""<<endl;
+  return false;
+
+#elif defined(___MACOSX___)
+  // libX11 is not part of a default macOS install (it ships with XQuartz,
+  // whose SDK is not assumed at build time), so we do not call XOpenDisplay
+  // here. Trust the DISPLAY environment variable: if it is set we assume an
+  // X server (typically XQuartz) is available; otherwise ROOT picks its
+  // Cocoa back-end or batch mode on its own.
+  const char* DisplayEnv = getenv("DISPLAY");
+  if (DisplayEnv == nullptr || DisplayEnv[0] == '\0') {
+    cout<<"Display not found: DISPLAY environment variable is unset or empty"<<endl;
+    return false;
+  }
+  return true;
+
+#else
+  return true;
+#endif
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int MSystem::RunChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName)
+{
+  pid_t Child = fork();
+  if (Child == 0) {
+    if (OutputFileName.IsEmpty() == false) {
+      int Log = open(OutputFileName.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+      if (Log >= 0) {
+        dup2(Log, STDOUT_FILENO);
+        dup2(Log, STDERR_FILENO);
+        close(Log);
+      }
+    }
+
+    MString Command = Executable + " " + Argument;
+    execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(0));
+    // If execl() returns, the child failed to start the command. Use _exit()
+    // after fork() to avoid running parent-owned C++ cleanup/stdio flushing.
+    // Exit code 127 is the shell convention for "command could not be run".
+    _exit(127);
+  }
+
+  if (Child < 0) {
+    return -1;
+  }
+
+  int ChildStatus = 0;
+  if (waitpid(Child, &ChildStatus, 0) < 0) {
+    return -1;
+  }
+
+  return ChildStatus;
 }
 
 

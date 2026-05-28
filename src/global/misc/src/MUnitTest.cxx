@@ -20,9 +20,9 @@
 #include "MUnitTest.h"
 
 // Standard libs:
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 // ROOT libs:
 
@@ -73,33 +73,58 @@ void MUnitTest::Summarize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MUnitTest::RunChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName)
+bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString Description, const MString& GeneratedFile, const MString& ReferenceFile)
 {
-  pid_t Child = fork();
-  if (Child == 0) {
-    if (OutputFileName.IsEmpty() == false) {
-      int Log = open(OutputFileName.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
-      if (Log >= 0) {
-        dup2(Log, STDOUT_FILENO);
-        dup2(Log, STDERR_FILENO);
-        close(Log);
+  ifstream Generated(GeneratedFile.Data());
+  if (Generated.is_open() == false) {
+    RegisterFailure(Function, Input, Description,
+                    MString("generated file opens: ") + GeneratedFile.Data(),
+                    "cannot open generated file");
+    return false;
+  }
+
+  ifstream Reference(ReferenceFile.Data());
+  if (Reference.is_open() == false) {
+    RegisterFailure(Function, Input, Description,
+                    MString("reference file opens: ") + ReferenceFile.Data(),
+                    "cannot open reference file");
+    return false;
+  }
+
+  unsigned int LineNumber = 0;
+  string GeneratedLine, ReferenceLine;
+
+  while (true) {
+    bool GotGenerated = (bool) getline(Generated, GeneratedLine);
+    bool GotReference = (bool) getline(Reference, ReferenceLine);
+
+    if (GotGenerated == false && GotReference == false) break;
+
+    ++LineNumber;
+
+    if (GotGenerated != GotReference) {
+      ostringstream LengthOutput;
+      if (GotGenerated == false) {
+        LengthOutput << "generated file is shorter (ends at line " << LineNumber << ")";
+      } else {
+        LengthOutput << "generated file is longer (reference ends at line " << LineNumber << ")";
       }
+      RegisterFailure(Function, Input, Description + MString(" (line count)"), "same number of lines", LengthOutput.str());
+      return false;
     }
 
-    execl(Executable.Data(), Executable.Data(), Argument.Data(), static_cast<char*>(0));
-    _exit(127);
+    if (GeneratedLine != ReferenceLine) {
+      ostringstream Diff;
+      Diff << "\n      line " << LineNumber << ":"
+           << "\n        expected:  " << ReferenceLine
+           << "\n        generated: " << GeneratedLine;
+      RegisterFailure(Function, Input, Description, "identical files", Diff.str());
+      return false;
+    }
   }
 
-  if (Child < 0) {
-    return -1;
-  }
-
-  int Status = 0;
-  if (waitpid(Child, &Status, 0) < 0) {
-    return -1;
-  }
-
-  return Status;
+  RegisterSuccess();
+  return true;
 }
 
 

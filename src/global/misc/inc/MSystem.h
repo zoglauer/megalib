@@ -51,6 +51,8 @@ class MSystem
   bool GetFileSuffix(MString Filename, MString* Suffix);
   bool GetFileWithoutSuffix(MString Filename, MString* NewFilename);
   
+  //! Run a child process with arguments and optionally redirect its output to a file
+  static int RunChildProcess(const MString& Executable, const MString& Arguments, const MString& OutputFileName = "");
 
   // protected methods:
  protected:
@@ -61,7 +63,17 @@ class MSystem
 
   // private methods:
  private:
-
+  //! Test whether an X11 display can be opened.
+  //!
+  //! INTERNAL: must be called exactly once during MGlobal::Initialize(),
+  //! before any worker threads are spawned. The Linux implementation
+  //! fork()s and the child then calls dlopen() and XOpenDisplay(); after
+  //! fork() in a multithreaded parent both can deadlock on inherited
+  //! library/runtime locks. The "early startup" constraint is a
+  //! precondition, not advice -- which is why this is private and
+  //! MGlobal is the only friended caller.
+  static bool HasDisplay();
+  friend class MGlobal;
 
 
   // protected members:

@@ -48,7 +48,8 @@ class MReadOutSequence
   //! Remove all content
   virtual void Clear();
 
-  //! Parse some content from a line - returns true if the line was handled - irrelevant if successfu
+  //! Parse a line: TI/ID/IA lines are processed, any other line is tolerantly ignored.
+  //! Always returns true - an unrecognized line is treated as consumed, not an error.
   virtual bool Parse(MString& Line, int Version = 1);
 
   
