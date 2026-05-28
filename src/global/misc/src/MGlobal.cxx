@@ -159,6 +159,11 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   MException::UseAbort();
 #endif
 
+  if (MSystem::HasDisplay() == false) {
+    cout<<"Switching to batch mode"<<endl;
+    gROOT->SetBatch(true);
+  }
+
   // Load the GUI defaults by initializing the singleton
   MGUIDefaults::GetInstance();
 
@@ -172,11 +177,6 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 
   // Font smoothing:
   gEnv->SetValue("X11.UseXft", "true");
-
-  if (MSystem::HasDisplay() == false) {
-    cout<<"No X-client available: Using batch mode"<<endl;
-    gROOT->SetBatch(true);
-  }
 
   // Set a common ROOT style for all programs:
   gStyle->SetTitleBorderSize(0);

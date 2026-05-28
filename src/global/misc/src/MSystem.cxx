@@ -139,7 +139,21 @@ bool MSystem::HasDisplay()
     //   1 = XOpenDisplay returned nullptr (server unreachable)
     //   2 = libX11 is not installed (dlopen failed)
     //   3 = libX11 loaded but expected symbols are missing
-    void* Lib = dlopen("libX11.so.6", RTLD_LAZY | RTLD_LOCAL);
+    // libX11 SONAME has been .6 for ~20 years; .7 is purely defensive
+    // in case a future ABI bump ever happens. The unversioned "libX11.so"
+    // is the -dev symlink and only exists where development packages are
+    // installed, so it goes last.
+    static const char* const LibCandidates[] = {
+      "libX11.so.6",
+      "libX11.so.7",
+      "libX11.so",
+      nullptr
+    };
+    void* Lib = nullptr;
+    for (int i = 0; LibCandidates[i] != nullptr; ++i) {
+      Lib = dlopen(LibCandidates[i], RTLD_LAZY | RTLD_LOCAL);
+      if (Lib != nullptr) break;
+    }
     if (Lib == nullptr) _exit(2);
 
     typedef void* (*OpenFn)(const char*);
@@ -168,7 +182,7 @@ bool MSystem::HasDisplay()
         int Code = WEXITSTATUS(ChildStatus);
         if (Code == 0) return true;
         if (Code == 2) {
-          cout<<"Display not found: libX11 is not installed (dlopen of libX11.so.6 failed)"<<endl;
+          cout<<"Display not found: libX11 is not installed (no libX11.so.{6,7,*} could be dlopen'd)"<<endl;
         } else if (Code == 3) {
           cout<<"Display not found: libX11 is missing expected symbols (XOpenDisplay / XCloseDisplay)"<<endl;
         } else {
