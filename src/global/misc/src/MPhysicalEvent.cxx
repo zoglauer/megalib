@@ -301,7 +301,6 @@ MString MPhysicalEvent::ToTraString() const
     S<<"ET UN"<<endl;
     break;
   default:
-    massert(false);
     S<<"ET Unkown"<<endl;
     break;
   }

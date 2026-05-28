@@ -36,6 +36,7 @@ using namespace std;
 
 // ROOT libs:
 #include <TEnv.h>
+#include <TROOT.h>
 #include <TStyle.h>
 #include <TError.h>
 #include <TSystem.h>
@@ -47,6 +48,7 @@ using namespace std;
 #include "MExceptions.h"
 #include "MStreams.h"
 #include "MFile.h"
+#include "MSystem.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -256,6 +258,11 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   // Show the intro
   if (ProgramName != "") {
     ShowIntro(ProgramName, ProgramDescription);
+  }
+
+  if (MSystem::HasDisplay() == false) {
+    cout<<"Switching to batch mode"<<endl<<endl;
+    gROOT->SetBatch(true);
   }
 
   // Launch the update check at the end:
