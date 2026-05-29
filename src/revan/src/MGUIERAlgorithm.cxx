@@ -142,7 +142,7 @@ void MGUIERAlgorithm::Create()
   m_TrackingList->Add("Bayesian electron tracking (Bayesian model selection)"); // 7
   m_TrackingList->Add("Kalman Filter 2D (work in progress)"); // 8
   m_TrackingList->Add("Kalman Filter 3D (work in progress)"); // 9
-  m_TrackingList->Add("First two layers (to be implemented)"); // 10
+  m_TrackingList->Add("First two layers (under development)"); // 10
   if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoNone) {
     m_TrackingList->SetSelected(0);
   } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoModifiedPearson) {
@@ -163,9 +163,9 @@ void MGUIERAlgorithm::Create()
     m_TrackingList->SetSelected(8);
   } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoKalman3D) {
     m_TrackingList->SetSelected(9);
-  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoFirstLayer) {
-    merr << "First two layers tracking is not implemented yet! No tracking algorithm selected." << endl;
-    m_TrackingList->SetSelected(0);
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoFirstTwoLayers) {
+    merr << "Tracking method implementation in progress." << endl;
+    m_TrackingList->SetSelected(10);
   } else {
     m_TrackingList->SetSelected(0);
   }
@@ -263,8 +263,8 @@ bool MGUIERAlgorithm::OnApply()
   } else if (m_TrackingList->GetSelected() == 9) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoKalman3D);
   } else if (m_TrackingList->GetSelected() == 10) {
-    merr << "First two layers tracking is not implemented yet! No tracking algorithm selected." << endl;
-    m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
+    merr << "Be patient! Under development." << endl;
+    m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoFirstTwoLayers);
     //m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoFirstLayer);
   }
   // Pair

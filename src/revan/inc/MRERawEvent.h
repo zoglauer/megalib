@@ -259,7 +259,8 @@ class MRERawEvent : public MRESE, public MRotationInterface
   static const int c_PairEvent;
   static const int c_MuonEvent;
   static const int c_ShowerEvent;
-  static const int c_PhotoEvent;*/
+  static const int c_PhotoEvent;
+  */
 
   static const int c_RejectionNone                               =  0;
   static const int c_RejectionTooManyHitsCSR                     =  1;

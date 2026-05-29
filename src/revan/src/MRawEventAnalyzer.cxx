@@ -67,6 +67,7 @@ using namespace std;
 #include "MERTrackKalman3D.h"
 #include "MERTrackKalman2D.h"
 #include "MERCSRChiSquare.h"
+#include "MERTrackFirstTwoLayers.h" 
 #include "MERCSRToF.h"
 #include "MERCSREnergyRecovery.h"
 #include "MERCSRToFWithEnergyRecovery.h"
@@ -658,9 +659,9 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   }
   
   if (SelectionsPassed == true && (RE->GetEnergy() < m_TotalEnergyMin || RE->GetEnergy() > m_TotalEnergyMax)) {
-    mdebug<<"ER - Selection: Total energy out of limits: "<<RE->GetEnergy()<<" keV is not within ["<<m_TotalEnergyMin<<", "<<m_TotalEnergyMax<<"] keV"<<endl; 
-    RE->SetRejectionReason(MRERawEvent::c_RejectionTotalEnergyOutOfLimits);
-    SelectionsPassed = false;
+   mdebug<<"ER - Selection: Total energy out of limits: "<<RE->GetEnergy()<<" keV is not within ["<<m_TotalEnergyMin<<", "<<m_TotalEnergyMax<<"] keV"<<endl; 
+   RE->SetRejectionReason(MRERawEvent::c_RejectionTotalEnergyOutOfLimits);
+   SelectionsPassed = false;
   }
 
   
@@ -701,7 +702,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       REI->SetBestTryEvent(REI->GetRawEventAt(0));
     }
     
-    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false; 
     
     m_TimeHitClusterize += Timer.ElapsedTime();  
   }
@@ -722,7 +723,6 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     }
 
     if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
-
     m_TimeEventType += Timer.ElapsedTime();
 
   }
@@ -764,7 +764,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
         m_Tracker->Analyze(REI);
       }
       
-      if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
+      if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;  
       
       m_TimeTrack += Timer.ElapsedTime();
       
@@ -1406,6 +1406,8 @@ bool MRawEventAnalyzer::PreAnalysis()
     } else if (m_TrackingAlgorithm == c_TrackingAlgoKalman2D) {
       m_Tracker = new MERTrackKalman2D();
       dynamic_cast<MERTrackKalman2D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoFirstTwoLayers) {
+      m_Tracker = new MERTrackFirstTwoLayers(m_Geometry); // this is the new method for pair reconstruction
     } else if (m_TrackingAlgorithm == c_TrackingAlgoNone) {
       // Nothing
     } else {
