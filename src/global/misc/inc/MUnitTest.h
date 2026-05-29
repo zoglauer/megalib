@@ -159,6 +159,21 @@ class MUnitTest
     __merr.Enable(true);
   }
 
+  //! Write complete text content to a test fixture file
+  bool WriteTextFile(const MString& FileName, const MString& Content) const;
+
+  //! Read complete text content from a test fixture file; returns an empty string on failure
+  MString ReadTextFile(const MString& FileName) const;
+
+  //! Return a process-local temporary file name for this test; the file is not created
+  MString GetTemporaryFileName(const MString& Name) const;
+
+  //! Return a process-local temporary directory name for this test; the directory is not created
+  MString GetTemporaryDirectoryName(const MString& Name = "") const;
+
+  //! Remove and recreate a process-local temporary directory for this test
+  bool PrepareTemporaryDirectory(const MString& Name = "") const;
+
   //! Register and report a failed test
   template <typename T> void RegisterFailure(MString Function, T Input, MString Description, MString Expected, MString Output) {
     mout<<endl;
