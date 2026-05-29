@@ -9,7 +9,9 @@
  */
 
 // Standard libs:
+#include <cerrno>
 #include <fstream>
+#include <sys/stat.h>
 using namespace std;
 
 // ROOT libs:
@@ -19,6 +21,7 @@ using namespace std;
 
 // MEGAlib:
 #include "MExceptions.h"
+#include "MFile.h"
 #define private public
 #include "MFunction2D.h"
 #undef private
@@ -43,7 +46,7 @@ bool UTFunction2D::Run()
 {
   bool Passed = true;
 
-  system("mkdir -p /tmp/UTFunction2D");
+  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MFunction2D fixtures can be created", mkdir("/tmp/UTFunction2D", 0777) == 0 || errno == EEXIST) && Passed;
 
   MFunction2D Default;
   Passed = Evaluate("MFunction2D()", "construction", "A representative MFunction2D instance can be constructed", true, true) && Passed;

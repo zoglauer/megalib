@@ -11,9 +11,7 @@
 
 // Standard libs:
 #include <cstdio>
-#include <fstream>
 #include <ostream>
-#include <sstream>
 using namespace std;
 
 // MEGAlib:
@@ -35,41 +33,12 @@ public:
   virtual bool Run();
 
 private:
-  //! Return a dedicated temporary file name
-  MString CreateFileName(const MString& Suffix) const;
-  //! Read a complete file into a string
-  MString ReadFile(const MString& FileName) const;
   //! Remove a temporary file
   void CleanFile(const MString& FileName) const;
 
   //! Test the direct MStreamBuffer API
   bool TestStreamBuffer();
 };
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Return a dedicated temporary file name
-MString UTStreamBuffer::CreateFileName(const MString& Suffix) const
-{
-  ostringstream FileName;
-  FileName<<"/tmp/UTStreamBuffer_"<<Suffix<<"_"<<getpid()<<".txt";
-  return FileName.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Read a complete file into a string
-MString UTStreamBuffer::ReadFile(const MString& FileName) const
-{
-  ifstream In(FileName);
-  ostringstream Content;
-  Content<<In.rdbuf();
-  return Content.str().c_str();
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,11 +77,11 @@ bool UTStreamBuffer::TestStreamBuffer()
 {
   bool Passed = true;
 
-  MString BasicFileName = CreateFileName("Basic");
-  MString RejectionFileName = CreateFileName("Rejection");
-  MString DisabledFileName = CreateFileName("Disabled");
-  MString ShowOnceFileName = CreateFileName("ShowOnce");
-  MString TimePrefixFileName = CreateFileName("TimePrefix");
+  MString BasicFileName = GetTemporaryFileName("Basic.txt");
+  MString RejectionFileName = GetTemporaryFileName("Rejection.txt");
+  MString DisabledFileName = GetTemporaryFileName("Disabled.txt");
+  MString ShowOnceFileName = GetTemporaryFileName("ShowOnce.txt");
+  MString TimePrefixFileName = GetTemporaryFileName("TimePrefix.txt");
 
   CleanFile(BasicFileName);
   CleanFile(RejectionFileName);
@@ -129,27 +98,27 @@ bool UTStreamBuffer::TestStreamBuffer()
 
     Passed = EvaluateTrue("Connect()", "new file", "Connecting a new file succeeds", Buffer.Connect(BasicFileName, false, false)) && Passed;
     Passed = EvaluateFalse("Connect()", "duplicate file", "Connecting the same file twice fails", Buffer.Connect(BasicFileName, false, false)) && Passed;
-    Passed = EvaluateFalse("Disconnect()", "unknown file", "Disconnecting an unknown file fails", Buffer.Disconnect(CreateFileName("DoesNotExist"))) && Passed;
+    Passed = EvaluateFalse("Disconnect()", "unknown file", "Disconnecting an unknown file fails", Buffer.Disconnect(GetTemporaryFileName("DoesNotExist.txt"))) && Passed;
 
     Stream<<"Alpha";
     Buffer.show();
-    Passed = Evaluate("show()", "plain output", "show() flushes the buffered line to the file", ReadFile(BasicFileName), MString("Alpha\n")) && Passed;
+    Passed = Evaluate("show()", "plain output", "show() flushes the buffered line to the file", ReadTextFile(BasicFileName), MString("Alpha\n")) && Passed;
 
     Buffer.SetHeader("Header");
     Buffer.SetPrefix("  ");
     Stream<<"Line1\nLine2";
     Buffer.show();
-    Passed = Evaluate("SetHeader()/SetPrefix()", "multi-line output", "Header and prefix are added to all shown lines", ReadFile(BasicFileName), MString("Alpha\nHeader\n  Line1\n  Line2\n")) && Passed;
+    Passed = Evaluate("SetHeader()/SetPrefix()", "multi-line output", "Header and prefix are added to all shown lines", ReadTextFile(BasicFileName), MString("Alpha\nHeader\n  Line1\n  Line2\n")) && Passed;
 
     Stream<<"Line3";
     Buffer.show();
-    Passed = Evaluate("show()", "header reset", "The header is shown again for each newly shown message block", ReadFile(BasicFileName), MString("Alpha\nHeader\n  Line1\n  Line2\nHeader\n  Line3\n")) && Passed;
+    Passed = Evaluate("show()", "header reset", "The header is shown again for each newly shown message block", ReadTextFile(BasicFileName), MString("Alpha\nHeader\n  Line1\n  Line2\nHeader\n  Line3\n")) && Passed;
 
     Passed = EvaluateTrue("Disconnect()", "known file", "Disconnecting a connected file succeeds", Buffer.Disconnect(BasicFileName)) && Passed;
 
     Stream<<"Ignored";
     Buffer.show();
-    Passed = Evaluate("Disconnect()", "no file output", "After disconnecting no further output reaches the file", ReadFile(BasicFileName), MString("Alpha\nHeader\n  Line1\n  Line2\nHeader\n  Line3\n")) && Passed;
+    Passed = Evaluate("Disconnect()", "no file output", "After disconnecting no further output reaches the file", ReadTextFile(BasicFileName), MString("Alpha\nHeader\n  Line1\n  Line2\nHeader\n  Line3\n")) && Passed;
   }
 
   {
@@ -167,7 +136,7 @@ bool UTStreamBuffer::TestStreamBuffer()
     Buffer.SetRejection("RejectMe");
     Stream<<"Second";
     Buffer.show();
-    Passed = Evaluate("SetRejection()", "duplicate rejection", "Using the same rejection key twice suppresses the second message", ReadFile(RejectionFileName), MString("First\n")) && Passed;
+    Passed = Evaluate("SetRejection()", "duplicate rejection", "Using the same rejection key twice suppresses the second message", ReadTextFile(RejectionFileName), MString("First\n")) && Passed;
   }
 
   {
@@ -200,7 +169,7 @@ bool UTStreamBuffer::TestStreamBuffer()
     Stream<<"Second";
     Buffer.show();
 
-    Passed = Evaluate("ShowOnce()", "single emission", "ShowOnce disables the stream after the first shown message", ReadFile(ShowOnceFileName), MString("First\n")) && Passed;
+    Passed = Evaluate("ShowOnce()", "single emission", "ShowOnce disables the stream after the first shown message", ReadTextFile(ShowOnceFileName), MString("First\n")) && Passed;
   }
 
   {
@@ -214,7 +183,7 @@ bool UTStreamBuffer::TestStreamBuffer()
     Stream<<"Timed";
     Buffer.show();
 
-    MString Content = ReadFile(TimePrefixFileName);
+    MString Content = ReadTextFile(TimePrefixFileName);
     Passed = EvaluateTrue("Connect(..., TimePrefix=true)", "contains payload", "Timed file output still contains the emitted message", Content.Contains("Timed\n")) && Passed;
     Passed = EvaluateTrue("Connect(..., TimePrefix=true)", "contains separator", "Timed file output prefixes the line with a timestamp separator", Content.Contains(":  ")) && Passed;
   }

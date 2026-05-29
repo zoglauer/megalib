@@ -17,6 +17,7 @@ using namespace std;
 
 // MEGAlib:
 #include "MExceptions.h"
+#include "MSystem.h"
 #include "MUnitTest.h"
 
 //! Unit test class for the exception hierarchy
@@ -331,7 +332,7 @@ bool UTExceptions::TestUsagePatterns()
   {
     MException::UseAbort(false);
 
-    int Status = RunChildProcess(BinaryPath(), "--abort-check", "/tmp/UTExceptions_abort_check.log");
+    int Status = MSystem::RunChildProcess(BinaryPath(), "--abort-check", "/tmp/UTExceptions_abort_check.log");
 
     Passed = EvaluateTrue("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with a non-zero status", Status != 0 && Status != -1) && Passed;
 

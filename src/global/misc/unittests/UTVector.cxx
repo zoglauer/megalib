@@ -425,9 +425,7 @@ bool UTVector::TestEdgeCases()
 int main()
 {
   UTVector Test;
-  bool Passed = Test.Run();
-
-  return Passed ? 0 : 1;
+  return Test.Run() == true ? 0 : 1;
 }
 
 

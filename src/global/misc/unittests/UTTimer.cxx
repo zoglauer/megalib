@@ -94,6 +94,10 @@ bool UTTimer::TestConstructionAndReset()
   Passed = EvaluateNear("Clear()", "elapsed", "Clear resets the elapsed time to zero", Paused.GetElapsed(), 0.0, 1e-6) && Passed;
   Passed = EvaluateNear("Clear()", "timeout", "Clear resets the timeout to zero", Paused.GetTimeOut(), 0.0, 1e-12) && Passed;
 
+  MTimer AliasTimer;
+  MTime::BusyWait(2000);
+  Passed = EvaluateNear("ElapsedTime()", "alias of GetElapsed", "ElapsedTime returns the same value as GetElapsed", AliasTimer.ElapsedTime(), AliasTimer.GetElapsed(), 1e-3) && Passed;
+
   return Passed;
 }
 

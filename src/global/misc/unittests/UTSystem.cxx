@@ -19,7 +19,11 @@
 #include <unistd.h>
 using namespace std;
 
+// ROOT libs:
+#include "TError.h"
+
 // MEGAlib:
+#include "MFile.h"
 #include "MSystem.h"
 #include "MUnitTest.h"
 
@@ -34,16 +38,6 @@ public:
   virtual bool Run();
 
 private:
-  static MString CreateTempDirectory(const char* Prefix)
-  {
-    char Template[256];
-    snprintf(Template, sizeof(Template), "/tmp/%s_%ld_XXXXXX", Prefix, static_cast<long>(getpid()));
-    char* Directory = mkdtemp(Template);
-    if (Directory == nullptr) {
-      return "";
-    }
-    return Directory;
-  }
 };
 
 
@@ -54,9 +48,9 @@ bool UTSystem::Run()
 {
   bool Passed = true;
 
-  const MString TempDirectory = CreateTempDirectory("UTSystem");
-  Passed = EvaluateTrue("CreateTempDirectory()", "temp dir", "A temporary directory can be created for MSystem tests", TempDirectory.IsEmpty() == false) && Passed;
-  if (TempDirectory.IsEmpty() == true) {
+  const MString TempDirectory = GetTemporaryDirectoryName();
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temp dir", "A temporary directory can be created for MSystem tests", PrepareTemporaryDirectory()) && Passed;
+  if (MFile::CreateDirectory(TempDirectory) == false) {
     Summarize();
     return false;
   }
@@ -82,7 +76,22 @@ bool UTSystem::Run()
   Passed = EvaluateTrue("FileExist()", "existing file", "FileExist reports the representative file as existing", System.FileExist(FileName)) && Passed;
   Passed = EvaluateFalse("FileExist()", "missing file", "FileExist reports a missing file as absent", System.FileExist(TempDirectory + "/does_not_exist")) && Passed;
 
+  const MString ChildLog = TempDirectory + "/child.log";
+  int ChildStatus = MSystem::RunChildProcess("/bin/sh", "-c 'echo UTSystem child'", ChildLog);
+  Passed = EvaluateTrue("RunChildProcess()", "successful child", "RunChildProcess returns a normal zero exit status for a successful child", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0) && Passed;
+  ifstream ChildLogInput(ChildLog.Data());
+  Passed = EvaluateTrue("RunChildProcess()", "redirected output", "RunChildProcess redirects child output to the requested file", ChildLogInput.is_open() == true) && Passed;
+  if (ChildLogInput.is_open() == true) {
+    string ChildLogContent((istreambuf_iterator<char>(ChildLogInput)), istreambuf_iterator<char>());
+    Passed = EvaluateTrue("RunChildProcess()", "redirected output", "The redirected child output contains the expected marker", MString(ChildLogContent).Contains("UTSystem child")) && Passed;
+  }
+  const MString MissingChildLog = TempDirectory + "/missing-child.log";
+  ChildStatus = MSystem::RunChildProcess("/tmp/UTSystem_missing_child_executable", "", MissingChildLog);
+  Passed = EvaluateTrue("RunChildProcess()", "missing child", "RunChildProcess returns the shell command-not-found status for a missing child executable", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 127) && Passed;
+
   int Free = -1;
+  int ErrorIgnoreLevel = gErrorIgnoreLevel;
+  gErrorIgnoreLevel = kFatal;
   DisableDefaultStreams();
   bool HasFreeMemory = System.FreeMemory(Free);
   int RAM = System.GetRAM();
@@ -90,6 +99,7 @@ bool UTSystem::Run()
   int Swap = System.GetSwap();
   int FreeSwap = System.GetFreeSwap();
   EnableDefaultStreams();
+  gErrorIgnoreLevel = ErrorIgnoreLevel;
   if (HasFreeMemory == true) {
     Passed = EvaluateTrue("FreeMemory()", "free mem value", "FreeMemory returns a non-negative amount of free memory when platform memory statistics are available", Free >= 0) && Passed;
     Passed = EvaluateTrue("GetRAM()", "ram", "GetRAM returns a non-negative amount of installed memory when platform memory statistics are available", RAM >= 0) && Passed;
@@ -121,6 +131,8 @@ bool UTSystem::Run()
   Passed = EvaluateTrue("BusyWait()", "elapsed", "BusyWait waits at least the requested time", ElapsedMicroseconds >= 3000LL) && Passed;
 
   Passed = EvaluateTrue("MFile::Remove()", "cleanup", "The representative MSystem file can be removed", remove(FileName.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("MFile::Remove()", "child log cleanup", "The representative child-process log can be removed", remove(ChildLog.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("MFile::Remove()", "missing child log cleanup", "The representative missing-child log can be removed", remove(MissingChildLog.Data()) == 0) && Passed;
   Passed = EvaluateFalse("FileExist()", "cleanup", "The representative MSystem file is gone after cleanup", System.FileExist(FileName)) && Passed;
   Passed = EvaluateTrue("rmdir()", "temp cleanup", "The temporary MSystem directory can be removed", rmdir(TempDirectory.Data()) == 0) && Passed;
 

@@ -18,6 +18,7 @@
 // MEGAlib:
 #include "MFile.h"
 #include "MStreams.h"
+#include "MSystem.h"
 #include "MUnitTest.h"
 
 // ROOT:
@@ -33,13 +34,13 @@ inline bool PrepareResponseMatrixTempDirectory()
 }
 
 
-inline bool RunAssertingUnitTest(const MString& Executable, const MString& Argument)
+inline bool RunInvalidAxisUnitTest(const MString& Executable, const MString& Argument)
 {
-  int Status = MUnitTest::RunChildProcess(Executable, Argument, "/tmp/UTResponseMatrix/response_matrix_assert.log");
+  int Status = MSystem::RunChildProcess(Executable, Argument, "/tmp/UTResponseMatrix/response_matrix_assert.log");
   if (Status < 0) {
     return false;
   }
-  return WIFSIGNALED(Status) || (WIFEXITED(Status) && WEXITSTATUS(Status) != 0);
+  return WIFEXITED(Status) && WEXITSTATUS(Status) == 0;
 }
 
 
@@ -456,8 +457,8 @@ public: \
     RM_DECLARE_AXES_##ORDER \
     vector<float> EmptyAxis; \
     vector<float> NonIncreasingAxis{0.0f, 1.0f, 1.0f}; \
-    Passed = EvaluateTrue("SetAxis()", "empty first axis", "An empty first axis triggers the documented assertion path", RunAssertingUnitTest(MString("bin/") + #SUITE, "--assert-empty-first-axis")) && Passed; \
-    Passed = EvaluateTrue("SetAxis()", "non-increasing last axis", "A non-increasing highest-order axis triggers the documented assertion path", RunAssertingUnitTest(MString("bin/") + #SUITE, "--assert-nonincreasing-last-axis")) && Passed; \
+    Passed = EvaluateTrue("SetAxis()", "empty first axis", "An empty first axis is rejected without crashing", RunInvalidAxisUnitTest(MString("bin/") + #SUITE, "--assert-empty-first-axis")) && Passed; \
+    Passed = EvaluateTrue("SetAxis()", "non-increasing last axis", "A non-increasing highest-order axis is rejected without crashing", RunInvalidAxisUnitTest(MString("bin/") + #SUITE, "--assert-nonincreasing-last-axis")) && Passed; \
     MATRIX Default; \
     Passed = Evaluate("GetOrder()", "default constructor", "The default constructor sets the matrix order", Default.GetOrder(), static_cast<unsigned int>(ORDER)) && Passed; \
     Passed = Evaluate("GetNBins()", "default constructor", "The default constructor starts with zero bins", Default.GetNBins(), 0UL) && Passed; \

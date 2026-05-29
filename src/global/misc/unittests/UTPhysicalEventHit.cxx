@@ -137,5 +137,5 @@ bool UTPhysicalEventHit::TestCopyAndAssign()
 int main()
 {
   UTPhysicalEventHit Test;
-  return Test.Run() ? 0 : 1;
+  return Test.Run() == true ? 0 : 1;
 }

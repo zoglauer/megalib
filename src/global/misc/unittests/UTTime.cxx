@@ -367,6 +367,18 @@ bool UTTime::TestCalendarAndConversions()
   BeforeNow.Set(0.0);
   Passed = EvaluateTrue("GetElapsedSeconds()", "epoch", "GetElapsedSeconds is positive for a time in the past", BeforeNow.GetElapsedSeconds() > 0.0) && Passed;
 
+  MTime NowTime(0L, 0L);
+  NowTime.Now();
+  Passed = EvaluateTrue("Now()", "system time", "Now sets the time to a value past the Unix epoch", NowTime.GetAsSeconds() > 1000000000.0) && Passed;
+
+  MTime CalendarSet;
+  CalendarSet.Set(static_cast<unsigned int>(1970), static_cast<unsigned int>(1), static_cast<unsigned int>(1), static_cast<unsigned int>(0), static_cast<unsigned int>(0), static_cast<unsigned int>(0), static_cast<unsigned int>(0));
+  Passed = EvaluateNear("Set(year, month, day, ...)", "epoch calendar", "Set with calendar fields stores the expected epoch time", CalendarSet.GetAsSeconds(), 0.0, 1e-12) && Passed;
+
+  MTime Internal(7L, 250000000L);
+  Passed = Evaluate("GetInternalSeconds()", "7.25", "GetInternalSeconds returns the stored seconds field", static_cast<long>(Internal.GetInternalSeconds()), 7L) && Passed;
+  Passed = Evaluate("GetInternalNanoSeconds()", "7.25", "GetInternalNanoSeconds returns the stored nanoseconds field", static_cast<long>(Internal.GetInternalNanoSeconds()), 250000000L) && Passed;
+
   return Passed;
 }
 

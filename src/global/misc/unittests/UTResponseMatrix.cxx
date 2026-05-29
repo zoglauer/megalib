@@ -9,13 +9,16 @@
  */
 
 // Standard libs:
+#include <cerrno>
 #include <fcntl.h>
 #include <sstream>
+#include <sys/stat.h>
 #include <unistd.h>
 using namespace std;
 
 // MEGAlib:
 #include "MResponseMatrix.h"
+#include "MFile.h"
 #include "MUnitTest.h"
 
 
@@ -118,7 +121,7 @@ bool UTResponseMatrix::Run()
   Passed = Evaluate("Clear()", "representative state hash", "Clear resets the representative hash", Named.GetHash(), 0UL) && Passed;
 
   MString TempFile = "/tmp/UTResponseMatrix/UTResponseMatrix_base.rsp";
-  system("mkdir -p /tmp/UTResponseMatrix");
+  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MResponseMatrix fixtures can be created", mkdir("/tmp/UTResponseMatrix", 0777) == 0 || errno == EEXIST) && Passed;
   {
     ofstream Out(TempFile.Data());
     Out<<"Version 1\n";

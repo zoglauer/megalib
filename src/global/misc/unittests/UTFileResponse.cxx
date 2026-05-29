@@ -9,12 +9,15 @@
  */
 
 // Standard libs:
+#include <cerrno>
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
 using namespace std;
 
 // MEGAlib:
 #include "MBinaryStore.h"
+#include "MFile.h"
 #include "MFileResponse.h"
 #include "MResponseMatrixO1.h"
 #include "MResponseMatrixON.h"
@@ -39,7 +42,7 @@ bool UTFileResponse::Run()
 {
   bool Passed = true;
 
-  system("mkdir -p /tmp/UTFileResponse");
+  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MFileResponse fixtures can be created", mkdir("/tmp/UTFileResponse", 0777) == 0 || errno == EEXIST) && Passed;
 
   MFileResponse Default;
   Passed = Evaluate("GetName()", "default constructor", "The default response-file parser starts with an undefined representative name", Default.GetName(), g_StringNotDefined) && Passed;

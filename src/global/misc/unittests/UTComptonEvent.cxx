@@ -459,5 +459,5 @@ bool UTComptonEvent::TestCopyAndStream()
 int main()
 {
   UTComptonEvent Test;
-  return Test.Run() ? 0 : 1;
+  return Test.Run() == true ? 0 : 1;
 }

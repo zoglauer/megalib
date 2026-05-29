@@ -9,10 +9,6 @@
  */
 
 
-// Standard libs:
-#include <fstream>
-using namespace std;
-
 // MEGAlib:
 #include "MExceptions.h"
 #include "MFile.h"
@@ -43,7 +39,8 @@ private:
   };
 
   bool PrepareTempDirectory() const;
-  bool WriteTextFile(const MString& FileName, const MString& Content) const;
+  MString TempDirectory() const;
+  MString TempFile(const MString& FileName) const;
 
   bool TestDefaultsAndSetters();
   bool TestHistories();
@@ -75,23 +72,25 @@ bool UTSettingsBasicFiles::Run()
 
 bool UTSettingsBasicFiles::PrepareTempDirectory() const
 {
-  MString Directory = "/tmp/UTSettingsBasicFiles";
-  MString Command = "mkdir -p " + Directory;
-
-  return system(Command.Data()) == 0;
+  return PrepareTemporaryDirectory();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTSettingsBasicFiles::WriteTextFile(const MString& FileName, const MString& Content) const
+MString UTSettingsBasicFiles::TempDirectory() const
 {
-  ofstream Out(FileName.Data());
-  if (Out.is_open() == false) return false;
-  Out<<Content;
-  Out.close();
-  return true;
+  return GetTemporaryDirectoryName();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTSettingsBasicFiles::TempFile(const MString& FileName) const
+{
+  return TempDirectory() + "/" + FileName;
 }
 
 
@@ -110,15 +109,15 @@ bool UTSettingsBasicFiles::TestDefaultsAndSetters()
   Passed = Evaluate("GetNFileHistories()", "default", "The default file history is empty", Settings.GetNFileHistories(), 0U) && Passed;
   Passed = Evaluate("GetNGeometryHistories()", "default", "The default geometry history is empty", Settings.GetNGeometryHistories(), 0U) && Passed;
 
-  MString DataFile = "/tmp/UTSettingsBasicFiles/current.tra";
-  MString GeometryFile = "/tmp/UTSettingsBasicFiles/geom.geo.setup";
+  MString DataFile = TempFile("current.tra");
+  MString GeometryFile = TempFile("geom.geo.setup");
   Passed = EvaluateTrue("WriteTextFile()", "data file", "A representative current data file can be written", WriteTextFile(DataFile, "data")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "geometry file", "A representative geometry file can be written", WriteTextFile(GeometryFile, "geometry")) && Passed;
 
-  Passed = Evaluate("SetCurrentFileName()", "missing file", "SetCurrentFileName rejects missing files", Settings.SetCurrentFileName("/tmp/UTSettingsBasicFiles/missing.tra"), false) && Passed;
+  Passed = Evaluate("SetCurrentFileName()", "missing file", "SetCurrentFileName rejects missing files", Settings.SetCurrentFileName(TempFile("missing.tra")), false) && Passed;
   Passed = Evaluate("GetCurrentFileName()", "missing file", "A rejected current file does not change the stored file name", Settings.GetCurrentFileName(), MString("")) && Passed;
 
-  Passed = Evaluate("SetGeometryFileName()", "missing file", "SetGeometryFileName rejects missing files", Settings.SetGeometryFileName("/tmp/UTSettingsBasicFiles/missing.geo.setup"), false) && Passed;
+  Passed = Evaluate("SetGeometryFileName()", "missing file", "SetGeometryFileName rejects missing files", Settings.SetGeometryFileName(TempFile("missing.geo.setup")), false) && Passed;
   Passed = Evaluate("GetGeometryFileName()", "missing file", "A rejected geometry file does not change the stored geometry file name", Settings.GetGeometryFileName(), MString("$(MEGALIB)/resource/examples/geomega/special/Dummy.geo.setup")) && Passed;
 
   Passed = Evaluate("SetCurrentFileName()", "existing file", "SetCurrentFileName accepts an existing representative file", Settings.SetCurrentFileName(DataFile), true) && Passed;
@@ -189,10 +188,10 @@ bool UTSettingsBasicFiles::TestXmlRoundTrip()
 
   Passed = EvaluateTrue("PrepareTempDirectory()", "xml temp dir", "The temporary directory for settings-basic-files xml tests can be created", PrepareTempDirectory()) && Passed;
 
-  MString DataFile = "/tmp/UTSettingsBasicFiles/xml_current.tra";
-  MString GeometryFile = "/tmp/UTSettingsBasicFiles/xml_geom.geo.setup";
-  MString OldDataFile = "/tmp/UTSettingsBasicFiles/xml_old.tra";
-  MString OldGeometryFile = "/tmp/UTSettingsBasicFiles/xml_old.geo.setup";
+  MString DataFile = TempFile("xml_current.tra");
+  MString GeometryFile = TempFile("xml_geom.geo.setup");
+  MString OldDataFile = TempFile("xml_old.tra");
+  MString OldGeometryFile = TempFile("xml_old.geo.setup");
   Passed = EvaluateTrue("WriteTextFile()", "xml data file", "The representative XML current data file can be written", WriteTextFile(DataFile, "data")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "xml geometry file", "The representative XML geometry file can be written", WriteTextFile(GeometryFile, "geometry")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "xml old data file", "The representative old data file can be written", WriteTextFile(OldDataFile, "olddata")) && Passed;
@@ -216,10 +215,10 @@ bool UTSettingsBasicFiles::TestXmlRoundTrip()
   new MXmlNode(&ReadDocument, "DataFileName", DataFile);
   MXmlNode* DataHistory = new MXmlNode(&ReadDocument, "DataFileHistory");
   new MXmlNode(DataHistory, "DataFileHistoryItem", DataFile);
-  new MXmlNode(DataHistory, "DataFileHistoryItem", "/tmp/UTSettingsBasicFiles/does_not_exist.tra");
+  new MXmlNode(DataHistory, "DataFileHistoryItem", TempFile("does_not_exist.tra"));
   MXmlNode* GeometryHistory = new MXmlNode(&ReadDocument, "GeometryFileHistory");
   new MXmlNode(GeometryHistory, "GeometryFileHistoryItem", GeometryFile);
-  new MXmlNode(GeometryHistory, "GeometryFileHistoryItem", "/tmp/UTSettingsBasicFiles/does_not_exist.geo.setup");
+  new MXmlNode(GeometryHistory, "GeometryFileHistoryItem", TempFile("does_not_exist.geo.setup"));
 
   SettingsBasicFilesTest ReadBack;
   Passed = Evaluate("ReadXml()", "direct xml", "ReadXml accepts a representative XML document", ReadBack.TestReadXml(&ReadDocument), true) && Passed;

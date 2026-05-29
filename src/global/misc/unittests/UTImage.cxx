@@ -296,5 +296,5 @@ bool UTImage::Run()
 int main()
 {
   UTImage Test;
-  return !Test.Run();
+  return Test.Run() == true ? 0 : 1;
 }

@@ -459,9 +459,6 @@ void UTExecute::SortRequestedTests(vector<MString>& RequestedTests, const map<MS
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
 bool UTExecute::LaunchTest(const MString& TestName, pid_t& ChildPid, MString& OutputFile) const
 {
   ChildPid = -1;

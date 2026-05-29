@@ -105,16 +105,6 @@ private:
     MString m_LoadedContent;
   };
 
-  static MString CreateTempDirectory(const char* Prefix)
-  {
-    char Template[256];
-    snprintf(Template, sizeof(Template), "/tmp/%s_%ld_XXXXXX", Prefix, static_cast<long>(getpid()));
-    char* Directory = mkdtemp(Template);
-    if (Directory == nullptr) {
-      return "";
-    }
-    return Directory;
-  }
 };
 
 
@@ -155,9 +145,9 @@ bool UTInterface::Run()
   Passed = Evaluate("SetGeometry()", "second update gui flag", "SetGeometry accepts a representative false update-gui flag", Interface.m_LastGeometryUpdateGui, false) && Passed;
   Passed = EvaluateTrue("GetGeometry()", "after second SetGeometry", "GetGeometry still returns no geometry for the dummy interface after repeated calls", Interface.GetGeometry() == nullptr) && Passed;
 
-  const MString TempDirectory = CreateTempDirectory("UTInterface");
-  Passed = EvaluateTrue("CreateTempDirectory()", "directory", "A temporary directory for MInterface tests can be created", TempDirectory.IsEmpty() == false) && Passed;
-  if (TempDirectory.IsEmpty() == true) {
+  const MString TempDirectory = GetTemporaryDirectoryName();
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "directory", "A temporary directory for MInterface tests can be created", PrepareTemporaryDirectory()) && Passed;
+  if (MFile::CreateDirectory(TempDirectory) == false) {
     Summarize();
     return false;
   }

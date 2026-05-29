@@ -15,7 +15,10 @@
 #include "MStreams.h"
 
 // Standard libs:
+#include <fstream>
 #include <sstream>
+#include <sys/stat.h>
+#include <unistd.h>
 using namespace std;
 
 
@@ -108,8 +111,72 @@ bool UTFile::TestStaticHelpers()
     Out<<"temporary"<<endl;
   }
   Passed = EvaluateTrue("Exists()", "existing file", "Exists recognizes readable files", MFile::Exists(TemporaryFile)) && Passed;
+  Passed = EvaluateFalse("Exists()", "directory", "Exists rejects directories even when the path is readable", MFile::Exists("/tmp")) && Passed;
   Passed = EvaluateTrue("Remove()", "existing file", "Remove deletes existing files", MFile::Remove(TemporaryFile)) && Passed;
   Passed = EvaluateFalse("Exists()", "removed file", "Removed files no longer exist", MFile::Exists(TemporaryFile)) && Passed;
+
+  MString ExecutableFile = MString("/tmp/UTFile_executable_") + (unsigned int) getpid() + ".sh";
+  {
+    ofstream Out(ExecutableFile.Data());
+    Passed = EvaluateTrue("ofstream::is_open()", "executable fixture", "The representative executable fixture can be opened", Out.is_open() == true) && Passed;
+    if (Out.is_open() == true) {
+      Out<<"#!/bin/sh\nexit 0\n";
+      Out.close();
+    }
+  }
+  Passed = EvaluateFalse("IsExecutable()", "regular file without executable bit", "IsExecutable rejects a regular file before executable permissions are added", MFile::IsExecutable(ExecutableFile)) && Passed;
+  Passed = EvaluateTrue("chmod()", "executable fixture", "The representative executable fixture can be made executable", chmod(ExecutableFile.Data(), 0700) == 0) && Passed;
+  Passed = EvaluateTrue("IsExecutable()", "regular executable file", "IsExecutable accepts a regular file with executable permissions", MFile::IsExecutable(ExecutableFile)) && Passed;
+  Passed = EvaluateFalse("IsExecutable()", "directory", "IsExecutable rejects directories", MFile::IsExecutable("/tmp")) && Passed;
+  Passed = EvaluateFalse("IsExecutable()", "missing file", "IsExecutable rejects missing files", MFile::IsExecutable(MString("/tmp/UTFile_missing_executable_") + (unsigned int) getpid())) && Passed;
+
+  MString CreatedDirectory = MString("/tmp/UTFile_created_directory_") + (unsigned int) getpid();
+  Passed = EvaluateTrue("CreateDirectory()", "new directory", "CreateDirectory creates a representative missing directory", MFile::CreateDirectory(CreatedDirectory)) && Passed;
+  Passed = EvaluateTrue("CreateDirectory()", "existing directory", "CreateDirectory accepts a representative directory that already exists", MFile::CreateDirectory(CreatedDirectory)) && Passed;
+  DisableDefaultStreams();
+  Passed = EvaluateFalse("CreateDirectory()", "regular file path", "CreateDirectory rejects a representative path that already names a regular file", MFile::CreateDirectory(ExecutableFile)) && Passed;
+  Passed = EvaluateFalse("CreateDirectory()", "empty path", "CreateDirectory rejects an empty path", MFile::CreateDirectory("")) && Passed;
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("Remove()", "executable fixture", "The representative executable fixture can be removed", MFile::Remove(ExecutableFile)) && Passed;
+  Passed = EvaluateTrue("rmdir()", "created directory cleanup", "The representative created directory can be removed", rmdir(CreatedDirectory.Data()) == 0) && Passed;
+
+  MString TemporaryCreatedFile = MFile::CreateTemporaryFile("UTFile_created.tmp");
+  Passed = EvaluateTrue("CreateTemporaryFile()", "default directory", "CreateTemporaryFile creates a randomized file in the default temporary directory", TemporaryCreatedFile.IsEmpty() == false) && Passed;
+  Passed = EvaluateTrue("CreateTemporaryFile()", "default directory exists", "The randomized temporary file exists after creation", MFile::Exists(TemporaryCreatedFile)) && Passed;
+  Passed = EvaluateTrue("CreateTemporaryFile()", "default directory name", "The randomized temporary file name contains the MEGAlib prefix and requested base name", TemporaryCreatedFile.Contains("MEGAlib_") && TemporaryCreatedFile.Contains("UTFile_created.tmp")) && Passed;
+
+  MString TemporaryCreatedDirectory = MFile::CreateTemporaryDirectory("UTFile_created_dir");
+  Passed = EvaluateTrue("CreateTemporaryDirectory()", "default directory", "CreateTemporaryDirectory creates a randomized directory in the default temporary directory", TemporaryCreatedDirectory.IsEmpty() == false) && Passed;
+  Passed = EvaluateTrue("CreateTemporaryDirectory()", "default directory exists", "The randomized temporary directory exists after creation", MFile::CreateDirectory(TemporaryCreatedDirectory)) && Passed;
+  Passed = EvaluateTrue("CreateTemporaryDirectory()", "default directory name", "The randomized temporary directory name contains the MEGAlib prefix and requested base name", TemporaryCreatedDirectory.Contains("MEGAlib_") && TemporaryCreatedDirectory.Contains("UTFile_created_dir")) && Passed;
+
+  MString TemporaryParentDirectory = MFile::CreateTemporaryDirectory("UTFile_parent");
+  Passed = EvaluateTrue("CreateTemporaryDirectory()", "parent directory", "A randomized parent directory for custom-location checks can be created", TemporaryParentDirectory.IsEmpty() == false) && Passed;
+  MString CustomTemporaryFile = MFile::CreateTemporaryFile("custom.tmp", 5, TemporaryParentDirectory);
+  Passed = EvaluateTrue("CreateTemporaryFile()", "custom directory", "CreateTemporaryFile creates a randomized file in the requested directory", CustomTemporaryFile.BeginsWith(TemporaryParentDirectory + "/MEGAlib_") && MFile::Exists(CustomTemporaryFile)) && Passed;
+  MString CustomTemporaryDirectory = MFile::CreateTemporaryDirectory("custom_dir", 5, TemporaryParentDirectory);
+  Passed = EvaluateTrue("CreateTemporaryDirectory()", "custom directory", "CreateTemporaryDirectory creates a randomized directory in the requested directory", CustomTemporaryDirectory.BeginsWith(TemporaryParentDirectory + "/MEGAlib_") && MFile::CreateDirectory(CustomTemporaryDirectory)) && Passed;
+
+  DisableDefaultStreams();
+  MString MissingParentFile = MFile::CreateTemporaryFile("missing.tmp", 5, MString("/tmp/UTFile_missing_parent_") + (unsigned int) getpid());
+  MString MissingParentDirectory = MFile::CreateTemporaryDirectory("missing_dir", 5, MString("/tmp/UTFile_missing_parent_") + (unsigned int) getpid());
+  MString InvalidNameFile = MFile::CreateTemporaryFile("subdir/invalid.tmp");
+  MString EmptyNameFile = MFile::CreateTemporaryFile("");
+  MString InvalidNameDirectory = MFile::CreateTemporaryDirectory("subdir/invalid_dir");
+  MString EmptyNameDirectory = MFile::CreateTemporaryDirectory("");
+  EnableDefaultStreams();
+  Passed = Evaluate("CreateTemporaryFile()", "missing parent", "CreateTemporaryFile returns an empty string when the target directory is missing", MissingParentFile, MString("")) && Passed;
+  Passed = Evaluate("CreateTemporaryDirectory()", "missing parent", "CreateTemporaryDirectory returns an empty string when the target directory is missing", MissingParentDirectory, MString("")) && Passed;
+  Passed = Evaluate("CreateTemporaryFile()", "directory component", "CreateTemporaryFile rejects names containing directory components", InvalidNameFile, MString("")) && Passed;
+  Passed = Evaluate("CreateTemporaryFile()", "empty name", "CreateTemporaryFile rejects empty names", EmptyNameFile, MString("")) && Passed;
+  Passed = Evaluate("CreateTemporaryDirectory()", "directory component", "CreateTemporaryDirectory rejects names containing directory components", InvalidNameDirectory, MString("")) && Passed;
+  Passed = Evaluate("CreateTemporaryDirectory()", "empty name", "CreateTemporaryDirectory rejects empty names", EmptyNameDirectory, MString("")) && Passed;
+
+  Passed = EvaluateTrue("Remove()", "temporary file cleanup", "The randomized temporary file can be removed", MFile::Remove(TemporaryCreatedFile)) && Passed;
+  Passed = EvaluateTrue("Remove()", "custom temporary file cleanup", "The randomized custom temporary file can be removed", MFile::Remove(CustomTemporaryFile)) && Passed;
+  Passed = EvaluateTrue("rmdir()", "custom temporary directory cleanup", "The randomized custom temporary directory can be removed", rmdir(CustomTemporaryDirectory.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("rmdir()", "temporary parent directory cleanup", "The randomized parent temporary directory can be removed", rmdir(TemporaryParentDirectory.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("rmdir()", "temporary directory cleanup", "The randomized temporary directory can be removed", rmdir(TemporaryCreatedDirectory.Data()) == 0) && Passed;
 
   DisableDefaultStreams();
   Passed = EvaluateFalse("Exists()", "empty file name", "Empty file names are rejected", MFile::Exists("")) && Passed;

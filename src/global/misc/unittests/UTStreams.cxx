@@ -11,10 +11,8 @@
 
 // Standard libs:
 #include <cstdio>
-#include <fstream>
 #include <list>
 #include <ostream>
-#include <sstream>
 using namespace std;
 
 // MEGAlib:
@@ -36,10 +34,6 @@ public:
   virtual bool Run();
 
 private:
-  //! Return a dedicated temporary file name
-  MString CreateFileName(const MString& Suffix) const;
-  //! Read a complete file into a string
-  MString ReadFile(const MString& FileName) const;
   //! Remove a temporary file
   void CleanFile(const MString& FileName) const;
   //! Count non-overlapping occurrences of a pattern
@@ -63,18 +57,6 @@ private:
   //! Test global streams and macros as they are used in MEGAlib
   bool TestGlobalStreamsAndMacros();
 };
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Return a dedicated temporary file name
-MString UTStreams::CreateFileName(const MString& Suffix) const
-{
-  ostringstream FileName;
-  FileName<<"/tmp/UTStreams_"<<Suffix<<"_"<<getpid()<<".txt";
-  return FileName.str().c_str();
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -144,19 +126,6 @@ void UTStreams::EmitDebugSeries()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Read a complete file into a string
-MString UTStreams::ReadFile(const MString& FileName) const
-{
-  ifstream In(FileName);
-  ostringstream Content;
-  Content<<In.rdbuf();
-  return Content.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 //! Remove a temporary file
 void UTStreams::CleanFile(const MString& FileName) const
 {
@@ -210,8 +179,8 @@ bool UTStreams::TestStreams()
 {
   bool Passed = true;
 
-  MString WrapperFileName = CreateFileName("Wrapper");
-  MString LogOnlyFileName = CreateFileName("LogOnly");
+  MString WrapperFileName = GetTemporaryFileName("Wrapper.txt");
+  MString LogOnlyFileName = GetTemporaryFileName("LogOnly.txt");
 
   CleanFile(WrapperFileName);
   CleanFile(LogOnlyFileName);
@@ -233,7 +202,7 @@ bool UTStreams::TestStreams()
     Stream<<"Fourth"<<show;
     Stream.Disconnect(WrapperFileName);
 
-    Passed = Evaluate("MStreams", "wrapper output", "The wrapper forwards header, prefix, manipulators and printf output", ReadFile(WrapperFileName), MString("WrapperHeader\n>> First\n>> Second\nWrapperHeader\n>> Third\nWrapperHeader\n>> Value=17\n>> \nWrapperHeader\n>> WarnedFourth\n")) && Passed;
+    Passed = Evaluate("MStreams", "wrapper output", "The wrapper forwards header, prefix, manipulators and printf output", ReadTextFile(WrapperFileName), MString("WrapperHeader\n>> First\n>> Second\nWrapperHeader\n>> Third\nWrapperHeader\n>> Value=17\n>> \nWrapperHeader\n>> WarnedFourth\n")) && Passed;
   }
 
   {
@@ -247,7 +216,7 @@ bool UTStreams::TestStreams()
     Stream<<"Shown"<<show;
     Stream.Disconnect(LogOnlyFileName);
 
-    Passed = Evaluate("logonly()", "file logging", "logonly flushes to the file without breaking subsequent show calls", ReadFile(LogOnlyFileName), MString("OnlyToFile\nShown\n")) && Passed;
+    Passed = Evaluate("logonly()", "file logging", "logonly flushes to the file without breaking subsequent show calls", ReadTextFile(LogOnlyFileName), MString("OnlyToFile\nShown\n")) && Passed;
   }
 
   CleanFile(WrapperFileName);
@@ -265,15 +234,15 @@ bool UTStreams::TestGlobalStreamsAndMacros()
 {
   bool Passed = true;
 
-  MString MoutFileName = CreateFileName("GlobalMout");
-  MString MlogFileName = CreateFileName("GlobalMlog");
-  MString MguiFileName = CreateFileName("GlobalMgui");
-  MString MerrFileName = CreateFileName("GlobalMerr");
-  MString MdepFileName = CreateFileName("GlobalMdep");
-  MString MimpFileName = CreateFileName("GlobalMimp");
-  MString AppendFileName = CreateFileName("Append");
-  MString MultiAFileName = CreateFileName("MultiA");
-  MString MultiBFileName = CreateFileName("MultiB");
+  MString MoutFileName = GetTemporaryFileName("GlobalMout.txt");
+  MString MlogFileName = GetTemporaryFileName("GlobalMlog.txt");
+  MString MguiFileName = GetTemporaryFileName("GlobalMgui.txt");
+  MString MerrFileName = GetTemporaryFileName("GlobalMerr.txt");
+  MString MdepFileName = GetTemporaryFileName("GlobalMdep.txt");
+  MString MimpFileName = GetTemporaryFileName("GlobalMimp.txt");
+  MString AppendFileName = GetTemporaryFileName("Append.txt");
+  MString MultiAFileName = GetTemporaryFileName("MultiA.txt");
+  MString MultiBFileName = GetTemporaryFileName("MultiB.txt");
 
   list<MString> FileNames;
   FileNames.push_back(MoutFileName);
@@ -322,7 +291,7 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     mout<<"Hello"<<endl;
     mout<<"World"<<show;
     mout.Disconnect(MoutFileName);
-    Passed = Evaluate("mout", "endl and show", "mout supports the dominant endl/show emission paths used in MEGAlib", ReadFile(MoutFileName), MString("Hello\nWorld\n")) && Passed;
+    Passed = Evaluate("mout", "endl and show", "mout supports the dominant endl/show emission paths used in MEGAlib", ReadTextFile(MoutFileName), MString("Hello\nWorld\n")) && Passed;
   }
 
   {
@@ -330,7 +299,7 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     mgui<<"GuiInfo"<<info;
     mgui<<"GuiError"<<error;
     mgui.Disconnect(MguiFileName);
-    Passed = Evaluate("mgui", "info and error", "mgui forwards info and error manipulators to the underlying stream", ReadFile(MguiFileName), MString("GuiInfo\nGuiError\n")) && Passed;
+    Passed = Evaluate("mgui", "info and error", "mgui forwards info and error manipulators to the underlying stream", ReadTextFile(MguiFileName), MString("GuiInfo\nGuiError\n")) && Passed;
   }
 
   {
@@ -338,7 +307,7 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     EmitMerrShow();
     __merr.Disconnect(MerrFileName);
 
-    MString Content = ReadFile(MerrFileName);
+    MString Content = ReadTextFile(MerrFileName);
     Passed = EvaluateTrue("merr", "message text", "The merr macro writes the emitted message", Content.Contains("Macro problem")) && Passed;
 #ifdef NDEBUG
   Passed = EvaluateFalse("merr", "debug file context", "In release builds merr does not prepend debug source context", Content.Contains("UTStreams.cxx")) && Passed;
@@ -357,7 +326,7 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     EmitDeprecatedUnique();
     __mdep.Disconnect(MdepFileName);
 
-    MString Content = ReadFile(MdepFileName);
+    MString Content = ReadTextFile(MdepFileName);
     Passed = Evaluate("mdep", "duplicate suppression", "The deprecation macro suppresses repeated messages from the same source location", CountOccurrences(Content, "Deprecated duplicate"), 1U) && Passed;
     Passed = Evaluate("mdep", "unique source", "A deprecation from a different source location is still emitted", CountOccurrences(Content, "Deprecated unique"), 1U) && Passed;
     Passed = EvaluateTrue("mdep", "header formatting", "The deprecation macro prefixes the output with a deprecation header", Content.Contains("Deprecated use of function")) && Passed;
@@ -371,7 +340,7 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     EmitImplementationUnique();
     __mimp.Disconnect(MimpFileName);
 
-    MString Content = ReadFile(MimpFileName);
+    MString Content = ReadTextFile(MimpFileName);
     Passed = Evaluate("mimp", "duplicate suppression", "The implementation-limit macro suppresses repeated messages from the same source location", CountOccurrences(Content, "Implementation duplicate"), 1U) && Passed;
     Passed = Evaluate("mimp", "unique source", "A different implementation-limit source location is still emitted", CountOccurrences(Content, "Implementation unique"), 1U) && Passed;
     Passed = EvaluateTrue("mimp", "header formatting", "The implementation-limit macro prefixes the output with a limitation header", Content.Contains("Implementation limitation")) && Passed;
@@ -385,19 +354,17 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     EmitDebugSeries();
     mlog.Disconnect(MlogFileName);
 
-    MString Content = ReadFile(MlogFileName);
+    MString Content = ReadTextFile(MlogFileName);
     Passed = Evaluate("mdebug", "verbosity gated", "mdebug messages are suppressed when the verbosity is too low and emitted when it is high enough", Content, MString("Debug1\nDebug2\nDebug3\nDebug4\nDebug5\n")) && Passed;
   }
 
   {
-    ofstream Out(AppendFileName);
-    Out<<"Existing\n";
-    Out.close();
+    Passed = EvaluateTrue("WriteTextFile()", "append setup", "The append-mode baseline file can be written", WriteTextFile(AppendFileName, "Existing\n")) && Passed;
 
     Passed = EvaluateTrue("MStreams::Connect(..., Append=true)", "append file", "Connecting in append mode succeeds", mout.Connect(AppendFileName, true, false)) && Passed;
     mout<<"Appended"<<endl;
     mout.Disconnect(AppendFileName);
-    Passed = Evaluate("Connect(..., Append=true)", "append content", "Append mode preserves the old file content and adds new output", ReadFile(AppendFileName), MString("Existing\nAppended\n")) && Passed;
+    Passed = Evaluate("Connect(..., Append=true)", "append content", "Append mode preserves the old file content and adds new output", ReadTextFile(AppendFileName), MString("Existing\nAppended\n")) && Passed;
   }
 
   {
@@ -408,8 +375,8 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     mout<<"OnlyB"<<endl;
     mout.Disconnect(MultiBFileName);
 
-    Passed = Evaluate("Disconnect()", "first file removed", "After disconnecting one of multiple files, the disconnected file no longer receives output", ReadFile(MultiAFileName), MString("Both\n")) && Passed;
-    Passed = Evaluate("Disconnect()", "remaining file still active", "After disconnecting one file, the remaining connected file still receives output", ReadFile(MultiBFileName), MString("Both\nOnlyB\n")) && Passed;
+    Passed = Evaluate("Disconnect()", "first file removed", "After disconnecting one of multiple files, the disconnected file no longer receives output", ReadTextFile(MultiAFileName), MString("Both\n")) && Passed;
+    Passed = Evaluate("Disconnect()", "remaining file still active", "After disconnecting one file, the remaining connected file still receives output", ReadTextFile(MultiBFileName), MString("Both\nOnlyB\n")) && Passed;
   }
 
   g_Verbosity = OriginalVerbosity;

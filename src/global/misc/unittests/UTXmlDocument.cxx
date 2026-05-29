@@ -11,7 +11,6 @@
 
 // Standard libs:
 #include <cstdio>
-#include <fstream>
 using namespace std;
 
 // MEGAlib:
@@ -32,7 +31,6 @@ public:
   virtual bool Run();
 
 private:
-  bool WriteTextFile(const MString& FileName, const MString& Content) const;
   bool TestXmlRoundTrip();
   bool TestXmlReload();
   bool TestXmlLoadEdges();
@@ -55,19 +53,6 @@ bool UTXmlDocument::Run()
   Summarize();
 
   return Passed;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTXmlDocument::WriteTextFile(const MString& FileName, const MString& Content) const
-{
-  ofstream Out(FileName.Data());
-  if (Out.is_open() == false) return false;
-  Out<<Content;
-  Out.close();
-  return true;
 }
 
 

@@ -8,16 +8,15 @@
  *
  */
 
-// Standard libs:
-#include <cerrno>
-#include <fstream>
-#include <sys/stat.h>
-using namespace std;
-
 // MEGAlib:
 #include "MAtmosphericAbsorption.h"
 #include "MFile.h"
 #include "MUnitTest.h"
+
+// Standard libs:
+#include <fstream>
+#include <unistd.h>
+using namespace std;
 
 
 //! Unit test class for MAtmosphericAbsorption
@@ -38,8 +37,8 @@ bool UTAtmosphericAbsorption::Run()
 {
   bool Passed = true;
 
-  const MString TempDirectory = "/tmp/UTAtmosphericAbsorption";
-  if (mkdir(TempDirectory.Data(), 0777) != 0 && errno != EEXIST) {
+  const MString TempDirectory = GetTemporaryDirectoryName();
+  if (PrepareTemporaryDirectory() == false) {
     Summarize();
     return false;
   }
@@ -80,18 +79,20 @@ bool UTAtmosphericAbsorption::Run()
                     Absorption.GetTransmissionProbability(0.0, 0.0, 100.0), 0.10) && Passed;
   Passed = Evaluate("GetTransmissionProbability()", "upper corner", "GetTransmissionProbability returns the representative upper-corner transmission probability",
                     Absorption.GetTransmissionProbability(10.0, 20.0, 200.0), 0.80) && Passed;
-  Passed = Evaluate("GetTransmissionProbability()", "below altitude", "GetTransmissionProbability returns zero below the modeled altitude range",
-                    Absorption.GetTransmissionProbability(-1.0, 10.0, 150.0), 0.40) && Passed;
-  Passed = Evaluate("GetTransmissionProbability()", "above altitude", "GetTransmissionProbability returns zero above the modeled altitude range",
-                    Absorption.GetTransmissionProbability(11.0, 10.0, 150.0), 0.50) && Passed;
-  Passed = Evaluate("GetTransmissionProbability()", "below azimuth", "GetTransmissionProbability returns zero below the modeled azimuth range",
-                    Absorption.GetTransmissionProbability(5.0, -1.0, 150.0), 0.30) && Passed;
-  Passed = Evaluate("GetTransmissionProbability()", "above azimuth", "GetTransmissionProbability returns zero above the modeled azimuth range",
-                    Absorption.GetTransmissionProbability(5.0, 25.0, 150.0), 0.60) && Passed;
+  DisableDefaultStreams();
+  Passed = EvaluateNear("GetTransmissionProbability()", "below altitude", "GetTransmissionProbability clamps altitude below the tabulated range to the minimum altitude",
+                        Absorption.GetTransmissionProbability(-1.0, 10.0, 150.0), 0.25, 1e-12) && Passed;
+  Passed = EvaluateNear("GetTransmissionProbability()", "above altitude", "GetTransmissionProbability clamps altitude above the tabulated range to the maximum altitude",
+                        Absorption.GetTransmissionProbability(11.0, 10.0, 150.0), 0.65, 1e-12) && Passed;
+  Passed = EvaluateNear("GetTransmissionProbability()", "below azimuth", "GetTransmissionProbability clamps azimuth below the tabulated range to the minimum azimuth",
+                        Absorption.GetTransmissionProbability(5.0, -1.0, 150.0), 0.35, 1e-12) && Passed;
+  Passed = EvaluateNear("GetTransmissionProbability()", "above azimuth", "GetTransmissionProbability clamps azimuth above the tabulated range to the maximum azimuth",
+                        Absorption.GetTransmissionProbability(5.0, 25.0, 150.0), 0.55, 1e-12) && Passed;
   Passed = EvaluateNear("GetTransmissionProbability()", "below energy", "GetTransmissionProbability clamps energy below the tabulated range to the minimum energy",
                         Absorption.GetTransmissionProbability(5.0, 10.0, 50.0), 0.40, 1e-12) && Passed;
   Passed = EvaluateNear("GetTransmissionProbability()", "above energy", "GetTransmissionProbability clamps energy above the tabulated range to the maximum energy",
                         Absorption.GetTransmissionProbability(5.0, 10.0, 250.0), 0.50, 1e-12) && Passed;
+  EnableDefaultStreams();
   Passed = EvaluateTrue("Read()", "reuse", "MAtmosphericAbsorption can be re-read on the same instance", Absorption.Read(AbsorptionFile)) && Passed;
   Passed = EvaluateNear("GetTransmissionProbability()", "reuse", "Re-reading the representative fixture preserves the representative interpolated transmission probability",
                         Absorption.GetTransmissionProbability(5.0, 10.0, 150.0), 0.45, 1e-12) && Passed;

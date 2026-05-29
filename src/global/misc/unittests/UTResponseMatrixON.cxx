@@ -9,7 +9,10 @@
  */
 
 // Standard libs:
+#include <cerrno>
+#include <sys/stat.h>
 #include <sys/wait.h>
+#include <vector>
 using namespace std;
 
 // ROOT:
@@ -18,9 +21,11 @@ using namespace std;
 
 // MEGAlib:
 #include "MExceptions.h"
+#include "MFile.h"
 #include "MResponseMatrixAxisSpheric.h"
 #include "MResponseMatrixON.h"
 #include "MStreams.h"
+#include "MSystem.h"
 #include "MUnitTest.h"
 
 
@@ -49,7 +54,7 @@ bool UTResponseMatrixON::Run()
 {
   bool Passed = true;
 
-  system("mkdir -p /tmp/UTResponseMatrixON");
+  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MResponseMatrixON fixtures can be created", mkdir("/tmp/UTResponseMatrixON", 0777) == 0 || errno == EEXIST) && Passed;
 
   Passed = EvaluateTrue("CopyConstructor()", "representative process", "Copy constructing and destroying a representative MResponseMatrixON succeeds", RunChildExpectingSuccess("--copy-constructor")) && Passed;
   Passed = EvaluateTrue("AssignmentOperator()", "representative process", "Assigning and destroying a representative MResponseMatrixON succeeds", RunChildExpectingSuccess("--assignment-operator")) && Passed;
@@ -319,7 +324,7 @@ void UTResponseMatrixON::CleanupCanvases(int TargetCount)
 
 bool UTResponseMatrixON::RunChildExpectingSuccess(const MString& Argument)
 {
-  int Status = RunChildProcess("bin/UTResponseMatrixON", Argument, "/dev/null");
+  int Status = MSystem::RunChildProcess("bin/UTResponseMatrixON", Argument, "/dev/null");
   return WIFEXITED(Status) && WEXITSTATUS(Status) == 0;
 }
 

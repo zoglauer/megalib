@@ -537,5 +537,5 @@ bool UTBinaryStore::TestPositionAndBounds()
 int main()
 {
   UTBinaryStore Test;
-  return !Test.Run();
+  return Test.Run() == true ? 0 : 1;
 }

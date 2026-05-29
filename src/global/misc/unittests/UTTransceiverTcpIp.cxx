@@ -208,13 +208,13 @@ static bool RunRawInProcess(MUnitTest& Test, unsigned int Port)
 
   Passed = Test.EvaluateTrue("Raw in-process", "server connect", "The raw server starts connecting", Server.Connect(false)) && Passed;
   if (Test.EvaluateTrue("Raw in-process", "client connect", "The raw client connects", Client.Connect(true, 0.75)) == false) {
-    cout<<"Raw in-process: client connect failed"<<endl;
+    mout<<"Raw in-process: client connect failed"<<endl;
     return false;
   }
   Passed = Test.EvaluateTrue("Raw in-process", "server connected", "The raw server reports connected", WaitForConnected(Server, 0.75)) && Passed;
   Passed = Test.EvaluateTrue("Raw in-process", "client connected", "The raw client reports connected", WaitForConnected(Client, 0.75)) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: connect timeout"<<endl;
+    mout<<"Raw in-process: connect timeout"<<endl;
     return false;
   }
   Passed = Test.EvaluateTrue("Raw in-process", "server is connected", "The raw server is connected", Server.IsConnected()) && Passed;
@@ -222,14 +222,14 @@ static bool RunRawInProcess(MUnitTest& Test, unsigned int Port)
   Passed = Test.EvaluateTrue("Raw in-process", "client is connected", "The raw client is connected", Client.IsConnected()) && Passed;
   Passed = Test.EvaluateFalse("Raw in-process", "client is server", "The raw client is not marked as server", Client.IsServer()) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: connection state mismatch"<<endl;
+    mout<<"Raw in-process: connection state mismatch"<<endl;
     return false;
   }
 
   MString SendPayload1;
   MString ExpectedMessage;
   if (Test.EvaluateTrue("Raw in-process", "payload build", "The raw payload can be built", BuildRawPayload(SendPayload1, ExpectedMessage)) == false) {
-    cout<<"Raw in-process: unable to build payload"<<endl;
+    mout<<"Raw in-process: unable to build payload"<<endl;
     return false;
   }
   const MString SendPayload2 = SendPayload1;
@@ -237,110 +237,110 @@ static bool RunRawInProcess(MUnitTest& Test, unsigned int Port)
   Passed = Test.EvaluateTrue("Raw in-process", "first send", "The raw client sends the first payload", Client.Send(SendPayload1)) && Passed;
   Passed = Test.EvaluateTrue("Raw in-process", "second send", "The raw client sends the second payload", Client.Send(SendPayload2)) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: send failed"<<endl;
+    mout<<"Raw in-process: send failed"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "client queue drained", "The raw client send queue drains", WaitForSendQueueEmpty(Client, 0.25)) == false) {
-    cout<<"Raw in-process: send queue timeout"<<endl;
+    mout<<"Raw in-process: send queue timeout"<<endl;
     return false;
   }
 
   MString Received;
   for (unsigned int i = 0; i < 2; ++i) {
     if (Test.EvaluateTrue("Raw in-process", "server receive", "The raw server receives a message", WaitForMessage(Server, Received, 0.25)) == false) {
-      cout<<"Raw in-process: receive timeout"<<endl;
+      mout<<"Raw in-process: receive timeout"<<endl;
       return false;
     }
     Passed = Test.Evaluate("Raw in-process", "server message", "The raw server receives the expected payload", Received, ExpectedMessage) && Passed;
     if (Passed == false) {
-      cout<<"Raw in-process: message mismatch"<<endl;
+      mout<<"Raw in-process: message mismatch"<<endl;
       return false;
     }
   }
 
   if (Test.EvaluateTrue("Raw in-process", "reply send", "The raw server sends the reply", Server.Send("ServerToClientEN")) == false) {
-    cout<<"Raw in-process: reply send failed"<<endl;
+    mout<<"Raw in-process: reply send failed"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "reply queue drained", "The raw server send queue drains", WaitForSendQueueEmpty(Server, 0.25)) == false) {
-    cout<<"Raw in-process: reply queue timeout"<<endl;
+    mout<<"Raw in-process: reply queue timeout"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "reply receive", "The raw client receives the reply", WaitForMessage(Client, Received, 0.25)) == false) {
-    cout<<"Raw in-process: reply receive timeout"<<endl;
+    mout<<"Raw in-process: reply receive timeout"<<endl;
     return false;
   }
   Passed = Test.Evaluate("Raw in-process", "reply message", "The raw client receives the expected reply", Received, MString("ServerToClient")) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: reply mismatch"<<endl;
+    mout<<"Raw in-process: reply mismatch"<<endl;
     return false;
   }
 
   Passed = Test.EvaluateTrue("Raw in-process", "client disconnect", "The raw client disconnects without waiting", Client.Disconnect(false, 0.25)) && Passed;
   Passed = Test.EvaluateTrue("Raw in-process", "server disconnect", "The raw server disconnects without waiting", Server.Disconnect(false, 0.25)) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: disconnect failed"<<endl;
+    mout<<"Raw in-process: disconnect failed"<<endl;
     return false;
   }
   Passed = Test.EvaluateFalse("Raw in-process", "client disconnected", "The raw client is disconnected after Disconnect(false)", Client.IsConnected()) && Passed;
   Passed = Test.EvaluateFalse("Raw in-process", "server disconnected", "The raw server is disconnected after Disconnect(false)", Server.IsConnected()) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: still connected after disconnect"<<endl;
+    mout<<"Raw in-process: still connected after disconnect"<<endl;
     return false;
   }
 
   if (Test.EvaluateTrue("Raw in-process", "server reconnect connect", "The raw server reconnects", Server.Connect(false)) == false) {
-    cout<<"Raw in-process: reconnect server start failed"<<endl;
+    mout<<"Raw in-process: reconnect server start failed"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "client reconnect connect", "The raw client reconnects", Client.Connect(true, 0.75)) == false) {
-    cout<<"Raw in-process: reconnect client failed"<<endl;
+    mout<<"Raw in-process: reconnect client failed"<<endl;
     return false;
   }
   Passed = Test.EvaluateTrue("Raw in-process", "server reconnect connected", "The raw server reconnects to a connected state", WaitForConnected(Server, 0.75)) && Passed;
   Passed = Test.EvaluateTrue("Raw in-process", "client reconnect connected", "The raw client reconnects to a connected state", WaitForConnected(Client, 0.75)) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: reconnect timeout"<<endl;
+    mout<<"Raw in-process: reconnect timeout"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "reconnect send", "The raw client sends after reconnect", Client.Send(SendPayload1)) == false) {
-    cout<<"Raw in-process: reconnect send failed"<<endl;
+    mout<<"Raw in-process: reconnect send failed"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "reconnect queue drained", "The raw client send queue drains after reconnect", WaitForSendQueueEmpty(Client, 0.25)) == false) {
-    cout<<"Raw in-process: reconnect send queue timeout"<<endl;
+    mout<<"Raw in-process: reconnect send queue timeout"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "reconnect receive", "The raw server receives after reconnect", WaitForMessage(Server, Received, 0.25)) == false) {
-    cout<<"Raw in-process: reconnect receive timeout"<<endl;
+    mout<<"Raw in-process: reconnect receive timeout"<<endl;
     return false;
   }
   Passed = Test.Evaluate("Raw in-process", "reconnect message", "The raw server receives the expected reconnect payload", Received, ExpectedMessage) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: reconnect receive mismatch"<<endl;
+    mout<<"Raw in-process: reconnect receive mismatch"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "reconnect reply send", "The raw server sends the reconnect reply", Server.Send("ServerToClientEN")) == false) {
-    cout<<"Raw in-process: reconnect reply send failed"<<endl;
+    mout<<"Raw in-process: reconnect reply send failed"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "reconnect reply queue drained", "The raw server send queue drains after reconnect", WaitForSendQueueEmpty(Server, 0.25)) == false) {
-    cout<<"Raw in-process: reconnect reply queue timeout"<<endl;
+    mout<<"Raw in-process: reconnect reply queue timeout"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw in-process", "reconnect reply receive", "The raw client receives the reconnect reply", WaitForMessage(Client, Received, 0.25)) == false) {
-    cout<<"Raw in-process: reconnect reply receive timeout"<<endl;
+    mout<<"Raw in-process: reconnect reply receive timeout"<<endl;
     return false;
   }
   Passed = Test.Evaluate("Raw in-process", "reconnect reply message", "The raw client receives the expected reconnect reply", Received, MString("ServerToClient")) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: reconnect reply mismatch"<<endl;
+    mout<<"Raw in-process: reconnect reply mismatch"<<endl;
     return false;
   }
   Passed = Test.EvaluateTrue("Raw in-process", "reconnect client disconnect", "The raw client disconnects after reconnect", Client.Disconnect(false, 0.25)) && Passed;
   Passed = Test.EvaluateTrue("Raw in-process", "reconnect server disconnect", "The raw server disconnects after reconnect", Server.Disconnect(false, 0.25)) && Passed;
   if (Passed == false) {
-    cout<<"Raw in-process: reconnect disconnect failed"<<endl;
+    mout<<"Raw in-process: reconnect disconnect failed"<<endl;
     return false;
   }
 
@@ -361,47 +361,47 @@ static bool RunRawOverflowInProcess(MUnitTest& Test, unsigned int Port)
 
   Passed = Test.EvaluateTrue("Raw overflow", "server connect", "The raw overflow server starts connecting", Server.Connect(false)) && Passed;
   if (Test.EvaluateTrue("Raw overflow", "client connect", "The raw overflow client connects", Client.Connect(true, 0.75)) == false) {
-    cout<<"Raw overflow: client connect failed"<<endl;
+    mout<<"Raw overflow: client connect failed"<<endl;
     return false;
   }
   Passed = Test.EvaluateTrue("Raw overflow", "server connected", "The raw overflow server reports connected", WaitForConnected(Server, 0.75)) && Passed;
   Passed = Test.EvaluateTrue("Raw overflow", "client connected", "The raw overflow client reports connected", WaitForConnected(Client, 0.75)) && Passed;
   if (Passed == false) {
-    cout<<"Raw overflow: connect timeout"<<endl;
+    mout<<"Raw overflow: connect timeout"<<endl;
     return false;
   }
 
   MString OverflowPayload;
   if (Test.EvaluateTrue("Raw overflow", "payload build", "The oversized raw payload can be built", BuildRawOverflowPayload(OverflowPayload)) == false) {
-    cout<<"Raw overflow: unable to build payload"<<endl;
+    mout<<"Raw overflow: unable to build payload"<<endl;
     return false;
   }
 
   if (Test.EvaluateTrue("Raw overflow", "send", "The raw overflow client sends the oversized payload", Client.Send(OverflowPayload)) == false) {
-    cout<<"Raw overflow: send failed"<<endl;
+    mout<<"Raw overflow: send failed"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Raw overflow", "send queue drained", "The raw overflow client send queue drains", WaitForSendQueueEmpty(Client, 0.25)) == false) {
-    cout<<"Raw overflow: send queue timeout"<<endl;
+    mout<<"Raw overflow: send queue timeout"<<endl;
     return false;
   }
 
   MString Unexpected;
   if (Test.EvaluateFalse("Raw overflow", "unexpected receive", "The raw overflow server does not receive a message", WaitForMessage(Server, Unexpected, 0.05)) == false) {
-    cout<<"Raw overflow: unexpected message received"<<endl;
+    mout<<"Raw overflow: unexpected message received"<<endl;
     return false;
   }
   Passed = Test.Evaluate("Raw overflow", "server receive queue", "The raw overflow server receive queue stays empty", Server.GetNStringsToReceive(), 0u) && Passed;
   Passed = Test.Evaluate("Raw overflow", "server received count", "The raw overflow server received count stays zero", Server.GetNReceivedStrings(), 0ul) && Passed;
   if (Passed == false) {
-    cout<<"Raw overflow: overflow message was not dropped"<<endl;
+    mout<<"Raw overflow: overflow message was not dropped"<<endl;
     return false;
   }
 
   Passed = Test.EvaluateTrue("Raw overflow", "client disconnect", "The raw overflow client disconnects", Client.Disconnect(true, 0.25)) && Passed;
   Passed = Test.EvaluateTrue("Raw overflow", "server disconnect", "The raw overflow server disconnects", Server.Disconnect(true, 0.25)) && Passed;
   if (Passed == false) {
-    cout<<"Raw overflow: disconnect failed"<<endl;
+    mout<<"Raw overflow: disconnect failed"<<endl;
     return false;
   }
 
@@ -420,13 +420,13 @@ static bool RunDefaultNegotiation(MUnitTest& Test, unsigned int Port)
 
   Passed = Test.EvaluateTrue("Default negotiation", "server connect", "The default server starts connecting", Server.Connect(false)) && Passed;
   if (Test.EvaluateTrue("Default negotiation", "client connect", "The default client connects", Client.Connect(true, 0.75)) == false) {
-    cout<<"Default negotiation: client connect failed"<<endl;
+    mout<<"Default negotiation: client connect failed"<<endl;
     return false;
   }
   Passed = Test.EvaluateTrue("Default negotiation", "server connected", "The default server reports connected", WaitForConnected(Server, 0.75)) && Passed;
   Passed = Test.EvaluateTrue("Default negotiation", "client connected", "The default client reports connected", WaitForConnected(Client, 0.75)) && Passed;
   if (Passed == false) {
-    cout<<"Default negotiation: connect timeout"<<endl;
+    mout<<"Default negotiation: connect timeout"<<endl;
     return false;
   }
   Passed = Test.EvaluateTrue("Default negotiation", "server connected state", "The default server is connected", Server.IsConnected()) && Passed;
@@ -434,50 +434,50 @@ static bool RunDefaultNegotiation(MUnitTest& Test, unsigned int Port)
   Passed = Test.EvaluateTrue("Default negotiation", "server role", "The default server is marked as server", Server.IsServer()) && Passed;
   Passed = Test.EvaluateFalse("Default negotiation", "client role", "The default client is not marked as server", Client.IsServer()) && Passed;
   if (Passed == false) {
-    cout<<"Default negotiation: connection state mismatch"<<endl;
+    mout<<"Default negotiation: connection state mismatch"<<endl;
     return false;
   }
 
   if (Test.EvaluateTrue("Default negotiation", "client send", "The default client sends to the server", Client.Send("DefaultClientToServer")) == false) {
-    cout<<"Default negotiation: client send failed"<<endl;
+    mout<<"Default negotiation: client send failed"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Default negotiation", "client queue drained", "The default client send queue drains", WaitForSendQueueEmpty(Client, 0.25)) == false) {
-    cout<<"Default negotiation: client send queue timeout"<<endl;
+    mout<<"Default negotiation: client send queue timeout"<<endl;
     return false;
   }
   MString Received;
   if (Test.EvaluateTrue("Default negotiation", "server receive", "The default server receives a message", WaitForMessage(Server, Received, 0.25)) == false) {
-    cout<<"Default negotiation: server receive timeout"<<endl;
+    mout<<"Default negotiation: server receive timeout"<<endl;
     return false;
   }
   Passed = Test.Evaluate("Default negotiation", "server message", "The default server receives the expected payload", Received, MString("DefaultClientToServer")) && Passed;
   if (Passed == false) {
-    cout<<"Default negotiation: server receive mismatch"<<endl;
+    mout<<"Default negotiation: server receive mismatch"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Default negotiation", "server send", "The default server sends to the client", Server.Send("DefaultServerToClient")) == false) {
-    cout<<"Default negotiation: server send failed"<<endl;
+    mout<<"Default negotiation: server send failed"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Default negotiation", "server queue drained", "The default server send queue drains", WaitForSendQueueEmpty(Server, 0.25)) == false) {
-    cout<<"Default negotiation: server send queue timeout"<<endl;
+    mout<<"Default negotiation: server send queue timeout"<<endl;
     return false;
   }
   if (Test.EvaluateTrue("Default negotiation", "client receive", "The default client receives a message", WaitForMessage(Client, Received, 0.25)) == false) {
-    cout<<"Default negotiation: client receive timeout"<<endl;
+    mout<<"Default negotiation: client receive timeout"<<endl;
     return false;
   }
   Passed = Test.Evaluate("Default negotiation", "client message", "The default client receives the expected payload", Received, MString("DefaultServerToClient")) && Passed;
   if (Passed == false) {
-    cout<<"Default negotiation: client receive mismatch"<<endl;
+    mout<<"Default negotiation: client receive mismatch"<<endl;
     return false;
   }
 
   Passed = Test.EvaluateTrue("Default negotiation", "client disconnect", "The default client disconnects without waiting", Client.Disconnect(false, 0.25)) && Passed;
   Passed = Test.EvaluateTrue("Default negotiation", "server disconnect", "The default server disconnects without waiting", Server.Disconnect(false, 0.25)) && Passed;
   if (Passed == false) {
-    cout<<"Default negotiation: disconnect failed"<<endl;
+    mout<<"Default negotiation: disconnect failed"<<endl;
     return false;
   }
 
@@ -494,13 +494,13 @@ static bool RunForcedReset(MUnitTest& Test, unsigned int Port)
   const MString ServerArgument = MString("--server-ascii:") + Port;
   const pid_t ServerPid = StartChildProcess(g_ExecutablePath, ServerArgument, MString("/tmp/UTTransceiverTcpIp_reset_server_") + Port + ".log");
   if (Test.EvaluateTrue("Forced reset", "server start", "The reset server child can be started", ServerPid >= 0) == false) {
-    cout<<"Forced reset: unable to start server child"<<endl;
+    mout<<"Forced reset: unable to start server child"<<endl;
     return false;
   }
 
   const MString ServerReady = GetReadyFile(Port, "server");
   if (Test.EvaluateTrue("Forced reset", "server ready", "The reset server child becomes ready", WaitForFile(ServerReady, ResetConnectTimeOut)) == false) {
-    cout<<"Forced reset: server ready timeout"<<endl;
+    mout<<"Forced reset: server ready timeout"<<endl;
     return false;
   }
 
@@ -508,20 +508,20 @@ static bool RunForcedReset(MUnitTest& Test, unsigned int Port)
   Client.SetVerbosity(1);
   Client.RequestClient(true);
   if (Test.EvaluateTrue("Forced reset", "client connect", "The reset client connects", Client.Connect(true, ResetConnectTimeOut)) == false) {
-    cout<<"Forced reset: client connect failed"<<endl;
+    mout<<"Forced reset: client connect failed"<<endl;
     return false;
   }
   Passed = Test.EvaluateTrue("Forced reset", "client connected", "The reset client reports connected", WaitForConnected(Client, ResetConnectTimeOut)) && Passed;
   Passed = Test.EvaluateTrue("Forced reset", "client connected state", "The reset client is connected", Client.IsConnected()) && Passed;
   if (Passed == false) {
-    cout<<"Forced reset: client connect timeout"<<endl;
+    mout<<"Forced reset: client connect timeout"<<endl;
     return false;
   }
 
   kill(ServerPid, SIGKILL);
   int ServerStatus = -1;
   if (Test.EvaluateTrue("Forced reset", "server killed", "The reset server child exits after SIGKILL", WaitForChildProcess(ServerPid, ServerStatus, ResetExitTimeOut)) == false) {
-    cout<<"Forced reset: server child did not exit"<<endl;
+    mout<<"Forced reset: server child did not exit"<<endl;
     return false;
   }
 
@@ -535,12 +535,12 @@ static bool RunForcedReset(MUnitTest& Test, unsigned int Port)
   Passed = Test.EvaluateTrue("Forced reset", "reset count", "The reset client observes at least one reset", Client.GetNResets() > 0) && Passed;
   Passed = Test.EvaluateFalse("Forced reset", "client disconnected", "The reset client is disconnected after the peer loss", Client.IsConnected()) && Passed;
   if (Passed == false) {
-    cout<<"Forced reset: reset counter not incremented"<<endl;
+    mout<<"Forced reset: reset counter not incremented"<<endl;
     return false;
   }
 
   if (Test.EvaluateTrue("Forced reset", "client disconnect", "The reset client disconnects after the forced loss", Client.Disconnect(false, 0.25)) == false) {
-    cout<<"Forced reset: client disconnect failed"<<endl;
+    mout<<"Forced reset: client disconnect failed"<<endl;
     return false;
   }
   return true;
@@ -569,19 +569,19 @@ static int RunServerRole(const MString& Argument)
 
   Server.Connect(false);
   if (TouchFile(GetReadyFile(Port, "server")) == false) {
-    cout<<"Server role: unable to create ready marker"<<endl;
+    mout<<"Server role: unable to create ready marker"<<endl;
     return 1;
   }
   if (WaitForConnected(Server, ChildConnectTimeOut) == false) {
-    cout<<"Server role: connect timeout"<<endl;
+    mout<<"Server role: connect timeout"<<endl;
     return 1;
   }
   if (Server.IsConnected() == false || Server.IsServer() == false) {
-    cout<<"Server role: connection state mismatch"<<endl;
+    mout<<"Server role: connection state mismatch"<<endl;
     return 1;
   }
   if (Server.GetNResets() != 0) {
-    cout<<"Server role: unexpected resets"<<endl;
+    mout<<"Server role: unexpected resets"<<endl;
     return 1;
   }
 
@@ -589,45 +589,45 @@ static int RunServerRole(const MString& Argument)
   const unsigned int MessageCount = 2;
   for (unsigned int i = 0; i < MessageCount; ++i) {
     if (WaitForMessage(Server, Received, ChildIOTimeOut) == false) {
-      cout<<"Server role: receive timeout"<<endl;
+      mout<<"Server role: receive timeout"<<endl;
       return 1;
     }
     MString Expected;
     if (IsRaw == true) {
       MString Payload;
       if (BuildRawPayload(Payload, Expected) == false) {
-        cout<<"Server role: unable to build raw expectation"<<endl;
+        mout<<"Server role: unable to build raw expectation"<<endl;
         return 1;
       }
     } else {
       Expected = MString("ClientToServer") + (i+1);
     }
     if (Received != Expected) {
-      cout<<"Server role: message mismatch"<<endl;
+      mout<<"Server role: message mismatch"<<endl;
       return 1;
     }
   }
 
   const MString Reply = IsRaw ? MString("ServerToClientEN") : MString("ServerToClient");
   if (Server.Send(Reply) == false) {
-    cout<<"Server role: send failed"<<endl;
+    mout<<"Server role: send failed"<<endl;
     return 1;
   }
   if (WaitForSendQueueEmpty(Server, ChildIOTimeOut) == false) {
-    cout<<"Server role: reply queue timeout"<<endl;
+    mout<<"Server role: reply queue timeout"<<endl;
     return 1;
   }
   if (WaitForFile(GetReadyFile(Port, "client_reply"), ChildIOTimeOut) == false) {
-    cout<<"Server role: reply receipt timeout"<<endl;
+    mout<<"Server role: reply receipt timeout"<<endl;
     return 1;
   }
 
   if (Server.Disconnect(true, ChildIOTimeOut) == false) {
-    cout<<"Server role: disconnect failed"<<endl;
+    mout<<"Server role: disconnect failed"<<endl;
     return 1;
   }
   if (Server.IsConnected() == true) {
-    cout<<"Server role: still connected after disconnect"<<endl;
+    mout<<"Server role: still connected after disconnect"<<endl;
     return 1;
   }
 
@@ -636,40 +636,40 @@ static int RunServerRole(const MString& Argument)
     const MString ReconnectReplyReady = GetReadyFile(Port, "client_reply2");
     Server.Connect(false);
     if (TouchFile(ReconnectReady) == false) {
-      cout<<"Server role: unable to create reconnect ready marker"<<endl;
+      mout<<"Server role: unable to create reconnect ready marker"<<endl;
       return 1;
     }
     if (WaitForConnected(Server, ChildConnectTimeOut) == false) {
-      cout<<"Server role: reconnect timeout"<<endl;
+      mout<<"Server role: reconnect timeout"<<endl;
       return 1;
     }
     if (Server.IsConnected() == false || Server.IsServer() == false) {
-      cout<<"Server role: reconnect state mismatch"<<endl;
+      mout<<"Server role: reconnect state mismatch"<<endl;
       return 1;
     }
 
     if (WaitForMessage(Server, Received, ChildIOTimeOut) == false) {
-      cout<<"Server role: reconnect receive timeout"<<endl;
+      mout<<"Server role: reconnect receive timeout"<<endl;
       return 1;
     }
     if (Received != "ReconnectClientToServer") {
-      cout<<"Server role: reconnect message mismatch"<<endl;
+      mout<<"Server role: reconnect message mismatch"<<endl;
       return 1;
     }
     if (Server.Send("ReconnectServerToClient") == false) {
-      cout<<"Server role: reconnect send failed"<<endl;
+      mout<<"Server role: reconnect send failed"<<endl;
       return 1;
     }
     if (WaitForSendQueueEmpty(Server, ChildIOTimeOut) == false) {
-      cout<<"Server role: reconnect send queue timeout"<<endl;
+      mout<<"Server role: reconnect send queue timeout"<<endl;
       return 1;
     }
     if (WaitForFile(ReconnectReplyReady, ChildConnectTimeOut) == false) {
-      cout<<"Server role: reconnect reply receipt timeout"<<endl;
+      mout<<"Server role: reconnect reply receipt timeout"<<endl;
       return 1;
     }
     if (Server.Disconnect(true, ChildIOTimeOut) == false) {
-      cout<<"Server role: reconnect disconnect failed"<<endl;
+      mout<<"Server role: reconnect disconnect failed"<<endl;
       return 1;
     }
   }
@@ -698,15 +698,15 @@ static int RunClientRole(const MString& Argument)
   Client.RequestClient(true);
 
   if (Client.Connect(true, ChildConnectTimeOut) == false) {
-    cout<<"Client role: connect failed"<<endl;
+    mout<<"Client role: connect failed"<<endl;
     return 1;
   }
   if (Client.IsConnected() == false || Client.IsServer() == true) {
-    cout<<"Client role: connection state mismatch"<<endl;
+    mout<<"Client role: connection state mismatch"<<endl;
     return 1;
   }
   if (TouchFile(GetReadyFile(Port, "client")) == false) {
-    cout<<"Client role: unable to create ready marker"<<endl;
+    mout<<"Client role: unable to create ready marker"<<endl;
     return 1;
   }
 
@@ -715,7 +715,7 @@ static int RunClientRole(const MString& Argument)
   if (IsRaw == true) {
     MString ExpectedReply;
     if (BuildRawPayload(SendPayload1, ExpectedReply) == false) {
-      cout<<"Client role: unable to build raw payload"<<endl;
+      mout<<"Client role: unable to build raw payload"<<endl;
       return 1;
     }
     SendPayload2 = SendPayload1;
@@ -725,94 +725,94 @@ static int RunClientRole(const MString& Argument)
   }
 
   if (Client.Send(SendPayload1) == false) {
-    cout<<"Client role: send failed"<<endl;
+    mout<<"Client role: send failed"<<endl;
     return 1;
   }
   if (SendPayload2.IsEmpty() == false) {
     if (Client.Send(SendPayload2) == false) {
-      cout<<"Client role: second send failed"<<endl;
+      mout<<"Client role: second send failed"<<endl;
       return 1;
     }
   }
 
   if (WaitForSendQueueEmpty(Client, ChildIOTimeOut) == false) {
-    cout<<"Client role: send queue timeout"<<endl;
+    mout<<"Client role: send queue timeout"<<endl;
     return 1;
   }
 
   MString Received;
   if (WaitForMessage(Client, Received, ChildIOTimeOut) == false) {
-    cout<<"Client role: reply timeout"<<endl;
+    mout<<"Client role: reply timeout"<<endl;
     return 1;
   }
   if (Received != "ServerToClient") {
-    cout<<"Client role: reply mismatch"<<endl;
+    mout<<"Client role: reply mismatch"<<endl;
     return 1;
   }
   if (TouchFile(GetReadyFile(Port, "client_reply")) == false) {
-    cout<<"Client role: unable to create reply marker"<<endl;
+    mout<<"Client role: unable to create reply marker"<<endl;
     return 1;
   }
 
   if (Client.GetNStringsToReceive() != 0) {
-    cout<<"Client role: receive queue not empty"<<endl;
+    mout<<"Client role: receive queue not empty"<<endl;
     return 1;
   }
   const unsigned int ExpectedSent = 2u;
   if (Client.GetNSentStrings() != ExpectedSent || Client.GetNReceivedStrings() < 1 || Client.GetNResets() != 0) {
-    cout<<"Client role: counter mismatch"<<endl;
+    mout<<"Client role: counter mismatch"<<endl;
     return 1;
   }
 
   if (Client.Disconnect(true, ChildIOTimeOut) == false) {
-    cout<<"Client role: disconnect failed"<<endl;
+    mout<<"Client role: disconnect failed"<<endl;
     return 1;
   }
   if (Client.IsConnected() == true) {
-    cout<<"Client role: still connected after disconnect"<<endl;
+    mout<<"Client role: still connected after disconnect"<<endl;
     return 1;
   }
   if (Client.GetNResets() != 0) {
-    cout<<"Client role: unexpected resets after clean disconnect"<<endl;
+    mout<<"Client role: unexpected resets after clean disconnect"<<endl;
     return 1;
   }
 
   if (IsRaw == false) {
     const MString ReconnectReady = GetReadyFile(Port, "server_reconnect");
     if (WaitForFile(ReconnectReady, ChildConnectTimeOut) == false) {
-      cout<<"Client role: reconnect ready timeout"<<endl;
+      mout<<"Client role: reconnect ready timeout"<<endl;
       return 1;
     }
     if (Client.Connect(true, ChildConnectTimeOut) == false) {
-      cout<<"Client role: reconnect connect failed"<<endl;
+      mout<<"Client role: reconnect connect failed"<<endl;
       return 1;
     }
     if (Client.IsConnected() == false || Client.IsServer() == true) {
-      cout<<"Client role: reconnect state mismatch"<<endl;
+      mout<<"Client role: reconnect state mismatch"<<endl;
       return 1;
     }
     if (Client.Send("ReconnectClientToServer") == false) {
-      cout<<"Client role: reconnect send failed"<<endl;
+      mout<<"Client role: reconnect send failed"<<endl;
       return 1;
     }
     if (WaitForSendQueueEmpty(Client, ChildIOTimeOut) == false) {
-      cout<<"Client role: reconnect send queue timeout"<<endl;
+      mout<<"Client role: reconnect send queue timeout"<<endl;
       return 1;
     }
     if (WaitForMessage(Client, Received, ChildIOTimeOut) == false) {
-      cout<<"Client role: reconnect reply timeout"<<endl;
+      mout<<"Client role: reconnect reply timeout"<<endl;
       return 1;
     }
     if (Received != "ReconnectServerToClient") {
-      cout<<"Client role: reconnect reply mismatch"<<endl;
+      mout<<"Client role: reconnect reply mismatch"<<endl;
       return 1;
     }
     if (TouchFile(GetReadyFile(Port, "client_reply2")) == false) {
-      cout<<"Client role: unable to create reconnect reply marker"<<endl;
+      mout<<"Client role: unable to create reconnect reply marker"<<endl;
       return 1;
     }
     if (Client.Disconnect(true, ChildIOTimeOut) == false) {
-      cout<<"Client role: reconnect disconnect failed"<<endl;
+      mout<<"Client role: reconnect disconnect failed"<<endl;
       return 1;
     }
   }

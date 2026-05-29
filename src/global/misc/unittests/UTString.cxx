@@ -582,9 +582,7 @@ bool UTString::TestEdgeCases()
 int main()
 {
   UTString Test;
-  bool Passed = Test.Run();
-
-  return Passed ? 0 : 1;
+  return Test.Run() == true ? 0 : 1;
 }
 
 

@@ -9,7 +9,9 @@
  */
 
 // Standard libs:
+#include <cerrno>
 #include <fstream>
+#include <sys/stat.h>
 using namespace std;
 
 // ROOT libs:
@@ -19,6 +21,7 @@ using namespace std;
 
 // MEGAlib:
 #include "MExceptions.h"
+#include "MFile.h"
 #include "MFunction3DSpherical.h"
 #include "MUnitTest.h"
 
@@ -41,7 +44,7 @@ bool UTFunction3DSpherical::Run()
 {
   bool Passed = true;
 
-  system("mkdir -p /tmp/UTFunction3DSpherical");
+  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MFunction3DSpherical fixtures can be created", mkdir("/tmp/UTFunction3DSpherical", 0777) == 0 || errno == EEXIST) && Passed;
 
   MFunction3DSpherical Default;
   Passed = Evaluate("MFunction3DSpherical()", "construction", "A representative MFunction3DSpherical instance can be constructed", true, true) && Passed;
@@ -169,7 +172,9 @@ bool UTFunction3DSpherical::Run()
     Out.close();
 
     MFunction3DSpherical InvalidTheta;
+    DisableDefaultStreams();
     Passed = Evaluate("Set()", "invalid theta axis", "MFunction3DSpherical rejects a representative theta axis outside the physical range", InvalidTheta.Set(InvalidThetaFile, "AP"), false) && Passed;
+    EnableDefaultStreams();
   }
 
   {

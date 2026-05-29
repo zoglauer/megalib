@@ -10,9 +10,6 @@
 
 
 // Standard libs:
-#include <fstream>
-#include <sstream>
-using namespace std;
 
 // ROOT libs:
 #include "TSystem.h"
@@ -128,10 +125,6 @@ private:
   MString GetTempDirectory() const;
   //! Create a clean temp directory
   bool PrepareTempDirectory() const;
-  //! Write ASCII text file content
-  bool WriteTextFile(const MString& FileName, const MString& Content) const;
-  //! Read ASCII text file content
-  MString ReadTextFile(const MString& FileName) const;
 };
 
 
@@ -161,7 +154,7 @@ bool UTFileEvents::Run()
 //! Return the temp test directory
 MString UTFileEvents::GetTempDirectory() const
 {
-  return "/tmp/UTFileEvents";
+  return GetTemporaryDirectoryName();
 }
 
 
@@ -171,33 +164,7 @@ MString UTFileEvents::GetTempDirectory() const
 //! Create a clean temp directory
 bool UTFileEvents::PrepareTempDirectory() const
 {
-  gSystem->Exec(("rm -rf " + GetTempDirectory()).Data());
-  return gSystem->mkdir(GetTempDirectory(), true) == 0;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Write ASCII text file content
-bool UTFileEvents::WriteTextFile(const MString& FileName, const MString& Content) const
-{
-  ofstream Out(FileName.Data());
-  Out<<Content;
-  return Out.good();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Read ASCII text file content
-MString UTFileEvents::ReadTextFile(const MString& FileName) const
-{
-  ifstream In(FileName.Data());
-  ostringstream Buffer;
-  Buffer<<In.rdbuf();
-  return Buffer.str().c_str();
+  return PrepareTemporaryDirectory();
 }
 
 
@@ -337,7 +304,7 @@ bool UTFileEvents::TestWriting()
   FileEventsTest File;
   File.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
   Passed = Evaluate("SetGeometryFileName()", "geometry expansion exact", "SetGeometryFileName stores the exact expanded geometry path", File.GetGeometryFileName(), GetTempDirectory() + "/geometry.setup") && Passed;
-  Passed = EvaluateTrue("SetGeometryFileName()", "geometry expansion", "SetGeometryFileName stores the expanded geometry path", File.GetGeometryFileName().EndsWith("/tmp/UTFileEvents/geometry.setup")) && Passed;
+  Passed = EvaluateTrue("SetGeometryFileName()", "geometry expansion", "SetGeometryFileName stores the expanded geometry path", File.GetGeometryFileName().EndsWith("/geometry.setup")) && Passed;
   File.SetObservationTime(MTime(123.5));
   Passed = EvaluateTrue("Open(write)", "write open", "The write test file opens successfully", File.Open(FileName, MFile::c_Write)) && Passed;
   Passed = EvaluateTrue("WriteHeader()", "write header", "WriteHeader succeeds in write mode", File.WriteHeader()) && Passed;

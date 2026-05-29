@@ -213,8 +213,8 @@ bool UTPhysicalEvent::TestBaseEvent()
   Passed = Evaluate("Reset()->GetTimeWalk()", "base", "Reset restores the default time walk", Event.GetTimeWalk(), -1) && Passed;
   Passed = Evaluate("Reset()->GetOIEnergy()", "base", "Reset clears the OI energy", Event.GetOIEnergy(), g_DoubleNotDefined) && Passed;
 
-  EvaluateException<MExceptionIndexOutOfBounds>("GetComment()", "base out-of-bounds", "Comment access outside the vector throws", [&](){ Event.GetComment(1); });
-  EvaluateException<MExceptionIndexOutOfBounds>("GetHit()", "base out-of-bounds", "Hit access outside the vector throws", [&](){ Event.GetHit(1); });
+  Passed = EvaluateException<MExceptionIndexOutOfBounds>("GetComment()", "base out-of-bounds", "Comment access outside the vector throws", [&](){ Event.GetComment(1); }) && Passed;
+  Passed = EvaluateException<MExceptionIndexOutOfBounds>("GetHit()", "base out-of-bounds", "Hit access outside the vector throws", [&](){ Event.GetHit(1); }) && Passed;
 
   return Passed;
 }
@@ -227,5 +227,5 @@ bool UTPhysicalEvent::TestBaseEvent()
 int main()
 {
   UTPhysicalEvent Test;
-  return Test.Run() ? 0 : 1;
+  return Test.Run() == true ? 0 : 1;
 }

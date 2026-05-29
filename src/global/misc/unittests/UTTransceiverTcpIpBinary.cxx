@@ -10,6 +10,10 @@
 
 // Standard libs:
 #include <cstring>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
 using namespace std;
 
 // MEGAlib:
@@ -120,7 +124,52 @@ public:
   virtual ~UTTransceiverTcpIpBinary() {}
 
   virtual bool Run();
+
+private:
+  static unsigned int GetFreePort();
 };
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int UTTransceiverTcpIpBinary::GetFreePort()
+{
+  static unsigned int FallbackPort = 60000 + static_cast<unsigned int>(getpid() % 4000);
+  auto GetFallbackPort = [&]() -> unsigned int {
+    ++FallbackPort;
+    if (FallbackPort > 65000) {
+      FallbackPort = 60000;
+    }
+    return FallbackPort;
+  };
+
+  int Socket = socket(AF_INET, SOCK_STREAM, 0);
+  if (Socket < 0) {
+    return GetFallbackPort();
+  }
+
+  sockaddr_in Address;
+  memset(&Address, 0, sizeof(Address));
+  Address.sin_family = AF_INET;
+  Address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  Address.sin_port = htons(0);
+
+  if (::bind(Socket, reinterpret_cast<sockaddr*>(&Address), sizeof(Address)) != 0) {
+    close(Socket);
+    return GetFallbackPort();
+  }
+
+  socklen_t Length = sizeof(Address);
+  if (getsockname(Socket, reinterpret_cast<sockaddr*>(&Address), &Length) != 0) {
+    close(Socket);
+    return GetFallbackPort();
+  }
+
+  const unsigned int Port = ntohs(Address.sin_port);
+  close(Socket);
+  return Port == 0 ? GetFallbackPort() : Port;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +205,7 @@ bool UTTransceiverTcpIpBinary::Run()
     Default.AutomaticReconnection(false);
     Passed = EvaluateFalse("AutomaticReconnection()", "setter", "Automatic reconnection can be disabled", Default.GetAutomaticReconnection()) && Passed;
     Default.SetHost("localhost");
-    Default.SetPort(63001);
+    Default.SetPort(GetFreePort());
     Passed = EvaluateTrue("Connect()", "no-wait", "Connect(false) starts cleanly even with automatic reconnection disabled", Default.Connect(false)) && Passed;
     Passed = EvaluateFalse("AutomaticReconnection()", "connect preserves", "Connect(false) must not re-enable automatic reconnection", Default.GetAutomaticReconnection()) && Passed;
     Passed = EvaluateTrue("Disconnect()", "cleanup", "Disconnect(false) stops the default transceiver cleanly", Default.Disconnect(false)) && Passed;
@@ -250,7 +299,7 @@ bool UTTransceiverTcpIpBinary::Run()
   }
 
   {
-    const unsigned int LivePort = 63120;
+    const unsigned int LivePort = GetFreePort();
     MTransceiverTcpIpBinary Server("LiveServer", "localhost", LivePort);
     MTransceiverTcpIpBinary Client("LiveClient", "localhost", LivePort);
     Server.SetVerbosity(0);
@@ -327,7 +376,7 @@ bool UTTransceiverTcpIpBinary::Run()
   }
 
   {
-    const unsigned int FailurePort = 63000;
+    const unsigned int FailurePort = GetFreePort();
     MTransceiverTcpIpBinary Failure("Failure", "localhost", FailurePort);
     Failure.SetVerbosity(0);
     Failure.RequestClient(true);
@@ -338,7 +387,7 @@ bool UTTransceiverTcpIpBinary::Run()
   }
 
   {
-    const unsigned int AutoReconnectPort = 63141;
+    const unsigned int AutoReconnectPort = GetFreePort();
     MTransceiverTcpIpBinary Server("AutoReconnectServer", "localhost", AutoReconnectPort);
     MTransceiverTcpIpBinary Client("AutoReconnectClient", "localhost", AutoReconnectPort);
     Server.SetVerbosity(0);
@@ -369,7 +418,7 @@ bool UTTransceiverTcpIpBinary::Run()
   }
 
   {
-    const unsigned int OverflowPort = 63150;
+    const unsigned int OverflowPort = GetFreePort();
     MTransceiverTcpIpBinary Server("OverflowServer", "localhost", OverflowPort);
     MTransceiverTcpIpBinary Client("OverflowClient", "localhost", OverflowPort);
     Server.SetVerbosity(0);
@@ -399,7 +448,7 @@ bool UTTransceiverTcpIpBinary::Run()
   }
 
   {
-    const unsigned int OverflowExistingPort = 63160;
+    const unsigned int OverflowExistingPort = GetFreePort();
     MTransceiverTcpIpBinary Server("OverflowExistingServer", "localhost", OverflowExistingPort);
     MTransceiverTcpIpBinary Client("OverflowExistingClient", "localhost", OverflowExistingPort);
     Server.SetVerbosity(0);

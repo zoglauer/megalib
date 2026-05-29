@@ -10,9 +10,7 @@
 
 
 // Standard libs:
-#include <fstream>
 #include <limits>
-#include <sstream>
 using namespace std;
 
 // ROOT libs:
@@ -57,8 +55,6 @@ private:
   MString GetDataDirectory() const;
   //! Prepare the temp directory
   bool PrepareTempDirectory() const;
-  //! Read file text
-  MString ReadTextFile(const MString& FileName) const;
   //! Read the observation time from a tra file
   bool ReadObservationTime(const MString& FileName, double& ObservationTime) const;
   //! Create a minimal unidentifiable event
@@ -93,7 +89,7 @@ bool UTFileEventsTra::Run()
 //! Return the temp directory
 MString UTFileEventsTra::GetTempDirectory() const
 {
-  return "/tmp/UTFileEventsTra";
+  return GetTemporaryDirectoryName();
 }
 
 
@@ -103,8 +99,7 @@ MString UTFileEventsTra::GetTempDirectory() const
 //! Prepare the temp directory
 bool UTFileEventsTra::PrepareTempDirectory() const
 {
-  gSystem->Exec(("rm -rf " + GetTempDirectory()).Data());
-  return gSystem->mkdir(GetTempDirectory(), true) == 0;
+  return PrepareTemporaryDirectory();
 }
 
 
@@ -120,18 +115,6 @@ MString UTFileEventsTra::GetDataDirectory() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-//! Read file text
-MString UTFileEventsTra::ReadTextFile(const MString& FileName) const
-{
-  ifstream In(FileName.Data());
-  ostringstream Buffer;
-  Buffer << In.rdbuf();
-  return Buffer.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 
 //! Read the observation time from a tra file
 bool UTFileEventsTra::ReadObservationTime(const MString& FileName, double& ObservationTime) const

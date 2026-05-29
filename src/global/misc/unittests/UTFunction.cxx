@@ -9,7 +9,9 @@
  */
 
 // Standard libs:
+#include <cerrno>
 #include <fstream>
+#include <sys/stat.h>
 using namespace std;
 
 // ROOT libs:
@@ -19,6 +21,7 @@ using namespace std;
 
 // MEGAlib:
 #include "MExceptions.h"
+#include "MFile.h"
 #include "MFunction.h"
 #include "MResponseMatrixO1.h"
 #include "MUnitTest.h"
@@ -42,7 +45,7 @@ bool UTFunction::Run()
 {
   bool Passed = true;
 
-  system("mkdir -p /tmp/UTFunction");
+  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MFunction fixtures can be created", mkdir("/tmp/UTFunction", 0777) == 0 || errno == EEXIST) && Passed;
 
   MFunction Default;
   Passed = Evaluate("MFunction()", "construction", "A representative MFunction instance can be constructed", true, true) && Passed;
