@@ -56,6 +56,14 @@ Variables in functions *should* follow the "upper camel case" convention, e.g.,
 X, DataPoint, IsNonZero
 ```
 
+## Code organization
+
+- Prefer class member functions over free functions. If a helper is tightly related to a class, make it a private, protected, or public member of that class as appropriate.
+- Avoid namespace-scope helper functions when possible, including anonymous-namespace helpers. Use anonymous namespaces only when there is a clear reason the helper cannot reasonably be part of a class.
+- Prefer C++ standard headers and C++ standard-library functionality over C or POSIX headers and functions when practical.
+- Avoid adding C headers such as `<stdio.h>`, `<stdlib.h>`, or POSIX headers such as `<unistd.h>` and `<fcntl.h>` when a suitable C++ header and C++ mechanism exists.
+- If a C or POSIX function is required because the C++ standard library does not provide equivalent semantics, document the reason briefly near the use.
+
 ## Comments
 
 - Use doxygen-style comments (//!) for classes, member functions, and variables, including a brief description of the method's functionality.
