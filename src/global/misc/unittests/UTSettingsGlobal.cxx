@@ -10,7 +10,7 @@
 
 
 // Standard libs:
-#include <unistd.h>
+#include <filesystem>
 
 // MEGAlib:
 #include "MFile.h"
@@ -213,7 +213,7 @@ bool UTSettingsGlobal::TestReadWriteFiles()
   Passed = EvaluateTrue("MFile::Remove()", "wrong root cleanup", "The wrong-root temporary file can be removed", MFile::Remove(WrongRootFile)) && Passed;
   Passed = EvaluateTrue("MFile::Remove()", "empty cleanup", "The empty temporary file can be removed", MFile::Remove(EmptyFile)) && Passed;
   Passed = EvaluateTrue("MFile::Remove()", "settings cleanup", "The representative global-settings file can be removed", MFile::Remove(SettingsFile)) && Passed;
-  Passed = EvaluateTrue("rmdir()", "file temp cleanup", "The global-settings temp directory can be removed", rmdir(TempDirectory().Data()) == 0) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "file temp cleanup", "The global-settings temp directory can be removed", std::filesystem::remove(TempDirectory().Data())) && Passed;
 
   return Passed;
 }

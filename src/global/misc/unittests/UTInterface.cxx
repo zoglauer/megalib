@@ -11,12 +11,11 @@
 
 // Standard libs:
 #include <cmath>
-#include <cerrno>
+#include <filesystem>
 #include <fstream>
 #include <limits>
-#include <sstream>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <string>
+#include <vector>
 using namespace std;
 
 // ROOT libs:
@@ -309,7 +308,7 @@ bool UTInterface::Run()
 
   Passed = EvaluateTrue("MFile::Remove()", "save cleanup", "The representative configuration file can be removed", MFile::Remove(SaveFile)) && Passed;
   Passed = EvaluateFalse("MFile::Exists()", "save cleanup", "The representative configuration file is gone after cleanup", MFile::Exists(SaveFile)) && Passed;
-  Passed = EvaluateTrue("rmdir()", "temp cleanup", "The temporary MInterface directory can be removed", rmdir(TempDirectory.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "temp cleanup", "The temporary MInterface directory can be removed", std::filesystem::remove(TempDirectory.Data())) && Passed;
 
   Summarize();
   return Passed;

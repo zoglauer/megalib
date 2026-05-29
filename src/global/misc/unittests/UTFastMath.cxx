@@ -38,9 +38,6 @@ bool UTFastMath::Run()
 {
   bool Passed = true;
 
-  MFastMath Math;
-  Passed = Evaluate("MFastMath()", "construction", "A representative MFastMath instance can be constructed", true, true) && Passed;
-
   Passed = EvaluateNear("atan()", "zero", "MFastMath::atan returns the representative zero angle", MFastMath::atan(0.0), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("atan()", "unity", "MFastMath::atan approximates the representative unit-angle well", MFastMath::atan(1.0), std::atan(1.0), 2e-3) && Passed;
   Passed = EvaluateNear("atan()", "large negative", "MFastMath::atan approximates representative large negative arguments well", MFastMath::atan(-5.0), std::atan(-5.0), 2e-3) && Passed;

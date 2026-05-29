@@ -11,8 +11,7 @@
 
 // Standard libs:
 #include <cstdlib>
-#include <unistd.h>
-using namespace std;
+#include <filesystem>
 
 // MEGAlib:
 #include "MFile.h"
@@ -128,10 +127,10 @@ bool UTPrelude::Run()
   Passed = EvaluateFalse("MFile::Exists()", "settings cleanup", "The temporary settings file is gone after cleanup", MFile::Exists(SettingsFile)) && Passed;
   MFile::Remove(FailureSettingsFile);
 
-  Passed = EvaluateTrue("rmdir()", "home cleanup", "The temporary HOME directory can be removed", rmdir(HomeDirectory.Data()) == 0) && Passed;
-  Passed = EvaluateTrue("rmdir()", "megalib cleanup", "The temporary MEGALIB directory can be removed", rmdir(MegaDirectory.Data()) == 0) && Passed;
-  Passed = EvaluateTrue("rmdir()", "failure home cleanup", "The temporary failure HOME directory can be removed", rmdir(FailureHomeDirectory.Data()) == 0) && Passed;
-  Passed = EvaluateTrue("rmdir()", "failure megalib cleanup", "The temporary failure MEGALIB directory can be removed", rmdir(FailureMegaDirectory.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "home cleanup", "The temporary HOME directory can be removed", std::filesystem::remove(HomeDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "megalib cleanup", "The temporary MEGALIB directory can be removed", std::filesystem::remove(MegaDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "failure home cleanup", "The temporary failure HOME directory can be removed", std::filesystem::remove(FailureHomeDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "failure megalib cleanup", "The temporary failure MEGALIB directory can be removed", std::filesystem::remove(FailureMegaDirectory.Data())) && Passed;
 
   Summarize();
   return Passed;

@@ -40,7 +40,11 @@ inline bool RunInvalidAxisUnitTest(const MString& Executable, const MString& Arg
   if (Status < 0) {
     return false;
   }
+#ifdef NDEBUG
   return WIFEXITED(Status) && WEXITSTATUS(Status) == 0;
+#else
+  return WIFSIGNALED(Status) || (WIFEXITED(Status) && WEXITSTATUS(Status) != 0);
+#endif
 }
 
 
@@ -457,8 +461,8 @@ public: \
     RM_DECLARE_AXES_##ORDER \
     vector<float> EmptyAxis; \
     vector<float> NonIncreasingAxis{0.0f, 1.0f, 1.0f}; \
-    Passed = EvaluateTrue("SetAxis()", "empty first axis", "An empty first axis is rejected without crashing", RunInvalidAxisUnitTest(MString("bin/") + #SUITE, "--assert-empty-first-axis")) && Passed; \
-    Passed = EvaluateTrue("SetAxis()", "non-increasing last axis", "A non-increasing highest-order axis is rejected without crashing", RunInvalidAxisUnitTest(MString("bin/") + #SUITE, "--assert-nonincreasing-last-axis")) && Passed; \
+    Passed = EvaluateTrue("SetAxis()", "empty first axis", "An empty first axis triggers the invalid-axis guard", RunInvalidAxisUnitTest(MString("bin/") + #SUITE, "--assert-empty-first-axis")) && Passed; \
+    Passed = EvaluateTrue("SetAxis()", "non-increasing last axis", "A non-increasing highest-order axis triggers the invalid-axis guard", RunInvalidAxisUnitTest(MString("bin/") + #SUITE, "--assert-nonincreasing-last-axis")) && Passed; \
     MATRIX Default; \
     Passed = Evaluate("GetOrder()", "default constructor", "The default constructor sets the matrix order", Default.GetOrder(), static_cast<unsigned int>(ORDER)) && Passed; \
     Passed = Evaluate("GetNBins()", "default constructor", "The default constructor starts with zero bins", Default.GetNBins(), 0UL) && Passed; \

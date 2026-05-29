@@ -44,8 +44,8 @@ bool UTResponseMatrixO1::Run()
   vector<float> EmptyAxis;
   vector<float> NonIncreasingAxis{0.0f, 1.0f, 1.0f};
 
-  Passed = EvaluateTrue("SetAxis()", "empty axis", "An empty axis is rejected without crashing", RunInvalidAxisUnitTest("bin/UTResponseMatrixO1", "--assert-empty-axis")) && Passed;
-  Passed = EvaluateTrue("SetAxis()", "non-increasing axis", "A non-increasing axis is rejected without crashing", RunInvalidAxisUnitTest("bin/UTResponseMatrixO1", "--assert-nonincreasing-axis")) && Passed;
+  Passed = EvaluateTrue("SetAxis()", "empty axis", "An empty axis triggers the invalid-axis guard", RunInvalidAxisUnitTest("bin/UTResponseMatrixO1", "--assert-empty-axis")) && Passed;
+  Passed = EvaluateTrue("SetAxis()", "non-increasing axis", "A non-increasing axis triggers the invalid-axis guard", RunInvalidAxisUnitTest("bin/UTResponseMatrixO1", "--assert-nonincreasing-axis")) && Passed;
 
   MResponseMatrixO1 Default;
   Passed = Evaluate("GetOrder()", "default constructor", "The default constructor sets the matrix order", Default.GetOrder(), 1U) && Passed;

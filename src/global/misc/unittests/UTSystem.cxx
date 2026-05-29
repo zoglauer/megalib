@@ -10,14 +10,10 @@
 
 
 // Standard libs:
-#include <cerrno>
-#include <cstdio>
-#include <cstdlib>
-#include <fstream>
-#include <sys/stat.h>
+#include <ctime>
+#include <filesystem>
 #include <sys/time.h>
-#include <unistd.h>
-using namespace std;
+#include <sys/wait.h>
 
 // ROOT libs:
 #include "TError.h"
@@ -56,16 +52,7 @@ bool UTSystem::Run()
   }
 
   const MString FileName = TempDirectory + "/example.geo.setup";
-  {
-    ofstream Out(FileName.Data());
-    Passed = EvaluateTrue("ofstream::is_open()", "fixture", "The representative file for MSystem tests can be opened", Out.is_open() == true) && Passed;
-    if (Out.is_open() == false) {
-      Summarize();
-      return false;
-    }
-    Out << "UTSystem";
-    Out.close();
-  }
+  Passed = EvaluateTrue("WriteTextFile()", "fixture", "The representative file for MSystem tests can be written", WriteTextFile(FileName, "UTSystem")) && Passed;
 
   MSystem System;
 
@@ -79,12 +66,9 @@ bool UTSystem::Run()
   const MString ChildLog = TempDirectory + "/child.log";
   int ChildStatus = MSystem::RunChildProcess("/bin/sh", "-c 'echo UTSystem child'", ChildLog);
   Passed = EvaluateTrue("RunChildProcess()", "successful child", "RunChildProcess returns a normal zero exit status for a successful child", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0) && Passed;
-  ifstream ChildLogInput(ChildLog.Data());
-  Passed = EvaluateTrue("RunChildProcess()", "redirected output", "RunChildProcess redirects child output to the requested file", ChildLogInput.is_open() == true) && Passed;
-  if (ChildLogInput.is_open() == true) {
-    string ChildLogContent((istreambuf_iterator<char>(ChildLogInput)), istreambuf_iterator<char>());
-    Passed = EvaluateTrue("RunChildProcess()", "redirected output", "The redirected child output contains the expected marker", MString(ChildLogContent).Contains("UTSystem child")) && Passed;
-  }
+  MString ChildLogContent = ReadTextFile(ChildLog);
+  Passed = EvaluateTrue("RunChildProcess()", "redirected output", "RunChildProcess redirects child output to the requested file", ChildLogContent.IsEmpty() == false) && Passed;
+  Passed = EvaluateTrue("RunChildProcess()", "redirected output", "The redirected child output contains the expected marker", ChildLogContent.Contains("UTSystem child")) && Passed;
   const MString MissingChildLog = TempDirectory + "/missing-child.log";
   ChildStatus = MSystem::RunChildProcess("/tmp/UTSystem_missing_child_executable", "", MissingChildLog);
   Passed = EvaluateTrue("RunChildProcess()", "missing child", "RunChildProcess returns the shell command-not-found status for a missing child executable", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 127) && Passed;
@@ -130,11 +114,11 @@ bool UTSystem::Run()
                                 + (static_cast<long long>(EndTime.tv_usec) - static_cast<long long>(StartTime.tv_usec));
   Passed = EvaluateTrue("BusyWait()", "elapsed", "BusyWait waits at least the requested time", ElapsedMicroseconds >= 3000LL) && Passed;
 
-  Passed = EvaluateTrue("MFile::Remove()", "cleanup", "The representative MSystem file can be removed", remove(FileName.Data()) == 0) && Passed;
-  Passed = EvaluateTrue("MFile::Remove()", "child log cleanup", "The representative child-process log can be removed", remove(ChildLog.Data()) == 0) && Passed;
-  Passed = EvaluateTrue("MFile::Remove()", "missing child log cleanup", "The representative missing-child log can be removed", remove(MissingChildLog.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("MFile::Remove()", "cleanup", "The representative MSystem file can be removed", MFile::Remove(FileName)) && Passed;
+  Passed = EvaluateTrue("MFile::Remove()", "child log cleanup", "The representative child-process log can be removed", MFile::Remove(ChildLog)) && Passed;
+  Passed = EvaluateTrue("MFile::Remove()", "missing child log cleanup", "The representative missing-child log can be removed", MFile::Remove(MissingChildLog)) && Passed;
   Passed = EvaluateFalse("FileExist()", "cleanup", "The representative MSystem file is gone after cleanup", System.FileExist(FileName)) && Passed;
-  Passed = EvaluateTrue("rmdir()", "temp cleanup", "The temporary MSystem directory can be removed", rmdir(TempDirectory.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "temp cleanup", "The temporary MSystem directory can be removed", std::filesystem::remove(TempDirectory.Data())) && Passed;
 
   Summarize();
   return Passed;

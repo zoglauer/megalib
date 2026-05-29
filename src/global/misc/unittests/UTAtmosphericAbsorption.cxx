@@ -14,9 +14,7 @@
 #include "MUnitTest.h"
 
 // Standard libs:
-#include <fstream>
-#include <unistd.h>
-using namespace std;
+#include <filesystem>
 
 
 //! Unit test class for MAtmosphericAbsorption
@@ -44,28 +42,21 @@ bool UTAtmosphericAbsorption::Run()
   }
 
   const MString AbsorptionFile = TempDirectory + "/atmospheric.abs";
-  {
-    ofstream Out(AbsorptionFile.Data());
-    Passed = EvaluateTrue("ofstream::is_open()", "fixture", "The representative atmospheric absorption fixture can be opened for writing", Out.is_open() == true) && Passed;
-    if (Out.is_open() == false) {
-      Summarize();
-      return false;
-    }
-    Out << "IP LIN\n";
-    Out << "XA 0 10\n";
-    Out << "YA 0 20\n";
-    Out << "ZA 100 200\n";
-    Out << "AP 0 0 100 0.10\n";
-    Out << "AP 10 0 100 0.50\n";
-    Out << "AP 0 20 100 0.30\n";
-    Out << "AP 10 20 100 0.70\n";
-    Out << "AP 0 0 200 0.20\n";
-    Out << "AP 10 0 200 0.60\n";
-    Out << "AP 0 20 200 0.40\n";
-    Out << "AP 10 20 200 0.80\n";
-    Out << "EN\n";
-    Out.close();
-  }
+  MString AbsorptionContent =
+    "IP LIN\n"
+    "XA 0 10\n"
+    "YA 0 20\n"
+    "ZA 100 200\n"
+    "AP 0 0 100 0.10\n"
+    "AP 10 0 100 0.50\n"
+    "AP 0 20 100 0.30\n"
+    "AP 10 20 100 0.70\n"
+    "AP 0 0 200 0.20\n"
+    "AP 10 0 200 0.60\n"
+    "AP 0 20 200 0.40\n"
+    "AP 10 20 200 0.80\n"
+    "EN\n";
+  Passed = EvaluateTrue("WriteTextFile()", "fixture", "The representative atmospheric absorption fixture can be written", WriteTextFile(AbsorptionFile, AbsorptionContent)) && Passed;
 
   MAtmosphericAbsorption Absorption;
   Passed = Evaluate("MAtmosphericAbsorption()", "construction", "A representative atmospheric-absorption instance can be constructed", true, true) && Passed;
@@ -103,20 +94,13 @@ bool UTAtmosphericAbsorption::Run()
   EnableDefaultStreams();
 
   const MString MalformedFile = TempDirectory + "/malformed.abs";
-  {
-    ofstream Out(MalformedFile.Data());
-    Passed = EvaluateTrue("ofstream::is_open()", "malformed fixture", "The malformed atmospheric absorption fixture can be opened for writing", Out.is_open() == true) && Passed;
-    if (Out.is_open() == false) {
-      Summarize();
-      return false;
-    }
-    Out << "IP LIN\n";
-    Out << "XA 0\n";
-    Out << "YA 0 20\n";
-    Out << "ZA 100 200\n";
-    Out << "AP 0 0 100 0.10\n";
-    Out.close();
-  }
+  MString MalformedContent =
+    "IP LIN\n"
+    "XA 0\n"
+    "YA 0 20\n"
+    "ZA 100 200\n"
+    "AP 0 0 100 0.10\n";
+  Passed = EvaluateTrue("WriteTextFile()", "malformed fixture", "The malformed atmospheric absorption fixture can be written", WriteTextFile(MalformedFile, MalformedContent)) && Passed;
 
   DisableDefaultStreams();
   MAtmosphericAbsorption Malformed;
@@ -135,7 +119,7 @@ bool UTAtmosphericAbsorption::Run()
 
   Passed = EvaluateTrue("MFile::Remove()", "fixture cleanup", "The representative atmospheric absorption fixture can be removed", MFile::Remove(AbsorptionFile)) && Passed;
   Passed = EvaluateFalse("MFile::Exists()", "fixture cleanup", "The representative atmospheric absorption fixture is gone after cleanup", MFile::Exists(AbsorptionFile)) && Passed;
-  Passed = EvaluateTrue("rmdir()", "temp cleanup", "The atmospheric-absorption temp directory can be removed", rmdir(TempDirectory.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "temp cleanup", "The atmospheric-absorption temp directory can be removed", std::filesystem::remove(TempDirectory.Data())) && Passed;
 
   Summarize();
   return Passed;

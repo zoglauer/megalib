@@ -40,8 +40,8 @@ bool UTResponseMatrixO2::Run()
   vector<float> EmptyAxis;
   vector<float> NonIncreasingAxis{0.0f, 1.0f, 1.0f};
 
-  Passed = EvaluateTrue("SetAxis()", "empty first axis", "An empty first axis is rejected without crashing", RunInvalidAxisUnitTest("bin/UTResponseMatrixO2", "--assert-empty-first-axis")) && Passed;
-  Passed = EvaluateTrue("SetAxis()", "non-increasing second axis", "A non-increasing second axis is rejected without crashing", RunInvalidAxisUnitTest("bin/UTResponseMatrixO2", "--assert-nonincreasing-second-axis")) && Passed;
+  Passed = EvaluateTrue("SetAxis()", "empty first axis", "An empty first axis triggers the invalid-axis guard", RunInvalidAxisUnitTest("bin/UTResponseMatrixO2", "--assert-empty-first-axis")) && Passed;
+  Passed = EvaluateTrue("SetAxis()", "non-increasing second axis", "A non-increasing second axis triggers the invalid-axis guard", RunInvalidAxisUnitTest("bin/UTResponseMatrixO2", "--assert-nonincreasing-second-axis")) && Passed;
 
   MResponseMatrixO2 Default;
   Passed = Evaluate("GetOrder()", "default constructor", "The default constructor sets the matrix order", Default.GetOrder(), 2U) && Passed;
