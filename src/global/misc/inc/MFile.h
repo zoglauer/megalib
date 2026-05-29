@@ -184,6 +184,10 @@ class MFile
   static bool IsExecutable(const MString& Path);
   //! Create the directory and all parent directories; return true on success or if it already exists
   static bool CreateDirectory(const MString& Path);
+  //! Create a randomized temporary file and return the full file name, e.g. /tmp/MEGAlib_aB3xYz9Qp1_results.tra, or an empty string on failure; NumberOfRandomChars is clamped to a minimum of 5
+  static MString CreateTemporaryFile(const MString& Name, unsigned int NumberOfRandomChars = 10, const MString& DirectoryWhereToCreateTheFile = "");
+  //! Create a randomized temporary directory and return the full directory name, e.g. /tmp/MEGAlib_aB3xYz9Qp1_WorkDirectory, or an empty string on failure; NumberOfRandomChars is clamped to a minimum of 5
+  static MString CreateTemporaryDirectory(const MString& Name, unsigned int NumberOfRandomChars = 10, const MString& DirectoryWhereToCreateTheDirectory = "");
 
 
   //! The file modes: Write to a new file
@@ -203,6 +207,8 @@ class MFile
 
   // private methods:
  private:
+  //! Construct a randomized temporary path under the requested directory
+  static MString MakeTemporaryPath(const MString& Name, unsigned int NumberOfRandomChars, const MString& Directory);
 
   //public members
  public:
