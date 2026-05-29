@@ -72,6 +72,7 @@ const int MRESE::c_Track           = 2;
 const int MRESE::c_Cluster         = 3;
 const int MRESE::c_Bremsstrahlung  = 4;
 const int MRESE::c_Event           = 5;
+const int MRESE::c_Vertex          = 6;
 
 
 ////////////////////////////////////////////////////////////////////////////////

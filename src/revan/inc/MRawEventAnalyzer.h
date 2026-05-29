@@ -186,8 +186,7 @@ class MRawEventAnalyzer
     c_TrackingAlgoPearson,
     c_TrackingAlgoKalman2D,
     c_TrackingAlgoKalman3D,
-    c_TrackingAlgoFirstTwoLayers,
-    c_TrackingAlgoFirstLayer
+    c_TrackingAlgoFirstTwoLayers
   };
 
   //! Set the electron tracking algorithm: One of c_TrackingAlgoNone, c_TrackingAlgoModifiedPearson, c_TrackingAlgoPearson,

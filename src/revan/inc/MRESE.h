@@ -171,6 +171,7 @@ class MRESE
   static const int c_Cluster;
   static const int c_Bremsstrahlung;
   static const int c_Event;
+  static const int c_Vertex;
 
  protected:
   virtual void RecalculateResolutions();

@@ -96,6 +96,8 @@ void MGUIOptionsTracking::Create()
     AddSubTitle("Tracking options for intrinsic electron tracking detectors - no options!");
   } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoBayesian) {
     AddSubTitle("Tracking options for Bayesian electron tracking:");
+  } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoFirstTwoLayers) {
+    AddSubTitle("Tracking options for first two layers:");
   } else {
     AddSubTitle("You deselected electron tracking!");
   }
@@ -105,7 +107,8 @@ void MGUIOptionsTracking::Create()
       m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoRank ||
       m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoChiSquare ||
       m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoGas ||
-      m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoBayesian) {
+      m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoBayesian ||
+      m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoFirstTwoLayers) {
     m_CBList = new MGUIECBList(this, "Search for the following event types:");
     m_CBList->Add("Search for MIPS");
     m_CBList->SetSelected(0, m_Data->GetSearchMIPs());

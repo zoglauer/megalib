@@ -32,8 +32,8 @@ FILES := MGeometryRevan \
 	MEREventClusterizerTMVA \
 	MEREventClusterizerDataSet \
 	MERHitClusterizer \
-    MEREventType \
-    MEREventTypeExternal \
+  MEREventType \
+  MEREventTypeExternal \
 	MERTrack \
 	MERTrackPearson \
 	MERTrackRank \
@@ -62,6 +62,7 @@ FILES := MGeometryRevan \
 	MREHit \
 	MRECluster \
 	MRETrack \
+  MREVertex \
 	MRERawEvent \
 	MREAM \
 	MREAMDriftChamberEnergy \

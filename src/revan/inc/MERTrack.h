@@ -81,6 +81,9 @@ class MERTrack : public MERConstruction
   //! Return true if one Raw Event of m_List is of type EventType
   bool HasOneREOfType(int EventType);
 
+  //! Return whether the vector meet the condition f for at least n_index indices starting from start_index, but not exceeding m_RangeForVertexSearch
+  bool CheckVectorBetweenIndices(const vector<int>& v, const std::function<bool(int)>& f, const int start_index, const int n_index);
+
   // private methods:
  private:
 
@@ -113,7 +116,15 @@ class MERTrack : public MERConstruction
 
   //! List of detectors in which the electron tracking is performed
   vector<MDDetector*> m_DetectorList;
-  
+ 
+  //! CheckForPairs hidden parameters
+  double m_NLayersWithTwoHits;
+  double m_FractionOfLayersWithTwoHits;
+  int m_RangeForVertexSearch;
+  int m_NEmptyLayersAboveVertex;
+  int m_NEmptyLayersBelowVertex;
+  int m_N2htLayersStartVertex;
+
   double m_TimePairs;
   double m_TimeMips;
   double m_TimeComptonSequences;
