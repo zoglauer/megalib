@@ -20,9 +20,12 @@
 #include "MUnitTest.h"
 
 // Standard libs:
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <system_error>
+#include <unistd.h>
 
 // ROOT libs:
 
@@ -67,6 +70,74 @@ void MUnitTest::Summarize()
   mout<<"Unit test: "<<m_Name<<endl;
   mout<<"Passed tests: "<<m_NumberOfPassedTests<<endl;
   mout<<"Failed tests: "<<m_NumberOfFailedTests<<endl;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::WriteTextFile(const MString& FileName, const MString& Content) const
+{
+  ofstream Out(FileName.Data());
+  if (Out.is_open() == false) return false;
+
+  Out<<Content;
+  Out.close();
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MUnitTest::ReadTextFile(const MString& FileName) const
+{
+  ifstream In(FileName.Data());
+  if (In.is_open() == false) return "";
+
+  ostringstream Buffer;
+  Buffer<<In.rdbuf();
+
+  return Buffer.str().c_str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MUnitTest::GetTemporaryFileName(const MString& Name) const
+{
+  return MString("/tmp/") + m_Name + "_" + Name + "_" + static_cast<unsigned int>(getpid());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MUnitTest::GetTemporaryDirectoryName(const MString& Name) const
+{
+  MString Directory = MString("/tmp/") + m_Name;
+  if (Name.IsEmpty() == false) Directory += "_" + Name;
+  Directory += "_";
+  Directory += static_cast<unsigned int>(getpid());
+
+  return Directory;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::PrepareTemporaryDirectory(const MString& Name) const
+{
+  const MString Directory = GetTemporaryDirectoryName(Name);
+
+  std::error_code Error;
+  std::filesystem::remove_all(Directory.Data(), Error);
+  if (Error) return false;
+
+  return std::filesystem::create_directories(Directory.Data(), Error) == true && !Error;
 }
 
 
