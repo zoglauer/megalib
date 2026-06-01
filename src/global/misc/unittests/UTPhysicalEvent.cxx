@@ -10,7 +10,6 @@
 
 
 // Standard libs:
-#include <fstream>
 #include <sstream>
 #include <string>
 using namespace std;
@@ -175,7 +174,7 @@ bool UTPhysicalEvent::TestBaseEvent()
   Passed = Evaluate("GetNComments()", "clear comments", "ClearComments removes all comments", CommentOnly.GetNComments(), 0U) && Passed;
 
   MFile File;
-  MString FileName = "/tmp/UTPhysicalEvent.tra";
+  MString FileName = GetTemporaryFileName("UTPhysicalEvent.tra");
   MPhysicalEvent StreamWrite;
   StreamWrite.SetId(23);
   StreamWrite.SetTime(MTime(3.5));
@@ -183,12 +182,7 @@ bool UTPhysicalEvent::TestBaseEvent()
   Passed = EvaluateFalse("Stream()", "base stream write", "The base event write-stream completes at EOF", StreamWrite.Stream(File, 0, false, false, false)) && Passed;
   File.Close();
 
-  {
-    ofstream Out(FileName);
-    Out << "ID 19\n";
-    Out << "CC delayed\n";
-    Out << "SE\n";
-  }
+  Passed = EvaluateTrue("WriteTextFile()", "base stream read setup", "The representative base event stream file can be written", WriteTextFile(FileName, "ID 19\nCC delayed\nSE\n")) && Passed;
 
   MPhysicalEvent StreamRead;
   Passed = EvaluateTrue("Open()", "base stream read", "The base event stream file can be opened for reading", File.Open(FileName, MFile::c_Read)) && Passed;

@@ -10,7 +10,6 @@
 
 
 // Standard libs:
-#include <filesystem>
 
 // MEGAlib:
 #include "MFile.h"
@@ -44,10 +43,6 @@ private:
     MString GetTestMasterNodeName() const { return m_NameMasterNode; }
   };
 
-  bool PrepareTempDirectory() const;
-  MString TempDirectory() const;
-  MString TempFile(const MString& FileName) const;
-
   bool TestDefaultsAndSetters();
   bool TestXmlRoundTrip();
   bool TestReadWriteFiles();
@@ -69,36 +64,6 @@ bool UTSettingsGlobal::Run()
 
   return Passed;
 }
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTSettingsGlobal::PrepareTempDirectory() const
-{
-  return PrepareTemporaryDirectory();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString UTSettingsGlobal::TempDirectory() const
-{
-  return GetTemporaryDirectoryName();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString UTSettingsGlobal::TempFile(const MString& FileName) const
-{
-  return TempDirectory() + "/" + FileName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 
 
 bool UTSettingsGlobal::TestDefaultsAndSetters()
@@ -170,11 +135,12 @@ bool UTSettingsGlobal::TestReadWriteFiles()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "file temp dir", "The temporary directory for global-settings file tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "file temp dir", "The temporary directory for global-settings file tests can be created", PrepareTemporaryDirectory()) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName();
 
-  MString SettingsFile = TempFile("global.cfg");
-  MString WrongRootFile = TempFile("wrong_root.cfg");
-  MString EmptyFile = TempFile("empty.cfg");
+  MString SettingsFile = TemporaryDirectory + "/global.cfg";
+  MString WrongRootFile = TemporaryDirectory + "/wrong_root.cfg";
+  MString EmptyFile = TemporaryDirectory + "/empty.cfg";
 
   SettingsGlobalTest Settings;
   Settings.SetTestSettingsFileName(SettingsFile);
@@ -192,7 +158,7 @@ bool UTSettingsGlobal::TestReadWriteFiles()
   Passed = Evaluate("GetFontScaler()", "representative file", "Read() restores the stored font scaler", ReadBack.GetFontScaler(), MString("huge")) && Passed;
 
   SettingsGlobalTest Missing;
-  Missing.SetTestSettingsFileName(TempFile("does_not_exist.cfg"));
+  Missing.SetTestSettingsFileName(TemporaryDirectory + "/does_not_exist.cfg");
   Passed = Evaluate("Read()", "missing file", "Read() treats a missing global settings file as a clean default-state success", Missing.Read(), true) && Passed;
   Passed = Evaluate("GetLicenseHash()", "missing file", "A missing global settings file leaves the default license hash intact", Missing.GetLicenseHash(), 0L) && Passed;
 
@@ -213,7 +179,7 @@ bool UTSettingsGlobal::TestReadWriteFiles()
   Passed = EvaluateTrue("MFile::Remove()", "wrong root cleanup", "The wrong-root temporary file can be removed", MFile::Remove(WrongRootFile)) && Passed;
   Passed = EvaluateTrue("MFile::Remove()", "empty cleanup", "The empty temporary file can be removed", MFile::Remove(EmptyFile)) && Passed;
   Passed = EvaluateTrue("MFile::Remove()", "settings cleanup", "The representative global-settings file can be removed", MFile::Remove(SettingsFile)) && Passed;
-  Passed = EvaluateTrue("std::filesystem::remove()", "file temp cleanup", "The global-settings temp directory can be removed", std::filesystem::remove(TempDirectory().Data())) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "file temp cleanup", "The global-settings temp directory can be removed", RemoveTemporaryDirectory()) && Passed;
 
   return Passed;
 }

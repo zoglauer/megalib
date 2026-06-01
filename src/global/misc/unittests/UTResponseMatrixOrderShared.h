@@ -12,7 +12,6 @@
 #define __UTResponseMatrixOrderShared__
 
 // Standard libs:
-#include <cstdlib>
 #include <sys/wait.h>
 
 // MEGAlib:
@@ -28,15 +27,9 @@
 #include <TROOT.h>
 
 
-inline bool PrepareResponseMatrixTempDirectory()
-{
-  return system("mkdir -p /tmp/UTResponseMatrix") == 0;
-}
-
-
 inline bool RunInvalidAxisUnitTest(const MString& Executable, const MString& Argument)
 {
-  int Status = MSystem::RunChildProcess(Executable, Argument, "/tmp/UTResponseMatrix/response_matrix_assert.log");
+  int Status = MSystem::RunChildProcess(Executable, Argument, "/dev/null");
   if (Status < 0) {
     return false;
   }
@@ -457,7 +450,7 @@ public: \
   virtual bool Run() \
   { \
     bool Passed = true; \
-    Passed = EvaluateTrue("PrepareResponseMatrixTempDirectory()", "setup", "The temporary response-matrix directory can be created", PrepareResponseMatrixTempDirectory()) && Passed; \
+    Passed = EvaluateTrue("PrepareTemporaryDirectory()", "setup", "The temporary response-matrix directory can be created", PrepareTemporaryDirectory()) && Passed; \
     RM_DECLARE_AXES_##ORDER \
     vector<float> EmptyAxis; \
     vector<float> NonIncreasingAxis{0.0f, 1.0f, 1.0f}; \
@@ -526,7 +519,7 @@ public: \
     RM_EXTRA_TESTS_##ORDER \
     MATRIX SumFull = Matrix.GetSumMatrixO##ORDER(RM_ORDER_INDICES_##ORDER); \
     Passed = EvaluateNear("GetSumMatrixO" #ORDER "()", "identity projection", "The full-order sum projection preserves the representative first-bin content", SumFull.GetBinContent(RM_ZERO_BINS_##ORDER), 6.0, 1e-6) && Passed; \
-    MString FileName = MString("/tmp/UTResponseMatrix/") + #SUITE + ".rsp"; \
+    MString FileName = GetTemporaryFileName(MString(#SUITE) + ".rsp"); \
     Passed = Evaluate("Write()", "stream round trip", "Writing the representative matrix in stream mode succeeds", Matrix.Write(FileName, true), true) && Passed; \
     MATRIX ReadBack; \
     Passed = Evaluate("Read()", "stream round trip", "Reading the representative matrix written in stream mode succeeds", ReadBack.Read(FileName), true) && Passed; \
@@ -544,13 +537,14 @@ public: \
       gROOT->SetBatch(WasBatch); \
     } \
     DisableDefaultStreams(); \
-    Passed = Evaluate("Write()", "non-stream mode", "Writing the representative matrix in non-stream mode is rejected explicitly", Matrix.Write(MString("/tmp/UTResponseMatrix/") + #SUITE + "_text.rsp", false), false) && Passed; \
+    Passed = Evaluate("Write()", "non-stream mode", "Writing the representative matrix in non-stream mode is rejected explicitly", Matrix.Write(GetTemporaryFileName(MString(#SUITE) + "_text.rsp"), false), false) && Passed; \
     MFile File; \
-    Passed = Evaluate("Open()", "non-stream read setup", "The representative non-stream response-matrix file can be created", File.Open(MString("/tmp/UTResponseMatrix/") + #SUITE + "_text_read.rsp", MFile::c_Write), true) && Passed; \
+    MString TextReadFileName = GetTemporaryFileName(MString(#SUITE) + "_text_read.rsp"); \
+    Passed = Evaluate("Open()", "non-stream read setup", "The representative non-stream response-matrix file can be created", File.Open(TextReadFileName, MFile::c_Write), true) && Passed; \
     File.Write(MString("# Response Matrix " #ORDER "\nVersion 1\n\nNM Representative\n\nOD " #ORDER "\n\nTS 0\n\nSA 0\n\nSM \n\nType ResponseMatrixO" #ORDER "\n")); \
     File.Close(); \
     MATRIX ReadBackText; \
-    Passed = Evaluate("Read()", "non-stream mode", "Reading the representative matrix in non-stream mode is rejected explicitly", ReadBackText.Read(MString("/tmp/UTResponseMatrix/") + #SUITE + "_text_read.rsp"), false) && Passed; \
+    Passed = Evaluate("Read()", "non-stream mode", "Reading the representative matrix in non-stream mode is rejected explicitly", ReadBackText.Read(TextReadFileName), false) && Passed; \
     EnableDefaultStreams(); \
     Summarize(); \
     return Passed; \

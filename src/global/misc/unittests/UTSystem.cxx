@@ -11,7 +11,6 @@
 
 // Standard libs:
 #include <ctime>
-#include <filesystem>
 #include <sys/time.h>
 #include <sys/wait.h>
 
@@ -70,7 +69,7 @@ bool UTSystem::Run()
   Passed = EvaluateTrue("RunChildProcess()", "redirected output", "RunChildProcess redirects child output to the requested file", ChildLogContent.IsEmpty() == false) && Passed;
   Passed = EvaluateTrue("RunChildProcess()", "redirected output", "The redirected child output contains the expected marker", ChildLogContent.Contains("UTSystem child")) && Passed;
   const MString MissingChildLog = TempDirectory + "/missing-child.log";
-  ChildStatus = MSystem::RunChildProcess("/tmp/UTSystem_missing_child_executable", "", MissingChildLog);
+  ChildStatus = MSystem::RunChildProcess(GetTemporaryFileName("missing_child_executable"), "", MissingChildLog);
   Passed = EvaluateTrue("RunChildProcess()", "missing child", "RunChildProcess returns the shell command-not-found status for a missing child executable", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 127) && Passed;
 
   int Free = -1;
@@ -118,7 +117,7 @@ bool UTSystem::Run()
   Passed = EvaluateTrue("MFile::Remove()", "child log cleanup", "The representative child-process log can be removed", MFile::Remove(ChildLog)) && Passed;
   Passed = EvaluateTrue("MFile::Remove()", "missing child log cleanup", "The representative missing-child log can be removed", MFile::Remove(MissingChildLog)) && Passed;
   Passed = EvaluateFalse("FileExist()", "cleanup", "The representative MSystem file is gone after cleanup", System.FileExist(FileName)) && Passed;
-  Passed = EvaluateTrue("std::filesystem::remove()", "temp cleanup", "The temporary MSystem directory can be removed", std::filesystem::remove(TempDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The temporary MSystem directory can be removed", RemoveTemporaryDirectory()) && Passed;
 
   Summarize();
   return Passed;

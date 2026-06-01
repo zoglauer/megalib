@@ -9,9 +9,7 @@
  */
 
 // Standard libs:
-#include <cerrno>
-#include <fstream>
-#include <sys/stat.h>
+#include <vector>
 using namespace std;
 
 // ROOT libs:
@@ -46,7 +44,7 @@ bool UTFunction2D::Run()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MFunction2D fixtures can be created", mkdir("/tmp/UTFunction2D", 0777) == 0 || errno == EEXIST) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temporary directory", "The temporary directory for MFunction2D fixtures can be created", PrepareTemporaryDirectory()) && Passed;
 
   MFunction2D Default;
   Passed = Evaluate("MFunction2D()", "construction", "A representative MFunction2D instance can be constructed", true, true) && Passed;
@@ -62,16 +60,9 @@ bool UTFunction2D::Run()
     EmptyConstant.Evaluate(0.0, 0.0);
   }) && Passed;
 
-  MString LinearFile = "/tmp/UTFunction2D/linear.fun";
-  {
-    ofstream Out(LinearFile.Data());
-    Out<<"IP LIN\n";
-    Out<<"XA 1 2 4\n";
-    Out<<"YA -1 1 2\n";
-    Out<<"GR 0 0 2 6\n";
-    Out<<"GR 1 6 8 12\n";
-    Out<<"GR 2 9 11 15\n";
-  }
+  MString LinearFile = GetTemporaryFileName("linear.fun");
+  Passed = EvaluateTrue("WriteTextFile()", "linear file", "The representative linear 2D file can be written",
+                        WriteTextFile(LinearFile, "IP LIN\nXA 1 2 4\nYA -1 1 2\nGR 0 0 2 6\nGR 1 6 8 12\nGR 2 9 11 15\n")) && Passed;
 
   MFunction2D Linear;
   Passed = Evaluate("Set()", "representative linear file", "MFunction2D reads a representative linear file successfully", Linear.Set(LinearFile, "AP"), true) && Passed;
@@ -98,16 +89,9 @@ bool UTFunction2D::Run()
   Passed = EvaluateNear("ScaleY()", "representative affine plane range", "ScaleY updates the representative maximum y value", Linear.GetYMax(), 1.0, 1e-12) && Passed;
   Passed = EvaluateNear("ScaleZ()", "representative affine plane range", "ScaleZ updates the representative maximum z value", Linear.GetZMax(), 30.0, 1e-12) && Passed;
 
-  MString NoneFile = "/tmp/UTFunction2D/none.fun";
-  {
-    ofstream Out(NoneFile.Data());
-    Out<<"IP NONE\n";
-    Out<<"XA 0 10 30\n";
-    Out<<"YA 0 20 50\n";
-    Out<<"GR 0 0 1 2\n";
-    Out<<"GR 1 10 11 12\n";
-    Out<<"GR 2 20 21 22\n";
-  }
+  MString NoneFile = GetTemporaryFileName("none.fun");
+  Passed = EvaluateTrue("WriteTextFile()", "none file", "The representative no-interpolation 2D file can be written",
+                        WriteTextFile(NoneFile, "IP NONE\nXA 0 10 30\nYA 0 20 50\nGR 0 0 1 2\nGR 1 10 11 12\nGR 2 20 21 22\n")) && Passed;
 
   MFunction2D None;
   Passed = Evaluate("Set()", "representative none file", "MFunction2D reads a representative no-interpolation file successfully", None.Set(NoneFile, "AP"), true) && Passed;
@@ -133,15 +117,9 @@ bool UTFunction2D::Run()
     Passed = EvaluateNear("GetRandom()", "representative draw 3 y", "GetRandom returns the representative third seeded golden y value", Y3, 30.028429401520969, 1e-4) && Passed;
   }
 
-  MString InvalidXBFile = "/tmp/UTFunction2D/invalid_xb.fun";
-  {
-    ofstream Out(InvalidXBFile.Data());
-    Out<<"IP LIN\n";
-    Out<<"XB 1 4 1\n";
-    Out<<"YA 0 1\n";
-    Out<<"GR 0 1\n";
-    Out<<"GR 1 2\n";
-  }
+  MString InvalidXBFile = GetTemporaryFileName("invalid_xb.fun");
+  Passed = EvaluateTrue("WriteTextFile()", "invalid XB file", "The representative invalid-XB 2D file can be written",
+                        WriteTextFile(InvalidXBFile, "IP LIN\nXB 1 4 1\nYA 0 1\nGR 0 1\nGR 1 2\n")) && Passed;
 
   MFunction2D InvalidXB;
   DisableDefaultStreams();
@@ -149,13 +127,9 @@ bool UTFunction2D::Run()
   EnableDefaultStreams();
 
   {
-    MString InvalidAPXIndexFile = "/tmp/UTFunction2D/invalid_ap_x_index.fun";
-    ofstream Out(InvalidAPXIndexFile.Data());
-    Out<<"IP LIN\n";
-    Out<<"XA 0 1\n";
-    Out<<"YA 0 1\n";
-    Out<<"AP 2 0 1\n";
-    Out.close();
+    MString InvalidAPXIndexFile = GetTemporaryFileName("invalid_ap_x_index.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "invalid AP x-index file", "The representative invalid AP x-index file can be written",
+                          WriteTextFile(InvalidAPXIndexFile, "IP LIN\nXA 0 1\nYA 0 1\nAP 2 0 1\n")) && Passed;
     MFunction2D InvalidAPXIndex;
     DisableDefaultStreams();
     Passed = Evaluate("Set()", "invalid AP x index equal to size", "MFunction2D rejects a representative AP x index equal to the x-axis size", InvalidAPXIndex.Set(InvalidAPXIndexFile, "AP"), false) && Passed;
@@ -163,13 +137,9 @@ bool UTFunction2D::Run()
   }
 
   {
-    MString InvalidAPYIndexFile = "/tmp/UTFunction2D/invalid_ap_y_index.fun";
-    ofstream Out(InvalidAPYIndexFile.Data());
-    Out<<"IP LIN\n";
-    Out<<"XA 0 1\n";
-    Out<<"YA 0 1\n";
-    Out<<"AP 0 2 1\n";
-    Out.close();
+    MString InvalidAPYIndexFile = GetTemporaryFileName("invalid_ap_y_index.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "invalid AP y-index file", "The representative invalid AP y-index file can be written",
+                          WriteTextFile(InvalidAPYIndexFile, "IP LIN\nXA 0 1\nYA 0 1\nAP 0 2 1\n")) && Passed;
     MFunction2D InvalidAPYIndex;
     DisableDefaultStreams();
     Passed = Evaluate("Set()", "invalid AP y index equal to size", "MFunction2D rejects a representative AP y index equal to the y-axis size", InvalidAPYIndex.Set(InvalidAPYIndexFile, "AP"), false) && Passed;
@@ -177,13 +147,9 @@ bool UTFunction2D::Run()
   }
 
   {
-    MString InvalidGRYIndexFile = "/tmp/UTFunction2D/invalid_gr_y_index.fun";
-    ofstream Out(InvalidGRYIndexFile.Data());
-    Out<<"IP LIN\n";
-    Out<<"XA 0 1\n";
-    Out<<"YA 0 1\n";
-    Out<<"GR 2 1 2\n";
-    Out.close();
+    MString InvalidGRYIndexFile = GetTemporaryFileName("invalid_gr_y_index.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "invalid GR y-index file", "The representative invalid GR y-index file can be written",
+                          WriteTextFile(InvalidGRYIndexFile, "IP LIN\nXA 0 1\nYA 0 1\nGR 2 1 2\n")) && Passed;
     MFunction2D InvalidGRYIndex;
     DisableDefaultStreams();
     Passed = Evaluate("Set()", "invalid GR y index equal to size", "MFunction2D rejects a representative GR y index equal to the y-axis size", InvalidGRYIndex.Set(InvalidGRYIndexFile, "AP"), false) && Passed;
@@ -191,14 +157,9 @@ bool UTFunction2D::Run()
   }
 
   {
-    MString UnknownIPFile = "/tmp/UTFunction2D/unknown_ip.fun";
-    ofstream Out(UnknownIPFile.Data());
-    Out<<"IP SPLINE\n";
-    Out<<"XA 0 1\n";
-    Out<<"YA 0 1\n";
-    Out<<"GR 0 1 2\n";
-    Out<<"GR 1 3 4\n";
-    Out.close();
+    MString UnknownIPFile = GetTemporaryFileName("unknown_ip.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "unknown interpolation file", "The representative unknown-interpolation 2D file can be written",
+                          WriteTextFile(UnknownIPFile, "IP SPLINE\nXA 0 1\nYA 0 1\nGR 0 1 2\nGR 1 3 4\n")) && Passed;
     MFunction2D UnknownIP;
     DisableDefaultStreams();
     Passed = Evaluate("Set()", "unknown 2D IP", "MFunction2D rejects a representative file with an unknown interpolation keyword", UnknownIP.Set(UnknownIPFile, "AP"), false) && Passed;
@@ -206,14 +167,9 @@ bool UTFunction2D::Run()
   }
 
   {
-    MString NonIncreasingYFile = "/tmp/UTFunction2D/non_increasing_y.fun";
-    ofstream Out(NonIncreasingYFile.Data());
-    Out<<"IP LIN\n";
-    Out<<"XA 0 1\n";
-    Out<<"YA 2 1\n";
-    Out<<"GR 0 1 2\n";
-    Out<<"GR 1 3 4\n";
-    Out.close();
+    MString NonIncreasingYFile = GetTemporaryFileName("non_increasing_y.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "non-increasing y file", "The representative non-increasing-y 2D file can be written",
+                          WriteTextFile(NonIncreasingYFile, "IP LIN\nXA 0 1\nYA 2 1\nGR 0 1 2\nGR 1 3 4\n")) && Passed;
     MFunction2D NonIncreasingY;
     DisableDefaultStreams();
     Passed = Evaluate("Set()", "non-increasing y", "MFunction2D rejects a representative file with non-increasing y values", NonIncreasingY.Set(NonIncreasingYFile, "AP"), false) && Passed;

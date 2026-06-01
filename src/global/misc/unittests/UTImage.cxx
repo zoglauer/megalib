@@ -9,8 +9,6 @@
  */
 
 // Standard libs:
-#include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
 using namespace std;
 
@@ -21,6 +19,7 @@ using namespace std;
 #include <TAxis.h>
 
 // MEGAlib:
+#include "MFile.h"
 #include "MImage.h"
 #include "MUnitTest.h"
 
@@ -255,16 +254,16 @@ bool UTImage::Run()
     double Values[3] = {1.0, 2.0, 3.0};
     TestImage Saved("SavedImage", Values, "Energy", 0.0, 3.0, 3, "Counts", MImage::c_Viridis, MImage::c_COLZ);
     DisableDefaultStreams();
-    Saved.SaveAs("/tmp/UTImage/does_not_exist.png");
+    Saved.SaveAs(GetTemporaryDirectoryName("missing") + "/does_not_exist.png");
     EnableDefaultStreams();
     Passed = EvaluateTrue("SaveAs()", "representative no-canvas path", "SaveAs is safely callable on a representative image without a canvas", true) && Passed;
 
     Saved.Display();
-    MString FileName = "/tmp/UTImage_existing_canvas.png";
-    ::remove(FileName.Data());
+    MString FileName = GetTemporaryFileName("existing_canvas.png");
+    DisableDefaultStreams();
     Saved.SaveAs(FileName);
-    struct stat Info;
-    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates the representative output file when a canvas exists", stat(FileName.Data(), &Info) == 0 && S_ISREG(Info.st_mode) != 0) && Passed;
+    EnableDefaultStreams();
+    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates the representative output file when a canvas exists", MFile::Exists(FileName)) && Passed;
   }
 
   {

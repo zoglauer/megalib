@@ -9,8 +9,6 @@
  */
 
 // Standard libs:
-#include <cerrno>
-#include <sys/stat.h>
 #include <sys/wait.h>
 #include <vector>
 using namespace std;
@@ -54,7 +52,7 @@ bool UTResponseMatrixON::Run()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MResponseMatrixON fixtures can be created", mkdir("/tmp/UTResponseMatrixON", 0777) == 0 || errno == EEXIST) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temporary directory", "The temporary directory for MResponseMatrixON fixtures can be created", PrepareTemporaryDirectory()) && Passed;
 
   Passed = EvaluateTrue("CopyConstructor()", "representative process", "Copy constructing and destroying a representative MResponseMatrixON succeeds", RunChildExpectingSuccess("--copy-constructor")) && Passed;
   Passed = EvaluateTrue("AssignmentOperator()", "representative process", "Assigning and destroying a representative MResponseMatrixON succeeds", RunChildExpectingSuccess("--assignment-operator")) && Passed;
@@ -234,7 +232,7 @@ bool UTResponseMatrixON::Run()
   Passed = EvaluateNear("Collapse()", "representative content first bin", "Collapse sums the representative collapsed content for the first bin", Collapsed.Get(vector<unsigned long>{0}), 4.0, 1e-6) && Passed;
   Passed = EvaluateNear("Collapse()", "representative content second bin", "Collapse sums the representative collapsed content for the second bin", Collapsed.Get(vector<unsigned long>{1}), 6.0, 1e-6) && Passed;
 
-  MString SparseFile = "/tmp/UTResponseMatrixON/representative_sparse.rsp";
+  MString SparseFile = GetTemporaryFileName("representative_sparse.rsp");
   {
     DisableDefaultStreams();
     Passed = Evaluate("Write()", "representative sparse round trip", "Writing the representative sparse ON matrix succeeds", CollapseSource.Write(SparseFile, false), true) && Passed;
@@ -248,7 +246,7 @@ bool UTResponseMatrixON::Run()
   StreamMatrix.AddAxisLinear("X", 2, 0.0, 2.0);
   StreamMatrix.AddAxisLinear("Y", 2, 0.0, 2.0);
   StreamMatrix.Set(vector<unsigned long>{0, 0}, 2.0f);
-  MString StreamFile = "/tmp/UTResponseMatrixON/representative_stream.rsp";
+  MString StreamFile = GetTemporaryFileName("representative_stream.rsp");
   {
     DisableDefaultStreams();
     Passed = Evaluate("Write()", "representative stream round trip", "Writing the representative stream ON matrix succeeds", StreamMatrix.Write(StreamFile, true), true) && Passed;
@@ -325,6 +323,7 @@ void UTResponseMatrixON::CleanupCanvases(int TargetCount)
 bool UTResponseMatrixON::RunChildExpectingSuccess(const MString& Argument)
 {
   int Status = MSystem::RunChildProcess("bin/UTResponseMatrixON", Argument, "/dev/null");
+  if (Status < 0) return false;
   return WIFEXITED(Status) && WEXITSTATUS(Status) == 0;
 }
 

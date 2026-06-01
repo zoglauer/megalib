@@ -9,9 +9,7 @@
  */
 
 // Standard libs:
-#include <cerrno>
-#include <fstream>
-#include <sys/stat.h>
+#include <vector>
 using namespace std;
 
 // ROOT libs:
@@ -45,7 +43,7 @@ bool UTFunction::Run()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MFunction fixtures can be created", mkdir("/tmp/UTFunction", 0777) == 0 || errno == EEXIST) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temporary directory", "The temporary directory for MFunction fixtures can be created", PrepareTemporaryDirectory()) && Passed;
 
   MFunction Default;
   Passed = Evaluate("MFunction()", "construction", "A representative MFunction instance can be constructed", true, true) && Passed;
@@ -232,7 +230,7 @@ bool UTFunction::Run()
     MFunction Saved;
     Passed = Evaluate("Set()", "save round-trip representative source", "MFunction accepts representative source data for a file round-trip",
                       Saved.Set(vector<double>{1.0, 2.5, 5.0}, vector<double>{3.0, 6.0, 11.0}, MFunction::c_InterpolationLinLin), true) && Passed;
-    MString FileName = "/tmp/UTFunction/roundtrip.dat";
+    MString FileName = GetTemporaryFileName("roundtrip.dat");
     Passed = Evaluate("Save()", "representative round-trip file", "Save writes a representative function file", Saved.Save(FileName, "DP"), true) && Passed;
 
     MFunction ReadBack;
@@ -242,11 +240,8 @@ bool UTFunction::Run()
   }
 
   {
-    MString DefaultInterpolationFile = "/tmp/UTFunction/default_interpolation.dat";
-    ofstream Out(DefaultInterpolationFile.Data());
-    Out<<"DP 2 5\n";
-    Out<<"DP 4 9\n";
-    Out.close();
+    MString DefaultInterpolationFile = GetTemporaryFileName("default_interpolation.dat");
+    Passed = EvaluateTrue("WriteTextFile()", "default interpolation file", "The representative default-interpolation file can be written", WriteTextFile(DefaultInterpolationFile, "DP 2 5\nDP 4 9\n")) && Passed;
 
     MFunction DefaultInterpolation;
     DisableDefaultStreams();
@@ -271,11 +266,8 @@ bool UTFunction::Run()
   }
 
   {
-    MString BadTokenFile = "/tmp/UTFunction/bad_token.dat";
-    ofstream Out(BadTokenFile.Data());
-    Out<<"IP LinLin\n";
-    Out<<"DP 1\n";
-    Out.close();
+    MString BadTokenFile = GetTemporaryFileName("bad_token.dat");
+    Passed = EvaluateTrue("WriteTextFile()", "bad token file", "The representative bad-token file can be written", WriteTextFile(BadTokenFile, "IP LinLin\nDP 1\n")) && Passed;
     MFunction BadToken;
     DisableDefaultStreams();
     bool BadTokenOk = BadToken.Set(BadTokenFile, "DP");
@@ -284,12 +276,8 @@ bool UTFunction::Run()
   }
 
   {
-    MString UnknownIPFile = "/tmp/UTFunction/unknown_ip.dat";
-    ofstream Out(UnknownIPFile.Data());
-    Out<<"IP Cubic\n";
-    Out<<"DP 1 2\n";
-    Out<<"DP 2 3\n";
-    Out.close();
+    MString UnknownIPFile = GetTemporaryFileName("unknown_ip.dat");
+    Passed = EvaluateTrue("WriteTextFile()", "unknown interpolation file", "The representative unknown-interpolation file can be written", WriteTextFile(UnknownIPFile, "IP Cubic\nDP 1 2\nDP 2 3\n")) && Passed;
     MFunction UnknownIP;
     DisableDefaultStreams();
     bool UnknownIPOk = UnknownIP.Set(UnknownIPFile, "DP");
@@ -298,12 +286,8 @@ bool UTFunction::Run()
   }
 
   {
-    MString NonIncreasingFile = "/tmp/UTFunction/non_increasing.dat";
-    ofstream Out(NonIncreasingFile.Data());
-    Out<<"IP LinLin\n";
-    Out<<"DP 2 2\n";
-    Out<<"DP 1 3\n";
-    Out.close();
+    MString NonIncreasingFile = GetTemporaryFileName("non_increasing.dat");
+    Passed = EvaluateTrue("WriteTextFile()", "non-increasing file", "The representative non-increasing file can be written", WriteTextFile(NonIncreasingFile, "IP LinLin\nDP 2 2\nDP 1 3\n")) && Passed;
     MFunction NonIncreasing;
     DisableDefaultStreams();
     bool NonIncreasingOk = NonIncreasing.Set(NonIncreasingFile, "DP");
@@ -312,12 +296,8 @@ bool UTFunction::Run()
   }
 
   {
-    MString LogFallbackFile = "/tmp/UTFunction/log_fallback.dat";
-    ofstream Out(LogFallbackFile.Data());
-    Out<<"IP LogLog\n";
-    Out<<"DP -1 2\n";
-    Out<<"DP 2 4\n";
-    Out.close();
+    MString LogFallbackFile = GetTemporaryFileName("log_fallback.dat");
+    Passed = EvaluateTrue("WriteTextFile()", "log fallback file", "The representative log-fallback file can be written", WriteTextFile(LogFallbackFile, "IP LogLog\nDP -1 2\nDP 2 4\n")) && Passed;
     MFunction LogFallback;
     DisableDefaultStreams();
     bool LogFallbackOk = LogFallback.Set(LogFallbackFile, "DP");
@@ -346,7 +326,7 @@ bool UTFunction::Run()
     Passed = Evaluate("Set()", "representative save-failure source", "MFunction accepts representative source data for save failure checks",
                       SaveFailure.Set(vector<double>{1.0, 2.0}, vector<double>{3.0, 5.0}, MFunction::c_InterpolationLinLin), true) && Passed;
     DisableDefaultStreams();
-    bool SaveFailureOk = SaveFailure.Save("/tmp/UTFunction_missing_directory/out.dat");
+    bool SaveFailureOk = SaveFailure.Save(GetTemporaryDirectoryName("missing_directory") + "/out.dat");
     EnableDefaultStreams();
     Passed = Evaluate("Save()", "unwritable representative target", "Save returns false for a representative unwritable target path", SaveFailureOk, false) && Passed;
   }

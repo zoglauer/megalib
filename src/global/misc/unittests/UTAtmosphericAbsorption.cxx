@@ -14,7 +14,6 @@
 #include "MUnitTest.h"
 
 // Standard libs:
-#include <filesystem>
 
 
 //! Unit test class for MAtmosphericAbsorption
@@ -119,7 +118,7 @@ bool UTAtmosphericAbsorption::Run()
 
   Passed = EvaluateTrue("MFile::Remove()", "fixture cleanup", "The representative atmospheric absorption fixture can be removed", MFile::Remove(AbsorptionFile)) && Passed;
   Passed = EvaluateFalse("MFile::Exists()", "fixture cleanup", "The representative atmospheric absorption fixture is gone after cleanup", MFile::Exists(AbsorptionFile)) && Passed;
-  Passed = EvaluateTrue("std::filesystem::remove()", "temp cleanup", "The atmospheric-absorption temp directory can be removed", std::filesystem::remove(TempDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The atmospheric-absorption temp directory can be removed", RemoveTemporaryDirectory()) && Passed;
 
   Summarize();
   return Passed;

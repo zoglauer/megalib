@@ -14,7 +14,7 @@
 #include "MUnitTest.h"
 
 // Standard lib:
-#include <fstream>
+#include <sstream>
 using namespace std;
 
 //! Unit test class for the MRotation helper
@@ -300,31 +300,29 @@ bool UTRotation::TestEdgeCases()
                      0.0, 0.0, 1.0);
   Passed = EvaluateNear("GetDeterminant()", "singular matrix", "A matrix with dependent rows has determinant zero", Singular.GetDeterminant(), 0.0, 1e-12) && Passed;
 
-  MString SingularInverseLog = "/tmp/UTRotation_singular_inverse.log";
+  MString SingularInverseLog = GetTemporaryFileName("singular_inverse.log");
   __merr.Connect(SingularInverseLog, false);
   __merr.DumpToStdOut(false);
   MRotation SingularInverse = Singular.GetInvers();
   __merr.DumpToStdOut(true);
   __merr.Disconnect(SingularInverseLog);
-  ifstream SingularInverseStream(SingularInverseLog.Data());
-  string SingularInverseMessage((istreambuf_iterator<char>(SingularInverseStream)), istreambuf_iterator<char>());
+  MString SingularInverseMessage = ReadTextFile(SingularInverseLog);
 
   Passed = EvaluateTrue("GetInvers()", "singular matrix", "GetInvers returns the identity matrix when inversion fails", SingularInverse == MRotation()) && Passed;
   Passed = EvaluateTrue("GetInvers()", "singular matrix warning", "GetInvers emits a warning for singular matrices",
-                        SingularInverseMessage.find("determinant is zero") != string::npos) && Passed;
+                        SingularInverseMessage.Contains("determinant is zero")) && Passed;
 
   MRotation SingularInPlace = Singular;
-  MString SingularInvertLog = "/tmp/UTRotation_singular_invert.log";
+  MString SingularInvertLog = GetTemporaryFileName("singular_invert.log");
   __merr.Connect(SingularInvertLog, false);
   __merr.DumpToStdOut(false);
   SingularInPlace.Invert();
   __merr.DumpToStdOut(true);
   __merr.Disconnect(SingularInvertLog);
-  ifstream SingularInvertStream(SingularInvertLog.Data());
-  string SingularInvertMessage((istreambuf_iterator<char>(SingularInvertStream)), istreambuf_iterator<char>());
+  MString SingularInvertMessage = ReadTextFile(SingularInvertLog);
   Passed = EvaluateTrue("Invert()", "singular matrix", "Invert falls back to the identity matrix for singular matrices", SingularInPlace == MRotation()) && Passed;
   Passed = EvaluateTrue("Invert()", "singular matrix warning", "Invert forwards the singular inversion warning",
-                        SingularInvertMessage.find("determinant is zero") != string::npos) && Passed;
+                        SingularInvertMessage.Contains("determinant is zero")) && Passed;
 
   MRotation RotateA(c_Pi / 7.0, MVector(1.0, 0.0, 0.0));
   MRotation RotateB(c_Pi / 5.0, MVector(0.0, 1.0, 0.0));

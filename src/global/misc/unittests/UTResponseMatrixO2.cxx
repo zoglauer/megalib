@@ -32,7 +32,7 @@ bool UTResponseMatrixO2::Run()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareResponseMatrixTempDirectory()", "setup", "The temporary response-matrix directory can be created", PrepareResponseMatrixTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "setup", "The temporary response-matrix directory can be created", PrepareTemporaryDirectory()) && Passed;
 
   vector<float> A1{0.0f, 1.0f, 2.0f};
   vector<float> A2{0.0f, 1.0f, 2.0f};
@@ -111,7 +111,7 @@ bool UTResponseMatrixO2::Run()
   MResponseMatrixO1 Slice = Matrix.GetSliceInterpolated(0.5f, 2);
   Passed = EvaluateNear("GetSliceInterpolated()", "representative slice", "The representative order-1 slice preserves the first-bin content", Slice.GetBinContent(0), 6.0, 1e-6) && Passed;
 
-  MString FileName = "/tmp/UTResponseMatrix/UTResponseMatrixO2.rsp";
+  MString FileName = GetTemporaryFileName("UTResponseMatrixO2.rsp");
   Passed = Evaluate("Write()", "stream round trip", "Writing the representative matrix in stream mode succeeds", Matrix.Write(FileName, true), true) && Passed;
   MResponseMatrixO2 ReadBack;
   Passed = Evaluate("Read()", "stream round trip", "Reading the representative matrix written in stream mode succeeds", ReadBack.Read(FileName), true) && Passed;
@@ -140,13 +140,14 @@ bool UTResponseMatrixO2::Run()
   }
 
   DisableDefaultStreams();
-  Passed = Evaluate("Write()", "non-stream mode", "Writing the representative matrix in non-stream mode is rejected explicitly", Matrix.Write("/tmp/UTResponseMatrix/UTResponseMatrixO2_text.rsp", false), false) && Passed;
+  Passed = Evaluate("Write()", "non-stream mode", "Writing the representative matrix in non-stream mode is rejected explicitly", Matrix.Write(GetTemporaryFileName("UTResponseMatrixO2_text.rsp"), false), false) && Passed;
   MFile File;
-  Passed = Evaluate("Open()", "non-stream read setup", "The representative non-stream response-matrix file can be created", File.Open("/tmp/UTResponseMatrix/UTResponseMatrixO2_text_read.rsp", MFile::c_Write), true) && Passed;
+  MString TextReadFileName = GetTemporaryFileName("UTResponseMatrixO2_text_read.rsp");
+  Passed = Evaluate("Open()", "non-stream read setup", "The representative non-stream response-matrix file can be created", File.Open(TextReadFileName, MFile::c_Write), true) && Passed;
   File.Write("# Response Matrix 2\nVersion 1\n\nNM Representative\n\nOD 2\n\nTS 0\n\nSA 0\n\nSM \n\nType ResponseMatrixO2\nR2 0 0 6\n");
   File.Close();
   MResponseMatrixO2 ReadBackText;
-  Passed = Evaluate("Read()", "non-stream mode", "Reading the representative matrix in non-stream mode is rejected explicitly", ReadBackText.Read("/tmp/UTResponseMatrix/UTResponseMatrixO2_text_read.rsp"), false) && Passed;
+  Passed = Evaluate("Read()", "non-stream mode", "Reading the representative matrix in non-stream mode is rejected explicitly", ReadBackText.Read(TextReadFileName), false) && Passed;
   EnableDefaultStreams();
 
   Summarize();

@@ -10,7 +10,6 @@
 
 
 // Standard libs:
-#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -155,7 +154,7 @@ bool UTPhotoEvent::TestCopyAndStream()
   Passed = EvaluateTrue("Assimilate(char*)", "basic line", "The basic text assimilation path is exercised", Event.Assimilate((char*) Basic.Data())) && Passed;
 
   MFile File;
-  MString FileName = "/tmp/UTPhotoEvent.tra";
+  MString FileName = GetTemporaryFileName("UTPhotoEvent.tra");
   Passed = EvaluateTrue("Open()", "stream write", "The temporary photo file can be opened for writing", File.Open(FileName, MFile::c_Write)) && Passed;
   Passed = EvaluateFalse("Stream()", "stream write", "The photo event write-stream completes at EOF", Event.Stream(File, 0, false, false, false)) && Passed;
   File.Close();

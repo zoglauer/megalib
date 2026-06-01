@@ -10,7 +10,6 @@
 
 
 // Standard libs:
-#include <fstream>
 #include <cmath>
 #include <sstream>
 #include <string>
@@ -235,7 +234,7 @@ bool UTPairEvent::TestCopyAndStream()
   delete Generic;
 
   MFile File;
-  MString FileName = "/tmp/UTPairEvent.tra";
+  MString FileName = GetTemporaryFileName("UTPairEvent.tra");
   Passed = EvaluateTrue("Open()", "stream write", "The temporary pair file can be opened for writing", File.Open(FileName, MFile::c_Write)) && Passed;
   Passed = EvaluateFalse("Stream()", "stream write", "The pair event write-stream completes at EOF", Event.Stream(File, 0, false, false, false)) && Passed;
   File.Close();

@@ -121,10 +121,6 @@ private:
   //! Test event counting and rewind behavior
   bool TestCountingAndRewind();
 
-  //! Return the temp test directory
-  MString GetTempDirectory() const;
-  //! Create a clean temp directory
-  bool PrepareTempDirectory() const;
 };
 
 
@@ -148,37 +144,15 @@ bool UTFileEvents::Run()
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Return the temp test directory
-MString UTFileEvents::GetTempDirectory() const
-{
-  return GetTemporaryDirectoryName();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Create a clean temp directory
-bool UTFileEvents::PrepareTempDirectory() const
-{
-  return PrepareTemporaryDirectory();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 //! Test read-side metadata parsing and observation-time handling
 bool UTFileEvents::TestOpenAndMetadata()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "metadata temp dir", "The temporary directory for MFileEvents tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "metadata temp dir", "The temporary directory for MFileEvents tests can be created", PrepareTemporaryDirectory("metadata")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("metadata");
 
-  MString FileName = GetTempDirectory() + "/metadata.tra";
+  MString FileName = TemporaryDirectory + "/metadata.tra";
   MString Content =
     "Type tra\n"
     "Version 42\n"
@@ -222,10 +196,11 @@ bool UTFileEvents::TestFooterParsing()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "footer temp dir", "The temporary directory can be recreated for footer tests", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "footer temp dir", "The temporary directory can be recreated for footer tests", PrepareTemporaryDirectory("footer")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("footer");
 
   {
-    MString FileName = GetTempDirectory() + "/footer_ti.tra";
+    MString FileName = TemporaryDirectory + "/footer_ti.tra";
     MString Content =
       "Type tra\n"
       "Version 3\n"
@@ -244,7 +219,7 @@ bool UTFileEvents::TestFooterParsing()
   }
 
   {
-    MString FileName = GetTempDirectory() + "/footer_continue.tra";
+    MString FileName = TemporaryDirectory + "/footer_continue.tra";
     MString Content =
       "Type tra\n"
       "Version 4\n"
@@ -267,7 +242,7 @@ bool UTFileEvents::TestFooterParsing()
   }
 
   {
-    MString FileName = GetTempDirectory() + "/footer_override.tra";
+    MString FileName = TemporaryDirectory + "/footer_override.tra";
     MString Content =
       "Type tra\n"
       "Version 5\n"
@@ -297,13 +272,14 @@ bool UTFileEvents::TestWriting()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "writing temp dir", "The temporary directory can be recreated for write tests", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "writing temp dir", "The temporary directory can be recreated for write tests", PrepareTemporaryDirectory("writing")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("writing");
 
-  MString FileName = GetTempDirectory() + "/write.tra";
+  MString FileName = TemporaryDirectory + "/write.tra";
 
   FileEventsTest File;
-  File.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
-  Passed = Evaluate("SetGeometryFileName()", "geometry expansion exact", "SetGeometryFileName stores the exact expanded geometry path", File.GetGeometryFileName(), GetTempDirectory() + "/geometry.setup") && Passed;
+  File.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
+  Passed = Evaluate("SetGeometryFileName()", "geometry expansion exact", "SetGeometryFileName stores the exact expanded geometry path", File.GetGeometryFileName(), TemporaryDirectory + "/geometry.setup") && Passed;
   Passed = EvaluateTrue("SetGeometryFileName()", "geometry expansion", "SetGeometryFileName stores the expanded geometry path", File.GetGeometryFileName().EndsWith("/geometry.setup")) && Passed;
   File.SetObservationTime(MTime(123.5));
   Passed = EvaluateTrue("Open(write)", "write open", "The write test file opens successfully", File.Open(FileName, MFile::c_Write)) && Passed;
@@ -321,9 +297,9 @@ bool UTFileEvents::TestWriting()
   Passed = EvaluateTrue("CloseEventList()", "close content", "The event-list trailer contains EN and the observation time", Text.Contains("EN\n") && Text.Contains("TE 123.5")) && Passed;
 
   {
-    MString BinaryFileName = GetTempDirectory() + "/write_binary.tra";
+    MString BinaryFileName = TemporaryDirectory + "/write_binary.tra";
     FileEventsTest BinaryFile;
-    BinaryFile.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+    BinaryFile.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write,binary)", "binary open", "The binary write test file opens successfully", BinaryFile.Open(BinaryFileName, MFile::c_Write, true)) && Passed;
     Passed = EvaluateTrue("WriteHeader() binary", "binary header", "WriteHeader writes the binary stream marker when the file is binary", BinaryFile.WriteHeader()) && Passed;
     Passed = EvaluateTrue("Close() binary", "binary close", "The binary write test file closes cleanly", BinaryFile.Close()) && Passed;
@@ -362,12 +338,13 @@ bool UTFileEvents::TestFileTreeHelpers()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "helpers temp dir", "The temporary directory can be recreated for helper tests", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "helpers temp dir", "The temporary directory can be recreated for helper tests", PrepareTemporaryDirectory("helpers")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("helpers");
 
-  MString FirstFile = GetTempDirectory() + "/first.tra";
-  MString SecondFile = GetTempDirectory() + "/second.tra";
-  MString ThirdFile = GetTempDirectory() + "/third.tra";
-  MString IncludeFile = GetTempDirectory() + "/include.tra";
+  MString FirstFile = TemporaryDirectory + "/first.tra";
+  MString SecondFile = TemporaryDirectory + "/second.tra";
+  MString ThirdFile = TemporaryDirectory + "/third.tra";
+  MString IncludeFile = TemporaryDirectory + "/include.tra";
 
   Passed = EvaluateTrue("WriteTextFile(first)", "first helper file", "The first helper file can be written", WriteTextFile(FirstFile, "Type tra\nVersion 1\nGeometry geo.setup\nTB 1\nSE 1\nTE 4\nNF second.tra\n")) && Passed;
   Passed = EvaluateTrue("WriteTextFile(second)", "second helper file", "The second helper file can be written", WriteTextFile(SecondFile, "Type tra\nVersion 2\nGeometry geo.setup\nTB 10\nSE 2\nTE 14\nNF third.tra\n")) && Passed;
@@ -422,14 +399,14 @@ bool UTFileEvents::TestFileTreeHelpers()
 
   {
     FileEventsTest File;
-    File.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+    File.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "create-next open", "The main file opens in write mode for next-file creation", File.Open(FirstFile, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "create-next header", "The initial file header can be written before creating a next file", File.WriteHeader()) && Passed;
     DisableDefaultStreams();
     bool Created = File.TestCreateNextFile();
     EnableDefaultStreams();
     Passed = EvaluateTrue("CreateNextFile()", "create next", "CreateNextFile closes the current file and opens the next split file", Created) && Passed;
-    Passed = Evaluate("CreateNextFile()", "create next file name exact", "CreateNextFile advances to the exact numbered split file path", File.GetFileName(), GetTempDirectory() + "/first.id1.tra") && Passed;
+    Passed = Evaluate("CreateNextFile()", "create next file name exact", "CreateNextFile advances to the exact numbered split file path", File.GetFileName(), TemporaryDirectory + "/first.id1.tra") && Passed;
     Passed = EvaluateTrue("CreateNextFile()", "create next file name", "CreateNextFile advances to a numbered split file", File.GetFileName().Contains(".id1.tra")) && Passed;
     Passed = EvaluateTrue("Exists(split file)", "create next split exists", "The newly created split file exists on disk", MFile::Exists(File.GetFileName())) && Passed;
     File.Close();
@@ -437,7 +414,7 @@ bool UTFileEvents::TestFileTreeHelpers()
 
   {
     FileEventsTest File;
-    File.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+    File.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "create-include open", "The main file opens in write mode for include-file creation", File.Open(FirstFile, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "create-include header", "The initial header can be written before creating an include file", File.WriteHeader()) && Passed;
     DisableDefaultStreams();
@@ -447,7 +424,7 @@ bool UTFileEvents::TestFileTreeHelpers()
     Passed = Evaluate("IsIncludeFileUsed()", "create include used", "Creating an include file marks the include-file state as used", File.IsIncludeFileUsed(), true) && Passed;
     Passed = EvaluateTrue("GetIncludeFile()", "create include pointer", "Creating an include file opens the include helper", File.GetIncludeFile() != nullptr && File.GetIncludeFile()->IsOpen()) && Passed;
     if (File.GetIncludeFile() != nullptr) {
-      Passed = Evaluate("GetIncludeFile()->GetFileName()", "create include file name exact", "The created include file uses the exact first numbered include path", File.GetIncludeFile()->GetFileName(), GetTempDirectory() + "/first.id2.tra") && Passed;
+      Passed = Evaluate("GetIncludeFile()->GetFileName()", "create include file name exact", "The created include file uses the exact first numbered include path", File.GetIncludeFile()->GetFileName(), TemporaryDirectory + "/first.id2.tra") && Passed;
       Passed = EvaluateTrue("GetIncludeFile()->GetFileName()", "create include file name", "The created include file uses the numbered include naming scheme", File.GetIncludeFile()->GetFileName().Contains(".id2.tra")) && Passed;
     }
     DisableDefaultStreams();
@@ -455,7 +432,7 @@ bool UTFileEvents::TestFileTreeHelpers()
     EnableDefaultStreams();
     Passed = EvaluateTrue("CreateIncludeFile() second", "create include reuse", "A second CreateIncludeFile call rotates the include file to the next numbered include", CreatedAgain) && Passed;
     if (File.GetIncludeFile() != nullptr) {
-      Passed = Evaluate("CreateIncludeFile() second", "create include reuse file name exact", "The rotated include file advances to the exact next numbered include path", File.GetIncludeFile()->GetFileName(), GetTempDirectory() + "/first.id3.tra") && Passed;
+      Passed = Evaluate("CreateIncludeFile() second", "create include reuse file name exact", "The rotated include file advances to the exact next numbered include path", File.GetIncludeFile()->GetFileName(), TemporaryDirectory + "/first.id3.tra") && Passed;
       Passed = EvaluateTrue("CreateIncludeFile() second", "create include reuse file name", "The rotated include file advances to the next numbered include file", File.GetIncludeFile()->GetFileName().Contains(".id3.tra")) && Passed;
     }
     File.Close();
@@ -478,11 +455,12 @@ bool UTFileEvents::TestCountingAndRewind()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "counting temp dir", "The temporary directory can be recreated for counting tests", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "counting temp dir", "The temporary directory can be recreated for counting tests", PrepareTemporaryDirectory("counting")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("counting");
 
-  MString MainFile = GetTempDirectory() + "/count.tra";
-  MString IncludeFile = GetTempDirectory() + "/count_include.tra";
-  MString NextFile = GetTempDirectory() + "/count_next.tra";
+  MString MainFile = TemporaryDirectory + "/count.tra";
+  MString IncludeFile = TemporaryDirectory + "/count_include.tra";
+  MString NextFile = TemporaryDirectory + "/count_next.tra";
 
   Passed = EvaluateTrue("WriteTextFile(include)", "count include file", "The include counting file can be written", WriteTextFile(IncludeFile, "Type tra\nVersion 1\nGeometry geo.setup\nSE 3\nSE 4\n")) && Passed;
   Passed = EvaluateTrue("WriteTextFile(next)", "count next file", "The next-file counting file can be written", WriteTextFile(NextFile, "Type tra\nVersion 1\nGeometry geo.setup\nSE 5\nSE 6\n")) && Passed;
@@ -504,7 +482,7 @@ bool UTFileEvents::TestCountingAndRewind()
   }
 
   {
-    MString SimpleFile = GetTempDirectory() + "/simple_count.tra";
+    MString SimpleFile = TemporaryDirectory + "/simple_count.tra";
     Passed = EvaluateTrue("WriteTextFile(simple)", "simple count file", "The direct-count file can be written", WriteTextFile(SimpleFile, "Type tra\nVersion 1\nGeometry geo.setup\nSE 11\nSE 12\nSE 13\n")) && Passed;
 
     FileEventsTest File;

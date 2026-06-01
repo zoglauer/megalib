@@ -9,10 +9,7 @@
  */
 
 // Standard libs:
-#include <cerrno>
-#include <fstream>
 #include <sstream>
-#include <sys/stat.h>
 using namespace std;
 
 // MEGAlib:
@@ -42,7 +39,7 @@ bool UTFileResponse::Run()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MFileResponse fixtures can be created", mkdir("/tmp/UTFileResponse", 0777) == 0 || errno == EEXIST) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temporary directory", "The temporary directory for MFileResponse fixtures can be created", PrepareTemporaryDirectory()) && Passed;
 
   MFileResponse Default;
   Passed = Evaluate("GetName()", "default constructor", "The default response-file parser starts with an undefined representative name", Default.GetName(), g_StringNotDefined) && Passed;
@@ -55,19 +52,9 @@ bool UTFileResponse::Run()
   MBinaryStore Store;
   Passed = Evaluate("Read(MBinaryStore,...)", "disabled overload", "The disabled MBinaryStore overload returns false", Default.Read(Store, 0), false) && Passed;
 
-  MString HeaderFile = "/tmp/UTFileResponse/header_only.rsp";
-  {
-    ofstream Out(HeaderFile.Data());
-    Out<<"Version 1\n";
-    Out<<"Type ResponseMatrixO1Stream\n";
-    Out<<"NM HeaderOnly\n";
-    Out<<"TS 88\n";
-    Out<<"SA 7.5\n";
-    Out<<"SM Mono 511\n";
-    Out<<"HA 1234\n";
-    Out<<"CE false\n";
-    Out<<"StartStream 0\n";
-  }
+  MString HeaderFile = GetTemporaryFileName("header_only.rsp");
+  Passed = EvaluateTrue("WriteTextFile()", "header file", "The representative response header file can be written",
+                        WriteTextFile(HeaderFile, "Version 1\nType ResponseMatrixO1Stream\nNM HeaderOnly\nTS 88\nSA 7.5\nSM Mono 511\nHA 1234\nCE false\nStartStream 0\n")) && Passed;
 
   MFileResponse HeaderReader;
   Passed = Evaluate("Open()", "representative header", "Open reads the representative response header successfully", HeaderReader.Open(HeaderFile), true) && Passed;
@@ -81,14 +68,9 @@ bool UTFileResponse::Run()
   Passed = Evaluate("GetHash()", "representative header", "Open stores the representative hash", HeaderReader.GetHash(), 1234UL) && Passed;
   HeaderReader.Close();
 
-  MString PartialHeaderFile = "/tmp/UTFileResponse/header_partial.rsp";
-  {
-    ofstream Out(PartialHeaderFile.Data());
-    Out<<"Version 1\n";
-    Out<<"Type ResponseMatrixO1Stream\n";
-    Out<<"CE true\n";
-    Out<<"StartStream 0\n";
-  }
+  MString PartialHeaderFile = GetTemporaryFileName("header_partial.rsp");
+  Passed = EvaluateTrue("WriteTextFile()", "partial header file", "The representative partial response header file can be written",
+                        WriteTextFile(PartialHeaderFile, "Version 1\nType ResponseMatrixO1Stream\nCE true\nStartStream 0\n")) && Passed;
   Passed = Evaluate("Open()", "reused parser first header", "Open reads the first representative header before the parser is reused", HeaderReader.Open(HeaderFile), true) && Passed;
   HeaderReader.Close();
   Passed = Evaluate("Open()", "reused parser second header", "Open also succeeds on a representative partial second header", HeaderReader.Open(PartialHeaderFile), true) && Passed;
@@ -107,7 +89,7 @@ bool UTFileResponse::Run()
   O1.SetFarFieldStartArea(4.0);
   O1.SetSpectrum("Mono", vector<double>{511.0});
   O1.SetHash(999UL);
-  MString O1File = "/tmp/UTFileResponse/o1_stream.rsp";
+  MString O1File = GetTemporaryFileName("o1_stream.rsp");
   Passed = Evaluate("Write()", "representative O1 stream file", "The representative O1 matrix can be written for MFileResponse dispatch", O1.Write(O1File, true), true) && Passed;
 
   MFileResponse O1Reader;
@@ -127,7 +109,7 @@ bool UTFileResponse::Run()
   ON.SetFarFieldStartArea(2.0);
   ON.SetSpectrum("Linear", vector<double>{1.0, 2.0});
   ON.SetHash(777UL);
-  MString ONFile = "/tmp/UTFileResponse/on_sparse.rsp";
+  MString ONFile = GetTemporaryFileName("on_sparse.rsp");
   {
     DisableDefaultStreams();
     Passed = Evaluate("Write()", "representative ON sparse file", "The representative ON matrix can be written for MFileResponse dispatch", ON.Write(ONFile, false), true) && Passed;
@@ -148,18 +130,9 @@ bool UTFileResponse::Run()
     delete ONReadBack;
   }
 
-  MString UnknownFile = "/tmp/UTFileResponse/unknown.rsp";
-  {
-    ofstream Out(UnknownFile.Data());
-    Out<<"Version 1\n";
-    Out<<"Type UnknownMatrix\n";
-    Out<<"NM Unknown\n";
-    Out<<"TS 1\n";
-    Out<<"SA 0\n";
-    Out<<"SM \n";
-    Out<<"HA 1\n";
-    Out<<"CE true\n";
-  }
+  MString UnknownFile = GetTemporaryFileName("unknown.rsp");
+  Passed = EvaluateTrue("WriteTextFile()", "unknown type file", "The representative unknown-type response file can be written",
+                        WriteTextFile(UnknownFile, "Version 1\nType UnknownMatrix\nNM Unknown\nTS 1\nSA 0\nSM \nHA 1\nCE true\n")) && Passed;
   MFileResponse UnknownReader;
   {
     DisableDefaultStreams();
@@ -167,18 +140,9 @@ bool UTFileResponse::Run()
     EnableDefaultStreams();
   }
 
-  MString MissingCEFile = "/tmp/UTFileResponse/missing_ce.rsp";
-  {
-    ofstream Out(MissingCEFile.Data());
-    Out<<"Version 1\n";
-    Out<<"Type ResponseMatrixO1Stream\n";
-    Out<<"NM MissingCE\n";
-    Out<<"TS 1\n";
-    Out<<"SA 0\n";
-    Out<<"SM Mono 511\n";
-    Out<<"HA 1\n";
-    Out<<"StartStream 0\n";
-  }
+  MString MissingCEFile = GetTemporaryFileName("missing_ce.rsp");
+  Passed = EvaluateTrue("WriteTextFile()", "missing CE file", "The representative missing-CE response file can be written",
+                        WriteTextFile(MissingCEFile, "Version 1\nType ResponseMatrixO1Stream\nNM MissingCE\nTS 1\nSA 0\nSM Mono 511\nHA 1\nStartStream 0\n")) && Passed;
   MFileResponse MissingCEReader;
   Passed = Evaluate("Open()", "missing CE", "Open accepts a representative header without CE and falls back to centered values", MissingCEReader.Open(MissingCEFile), true) && Passed;
   Passed = Evaluate("AreValuesCentered()", "missing CE", "Open falls back to representative centered values when CE is missing", MissingCEReader.AreValuesCentered(), true) && Passed;
@@ -187,13 +151,13 @@ bool UTFileResponse::Run()
   MFileResponse MissingReader;
   {
     DisableDefaultStreams();
-    Passed = Evaluate("Open()", "missing file", "Open returns false for a representative missing response file", MissingReader.Open("/tmp/UTFileResponse/does_not_exist.rsp"), false) && Passed;
+    Passed = Evaluate("Open()", "missing file", "Open returns false for a representative missing response file", MissingReader.Open(GetTemporaryFileName("does_not_exist.rsp")), false) && Passed;
     EnableDefaultStreams();
   }
 
   ostringstream Buffer;
   Buffer<<"Alpha";
-  MString WriteFile = "/tmp/UTFileResponse/write_stream.txt";
+  MString WriteFile = GetTemporaryFileName("write_stream.txt");
   MFileResponse Writer;
   Passed = Evaluate("Open()", "writer", "Open can create a representative output file", Writer.Open(WriteFile, MFile::c_Write), true) && Passed;
   if (Writer.IsOpen() == true) {
@@ -201,9 +165,7 @@ bool UTFileResponse::Run()
     Passed = Evaluate("Write(ostringstream&)", "clear stream", "Write(ostringstream&) clears the representative source stream after writing", MString(Buffer.str()), MString("")) && Passed;
     Writer.Write(1.5);
     Writer.Close();
-    ifstream In(WriteFile.Data());
-    string Content((istreambuf_iterator<char>(In)), istreambuf_iterator<char>());
-    Passed = Evaluate("Write(const double)", "representative output", "Write(const double) appends the representative value followed by a space", MString(Content.c_str()), MString("Alpha1.5 ")) && Passed;
+    Passed = Evaluate("Write(const double)", "representative output", "Write(const double) appends the representative value followed by a space", ReadTextFile(WriteFile), MString("Alpha1.5 ")) && Passed;
   }
 
   Summarize();

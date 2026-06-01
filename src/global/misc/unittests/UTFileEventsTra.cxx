@@ -49,12 +49,8 @@ private:
   //! Test threaded and parser-mode variants
   bool TestParserModesAndThreading();
 
-  //! Return the temp directory
-  MString GetTempDirectory() const;
   //! Return the data directory
   MString GetDataDirectory() const;
-  //! Prepare the temp directory
-  bool PrepareTempDirectory() const;
   //! Read the observation time from a tra file
   bool ReadObservationTime(const MString& FileName, double& ObservationTime) const;
   //! Create a minimal unidentifiable event
@@ -81,29 +77,6 @@ bool UTFileEventsTra::Run()
 
   return Passed;
 }
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Return the temp directory
-MString UTFileEventsTra::GetTempDirectory() const
-{
-  return GetTemporaryDirectoryName();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Prepare the temp directory
-bool UTFileEventsTra::PrepareTempDirectory() const
-{
-  return PrepareTemporaryDirectory();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
 
 
 //! Return the data directory
@@ -222,20 +195,21 @@ bool UTFileEventsTra::TestOpenAndGuards()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "open temp dir", "The temporary directory for MFileEventsTra tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "open temp dir", "The temporary directory for MFileEventsTra tests can be created", PrepareTemporaryDirectory("open")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("open");
 
   {
     MFileEventsTra File;
     DisableDefaultStreams();
-    bool Opened = File.Open(GetTempDirectory() + "/invalid.txt");
+    bool Opened = File.Open(TemporaryDirectory + "/invalid.txt");
     EnableDefaultStreams();
     Passed = EvaluateFalse("Open(invalid extension)", "invalid extension", "Files without tra extension are rejected", Opened) && Passed;
   }
 
   {
-    MString FileName = GetTempDirectory() + "/guards.tra";
+    MString FileName = TemporaryDirectory + "/guards.tra";
     MFileEventsTra Writer;
-    Writer.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+    Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "guards open write", "A tra file opens in write mode", Writer.Open(FileName, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "guards header", "WriteHeader succeeds for tra files", Writer.WriteHeader()) && Passed;
 
@@ -276,13 +250,14 @@ bool UTFileEventsTra::TestRoundTrip()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "round-trip temp dir", "The temporary directory can be recreated for round-trip tests", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "round-trip temp dir", "The temporary directory can be recreated for round-trip tests", PrepareTemporaryDirectory("roundtrip")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("roundtrip");
 
-  MString FileName = GetTempDirectory() + "/roundtrip.tra";
+  MString FileName = TemporaryDirectory + "/roundtrip.tra";
 
   {
     MFileEventsTra Writer;
-    Writer.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+    Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "round-trip open write", "The round-trip tra file opens in write mode", Writer.Open(FileName, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "round-trip header", "The round-trip file header is written", Writer.WriteHeader()) && Passed;
 
@@ -329,14 +304,15 @@ bool UTFileEventsTra::TestIncludeFiles()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "include temp dir", "The temporary directory can be recreated for include-file tests", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "include temp dir", "The temporary directory can be recreated for include-file tests", PrepareTemporaryDirectory("include")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("include");
 
-  MString MainFile = GetTempDirectory() + "/main.tra";
-  MString IncludeFile = GetTempDirectory() + "/include.tra";
+  MString MainFile = TemporaryDirectory + "/main.tra";
+  MString IncludeFile = TemporaryDirectory + "/include.tra";
 
   {
     MFileEventsTra Writer;
-    Writer.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+    Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "include main open", "The main tra file opens in write mode", Writer.Open(MainFile, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "include main header", "The main tra header is written", Writer.WriteHeader()) && Passed;
     Passed = EvaluateTrue("AddText(IN)", "include main include line", "The main tra file can reference an include file", Writer.AddText("IN include.tra\n")) && Passed;
@@ -347,7 +323,7 @@ bool UTFileEventsTra::TestIncludeFiles()
 
   {
     MFileEventsTra Writer;
-    Writer.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+    Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "include child open", "The include tra file opens in write mode", Writer.Open(IncludeFile, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "include child header", "The include tra header is written", Writer.WriteHeader()) && Passed;
     MUnidentifiableEvent Event = CreateUnidentifiableEvent(3, 7.0, 22.0);
@@ -385,12 +361,13 @@ bool UTFileEventsTra::TestEOFBehavior()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "eof temp dir", "The temporary directory can be recreated for EOF tests", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "eof temp dir", "The temporary directory can be recreated for EOF tests", PrepareTemporaryDirectory("eof")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("eof");
 
-  MString FileName = GetTempDirectory() + "/empty.tra";
+  MString FileName = TemporaryDirectory + "/empty.tra";
   {
     MFileEventsTra Writer;
-    Writer.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+    Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "eof open write", "The empty tra file opens in write mode", Writer.Open(FileName, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "eof header", "The empty tra file header is written", Writer.WriteHeader()) && Passed;
     Writer.SetObservationTime(MTime(3.0));
@@ -418,12 +395,13 @@ bool UTFileEventsTra::TestParserModesAndThreading()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "mode temp dir", "The temporary directory can be recreated for parser-mode tests", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "mode temp dir", "The temporary directory can be recreated for parser-mode tests", PrepareTemporaryDirectory("mode")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("mode");
 
-  MString FileName = GetTempDirectory() + "/modes.tra";
+  MString FileName = TemporaryDirectory + "/modes.tra";
   {
     MFileEventsTra Writer;
-    Writer.SetGeometryFileName(GetTempDirectory() + "/geometry.setup");
+    Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "mode open write", "The mode test tra file opens in write mode", Writer.Open(FileName, MFile::c_Write)) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "mode header", "The mode test header is written", Writer.WriteHeader()) && Passed;
     MUnidentifiableEvent Event = CreateUnidentifiableEvent(9, 2.5, 19.0);

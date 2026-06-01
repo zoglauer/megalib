@@ -10,8 +10,6 @@
 
 // Standard libs:
 #include <limits>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
 using namespace std;
 
@@ -22,6 +20,7 @@ using namespace std;
 #include <TList.h>
 
 // MEGAlib:
+#include "MFile.h"
 #include "MImage3D.h"
 #include "MUnitTest.h"
 
@@ -173,7 +172,7 @@ bool UTImage3D::Run()
     Passed = EvaluateNear("Reset()", "default constructor pre-display average", "Reset is safely callable on a representative 3D image before any histogram has been created", Default.GetAverage(), 0.0, 1e-12) && Passed;
 
     DisableDefaultStreams();
-    Default.SaveAs("/tmp/UTImage3D/does_not_exist.png");
+    Default.SaveAs(GetTemporaryDirectoryName("missing") + "/does_not_exist.png");
     EnableDefaultStreams();
     Passed = EvaluateTrue("SaveAs()", "default constructor no-canvas path", "SaveAs is safely callable on a representative 3D image without a canvas", true) && Passed;
   }
@@ -492,8 +491,8 @@ bool UTImage3D::Run()
 
     double RedisplayValues[8] = {21.0, numeric_limits<double>::infinity(), numeric_limits<double>::quiet_NaN(), 24.0,
                                  25.0, 26.0, 27.0, 28.0};
-    Image.SetImageArray(RedisplayValues);
     DisableDefaultStreams();
+    Image.SetImageArray(RedisplayValues);
     Image.Display(Image.GetCanvasPointer());
     EnableDefaultStreams();
     if (Hist != nullptr) {
@@ -512,11 +511,11 @@ bool UTImage3D::Run()
                       "Z Axis", 0.0, 2.0, 2,
                       "Counts");
     Image.Display();
-    MString FileName = "/tmp/UTImage3D_existing_canvas.png";
-    unlink(FileName.Data());
+    MString FileName = GetTemporaryFileName("existing_canvas.png");
+    DisableDefaultStreams();
     Image.SaveAs(FileName);
-    struct stat Info;
-    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates the representative 3D output file when a canvas exists", stat(FileName.Data(), &Info) == 0 && S_ISREG(Info.st_mode) != 0) && Passed;
+    EnableDefaultStreams();
+    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates the representative 3D output file when a canvas exists", MFile::Exists(FileName)) && Passed;
   }
 
   {

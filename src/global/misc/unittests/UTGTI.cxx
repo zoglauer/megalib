@@ -30,12 +30,6 @@ public:
   virtual bool Run();
 
 private:
-  //! Create the temporary directory used by the tests
-  bool PrepareTempDirectory();
-  //! Return the process-unique temporary directory used by the tests
-  MString TempDirectory() const;
-  //! Return a file in the process-unique temporary directory
-  MString TempFile(const MString& FileName) const;
   //! Test constructor and reset behavior
   bool TestDefaultAndReset();
   //! Test loading representative GTI and BTI intervals
@@ -71,36 +65,6 @@ bool UTGTI::Run()
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTGTI::PrepareTempDirectory()
-{
-  return PrepareTemporaryDirectory();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString UTGTI::TempDirectory() const
-{
-  return GetTemporaryDirectoryName();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString UTGTI::TempFile(const MString& FileName) const
-{
-  return TempDirectory() + "/" + FileName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 bool UTGTI::TestDefaultAndReset()
 {
   bool Passed = true;
@@ -128,9 +92,10 @@ bool UTGTI::TestLoadAndIsGood()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "load temp dir", "The temporary directory for GTI load tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "load temp dir", "The temporary directory for GTI load tests can be created", PrepareTemporaryDirectory("load")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("load");
 
-  MString FileName = TempFile("basic.gti");
+  MString FileName = TemporaryDirectory + "/basic.gti";
   MString Content =
     "GT 10 20\n"
     "BT 12 14\n"
@@ -151,7 +116,7 @@ bool UTGTI::TestLoadAndIsGood()
   Passed = EvaluateTrue("IsGood()", "second good interval", "A representative time in the second good interval is accepted", GTI.IsGood(MTime(35))) && Passed;
   Passed = EvaluateFalse("IsGood()", "after second interval", "Times after the second good interval are rejected", GTI.IsGood(MTime(41))) && Passed;
 
-  MString FractionalFile = TempFile("fractional.gti");
+  MString FractionalFile = TemporaryDirectory + "/fractional.gti";
   MString FractionalContent =
     "GT 10.25 20.75\n"
     "BT 13.5 14.25\n"
@@ -179,10 +144,11 @@ bool UTGTI::TestAdd()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "add temp dir", "The temporary directory for GTI add tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "add temp dir", "The temporary directory for GTI add tests can be created", PrepareTemporaryDirectory("add")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("add");
 
-  MString FirstFile = TempFile("first.gti");
-  MString SecondFile = TempFile("second.gti");
+  MString FirstFile = TemporaryDirectory + "/first.gti";
+  MString SecondFile = TemporaryDirectory + "/second.gti";
 
   Passed = EvaluateTrue("WriteTextFile()", "first add file", "The first GTI input file can be written", WriteTextFile(FirstFile, "GT 1 3\nBT 2 2\nEN\n")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "second add file", "The second GTI input file can be written", WriteTextFile(SecondFile, "GT 8 10\nBT 9 9\nEN\n")) && Passed;
@@ -211,10 +177,11 @@ bool UTGTI::TestIncludes()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "include temp dir", "The temporary directory for GTI include tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "include temp dir", "The temporary directory for GTI include tests can be created", PrepareTemporaryDirectory("include")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("include");
 
-  MString IncludedFile = TempFile("included.gti");
-  MString MainFile = TempFile("main.gti");
+  MString IncludedFile = TemporaryDirectory + "/included.gti";
+  MString MainFile = TemporaryDirectory + "/main.gti";
 
   Passed = EvaluateTrue("WriteTextFile()", "included file", "The included GTI file can be written", WriteTextFile(IncludedFile, "GT 70 80\nBT 75 76\nEN\n")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "main include file", "The main GTI file referencing the include can be written", WriteTextFile(MainFile, "IN included.gti\nGT 50 60\nEN\n")) && Passed;
@@ -237,10 +204,11 @@ bool UTGTI::TestLoadParsingDetails()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "parsing temp dir", "The temporary directory for GTI parsing-detail tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "parsing temp dir", "The temporary directory for GTI parsing-detail tests can be created", PrepareTemporaryDirectory("parsing")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("parsing");
 
   {
-    MString FileName = TempFile("early_end.gti");
+    MString FileName = TemporaryDirectory + "/early_end.gti";
     MString Content =
       "GT 1 2\n"
       "EN\n"
@@ -254,7 +222,7 @@ bool UTGTI::TestLoadParsingDetails()
   }
 
   {
-    MString FileName = TempFile("malformed_lines.gti");
+    MString FileName = TemporaryDirectory + "/malformed_lines.gti";
     MString Content =
       "GT 10 11\n"
       "GT 20\n"
@@ -284,14 +252,15 @@ bool UTGTI::TestLoadFailure()
 
   MGTI GTI;
   DisableDefaultStreams();
-  Passed = EvaluateFalse("Load()", "missing file", "Load() reports failure for missing GTI files", GTI.Load(TempFile("does_not_exist.gti"))) && Passed;
+  Passed = EvaluateFalse("Load()", "missing file", "Load() reports failure for missing GTI files", GTI.Load(GetTemporaryFileName("does_not_exist.gti"))) && Passed;
   EnableDefaultStreams();
   Passed = EvaluateTrue("Load()", "missing file fallback", "A failed load falls back to the default open interval", GTI.IsGood(MTime(12345))) && Passed;
   Passed = EvaluateFalse("Load()", "missing file fallback upper bound", "The failed-load fallback still keeps the configured upper bound", GTI.IsGood(MTime(2000000001))) && Passed;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "failure temp dir", "The temporary directory for GTI failure tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "failure temp dir", "The temporary directory for GTI failure tests can be created", PrepareTemporaryDirectory("failure")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("failure");
 
-  MString MainFile = TempFile("missing_include.gti");
+  MString MainFile = TemporaryDirectory + "/missing_include.gti";
   Passed = EvaluateTrue("WriteTextFile()", "missing include file", "A GTI file with a missing include can be written", WriteTextFile(MainFile, "IN does_not_exist.gti\nGT 1 2\nEN\n")) && Passed;
 
   MGTI IncludeFailure;

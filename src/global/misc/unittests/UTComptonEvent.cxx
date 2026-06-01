@@ -11,7 +11,6 @@
 
 // Standard libs:
 #include <cmath>
-#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -427,7 +426,7 @@ bool UTComptonEvent::TestCopyAndStream()
   delete CopiedPhysical;
 
   MFile File;
-  MString FileName = "/tmp/UTComptonEvent.tra";
+  MString FileName = GetTemporaryFileName("UTComptonEvent.tra");
   Passed = EvaluateTrue("Open()", "stream write", "The temporary Compton file can be opened for writing", File.Open(FileName, MFile::c_Write)) && Passed;
   Passed = EvaluateFalse("Stream()", "stream write", "The Compton event write-stream completes at EOF", Event.Stream(File, 0, false, false, false)) && Passed;
   File.Close();

@@ -9,12 +9,6 @@
  */
 
 
-// Standard libs:
-#include <cstdlib>
-#include <fstream>
-#include <sstream>
-using namespace std;
-
 // MEGAlib:
 #include "MExceptions.h"
 #include "MSystem.h"
@@ -332,17 +326,14 @@ bool UTExceptions::TestUsagePatterns()
   {
     MException::UseAbort(false);
 
-    int Status = MSystem::RunChildProcess(BinaryPath(), "--abort-check", "/tmp/UTExceptions_abort_check.log");
+    MString LogFileName = GetTemporaryFileName("abort_check.log");
+    int Status = MSystem::RunChildProcess(BinaryPath(), "--abort-check", LogFileName);
 
     Passed = EvaluateTrue("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with a non-zero status", Status != 0 && Status != -1) && Passed;
 
-    ifstream In("/tmp/UTExceptions_abort_check.log");
-    ostringstream Output;
-    Output<<In.rdbuf();
-    MString Content = Output.str().c_str();
+    MString Content = ReadTextFile(LogFileName);
     Passed = EvaluateTrue("MException::UseAbort(true)", "child message", "Abort mode prints the exception message before terminating", Content.Contains("Unknown mode abort-check!")) && Passed;
 
-    remove("/tmp/UTExceptions_abort_check.log");
     MException::UseAbort(false);
   }
 

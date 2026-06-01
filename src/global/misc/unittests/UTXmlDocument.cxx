@@ -9,10 +9,6 @@
  */
 
 
-// Standard libs:
-#include <cstdio>
-using namespace std;
-
 // MEGAlib:
 #include "MStreams.h"
 #include "MUnitTest.h"
@@ -63,6 +59,8 @@ bool UTXmlDocument::TestXmlRoundTrip()
 {
   bool Passed = true;
 
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "round trip temp dir", "The temporary directory for XML round-trip tests can be created", PrepareTemporaryDirectory("roundtrip")) && Passed;
+
   MXmlDocument Document(MString("Config"));
   new MXmlAttribute(&Document, MString("version"), MString("2"));
   new MXmlNode(&Document, MString("Name"), MString("Detector"));
@@ -81,7 +79,7 @@ bool UTXmlDocument::TestXmlRoundTrip()
   new MXmlNode(ExtraGroup, MString("Item"), MString("Nested"));
   new MXmlNode(ExtraGroup, MString("Label"), MString("Inner"));
 
-  MString FileName = "/tmp/UTXmlDocument_roundtrip.xml";
+  MString FileName = GetTemporaryDirectoryName("roundtrip") + "/roundtrip.xml";
   Passed = EvaluateTrue("Save()", "round trip", "Documents can be saved to disk", Document.Save(FileName)) && Passed;
 
   MXmlDocument Loaded;
@@ -196,8 +194,6 @@ bool UTXmlDocument::TestXmlRoundTrip()
     Passed = Evaluate("GetName()", "round trip", "The document root name survives a save/load round trip", Loaded.GetName(), MString("Config")) && Passed;
   }
 
-  ::remove(FileName.Data());
-
   return Passed;
 }
 
@@ -208,6 +204,8 @@ bool UTXmlDocument::TestXmlRoundTrip()
 bool UTXmlDocument::TestXmlReload()
 {
   bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "reload temp dir", "The temporary directory for XML reload tests can be created", PrepareTemporaryDirectory("reload")) && Passed;
 
   MXmlDocument First(MString("Settings"));
   new MXmlAttribute(&First, MString("version"), MString("1"));
@@ -221,8 +219,8 @@ bool UTXmlDocument::TestXmlReload()
   new MXmlNode(&Second, MString("GeometryFileName"), MString("second.geo.setup"));
   new MXmlNode(&Second, MString("DataFileName"), MString("current.tra"));
 
-  MString FirstFileName = "/tmp/UTXmlDocument_reload_first.xml";
-  MString SecondFileName = "/tmp/UTXmlDocument_reload_second.xml";
+  MString FirstFileName = GetTemporaryDirectoryName("reload") + "/reload_first.xml";
+  MString SecondFileName = GetTemporaryDirectoryName("reload") + "/reload_second.xml";
   Passed = EvaluateTrue("Save()", "reload first", "The first settings-style xml document can be saved", First.Save(FirstFileName)) && Passed;
   Passed = EvaluateTrue("Save()", "reload second", "The second settings-style xml document can be saved", Second.Save(SecondFileName)) && Passed;
 
@@ -235,9 +233,6 @@ bool UTXmlDocument::TestXmlReload()
   Passed = EvaluateTrue("GetNode(name)", "reload second", "Reloading clears nodes that only existed in the first document", Loaded.GetNode("DataFileHistory") == 0) && Passed;
   Passed = EvaluateNear("GetNNodes()", "reload second", "Reloading replaces the root child set instead of accumulating it", Loaded.GetNNodes(), 2.0, 1e-12) && Passed;
 
-  ::remove(FirstFileName.Data());
-  ::remove(SecondFileName.Data());
-
   return Passed;
 }
 
@@ -249,6 +244,8 @@ bool UTXmlDocument::TestXmlLoadEdges()
 {
   bool Passed = true;
 
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "load-edge temp dir", "The temporary directory for XML load-edge tests can be created", PrepareTemporaryDirectory("load_edges")) && Passed;
+
   MXmlDocument Default;
   Passed = Evaluate("GetName()", "default constructor", "The default xml document name is empty", Default.GetName(), MString("")) && Passed;
   Passed = Evaluate("GetNNodes()", "default constructor", "The default xml document has no child nodes", Default.GetNNodes(), 0U) && Passed;
@@ -256,28 +253,26 @@ bool UTXmlDocument::TestXmlLoadEdges()
   {
     MXmlDocument Missing;
     DisableDefaultStreams();
-    Passed = Evaluate("Load()", "missing file", "Loading a missing XML file fails cleanly", Missing.Load("/tmp/UTXmlDocument_does_not_exist.xml"), false) && Passed;
+    Passed = Evaluate("Load()", "missing file", "Loading a missing XML file fails cleanly", Missing.Load(GetTemporaryDirectoryName("load_edges") + "/does_not_exist.xml"), false) && Passed;
     EnableDefaultStreams();
   }
 
   {
-    MString EmptyFileName = "/tmp/UTXmlDocument_empty.xml";
+    MString EmptyFileName = GetTemporaryDirectoryName("load_edges") + "/empty.xml";
     Passed = EvaluateTrue("WriteTextFile()", "empty file", "An empty XML file can be written", WriteTextFile(EmptyFileName, "")) && Passed;
     MXmlDocument Empty;
     Passed = Evaluate("Load()", "empty file", "Loading an existing empty XML file currently succeeds", Empty.Load(EmptyFileName), true) && Passed;
     Passed = Evaluate("GetName()", "empty file", "Loading an empty XML file leaves the root name empty", Empty.GetName(), MString("")) && Passed;
     Passed = Evaluate("GetNNodes()", "empty file", "Loading an empty XML file leaves the document without child nodes", Empty.GetNNodes(), 0U) && Passed;
-    ::remove(EmptyFileName.Data());
   }
 
   {
-    MString BrokenAttributeFileName = "/tmp/UTXmlDocument_broken_attribute.xml";
+    MString BrokenAttributeFileName = GetTemporaryDirectoryName("load_edges") + "/broken_attribute.xml";
     Passed = EvaluateTrue("WriteTextFile()", "broken attribute file", "A malformed XML file with a broken root attribute can be written", WriteTextFile(BrokenAttributeFileName, "<Config version=2></Config>\n")) && Passed;
     MXmlDocument Broken;
     DisableDefaultStreams();
     Passed = Evaluate("Load()", "broken attribute file", "Loading XML with malformed root attributes fails", Broken.Load(BrokenAttributeFileName), false) && Passed;
     EnableDefaultStreams();
-    ::remove(BrokenAttributeFileName.Data());
   }
 
   return Passed;
@@ -291,10 +286,12 @@ bool UTXmlDocument::TestXmlRegressionBugs()
 {
   bool Passed = true;
 
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "regression temp dir", "The temporary directory for XML regression tests can be created", PrepareTemporaryDirectory("regression")) && Passed;
+
   {
     MXmlDocument Document("Config");
     new MXmlNode(&Document, "Text", MString("A&B<C>"));
-    MString FileName = "/tmp/UTXmlDocument_special_text.xml";
+    MString FileName = GetTemporaryDirectoryName("regression") + "/special_text.xml";
     Passed = EvaluateTrue("Save()", "special text setup", "A representative document with XML-special text characters can be saved", Document.Save(FileName)) && Passed;
 
     MXmlDocument Loaded;
@@ -304,13 +301,12 @@ bool UTXmlDocument::TestXmlRegressionBugs()
     } else {
       Passed = EvaluateTrue("GetNode(name)", "special text round trip", "The special-text node should still be present after loading", false) && Passed;
     }
-    ::remove(FileName.Data());
   }
 
   {
     MXmlDocument Document("Config");
     new MXmlAttribute(&Document, "label", MString("A&B\"C"));
-    MString FileName = "/tmp/UTXmlDocument_special_attribute.xml";
+    MString FileName = GetTemporaryDirectoryName("regression") + "/special_attribute.xml";
     Passed = EvaluateTrue("Save()", "special attribute setup", "A representative document with XML-special attribute characters can be saved", Document.Save(FileName)) && Passed;
 
     MXmlDocument Loaded;
@@ -320,14 +316,13 @@ bool UTXmlDocument::TestXmlRegressionBugs()
     } else {
       Passed = EvaluateTrue("GetAttribute(name)", "special attribute round trip", "The special attribute should still be present after loading", false) && Passed;
     }
-    ::remove(FileName.Data());
   }
 
   {
     MXmlDocument Document("Config");
     MXmlNode* Outer = new MXmlNode(&Document, "A");
     new MXmlNode(Outer, "A", MString("Inner"));
-    MString FileName = "/tmp/UTXmlDocument_nested_same_name.xml";
+    MString FileName = GetTemporaryDirectoryName("regression") + "/nested_same_name.xml";
     Passed = EvaluateTrue("Save()", "nested same-name setup", "A representative document with nested same-name nodes can be saved", Document.Save(FileName)) && Passed;
 
     MXmlDocument Loaded;
@@ -339,24 +334,22 @@ bool UTXmlDocument::TestXmlRegressionBugs()
     } else {
       Passed = EvaluateTrue("GetNode(name)", "nested same-name round trip", "The nested same-name child node should still be present after loading", false) && Passed;
     }
-    ::remove(FileName.Data());
   }
 
   {
-    MString FileName = "/tmp/UTXmlDocument_parse_failure.xml";
+    MString FileName = GetTemporaryDirectoryName("regression") + "/parse_failure.xml";
     Passed = EvaluateTrue("WriteTextFile()", "parse failure setup", "A malformed XML file that triggers a node-parse failure can be written", WriteTextFile(FileName, "<Config><Child></Child>text<Other></Other></Config>\n")) && Passed;
 
     MXmlDocument Loaded;
     DisableDefaultStreams();
     Passed = Evaluate("Load()", "parse failure propagation", "Load should return false when node parsing fails", Loaded.Load(FileName), false) && Passed;
     EnableDefaultStreams();
-    ::remove(FileName.Data());
   }
 
   {
     MXmlDocument Document("Config");
     new MXmlNode(&Document, "Name", "Value");
-    Passed = Evaluate("Save()", "unwritable target", "Save should return false when the target file cannot be created", Document.Save("/tmp/UTXmlDocument_missing_directory/output.xml"), false) && Passed;
+    Passed = Evaluate("Save()", "unwritable target", "Save should return false when the target file cannot be created", Document.Save(GetTemporaryDirectoryName("missing_directory") + "/output.xml"), false) && Passed;
   }
 
   return Passed;

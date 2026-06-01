@@ -175,13 +175,13 @@ bool UTUnitTest::TestFileComparison()
   MFile::Remove(MissingGeneratedFile);
   MFile::Remove(MissingReferenceFile);
 
-  Passed = EvaluateTrue("ofstream::is_open()", "reference fixture", "The representative reference file can be written",
+  Passed = EvaluateTrue("WriteTextFile()", "reference fixture", "The representative reference file can be written",
                         WriteTextFile(ReferenceFile, "alpha\nbeta\n")) && Passed;
-  Passed = EvaluateTrue("ofstream::is_open()", "matching fixture", "The representative matching file can be written",
+  Passed = EvaluateTrue("WriteTextFile()", "matching fixture", "The representative matching file can be written",
                         WriteTextFile(MatchingFile, "alpha\nbeta\n")) && Passed;
-  Passed = EvaluateTrue("ofstream::is_open()", "different fixture", "The representative different file can be written",
+  Passed = EvaluateTrue("WriteTextFile()", "different fixture", "The representative different file can be written",
                         WriteTextFile(DifferentFile, "alpha\ngamma\n")) && Passed;
-  Passed = EvaluateTrue("ofstream::is_open()", "short fixture", "The representative short file can be written",
+  Passed = EvaluateTrue("WriteTextFile()", "short fixture", "The representative short file can be written",
                         WriteTextFile(ShortFile, "alpha\n")) && Passed;
   Passed = EvaluateTrue("ReadTextFile()", "reference fixture", "The unit-test helper can read back a representative fixture file",
                         ReadTextFile(ReferenceFile) == "alpha\nbeta\n") && Passed;
@@ -189,6 +189,12 @@ bool UTUnitTest::TestFileComparison()
                         PrepareTemporaryDirectory("file_comparison")) && Passed;
   Passed = EvaluateTrue("std::filesystem::is_directory()", "scratch directory", "The generated temporary directory exists after preparation",
                         std::filesystem::is_directory(TemporaryDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "nested scratch fixture", "A nested fixture can be written before recursive cleanup",
+                        WriteTextFile(TemporaryDirectory + "/nested.txt", "temporary\n")) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "scratch directory", "The unit-test helper recursively removes a temporary directory",
+                        RemoveTemporaryDirectory("file_comparison")) && Passed;
+  Passed = EvaluateFalse("std::filesystem::exists()", "scratch directory", "The temporary directory no longer exists after recursive cleanup",
+                         std::filesystem::exists(TemporaryDirectory.Data())) && Passed;
 
   UnitTestProbe Probe("Probe");
   Passed = EvaluateTrue("EvaluateFilesIdentical()", "matching files", "EvaluateFilesIdentical accepts representative identical files",

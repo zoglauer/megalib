@@ -11,7 +11,6 @@
 
 // Standard libs:
 #include <cmath>
-#include <filesystem>
 #include <fstream>
 #include <limits>
 #include <string>
@@ -308,7 +307,7 @@ bool UTInterface::Run()
 
   Passed = EvaluateTrue("MFile::Remove()", "save cleanup", "The representative configuration file can be removed", MFile::Remove(SaveFile)) && Passed;
   Passed = EvaluateFalse("MFile::Exists()", "save cleanup", "The representative configuration file is gone after cleanup", MFile::Exists(SaveFile)) && Passed;
-  Passed = EvaluateTrue("std::filesystem::remove()", "temp cleanup", "The temporary MInterface directory can be removed", std::filesystem::remove(TempDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The temporary MInterface directory can be removed", RemoveTemporaryDirectory()) && Passed;
 
   Summarize();
   return Passed;

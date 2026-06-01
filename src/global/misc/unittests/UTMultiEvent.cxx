@@ -142,7 +142,7 @@ bool UTMultiEvent::TestRoundTrips()
   Passed = Evaluate("ToTraString()", "multi tra exact", "The multi-event tra-string is deterministic for representative child events", Tra, ExpectedTra) && Passed;
   Passed = EvaluateTrue("ToTraString()", "multi tra", "The tra string contains the multi-event separators", Tra.Contains("SI") && Tra.Contains("SF")) && Passed;
   MFile File;
-  MString FileName = "/tmp/UTMultiEvent.tra";
+  MString FileName = GetTemporaryFileName("UTMultiEvent.tra");
   Passed = EvaluateTrue("Open()", "multi tra", "The temporary tra file can be opened for writing", File.Open(FileName, MFile::c_Write)) && Passed;
   Passed = EvaluateTrue("Stream()", "multi tra", "The event can be streamed to a file", Event.Stream(File, 0, false, false, false)) && Passed;
   File.Close();

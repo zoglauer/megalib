@@ -9,11 +9,7 @@
  */
 
 // Standard libs:
-#include <cerrno>
-#include <fcntl.h>
 #include <sstream>
-#include <sys/stat.h>
-#include <unistd.h>
 using namespace std;
 
 // MEGAlib:
@@ -120,19 +116,18 @@ bool UTResponseMatrix::Run()
   Passed = Evaluate("Clear()", "representative state spectral parameters", "Clear removes representative spectral parameters", Named.GetSpectralParameters().size(), 0UL) && Passed;
   Passed = Evaluate("Clear()", "representative state hash", "Clear resets the representative hash", Named.GetHash(), 0UL) && Passed;
 
-  MString TempFile = "/tmp/UTResponseMatrix/UTResponseMatrix_base.rsp";
-  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MResponseMatrix fixtures can be created", mkdir("/tmp/UTResponseMatrix", 0777) == 0 || errno == EEXIST) && Passed;
-  {
-    ofstream Out(TempFile.Data());
-    Out<<"Version 1\n";
-    Out<<"Type DummyResponse\n";
-    Out<<"NM ReadBack\n";
-    Out<<"TS 123\n";
-    Out<<"SA 4.5\n";
-    Out<<"SM Mono 511\n";
-    Out<<"HA 999\n";
-    Out<<"CE true\n";
-  }
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temporary directory", "The temporary directory for MResponseMatrix fixtures can be created", PrepareTemporaryDirectory()) && Passed;
+  MString TempFile = GetTemporaryFileName("UTResponseMatrix_base.rsp");
+  Passed = EvaluateTrue("WriteTextFile()", "representative response fixture", "The representative response-matrix fixture can be written",
+                        WriteTextFile(TempFile,
+                                      "Version 1\n"
+                                      "Type DummyResponse\n"
+                                      "NM ReadBack\n"
+                                      "TS 123\n"
+                                      "SA 4.5\n"
+                                      "SM Mono 511\n"
+                                      "HA 999\n"
+                                      "CE true\n")) && Passed;
 
   TestResponseMatrix ReadBack;
   ReadBack.SetReadSpecificResult(true);
@@ -153,7 +148,7 @@ bool UTResponseMatrix::Run()
   Passed = Evaluate("Read()", "representative failure", "Read returns failure when the representative derived reader fails", ReadFail.Read(TempFile), false) && Passed;
   {
     DisableDefaultStreams();
-    Passed = Evaluate("Read()", "missing file", "Read returns false for a representative missing response file", ReadFail.Read("/tmp/UTResponseMatrix/does_not_exist.rsp"), false) && Passed;
+    Passed = Evaluate("Read()", "missing file", "Read returns false for a representative missing response file", ReadFail.Read(GetTemporaryFileName("does_not_exist.rsp")), false) && Passed;
     EnableDefaultStreams();
   }
 

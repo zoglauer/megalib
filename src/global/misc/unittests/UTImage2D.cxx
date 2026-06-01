@@ -19,6 +19,7 @@ using namespace std;
 #include <TAxis.h>
 
 // MEGAlib:
+#include "MFile.h"
 #include "MImage2D.h"
 #include "MUnitTest.h"
 
@@ -117,7 +118,7 @@ bool UTImage2D::Run()
     Passed = EvaluateNear("Reset()", "default constructor pre-display average", "Reset is safely callable on a representative 2D image before any histogram has been created", Default.GetAverage(), 0.0, 1e-12) && Passed;
 
     DisableDefaultStreams();
-    Default.SaveAs("/tmp/UTImage2D/does_not_exist.png");
+    Default.SaveAs(GetTemporaryDirectoryName("missing") + "/does_not_exist.png");
     EnableDefaultStreams();
     Passed = EvaluateTrue("SaveAs()", "default constructor no-canvas path", "SaveAs is safely callable on a representative 2D image without a canvas", true) && Passed;
   }
@@ -334,8 +335,8 @@ bool UTImage2D::Run()
     }
 
     double RedisplayValues[4] = {5.0, numeric_limits<double>::infinity(), numeric_limits<double>::quiet_NaN(), 8.0};
-    Image.SetImageArray(RedisplayValues);
     DisableDefaultStreams();
+    Image.SetImageArray(RedisplayValues);
     Image.Display(Image.GetCanvasPointer());
     EnableDefaultStreams();
     if (Hist != nullptr) {
@@ -391,8 +392,11 @@ bool UTImage2D::Run()
     }
 
     Image.Display();
-    Image.SaveAs("/tmp/UTImage2D_existing_canvas.png");
-    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs is callable on a representative 2D image with an existing canvas", true) && Passed;
+    MString FileName = GetTemporaryFileName("existing_canvas.png");
+    DisableDefaultStreams();
+    Image.SaveAs(FileName);
+    EnableDefaultStreams();
+    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates the representative 2D output file when a canvas exists", MFile::Exists(FileName)) && Passed;
   }
 
   {

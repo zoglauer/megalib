@@ -8,11 +8,6 @@
  *
  */
 
-
-// Standard libs:
-#include <fstream>
-using namespace std;
-
 // MEGAlib:
 #include "MFile.h"
 #include "MSettings.h"
@@ -51,10 +46,6 @@ public:
   }
 
 private:
-  bool PrepareTempDirectory() const;
-  MString TempDirectory() const;
-  MString TempFile(const MString& FileName) const;
-
   bool TestDefaultsAndSetters();
   bool TestXmlRoundTrip();
   bool TestReadWriteFiles();
@@ -80,36 +71,6 @@ bool UTSettings::Run()
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTSettings::PrepareTempDirectory() const
-{
-  return PrepareTemporaryDirectory();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString UTSettings::TempDirectory() const
-{
-  return GetTemporaryDirectoryName();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString UTSettings::TempFile(const MString& FileName) const
-{
-  return TempDirectory() + "/" + FileName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 bool UTSettings::TestDefaultsAndSetters()
 {
   bool Passed = true;
@@ -120,8 +81,9 @@ bool UTSettings::TestDefaultsAndSetters()
   Passed = Evaluate("GetMEGAlibVersion()", "default", "The default MEGAlib version tracks the current global version", Settings.GetMEGAlibVersion(), static_cast<unsigned int>(g_Version)) && Passed;
   Passed = Evaluate("GetSettingsFileName()", "default", "The settings file name starts empty before the first read", Settings.GetSettingsFileName(), MString("")) && Passed;
 
-  Settings.SetSettingsFileName(TempFile("manual.cfg"));
-  Passed = Evaluate("SetSettingsFileName()", "set", "SetSettingsFileName stores the representative path", Settings.GetSettingsFileName(), TempFile("manual.cfg")) && Passed;
+  const MString ManualFile = GetTemporaryDirectoryName("defaults") + "/manual.cfg";
+  Settings.SetSettingsFileName(ManualFile);
+  Passed = Evaluate("SetSettingsFileName()", "set", "SetSettingsFileName stores the representative path", Settings.GetSettingsFileName(), ManualFile) && Passed;
 
   Settings.SetVersion(17);
   Settings.SetMEGAlibVersion(23);
@@ -139,9 +101,10 @@ bool UTSettings::TestXmlRoundTrip()
 {
   bool Passed = true;
 
-  MString DataFile = TempFile("xml_current.tra");
-  MString GeometryFile = TempFile("xml_geom.geo.setup");
-  PrepareTempDirectory();
+  PrepareTemporaryDirectory("xml");
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("xml");
+  MString DataFile = TemporaryDirectory + "/xml_current.tra";
+  MString GeometryFile = TemporaryDirectory + "/xml_geom.geo.setup";
   WriteTextFile(DataFile, "data");
   WriteTextFile(GeometryFile, "geometry");
 
@@ -182,18 +145,19 @@ bool UTSettings::TestReadWriteFiles()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "file temp dir", "The temporary directory for settings file tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "file temp dir", "The temporary directory for settings file tests can be created", PrepareTemporaryDirectory("files")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("files");
 
-  MString DataFile = TempFile("file_current.tra");
-  MString GeometryFile = TempFile("file_geom.geo.setup");
+  MString DataFile = TemporaryDirectory + "/file_current.tra";
+  MString GeometryFile = TemporaryDirectory + "/file_geom.geo.setup";
   Passed = EvaluateTrue("WriteTextFile()", "file current", "A representative current data file can be written", WriteTextFile(DataFile, "data")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "file geometry", "A representative geometry file can be written", WriteTextFile(GeometryFile, "geometry")) && Passed;
 
-  MString ExplicitFile = TempFile("explicit_settings");
-  MString DefaultFile = TempFile("default_settings.cfg");
-  MString WrongRootFile = TempFile("wrong_root.cfg");
-  MString NonXmlFile = TempFile("non_xml.cfg");
-  MString EmptyFile = TempFile("empty.cfg");
+  MString ExplicitFile = TemporaryDirectory + "/explicit_settings";
+  MString DefaultFile = TemporaryDirectory + "/default_settings.cfg";
+  MString WrongRootFile = TemporaryDirectory + "/wrong_root.cfg";
+  MString NonXmlFile = TemporaryDirectory + "/non_xml.cfg";
+  MString EmptyFile = TemporaryDirectory + "/empty.cfg";
 
   SettingsTest Settings;
   Settings.SetCurrentFileName(DataFile);
@@ -222,7 +186,7 @@ bool UTSettings::TestReadWriteFiles()
   Passed = Evaluate("GetGeometryFileName()", "explicit file", "Read(MString) restores the inherited geometry file name", ReadBack.GetGeometryFileName(), GeometryFile) && Passed;
 
   SettingsTest MissingDefault;
-  MissingDefault.SetDefaultSettingsFileName(TempFile("does_not_exist.cfg"));
+  MissingDefault.SetDefaultSettingsFileName(TemporaryDirectory + "/does_not_exist.cfg");
   DisableDefaultStreams();
   Passed = Evaluate("Read()", "missing default", "Read() on a missing default settings file fails cleanly", MissingDefault.Read(), false) && Passed;
   EnableDefaultStreams();
@@ -266,10 +230,11 @@ bool UTSettings::TestChange()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareTempDirectory()", "change temp dir", "The temporary directory for change() tests can be created", PrepareTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "change temp dir", "The temporary directory for change() tests can be created", PrepareTemporaryDirectory("change")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("change");
 
-  MString DataFile = TempFile("change_current.tra");
-  MString GeometryFile = TempFile("change_geom.geo.setup");
+  MString DataFile = TemporaryDirectory + "/change_current.tra";
+  MString GeometryFile = TemporaryDirectory + "/change_geom.geo.setup";
   Passed = EvaluateTrue("WriteTextFile()", "change current file", "A representative current file for change() can be written", WriteTextFile(DataFile, "data")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "change geometry file", "A representative geometry file for change() can be written", WriteTextFile(GeometryFile, "geometry")) && Passed;
 
@@ -289,12 +254,11 @@ bool UTSettings::TestChange()
   Passed = Evaluate("GetCurrentFileName()", "data file", "Change() updates the inherited current data file name", Settings.GetCurrentFileName(), DataFile) && Passed;
 
   {
-    MString LogFileName = TempFile("change_missing_node.log");
+    MString LogFileName = TemporaryDirectory + "/change_missing_node.log";
     int Status = MSystem::RunChildProcess(BinaryPath(), "--change-missing-node", LogFileName);
     Passed = EvaluateTrue("Change()", "missing node status", "Change() returns failure for a missing dotted-path node", Status == 0) && Passed;
 
-    ifstream In(LogFileName.Data());
-    string Content((istreambuf_iterator<char>(In)), istreambuf_iterator<char>());
+    MString Content = ReadTextFile(LogFileName);
     Passed = EvaluateTrue("Change()", "missing node message", "Change() reports the missing node path", MString(Content).Contains("Error: Unable to find node MissingNode")) && Passed;
   }
 

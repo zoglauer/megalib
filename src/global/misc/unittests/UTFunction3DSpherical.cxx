@@ -9,9 +9,7 @@
  */
 
 // Standard libs:
-#include <cerrno>
-#include <fstream>
-#include <sys/stat.h>
+#include <vector>
 using namespace std;
 
 // ROOT libs:
@@ -44,7 +42,7 @@ bool UTFunction3DSpherical::Run()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MFunction3DSpherical fixtures can be created", mkdir("/tmp/UTFunction3DSpherical", 0777) == 0 || errno == EEXIST) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temporary directory", "The temporary directory for MFunction3DSpherical fixtures can be created", PrepareTemporaryDirectory()) && Passed;
 
   MFunction3DSpherical Default;
   Passed = Evaluate("MFunction3DSpherical()", "construction", "A representative MFunction3DSpherical instance can be constructed", true, true) && Passed;
@@ -125,7 +123,7 @@ bool UTFunction3DSpherical::Run()
 
     MFunction3DSpherical RoundTripSource;
     Passed = Evaluate("Set()", "representative spherical round-trip source", "MFunction3DSpherical accepts representative source data for a file round-trip", RoundTripSource.Set(Phi, Theta, Energy, Values), true) && Passed;
-    MString FileName = "/tmp/UTFunction3DSpherical/roundtrip.fun";
+    MString FileName = GetTemporaryFileName("roundtrip.fun");
     Passed = Evaluate("Save()", "representative spherical round-trip file", "Save writes a representative spherical function file", RoundTripSource.Save(FileName, "AP"), true) && Passed;
 
     MFunction3DSpherical RoundTripRead;
@@ -146,30 +144,14 @@ bool UTFunction3DSpherical::Run()
     Passed = Evaluate("Set()", "representative spherical save-failure source", "MFunction3DSpherical accepts representative source data for save failure checks",
                       SaveFailure.Set(vector<double>{0.0, 180.0}, vector<double>{0.0, 90.0, 180.0}, vector<double>{1.0, 3.0}, vector<double>{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0}), true) && Passed;
     DisableDefaultStreams();
-    Passed = Evaluate("Save()", "unwritable representative spherical target", "Save returns false for a representative unwritable spherical target path", SaveFailure.Save("/tmp/UTFunction3DSpherical_missing_directory/out.fun"), false) && Passed;
+    Passed = Evaluate("Save()", "unwritable representative spherical target", "Save returns false for a representative unwritable spherical target path", SaveFailure.Save(GetTemporaryDirectoryName("missing_directory") + "/out.fun"), false) && Passed;
     EnableDefaultStreams();
   }
 
   {
-    MString InvalidThetaFile = "/tmp/UTFunction3DSpherical/invalid_theta.fun";
-    ofstream Out(InvalidThetaFile.Data());
-    Out<<"IP LIN\n";
-    Out<<"PA 0 180\n";
-    Out<<"TA -10 90 180\n";
-    Out<<"EA 1 2\n";
-    Out<<"AP 0 0 0 1\n";
-    Out<<"AP 1 0 0 1\n";
-    Out<<"AP 0 1 0 1\n";
-    Out<<"AP 1 1 0 1\n";
-    Out<<"AP 0 2 0 1\n";
-    Out<<"AP 1 2 0 1\n";
-    Out<<"AP 0 0 1 1\n";
-    Out<<"AP 1 0 1 1\n";
-    Out<<"AP 0 1 1 1\n";
-    Out<<"AP 1 1 1 1\n";
-    Out<<"AP 0 2 1 1\n";
-    Out<<"AP 1 2 1 1\n";
-    Out.close();
+    MString InvalidThetaFile = GetTemporaryFileName("invalid_theta.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "invalid theta file", "The representative invalid-theta spherical file can be written",
+                          WriteTextFile(InvalidThetaFile, "IP LIN\nPA 0 180\nTA -10 90 180\nEA 1 2\nAP 0 0 0 1\nAP 1 0 0 1\nAP 0 1 0 1\nAP 1 1 0 1\nAP 0 2 0 1\nAP 1 2 0 1\nAP 0 0 1 1\nAP 1 0 1 1\nAP 0 1 1 1\nAP 1 1 1 1\nAP 0 2 1 1\nAP 1 2 1 1\n")) && Passed;
 
     MFunction3DSpherical InvalidTheta;
     DisableDefaultStreams();
@@ -178,14 +160,9 @@ bool UTFunction3DSpherical::Run()
   }
 
   {
-    MString InvalidIndexFile = "/tmp/UTFunction3DSpherical/invalid_index.fun";
-    ofstream Out(InvalidIndexFile.Data());
-    Out<<"IP LIN\n";
-    Out<<"PA 0 180\n";
-    Out<<"TA 0 90 180\n";
-    Out<<"EA 1 2\n";
-    Out<<"AP 2 0 0 1\n";
-    Out.close();
+    MString InvalidIndexFile = GetTemporaryFileName("invalid_index.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "invalid index file", "The representative invalid-index spherical file can be written",
+                          WriteTextFile(InvalidIndexFile, "IP LIN\nPA 0 180\nTA 0 90 180\nEA 1 2\nAP 2 0 0 1\n")) && Passed;
 
     MFunction3DSpherical InvalidIndex;
     DisableDefaultStreams();
@@ -194,38 +171,13 @@ bool UTFunction3DSpherical::Run()
   }
 
   {
-    MString CompleteFile = "/tmp/UTFunction3DSpherical/complete.fun";
-    ofstream OutComplete(CompleteFile.Data());
-    OutComplete<<"IP LIN\n";
-    OutComplete<<"PA 0 180\n";
-    OutComplete<<"TA 0 90 180\n";
-    OutComplete<<"EA 1 2\n";
-    OutComplete<<"AP 0 0 0 1\n";
-    OutComplete<<"AP 1 0 0 2\n";
-    OutComplete<<"AP 0 1 0 3\n";
-    OutComplete<<"AP 1 1 0 4\n";
-    OutComplete<<"AP 0 2 0 5\n";
-    OutComplete<<"AP 1 2 0 6\n";
-    OutComplete<<"AP 0 0 1 7\n";
-    OutComplete<<"AP 1 0 1 8\n";
-    OutComplete<<"AP 0 1 1 9\n";
-    OutComplete<<"AP 1 1 1 10\n";
-    OutComplete<<"AP 0 2 1 11\n";
-    OutComplete<<"AP 1 2 1 12\n";
-    OutComplete.close();
+    MString CompleteFile = GetTemporaryFileName("complete.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "complete file", "The representative complete spherical file can be written",
+                          WriteTextFile(CompleteFile, "IP LIN\nPA 0 180\nTA 0 90 180\nEA 1 2\nAP 0 0 0 1\nAP 1 0 0 2\nAP 0 1 0 3\nAP 1 1 0 4\nAP 0 2 0 5\nAP 1 2 0 6\nAP 0 0 1 7\nAP 1 0 1 8\nAP 0 1 1 9\nAP 1 1 1 10\nAP 0 2 1 11\nAP 1 2 1 12\n")) && Passed;
 
-    MString MissingEAFile = "/tmp/UTFunction3DSpherical/missing_ea.fun";
-    ofstream OutMissing(MissingEAFile.Data());
-    OutMissing<<"IP LIN\n";
-    OutMissing<<"PA 0 180\n";
-    OutMissing<<"TA 0 90 180\n";
-    OutMissing<<"AP 0 0 0 1\n";
-    OutMissing<<"AP 1 0 0 2\n";
-    OutMissing<<"AP 0 1 0 3\n";
-    OutMissing<<"AP 1 1 0 4\n";
-    OutMissing<<"AP 0 2 0 5\n";
-    OutMissing<<"AP 1 2 0 6\n";
-    OutMissing.close();
+    MString MissingEAFile = GetTemporaryFileName("missing_ea.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "missing EA file", "The representative missing-EA spherical file can be written",
+                          WriteTextFile(MissingEAFile, "IP LIN\nPA 0 180\nTA 0 90 180\nAP 0 0 0 1\nAP 1 0 0 2\nAP 0 1 0 3\nAP 1 1 0 4\nAP 0 2 0 5\nAP 1 2 0 6\n")) && Passed;
 
     MFunction3DSpherical ReRead;
     Passed = Evaluate("Set()", "representative complete spherical file before reread", "MFunction3DSpherical accepts a representative complete file before reread failure checks", ReRead.Set(CompleteFile, "AP"), true) && Passed;

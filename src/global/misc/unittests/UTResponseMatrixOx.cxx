@@ -80,8 +80,8 @@ bool UTResponseMatrixOx::Run()
   Passed = EvaluateTrue("GetStatistics()", "representative axes", "The statistics string includes the representative axis name", Statistics.Contains("X1")) && Passed;
   Passed = EvaluateTrue("GetStatistics()", "representative sum", "The statistics string includes the representative sum", Statistics.Contains("Sum:                    6")) && Passed;
 
-  Passed = EvaluateTrue("PrepareResponseMatrixTempDirectory()", "read setup", "The temporary response-matrix directory exists for the base-class read test", PrepareResponseMatrixTempDirectory()) && Passed;
-  MString FileName = "/tmp/UTResponseMatrix/UTResponseMatrixOx.rsp";
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "read setup", "The temporary response-matrix directory exists for the base-class read test", PrepareTemporaryDirectory()) && Passed;
+  MString FileName = GetTemporaryFileName("UTResponseMatrixOx.rsp");
   Passed = Evaluate("Write()", "base read setup", "A representative order-1 matrix can be written for the base-class read test", Matrix.Write(FileName, true), true) && Passed;
   ResponseMatrixOxTest ReadBack;
   Passed = Evaluate("Read()", "base class", "The base response-matrix read implementation initializes the representative derived matrix", ReadBack.Read(FileName), true) && Passed;

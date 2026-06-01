@@ -11,7 +11,6 @@
 
 // Standard libs:
 #include <cmath>
-#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -215,7 +214,7 @@ bool UTPETEvent::TestCopyAndStream()
   Passed = EvaluateTrue("GetResolutionMeasure()", "PET off line", "A representative point away from the detector line has a positive resolution measure", Event.GetResolutionMeasure(MVector(2.0, 3.5, 4.0)) > 0.0) && Passed;
 
   MFile File;
-  MString FileName = "/tmp/UTPETEvent.tra";
+  MString FileName = GetTemporaryFileName("UTPETEvent.tra");
   Passed = EvaluateTrue("Open()", "stream write", "The temporary PET file can be opened for writing", File.Open(FileName, MFile::c_Write)) && Passed;
   Passed = EvaluateFalse("Stream()", "stream write", "The PET event write-stream completes at EOF", Event.Stream(File, 0, false, false, false)) && Passed;
   File.Close();

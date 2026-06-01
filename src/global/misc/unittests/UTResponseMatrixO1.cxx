@@ -37,7 +37,7 @@ bool UTResponseMatrixO1::Run()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("PrepareResponseMatrixTempDirectory()", "setup", "The temporary response-matrix directory can be created", PrepareResponseMatrixTempDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "setup", "The temporary response-matrix directory can be created", PrepareTemporaryDirectory()) && Passed;
 
   vector<float> Axis{0.0f, 1.0f, 2.0f};
   vector<float> DifferentAxis{0.0f, 1.0f, 3.0f};
@@ -162,8 +162,8 @@ bool UTResponseMatrixO1::Run()
   Passed = EvaluateNear("Smooth()", "second bin", "Smoothing reproduces the ROOT reference smoothing for the second representative bin", SmoothMatrix.GetBinContent(1), ExpectedSmooth[1], 1e-6) && Passed;
   Passed = EvaluateNear("Smooth()", "third bin", "Smoothing reproduces the ROOT reference smoothing for the third representative bin", SmoothMatrix.GetBinContent(2), ExpectedSmooth[2], 1e-6) && Passed;
 
-  MString FileName = "/tmp/UTResponseMatrix/UTResponseMatrixO1.rsp";
-  MString TextFileName = "/tmp/UTResponseMatrix/UTResponseMatrixO1_text.rsp";
+  MString FileName = GetTemporaryFileName("UTResponseMatrixO1.rsp");
+  MString TextFileName = GetTemporaryFileName("UTResponseMatrixO1_text.rsp");
   Passed = Evaluate("Write()", "text round trip", "Writing the representative matrix in text mode succeeds", Matrix.Write(TextFileName, false), true) && Passed;
   MResponseMatrixO1 ReadBackText;
   Passed = Evaluate("Read()", "text round trip", "Reading the representative matrix written in text mode succeeds", ReadBackText.Read(TextFileName), true) && Passed;

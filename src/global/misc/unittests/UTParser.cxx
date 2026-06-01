@@ -14,11 +14,6 @@
 #include "MUnitTest.h"
 #include "MStreams.h"
 
-// Standard libs:
-#include <fstream>
-using namespace std;
-
-
 //! Unit test class for the MParser helper
 class UTParser : public MUnitTest
 {
@@ -91,13 +86,10 @@ bool UTParser::TestOpenAndParse()
 {
   bool Passed = true;
 
-  MString FileName = "/tmp/UTParser_open.txt";
-  {
-    ofstream Out(FileName.Data());
-    Out<<"alpha beta"<<endl;
-    Out<<"Sphere.Source value"<<endl;
-    Out<<"# comment"<<endl;
-  }
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "open temp dir", "The temporary directory for parser open tests can be created", PrepareTemporaryDirectory("open")) && Passed;
+  MString FileName = GetTemporaryDirectoryName("open") + "/input.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "open input", "The representative parser input file can be written",
+                        WriteTextFile(FileName, "alpha beta\nSphere.Source value\n# comment\n")) && Passed;
 
   ParserTest Parser(' ', true);
   Passed = EvaluateTrue("Open()", "read mode", "Opening a parser in read mode succeeds on valid files", Parser.Open(FileName, MFile::c_Read)) && Passed;
@@ -105,7 +97,7 @@ bool UTParser::TestOpenAndParse()
   Passed = EvaluateNear("GetNLines()", "read mode", "All lines are tokenized and stored during read-mode opening", Parser.GetNLines(), 3.0, 1e-12) && Passed;
 
   ParserTest WriteParser(' ', true);
-  Passed = EvaluateTrue("Open()", "write mode", "Opening a parser in write mode succeeds", WriteParser.Open("/tmp/UTParser_write.txt", MFile::c_Write)) && Passed;
+  Passed = EvaluateTrue("Open()", "write mode", "Opening a parser in write mode succeeds", WriteParser.Open(GetTemporaryDirectoryName("open") + "/write.txt", MFile::c_Write)) && Passed;
   Passed = EvaluateNear("Parse()", "write mode", "Parse is not called during write-mode opening", WriteParser.m_ParseCalls, 0.0, 1e-12) && Passed;
   Passed = EvaluateTrue("Close()", "write mode", "Write-mode parser files can be closed", WriteParser.Close()) && Passed;
 
@@ -117,13 +109,11 @@ bool UTParser::TestOpenAndParse()
   Passed = EvaluateNear("Parse()", "parse failure", "Parse is still invoked when it reports failure", FailingParser.m_ParseCalls, 1.0, 1e-12) && Passed;
 
   DisableDefaultStreams();
-  Passed = EvaluateFalse("Open()", "missing file", "Opening a missing parser input file fails", Parser.Open("/tmp/UTParser_missing.txt", MFile::c_Read)) && Passed;
+  Passed = EvaluateFalse("Open()", "missing file", "Opening a missing parser input file fails", Parser.Open(GetTemporaryDirectoryName("open") + "/missing.txt", MFile::c_Read)) && Passed;
   EnableDefaultStreams();
 
   Parser.Close();
   FailingParser.Close();
-  MFile::Remove(FileName);
-  MFile::Remove("/tmp/UTParser_write.txt");
 
   return Passed;
 }
@@ -137,13 +127,10 @@ bool UTParser::TestLineAccess()
 {
   bool Passed = true;
 
-  MString FileName = "/tmp/UTParser_lines.txt";
-  {
-    ofstream Out(FileName.Data());
-    Out<<"alpha beta"<<endl;
-    Out<<"Sphere.Source value"<<endl;
-    Out<<"# comment"<<endl;
-  }
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "line temp dir", "The temporary directory for parser line-access tests can be created", PrepareTemporaryDirectory("lines")) && Passed;
+  MString FileName = GetTemporaryDirectoryName("lines") + "/input.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "line input", "The representative parser line-access file can be written",
+                        WriteTextFile(FileName, "alpha beta\nSphere.Source value\n# comment\n")) && Passed;
 
   ParserTest Parser(' ', true);
   Passed = EvaluateTrue("Open()", "line access", "Opening a parser for line access succeeds", Parser.Open(FileName, MFile::c_Read)) && Passed;
@@ -190,7 +177,6 @@ bool UTParser::TestLineAccess()
   EnableDefaultStreams();
 
   Parser.Close();
-  MFile::Remove(FileName);
 
   return Passed;
 }
@@ -204,12 +190,10 @@ bool UTParser::TestStreamingHelpers()
 {
   bool Passed = true;
 
-  MString TokenFileName = "/tmp/UTParser_tokenize.txt";
-  {
-    ofstream Out(TokenFileName.Data());
-    Out<<"first second"<<endl;
-    Out<<"Sphere.Source value"<<endl;
-  }
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "streaming temp dir", "The temporary directory for parser streaming tests can be created", PrepareTemporaryDirectory("streaming")) && Passed;
+  MString TokenFileName = GetTemporaryDirectoryName("streaming") + "/tokenize.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "tokenize input", "The representative parser tokenize file can be written",
+                        WriteTextFile(TokenFileName, "first second\nSphere.Source value\n")) && Passed;
 
   ParserTest Parser(' ', true);
   Passed = EvaluateTrue("Open()", "tokenize line", "Opening a parser for TokenizeLine() succeeds", Parser.Open(TokenFileName, MFile::c_Read)) && Passed;
@@ -226,11 +210,8 @@ bool UTParser::TestStreamingHelpers()
 
   Passed = EvaluateFalse("TokenizeLine()", "end of file", "TokenizeLine() returns false at end of file", Parser.TokenizeLine(Fast, false)) && Passed;
 
-  MString FloatFileName = "/tmp/UTParser_float.txt";
-  {
-    ofstream Out(FloatFileName.Data());
-    Out<<"1.5 2.75"<<endl;
-  }
+  MString FloatFileName = GetTemporaryDirectoryName("streaming") + "/float.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "float input", "The representative parser float file can be written", WriteTextFile(FloatFileName, "1.5 2.75\n")) && Passed;
 
   ParserTest FloatParser;
   Passed = EvaluateTrue("Open()", "float streaming", "Opening a parser for GetFloat() succeeds", FloatParser.Open(FloatFileName, MFile::c_Read)) && Passed;
@@ -241,14 +222,9 @@ bool UTParser::TestStreamingHelpers()
   Passed = EvaluateNear("GetFloat()", "second float", "GetFloat() parses the second float token", Value, 2.75, 1e-6) && Passed;
   Passed = EvaluateFalse("GetFloat()", "end of file", "GetFloat() returns false at end of file", FloatParser.GetFloat(Value)) && Passed;
 
-  MString ResponseStyleFileName = "/tmp/UTParser_response_style.txt";
-  {
-    ofstream Out(ResponseStyleFileName.Data());
-    Out<<"AXIS BIN=4 TYPE=linear"<<endl;
-    Out<<"VALUES"<<endl;
-    Out<<"1.0 2.5"<<endl;
-    Out<<"3.75"<<endl;
-  }
+  MString ResponseStyleFileName = GetTemporaryDirectoryName("streaming") + "/response_style.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "response-style input", "The representative parser response-style file can be written",
+                        WriteTextFile(ResponseStyleFileName, "AXIS BIN=4 TYPE=linear\nVALUES\n1.0 2.5\n3.75\n")) && Passed;
 
   ParserTest ResponseParser(' ', false);
   Passed = EvaluateTrue("Open()", "response-style streaming", "Opening a parser for response-style streaming succeeds", ResponseParser.Open(ResponseStyleFileName, MFile::c_Read)) && Passed;
@@ -269,9 +245,6 @@ bool UTParser::TestStreamingHelpers()
 
   Parser.Close();
   FloatParser.Close();
-  MFile::Remove(TokenFileName);
-  MFile::Remove(FloatFileName);
-  MFile::Remove(ResponseStyleFileName);
 
   return Passed;
 }
@@ -285,17 +258,14 @@ bool UTParser::TestEdgeCases()
 {
   bool Passed = true;
 
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "edge temp dir", "The temporary directory for parser edge-case tests can be created", PrepareTemporaryDirectory("edge")) && Passed;
+
   ParserTest NamedParser;
   NamedParser.SetFileName("relative/test.par");
   Passed = Evaluate("GetFileName()", "set name", "SetFileName() updates the inherited parser file name", NamedParser.GetFileName(), MString("relative/test.par")) && Passed;
 
-  MString EmptyFileName = "/tmp/UTParser_empty_lines.txt";
-  {
-    ofstream Out(EmptyFileName.Data());
-    Out<<"first"<<endl;
-    Out<<endl;
-    Out<<"third"<<endl;
-  }
+  MString EmptyFileName = GetTemporaryDirectoryName("edge") + "/empty_lines.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "empty-line input", "The representative empty-line parser file can be written", WriteTextFile(EmptyFileName, "first\n\nthird\n")) && Passed;
 
   ParserTest EmptyParser(' ', true);
   Passed = EvaluateTrue("Open()", "empty lines", "Opening a parser with genuine empty lines succeeds", EmptyParser.Open(EmptyFileName, MFile::c_Read)) && Passed;
@@ -307,14 +277,9 @@ bool UTParser::TestEdgeCases()
   Passed = EvaluateTrue("TokenizeLine()", "empty line", "TokenizeLine() returns true for a real empty line inside the file", EmptyParser.TokenizeLine(EmptyLineTokenizer, false)) && Passed;
   Passed = EvaluateNear("GetNTokens()", "empty line", "A real empty line currently tokenizes into one empty token", EmptyLineTokenizer.GetNTokens(), 1.0, 1e-12) && Passed;
   EmptyParser.Close();
-  MFile::Remove(EmptyFileName);
 
-  MString RewindFileName = "/tmp/UTParser_rewind.txt";
-  {
-    ofstream Out(RewindFileName.Data());
-    Out<<"alpha beta"<<endl;
-    Out<<"gamma delta"<<endl;
-  }
+  MString RewindFileName = GetTemporaryDirectoryName("edge") + "/rewind.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "rewind input", "The representative rewind parser file can be written", WriteTextFile(RewindFileName, "alpha beta\ngamma delta\n")) && Passed;
 
   ParserTest RewindParser(' ', true);
   Passed = EvaluateTrue("Open()", "rewind", "Opening a parser for rewind testing succeeds", RewindParser.Open(RewindFileName, MFile::c_Read)) && Passed;
@@ -324,19 +289,11 @@ bool UTParser::TestEdgeCases()
   Passed = EvaluateTrue("TokenizeLine()", "rewind second pass", "After Rewind() the first line can be tokenized again", RewindParser.TokenizeLine(RewindTokenizer, false)) && Passed;
   Passed = Evaluate("GetTokenAt()", "rewind second pass", "Rewinding restores the file position to the beginning", RewindTokenizer.GetTokenAt(0), MString("alpha")) && Passed;
   RewindParser.Close();
-  MFile::Remove(RewindFileName);
 
-  MString FirstFileName = "/tmp/UTParser_reopen_first.txt";
-  {
-    ofstream Out(FirstFileName.Data());
-    Out<<"one"<<endl;
-    Out<<"two"<<endl;
-  }
-  MString SecondFileName = "/tmp/UTParser_reopen_second.txt";
-  {
-    ofstream Out(SecondFileName.Data());
-    Out<<"three"<<endl;
-  }
+  MString FirstFileName = GetTemporaryDirectoryName("edge") + "/reopen_first.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "reopen first input", "The representative first reopen parser file can be written", WriteTextFile(FirstFileName, "one\ntwo\n")) && Passed;
+  MString SecondFileName = GetTemporaryDirectoryName("edge") + "/reopen_second.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "reopen second input", "The representative second reopen parser file can be written", WriteTextFile(SecondFileName, "three\n")) && Passed;
 
   ParserTest ReopenParser(' ', true);
   Passed = EvaluateTrue("Open()", "reopen first", "Opening the first parser input succeeds", ReopenParser.Open(FirstFileName, MFile::c_Read)) && Passed;
@@ -345,15 +302,9 @@ bool UTParser::TestEdgeCases()
   Passed = EvaluateNear("GetNLines()", "reopen second", "Reopening replaces the old stored lines instead of accumulating them", ReopenParser.GetNLines(), 1.0, 1e-12) && Passed;
   Passed = Evaluate("GetLine()", "reopen second", "After reopening only the new file contents remain stored", ReopenParser.GetLine(0), MString("three")) && Passed;
   ReopenParser.Close();
-  MFile::Remove(FirstFileName);
-  MFile::Remove(SecondFileName);
 
-  MString AddLineFileName = "/tmp/UTParser_addline.txt";
-  {
-    ofstream Out(AddLineFileName.Data());
-    Out<<"existing line"<<endl;
-    Out<<"second line"<<endl;
-  }
+  MString AddLineFileName = GetTemporaryDirectoryName("edge") + "/addline.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "add-line input", "The representative add-line parser file can be written", WriteTextFile(AddLineFileName, "existing line\nsecond line\n")) && Passed;
 
   ParserTest AddLineParser(' ', true);
   Passed = EvaluateTrue("Open()", "add line read mode", "Opening a parser in read mode for AddLine() contract testing succeeds", AddLineParser.Open(AddLineFileName, MFile::c_Read)) && Passed;
@@ -363,7 +314,6 @@ bool UTParser::TestEdgeCases()
   Passed = EvaluateNear("GetNLines()", "add line read mode", "AddLine() appends one more tokenized line in read mode", AddLineParser.GetNLines(), 3.0, 1e-12) && Passed;
   Passed = Evaluate("GetLine()", "add line read mode", "AddLine() stores the appended text at the end", AddLineParser.GetLine(2), MString("stored line")) && Passed;
   AddLineParser.Close();
-  MFile::Remove(AddLineFileName);
 
   return Passed;
 }

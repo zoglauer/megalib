@@ -15,10 +15,9 @@
 #include "MStreams.h"
 
 // Standard libs:
-#include <fstream>
+#include <filesystem>
 #include <sstream>
 #include <sys/stat.h>
-#include <unistd.h>
 using namespace std;
 
 
@@ -105,32 +104,25 @@ bool UTFile::TestStaticHelpers()
   Passed = EvaluateTrue("ProgramExists()", "existing program", "ProgramExists finds shell programs on PATH", MFile::ProgramExists("sh")) && Passed;
   Passed = EvaluateFalse("ProgramExists()", "missing program", "ProgramExists returns false for missing programs", MFile::ProgramExists("definitely_not_a_real_megalib_test_program")) && Passed;
 
-  MString TemporaryFile = "/tmp/UTFile_exists.txt";
-  {
-    ofstream Out(TemporaryFile.Data());
-    Out<<"temporary"<<endl;
-  }
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "static helpers temp dir", "The temporary directory for MFile static-helper tests can be created", PrepareTemporaryDirectory("static")) && Passed;
+  const MString StaticDirectory = GetTemporaryDirectoryName("static");
+
+  MString TemporaryFile = StaticDirectory + "/exists.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "exists fixture", "The representative existing-file fixture can be written", WriteTextFile(TemporaryFile, "temporary\n")) && Passed;
   Passed = EvaluateTrue("Exists()", "existing file", "Exists recognizes readable files", MFile::Exists(TemporaryFile)) && Passed;
   Passed = EvaluateFalse("Exists()", "directory", "Exists rejects directories even when the path is readable", MFile::Exists("/tmp")) && Passed;
   Passed = EvaluateTrue("Remove()", "existing file", "Remove deletes existing files", MFile::Remove(TemporaryFile)) && Passed;
   Passed = EvaluateFalse("Exists()", "removed file", "Removed files no longer exist", MFile::Exists(TemporaryFile)) && Passed;
 
-  MString ExecutableFile = MString("/tmp/UTFile_executable_") + (unsigned int) getpid() + ".sh";
-  {
-    ofstream Out(ExecutableFile.Data());
-    Passed = EvaluateTrue("ofstream::is_open()", "executable fixture", "The representative executable fixture can be opened", Out.is_open() == true) && Passed;
-    if (Out.is_open() == true) {
-      Out<<"#!/bin/sh\nexit 0\n";
-      Out.close();
-    }
-  }
+  MString ExecutableFile = StaticDirectory + "/executable.sh";
+  Passed = EvaluateTrue("WriteTextFile()", "executable fixture", "The representative executable fixture can be written", WriteTextFile(ExecutableFile, "#!/bin/sh\nexit 0\n")) && Passed;
   Passed = EvaluateFalse("IsExecutable()", "regular file without executable bit", "IsExecutable rejects a regular file before executable permissions are added", MFile::IsExecutable(ExecutableFile)) && Passed;
   Passed = EvaluateTrue("chmod()", "executable fixture", "The representative executable fixture can be made executable", chmod(ExecutableFile.Data(), 0700) == 0) && Passed;
   Passed = EvaluateTrue("IsExecutable()", "regular executable file", "IsExecutable accepts a regular file with executable permissions", MFile::IsExecutable(ExecutableFile)) && Passed;
   Passed = EvaluateFalse("IsExecutable()", "directory", "IsExecutable rejects directories", MFile::IsExecutable("/tmp")) && Passed;
-  Passed = EvaluateFalse("IsExecutable()", "missing file", "IsExecutable rejects missing files", MFile::IsExecutable(MString("/tmp/UTFile_missing_executable_") + (unsigned int) getpid())) && Passed;
+  Passed = EvaluateFalse("IsExecutable()", "missing file", "IsExecutable rejects missing files", MFile::IsExecutable(StaticDirectory + "/missing_executable.sh")) && Passed;
 
-  MString CreatedDirectory = MString("/tmp/UTFile_created_directory_") + (unsigned int) getpid();
+  MString CreatedDirectory = StaticDirectory + "/created_directory";
   Passed = EvaluateTrue("CreateDirectory()", "new directory", "CreateDirectory creates a representative missing directory", MFile::CreateDirectory(CreatedDirectory)) && Passed;
   Passed = EvaluateTrue("CreateDirectory()", "existing directory", "CreateDirectory accepts a representative directory that already exists", MFile::CreateDirectory(CreatedDirectory)) && Passed;
   DisableDefaultStreams();
@@ -138,7 +130,7 @@ bool UTFile::TestStaticHelpers()
   Passed = EvaluateFalse("CreateDirectory()", "empty path", "CreateDirectory rejects an empty path", MFile::CreateDirectory("")) && Passed;
   EnableDefaultStreams();
   Passed = EvaluateTrue("Remove()", "executable fixture", "The representative executable fixture can be removed", MFile::Remove(ExecutableFile)) && Passed;
-  Passed = EvaluateTrue("rmdir()", "created directory cleanup", "The representative created directory can be removed", rmdir(CreatedDirectory.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "created directory cleanup", "The representative created directory can be removed", std::filesystem::remove(CreatedDirectory.Data())) && Passed;
 
   MString TemporaryCreatedFile = MFile::CreateTemporaryFile("UTFile_created.tmp");
   Passed = EvaluateTrue("CreateTemporaryFile()", "default directory", "CreateTemporaryFile creates a randomized file in the default temporary directory", TemporaryCreatedFile.IsEmpty() == false) && Passed;
@@ -158,8 +150,8 @@ bool UTFile::TestStaticHelpers()
   Passed = EvaluateTrue("CreateTemporaryDirectory()", "custom directory", "CreateTemporaryDirectory creates a randomized directory in the requested directory", CustomTemporaryDirectory.BeginsWith(TemporaryParentDirectory + "/MEGAlib_") && MFile::CreateDirectory(CustomTemporaryDirectory)) && Passed;
 
   DisableDefaultStreams();
-  MString MissingParentFile = MFile::CreateTemporaryFile("missing.tmp", 5, MString("/tmp/UTFile_missing_parent_") + (unsigned int) getpid());
-  MString MissingParentDirectory = MFile::CreateTemporaryDirectory("missing_dir", 5, MString("/tmp/UTFile_missing_parent_") + (unsigned int) getpid());
+  MString MissingParentFile = MFile::CreateTemporaryFile("missing.tmp", 5, GetTemporaryDirectoryName("missing_parent"));
+  MString MissingParentDirectory = MFile::CreateTemporaryDirectory("missing_dir", 5, GetTemporaryDirectoryName("missing_parent"));
   MString InvalidNameFile = MFile::CreateTemporaryFile("subdir/invalid.tmp");
   MString EmptyNameFile = MFile::CreateTemporaryFile("");
   MString InvalidNameDirectory = MFile::CreateTemporaryDirectory("subdir/invalid_dir");
@@ -174,9 +166,9 @@ bool UTFile::TestStaticHelpers()
 
   Passed = EvaluateTrue("Remove()", "temporary file cleanup", "The randomized temporary file can be removed", MFile::Remove(TemporaryCreatedFile)) && Passed;
   Passed = EvaluateTrue("Remove()", "custom temporary file cleanup", "The randomized custom temporary file can be removed", MFile::Remove(CustomTemporaryFile)) && Passed;
-  Passed = EvaluateTrue("rmdir()", "custom temporary directory cleanup", "The randomized custom temporary directory can be removed", rmdir(CustomTemporaryDirectory.Data()) == 0) && Passed;
-  Passed = EvaluateTrue("rmdir()", "temporary parent directory cleanup", "The randomized parent temporary directory can be removed", rmdir(TemporaryParentDirectory.Data()) == 0) && Passed;
-  Passed = EvaluateTrue("rmdir()", "temporary directory cleanup", "The randomized temporary directory can be removed", rmdir(TemporaryCreatedDirectory.Data()) == 0) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "custom temporary directory cleanup", "The randomized custom temporary directory can be removed", std::filesystem::remove(CustomTemporaryDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "temporary parent directory cleanup", "The randomized parent temporary directory can be removed", std::filesystem::remove(TemporaryParentDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("std::filesystem::remove()", "temporary directory cleanup", "The randomized temporary directory can be removed", std::filesystem::remove(TemporaryCreatedDirectory.Data())) && Passed;
 
   DisableDefaultStreams();
   Passed = EvaluateFalse("Exists()", "empty file name", "Empty file names are rejected", MFile::Exists("")) && Passed;
@@ -195,7 +187,10 @@ bool UTFile::TestAsciiIO()
 {
   bool Passed = true;
 
-  MString FileName = "/tmp/UTFile_ascii.txt";
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "ascii temp dir", "The temporary directory for MFile ASCII tests can be created", PrepareTemporaryDirectory("ascii")) && Passed;
+  const MString AsciiDirectory = GetTemporaryDirectoryName("ascii");
+
+  MString FileName = AsciiDirectory + "/UTFile_ascii.txt";
   MFile::Remove(FileName);
 
   MFile File;
@@ -271,7 +266,7 @@ bool UTFile::TestAsciiIO()
   Passed = Evaluate("ReadLine(MString)", "seek end", "End-relative seeking lands on the expected trailing line", Line, MString("gamma")) && Passed;
 
   Passed = EvaluateTrue("Rewind()", "ascii read", "Rewind resets the file before float parsing", File.Rewind()) && Passed;
-  MString FloatFileName = "/tmp/UTFile_float.txt";
+  MString FloatFileName = AsciiDirectory + "/UTFile_float.txt";
   MFile::Remove(FloatFileName);
   MFile FloatFile;
   Passed = EvaluateTrue("Open()", "float ascii write", "ASCII files for float parsing can be opened for writing", FloatFile.Open(FloatFileName, MFile::c_Create, false)) && Passed;
@@ -286,7 +281,7 @@ bool UTFile::TestAsciiIO()
   Passed = EvaluateNear("Get(float)", "second float", "Get(float) parses the expected second float", SecondFloat, 2.75, 1e-6) && Passed;
   Passed = EvaluateTrue("Close()", "float ascii read", "Float test files can be closed after reading", FloatFile.Close()) && Passed;
 
-  MString DelimiterFileName = "/tmp/UTFile_delimiter.txt";
+  MString DelimiterFileName = AsciiDirectory + "/UTFile_delimiter.txt";
   MFile::Remove(DelimiterFileName);
   MFile DelimiterFile;
   Passed = EvaluateTrue("Open()", "delimiter write", "ASCII files for delimiter tests can be opened for writing", DelimiterFile.Open(DelimiterFileName, MFile::c_Write, false)) && Passed;
@@ -300,28 +295,24 @@ bool UTFile::TestAsciiIO()
 
   MFile LengthFile;
   LengthFile.SetCompressionLevel(0);
-  Passed = EvaluateTrue("Open()", "compression clamp low", "Compression levels below one are clamped and still allow file creation", LengthFile.Open("/tmp/UTFile_clamp_low.gz", MFile::c_Write, false)) && Passed;
+  const MString ClampLowFileName = AsciiDirectory + "/UTFile_clamp_low.gz";
+  const MString ClampHighFileName = AsciiDirectory + "/UTFile_clamp_high.gz";
+  Passed = EvaluateTrue("Open()", "compression clamp low", "Compression levels below one are clamped and still allow file creation", LengthFile.Open(ClampLowFileName, MFile::c_Write, false)) && Passed;
   Passed = EvaluateTrue("Close()", "compression clamp low", "Clamped low compression files can be closed", LengthFile.Close()) && Passed;
   LengthFile.SetCompressionLevel(10);
-  Passed = EvaluateTrue("Open()", "compression clamp high", "Compression levels above nine are clamped and still allow file creation", LengthFile.Open("/tmp/UTFile_clamp_high.gz", MFile::c_Write, false)) && Passed;
+  Passed = EvaluateTrue("Open()", "compression clamp high", "Compression levels above nine are clamped and still allow file creation", LengthFile.Open(ClampHighFileName, MFile::c_Write, false)) && Passed;
   Passed = EvaluateTrue("Close()", "compression clamp high", "Clamped high compression files can be closed", LengthFile.Close()) && Passed;
-  MFile::Remove("/tmp/UTFile_clamp_low.gz");
-  MFile::Remove("/tmp/UTFile_clamp_high.gz");
+  MFile::Remove(ClampLowFileName);
+  MFile::Remove(ClampHighFileName);
 
   Passed = EvaluateTrue("Close()", "ascii read", "ASCII files can be closed after reading", File.Close()) && Passed;
   File.Reset();
   Passed = EvaluateFalse("IsOpen()", "reset", "Reset closes the file", File.IsOpen()) && Passed;
   Passed = Evaluate("GetFileName()", "reset", "Reset clears the stored file name", File.GetFileName(), MString("")) && Passed;
 
-  MString ScanFileName = "/tmp/UTFile_scan.txt";
+  MString ScanFileName = AsciiDirectory + "/UTFile_scan.txt";
   MFile::Remove(ScanFileName);
-  {
-    ofstream Out(ScanFileName.Data());
-    Out<<"SE"<<endl;
-    Out<<"ID 1"<<endl;
-    Out<<"SE"<<endl;
-    Out<<"ID 2"<<endl;
-  }
+  Passed = EvaluateTrue("WriteTextFile()", "scan fixture", "The representative scan fixture can be written", WriteTextFile(ScanFileName, "SE\nID 1\nSE\nID 2\n")) && Passed;
   Passed = EvaluateTrue("Open()", "scan file", "ASCII scan files can be opened for repeated scanning", File.Open(ScanFileName, MFile::c_Read, false)) && Passed;
   Passed = EvaluateTrue("ReadLine(MString)", "scan first line", "Scan files can be read line by line", File.ReadLine(Line)) && Passed;
   Passed = EvaluateNear("GetUncompressedFilePosition()", "scan first line", "The uncompressed file position advances after reading one line", File.GetUncompressedFilePosition() > 0 ? 1.0 : 0.0, 1.0, 1e-12) && Passed;
@@ -334,7 +325,7 @@ bool UTFile::TestAsciiIO()
   Passed = Evaluate("ReadLine(MString)", "reopen scan first line", "Reopened scan files start at the first line again", Line, MString("SE")) && Passed;
   Passed = EvaluateTrue("Close()", "reopen scan file", "Reopened scan files can be closed again", File.Close()) && Passed;
 
-  MString EmptyFileName = "/tmp/UTFile_empty.txt";
+  MString EmptyFileName = AsciiDirectory + "/UTFile_empty.txt";
   MFile::Remove(EmptyFileName);
   MFile EmptyFile;
   Passed = EvaluateTrue("Open()", "empty file write", "Empty files can be created", EmptyFile.Open(EmptyFileName, MFile::c_Create, false)) && Passed;
@@ -347,7 +338,7 @@ bool UTFile::TestAsciiIO()
   Passed = EvaluateTrue("Close()", "empty file read", "Empty files can be closed after reading", EmptyFile.Close()) && Passed;
 
   DisableDefaultStreams();
-  Passed = EvaluateFalse("Open()", "missing file", "Opening a missing file for reading fails", File.Open("/tmp/UTFile_missing.txt", MFile::c_Read, false)) && Passed;
+  Passed = EvaluateFalse("Open()", "missing file", "Opening a missing file for reading fails", File.Open(AsciiDirectory + "/UTFile_missing.txt", MFile::c_Read, false)) && Passed;
   EnableDefaultStreams();
 
   MFile::Remove(FileName);
@@ -368,7 +359,8 @@ bool UTFile::TestBinaryIO()
 {
   bool Passed = true;
 
-  MString FileName = "/tmp/UTFile_binary.dat";
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "binary temp dir", "The temporary directory for MFile binary tests can be created", PrepareTemporaryDirectory("binary")) && Passed;
+  MString FileName = GetTemporaryDirectoryName("binary") + "/UTFile_binary.dat";
   MFile::Remove(FileName);
 
   MFile File;
@@ -411,7 +403,10 @@ bool UTFile::TestGzipIO()
 {
   bool Passed = true;
 
-  MString FileName = "/tmp/UTFile_zipped.txt.gz";
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "gzip temp dir", "The temporary directory for MFile gzip tests can be created", PrepareTemporaryDirectory("gzip")) && Passed;
+  const MString GzipDirectory = GetTemporaryDirectoryName("gzip");
+
+  MString FileName = GzipDirectory + "/UTFile_zipped.txt.gz";
   MFile::Remove(FileName);
 
   MFile File;
@@ -469,7 +464,7 @@ bool UTFile::TestGzipIO()
   Passed = EvaluateTrue("ReadLine(MString)", "gzip seek current", "ReadLine(MString) works after current-relative gzip seeking", File.ReadLine(Line)) && Passed;
   Passed = Evaluate("ReadLine(MString)", "gzip seek current", "Current-relative gzip seeking lands on the expected line", Line, MString("beta")) && Passed;
 
-  MString FloatGzipFileName = "/tmp/UTFile_float.txt.gz";
+  MString FloatGzipFileName = GzipDirectory + "/UTFile_float.txt.gz";
   MFile::Remove(FloatGzipFileName);
   MFile FloatFile;
   FloatFile.SetCompressionLevel(6);
@@ -485,7 +480,7 @@ bool UTFile::TestGzipIO()
   Passed = EvaluateNear("Get(float)", "gzip second float", "The second gzip float is parsed correctly", GzipFloat2, 4.5, 1e-6) && Passed;
   Passed = EvaluateTrue("Close()", "gzip float read", "Gzip float files can be closed after reading", FloatFile.Close()) && Passed;
 
-  MString EmptyGzipFileName = "/tmp/UTFile_empty.txt.gz";
+  MString EmptyGzipFileName = GzipDirectory + "/UTFile_empty.txt.gz";
   MFile::Remove(EmptyGzipFileName);
   MFile EmptyFile;
   EmptyFile.SetCompressionLevel(6);

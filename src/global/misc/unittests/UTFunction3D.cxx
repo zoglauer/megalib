@@ -9,9 +9,7 @@
  */
 
 // Standard libs:
-#include <cerrno>
-#include <fstream>
-#include <sys/stat.h>
+#include <vector>
 using namespace std;
 
 // ROOT libs:
@@ -64,7 +62,7 @@ bool UTFunction3D::Run()
 {
   bool Passed = true;
 
-  Passed = EvaluateTrue("mkdir()", "temporary directory", "The temporary directory for MFunction3D fixtures can be created", mkdir("/tmp/UTFunction3D", 0777) == 0 || errno == EEXIST) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temporary directory", "The temporary directory for MFunction3D fixtures can be created", PrepareTemporaryDirectory()) && Passed;
 
   MFunction3D Default;
   Passed = Evaluate("MFunction3D()", "construction", "A representative MFunction3D instance can be constructed", true, true) && Passed;
@@ -230,7 +228,7 @@ bool UTFunction3D::Run()
     const vector<double> Axis{0.0, 1.0, 2.0};
     Passed = Evaluate("Set()", "representative 3D round-trip source", "MFunction3D accepts representative zero-based axes for a file round-trip",
                       RoundTripSource.Set(Axis, Axis, Axis, CreateAffineValues(Axis, Axis, Axis)), true) && Passed;
-    MString FileName = "/tmp/UTFunction3D/roundtrip.fun";
+    MString FileName = GetTemporaryFileName("roundtrip.fun");
     Passed = Evaluate("Save()", "representative 3D round-trip file", "Save writes a representative 3D function file", RoundTripSource.Save(FileName, "DP"), true) && Passed;
 
     MFunction3D RoundTripRead;
@@ -256,21 +254,9 @@ bool UTFunction3D::Run()
   }
 
   {
-    MString UnknownIPFile = "/tmp/UTFunction3D/unknown_ip.fun";
-    ofstream Out(UnknownIPFile.Data());
-    Out<<"IP SPLINE\n";
-    Out<<"XA 0 1\n";
-    Out<<"YA 0 1\n";
-    Out<<"ZA 0 1\n";
-    Out<<"DP 0 0 0 1\n";
-    Out<<"DP 1 0 0 2\n";
-    Out<<"DP 0 1 0 3\n";
-    Out<<"DP 1 1 0 4\n";
-    Out<<"DP 0 0 1 5\n";
-    Out<<"DP 1 0 1 6\n";
-    Out<<"DP 0 1 1 7\n";
-    Out<<"DP 1 1 1 8\n";
-    Out.close();
+    MString UnknownIPFile = GetTemporaryFileName("unknown_ip.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "unknown interpolation file", "The representative unknown-interpolation 3D file can be written",
+                          WriteTextFile(UnknownIPFile, "IP SPLINE\nXA 0 1\nYA 0 1\nZA 0 1\nDP 0 0 0 1\nDP 1 0 0 2\nDP 0 1 0 3\nDP 1 1 0 4\nDP 0 0 1 5\nDP 1 0 1 6\nDP 0 1 1 7\nDP 1 1 1 8\n")) && Passed;
     MFunction3D UnknownIP;
     DisableDefaultStreams();
     Passed = Evaluate("Set()", "unknown 3D IP", "MFunction3D rejects a representative file with an unknown interpolation keyword", UnknownIP.Set(UnknownIPFile, "DP"), false) && Passed;
@@ -278,21 +264,9 @@ bool UTFunction3D::Run()
   }
 
   {
-    MString NonIncreasingZFile = "/tmp/UTFunction3D/non_increasing_z.fun";
-    ofstream Out(NonIncreasingZFile.Data());
-    Out<<"IP LIN\n";
-    Out<<"XA 0 1\n";
-    Out<<"YA 0 1\n";
-    Out<<"ZA 2 1\n";
-    Out<<"DP 0 0 2 1\n";
-    Out<<"DP 1 0 2 2\n";
-    Out<<"DP 0 1 2 3\n";
-    Out<<"DP 1 1 2 4\n";
-    Out<<"DP 0 0 1 5\n";
-    Out<<"DP 1 0 1 6\n";
-    Out<<"DP 0 1 1 7\n";
-    Out<<"DP 1 1 1 8\n";
-    Out.close();
+    MString NonIncreasingZFile = GetTemporaryFileName("non_increasing_z.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "non-increasing z file", "The representative non-increasing-z 3D file can be written",
+                          WriteTextFile(NonIncreasingZFile, "IP LIN\nXA 0 1\nYA 0 1\nZA 2 1\nDP 0 0 2 1\nDP 1 0 2 2\nDP 0 1 2 3\nDP 1 1 2 4\nDP 0 0 1 5\nDP 1 0 1 6\nDP 0 1 1 7\nDP 1 1 1 8\n")) && Passed;
     MFunction3D NonIncreasingZ;
     DisableDefaultStreams();
     Passed = Evaluate("Set()", "non-increasing z", "MFunction3D rejects a representative file with non-increasing z values", NonIncreasingZ.Set(NonIncreasingZFile, "DP"), false) && Passed;
@@ -300,32 +274,13 @@ bool UTFunction3D::Run()
   }
 
   {
-    MString CompleteFile = "/tmp/UTFunction3D/complete.fun";
-    ofstream OutComplete(CompleteFile.Data());
-    OutComplete<<"IP LIN\n";
-    OutComplete<<"XA 0 1\n";
-    OutComplete<<"YA 0 1\n";
-    OutComplete<<"ZA 0 1\n";
-    OutComplete<<"DP 0 0 0 1\n";
-    OutComplete<<"DP 1 0 0 2\n";
-    OutComplete<<"DP 0 1 0 3\n";
-    OutComplete<<"DP 1 1 0 4\n";
-    OutComplete<<"DP 0 0 1 5\n";
-    OutComplete<<"DP 1 0 1 6\n";
-    OutComplete<<"DP 0 1 1 7\n";
-    OutComplete<<"DP 1 1 1 8\n";
-    OutComplete.close();
+    MString CompleteFile = GetTemporaryFileName("complete.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "complete file", "The representative complete 3D file can be written",
+                          WriteTextFile(CompleteFile, "IP LIN\nXA 0 1\nYA 0 1\nZA 0 1\nDP 0 0 0 1\nDP 1 0 0 2\nDP 0 1 0 3\nDP 1 1 0 4\nDP 0 0 1 5\nDP 1 0 1 6\nDP 0 1 1 7\nDP 1 1 1 8\n")) && Passed;
 
-    MString MissingZAFile = "/tmp/UTFunction3D/missing_za.fun";
-    ofstream OutMissing(MissingZAFile.Data());
-    OutMissing<<"IP LIN\n";
-    OutMissing<<"XA 0 1\n";
-    OutMissing<<"YA 0 1\n";
-    OutMissing<<"DP 0 0 0 1\n";
-    OutMissing<<"DP 1 0 0 2\n";
-    OutMissing<<"DP 0 1 0 3\n";
-    OutMissing<<"DP 1 1 0 4\n";
-    OutMissing.close();
+    MString MissingZAFile = GetTemporaryFileName("missing_za.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "missing ZA file", "The representative missing-ZA 3D file can be written",
+                          WriteTextFile(MissingZAFile, "IP LIN\nXA 0 1\nYA 0 1\nDP 0 0 0 1\nDP 1 0 0 2\nDP 0 1 0 3\nDP 1 1 0 4\n")) && Passed;
 
     MFunction3D ReRead;
     Passed = Evaluate("Set()", "representative complete file before reread", "MFunction3D accepts a representative complete file before reread failure checks", ReRead.Set(CompleteFile, "DP"), true) && Passed;
@@ -336,7 +291,7 @@ bool UTFunction3D::Run()
 
   {
     DisableDefaultStreams();
-    Passed = Evaluate("Save()", "unwritable representative 3D target", "Save returns false for a representative unwritable 3D target path", Affine.Save("/tmp/UTFunction3D_missing_directory/out.fun"), false) && Passed;
+    Passed = Evaluate("Save()", "unwritable representative 3D target", "Save returns false for a representative unwritable 3D target path", Affine.Save(GetTemporaryDirectoryName("missing_directory") + "/out.fun"), false) && Passed;
     EnableDefaultStreams();
   }
 
