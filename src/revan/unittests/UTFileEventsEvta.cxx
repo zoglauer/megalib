@@ -10,7 +10,6 @@
 
 
 // Standard libs:
-#include <fstream>
 #include <sstream>
 using namespace std;
 
@@ -58,8 +57,6 @@ private:
   MString GetGeometryFileName() const;
   //! Prepare the temp directory
   bool PrepareTempDirectory() const;
-  //! Write a text file
-  bool WriteTextFile(const MString& FileName, const MString& Content) const;
   //! Scan the revan geometry
   bool LoadGeometry(MGeometryRevan& Geometry) const;
 };
@@ -90,7 +87,7 @@ bool UTFileEventsEvta::Run()
 
 MString UTFileEventsEvta::GetTempDirectory() const
 {
-  return "/tmp/UTFileEventsEvta";
+  return GetTemporaryDirectoryName("files");
 }
 
 
@@ -117,20 +114,7 @@ MString UTFileEventsEvta::GetGeometryFileName() const
 
 bool UTFileEventsEvta::PrepareTempDirectory() const
 {
-  gSystem->Exec(("rm -rf " + GetTempDirectory()).Data());
-  return gSystem->mkdir(GetTempDirectory(), true) == 0;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool UTFileEventsEvta::WriteTextFile(const MString& FileName, const MString& Content) const
-{
-  ofstream Out(FileName.Data());
-  if (Out.is_open() == false) return false;
-  Out << Content.Data();
-  return Out.good();
+  return PrepareTemporaryDirectory("files");
 }
 
 

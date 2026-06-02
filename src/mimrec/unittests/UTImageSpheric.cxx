@@ -11,8 +11,6 @@
 // Standard libs:
 #include <cmath>
 #include <limits>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
 using namespace std;
 
@@ -22,6 +20,7 @@ using namespace std;
 #include <TH2.h>
 
 // MEGAlib:
+#include "MFile.h"
 #include "MImageSpheric.h"
 #include "MUnitTest.h"
 
@@ -140,11 +139,10 @@ bool UTImageSpheric::Run()
       Passed = EvaluateNear("Display()", "representative bin (2,2)", "Display stores the representative fifth spherical bin with the expected inverted y-axis mapping", Hist->GetBinContent(2, 1), 5.0, 1e-12) && Passed;
       Passed = EvaluateNear("Display()", "representative bin (3,2)", "Display stores the representative sixth spherical bin with the expected inverted y-axis mapping", Hist->GetBinContent(3, 1), 6.0, 1e-12) && Passed;
     }
-    const char* SaveFile = "/tmp/UTImageSpheric_existing_canvas.png";
-    unlink(SaveFile);
+    const MString SaveFile = GetTemporaryFileName("existing_canvas.png");
     Image.SaveAs(SaveFile);
-    struct stat Stat = {};
-    Passed = EvaluateTrue("SaveAs()", "representative none save", "SaveAs writes the representative spherical image to a file when a canvas exists", stat(SaveFile, &Stat) == 0) && Passed;
+    Passed = EvaluateTrue("SaveAs()", "representative none save", "SaveAs writes the representative spherical image to a file when a canvas exists", MFile::Exists(SaveFile)) && Passed;
+    RemoveTemporaryFile(SaveFile);
     Image.Reset();
     if (Hist != nullptr) {
       Passed = Evaluate("Reset()", "representative none reset clears bins", "Reset zeroes the unprojected spherical histogram after display", CountNonZeroBins(Hist), 0) && Passed;

@@ -11,8 +11,6 @@
 // Standard libs:
 #include <fstream>
 #include <limits>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
 using namespace std;
 
@@ -24,6 +22,7 @@ using namespace std;
 
 // MEGAlib:
 #include "MBinnerFISBEL.h"
+#include "MFile.h"
 #include "MImageGalactic.h"
 #include "MUnitTest.h"
 
@@ -150,11 +149,10 @@ bool UTImageGalactic::Run()
       Passed = Evaluate("SetImageArray()", "representative none nullptr clears bins", "SetImageArray(nullptr) zeros the representative galactic histogram in unprojected mode", CountNonZeroBins(Hist), 0) && Passed;
     }
 
-    const char* SaveFile = "/tmp/UTImageGalactic_existing_canvas.png";
-    unlink(SaveFile);
+    const MString SaveFile = GetTemporaryFileName("existing_canvas.png");
     Image.SaveAs(SaveFile);
-    struct stat Stat = {};
-    Passed = EvaluateTrue("SaveAs()", "representative none save", "SaveAs writes the representative galactic image to a file when a canvas exists", stat(SaveFile, &Stat) == 0) && Passed;
+    Passed = EvaluateTrue("SaveAs()", "representative none save", "SaveAs writes the representative galactic image to a file when a canvas exists", MFile::Exists(SaveFile)) && Passed;
+    RemoveTemporaryFile(SaveFile);
   }
 
   {
@@ -196,9 +194,9 @@ bool UTImageGalactic::Run()
   }
 
   {
-    const char* WrapCatalog = "/tmp/UTImageGalactic_wrap.scat";
+    const MString WrapCatalog = GetTemporaryFileName("wrap.scat");
     {
-      ofstream Out(WrapCatalog);
+      ofstream Out(WrapCatalog.Data());
       Out << "Type scat\n";
       Out << "Version 2\n";
       Out << "PS MO 0 400 1.0 WrapPos\n";
@@ -215,7 +213,7 @@ bool UTImageGalactic::Run()
     Image.SetProjection(MImageProjection::c_None);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative wrap none", "Display can add named sources that require longitude wrapping in unprojected mode", Image.IsCreated()) && Passed;
-    unlink(WrapCatalog);
+    RemoveTemporaryFile(WrapCatalog);
   }
 
   {
@@ -352,9 +350,9 @@ bool UTImageGalactic::Run()
   }
 
   {
-    const char* WrapCatalog = "/tmp/UTImageGalactic_wrap_hammer.scat";
+    const MString WrapCatalog = GetTemporaryFileName("wrap_hammer.scat");
     {
-      ofstream Out(WrapCatalog);
+      ofstream Out(WrapCatalog.Data());
       Out << "Type scat\n";
       Out << "Version 2\n";
       Out << "PS MO 0 400 1.0 WrapPos\n";
@@ -371,7 +369,7 @@ bool UTImageGalactic::Run()
     Image.SetProjection(MImageProjection::c_Hammer);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative wrap hammer", "Display can add named sources that require longitude wrapping in Hammer mode", Image.IsCreated()) && Passed;
-    unlink(WrapCatalog);
+    RemoveTemporaryFile(WrapCatalog);
   }
 
   {
@@ -429,9 +427,9 @@ bool UTImageGalactic::Run()
   }
 
   {
-    const char* EmptyCatalog = "/tmp/UTImageGalactic_empty.scat";
+    const MString EmptyCatalog = GetTemporaryFileName("empty.scat");
     {
-      ofstream Out(EmptyCatalog);
+      ofstream Out(EmptyCatalog.Data());
       Out << "Type scat\n";
       Out << "Version 2\n";
       Out << "EN\n";
@@ -445,7 +443,7 @@ bool UTImageGalactic::Run()
     Image.SetProjection(MImageProjection::c_None);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative empty catalog", "Display tolerates an empty source catalog without crashing", Image.IsCreated()) && Passed;
-    unlink(EmptyCatalog);
+    RemoveTemporaryFile(EmptyCatalog);
   }
 
   {

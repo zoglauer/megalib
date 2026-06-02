@@ -17,6 +17,7 @@ using namespace std;
 // MEGAlib:
 #include "MQualifiedIsotope.h"
 #include "MStreams.h"
+#include "MSystem.h"
 #include "MUnitTest.h"
 
 
@@ -169,25 +170,25 @@ bool UTQualifiedIsotope::TestOutOfBounds()
   bool Passed = true;
 
   {
-    MString LogFileName = "/tmp/UTQualifiedIsotope_setlinefound_fatal.log";
-    MString Command = MString("\"") + g_UTQualifiedIsotopeBinary + "\" --fatal-set > " + LogFileName + " 2>&1";
-    int Status = system(Command.Data());
+    MString LogFileName = GetTemporaryFileName("setlinefound_fatal.log");
+    int Status = MSystem::RunChildProcess(g_UTQualifiedIsotopeBinary, "--fatal-set", LogFileName);
     Passed = EvaluateTrue("SetLineFound()", "out of bounds status", "Out-of-bounds SetLineFound access aborts the child process", Status != 0) && Passed;
 
     ifstream In(LogFileName.Data());
     string Content((istreambuf_iterator<char>(In)), istreambuf_iterator<char>());
     Passed = EvaluateTrue("SetLineFound()", "out of bounds message", "Out-of-bounds SetLineFound access reports the offending index and size", MString(Content).Contains("Index out of bounds: l=1 vs. size()=1")) && Passed;
+    RemoveTemporaryFile(LogFileName);
   }
 
   {
-    MString LogFileName = "/tmp/UTQualifiedIsotope_getlinefound_fatal.log";
-    MString Command = MString("\"") + g_UTQualifiedIsotopeBinary + "\" --fatal-get > " + LogFileName + " 2>&1";
-    int Status = system(Command.Data());
+    MString LogFileName = GetTemporaryFileName("getlinefound_fatal.log");
+    int Status = MSystem::RunChildProcess(g_UTQualifiedIsotopeBinary, "--fatal-get", LogFileName);
     Passed = EvaluateTrue("GetLineFound()", "out of bounds status", "Out-of-bounds GetLineFound access aborts the child process", Status != 0) && Passed;
 
     ifstream In(LogFileName.Data());
     string Content((istreambuf_iterator<char>(In)), istreambuf_iterator<char>());
     Passed = EvaluateTrue("GetLineFound()", "out of bounds message", "Out-of-bounds GetLineFound access reports the offending index and size", MString(Content).Contains("Index out of bounds: l=1 vs. size()=1")) && Passed;
+    RemoveTemporaryFile(LogFileName);
   }
 
   return Passed;
