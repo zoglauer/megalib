@@ -29,11 +29,43 @@ using namespace std;
 #include "MUnitTest.h"
 
 
-static MString g_ExecutablePath;
+//! Shared helpers for the parent test process and its child roles
+class UTTransceiverTcpIpHelpers
+{
+public:
+  static void SetExecutablePath(const MString& ExecutablePath) { m_ExecutablePath = ExecutablePath; }
+  static void SetTemporaryDirectory(const MString& TemporaryDirectory) { m_TemporaryDirectory = TemporaryDirectory; }
+  static const MString& GetExecutablePath() { return m_ExecutablePath; }
+  static pid_t StartChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName);
+  static bool WaitForSendQueueEmpty(MTransceiverTcpIp& Transceiver, double TimeOut);
+  static bool WaitForMessage(MTransceiverTcpIp& Transceiver, MString& Message, double TimeOut);
+  static bool WaitForFile(const MString& FileName, double TimeOut);
+  static MString GetReadyFile(unsigned int Port, const MString& Role);
+  static bool TouchFile(const MString& FileName);
+  static bool WaitForChildProcess(pid_t Child, int& Status, double TimeOut);
+  static MString GetTraFixtureFile();
+  static bool BuildRawPayload(MString& Payload, MString& ExpectedMessage);
+  static bool BuildRawOverflowPayload(MString& Payload);
+  static bool WaitForConnected(MTransceiverTcpIp& Transceiver, double TimeOut);
+  static bool RunRawInProcess(MUnitTest& Test, unsigned int Port);
+  static bool RunRawOverflowInProcess(MUnitTest& Test, unsigned int Port);
+  static bool RunDefaultNegotiation(MUnitTest& Test, unsigned int Port);
+  static bool RunForcedReset(MUnitTest& Test, unsigned int Port, const MString& OutputFileName);
+  static int RunServerRole(const MString& Argument);
+  static int RunClientRole(const MString& Argument);
+
+private:
+  static MString m_ExecutablePath;
+  static MString m_TemporaryDirectory;
+};
+
+
+MString UTTransceiverTcpIpHelpers::m_ExecutablePath;
+MString UTTransceiverTcpIpHelpers::m_TemporaryDirectory;
 
 
 //! Start one child process and return its PID.
-static pid_t StartChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName)
+pid_t UTTransceiverTcpIpHelpers::StartChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName)
 {
   pid_t Child = fork();
   if (Child < 0) {
@@ -59,7 +91,7 @@ static pid_t StartChildProcess(const MString& Executable, const MString& Argumen
 
 
 //! Wait until the send queue has drained or the timeout expires.
-static bool WaitForSendQueueEmpty(MTransceiverTcpIp& Transceiver, double TimeOut)
+bool UTTransceiverTcpIpHelpers::WaitForSendQueueEmpty(MTransceiverTcpIp& Transceiver, double TimeOut)
 {
   MTimer Passed;
   while (Passed.GetElapsed() <= TimeOut) {
@@ -74,7 +106,7 @@ static bool WaitForSendQueueEmpty(MTransceiverTcpIp& Transceiver, double TimeOut
 
 
 //! Wait until a message is available in the receive buffer or the timeout expires.
-static bool WaitForMessage(MTransceiverTcpIp& Transceiver, MString& Message, double TimeOut)
+bool UTTransceiverTcpIpHelpers::WaitForMessage(MTransceiverTcpIp& Transceiver, MString& Message, double TimeOut)
 {
   MTimer Passed;
   while (Passed.GetElapsed() <= TimeOut) {
@@ -89,7 +121,7 @@ static bool WaitForMessage(MTransceiverTcpIp& Transceiver, MString& Message, dou
 
 
 //! Wait until a file appears or the timeout expires.
-static bool WaitForFile(const MString& FileName, double TimeOut)
+bool UTTransceiverTcpIpHelpers::WaitForFile(const MString& FileName, double TimeOut)
 {
   MTimer Passed;
   while (Passed.GetElapsed() <= TimeOut) {
@@ -104,14 +136,17 @@ static bool WaitForFile(const MString& FileName, double TimeOut)
 
 
 //! Return the path to the ready marker for a test role.
-static MString GetReadyFile(unsigned int Port, const MString& Role)
+MString UTTransceiverTcpIpHelpers::GetReadyFile(unsigned int Port, const MString& Role)
 {
-  return MString("/tmp/UTTransceiverTcpIp_ready_") + Role + "_" + Port + ".txt";
+  // Child roles inherit the parent test's randomized root through the
+  // environment. They have no MUnitTest instance for that parent root, so
+  // they intentionally construct only these fixed marker paths directly.
+  return m_TemporaryDirectory + "/ready_" + Role + "_" + Port + ".txt";
 }
 
 
 //! Create a file to signal readiness.
-static bool TouchFile(const MString& FileName)
+bool UTTransceiverTcpIpHelpers::TouchFile(const MString& FileName)
 {
   ofstream Out(FileName.Data());
   return Out.is_open() == true;
@@ -119,7 +154,7 @@ static bool TouchFile(const MString& FileName)
 
 
 //! Wait for a child process to exit, with a timeout.
-static bool WaitForChildProcess(pid_t Child, int& Status, double TimeOut)
+bool UTTransceiverTcpIpHelpers::WaitForChildProcess(pid_t Child, int& Status, double TimeOut)
 {
   MTimer Passed;
   while (Passed.GetElapsed() <= TimeOut) {
@@ -140,14 +175,14 @@ static bool WaitForChildProcess(pid_t Child, int& Status, double TimeOut)
 
 
 //! Return the path to a representative tra fixture.
-static MString GetTraFixtureFile()
+MString UTTransceiverTcpIpHelpers::GetTraFixtureFile()
 {
   return MString(gSystem->pwd()) + "/src/global/misc/unittests/data/UTFileEventsTra/ObsTime_1sec_complete.inc1.id1.tra.gz";
 }
 
 
 //! Build a raw event-list payload from the tra fixture.
-static bool BuildRawPayload(MString& Payload, MString& ExpectedMessage)
+bool UTTransceiverTcpIpHelpers::BuildRawPayload(MString& Payload, MString& ExpectedMessage)
 {
   MFileEventsTra Reader;
   if (Reader.Open(GetTraFixtureFile()) == false) {
@@ -171,7 +206,7 @@ static bool BuildRawPayload(MString& Payload, MString& ExpectedMessage)
 
 
 //! Build a raw event-list payload that exceeds the receive-side safety limit.
-static bool BuildRawOverflowPayload(MString& Payload)
+bool UTTransceiverTcpIpHelpers::BuildRawOverflowPayload(MString& Payload)
 {
   const size_t TargetLength = MTransceiverTcpIp::c_MaxRawMessageLength + 256;
   std::string Data(TargetLength, 'A');
@@ -181,7 +216,7 @@ static bool BuildRawOverflowPayload(MString& Payload)
 
 
 //! Wait until the transceiver reports a connected state.
-static bool WaitForConnected(MTransceiverTcpIp& Transceiver, double TimeOut)
+bool UTTransceiverTcpIpHelpers::WaitForConnected(MTransceiverTcpIp& Transceiver, double TimeOut)
 {
   MTimer Passed;
   while (Passed.GetElapsed() <= TimeOut) {
@@ -196,7 +231,7 @@ static bool WaitForConnected(MTransceiverTcpIp& Transceiver, double TimeOut)
 
 
 //! Run a raw in-process round-trip that mirrors the event-list usage.
-static bool RunRawInProcess(MUnitTest& Test, unsigned int Port)
+bool UTTransceiverTcpIpHelpers::RunRawInProcess(MUnitTest& Test, unsigned int Port)
 {
   bool Passed = true;
   MTransceiverTcpIp Server("RawServer", "localhost", Port, MTransceiverTcpIp::c_ModeRawEventList);
@@ -349,7 +384,7 @@ static bool RunRawInProcess(MUnitTest& Test, unsigned int Port)
 
 
 //! Run a raw in-process overflow regression.
-static bool RunRawOverflowInProcess(MUnitTest& Test, unsigned int Port)
+bool UTTransceiverTcpIpHelpers::RunRawOverflowInProcess(MUnitTest& Test, unsigned int Port)
 {
   bool Passed = true;
   MTransceiverTcpIp Server("RawOverflowServer", "localhost", Port, MTransceiverTcpIp::c_ModeRawEventList);
@@ -410,7 +445,7 @@ static bool RunRawOverflowInProcess(MUnitTest& Test, unsigned int Port)
 
 
 //! Run a default dual-role negotiation test without forcing a role.
-static bool RunDefaultNegotiation(MUnitTest& Test, unsigned int Port)
+bool UTTransceiverTcpIpHelpers::RunDefaultNegotiation(MUnitTest& Test, unsigned int Port)
 {
   bool Passed = true;
   MTransceiverTcpIp Server("DefaultServer", "localhost", Port, MTransceiverTcpIp::c_ModeASCIIText);
@@ -486,13 +521,13 @@ static bool RunDefaultNegotiation(MUnitTest& Test, unsigned int Port)
 
 
 //! Force a remote-side connection loss and verify reset accounting.
-static bool RunForcedReset(MUnitTest& Test, unsigned int Port)
+bool UTTransceiverTcpIpHelpers::RunForcedReset(MUnitTest& Test, unsigned int Port, const MString& OutputFileName)
 {
   bool Passed = true;
   const double ResetConnectTimeOut = 5.0;
   const double ResetExitTimeOut = 1.0;
   const MString ServerArgument = MString("--server-ascii:") + Port;
-  const pid_t ServerPid = StartChildProcess(g_ExecutablePath, ServerArgument, MString("/tmp/UTTransceiverTcpIp_reset_server_") + Port + ".log");
+  const pid_t ServerPid = StartChildProcess(m_ExecutablePath, ServerArgument, OutputFileName);
   if (Test.EvaluateTrue("Forced reset", "server start", "The reset server child can be started", ServerPid >= 0) == false) {
     mout<<"Forced reset: unable to start server child"<<endl;
     return false;
@@ -548,7 +583,7 @@ static bool RunForcedReset(MUnitTest& Test, unsigned int Port)
 
 
 //! Run one server role in a child process.
-static int RunServerRole(const MString& Argument)
+int UTTransceiverTcpIpHelpers::RunServerRole(const MString& Argument)
 {
   const double ChildConnectTimeOut = 5.0;
   const double ChildIOTimeOut = 1.0;
@@ -678,7 +713,7 @@ static int RunServerRole(const MString& Argument)
 
 
 //! Run one client role in a child process.
-static int RunClientRole(const MString& Argument)
+int UTTransceiverTcpIpHelpers::RunClientRole(const MString& Argument)
 {
   const double ChildConnectTimeOut = 5.0;
   const double ChildIOTimeOut = 1.0;
@@ -887,25 +922,25 @@ bool UTTransceiverTcpIp::RunMode(bool RawMode, bool InvalidMode, unsigned int Po
   const double ChildProcessTimeOut = 10.0;
   const MString ServerArgument = RawMode ? MString("--server-raw:") + Port : (InvalidMode ? MString("--server-invalid:") + Port : MString("--server-ascii:") + Port);
   const MString ClientArgument = RawMode ? MString("--client-raw:") + Port : (InvalidMode ? MString("--client-invalid:") + Port : MString("--client-ascii:") + Port);
-  const MString ServerReady = GetReadyFile(Port, "server");
-  const MString ClientReady = GetReadyFile(Port, "client");
-  const MString ClientReply = GetReadyFile(Port, "client_reply");
-  const MString ServerReconnect = GetReadyFile(Port, "server_reconnect");
-  const MString ClientReply2 = GetReadyFile(Port, "client_reply2");
+  const MString ServerReady = UTTransceiverTcpIpHelpers::GetReadyFile(Port, "server");
+  const MString ClientReady = UTTransceiverTcpIpHelpers::GetReadyFile(Port, "client");
+  const MString ClientReply = UTTransceiverTcpIpHelpers::GetReadyFile(Port, "client_reply");
+  const MString ServerReconnect = UTTransceiverTcpIpHelpers::GetReadyFile(Port, "server_reconnect");
+  const MString ClientReply2 = UTTransceiverTcpIpHelpers::GetReadyFile(Port, "client_reply2");
 
-  gSystem->Unlink(ServerReady);
-  gSystem->Unlink(ClientReady);
-  gSystem->Unlink(ClientReply);
-  gSystem->Unlink(ServerReconnect);
-  gSystem->Unlink(ClientReply2);
+  RemoveTemporaryFile(ServerReady);
+  RemoveTemporaryFile(ClientReady);
+  RemoveTemporaryFile(ClientReply);
+  RemoveTemporaryFile(ServerReconnect);
+  RemoveTemporaryFile(ClientReply2);
 
-  const pid_t ServerPid = StartChildProcess(g_ExecutablePath, ServerArgument, MString("/tmp/UTTransceiverTcpIp_server_") + Port + ".log");
+  const pid_t ServerPid = UTTransceiverTcpIpHelpers::StartChildProcess(UTTransceiverTcpIpHelpers::GetExecutablePath(), ServerArgument, GetTemporaryFileName(MString("server_") + Port + ".log"));
   Passed = EvaluateTrue("Server child process", RawMode ? "raw server" : "ASCII server", "The server child process can be started", ServerPid >= 0) && Passed;
   if (ServerPid < 0) {
     return false;
   }
-  Passed = EvaluateTrue("Server ready", RawMode ? "raw server" : "ASCII server", "The server child becomes ready before the client starts", WaitForFile(ServerReady, ChildConnectTimeOut)) && Passed;
-  const pid_t ClientPid = StartChildProcess(g_ExecutablePath, ClientArgument, MString("/tmp/UTTransceiverTcpIp_client_") + Port + ".log");
+  Passed = EvaluateTrue("Server ready", RawMode ? "raw server" : "ASCII server", "The server child becomes ready before the client starts", UTTransceiverTcpIpHelpers::WaitForFile(ServerReady, ChildConnectTimeOut)) && Passed;
+  const pid_t ClientPid = UTTransceiverTcpIpHelpers::StartChildProcess(UTTransceiverTcpIpHelpers::GetExecutablePath(), ClientArgument, GetTemporaryFileName(MString("client_") + Port + ".log"));
   Passed = EvaluateTrue("Client child process", RawMode ? "raw client" : "ASCII client", "The client child process can be started", ClientPid >= 0) && Passed;
   if (ClientPid < 0) {
     return false;
@@ -913,22 +948,22 @@ bool UTTransceiverTcpIp::RunMode(bool RawMode, bool InvalidMode, unsigned int Po
 
   int ServerStatus = -1;
   int ClientStatus = -1;
-  if (WaitForChildProcess(ServerPid, ServerStatus, ChildProcessTimeOut) == false) {
+  if (UTTransceiverTcpIpHelpers::WaitForChildProcess(ServerPid, ServerStatus, ChildProcessTimeOut) == false) {
     Passed = EvaluateTrue("Server child process", RawMode ? "raw server" : "ASCII server", "The server child process exits successfully", false) && Passed;
   } else {
     Passed = EvaluateTrue("Server child process", RawMode ? "raw server" : "ASCII server", "The server child process exits successfully", WIFEXITED(ServerStatus) && WEXITSTATUS(ServerStatus) == 0) && Passed;
   }
-  if (WaitForChildProcess(ClientPid, ClientStatus, ChildProcessTimeOut) == false) {
+  if (UTTransceiverTcpIpHelpers::WaitForChildProcess(ClientPid, ClientStatus, ChildProcessTimeOut) == false) {
     Passed = EvaluateTrue("Client child process", RawMode ? "raw client" : "ASCII client", "The client child process exits successfully", false) && Passed;
   } else {
     Passed = EvaluateTrue("Client child process", RawMode ? "raw client" : "ASCII client", "The client child process exits successfully", WIFEXITED(ClientStatus) && WEXITSTATUS(ClientStatus) == 0) && Passed;
   }
 
-  gSystem->Unlink(ServerReady);
-  gSystem->Unlink(ClientReady);
-  gSystem->Unlink(ClientReply);
-  gSystem->Unlink(ServerReconnect);
-  gSystem->Unlink(ClientReply2);
+  RemoveTemporaryFile(ServerReady);
+  RemoveTemporaryFile(ClientReady);
+  RemoveTemporaryFile(ClientReply);
+  RemoveTemporaryFile(ServerReconnect);
+  RemoveTemporaryFile(ClientReply2);
 
   return Passed;
 }
@@ -942,6 +977,9 @@ bool UTTransceiverTcpIp::Run()
   bool Passed = true;
 
   gROOT->SetBatch(true);
+  const MString TemporaryDirectory = GetTemporaryDirectoryName();
+  UTTransceiverTcpIpHelpers::SetTemporaryDirectory(TemporaryDirectory);
+  setenv("UT_TRANSCEIVER_TCP_IP_TEMP_DIRECTORY", TemporaryDirectory.Data(), 1);
 
   {
     MTransceiverTcpIp Default;
@@ -992,10 +1030,10 @@ bool UTTransceiverTcpIp::Run()
 
   Passed = RunMode(false, false, GetFreePort()) && Passed;
   Passed = RunMode(true, false, GetFreePort()) && Passed;
-  Passed = RunRawInProcess(*this, GetFreePort()) && Passed;
-  Passed = RunRawOverflowInProcess(*this, GetFreePort()) && Passed;
-  Passed = RunDefaultNegotiation(*this, GetFreePort()) && Passed;
-  Passed = RunForcedReset(*this, GetFreePort()) && Passed;
+  Passed = UTTransceiverTcpIpHelpers::RunRawInProcess(*this, GetFreePort()) && Passed;
+  Passed = UTTransceiverTcpIpHelpers::RunRawOverflowInProcess(*this, GetFreePort()) && Passed;
+  Passed = UTTransceiverTcpIpHelpers::RunDefaultNegotiation(*this, GetFreePort()) && Passed;
+  Passed = UTTransceiverTcpIpHelpers::RunForcedReset(*this, GetFreePort(), GetTemporaryFileName("reset_server.log")) && Passed;
   Summarize();
   return Passed;
 }
@@ -1006,17 +1044,22 @@ bool UTTransceiverTcpIp::Run()
 
 int main(int argc, char** argv)
 {
+  const char* TemporaryDirectory = getenv("UT_TRANSCEIVER_TCP_IP_TEMP_DIRECTORY");
+  if (TemporaryDirectory != nullptr) {
+    UTTransceiverTcpIpHelpers::SetTemporaryDirectory(TemporaryDirectory);
+  }
+
   if (argc == 2) {
     MString Argument = argv[1];
     if (Argument.BeginsWith("--server-ascii:") || Argument.BeginsWith("--server-raw:") || Argument.BeginsWith("--server-invalid:")) {
-      return RunServerRole(Argument);
+      return UTTransceiverTcpIpHelpers::RunServerRole(Argument);
     }
     if (Argument.BeginsWith("--client-ascii:") || Argument.BeginsWith("--client-raw:") || Argument.BeginsWith("--client-invalid:")) {
-      return RunClientRole(Argument);
+      return UTTransceiverTcpIpHelpers::RunClientRole(Argument);
     }
   }
 
-  g_ExecutablePath = argc > 0 ? argv[0] : "bin/UTTransceiverTcpIp";
+  UTTransceiverTcpIpHelpers::SetExecutablePath(argc > 0 ? argv[0] : "bin/UTTransceiverTcpIp");
 
   UTTransceiverTcpIp Test;
   return Test.Run() == true ? 0 : 1;

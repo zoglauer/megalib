@@ -130,7 +130,7 @@ void UTStreams::EmitDebugSeries()
 void UTStreams::CleanFile(const MString& FileName) const
 {
   if (MFile::Exists(FileName) == true) {
-    MFile::Remove(FileName);
+    RemoveTemporaryFile(FileName);
   }
 }
 

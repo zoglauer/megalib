@@ -114,11 +114,11 @@ bool UTAtmosphericAbsorption::Run()
   Passed = EvaluateNear("GetTransmissionProbability()", "recover", "A failed read does not prevent the representative interpolated probability from being reloaded",
                         Recovery.GetTransmissionProbability(5.0, 10.0, 150.0), 0.45, 1e-12) && Passed;
 
-  Passed = EvaluateTrue("MFile::Remove()", "malformed cleanup", "The representative malformed atmospheric absorption file can be removed", MFile::Remove(MalformedFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "malformed cleanup", "The representative malformed atmospheric absorption file can be removed", RemoveTemporaryFile(MalformedFile)) && Passed;
 
-  Passed = EvaluateTrue("MFile::Remove()", "fixture cleanup", "The representative atmospheric absorption fixture can be removed", MFile::Remove(AbsorptionFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "fixture cleanup", "The representative atmospheric absorption fixture can be removed", RemoveTemporaryFile(AbsorptionFile)) && Passed;
   Passed = EvaluateFalse("MFile::Exists()", "fixture cleanup", "The representative atmospheric absorption fixture is gone after cleanup", MFile::Exists(AbsorptionFile)) && Passed;
-  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The atmospheric-absorption temp directory can be removed", RemoveTemporaryDirectory()) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The atmospheric-absorption temp directory can be removed", RemoveTemporaryDirectory(TempDirectory)) && Passed;
 
   Summarize();
   return Passed;

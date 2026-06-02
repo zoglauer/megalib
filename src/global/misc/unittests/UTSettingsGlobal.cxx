@@ -176,10 +176,10 @@ bool UTSettingsGlobal::TestReadWriteFiles()
   Passed = Evaluate("Read()", "empty file", "Read() falls back to default settings for an empty global settings file", Empty.Read(), true) && Passed;
   EnableDefaultStreams();
 
-  Passed = EvaluateTrue("MFile::Remove()", "wrong root cleanup", "The wrong-root temporary file can be removed", MFile::Remove(WrongRootFile)) && Passed;
-  Passed = EvaluateTrue("MFile::Remove()", "empty cleanup", "The empty temporary file can be removed", MFile::Remove(EmptyFile)) && Passed;
-  Passed = EvaluateTrue("MFile::Remove()", "settings cleanup", "The representative global-settings file can be removed", MFile::Remove(SettingsFile)) && Passed;
-  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "file temp cleanup", "The global-settings temp directory can be removed", RemoveTemporaryDirectory()) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "wrong root cleanup", "The wrong-root temporary file can be removed", RemoveTemporaryFile(WrongRootFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty cleanup", "The empty temporary file can be removed", RemoveTemporaryFile(EmptyFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "settings cleanup", "The representative global-settings file can be removed", RemoveTemporaryFile(SettingsFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "file temp cleanup", "The global-settings temp directory can be removed", RemoveTemporaryDirectory(TemporaryDirectory)) && Passed;
 
   return Passed;
 }

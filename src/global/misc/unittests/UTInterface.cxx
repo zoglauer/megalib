@@ -305,9 +305,9 @@ bool UTInterface::Run()
     EnableDefaultStreams();
   }
 
-  Passed = EvaluateTrue("MFile::Remove()", "save cleanup", "The representative configuration file can be removed", MFile::Remove(SaveFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "save cleanup", "The representative configuration file can be removed", RemoveTemporaryFile(SaveFile)) && Passed;
   Passed = EvaluateFalse("MFile::Exists()", "save cleanup", "The representative configuration file is gone after cleanup", MFile::Exists(SaveFile)) && Passed;
-  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The temporary MInterface directory can be removed", RemoveTemporaryDirectory()) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The temporary MInterface directory can be removed", RemoveTemporaryDirectory(TempDirectory)) && Passed;
 
   Summarize();
   return Passed;

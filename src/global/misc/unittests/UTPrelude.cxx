@@ -83,7 +83,7 @@ bool UTPrelude::Run()
   }
 
   const MString SettingsFile = HomeDirectory + "/.megalib.cfg";
-  MFile::Remove(SettingsFile);
+  RemoveTemporaryFile(SettingsFile);
 
   MString FirstContent;
   {
@@ -104,7 +104,7 @@ bool UTPrelude::Run()
   }
 
   const MString FailureSettingsFile = FailureHomeDirectory + "/.megalib.cfg";
-  MFile::Remove(FailureSettingsFile);
+  RemoveTemporaryFile(FailureSettingsFile);
   Passed = EvaluateTrue("WriteTextFile()", "bad settings", "A malformed settings file can be created for the failure-path test", WriteTextFile(FailureSettingsFile, "<NotMEGAlib><LicenseHash>1</LicenseHash></NotMEGAlib>\n")) && Passed;
   {
     ScopedEnvironment HomeEnv("HOME", FailureHomeDirectory);
@@ -122,14 +122,14 @@ bool UTPrelude::Run()
   const MString SecondContent = ReadTextFile(SettingsFile);
   Passed = Evaluate("Play()", "repeat content", "Repeated startup keeps the saved settings file stable", SecondContent, FirstContent) && Passed;
 
-  Passed = EvaluateTrue("MFile::Remove()", "settings cleanup", "The temporary settings file can be removed", MFile::Remove(SettingsFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "settings cleanup", "The temporary settings file can be removed", RemoveTemporaryFile(SettingsFile)) && Passed;
   Passed = EvaluateFalse("MFile::Exists()", "settings cleanup", "The temporary settings file is gone after cleanup", MFile::Exists(SettingsFile)) && Passed;
-  MFile::Remove(FailureSettingsFile);
+  RemoveTemporaryFile(FailureSettingsFile);
 
-  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "home cleanup", "The temporary HOME directory can be removed", RemoveTemporaryDirectory("Home")) && Passed;
-  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "megalib cleanup", "The temporary MEGALIB directory can be removed", RemoveTemporaryDirectory("Mega")) && Passed;
-  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "failure home cleanup", "The temporary failure HOME directory can be removed", RemoveTemporaryDirectory("FailureHome")) && Passed;
-  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "failure megalib cleanup", "The temporary failure MEGALIB directory can be removed", RemoveTemporaryDirectory("FailureMega")) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "home cleanup", "The temporary HOME directory can be removed", RemoveTemporaryDirectory(HomeDirectory)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "megalib cleanup", "The temporary MEGALIB directory can be removed", RemoveTemporaryDirectory(MegaDirectory)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "failure home cleanup", "The temporary failure HOME directory can be removed", RemoveTemporaryDirectory(FailureHomeDirectory)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "failure megalib cleanup", "The temporary failure MEGALIB directory can be removed", RemoveTemporaryDirectory(FailureMegaDirectory)) && Passed;
 
   Summarize();
   return Passed;

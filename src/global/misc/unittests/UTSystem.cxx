@@ -113,11 +113,11 @@ bool UTSystem::Run()
                                 + (static_cast<long long>(EndTime.tv_usec) - static_cast<long long>(StartTime.tv_usec));
   Passed = EvaluateTrue("BusyWait()", "elapsed", "BusyWait waits at least the requested time", ElapsedMicroseconds >= 3000LL) && Passed;
 
-  Passed = EvaluateTrue("MFile::Remove()", "cleanup", "The representative MSystem file can be removed", MFile::Remove(FileName)) && Passed;
-  Passed = EvaluateTrue("MFile::Remove()", "child log cleanup", "The representative child-process log can be removed", MFile::Remove(ChildLog)) && Passed;
-  Passed = EvaluateTrue("MFile::Remove()", "missing child log cleanup", "The representative missing-child log can be removed", MFile::Remove(MissingChildLog)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "cleanup", "The representative MSystem file can be removed", RemoveTemporaryFile(FileName)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "child log cleanup", "The representative child-process log can be removed", RemoveTemporaryFile(ChildLog)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "missing child log cleanup", "The representative missing-child log can be removed", RemoveTemporaryFile(MissingChildLog)) && Passed;
   Passed = EvaluateFalse("FileExist()", "cleanup", "The representative MSystem file is gone after cleanup", System.FileExist(FileName)) && Passed;
-  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The temporary MSystem directory can be removed", RemoveTemporaryDirectory()) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The temporary MSystem directory can be removed", RemoveTemporaryDirectory(TempDirectory)) && Passed;
 
   Summarize();
   return Passed;
