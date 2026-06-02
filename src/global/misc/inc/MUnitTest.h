@@ -19,8 +19,10 @@
 // Standard libs:
 #include <cmath>
 #include <exception>
+#include <filesystem>
 #include <iomanip>
 #include <limits>
+#include <mutex>
 #include <sstream>
 #include <typeinfo>
 #include <vector>
@@ -38,12 +40,13 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! The base class for unit test
+//! The base class for unit testing
 class MUnitTest
 {
   // public interface:
  public:
-  //! Default constructor
+  //! Construct a named unit test
+  //! For the name, use only ASCII letters, digits, '_' and '-' so the name can also serve as the temporary-directory basename, otherwise temporary files use c_FallbackTemporaryBaseName
   MUnitTest(const MString& Name);
   //! Default destuctor 
   virtual ~MUnitTest();
@@ -135,6 +138,9 @@ class MUnitTest
   //! Summarize the test run
   void Summarize();
 
+  //! Fallback basename used when a unit-test name cannot safely name a temporary directory
+  static const MString c_FallbackTemporaryBaseName;
+
   // protected methods:
  protected:
   //! Register a passed test
@@ -174,6 +180,12 @@ class MUnitTest
   //! Remove and recreate a process-local temporary directory for this test
   bool PrepareTemporaryDirectory(const MString& Name = "") const;
 
+  //! Remove a temporary file only if it is inside this test's randomized temporary root
+  bool RemoveTemporaryFile(const MString& FileName) const;
+
+  //! Recursively remove a temporary directory only if it is inside this test's randomized temporary root; an empty name removes the root itself
+  bool RemoveTemporaryDirectory(const MString& DirectoryName = "") const;
+
   //! Register and report a failed test
   template <typename T> void RegisterFailure(MString Function, T Input, MString Description, MString Expected, MString Output) {
     mout<<endl;
@@ -188,8 +200,23 @@ class MUnitTest
 
   // private methods:
  private:
+  //! Create this test's randomized private temporary root if necessary
+  bool CreateTemporaryRootDirectory() const;
 
+  //! Return the randomized private temporary root for this test
+  MString GetTemporaryRootDirectory() const;
 
+  //! Return true only for a plain child file or directory name without path components; see IsValidTemporaryBaseName() for the root-basename rule
+  bool IsValidTemporaryPathName(const MString& Name, bool AllowEmpty = false) const;
+
+  //! Return true only if Name is suitable as the unit-test-derived temporary directory basename; see IsValidTemporaryPathName() for child names
+  bool IsValidTemporaryBaseName(const MString& Name) const;
+
+  //! Return true only if Path resolves inside this test's randomized temporary root
+  bool IsSafeTemporaryPath(const MString& Path, bool AllowRoot) const;
+
+  //! Return true if Child is Parent or is contained below Parent
+  bool IsPathContained(const std::filesystem::path& Parent, const std::filesystem::path& Child) const;
 
   // protected members:
  protected:
@@ -199,10 +226,16 @@ class MUnitTest
  private:
    //! Name of the unit test
    MString m_Name;
+   //! Safe basename used for this test's randomized temporary root
+   MString m_TemporaryBaseName;
    //! Passed tests
    unsigned int m_NumberOfPassedTests;
    //! Failed tests
    unsigned int m_NumberOfFailedTests;
+   //! Randomized private temporary root, created lazily
+   mutable MString m_TemporaryRootDirectory;
+   //! Serialize lazy temporary-root creation and guarded filesystem operations
+   mutable recursive_mutex m_TemporaryPathMutex;
 
 
 #ifdef ___CLING___
