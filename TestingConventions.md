@@ -216,24 +216,24 @@ EnableDefaultStreams();
 1. Locate committed test data via the `$MEGALIB` environment variable. Never hard-code absolute paths.
 2. If `$MEGALIB` is unset in a unit test, skip the data-dependent sub-test with an `mout` notice and return `Passed` (true) — local builds must not fail because optional data is unavailable.
 3. End-to-end regression tests treat the data as required: if `$MEGALIB` is set but the input file is missing, the test fails.
-4. Test-generated fixture files (small files the test writes itself) live under `/tmp/`, never in the source tree. Give each fixture a name unique to the test and, if it may run concurrently with itself, suffix with `getpid()`:
+4. Test-generated fixture files (small files the test writes itself) live under the private randomized temporary root managed by `MUnitTest`, never in the source tree. Use the guarded `MUnitTest` helpers instead of constructing raw `/tmp/...` paths, adding `getpid()` suffixes, invoking shell cleanup commands, or removing files directly:
 
 ```cpp
-MString FixtureFile = MString("/tmp/UTFoo_") + (unsigned int) getpid() + ".dat";
-ofstream Out(FixtureFile.Data());
-Passed = EvaluateTrue("Setup", "fixture",
+const MString FixtureFile = GetTemporaryFileName("fixture.dat");
+Passed = EvaluateTrue("WriteTextFile()", "fixture",
                      "The fixture file can be created",
-                     Out.is_open()) && Passed;
-Out << "..." << endl;
-Out.close();
+                     WriteTextFile(FixtureFile, "...")) && Passed;
 
 // ... use the file ...
 
-MFile::Remove(FixtureFile);
+Passed = EvaluateTrue("RemoveTemporaryFile()", "fixture",
+                     "The fixture file can be removed",
+                     RemoveTemporaryFile(FixtureFile)) && Passed;
 ```
 
-5. Always assert `is_open()` immediately after opening — a write failure should surface where it happens, not later as a confusing read error.
-6. Remove every fixture file the test creates, on every path.
+5. Use `PrepareTemporaryDirectory()` when a sub-test needs an empty directory. It removes and recreates that directory below the private temporary root.
+6. Temporary-root cleanup is automatic. Explicit cleanup may still be used and tested where it is relevant to the behavior under test.
+7. When direct stream I/O is required instead of `WriteTextFile()` or `ReadTextFile()`, always assert `is_open()` immediately after opening — a failure should surface where it happens, not later as a confusing read error.
 
 ## Monte Carlo and Stochastic Code
 1. Every MC test fixes the random seed explicitly. No reliance on default seeding.
@@ -265,11 +265,13 @@ MFile::Remove(FixtureFile);
 1. Tests must pass in any order and in isolation.
 2. Tests must not depend on other tests' side effects.
 3. Restore any global state, singleton, static, or environment variable the test mutates. This includes ROOT's global state (`gROOT`, `gDirectory`, `gRandom`) and MEGAlib globals.
-4. Use temp directories for filesystem work. Never touch the real user filesystem.
+4. Use the randomized private temporary root managed by `MUnitTest` for filesystem work. Never touch the real user filesystem.
 5. Do not make network calls in unit or integration tests.
 6. Prefer freezing or injecting clocks instead of reading wall-clock time directly. If the public API itself measures real time and no injection seam exists, wall-clock tests are allowed only as a last resort. Such tests must use coarse, stable assertions and document why a fake clock could not be used.
 7. Flaky tests are bugs. Fix or quarantine them. Do not add retries.
 8. When a class owns dynamic resources, include at least one test that exercises reassignment or reinitialization, not just single-use success paths.
+9. When testing filesystem helpers, cover recreation, idempotent removal, traversal rejection, sibling rejection, symlink escape rejection, and concurrent lazy initialization where applicable.
+10. When testing thread safety, force contention and validate every result, not only the final iteration.
 
 ## Assertions and Diagnostics
 1. Failure messages must show expected vs. actual without requiring a rerun. The `MUnitTest` helpers do this automatically — use them, not raw `if`/`return`.

@@ -64,6 +64,17 @@ X, DataPoint, IsNonZero
 - Avoid adding C headers such as `<stdio.h>`, `<stdlib.h>`, or POSIX headers such as `<unistd.h>` and `<fcntl.h>` when a suitable C++ header and C++ mechanism exists.
 - If a C or POSIX function is required because the C++ standard library does not provide equivalent semantics, document the reason briefly near the use.
 
+## Conditions and error handling
+
+- Do not rely on implicit truthiness. Write explicit comparisons such as `Flag == true`, `Flag == false`, `Pointer == nullptr`, and `Error.value() != 0`.
+- For recoverable filesystem operations, prefer the `std::error_code` overloads. Print a contextual `merr` message before returning failure unless the failure is expected and intentionally ignored.
+
+## Filesystem safety
+
+- Keep user-facing labels separate from filesystem-safe names. Validate path components instead of silently sanitizing them.
+- Restrict destructive filesystem operations to a validated private root directory. Reject empty paths, traversal outside the root, sibling paths, and symlink escapes.
+- If a mutex protects a non-obvious filesystem race, add a short comment describing the race, such as preventing concurrent teardown while file I/O is in progress.
+
 ## Comments
 
 - Use doxygen-style comments (//!) for classes, member functions, and variables, including a brief description of the method's functionality.
