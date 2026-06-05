@@ -36,11 +36,6 @@ class MFastMath
 {
   // public interface:
  public:
-  //! Default constructor
-  MFastMath() {}
-  //! Default destuctor 
-  virtual ~MFastMath() {}
-
   //! A fast atan (accuracy < 0.00150887 radians)
   static double atan(double x) {
     if (x > 1.0) {
@@ -197,13 +192,6 @@ class MFastMath
 
   // private members:
  private:
-
-
-
-#ifdef ___CLING___
- public:
-  ClassDef(MFastMath, 0) // no description
-#endif
 
 };
 

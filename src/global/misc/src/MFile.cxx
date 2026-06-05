@@ -37,6 +37,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <filesystem>
+#include <random>
 using namespace std;
 
 
@@ -1260,7 +1261,89 @@ bool MFile::CreateDirectory(const MString& Path)
   // Returns true on success and also when the directory already exists.
 
   if (Path.IsEmpty() == true) return false;
-  return gSystem->mkdir(Path.Data(), kTRUE) == 0;
+
+  std::error_code Error; // Avoid exceptions; mkdir below determines final success.
+  if (std::filesystem::is_directory(Path.Data(), Error) == true) return true;
+
+  if (gSystem->mkdir(Path.Data(), kTRUE) == 0) return true;
+
+  merr<<"Error in MFile::CreateDirectory: unable to create directory "<<Path<<endl;
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MFile::MakeTemporaryPath(const MString& Name, unsigned int NumberOfRandomChars, const MString& Directory)
+{
+  static const char Characters[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+  MString BaseName = MFile::GetBaseName(Name);
+  if (BaseName != Name || BaseName.IsEmpty() == true) {
+    merr<<"Error in MFile::MakeTemporaryPath: temporary file names must be plain file names without directory components: "<<Name<<endl;
+    return "";
+  }
+
+  MString TargetDirectory = Directory;
+  if (TargetDirectory.IsEmpty() == true) {
+    TargetDirectory = gSystem->TempDirectory();
+  }
+
+  std::random_device RandomDevice;
+  MString RandomPart;
+  for (unsigned int c = 0; c < NumberOfRandomChars; ++c) {
+    RandomPart += Characters[RandomDevice() % (sizeof(Characters) - 1)];
+  }
+
+  return TargetDirectory + "/MEGAlib_" + RandomPart + "_" + BaseName;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MFile::CreateTemporaryFile(const MString& Name, unsigned int NumberOfRandomChars, const MString& DirectoryWhereToCreateTheFile)
+{
+  // Create a randomized temporary file and return its full path.
+  // The file is created atomically by using exclusive fopen creation.
+
+  if (NumberOfRandomChars < 5) NumberOfRandomChars = 5;
+
+  for (unsigned int Attempt = 0; Attempt < 100; ++Attempt) {
+    MString FileName = MakeTemporaryPath(Name, NumberOfRandomChars, DirectoryWhereToCreateTheFile);
+    if (FileName.IsEmpty() == true) break;
+    FILE* File = fopen(FileName.Data(), "wx");
+    if (File != nullptr) {
+      fclose(File);
+      return FileName;
+    }
+  }
+
+  merr<<"Error in MFile::CreateTemporaryFile: unable to create temporary file for "<<Name<<endl;
+  return "";
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MFile::CreateTemporaryDirectory(const MString& Name, unsigned int NumberOfRandomChars, const MString& DirectoryWhereToCreateTheDirectory)
+{
+  // Create a randomized temporary directory and return its full path.
+
+  if (NumberOfRandomChars < 5) NumberOfRandomChars = 5;
+
+  for (unsigned int Attempt = 0; Attempt < 100; ++Attempt) {
+    MString Directory = MakeTemporaryPath(Name, NumberOfRandomChars, DirectoryWhereToCreateTheDirectory);
+    if (Directory.IsEmpty() == true) break;
+
+    std::error_code Error;
+    if (std::filesystem::create_directory(Directory.Data(), Error) == true) return Directory;
+  }
+
+  merr<<"Error in MFile::CreateTemporaryDirectory: unable to create temporary directory for "<<Name<<endl;
+  return "";
 }
 
 
