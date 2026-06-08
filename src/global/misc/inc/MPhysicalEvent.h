@@ -124,7 +124,7 @@ class MPhysicalEvent : public MRotationInterface
   const MPhysicalEventHit& GetHit(unsigned int i) const;
   
   //! Set the OI information
-  void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy; }
+  void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy, const int SecondaryId) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy, m_OISecondaryId = SecondaryId ; }
   //! Get the OI position information
   MVector GetOIPosition() const { return m_OIPosition; }
   //! Get the OI direction information
@@ -201,7 +201,9 @@ class MPhysicalEvent : public MRotationInterface
   MVector m_OIPolarization;
   //! OI energy (the meaning is a secret...)
   double m_OIEnergy;
-
+  //! OI Secondary Id (the meaning is a secret...)
+  int m_OISecondaryId;
+  
   //! Store the read lines for delayed parsing
   vector<MString> m_Lines; 
 
