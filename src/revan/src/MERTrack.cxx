@@ -189,7 +189,6 @@ bool MERTrack::SetParameters(bool SearchMIPs,
       merr<<"No electron tracking will be performed!"<<show;
     }
   }
-  mout << "alaviron tracking detector list: " << m_DetectorList.size() << endl;
 
   return true;
 }
@@ -214,7 +213,7 @@ bool MERTrack::HasOneREOfType(int EventType) {
 
 bool MERTrack::CheckVectorBetweenIndices(const vector<int>& v, const std::function<bool(int)>& f, const int start_index, const int n_index) {
   for (int i = start_index; i < std::min(start_index + n_index, m_RangeForVertexSearch); ++i) {
-    if (!f(i)) return false;
+    if (!f(v[i])) return false;
   }
   return true;
 }
@@ -552,7 +551,6 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
   // hit followed by at least N layers with two hits per layer:
 
   mdebug<<"Searching for a pair vertex"<<endl;
-  mout << "alaviron: Checking for pair vertex in event " << RE->GetEventID() << " with " << RE->GetNRESEs() << " RESEs." << endl;
 
   MRawEventIncarnations *List = 0;
   bool OnlyHitInLayer = false;
@@ -576,8 +574,7 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
   vector<MRESE*>::iterator Iterator1;
   vector<MRESE*>::iterator Iterator2;
   for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
-    // alaviron: to be changed back to mdebug when we are done
-    mout<<(*Iterator1)->GetID()<<": "<<(*Iterator1)->GetPosition().Z()<<endl;
+    mdebug<<(*Iterator1)->GetID()<<": "<<(*Iterator1)->GetPosition().Z()<<endl;
   }
 
   // For each of the RESE's in the list check if it could be the first of the vertex
@@ -613,7 +610,6 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
       //mdebug<<"Distance "<<(*Iterator1)->GetID()<<" - "<<(*Iterator2)->GetID()<<": "<<Distance<<endl;
     }
 
-
     // Under the following conditions we do have a pair:
 
     // Pair starting from top
@@ -622,7 +618,6 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
 
 
     // Check for vertex below
-    //if (NAbove[1] == 0) {
     if (CheckVectorBetweenIndices(NAbove, [](int i){ return i == 0; }, 1, m_NEmptyLayersAboveVertex)) {
       int StartIndex = 0; // We start when we have 2 hits for the first time
       int StopIndex = 0; // We stop when we skip 2 layers for the first time
@@ -636,15 +631,10 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
         
         
         // We stop when we skip 2 layers for the first time
-        //if (NBelow[d] == 0 && NBelow[d+1] == 0) break;
-        //StopIndex = d;
         if (CheckVectorBetweenIndices(NBelow, [](int i){ return i == 0; }, d, m_NEmptyLayersBelowVertex)) break;
+        StopIndex = d;
         // Store the index where we have 2 hits for the first time, twice
-        //if (StartIndex == 0 && NBelow[d] > 1 && NBelow[d+1] > 1) StartIndex = d;
-        if (CheckVectorBetweenIndices(NBelow, [](int i){ return i >= 2; }, d, m_N2htLayersStartVertex)) {
-          if (StartIndex == 0) StartIndex = d;
-          StopIndex = d + m_N2htLayersStartVertex; // We stop after the last layer with 2 hits
-        }
+        if (StartIndex == 0 && CheckVectorBetweenIndices(NBelow, [](int i){ return i > 1; }, d, m_N2htLayersStartVertex)) StartIndex = d;
 
         if (StartIndex != 0) {
           if (NBelow[d] >= 2) ++LayersWithAtLeastTwoHitsBetweenStartAndStop;
@@ -652,10 +642,11 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
       }
 
       // Since we can have just a single track at the end, move upward until we have at least two hits in a row
-      /*for (unsigned int d = StopIndex; d > 2; --d) {
-        if (NBelow[d-1] >= 2 && NBelow[d-2] >= 2) break;
+      for (unsigned int d = StopIndex; d > 2; --d) {
+        //if (NBelow[d-1] >= 2 && NBelow[d-2] >= 2) break;
+        if (CheckVectorBetweenIndices(NBelow, [](int i){ return i > 1; }, d-2, 2)) break;
         StopIndex = d;
-      }*/
+      }
 
       mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Above: ";
       for (int i: NAbove) mdebug<<i<<" ";

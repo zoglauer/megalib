@@ -761,9 +761,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       
       for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
         MRawEventIncarnations* REI = m_RawEvents->Get(i);
-        mout << "alaviron MRawEventAnalyzer::AnalyzeEvent: tracking " << i << endl;
         m_Tracker->Analyze(REI);
-        mout << "alaviron test" << endl;
       }
       
       if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;  
@@ -787,9 +785,6 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       }
     }
   }
-  mout << "alaviron test 2" << endl;
-  
-  //mout << "AL evtid=" << m_RawEvents->Get(0)->GetRawEventAt(0)->GetEventId() << " evtype=" << m_RawEvents->Get(0)->GetRawEventAt(0)->GetEventTypeAsString() << endl;
   
   
   // Section E: Compton sequence reconstruction       
@@ -1411,7 +1406,6 @@ bool MRawEventAnalyzer::PreAnalysis()
       dynamic_cast<MERTrackKalman2D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
     } else if (m_TrackingAlgorithm == c_TrackingAlgoFirstTwoLayers) {
       m_Tracker = new MERTrackFirstTwoLayers(m_Geometry); // this is the new method for pair reconstruction
-      mout << "alaviron MRawEventAnalyzer::PreAnalysis: Using the first two layers for tracking!" << endl;
     } else if (m_TrackingAlgorithm == c_TrackingAlgoNone) {
       // Nothing
     } else {
@@ -1419,7 +1413,6 @@ bool MRawEventAnalyzer::PreAnalysis()
       Return = false;
     }
 
-    mout << "alaviron tracking detector list: " << m_ElectronTrackingDetectorList.size() << endl;
     if (m_Tracker != nullptr) {
       m_Tracker->SetGeometry(m_Geometry);
       m_Tracker->SetParameters(m_SearchMIPTracks,

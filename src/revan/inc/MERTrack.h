@@ -118,7 +118,7 @@ class MERTrack : public MERConstruction
   vector<MDDetector*> m_DetectorList;
  
   //! CheckForPairs hidden parameters
-  double m_NLayersWithTwoHits;
+  int m_NLayersWithTwoHits;
   double m_FractionOfLayersWithTwoHits;
   int m_RangeForVertexSearch;
   int m_NEmptyLayersAboveVertex;

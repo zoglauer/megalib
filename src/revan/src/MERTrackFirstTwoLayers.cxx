@@ -34,13 +34,6 @@ MERTrackFirstTwoLayers::MERTrackFirstTwoLayers(MGeometryRevan* geom)
   m_NEmptyLayersAboveVertex = 1;
   m_NEmptyLayersBelowVertex = 1;
   m_N2htLayersStartVertex = 1;
-
-  // Get interlayer distance from the first detector in the list
-  //m_InterlayerDistance = m_DetectorList[0]->GetStructuralPitch().Z(); // defined in .det file
-  //mout << "alaviron: Interlayer distance: " << m_InterlayerDistance << " cm" << endl;
-  //if (m_InterlayerDistance == 0.0) {
- //throw std::runtime_error("Tracking detector has zero z-pitch specified in geometry — cannot determine interlayer distance.");
-  //}
 }
 
 
@@ -112,49 +105,6 @@ std::vector<CombinedHit> MERTrackFirstTwoLayers::CombiningHitsByAngle(
 }
 
 //////////////////////////////////////////
-// VERTEXFINDER CLASS
-//////////////////////////////////////////
-/*MERTrackFirstTwoLayers::VertexFinder::VertexFinder(MGeometryRevan* geom)
- : Geometry(geom), m_InterlayerDistance(0.0)
-{
- // Build detector list from all MDStrip2D detectors in the geometry
- for (unsigned int i = 0; i < Geometry->GetNDetectors(); ++i) {
-     MDDetector* det = Geometry->GetDetectorAt(i);
-     if (det != nullptr && dynamic_cast<MDStrip2D*>(det) != nullptr) {
-      m_DetectorList.push_back(det);
-     }
- }
-
- if (m_DetectorList.empty()) {
-     throw std::runtime_error("No tracking detectors selected in the electron tracking options!");
- }
-
- // Get interlayer distance from the first detector in the list
- m_InterlayerDistance = m_DetectorList[0]->GetStructuralPitch().Z(); // defined in .det file
-
- if (m_InterlayerDistance == 0.0) {
-     throw std::runtime_error("Tracking detector has zero z-pitch specified in geometry — cannot determine interlayer distance.");
- }
-}*/
-
-/*bool MERTrackFirstTwoLayers::VertexFinder::IsInTracker(MRESE* rese)
-{
- if (rese->GetType() == MRESE::c_Track) return true;
-
- MDVolumeSequence* VS = rese->GetVolumeSequence();
- if (VS == nullptr) return false;
-
- MDDetector* det = VS->GetDetector();
- if (det == nullptr) return false;
-
- for (MDDetector* listed : m_DetectorList) {
-     if (det == listed) return true;
- }
-
- return false;
-}*/
-
-//////////////////////////////////////////
 
 std::pair<std::pair<MVector, MVector>, std::pair<MVector, MVector>>
 MERTrackFirstTwoLayers::BestHitPairing(const MVector& A1, const MVector& A2, const MVector& B1, const MVector& B2)
@@ -218,7 +168,6 @@ MREVertex* MERTrackFirstTwoLayers::TopVertex(const std::vector<MREVertex*>& vert
 std::vector<MREVertex*> MERTrackFirstTwoLayers::FindVertices(MRERawEvent* RE)
 {
   std::vector<MREVertex*> Vertices;
-  mout << "alaviron: Starting vertex finding for event " << RE->GetEventID() << " with " << RE->GetNRESEs() << " RESEs." << endl;
 
   const int    LayerRequirement    = 4; // matches the revan requirement
   const int    SearchRange         = 30;
@@ -357,6 +306,7 @@ std::vector<MREVertex*> MERTrackFirstTwoLayers::FindVertices(MRERawEvent* RE)
      vtx.m_EventID = RE->GetEventID();
 
      vtx.m_TrackHits = { hp1, hp2 };*/
+     // A.L. Does the vertex need to know the list of hits? TBD.
 
      // Assign track directions and energies 
     MVector vtx_pos = vtx->GetPosition();
@@ -455,13 +405,6 @@ std::vector<MREVertex*> MERTrackFirstTwoLayers::FindVertices(MRERawEvent* RE)
     MRESE* hit1lay2 = hits_in_layer_below[0];
     MRESE* hit2lay2 = hits_in_layer_below[1];
 
-    /*auto toMVector = [](MRESE* r) -> MVector {
-      MVector p = r->GetPosition();
-      return { p.X(), p.Y(), p.Z() };
-    };
-
-    MVector A1 = toMVector(hit1lay1), A2 = toMVector(hit2lay1);
-    MVector B1 = toMVector(hit1lay2), B2 = toMVector(hit2lay2);*/
     MVector A1 = hit1lay1->GetPosition();
     MVector A2 = hit2lay1->GetPosition();
     MVector B1 = hit1lay2->GetPosition();
@@ -496,7 +439,6 @@ std::vector<MREVertex*> MERTrackFirstTwoLayers::FindVertices(MRERawEvent* RE)
     vtx->ComputeGammaDirection();
     Vertices.push_back(vtx);
   }
-  mout << "alaviron: Finished vertex finding for event " << RE->GetEventID() << ". Found " << Vertices.size() << " vertices." << endl;
   return Vertices;
 }
 
@@ -507,136 +449,15 @@ std::vector<MREVertex*> MERTrackFirstTwoLayers::FindVertices(MRERawEvent* RE)
 bool MERTrackFirstTwoLayers::Analyze(MRawEventIncarnations* REList)
 {
   MERConstruction::Analyze(REList);
-  mout << "alaviron: Starting first two layers tracking::Analyze of event " << m_List->GetRawEventAt(0)->GetEventID() << endl;
   for (int e = 0; e < m_List->GetNRawEvents(); e++) {
     MRERawEvent* RE = m_List->GetRawEventAt(e);
     if (RE->GetEventType() == c_PairEvent) {
-      mout << "alaviron: 0 " << RE << endl;
       TrackPairs(RE);
-      mout << "alaviron: 4 " << RE << endl;
       RE->SetEventReconstructed(true);
-      mout << "alaviron: 5 " << RE << endl;
     }
   }
   return true;
 }
-/*
-//////////////////////////////////////////
-// Implementing modified version of CheckForPair function in the base class
-//////////////////////////////////////////
-
-MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
-{
-  mdebug<<"Searching for a pair vertex"<<endl;
-  mout << "CheckForPair called for event " << RE->GetEventID() << endl;
-
-  MRawEventIncarnations *List = 0;
-  bool OnlyHitInLayer = false;
-  unsigned int SearchRange = 30;
-
-  // Create a list of RESEs sorted by depth in tracker
-  vector<MRESE*> ReseList;
-  for (int h = 0; h < RE->GetNRESEs(); h++) {
- if (IsInTracker(RE->GetRESEAt(h)) == false) continue;
-
- ReseList.push_back(RE->GetRESEAt(h));
-  }
-  sort(ReseList.begin(), ReseList.end(), CompareRESEByZ());
-
-  mdebug<<"RESE's sorted by depth: "<<endl;
-  vector<MRESE*>::iterator Iterator1;
-  vector<MRESE*>::iterator Iterator2;
-  for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
- mdebug<<(*Iterator1)->GetID()<<": "<<(*Iterator1)->GetPosition().Z()<<endl;
-  }
-
-  // For each of the RESEs in the list check if it could be the first of the vertex
-  for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
-
- // If it is a single hit, and if it is the only one in its layer:
- OnlyHitInLayer = true;
- for (Iterator2 = ReseList.begin(); Iterator2 != ReseList.end(); Iterator2++) {
-   if ((*Iterator1) == (*Iterator2)) continue;
-   if (m_Geometry->AreInSameLayer((*Iterator1), (*Iterator2)) == true) {
-     OnlyHitInLayer = false;
-     break;
-   }
- }
- if (OnlyHitInLayer == false) continue;
- mdebug<<"Search vertex: Only hit in layer:"<<endl;
- mdebug<<(*Iterator1)->ToString()<<endl;
-
- // We only have one hit:
- vector<int> NBelow(SearchRange, 0);
- vector<int> NAbove(SearchRange, 0);
-
- int Distance;
- for (Iterator2 = ReseList.begin(); Iterator2 != ReseList.end(); Iterator2++) {
-   if ((*Iterator1) == (*Iterator2)) continue;
-
-   Distance = m_Geometry->GetLayerDistance((*Iterator1), (*Iterator2));
-   if (Distance > 0 && Distance < int(SearchRange)) NAbove[Distance]++;
-   if (Distance < 0 && abs(Distance) < int(SearchRange)) NBelow[abs(Distance)]++;
-   massert(Distance != 0);
- }
-
- // Pair starting from top
- MRESE* Vertex = 0;
- int VertexDirection = 0;
-
- // Check for vertex below
- if (NAbove[1] == 0) {
-   int StartIndex = 0; // We start when we have 2 hits for the first time
-   int StopIndex = 0; // We stop when we skip 2 layers for the first time
-   int LayersWithAtLeastTwoHitsBetweenStartAndStop = 0;
-
-
-   for (unsigned int d = 1; d < SearchRange-1; ++d) {
-     if (NBelow[d] == 0 && NBelow[d+1] == 0) break;
-     StopIndex = d;
-     if (StartIndex == 0 && NBelow[d] > 1) StartIndex = d;
-
-     if (StartIndex != 0) {
-    if (NBelow[d] >= 2) ++LayersWithAtLeastTwoHitsBetweenStartAndStop;
-     }
-   }
-
-   // Since we can have just a single track at the end, move upward until we have at least two hits in a row
-   for (unsigned int d = StopIndex; d > 2; --d) {
-     if (NBelow[d-1] >= 2 && NBelow[d-2] >= 2) break;
-     StopIndex = d;
-   }
-
-   mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Above: ";
-   for (int i: NAbove) mdebug<<i<<" ";
-   mdebug<<endl;
-   mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Below: ";
-   for (int i: NBelow) mdebug<<i<<" ";
-   mdebug<<endl;
-
-   mdebug<<"Vertex statistics (max: "<<SearchRange<<"): layers used: "<<StopIndex<<", start of 2+ hits: "<<StartIndex<<"  layers with 2+ hits between start and stop: "<<LayersWithAtLeastTwoHitsBetweenStartAndStop<<" ("<<((StopIndex-StartIndex > 0) ? 100.0*LayersWithAtLeastTwoHitsBetweenStartAndStop/(StopIndex-StartIndex) : 0)<<"%)"<<endl;
-
-   if (LayersWithAtLeastTwoHitsBetweenStartAndStop > 3) {
-     // REMOVED THE ORIGINAL 4+ LAYER REQ AND >50% W/ PAIRS
-     Vertex = (*Iterator1);
-     VertexDirection = -1;
-   }
- }
-
- if (Vertex != 0) {
-   if (List == 0) List = new MRawEventIncarnations();
-   RE->SetVertex(Vertex);
-   RE->SetVertexDirection(VertexDirection);
-   MRERawEvent *New = RE->Duplicate();
-   RE->SetVertex(0);
-   List->AddRawEvent(New);
-   mdebug<<"Search vertex: Found vertex: "<<Vertex->GetID()<<endl;
-   break; 
- }
-  }
-
-  return List;
-}*/
 
 //////////////////////////////////////////
 // TRACKPAIRS — actually performs the reconstruction
@@ -644,7 +465,6 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
 
 void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
 {
-  mout << "alaviron: Starting TrackPairs for event " << RE->GetEventID() << endl;
   if (RE->GetNRESEs() == 0) {
     // mout << "No RESEs, skipping." << endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionNotEnoughHitsInTracker);
@@ -653,12 +473,6 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
 
  //VertexFinder finder(m_Geometry, m_DetectorList);
   std::vector<MREVertex*> vertices = FindVertices(RE);
-  mout << "alaviron - left blank" << endl;
-  mout << "alaviron: Found " << vertices.size() << " vertices for event " << RE->GetEventID() << endl;
-  for (auto& v:vertices) {
-    mout << "alaviron: vertex " << v->GetID() << " of type " << v->GetType();
-  }
-  mout << endl;
 
   if (vertices.empty()) {
     mout << "No vertex found for event " << RE->GetEventID() << endl;
@@ -667,10 +481,6 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
   }
 
   MREVertex* best = TopVertex(vertices);
-  mout << "alaviron: Selected vertex " << best->GetID() << " of type " << best->GetType() << " with " << best->m_AllRESEs.size() << " contributing hits" << endl;
-  for (auto& r : best->m_AllRESEs) {
-    mout << "  contributing hit: " << r->ToString() << endl;
-  }
 
   // Set vertex on raw event for MEGAlib bookkeeping
   if (best->GetRESE() != nullptr) {
@@ -717,7 +527,6 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
   Electron->SetEnergy(best->m_electron_energy);
   Positron->SetEnergy(best->m_positron_energy);
 
-  mout << "alaviron: 1 " << RE << endl;
   // Write back to the raw event 
   RE->SetElectronTrack(Electron);
   RE->SetPositronTrack(Positron);
@@ -728,15 +537,12 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
   // Set event as reconstructed
   RE->SetGoodEvent(true);
   RE->SetEventReconstructed(true);
-  mout << "alaviron: 2 " << RE << endl;
 
-  mout << "Event " << RE->GetEventID()
+  mdebug << "Event " << RE->GetEventID()
     << " | type: "    << best->m_vertex_type
     << " | vertex z: " << best->GetPosition().Z()
     << " | gamma dir: ("
     << best->m_gamma_dir.X() << ", "
     << best->m_gamma_dir.Y() << ", "
     << best->m_gamma_dir.Z() << ")" << endl;
-  mout << "alaviron: 3 " << RE << endl;
-  return;
 }
