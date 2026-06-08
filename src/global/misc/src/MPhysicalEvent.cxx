@@ -141,6 +141,7 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_OIDirection = E->m_OIDirection;
   m_OIPolarization = E->m_OIPolarization;
   m_OIEnergy = E->m_OIEnergy;  
+  m_OISecondaryId = E->m_OISecondaryId;
   
   return true;
 }
@@ -181,7 +182,8 @@ void MPhysicalEvent::Reset()
   m_OIDirection = g_VectorNotDefined;
   m_OIPolarization = g_VectorNotDefined;
   m_OIEnergy = g_DoubleNotDefined;
-
+  m_OISecondaryId = g_IntNotDefined;
+  
   m_Lines.clear();
   m_Comments.clear();
 }
@@ -319,7 +321,7 @@ MString MPhysicalEvent::ToTraString() const
     S<<"DC"<<endl;
   }
   if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined) {
-    S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy<<endl;
+    S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy<<endl <<" "<<m_OISecondaryId<<endl;
   }
   for (unsigned int c = 0; c < m_Comments.size(); ++c) {
     S<<"CC "<<m_Comments[c]<<endl;
@@ -533,8 +535,9 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
       m_OIPolarization[1] = strtod(p, &p);
       m_OIPolarization[2] = strtod(p, &p);
       m_OIEnergy = strtod(p, NULL);
+      m_OISecondaryId = strtod(p, NULL);
     } else {
-      if (sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], &m_OIEnergy) != 10) {
+      if (sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], &m_OIEnergy, &m_OISecondaryId) != 11) {
         Ret = 1;
       }
     }
