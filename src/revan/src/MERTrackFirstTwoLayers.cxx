@@ -27,7 +27,7 @@ ClassImp(MERTrackFirstTwoLayers)
 MERTrackFirstTwoLayers::MERTrackFirstTwoLayers(MGeometryRevan* geom)
  : MERTrack(), m_Geometry(geom)//, m_InterlayerDistance(0.0)
 {
-  mout << "Running new geometric reconstruction algorithm!" << endl;
+  mdebug << "Running new geometric reconstruction algorithm!" << endl;
   m_NLayersForVertexSearch = 3;
   m_FractionOfLayersWithTwoHits = 0.;
   m_RangeForVertexSearch = 30;
@@ -155,12 +155,8 @@ MVector MERTrackFirstTwoLayers::CalculatingVertexPosition(const MVector& p1, con
 MREVertex* MERTrackFirstTwoLayers::TopVertex(const std::vector<MREVertex*>& vertex_list)
 {
   // Returns the vertex with the largest z (shallowest layer)
-  //return std::max_element(vertex_list.begin(), vertex_list.end(), [](const MREVertex& a, const MREVertex& b){ return a.GetPositionZ() < b.GetPositionZ(); });
-  const MREVertex* tmp = *(std::max_element(vertex_list.begin(), vertex_list.end(),
-      [](const MREVertex* a, const MREVertex* b){ return a->GetPositionZ() < b->GetPositionZ(); }));
-  //mout << "alaviron: Previous known good:\n  " << tmp->ToString() << " to now:\n  " << std::min_element(vertex_list.begin(), vertex_list.end(), CompareRESEByZ())->ToString() << endl;
-  //return *std::min_element(vertex_list.begin(), vertex_list.end(), CompareRESEByZ());
-  return const_cast<MREVertex*>(tmp);
+  // min_element because CompareRESEByZ returns true if first > second, min/max_element needs first < second
+  return const_cast<MREVertex*>(*std::min_element(vertex_list.begin(), vertex_list.end(), CompareRESEByZ()));
 }
 
 //////////////////////////////////////////
@@ -475,7 +471,7 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
   std::vector<MREVertex*> vertices = FindVertices(RE);
 
   if (vertices.empty()) {
-    mout << "No vertex found for event " << RE->GetEventID() << endl;
+    mdebug << "No vertex found for event " << RE->GetEventID() << endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionPairEventNoVertex);
     return;
   }
