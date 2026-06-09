@@ -317,10 +317,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
         if (Line[0] == 'I' && Line[1] == 'A') {
           if (Line[3] == 'I' && Line[4] == 'N' && Line[5] == 'I' && Line[6] == 'T') {
             double x, y, z, dx, dy, dz, px, py, pz, e;
-            if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
-              &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+	    int id;
+            if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+              &x, &y, &z, &id, &dx, &dy, &dz, &px, &py, &pz, &e) == 11) {
               ostringstream out;
-              out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+              out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<";"<<id<<endl;
               Line = out.str().c_str();
             }
           }
