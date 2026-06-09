@@ -323,8 +323,16 @@ class MString
   //! Split the string in substring using the delimeter
   vector<MString> Tokenize(const MString& Delimeter, bool IgnoreEmpty = true) const;
 
-  //! Test if the string is a number -- ignores whitespace at beginning and end
+  //! Test if the string is a number -- ignores all leading and trailing whitespace (spaces, tabs, newlines, etc.)
   bool IsNumber() const;
+
+  //! Test if the string is a floating-point number containing a decimal point or exponent -- ignores all leading and trailing whitespace (spaces, tabs, newlines, etc.)
+  bool IsFloatingPointNumber() const;
+
+  //! Return true if both strings are floating-point numbers differing by no more than MaximumLastDigitDifference times the smaller last-printed-digit unit
+  //! For example, with MaximumLastDigitDifference = 2, 0.518236 and 0.518237 match because their difference of 0.000001 is less than 2 * 0.000001
+  //! Likewise, 1.234e-4 and 1.235e-4 match because their difference of 0.001e-4 is less than 2 * 0.001e-4
+  bool AreNumbersNumericallyMatching(const MString& Number, unsigned int MaximumLastDigitDifference = 2) const;
 
   //! Test if the string is a non-negative base-10 integer.
   //! Leading and trailing whitespace is ignored.

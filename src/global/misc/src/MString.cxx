@@ -27,7 +27,9 @@
 #include "MString.h"
 
 // Standard libs:
+#include <algorithm>
 #include <cmath>
+#include <limits>
 #include <locale>
 #include <iomanip>
 using namespace std;
@@ -428,24 +430,104 @@ long MString::GetHash() const
 
 bool MString::IsNumber() const
 {
-  //! Test if the string is a number - ignores whitespaces at beginning and end
-  
-  
+  //! Test if the string is a number - ignores all leading and trailing whitespace (spaces, tabs, newlines, etc.)
+
   istringstream In(m_String);
-  
+
   double Number;
   In>>skipws>>Number; // ignore white spaces at the beginning
-  
-  //! Check for whitespaces at the end
-  char c;
-  while (!In.eof() && !In.fail()) {
-    c = In.get();
-    if (In.eof()) return true;
-    if (isspace(static_cast<unsigned char>(c)) == 0) return false;
+
+  if (In.fail() == true) return false;
+
+  //! Ignore white spaces at the end
+  In>>ws;
+
+  //! If nothing is left, then the complete string is a number
+  if (In.eof() == false) return false;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MString::IsFloatingPointNumber() const
+{
+  //! Test if the string is a floating-point number - ignores all leading and trailing whitespace (spaces, tabs, newlines, etc.)
+
+  //! Floating-point numbers must contain a decimal point or an exponent
+  if (m_String.find('.') == string::npos &&
+      m_String.find('e') == string::npos &&
+      m_String.find('E') == string::npos) {
+    return false;
   }
-  
-  // If nothing is left and the string is still good, then we are good
-  return In.eof() && !In.fail(); 
+
+  //! Check if the complete string is a number
+  return IsNumber();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MString::AreNumbersNumericallyMatching(const MString& Number, unsigned int MaximumLastDigitDifference) const
+{
+  //! Test if two floating-point numbers match within a tolerance based on their printed precision
+
+  //! Both strings must be floating-point representations
+  if (IsFloatingPointNumber() == false) return false;
+  if (Number.IsFloatingPointNumber() == false) return false;
+
+  //! Identical floating-point representations always match
+  if (*this == Number) return true;
+
+  //! Return the value represented by the last printed digit
+  //! For example, 0.87370 returns 0.00001, 0.8737 returns 0.0001, and 1.234e-4 returns 0.0000001
+  //! Thus, the smaller returned unit belongs to the number with the higher printed precision
+  auto GetPrintedFloatingPointUnit = [](const MString& Value) {
+    MString TrimmedValue = Value;
+    TrimmedValue.Strip();
+    const string Token = TrimmedValue.ToString();
+
+    //! Separate mantissa and exponent so that the exponent can shift the last printed digit
+    //! For example, the last digit of 1.234e-4 represents 10^(-4-3) = 10^-7
+    const size_t ExponentPosition = Token.find_first_of("eE");
+    const string Mantissa = ExponentPosition == string::npos ? Token : Token.substr(0, ExponentPosition);
+    const int Exponent = ExponentPosition == string::npos ? 0 : stoi(Token.substr(ExponentPosition + 1));
+
+    //! Without a decimal point, the mantissa has no printed fractional digits
+    const size_t DecimalPosition = Mantissa.find('.');
+    if (DecimalPosition == string::npos) return pow(10.0, Exponent);
+
+    //! Each printed fractional digit reduces the unit by one power of ten
+    const int FractionDigits = static_cast<int>(Mantissa.size() - DecimalPosition - 1);
+    return pow(10.0, Exponent - FractionDigits);
+  };
+
+  //! The numbers need to be finite (not NaN or infinite)
+  const double ThisValue = ToDouble();
+  const double OtherValue = Number.ToDouble();
+  if (isfinite(ThisValue) == false) return false;
+  if (isfinite(OtherValue) == false) return false;
+
+  //! Use the smaller unit so both numbers are compared at the higher printed precision
+  //! For example, 0.8737 is treated as 0.87370 when compared with 0.87365
+  const double ThisPrintedUnit = GetPrintedFloatingPointUnit(*this);
+  const double OtherPrintedUnit = GetPrintedFloatingPointUnit(Number);
+  const double SmallerPrintedUnit = min(ThisPrintedUnit, OtherPrintedUnit);
+  const double MaximumDifference = MaximumLastDigitDifference * SmallerPrintedUnit;
+
+  const double Difference = fabs(ThisValue - OtherValue);
+
+  //! Account for round-off introduced by parsing, subtraction, and tolerance calculation
+  //! Scale the allowance to the values and tolerance involved in this comparison
+  //! Four machine epsilons cover the small number of floating-point operations without imposing an absolute floor near zero
+  const double ComparisonScale = max({fabs(ThisValue), fabs(OtherValue), MaximumDifference});
+  const double RoundOff = 4 * numeric_limits<double>::epsilon() * ComparisonScale;
+  if (Difference > MaximumDifference + RoundOff) return false;
+
+  return true;
 }
 
 

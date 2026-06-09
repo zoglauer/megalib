@@ -121,6 +121,102 @@ bool MUnitTest::WriteTextFile(const MString& FileName, const MString& Content) c
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MUnitTest::EvaluateFilesNumericallyEquivalent(MString Function, MString Input, MString Description,
+                                                   const MString& TestFile, const MString& ReferenceFile,
+                                                   unsigned int MaximumLastDigitDifference)
+{
+  //! Open both files independently so failures identify which input is unavailable
+  ifstream TestStream(TestFile.Data());
+  if (TestStream.is_open() == false) {
+    RegisterFailure(Function, Input, Description,
+                    MString("test file opens: ") + TestFile.Data(),
+                    "cannot open test file");
+    return false;
+  }
+
+  ifstream ReferenceStream(ReferenceFile.Data());
+  if (ReferenceStream.is_open() == false) {
+    RegisterFailure(Function, Input, Description,
+                    MString("reference file opens: ") + ReferenceFile.Data(),
+                    "cannot open reference file");
+    return false;
+  }
+
+  //! Read both files in lockstep so line count and line content are checked together
+  unsigned int LineNumber = 0;
+  MString TestLine;
+  MString ReferenceLine;
+
+  while (true) {
+    const bool GotTest = static_cast<bool>(TestLine.ReadLine(TestStream));
+    const bool GotReference = static_cast<bool>(ReferenceLine.ReadLine(ReferenceStream));
+
+    //! Reaching the end of both files at the same time completes the comparison
+    if (GotTest == false && GotReference == false) break;
+
+    ++LineNumber;
+
+    //! If only one read succeeded, the files contain a different number of lines
+    if (GotTest != GotReference) {
+      ostringstream LengthOutput;
+      if (GotTest == false) {
+        LengthOutput << "test file is shorter (ends at line " << LineNumber << ")";
+      } else {
+        LengthOutput << "test file is longer (reference ends at line " << LineNumber << ")";
+      }
+      RegisterFailure(Function, Input, Description + MString(" (line count)"),
+                      "same number of lines", LengthOutput.str());
+      return false;
+    }
+
+    //! Stop at the first unequal line and report both complete lines for diagnosis
+    if (LinesMatchNumerically(TestLine, ReferenceLine, MaximumLastDigitDifference) == false) {
+      ostringstream Diff;
+      Diff << "\n      line " << LineNumber << ":"
+           << "\n        expected:  " << ReferenceLine
+           << "\n        test:      " << TestLine;
+      RegisterFailure(Function, Input, Description, "numerically equivalent files", Diff.str());
+      return false;
+    }
+  }
+
+  RegisterSuccess();
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::LinesMatchNumerically(const MString& TestLine, const MString& ReferenceLine,
+                                      unsigned int MaximumLastDigitDifference) const
+{
+  //! Stream extraction splits both lines at whitespace and ignores whitespace differences
+  istringstream TestStream(TestLine.ToString());
+  istringstream ReferenceStream(ReferenceLine.ToString());
+
+  MString TestToken;
+  MString ReferenceToken;
+  while (true) {
+    const bool HasTestToken = static_cast<bool>(TestStream >> TestToken);
+    const bool HasReferenceToken = static_cast<bool>(ReferenceStream >> ReferenceToken);
+
+    //! If either stream is exhausted, both must be exhausted to have equal token counts
+    if (HasTestToken == false || HasReferenceToken == false) return HasTestToken == HasReferenceToken;
+
+    //! Identical tokens match directly, including non-numeric and integer-only tokens
+    if (TestToken == ReferenceToken) continue;
+
+    //! Differing tokens must be floating-point numbers matching within their printed precision
+    if (TestToken.AreNumbersNumericallyMatching(ReferenceToken, MaximumLastDigitDifference) == false) return false;
+  }
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MString MUnitTest::ReadTextFile(const MString& FileName) const
 {
   // Keep validation and reading atomic with respect to concurrent teardown, i.e.
@@ -490,51 +586,59 @@ bool MUnitTest::IsPathContained(const std::filesystem::path& Parent, const std::
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString Description, const MString& GeneratedFile, const MString& ReferenceFile)
+bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString Description, const MString& TestFile, const MString& ReferenceFile)
 {
-  ifstream Generated(GeneratedFile.Data());
-  if (Generated.is_open() == false) {
+  //! Open both files independently so failures identify which input is unavailable
+  ifstream TestStream(TestFile.Data());
+  if (TestStream.is_open() == false) {
     RegisterFailure(Function, Input, Description,
-                    MString("generated file opens: ") + GeneratedFile.Data(),
-                    "cannot open generated file");
+                    MString("test file opens: ") + TestFile.Data(),
+                    "cannot open test file");
     return false;
   }
 
-  ifstream Reference(ReferenceFile.Data());
-  if (Reference.is_open() == false) {
+  ifstream ReferenceStream(ReferenceFile.Data());
+  if (ReferenceStream.is_open() == false) {
     RegisterFailure(Function, Input, Description,
                     MString("reference file opens: ") + ReferenceFile.Data(),
                     "cannot open reference file");
     return false;
   }
 
+  //! Read both files in lockstep so line count and line content are checked together
   unsigned int LineNumber = 0;
-  string GeneratedLine, ReferenceLine;
+  MString TestLine;
+  MString ReferenceLine;
 
   while (true) {
-    bool GotGenerated = (bool) getline(Generated, GeneratedLine);
-    bool GotReference = (bool) getline(Reference, ReferenceLine);
+    const bool GotTest = static_cast<bool>(TestLine.ReadLine(TestStream));
+    const bool GotReference = static_cast<bool>(ReferenceLine.ReadLine(ReferenceStream));
 
-    if (GotGenerated == false && GotReference == false) break;
+    //! Reaching the end of both files at the same time completes the comparison
+    if (GotTest == false && GotReference == false) break;
 
     ++LineNumber;
 
-    if (GotGenerated != GotReference) {
+    //! If only one read succeeded, the files contain a different number of lines
+    if (GotTest != GotReference) {
       ostringstream LengthOutput;
-      if (GotGenerated == false) {
-        LengthOutput << "generated file is shorter (ends at line " << LineNumber << ")";
+      if (GotTest == false) {
+        LengthOutput << "test file is shorter (ends at line " << LineNumber << ")";
       } else {
-        LengthOutput << "generated file is longer (reference ends at line " << LineNumber << ")";
+        LengthOutput << "test file is longer (reference ends at line " << LineNumber << ")";
       }
-      RegisterFailure(Function, Input, Description + MString(" (line count)"), "same number of lines", LengthOutput.str());
+      RegisterFailure(Function, Input, Description + MString(" (line count)"),
+                      "same number of lines", LengthOutput.str());
       return false;
     }
 
-    if (GeneratedLine != ReferenceLine) {
+    //! Exact comparison preserves all characters within the line, including whitespace
+    //! Stop at the first unequal line and report both complete lines for diagnosis
+    if (TestLine != ReferenceLine) {
       ostringstream Diff;
       Diff << "\n      line " << LineNumber << ":"
            << "\n        expected:  " << ReferenceLine
-           << "\n        generated: " << GeneratedLine;
+           << "\n        test:      " << TestLine;
       RegisterFailure(Function, Input, Description, "identical files", Diff.str());
       return false;
     }
