@@ -129,8 +129,20 @@ class MUnitTest
     return false;
   }
   
-  //! Evaluate that two files are identical line by line; stops at and reports the first differing line
-  bool EvaluateFilesIdentical(MString Function, MString Input, MString Description, const MString& GeneratedFile, const MString& ReferenceFile);
+  //! Evaluate that two text files contain exactly the same lines
+  //! All characters within each line, including whitespace, must match; line-ending characters are consumed while reading
+  //! The files must contain the same number of lines; the first unequal line is reported
+  bool EvaluateFilesIdentical(MString Function, MString Input, MString Description, const MString& TestFile, const MString& ReferenceFile);
+
+  //! Evaluate that two text files have the same lines and whitespace-separated tokens
+  //! Floating-point tokens may differ by MaximumLastDigitDifference times the smaller last-printed-digit unit; all other tokens must match exactly
+  //! Tolerance matching requires both differing tokens to represent zero or finite normal doubles; subnormal and out-of-range values do not match numerically
+  //! For example, with MaximumLastDigitDifference = 2, 0.518236 and 0.518237 match because their difference of 0.000001 is less than 2 * 0.000001
+  //! Likewise, 1.234e-4 and 1.235e-4 match because their difference of 0.001e-4 is less than 2 * 0.001e-4
+  //! Differences in whitespace between tokens are ignored; the first unequal line is reported
+  bool EvaluateFilesNumericallyEquivalent(MString Function, MString Input, MString Description,
+                                          const MString& TestFile, const MString& ReferenceFile,
+                                          unsigned int MaximumLastDigitDifference = 2);
 
   //! Run the unit test
   virtual bool Run() = 0;
@@ -217,6 +229,13 @@ class MUnitTest
 
   //! Return true if Child is Parent or is contained below Parent
   bool IsPathContained(const std::filesystem::path& Parent, const std::filesystem::path& Child) const;
+
+  //! Return true if two lines contain the same number of whitespace-separated tokens and each token matches
+  //! Floating-point tokens use MString::AreNumbersNumericallyMatching() for comparison
+  //! All other tokens must be identical
+  //! For example, with MaximumLastDigitDifference = 2, "CT 0.518237 0.481763" matches "CT 0.518236 0.481764", but a changed "CT" token does not
+  bool LinesMatchNumerically(const MString& TestLine, const MString& ReferenceLine,
+                             unsigned int MaximumLastDigitDifference) const;
 
   // protected members:
  protected:

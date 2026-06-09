@@ -190,7 +190,6 @@ class MFile
   static MString CreateTemporaryDirectory(const MString& Name, unsigned int NumberOfRandomChars = 10, const MString& DirectoryWhereToCreateTheDirectory = "");
 
 
-
   //! The file modes: Write to a new file
   static unsigned int c_Write;
   //! The file modes: Write to a new file
