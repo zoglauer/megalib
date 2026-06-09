@@ -1261,7 +1261,7 @@ MString MRERawEvent::ToCompactString()
 
   ED1 = m_Start->GetEnergy();
   ED2 = GetEnergy() - ED1;
-
+  
 
   if (m_Start->GetType() == MRESE::c_Track) {
     snprintf(Text, Length,
