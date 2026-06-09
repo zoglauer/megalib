@@ -614,6 +614,10 @@ bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString 
     const bool GotTest = static_cast<bool>(TestLine.ReadLine(TestStream));
     const bool GotReference = static_cast<bool>(ReferenceLine.ReadLine(ReferenceStream));
 
+    //! Remove the carriage-return component of CRLF line endings
+    if (GotTest == true && TestLine.EndsWith("\r")) TestLine.RemoveLast(1);
+    if (GotReference == true && ReferenceLine.EndsWith("\r")) ReferenceLine.RemoveLast(1);
+
     //! Reaching the end of both files at the same time completes the comparison
     if (GotTest == false && GotReference == false) break;
 
