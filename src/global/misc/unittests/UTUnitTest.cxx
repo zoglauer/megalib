@@ -62,6 +62,8 @@ private:
   bool TestExceptionHelper();
   //! Test file-comparison helper
   bool TestFileComparison();
+  //! Test numerical line and file-comparison helpers
+  bool TestNumericalFileComparison();
   //! Test randomized temporary roots and guarded cleanup helpers
   bool TestTemporaryPaths();
 };
@@ -77,6 +79,7 @@ bool UTUnitTest::Run()
   Passed = TestEvaluateHelpers() && Passed;
   Passed = TestExceptionHelper() && Passed;
   Passed = TestFileComparison() && Passed;
+  Passed = TestNumericalFileComparison() && Passed;
   Passed = TestTemporaryPaths() && Passed;
 
   Summarize();
@@ -175,7 +178,13 @@ bool UTUnitTest::TestFileComparison()
   const MString ReferenceFile = GetTemporaryFileName("reference.txt");
   const MString MatchingFile = GetTemporaryFileName("matching.txt");
   const MString DifferentFile = GetTemporaryFileName("different.txt");
+  const MString WhitespaceFile = GetTemporaryFileName("whitespace.txt");
+  const MString CrlfFile = GetTemporaryFileName("crlf.txt");
+  const MString NoFinalNewlineFile = GetTemporaryFileName("no_final_newline.txt");
   const MString ShortFile = GetTemporaryFileName("short.txt");
+  const MString LongFile = GetTemporaryFileName("long.txt");
+  const MString EmptyReferenceFile = GetTemporaryFileName("empty_reference.txt");
+  const MString EmptyTestFile = GetTemporaryFileName("empty_test.txt");
   const MString MissingGeneratedFile = GetTemporaryFileName("missing_generated.txt");
   const MString MissingReferenceFile = GetTemporaryFileName("missing_reference.txt");
   const MString TemporaryDirectory = GetTemporaryDirectoryName("file_comparison");
@@ -183,7 +192,13 @@ bool UTUnitTest::TestFileComparison()
   RemoveTemporaryFile(ReferenceFile);
   RemoveTemporaryFile(MatchingFile);
   RemoveTemporaryFile(DifferentFile);
+  RemoveTemporaryFile(WhitespaceFile);
+  RemoveTemporaryFile(CrlfFile);
+  RemoveTemporaryFile(NoFinalNewlineFile);
   RemoveTemporaryFile(ShortFile);
+  RemoveTemporaryFile(LongFile);
+  RemoveTemporaryFile(EmptyReferenceFile);
+  RemoveTemporaryFile(EmptyTestFile);
   RemoveTemporaryFile(MissingGeneratedFile);
   RemoveTemporaryFile(MissingReferenceFile);
 
@@ -193,8 +208,20 @@ bool UTUnitTest::TestFileComparison()
                         WriteTextFile(MatchingFile, "alpha\nbeta\n")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "different fixture", "The representative different file can be written",
                         WriteTextFile(DifferentFile, "alpha\ngamma\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "whitespace fixture", "The representative whitespace-different file can be written",
+                        WriteTextFile(WhitespaceFile, "alpha \nbeta\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "CRLF fixture", "The representative CRLF file can be written",
+                        WriteTextFile(CrlfFile, "alpha\r\nbeta\r\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "no-final-newline fixture", "The representative file without a final newline can be written",
+                        WriteTextFile(NoFinalNewlineFile, "alpha\nbeta")) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "short fixture", "The representative short file can be written",
                         WriteTextFile(ShortFile, "alpha\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "long fixture", "The representative long file can be written",
+                        WriteTextFile(LongFile, "alpha\nbeta\ngamma\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "empty reference fixture", "The empty reference file can be written",
+                        WriteTextFile(EmptyReferenceFile, "")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "empty test fixture", "The empty test file can be written",
+                        WriteTextFile(EmptyTestFile, "")) && Passed;
   Passed = EvaluateTrue("ReadTextFile()", "reference fixture", "The unit-test helper can read back a representative fixture file",
                         ReadTextFile(ReferenceFile) == "alpha\nbeta\n") && Passed;
   Passed = EvaluateTrue("PrepareTemporaryDirectory()", "scratch directory", "The unit-test helper can create a clean temporary directory",
@@ -209,26 +236,210 @@ bool UTUnitTest::TestFileComparison()
   UnitTestProbe Probe("Probe");
   Passed = EvaluateTrue("EvaluateFilesIdentical()", "matching files", "EvaluateFilesIdentical accepts representative identical files",
                         Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "matching files", "The files match", MatchingFile, ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesIdentical()", "empty files", "EvaluateFilesIdentical accepts two empty files",
+                        Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "empty files", "The empty files match", EmptyTestFile, EmptyReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesIdentical()", "LF and CRLF files", "EvaluateFilesIdentical consumes LF and CRLF line-ending characters",
+                        Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "LF and CRLF files", "The files contain the same lines", CrlfFile, ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesIdentical()", "optional final newline", "EvaluateFilesIdentical accepts files differing only by a final line-ending character",
+                        Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "optional final newline", "The files contain the same lines", NoFinalNewlineFile, ReferenceFile)) && Passed;
 
   Probe.Silence();
   const bool DifferentFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "different files", "Different files are rejected", DifferentFile, ReferenceFile);
+  const bool WhitespaceFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "whitespace difference", "Whitespace differences are rejected", WhitespaceFile, ReferenceFile);
   const bool ShortFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "short file", "Short files are rejected", ShortFile, ReferenceFile);
+  const bool LongFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "long file", "Long files are rejected", LongFile, ReferenceFile);
   const bool MissingGeneratedFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "missing generated", "Missing generated files are rejected", MissingGeneratedFile, ReferenceFile);
   const bool MissingReferenceFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "missing reference", "Missing reference files are rejected", MatchingFile, MissingReferenceFile);
   Probe.Unsilence();
 
   Passed = EvaluateFalse("EvaluateFilesIdentical()", "different files", "EvaluateFilesIdentical returns false for representative different files", DifferentFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "whitespace difference", "EvaluateFilesIdentical returns false for a difference in trailing whitespace", WhitespaceFailure) && Passed;
   Passed = EvaluateFalse("EvaluateFilesIdentical()", "short file", "EvaluateFilesIdentical returns false when the representative generated file is shorter", ShortFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "long file", "EvaluateFilesIdentical returns false when the representative test file is longer", LongFailure) && Passed;
   Passed = EvaluateFalse("EvaluateFilesIdentical()", "missing generated", "EvaluateFilesIdentical returns false when the representative generated file is missing", MissingGeneratedFailure) && Passed;
   Passed = EvaluateFalse("EvaluateFilesIdentical()", "missing reference", "EvaluateFilesIdentical returns false when the representative reference file is missing", MissingReferenceFailure) && Passed;
 
   Passed = EvaluateTrue("RemoveTemporaryFile()", "reference cleanup", "The representative reference file can be removed", RemoveTemporaryFile(ReferenceFile)) && Passed;
   Passed = EvaluateTrue("RemoveTemporaryFile()", "matching cleanup", "The representative matching file can be removed", RemoveTemporaryFile(MatchingFile)) && Passed;
   Passed = EvaluateTrue("RemoveTemporaryFile()", "different cleanup", "The representative different file can be removed", RemoveTemporaryFile(DifferentFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "whitespace cleanup", "The representative whitespace-different file can be removed", RemoveTemporaryFile(WhitespaceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "CRLF cleanup", "The representative CRLF file can be removed", RemoveTemporaryFile(CrlfFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "no-final-newline cleanup", "The representative file without a final newline can be removed", RemoveTemporaryFile(NoFinalNewlineFile)) && Passed;
   Passed = EvaluateTrue("RemoveTemporaryFile()", "short cleanup", "The representative short file can be removed", RemoveTemporaryFile(ShortFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "long cleanup", "The representative long file can be removed", RemoveTemporaryFile(LongFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty reference cleanup", "The empty reference file can be removed", RemoveTemporaryFile(EmptyReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty test cleanup", "The empty test file can be removed", RemoveTemporaryFile(EmptyTestFile)) && Passed;
   Passed = EvaluateTrue("RemoveTemporaryDirectory()", "scratch cleanup", "The prepared nested directory can be removed recursively", RemoveTemporaryDirectory(TemporaryDirectory)) && Passed;
   Passed = EvaluateFalse("std::filesystem::exists()", "scratch cleanup", "The prepared nested directory no longer exists after removal",
                          std::filesystem::exists(TemporaryDirectory.Data())) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestNumericalFileComparison()
+{
+  bool Passed = true;
+
+  UnitTestProbe Probe("NumericalProbe");
+  const MString EmptyReferenceFile = GetTemporaryFileName("numerical_empty_reference.txt");
+  const MString EmptyTestFile = GetTemporaryFileName("numerical_empty_test.txt");
+  const MString ReferenceFile = GetTemporaryFileName("numerical_reference.txt");
+  const MString MatchingFile = GetTemporaryFileName("numerical_matching.txt");
+  const MString CrlfFile = GetTemporaryFileName("numerical_crlf.txt");
+  const MString ExtremeExponentReferenceFile = GetTemporaryFileName("numerical_extreme_exponent_reference.txt");
+  const MString ExtremeExponentFile = GetTemporaryFileName("numerical_extreme_exponent.txt");
+  const MString LargeReferenceFile = GetTemporaryFileName("numerical_large_reference.txt");
+  const MString LargeOppositeFile = GetTemporaryFileName("numerical_large_opposite.txt");
+  const MString ZeroToleranceFile = GetTemporaryFileName("numerical_zero_tolerance.txt");
+  const MString ZeroToleranceDifferentFile = GetTemporaryFileName("numerical_zero_tolerance_different.txt");
+  const MString EmptyLineReferenceFile = GetTemporaryFileName("numerical_empty_line_reference.txt");
+  const MString WhitespaceLineFile = GetTemporaryFileName("numerical_whitespace_line.txt");
+  const MString CustomToleranceFile = GetTemporaryFileName("numerical_custom_tolerance.txt");
+  const MString DifferentTokenFile = GetTemporaryFileName("numerical_different_token.txt");
+  const MString DifferentIntegerFile = GetTemporaryFileName("numerical_different_integer.txt");
+  const MString ExtraTokenFile = GetTemporaryFileName("numerical_extra_token.txt");
+  const MString MissingTokenFile = GetTemporaryFileName("numerical_missing_token.txt");
+  const MString OutsideToleranceFile = GetTemporaryFileName("numerical_outside_tolerance.txt");
+  const MString ShortFile = GetTemporaryFileName("numerical_short.txt");
+  const MString LongFile = GetTemporaryFileName("numerical_long.txt");
+  const MString MissingTestFile = GetTemporaryFileName("numerical_missing_test.txt");
+  const MString MissingReferenceFile = GetTemporaryFileName("numerical_missing_reference.txt");
+
+  RemoveTemporaryFile(EmptyReferenceFile);
+  RemoveTemporaryFile(EmptyTestFile);
+  RemoveTemporaryFile(ReferenceFile);
+  RemoveTemporaryFile(MatchingFile);
+  RemoveTemporaryFile(CrlfFile);
+  RemoveTemporaryFile(ExtremeExponentReferenceFile);
+  RemoveTemporaryFile(ExtremeExponentFile);
+  RemoveTemporaryFile(LargeReferenceFile);
+  RemoveTemporaryFile(LargeOppositeFile);
+  RemoveTemporaryFile(ZeroToleranceFile);
+  RemoveTemporaryFile(ZeroToleranceDifferentFile);
+  RemoveTemporaryFile(EmptyLineReferenceFile);
+  RemoveTemporaryFile(WhitespaceLineFile);
+  RemoveTemporaryFile(CustomToleranceFile);
+  RemoveTemporaryFile(DifferentTokenFile);
+  RemoveTemporaryFile(DifferentIntegerFile);
+  RemoveTemporaryFile(ExtraTokenFile);
+  RemoveTemporaryFile(MissingTokenFile);
+  RemoveTemporaryFile(OutsideToleranceFile);
+  RemoveTemporaryFile(ShortFile);
+  RemoveTemporaryFile(LongFile);
+  RemoveTemporaryFile(MissingTestFile);
+  RemoveTemporaryFile(MissingReferenceFile);
+
+  Passed = EvaluateTrue("WriteTextFile()", "empty numerical reference fixture", "The empty numerical reference fixture can be written",
+                        WriteTextFile(EmptyReferenceFile, "")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "empty numerical test fixture", "The empty numerical test fixture can be written",
+                        WriteTextFile(EmptyTestFile, "")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "numerical reference fixture", "The numerical reference fixture can be written",
+                        WriteTextFile(ReferenceFile, "CT 0.518236 0.481764\nscale 1.234e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "numerically matching fixture", "The numerically matching fixture can be written",
+                        WriteTextFile(MatchingFile, "CT\t0.518237  0.481763\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "numerical CRLF fixture", "The numerically matching CRLF fixture can be written",
+                        WriteTextFile(CrlfFile, "CT\t0.518237  0.481763\r\nscale 1.235e-4\r\nbins 16\r\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "extreme-exponent reference fixture", "The extreme-exponent reference fixture can be written",
+                        WriteTextFile(ExtremeExponentReferenceFile, "value 0.0\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "extreme-exponent fixture", "The extreme-exponent numerical fixture can be written",
+                        WriteTextFile(ExtremeExponentFile, "value 0.0e-2147483648\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "large-value reference fixture", "The large-value reference fixture can be written",
+                        WriteTextFile(LargeReferenceFile, "value 1e308\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "opposite-sign large-value fixture", "The opposite-sign large-value fixture can be written",
+                        WriteTextFile(LargeOppositeFile, "value -1e308\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "zero-tolerance fixture", "The equal-value zero-tolerance fixture can be written",
+                        WriteTextFile(ZeroToleranceFile, "CT 0.5182360 0.4817640\nscale 0.0001234\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "zero-tolerance difference fixture", "The unequal-value zero-tolerance fixture can be written",
+                        WriteTextFile(ZeroToleranceDifferentFile, "CT 0.518237 0.481764\nscale 1.234e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "empty-line reference fixture", "The empty-line reference fixture can be written",
+                        WriteTextFile(EmptyLineReferenceFile, "CT 0.518236 0.481764\n\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "whitespace-line fixture", "The whitespace-line fixture can be written",
+                        WriteTextFile(WhitespaceLineFile, "CT 0.518237 0.481763\n\t   \nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "custom-tolerance fixture", "The custom-tolerance fixture can be written",
+                        WriteTextFile(CustomToleranceFile, "CT 0.518239 0.481763\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "different-token fixture", "The changed-token fixture can be written",
+                        WriteTextFile(DifferentTokenFile, "CH 0.518237 0.481763\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "different-integer fixture", "The changed-integer fixture can be written",
+                        WriteTextFile(DifferentIntegerFile, "CT 0.518237 0.481763\nscale 1.235e-4\nbins 17\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "extra-token fixture", "The extra-token fixture can be written",
+                        WriteTextFile(ExtraTokenFile, "CT 0.518237 0.481763 extra\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "missing-token fixture", "The missing-token fixture can be written",
+                        WriteTextFile(MissingTokenFile, "CT 0.518237\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "outside-tolerance fixture", "The outside-tolerance fixture can be written",
+                        WriteTextFile(OutsideToleranceFile, "CT 0.518240 0.481763\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "short numerical fixture", "The short numerical fixture can be written",
+                        WriteTextFile(ShortFile, "CT 0.518237 0.481763\nscale 1.235e-4\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "long numerical fixture", "The long numerical fixture can be written",
+                        WriteTextFile(LongFile, "CT 0.518237 0.481763\nscale 1.235e-4\nbins 16\nextra\n")) && Passed;
+
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "empty files", "EvaluateFilesNumericallyEquivalent accepts two empty files",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "empty files", "The empty files match", EmptyTestFile, EmptyReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "numerically matching files", "EvaluateFilesNumericallyEquivalent accepts representative files with matching numeric tokens",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "numerically matching files", "The files match numerically", MatchingFile, ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "LF and CRLF files", "EvaluateFilesNumericallyEquivalent accepts matching files with LF and CRLF line endings",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "LF and CRLF files", "The files match numerically", CrlfFile, ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "extreme exponent", "EvaluateFilesNumericallyEquivalent handles fractional zero at the minimum integer exponent",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "extreme exponent", "The zero values match numerically", ExtremeExponentFile, ExtremeExponentReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "equal values at zero tolerance", "EvaluateFilesNumericallyEquivalent accepts equal numeric values with different representations at zero tolerance",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "equal values at zero tolerance", "The files have equal numeric values", ZeroToleranceFile, ReferenceFile, 0)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "whitespace-only line", "EvaluateFilesNumericallyEquivalent treats whitespace-only lines as equivalent",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "whitespace-only line", "The whitespace-only line matches an empty line", WhitespaceLineFile, EmptyLineReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "custom tolerance of three units", "EvaluateFilesNumericallyEquivalent honors a custom last-printed-digit tolerance",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "custom tolerance of three units", "The files match at the custom tolerance", CustomToleranceFile, ReferenceFile, 3)) && Passed;
+
+  Probe.Silence();
+  const bool DefaultToleranceFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "default tolerance", "The default tolerance rejects a three-unit difference", CustomToleranceFile, ReferenceFile);
+  const bool ZeroToleranceFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "unequal values at zero tolerance", "Zero tolerance rejects unequal numeric values", ZeroToleranceDifferentFile, ReferenceFile, 0);
+  const bool LargeOppositeFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "large opposite-sign values", "Large opposite-sign values are rejected", LargeOppositeFile, LargeReferenceFile);
+  const bool DifferentTokenFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "different text token", "Changed text tokens are rejected", DifferentTokenFile, ReferenceFile);
+  const bool DifferentIntegerFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "different integer token", "Changed integer tokens are rejected", DifferentIntegerFile, ReferenceFile);
+  const bool ExtraTokenFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "extra token", "Different token counts are rejected", ExtraTokenFile, ReferenceFile);
+  const bool MissingTokenFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "missing token", "Different token counts are rejected in the opposite direction", MissingTokenFile, ReferenceFile);
+  const bool OutsideToleranceFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "outside tolerance", "Numeric differences outside the tolerance are rejected", OutsideToleranceFile, ReferenceFile);
+  const bool ShortFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "short file", "Short files are rejected", ShortFile, ReferenceFile);
+  const bool LongFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "long file", "Long files are rejected", LongFile, ReferenceFile);
+  const bool MissingTestFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "missing test file", "Missing test files are rejected", MissingTestFile, ReferenceFile);
+  const bool MissingReferenceFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "missing reference file", "Missing reference files are rejected", MatchingFile, MissingReferenceFile);
+  Probe.Unsilence();
+
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "default tolerance", "EvaluateFilesNumericallyEquivalent rejects a three-unit difference at the default tolerance", DefaultToleranceFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "unequal values at zero tolerance", "EvaluateFilesNumericallyEquivalent rejects unequal numeric values at zero tolerance", ZeroToleranceFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "large opposite-sign values", "EvaluateFilesNumericallyEquivalent rejects values whose difference overflows double", LargeOppositeFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "different text token", "EvaluateFilesNumericallyEquivalent returns false for a changed non-numeric token", DifferentTokenFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "different integer token", "EvaluateFilesNumericallyEquivalent returns false for a changed integer-only token", DifferentIntegerFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "extra token", "EvaluateFilesNumericallyEquivalent returns false for different token counts", ExtraTokenFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "missing token", "EvaluateFilesNumericallyEquivalent returns false when the test line has fewer tokens", MissingTokenFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "outside tolerance", "EvaluateFilesNumericallyEquivalent returns false for a numeric difference outside the tolerance", OutsideToleranceFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "short file", "EvaluateFilesNumericallyEquivalent returns false when the test file is shorter", ShortFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "long file", "EvaluateFilesNumericallyEquivalent returns false when the test file is longer", LongFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "missing test file", "EvaluateFilesNumericallyEquivalent returns false when the test file is missing", MissingTestFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "missing reference file", "EvaluateFilesNumericallyEquivalent returns false when the reference file is missing", MissingReferenceFailure) && Passed;
+
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty numerical reference cleanup", "The empty numerical reference fixture can be removed", RemoveTemporaryFile(EmptyReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty numerical test cleanup", "The empty numerical test fixture can be removed", RemoveTemporaryFile(EmptyTestFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "numerical reference cleanup", "The numerical reference fixture can be removed", RemoveTemporaryFile(ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "numerically matching cleanup", "The numerically matching fixture can be removed", RemoveTemporaryFile(MatchingFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "numerical CRLF cleanup", "The numerically matching CRLF fixture can be removed", RemoveTemporaryFile(CrlfFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "extreme-exponent reference cleanup", "The extreme-exponent reference fixture can be removed", RemoveTemporaryFile(ExtremeExponentReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "extreme-exponent cleanup", "The extreme-exponent numerical fixture can be removed", RemoveTemporaryFile(ExtremeExponentFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "large-value reference cleanup", "The large-value reference fixture can be removed", RemoveTemporaryFile(LargeReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "opposite-sign large-value cleanup", "The opposite-sign large-value fixture can be removed", RemoveTemporaryFile(LargeOppositeFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "zero-tolerance cleanup", "The equal-value zero-tolerance fixture can be removed", RemoveTemporaryFile(ZeroToleranceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "zero-tolerance difference cleanup", "The unequal-value zero-tolerance fixture can be removed", RemoveTemporaryFile(ZeroToleranceDifferentFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty-line reference cleanup", "The empty-line reference fixture can be removed", RemoveTemporaryFile(EmptyLineReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "whitespace-line cleanup", "The whitespace-line fixture can be removed", RemoveTemporaryFile(WhitespaceLineFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "custom-tolerance cleanup", "The custom-tolerance fixture can be removed", RemoveTemporaryFile(CustomToleranceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "different-token cleanup", "The changed-token fixture can be removed", RemoveTemporaryFile(DifferentTokenFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "different-integer cleanup", "The changed-integer fixture can be removed", RemoveTemporaryFile(DifferentIntegerFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "extra-token cleanup", "The extra-token fixture can be removed", RemoveTemporaryFile(ExtraTokenFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "missing-token cleanup", "The missing-token fixture can be removed", RemoveTemporaryFile(MissingTokenFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "outside-tolerance cleanup", "The outside-tolerance fixture can be removed", RemoveTemporaryFile(OutsideToleranceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "short numerical cleanup", "The short numerical fixture can be removed", RemoveTemporaryFile(ShortFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "long numerical cleanup", "The long numerical fixture can be removed", RemoveTemporaryFile(LongFile)) && Passed;
 
   return Passed;
 }

@@ -43,6 +43,8 @@ private:
   bool TestTokenizeAndExtract();
   //! Test streaming and type checks
   bool TestReadingAndTypeChecks();
+  //! Test floating-point recognition and printed-precision matching
+  bool TestFloatingPointMatching();
   //! Test numeric conversion and formatting helpers
   bool TestNumericConversions();
   //! Test edge cases and defensive behavior
@@ -63,6 +65,7 @@ bool UTString::Run()
   AllPassed = TestModification() && AllPassed;
   AllPassed = TestTokenizeAndExtract() && AllPassed;
   AllPassed = TestReadingAndTypeChecks() && AllPassed;
+  AllPassed = TestFloatingPointMatching() && AllPassed;
   AllPassed = TestNumericConversions() && AllPassed;
   AllPassed = TestEdgeCases() && AllPassed;
 
@@ -430,6 +433,78 @@ bool UTString::TestReadingAndTypeChecks()
   Passed = EvaluateTrue("Is<int>()", " 123", "Template type check ignores leading whitespace", MString(" 123").Is<int>()) && Passed;
   Passed = EvaluateFalse("Is<int>()", "123.4", "Template type check rejects mismatched formats", MString("123.4").Is<int>()) && Passed;
   Passed = EvaluateFalse("Is<unsigned int>()", "-1", "Unsigned type checks reject negative values", MString("-1").Is<unsigned int>()) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test floating-point recognition and printed-precision matching
+bool UTString::TestFloatingPointMatching()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("IsNumber()", "newlines and tabs around 12.5", "IsNumber accepts all standard leading and trailing whitespace", MString("\n\t12.5\r\v").IsNumber()) && Passed;
+  Passed = EvaluateTrue("IsFloatingPointNumber()", "-12.5", "IsFloatingPointNumber accepts a representative decimal value", MString("-12.5").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateTrue("IsFloatingPointNumber()", "1e3", "IsFloatingPointNumber accepts scientific notation without a decimal point", MString("1e3").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateTrue("IsFloatingPointNumber()", " +1.E-3 ", "IsFloatingPointNumber accepts surrounding whitespace and an uppercase exponent", MString(" +1.E-3 ").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateTrue("IsFloatingPointNumber()", ".5", "IsFloatingPointNumber accepts a fraction without a leading zero", MString(".5").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateTrue("IsFloatingPointNumber()", "1.", "IsFloatingPointNumber accepts a trailing decimal point", MString("1.").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateFalse("IsFloatingPointNumber()", "12", "IsFloatingPointNumber rejects an integer-only representation", MString("12").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateFalse("IsFloatingPointNumber()", "1e", "IsFloatingPointNumber rejects an incomplete exponent", MString("1e").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateFalse("IsFloatingPointNumber()", "1.23456789012345e-308", "IsFloatingPointNumber rejects a finite subnormal double representation", MString("1.23456789012345e-308").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateFalse("IsFloatingPointNumber()", "-1.23456789012345e-308", "IsFloatingPointNumber rejects a negative finite subnormal double representation", MString("-1.23456789012345e-308").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateFalse("IsFloatingPointNumber()", "1e-400", "IsFloatingPointNumber rejects a representation that underflows to zero", MString("1e-400").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateFalse("IsFloatingPointNumber()", "-1e-400", "IsFloatingPointNumber rejects a negative representation that underflows to zero", MString("-1e-400").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateFalse("IsFloatingPointNumber()", "1e309", "IsFloatingPointNumber rejects a representation outside the finite double range", MString("1e309").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateFalse("IsFloatingPointNumber()", "-1e309", "IsFloatingPointNumber rejects a negative representation outside the finite double range", MString("-1e309").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateFalse("IsFloatingPointNumber()", "empty input", "IsFloatingPointNumber rejects an empty string", MString("").IsFloatingPointNumber()) && Passed;
+
+  Passed = EvaluateTrue("IsNumber()", "2.2250738585072014e-308", "IsNumber accepts the minimum positive normal double", MString("2.2250738585072014e-308").IsNumber()) && Passed;
+  Passed = EvaluateTrue("IsNumber()", "-2.2250738585072014e-308", "IsNumber accepts the minimum-magnitude negative normal double", MString("-2.2250738585072014e-308").IsNumber()) && Passed;
+  Passed = EvaluateFalse("IsNumber()", "2.225073858507201e-308", "IsNumber rejects a value immediately below the normal double range", MString("2.225073858507201e-308").IsNumber()) && Passed;
+  Passed = EvaluateTrue("IsFloatingPointNumber()", "2.2250738585072014e-308", "IsFloatingPointNumber accepts the minimum positive normal double", MString("2.2250738585072014e-308").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateTrue("IsNumber()", "1.7976931348623157e308", "IsNumber accepts the maximum finite double", MString("1.7976931348623157e308").IsNumber()) && Passed;
+  Passed = EvaluateFalse("IsNumber()", "1.7976931348623159e308", "IsNumber rejects a value above the maximum finite double", MString("1.7976931348623159e308").IsNumber()) && Passed;
+  Passed = EvaluateTrue("IsFloatingPointNumber()", "1.7976931348623157e308", "IsFloatingPointNumber accepts the maximum finite double", MString("1.7976931348623157e308").IsFloatingPointNumber()) && Passed;
+  Passed = EvaluateTrue("IsFloatingPointNumber()", "0e-400", "IsFloatingPointNumber accepts an exact zero with a very small exponent", MString("0e-400").IsFloatingPointNumber()) && Passed;
+
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "identical 3.14159 representations", "Identical floating-point representations always match", MString("3.14159").AreNumbersNumericallyMatching("3.14159")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "whitespace around 3.14159 and 3.14160", "Matching ignores leading and trailing whitespace around both floating-point representations", MString(" \t3.14159\n").AreNumbersNumericallyMatching("\r3.14160 ")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "0.518236 and 0.518237", "The default tolerance accepts floating-point values one last-printed-digit unit apart", MString("0.518236").AreNumbersNumericallyMatching("0.518237")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "0.518237 and 0.518236", "Numerical matching is symmetric when the operands are reversed", MString("0.518237").AreNumbersNumericallyMatching("0.518236")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "1.234e-4 and 1.235e-4", "The default tolerance scales the printed precision by the scientific exponent", MString("1.234e-4").AreNumbersNumericallyMatching("1.235e-4")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "+1.234E+4 and 1.235e4", "Matching accepts uppercase and explicitly signed positive exponents", MString("+1.234E+4").AreNumbersNumericallyMatching("1.235e4")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "1000.0 and 1.0000e3", "Matching compares equivalent fixed and scientific representations using their printed precision", MString("1000.0").AreNumbersNumericallyMatching("1.0000e3", 0)) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "1.234567890123456e300 and 1.234567890123457e300", "The default tolerance accepts a one-last-digit difference for very large finite values", MString("1.234567890123456e300").AreNumbersNumericallyMatching("1.234567890123457e300")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "1.234567890123456e300 and 1.234567890123460e300", "The default tolerance rejects a multi-last-digit difference for very large finite values", MString("1.234567890123456e300").AreNumbersNumericallyMatching("1.234567890123460e300")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "1e308 and -1e308", "Matching rejects large opposite-sign values whose difference overflows double", MString("1e308").AreNumbersNumericallyMatching("-1e308")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "1.234567890123456e-300 and 1.234567890123457e-300", "The default tolerance accepts a one-last-digit difference for very small finite values", MString("1.234567890123456e-300").AreNumbersNumericallyMatching("1.234567890123457e-300")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "1.234567890123456e-300 and 1.234567890123460e-300", "The default tolerance rejects a multi-last-digit difference for very small finite values", MString("1.234567890123456e-300").AreNumbersNumericallyMatching("1.234567890123460e-300")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "nearby subnormal values", "Matching rejects finite subnormal double representations", MString("1.23456789012345e-308").AreNumbersNumericallyMatching("1.23456789012346e-308")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "identical subnormal representations", "Matching rejects identical finite subnormal double representations", MString("1.23456789012345e-308").AreNumbersNumericallyMatching("1.23456789012345e-308")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "minimum normal in equivalent scientific representations", "Matching accepts equivalent representations of the minimum positive normal double at zero tolerance", MString("2.2250738585072014e-308").AreNumbersNumericallyMatching("0.22250738585072014e-307", 0)) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "maximum finite in equivalent scientific representations", "Matching accepts equivalent representations of the maximum finite double at zero tolerance", MString("1.7976931348623157e308").AreNumbersNumericallyMatching("17.976931348623157e307", 0)) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "1.000000000000000 and 1.000000000000002", "The default tolerance accepts a two-unit difference near double-precision digit capacity", MString("1.000000000000000").AreNumbersNumericallyMatching("1.000000000000002")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "1.000000000000000 and 1.000000000000004", "The default tolerance rejects a four-unit difference near double-precision digit capacity", MString("1.000000000000000").AreNumbersNumericallyMatching("1.000000000000004")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "-2.50 and -2.52", "The default tolerance includes the two-unit boundary for negative values", MString("-2.50").AreNumbersNumericallyMatching("-2.52")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "-2.50 and -2.521", "The default tolerance rejects values beyond two units of the higher printed precision", MString("-2.50").AreNumbersNumericallyMatching("-2.521")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "0.8737 and 0.87365", "Matching uses the smaller last-printed-digit unit from the more precise value", MString("0.8737").AreNumbersNumericallyMatching("0.87365")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "-0.0 and 0.0 with zero tolerance", "Signed zero representations match at zero tolerance", MString("-0.0").AreNumbersNumericallyMatching("0.0", 0)) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "0e-2147483649 and 0.0", "Matching handles a zero representation with a negative exponent below the integer range", MString("0e-2147483649").AreNumbersNumericallyMatching("0.0")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "0e2147483648 and 0.0", "Matching handles a zero representation with a positive exponent above the integer range", MString("0e2147483648").AreNumbersNumericallyMatching("0.0")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "0.0e-2147483648 and 0.0", "Matching handles fractional zero at the minimum integer exponent without signed overflow", MString("0.0e-2147483648").AreNumbersNumericallyMatching("0.0")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "0.0 and 0.2", "The default tolerance includes the two-unit boundary around zero", MString("0.0").AreNumbersNumericallyMatching("0.2")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "0.0 and 0.3", "The default tolerance rejects values beyond two units around zero", MString("0.0").AreNumbersNumericallyMatching("0.3")) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "1.0 and 1.00 with zero tolerance", "A zero tolerance accepts equal numeric values with different floating-point representations", MString("1.0").AreNumbersNumericallyMatching("1.00", 0)) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "1.0 and 1.1 with zero tolerance", "A zero tolerance rejects unequal numeric values", MString("1.0").AreNumbersNumericallyMatching("1.1", 0)) && Passed;
+  Passed = EvaluateTrue("AreNumbersNumericallyMatching()", "1.000 and 1.003 with tolerance 3", "A custom tolerance accepts values at its last-printed-digit boundary", MString("1.000").AreNumbersNumericallyMatching("1.003", 3)) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "1.000 and 1.004 with tolerance 3", "A custom tolerance rejects values beyond its last-printed-digit boundary", MString("1.000").AreNumbersNumericallyMatching("1.004", 3)) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "12 and 12.0", "Matching rejects an integer-only representation", MString("12").AreNumbersNumericallyMatching("12.0")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "1e309 and 1e309", "Matching rejects non-finite overflow representations", MString("1e309").AreNumbersNumericallyMatching("1e309")) && Passed;
+  Passed = EvaluateFalse("AreNumbersNumericallyMatching()", "1.0 and malformed input", "Matching rejects a malformed floating-point representation", MString("1.0").AreNumbersNumericallyMatching("1.0x")) && Passed;
 
   return Passed;
 }
