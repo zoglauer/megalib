@@ -520,7 +520,6 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
 
   m_EventStore->AddRawEvent(RE);
   
-
   return true;
 }
 
