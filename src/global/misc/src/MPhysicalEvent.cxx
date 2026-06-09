@@ -534,8 +534,8 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
       m_OIPolarization[0] = strtod(p, &p);
       m_OIPolarization[1] = strtod(p, &p);
       m_OIPolarization[2] = strtod(p, &p);
-      m_OIEnergy = strtod(p, NULL);
-      m_OISecondaryId = strtod(p, NULL);
+      m_OIEnergy = strtod(p, &p);
+      m_OISecondaryId = (int)strtol(p, NULL, 10);
     } else {
       if (sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], &m_OIEnergy, &m_OISecondaryId) != 11) {
         Ret = 1; 
