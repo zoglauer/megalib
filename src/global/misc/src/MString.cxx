@@ -353,13 +353,16 @@ long MString::GetHash() const
 
 bool MString::IsNumber() const
 {
-  //! Test if the string is a number - ignores all leading and trailing whitespace (spaces, tabs, newlines, etc.)
+  //! Test if the string is zero or a finite normal double - ignores all leading and trailing whitespace (spaces, tabs, newlines, etc.)
 
   istringstream In(m_String);
 
   double Number;
   In>>skipws>>Number; // ignore white spaces at the beginning
   if (In.fail() == true) return false;
+
+  //! Reject nonzero subnormal values so only the fully supported normal double range and zero are accepted
+  if (Number != 0.0 && fabs(Number) < numeric_limits<double>::min()) return false;
 
   //! Ignore white spaces at the end
   In>>ws;
@@ -408,23 +411,33 @@ bool MString::AreNumbersNumericallyMatching(const MString& Number, unsigned int 
   //! For example, 0.87370 returns 0.00001, 0.8737 returns 0.0001, and 1.234e-4 returns 0.0000001
   //! Thus, the smaller returned unit belongs to the number with the higher printed precision
   auto GetPrintedFloatingPointUnit = [](const MString& Value) {
-    MString TrimmedValue = Value;
-    TrimmedValue.Strip();
-    const string Token = TrimmedValue.ToString();
+    //! Extract the single numeric token while discarding all leading and trailing stream whitespace
+    istringstream TokenStream(Value.ToString());
+    string Token;
+    TokenStream >> Token;
 
     //! Separate mantissa and exponent so that the exponent can shift the last printed digit
     //! For example, the last digit of 1.234e-4 represents 10^(-4-3) = 10^-7
     const size_t ExponentPosition = Token.find_first_of("eE");
     const string Mantissa = ExponentPosition == string::npos ? Token : Token.substr(0, ExponentPosition);
-    const int Exponent = ExponentPosition == string::npos ? 0 : stoi(Token.substr(ExponentPosition + 1));
+    int Exponent = 0;
+    if (ExponentPosition != string::npos) {
+      const string ExponentToken = Token.substr(ExponentPosition + 1);
+      try {
+        Exponent = stoi(ExponentToken);
+      } catch (const out_of_range&) {
+        //! Exponents outside the integer range already force a double power to zero or infinity
+        return ExponentToken[0] == '-' ? 0.0 : numeric_limits<double>::infinity();
+      }
+    }
 
     //! Without a decimal point, the mantissa has no printed fractional digits
     const size_t DecimalPosition = Mantissa.find('.');
     if (DecimalPosition == string::npos) return pow(10.0, Exponent);
 
     //! Each printed fractional digit reduces the unit by one power of ten
-    const int FractionDigits = static_cast<int>(Mantissa.size() - DecimalPosition - 1);
-    return pow(10.0, Exponent - FractionDigits);
+    const double FractionDigits = static_cast<double>(Mantissa.size() - DecimalPosition - 1);
+    return pow(10.0, static_cast<double>(Exponent) - FractionDigits);
   };
 
   //! The numbers need to be finite (not NaN or infinite)
@@ -441,6 +454,8 @@ bool MString::AreNumbersNumericallyMatching(const MString& Number, unsigned int 
   const double MaximumDifference = MaximumLastDigitDifference * SmallerPrintedUnit;
 
   const double Difference = fabs(ThisValue - OtherValue);
+  //! Subtracting finite values with large opposite signs can overflow to infinity
+  if (isfinite(Difference) == false) return false;
 
   //! Account for round-off introduced by parsing, subtraction, and tolerance calculation
   //! Scale the allowance to the values and tolerance involved in this comparison
