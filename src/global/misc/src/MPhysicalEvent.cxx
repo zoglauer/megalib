@@ -141,7 +141,7 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_OIDirection = E->m_OIDirection;
   m_OIPolarization = E->m_OIPolarization;
   m_OIEnergy = E->m_OIEnergy;  
-  m_OISecondaryId = E->m_OISecondaryId;
+  m_OIParticleId = E->m_OIParticleId;
   
   return true;
 }
@@ -182,7 +182,7 @@ void MPhysicalEvent::Reset()
   m_OIDirection = g_VectorNotDefined;
   m_OIPolarization = g_VectorNotDefined;
   m_OIEnergy = g_DoubleNotDefined;
-  m_OISecondaryId = g_IntNotDefined;
+  m_OIParticleId = g_IntNotDefined;
   
   m_Lines.clear();
   m_Comments.clear();
@@ -321,7 +321,7 @@ MString MPhysicalEvent::ToTraString() const
     S<<"DC"<<endl;
   }
   if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined) {
-    S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy <<" "<<m_OISecondaryId<<endl;
+    S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy <<" "<<m_OIParticleId<<endl;
   }
   for (unsigned int c = 0; c < m_Comments.size(); ++c) {
     S<<"CC "<<m_Comments[c]<<endl;
@@ -534,13 +534,35 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
       m_OIPolarization[0] = strtod(p, &p);
       m_OIPolarization[1] = strtod(p, &p);
       m_OIPolarization[2] = strtod(p, &p);
-      m_OIEnergy = strtod(p, &p);
-      m_OISecondaryId = (int)strtol(p, NULL, 10);
+      
+      // Read the 10th value (Energy)
+      char* next_p;
+      m_OIEnergy = strtod(p, &next_p);
+      // RETROCOMPATIBILITY CHECK:
+      // If next_p points to the exact same position as p, no characters were consumed.
+      // Or, if it reached the end of the string, there is no ID to read.
+    if (p == next_p || *next_p == '\0' || *next_p == '\n' || *next_p == '\r') {
+      m_OIParticleId = 0; // Set a default value for old files
     } else {
-      if (sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], &m_OIEnergy, &m_OISecondaryId) != 11) {
-        Ret = 1; 
-      }
+      m_OIParticleId = (int)strtol(next_p, NULL, 10); // Read the ID for new files
     }
+      
+    } else {
+      // Try reading all 11 items first (New File Format)
+    int parsed = sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d", 
+                        &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], 
+                        &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], 
+                        &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], 
+                        &m_OIEnergy, &m_OIParticleId);
+    
+    if (parsed == 10) {
+      // RETROCOMPATIBILITY: It's an old file (only 10 numbers successfully parsed)
+      m_OIParticleId = 0; // Assign your default old-file ID
+    } else if (parsed != 11) {
+      // It's broken text (neither 10 nor 11 numbers parsed successfully)
+      Ret = 1; 
+    }
+   }
   } else if (Line[0] == 'D' && Line[1] == 'C') {
     m_Decay = true;
   } else if (Line[0] == 'S' && Line[1] == 'E') {
