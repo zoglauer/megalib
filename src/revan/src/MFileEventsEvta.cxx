@@ -494,7 +494,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
           Event->AddREAM(GR);
         }
         if (m_SaveOI == true && SimEvent->GetNIAs() > 0) {
-          Event->SetOriginInformation(SimEvent->GetIAAt(0)->GetPosition(), SimEvent->GetIAAt(0)->GetSecondaryDirection(), SimEvent->GetIAAt(0)->GetSecondaryPolarization(), SimEvent->GetIAAt(0)->GetSecondaryEnergy(),SimEvent->GetIAAt(0)->GetSecondaryParticleID());
+          Event->SetOriginInformation(SimEvent->GetIAAt(0)->GetPosition(), SimEvent->GetIAAt(0)->GetSecondaryDirection(), SimEvent->GetIAAt(0)->GetSecondaryPolarization(), SimEvent->GetIAAt(0)->GetSecondaryEnergy(),SimEvent->GetIAAt(0)->GetParticleID());
         }
         
         delete SimEvent;
