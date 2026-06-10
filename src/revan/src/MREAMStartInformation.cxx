@@ -73,7 +73,7 @@ MREAMStartInformation::MREAMStartInformation(const MREAMStartInformation& REAM)
   m_Direction = REAM.m_Direction;
   m_Polarization = REAM.m_Polarization;
   m_Energy = REAM.m_Energy;
-  m_ParticleId = REAM.m_SecondaryId;
+  m_ParticleId = REAM.m_ParticleId;
 }
 
 
