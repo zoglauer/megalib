@@ -1843,7 +1843,7 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       Start->SetDirection(MVector(dx, dy, dz));
       Start->SetPolarization(MVector(px, py, pz));
       Start->SetEnergy(e);
-      Start->SetSecondaryId(id);
+      Start->SetParticleId(id);
       m_Measurements.push_back(Start);
     } else {
       Ret = 1;
