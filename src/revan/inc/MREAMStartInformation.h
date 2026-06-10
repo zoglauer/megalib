@@ -72,7 +72,7 @@ class MREAMStartInformation : public MREAM
   //! Return original energy 
   double GetEnergy() const { return m_Energy; }
   //! Return original Secondary Id 
-  int GetSecondaryId() const { return m_SecondaryId; }
+  int GetParticleId() const { return m_ParticleId; }
 
   // protected methods:
  protected:
@@ -94,7 +94,7 @@ class MREAMStartInformation : public MREAM
   //! Original energy
   double m_Energy;
   //! Original Id
-  int m_SecondaryId;
+  int m_ParticleId;
   
 #ifdef ___CLING___
  public:
