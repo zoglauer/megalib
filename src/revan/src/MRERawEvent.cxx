@@ -450,14 +450,14 @@ double MRERawEvent::GetEnergy()
 
 
 //! Set origin information
-void MRERawEvent::SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy, int SecondaryId)
+void MRERawEvent::SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy, int ParticleId)
 {
   MREAMStartInformation* OI = new MREAMStartInformation();
   OI->SetPosition(Position);
   OI->SetDirection(Direction);
   OI->SetPolarization(Polarization);
   OI->SetEnergy(Energy);
-  OI->SetSecondaryId(SecondaryId);
+  OI->SetParticleId(ParticleId);
   
   m_Measurements.push_back(OI);
 }
@@ -1203,7 +1203,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
   for (unsigned int m = 0; m < m_Measurements.size(); ++m) {
     if (m_Measurements[m]->GetType() == MREAM::c_StartInformation) {
       MREAMStartInformation* Start = dynamic_cast<MREAMStartInformation*>(m_Measurements[m]);
-      m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection(), Start->GetPolarization(), Start->GetEnergy(), Start->GetSecondaryId());
+      m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection(), Start->GetPolarization(), Start->GetEnergy(), Start->GetParticleId());
     }
   }
   m_Event->ClearComments(); // Since this info might be added multiple times.
