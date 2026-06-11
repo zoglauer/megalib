@@ -320,7 +320,7 @@ MString MPhysicalEvent::ToTraString() const
   if (m_Decay == true) {
     S<<"DC"<<endl;
   }
-  if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined) {
+  if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined && m_OIParticleId != g_IntNotDefined ) {
     S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy <<" "<<m_OIParticleId<<endl;
   }
   for (unsigned int c = 0; c < m_Comments.size(); ++c) {
