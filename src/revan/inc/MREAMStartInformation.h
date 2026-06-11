@@ -62,7 +62,7 @@ class MREAMStartInformation : public MREAM
   //! Set original energy
   void SetEnergy(const double Energy) { m_Energy = Energy; }
   //! Set original Secondary Id
-  void SetSecondaryId(const int Id) { m_SecondaryId = Id; }
+  void SetParticleId(const int Id) { m_ParticleId = Id; }
   //! Return original position
   MVector GetPosition() const { return m_Position; }
   //! Return original position
