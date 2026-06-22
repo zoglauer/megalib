@@ -238,7 +238,7 @@ void MRETrack::AddRESE(MRESE *RESE)
   // Adding tracks is not allowed in the moment
 
   if (RESE->GetType() != MRESE::c_Hit && RESE->GetType() != MRESE::c_Cluster) {
-    merr<<"You can only add Hits and clusters to a Track, not this RESE: "<<endl;
+    merr<<"You can only add Hits and clusters to a Track, not this RESE: " << RESE->GetType() <<endl;
     merr<<RESE->ToString().Data()<<show;
     massert(RESE->GetType() == MRESE::c_Hit || RESE->GetType() == MRESE::c_Cluster);
   }

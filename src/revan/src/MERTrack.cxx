@@ -284,9 +284,11 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
     for (int e = 0; e < e_max; e++) {
       RE = m_List->GetRawEventAt(e);
       if (RE->GetEventType() == c_PairEvent) {// Iterate only over pair events
+        mout << "alaviron1 " << RE << " " << RE->GetVertex() << " " << m_List->GetNRawEvents() << endl;
         List = CheckForPair(RE);//Check for vertices
         if (List) { // if vertices
           mdebug<<"List: "<<List->GetNRawEvents()<<endl;
+          mout << "alaviron2 " << RE << " " << RE->GetVertex() << " " << m_List->GetNRawEvents() << endl;
           HasVertices = true;
           m_List->DeleteRawEvent(RE);
           e--;
@@ -294,6 +296,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
           for (int i = 0; i < List->GetNRawEvents(); i++) {
             m_List->AddRawEvent(List->GetRawEventAt(i));
           }
+          mout << "alaviron3 " << RE << " " << RE->GetVertex() << " " << m_List->GetNRawEvents() << endl;
           delete List;
           List = nullptr;
           mdebug<<"Tracking: Event has vertex!"<<endl;
@@ -302,10 +305,13 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
           // Let's analyze pairs:
           mdebug<<"* Step: Pair tracking"<<endl;
           mdebug<<m_List->ToString()<<endl;
-          int e_max = m_List->GetNRawEvents();
-          for (int e = 0; e < e_max; e++) {
-            RE = m_List->GetRawEventAt(e);
+          mout << "alaviron4 " << RE << " " << RE->GetVertex() << " " << m_List->GetNRawEvents() << endl;
+          int e_max2 = m_List->GetNRawEvents();
+          for (int e2 = 0; e2 < e_max2; e2++) {
+            RE = m_List->GetRawEventAt(e2);
+            mout << "alaviron5 " << RE << " " << RE->GetVertex() << " " << m_List->GetNRawEvents() << endl;
             if (RE->GetVertex() != 0) {
+              mout << "alaviron trackpairs" << endl;
               TrackPairs(RE);
             }
           }

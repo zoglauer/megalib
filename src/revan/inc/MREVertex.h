@@ -39,7 +39,7 @@ class MREVertex: public MRESE
 {
  public:
   MREVertex(MRESE* rese, std::vector<MRESE*> allRESEs = {}, MVector* position = nullptr);
-  //~MREVertex() = default; // AI proposed
+  MREVertex(MREVertex* vertex);
   ~MREVertex() {}
 
   void ComputeGammaDirection();

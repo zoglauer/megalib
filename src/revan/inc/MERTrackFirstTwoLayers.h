@@ -26,7 +26,7 @@ class MERTrackFirstTwoLayers : public MERTrack
 public:
   MERTrackFirstTwoLayers(MGeometryRevan* geom);
   virtual ~MERTrackFirstTwoLayers();
-  virtual bool Analyze(MRawEventIncarnations* REList) override;
+  //virtual bool Analyze(MRawEventIncarnations* REList) override;
 
 protected:
 
@@ -87,7 +87,8 @@ protected:
   MVector CalculatingVertexPosition(const MVector& p1, const MVector& v1,
                                       const MVector& p2, const MVector& v2);
 
-  std::vector<MREVertex*> FindVertices(MRERawEvent* RE);
+  //std::vector<MREVertex*> FindVertices(MRERawEvent* RE);
+  virtual MRawEventIncarnations* CheckForPair(MRERawEvent* RE) override;
 
   MREVertex* TopVertex(const std::vector<MREVertex*>& vertex_list);
 

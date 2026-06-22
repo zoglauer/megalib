@@ -76,6 +76,48 @@ MREVertex::MREVertex(MRESE* rese_in, std::vector<MRESE*> allRESEs, MVector* posi
 
 //////////////////////////////////////////
 
+MREVertex::MREVertex(MREVertex* vertex):
+      MRESE(vertex), // copy base class members
+      m_electron_dir(vertex->m_electron_dir),
+      m_positron_dir(vertex->m_positron_dir),
+      m_gamma_dir(vertex->m_gamma_dir),
+      m_electron_energy(vertex->m_electron_energy),
+      m_positron_energy(vertex->m_positron_energy),
+      m_vertex_type(vertex->m_vertex_type),
+      m_EventID(vertex->m_EventID)
+      //m_AllRESEs(vertex->m_AllRESEs),
+      //m_rese(vertex->m_rese)
+{
+  m_SubElementType = MRESE::c_Vertex;
+  // m_RESEList elements copied during MRESE call; re-linking m_AllRESE
+  for (MRESE* r : vertex->m_AllRESEs) {
+    for(int i=0; i<m_RESEList->GetNRESEs(); i++) {
+      MRESE* c = m_RESEList->GetRESEAt(i);
+      if(c->GetID() == r->GetID()) m_AllRESEs.push_back(c);
+    }
+  }
+  // Re-link m_rese
+  for(int i=0; i<m_RESEList->GetNRESEs(); i++) {
+    MRESE* c = m_RESEList->GetRESEAt(i);
+    if (c->GetID() == vertex->m_rese->GetID()) m_rese = c;
+  }
+  // Re-link m_TrackHits
+  for (size_t k=0; k<vertex->m_TrackHits.size(); k++) {
+    CombinedHit c;
+    c.m_energy = vertex->m_TrackHits[k].m_energy;
+    c.m_position = vertex->m_TrackHits[k].m_position;
+    for (MRESE* r : vertex->m_TrackHits[k].m_reses) {
+      for(int i=0; i<m_RESEList->GetNRESEs(); i++) {
+        MRESE* t = m_RESEList->GetRESEAt(i);
+        if(t->GetID() == r->GetID())
+          c.m_reses.push_back(t);
+      }
+    }
+    m_TrackHits.push_back(c);
+  }
+}
+
+
 void MREVertex::ComputeGammaDirection()
 {
   if (m_electron_energy == 0.0 || m_positron_energy == 0.0) throw std::runtime_error("Track energies are zero.");
