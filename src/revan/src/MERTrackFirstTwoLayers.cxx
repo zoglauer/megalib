@@ -151,7 +151,6 @@ MVector MERTrackFirstTwoLayers::CalculatingVertexPosition(const MVector& p1, con
 
 //////////////////////////////////////////
 
-//MERTrackFirstTwoLayers::Vertex
 MREVertex* MERTrackFirstTwoLayers::TopVertex(const std::vector<MREVertex*>& vertex_list)
 {
   // Returns the vertex with the largest z (shallowest layer)
@@ -161,7 +160,6 @@ MREVertex* MERTrackFirstTwoLayers::TopVertex(const std::vector<MREVertex*>& vert
 
 //////////////////////////////////////////
 
-//std::vector<MREVertex*> MERTrackFirstTwoLayers::FindVertices(MRERawEvent* RE)
 MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
 {
   std::vector<MREVertex*> Vertices;
@@ -308,19 +306,6 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
     vtx->m_EventID = RE->GetEventID();
 
     vtx->m_TrackHits = { hp1, hp2 };
-    // A.L. Does the vertex need to know the list of hits? TBD.
-    mout << "--- alaviron candidate vertex 1 ---" << endl;
-    for (MRESE* r : vtx->m_AllRESEs) {
-      mout << "  AllRESE: " << r << " "<< r->GetType() << endl;
-      mout << " " << r->GetID() << endl;
-      mout << " " << r->GetEnergy() << endl;
-    }
-    for (MRESE* r : vtx->m_TrackHits[0].m_reses) {
-      mout << "  TrackHit0: " << r << " " << r->GetType() << " "<< r->GetID() << " " << r->GetEnergy() << endl;
-    }
-    for (MRESE* r : vtx->m_TrackHits[1].m_reses) {
-      mout << "  TrackHit1: " << r << " " << r->GetType() << " "<< r->GetID() << " " << r->GetEnergy() << endl;
-    }
 
     // Assign track directions and energies 
     MVector vtx_pos = vtx->GetPosition();
@@ -370,41 +355,19 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
     vtx->ComputeGammaDirection();
     Vertices.push_back(vtx);
     vertex_created_for_event = true;
-    mout << "--- alaviron candidate vertex 2 ---" << endl;
-    for (MRESE* r : vtx->m_AllRESEs) {
-      mout << "  AllRESE: " << r << " "<< r->GetType() << endl;
-      mout << " " << r->GetID() << endl;
-      mout << " " << r->GetEnergy() << endl;
-    }
-    for (MRESE* r : vtx->m_TrackHits[0].m_reses) {
-      mout << "  TrackHit0: " << r << " " << r->GetType() << " "<< r->GetID() << " " << r->GetEnergy() << endl;
-    }
-    for (MRESE* r : vtx->m_TrackHits[1].m_reses) {
-      mout << "  TrackHit1: " << r << " " << r->GetType() << " "<< r->GetID() << " " << r->GetEnergy() << endl;
-    }
-    /*mout << "--- alaviron vtx 1ht.ht ---" << endl;
-    mout << vtx->GetType() << " " << vtx->GetID() << " " <<show;
-    mout << vtx->m_TrackHits.size() << " " << vtx->m_AllRESEs.size() << " "  <<show;
-    mout << vtx->m_TrackHits[0].m_reses.size() << " " << vtx->m_TrackHits[1].m_reses.size() <<show;
-    mout << vtx->m_TrackHits[0].m_energy << " " << vtx->m_TrackHits[1].m_energy <<endl;*/
-
   }
 
   // 2ht-2ht: only attempt if no vertex was found above 
   if (!vertex_created_for_event) {
-
-    //if (RESEs.empty()) return Vertices;
 
     MRESE* top_hit = RESEs[0];
 
     // Hits in the topmost layer
     std::vector<MRESE*> hits_in_first_layer;
     for (MRESE* rese : RESEs) {
-    if (m_Geometry->GetLayerDistance(rese, top_hit) == 0)
-      hits_in_first_layer.push_back(rese);
+      if (m_Geometry->GetLayerDistance(rese, top_hit) == 0)
+        hits_in_first_layer.push_back(rese);
     }
-
-    //if ((int)hits_in_first_layer.size() != 2) return Vertices;
 
     // Hits in the layer immediately below
     std::vector<MRESE*> hits_in_layer_below;
@@ -412,8 +375,6 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
       if (m_Geometry->GetLayerDistance(hits_in_first_layer[0], rese) == -1)
         hits_in_layer_below.push_back(rese);
     }
-
-    //if ((int)hits_in_layer_below.size() != 2) return Vertices;
 
     // Apply LayerRequirement check on the 2ht topology
     std::vector<int> NBelow(SearchRange, 0);
@@ -429,10 +390,7 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
       if (StartIndex != 0 && NBelow[dist] >= 2) LayersWithAtLeastTwoHits++;
     }
 
-    //if (LayersWithAtLeastTwoHits < LayerRequirement) return Vertices;
     if (LayersWithAtLeastTwoHits >= LayerRequirement && hits_in_first_layer.size() == 2 && hits_in_layer_below.size() == 2) {
-      //return Vertices;
-
       // Extract the four hit positions
       MRESE* hit1lay1 = hits_in_first_layer[0];
       MRESE* hit2lay1 = hits_in_first_layer[1];
@@ -458,7 +416,6 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
 
       // Parallel-track check
       if (!std::isnan(vertex_point.X()) && !std::isnan(vertex_point.Y()) && !std::isnan(vertex_point.Z())) {
-        //return Vertices;
 
         MREVertex* vtx = new MREVertex(nullptr,
             {hit1lay1, hit2lay1, hit1lay2, hit2lay2}, &vertex_point);
@@ -472,23 +429,6 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
 
         vtx->ComputeGammaDirection();
         Vertices.push_back(vtx);
-        /*mout << "--- alaviron vtx 1ht2ht ---" << endl;
-        mout << vtx->GetType() << " " << vtx->GetID() << " " <<show;
-        mout << vtx->m_TrackHits.size() << " " << vtx->m_AllRESEs.size() << " "  <<show;
-        mout << vtx->m_TrackHits[0].m_reses.size() << " " << vtx->m_TrackHits[1].m_reses.size() <<show;
-        mout << vtx->m_TrackHits[0].m_energy << " " << vtx->m_TrackHits[1].m_energy <<endl;*/
-        mout << "--- alaviron candidate vertex 3 ---" << endl;
-        for (MRESE* r : vtx->m_AllRESEs) {
-          mout << "  AllRESE: " << r << " " << r->GetType() << endl;
-          mout << " " << r->GetID() << endl;
-          mout << " " << r->GetEnergy() << endl;
-        }
-        /*for (MRESE* r : vtx->m_TrackHits[0].m_reses) {
-          mout << "  TrackHit0: " << r << " " << r->GetType() << " "<< r->GetID() << " " << r->GetEnergy() << endl;
-        }
-        for (MRESE* r : vtx->m_TrackHits[1].m_reses) {
-          mout << "  TrackHit1: " << r << " " << r->GetType() << " "<< r->GetID() << " " << r->GetEnergy() << endl;
-        }*/
       }
     }
   }
@@ -511,7 +451,6 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
     // Get back on tracks ...
     RE->SetVertex(nullptr);
     List->AddRawEvent(New);
-    mout << "alaviron- " << best << " " << RE->GetVertex() << " " << New->GetVertex() << endl;
   }
   return List;
 
@@ -540,62 +479,12 @@ MRawEventIncarnations* MERTrackFirstTwoLayers::CheckForPair(MRERawEvent* RE)
 
 void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
 {
-  /*if (RE->GetNRESEs() == 0) {
-    // mout << "No RESEs, skipping." << endl;
-    RE->SetRejectionReason(MRERawEvent::c_RejectionNotEnoughHitsInTracker);
-    return;
-  }*/
-
- //VertexFinder finder(m_Geometry, m_DetectorList);
-  //std::vector<MREVertex*> vertices = FindVertices(RE);
-
-  /*if (vertices.empty()) {
+  MREVertex* best = dynamic_cast<MREVertex*>(RE->GetVertex());
+  if (!best) {
     mdebug << "No vertex found for event " << RE->GetEventID() << endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionPairEventNoVertex);
     return;
-  }*/
-
-  //MREVertex* best = TopVertex(vertices);
-  MREVertex* best = dynamic_cast<MREVertex*>(RE->GetVertex());
-
-  mout << "--- alaviron best vertex ---" << endl;
-  mout << best->GetType() << " " << best->GetID() << " " << endl;
-  mout << best->m_TrackHits.size() << " " << best->m_AllRESEs.size() << " "  << endl;
-  //mout << best->m_TrackHits[0].m_reses.size() << " " << best->m_TrackHits[1].m_reses.size() << endl;
-  //mout << best->m_TrackHits[0].m_energy << " " << best->m_TrackHits[1].m_energy << endl;
-  for (MRESE* r : best->m_AllRESEs) {
-    mout << "  AllRESE: " << r << " "<< r->GetType() << endl;
-    mout << " " << r->GetID() << endl;
-    mout << " " << r->GetEnergy() << endl;
   }
-  /*for (MRESE* r : best->m_TrackHits[0].m_reses) {
-    mout << "  TrackHit0: " << r << " " << r->GetType() << " "<< r->GetID() << " " << r->GetEnergy() << endl;
-  }
-  for (MRESE* r : best->m_TrackHits[1].m_reses) {
-    mout << "  TrackHit1: " << r << " " << r->GetType() << " "<< r->GetID() << " " << r->GetEnergy() << endl;
-  }*/
-        //<< best->GetRESE()->GetType() << " " << best->GetRESE()->GetID() << " " << endl;
-       /*<< best->GetPosition().X() << " " 
-       << best->GetPosition().Y() << " " 
-       << best->GetPosition().Z() << " "
-       << best->GetEnergy() << " "
-       << best->m_vertex_type << " "
-       << best->m_electron_dir.X() << " "
-       << best->m_electron_dir.Y() << " "
-       << best->m_electron_dir.Z() << " "
-       << best->m_positron_dir.X() << " "
-       << best->m_positron_dir.Y() << " "
-       << best->m_positron_dir.Z() << " "
-       << best->m_electron_energy << " "
-       << best->m_positron_energy << endl;*/
-
-  // Set vertex on raw event for MEGAlib bookkeeping
-  /*if (best->GetRESE() != nullptr) {
-    RE->SetVertex(best->GetRESE());
-  } else if (best->m_AllRESEs.size() > 0) {
-    RE->SetVertex(best->m_AllRESEs[0]);
-  }
-  RE->SetVertexDirection(-1);*/
 
   // Build electron and positron tracks 
   MRETrack* Electron = new MRETrack();
@@ -627,20 +516,34 @@ void MERTrackFirstTwoLayers::TrackPairs(MRERawEvent* RE)
   MVector eDir(best->m_electron_dir.X(), best->m_electron_dir.Y(), best->m_electron_dir.Z());
   MVector pDir(best->m_positron_dir.X(), best->m_positron_dir.Y(), best->m_positron_dir.Z());
 
+  Electron->SetPosition(best->GetPosition());
   Electron->SetFixedDirection(eDir);
   Positron->SetFixedDirection(pDir);
 
   // Set energies
-  Electron->SetEnergy(best->m_electron_energy);
-  Positron->SetEnergy(best->m_positron_energy);
+  double energySum = 0.;
+  for (int i=0; i<RE->GetNRESEs(); i++) {
+    if (RE->GetRESEAt(i)->GetEnergy()>0)
+      energySum += RE->GetRESEAt(i)->GetEnergy();
+  }
+  double xplus = best->m_positron_energy/(best->m_electron_energy+best->m_positron_energy);
+  Electron->SetEnergy(energySum*(1-xplus));
+  Positron->SetEnergy(energySum*xplus);
 
   // Write back to the raw event 
   RE->SetElectronTrack(Electron);
   RE->SetPositronTrack(Positron);
   // PairQualityFactor to keep track of vertex type
-  if (best->m_vertex_type == "type_1ht2ht") RE->SetPairQualityFactor(1.0);
-  else if (best->m_vertex_type == "type_1ht1ht") RE->SetPairQualityFactor(2.0);
-  else RE->SetPairQualityFactor(3.0);
+  if (best->m_vertex_type == "type_1ht2ht") {
+    Electron->SetQualityFactor(1.0);
+    Positron->SetQualityFactor(1.0);
+  } else if (best->m_vertex_type == "type_1ht1ht") {
+    Electron->SetQualityFactor(2.0);
+    Positron->SetQualityFactor(2.0);
+  } else {
+    Electron->SetQualityFactor(3.0);
+    Positron->SetQualityFactor(3.0);
+  }
   // Set event as reconstructed
   RE->SetGoodEvent(true);
   RE->SetEventReconstructed(true);
