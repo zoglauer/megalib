@@ -114,6 +114,8 @@ MEventSelector::MEventSelector()
 
   m_EventIdMin = 0;
   m_EventIdMax = numeric_limits<long>::max();
+  m_TypeProbabilityMin = -numeric_limits<double>::max();
+  m_TypeProbabilityMax = numeric_limits<double>::max();
 
   m_UseSource = false;
   m_SourcePosition = MVector(0, 0, c_FarAway);
@@ -242,6 +244,8 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_EventIdMax = EventSelector.m_EventIdMax;
   m_ThetaDeviationMax = EventSelector.m_ThetaDeviationMax;
   m_EarthHorizon = EventSelector.m_EarthHorizon;
+  m_TypeProbabilityMin = EventSelector.m_TypeProbabilityMin;
+  m_TypeProbabilityMax = EventSelector.m_TypeProbabilityMax;
 
   m_InitialEnergyDepositPairMin = EventSelector.m_InitialEnergyDepositPairMin;
   m_InitialEnergyDepositPairMax = EventSelector.m_InitialEnergyDepositPairMax;
@@ -377,6 +381,7 @@ void MEventSelector::Reset()
   m_NRejectedUseNotTrackedComptons = 0;
   m_NRejectedUseDecays = 0;
   m_NRejectedUseFlaggedAsBad = 0;
+  m_NRejectedTypeProbability = 0;
   m_NRejectedOpeningAnglePair = 0;
   m_NRejectedInitialEnergyDepositPair = 0;
   m_NRejectedPairQualityFactor = 0;
@@ -489,6 +494,7 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   SetTrackQualityFactor(S->GetTrackQualityFactorRangeMin(), S->GetTrackQualityFactorRangeMax());
   SetCoincidenceWindow(S->GetCoincidenceWindowRangeMin(), S->GetCoincidenceWindowRangeMax());
   SetEventId(S->GetEventIdRangeMin(), S->GetEventIdRangeMax());
+  SetTypeProbability(S->GetTypeProbabilityMin(), S->GetTypeProbabilityMax());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -704,6 +710,15 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
           <<m_EventIdMin<<"<"<<Event->GetId()<<"<"<<m_EventIdMax<<"!"<<endl;
     }
     m_NRejectedEventId++;
+    Return = false;
+  }
+  if (Event->GetTypeProbability() < m_TypeProbabilityMin ||
+      Event->GetTypeProbability() > m_TypeProbabilityMax) {
+    if (DumpOutput) {
+      cout<<"ID "<<Event->GetId()<<": Not within Type probability selection: "
+          <<m_TypeProbabilityMin<<"<"<<Event->GetTypeProbability()<<"<"<<m_TypeProbabilityMax<<"!"<<endl;
+    }
+    m_NRejectedTypeProbability++;
     Return = false;
   }
   if (Event->IsDecay() == true && m_UseDecays == false) {
@@ -1313,6 +1328,10 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
   }
   if (Event->GetId() < m_EventIdMin ||
       Event->GetId() > m_EventIdMax) {
+    return false;
+  }
+  if (Event->GetTypeProbability() < m_TypeProbabilityMin ||
+      Event->GetTypeProbability() > m_TypeProbabilityMax) {
     return false;
   }
   if (Event->IsDecay() == true && m_UseDecays == false) {
@@ -1936,6 +1955,18 @@ void MEventSelector::SetEventId(long Min, long Max)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MEventSelector::SetTypeProbability(double Min, double Max)
+{
+  // Set the range of type probability
+
+  m_TypeProbabilityMin = Min;
+  m_TypeProbabilityMax = Max;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MEventSelector::UsePairs(bool Pairs)
 {
   // Pass through/Neglect pairs
@@ -2058,6 +2089,7 @@ MString MEventSelector::ToString()
   s<<"Use unidentifiables  ...........  "<<m_NRejectedUseUnidentifiables<<endl;
   s<<"Use decays  ....................  "<<m_NRejectedUseDecays<<endl;
   s<<"Use flagged as bad  ............  "<<m_NRejectedUseFlaggedAsBad<<endl;
+  s<<"Type probability  ..............  "<<m_NRejectedTypeProbability<<endl;
   if (m_NRejectedQuickHack > 0) {
     s<<"Quick hack  ....................  "<<m_NRejectedQuickHack<<endl;
   }
@@ -2121,6 +2153,7 @@ ostream& operator<<(ostream& os, MEventSelector& S)
   os<<"Track quality factor:             "<<S.m_TrackQualityFactorMin<<"-"<<S.m_TrackQualityFactorMax<<endl;
   os<<"Coincidence window:               "<<S.m_CoincidenceWindowMin<<"-"<<S.m_CoincidenceWindowMax<<endl;
   os<<"Event ID:                         "<<S.m_EventIdMin<<"-"<<S.m_EventIdMax<<endl;
+  os<<"Type probability:                 "<<S.m_TypeProbabilityMin<<"-"<<S.m_TypeProbabilityMax<<endl;
   os<<"Earth horizon cut:                "<<S.m_EarthHorizon<<endl;
   os<<"Max. theta deviation              "<<S.m_ThetaDeviationMax<<endl;
   os<<"Max. ARM                          "<<S.m_ARMMax<<endl;

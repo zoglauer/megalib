@@ -3927,7 +3927,6 @@ void MInterfaceMimrec::EnergySpectra()
   MPhysicalEvent* Event = nullptr;
   while ((Event = GetNextEvent()) != 0) {
 
-
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;

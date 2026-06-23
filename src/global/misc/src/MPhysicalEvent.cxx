@@ -70,7 +70,7 @@ MPhysicalEvent::MPhysicalEvent() : MRotationInterface(), m_Time(0)
   // default constructor
 
   m_EventType = c_UnknownEvent;
-
+  m_EventTypeProbability = 1.;
   Reset();
 }
 
@@ -128,6 +128,7 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   Set(*dynamic_cast<MRotationInterface*>(E));
   
   m_EventType = E->m_EventType;
+  m_EventTypeProbability = E->m_EventTypeProbability;
   m_TimeWalk = E->m_TimeWalk;
   m_Time = E->m_Time;
   m_Id = E->m_Id;
@@ -280,9 +281,12 @@ MString MPhysicalEvent::GetTypeStringCode(int evtype)
       return MString("PT");
     case c_MultiEvent:
       return MString("MT");
+    case c_UnknownEvent:
+      return MString("UN");
     case c_UnidentifiableEvent:
       return MString("UN");
     default:
+      merr << "Event type unknown: " << evtype << endl;
       massert(false);
       return MString("Unkown");
   }
@@ -324,6 +328,7 @@ MString MPhysicalEvent::ToTraString() const
     break;
   }*/
   S<<"ET "<<GetTypeStringCode(m_EventType)<<endl;
+  S<<"TP "<<m_EventTypeProbability<<endl;
   S<<"ID "<<m_Id<<endl;
   S<<"TI "<<m_Time.GetLongIntsString()<<endl;
   if (m_TimeWalk != -1) {
@@ -492,6 +497,14 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
       cout<<"int MPhysicalEvent::ParseLine: Unkown event type..."<<endl;
       Ret = 1;
     }*/
+  } else if (Line[0]=='T' && Line[1]=='P') {
+    if (Fast == true) {
+      m_EventTypeProbability = strtod(Line+3, NULL);
+    } else {
+      if (sscanf(Line, "TP %lf", &m_EventTypeProbability) != 1) {
+        Ret = 1;
+      }
+    }
   } else if (Line[0] == 'T' && Line[1] == 'I') {
     if (Fast == true) {
       if (m_Time.Set(Line) == false) {

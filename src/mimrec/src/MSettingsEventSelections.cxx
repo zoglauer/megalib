@@ -64,6 +64,9 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_EventIdRangeMin = 0;
   m_EventIdRangeMax = 10000000;
 
+  m_TypeProbabilityMin = -numeric_limits<double>::max();
+  m_TypeProbabilityMax = numeric_limits<double>::max();
+
   m_TrackLengthRangeMin = 1;
   m_TrackLengthRangeMax = 100;
 
@@ -241,6 +244,8 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
 
   new MXmlNode(aNode, "EventID", m_EventIdRangeMin, m_EventIdRangeMax);
 
+  new MXmlNode(aNode, "TypeProbability", m_TypeProbabilityMin, m_TypeProbabilityMax);
+
   new MXmlNode(aNode, "TimeMode", m_TimeMode);
   new MXmlNode(aNode, "Time", m_TimeRangeMin, m_TimeRangeMax);
   new MXmlNode(aNode, "TimeFile", m_TimeFile);
@@ -388,6 +393,11 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
     if ((bNode = aNode->GetNode("EventID")) != 0) {
       m_EventIdRangeMin = bNode->GetMinValueAsLong();
       m_EventIdRangeMax = bNode->GetMaxValueAsLong();
+    }
+
+    if ((bNode = aNode->GetNode("TypeProbability")) != 0) {
+      m_TypeProbabilityMin = bNode->GetMinValueAsDouble();
+      m_TypeProbabilityMax = bNode->GetMaxValueAsDouble();
     }
 
     if ((bNode = aNode->GetNode("TimeMode")) != 0) {

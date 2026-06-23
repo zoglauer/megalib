@@ -142,6 +142,7 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   m_EventTime = RE->m_EventTime;
   m_EventClock = RE->m_EventClock;
   m_EventType = RE->GetEventType();
+  m_EventTypeProbability = RE->GetEventTypeProbability();
   m_EventID = RE->GetEventID();
   m_RejectionReason = RE->m_RejectionReason;
   m_TimeWalk = RE->m_TimeWalk;
@@ -290,6 +291,7 @@ void MRERawEvent::Init()
 
   m_EventID = 0;
   m_EventType = c_UnknownEvent;
+  m_EventTypeProbability = 1.;
   m_RejectionReason = c_RejectionNone;
   m_TimeWalk = -1;
   m_EventTime.Set(0);
@@ -1203,10 +1205,10 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
 
       m_Event = (MPhysicalEvent*) Pair;
     } else if (m_EventType == c_PhotoEvent) {
-      // We do have only one hit:
-      massert(GetNRESEs() == 1);
-      massert(GetRESEAt(0)->GetType() == MRESE::c_Hit || GetRESEAt(0)->GetType() == MRESE::c_Cluster);
-
+      // We do have only one hit: Not necessarily the case anymore!
+      //massert(GetNRESEs() == 1);
+      //massert(GetRESEAt(0)->GetType() == MRESE::c_Hit || GetRESEAt(0)->GetType() == MRESE::c_Cluster);
+      massert(GetNRESEs() > 0);
       MPhotoEvent* Photo = new MPhotoEvent();
       Photo->SetEnergy(GetRESEAt(0)->GetEnergy());
       Photo->SetPosition(GetRESEAt(0)->GetPosition());

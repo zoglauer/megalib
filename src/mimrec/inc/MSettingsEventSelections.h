@@ -134,6 +134,11 @@ class MSettingsEventSelections : public MSettingsInterface
   long GetEventIdRangeMax() const { return m_EventIdRangeMax; }
   void SetEventIdRangeMax(long EventIdRangeMax) { m_EventIdRangeMax = EventIdRangeMax; m_EventSelectionModified = true; }
 
+  double GetTypeProbabilityMin() const { return m_TypeProbabilityMin; }
+  void SetTypeProbabilityMin(double TypeProbabilityMin) { m_TypeProbabilityMin = TypeProbabilityMin; m_EventSelectionModified = true; }
+  double GetTypeProbabilityMax() const { return m_TypeProbabilityMax; }
+  void SetTypeProbabilityMax(double TypeProbabilityMax) { m_TypeProbabilityMax = TypeProbabilityMax; m_EventSelectionModified = true; }
+
   double GetFirstEnergyRangeMin() const { return m_FirstEnergyRangeMin; }
   void SetFirstEnergyRangeMin(double FirstEnergyRangeMin) { m_FirstEnergyRangeMin = FirstEnergyRangeMin; m_EventSelectionModified = true; }
 
@@ -417,6 +422,9 @@ class MSettingsEventSelections : public MSettingsInterface
 
   long m_EventIdRangeMin;
   long m_EventIdRangeMax;
+
+  double m_TypeProbabilityMin;
+  double m_TypeProbabilityMax;
 
   unsigned int m_TimeMode;
   MTime m_TimeRangeMin;

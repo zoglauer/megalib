@@ -165,6 +165,8 @@ class MEventSelector
   void ApplyCoincidenceWindow(MEventSelector& E) { E.SetCoincidenceWindow(m_CoincidenceWindowMin, m_CoincidenceWindowMax); }
   void SetEventId(long Min = 0, long Max = numeric_limits<long>::max());
   void ApplyEventId(MEventSelector& E) { E.SetEventId(m_EventIdMin, m_EventIdMax); }
+  void SetTypeProbability(double Min = -numeric_limits<double>::max(), double Max = numeric_limits<double>::max());
+  void ApplyTypeProbability(MEventSelector& E) { E.SetTypeProbability(m_TypeProbabilityMin, m_TypeProbabilityMax); }
 
 
   // Pair specific:
@@ -260,6 +262,8 @@ class MEventSelector
   double m_CoincidenceWindowMax;
   long m_EventIdMin;
   long m_EventIdMax;
+  double m_TypeProbabilityMin;
+  double m_TypeProbabilityMax;
   double m_ThetaDeviationMax;
   MEarthHorizon m_EarthHorizon;
 
@@ -347,6 +351,7 @@ class MEventSelector
   long m_NRejectedUseFlaggedAsBad;
   long m_NRejectedUseTrackedComptons;
   long m_NRejectedUseNotTrackedComptons;
+  long m_NRejectedTypeProbability;
   long m_NRejectedOpeningAnglePair;
   long m_NRejectedInitialEnergyDepositPair;
   long m_NRejectedPairQualityFactor;

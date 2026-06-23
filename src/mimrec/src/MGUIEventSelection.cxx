@@ -194,6 +194,18 @@ void MGUIEventSelection::Create()
   m_DecayCB->SetState((m_Settings->GetEventTypeDecay() == 1) ?  kButtonDown : kButtonUp);
 
 
+  // Type probability selection box
+  m_TypeProbability = new MGUIEMinMaxEntry(EventTypeFrame,
+                                           MString("Type probability window"),
+                                           false,
+                                           MString("Minimum TP: "),
+                                           MString("Maximum TP: "),
+                                           m_Settings->GetTypeProbabilityMin(),
+                                           m_Settings->GetTypeProbabilityMax(),
+                                           true, 0.);
+  m_TypeProbability->SetEntryFieldSize(FieldSize);
+  EventTypeFrame->AddFrame(m_TypeProbability, MinMaxFirstLayout);
+
   // ID
   m_EventId = new MGUIEMinMaxEntry(EventTypeFrame,
                                    MString("Event ID window:"),
@@ -1293,6 +1305,8 @@ bool MGUIEventSelection::OnApply()
   }
   if (m_EventId->CheckRange(0l, numeric_limits<long>::max(),
                             0l, numeric_limits<long>::max(), false) == false) return false;
+  if (m_TypeProbability->CheckRange(-numeric_limits<double>::max(), numeric_limits<double>::max(), 
+                                    -numeric_limits<double>::max(), numeric_limits<double>::max(), false) == false) return false;
   if (m_TrackLength->CheckRange(1, numeric_limits<int>::max(),
                                 1, numeric_limits<int>::max(), false) == false) return false;
   if (m_SequenceLength->CheckRange(2, numeric_limits<int>::max(),
@@ -1378,6 +1392,11 @@ bool MGUIEventSelection::OnApply()
   if (m_EventId->IsModified() == true) {
     m_Settings->SetEventIdRangeMin(long(m_EventId->GetMinValueInt()));
     m_Settings->SetEventIdRangeMax(long(m_EventId->GetMaxValueInt()));
+  }
+
+  if (m_TypeProbability->IsModified() == true) {
+    m_Settings->SetTypeProbabilityMin(m_TypeProbability->GetMinValueDouble());
+    m_Settings->SetTypeProbabilityMax(m_TypeProbability->GetMaxValueDouble());
   }
 
 

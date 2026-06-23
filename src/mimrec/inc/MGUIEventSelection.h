@@ -93,6 +93,8 @@ class MGUIEventSelection : public MGUIDialog
 
   MGUIEMinMaxEntry* m_EventId;
 
+  MGUIEMinMaxEntry* m_TypeProbability;
+
   TGRadioButton* m_GTIAllRB;
   TGRadioButton* m_GTIEntryRB;
   MGUIEEntry* m_MinTimeEntry;

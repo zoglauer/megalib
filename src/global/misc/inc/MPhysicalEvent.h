@@ -92,8 +92,7 @@ class MPhysicalEvent : public MRotationInterface
   MString GetTypeString() const;
   static MString GetTypeStringCode(int evtype);
   //! Set event type probability
-  void SetTypeProbability(double evtTypeProbability)
-        { m_EventTypeProbability = evtTypeProbability; }
+  void SetTypeProbability(double evtTypeProbability) { m_EventTypeProbability = evtTypeProbability; }
   //! Get event type probability
   double GetTypeProbability() { return m_EventTypeProbability; }
   
