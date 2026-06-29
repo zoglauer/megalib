@@ -123,7 +123,7 @@ bool MReadOutDataTiming::Parse(const MTokenizer& T, unsigned int StartElement)
   if (MReadOutData::Parse(T, StartElement) == false) return false;
   
   // Then here:
-  // m_Timing = T.GetTokenAtAsDouble(StartElement + MReadOutData::GetNumberOfParsableElements());
+  m_Timing = T.GetTokenAtAsDouble(StartElement + MReadOutData::GetNumberOfParsableElements());
   
   return true;
 }
