@@ -33,7 +33,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! This basic read-out data just consisting of one timing value as unsigned int
+//! This basic read-out data just consisting of one timing value as double
 class MReadOutDataTiming : public MReadOutData
 {
   // public interface:
@@ -59,9 +59,9 @@ class MReadOutDataTiming : public MReadOutData
   virtual void Clear();
 
   //! Set the timing
-  void SetTiming(unsigned int Timing) { m_Timing = Timing; }
+  void SetTiming(double Timing) { m_Timing = Timing; }
   //! Get the timing
-  unsigned int GetTiming() const { return m_Timing; }
+  double GetTiming() const { return m_Timing; }
 
   //! Clone this data element - the returned element must be deleted
   virtual MReadOutDataTiming* Clone() const;
@@ -88,7 +88,7 @@ class MReadOutDataTiming : public MReadOutData
   // protected members:
  protected:
   //! The timing
-  unsigned int m_Timing;
+  double m_Timing;
 
   // private members:
  private:
