@@ -1,0 +1,14 @@
+diff -rupN root_v6.40.2/root_v6.40.2-source/CMakeLists.txt root_v6.40.2_patched/root_v6.40.2-source/CMakeLists.txt
+--- root_v6.40.2/root_v6.40.2-source/CMakeLists.txt	2026-08-07 13:15:33.339987673 -0700
++++ root_v6.40.2_patched/root_v6.40.2-source/CMakeLists.txt	2026-08-07 13:15:33.339174774 -0700
+@@ -605,8 +605,8 @@ add_custom_target(dist COMMAND cpack --c
+ get_cmake_property(variables CACHE_VARIABLES)
+ foreach(var ${variables})
+   if((var MATCHES "_(LIBRARIES|LIBRARY|INCLUDE|VERSION)") AND
+-     (NOT ${${var}} STREQUAL "") AND
+-     (NOT ${var} MATCHES "NOTFOUND"))
++     (NOT "${${var}}" STREQUAL "") AND
++     (NOT "${var}" MATCHES "NOTFOUND"))
+     if (var MATCHES "^QT_")
+       # filter out the very long list of Qt libraries and include dirs
+       if (var MATCHES "(QT_LIBRARY_DIR|QT_QTCORE_INCLUDE_DIR)")
