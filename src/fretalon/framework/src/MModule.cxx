@@ -81,6 +81,7 @@ MModule::MModule()
   
   m_AllowMultiThreading = false;
   m_AllowMultipleInstances = false;
+  m_TypeExclusive = true;
 
   m_UseMultiThreading = false;
   m_Thread = 0;
