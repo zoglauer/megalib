@@ -240,17 +240,23 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
     for (unsigned int m = 0; m < m_AvailableModules[i]->GetNPreceedingModuleTypes(); ++m) {
       //cout<<"Requires: "<<m_AvailableModules[i]->GetPreceedingModuleType(m)<<endl;
       bool Found = false;
-      //cout<<"Checking "<<Previous.size()<<" previous elements"<<endl;
-      for (unsigned int p = 0; p < Previous.size(); ++p) {
-        //cout<<"Checking: "<<Previous[p]->GetName()<<endl;
-        for (unsigned int t = 0; t < Previous[p]->GetNModuleTypes(); ++t) {
-          //cout<<"Provides: "<<Previous[p]->GetModuleType(t)<<endl;
-          if (Previous[p]->GetModuleType(t) == m_AvailableModules[i]->GetPreceedingModuleType(m)) {
-            Found = true;
-            break;
-          }
+      if (m_AvailableModules[i]->GetPreceedingModuleImmediateRequirement(m) == true) {
+        if (Previous.empty() == false) {
+          Found = Previous.back()->ProvidesModuleType(m_AvailableModules[i]->GetPreceedingModuleType(m));
         }
-        if (Found == true) break;
+      } else {
+        //cout<<"Checking "<<Previous.size()<<" previous elements"<<endl;
+        for (unsigned int p = 0; p < Previous.size(); ++p) {
+          //cout<<"Checking: "<<Previous[p]->GetName()<<endl;
+          for (unsigned int t = 0; t < Previous[p]->GetNModuleTypes(); ++t) {
+            //cout<<"Provides: "<<Previous[p]->GetModuleType(t)<<endl;
+            if (Previous[p]->GetModuleType(t) == m_AvailableModules[i]->GetPreceedingModuleType(m)) {
+              Found = true;
+              break;
+            }
+          }
+          if (Found == true) break;
+        }
       }
       if (Found == false) {
         //mout<<"Failed Previous requirement"<<endl;
@@ -274,8 +280,8 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
       }
     }
 
-    // (3) If any of the module types are already in the list, ignore it:
-    if (Passed == true) {
+    // (3) If any of the module types are already in the list, ignore it unless IsTypeExclusive == false:
+    if (Passed == true && m_AvailableModules[i]->IsTypeExclusive() == true) {
       bool AlreadyInList = false;
       for (unsigned int p = 0; p < Previous.size(); ++p) {
         for (unsigned int t = 0; t < Previous[p]->GetNModuleTypes(); ++t) {
@@ -403,9 +409,15 @@ bool MSupervisor::Validate()
     for (unsigned int t = 0; t < m_Modules[m]->GetNPreceedingModuleTypes(); ++t) {
       // (a) Check if a required predecessor is in the existing predecessor list 
       bool Found = false;
-      for (unsigned int p = 0; p < PredecessorTypes.size(); ++p) {
-        if (PredecessorTypes[p] == m_Modules[m]->GetPreceedingModuleType(t)) {
-          Found = true;
+      if (m_Modules[m]->GetPreceedingModuleImmediateRequirement(t) == true) {
+        if (m > 0) {
+          Found = m_Modules[m-1]->ProvidesModuleType(m_Modules[m]->GetPreceedingModuleType(t));
+        }
+      } else {
+        for (unsigned int p = 0; p < PredecessorTypes.size(); ++p) {
+          if (PredecessorTypes[p] == m_Modules[m]->GetPreceedingModuleType(t)) {
+            Found = true;
+          }
         }
       }
       // (b) is not check if it is a hard or soft requirement

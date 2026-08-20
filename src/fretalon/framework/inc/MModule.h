@@ -80,8 +80,10 @@ class MModule
   unsigned int GetNPreceedingModuleTypes() const { return m_PreceedingModules.size(); }
   //! Return the preceeding module at position i (no error checks performed)
   uint64_t GetPreceedingModuleType(unsigned int i) const { return m_PreceedingModules.at(i); }
-  //! Return true if the preceeding module at position i is a hard requirement (no error checks performed)
+  //! Return the preceeding module at position i (no error checks performed)
   bool GetPreceedingModuleHardRequirement(unsigned int i) const { return m_PreceedingModulesHardRequirement.at(i); }
+  //! Return true if the preceeding module at position i must be directly before this module
+  bool GetPreceedingModuleImmediateRequirement(unsigned int i) const { return m_PreceedingModulesImmediateRequirement.at(i); }
   //! Return true if this module is a hard predecessor
   bool IsHardPreceedingModule(uint64_t Type) const;
   //! Return true if this module is a soft predecessor
@@ -109,6 +111,11 @@ class MModule
   bool AllowsMultiThreading() const { return m_AllowMultiThreading; }
   //! Return true, if this module allows to be used in multiple instances
   bool AllowsMultipleInstances() const { return m_AllowMultipleInstances; }
+
+  //! Set whether only one module of this type may be in a sequence (default: true).
+  void SetTypeExclusive(bool Flag) { m_TypeExclusive = Flag; }
+  //! Return true if this type should be exclusive
+  bool IsTypeExclusive() const { return m_TypeExclusive; }
 
   //! Use multi threading -- but it is only really used if the module allows it
   void UseMultiThreading(bool UseMultiThreading = true) { m_UseMultiThreading = UseMultiThreading; }
@@ -208,7 +215,11 @@ class MModule
 
   //! Set which modules are assumed to be already performed
   //! If soft is set then only if the module is present at all require it to be done before
-  void AddPreceedingModuleType(uint64_t  Type, bool HardRequirement = true) { m_PreceedingModules.push_back(Type); m_PreceedingModulesHardRequirement.push_back(HardRequirement); }
+  //! If ImmediatelyPreceeding is true, a module of the required type must immediately precede this module
+  void AddPreceedingModuleType(uint64_t  Type, bool HardRequirement = true, bool ImmediatelyPreceeding = false) { m_PreceedingModules.push_back(Type); m_PreceedingModulesHardRequirement.push_back(HardRequirement); m_PreceedingModulesImmediateRequirement.push_back(ImmediatelyPreceeding); }
+
+  //! Remove all preceeding module requirements
+  void ClearPreceedingModuleTypes() { m_PreceedingModules.clear(); m_PreceedingModulesHardRequirement.clear(); m_PreceedingModulesImmediateRequirement.clear(); }
   //! Add which type of module this is, e.g. c_EnergyCalibration
   //! This option ca be called twice to set two tasks of this modules!
   void AddModuleType(uint64_t  Type) { m_Modules.push_back(Type); }
@@ -244,6 +255,8 @@ class MModule
   vector<uint64_t> m_PreceedingModules;
   //! List of preceeding modules being a soft or hard requirement
   vector<bool> m_PreceedingModulesHardRequirement;
+  //! List of preceeding modules which must be directly before this module
+  vector<bool> m_PreceedingModulesImmediateRequirement;
   //! List of succeeding modules
   vector<uint64_t> m_SucceedingModules;
   //! List of types of this modules
@@ -284,6 +297,8 @@ class MModule
   bool m_AllowMultiThreading;
   //! Flag indicating that this module allows multiple instances
   bool m_AllowMultipleInstances;
+  //! Flag indicating that only one module of this type is allowed per sequence
+  bool m_TypeExclusive;
   
   //! Flag indicating if we should use multithreading if available
   bool m_UseMultiThreading;
