@@ -61,6 +61,8 @@ class MREAMStartInformation : public MREAM
   void SetPolarization(const MVector Polarization) { m_Polarization = Polarization; }
   //! Set original energy
   void SetEnergy(const double Energy) { m_Energy = Energy; }
+  //! Set original Secondary Id
+  void SetParticleId(const int Id) { m_ParticleId = Id; }
   //! Return original position
   MVector GetPosition() const { return m_Position; }
   //! Return original position
@@ -69,6 +71,8 @@ class MREAMStartInformation : public MREAM
   MVector GetDirection() const { return m_Direction; }
   //! Return original energy 
   double GetEnergy() const { return m_Energy; }
+  //! Return original Secondary Id 
+  int GetParticleId() const { return m_ParticleId; }
 
   // protected methods:
  protected:
@@ -89,7 +93,9 @@ class MREAMStartInformation : public MREAM
   MVector m_Polarization;
   //! Original energy
   double m_Energy;
-
+  //! Original Id
+  int m_ParticleId;
+  
 #ifdef ___CLING___
  public:
   ClassDef(MREAMStartInformation, 0) // no description

@@ -492,11 +492,13 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
       if (L[0] == 'I' && L[1] == 'A') {
         if (L[3] == 'I' && L[4] == 'N' && L[5] == 'I' && L[6] == 'T') {
           double x, y, z, dx, dy, dz, px, py, pz, e;
-          if (sscanf(L.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf", &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+	  int id;
+          if (sscanf(L.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf", &x, &y, &z, &id, &dx, &dy, &dz, &px, &py, &pz, &e) == 11) {
             ostringstream out;
-            out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+            out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<";"<<id<<endl;
             L = out.str().c_str();
           }
+	  
         }
       }
     }
