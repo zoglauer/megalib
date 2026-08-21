@@ -117,9 +117,11 @@ void MIsotope::AddLine(double Energy, double BranchingRatio, const MString& Flag
     m_LineEnergies.push_back(Energy);
     m_LineBranchingRatios.push_back(BranchingRatio);
     m_LineExcludeFlags.push_back(false);
-    m_LineDefaultFlags.push_back(false);
     if (Flags.Contains("E") == true) m_LineExcludeFlags.back() = true;
-    if (Flags.Contains("D") == true) m_LineDefaultFlags.back() = true;
+    m_LinePrimaryFlags.push_back(false);
+    if (Flags.Contains("D") == true || Flags.Contains("P") == true) m_LinePrimaryFlags.back() = true;
+    m_LineSecondaryFlags.push_back(false);
+    if (Flags.Contains("S") == true) m_LineSecondaryFlags.back() = true;
   }
 }
 
@@ -152,18 +154,18 @@ bool MIsotope::GetLineExcludeFlag(unsigned int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return the default line, or -1 if non could be found
-int MIsotope::GetDefaultLine() const
+//! Return the primary line, or -1 if non could be found
+int MIsotope::GetPrimaryLine() const
 {
-  if (m_LineDefaultFlags.size() == 0) return -1;
-  
-  // If we have defined one , and it is not excluded
-  for (unsigned int l = 0; l < m_LineDefaultFlags.size(); ++l) {
-    if (m_LineDefaultFlags[l] == true && m_LineExcludeFlags[l] == false) {
-      return l; 
+  if (m_LinePrimaryFlags.size() == 0) return -1;
+
+  // If we have defined one, and it is not excluded
+  for (unsigned int l = 0; l < m_LinePrimaryFlags.size(); ++l) {
+    if (m_LinePrimaryFlags[l] == true && m_LineExcludeFlags[l] == false) {
+      return l;
     }
   }
-  
+
   // If not return the line with the strongest branching ratio which is not excluded
   int Line = -1;
   double Strength = -1;
@@ -175,8 +177,28 @@ int MIsotope::GetDefaultLine() const
       }
     }
   }
-  
+
   return Line;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the secondary line, or -1 if non could be found
+int MIsotope::GetSecondaryLine() const
+{
+  if (m_LineSecondaryFlags.size() == 0) return -1;
+
+  // If we have defined one, and it is not excluded
+  for (unsigned int l = 0; l < m_LineSecondaryFlags.size(); ++l) {
+    if (m_LineSecondaryFlags[l] == true && m_LineExcludeFlags[l] == false) {
+      return l;
+    }
+  }
+
+  // We have no secondary line defined or available
+  return -1;
 }
 
   

@@ -449,7 +449,7 @@ vector<int> MResponseBase::GetOriginIds(MRESE* RESE)
 {
   // Extremely time critical function!
 
-  const int IdOffset = 2;
+  // const int IdOffset = 2;
 
   map<MRESE*, vector<int> >::iterator RIter = m_OriginIds.find(RESE);
 
@@ -457,6 +457,7 @@ vector<int> MResponseBase::GetOriginIds(MRESE* RESE)
     return (*RIter).second;
   } else {
     
+    /* For MEGAlib 3
     vector<int> Ids = GetReseIds(RESE);
 
     vector<int> OriginIds;
@@ -486,7 +487,23 @@ vector<int> MResponseBase::GetOriginIds(MRESE* RESE)
         }
       }
     }
+    */
 
+    
+    set<unsigned int> RESEOriginIDs = RESE->GetOriginIDs();
+
+    vector<int> OriginIds;
+    OriginIds.reserve(10);
+
+    for (auto Iter = RESEOriginIDs.begin(); Iter != RESEOriginIDs.end(); ++Iter) {
+      int Origin  = (*Iter);
+      if (Origin >= 1 && 
+        m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "INIT" && 
+        m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "ANNI") {
+        OriginIds.push_back(int(Origin));
+      }
+    }
+    
     sort(OriginIds.begin(), OriginIds.end());
     m_OriginIds[RESE] = OriginIds;
 
@@ -502,13 +519,13 @@ bool MResponseBase::AreIdsInSequence(const vector<int>& Ids)
 {
   // Return true if the given Ids are in sequence without holes
 
-  const int IdOffset = 2;
+  const unsigned int IdOffset = 2;
 
 //   for (unsigned int i = 0; i < Ids.size()-1; ++i) {
 //     if (Ids[i+1] - Ids[i] != 1) return false;
 //   }
 
-  vector<int> Origins;
+  vector<unsigned int> Origins;
   for (unsigned int i = 0; i < Ids.size(); ++i) {
     for (unsigned int h = 0; h < m_SiEvent->GetHTAt(Ids[i]-IdOffset)->GetNOrigins(); ++h) {
       bool Contained = false;
@@ -543,7 +560,7 @@ bool MResponseBase::AreIdsInSequence(const vector<int>& Ids)
         if (m_SiEvent->GetHTAt(h)->IsOrigin(Origins[o]) == true) {
           bool Found = false;
           for (unsigned int i = 0; i < Ids.size(); ++i) {
-            if (int(h) == Ids[i]-IdOffset) {
+            if (h == Ids[i]-IdOffset) {
               Found = true;
               break;
             }

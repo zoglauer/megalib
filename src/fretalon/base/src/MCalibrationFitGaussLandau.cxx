@@ -364,6 +364,52 @@ void MCalibrationFitGaussLandau::SetFitParameters(ROOT::Fit::Fitter& Fitter, TH1
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Convert to a string
+MString MCalibrationFitGaussLandau::ToParsableString(const MString& Mode, bool WithDescriptor)
+{
+  ostringstream out;
+
+  if (m_Fit != 0 && m_IsFitUpToDate == true) {
+    if (Mode == "param") {
+      out<<MCalibrationFitGaussian::ToParsableString(Mode, WithDescriptor)<<" ";
+      if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction ||
+          m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay) {
+        int BPM = GetBackgroundFitParameters();
+        // We alreday covered 0..4
+        out<<m_Fit->GetParameter(5+BPM)<<" ";
+        out<<m_Fit->GetParameter(6+BPM)<<" ";
+      } else {
+        int NPM = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
+        // We alreday covered 0..2
+        out<<m_Fit->GetParameter(3+NPM)<<" ";
+        out<<m_Fit->GetParameter(4+NPM)<<" ";
+      }
+    } else if (Mode == "param+error") {
+      out<<MCalibrationFitGaussian::ToParsableString(Mode, WithDescriptor)<<" ";
+      if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction ||
+          m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay) {
+        int BPM = GetBackgroundFitParameters();
+        // We alreday covered 0..4
+        out<<m_Fit->GetParameter(5+BPM)<<" "<<m_Fit->GetParError(5+BPM)<<"  ";
+        out<<m_Fit->GetParameter(6+BPM)<<" "<<m_Fit->GetParError(6+BPM)<<"  ";
+      } else {
+        int NPM = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
+        // We alreday covered 0..2
+        out<<m_Fit->GetParameter(3+NPM)<<" "<<m_Fit->GetParError(3+NPM)<<"  ";
+        out<<m_Fit->GetParameter(4+NPM)<<" "<<m_Fit->GetParError(4+NPM)<<"  ";
+      }
+    }
+  } else {
+    merr<<"Fit cannot be stored, since it is not up to date"<<endl;
+  }
+
+  return out.str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Get the FWHM
 double MCalibrationFitGaussLandau::GetFWHM() const
 { 

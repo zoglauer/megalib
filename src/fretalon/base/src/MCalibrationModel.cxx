@@ -46,7 +46,7 @@ ClassImp(MCalibrationModel)
 
 
 //! Default constructor
-MCalibrationModel::MCalibrationModel() : m_Type(MCalibrationModelType::c_Energy), m_Fit(nullptr), m_IsFitUpToDate(false), m_Keyword("none"),   m_FitQuality(numeric_limits<double>::max()/1000)
+MCalibrationModel::MCalibrationModel() : m_Type(MCalibrationModelType::c_Energy), m_Fit(nullptr), m_IsFitUpToDate(false), m_Keyword("none"), m_FitQuality(numeric_limits<double>::max()/1000)
 {
 }
 
@@ -351,6 +351,10 @@ MString MCalibrationModel::ToParsableString(bool WithDescriptor)
   if (WithDescriptor == true) out<<m_Keyword<<" ";
   for (int i = 0; i < m_Fit->GetNpar(); ++i) {
     out<<m_Fit->GetParameter(i)<<" ";
+  }
+  if (WithDescriptor == true) out<<"error ";
+  for (int i = 0; i < m_Fit->GetNpar(); ++i) {
+    out<<m_Fit->GetParError(i)<<" ";
   }
   return out.str();
 }

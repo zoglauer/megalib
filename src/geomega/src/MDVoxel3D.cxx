@@ -207,7 +207,7 @@ void MDVoxel3D::HasGuardRing(bool HasGuardRing)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
   // Noise energy of this hit:
 
@@ -215,6 +215,7 @@ void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 
   // Test for failure:
   if (gRandom->Rndm() < m_FailureRate) {
+    Flags += " FAILURE";
     Energy = 0;
     return;
   }
@@ -223,12 +224,14 @@ void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
   ApplyEnergyResolution(Energy);
 
   // Overflow:
-  ApplyOverflow(Energy);
+  if (ApplyOverflow(Energy) == true) {
+    Flags += " OVERFLOW";
+  }
 
   // Noise threshold:
-  if (ApplyNoiseThreshold(Energy) == true) {
-    return;
-  }
+  //if (ApplyNoiseThreshold(Energy) == true) {
+  //  return;
+  //}
 
   // Noise the time:
   ApplyTimeResolution(Time, Energy);
@@ -241,10 +244,10 @@ void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MDGridPoint> MDVoxel3D::Discretize(const MVector& PosInDetector, 
-                                          const double& Energy, 
-                                          const double& Time, 
-                                          MDVolume* DetectorVolume) const
+vector<MDGridPoint> MDVoxel3D::Grid(const MVector& PosInDetector, 
+                                    const double& Energy, 
+                                    const double& Time, 
+                                    const MDVolume* DetectorVolume) const
 {
   // Discretize Pos to a voxel of this volume
 
@@ -393,7 +396,7 @@ MVector MDVoxel3D::GetPositionInDetectorVolume(const unsigned int xGrid,
                                                const unsigned int zGrid,
                                                const MVector PositionInGrid,
                                                const unsigned int Type,
-                                               MDVolume* Volume)
+                                               const MDVolume* Volume) const
 {
   // Return the position in the detector volume
 

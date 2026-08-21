@@ -246,20 +246,42 @@ echo "Creating a list of all data files to use" | ${LOGGING}
 
 cd ${DATADIR}
 
-# Find all sim and evta files except concatenation files (that's what the *inc*id* is for)
+# Find all sim, evta, tra files except concatenation files (that's what the *inc*id* is for)
 DATAFILES=()
-for F in `ls -U *inc*id*.sim.gz 2>/dev/null`; do
-  DATAFILES+=( "${F}" ) 
+for F in `ls -U *inc*id*.tra.gz 2>/dev/null`; do
+    DATAFILES+=( "${F}" )
 done
-for F in `ls -U *inc*id*.sim 2>/dev/null`; do
-  DATAFILES+=( "${F}" ) 
+for F in `ls -U *inc*id*.tra 2>/dev/null`; do
+  DATAFILES+=( "${F}" )
 done
-for F in `ls -U *inc*id*.evta 2>/dev/null`; do
-  DATAFILES+=( "${F}" ) 
-done
-for F in `ls -U *inc*id*.evta.gz 2>/dev/null`; do
-  DATAFILES+=( "${F}" ) 
-done
+if [ ${#DATAFILES[*]} -eq 0 ]; then
+  for F in `ls -U *inc*id*.evta.gz 2>/dev/null`; do
+    DATAFILES+=( "${F}" ) 
+  done
+  for F in `ls -U *inc*id*.evta 2>/dev/null`; do
+    DATAFILES+=( "${F}" ) 
+  done
+  if [ ${#DATAFILES[*]} -eq 0 ]; then
+    for F in `ls -U *inc*id*.sim 2>/dev/null`; do
+      DATAFILES+=( "${F}" ) 
+    done
+    for F in `ls -U *inc*id*.sim.gz 2>/dev/null`; do
+      DATAFILES+=( "${F}" ) 
+    done
+    if [ ${#DATAFILES[*]} -eq 0 ]; then
+      echo "Did not find any files - existing"
+      exit 1
+    else
+      echo "Found sim files - will use those"
+    fi
+  else
+    echo "Found evta files - will use those"
+  fi
+else 
+  echo "Found tra files - will use those"
+fi
+
+
 
 # Done
 cd ${HERE}
@@ -278,6 +300,8 @@ if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
     OUTFILE=${OUTFILE/.sim/}
     OUTFILE=${OUTFILE/.evta.gz/}
     OUTFILE=${OUTFILE/.evta/}
+    OUTFILE=${OUTFILE/.tra.gz/}
+    OUTFILE=${OUTFILE/.tra/}
 
     if [[ ${TARGETFILES} !=  *"${OUTFILE}"* ]]; then
       NOTDONE+=( "${DATAFILES[$d]}" )
@@ -408,6 +432,8 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     OUTFILE=${OUTFILE/.sim/}
     OUTFILE=${OUTFILE/.evta.gz/}
     OUTFILE=${OUTFILE/.evta/}
+    OUTFILE=${OUTFILE/.tra.gz/}
+    OUTFILE=${OUTFILE/.tra/}
     COMMAND=""
     COMMAND+=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -r /tmp/${OUTFILE} -m ${MODE}"
     if [[ ${OPTIONS} != "" ]]; then COMMAND+=" -o ${OPTIONS}"; fi
@@ -491,6 +517,8 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           OUTFILE=${OUTFILE/.sim/}
           OUTFILE=${OUTFILE/.evta.gz/}
           OUTFILE=${OUTFILE/.evta/}
+          OUTFILE=${OUTFILE/.tra.gz/}
+          OUTFILE=${OUTFILE/.tra/}
 
           REMOTECOMMAND=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} responsecreator -f ${DATADIR}/${DATAFILES[$d]} -g ${GEOMETRY} -r ${OUTFILE} -m ${MODE}"
           if [[ ${OPTIONS} != "" ]]; then REMOTECOMMAND+=" -o ${OPTIONS}"; fi

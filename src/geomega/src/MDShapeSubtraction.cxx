@@ -142,10 +142,15 @@ bool MDShapeSubtraction::Validate()
     m_Geo = new TGeoCompositeShape(m_Name, Node);
     
     // Determine an almost unique position inside this shape:
-    unsigned int Seed = gRandom->GetSeed();
-    gRandom->SetSeed(12345678);
-    m_AlmostUniquePosition = GetRandomPositionInside();
-    gRandom->SetSeed(Seed);
+    // First try 0/0/0:
+    m_AlmostUniquePosition = MVector(0, 0, 0);
+    if (IsInside(m_AlmostUniquePosition) == false) {
+      // If it failed, use a random position
+      unsigned int Seed = gRandom->GetSeed();
+      gRandom->SetSeed(12345678);
+      m_AlmostUniquePosition = GetRandomPositionInside();
+      gRandom->SetSeed(Seed);
+    }
     
     m_IsValidated = true;
   }

@@ -100,7 +100,7 @@ if [ "${SOURCE}" == "" ]; then
 fi
 if [[ ! -f ${SOURCE} ]]; then 
   echo " "
-  echo "ERROR: The source file must exist"
+  echo "ERROR: The source file must exist: ${SOURCE}"
   exit 1
 fi
 echo " * Source file: ${SOURCE}"
@@ -226,10 +226,10 @@ if [ "$?" != "0" ]; then
 fi
 
 # Make special directory relative to master dir
-echo " * Making remote working directory..." 
+echo " * Making remote working directory \"${RUNDIR}\"..." 
 ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "cd ${MASTERDIR}; if [[ ! -d ${RUNDIR} ]]; then mkdir ${RUNDIR}; fi"
 if [ "$?" != "0" ]; then
-  echo "ERROR: Failed to create remote working directory" | ${LOGGING}
+  echo "ERROR: Failed to create remote working directory \"${RUNDIR}\" " | ${LOGGING}
   exit 1
 fi
 

@@ -87,7 +87,8 @@ public:
   static const int c_ProcessIDIonization;
   static const int c_ProcessIDTransportation;
   static const int c_ProcessIDUncovered;
-  
+  static const int c_ProcessIDNoProcess; //added in g4.11 : New class G4NoProcess, representing an empty process not assigned to any particle, and used only in G4SteppingManager::InvokeAtRestDoItProcs() for stable ions at rest, in order to avoid that radioactive decay appears as process defining their last step. Note that the method IsApplicable(), retunrs false, as this process should not be set to any particle. (see release note)
+
   
   // protected methods:
 protected:

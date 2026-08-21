@@ -355,5 +355,74 @@ void MCalibrationFit::Draw(MString Options)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Convert to a string
+MString MCalibrationFit::ToParsableString(const MString& Mode, bool WithDescriptor)
+{
+  ostringstream out;
+
+  if (m_Fit != 0 && m_IsFitUpToDate == true) {
+    if (Mode == "param") {
+      if (WithDescriptor == true) {
+        out<<"param ";
+      }
+      if (m_BackgroundModel == c_BackgroundModelNone) {
+      } else if (m_BackgroundModel == c_BackgroundModelFlat) {
+        out<<m_Fit->GetParameter(0)<<" ";
+      } else if (m_BackgroundModel == c_BackgroundModelLinear) {
+        out<<m_Fit->GetParameter(0)<<" ";
+        out<<m_Fit->GetParameter(1)<<" ";
+      }
+
+      int BPM = GetBackgroundFitParameters();
+
+      if (m_EnergyLossModel == c_EnergyLossModelNone) {
+      } else if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
+        out<<m_Fit->GetParameter(0+BPM)<<" ";
+        out<<m_Fit->GetParameter(1+BPM)<<" ";
+        out<<m_Fit->GetParameter(2+BPM)<<" ";
+        out<<m_Fit->GetParameter(3+BPM)<<" ";
+      } else if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay) {
+        out<<m_Fit->GetParameter(0+BPM)<<" ";
+        out<<m_Fit->GetParameter(1+BPM)<<" ";
+        out<<m_Fit->GetParameter(2+BPM)<<" ";
+        out<<m_Fit->GetParameter(3+BPM)<<" ";
+      }
+    } else if (Mode == "param+error") {
+      if (WithDescriptor == true) {
+        out<<"param+error ";
+      }
+      if (m_BackgroundModel == c_BackgroundModelNone) {
+      } else if (m_BackgroundModel == c_BackgroundModelFlat) {
+        out<<m_Fit->GetParameter(0)<<" "<<m_Fit->GetParError(0)<<"  ";
+      } else if (m_BackgroundModel == c_BackgroundModelLinear) {
+        out<<m_Fit->GetParameter(0)<<" "<<m_Fit->GetParError(0)<<"  ";
+        out<<m_Fit->GetParameter(1)<<" "<<m_Fit->GetParError(1)<<"  ";
+      }
+
+      int BPM = GetBackgroundFitParameters();
+      if (m_EnergyLossModel == c_EnergyLossModelNone) {
+      } else if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
+        out<<m_Fit->GetParameter(0+BPM)<<" "<<m_Fit->GetParError(0+BPM)<<"  ";
+        out<<m_Fit->GetParameter(1+BPM)<<" "<<m_Fit->GetParError(1+BPM)<<"  ";
+        out<<m_Fit->GetParameter(2+BPM)<<" "<<m_Fit->GetParError(2+BPM)<<"  ";
+        out<<m_Fit->GetParameter(3+BPM)<<" "<<m_Fit->GetParError(3+BPM)<<"  ";
+      } else if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay) {
+        out<<m_Fit->GetParameter(0+BPM)<<" "<<m_Fit->GetParError(0+BPM)<<"  ";
+        out<<m_Fit->GetParameter(1+BPM)<<" "<<m_Fit->GetParError(1+BPM)<<"  ";
+        out<<m_Fit->GetParameter(2+BPM)<<" "<<m_Fit->GetParError(2+BPM)<<"  ";
+        out<<m_Fit->GetParameter(3+BPM)<<" "<<m_Fit->GetParError(3+BPM)<<"  ";
+      }
+    }
+  } else {
+    merr<<"Fit cannot be stored, since it is not up to date"<<endl;
+  }
+
+  return out.str();
+}
+
+
 // MCalibrationFit.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

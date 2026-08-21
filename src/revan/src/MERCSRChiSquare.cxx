@@ -715,7 +715,7 @@ double MERCSRChiSquare::ComputeQualityFactor(vector<MRESE*>& Interactions)
   for (unsigned int i = 1; i < Interactions.size() - 1; ++i) {
     
     // Calculate energies:
-    Ee = Interactions[i]->GetEnergy(); // Das muss i heissen - definitiv!!!
+    Ee = Interactions[i]->GetEnergy(); 
     dEe = Interactions[i]->GetEnergyResolution();
     
     Eg = 0.0;

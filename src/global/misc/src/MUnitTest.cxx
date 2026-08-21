@@ -26,6 +26,7 @@
 #include <string>
 #include <system_error>
 
+
 // ROOT libs:
 #include "TSystem.h"
 
@@ -604,6 +605,7 @@ bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString 
                     "cannot open reference file");
     return false;
   }
+
 
   //! Read both files in lockstep so line count and line content are checked together
   unsigned int LineNumber = 0;

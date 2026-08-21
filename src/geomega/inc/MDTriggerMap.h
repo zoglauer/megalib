@@ -77,9 +77,9 @@ class MDTriggerMap : public MDTrigger
   virtual bool Applies(MDDetector* D) const;
 
   //! Returns true if the hit could be added 
-  virtual bool AddHit(MDVolumeSequence& VS);
+  virtual bool AddHit(const MDVolumeSequence& VS);
   //! Returns true if the hit could be added 
-  virtual bool AddGuardRingHit(MDVolumeSequence& VS);
+  virtual bool AddGuardRingHit(const MDVolumeSequence& VS);
 
   //! Reset all added hits - it will not change the basic setup of the trigger (type, detector, required hits)
   virtual void Reset();

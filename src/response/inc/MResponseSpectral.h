@@ -96,20 +96,30 @@ class MResponseSpectral : public MResponseBuilder
    //! The ARM cut sky bins
    unsigned int m_ARMCutNumberOfSkyBins;
    
+   //! fisbel or healpix
+   MString m_AngleBinMode;
    
-  MResponseMatrixON m_EnergyBeforeER;
-  MResponseMatrixON m_EnergyUnselected;
-  MResponseMatrixON m_EnergySelected;
- 
-  MResponseMatrixON m_EnergyRatioBeforeER;
-  MResponseMatrixON m_EnergyRatioUnselected;
-  MResponseMatrixON m_EnergyRatioSelected;
+   //! 4D: Incoming energy and direction vs measured energy before event reconstruction
+   MResponseMatrixON m_EnergyBeforeER;
+   //! 4D: Incoming energy and direction vs measured energy after event reconstruction but without selections
+   MResponseMatrixON m_EnergyUnselected;
+   //! 4D: Incoming energy and direction vs measured energy after event reconstruction but with selections
+   MResponseMatrixON m_EnergySelected;
+
+   //! 4D: Incoming energy and direction vs ratio measured /ideal energy before event reconstruction
+   MResponseMatrixON m_EnergyRatioBeforeER;
+   //! 4D: Incoming energy and direction vs ratio measured /ideal energy after event reconstruction but without selections
+   MResponseMatrixON m_EnergyRatioUnselected;
+   //! 4D: Incoming energy and direction vs ratio measured /ideal energy after event reconstruction but with selections
+   MResponseMatrixON m_EnergyRatioSelected;
   
-  MResponseMatrixON m_EnergySelectedARMCut;
-  MResponseMatrixON m_EnergySelectedARMCutOriginRestricted; 
+   //! 4D: Incoming energy vs measured energy and inside a predefined ARM-cut around the sky bin after event reconstruction but with selections
+   MResponseMatrixON m_EnergySelectedARMCut;
+   //! 4D: Incoming energy vs measured energy and inside a predefined ARM-cut around the sky bin but only when the real origin direction is within a certain distance in degrees from the sky bin after event reconstruction but with selections
+   MResponseMatrixON m_EnergySelectedARMCutOriginRestricted;
  
-  //! The bin centers for the ARM cut
-  vector<MVector> m_BinCenters;
+   //! The bin centers for the ARM cut
+   vector<MVector> m_BinCenters;
   
   // private members:
  private:

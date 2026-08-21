@@ -17,6 +17,7 @@ DLL           := so
 ROOTCFLAGS    := $(shell root-config --cflags)
 ROOTGLIBS     := $(shell root-config --glibs)
 
+
 # Compiler & linker options:
 CXX           := c++
 CXXFLAGS      := $(OPT) -std=c++14 -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-unused-but-set-variable -Wno-overloaded-virtual -Wno-tautological-undefined-compare -Wno-deprecated-declarations
@@ -30,6 +31,7 @@ DEPFLAGS      := -M
 
 LINK          := ln -s -f
 
+
 # HEASoft
 HEACFLAGS     :=
 HEALIBS       :=
@@ -39,6 +41,17 @@ ifeq ("$(shell PKG_CONFIG_PATH=$(LHEASOFT)/lib/pkgconfig pkg-config --exists cfi
 else ifeq ("$(shell pkg-config --exists cfitsio 1>&2 2> /dev/null; echo $$?)", "0")
         HEACFLAGS += $(shell pkg-config --cflags cfitsio)
 	HEALIBS = $(filter-out -lm, $(shell pkg-config --libs cfitsio))
+endif
+
+
+# HEALPix
+HEALPIXCFLAGS   :=
+HEALPIXLIBS    :=
+ifeq ("$(shell pkg-config --exists healpix_cxx 1>&2 2> /dev/null; echo $$?)", "0")
+	HEALPIXCFLAGS += $(shell pkg-config --cflags healpix_cxx)
+	HEALPIXCFLAGS := $(filter-out -fopenmp, $(HEALPIXCFLAGS))
+	HEALPIXLIBS += $(shell pkg-config --libs healpix_cxx)
+	LIBS += $(HEALPIXLIBS)
 endif
 
 

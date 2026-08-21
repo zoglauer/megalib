@@ -221,7 +221,7 @@ bool MCGeometryConverter::ConvertShape(ofstream& fout, G4String& Name, G4VSolid*
   } else if (S->GetEntityType() == "G4Sphere") {
     G4Sphere* Sphere = (G4Sphere*) S;
     fout<<Init
-    <<Sphere->GetInsideRadius()/cm<<" "
+    <<Sphere->GetInnerRadius()/cm<<" "
     <<Sphere->GetOuterRadius()/cm<<" "
     <<Sphere->GetStartThetaAngle()/deg<<" "
     <<Sphere->GetStartThetaAngle()/deg + Sphere->GetDeltaThetaAngle()/deg<<" "

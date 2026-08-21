@@ -95,7 +95,9 @@ FILES := MGlobal \
 	MBinnerFixedNumberOfBins \
 	MBinnerFixedCountsPerBin \
 	MBinnerBayesianBlocks \
+	MBinnerSpherical \
 	MBinnerFISBEL \
+	MBinnerHEALPix \
 	MXmlData \
 	MXmlNode \
 	MXmlAttribute \
@@ -146,7 +148,7 @@ $(DICTIONARY): $(HEADERS)
 	@echo "Generating $(DICTIONARYNAME)_LinkDef ..."
 	@$(BN)/generatelinkdef -o $(LINKDEF) -i $(HEADERS)
 	@echo "Generating dictionary ..."
-	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
+	@rootcling -f $@ -I$(IN) $(HEALPIXCFLAGS) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
 	@mv $(ROOTPCM) $(LB)
 	@echo "Dictionary done ..."
 
@@ -156,11 +158,11 @@ $(SHAREDLIB): $(DICTIONARYOBJECT) $(OBJECTS)
 
 $(OBJECTS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) $(HEALPIXCFLAGS) -c $< -o $@
 
 $(DICTIONARYOBJECT): $(DICTIONARY)
 	@echo "Compiling dictionary ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) $(HEALPIXCFLAGS) -c $< -o $@
 
 #
 #----------------------------------------------------------------

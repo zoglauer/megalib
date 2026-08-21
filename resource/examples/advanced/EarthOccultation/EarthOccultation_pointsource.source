@@ -1,0 +1,34 @@
+Geometry $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup
+StoreSimulationInfo  init-only 
+PhysicsListEM LivermorePol
+
+
+Run SpaceSim
+SpaceSim.FileName  crab
+SpaceSim.Time  1843467255.0
+SpaceSim.OrientationSky Galactic File NoLoop Equatorial_orbit_530km_Galactic_zenith.ori
+
+SpaceSim.Source crab
+crab.ParticleType	       1
+crab.Beam                       FarFieldPointSource 0 0
+crab.Orientation                Galactic Fixed -5.78 184.56
+crab.Spectrum                   File crab_spec.dat
+crab.Flux                       0.048977e-3
+
+# False means you want to reject all event > thetamax i.e rejecting all events coming from the Earth
+# This is what you want to use for a source like the crab
+
+crab.EarthOccultation False 
+
+# You can specify the maximum angle between the direction of the particle and the Earth zenith vector 
+# This is what you want to use for a source like the crab and a specic angle between the particle direction and the Earth zenith vector 
+# if Thetamax is not specify, cosima will compute it from the Orientation file and the corresponding altitude
+
+
+#crab.EarthOccultation False 20
+
+# True means you want to reject all event <= thetamax i.e rejecting all events that are not coming from the Earth
+# This is what you want to use for a source coming from the Earth like albedo
+
+#crab.EarthOccultation True 
+

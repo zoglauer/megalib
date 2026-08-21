@@ -64,12 +64,7 @@ class MFileEventsSim : public MFileEvents
   //! Attention: This information is only complete after all files have been scanned,
   //! i.e. after GetEvents has been called for all events!
   //! In addition, this is the number for the total file(s), NOT up to the just read event!!
-  long GetSimulatedEvents();
-  //! Set the simulated events
-  void SetSimulatedEvents(long SimulatedEvents) { m_SimulatedEvents = SimulatedEvents; }
-
-  //! Get simulation start are in far field (zero if not used)
-  double GetSimulationStartAreaFarField() const { return m_SimulationStartAreaFarField; }
+  virtual long GetSimulatedEvents();
 
   // protected methods:
  protected:
@@ -104,14 +99,6 @@ class MFileEventsSim : public MFileEvents
  private:
   //! The geometry representation
   MDGeometryQuest* m_Geometry;
-
-  //! Number of simulated events
-  long m_SimulatedEvents;
-  //! True if the simulated events have been read
-  bool m_HasSimulatedEvents;
-
-  //! The simulated start area of far field simualtions
-  double m_SimulationStartAreaFarField;
 
   //! The binary stire
   MBinaryStore m_BinaryStore;

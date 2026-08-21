@@ -27,13 +27,17 @@
 #include "MMelinator.h"
 
 // Standard libs:
+#include <pwd.h>
+#include <unistd.h>
 #include <algorithm>
 #include <new>
 #include <map>
 #include <thread>
+#include <iomanip>
 using namespace std;
 
 // ROOT libs:
+#include "TROOT.h"
 #include "TObject.h"
 #include "TList.h"
 #include "TBox.h"
@@ -45,6 +49,11 @@ using namespace std;
 #include "TGaxis.h"
 #include "TGraphErrors.h"
 #include "TSystem.h"
+#include "TH2.h"
+#include "TPaveText.h"
+#include "TPad.h"
+#include "TCanvas.h"
+#include "TLatex.h"
 
 // MEGAlib libs:
 #include "MFile.h"
@@ -115,6 +124,24 @@ MMelinator::MMelinator()
   m_CalibrationModelEnergyAssignmentMethod = MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing;
   m_CalibrationModelDeterminationMethod = MCalibrateEnergyDetermineModel::c_CalibrationModelStepWise;
   
+  m_ReportFileName = "MelinatorReport.pdf";
+
+  m_ReportADCHistogramMinimum = 0;
+  m_ReportADCHistogramMaximum = 10000;
+  m_ReportADCHistogramBins = 1000;
+
+  m_ReportEnergyHistogramMinimum = 0;
+  m_ReportEnergyHistogramMaximum = 2000;
+  m_ReportEnergyHistogramBins = 500;
+
+  m_ReportThresholdHistogramMinimum = 0;
+  m_ReportThresholdHistogramMaximum = 40;
+  m_ReportThresholdHistogramBins = 40;
+
+  m_ReportOverflowHistogramMinimum = 1500;
+  m_ReportOverflowHistogramMaximum = 2500;
+  m_ReportOverflowHistogramBins = 100;
+
   m_NThreads = thread::hardware_concurrency();
   if (m_NThreads < 1) m_NThreads = 1;
   
@@ -562,13 +589,15 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   
   Canvas.SetLeftMargin(0.1);
   Canvas.SetRightMargin(0.05);
-  Canvas.SetTopMargin(0.05);
+  Canvas.SetTopMargin(0.10);
   Canvas.SetBottomMargin(0.14);
   
 
   if (m_HistogramChanged == true) {
 
-    for (auto H: m_Histograms) delete H;
+    for (auto H: m_Histograms) {
+      delete H;
+    }
     m_Histograms.clear();
     
 
@@ -691,7 +720,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   }
 
   for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
-    if (m_Histograms[h] == 0) continue;
+    if (m_Histograms[h] == nullptr) continue;
     
     if (h == 0) {
       m_Histograms[h]->DrawCopy("HIST");
@@ -739,12 +768,12 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   
   double ySizeMin = 0.84 - 0.075*m_Histograms.size();
   if (ySizeMin < 0.5) ySizeMin = 0.5;
-  TLegend* Legend = new TLegend(0.8, ySizeMin, 0.94, 0.94, NULL, "brNDC");
+  TLegend* Legend = new TLegend(0.8, ySizeMin, 0.94, 0.88, NULL, "brNDC");
   Legend->SetHeader("Isotope list:");
   
   // Final draw so that everything is on top of each other:
   for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
-    if (m_Histograms[h] == 0) continue;
+    if (m_Histograms[h] == nullptr) continue;
     m_Histograms[h]->DrawCopy("SAME");
     MString Names;
     unsigned int IsotopeIndex = distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), h));
@@ -764,10 +793,19 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   
   // Draw the axis of the first histogram again:
   for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
-    if (m_Histograms[h] == 0) continue;
+    if (m_Histograms[h] == nullptr) continue;
     m_Histograms[h]->DrawCopy("AXIS SAME");
     break;
   }
+
+  if (m_Histograms.size() > 0) {
+    MString SummaryText = MString("Spectrum for ") + C.GetReadOutElement().ToString();
+    TLatex* Summary = new TLatex();
+    Summary->SetNDC();  // Use NDC coordinates
+    Summary->SetTextAlign(22);
+    Summary->DrawLatex(0.5, 0.95, SummaryText);
+  }
+
 
   Canvas.Update();
   m_HistogramChanged = false;
@@ -898,7 +936,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
   MReadOutCollection& Coll = GetCollection(Collection);
   
   //Canvas.SetBit(kNoContextMenu);
-  Canvas.SetBit(kCannotPick);
+  //Canvas.SetBit(kCannotPick);
   Canvas.Clear();
   Canvas.cd();
   Canvas.SetGridx();
@@ -907,7 +945,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
 
   Canvas.SetLeftMargin(0.17);
   Canvas.SetRightMargin(0.05);
-  Canvas.SetTopMargin(0.05);
+  Canvas.SetTopMargin(0.10);
   Canvas.SetBottomMargin(0.12);
 
   unsigned int LineID = 0;
@@ -926,7 +964,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
             
             Spectrum->SetFillStyle(0);
             //Spectrum->SetAxisRange(P.GetLowEdge(), P.GetHighEdge());
-            Spectrum->SetMaximum(1.1*Spectrum->GetMaximum());
+            Spectrum->SetMaximum(1.2*Spectrum->GetMaximum());
             
             //Spectrum->GetXaxis()->SetLabelOffset(0.0);
             Spectrum->GetXaxis()->SetLabelSize(0.05);
@@ -950,9 +988,33 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
               F.Draw("SAME");
             }
             
-            TLine* Line = new TLine(P.GetPeak(), Spectrum->GetMaximum(), P.GetPeak(), Spectrum->GetMinimum());
+            TLine* Line = new TLine(P.GetPeak(), 0.85*Spectrum->GetMaximum(), P.GetPeak(), Spectrum->GetMinimum());
             Line->SetLineWidth(3);
             Line->Draw("SAME");
+
+            if (P.HasFit() && P.IsGood()) {
+              ostringstream FitQualityString;
+              FitQualityString<<"#chi^{2}/ndf = "<<fixed<<setprecision(3)<<P.GetFit().GetReducedChisquare();
+              TLatex* FitQualityLabel1 = new TLatex(P.GetLowEdge() + 0.05*(P.GetHighEdge() - P.GetLowEdge()), 0.935*Spectrum->GetMaximum(), FitQualityString.str().c_str());
+              FitQualityLabel1->SetTextAlign(11);
+              FitQualityLabel1->Draw("SAME");
+              TLatex* FitQualityLabel2 = new TLatex(P.GetLowEdge() + 0.05*(P.GetHighEdge() - P.GetLowEdge()), 0.885*Spectrum->GetMaximum(), "(for unbinned fit)");
+              FitQualityLabel2->SetTextSize(0.04);
+              FitQualityLabel2->SetTextAlign(11);
+              FitQualityLabel2->Draw("SAME");
+            }
+
+            ostringstream Text;
+            if (P.IsGood()) {
+              MIsotope I = P.GetIsotope();
+              Text<<I.GetName()<<" ("<<fixed<<setprecision(1)<<P.GetEnergy()<<" keV at "<<fixed<<setprecision(1)<<P.GetPeak()<<" rou's)";
+            } else {
+              Text<<"Excluded line at "<<fixed<<setprecision(1)<<P.GetPeak()<<" rou's";
+            }
+            TLatex* Summary = new TLatex(0.5*(P.GetLowEdge() + P.GetHighEdge()), 1.05*Spectrum->GetMaximum(), Text.str().c_str());
+            Summary->SetTextAlign(22);
+            Summary->Draw("SAME");
+
           }
           ++LineID;
         }
@@ -1001,7 +1063,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool 
 
   Canvas.SetLeftMargin(0.17);
   Canvas.SetRightMargin(0.17);
-  Canvas.SetTopMargin(0.05);
+  Canvas.SetTopMargin(0.10);
   Canvas.SetBottomMargin(0.12);
   
   
@@ -1134,8 +1196,34 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool 
       Zero->Draw("SAME");
     }
     
+    ostringstream Text;
+    if (UseEnergy == true) {
+      Text<<"Energy Model: "<<Model.GetName();
+    } else {
+      Text<<"FWHM Model: "<<Model.GetName();
+    }
+    TLatex* ModelName = new TLatex(0.5*(0 + MaximumX), 1.05*1.1*MaximumY, Text.str().c_str());
+    ModelName->SetTextAlign(22);
+    ModelName->Draw("SAME");
+
+    ostringstream FitQualityString;
+    FitQualityString<<"#chi^{2}/ndf = "<<fixed<<setprecision(3)<<Model.GetFitQuality();
+    TLatex* FitQualityLabel = new TLatex(0.05*(0 + MaximumX), 1.025*MaximumY, FitQualityString.str().c_str());
+    FitQualityLabel->SetTextAlign(11);
+    FitQualityLabel->Draw("SAME");
+
+  } else {
+    ostringstream Text;
+    if (UseEnergy == true) {
+      Text<<"Energy Model: interpolation";
+    } else {
+      Text<<"FWHM Model: interpolation";
+    }
+    TLatex* ModelName = new TLatex(0.5*(0 + MaximumX), 1.05*Graph->GetMaximum(), Text.str().c_str());
+    ModelName->SetTextAlign(22);
+    ModelName->Draw("SAME");
   }
-  
+
   Canvas.Update();
 }
 
@@ -1518,8 +1606,25 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
 
 
 //! Save the calibration in e-cal format
-bool MMelinator::Save(MString FileName)
+bool MMelinator::SaveEcal(MString FileName)
 {
+  if (m_CalibrationStore.GetNumberOfElements() == 0) {
+    mgui<<"You need to run the calibration first, before saving the results."<<error;
+    return true; // True: No subsequent error messages required
+  } else {
+    bool FoundOne = false;
+    for (unsigned int c = 0; c < m_CalibrationStore.GetNumberOfElements(); ++c) {
+      if (dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))) != nullptr) {
+        FoundOne = true;
+        break;
+      }
+    }
+    if (FoundOne == false) {
+      mgui<<"You need to run the calibration first, before saving the results."<<error;
+      return true; // True: No subsequent error messages required
+    }
+  }
+
   ofstream out;
   out.open(FileName);
   if (out.is_open() == false) {
@@ -1538,7 +1643,15 @@ bool MMelinator::Save(MString FileName)
     }
     out<<endl;
   }
-  out<<" "<<endl;
+  out<<endl;
+  out<<"# Keyword description"<<endl;
+  out<<"# CL - calibration points: the fit parameters plus uncertainty for each calibration point"<<endl;
+  out<<"# CP - calibration points: the data points going into the calibration"<<endl;
+  out<<"#    pawk = ADCs, Energy in keV, FWHM of energy in keV for each point"<<endl;
+  out<<"# CM - calibration model energy: the energy calibration model"<<endl;
+  out<<"# CR - calibration model fwhm: the FWHM calibration model"<<endl;
+  out<<endl;
+  out<<endl;
   out<<"TYPE ECAL"<<endl;
   out<<" "<<endl;
   //out<<"CF doublesidedstrip pointsadctokev"<<endl;
@@ -1552,6 +1665,10 @@ bool MMelinator::Save(MString FileName)
       out<<endl;
       out<<"# ROU: "<<ROE.ToParsableString(true)<<endl;
       out<<"# "<<C->ToParsableString("peakparametrization", true)<<endl;
+      vector<MCalibrationSpectralPoint> Points = C->GetUniquePoints();
+      for (unsigned int s = 0; s < Points.size(); ++s) {
+        out<<"CL "<<ROE.ToParsableString(true)<<"  "<<C->ToParsableString("peakparametrizationshort", false)<<"  "<<s<<" "<<Points[s].ToParsableString("param+error", true)<<endl;
+      }
       out<<"CP "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("pakw", true)<<endl;
       if (C->HasEnergyModel() == true) {
         out<<"CM "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("energymodel", true)<<endl;
@@ -1567,6 +1684,578 @@ bool MMelinator::Save(MString FileName)
   return true;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Create a ROOT file with all the histograms
+bool MMelinator::SaveHistograms(MString FileName)
+{
+  TFile* File = new TFile(FileName, "RECREATE");
+
+  MGUIProgressBar Progress("Status", "Status of histogram creation");
+  Progress.SetMinMax(0, GetNumberOfCollections());
+
+  for (unsigned int c = 0; c < GetNumberOfCollections(); ++c) {
+    gSystem->ProcessEvents(); // For an unknown reason, I really need 2 ProcessEvents here...
+    Progress.SetValue(c);
+    gSystem->ProcessEvents(); // Added for smoother UI updates...
+    if (Progress.TestCancel() == true) break;
+
+    const MReadOutElement& ROE = GetCollection(c).GetReadOutElement();
+    MString DetName = MString("Detector_") + ROE.GetDetectorID();
+    MString SideName = "";
+    MString StripName = "";
+    if (ROE.IsOfType("singlessidedstrip") == true) {
+      StripName = MString("Strip_") + static_cast<const MReadOutElementStrip&>(ROE).GetStripID();
+    } else if (ROE.IsOfType("doublesidedstrip") == true) {
+      SideName = MString("Side_") + (static_cast<const MReadOutElementDoubleStrip&>(ROE).IsLowVoltageStrip() ? "LV" : "HV");
+      StripName = MString("Strip_") + static_cast<const MReadOutElementDoubleStrip&>(ROE).GetStripID();
+    }
+
+    TDirectory* CurrentDir = File;
+    TDirectory* NewDir = nullptr;
+    NewDir = CurrentDir->GetDirectory(DetName);
+    if (NewDir == nullptr) NewDir = File->mkdir(DetName);
+    CurrentDir->cd(NewDir->GetPath());
+    CurrentDir = NewDir;
+
+    if (SideName != "") {
+      NewDir = CurrentDir->GetDirectory(SideName);
+      if (NewDir == nullptr) NewDir = CurrentDir->mkdir(SideName);
+      CurrentDir->cd(NewDir->GetPath());
+      CurrentDir = NewDir;
+    }
+
+    if (StripName != "") {
+      NewDir = CurrentDir->GetDirectory(StripName);
+      if (NewDir == nullptr) NewDir = CurrentDir->mkdir(StripName);
+      CurrentDir->cd(NewDir->GetPath());
+      CurrentDir = NewDir;
+    }
+
+    gROOT->SetBatch(true);
+    TCanvas SpectralCanvas;
+    DrawSpectrum(SpectralCanvas, c, -1);
+    SpectralCanvas.SetName("Spectrum");
+    SpectralCanvas.Write();
+
+    TCanvas CalibrationEnergyCanvas;
+    DrawCalibration(CalibrationEnergyCanvas, c, true);
+    CalibrationEnergyCanvas.SetName("CalibrationEnergy");
+    CalibrationEnergyCanvas.Write();
+
+    TCanvas CalibrationFWHMCanvas;
+    DrawCalibration(CalibrationFWHMCanvas, c, false);
+    CalibrationFWHMCanvas.SetName("CalibrationFWHM");
+    CalibrationFWHMCanvas.Write();
+
+    for (unsigned int s = 0; s < GetNumberOfCalibrationSpectralPoints(c); ++s) {
+      MCalibrationSpectralPoint P = GetCalibrationSpectralPoint(c, s);
+      MIsotope I = P.GetIsotope();
+      ostringstream Text;
+      Text<<"LineFit_"<<I.GetName()<<"_"<<fixed<<setprecision(1)<<P.GetEnergy()<<"keV";
+      TCanvas LineFitCanvas;
+      DrawLineFit(LineFitCanvas, c, s, c_HistogramBinningModeFixedNumberOfBins, 50);
+      LineFitCanvas.SetName(Text.str().c_str());
+      LineFitCanvas.Write();
+    }
+    gROOT->SetBatch(false);
+  }
+
+  // ROOT bug I guess:
+  // After File->Close() the histograms stored in m_Histograms are no longer available
+  // My guess is that ROOT deletes them?
+  // Anyway, this has to be here for ROOT 6.34 or we crash.
+  // If ROOT does not delete them, this here is a memory leak.
+  m_Histograms.clear();
+  m_HistogramChanged = true;
+
+  // Save and close
+  File->Close();
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Create a calibration report
+bool MMelinator::CreateReport()
+{
+  if (m_CalibrationStore.GetNumberOfElements() == 0) {
+    mgui<<"You need to run the calibration first, before creating a report."<<error;
+    return true; // True: No subsequent error messages required
+  } else {
+    bool FoundOne = false;
+    for (unsigned int c = 0; c < m_CalibrationStore.GetNumberOfElements(); ++c) {
+      if (dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))) != nullptr) {
+        FoundOne = true;
+        break;
+      }
+    }
+    if (FoundOne == false) {
+      mgui<<"You need to run the calibration first, before creating a report."<<error;
+      return true; // True: No subsequent error messages required
+    }
+  }
+
+  // Section 1: Create histograms
+
+  TH2D* AllFittedEnergies = new TH2D("Fitted", "Fitted", m_ReportEnergyHistogramBins, m_ReportEnergyHistogramMinimum, m_ReportEnergyHistogramMaximum, m_CalibrationStore.GetNumberOfElements()+1, -0.5, m_CalibrationStore.GetNumberOfElements() + 0.5);
+  AllFittedEnergies->SetXTitle("Energy [keV]");
+  AllFittedEnergies->SetYTitle("ReadOutUnit ID");
+  AllFittedEnergies->SetContour(99);
+
+
+  TH2D* AllRawADCs = new TH2D("RawADCs", "RawADCs", m_ReportADCHistogramBins, m_ReportADCHistogramMinimum, m_ReportADCHistogramMaximum, m_CalibrationStore.GetNumberOfElements()+1, -0.5, m_CalibrationStore.GetNumberOfElements() + 0.5);
+  AllRawADCs->SetXTitle("ADCs [rou's]");
+  AllRawADCs->SetYTitle("ReadOutUnit ID");
+  AllRawADCs->SetContour(99);
+
+
+  // If we have double-sided strips make one histogram per detector and side
+  map<pair<unsigned int, bool>, MString> TitlesMap;
+  map<pair<unsigned int, bool>, TH2D*> ADCsMap;
+  map<pair<unsigned int, bool>, TH2D*> EnergiesMap;
+  map<pair<unsigned int, bool>, TH2D*> ThresholdsMap;
+  map<pair<unsigned int, bool>, TH2D*> OverflowsMap;
+  // Outer map: detector ID, side; inner map: rog, isotope
+  map<pair<unsigned int, bool>, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>> FWHMesMap;
+  map<pair<unsigned int, bool>, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>> ResidualsMap;
+
+  if (m_CalibrationStore.GetReadOutElement(0).IsOfType("doublesidedstrip") == true) {
+    // Step 1: Maximum strip ID
+    unsigned int MaxStripID = 0;
+    for (unsigned int c = 0; c < m_CalibrationStore.GetNumberOfElements(); ++c) {
+      MReadOutElement& ROE = m_CalibrationStore.GetReadOutElement(c);
+      if (m_CalibrationStore.GetReadOutElement(c).IsOfType("doublesidedstrip") == true) {
+        MReadOutElementDoubleStrip& ROE_DS = static_cast<MReadOutElementDoubleStrip&>(ROE);
+        if (ROE_DS.GetStripID() > MaxStripID) {
+          MaxStripID = ROE_DS.GetStripID();
+        }
+      }
+    }
+    // Step 2: Create histograms
+    for (unsigned int c = 0; c < m_CalibrationStore.GetNumberOfElements(); ++c) {
+      MReadOutElement& ROE = m_CalibrationStore.GetReadOutElement(c);
+      if (m_CalibrationStore.GetReadOutElement(c).IsOfType("doublesidedstrip") == true) {
+        MReadOutElementDoubleStrip& ROE_DS = static_cast<MReadOutElementDoubleStrip&>(ROE);
+        pair<unsigned int, bool> DetectorAndSide = { ROE_DS.GetDetectorID(), ROE_DS.IsLowVoltageStrip() };
+        auto MapIter = ADCsMap.find(DetectorAndSide);
+        if (MapIter == ADCsMap.end()) {
+          MString Name = "Detector ";
+          Name += ROE_DS.GetDetectorID();
+          if (ROE_DS.IsLowVoltageStrip() == true) {
+            Name += ", low voltage side";
+          } else {
+            Name += ", high voltage side";
+          }
+
+          TitlesMap[DetectorAndSide] = Name;
+
+          ADCsMap[DetectorAndSide] = new TH2D("", "ADC spectrum", m_ReportADCHistogramBins, m_ReportADCHistogramMinimum, m_ReportADCHistogramMaximum, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          ADCsMap[DetectorAndSide]->SetXTitle("ADC units");
+          ADCsMap[DetectorAndSide]->SetYTitle("Strip ID");
+          ADCsMap[DetectorAndSide]->SetContour(99);
+
+          EnergiesMap[DetectorAndSide] = new TH2D("", "Energy spectrum", m_ReportEnergyHistogramBins, m_ReportEnergyHistogramMinimum, m_ReportEnergyHistogramMaximum, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          EnergiesMap[DetectorAndSide]->SetXTitle("Energy [keV]");
+          EnergiesMap[DetectorAndSide]->SetYTitle("Strip ID");
+          EnergiesMap[DetectorAndSide]->SetContour(99);
+
+          ThresholdsMap[DetectorAndSide] = new TH2D("", "Thresholds", m_ReportThresholdHistogramBins, m_ReportThresholdHistogramMinimum, m_ReportThresholdHistogramMaximum, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          ThresholdsMap[DetectorAndSide]->SetXTitle("Energy [keV]");
+          ThresholdsMap[DetectorAndSide]->SetYTitle("Strip ID");
+          ThresholdsMap[DetectorAndSide]->SetContour(99);
+
+          OverflowsMap[DetectorAndSide] = new TH2D("", "Overflows", m_ReportOverflowHistogramBins, m_ReportOverflowHistogramMinimum, m_ReportOverflowHistogramMaximum, MaxStripID+1, -0.5, MaxStripID + 0.5);
+          OverflowsMap[DetectorAndSide]->SetXTitle("Energy [keV]");
+          OverflowsMap[DetectorAndSide]->SetYTitle("Strip ID");
+          OverflowsMap[DetectorAndSide]->SetContour(99);
+        }
+
+        MCalibration& C = m_CalibrationStore.GetCalibration(c);
+        if (dynamic_cast<MCalibrationSpectrum*>(&C) == nullptr) continue;
+        MCalibrationSpectrum& CS = static_cast<MCalibrationSpectrum&>(C);
+        for (unsigned int g = 0; g < CS.GetNumberOfReadOutDataGroups(); ++g) {
+          unsigned int IsotopeIndex = distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g));
+          for (unsigned int i = 0; i < m_Isotopes[IsotopeIndex].size(); ++i) {
+            for (unsigned int l = 0; l < m_Isotopes[IsotopeIndex][i].GetNLines(); ++l) {
+              if (m_Isotopes[IsotopeIndex][i].GetPrimaryLine() == static_cast<int>(l) || m_Isotopes[IsotopeIndex][i].GetSecondaryLine() == static_cast<int>(l))  {
+                tuple<unsigned int, unsigned int, unsigned int> ROGIDAndIsotope = { IsotopeIndex, i, l };
+                // Inefficiency: we loop over everything... but avoiding it is a complicated optimization
+                // Use try_emplace to avoid that
+
+                MString Name;
+                Name += m_Isotopes[IsotopeIndex][i].GetName();
+                Name += " ";
+                Name += m_Isotopes[IsotopeIndex][i].GetLineEnergy(l);
+                Name += " keV";
+
+                FWHMesMap.try_emplace(DetectorAndSide, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>());
+                FWHMesMap[DetectorAndSide].try_emplace(ROGIDAndIsotope, new TH1D("", MString("FWHMes") + Name, MaxStripID+1, -0.5, MaxStripID + 0.5));
+                FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetXTitle("Strip ID");
+                FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetYTitle("FWHM [keV]");
+                FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetLineWidth(2);
+
+                ResidualsMap.try_emplace(DetectorAndSide, map<tuple<unsigned int, unsigned int, unsigned int>, TH1D*>());
+                ResidualsMap[DetectorAndSide].try_emplace(ROGIDAndIsotope, new TH1D("", MString("Residuals") + Name, MaxStripID+1, -0.5, MaxStripID + 0.5));
+                ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetXTitle("Strip ID");
+                ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetYTitle("Residuals [keV]");
+                ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetLineWidth(2);
+              }
+            }
+          }
+        }
+      } // is // double-sided strip in calibration store
+    } // ROE in calibration store
+  } // double-sided strip
+
+
+
+  // Fill the plots
+
+  for (unsigned int c = 0; c < m_CalibrationStore.GetNumberOfElements(); ++c) {
+    MReadOutElement& ROE = m_CalibrationStore.GetReadOutElement(c);
+    TH2D* CurrentHistEnergy = nullptr;
+    TH2D* CurrentHistADCs = nullptr;
+    TH2D* CurrentHistThresholds = nullptr;
+    TH2D* CurrentHistOverflows = nullptr;
+    unsigned int CurrentStripID = 0;
+    if (m_CalibrationStore.GetReadOutElement(c).IsOfType("doublesidedstrip") == true) {
+      MReadOutElementDoubleStrip& ROE_DS = static_cast<MReadOutElementDoubleStrip&>(ROE);
+      pair<unsigned int, bool> DetectorAndSide = { ROE_DS.GetDetectorID(), ROE_DS.IsLowVoltageStrip() };
+      CurrentHistEnergy = EnergiesMap[DetectorAndSide];
+      CurrentHistADCs = ADCsMap[DetectorAndSide];
+      CurrentHistThresholds = ThresholdsMap[DetectorAndSide];
+      CurrentHistOverflows = OverflowsMap[DetectorAndSide];
+      CurrentStripID = ROE_DS.GetStripID();
+    }
+    if (dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))) == nullptr) continue;
+    MCalibrationSpectrum& CS = dynamic_cast<MCalibrationSpectrum&>(m_CalibrationStore.GetCalibration(c));
+    if (CS.HasEnergyModel() == false) continue;
+    MCalibrationModel& M = CS.GetEnergyModel();
+
+    unsigned int IDofROC = m_Store.FindReadOutCollection(ROE);
+    if (IDofROC == g_UnsignedIntNotDefined) continue;
+    MReadOutCollection& ROC = m_Store.GetReadOutCollection(IDofROC);
+    for (unsigned int g = 0; g < ROC.GetNumberOfReadOutDataGroups(); ++g) {
+      MReadOutDataGroup& ROG = ROC.GetReadOutDataGroup(g);
+      for (unsigned int d = 0; d < ROG.GetNumberOfReadOutDatas(); ++d) {
+        MReadOutData& ROD = ROG.GetReadOutData(d);
+        MReadOutDataADCValue* ROD_ADC = dynamic_cast<MReadOutDataADCValue*>(ROD.Get(MReadOutDataADCValue::m_TypeID));
+        if (ROD_ADC != nullptr) {
+          double ADCs = ROD_ADC->GetADCValue();
+          double Energy = M.GetFitValue(ADCs);
+          AllFittedEnergies->Fill(Energy, c);
+          AllRawADCs->Fill(ADCs, c);
+          if (CurrentHistEnergy != nullptr) {
+            CurrentHistEnergy->Fill(Energy, CurrentStripID);
+            CurrentHistOverflows->Fill(Energy, CurrentStripID);
+            CurrentHistThresholds->Fill(Energy, CurrentStripID);
+            CurrentHistADCs->Fill(ADCs, CurrentStripID);
+          }
+        }
+      }
+    }
+
+    if (m_CalibrationStore.GetReadOutElement(c).IsOfType("doublesidedstrip") == true) {
+      MReadOutElementDoubleStrip& ROE_DS = static_cast<MReadOutElementDoubleStrip&>(ROE);
+      pair<unsigned int, bool> DetectorAndSide = { ROE_DS.GetDetectorID(), ROE_DS.IsLowVoltageStrip() };
+
+      for (unsigned int g = 0; g < CS.GetNumberOfReadOutDataGroups(); ++g) {
+        unsigned int IsotopeIndex = distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g));
+        for (unsigned int i = 0; i < m_Isotopes[IsotopeIndex].size(); ++i) {
+          for (unsigned int l = 0; l < m_Isotopes[IsotopeIndex][i].GetNLines(); ++l) {
+            if (m_Isotopes[IsotopeIndex][i].GetPrimaryLine() == static_cast<int>(l) || m_Isotopes[IsotopeIndex][i].GetSecondaryLine() == static_cast<int>(l))  {
+              tuple<unsigned int, unsigned int, unsigned int> ROGIDAndIsotope = { IsotopeIndex, i, l };
+
+              // Loop over all spectral point, and find the isotope and the line
+              for (unsigned int ii = 0; ii < CS.GetNumberOfSpectralPoints(g); ++ii) {
+                MCalibrationSpectralPoint& SP = CS.GetSpectralPoint(g, ii);
+                if (SP.GetIsotope() == m_Isotopes[IsotopeIndex][i]) {
+                  if (fabs(SP.GetEnergy() - m_Isotopes[IsotopeIndex][i].GetLineEnergy(l)) < 0.01 && SP.HasFit() == true) {
+                    FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->SetTitle(MString("FWHM per strip for ") + m_Isotopes[IsotopeIndex][i].GetName() + ", " + SP.GetEnergy() + " keV line"); // I know it is set multiple times...
+                    FWHMesMap[DetectorAndSide][ROGIDAndIsotope]->Fill(CurrentStripID, SP.GetEnergyFWHM());
+                    ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->SetTitle(MString("Residuals line/fit per strip for ") + m_Isotopes[IsotopeIndex][i].GetName() + ", " + SP.GetEnergy() + " keV line"); // I know it is set multiple times...
+                    double Residual = SP.GetEnergy() - M.GetFitValue(SP.GetPeak());
+                    ResidualsMap[DetectorAndSide][ROGIDAndIsotope]->Fill(CurrentStripID, Residual);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Create the canvases
+
+  gROOT->SetBatch(true);
+
+  auto IterTitles = TitlesMap.begin();
+  auto IterEnergies = EnergiesMap.begin();
+  auto IterADCs = ADCsMap.begin();
+  auto IterThresholds = ThresholdsMap.begin();
+  auto IterOverflows = OverflowsMap.begin();
+  auto IterFWHMes = FWHMesMap.begin();
+  auto IterResiduals = ResidualsMap.begin();
+
+  TCanvas* TitleCanvas = new TCanvas("Melinator Calibration Report", "Melinator Calibration Report", 850, 1100);
+  TitleCanvas->cd();
+
+  TPaveText* Title = new TPaveText(0.1, 0.75, 0.9, 0.9, "NDC");
+  Title->AddText("Melinator Calibration Report");
+  Title->SetTextFont(62);
+  Title->SetTextSize(0.05);
+  Title->SetFillColor(0);
+  Title->SetBorderSize(0);
+  Title->SetLineColor(0);
+  Title->Draw();
+
+
+
+  // Align text using TLatex
+  float yStart = 0.70;
+  float yStep = 0.03;
+  float xLabel = 0.195;
+  float xValue = 0.39;
+  unsigned int CurrentStep = 0;
+
+  TLatex* LatexLabel;
+  TLatex* LatexValue;
+
+  unsigned int TextFont = 42;
+  double TextSize = 0.02;
+
+
+  TString UserName = "";
+
+  struct passwd *pw = getpwuid(getuid());
+  if (pw && pw->pw_gecos && strlen(pw->pw_gecos) > 0) {
+    // Some systems use comma-separated GECOS fields: "Full Name,Room,Work Phone,..."
+    UserName = pw->pw_gecos;
+    Ssiz_t commaPos = UserName.First(',');
+    if (commaPos != kNPOS) {
+      UserName.Remove(commaPos);  // Only keep the full name
+    }
+  }
+
+  // Fall backs:
+  if (UserName.IsNull()) UserName = gSystem->Getenv("USER");
+  if (UserName.IsNull()) UserName = gSystem->Getenv("LOGNAME");
+  if (UserName.IsNull()) UserName = "unknown";
+
+  LatexLabel = new TLatex(xLabel, yStart - CurrentStep*yStep, "Created by:");
+  LatexLabel->SetTextFont(TextFont); LatexLabel->SetTextSize(TextSize); LatexLabel->Draw();
+  LatexValue = new TLatex(xValue, yStart - CurrentStep*yStep, UserName.Data());
+  LatexValue->SetTextFont(TextFont); LatexValue->SetTextSize(TextSize); LatexValue->Draw();
+  CurrentStep++;
+
+  TDatime Now;
+  TString DateTime = Form("%04d-%02d-%02d %02d:%02d:%02d", Now.GetYear(), Now.GetMonth(), Now.GetDay(),  Now.GetHour(), Now.GetMinute(), Now.GetSecond());
+
+  LatexLabel = new TLatex(xLabel, yStart - CurrentStep*yStep, "Created on:");
+  LatexLabel->SetTextFont(TextFont); LatexLabel->SetTextSize(TextSize); LatexLabel->Draw();
+  LatexValue = new TLatex(xValue, yStart - CurrentStep*yStep, DateTime);
+  LatexValue->SetTextFont(TextFont); LatexValue->SetTextSize(TextSize); LatexValue->Draw();
+  CurrentStep++;
+
+
+  TString GitHash = gSystem->GetFromPipe("cd $MEGALIB; git rev-parse --short HEAD");
+  if (GitHash.IsNull()) GitHash = "unknown";
+
+  LatexLabel = new TLatex(xLabel, yStart - CurrentStep*yStep, "MEGAlib git commit:");
+  LatexLabel->SetTextFont(TextFont); LatexLabel->SetTextSize(TextSize); LatexLabel->Draw();
+  LatexValue = new TLatex(xValue, yStart - CurrentStep*yStep, GitHash.Data());
+  LatexValue->SetTextFont(TextFont); LatexValue->SetTextSize(TextSize); LatexValue->Draw();
+  CurrentStep++;
+
+
+  LatexLabel = new TLatex(xLabel, yStart - CurrentStep*yStep, "Data sets:");
+  LatexLabel->SetTextFont(TextFont); LatexLabel->SetTextSize(TextSize); LatexLabel->Draw();
+
+  for (unsigned int f = 0; f < m_CalibrationFileNames.size(); ++f) {
+    MString FileName = m_CalibrationFileNames[f];
+    FileName = MFile::GetBaseName(FileName);
+    FileName += " (";
+    for (unsigned int i = 0; i < m_Isotopes[f].size(); ++i) {
+      FileName += m_Isotopes[f][i].GetName();
+      if (i < m_Isotopes[f].size() - 1) {
+        FileName += ", ";
+      }
+    }
+    FileName += ")";
+
+    LatexValue = new TLatex(xValue, yStart - CurrentStep*yStep, FileName.Data());
+    LatexValue->SetTextFont(TextFont); LatexValue->SetTextSize(TextSize); LatexValue->Draw();
+    CurrentStep++;
+  }
+
+
+  TitleCanvas->Print(m_ReportFileName + "(");
+
+
+  while (IterTitles != TitlesMap.end() && IterEnergies != EnergiesMap.end() && IterADCs != ADCsMap.end() && IterThresholds != ThresholdsMap.end() && IterOverflows != OverflowsMap.end() && IterFWHMes != FWHMesMap.end() && IterResiduals != ResidualsMap.end()) {
+
+    // Page 1: Spectra
+
+    TCanvas* SpectrumPages = new TCanvas("", "", 850, 1100);
+    SpectrumPages->SetLogz();
+    SpectrumPages->cd();
+
+    TPad* TitlePad = new TPad("padTitle", "Title", 0.0, 0.9, 1.0, 1.0);
+    TitlePad->Draw();
+    TitlePad->cd();
+
+    TPaveText* Title = new TPaveText(0.0, 0.0, 1.0, 1.0, "brNDC");
+    Title->AddText(IterTitles->second);
+    Title->SetFillColor(0);     // No background color
+    Title->SetBorderSize(0);    // No border
+    Title->SetLineColor(0);     // Remove outline
+    Title->SetTextFont(TextFont);
+    Title->SetTextSize(0.4);
+    Title->Draw();
+
+    SpectrumPages->cd();
+
+    TPad* ADCPad = new TPad("ADCPad", "ADCPad", 0.0, 0.45, 1.0, 0.9);
+    ADCPad->Draw();
+    ADCPad->cd();
+    ADCPad->SetLogz();
+    IterADCs->second->Draw("colz");
+
+    SpectrumPages->cd();
+
+    TPad* EnergyPad = new TPad("EnergyPad", "EnergyPad", 0.0, 0.0, 1.0, 0.45);
+    EnergyPad->Draw();
+    EnergyPad->cd();
+    EnergyPad->SetLogz();
+    IterEnergies->second->Draw("colz");
+
+    SpectrumPages->cd();
+    SpectrumPages->Update();
+
+    SpectrumPages->Print(m_ReportFileName);   // middle pages
+
+
+    // Page 2: Thresholds & Overflows
+
+    TCanvas* ThresholdsPages = new TCanvas("", "", 850, 1100);
+    ThresholdsPages->SetLogz();
+    ThresholdsPages->cd();
+
+    TPad* ThresholdsTitlePad = new TPad("padTitle", "Title", 0.0, 0.9, 1.0, 1.0);
+    ThresholdsTitlePad->Draw();
+    ThresholdsTitlePad->cd();
+
+    TPaveText* ThresholdsTitle = new TPaveText(0.0, 0.0, 1.0, 1.0, "brNDC");
+    ThresholdsTitle->AddText(IterTitles->second);
+    ThresholdsTitle->SetFillColor(0);     // No background color
+    ThresholdsTitle->SetBorderSize(0);    // No border
+    ThresholdsTitle->SetLineColor(0);     // Remove outline
+    ThresholdsTitle->SetTextFont(TextFont);
+    ThresholdsTitle->SetTextSize(0.4);
+    ThresholdsTitle->Draw();
+
+    ThresholdsPages->cd();
+
+    TPad* ThresholdsPad = new TPad("ThresholdsPad", "ThresholdsPad", 0.0, 0.45, 1.0, 0.9);
+    ThresholdsPad->Draw();
+    ThresholdsPad->cd();
+    ThresholdsPad->SetLogz();
+    IterThresholds->second->Draw("colz");
+
+    ThresholdsPages->cd();
+
+    TPad* OverflowsPad = new TPad("OverflowsPad", "OverflowsPad", 0.0, 0.0, 1.0, 0.45);
+    OverflowsPad->Draw();
+    OverflowsPad->cd();
+    OverflowsPad->SetLogz();
+    IterOverflows->second->Draw("colz");
+
+    ThresholdsPages->cd();
+    ThresholdsPages->Update();
+
+    ThresholdsPages->Print(m_ReportFileName);   // middle pages
+
+
+    // Page 3+ is lines:
+
+    auto IterFWHMesInner = IterFWHMes->second.begin();
+    auto IterResidualsInner = IterResiduals->second.begin();
+    while (IterResidualsInner != IterResiduals->second.end() && IterFWHMesInner != IterFWHMes->second.end()) {
+
+      TCanvas* LineFitPages = new TCanvas("", "", 850, 1100);
+      LineFitPages->cd();
+
+      TPad* TitlePadLineFitPages = new TPad("padTitle", "Title", 0.0, 0.9, 1.0, 1.0);
+      TitlePadLineFitPages->Draw();
+      TitlePadLineFitPages->cd();
+
+      TPaveText* TitleLineFitPages = new TPaveText(0.0, 0.0, 1.0, 1.0, "brNDC");
+      TitleLineFitPages->AddText(IterTitles->second);
+      TitleLineFitPages->SetFillColor(0);     // No background color
+      TitleLineFitPages->SetBorderSize(0);    // No border
+      TitleLineFitPages->SetLineColor(0);     // Remove outline
+      TitleLineFitPages->SetTextFont(TextFont);
+      TitleLineFitPages->SetTextSize(0.4);
+      TitleLineFitPages->Draw();
+
+      LineFitPages->cd();
+
+
+      TPad* FWHMPad = new TPad("", "", 0.0, 0.45, 1.0, 0.9);
+      FWHMPad->Draw();
+      FWHMPad->cd();
+      IterFWHMesInner->second->Draw("HIST ");
+
+      LineFitPages->cd();
+
+      TPad* ResidualsPad = new TPad("", "", 0.0, 0.0, 1.0, 0.45);
+      ResidualsPad->Draw();
+      ResidualsPad->cd();
+      IterResidualsInner->second->Draw("HIST ");
+
+      LineFitPages->cd();
+      LineFitPages->Update();
+
+      LineFitPages->Print(m_ReportFileName);   // middle pages
+
+      ++IterFWHMesInner;
+      ++IterResidualsInner;
+    }
+
+    ++IterTitles;
+    ++IterEnergies;
+    ++IterADCs;
+    ++IterThresholds;
+    ++IterOverflows;
+    ++IterFWHMes;
+    ++IterResiduals;
+  }
+
+  TCanvas* EndPageCanvas = new TCanvas("EndPage", "EndPage", 850, 1100);
+  EndPageCanvas->cd();
+
+  TPaveText* TheEnd = new TPaveText(0.1, 0.75, 0.9, 0.9, "NDC");
+  TheEnd->AddText("The End");
+  TheEnd->SetTextFont(62);
+  TheEnd->SetTextSize(0.02);
+  TheEnd->SetFillColor(0);
+  TheEnd->SetBorderSize(0);
+  TheEnd->SetLineColor(0);
+  TheEnd->Draw();
+
+  EndPageCanvas->Print(m_ReportFileName + ")");  // close PDF
+
+  gROOT->SetBatch(false);
+
+  return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

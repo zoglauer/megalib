@@ -18,6 +18,7 @@
 
 // Standard libs:
 #include <vector>
+#include <set>
 using namespace std;
 
 // ROOT libs:
@@ -106,20 +107,40 @@ class MDGridPoint
   unsigned int GetHits() const { return m_Hits; }
   //! Set the hits of this grid position
   void SetHits(const unsigned int Hits) { m_Hits = Hits; }
-
+  
   //! Return the weight of this grid position
   double GetWeight() const { return m_Weight; }
   //! Set the weight of this grid position
   void SetWeight(const double Weight) { m_Weight = Weight; }
-
-  //! Return all hit origins at this grid position (Used only by sivan)
-  vector<int> GetOrigins() const { return m_Origins; }
-  //! Set all hit origins at this grid position (Used only by sivan)
-  void SetOrigins(const vector<int>& Origins) { m_Origins = Origins; }
-
+  
+  //! Return the flags for this grid position
+  MString GetFlags() const { return m_Flags; }
+  //! Set the flags of this grid position
+  void SetFlags(const MString Flags) { m_Flags = Flags; }
+  
+  //! Return all hit origins at this grid position
+  set<unsigned int> GetOriginIDs() const { return m_OriginIDs; }
+  //! Set all hit origins at this grid position
+  void SetOriginIDs(const set<unsigned int>& OriginIDs) { m_OriginIDs = OriginIDs; }
+  //! Add all hit origins at this grid position
+  void AddOriginIDs(const set<int unsigned>& OriginIDs) { m_OriginIDs.insert(OriginIDs.begin(), OriginIDs.end()); }
+  
+  //! Return true if the grid point is above the trigger threshold
+  bool IsAboveTriggerThreshold() const { return m_IsAboveTriggerThreshold; }
+  //! Set whether the grid point is above thr trigger threshold
+  void IsAboveTriggerThreshold(bool Above) { m_IsAboveTriggerThreshold = Above; }
+  
+  //! Return true if the grid point is read out
+  bool IsReadOut() const { return m_IsReadOut; }
+  //! Set whether the grid point is reade out
+  void IsReadOut(bool ReadOut) { m_IsReadOut = ReadOut; }
+  
+  
+  //! Set the type of the grid point
+  void SetType(unsigned int Type) { m_Type = Type; }
   //! Return the type of the grid point
   unsigned int GetType() const { return m_Type; }
-
+  
 
   // The different grid point types:
   static const unsigned int c_Unknown;
@@ -170,9 +191,20 @@ class MDGridPoint
   double m_Weight;
     
   //! Hit origins at this grid position (Used only by sivan)
-  vector<int> m_Origins;
+  set<unsigned int> m_OriginIDs;
   
-
+  //! Special flags from the DEE
+  MString m_Flags;
+  
+  //! True is the hit is above the trigger threshold -- NOT is it triggered
+  bool m_IsAboveTriggerThreshold;
+  
+  //! True if the grid point need to be read-out
+  bool m_IsReadOut;
+  
+  
+  
+  
 #ifdef ___CLING___
  public:
   ClassDef(MDGridPoint, 0)

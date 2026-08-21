@@ -118,7 +118,6 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way, bool IsBinary)
   }
   
   m_SimulatedEvents = 0;
-  m_SimulationStartAreaFarField = 0;
   m_HasSimulatedEvents = false;
 
   if (Way == c_Read) {
@@ -132,16 +131,7 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way, bool IsBinary)
     while (IsGood() == true) {
       if (ReadLine(Line) == false) break;
 
-      if (Line.BeginsWith("SimulationStartAreaFarField") == true || Line.BeginsWith("StartAreaFarField") == true) {
-        MTokenizer Tokens;
-        Tokens.Analyze(Line);
-        if (Tokens.GetNTokens() != 2) {
-          mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-          mout<<"Unable to read SimulationStartAreaFarField"<<endl;              
-        } else {
-          m_SimulationStartAreaFarField = Tokens.GetTokenAtAsDouble(1);
-        }
-      } else if (Line.BeginsWith("IN") == true) {
+      if (Line.BeginsWith("IN") == true) {
         break; 
       } else if (Line.BeginsWith("SE") == true) {
         break; 
@@ -168,28 +158,8 @@ bool MFileEventsSim::ParseFooter(const MString& Line)
   // Parse the footer
   
   // Handle common data in the base class
-  MFileEvents::ParseFooter(Line);
-  
-  // In case the job crashed badly we might have no TS, thus use the last ID
-  if (Line.BeginsWith("ID") == true) {
-    MTokenizer Tokens;
-    Tokens.Analyze(Line);
-    if (Tokens.GetNTokens() == 3) {
-      m_SimulatedEvents = Tokens.GetTokenAtAsInt(2);
-      m_HasSimulatedEvents = true;
-    }
-  }
-  if (Line.BeginsWith("TS") == true) {
-    MTokenizer Tokens;
-    Tokens.Analyze(Line);
-    if (Tokens.GetNTokens() != 2) {
-      mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-      mout<<"Unable to read TS keyword"<<endl;
-      return false;
-    } else {
-      m_SimulatedEvents = Tokens.GetTokenAtAsInt(1);
-      m_HasSimulatedEvents = true;
-    }
+  if (MFileEvents::ParseFooter(Line) == false) {
+    return false;
   }
   
   return true;
@@ -206,7 +176,7 @@ long MFileEventsSim::GetSimulatedEvents()
   if (m_HasSimulatedEvents == false) {
     ReadFooter(); 
   }
-  
+
   return m_SimulatedEvents;
 }
   

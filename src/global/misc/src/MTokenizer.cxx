@@ -309,7 +309,7 @@ unsigned int MTokenizer::GetTokenAtAsUnsignedIntFast(const unsigned int i) const
     }
     return val;
   } else {
-    mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
+    mlog<<"int MTokenizer::GetTokenAtAsUnsignedIntFast(int i): "<<endl;
     if (m_Tokens.size() > 0) {
       mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
@@ -331,13 +331,13 @@ unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const unsigned int i) const
   if (i < m_Tokens.size()) {
     int Value = int(atof(m_Tokens[i]));
     if (Value < 0) {
-      mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i)"<<endl;
+      mlog<<"unsigned int MTokenizer::GetTokenAtAsUnsignedInt(int i)"<<endl;
       mlog<<"Value is negative!!!"<<endl;
       return 0;
     }
     return (unsigned int) Value;
   } else {
-    mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
+    mlog<<"unsigned int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
     if (m_Tokens.size() > 0) {
       mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;

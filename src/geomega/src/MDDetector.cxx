@@ -111,6 +111,7 @@ const int MDDetector::c_GuardRingEnergyResolutionTypeIdeal       = 2;
 const int MDDetector::c_GuardRingEnergyResolutionTypeGauss       = 3;
 */
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -824,24 +825,24 @@ bool MDDetector::ApplyOverflow(double& Energy) const
 bool MDDetector::IsAboveTriggerThreshold(const double& Energy, const MDGridPoint& Point) const 
 {
   // Is this hit above the trigger threshold ?
-
+  
   // If the channel is blocked from triggering, we are per definition never above the trigger threshold...
   if (m_AreBlockedTriggerChannelsUsed == true) {
     if (m_BlockedTriggerChannels.GetVoxelValue(Point) > 0.0) {
       return false;
     }
   }
-
-  // Given this flag, in case we passed the noise criteria, we also have a trigger:
-  if (m_NoiseThresholdEqualsTriggerThreshold == true) {
-    return true;
-  }
-
+  
+  // Given this flag, in case we passed the noise criteria, we already have a trigger:
+  //if (m_NoiseThresholdEqualsTriggerThreshold == true) {
+  //  return true;
+  //}
+  
   // If you change anything here, make sure to change GetSecureUpperLimitTriggerThreshold !!!!
   double NoisedThreshold = 
-    gRandom->Gaus(GetTriggerThreshold(MVector(0.0, 0.0, Point.GetPosition().Z())), 
-                  m_TriggerThresholdSigma);
-
+  gRandom->Gaus(GetTriggerThreshold(MVector(0.0, 0.0, Point.GetPosition().Z())), 
+                m_TriggerThresholdSigma);
+  
   if (Energy > NoisedThreshold) {
     return true;
   } else {
@@ -850,6 +851,52 @@ bool MDDetector::IsAboveTriggerThreshold(const double& Energy, const MDGridPoint
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDDetector::IsAboveNoiseThreshold(const double& Energy, const MDGridPoint& Point) const 
+{
+  // Is this hit above the trigger threshold ?
+  
+  // If the channel is blocked from triggering, we are per definition never above the trigger threshold...
+  if (m_AreBlockedTriggerChannelsUsed == true) {
+    if (m_BlockedTriggerChannels.GetVoxelValue(Point) > 0.0) {
+      return false;
+    }
+  }
+  
+  // If you change anything here, make sure to change GetSecureUpperLimitTriggerThreshold !!!!
+  double NoisedThreshold = 
+  gRandom->Gaus(GetNoiseThreshold(MVector(0.0, 0.0, Point.GetPosition().Z())), 
+                m_NoiseThresholdSigma);
+  
+  if (Energy > NoisedThreshold) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDDetector::SigmasAboveNoiseLevel(const double& Energy, const MDGridPoint& Point) const
+{
+  //! Return the sigmas above the noise level this energy is
+
+  double Sigmas = 0;
+  if (m_EnergyResolutionType == c_EnergyResolutionTypeGauss) {
+    Sigmas = Energy / GetEnergyResolutionWidth1(Energy, Point.GetPosition());
+  } else {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"SigmasAboveNoiseLevel only works for Gaussian energy resolution!"<<endl;
+  }
+    
+  return Sigmas;
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 

@@ -26,6 +26,7 @@
 #include "MRESEList.h"
 #include "MDDetector.h"
 #include "MDVolumeSequence.h"
+#include "MDGridPoint.h"
 #include "MPhysicalEventHit.h"
 
 // Forward declarations:
@@ -92,10 +93,25 @@ class MRESE
   virtual double GetTime(); 
   virtual double GetTimeResolution(); 
   virtual void SetDetector(int Detector); 
-  virtual int GetDetector(); 
+  virtual int GetDetector();
+  
+  virtual void SetNoiseFlags(MString NoiseFlags) { m_NoiseFlags = NoiseFlags; } 
+  virtual MString GetNoiseFlags() const { return m_NoiseFlags; } 
+  
   virtual void SetVolumeSequence(MDVolumeSequence* VS);
   virtual MDVolumeSequence* GetVolumeSequence();
- 
+  
+  virtual void SetGridPoint(const MDGridPoint& GP);
+  virtual MDGridPoint GetGridPoint() const;
+  
+  //! Add a simulation origin ID required for response generation
+  virtual void AddOriginID(const unsigned int OriginID);
+  //! Add origin IDs required for response generation
+  virtual void AddOriginIDs(const set<unsigned int> OriginIDs);
+  //! Get the origin Origin IDs
+  virtual set<unsigned int> GetOriginIDs() const { return m_OriginIDs; }
+  
+  
   // the link interface:
   int GetNLinks(); 
   bool HasLinks();
@@ -129,7 +145,7 @@ class MRESE
   virtual MRESE* RemoveRESEAndCompress(int ID);
   //! Remove all the RESEs which are part of this RESE - the array is NOT shrunk 
   virtual void RemoveAll();
-  //! Remove all the RESEs which are part of this RESE - the array is NOT shrunk 
+  //! Remove all the RESEs which are part of this RESE - the array is shrunk 
   virtual void RemoveAllAndCompress();
   
   virtual void DeleteRESE(MRESE* RESE);
@@ -138,8 +154,10 @@ class MRESE
   virtual void DeleteRESEAtAndCompress(int i);
   virtual void DeleteRESE(int ID);
   virtual void DeleteRESEAndCompress(int ID);
-  //! delete all the RESEs which are part of this RESE
+  //! delete all the RESEs which are part of this RESE - the array is not shrunk
   virtual void DeleteAll();
+  
+  //! Shrink the array
   virtual void CompressRESEs();
 
   //! Shuffle the RESEs around in random order (goal: they are more or less sorted when the come from cosima, but not in real life)
@@ -171,7 +189,8 @@ class MRESE
   static const int c_Cluster;
   static const int c_Bremsstrahlung;
   static const int c_Event;
-
+  static const int c_StripHit;
+  
  protected:
   virtual void RecalculateResolutions();
   
@@ -219,6 +238,9 @@ class MRESE
   //! Geomega volume sequence
   MDVolumeSequence* m_VolumeSequence;
 
+  //! Geomega grid point
+  MDGridPoint m_GridPoint;
+  
   //! True if good RESE - currently only relevant for measured data...
   bool m_IsValid;
 
@@ -227,6 +249,13 @@ class MRESE
   //! Storage for the container-interface
   MRESEList* m_RESEList;
 
+  //! Flags from noising
+  MString m_NoiseFlags;
+  
+  //! The origin IDs for response creation
+  set<unsigned int> m_OriginIDs;
+  
+  
   // private members:
  private:
   //! Counts the distributed IDs

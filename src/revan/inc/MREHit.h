@@ -56,7 +56,9 @@ class MREHit : public MRESE
   virtual MString ToEvtaString(const int Precision, const int Version = 1);
 
   MREHit* Duplicate();
-
+  
+  //! Fix the resolutions as they have been set externally and cannot be changed
+  void FixResolutions(bool Fix) { m_FixedResolutions = Fix; } 
   //! Return true if the resolutions have been set externally and cannot be changed
   bool HasFixedResolutions() const { return m_FixedResolutions; } 
   
@@ -64,14 +66,20 @@ class MREHit : public MRESE
   bool UpdateVolumeSequence(MDGeometryQuest* Geometry);
   //! Retrieve the resolutions from the geometry
   bool RetrieveResolutions(MDGeometryQuest* Geometry);
+  
+  // TODO: Delete!
+  
   //! Noise the positions, energies and times (!!make sure to do this only for simulations and  only once!!)
   bool Noise(MDGeometryQuest* Geometry);
+  //! Split the hit (due to e.g. charge sharing)
+  MDGridPointCollection Grid(MDGeometryQuest* Geometry);
+  
 
   // private members:
  private:
   //! Flag indicating the resolutions have been set externally
   bool m_FixedResolutions;
-   
+
   
 #ifdef ___CLING___
  public:

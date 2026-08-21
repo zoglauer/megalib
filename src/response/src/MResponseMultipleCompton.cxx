@@ -445,7 +445,7 @@ bool MResponseMultipleCompton::IsComptonStart(MRESE& Start, double Etot, double 
   if (StartOriginIds.size() == 0) {
     if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Start has no Sim IDs!"<<endl;
     return false;
-  }
+  } 
   
   // Find the smallest origin ID in the sequence
   int SmallestOriginID = numeric_limits<int>::max();
@@ -891,6 +891,7 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
       while (true) {
         if (Predeccessor == 1) break; // we reached init
         if (m_SiEvent->GetIAAt(Predeccessor-1)->GetOriginID() == m_SiEvent->GetIAAt(HighestOriginID-1)->GetOriginID()) {
+          /* Old -- not sure why it even should be part of AllSimIds -- on the contrary
           if (m_SiEvent->GetIAAt(Predeccessor-1)->GetProcess() == "COMP") {
             if (find(AllSimIds.begin(), AllSimIds.end(), Predeccessor) != AllSimIds.end()) {
               IsGood = true;
@@ -899,6 +900,11 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
               mdebug<<"ContainsOnlyComptonDependants: Preceeding Compton IA is missing"<<endl;
               return false;
             }
+          }
+          */
+          if (m_SiEvent->GetIAAt(Predeccessor-1)->GetProcess() == "COMP") {
+            IsGood = true;
+            break;
           }
         }
         --Predeccessor;
@@ -984,10 +990,26 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
       CleanedSimIDs.push_back(SimIDs[i]);
     }
   }
+  sort(CleanedSimIDs.begin(), CleanedSimIDs.end());
   SimIDs = CleanedSimIDs;
   CleanedSimIDs.clear();
   
-  // (b) Keep only the smallest PHOT IA since we require it to be contained
+  
+  // (b) Keep only the smallest PHOT IA since all susequent ones (excluding the above removed descendents) derive from the same origin
+  for (unsigned int i = SimIDs.size() - 1; i > 0; --i) {
+    if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "PHOT" &&
+      m_SiEvent->GetIAAt(SimIDs[i-1]-1)->GetProcess() == "PHOT" &&   
+      m_SiEvent->GetIAAt(SimIDs[i]-1)->GetOriginID() == m_SiEvent->GetIAAt(SimIDs[i-1])->GetOriginID()) {
+       SimIDs[i] = -1; // remove 
+    }
+  }
+  for (unsigned int i = 0; i < SimIDs.size(); ++i) {
+    if (SimIDs[i] != -1) {
+      CleanedSimIDs.push_back(SimIDs[i]);
+    }
+  }
+  
+  /* Does not cover PHOT originating from e.g. Bremsstrahlung
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
     if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "PHOT") {
       if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetOriginID() == m_SiEvent->GetIAAt(SimIDs[i]-2)->GetOriginID() && m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() != "PHOT") {
@@ -997,9 +1019,12 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
       CleanedSimIDs.push_back(SimIDs[i]);
     }
   }
+  */
+  
   SimIDs = CleanedSimIDs;
   CleanedSimIDs.clear();
-    
+  
+  
   // (c) Exclude fluoresence COMP
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
     if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "COMP") {
@@ -1013,12 +1038,15 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
   SimIDs = CleanedSimIDs;
   CleanedSimIDs.clear();
   
-  mdebug<<"SimIDs: "; for (int i: SimIDs) mdebug<<i<<" "; mdebug<<endl;
+  if (SimIDs.size() == 0) {
+    mout<<"Error: No sim IDs left. "<<endl;
+    mout<<"Original SimIDs: "; for (int i: AllSimIds) mdebug<<i<<" "; mdebug<<endl;
+  }
   
   // (d) Sanity check - we just should have COMP & PHOT in our list
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
     if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "COMP" && m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "PHOT") {
-      cout<<"Error: We only should have COMP and PHOT IA's at this point and not \""<<m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess()<<"\". Did you use hadronic processes for the simulations?"<<endl;
+      mout<<"Error: We only should have COMP and PHOT IA's at this point and not \""<<m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess()<<"\". Did you use hadronic processes for the simulations?"<<endl;
     }
   }
   
@@ -1062,8 +1090,8 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
 bool MResponseMultipleCompton::IsTotalAbsorbed(const vector<int>& AllSimIds, 
                                                double Energy, double EnergyResolution)
 {
-  massert(AllSimIds.size() > 0);
-
+  massert(AllSimIds.size() > 0);  
+  
   EnergyResolution = 3*EnergyResolution+2;
 
   int MinId = numeric_limits<int>::max();
@@ -1072,7 +1100,7 @@ bool MResponseMultipleCompton::IsTotalAbsorbed(const vector<int>& AllSimIds,
   }
 
   if (MinId == numeric_limits<int>::max()) return false;
-
+  
   double Ideal;
   MSimIA* Top = 0;
   if (m_SiEvent->GetIAAt(MinId-2)->GetOriginID() == m_SiEvent->GetIAAt(MinId-1)->GetOriginID()) {
@@ -1094,7 +1122,7 @@ bool MResponseMultipleCompton::IsTotalAbsorbed(const vector<int>& AllSimIds,
   }
 
   if (fabs(Ideal - Energy) > EnergyResolution) {
-      mdebug<<"Is totally absorbed: Not completely absorbed: Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
+      mdebug<<"Is totally absorbed: Not completely absorbed (or if ideal < real, sequence is wrong): Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
     return false;
   } else {
     mdebug<<"Is totally absorbed: Completely absorbed: Tot abs: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;

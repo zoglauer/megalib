@@ -87,7 +87,7 @@ bool MResponseEventQuality::Initialize()
   AxisPhi.SetLinear(180/AngleBinWidth, 0, 180);
   
   MResponseMatrixAxisSpheric AxisScatteredGammaRayCoordinates("#psi [deg]", "#chi [deg]");
-  AxisScatteredGammaRayCoordinates.SetFISBEL(AngleBins);
+  AxisScatteredGammaRayCoordinates.SetFISBELByNumberOfBins(AngleBins);
   
   m_GoodQuality.SetName("Event quality -- good events");
   m_GoodQuality.AddAxis(AxisEnergyMeasured);

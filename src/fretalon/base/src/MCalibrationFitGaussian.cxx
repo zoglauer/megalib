@@ -38,7 +38,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-
+#include "MStreams.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -330,33 +330,77 @@ void MCalibrationFitGaussian::SetFitParameters(ROOT::Fit::Fitter& Fitter, TH1D& 
     Fitter.Config().ParSettings(4+BPM).SetValue(MaxValue);
     Fitter.Config().ParSettings(4+BPM).SetLimits(0, 3*MaxValue);
   } else {
-    int BPM = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
+    int NPM = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
     
-    Fitter.Config().ParSettings(0+BPM).SetName("Mean (Gaussian)");
+    Fitter.Config().ParSettings(0+NPM).SetName("Mean (Gaussian)");
     if (m_GaussianMean != g_DoubleNotDefined) {
-      Fitter.Config().ParSettings(0+BPM).SetValue(m_GaussianMean);
+      Fitter.Config().ParSettings(0+NPM).SetValue(m_GaussianMean);
     } else {
-      Fitter.Config().ParSettings(0+BPM).SetValue(0.5*(Min+Max));
+      Fitter.Config().ParSettings(0+NPM).SetValue(0.5*(Min+Max));
     }
-    Fitter.Config().ParSettings(0+BPM).SetLimits(Min, Max);
+    Fitter.Config().ParSettings(0+NPM).SetLimits(Min, Max);
     
-    Fitter.Config().ParSettings(1+BPM).SetName("Sigma (Gaussian)");
+    Fitter.Config().ParSettings(1+NPM).SetName("Sigma (Gaussian)");
     if (m_GaussianSigma != g_DoubleNotDefined) {
-      Fitter.Config().ParSettings(1+BPM).SetValue(m_GaussianSigma);
-      Fitter.Config().ParSettings(1+BPM).SetLimits(0.3*m_GaussianSigma, 2*m_GaussianSigma);
+      Fitter.Config().ParSettings(1+NPM).SetValue(m_GaussianSigma);
+      Fitter.Config().ParSettings(1+NPM).SetLimits(0.3*m_GaussianSigma, 2*m_GaussianSigma);
     } else {
-      Fitter.Config().ParSettings(1+BPM).SetValue(5*Hist.GetBinWidth(1));
-      Fitter.Config().ParSettings(1+BPM).SetLimits(Hist.GetBinWidth(1), 0.5*(Max-Min));
+      Fitter.Config().ParSettings(1+NPM).SetValue(5*Hist.GetBinWidth(1));
+      Fitter.Config().ParSettings(1+NPM).SetLimits(Hist.GetBinWidth(1), 0.5*(Max-Min));
     }
     
-    Fitter.Config().ParSettings(2+BPM).SetName("Amplitude (Gaussian)");
+    Fitter.Config().ParSettings(2+NPM).SetName("Amplitude (Gaussian)");
     if (m_GaussianHeight != g_DoubleNotDefined) {
-      Fitter.Config().ParSettings(2+BPM).SetValue(m_GaussianHeight);
+      Fitter.Config().ParSettings(2+NPM).SetValue(m_GaussianHeight);
     } else {
-      Fitter.Config().ParSettings(2+BPM).SetValue(MaxValue);
+      Fitter.Config().ParSettings(2+NPM).SetValue(MaxValue);
     }
-    Fitter.Config().ParSettings(2+BPM).SetLimits(0, 3*MaxValue);
+    Fitter.Config().ParSettings(2+NPM).SetLimits(0, 3*MaxValue);
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Convert to a string
+MString MCalibrationFitGaussian::ToParsableString(const MString& Mode, bool WithDescriptor)
+{
+  ostringstream out;
+
+  if (m_Fit != 0 && m_IsFitUpToDate == true) {
+    if (Mode == "param") {
+      out<<MCalibrationFit::ToParsableString(Mode, WithDescriptor)<<" ";
+      if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction ||
+          m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay) {
+        int BPM = GetBackgroundFitParameters();
+        // We alreday covered 0..3
+        out<<m_Fit->GetParameter(4+BPM)<<" ";
+      } else {
+        int NPM = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
+        out<<m_Fit->GetParameter(0+NPM)<<" ";
+        out<<m_Fit->GetParameter(1+NPM)<<" ";
+        out<<m_Fit->GetParameter(2+NPM)<<" ";
+      }
+    } else if (Mode == "param+error") {
+      out<<MCalibrationFit::ToParsableString(Mode, WithDescriptor)<<" ";
+      if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction ||
+          m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay) {
+        int BPM = GetBackgroundFitParameters();
+        // We alreday covered 0..3
+        out<<m_Fit->GetParameter(4+BPM)<<" "<<m_Fit->GetParError(3+BPM)<<"  ";
+      } else {
+        int NPM = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
+        out<<m_Fit->GetParameter(0+NPM)<<" "<<m_Fit->GetParError(0+NPM)<<"  ";
+        out<<m_Fit->GetParameter(1+NPM)<<" "<<m_Fit->GetParError(1+NPM)<<"  ";
+        out<<m_Fit->GetParameter(2+NPM)<<" "<<m_Fit->GetParError(2+NPM)<<"  ";
+      }
+    }
+  } else {
+    merr<<"Fit cannot be stored, since it is not up to date"<<endl;
+  }
+
+  return out.str();
 }
 
 

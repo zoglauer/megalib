@@ -1,13 +1,10 @@
 # Template for a narrow line point source
 
-Version                         1
+# Include Common parameters
+Include Common.source
+
+# The geometry
 Geometry                        %%GEOMETRY%%
-
-# Physics list
-PhysicsListEM                   LivermorePol
-
-# Output formats
-StoreSimulationInfo             init-only
 
 # The run
 Run SpaceSim

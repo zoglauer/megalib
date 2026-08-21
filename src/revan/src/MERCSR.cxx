@@ -126,6 +126,7 @@ bool MERCSR::Analyze(MRawEventIncarnations* List)
         m_List->DeleteRawEvent(RE);
         e--;
         e_max--;
+        //cout<<endl<<"Created "<<NewList->GetNRawEvents()<<" events"<<endl<<endl<<endl;
         for (int i = 0; i < NewList->GetNRawEvents(); ++i) {
           m_List->AddRawEvent(NewList->GetRawEventAt(i));
         }

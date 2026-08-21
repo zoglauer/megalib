@@ -33,7 +33,7 @@ class MTime
 {
   // public interface:
  public:
-  //! Default constructor, set the time to NOW
+  //! Default constructor, set the time to 0
   MTime();
   //! Extract the time from a formatted string
   //! Deprecated: this parser has limited error handling

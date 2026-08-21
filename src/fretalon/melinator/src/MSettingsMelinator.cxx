@@ -86,6 +86,25 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
   m_MinimumTemperature = -numeric_limits<double>::max();
   m_MaximumTemperature = +numeric_limits<double>::max();
   
+  m_ReportFileName = "MelinatorReport.pdf";
+
+  m_ReportADCHistogramMinimum = 0;
+  m_ReportADCHistogramMaximum = 10000;
+  m_ReportADCHistogramBins = 1000;
+
+  m_ReportEnergyHistogramMinimum = 0;
+  m_ReportEnergyHistogramMaximum = 2000;
+  m_ReportEnergyHistogramBins = 500;
+
+  m_ReportThresholdHistogramMinimum = 0;
+  m_ReportThresholdHistogramMaximum = 40;
+  m_ReportThresholdHistogramBins = 40;
+
+  m_ReportOverflowHistogramMinimum = 1500;
+  m_ReportOverflowHistogramMaximum = 2500;
+  m_ReportOverflowHistogramBins = 100;
+
+
   if (AutoLoad == true) {
     Read();
   }
@@ -178,6 +197,25 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
   
   new MXmlNode(Node, "SaveAsFileName", m_SaveAsFileName);
   
+  new MXmlNode(Node, "ReportFileName", m_ReportFileName);
+
+  new MXmlNode(Node, "ReportADCHistogramMinimum", m_ReportADCHistogramMinimum);
+  new MXmlNode(Node, "ReportADCHistogramMaximum", m_ReportADCHistogramMaximum);
+  new MXmlNode(Node, "ReportADCHistogramBins", m_ReportADCHistogramBins);
+
+  new MXmlNode(Node, "ReportEnergyHistogramMinimum", m_ReportEnergyHistogramMinimum);
+  new MXmlNode(Node, "ReportEnergyHistogramMaximum", m_ReportEnergyHistogramMaximum);
+  new MXmlNode(Node, "ReportEnergyHistogramBins", m_ReportEnergyHistogramBins);
+
+  new MXmlNode(Node, "ReportThresholdHistogramMinimum", m_ReportThresholdHistogramMinimum);
+  new MXmlNode(Node, "ReportThresholdHistogramMaximum", m_ReportThresholdHistogramMaximum);
+  new MXmlNode(Node, "ReportThresholdHistogramBins", m_ReportThresholdHistogramBins);
+
+  new MXmlNode(Node, "ReportOverflowHistogramMinimum", m_ReportOverflowHistogramMinimum);
+  new MXmlNode(Node, "ReportOverflowHistogramMaximum", m_ReportOverflowHistogramMaximum);
+  new MXmlNode(Node, "ReportOverflowHistogramBins", m_ReportOverflowHistogramBins);
+
+
   // Not stored, since command line options:
   // new MXmlNode(Node, "SelectedDetectorID", m_SelectedDetectorID);
   // new MXmlNode(Node, "SelectedDetectorSide", m_SelectedDetectorSide);
@@ -298,6 +336,54 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("SaveAsFileName")) != 0) {
     m_SaveAsFileName = aNode->GetValueAsString();
   }
+
+
+  if ((aNode = Node->GetNode("ReportFileName")) != 0) {
+    m_ReportFileName = aNode->GetValueAsString();
+  }
+
+  if ((aNode = Node->GetNode("ReportADCHistogramMinimum")) != 0) {
+    m_ReportADCHistogramMinimum = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("ReportADCHistogramMaximum")) != 0) {
+    m_ReportADCHistogramMaximum = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("ReportADCHistogramBins")) != 0) {
+    m_ReportADCHistogramBins = aNode->GetValueAsUnsignedInt();
+  }
+
+  if ((aNode = Node->GetNode("ReportEnergyHistogramMinimum")) != 0) {
+    m_ReportEnergyHistogramMinimum = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("ReportEnergyHistogramMaximum")) != 0) {
+    m_ReportEnergyHistogramMaximum = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("ReportEnergyHistogramBins")) != 0) {
+    m_ReportEnergyHistogramBins = aNode->GetValueAsUnsignedInt();
+  }
+
+  if ((aNode = Node->GetNode("ReportThresholdHistogramMinimum")) != 0) {
+    m_ReportThresholdHistogramMinimum = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("ReportThresholdHistogramMaximum")) != 0) {
+    m_ReportThresholdHistogramMaximum = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("ReportThresholdHistogramBins")) != 0) {
+    m_ReportThresholdHistogramBins = aNode->GetValueAsUnsignedInt();
+  }
+
+  if ((aNode = Node->GetNode("ReportOverflowHistogramMinimum")) != 0) {
+    m_ReportOverflowHistogramMinimum = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("ReportOverflowHistogramMaximum")) != 0) {
+    m_ReportOverflowHistogramMaximum = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("ReportOverflowHistogramBins")) != 0) {
+    m_ReportOverflowHistogramBins = aNode->GetValueAsUnsignedInt();
+  }
+
+
+
  
   /*
   // Not stored since command line options

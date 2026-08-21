@@ -65,6 +65,8 @@ MSimHT::MSimHT(MDGeometryQuest* Geo)
 
   m_Cluster = 0;
   m_VolumeSequence = 0;
+  
+  m_NoiseFlags = "";
 }
 
 
@@ -95,6 +97,8 @@ MSimHT::MSimHT(const MSimHT& HT)
     m_VolumeSequence = 0;
   }
 
+  m_NoiseFlags = HT.m_NoiseFlags;
+  
   m_Cluster = 0;
 }
 
@@ -114,7 +118,7 @@ MSimHT::~MSimHT()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const vector<int>& Origins, bool NeedsNoising)
+void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const vector<unsigned int>& Origins, bool NeedsNoising)
 {
   //! Set all core data
   
@@ -139,7 +143,7 @@ void MSimHT::Set(const int Detector, const MVector& Position, const double Energ
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const set<int>& Origins, bool NeedsNoising)
+void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const set<unsigned int>& Origins, bool NeedsNoising)
 {
   //! Set all core data
   
@@ -150,7 +154,7 @@ void MSimHT::Set(const int Detector, const MVector& Position, const double Energ
   m_OriginalTime = Time;
   
   m_Origins.clear();
-  for (set<int>::const_iterator Iter = Origins.begin(); Iter != Origins.end(); ++Iter) {
+  for (set<unsigned int>::const_iterator Iter = Origins.begin(); Iter != Origins.end(); ++Iter) {
     m_Origins.push_back(*Iter);
   }
   
@@ -416,7 +420,7 @@ MString MSimHT::ToSimString(const int WhatToStore, const int ScientificPrecision
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MSimHT::IsOrigin(const int Origin) const
+bool MSimHT::IsOrigin(const unsigned int Origin) const
 {
   for (unsigned int i = 0; i < m_Origins.size(); ++i) {
     if (m_Origins[i] == Origin) {
@@ -431,7 +435,7 @@ bool MSimHT::IsOrigin(const int Origin) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MSimHT::GetOriginAt(const unsigned int i) const
+unsigned int MSimHT::GetOriginAt(const unsigned int i) const
 {
   // Return the first entry of the origin list
 
@@ -459,7 +463,7 @@ unsigned int MSimHT::GetNOrigins() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<int> MSimHT::GetOrigins() const
+vector<unsigned int> MSimHT::GetOrigins() const
 {
   // Return all origins as a vector!
 
@@ -470,12 +474,12 @@ vector<int> MSimHT::GetOrigins() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MSimHT::AddOrigin(int i)
+void MSimHT::AddOrigin(unsigned int Origin)
 {
   // Add a new origin to this HT
 
-  if (IsOrigin(i) == false) {
-    m_Origins.push_back(i);
+  if (IsOrigin(Origin) == false) {
+    m_Origins.insert(m_Origins.begin(), Origin);
   }
 }
 
@@ -483,12 +487,12 @@ void MSimHT::AddOrigin(int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MSimHT::SetOrigins(const set<int>& Origins)
+void MSimHT::SetOrigins(const set<unsigned int>& Origins)
 {
   // Set all origins
 
   m_Origins.clear();
-  for (set<int>::const_iterator Iter = Origins.begin(); Iter != Origins.end(); ++Iter) {
+  for (auto Iter = Origins.begin(); Iter != Origins.end(); ++Iter) {
     m_Origins.push_back(*Iter);
   }
 }
@@ -542,13 +546,13 @@ MDVolumeSequence* MSimHT::GetVolumeSequence()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MSimHT::GetSmallestOrigin(int Except) const
+unsigned int MSimHT::GetSmallestOrigin(unsigned int Except) const
 {
   // Return the smallest origin
   // if Except > 0 then ignore this origin
-  // Return -1 if there is no smallest origin
+  // Return 0 if there is no smallest origin
 
-  int Smallest = numeric_limits<int>::max();
+  unsigned int Smallest = numeric_limits<unsigned int>::max();
   for (unsigned int i = 0; i < m_Origins.size(); ++i) {
     if (m_Origins[i] != Except) {
       if (m_Origins[i] < Smallest) {
@@ -556,8 +560,8 @@ int MSimHT::GetSmallestOrigin(int Except) const
       }
     }
   }
-  if (Smallest == numeric_limits<int>::max()) {
-    Smallest = -1;
+  if (Smallest == numeric_limits<unsigned int>::max()) {
+    Smallest = 0;
   }
 
   return Smallest;
@@ -604,7 +608,8 @@ bool MSimHT::Noise(bool RecalculateVolumeSequence)
       }
     }
     if (m_Geometry->GetActivateNoising() == true) {
-      m_Geometry->Noise(m_Position, m_Energy, m_Time, *m_VolumeSequence);
+      m_NoiseFlags = "";
+      m_Geometry->Noise(m_Position, m_Energy, m_Time, m_NoiseFlags, *m_VolumeSequence);
       if (m_Energy <= 0.0) return false;
     }    
   }

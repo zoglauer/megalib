@@ -75,10 +75,14 @@ class MResponsePolarizationBinnedMode : public MResponseBuilder
  protected:
   //! The bin width of the angles near the equator for the gamma rays
   double m_AngleBinWidth;
+  //! The mode with which to bin the sky coordiantes: fisbel or healpix
+  MString m_AngleBinMode;
   //! The bin width of the angles near the equator for the recoil electron (360 for no electron tracking)
   double m_AngleBinWidthElectron;
   //! Number of energy bins
   unsigned int m_EnergyNBins;
+  //! The mode how to do the spherical coordinates binning: lin or log
+  MString m_EnergyBinMode;
   //! Minimum energy range
   double m_EnergyMinimum;
   //! Maximum energy range
@@ -91,9 +95,12 @@ class MResponsePolarizationBinnedMode : public MResponseBuilder
   double m_DistanceMinimum;
   //! Maximum energy range
   double m_DistanceMaximum;
-  //! Number of distance bins
-  unsigned int m_PolarizationAngleNBins;
   
+  //! Number of polarization bins
+  unsigned int m_PolarizationAngleNBins;
+  //! The polarization mode
+  MString m_PolarizationMode;
+
   //! The Polarization response 
   MResponseMatrixON m_PolarizationResponse;
   

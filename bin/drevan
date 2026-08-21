@@ -387,19 +387,30 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
  
     echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}" | ${LOGGING}
     
-    # Check if revan starts up:
+    # Check if revan starts up - we use a short temporary sim file to avoid reading large gzip'ed files:
     OUTFILE=${DATAFILES[0]}
     OUTFILE=${OUTFILE/.sim.gz/}
     OUTFILE=${OUTFILE/.sim/}
     OUTFILE=${OUTFILE/.evta.gz/}
     OUTFILE=${OUTFILE/.evta/}
+    
+    TMPFILE=""
+    if [[ ${DATAFILES[0]} == *.sim* ]]; then
+      TMPFILE=$(mktemp -p ${TARGETDIR} --suffix .sim)
+    else
+      TMPFILE=$(mktemp -p ${TARGETDIR} --suffix .evta)
+    fi
+    chmod go+r ${TMPFILE}
+    zcat ${DATADIR}/${DATAFILES[0]} | head -n 100000 > ${TMPFILE}
+    
     COMMAND=""
-    COMMAND+=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} revan -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[0]} -o ${TARGETDIR}/${OUTFILE}.delme"
+    COMMAND+=". .dmegalib.bashrc; cd ${TARGETDIR}; nice -n ${NICE} revan -g ${GEOMETRY} -f ${TMPFILE} -o ${TARGETDIR}/${OUTFILE}.delme"
     if [[ ${REVANCFG} != "" ]]; then COMMAND+=" -c ${REVANCFG}"; fi
     if [[ ${ZIP} == TRUE ]]; then COMMAND+=" -z"; fi
     COMMAND+=" --test"
     
     ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${COMMAND} )
+    rm -f ${TMPFILE}
     if [[ ${ANSWER} != *TEST*RUN*SUCCESSFUL* ]]; then     
       echo " * Remote machine: ${MACHINES[$m]}: revan run failed" | ${LOGGING}
       echo "" | ${LOGGING}

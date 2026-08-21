@@ -509,5 +509,20 @@ bool MFileEventsTra::AddEvent(MPhysicalEvent* Tra)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+long MFileEventsTra::GetSimulatedEvents()
+{
+  //! Return the number of simulated events
+
+  if (m_HasSimulatedEvents == false) {
+    ReadFooter();
+  }
+
+  return m_SimulatedEvents;
+}
+
+
 // MFileEventsTra.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
