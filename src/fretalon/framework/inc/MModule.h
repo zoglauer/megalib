@@ -79,11 +79,11 @@ class MModule
   //! Return the number of the preceeding modules
   unsigned int GetNPreceedingModuleTypes() const { return m_PreceedingModules.size(); }
   //! Return the preceeding module at position i (no error checks performed)
-  uint64_t GetPreceedingModuleType(unsigned int i) const { return m_PreceedingModules.at(i); }
-  //! Return the preceeding module at position i (no error checks performed)
-  bool GetPreceedingModuleHardRequirement(unsigned int i) const { return m_PreceedingModulesHardRequirement.at(i); }
+  uint64_t GetPreceedingModuleType(unsigned int i) const { return m_PreceedingModules.at(i).m_Type; }
+  //! Return true if the preceeding module at position i is a hard requirement (no error checks performed)
+  bool GetPreceedingModuleHardRequirement(unsigned int i) const { return m_PreceedingModules.at(i).m_Hard; }
   //! Return true if the preceeding module at position i must be directly before this module
-  bool GetPreceedingModuleImmediateRequirement(unsigned int i) const { return m_PreceedingModulesImmediateRequirement.at(i); }
+  bool GetPreceedingModuleImmediateRequirement(unsigned int i) const { return m_PreceedingModules.at(i).m_Immediate; }
   //! Return true if this module is a hard predecessor
   bool IsHardPreceedingModule(uint64_t Type) const;
   //! Return true if this module is a soft predecessor
@@ -215,11 +215,12 @@ class MModule
 
   //! Set which modules are assumed to be already performed
   //! If soft is set then only if the module is present at all require it to be done before
-  //! If ImmediatelyPreceeding is true, a module of the required type must immediately precede this module
-  void AddPreceedingModuleType(uint64_t  Type, bool HardRequirement = true, bool ImmediatelyPreceeding = false) { m_PreceedingModules.push_back(Type); m_PreceedingModulesHardRequirement.push_back(HardRequirement); m_PreceedingModulesImmediateRequirement.push_back(ImmediatelyPreceeding); }
+  //! If ImmediatelyPreceeding is true, a module of the required type must immediately precede this
+  //! module. An immediate requirement is always hard, so a soft one is raised to a hard one.
+  void AddPreceedingModuleType(uint64_t  Type, bool HardRequirement = true, bool ImmediatelyPreceeding = false);
 
   //! Remove all preceeding module requirements
-  void ClearPreceedingModuleTypes() { m_PreceedingModules.clear(); m_PreceedingModulesHardRequirement.clear(); m_PreceedingModulesImmediateRequirement.clear(); }
+  void ClearPreceedingModuleTypes() { m_PreceedingModules.clear(); }
   //! Add which type of module this is, e.g. c_EnergyCalibration
   //! This option ca be called twice to set two tasks of this modules!
   void AddModuleType(uint64_t  Type) { m_Modules.push_back(Type); }
@@ -251,12 +252,33 @@ class MModule
   //! Name of the XML tag --- has to be unique
   MString m_XmlTag;
 
-  //! List of preceeding modules
-  vector<uint64_t> m_PreceedingModules;
-  //! List of preceeding modules being a soft or hard requirement
-  vector<bool> m_PreceedingModulesHardRequirement;
-  //! List of preceeding modules which must be directly before this module
-  vector<bool> m_PreceedingModulesImmediateRequirement;
+  //! One requirement on a module type which has to appear earlier in the sequence.
+  //! The three properties are kept in one object rather than in parallel vectors, so that they
+  //! cannot get out of step when a derived module rebuilds its requirements.
+  class MPreceedingModule
+  {
+  public:
+    //! Standard constructor.
+    //! An immediate requirement is always a hard one: demanding that a module of the given type is
+    //! directly before this module is meaningless unless that type has to be in the sequence at all.
+    //! A soft requirement combined with an immediate one is therefore raised to a hard requirement.
+    MPreceedingModule(uint64_t Type, bool Hard, bool Immediate) : m_Type(Type), m_Hard(Hard), m_Immediate(Immediate)
+    {
+      if (m_Immediate == true) {
+        m_Hard = true;
+      }
+    }
+
+    //! The required module type
+    uint64_t m_Type;
+    //! True if the type must be present, false if it only has to come earlier when it is present
+    bool m_Hard;
+    //! True if a module of the required type must be directly before this module
+    bool m_Immediate;
+  };
+
+  //! List of module types which have to appear earlier in the sequence
+  vector<MPreceedingModule> m_PreceedingModules;
   //! List of succeeding modules
   vector<uint64_t> m_SucceedingModules;
   //! List of types of this modules

@@ -259,6 +259,12 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
         }
       }
       if (Found == false) {
+        // A soft requirement does not stop the module from being offered: the providing module does
+        // not have to be in the sequence at all. The one case a soft requirement does forbid -- the
+        // provider ending up after this module -- is caught by the soft-predecessor check below.
+        if (m_AvailableModules[i]->GetPreceedingModuleHardRequirement(m) == false) {
+          continue;
+        }
         //mout<<"Failed Previous requirement"<<endl;
         Passed = false;
         break;
@@ -280,15 +286,19 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
       }
     }
 
-    // (3) If any of the module types are already in the list, ignore it unless IsTypeExclusive == false:
-    if (Passed == true && m_AvailableModules[i]->IsTypeExclusive() == true) {
+    // (3) If any of the module types are already in the list, ignore it -- unless this module and
+    // the one already in the list both allow several modules of the same type. Exclusivity is a
+    // statement about the type, so it has to hold whichever of the two is added first.
+    if (Passed == true) {
       bool AlreadyInList = false;
       for (unsigned int p = 0; p < Previous.size(); ++p) {
         for (unsigned int t = 0; t < Previous[p]->GetNModuleTypes(); ++t) {
           for (unsigned int at = 0; at < m_AvailableModules[i]->GetNModuleTypes(); ++at) {
             if (Previous[p]->GetModuleType(t) == m_AvailableModules[i]->GetModuleType(at)) {
-              AlreadyInList = true;
-              break;
+              if (m_AvailableModules[i]->IsTypeExclusive() == true || Previous[p]->IsTypeExclusive() == true) {
+                AlreadyInList = true;
+                break;
+              }
             }
           }
         }
@@ -351,17 +361,23 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
 
 bool MSupervisor::SetModule(MModule* Module, unsigned int i) 
 {
-  // Set a module at a specific position - return false if other modules had to be eliminated  
+  // Set a module at a specific position - return false if the module could not be set there or if
+  // other modules had to be eliminated
 
+  bool ModuleSet = true;
   if (m_Modules.size() > i) {
     m_Modules[i] = Module;
   } else if (m_Modules.size() == i) {
     m_Modules.push_back(Module);
   } else {
     merr<<"Unable to add module"<<endl;
+    ModuleSet = false;
   }
 
-  return Validate();
+  // Validate in any case, so that the sequence is left consistent even when the position was wrong
+  const bool NothingEliminated = Validate();
+
+  return ModuleSet == true && NothingEliminated == true;
 }
 
 
@@ -370,15 +386,21 @@ bool MSupervisor::SetModule(MModule* Module, unsigned int i)
 
 bool MSupervisor::RemoveModule(unsigned int i)
 {
-  //! Remove module at a specific position - return false if other modules had to be eliminated  
+  //! Remove module at a specific position - return false if the module could not be removed or if
+  //! other modules had to be eliminated
 
+  bool ModuleRemoved = true;
   if (i < m_Modules.size()) {
     m_Modules.erase(m_Modules.begin() + i);
   } else {
     merr<<"Unable to remove module"<<endl;
+    ModuleRemoved = false;
   }
 
-  return Validate();
+  // Validate in any case, so that the sequence is left consistent even when the position was wrong
+  const bool NothingEliminated = Validate();
+
+  return ModuleRemoved == true && NothingEliminated == true;
 }
 
 
@@ -488,12 +510,16 @@ bool MSupervisor::Validate()
 
 
   //cout<<"Valid until: "<<ValidUntil<<endl;
+  // Remember whether anything had to go before the erasing changes the size: both SetModule() and
+  // RemoveModule() pass this on as "false if other modules had to be eliminated"
+  const bool NothingEliminated = (ValidUntil == m_Modules.size());
+
   while (ValidUntil < m_Modules.size()) {
     mout<<"Erasing some modules!"<<endl;
     m_Modules.erase(m_Modules.begin()+ValidUntil);
   }
 
-  return false;
+  return NothingEliminated;
 }
 
 
