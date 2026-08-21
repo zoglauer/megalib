@@ -158,16 +158,16 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   MFile::Rewind();
   
   if (ReadOutElementFormat == "" || ReadOutDataFormat == "") {
-    cout<<"Error in file: "<<m_FileName<<":"<<endl;
-    cout<<"No read-out element type / data format found in the file!"<<endl;
+    mout<<"Error in file: "<<m_FileName<<":"<<endl;
+    mout<<"No read-out element type / data format found in the file!"<<endl;
     Close();
     return false;
   }
   
   // Create the read-out elements and data to fill
   if ((m_ROE = MFretalonRegistry::Instance().GetReadOutElement(ReadOutElementFormat)) == 0) {
-    cout<<"Error in file: "<<m_FileName<<":"<<endl;
-    cout<<"No read-out element of type \""<<ReadOutElementFormat<<"\" is registered!"<<endl;
+    mout<<"Error in file: "<<m_FileName<<":"<<endl;
+    mout<<"No read-out element of type \""<<ReadOutElementFormat<<"\" is registered!"<<endl;
     Close();
     return false;
   }
@@ -191,8 +191,8 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   for (auto Name: RODNames) {
     MReadOutData* ROD = MFretalonRegistry::Instance().GetReadOutData(Name);
     if (ROD == nullptr) {
-      cout<<"Error in file: "<<m_FileName<<":"<<endl;
-      cout<<"No read-out data of type "<<Name<<" is registered!"<<endl;
+      mout<<"Error in file: "<<m_FileName<<":"<<endl;
+      mout<<"No read-out data of type "<<Name<<" is registered!"<<endl;
       Close();
       return false;
     }
@@ -208,8 +208,8 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   
   // But if we are still nullptr
   if (m_ROD == nullptr) {
-    cout<<"Error in file: "<<m_FileName<<":"<<endl;
-    cout<<"Data was not found!"<<endl;
+    mout<<"Error in file: "<<m_FileName<<":"<<endl;
+    mout<<"Data was not found!"<<endl;
     Close();
     return false;
   }

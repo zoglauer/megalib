@@ -88,6 +88,10 @@ class MModuleSaver : public MModule, public MModuleInterfaceFileName
   //! Output stream for dat file
   ofstream m_Out;
 
+  //! True once the roa UF header has been written to the current file -- it can only be written
+  //! after the first event has arrived, since that is when the read-out element and data types are known
+  bool m_RoaHeaderWritten;
+
   
 #ifdef ___CLING___
  public:

@@ -80,8 +80,8 @@ class MModule
   unsigned int GetNPreceedingModuleTypes() const { return m_PreceedingModules.size(); }
   //! Return the preceeding module at position i (no error checks performed)
   uint64_t GetPreceedingModuleType(unsigned int i) const { return m_PreceedingModules.at(i); }
-  //! Return the preceeding module at position i (no error checks performed)
-  uint64_t GetPreceedingModuleHardRequirement(unsigned int i) const { return m_PreceedingModulesHardRequirement.at(i); }
+  //! Return true if the preceeding module at position i is a hard requirement (no error checks performed)
+  bool GetPreceedingModuleHardRequirement(unsigned int i) const { return m_PreceedingModulesHardRequirement.at(i); }
   //! Return true if this module is a hard predecessor
   bool IsHardPreceedingModule(uint64_t Type) const;
   //! Return true if this module is a soft predecessor

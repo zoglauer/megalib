@@ -455,7 +455,7 @@ bool MGUIMainFretalon::OnOptions(unsigned int ModuleID)
     m_Supervisor->GetModule(ModuleID)->ShowOptionsGUI();
     return true;
   }
-  cout<<"Warning: No module with ID: "<<ModuleID<<endl;
+  mout<<"Warning: No module with ID: "<<ModuleID<<endl;
   
   return false;
 }
