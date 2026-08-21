@@ -100,8 +100,8 @@ void MModuleReadOutAssemblyQueues::EnableSorting(bool Sorted)
     if (m_IncomingEvents.begin() != m_IncomingEvents.end() ||
         m_OutgoingEvents.begin() != m_OutgoingEvents.end()) {
       if (g_Verbosity >= c_Error) {
-        cout<<"Error in MModuleReadOutAssemblyQueues::EnableSorting:"<<endl;
-        cout<<"You cannot change the sorting mode while events are in the queue!"<<endl;
+        mout<<"Error in MModuleReadOutAssemblyQueues::EnableSorting:"<<endl;
+        mout<<"You cannot change the sorting mode while events are in the queue!"<<endl;
       }
     } else {
       m_SortedQueue = Sorted;
@@ -121,8 +121,8 @@ bool MModuleReadOutAssemblyQueues::AddIncoming(MReadOutAssembly* Event)
 
   if (Event == nullptr) {
     if (g_Verbosity >= c_Error) {
-      cout<<"Error in MModuleReadOutAssemblyQueues::AddIncoming:"<<endl;
-      cout<<"You cannot add nullptr to the incoming queue!"<<endl;
+      mout<<"Error in MModuleReadOutAssemblyQueues::AddIncoming:"<<endl;
+      mout<<"You cannot add nullptr to the incoming queue!"<<endl;
     }
     return false;
   }
@@ -188,7 +188,7 @@ bool MModuleReadOutAssemblyQueues::AddOutgoing(MReadOutAssembly* Event)
     deque<unsigned long>::reverse_iterator Iter = find(m_SortingOrder.rbegin(), m_SortingOrder.rend(), ID);
     if (Iter == m_SortingOrder.rend()) {
       if (g_Verbosity >= c_Error) {
-        cout<<"Serious error: The event ID "<<ID<<" was not previously part of the deque!"<<endl;
+        mout<<"Serious error: The event ID "<<ID<<" was not previously part of the deque!"<<endl;
       }
       return false;
     }

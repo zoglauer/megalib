@@ -489,7 +489,7 @@ bool MSupervisor::Validate()
 
   //cout<<"Valid until: "<<ValidUntil<<endl;
   while (ValidUntil < m_Modules.size()) {
-    cout<<"Erasing some modules!"<<endl;
+    mout<<"Erasing some modules!"<<endl;
     m_Modules.erase(m_Modules.begin()+ValidUntil);
   }
 
@@ -519,7 +519,7 @@ bool MSupervisor::ChangeConfiguration(MString NewField)
   for (MString S: NodeNames) {
     MXmlNode* Node = Iter->GetNode(S);
     if (Node == nullptr) {
-      cout<<"Error: Unable to find node "<<S<<" under node "<<Iter->GetName()<<endl;
+      mout<<"Error: Unable to find node "<<S<<" under node "<<Iter->GetName()<<endl;
       return false;
     }
     Iter = Node;
@@ -780,7 +780,7 @@ bool MSupervisor::Analyze(bool TestRun)
     return false;
   }
   for (unsigned int m = 0; m < GetNModules(); ++m) {
-    if (g_Verbosity >= c_Info) cout<<"Initializing: "<<GetModule(m)->GetName()<<": "<<long(GetModule(m))<<endl;
+    if (g_Verbosity >= c_Info) mout<<"Initializing: "<<GetModule(m)->GetName()<<": "<<long(GetModule(m))<<endl;
     GetModule(m)->SetInterrupt(false);
     GetModule(m)->UseMultiThreading(m_UseMultiThreading);
     GetModule(m)->ClearQueues(); // Just in case a module did not call Finalize...
@@ -1005,7 +1005,7 @@ bool MSupervisor::Analyze(bool TestRun)
                 break;
               } else {
                 Modules[m].push_back(M);
-                cout<<"Spawned module: "<<M->GetName()<<endl<<flush;
+                mout<<"Spawned module: "<<M->GetName()<<endl<<flush;
               }
             }
           }
@@ -1095,19 +1095,20 @@ bool MSupervisor::Analyze(bool TestRun)
     m_ExpoCombinedViewer->OnUpdate();
   }
   
-  cout<<endl;
+  mout<<endl;
   if (m_SoftInterrupt == true) {
-    cout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
+    mout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
   } else {
-    cout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
+    mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
   }
   
   //if (g_Verbosity >= c_Error) {
-  ios::fmtflags SavedFlags(cout.flags());
-  cout.setf(ios::fixed);
-  cout.precision(1);
-  cout<<endl;
-  cout<<"Summary: "<<endl;
+  ios::fmtflags SavedFlags(mout.flags());
+  streamsize SavedPrecision = mout.precision();
+  mout.setf(ios::fixed);
+  mout.precision(1);
+  mout<<endl;
+  mout<<"Summary: "<<endl;
   for (unsigned int m = 0; m < Modules.size(); ++m) {
     long ProcessedEvents = 0;
     double ProcessingTime = 0;
@@ -1123,13 +1124,14 @@ bool MSupervisor::Analyze(bool TestRun)
       m_ExpoSupervisor->SetInstances(m, Modules[m].size());
     }
     
-    cout<<"Spent "<<ProcessingTime<<" sec analyzing ";
-    cout<<"(vs. "<<SleepingTime<<" sec sleeping) ";
-    cout<<"in module \""<<Modules[m][0]->GetName()<<"\" ";
-    cout<<"utilizing "<<Modules[m].size()<<" instance"<<(Modules[m].size() > 1 ? "s " : " ");
-    cout<<"and processed "<<ProcessedEvents<<" events."<<endl;
+    mout<<"Spent "<<ProcessingTime<<" sec analyzing ";
+    mout<<"(vs. "<<SleepingTime<<" sec sleeping) ";
+    mout<<"in module \""<<Modules[m][0]->GetName()<<"\" ";
+    mout<<"utilizing "<<Modules[m].size()<<" instance"<<(Modules[m].size() > 1 ? "s " : " ");
+    mout<<"and processed "<<ProcessedEvents<<" events."<<endl;
   }
-  cout.flags(SavedFlags);
+  mout.precision(SavedPrecision);
+  mout.flags(SavedFlags);
   //}
 
   // A final UI update:
@@ -1140,7 +1142,7 @@ bool MSupervisor::Analyze(bool TestRun)
   m_IsAnalysisRunning = false;
 
   if (TestRun == true) {
-    cout<<">>> TEST RUN SUCCESSFUL <<<"<<endl;
+    mout<<">>> TEST RUN SUCCESSFUL <<<"<<endl;
   }
   
   if (m_Terminate == true) Terminate();

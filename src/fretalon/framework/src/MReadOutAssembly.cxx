@@ -76,8 +76,14 @@ void MReadOutAssembly::Clear()
 {
   //! Reset all data
 
+  // Reset the inherited sequence data -- this also drops the stored read-outs and sim IAs, so a
+  // reused assembly does not accumulate them across loads
+  MReadOutSequence::Clear();
+
+  // The assembly reports an undefined ID rather than the base class' zero
   m_ID = g_UnsignedIntNotDefined;
-  m_Time = 0;
+  m_AnalysisProgress = 0;
+  m_FilteredOut = false;
 }
 
 
@@ -87,17 +93,19 @@ void MReadOutAssembly::Clear()
 bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
   // Returns true if something has been read (sucessful or not)
-  
-  if (MReadOutSequence::Parse(Line) == true) return true;
-  
+
+  // The assembly-specific keywords have to be checked first: the base sequence parser is tolerant
+  // and consumes every line including unrecognized ones, so anything checked after it is unreachable
+
+  // A BD line lists one or more bad-event flag names ("BD <flag> <flag> ..."). The assembly tracks
+  // only a single filtered-out state rather than the individual flags, so any bad-data marker
+  // removes the whole assembly from the analysis.
   if (Line.BeginsWith("BD")) {
-    // set a bad flag
-    // too lazy RN to go thru each flag.  the following should do::
     m_FilteredOut = true;
     return true;
   }
 
-  return false;
+  return MReadOutSequence::Parse(Line, Version);
 }
 
 

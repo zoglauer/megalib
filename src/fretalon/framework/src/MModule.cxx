@@ -112,9 +112,13 @@ bool MModule::FullfillsRequirements(MReadOutAssembly* Event)
 {
   //! Return true, if the read-out assembly fullfills the preeceding modules requirements
 
+  // Only hard requirements are checked: the provider of a soft requirement need not be in the
+  // sequence at all, so its progress flag may legitimately never be set.
   for (unsigned int i = 0; i < GetNPreceedingModuleTypes(); ++i) {
-    if (Event->HasAnalysisProgress(GetPreceedingModuleType(i)) == false) {
-      return false; 
+    if (GetPreceedingModuleHardRequirement(i) == true) {
+      if (Event->HasAnalysisProgress(GetPreceedingModuleType(i)) == false) {
+        return false;
+      }
     }
   }
     
