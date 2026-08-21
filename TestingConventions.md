@@ -266,7 +266,10 @@ Passed = EvaluateTrue("RemoveTemporaryFile()", "fixture",
 2. Tests must not depend on other tests' side effects.
 3. Restore any global state, singleton, static, or environment variable the test mutates. This includes ROOT's global state (`gROOT`, `gDirectory`, `gRandom`) and MEGAlib globals.
 4. Use the randomized private temporary root managed by `MUnitTest` for filesystem work. Never touch the real user filesystem.
-5. Do not make network calls in unit or integration tests.
+5. Do not contact anything outside the machine. Loop-back sockets are allowed where the class under test *is* the network layer -- `UTTransceiverTcpIp` and `UTTransceiverTcpIpBinary` bind real servers and clients on `localhost` and verify actual round trips. When a test does this:
+   - Never hard-code a port. Ask the operating system for a free one: bind a throw-away socket to port `0` on `INADDR_LOOPBACK`, read the assigned port back with `getsockname()`, close it, and use that value. Keep a fallback (`55000 + getpid() % 5000`, incremented and wrapped) for when that fails. See `UTTransceiverTcpIp::GetFreePort()`.
+   - Assert the connection actually happened -- `IsConnected()`, `IsServer()`, and the received payload. A transceiver `Connect()` returns `true` as soon as a role is requested and a bind failure degrades silently in the background thread, so "the call returned true" proves nothing on its own.
+   - Bound every wait with an explicit time out and poll (`WaitForConnected`, `WaitForMessage`); never block forever.
 6. Prefer freezing or injecting clocks instead of reading wall-clock time directly. If the public API itself measures real time and no injection seam exists, wall-clock tests are allowed only as a last resort. Such tests must use coarse, stable assertions and document why a fake clock could not be used.
 7. Flaky tests are bugs. Fix or quarantine them. Do not add retries.
 8. When a class owns dynamic resources, include at least one test that exercises reassignment or reinitialization, not just single-use success paths.
@@ -293,11 +296,28 @@ Passed = EvaluateTrue("RemoveTemporaryFile()", "fixture",
 2. Do not use `cout` or `cerr`. Use `mout`, `merr`, `mlog`, or `mgui`.
 3. When touching code that uses `cout`/`cerr`, switching it to `mout`/`merr` is allowed.
 4. Follow the conventions in `CodingConventions.md` at the repo root. If a rule here conflicts with that file, that file wins.
+5. `CodingConventions.md` prefers C++ standard headers over C and POSIX ones, but that preference only applies where the C++ standard library offers equivalent semantics. Sockets and process control do not have one, so `<sys/socket.h>`, `<netinet/in.h>`, `<arpa/inet.h>`, `<unistd.h>`, `<signal.h>`, `<sys/wait.h>`, and `<fcntl.h>` are expected in tests that drive them -- as in `UTTransceiverTcpIp`. Note the reason briefly next to the includes.
+6. `int main()` is the default. Use `int main(int argc, char** argv)` only when the parameters are actually read -- for example when the test re-executes itself in a child role, as `UTTransceiverTcpIp` does. Unused parameters are drift.
 
 ## Test Hygiene
 1. Silence expected noisy streams by calling `DisableDefaultStreams()` immediately before the noisy call and `EnableDefaultStreams()` immediately after. Both are protected methods on `MUnitTest`.
 2. Do not leave streams disabled across a sub-test boundary. Re-enable on every return path.
-3. Range, finiteness, and non-empty checks are fallback assertions only when no exact expected result is reasonably derivable.
+3. **Never call an `Evaluate*` helper while output is suppressed.** `MUnitTest` reports failures through `mout`, and `mout` writes to `std::cout`, so both `DisableDefaultStreams()` and a `cout.rdbuf()` swap swallow the `FAILED:` diagnostic. The test still returns non-zero and the summary still counts the failure, but the expected-vs-actual detail is lost. Wrap only the noisy call, store its result in a local, restore output, then assert:
+
+```cpp
+DisableDefaultStreams();
+const bool Result = Module.Initialize();
+EnableDefaultStreams();
+Passed = EvaluateFalse("Initialize()", "missing file", "Initialization fails when the file is absent", Result) && Passed;
+```
+
+4. Match the suppression mechanism to how the code under test actually prints:
+   - `mout` / `mlog` / `mgui` / `merr` -> `DisableDefaultStreams()` / `EnableDefaultStreams()`.
+   - `cout` guarded by `if (g_Verbosity >= c_Error)` -> save `g_Verbosity`, set `c_Quiet`, restore. Note that `g_Verbosity` defaults to `0` (`c_Quiet`), so such output is usually already silent.
+   - Ungated raw `cout` in production code -> only a `cout.rdbuf()` capture works. Prefer fixing the production code to use `mout`/`merr`; capture only when that code is out of scope.
+   - ROOT `Info in <...>` messages go to **stderr**, not stdout, and no MEGAlib mechanism silences them. Guard with `gErrorIgnoreLevel = kWarning` and restore the previous value.
+5. A test must leave stdout and stderr clean when it passes. Unexpected output hides real diagnostics and makes failures hard to spot in a suite run.
+6. Range, finiteness, and non-empty checks are fallback assertions only when no exact expected result is reasonably derivable.
 
 ## Harness
 1. `make unittests` builds all unit tests.
