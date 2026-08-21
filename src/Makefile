@@ -29,6 +29,7 @@ unittests:
 	$(MAKE) unittests -C mimrec
 	$(MAKE) unittests -C revan
 	$(MAKE) unittests -C sivan
+	$(MAKE) unittests -C fretalon
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
 	$(MAKE) unittests -C cosima
 endif

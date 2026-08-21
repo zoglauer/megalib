@@ -17,6 +17,10 @@ all:
 	@$(MAKE) -C base
 	@$(MAKE) -C melinator
 
+unittests:
+	@$(MAKE) -C base
+	@$(MAKE) unittests -C framework
+
 link:
 	@$(MAKE) link -C base
 	@$(MAKE) link -C melinator

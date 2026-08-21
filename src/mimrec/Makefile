@@ -120,6 +120,8 @@ OBJECT_MAIN:=$(patsubst %, $(LB)/%.o, $(MAIN))
 EXECUTABLE:=$(BN)/$(PROGRAM)
 
 CXX_UT := $(wildcard unittests/*.cxx)
+# ETARMFitter is an end-to-end test which requires a UI, not a unit test
+CXX_UT := $(filter-out unittests/ETARMFitter.cxx,$(CXX_UT))
 EXE_UT := $(patsubst %.cxx,%,$(CXX_UT))
 EXE_UT := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
 
@@ -148,6 +150,7 @@ clean:
 	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
 	@rm -f $(OBJECTS_UI) $(SHAREDLIB_UI) $(DICTIONARY_UI) $(DICTIONARYOBJECT_UI) $(LINKDEF_UI) $(ROOTMAP_UI) $(LB)/$(ROOTPCM_UI)
 	@rm -f $(OBJECTS_MAIN) $(EXECUTABLE)
+	@rm -f $(EXE_UT)
 
 	
 #----------------------------------------------------------------
