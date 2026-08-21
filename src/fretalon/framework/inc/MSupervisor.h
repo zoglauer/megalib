@@ -75,9 +75,11 @@ class MSupervisor
   unsigned int GetNModules() { return m_Modules.size(); }
   //! Return the modules at position i in the current sequence --- no error checks are performed  
   MModule* GetModule(unsigned int i);
-  //! Set a module at a specific position - return false if other modules had to be eliminated  
+  //! Set a module at a specific position - return false if the module could not be set there or if
+  //! other modules had to be eliminated
   bool SetModule(MModule* Module, unsigned int i);
-  //! Remove module at a specific position - return false if other modules had to be eliminated  
+  //! Remove module at a specific position - return false if the module could not be removed or if
+  //! other modules had to be eliminated
   bool RemoveModule(unsigned int i);
 
   //! Return a list of possible volumes, which might to follow

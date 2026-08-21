@@ -33,6 +33,7 @@
 
 // MEGAlib libs:
 #include "MModuleReadOutAssemblyQueues.h"
+#include "MStreams.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,6 +82,7 @@ MModule::MModule()
   
   m_AllowMultiThreading = false;
   m_AllowMultipleInstances = false;
+  m_TypeExclusive = true;
 
   m_UseMultiThreading = false;
   m_Thread = 0;
@@ -101,6 +103,26 @@ MModule::MModule()
 MModule::~MModule()
 {
   // Delete this instance of MModule
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MModule::AddPreceedingModuleType(uint64_t Type, bool HardRequirement, bool ImmediatelyPreceeding)
+{
+  //! Set which module type is assumed to be already performed
+
+  // An immediate requirement is meaningless unless the type is in the sequence at all, so the two
+  // cannot be combined. MPreceedingModule raises it to a hard requirement -- say so, because the
+  // caller asked for something it will not get.
+  if (ImmediatelyPreceeding == true && HardRequirement == false) {
+    if (g_Verbosity >= c_Warning) {
+      mout<<m_XmlTag<<": A soft preceeding module requirement (type: "<<Type<<") cannot be immediate -- raising it to a hard requirement"<<endl;
+    }
+  }
+
+  m_PreceedingModules.push_back(MPreceedingModule(Type, HardRequirement, ImmediatelyPreceeding));
 }
 
 
