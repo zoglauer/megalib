@@ -135,7 +135,7 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
     if (Option == "-h" || Option == "--help" || Option == "?" || Option == "-?") {
-      cout<<Usage.str()<<endl;
+      mout<<Usage.str()<<endl;
       return false;
     }
   }
@@ -148,8 +148,8 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
     if (Option == "-c" || Option == "--configuration" ||
         Option == "-m" || Option == "--multithreading") {
       if (!((argc > i+1) && argv[i+1][0] != '-')){
-        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-        cout<<Usage.str()<<endl;
+        mout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        mout<<Usage.str()<<endl;
         return false;
       }
     }
@@ -160,13 +160,14 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
     Option = argv[i];
     if (Option == "--configuration" || Option == "-c") {
       m_Supervisor->Load(argv[++i]);
-      cout<<"Command-line parser: Use configuration file "<<argv[i]<<endl;
+      mout<<"Command-line parser: Use configuration file "<<argv[i]<<endl;
     } else if (Option == "--verbosity" || Option == "-v") {
       g_Verbosity = atoi(argv[++i]);
-      cout<<"Command-line parser: Verbosity "<<g_Verbosity<<endl;
+      mout<<"Command-line parser: Verbosity "<<g_Verbosity<<endl;
     } else if (Option == "--multithreading" || Option == "-m") {
-      m_Supervisor->UseMultiThreading((atoi(argv[i]) != 0 ? true : false));
-      cout<<"Command-line parser: Using multithreading: "<<(atoi(argv[i]) != 0 ? "yes" : "no")<<endl;
+      bool UseMultiThreading = (atoi(argv[++i]) != 0);
+      m_Supervisor->UseMultiThreading(UseMultiThreading);
+      mout<<"Command-line parser: Using multithreading: "<<(UseMultiThreading == true ? "yes" : "no")<<endl;
     } else if (Option == "--auto" || Option == "-a") {
       // Parse later
     }
