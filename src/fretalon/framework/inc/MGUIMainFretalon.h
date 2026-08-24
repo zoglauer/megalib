@@ -70,6 +70,10 @@ public:
 protected:
   //! Update the module section
   void UpdateModules();
+  //! Disable all UI options that enables editing the sequence
+  void LockModifications();
+  //! Enable all UI options that enables editing the sequence
+  void UnlockModifications();
 
   //! Actions when the change button has been pressed
   virtual bool OnChange(unsigned int ModuleID);
@@ -128,6 +132,9 @@ private:
   
   //! List of the modules
   vector<MGUIEModule*> m_Modules;
+
+  //! The options menu - needed for enabling / diabling the modification locking
+  TGPopupMenu* m_MenuOptions;
 
 
   // IDs:

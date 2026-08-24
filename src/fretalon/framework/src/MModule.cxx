@@ -33,6 +33,7 @@
 
 // MEGAlib libs:
 #include "MModuleReadOutAssemblyQueues.h"
+#include "MStreams.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,11 +82,14 @@ MModule::MModule()
   
   m_AllowMultiThreading = false;
   m_AllowMultipleInstances = false;
+  m_TypeExclusive = true;
 
   m_UseMultiThreading = false;
   m_Thread = 0;
   m_IsThreadRunning = false;
-  
+
+  m_Geometry = nullptr;
+
   m_NAnalyzedEvents = 0;
   
   ClearTimer();
@@ -107,13 +111,36 @@ MModule::~MModule()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MModule::AddPreceedingModuleType(uint64_t Type, bool HardRequirement, bool ImmediatelyPreceeding)
+{
+  //! Set which module type is assumed to be already performed
+
+  // An immediate requirement is automatically a hard requiremnet
+  if (ImmediatelyPreceeding == true && HardRequirement == false) {
+    HardRequirement = true;
+    if (g_Verbosity >= c_Warning) {
+      mout<<m_XmlTag<<": A soft preceeding module requirement (type: "<<Type<<") cannot be immediate -- raising it to a hard requirement"<<endl;
+    }
+  }
+
+  m_PreceedingModules.push_back(MPreceedingModuleRequirements(Type, HardRequirement, ImmediatelyPreceeding));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MModule::FullfillsRequirements(MReadOutAssembly* Event)
 {
   //! Return true, if the read-out assembly fullfills the preeceding modules requirements
 
+  // Only hard requirements are checked: the provider of a soft requirement need not be in the
+  // sequence at all, so its progress flag may legitimately never be set.
   for (unsigned int i = 0; i < GetNPreceedingModuleTypes(); ++i) {
-    if (Event->HasAnalysisProgress(GetPreceedingModuleType(i)) == false) {
-      return false; 
+    if (GetPreceedingModuleHardRequirement(i) == true) {
+      if (Event->HasAnalysisProgress(GetPreceedingModuleType(i)) == false) {
+        return false;
+      }
     }
   }
     
@@ -238,19 +265,22 @@ bool MModule::Initialize()
   
   if (m_UseMultiThreading == true && m_AllowMultiThreading > 0) {
     m_IsThreadRunning = false;
-  
+
     delete m_Thread;
-    m_Thread = new TThread(m_XmlTag + "-Thread ", 
-                           (void(*) (void *)) &MModuleKickstartThread, 
-                           (void*) this);
+    m_Thread = new TThread(m_XmlTag + "-Thread ", &MModuleKickstartThread, (void*) this);
     m_Thread->SetPriority(TThread::kHighPriority);
-    m_Thread->Run();
-    
+    if (m_Thread->Run() != 0) {
+      merr<<m_XmlTag<<": Unable to start the analysis thread"<<endl;
+      delete m_Thread;
+      m_Thread = nullptr;
+      return false;
+    }
+
     while (m_IsThreadRunning == false) {
       gSystem->Sleep(10);
     }
   }
-  
+
   return true;
 }
   
@@ -267,7 +297,8 @@ void MModule::AnalysisLoop()
     if (m_IsPaused == true || DoSingleAnalysis() == false) {
       MTimer SleepTimer;
       gSystem->Sleep(20);
-      m_SleepTime += SleepTimer.GetElapsed(); // Sleep() is not perfectly accurate...
+      // TODO: Once we switch to C++20 switch to: m_SleepTime += SleepTimer.GetElapsed()
+      m_SleepTime = m_SleepTime.load() + SleepTimer.GetElapsed(); // Sleep() is not perfectly accurate...
     }
   }
 
@@ -338,10 +369,9 @@ void MModule::Finalize()
 {
   if (m_Thread != 0) {
     m_Interrupt = true;
-    while (m_IsThreadRunning == true) {
-      gSystem->Sleep(20);
-    }
-    if (m_Thread != 0) m_Thread->Kill();
+    // Join blocks until the OS thread has truly finished.
+    m_Thread->Join();
+    delete m_Thread;
     m_Thread = 0;
   }
   

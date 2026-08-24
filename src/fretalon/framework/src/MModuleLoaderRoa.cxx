@@ -114,7 +114,7 @@ bool MModuleLoaderRoa::AnalyzeEvent(MReadOutAssembly* Event)
   // Here: Just read it.
     
   if (ReadNextEvent(Event) == false) {
-    cout<<"MModuleLoaderRoa: No more events!"<<endl;
+    mout<<"MModuleLoaderRoa: No more events!"<<endl;
     m_IsFinished = true;
     return false;
   }
@@ -151,7 +151,7 @@ bool MModuleLoaderRoa::ReadNextEvent(MReadOutAssembly* Event)
   m_RoaFile.ReadNext(ROS);
 
   if (ROS.GetNumberOfReadOuts() == 0) {
-    cout<<m_Name<<": No more read-outs available in File"<<endl;
+    mout<<m_Name<<": No more read-outs available in File"<<endl;
     return false;
   }
   

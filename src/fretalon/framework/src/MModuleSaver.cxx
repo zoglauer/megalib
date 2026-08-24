@@ -45,7 +45,7 @@ ClassImp(MModuleSaver)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleSaver::MModuleSaver() : MModule(), MModuleInterfaceFileName()
+MModuleSaver::MModuleSaver() : MModule(), MModuleInterfaceFileName(), m_RoaHeaderWritten(false)
 {
   // Construct an instance of MNCTModuleTemplate
 
@@ -93,13 +93,13 @@ bool MModuleSaver::Initialize()
   // Initialize the module
   
   if (m_FileName.EndsWith("evta") == false && m_FileName.EndsWith("roa") == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": The file must be either a evta or roa file, and not: "<<m_FileName<<endl;
+    if (g_Verbosity >= c_Error) mout<<m_XmlTag<<": The file must be either a evta or roa file, and not: "<<m_FileName<<endl;
     return false;    
   }
   
   m_Out.open(m_FileName);
   if (m_Out.is_open() == false) {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unable to open file: "<<m_FileName<<endl;
+    if (g_Verbosity >= c_Error) mout<<m_XmlTag<<": Unable to open file: "<<m_FileName<<endl;
     return false;
   }
   
@@ -111,12 +111,12 @@ bool MModuleSaver::Initialize()
     m_Out<<endl;
   } else if (m_FileName.EndsWith("roa")) {
     m_Mode = c_RoaFile;
+    m_RoaHeaderWritten = false;
     m_Out<<endl;
     m_Out<<"TYPE ROA"<<endl;
-    //m_Out<<"UF TBD TBD"<<endl;
     m_Out<<endl;
   } else {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
+    if (g_Verbosity >= c_Error) mout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
   }
 
@@ -150,9 +150,28 @@ bool MModuleSaver::AnalyzeEvent(MReadOutAssembly* Event)
   if (m_Mode == c_EvtaFile) {
     Event->StreamEvta(m_Out);  
   } else if (m_Mode == c_RoaFile) {
-    Event->StreamRoa(m_Out);
+    // MFileReadOuts needs the "UF <element type> <data type>" header to know which read-out classes
+    // to instantiate, and only scans the first 100 lines of the file for it. The types can only be
+    // taken from the read-outs of the first event, so if that event has none the format of the file
+    // cannot be determined and the file would be unreadable.
+    if (m_RoaHeaderWritten == false) {
+      if (Event->GetNumberOfReadOuts() == 0) {
+        if (g_Verbosity >= c_Error) mout<<m_XmlTag<<": The first event has no read-outs, thus the roa read-out format cannot be determined: "<<m_FileName<<endl;
+        // Everything written from here on would be unreadable, so stop the analysis instead of
+        // quietly dropping events -- the supervisor shuts the module sequence down in an orderly way
+        m_IsOK = false;
+        return false;
+      }
+      const MReadOut& ReadOut = Event->GetReadOut(0);
+      m_Out<<"UF "<<ReadOut.GetReadOutElement().GetType()<<" "<<ReadOut.GetReadOutData().GetType()<<endl;
+      m_Out<<endl;
+      m_RoaHeaderWritten = true;
+    }
+    // The reader parses the read-out values positionally, so the per-line type descriptors have to
+    // be left out -- with them every value is shifted by one token
+    Event->StreamRoa(m_Out, false);
   } else {
-    if (g_Verbosity >= c_Error) cout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
+    if (g_Verbosity >= c_Error) mout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
   }
   

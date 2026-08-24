@@ -80,6 +80,8 @@ MSupervisor::MSupervisor()
   
   m_UseMultiThreading = false;
   m_IsAnalysisRunning = false;
+  m_SequenceIncomplete = false;
+  m_ModuleOptionsIncomplete = false;
 
   m_UIUse = true;
   m_UIProgramName = "Unnamed program";
@@ -107,7 +109,9 @@ void MSupervisor::Clear()
   //! Reset all data
 
   m_Modules.clear();
-  
+  m_SequenceIncomplete = false;
+  m_ModuleOptionsIncomplete = false;
+
   // Don't delete those! Otherwise we have to add improved handling of when 
   // the canvases within the UI's get deleted...
   // delete m_Gui;
@@ -124,6 +128,9 @@ void MSupervisor::Clear()
   m_GeometryFileName = "";
   delete m_Geometry;
   m_Geometry = nullptr;
+  for (unsigned int a = 0; a < m_AvailableModules.size(); ++a) {
+    m_AvailableModules[a]->SetGeometry(nullptr);
+  }
 }
 
 
@@ -211,16 +218,55 @@ MModule* MSupervisor::GetAvailableModuleByXmlTag(MString XmlTag)
 
 vector<MModule*> MSupervisor::ReturnPossibleVolumes(unsigned int Position)
 {
-  vector<MModule*> Previous;
-  if (Position > 0) {
-    for (unsigned int i = 0; i < Position; ++i) {
-      Previous.push_back(m_Modules[i]);
-    }
+  vector<MModule*> PreviousModules;
+  for (unsigned int i = 0; i < Position && i < m_Modules.size(); ++i) {
+    PreviousModules.push_back(m_Modules[i]);
   }
 
   //cout<<"Assembling possible modules for position: "<<Position<<" --> "<<Previous.size()<<endl;
 
-  return ReturnPossibleVolumes(Previous);
+  vector<MModule*> Possible = ReturnPossibleVolumes(PreviousModules);
+
+  // Now check that what comes after is in agreement
+  vector<MModule*> ReturnedModules;
+
+  for (unsigned int c = 0; c < Possible.size(); ++c) {
+    vector<MModule*> Hypothetical = m_Modules;
+    if (Position < Hypothetical.size()) {
+      Hypothetical[Position] = Possible[c];
+    } else if (Position == Hypothetical.size()) {
+      Hypothetical.push_back(Possible[c]);
+    }
+
+    // Check if exclusive modules would collide
+    const unsigned int ValidIgnoringExclusivity = GetNValidModules(Hypothetical, false, true, (int) Position);
+    bool CollidesLater = false;
+    for (unsigned int p = Position + 1; p < ValidIgnoringExclusivity; ++p) {
+      for (unsigned int t = 0; t < Hypothetical[p]->GetNModuleTypes(); ++t) {
+        for (unsigned int at = 0; at < Possible[c]->GetNModuleTypes(); ++at) {
+          if (Hypothetical[p]->GetModuleType(t) == Possible[c]->GetModuleType(at)) {
+            if (Possible[c]->IsTypeExclusive() == true || Hypothetical[p]->IsTypeExclusive() == true) {
+              CollidesLater = true;
+            }
+          }
+        }
+      }
+    }
+
+    // Check whether the candidate has a soft requirement whose provider ends up positioned after it
+    if (CollidesLater == false) {
+      const unsigned int ValidWithCandidate = GetNValidModules(Hypothetical, false, true, -1);
+      if (Position >= ValidWithCandidate) {
+        CollidesLater = true;
+      }
+    }
+
+    if (CollidesLater == false) {
+      ReturnedModules.push_back(Possible[c]);
+    }
+  }
+
+  return ReturnedModules;
 }
 
 
@@ -236,30 +282,47 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
 
     bool Passed = true;
 
-    // (1) Check if the requirement on previous modules can be passed 
+    // (1) A start module (generates its own events) can only be first
+    if (Previous.empty() == false && m_AvailableModules[i]->IsStartModule() == true) {
+      Passed = false;
+    }
+
+    // (2) Check if the requirement on previous modules can be passed
     for (unsigned int m = 0; m < m_AvailableModules[i]->GetNPreceedingModuleTypes(); ++m) {
       //cout<<"Requires: "<<m_AvailableModules[i]->GetPreceedingModuleType(m)<<endl;
       bool Found = false;
-      //cout<<"Checking "<<Previous.size()<<" previous elements"<<endl;
-      for (unsigned int p = 0; p < Previous.size(); ++p) {
-        //cout<<"Checking: "<<Previous[p]->GetName()<<endl;
-        for (unsigned int t = 0; t < Previous[p]->GetNModuleTypes(); ++t) {
-          //cout<<"Provides: "<<Previous[p]->GetModuleType(t)<<endl;
-          if (Previous[p]->GetModuleType(t) == m_AvailableModules[i]->GetPreceedingModuleType(m)) {
-            Found = true;
-            break;
-          }
+      if (m_AvailableModules[i]->GetPreceedingModuleImmediateRequirement(m) == true) {
+        if (Previous.empty() == false) {
+          Found = Previous.back()->ProvidesModuleType(m_AvailableModules[i]->GetPreceedingModuleType(m));
         }
-        if (Found == true) break;
+      } else {
+        //cout<<"Checking "<<Previous.size()<<" previous elements"<<endl;
+        for (unsigned int p = 0; p < Previous.size(); ++p) {
+          //cout<<"Checking: "<<Previous[p]->GetName()<<endl;
+          for (unsigned int t = 0; t < Previous[p]->GetNModuleTypes(); ++t) {
+            //cout<<"Provides: "<<Previous[p]->GetModuleType(t)<<endl;
+            if (Previous[p]->GetModuleType(t) == m_AvailableModules[i]->GetPreceedingModuleType(m)) {
+              Found = true;
+              break;
+            }
+          }
+          if (Found == true) break;
+        }
       }
       if (Found == false) {
+        // A soft requirement does not stop the module from being offered: the providing module does
+        // not have to be in the sequence at all. The one case a soft requirement does forbid -- the
+        // provider ending up after this module -- is caught by the soft-predecessor check below.
+        if (m_AvailableModules[i]->GetPreceedingModuleHardRequirement(m) == false) {
+          continue;
+        }
         //mout<<"Failed Previous requirement"<<endl;
         Passed = false;
         break;
       }
     }
 
-    // (2) If any of it is already in the list ignore it:
+    // (3) If any of it is already in the list ignore it:
     if (Passed == true) {
       bool AlreadyInList = false;
       for (unsigned int p = 0; p < m_Modules.size(); ++p) {
@@ -274,15 +337,19 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
       }
     }
 
-    // (3) If any of the module types are already in the list, ignore it:
+    // (4) If any of the module types are already in the list, ignore it -- unless this module and
+    // the one already in the list both allow several modules of the same type. Exclusivity is a
+    // statement about the type, so it has to hold whichever of the two is added first.
     if (Passed == true) {
       bool AlreadyInList = false;
       for (unsigned int p = 0; p < Previous.size(); ++p) {
         for (unsigned int t = 0; t < Previous[p]->GetNModuleTypes(); ++t) {
           for (unsigned int at = 0; at < m_AvailableModules[i]->GetNModuleTypes(); ++at) {
             if (Previous[p]->GetModuleType(t) == m_AvailableModules[i]->GetModuleType(at)) {
-              AlreadyInList = true;
-              break;
+              if (m_AvailableModules[i]->IsTypeExclusive() == true || Previous[p]->IsTypeExclusive() == true) {
+                AlreadyInList = true;
+                break;
+              }
             }
           }
         }
@@ -311,7 +378,7 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
       }
     }
     
-    // (4) If any of the modules which can follow are already in the list, also ignore it
+    // (5) If any of the modules which can follow are already in the list, also ignore it
 //     if (Passed == true) {
 //       bool AlreadyInList = false;
 //       for (unsigned int at = 0; at < m_AvailableModules[i]->GetNSucceedingModuleTypes(); ++at) {
@@ -345,17 +412,34 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
 
 bool MSupervisor::SetModule(MModule* Module, unsigned int i) 
 {
-  // Set a module at a specific position - return false if other modules had to be eliminated  
+  // Set a module at a specific position - return false if the module could not be set there or if
+  // other modules had to be eliminated
 
+  // True if the module indeed could be placed at position i
+  bool ModuleSet = true;
+  // True if the module actually changed
+  bool GenuineChange = true;
   if (m_Modules.size() > i) {
+    if (m_Modules[i] == Module) {
+      GenuineChange = false;
+    }
     m_Modules[i] = Module;
   } else if (m_Modules.size() == i) {
     m_Modules.push_back(Module);
   } else {
     merr<<"Unable to add module"<<endl;
+    ModuleSet = false;
   }
 
-  return Validate();
+  // Validate in any case, so that the sequence is left consistent even when the position was wrong
+  const bool NothingEliminated = Validate();
+
+  // A successful change clears the incompleteness flag
+  if (ModuleSet == true && NothingEliminated == true && GenuineChange == true) {
+    m_SequenceIncomplete = false;
+  }
+
+  return ModuleSet == true && NothingEliminated == true;
 }
 
 
@@ -364,15 +448,150 @@ bool MSupervisor::SetModule(MModule* Module, unsigned int i)
 
 bool MSupervisor::RemoveModule(unsigned int i)
 {
-  //! Remove module at a specific position - return false if other modules had to be eliminated  
+  //! Remove module at a specific position - return false if the module could not be removed or if
+  //! other modules had to be eliminated
 
+  bool ModuleRemoved = true;
   if (i < m_Modules.size()) {
     m_Modules.erase(m_Modules.begin() + i);
   } else {
     merr<<"Unable to remove module"<<endl;
+    ModuleRemoved = false;
   }
 
-  return Validate();
+  // Validate in any case, so that the sequence is left consistent even when the position was wrong
+  const bool NothingEliminated = Validate();
+
+  // Only a genuinely successful edit clears this.
+  if (ModuleRemoved == true && NothingEliminated == true) {
+    m_SequenceIncomplete = false;
+  }
+
+  return ModuleRemoved == true && NothingEliminated == true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MSupervisor::GetNValidModules(bool Report, bool CheckTypeExclusivity, int ExcludeFromExclusivity)
+{
+  return GetNValidModules(m_Modules, Report, CheckTypeExclusivity, ExcludeFromExclusivity);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MSupervisor::GetNValidModules(const vector<MModule*>& Modules, bool Report, bool CheckTypeExclusivity, int ExcludeFromExclusivity)
+{
+  // Return how many modules, from the start, form a valid sequence; does not modify it.
+
+  unsigned int ValidUntil = Modules.size();
+
+  // (1) Make sure no module appears twice:
+  for (unsigned int m1 = 0; m1 < Modules.size(); ++m1) {
+    for (unsigned int m2 = m1+1; m2 < Modules.size(); ++m2) {
+      if (Modules[m1] == Modules[m2]) {
+        if (Report == true) mout<<"Module: "<<Modules[m1]->GetName()<<" appears twice: "<<m1<<" & "<<m2<<endl;
+        if (m2 < ValidUntil) {
+          ValidUntil = m2;
+        }
+      }
+    }
+  }
+
+  // (2) Make sure no module type occurs twice unless every module carrying it allows that (e.g. two filters or savers)
+  if (CheckTypeExclusivity == true) {
+    for (unsigned int m1 = 0; m1 < Modules.size(); ++m1) {
+      if ((int) m1 == ExcludeFromExclusivity) continue;
+      for (unsigned int m2 = m1+1; m2 < Modules.size(); ++m2) {
+        if ((int) m2 == ExcludeFromExclusivity) continue;
+        for (unsigned int t1 = 0; t1 < Modules[m1]->GetNModuleTypes(); ++t1) {
+          for (unsigned int t2 = 0; t2 < Modules[m2]->GetNModuleTypes(); ++t2) {
+            if (Modules[m1]->GetModuleType(t1) == Modules[m2]->GetModuleType(t2)) {
+              if (Modules[m1]->IsTypeExclusive() == true || Modules[m2]->IsTypeExclusive() == true) {
+                if (Report == true) mout<<"Module \""<<Modules[m2]->GetName()<<"\" provides a type which module \""<<Modules[m1]->GetName()<<"\" already provides exclusively"<<endl;
+                if (m2 < ValidUntil) {
+                  ValidUntil = m2;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // (3) Only the very first module may be start module, e.g., generate events
+  for (unsigned int m = 1; m < Modules.size(); ++m) {
+    if (Modules[m]->IsStartModule() == true) {
+      if (Report == true) mout<<"Module \""<<Modules[m]->GetName()<<"\" generates its own events and cannot be used anywhere but as the first module"<<endl;
+      if (m < ValidUntil) {
+        ValidUntil = m;
+      }
+    }
+  }
+
+  // (4) Check hard predecessor requirements
+  vector<uint64_t> PredecessorTypes; // This stores the modules which came before m
+  for (unsigned int m = 0; m < Modules.size(); ++m) {
+    for (unsigned int t = 0; t < Modules[m]->GetNPreceedingModuleTypes(); ++t) {
+      if (Modules[m]->GetPreceedingModuleHardRequirement(t) == false) continue;
+
+      // Check if a required predecessor is in the existing predecessor list
+      bool Found = false;
+      if (Modules[m]->GetPreceedingModuleImmediateRequirement(t) == true) {
+        if (m > 0) {
+          Found = Modules[m-1]->ProvidesModuleType(Modules[m]->GetPreceedingModuleType(t));
+        }
+      } else {
+        for (unsigned int p = 0; p < PredecessorTypes.size(); ++p) {
+          if (PredecessorTypes[p] == Modules[m]->GetPreceedingModuleType(t)) {
+            Found = true;
+          }
+        }
+      }
+
+      if (Found == false) {
+        if (Report == true) mout<<"Hard predecessor requirements for module \""<<Modules[m]->GetName()<<"\" are not fullfilled (type: "<<Modules[m]->GetPreceedingModuleType(t)<<")"<<endl;
+        if (m < ValidUntil) {
+          ValidUntil = m;
+        }
+        break;
+      }
+    }
+    if (ValidUntil == m) break;
+
+    for (unsigned int t = 0; t < Modules[m]->GetNModuleTypes(); ++t) {
+      PredecessorTypes.push_back(Modules[m]->GetModuleType(t));
+    }
+  }
+
+  // (5) A soft requirement's provider, if present, must not come after this module
+  for (unsigned int m = 0; m < ValidUntil; ++m) {
+    for (unsigned int t = 0; t < Modules[m]->GetNPreceedingModuleTypes(); ++t) {
+      if (Modules[m]->GetPreceedingModuleHardRequirement(t) == true) continue;
+
+      bool FoundAfter = false;
+      for (unsigned int m2 = m+1; m2 < ValidUntil; ++m2) {
+        if (Modules[m2]->ProvidesModuleType(Modules[m]->GetPreceedingModuleType(t)) == true) {
+          FoundAfter = true;
+          break;
+        }
+      }
+      if (FoundAfter == true) {
+        if (Report == true) mout<<"Soft predecessor requirements for module "<<Modules[m]->GetName()<<" are not fullfilled"<<endl;
+        if (m < ValidUntil) {
+          ValidUntil = m;
+        }
+        break;
+      }
+    }
+    if (ValidUntil == m) break;
+  }
+
+  return ValidUntil;
 }
 
 
@@ -381,105 +600,16 @@ bool MSupervisor::RemoveModule(unsigned int i)
 
 bool MSupervisor::Validate()
 {
-  // Validate
+  // Validate the sequence and remove the modules which make it invalid. Both SetModule() and
+  // RemoveModule() pass the result on as "false if other modules had to be eliminated".
 
-  unsigned int ValidUntil = m_Modules.size();
-
-  // (1) Make sure no module appears twice:
-  for (unsigned int m1 = 0; m1 < m_Modules.size(); ++m1) {
-    for (unsigned int m2 = m1+1; m2 < m_Modules.size(); ++m2) {
-      if (m_Modules[m1] == m_Modules[m2]) {
-        mout<<"Module: "<<m_Modules[m1]->GetName()<<" appears twice: "<<m1<<" & "<<m2<<endl;
-        if (m2 < ValidUntil) {
-          ValidUntil = m2;
-        }
-      }
-    }
+  const unsigned int Valid = GetNValidModules();
+  if (Valid == m_Modules.size()) {
+    return true;
   }
 
-  // (2) Make sure all predecessor requirements are fulfilled
-  vector<uint64_t> PredecessorTypes; // This stores the modules which came before m
-  for (unsigned int m = 0; m < m_Modules.size(); ++m) {
-    for (unsigned int t = 0; t < m_Modules[m]->GetNPreceedingModuleTypes(); ++t) {
-      // (a) Check if a required predecessor is in the existing predecessor list 
-      bool Found = false;
-      for (unsigned int p = 0; p < PredecessorTypes.size(); ++p) {
-        if (PredecessorTypes[p] == m_Modules[m]->GetPreceedingModuleType(t)) {
-          Found = true;
-        }
-      }
-      // (b) is not check if it is a hard or soft requirement
-      if (Found == false) {
-        // if it is a hard requirement than we have to quit
-        if (m_Modules[m]->GetPreceedingModuleHardRequirement(t) == true) {
-          mout<<"Hard predecessor requirements for module \""<<m_Modules[m]->GetName()<<"\" are not fullfilled (type: "<<m_Modules[m]->GetPreceedingModuleType(t)<<")"<<endl;
-          if (m < ValidUntil) {
-            ValidUntil = m;
-          }
-          break;
-        }
-        // if it is just a soft requirement, make sure it does not show up in the rest of the list
-        else {
-          bool FoundAfter = false;
-          for (unsigned int m2 = m+1; m2 < m_Modules.size(); ++m2) {
-            if (m_Modules[m2]->ProvidesModuleType(m_Modules[m]->GetPreceedingModuleType(t)) == true) {
-              FoundAfter = true;
-              break;
-            }
-          }
-          if (FoundAfter == true) {
-            mout<<"Soft predecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
-            if (m < ValidUntil) {
-              ValidUntil = m;
-            }
-            break;            
-          }
-        }
-        break;
-      }
-    }
-    if (ValidUntil == m) break;
-
-    for (unsigned int t = 0; t < m_Modules[m]->GetNModuleTypes(); ++t) {
-      PredecessorTypes.push_back(m_Modules[m]->GetModuleType(t));
-    }
-  }
-
-  // (3) Make sure all succecessor requirements are fulfilled
-  /*
-  for (unsigned int m = 0; m < m_Modules.size(); ++m) {
-    for (unsigned int s = m+1; s < m_Modules.size(); ++s) {
-      for (unsigned int st = 0; st < m_Modules[s]->GetNModuleTypes(); ++st) {
-        bool Found = false;
-        if (
-        for (unsigned int mt = 0; mt < m_Modules[m]->GetNSucceedingModuleTypes(); ++mt) {
-          if (m_Modules[m]->GetSucceedingModuleType(mt) == m_Modules[s]->GetModuleType(st)) {
-            Found = true;
-            break;
-          }
-        }
-        if (Found == false) {
-          mout<<"Succecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
-          if (s < ValidUntil) {
-            ValidUntil = s;
-          }
-          break;
-        }
-        if (ValidUntil == s) break;
-      }
-      if (ValidUntil == s) break;
-    }
-  }
-  */
-
-  // Many possible validations are missing
-
-
-  //cout<<"Valid until: "<<ValidUntil<<endl;
-  while (ValidUntil < m_Modules.size()) {
-    cout<<"Erasing some modules!"<<endl;
-    m_Modules.erase(m_Modules.begin()+ValidUntil);
-  }
+  mout<<"Removing "<<m_Modules.size() - Valid<<" module(s) from the sequence"<<endl;
+  m_Modules.erase(m_Modules.begin() + Valid, m_Modules.end());
 
   return false;
 }
@@ -507,7 +637,8 @@ bool MSupervisor::ChangeConfiguration(MString NewField)
   for (MString S: NodeNames) {
     MXmlNode* Node = Iter->GetNode(S);
     if (Node == nullptr) {
-      cout<<"Error: Unable to find node "<<S<<" under node "<<Iter->GetName()<<endl;
+      mout<<"Error: Unable to find node "<<S<<" under node "<<Iter->GetName()<<endl;
+      delete Master;
       return false;
     }
     Iter = Node;
@@ -515,14 +646,18 @@ bool MSupervisor::ChangeConfiguration(MString NewField)
   
   // Set the data
   Iter->SetValue(Value);
-  
-  // Read everything back
-  ReadXmlConfiguration(Master);
-  
+
+  // Rebuilds from modules already resolved in memory, so it can't find any previous issues
+  const bool WasSequenceIncomplete = m_SequenceIncomplete;
+  const bool Read = ReadXmlConfiguration(Master);
+  if (WasSequenceIncomplete == true) {
+    m_SequenceIncomplete = true;
+  }
+
   // Cleanup
   delete Master;
-  
-  return true;  
+
+  return Read;
 }
 
 
@@ -533,26 +668,30 @@ bool MSupervisor::Load(MString FileName)
 {
   // Load all data from a file
 
-  Clear();
-
   if (FileName == "") FileName = m_ConfigurationFileName;
   MFile::ExpandFileName(FileName);
- 
+
   if (MFile::Exists(FileName) == false) {
-    mout<<"Info: Configuration file "<<m_ConfigurationFileName<<" does not exist. Using empty configuration."<<endl;
+    mout<<"Info: Configuration file "<<FileName<<" does not exist. Keeping the current configuration."<<endl;
     return false;
   }
 
   // Create a XML document describing the data:
   MXmlDocument* Document = new MXmlDocument();
-  Document->Load(FileName);
+  if (Document->Load(FileName) == false) {
+    mout<<"Error: Unable to parse the configuration file "<<FileName<<endl;
+    delete Document;
+    return false;
+  }
 
-  ReadXmlConfiguration(Document);
+  Clear();
+
+  const bool Read = ReadXmlConfiguration(Document);
 
   delete Document;
 
-  return true;
-} 
+  return Read;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -561,6 +700,13 @@ bool MSupervisor::Load(MString FileName)
 //! Read the configuration data from an XML node
 bool MSupervisor::ReadXmlConfiguration(MXmlDocument* Document)
 {
+  // Returns false if the configuration could not be restored as it was stored
+
+  // The sequence is the same as on file
+  bool SequenceComplete = true;
+  // The options are the same as on file
+  bool OptionsComplete = true;
+
   int Version = 1;
   MXmlNode* VersionNode = Document->GetNode("Version");
   if (VersionNode != nullptr) {
@@ -580,7 +726,19 @@ bool MSupervisor::ReadXmlConfiguration(MXmlDocument* Document)
         m_Modules.push_back(M);
       } else {
         mout<<"Error: Cannot find a module with name: "<<ModuleSequence->GetNode(m)->GetValue()<<endl;
+        SequenceComplete = false;
       }
+    }
+
+    if (SequenceComplete == false) {
+      mout<<"The module sequence in the configuration is incomplete -- at least one module is unknown."<<endl;
+      mout<<"The remaining modules have been loaded, but the sequence must be corrected before it can be used."<<endl;
+    }
+
+    const unsigned int Valid = GetNValidModules();
+    if (Valid < m_Modules.size()) {
+      mout<<"The module sequence in the configuration is not valid from position "<<Valid<<" on."<<endl;
+      mout<<"The modules have been kept -- please correct the sequence in the module sequence editor."<<endl;
     }
   }
 
@@ -594,12 +752,20 @@ bool MSupervisor::ReadXmlConfiguration(MXmlDocument* Document)
     for (unsigned int a = 0; a < m_AvailableModules.size(); ++a) {
       MXmlNode* ModuleNode = ModuleOptions->GetNode(m_AvailableModules[a]->GetXmlTag());
       if (ModuleNode != nullptr) {
-        m_AvailableModules[a]->ReadXmlConfiguration(ModuleNode);
+        if (m_AvailableModules[a]->ReadXmlConfiguration(ModuleNode) == false) {
+          mout<<"Error: Module \""<<m_AvailableModules[a]->GetName()<<"\" could not restore its configuration"<<endl;
+          OptionsComplete = false;
+        }
       }
     }
   }
-  
-  return true;
+
+  // Store in class
+  m_SequenceIncomplete = (SequenceComplete == false);
+  m_ModuleOptionsIncomplete = (OptionsComplete == false);
+  const bool Complete = SequenceComplete && OptionsComplete;
+
+  return Complete;
 }
  
 
@@ -662,21 +828,22 @@ bool MSupervisor::LoadGeometry()
 {
   //! Load the geometry and transfer it to all modules
 
-  m_Geometry = new MDGeometryQuest();
+  MDGeometryQuest* NewGeometry = new MDGeometryQuest();
 
-  if (m_Geometry->ScanSetupFile(m_GeometryFileName) == true) {
-    mlog<<"Geometry "<<m_Geometry->GetName()<<" loaded!"<<endl;
-    m_Geometry->ActivateNoising(false);
-    m_Geometry->SetGlobalFailureRate(0.0);
+  if (NewGeometry->ScanSetupFile(m_GeometryFileName) == true) {
+    mlog<<"Geometry "<<NewGeometry->GetName()<<" loaded!"<<endl;
+    NewGeometry->ActivateNoising(false);
+    NewGeometry->SetGlobalFailureRate(0.0);
   } else {
     mlog<<"Loading of geometry "<<m_GeometryFileName<<" failed!!"<<endl;
-    delete m_Geometry;
-    m_Geometry = nullptr;
+    delete NewGeometry;
     return false;
-  }  
+  }
 
-  for (unsigned int m = 0; m < m_Modules.size(); ++m) {
-    m_Modules[m]->SetGeometry(m_Geometry);
+  delete m_Geometry;
+  m_Geometry = NewGeometry;
+  for (unsigned int a = 0; a < m_AvailableModules.size(); ++a) {
+    m_AvailableModules[a]->SetGeometry(m_Geometry);
   }
 
   return true;
@@ -731,11 +898,48 @@ bool MSupervisor::LaunchUI()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MSupervisor::IsSequenceRunnable()
+{
+  // True if the sequence meets every requirement Analyze() enforces; does not modify it.
+
+  const unsigned int Valid = GetNValidModules();
+  if (Valid < GetNModules()) {
+    if (g_Verbosity >= c_Error) mout<<"The module sequence is not valid from position "<<Valid<<" on."<<endl;
+    return false;
+  }
+  if (IsConfigurationIncomplete() == true) {
+    if (g_Verbosity >= c_Error) mout<<"The module sequence is incomplete."<<endl;
+    return false;
+  }
+  if (GetNModules() == 0) {
+    if (g_Verbosity >= c_Error) mout<<"Error: No modules"<<endl;
+    return false;
+  }
+  if (GetModule(0)->IsStartModule() == false) {
+    if (g_Verbosity >= c_Error) mout<<"Error: The first module must either load or generate the events"<<endl;
+    return false;
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MSupervisor::Analyze(bool TestRun)
 {
   if (m_IsAnalysisRunning == true) return false;
   m_IsAnalysisRunning = true;
-  
+
+  // An invalid loaded sequence is kept (nothing thrown away) but must not run or be saved back.
+  if (IsSequenceRunnable() == false) {
+    mout<<"Not starting the analysis. Please correct the sequence first."<<endl;
+    m_IsAnalysisRunning = false;
+    if (m_Terminate == true) Terminate();
+    return false;
+  }
+
   // Start with saving the data:
   Save(m_ConfigurationFileName);
 
@@ -745,44 +949,39 @@ bool MSupervisor::Analyze(bool TestRun)
   } else {
     m_HardInterrupt = false;
   }
-  
+
   // Start a global timer:
   MTimer Timer;
 
   // Load the geometry:
   if (LoadGeometry() == false) {
     m_IsAnalysisRunning = false;
+    if (m_Terminate == true) Terminate();
     return false;
   }
 
-  
   // Initialize the modules:
-  if (GetNModules() == 0) {
-    if (g_Verbosity >= c_Error) mout<<"Error: No modules"<<endl;
-    m_IsAnalysisRunning = false;
-    return false;
-  }
-  if (GetNModules() == 1 && GetModule(0)->IsStartModule() == false) {
-    if (g_Verbosity >= c_Error) mout<<"Error: The first module must either load or generate the events"<<endl;
-    m_IsAnalysisRunning = false;
-    return false;
-  }
   for (unsigned int m = 0; m < GetNModules(); ++m) {
-    if (g_Verbosity >= c_Info) cout<<"Initializing: "<<GetModule(m)->GetName()<<": "<<long(GetModule(m))<<endl;
+    if (g_Verbosity >= c_Info) mout<<"Initializing: "<<GetModule(m)->GetName()<<": "<<long(GetModule(m))<<endl;
     GetModule(m)->SetInterrupt(false);
     GetModule(m)->UseMultiThreading(m_UseMultiThreading);
     GetModule(m)->ClearQueues(); // Just in case a module did not call Finalize...
     if (GetModule(m)->Initialize() == false) {
+      // Either way (failure or soft interrupt), later modules were never initialized -- stop here
+      // rather than run the analysis loop over a partially-initialized sequence.
       if (m_SoftInterrupt == true) {
-        break;
+        mout<<"Initialization of module "<<GetModule(m)->GetName()<<" was interrupted"<<endl;
+      } else {
+        mout<<"Initialization of module "<<GetModule(m)->GetName()<<" failed"<<endl;
       }
-      mout<<"Initialization of module "<<GetModule(m)->GetName()<<" failed"<<endl;
 
       // Finalize already initialized modules since threads are already running:
       for (unsigned int r = 0; r <= m; ++r) {
         GetModule(r)->Finalize();
       }
+
       m_IsAnalysisRunning = false;
+      if (m_Terminate == true) Terminate();
       return false;
     }
   }
@@ -983,7 +1182,13 @@ bool MSupervisor::Analyze(bool TestRun)
             while (Modules[m].size() < TargetInstances[m]) {
               MModule* M = Modules[m][0]->Clone();
               MXmlNode* Node = Modules[m][0]->CreateXmlConfiguration();
-              M->ReadXmlConfiguration(Node);
+              M->SetGeometry(m_Geometry);
+              if (M->ReadXmlConfiguration(Node) == false) {
+                mout<<"Error: Spawned instance of module "<<Modules[m][0]->GetName()<<" could not restore its configuration -- not using it"<<endl;
+                delete Node;
+                delete M;
+                break;
+              }
               delete Node;
               M->SetInterrupt(false);
               M->UseMultiThreading(m_UseMultiThreading);
@@ -993,7 +1198,7 @@ bool MSupervisor::Analyze(bool TestRun)
                 break;
               } else {
                 Modules[m].push_back(M);
-                cout<<"Spawned module: "<<M->GetName()<<endl<<flush;
+                mout<<"Spawned module: "<<M->GetName()<<endl<<flush;
               }
             }
           }
@@ -1083,19 +1288,20 @@ bool MSupervisor::Analyze(bool TestRun)
     m_ExpoCombinedViewer->OnUpdate();
   }
   
-  cout<<endl;
+  mout<<endl;
   if (m_SoftInterrupt == true) {
-    cout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
+    mout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
   } else {
-    cout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
+    mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
   }
   
   //if (g_Verbosity >= c_Error) {
-  ios::fmtflags SavedFlags(cout.flags());
-  cout.setf(ios::fixed);
-  cout.precision(1);
-  cout<<endl;
-  cout<<"Summary: "<<endl;
+  ios::fmtflags SavedFlags(mout.flags());
+  streamsize SavedPrecision = mout.precision();
+  mout.setf(ios::fixed);
+  mout.precision(1);
+  mout<<endl;
+  mout<<"Summary: "<<endl;
   for (unsigned int m = 0; m < Modules.size(); ++m) {
     long ProcessedEvents = 0;
     double ProcessingTime = 0;
@@ -1111,14 +1317,22 @@ bool MSupervisor::Analyze(bool TestRun)
       m_ExpoSupervisor->SetInstances(m, Modules[m].size());
     }
     
-    cout<<"Spent "<<ProcessingTime<<" sec analyzing ";
-    cout<<"(vs. "<<SleepingTime<<" sec sleeping) ";
-    cout<<"in module \""<<Modules[m][0]->GetName()<<"\" ";
-    cout<<"utilizing "<<Modules[m].size()<<" instance"<<(Modules[m].size() > 1 ? "s " : " ");
-    cout<<"and processed "<<ProcessedEvents<<" events."<<endl;
+    mout<<"Spent "<<ProcessingTime<<" sec analyzing ";
+    mout<<"(vs. "<<SleepingTime<<" sec sleeping) ";
+    mout<<"in module \""<<Modules[m][0]->GetName()<<"\" ";
+    mout<<"utilizing "<<Modules[m].size()<<" instance"<<(Modules[m].size() > 1 ? "s " : " ");
+    mout<<"and processed "<<ProcessedEvents<<" events."<<endl;
   }
-  cout.flags(SavedFlags);
+  mout.precision(SavedPrecision);
+  mout.flags(SavedFlags);
   //}
+
+  // Delete the spawned clones
+  for (unsigned int m = 0; m < Modules.size(); ++m) {
+    for (unsigned int s = 1; s < Modules[m].size(); ++s) {
+      delete Modules[m][s];
+    }
+  }
 
   // A final UI update:
   if (m_UIUse == true) {
@@ -1128,7 +1342,7 @@ bool MSupervisor::Analyze(bool TestRun)
   m_IsAnalysisRunning = false;
 
   if (TestRun == true) {
-    cout<<">>> TEST RUN SUCCESSFUL <<<"<<endl;
+    mout<<">>> TEST RUN SUCCESSFUL <<<"<<endl;
   }
   
   if (m_Terminate == true) Terminate();
@@ -1173,8 +1387,14 @@ void MSupervisor::Exit()
 void MSupervisor::Terminate()
 {
   // Exit the application
-  
-  Save(m_ConfigurationFileName);
+
+  // Only save the configuration if it is a good one
+  if (IsSequenceRunnable() == true) {
+    Save(m_ConfigurationFileName);
+  } else {
+    mout<<"Not saving: the current module sequence does not meet the requirements to run."<<endl;
+  }
+
   gApplication->Terminate(0);
 }
 

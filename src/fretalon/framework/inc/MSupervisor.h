@@ -71,13 +71,26 @@ class MSupervisor
   //! Return the module with the given XML tag or a nullptr in case there is none --- no error checks are performed  
   MModule* GetAvailableModuleByXmlTag(MString XmlTag);
 
+  //! Return how many modules, from the start, form a valid sequence; does not modify it.
+  //! Report=false suppresses violation messages.
+  //! CheckTypeExclusivity=false ignores exclusivity entirely -- needed when asking "regardless of
+  //! exclusivity", since exclusivity blames the later module and would otherwise be circular.
+  //! ExcludeFromExclusivity (-1 = none) excludes one module index from exclusivity checks only,
+  //! leaving exclusivity checks between all other modules active.
+  unsigned int GetNValidModules(bool Report = true, bool CheckTypeExclusivity = true, int ExcludeFromExclusivity = -1);
+  //! True if the last Load() is missing a module or a module's options -- the loaded sequence may
+  //! still be valid, just not what was stored. Tracked as two flags since only a sequence edit can
+  //! clear the missing-module half.
+  bool IsConfigurationIncomplete() const { return m_SequenceIncomplete || m_ModuleOptionsIncomplete; }
   //! Return the number of modules in the current sequence
   unsigned int GetNModules() { return m_Modules.size(); }
   //! Return the modules at position i in the current sequence --- no error checks are performed  
   MModule* GetModule(unsigned int i);
-  //! Set a module at a specific position - return false if other modules had to be eliminated  
+  //! Set a module at a specific position - return false if the module could not be set there or if
+  //! other modules had to be eliminated
   bool SetModule(MModule* Module, unsigned int i);
-  //! Remove module at a specific position - return false if other modules had to be eliminated  
+  //! Remove module at a specific position - return false if the module could not be removed or if
+  //! other modules had to be eliminated
   bool RemoveModule(unsigned int i);
 
   //! Return a list of possible volumes, which might to follow
@@ -153,8 +166,11 @@ class MSupervisor
   //! End the program (and saves the GUI data)
   void Terminate();
 
+  //! True if the sequence is valid, complete, non-empty, and starts with a start module -- everything
+  //! Analyze() requires before running. Shared by Analyze() and Terminate() so both agree.
+  bool IsSequenceRunnable();
 
-  //! Validate the sequence of possible modules
+  //! Validate the sequence of possible modules and remove the ones which make it invalid
   bool Validate();
 
   
@@ -168,6 +184,10 @@ class MSupervisor
   MSupervisor(MSupervisor const&) = delete;
   //! No assignment operator
   void operator=(MSupervisor const&) = delete;
+
+  //! Same as the public GetNValidModules(), but checks the given sequence instead of m_Modules --
+  //! lets a caller ask about a hypothetical sequence without touching the real one.
+  unsigned int GetNValidModules(const vector<MModule*>& Modules, bool Report, bool CheckTypeExclusivity, int ExcludeFromExclusivity);
 
   // protected members:
  protected:
@@ -183,6 +203,11 @@ class MSupervisor
 
   //! Sequence of currently used modules
   vector<MModule*> m_Modules;
+  //! True if the last Load() referenced an unresolved module. Cleared by a successful sequence edit.
+  bool m_SequenceIncomplete;
+  //! True if a module could not restore its options from the last Load()/ChangeConfiguration().
+  //! Not fixable by a sequence edit; only a fresh Load()/ChangeConfiguration() clears it.
+  bool m_ModuleOptionsIncomplete;
 
   //! The geometry file name
   MString m_GeometryFileName;
