@@ -147,5 +147,17 @@ void MGUIEModule::Associate(const TGWindow* Window)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIEModule::SetEnabled(bool Enabled)
+{
+  m_ChangeButton->SetState(Enabled == true ? kButtonUp : kButtonDisabled);
+  if (m_Module != 0) {
+    m_RemoveButton->SetState(Enabled == true ? kButtonUp : kButtonDisabled);
+  }
+}
+
+
 // MGUIEModule: the end...
 ////////////////////////////////////////////////////////////////////////////////

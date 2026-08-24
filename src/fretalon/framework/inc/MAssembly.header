@@ -40,10 +40,9 @@ class MAssembly
   //! Default destructor
   virtual ~MAssembly();
 
-  //! Each interface must be able to parse a command line - 
-  //! this function is called by main()
-  bool ParseCommandLine(int argc, char** argv);
-  
+  //! Return error, and fill ReadyForUILoop if TApplication should be switched to Run()
+  bool ParseCommandLine(int argc, char** argv, bool& ReadyForUILoop);
+
   //! Called when hit Control-C: Set the interrupt which will end the analysis in the supervisor
   void SetInterrupt(bool Flag = true) { m_Supervisor->SetHardInterrupt(Flag); }
 
@@ -88,7 +87,7 @@ class MAssembly
   //! The interrupt flag - the analysis will stop when this flag is set
   bool m_Interrupt;
 
-  
+
 #ifdef ___CINT___
  public:
   ClassDef(MAssembly, 0) // image reconstruction management class 
