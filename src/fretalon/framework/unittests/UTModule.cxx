@@ -16,6 +16,7 @@
 #include "MXmlNode.h"
 
 // Standard libs:
+#include <sstream>
 #include <stdexcept>
 #include <cstdint>
 using namespace std;
@@ -59,6 +60,9 @@ private:
     void SetProbeXmlTag(const MString& XmlTag) { m_XmlTag = XmlTag; }
     void AddHardPreceedingType(uint64_t Type) { AddPreceedingModuleType(Type, true); }
     void AddSoftPreceedingType(uint64_t Type) { AddPreceedingModuleType(Type, false); }
+    void AddImmediatePreceedingType(uint64_t Type, bool Hard = true) { AddPreceedingModuleType(Type, Hard, true); }
+    void SetProbeTypeExclusive(bool Flag) { SetTypeExclusive(Flag); }
+    void ClearProbePreceedingTypes() { ClearPreceedingModuleTypes(); }
     void AddProvidedType(uint64_t Type) { AddModuleType(Type); }
     void AddExpectedSucceedingType(uint64_t Type) { AddSucceedingModuleType(Type); }
     void SetStartModule(bool Flag) { m_IsStartModule = Flag; }
@@ -95,6 +99,8 @@ private:
   bool TestStartModuleFlow();
   //! Test remaining public API with side-effect-free helper paths
   bool TestAdditionalPublicAPI();
+  //! Test the immediate and exclusivity flags used for GUI sequence building
+  bool TestOrderingFlags();
 };
 
 
@@ -110,6 +116,7 @@ bool UTModule::Run()
   Passed = TestAnalysisFlow() && Passed;
   Passed = TestStartModuleFlow() && Passed;
   Passed = TestAdditionalPublicAPI() && Passed;
+  Passed = TestOrderingFlags() && Passed;
 
   Summarize();
   return Passed;
@@ -145,6 +152,7 @@ bool UTModule::TestDefaultsAndMetadata()
   Passed = Evaluate("GetNumberOfAnalyzedEvents()", "default", "No events have passed through analysis by default", Module.GetNumberOfAnalyzedEvents(), 0L) && Passed;
   Passed = EvaluateNear("GetSleepingTime()", "default", "No sleeping time is recorded by default", Module.GetSleepingTime(), 0.0, 1.0e-12) && Passed;
   Passed = EvaluateNear("GetProcessingTime()", "default", "No processing time is recorded by default", Module.GetProcessingTime(), 0.0, 1.0e-6) && Passed;
+  Passed = EvaluateTrue("GetGeometry()", "default", "A freshly constructed module starts without a geometry pointer, not an uninitialized one", Module.GetGeometry() == nullptr) && Passed;
 
   Module.SetProbeName("ProbeModule");
   Module.SetProbeXmlTag("ProbeXml");
@@ -420,6 +428,79 @@ bool UTModule::TestAdditionalPublicAPI()
   InterruptedLoopModule.SetInterrupt();
   Passed = EvaluateTrue("MModuleKickstartThread()", "pre-interrupted module", "The thread entry point returns after an already-interrupted analysis loop", MModuleKickstartThread(&InterruptedLoopModule) == nullptr) && Passed;
   Passed = EvaluateFalse("IsMultiThreaded()", "after interrupted AnalysisLoop", "The analysis loop clears the running flag before returning", InterruptedLoopModule.IsMultiThreaded()) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTModule::TestOrderingFlags()
+{
+  bool Passed = true;
+
+  // The immediate flag is stored per requirement, alongside the hard/soft flag
+  ModuleProbe Module;
+  Module.AddHardPreceedingType(ModuleProbe::c_InputProgress);
+  Module.AddImmediatePreceedingType(ModuleProbe::c_OutputProgress);
+  Passed = EvaluateSize("AddPreceedingModuleType()", "two requirements", "Both requirements are registered", Module.GetNPreceedingModuleTypes(), static_cast<size_t>(2)) && Passed;
+  Passed = EvaluateFalse("GetPreceedingModuleImmediateRequirement()", "plain requirement", "A requirement added without the immediate flag is not immediate", Module.GetPreceedingModuleImmediateRequirement(0)) && Passed;
+  Passed = EvaluateTrue("GetPreceedingModuleImmediateRequirement()", "immediate requirement", "A requirement added with the immediate flag is immediate", Module.GetPreceedingModuleImmediateRequirement(1)) && Passed;
+  Passed = EvaluateException<out_of_range>("GetPreceedingModuleImmediateRequirement()", "index equal to the size", "Requesting the immediate flag one past the last requirement throws", [&]() { Module.GetPreceedingModuleImmediateRequirement(Module.GetNPreceedingModuleTypes()); }) && Passed;
+
+  // An immediate requirement is meaningless unless the type is present at all, so a soft one is
+  // raised to a hard one rather than being stored as a contradictory combination
+  const int PreviousVerbosity = g_Verbosity;
+  ModuleProbe ContradictoryModule;
+  g_Verbosity = c_Quiet;
+  ContradictoryModule.AddImmediatePreceedingType(ModuleProbe::c_SoftProgress, false);
+  g_Verbosity = PreviousVerbosity;
+  Passed = EvaluateTrue("AddPreceedingModuleType()", "soft and immediate", "A soft requirement asked to be immediate is raised to a hard requirement", ContradictoryModule.GetPreceedingModuleHardRequirement(0)) && Passed;
+  Passed = EvaluateTrue("AddPreceedingModuleType()", "soft and immediate", "The immediate flag itself is kept", ContradictoryModule.GetPreceedingModuleImmediateRequirement(0)) && Passed;
+  Passed = EvaluateTrue("IsHardPreceedingModule()", "soft and immediate", "The raised requirement is reported as a hard predecessor", ContradictoryModule.IsHardPreceedingModule(ModuleProbe::c_SoftProgress)) && Passed;
+  Passed = EvaluateFalse("IsSoftPreceedingModule()", "soft and immediate", "The raised requirement is no longer reported as a soft predecessor", ContradictoryModule.IsSoftPreceedingModule(ModuleProbe::c_SoftProgress)) && Passed;
+
+  // Raising the requirement silently would hide a mistake from the caller, so it is reported at
+  // warning level. Capture the raw stream: the message content itself is what is being asserted.
+  ModuleProbe WarningModule;
+  WarningModule.SetProbeXmlTag("XmlTagWarningProbe");
+  g_Verbosity = c_Warning;
+  ostringstream ContradictoryOutput;
+  streambuf* OriginalCout = cout.rdbuf(ContradictoryOutput.rdbuf());
+  WarningModule.AddImmediatePreceedingType(ModuleProbe::c_SoftProgress, false);
+  cout.rdbuf(OriginalCout);
+  ostringstream LegitimateOutput;
+  OriginalCout = cout.rdbuf(LegitimateOutput.rdbuf());
+  WarningModule.AddImmediatePreceedingType(ModuleProbe::c_InputProgress, true);
+  WarningModule.AddSoftPreceedingType(ModuleProbe::c_OutputProgress);
+  cout.rdbuf(OriginalCout);
+  g_Verbosity = PreviousVerbosity;
+
+  Passed = EvaluateTrue("AddPreceedingModuleType()", "soft and immediate warning", "Raising a soft requirement to a hard one is reported at warning level", MString(ContradictoryOutput.str()).Contains("cannot be immediate")) && Passed;
+  Passed = EvaluateTrue("AddPreceedingModuleType()", "soft and immediate warning", "The warning names the module it came from", MString(ContradictoryOutput.str()).Contains("XmlTagWarningProbe")) && Passed;
+  Passed = EvaluateTrue("AddPreceedingModuleType()", "legitimate combinations", "Neither a hard immediate nor a plain soft requirement produces a warning", LegitimateOutput.str().empty()) && Passed;
+
+  // Clearing has to drop the type, the hard flag and the immediate flag together, so that a module
+  // rebuilding its requirements cannot end up with flags left over from the previous set
+  ModuleProbe RebuiltModule;
+  RebuiltModule.AddImmediatePreceedingType(ModuleProbe::c_InputProgress);
+  RebuiltModule.AddHardPreceedingType(ModuleProbe::c_OutputProgress);
+  RebuiltModule.ClearProbePreceedingTypes();
+  Passed = EvaluateSize("ClearPreceedingModuleTypes()", "after clearing", "Clearing removes every registered requirement", RebuiltModule.GetNPreceedingModuleTypes(), static_cast<size_t>(0)) && Passed;
+  RebuiltModule.AddSoftPreceedingType(ModuleProbe::c_SoftProgress);
+  Passed = EvaluateSize("ClearPreceedingModuleTypes()", "rebuilt", "A requirement added after clearing is the only one left", RebuiltModule.GetNPreceedingModuleTypes(), static_cast<size_t>(1)) && Passed;
+  Passed = Evaluate("GetPreceedingModuleType()", "rebuilt", "The rebuilt requirement stores the new type", RebuiltModule.GetPreceedingModuleType(0), ModuleProbe::c_SoftProgress) && Passed;
+  Passed = EvaluateFalse("GetPreceedingModuleHardRequirement()", "rebuilt", "The rebuilt requirement does not inherit the previous hard flag", RebuiltModule.GetPreceedingModuleHardRequirement(0)) && Passed;
+  Passed = EvaluateFalse("GetPreceedingModuleImmediateRequirement()", "rebuilt", "The rebuilt requirement does not inherit the previous immediate flag", RebuiltModule.GetPreceedingModuleImmediateRequirement(0)) && Passed;
+
+  // Type exclusivity
+  ModuleProbe ExclusiveModule;
+  Passed = EvaluateTrue("IsTypeExclusive()", "default", "A module is type exclusive by default", ExclusiveModule.IsTypeExclusive()) && Passed;
+  ExclusiveModule.SetProbeTypeExclusive(false);
+  Passed = EvaluateFalse("SetTypeExclusive()", "cleared", "Type exclusivity can be switched off", ExclusiveModule.IsTypeExclusive()) && Passed;
+  ExclusiveModule.SetProbeTypeExclusive(true);
+  Passed = EvaluateTrue("SetTypeExclusive()", "restored", "Type exclusivity can be switched back on", ExclusiveModule.IsTypeExclusive()) && Passed;
 
   return Passed;
 }

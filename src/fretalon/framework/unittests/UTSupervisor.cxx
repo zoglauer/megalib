@@ -11,6 +11,7 @@
 
 // MEGAlib:
 #include "MAssembly.h"
+#include "MFile.h"
 #include "MModule.h"
 #include "MSupervisor.h"
 #include "MUnitTest.h"
@@ -49,6 +50,8 @@ private:
       m_MaxGeneratedEvents(-1),
       m_InitializeResult(true),
       m_MarkNotOKDuringAnalysis(false),
+      m_RejectConfiguration(false),
+      m_SupervisorToInterrupt(nullptr),
       m_InitializeCalls(0),
       m_FinalizeCalls(0),
       m_AnalyzeCalls(0)
@@ -67,7 +70,6 @@ private:
       SupervisorModuleProbe* Module = new SupervisorModuleProbe(m_Name, m_XmlTag);
       Module->m_ConfigValue = m_ConfigValue;
       Module->m_PreceedingModules = m_PreceedingModules;
-      Module->m_PreceedingModulesHardRequirement = m_PreceedingModulesHardRequirement;
       Module->m_SucceedingModules = m_SucceedingModules;
       Module->m_Modules = m_Modules;
       Module->m_IsStartModule = m_IsStartModule;
@@ -77,6 +79,12 @@ private:
     virtual bool Initialize()
     {
       ++m_InitializeCalls;
+      // Simulates a soft interrupt landing during this module's own Initialize() -- returns
+      // false as if init failed, with the interrupt flag already set on return
+      if (m_SupervisorToInterrupt != nullptr) {
+        m_SupervisorToInterrupt->SetSoftInterrupt(true);
+        return false;
+      }
       if (m_InitializeResult == false) {
         return false;
       }
@@ -111,6 +119,9 @@ private:
 
     virtual bool ReadXmlConfiguration(MXmlNode* Node)
     {
+      if (m_RejectConfiguration == true) {
+        return false;
+      }
       MXmlNode* ConfigValue = Node->GetNode("ConfigValue");
       if (ConfigValue != nullptr) {
         m_ConfigValue = ConfigValue->GetValue();
@@ -127,17 +138,23 @@ private:
 
     void AddHardPreceedingType(uint64_t Type) { AddPreceedingModuleType(Type, true); }
     void AddSoftPreceedingType(uint64_t Type) { AddPreceedingModuleType(Type, false); }
+    void AddImmediatePreceedingType(uint64_t Type) { AddPreceedingModuleType(Type, true, true); }
+    void SetProbeTypeExclusive(bool Flag) { SetTypeExclusive(Flag); }
     void AddProvidedType(uint64_t Type) { AddModuleType(Type); }
     void SetConfigValue(const MString& ConfigValue) { m_ConfigValue = ConfigValue; }
     void SetMaxGeneratedEvents(int MaxGeneratedEvents) { m_MaxGeneratedEvents = MaxGeneratedEvents; }
     void SetInitializeResult(bool InitializeResult) { m_InitializeResult = InitializeResult; }
     void SetMarkNotOKDuringAnalysis(bool MarkNotOKDuringAnalysis) { m_MarkNotOKDuringAnalysis = MarkNotOKDuringAnalysis; }
+    void SetRejectConfiguration(bool Flag) { m_RejectConfiguration = Flag; }
+    void SetSoftInterruptOnInitialize(MSupervisor* Supervisor) { m_SupervisorToInterrupt = Supervisor; }
     void SetAllowMultiThreading(bool Flag) { m_AllowMultiThreading = Flag; }
     void ResetProbeState()
     {
       m_MaxGeneratedEvents = -1;
       m_InitializeResult = true;
       m_MarkNotOKDuringAnalysis = false;
+      m_RejectConfiguration = false;
+      m_SupervisorToInterrupt = nullptr;
       m_InitializeCalls = 0;
       m_FinalizeCalls = 0;
       m_AnalyzeCalls = 0;
@@ -157,6 +174,8 @@ private:
     int m_MaxGeneratedEvents;
     bool m_InitializeResult;
     bool m_MarkNotOKDuringAnalysis;
+    bool m_RejectConfiguration;
+    MSupervisor* m_SupervisorToInterrupt;
     unsigned int m_InitializeCalls;
     unsigned int m_FinalizeCalls;
     unsigned int m_AnalyzeCalls;
@@ -180,6 +199,10 @@ private:
   bool TestMultiThreadedAnalysis();
   //! Test the user-interface settings and the headless LaunchUI path
   bool TestUserInterfaceSettings();
+  //! Test the rules the GUI uses to offer modules for a sequence position
+  bool TestSequenceBuildingRules();
+  //! Return true if the module is among those offered after the given sequence
+  bool IsOffered(vector<MModule*>& Previous, MModule* Candidate);
   //! Return the shared geometry fixture path used for supervisor integration paths
   MString GetGeometryFixtureName() const;
   //! Reset all representative module probes before a stateful analysis test
@@ -216,6 +239,7 @@ bool UTSupervisor::Run()
   Passed = TestAdditionalAnalysisBranches() && Passed;
   Passed = TestMultiThreadedAnalysis() && Passed;
   Passed = TestUserInterfaceSettings() && Passed;
+  Passed = TestSequenceBuildingRules() && Passed;
 
   Summarize();
   return Passed;
@@ -313,7 +337,7 @@ bool UTSupervisor::TestModuleSequence()
 
   m_Supervisor->Clear();
 
-  Passed = EvaluateFalse("SetModule()", "append loader", "SetModule appends at the next sequence position; Validate currently returns false even for valid sequences", m_Supervisor->SetModule(m_Loader, 0)) && Passed;
+  Passed = EvaluateTrue("SetModule()", "append loader", "Appending a valid first module reports success and keeps the sequence", m_Supervisor->SetModule(m_Loader, 0)) && Passed;
   Passed = Evaluate("GetNModules()", "loader only", "The loader is stored as the first sequence module", m_Supervisor->GetNModules(), 1U) && Passed;
   Passed = EvaluateTrue("GetModule()", "loader", "The first configured module can be retrieved", m_Supervisor->GetModule(0) == m_Loader) && Passed;
   Passed = EvaluateTrue("GetModule()", "out of range", "Out-of-range configured-module lookup returns nullptr", m_Supervisor->GetModule(99) == nullptr) && Passed;
@@ -323,8 +347,8 @@ bool UTSupervisor::TestModuleSequence()
   Passed = EvaluateTrue("ReturnPossibleVolumes()", "loader excluded", "The existing module instance is not offered again", find(PossibleAfterLoader.begin(), PossibleAfterLoader.end(), m_Loader) == PossibleAfterLoader.end()) && Passed;
   Passed = EvaluateTrue("ReturnPossibleVolumes()", "saver blocked", "Modules with missing hard predecessors are not offered", find(PossibleAfterLoader.begin(), PossibleAfterLoader.end(), m_Saver) == PossibleAfterLoader.end()) && Passed;
 
-  Passed = EvaluateFalse("SetModule()", "append filter", "Appending a valid second module keeps the sequence", m_Supervisor->SetModule(m_Filter, 1)) && Passed;
-  Passed = EvaluateFalse("SetModule()", "append saver", "Appending a valid third module keeps the sequence", m_Supervisor->SetModule(m_Saver, 2)) && Passed;
+  Passed = EvaluateTrue("SetModule()", "append filter", "Appending a valid second module reports success and keeps the sequence", m_Supervisor->SetModule(m_Filter, 1)) && Passed;
+  Passed = EvaluateTrue("SetModule()", "append saver", "Appending a valid third module reports success and keeps the sequence", m_Supervisor->SetModule(m_Saver, 2)) && Passed;
   Passed = Evaluate("GetNModules()", "valid sequence", "The valid loader/filter/saver sequence is retained", m_Supervisor->GetNModules(), 3U) && Passed;
 
   // Silence only the noisy call itself -- an Evaluate* made while the MEGAlib streams are
@@ -353,7 +377,7 @@ bool UTSupervisor::TestModuleSequence()
   Passed = EvaluateFalse("RemoveModule()", "out of range", "Removing an out-of-range module reports validation failure and leaves the sequence unchanged", RemoveResult) && Passed;
   Passed = Evaluate("GetNModules()", "after out-of-range remove", "The module sequence is unchanged after an out-of-range remove", m_Supervisor->GetNModules(), 1U) && Passed;
 
-  Passed = EvaluateFalse("RemoveModule()", "existing loader", "Removing an existing module clears it from the sequence", m_Supervisor->RemoveModule(0)) && Passed;
+  Passed = EvaluateTrue("RemoveModule()", "existing loader", "Removing an existing module reports success and clears it from the sequence", m_Supervisor->RemoveModule(0)) && Passed;
   Passed = Evaluate("GetNModules()", "empty after remove", "The sequence is empty after removing its only module", m_Supervisor->GetNModules(), 0U) && Passed;
 
   DisableDefaultStreams();
@@ -437,11 +461,170 @@ bool UTSupervisor::TestConfiguration()
 
   const MString MissingFile = GetTemporaryFileName("missing_supervisor.cfg");
   RemoveTemporaryFile(MissingFile);
-  DisableDefaultStreams();
+  // PrepareSupervisor() set the default configuration file name to this, which differs from the
+  // file actually requested below, so the message can be checked for naming the right one
+  const MString DefaultConfigurationFile = GetTemporaryFileName("supervisor_default.cfg");
+  Passed = EvaluateFalse("GetTemporaryFileName()", "default vs. requested file", "The default configuration file name differs from the one about to be requested", DefaultConfigurationFile == MissingFile) && Passed;
+  ostringstream MissingLoadOutput;
+  streambuf* MissingLoadOriginal = cout.rdbuf(MissingLoadOutput.rdbuf());
   const bool MissingLoadResult = m_Supervisor->Load(MissingFile);
+  cout.rdbuf(MissingLoadOriginal);
+  Passed = EvaluateFalse("Load()", "missing configuration", "Loading a missing configuration file reports failure", MissingLoadResult) && Passed;
+  Passed = Evaluate("GetNModules()", "after missing configuration", "A missing configuration load preserves the current module sequence instead of wiping it", m_Supervisor->GetNModules(), 1U) && Passed;
+  Passed = EvaluateTrue("Load()", "missing configuration message", "The missing-file message names the file which was actually requested, not the unrelated default configuration file name", MissingLoadOutput.str().find(MissingFile.Data()) != string::npos) && Passed;
+  Passed = EvaluateFalse("Load()", "missing configuration message", "The missing-file message does not misname the default configuration file instead", MissingLoadOutput.str().find(DefaultConfigurationFile.Data()) != string::npos) && Passed;
+
+  // A file which cannot even be parsed as XML must fail the same way a missing file does: reported,
+  // and without touching whatever configuration was already in memory
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(m_Loader, 0);
+  const MString MalformedFile = GetTemporaryFileName("malformed_supervisor.cfg");
+  Passed = EvaluateTrue("WriteTextFile()", "malformed configuration", "A malformed XML configuration file can be written",
+                        WriteTextFile(MalformedFile,
+                                      "<NuclearizerData>\n"
+                                      "  <!-- an unterminated comment\n"
+                                      "</NuclearizerData>\n")) && Passed;
+  DisableDefaultStreams();
+  const bool MalformedLoadResult = m_Supervisor->Load(MalformedFile);
   EnableDefaultStreams();
-  Passed = EvaluateFalse("Load()", "missing configuration", "Loading a missing configuration file reports failure and leaves an empty configuration", MissingLoadResult) && Passed;
-  Passed = Evaluate("GetNModules()", "after missing configuration", "A missing configuration load clears the current module sequence", m_Supervisor->GetNModules(), 0U) && Passed;
+  Passed = EvaluateFalse("Load()", "malformed configuration", "Loading a file which cannot be parsed as XML reports failure", MalformedLoadResult) && Passed;
+  Passed = Evaluate("GetNModules()", "after malformed configuration", "A malformed configuration load preserves the current module sequence instead of wiping it", m_Supervisor->GetNModules(), 1U) && Passed;
+  Passed = EvaluateTrue("GetModule()", "after malformed configuration", "The preserved sequence still resolves to the same module instance", m_Supervisor->GetModule(0) == m_Loader) && Passed;
+  RemoveTemporaryFile(MalformedFile);
+
+  // An unresolvable entry is dropped; the remainder (loader/filter, calibration gone) can be
+  // valid on its own, so GetNValidModules() alone can't detect this
+  const MString IncompleteFile = GetTemporaryFileName("incomplete_supervisor.cfg");
+  Passed = EvaluateTrue("WriteTextFile()", "incomplete configuration", "A configuration referencing an unknown module can be written",
+                        WriteTextFile(IncompleteFile,
+                                      "<NuclearizerData>\n"
+                                      "  <Version>1</Version>\n"
+                                      "  <ModuleSequence>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTSupervisorLoader</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagDoesNotExist</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTSupervisorFilter</ModuleSequenceItem>\n"
+                                      "  </ModuleSequence>\n"
+                                      "</NuclearizerData>\n")) && Passed;
+  DisableDefaultStreams();
+  const bool IncompleteLoadResult = m_Supervisor->Load(IncompleteFile);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("Load()", "incomplete configuration", "Loading a configuration with an unresolvable module reports failure", IncompleteLoadResult) && Passed;
+  Passed = Evaluate("GetNModules()", "incomplete configuration", "The unresolvable entry is left out, keeping the two modules which could be resolved", m_Supervisor->GetNModules(), 2U) && Passed;
+  Passed = EvaluateTrue("IsConfigurationIncomplete()", "incomplete configuration", "The supervisor remembers that the loaded configuration is not what was stored", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+  Passed = Evaluate("GetNValidModules()", "incomplete configuration", "The remaining loader/filter sequence is valid entirely on its own", m_Supervisor->GetNValidModules(), m_Supervisor->GetNModules()) && Passed;
+
+  m_Supervisor->SetConfigurationFileName(GetTemporaryFileName("supervisor_incomplete_analyze.cfg"));
+  DisableDefaultStreams();
+  const bool AnalyzedIncomplete = m_Supervisor->Analyze(false);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("Analyze()", "incomplete configuration", "A valid but incomplete sequence is refused even though every remaining module is individually fine", AnalyzedIncomplete) && Passed;
+  Passed = EvaluateFalse("IsAnalysisisRunning()", "incomplete configuration", "The running flag is reset after the refusal", m_Supervisor->IsAnalysisisRunning()) && Passed;
+
+  // ChangeConfiguration() rebuilds from modules already in memory, so it can't see the dropped
+  // entry -- an unrelated field edit must not silently clear the incompleteness
+  Passed = EvaluateTrue("ChangeConfiguration()", "unrelated field, incomplete configuration", "Changing an unrelated field still succeeds", m_Supervisor->ChangeConfiguration("GeometryFileName=changed-while-incomplete.geo")) && Passed;
+  Passed = EvaluateTrue("IsConfigurationIncomplete()", "after unrelated field change", "An unrelated field change does not clear the incompleteness recorded by the earlier load", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+
+  // Explicitly editing the sequence through the module editor is how the user is asked to correct
+  // an incomplete configuration, so that edit has to be able to clear the flag again
+  Passed = EvaluateTrue("SetModule()", "repair incomplete configuration", "Appending a valid module through the editor is accepted", m_Supervisor->SetModule(m_Saver, 2)) && Passed;
+  Passed = EvaluateFalse("IsConfigurationIncomplete()", "after SetModule", "An explicit edit through the module editor clears the incompleteness flag", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+
+  DisableDefaultStreams();
+  m_Supervisor->Load(IncompleteFile);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("IsConfigurationIncomplete()", "reloaded incomplete configuration", "Reloading the same incomplete configuration sets the flag again", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+  Passed = EvaluateTrue("RemoveModule()", "repair incomplete configuration", "Removing a module through the editor is accepted", m_Supervisor->RemoveModule(1)) && Passed;
+  Passed = EvaluateFalse("IsConfigurationIncomplete()", "after RemoveModule", "An explicit edit through the module editor clears the incompleteness flag", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+
+  // A rejected edit hasn't repaired anything -- clearing the protection regardless of outcome
+  // would let RemoveModule(99) or similar make an incomplete sequence runnable unfixed
+  DisableDefaultStreams();
+  m_Supervisor->Load(IncompleteFile);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("IsConfigurationIncomplete()", "reloaded incomplete configuration again", "Reloading the same incomplete configuration sets the flag again", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+  DisableDefaultStreams();
+  const bool OutOfRangeRemove = m_Supervisor->RemoveModule(99);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("RemoveModule()", "out of range on incomplete configuration", "Removing at an invalid position reports failure", OutOfRangeRemove) && Passed;
+  Passed = EvaluateTrue("IsConfigurationIncomplete()", "after failed RemoveModule", "A rejected edit has not repaired anything, so the incompleteness protection must remain", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+
+  // Replacing a module with the identical instance already at that position changes nothing, even
+  // though the call itself reports success, so it must not clear the protection either
+  const bool NoOpSet = m_Supervisor->SetModule(m_Supervisor->GetModule(0), 0);
+  Passed = EvaluateTrue("SetModule()", "no-op replacement on incomplete configuration", "Replacing a module with the identical instance already there reports success", NoOpSet) && Passed;
+  Passed = EvaluateTrue("IsConfigurationIncomplete()", "after no-op SetModule", "A no-op edit has not repaired anything, so the incompleteness protection must remain", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+
+  // Now genuinely repair the sequence half, isolating the module-options half for the next check
+  Passed = EvaluateTrue("RemoveModule()", "repair after a rejected attempt", "A genuinely successful edit still clears the flag after an earlier rejected attempt", m_Supervisor->RemoveModule(1)) && Passed;
+  Passed = EvaluateFalse("IsConfigurationIncomplete()", "sequence repaired", "The sequence half of the incompleteness is now clean", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+
+  // A sequence edit only repairs the missing-module half -- it can't fix a module which failed
+  // to restore its own options
+  m_SoftProvider->SetRejectConfiguration(true);
+  DisableDefaultStreams();
+  m_Supervisor->ChangeConfiguration("ModuleOptions.XmlTagUTSupervisorSoftProvider.ConfigValue=still-rejected");
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("IsConfigurationIncomplete()", "module options rejected", "The module-options half of the incompleteness is now set", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+  Passed = EvaluateTrue("SetModule()", "sequence edit cannot repair module options", "A valid, unrelated sequence edit is accepted on its own terms", m_Supervisor->SetModule(m_Filter, 1)) && Passed;
+  Passed = EvaluateTrue("IsConfigurationIncomplete()", "after unrelated sequence edit", "A sequence edit cannot clear an incompleteness caused by a module rejecting its own options", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+  m_SoftProvider->SetRejectConfiguration(false);
+
+  // A module which rejects the field it was just given has to make ChangeConfiguration() itself
+  // fail, not just log an error internally and report success regardless
+  m_SoftProvider->SetRejectConfiguration(true);
+  DisableDefaultStreams();
+  const bool RejectedFieldResult = m_Supervisor->ChangeConfiguration("ModuleOptions.XmlTagUTSupervisorSoftProvider.ConfigValue=rejected");
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("ChangeConfiguration()", "module rejects its configuration", "ChangeConfiguration reports failure when a module's own reader rejects the change", RejectedFieldResult) && Passed;
+  Passed = EvaluateTrue("IsConfigurationIncomplete()", "module rejects its configuration", "A module rejecting its own configuration during a field change is itself recorded as an incompleteness", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+  m_SoftProvider->SetRejectConfiguration(false);
+
+  RemoveTemporaryFile(IncompleteFile);
+
+  // A stored sequence can be invalid outright (order breaks a hard requirement) even though every
+  // module resolves. Load() only reports completeness, not validity -- caught separately, before
+  // Analyze() runs it.
+  const MString InvalidOrderFile = GetTemporaryFileName("invalid_order_supervisor.cfg");
+  Passed = EvaluateTrue("WriteTextFile()", "invalid-order configuration", "A configuration with a broken module order can be written",
+                        WriteTextFile(InvalidOrderFile,
+                                      "<NuclearizerData>\n"
+                                      "  <Version>1</Version>\n"
+                                      "  <ModuleSequence>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTSupervisorFilter</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTSupervisorLoader</ModuleSequenceItem>\n"
+                                      "  </ModuleSequence>\n"
+                                      "</NuclearizerData>\n")) && Passed;
+  DisableDefaultStreams();
+  const bool InvalidOrderLoadResult = m_Supervisor->Load(InvalidOrderFile);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("Load()", "invalid-order configuration", "Every entry resolves, so loading itself reports success", InvalidOrderLoadResult) && Passed;
+  Passed = EvaluateFalse("IsConfigurationIncomplete()", "invalid-order configuration", "The configuration is complete -- it is invalid, which is a different thing", m_Supervisor->IsConfigurationIncomplete()) && Passed;
+  DisableDefaultStreams();
+  const unsigned int InvalidOrderValid = m_Supervisor->GetNValidModules();
+  EnableDefaultStreams();
+  Passed = Evaluate("GetNValidModules()", "invalid-order configuration", "The filter is first in this sequence and its hard predecessor requirement is unmet, so no module is valid", InvalidOrderValid, 0U) && Passed;
+
+  DisableDefaultStreams();
+  const bool AnalyzedInvalidOrder = m_Supervisor->Analyze(false);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("Analyze()", "invalid-order configuration", "A sequence loaded from disk with a broken order is refused, reached through Load() rather than through the module editor", AnalyzedInvalidOrder) && Passed;
+  Passed = EvaluateFalse("IsAnalysisisRunning()", "invalid-order configuration", "The running flag is reset after the refusal", m_Supervisor->IsAnalysisisRunning()) && Passed;
+  RemoveTemporaryFile(InvalidOrderFile);
+
+  // A valid sequence with no start module must be rejected before Save() writes it -- otherwise
+  // the refused configuration overwrites the last usable one
+  const MString NoStartSaveFile = GetTemporaryFileName("supervisor_no_start_save.cfg");
+  RemoveTemporaryFile(NoStartSaveFile);
+  m_Supervisor->Clear();
+  m_Supervisor->SetConfigurationFileName(NoStartSaveFile);
+  m_Supervisor->SetModule(m_SoftProvider, 0);
+  Passed = Evaluate("GetNValidModules()", "no start module", "The single module has no requirements of its own, so the sequence is valid -- only the missing start module is at fault", m_Supervisor->GetNValidModules(), 1U) && Passed;
+  DisableDefaultStreams();
+  const bool AnalyzedNoStart = m_Supervisor->Analyze(false);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("Analyze()", "no start module", "A valid sequence whose first module does not generate events is refused", AnalyzedNoStart) && Passed;
+  Passed = EvaluateFalse("MFile::Exists()", "no start module", "The rejected sequence is not saved to disk before being refused", MFile::Exists(NoStartSaveFile)) && Passed;
 
   RemoveTemporaryFile(SaveFile);
   RemoveTemporaryFile(NameFallbackFile);
@@ -536,13 +719,40 @@ bool UTSupervisor::TestSuccessfulAnalysis()
   Passed = EvaluateTrue("GetGeometry()", "after valid LoadGeometry", "A successful geometry load stores the geometry object", m_Supervisor->GetGeometry() != nullptr) && Passed;
   Passed = EvaluateTrue("SetGeometry()", "after valid LoadGeometry", "A successful geometry load passes the same geometry pointer to configured modules", m_Loader->GetGeometryPointer() == m_Supervisor->GetGeometry() && m_Filter->GetGeometryPointer() == m_Supervisor->GetGeometry()) && Passed;
 
+  // A second call which fails must not discard the still-valid geometry from the first one, nor
+  // leave the modules holding a pointer to something which has since been freed
+  MDGeometryQuest* FirstGeometry = m_Supervisor->GetGeometry();
+  m_Supervisor->SetGeometryFileName(GetTemporaryFileName("supervisor_missing_geometry.geo.setup"));
+  DisableDefaultStreams();
+  const bool SecondGeometryResult = m_Supervisor->LoadGeometry();
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("LoadGeometry()", "repeated call, second load fails", "A second geometry load with a nonexistent file fails", SecondGeometryResult) && Passed;
+  Passed = EvaluateTrue("GetGeometry()", "after failed repeated LoadGeometry", "The previous, still-valid geometry is kept rather than being discarded or leaked", m_Supervisor->GetGeometry() == FirstGeometry) && Passed;
+  Passed = EvaluateTrue("SetGeometry()", "after failed repeated LoadGeometry", "Modules still point at the previous, still-valid geometry rather than a dangling pointer", m_Loader->GetGeometryPointer() == FirstGeometry && m_Filter->GetGeometryPointer() == FirstGeometry) && Passed;
+
+  // A successful replacement deletes the old geometry -- a module removed from the sequence since
+  // the previous load must still be updated, or it's left pointing at freed memory
+  Passed = EvaluateTrue("RemoveModule()", "before second successful geometry load", "The filter is removed from the sequence ahead of the next load", m_Supervisor->RemoveModule(1)) && Passed;
+  Passed = EvaluateTrue("SetGeometry()", "removed module before second load", "The removed module still points at the first geometry immediately after removal", m_Filter->GetGeometryPointer() == FirstGeometry) && Passed;
+  m_Supervisor->SetGeometryFileName(GeometryFileName);
+  DisableDefaultStreams();
+  const bool ThirdGeometryResult = m_Supervisor->LoadGeometry();
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("LoadGeometry()", "second successful load after removal", "A second successful geometry load succeeds", ThirdGeometryResult) && Passed;
+  Passed = EvaluateTrue("SetGeometry()", "removed module after second load", "A module removed from the sequence since the previous load is still updated to the new geometry, not left pointing at the one just freed", m_Filter->GetGeometryPointer() == m_Supervisor->GetGeometry()) && Passed;
+  Passed = EvaluateTrue("SetGeometry()", "configured module after second load", "The module still in the sequence is updated to the new geometry as well", m_Loader->GetGeometryPointer() == m_Supervisor->GetGeometry()) && Passed;
+
+  // Clear() deletes the geometry -- any module still pointing at it would dangle otherwise.
+  // Checked before ResetProbeStates(), which would itself mask a regression here.
   m_Supervisor->Clear();
+  Passed = EvaluateTrue("Clear()", "geometry pointer reset", "Clear() resets the geometry pointer on every available module, not only the ones still in the sequence", m_Loader->GetGeometryPointer() == nullptr && m_Filter->GetGeometryPointer() == nullptr) && Passed;
+
   ResetProbeStates();
   m_Supervisor->SetGeometryFileName(GeometryFileName);
   DisableDefaultStreams();
   const bool EmptyAnalysisResult = m_Supervisor->Analyze(false);
   EnableDefaultStreams();
-  Passed = EvaluateFalse("Analyze()", "no modules", "Analysis fails after geometry loading when no modules are configured", EmptyAnalysisResult) && Passed;
+  Passed = EvaluateFalse("Analyze()", "no modules", "Analysis fails when no modules are configured, before geometry is even loaded", EmptyAnalysisResult) && Passed;
   Passed = EvaluateFalse("IsAnalysisisRunning()", "after no-module Analyze", "The running flag is reset after the no-module analysis failure", m_Supervisor->IsAnalysisisRunning()) && Passed;
 
   m_Supervisor->Clear();
@@ -621,6 +831,36 @@ bool UTSupervisor::TestAdditionalAnalysisBranches()
   Passed = Evaluate("Finalize()", "failing filter", "The failing module is also finalized by the current cleanup loop", m_Filter->GetFinalizeCalls(), 1U) && Passed;
   Passed = Evaluate("Finalize()", "saver after failure", "Modules after the failing module are not finalized", m_Saver->GetFinalizeCalls(), 0U) && Passed;
   Passed = Evaluate("AnalyzeEvent()", "after initialization failure", "No events are analyzed when initialization fails", m_Loader->GetAnalyzeCalls(), 0U) && Passed;
+  m_Supervisor->Clear();
+
+  // A soft interrupt during a module's own Initialize() must be treated like a genuine failure --
+  // later modules were never initialized either way. The probe simulates this by setting the
+  // interrupt on the supervisor from inside its own Initialize() call.
+  m_Supervisor->Clear();
+  ResetProbeStates();
+  m_Supervisor->UseUI(false);
+  m_Supervisor->UseMultiThreading(false);
+  m_Supervisor->SetConfigurationFileName(GetTemporaryFileName("supervisor_init_interrupt.cfg"));
+  m_Supervisor->SetGeometryFileName(GeometryFileName);
+  m_Filter->SetSoftInterruptOnInitialize(m_Supervisor);
+  m_Supervisor->SetModule(m_Loader, 0);
+  m_Supervisor->SetModule(m_Filter, 1);
+  m_Supervisor->SetModule(m_Saver, 2);
+
+  DisableDefaultStreams();
+  const bool InitializationInterruptResult = m_Supervisor->Analyze(false);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("Analyze()", "module initialization interrupted", "Analysis reports failure when a soft interrupt lands during a module's own initialization", InitializationInterruptResult) && Passed;
+  Passed = EvaluateFalse("IsAnalysisisRunning()", "after initialization interrupted", "The running flag is reset after an interrupted initialization", m_Supervisor->IsAnalysisisRunning()) && Passed;
+  Passed = Evaluate("Initialize()", "loader before interrupt", "Modules before the interrupted module are initialized", m_Loader->GetInitializeCalls(), 1U) && Passed;
+  Passed = Evaluate("Initialize()", "interrupted filter", "The interrupted module's initialization is attempted once", m_Filter->GetInitializeCalls(), 1U) && Passed;
+  Passed = Evaluate("Initialize()", "saver after interrupt", "Modules after the interrupted module are not initialized -- this is the regression this test guards against", m_Saver->GetInitializeCalls(), 0U) && Passed;
+  Passed = Evaluate("Finalize()", "loader after interrupt", "Already initialized modules are finalized after an interrupted initialization", m_Loader->GetFinalizeCalls(), 1U) && Passed;
+  Passed = Evaluate("Finalize()", "interrupted filter", "The interrupted module is also finalized by the cleanup loop", m_Filter->GetFinalizeCalls(), 1U) && Passed;
+  Passed = Evaluate("Finalize()", "saver after interrupt", "Modules after the interrupted module are not finalized", m_Saver->GetFinalizeCalls(), 0U) && Passed;
+  Passed = Evaluate("AnalyzeEvent()", "after initialization interrupted", "No events are analyzed when initialization is interrupted", m_Loader->GetAnalyzeCalls(), 0U) && Passed;
+  m_Filter->SetSoftInterruptOnInitialize(nullptr);
+  m_Supervisor->SetSoftInterrupt(false);
   m_Supervisor->Clear();
 
   m_Supervisor->Clear();
@@ -759,9 +999,438 @@ bool UTSupervisor::TestUserInterfaceSettings()
   }
   m_Supervisor->UseUI(false);
 
-  // Exit() is deliberately not exercised: with no analysis running it calls Terminate(), which ends
-  // the process through gApplication->Terminate(0) and would take the test run down with it.
+  // Exit() is not exercised: it calls Terminate() -> gApplication->Terminate(0), which would end
+  // the test process. Terminate()'s save guard is IsSequenceRunnable(), shared with Analyze(), so
+  // it's covered indirectly through the Analyze() tests elsewhere in this file.
 
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTSupervisor::IsOffered(vector<MModule*>& Previous, MModule* Candidate)
+{
+  vector<MModule*> Offered = m_Supervisor->ReturnPossibleVolumes(Previous);
+  return find(Offered.begin(), Offered.end(), Candidate) != Offered.end();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTSupervisor::TestSequenceBuildingRules()
+{
+  bool Passed = true;
+
+  // Analyze() loads the geometry, and ROOT announces every TGeoManager it builds; keep warnings
+  const int PreviousErrorIgnoreLevel = gErrorIgnoreLevel;
+  gErrorIgnoreLevel = kWarning;
+
+  // These probes are registered last, so that the available-module counts asserted by the earlier
+  // sub-tests are not disturbed
+  const uint64_t c_RuleProvider = 0x1000;
+  const uint64_t c_RuleShared   = 0x2000;
+  const uint64_t c_RuleOptional = 0x4000;
+
+  SupervisorModuleProbe* Provider = new SupervisorModuleProbe("UT Rule Provider", "XmlTagUTRuleProvider", c_RuleProvider, true);
+  SupervisorModuleProbe* Spacer = new SupervisorModuleProbe("UT Rule Spacer", "XmlTagUTRuleSpacer", 0x8000);
+  SupervisorModuleProbe* Immediate = new SupervisorModuleProbe("UT Rule Immediate", "XmlTagUTRuleImmediate", 0x10000);
+  Immediate->AddImmediatePreceedingType(c_RuleProvider);
+  SupervisorModuleProbe* SoftUser = new SupervisorModuleProbe("UT Rule Soft User", "XmlTagUTRuleSoftUser", 0x20000);
+  SoftUser->AddSoftPreceedingType(c_RuleOptional);
+  SupervisorModuleProbe* SoftProviderLate = new SupervisorModuleProbe("UT Rule Soft Provider", "XmlTagUTRuleSoftProvider", c_RuleOptional);
+  SoftProviderLate->SetProbeTypeExclusive(false);
+  SupervisorModuleProbe* SoftProviderSecond = new SupervisorModuleProbe("UT Rule Soft Provider 2", "XmlTagUTRuleSoftProvider2", c_RuleOptional);
+  SoftProviderSecond->SetProbeTypeExclusive(false);
+  SupervisorModuleProbe* ExclusiveA = new SupervisorModuleProbe("UT Rule Exclusive", "XmlTagUTRuleExclusive", c_RuleShared);
+  SupervisorModuleProbe* SharedB = new SupervisorModuleProbe("UT Rule Shared B", "XmlTagUTRuleSharedB", c_RuleShared);
+  SharedB->SetProbeTypeExclusive(false);
+  SupervisorModuleProbe* SharedC = new SupervisorModuleProbe("UT Rule Shared C", "XmlTagUTRuleSharedC", c_RuleShared);
+  SharedC->SetProbeTypeExclusive(false);
+  SupervisorModuleProbe* SecondStart = new SupervisorModuleProbe("UT Rule Second Start", "XmlTagUTRuleSecondStart", 0x2000000, true);
+
+  m_Supervisor->AddAvailableModule(Provider);
+  m_Supervisor->AddAvailableModule(Spacer);
+  m_Supervisor->AddAvailableModule(Immediate);
+  m_Supervisor->AddAvailableModule(SoftUser);
+  m_Supervisor->AddAvailableModule(SoftProviderLate);
+  m_Supervisor->AddAvailableModule(SoftProviderSecond);
+  m_Supervisor->AddAvailableModule(ExclusiveA);
+  m_Supervisor->AddAvailableModule(SharedB);
+  m_Supervisor->AddAvailableModule(SharedC);
+  m_Supervisor->AddAvailableModule(SecondStart);
+
+  vector<MModule*> AfterProvider;
+  AfterProvider.push_back(Provider);
+  vector<MModule*> AfterProviderSpacer;
+  AfterProviderSpacer.push_back(Provider);
+  AfterProviderSpacer.push_back(Spacer);
+
+  // An immediate requirement is only satisfied by the module directly before the new position
+  Passed = EvaluateTrue("ReturnPossibleVolumes()", "immediate requirement satisfied", "A module with an immediate requirement is offered directly after its provider", IsOffered(AfterProvider, Immediate)) && Passed;
+  Passed = EvaluateFalse("ReturnPossibleVolumes()", "immediate requirement one position later", "A module with an immediate requirement is not offered once another module sits in between", IsOffered(AfterProviderSpacer, Immediate)) && Passed;
+  vector<MModule*> Empty;
+  Passed = EvaluateFalse("ReturnPossibleVolumes()", "immediate requirement at the start", "A module with an immediate requirement is not offered as the first module of a sequence", IsOffered(Empty, Immediate)) && Passed;
+
+  // A soft requirement must not stop a module from being offered: its provider is optional
+  Passed = EvaluateTrue("ReturnPossibleVolumes()", "soft requirement, provider absent", "A module whose soft requirement is unmet is still offered, because its provider is optional", IsOffered(AfterProvider, SoftUser)) && Passed;
+
+  // Type exclusivity has to give the same answer whichever module was added first
+  vector<MModule*> AfterExclusive;
+  AfterExclusive.push_back(ExclusiveA);
+  vector<MModule*> AfterShared;
+  AfterShared.push_back(SharedB);
+  Passed = EvaluateFalse("ReturnPossibleVolumes()", "exclusive module placed first", "A second module of the same type is not offered after a type-exclusive module", IsOffered(AfterExclusive, SharedB)) && Passed;
+  Passed = EvaluateFalse("ReturnPossibleVolumes()", "exclusive module placed second", "A type-exclusive module is not offered after another module of the same type", IsOffered(AfterShared, ExclusiveA)) && Passed;
+  Passed = EvaluateTrue("ReturnPossibleVolumes()", "both non-exclusive", "Two modules of the same type are offered together when neither is type exclusive", IsOffered(AfterShared, SharedC)) && Passed;
+
+  // The sequence setters report whether the call did what was asked
+  m_Supervisor->Clear();
+  Passed = EvaluateTrue("SetModule()", "valid start module", "Setting a valid module at the next position reports success", m_Supervisor->SetModule(Provider, 0)) && Passed;
+  Passed = EvaluateTrue("SetModule()", "valid immediate follower", "Setting a module whose immediate requirement is met reports success", m_Supervisor->SetModule(Immediate, 1)) && Passed;
+  Passed = Evaluate("GetNModules()", "valid sequence", "Both modules remain in the sequence", m_Supervisor->GetNModules(), 2U) && Passed;
+
+  // The same pair in the wrong order breaks the immediate requirement and is trimmed
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(Provider, 0);
+  m_Supervisor->SetModule(Spacer, 1);
+  DisableDefaultStreams();
+  const bool ImmediateAfterSpacer = m_Supervisor->SetModule(Immediate, 2);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("SetModule()", "immediate requirement broken", "Placing a module whose immediate predecessor is no longer directly before it reports failure", ImmediateAfterSpacer) && Passed;
+  Passed = Evaluate("GetNModules()", "after broken immediate requirement", "The offending module is trimmed from the sequence", m_Supervisor->GetNModules(), 2U) && Passed;
+
+  // A module whose immediate predecessor is required cannot be the first one in the sequence
+  m_Supervisor->Clear();
+  DisableDefaultStreams();
+  const bool ImmediateAtStart = m_Supervisor->SetModule(Immediate, 0);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("SetModule()", "immediate requirement at the start", "A module with an immediate requirement cannot be the first module of a sequence", ImmediateAtStart) && Passed;
+  Passed = Evaluate("GetNModules()", "immediate requirement at the start", "The rejected module does not stay in the sequence", m_Supervisor->GetNModules(), 0U) && Passed;
+
+  // A rejected position has to be distinguishable from a rejected sequence: the sequence is still
+  // valid afterwards, so the very next well-placed module is accepted
+  m_Supervisor->Clear();
+  DisableDefaultStreams();
+  const bool GapPosition = m_Supervisor->SetModule(Provider, 3);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("SetModule()", "position beyond the end", "Setting a module beyond the next free position reports failure", GapPosition) && Passed;
+  Passed = Evaluate("GetNModules()", "position beyond the end", "A rejected position leaves the sequence untouched", m_Supervisor->GetNModules(), 0U) && Passed;
+  Passed = EvaluateTrue("SetModule()", "after a rejected position", "The sequence is still usable after a rejected position", m_Supervisor->SetModule(Provider, 0)) && Passed;
+
+  // Type exclusivity is part of what makes a sequence valid, not only a rule for what the GUI
+  // offers, so placing a second module of an exclusive type is rejected and trimmed
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(ExclusiveA, 0);
+  DisableDefaultStreams();
+  const bool SecondOfSameType = m_Supervisor->SetModule(SharedB, 1);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("SetModule()", "two modules of one exclusive type", "A second module carrying a type an earlier module provides exclusively is rejected", SecondOfSameType) && Passed;
+  Passed = Evaluate("GetNModules()", "two modules of one exclusive type", "The rejected module is trimmed from the sequence", m_Supervisor->GetNModules(), 1U) && Passed;
+
+  // Two modules which both allow their type to repeat stay in the sequence
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(SharedB, 0);
+  const bool TwoNonExclusive = m_Supervisor->SetModule(SharedC, 1);
+  Passed = EvaluateTrue("SetModule()", "two modules of one shared type", "Two modules of the same type are accepted when neither is type exclusive", TwoNonExclusive) && Passed;
+  Passed = Evaluate("GetNModules()", "two modules of one shared type", "Both non-exclusive modules remain in the sequence", m_Supervisor->GetNModules(), 2U) && Passed;
+
+  // A candidate whose soft requirement is provided further down would be erased the moment it is
+  // placed, so it must not be offered for that position in the first place
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(Spacer, 0);
+  m_Supervisor->SetModule(SoftProviderLate, 1);
+  vector<MModule*> OfferedBeforeSoftProvider = m_Supervisor->ReturnPossibleVolumes(0);
+  Passed = EvaluateTrue("ReturnPossibleVolumes(Position)", "soft provider held later", "A module whose soft requirement is provided further down the sequence is not offered for an earlier position", find(OfferedBeforeSoftProvider.begin(), OfferedBeforeSoftProvider.end(), SoftUser) == OfferedBeforeSoftProvider.end()) && Passed;
+
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(ExclusiveA, 0);
+  Passed = Evaluate("GetNValidModules()", "valid single module", "A single module forms a valid sequence", m_Supervisor->GetNValidModules(), 1U) && Passed;
+
+  // Nothing produces events unless the first module is a start module, so the analysis loop would
+  // never reach its shutdown condition. That has to be refused for any sequence length.
+  m_Supervisor->Clear();
+  ResetProbeStates();
+  m_Supervisor->UseUI(false);
+  m_Supervisor->UseMultiThreading(false);
+  m_Supervisor->SetConfigurationFileName(GetTemporaryFileName("supervisor_no_start.cfg"));
+  m_Supervisor->SetGeometryFileName(GetGeometryFixtureName());
+  m_Supervisor->SetModule(Spacer, 0);
+  m_Supervisor->SetModule(SharedB, 1);
+  Passed = Evaluate("GetNModules()", "two non-start modules", "Both non-start modules are in the sequence", m_Supervisor->GetNModules(), 2U) && Passed;
+  DisableDefaultStreams();
+  const bool AnalyzedWithoutStartModule = m_Supervisor->Analyze(false);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("Analyze()", "no start module", "A sequence whose first module does not generate events is refused, however many modules follow", AnalyzedWithoutStartModule) && Passed;
+  Passed = EvaluateFalse("IsAnalysisisRunning()", "no start module", "The running flag is reset after the refusal", m_Supervisor->IsAnalysisisRunning()) && Passed;
+
+  // A soft requirement is violated by a provider behind the module even when one also sits before it
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(SoftProviderLate, 0);
+  m_Supervisor->SetModule(SoftUser, 1);
+  Passed = Evaluate("GetNValidModules()", "soft provider before", "A soft requirement met by an earlier module is valid", m_Supervisor->GetNValidModules(), 2U) && Passed;
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(SoftProviderLate, 0);
+  m_Supervisor->SetModule(SoftUser, 1);
+  DisableDefaultStreams();
+  const bool ProviderOnBothSides = m_Supervisor->SetModule(SoftProviderSecond, 2);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("SetModule()", "soft provider on both sides", "A soft requirement is violated by a provider behind the module even when one also sits before it", ProviderOnBothSides) && Passed;
+  Passed = Evaluate("GetNModules()", "soft provider on both sides", "The sequence is trimmed at the module whose soft requirement is violated", m_Supervisor->GetNModules(), 1U) && Passed;
+
+  // SetModule() replaces rather than inserts, so replacing an existing position can leave modules
+  // after it unable to fulfill their requirements -- they get trimmed. Applies to any unmet hard
+  // requirement, not just immediate ones.
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(Provider, 0);
+  m_Supervisor->SetModule(Immediate, 1);
+  vector<MModule*> OfferedAtStart = m_Supervisor->ReturnPossibleVolumes(0);
+  Passed = EvaluateTrue("ReturnPossibleVolumes(Position)", "successors ignored", "A module is offered for a position even when choosing it invalidates the modules after it", find(OfferedAtStart.begin(), OfferedAtStart.end(), Spacer) != OfferedAtStart.end()) && Passed;
+  DisableDefaultStreams();
+  const bool ReplacedDependency = m_Supervisor->SetModule(Spacer, 0);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("SetModule()", "replacing a required predecessor", "Replacing a module that a later module depends on reports that modules had to be eliminated", ReplacedDependency) && Passed;
+  Passed = Evaluate("GetNModules()", "replacing a required predecessor", "The dependent module is trimmed from the sequence", m_Supervisor->GetNModules(), 1U) && Passed;
+  Passed = EvaluateTrue("GetModule()", "replacing a required predecessor", "Only the replacement module remains", m_Supervisor->GetModule(0) == Spacer) && Passed;
+
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(Provider, 0);
+  m_Supervisor->SetModule(Spacer, 1);
+  DisableDefaultStreams();
+  const bool RemovedOutOfRange = m_Supervisor->RemoveModule(99);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("RemoveModule()", "out of range", "Removing a module at an invalid position reports failure", RemovedOutOfRange) && Passed;
+  Passed = Evaluate("GetNModules()", "after out-of-range remove", "An out-of-range remove leaves the sequence untouched", m_Supervisor->GetNModules(), 2U) && Passed;
+
+  // A module can demand several immediate predecessors, but only one module can be directly before
+  // it, so they can only all be met by a single module providing every one of those types
+  const uint64_t c_RuleFirst  = 0x40000;
+  const uint64_t c_RuleSecond = 0x80000;
+
+  SupervisorModuleProbe* BothProvider = new SupervisorModuleProbe("UT Rule Both Provider", "XmlTagUTRuleBothProvider", c_RuleFirst);
+  BothProvider->AddProvidedType(c_RuleSecond);
+  SupervisorModuleProbe* FirstOnlyProvider = new SupervisorModuleProbe("UT Rule First Only", "XmlTagUTRuleFirstOnly", c_RuleFirst);
+  SupervisorModuleProbe* TwoImmediate = new SupervisorModuleProbe("UT Rule Two Immediate", "XmlTagUTRuleTwoImmediate", 0x100000);
+  TwoImmediate->AddImmediatePreceedingType(c_RuleFirst);
+  TwoImmediate->AddImmediatePreceedingType(c_RuleSecond);
+
+  m_Supervisor->AddAvailableModule(BothProvider);
+  m_Supervisor->AddAvailableModule(FirstOnlyProvider);
+  m_Supervisor->AddAvailableModule(TwoImmediate);
+
+  vector<MModule*> AfterBothProvider;
+  AfterBothProvider.push_back(BothProvider);
+  vector<MModule*> AfterFirstOnly;
+  AfterFirstOnly.push_back(FirstOnlyProvider);
+
+  Passed = EvaluateTrue("ReturnPossibleVolumes()", "two immediate requirements, both provided", "A module with two immediate requirements is offered after a single module providing both types", IsOffered(AfterBothProvider, TwoImmediate)) && Passed;
+  Passed = EvaluateFalse("ReturnPossibleVolumes()", "two immediate requirements, one provided", "A module with two immediate requirements is not offered when the module before it provides only one of the types", IsOffered(AfterFirstOnly, TwoImmediate)) && Passed;
+
+  // Exclusivity has to trigger on any shared type, not only when the whole type list matches
+  const uint64_t c_RuleOverlap = 0x200000;
+  SupervisorModuleProbe* OverlapA = new SupervisorModuleProbe("UT Rule Overlap A", "XmlTagUTRuleOverlapA", 0x400000);
+  OverlapA->AddProvidedType(c_RuleOverlap);
+  SupervisorModuleProbe* OverlapB = new SupervisorModuleProbe("UT Rule Overlap B", "XmlTagUTRuleOverlapB", c_RuleOverlap);
+  OverlapB->AddProvidedType(0x800000);
+  SupervisorModuleProbe* NoOverlap = new SupervisorModuleProbe("UT Rule No Overlap", "XmlTagUTRuleNoOverlap", 0x1000000);
+
+  m_Supervisor->AddAvailableModule(OverlapA);
+  m_Supervisor->AddAvailableModule(OverlapB);
+  m_Supervisor->AddAvailableModule(NoOverlap);
+
+  vector<MModule*> AfterOverlapA;
+  AfterOverlapA.push_back(OverlapA);
+  Passed = EvaluateFalse("ReturnPossibleVolumes()", "one shared type of several", "A module sharing a single type with one already in the sequence is not offered", IsOffered(AfterOverlapA, OverlapB)) && Passed;
+  Passed = EvaluateTrue("ReturnPossibleVolumes()", "no shared type", "A module sharing no type with the sequence is offered", IsOffered(AfterOverlapA, NoOverlap)) && Passed;
+  OverlapA->SetProbeTypeExclusive(false);
+  OverlapB->SetProbeTypeExclusive(false);
+  Passed = EvaluateTrue("ReturnPossibleVolumes()", "one shared type, neither exclusive", "Modules sharing a type are offered together when neither is type exclusive", IsOffered(AfterOverlapA, OverlapB)) && Passed;
+  OverlapA->SetProbeTypeExclusive(true);
+  OverlapB->SetProbeTypeExclusive(true);
+
+  // Type exclusivity has to hold for the whole sequence, not only for the part before the position:
+  // when an earlier position is replaced there can be modules after it holding the same type
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(Spacer, 0);
+  m_Supervisor->SetModule(ExclusiveA, 1);
+  vector<MModule*> OfferedBeforeExclusive = m_Supervisor->ReturnPossibleVolumes(0);
+  Passed = EvaluateTrue("ReturnPossibleVolumes(Position)", "exclusive type held later", "A module is not offered for an earlier position when a module after it already holds the same exclusive type", find(OfferedBeforeExclusive.begin(), OfferedBeforeExclusive.end(), SharedB) == OfferedBeforeExclusive.end()) && Passed;
+  ExclusiveA->SetProbeTypeExclusive(false);
+  vector<MModule*> OfferedNonExclusive = m_Supervisor->ReturnPossibleVolumes(0);
+  Passed = EvaluateTrue("ReturnPossibleVolumes(Position)", "non-exclusive type held later", "A module is offered for an earlier position when neither it nor the module after it is type exclusive", find(OfferedNonExclusive.begin(), OfferedNonExclusive.end(), SharedB) != OfferedNonExclusive.end()) && Passed;
+  ExclusiveA->SetProbeTypeExclusive(true);
+
+  // The exclusivity check must also see a successor unreachable only because the CURRENT occupant
+  // is itself invalid (Immediate at position 0 fails its own immediate requirement, unrelated to
+  // SharedB/ExclusiveA's type) -- replacing Immediate with SharedB must be refused the same way as
+  // the Spacer case above. Built from XML since SetModule(Immediate, 0) would be trimmed immediately.
+  const MString ExclusivityInvalidPrefixFile = GetTemporaryFileName("supervisor_exclusivity_invalid_prefix.cfg");
+  Passed = EvaluateTrue("WriteTextFile()", "exclusivity behind an invalid first module", "A configuration with an already-invalid first module and an exclusive module right behind it can be written",
+                        WriteTextFile(ExclusivityInvalidPrefixFile,
+                                      "<NuclearizerData>\n"
+                                      "  <Version>1</Version>\n"
+                                      "  <ModuleSequence>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleImmediate</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleExclusive</ModuleSequenceItem>\n"
+                                      "  </ModuleSequence>\n"
+                                      "</NuclearizerData>\n")) && Passed;
+  DisableDefaultStreams();
+  const bool ExclusivityInvalidPrefixLoadResult = m_Supervisor->Load(ExclusivityInvalidPrefixFile);
+  const unsigned int ExclusivityInvalidPrefixValid = m_Supervisor->GetNValidModules();
+  vector<MModule*> OfferedBehindInvalidPrefix = m_Supervisor->ReturnPossibleVolumes(0);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("Load()", "exclusivity behind an invalid first module", "Every entry resolves, so loading itself reports success", ExclusivityInvalidPrefixLoadResult) && Passed;
+  Passed = Evaluate("GetNValidModules()", "exclusivity behind an invalid first module", "Immediate is invalid on its own, so nothing is valid before any candidate is even considered", ExclusivityInvalidPrefixValid, 0U) && Passed;
+  Passed = EvaluateFalse("ReturnPossibleVolumes(Position)", "exclusivity behind an invalid first module", "A candidate is not offered when it would exclusively conflict with a module still present later in the sequence, even though nothing was valid before the candidate was considered", find(OfferedBehindInvalidPrefix.begin(), OfferedBehindInvalidPrefix.end(), SharedB) != OfferedBehindInvalidPrefix.end()) && Passed;
+  RemoveTemporaryFile(ExclusivityInvalidPrefixFile);
+
+  // The bound above must not blanket-disable ALL exclusivity checking -- that would also hide a
+  // conflict between two OTHER modules unrelated to the candidate. Sequence (via XML, as above):
+  // [slot, ExclusiveA, SharedB, ExclusiveX] with candidate SharedX (ExclusiveX/SharedX an unrelated
+  // type). ExclusiveA/SharedB collide regardless of the candidate, invalidating from position 2 on
+  // -- the scan must never reach ExclusiveX, so SharedX must be offered.
+  const uint64_t c_RuleSharedX = 0x4000000;
+  SupervisorModuleProbe* ExclusiveX = new SupervisorModuleProbe("UT Rule Exclusive X", "XmlTagUTRuleExclusiveX", c_RuleSharedX);
+  SupervisorModuleProbe* SharedX = new SupervisorModuleProbe("UT Rule Shared X", "XmlTagUTRuleSharedX", c_RuleSharedX);
+  SharedX->SetProbeTypeExclusive(false);
+  m_Supervisor->AddAvailableModule(ExclusiveX);
+  m_Supervisor->AddAvailableModule(SharedX);
+
+  const MString UnrelatedExclusivityFile = GetTemporaryFileName("supervisor_exclusivity_unrelated_conflict.cfg");
+  Passed = EvaluateTrue("WriteTextFile()", "unrelated exclusivity conflict later in the sequence", "A configuration with an unrelated exclusivity conflict behind the candidate's position can be written",
+                        WriteTextFile(UnrelatedExclusivityFile,
+                                      "<NuclearizerData>\n"
+                                      "  <Version>1</Version>\n"
+                                      "  <ModuleSequence>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleSpacer</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleExclusive</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleSharedB</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleExclusiveX</ModuleSequenceItem>\n"
+                                      "  </ModuleSequence>\n"
+                                      "</NuclearizerData>\n")) && Passed;
+  DisableDefaultStreams();
+  const bool UnrelatedExclusivityLoadResult = m_Supervisor->Load(UnrelatedExclusivityFile);
+  vector<MModule*> OfferedPastUnrelatedExclusivityConflict = m_Supervisor->ReturnPossibleVolumes(0);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("Load()", "unrelated exclusivity conflict later in the sequence", "Every entry resolves, so loading itself reports success", UnrelatedExclusivityLoadResult) && Passed;
+  Passed = EvaluateTrue("ReturnPossibleVolumes(Position)", "unrelated exclusivity conflict later in the sequence", "A candidate is still offered when an exclusivity conflict unrelated to the candidate already invalidates the sequence before a same-type module further down", find(OfferedPastUnrelatedExclusivityConflict.begin(), OfferedPastUnrelatedExclusivityConflict.end(), SharedX) != OfferedPastUnrelatedExclusivityConflict.end()) && Passed;
+  RemoveTemporaryFile(UnrelatedExclusivityFile);
+
+  // Appending must not be affected by the check above -- there is nothing after the last position
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(Provider, 0);
+  vector<MModule*> OfferedAtEnd = m_Supervisor->ReturnPossibleVolumes(1);
+  Passed = EvaluateTrue("ReturnPossibleVolumes(Position)", "appending at the end", "Appending still offers the modules whose requirements are met", find(OfferedAtEnd.begin(), OfferedAtEnd.end(), Immediate) != OfferedAtEnd.end()) && Passed;
+
+  // GetNValidModules reports how far a sequence is valid without changing it
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(Provider, 0);
+  m_Supervisor->SetModule(Spacer, 1);
+  Passed = Evaluate("GetNValidModules()", "valid sequence", "A completely valid sequence is valid over its whole length", m_Supervisor->GetNValidModules(), m_Supervisor->GetNModules()) && Passed;
+  Passed = Evaluate("GetNModules()", "after GetNValidModules", "Querying the valid length does not change the sequence", m_Supervisor->GetNModules(), 2U) && Passed;
+
+  // Replacing an existing position with a module that keeps the sequence valid reports success
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(Provider, 0);
+  m_Supervisor->SetModule(Spacer, 1);
+  Passed = EvaluateTrue("SetModule()", "valid replacement", "Replacing a module with one that keeps the sequence valid reports success", m_Supervisor->SetModule(NoOverlap, 1)) && Passed;
+  Passed = Evaluate("GetNModules()", "valid replacement", "A valid replacement does not change the length of the sequence", m_Supervisor->GetNModules(), 2U) && Passed;
+  Passed = EvaluateTrue("GetModule()", "valid replacement", "The replacement module sits at the position it was set to", m_Supervisor->GetModule(1) == NoOverlap) && Passed;
+  Passed = EvaluateTrue("GetModule()", "valid replacement", "The module before the replaced position is untouched", m_Supervisor->GetModule(0) == Provider) && Passed;
+
+  // A start module can only ever be first -- elsewhere it never drains its incoming queue
+  Passed = EvaluateTrue("ReturnPossibleVolumes()", "start module as the first module", "A module which generates its own events is offered as the first module of a sequence", IsOffered(Empty, SecondStart)) && Passed;
+  Passed = EvaluateFalse("ReturnPossibleVolumes()", "start module after another module", "A module which generates its own events is not offered anywhere but as the first module", IsOffered(AfterProvider, SecondStart)) && Passed;
+
+  m_Supervisor->Clear();
+  m_Supervisor->SetModule(Provider, 0);
+  DisableDefaultStreams();
+  const bool SecondStartPlaced = m_Supervisor->SetModule(SecondStart, 1);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("SetModule()", "second start module", "A second module which generates its own events is rejected even when placed directly through SetModule", SecondStartPlaced) && Passed;
+  Passed = Evaluate("GetNModules()", "second start module", "The offending module is trimmed from the sequence", m_Supervisor->GetNModules(), 1U) && Passed;
+
+  // GetNValidModules() must judge the soft-provider check only against the hard-valid prefix -- a
+  // provider in an already-invalid suffix can't be blamed for a soft violation earlier on. Loaded
+  // from XML since SetModule() would trim the invalid middle module before this could be built.
+  const MString SoftSuffixFile = GetTemporaryFileName("supervisor_soft_suffix.cfg");
+  Passed = EvaluateTrue("WriteTextFile()", "soft provider in invalid suffix", "A configuration with a provider stranded behind an invalid module can be written",
+                        WriteTextFile(SoftSuffixFile,
+                                      "<NuclearizerData>\n"
+                                      "  <Version>1</Version>\n"
+                                      "  <ModuleSequence>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleSoftUser</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleImmediate</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleSoftProvider</ModuleSequenceItem>\n"
+                                      "  </ModuleSequence>\n"
+                                      "</NuclearizerData>\n")) && Passed;
+  DisableDefaultStreams();
+  const bool SoftSuffixLoadResult = m_Supervisor->Load(SoftSuffixFile);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("Load()", "soft provider in invalid suffix", "Every entry resolves, so loading itself reports success", SoftSuffixLoadResult) && Passed;
+  Passed = Evaluate("GetNModules()", "soft provider in invalid suffix", "All three modules are kept even though the sequence is not fully valid", m_Supervisor->GetNModules(), 3U) && Passed;
+  DisableDefaultStreams();
+  const unsigned int SoftSuffixValid = m_Supervisor->GetNValidModules();
+  EnableDefaultStreams();
+  Passed = Evaluate("GetNValidModules()", "soft provider in invalid suffix", "The soft consumer is valid on its own once the invalid module and the provider stranded behind it are excluded from consideration", SoftSuffixValid, 1U) && Passed;
+
+  RemoveTemporaryFile(SoftSuffixFile);
+
+  // ReturnPossibleVolumes(Position) must judge candidates against the same hard-valid prefix, not
+  // the raw remainder -- otherwise a stranded provider can disqualify a candidate GetNValidModules()
+  // would accept. Position 0 holds Spacer, not SoftUser itself, since a module already at its own
+  // position is always excluded from its own candidate list regardless of this bug.
+  const MString SoftSuffixOfferFile = GetTemporaryFileName("supervisor_soft_suffix_offer.cfg");
+  Passed = EvaluateTrue("WriteTextFile()", "soft provider in invalid suffix, offer check", "A configuration with a neutral first module and a provider stranded behind an invalid one can be written",
+                        WriteTextFile(SoftSuffixOfferFile,
+                                      "<NuclearizerData>\n"
+                                      "  <Version>1</Version>\n"
+                                      "  <ModuleSequence>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleSpacer</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleImmediate</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleSoftProvider</ModuleSequenceItem>\n"
+                                      "  </ModuleSequence>\n"
+                                      "</NuclearizerData>\n")) && Passed;
+  DisableDefaultStreams();
+  const bool SoftSuffixOfferLoadResult = m_Supervisor->Load(SoftSuffixOfferFile);
+  const unsigned int SoftSuffixOfferValid = m_Supervisor->GetNValidModules();
+  vector<MModule*> OfferedWithSoftSuffix = m_Supervisor->ReturnPossibleVolumes(0);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("Load()", "soft provider in invalid suffix, offer check", "Every entry resolves, so loading itself reports success", SoftSuffixOfferLoadResult) && Passed;
+  Passed = Evaluate("GetNValidModules()", "soft provider in invalid suffix, offer check", "Spacer alone is valid once the invalid module and the provider stranded behind it are excluded from consideration", SoftSuffixOfferValid, 1U) && Passed;
+  Passed = EvaluateTrue("ReturnPossibleVolumes(Position)", "soft provider in invalid suffix, offer check", "A candidate for position 0 is not hidden by a soft-requirement provider stranded behind an already-invalid module", find(OfferedWithSoftSuffix.begin(), OfferedWithSoftSuffix.end(), SoftUser) != OfferedWithSoftSuffix.end()) && Passed;
+
+  // Opposite direction: bounding the successor scan by validity BEFORE the candidate is placed
+  // must not miss a genuine self-erasure. Immediate at position 0 is already invalid on its own
+  // (empty pre-candidate prefix), but SoftProviderLate at position 1 would still sit directly
+  // after SoftUser if SoftUser replaced Immediate, violating SoftUser's own ordering. Built from
+  // XML, as above -- SetModule() would trim Immediate before SoftProviderLate could be added.
+  const MString SelfErasureFile = GetTemporaryFileName("supervisor_self_erasure.cfg");
+  Passed = EvaluateTrue("WriteTextFile()", "self-erasure via a later, still-present provider", "A configuration with an already-invalid first module and a real provider right behind it can be written",
+                        WriteTextFile(SelfErasureFile,
+                                      "<NuclearizerData>\n"
+                                      "  <Version>1</Version>\n"
+                                      "  <ModuleSequence>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleImmediate</ModuleSequenceItem>\n"
+                                      "    <ModuleSequenceItem>XmlTagUTRuleSoftProvider</ModuleSequenceItem>\n"
+                                      "  </ModuleSequence>\n"
+                                      "</NuclearizerData>\n")) && Passed;
+  DisableDefaultStreams();
+  const bool SelfErasureLoadResult = m_Supervisor->Load(SelfErasureFile);
+  const unsigned int SelfErasureCurrentValid = m_Supervisor->GetNValidModules();
+  vector<MModule*> OfferedForSelfErasure = m_Supervisor->ReturnPossibleVolumes(0);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("Load()", "self-erasure via a later, still-present provider", "Every entry resolves, so loading itself reports success", SelfErasureLoadResult) && Passed;
+  Passed = Evaluate("GetNValidModules()", "self-erasure via a later, still-present provider", "Immediate is invalid on its own, so nothing is valid before any candidate is even considered", SelfErasureCurrentValid, 0U) && Passed;
+  Passed = EvaluateFalse("ReturnPossibleVolumes(Position)", "self-erasure via a later, still-present provider", "A candidate is not offered when placing it would violate its own soft ordering requirement against a module still present later in the sequence, even though nothing was valid before the candidate was considered", find(OfferedForSelfErasure.begin(), OfferedForSelfErasure.end(), SoftUser) != OfferedForSelfErasure.end()) && Passed;
+  RemoveTemporaryFile(SelfErasureFile);
+
+  m_Supervisor->Clear();
+
+
+  gErrorIgnoreLevel = PreviousErrorIgnoreLevel;
   return Passed;
 }
 
