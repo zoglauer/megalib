@@ -44,6 +44,9 @@ class MGUIEModule : public MGUIElement
   //! Transfer button clicks to this window
   void Associate(const TGWindow* Window);
 
+  //! Enable/disable the change and remove button
+  void SetEnabled(bool Enabled);
+
   // protected methods:
  protected:
   //! Create this GUI element

@@ -31,6 +31,7 @@
 #include <sstream>
 #include <vector>
 #include <csignal>
+#include <cstdlib>
 using namespace std;
 
 // ROOT libs:
@@ -75,7 +76,7 @@ MAssembly::MAssembly()
     
   m_Interrupt = false;
   m_UseGui = true;
-  
+
   m_Supervisor = MSupervisor::GetSupervisor();
   
   MString ConfigurationFileName = "~/.fretalon.cfg";
@@ -109,8 +110,10 @@ MAssembly::~MAssembly()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MAssembly::ParseCommandLine(int argc, char** argv)
+bool MAssembly::ParseCommandLine(int argc, char** argv, bool& ReadyForUILoop)
 {
+  ReadyForUILoop = false;
+
   ostringstream Usage;
   Usage<<endl;
   Usage<<"  Usage: Nuclearizer <options>"<<endl;
@@ -118,12 +121,16 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   Usage<<"      -c --configuration <filename>.cfg:"<<endl;
   Usage<<"             Use this file as configuration file."<<endl;
   Usage<<"             If no configuration file is give ~/.fretalon.cfg is loaded by default"<<endl;
+  Usage<<"      -C --change-configuration <pattern>:"<<endl;
+  Usage<<"             Replace any value in the configuration file (-C can be used multiple times)"<<endl;
+  Usage<<"             E.g. to replace the geometry file name, one would set pattern to:"<<endl;
+  Usage<<"             -C GeometryFileName=/path/to/some.geo.setup"<<endl;
   Usage<<"      -a --auto:"<<endl;
   Usage<<"             Automatically start analysis without GUI"<<endl;
   Usage<<"      -m --multithreading:"<<endl;
   Usage<<"             0: false (default), else: true"<<endl;
   Usage<<"      -v --verbosity:"<<endl;
-  Usage<<"             Verbosity: 0: Quiet, 1: Errors, 2: Warnings, 3: Info"<<endl;
+  Usage<<"             Verbosity: 0: Quiet, 1: Errors, 2: Warnings, 3: Info, 4: Chatty, 5: Extreme"<<endl;
   Usage<<"      -h --help:"<<endl;
   Usage<<"             You know the answer..."<<endl;
   Usage<<endl;
@@ -143,55 +150,96 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
   // First check if all options are ok:
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
-    
+
     // Single argument
     if (Option == "-c" || Option == "--configuration" ||
-        Option == "-m" || Option == "--multithreading") {
+        Option == "-C" || Option == "--change-configuration" ||
+        Option == "-m" || Option == "--multithreading" ||
+        Option == "-v" || Option == "--verbosity") {
       if (!((argc > i+1) && argv[i+1][0] != '-')){
-        mout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        mout<<"Error: Option "<<Option<<" needs a second argument!"<<endl;
         mout<<Usage.str()<<endl;
-        return false;
+        return true;
       }
+
+      int ParsedValue = 0;
+      if (Option == "-m" || Option == "--multithreading" ||
+          Option == "-v" || Option == "--verbosity") {
+        if (MString(argv[i+1]).Is<int>() == false) {
+          mout<<"Error: Option "<<Option<<" needs a plain integer second argument!"<<endl;
+          mout<<Usage.str()<<endl;
+          return true;
+        }
+        ParsedValue = MString(argv[i+1]).ToInt();
+      }
+      // Check verbosity range
+      if ((Option == "-v" || Option == "--verbosity") && (ParsedValue < c_Quiet || ParsedValue > c_Extreme)) {
+        mout<<"Error: Option "<<Option<<" needs a verbosity value between "<<c_Quiet<<" and "<<c_Extreme<<"!"<<endl;
+        mout<<Usage.str()<<endl;
+        return true;
+      }
+      ++i; // We have one option here to skip
+    } else if (Option == "-a" || Option == "--auto") {
+      // No argument to skip
+    } else {
+      mout<<"Error: Unknown option "<<Option<<endl;
+      mout<<Usage.str()<<endl;
+      return true;
     }
   }
-  
+
   // Now parse all low level options
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
     if (Option == "--configuration" || Option == "-c") {
-      m_Supervisor->Load(argv[++i]);
+      if (m_Supervisor->Load(argv[++i]) == false) {
+        mout<<"Error: Configuration file "<<argv[i]<<" could not be fully loaded"<<endl;
+        return true;
+      }
       mout<<"Command-line parser: Use configuration file "<<argv[i]<<endl;
     } else if (Option == "--verbosity" || Option == "-v") {
-      g_Verbosity = atoi(argv[++i]);
+      g_Verbosity = MString(argv[++i]).ToInt();
       mout<<"Command-line parser: Verbosity "<<g_Verbosity<<endl;
     } else if (Option == "--multithreading" || Option == "-m") {
-      bool UseMultiThreading = (atoi(argv[++i]) != 0);
+      bool UseMultiThreading = (MString(argv[++i]).ToInt() != 0);
       m_Supervisor->UseMultiThreading(UseMultiThreading);
       mout<<"Command-line parser: Using multithreading: "<<(UseMultiThreading == true ? "yes" : "no")<<endl;
     } else if (Option == "--auto" || Option == "-a") {
       // Parse later
     }
   }
-  
+
+  for (int i = 1; i < argc; i++) {
+    Option = argv[i];
+    if (Option == "--change-configuration" || Option == "-C") {
+      if (m_Supervisor->ChangeConfiguration(argv[++i]) == false) {
+        mout<<"Error: Command-line parser: Unable to change this configuration value: "<<argv[i]<<endl;
+      } else {
+        mout<<"Command-line parser: Changing this configuration value: "<<argv[i]<<endl;
+      }
+    }
+  }
+
   // Now parse all high level options
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
     if (Option == "--auto" || Option == "-a") {
       m_UseGui = false;
       gROOT->SetBatch(true);
-      m_Supervisor->Analyze();
+      const bool AnalysisFailed = (m_Supervisor->Analyze() == false);
       m_Supervisor->Exit();
-      return false;
+      return AnalysisFailed;
     }
   }
-  
+
   if (m_UseGui == true) {
     if (m_Supervisor->LaunchUI() == false) {
-      return false; 
+      return true;
     }
   }
-  
-  return true;
+
+  ReadyForUILoop = true;
+  return false;
 }
 
 
@@ -237,16 +285,18 @@ int main(int argc, char** argv)
   }
 
   TApplication* AppNuclearizer = new TApplication("Nuclearizer", 0, 0);
+  // Make sure TApplication::Terminate() returns here
+  AppNuclearizer->SetReturnFromRun(true);
 
   MAssembly Nuclearizer;
   g_Prg = &Nuclearizer;
-  if (Nuclearizer.ParseCommandLine(argc, argv) == false) {
-    return 0;
-  } else {
+  bool ReadyForUILoop = false;
+  const bool HadError = Nuclearizer.ParseCommandLine(argc, argv, ReadyForUILoop);
+  if (HadError == false && ReadyForUILoop == true) {
     AppNuclearizer->Run();
-  }  
+  }
 
-  return 0;
+  return HadError == true ? 1 : 0;
 }
 
 

@@ -109,23 +109,23 @@ void MGUIMainFretalon::Create()
   TGMenuBar* MenuBar = new TGMenuBar(this, 1, 1, kHorizontalFrame | kRaisedFrame);
   AddFrame(MenuBar, MenuBarLayout);
 
-  TGPopupMenu* MenuOptions = new TGPopupMenu(gClient->GetRoot());
-  MenuOptions->AddLabel("Configuration file");
-  MenuOptions->AddEntry("Open", c_LoadConfig);
-  MenuOptions->AddEntry("Save As", c_SaveConfig);
-  MenuOptions->AddSeparator();
+  m_MenuOptions = new TGPopupMenu(gClient->GetRoot());
+  m_MenuOptions->AddLabel("Configuration file");
+  m_MenuOptions->AddEntry("Open", c_LoadConfig);
+  m_MenuOptions->AddEntry("Save As", c_SaveConfig);
+  m_MenuOptions->AddSeparator();
   MString Geo = MString("Geometry file");
   if (m_Supervisor->GetGeometry() != 0) {
     Geo += " (current: ";
-    Geo += m_Supervisor->GetGeometry()->GetName(); 
+    Geo += m_Supervisor->GetGeometry()->GetName();
     Geo += ")";
   }
-  MenuOptions->AddLabel(Geo);
-  MenuOptions->AddEntry("Open", c_Geometry);
-  MenuOptions->AddSeparator();
-  MenuOptions->AddEntry("Exit", c_Exit);
-  MenuOptions->Associate(this);
-  MenuBar->AddPopup("Options", MenuOptions, MenuBarItemLayoutLeft);
+  m_MenuOptions->AddLabel(Geo);
+  m_MenuOptions->AddEntry("Open", c_Geometry);
+  m_MenuOptions->AddSeparator();
+  m_MenuOptions->AddEntry("Exit", c_Exit);
+  m_MenuOptions->Associate(this);
+  MenuBar->AddPopup("Options", m_MenuOptions, MenuBarItemLayoutLeft);
 
   TGPopupMenu* MenuInfo = new TGPopupMenu(fClient->GetRoot());
   MenuInfo->AddEntry("About", c_About);
@@ -281,8 +281,32 @@ void MGUIMainFretalon::UpdateModules()
   Resize();
 
   MapSubwindows();
-  MapWindow();  
+  MapWindow();
   Layout();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIMainFretalon::LockModifications()
+{
+  for (unsigned int m = 0; m < m_Modules.size(); ++m) {
+    m_Modules[m]->SetEnabled(false);
+  }
+  m_MenuOptions->DisableEntry(c_LoadConfig);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIMainFretalon::UnlockModifications()
+{
+  for (unsigned int m = 0; m < m_Modules.size(); ++m) {
+    m_Modules[m]->SetEnabled(true);
+  }
+  m_MenuOptions->EnableEntry(c_LoadConfig);
 }
 
 
@@ -423,9 +447,13 @@ void MGUIMainFretalon::CloseWindow()
 
 bool MGUIMainFretalon::OnChange(unsigned int ModuleID)
 {
+  LockModifications();
+
   MGUIModuleSelector* S = new MGUIModuleSelector(m_Supervisor, ModuleID);
   gClient->WaitForUnmap(S);
-  delete S;  
+  delete S;
+
+  UnlockModifications();
 
   UpdateModules();
 
@@ -485,13 +513,15 @@ bool MGUIMainFretalon::OnStart()
   m_StartButton->SetEnabled(false);
   m_ViewButton->SetEnabled(true);
   m_StopButton->SetEnabled(true);
+  LockModifications();
   gSystem->ProcessEvents();
-  
+
   m_Supervisor->Analyze();
-  
+
   m_StartButton->SetText("Start Calibration");
   m_StartButton->SetEnabled(true);
   m_StopButton->SetEnabled(false);
+  UnlockModifications();
   // The view will never get disabled again
   
   return true;
@@ -571,10 +601,13 @@ bool MGUIMainFretalon::OnLoadConfiguration()
   
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
-    m_Supervisor->Load(MString(Info.fFilename));
+    if (m_Supervisor->Load(MString(Info.fFilename)) == false) {
+      mgui<<"The configuration file \""<<Info.fFilename<<"\" could not be fully loaded."<<endl
+          <<"Please check the module sequence editor before starting the analysis."<<show;
+    }
 
     UpdateModules();
-  } 
+  }
 
   delete [] Types;
   
