@@ -22,12 +22,7 @@ OBJ_FILES  := $(addprefix $(LB)/,$(notdir $(CXX_FILES:.cxx=.o)))
 DEP_FILES  := $(OBJ_FILES:.o=.d)
 LIBRARY    := Fretalon
 SOBJ       := $(LB)/lib$(LIBRARY).$(DLL)
-LIBRARIES  := \
-	-lFretalonBase \
-	-lSivan \
-	-lGeomega \
-	-lCommonGui \
-	-lCommonMisc \
+LIBRARIES  := -lFretalonBase -lSivan -lGeomega -lCommonGui -lCommonMisc
 
 DICTIONARYNAME:=$(LIBRARY)_Dictionary
 DICTIONARY:=$(LB)/$(DICTIONARYNAME).cxx
@@ -44,27 +39,17 @@ EXE_UT     := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
 # Commands:
 #
 
-# unittests is also the name of a directory here, so the targets must be declared phony or make
-# considers them up to date and skips their recipes
 .PHONY: all unittests lib link headers clean
 
-# link removes the two substituted headers and headers re-creates them, so nothing may be compiled
-# until both have finished. Listing them as prerequisites is not enough: with a parallel make the
-# compiles start alongside them. Recursive invocations force the order without serializing the
-# compiles themselves.
-
 all:
-	@$(MAKE) link
 	@$(MAKE) headers
 	@$(MAKE) $(PRG)
 
 unittests:
-	@$(MAKE) link
 	@$(MAKE) headers
 	@$(MAKE) $(EXE_UT)
 
 lib:
-	@$(MAKE) link
 	@$(MAKE) headers
 	@$(MAKE) $(SOBJ)
 
