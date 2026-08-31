@@ -97,6 +97,8 @@ void MReadOutElementStrip::Clear()
 //! Return true if this read-out element is of the given type
 bool MReadOutElementStrip::IsOfType(const MString& String) const
 { 
+  if (String == "singlesidedstrip") return true;
+  // Older roa files carry the previous misspelling in their UF header -- keep reading them
   if (String == "singlessidedstrip") return true;
   
   return false;
@@ -109,7 +111,7 @@ bool MReadOutElementStrip::IsOfType(const MString& String) const
 //! Return the type of this read-out element
 MString MReadOutElementStrip::GetType() const
 {
-  return "singlessidedstrip";
+  return "singlesidedstrip";
 }
 
 

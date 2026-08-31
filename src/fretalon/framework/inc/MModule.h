@@ -21,6 +21,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <atomic>
 #include <algorithm>
 using namespace std;
 
@@ -79,9 +80,11 @@ class MModule
   //! Return the number of the preceeding modules
   unsigned int GetNPreceedingModuleTypes() const { return m_PreceedingModules.size(); }
   //! Return the preceeding module at position i (no error checks performed)
-  uint64_t GetPreceedingModuleType(unsigned int i) const { return m_PreceedingModules.at(i); }
-  //! Return the preceeding module at position i (no error checks performed)
-  uint64_t GetPreceedingModuleHardRequirement(unsigned int i) const { return m_PreceedingModulesHardRequirement.at(i); }
+  uint64_t GetPreceedingModuleType(unsigned int i) const { return m_PreceedingModules.at(i).m_Type; }
+  //! Return true if the preceeding module at position i is a hard requirement (no error checks performed)
+  bool GetPreceedingModuleHardRequirement(unsigned int i) const { return m_PreceedingModules.at(i).m_Hard; }
+  //! Return true if the preceeding module at position i must be directly before this module
+  bool GetPreceedingModuleImmediateRequirement(unsigned int i) const { return m_PreceedingModules.at(i).m_Immediate; }
   //! Return true if this module is a hard predecessor
   bool IsHardPreceedingModule(uint64_t Type) const;
   //! Return true if this module is a soft predecessor
@@ -109,6 +112,11 @@ class MModule
   bool AllowsMultiThreading() const { return m_AllowMultiThreading; }
   //! Return true, if this module allows to be used in multiple instances
   bool AllowsMultipleInstances() const { return m_AllowMultipleInstances; }
+
+  //! Set whether only one module of this type may be in a sequence (default: true).
+  void SetTypeExclusive(bool Flag) { m_TypeExclusive = Flag; }
+  //! Return true if this type should be exclusive
+  bool IsTypeExclusive() const { return m_TypeExclusive; }
 
   //! Use multi threading -- but it is only really used if the module allows it
   void UseMultiThreading(bool UseMultiThreading = true) { m_UseMultiThreading = UseMultiThreading; }
@@ -206,9 +214,13 @@ class MModule
   //! Set the name of this module
   void SetName(MString Name) { m_Name = Name; }
 
-  //! Set which modules are assumed to be already performed
-  //! If soft is set then only if the module is present at all require it to be done before
-  void AddPreceedingModuleType(uint64_t  Type, bool HardRequirement = true) { m_PreceedingModules.push_back(Type); m_PreceedingModulesHardRequirement.push_back(HardRequirement); }
+  //! Add a requirement that a module of the given type has run earlier in the sequence.
+  //! Type: the required module type. HardRequirement: the type must be present. ImmediatelyPreceeding:
+  //! a module of that type must be directly before this one (forces HardRequirement to true).
+  void AddPreceedingModuleType(uint64_t  Type, bool HardRequirement = true, bool ImmediatelyPreceeding = false);
+
+  //! Remove all preceeding module requirements
+  void ClearPreceedingModuleTypes() { m_PreceedingModules.clear(); }
   //! Add which type of module this is, e.g. c_EnergyCalibration
   //! This option ca be called twice to set two tasks of this modules!
   void AddModuleType(uint64_t  Type) { m_Modules.push_back(Type); }
@@ -240,10 +252,29 @@ class MModule
   //! Name of the XML tag --- has to be unique
   MString m_XmlTag;
 
-  //! List of preceeding modules
-  vector<uint64_t> m_PreceedingModules;
-  //! List of preceeding modules being a soft or hard requirement
-  vector<bool> m_PreceedingModulesHardRequirement;
+  //! Class storing the preceeding module requirements
+  class MPreceedingModuleRequirements
+  {
+  public:
+    //! Type: the required module type. Hard: must be present. Immediate: must be directly before
+    //! this module (forces Hard to true).
+    MPreceedingModuleRequirements(uint64_t Type, bool Hard, bool Immediate) : m_Type(Type), m_Hard(Hard), m_Immediate(Immediate)
+    {
+      if (m_Immediate == true) {
+        m_Hard = true;
+      }
+    }
+
+    //! The required module type
+    uint64_t m_Type;
+    //! True if the type must be present, false if it only has to come earlier when it is present
+    bool m_Hard;
+    //! True if a module of the required type must be directly before this module
+    bool m_Immediate;
+  };
+
+  //! List of module types which have to appear earlier in the sequence
+  vector<MPreceedingModuleRequirements> m_PreceedingModules;
   //! List of succeeding modules
   vector<uint64_t> m_SucceedingModules;
   //! List of types of this modules
@@ -264,47 +295,49 @@ class MModule
   
   //! True, if the module is ready to analyze events
   bool m_IsReady;
-  //! True, if the status of the module is OK
-  bool m_IsOK;
-  //! True, if the module is finished (e.g. cannot read any more events)
-  bool m_IsFinished;
-  //! True if the analysis is under way
-  bool m_IsAnalyzing;
-  
-  
+  //! True, if the status of the module is OK -- used across threads
+  atomic<bool> m_IsOK;
+  //! True, if the module is finished (e.g. cannot read any more events) -- used across threads
+  atomic<bool> m_IsFinished;
+  //! True if the analysis is under way -- used across threads
+  atomic<bool> m_IsAnalyzing;
+
+
   //! True if the module can be paused
   bool m_AllowPausing;
-  //! True if the module is paused
-  bool m_IsPaused;
-  
-  //! Interrupt whatever it is doing and break
-  bool m_Interrupt;
+  //! True if the module is paused -- used across threads
+  atomic<bool> m_IsPaused;
+
+  //! Interrupt whatever it is doing and break -- used across threads
+  atomic<bool> m_Interrupt;
 
   //! Flag indicating that this module allows multi-threading
   bool m_AllowMultiThreading;
   //! Flag indicating that this module allows multiple instances
   bool m_AllowMultipleInstances;
+  //! Flag indicating that only one module of this type is allowed per sequence
+  bool m_TypeExclusive;
   
   //! Flag indicating if we should use multithreading if available
   bool m_UseMultiThreading;
   
   //! The thread where the analysis happens
-  TThread* m_Thread;     
-  //! True if the analysis thread is in its execution loop
-  bool m_IsThreadRunning;
+  TThread* m_Thread;
+  //! True if the analysis thread is in its execution loop -- used across threads
+  atomic<bool> m_IsThreadRunning;
 
-  //! The number of events passing through the Analysis function
-  long m_NAnalyzedEvents;
-  
-  
+  //! The number of events passing through the Analysis function -- used across threads
+  atomic<long> m_NAnalyzedEvents;
+
+
   // private members:
  private:
   //! The internal analysis timer
   MTimer m_Timer;
   //! The mutex protecting the analysis timer
   mutex m_TimerGuard;
-  //! The internal sleep time
-  double m_SleepTime;
+  //! The internal sleep time -- used across threads
+  atomic<double> m_SleepTime;
 
   //! The incoming and outgoing event queues
   shared_ptr<MModuleReadOutAssemblyQueues> m_Queues;
