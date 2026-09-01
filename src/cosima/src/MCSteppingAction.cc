@@ -198,6 +198,7 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   
   m_KnownProcess.push_back("HadronCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("nCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
+  m_KnownProcess.push_back("nCaptureHP"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("CHIPSNuclearCaptureAtRest"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("muMinusCaptureAtRest"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("hBertiniCaptureAtRest"); m_KnownProcessID.push_back(c_ProcessIDCapture);
