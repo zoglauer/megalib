@@ -10,6 +10,7 @@ bin/realta
 bin/revan
 bin/sivan
 bin/spectralyze
+bin/UT*
 
 BackgroundMixer
 ConvertACTtools
