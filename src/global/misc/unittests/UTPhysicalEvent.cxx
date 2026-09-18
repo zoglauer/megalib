@@ -103,7 +103,7 @@ bool UTPhysicalEvent::TestBaseEvent()
   Event.SetId(42);
   Event.SetTimeWalk(7);
   Event.SetDecay(true);
-  Event.SetBad(true, "bad event");
+  Event.AddBadFlag("bad event");
   Event.SetAllHitsGood(false);
 
   MVector OIPosition(1.0, 2.0, 3.0);
@@ -122,9 +122,12 @@ bool UTPhysicalEvent::TestBaseEvent()
   Passed = Evaluate("GetId()", "set/get", "SetId stores the event id", Event.GetId(), 42L) && Passed;
   Passed = Evaluate("GetTimeWalk()", "set/get", "SetTimeWalk stores the event time walk", Event.GetTimeWalk(), 7) && Passed;
   Passed = EvaluateTrue("IsDecay()", "set/get", "SetDecay stores the decay flag", Event.IsDecay()) && Passed;
-  Passed = EvaluateTrue("IsBad()", "set/get", "SetBad stores the bad flag", Event.IsBad()) && Passed;
-  Passed = Evaluate("GetBadString()", "set/get", "SetBad stores the bad description", Event.GetBadString(), MString("bad event")) && Passed;
-  Passed = EvaluateFalse("IsGoodEvent()", "set/get", "SetBad does not imply a good event", Event.IsGoodEvent()) && Passed;
+  Passed = EvaluateTrue("IsBad()", "set/get", "AddBadFlag makes the event bad", Event.IsBad()) && Passed;
+  Passed = Evaluate("GetNBadFlags()", "set/get", "One bad flag is stored", Event.GetNBadFlags(), 1U) && Passed;
+  Passed = Evaluate("GetBadFlag()", "set/get", "AddBadFlag stores the bad flag", Event.GetBadFlag(0), MString("bad event")) && Passed;
+  Passed = EvaluateTrue("HasBadFlag()", "set/get", "HasBadFlag finds the stored flag", Event.HasBadFlag("bad event")) && Passed;
+  Passed = EvaluateFalse("HasBadFlag()", "set/get", "HasBadFlag does not find another flag", Event.HasBadFlag("other")) && Passed;
+  Passed = EvaluateFalse("IsGoodEvent()", "set/get", "AddBadFlag does not imply a good event", Event.IsGoodEvent()) && Passed;
   Passed = EvaluateFalse("AllHitsGood()", "set/get", "SetAllHitsGood(false) updates the flag", Event.AllHitsGood()) && Passed;
   Passed = Evaluate("GetNComments()", "set/get", "One comment is stored", Event.GetNComments(), 1U) && Passed;
   Passed = Evaluate("GetComment()", "set/get", "Stored comment round-trips", Event.GetComment(0), Comment) && Passed;
@@ -159,12 +162,31 @@ bool UTPhysicalEvent::TestBaseEvent()
   Passed = Evaluate("Duplicate()->GetId()", "base", "Duplicate preserves the event id", Duplicate->GetId(), Event.GetId()) && Passed;
   Passed = Evaluate("Duplicate()->GetTime()", "base", "Duplicate preserves the event time", Duplicate->GetTime().GetAsDouble(), Event.GetTime().GetAsDouble()) && Passed;
   Passed = Evaluate("Duplicate()->GetTimeWalk()", "base", "Duplicate preserves the time walk", Duplicate->GetTimeWalk(), Event.GetTimeWalk()) && Passed;
-  Passed = Evaluate("Duplicate()->GetBadString()", "base", "Duplicate preserves the bad description", Duplicate->GetBadString(), Event.GetBadString()) && Passed;
+  Passed = Evaluate("Duplicate()->GetNBadFlags()", "base", "Duplicate preserves the number of bad flags", Duplicate->GetNBadFlags(), Event.GetNBadFlags()) && Passed;
+  Passed = Evaluate("Duplicate()->GetBadFlag()", "base", "Duplicate preserves the bad flag", Duplicate->GetBadFlag(0), Event.GetBadFlag(0)) && Passed;
   Passed = Evaluate("Duplicate()->GetNComments()", "base", "Duplicate preserves comments", Duplicate->GetNComments(), Event.GetNComments()) && Passed;
   Passed = Evaluate("Duplicate()->GetNHits()", "base", "Duplicate preserves hits", Duplicate->GetNHits(), Event.GetNHits()) && Passed;
   Passed = Evaluate("Duplicate()->GetOIPosition()", "base", "Duplicate preserves the OI position", Duplicate->GetOIPosition(), Event.GetOIPosition()) && Passed;
   Passed = Evaluate("Duplicate()->GetOIEnergy()", "base", "Duplicate preserves the OI energy", Duplicate->GetOIEnergy(), Event.GetOIEnergy()) && Passed;
   delete Duplicate;
+
+  MPhysicalEvent Flags;
+  Passed = EvaluateFalse("IsBad()", "no flags", "An event without bad flags is not bad", Flags.IsBad()) && Passed;
+  Flags.AddBadFlag("first");
+  Flags.AddBadFlag("second (reason)");
+  Passed = Evaluate("GetNBadFlags()", "two flags", "Both bad flags are stored", Flags.GetNBadFlags(), 2U) && Passed;
+  Passed = Evaluate("GetBadFlag()", "two flags", "The first flag is kept in order", Flags.GetBadFlag(0), MString("first")) && Passed;
+  Passed = Evaluate("GetBadFlag()", "two flags", "The second flag is kept in order", Flags.GetBadFlag(1), MString("second (reason)")) && Passed;
+  MString FlagsTra = Flags.ToTraString();
+  Passed = EvaluateTrue("ToTraString()", "two flags", "Each bad flag is written as its own BD line", FlagsTra.Contains("BD first\nBD second (reason)\n")) && Passed;
+  Passed = Evaluate("ParseLine()", "BD line", "The base parser accepts a BD line", Flags.ParseLine("BD third", false), 0) && Passed;
+  Passed = Evaluate("GetNBadFlags()", "BD line", "A parsed BD line adds a flag instead of replacing one", Flags.GetNBadFlags(), 3U) && Passed;
+  Passed = Evaluate("GetBadFlag()", "BD line", "The parsed flag is stored without the keyword", Flags.GetBadFlag(2), MString("third")) && Passed;
+  Passed = EvaluateException<MExceptionIndexOutOfBounds>("GetBadFlag()", "out-of-bounds", "Bad flag access outside the vector throws", [&](){ Flags.GetBadFlag(3); }) && Passed;
+  Flags.ClearBadFlags();
+  Passed = Evaluate("GetNBadFlags()", "clear bad flags", "ClearBadFlags removes all bad flags", Flags.GetNBadFlags(), 0U) && Passed;
+  Passed = EvaluateFalse("IsBad()", "clear bad flags", "An event is no longer bad after ClearBadFlags", Flags.IsBad()) && Passed;
+  Passed = EvaluateFalse("ToTraString()", "clear bad flags", "No BD line is written without bad flags", Flags.ToTraString().Contains("BD")) && Passed;
 
   MPhysicalEvent CommentOnly;
   MString AnotherComment("another comment");

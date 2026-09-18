@@ -100,12 +100,18 @@ class MPhysicalEvent : public MRotationInterface
   //! Return true if this event originated from a decay
   bool IsDecay() const { return m_Decay; }
 
-  //! Set a flag indicating that this event is bad
-  void SetBad(const bool Flag, const MString BadString = "") { m_Bad = Flag; if (Flag == false) m_BadString = ""; else m_BadString = BadString; }
+  //! Add a flag indicating why this event is bad
+  void AddBadFlag(const MString& BadFlag) { m_BadFlags.push_back(BadFlag); }
   //! Return true the if this event is bad
-  bool IsBad() const { return m_Bad; }
-  //! Return a string indicating why this event is bad
-  MString GetBadString() const { return m_BadString; }
+  bool IsBad() const { return m_BadFlags.size() == 0 ? false : true; }
+  //! Return the number of flags indicating why this event is bad
+  unsigned int GetNBadFlags() const { return m_BadFlags.size(); }
+  //! Return the specific flag indicating why this event is bad -- throws MExceptionIndexOutOfBounds otherwise
+  MString GetBadFlag(unsigned int i) const;
+  //! Return true if this flag is already stored
+  bool HasBadFlag(const MString& BadFlag) const;
+  //! Remove all bad flags
+  void ClearBadFlags() { m_BadFlags.clear(); }
 
   //! Add a comment
   void AddComment(MString& Comment) { m_Comments.push_back(Comment); }
@@ -182,10 +188,8 @@ class MPhysicalEvent : public MRotationInterface
 
   //! True if this event has a decay flag
   bool m_Decay;
-  //! True if this event has be qualified as bad event
-  bool m_Bad;
-  //! String giving the reason this event is qualified as bad
-  MString m_BadString;
+  //! The flags giving the reasons this event is qualified as bad
+  vector<MString> m_BadFlags;
 
   //! A set of comments store with the event
   vector<MString> m_Comments;

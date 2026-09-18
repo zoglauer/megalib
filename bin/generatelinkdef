@@ -26,7 +26,7 @@ CMD=( "$@" )
 
 # Check for help
 for C in "${CMD[@]}"; do
-  if [[ ${C} == *-h* ]]; then
+  if [[ ${C} == "-h" ]] || [[ ${C} == "--help" ]]; then
     echo ""
     commandhelp
     exit 0
