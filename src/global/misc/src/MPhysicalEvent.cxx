@@ -136,6 +136,7 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_Bad = E->m_Bad;
   m_BadString = E->m_BadString;
   m_Comments = E->m_Comments;
+  m_Hits = E->m_Hits;
 
   return true;
 }
