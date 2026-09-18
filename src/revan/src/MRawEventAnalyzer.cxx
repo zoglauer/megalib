@@ -660,8 +660,8 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     SelectionsPassed = false;
   }
   
-  if (SelectionsPassed == true && RE->GetExternalBadEventFlag() == true && m_RejectAllBadEvents == true) {
-    mdebug<<"ER - Selection: External bad event flag raised: "<<RE->GetExternalBadEventString()<<endl;
+  if (SelectionsPassed == true && RE->IsBad() == true && m_RejectAllBadEvents == true) {
+    mdebug<<"ER - Selection: External bad event flag raised: "<<RE->GetBadFlag(0)<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionExternalBadEventFlag);
     SelectionsPassed = false;
   }
