@@ -215,22 +215,23 @@ bool MCActivator::CalculateEquilibriumRates()
   // Some test
   /*G4IonTable* IonTable = G4IonTable::GetIonTable();
 
-  int Z = 70;
-  for (int A = 157; A <= 157; ++A) {
-    G4Ions* Ion = dynamic_cast<G4Ions*>(IonTable->GetIon(Z, A, 0.5293,G4Ions::G4FloatLevelBase::no_Float));
+  int Z = 13;
+  E = 0.228305;
+  for (int A = 26; A <= 26; ++A) {
+    G4Ions* Ion = dynamic_cast<G4Ions*>(IonTable->GetIon(Z, A,E ,G4Ions::G4FloatLevelBase::no_Float));
     if (Ion == 0) {cout<<"ion not found !"<<endl; continue;}
     Ion->DumpTable();
     
    
     
-    cout<<"Life time :"<<IonTable->GetLifeTime(Z, A, 0,G4Ions::G4FloatLevelBase::plus_Y)<<endl;
-    G4ParticleDefinition* part = IonTable->GetIon(Z, A, 0,G4Ions::G4FloatLevelBase::plus_Y);
+    cout<<"Life time :"<<IonTable->GetLifeTime(Z, A, E,G4Ions::G4FloatLevelBase::plus_Y)<<endl;
+    G4ParticleDefinition* part = IonTable->GetIon(Z, A, E,G4Ions::G4FloatLevelBase::plus_Y);
     cout<<"Life time from PDG def:"<<part->GetPDGLifeTime()/s<<endl;
 
 
 
     G4RadioactiveDecay* Decay = new G4RadioactiveDecay();
-    G4DecayTable* DecayTable = Decay->LoadDecayTable(*Ion);
+    G4DecayTable* DecayTable = Decay->LoadDecayTable( Ion);
     if (DecayTable == 0) continue;
     if (DecayTable->entries() == 0) continue;
     DecayTable->DumpInfo();
@@ -511,6 +512,40 @@ bool MCActivator::CalculateEquilibriumRates()
                   // Create new levels...
                   cout<<"Number of gammas: "<<NuclearLevel->NumberOfTransitions()<<endl;
 
+                  if (NuclearLevel->NumberOfTransitions() == 0) {
+                  // No tabulated gamma transition for this level -- this is typically a
+                  // level that de-excites via internal transition / internal conversion
+                  // with no listed radiative branch. Without special-casing this, the
+                  // branch never changes and the cascade loop spins forever.
+                  // Force an immediate, full-branching-ratio de-excitation to the
+                  // ground state instead.
+                  mout<<"Warning: No gamma transitions tabulated for "<<Nucleus->GetParticleName()
+                   <<" at excitation "<<Nucleus->GetExcitationEnergy()/keV<<" keV "
+                   <<"(likely a pure internal-transition / forbidden-gamma level). "
+                   <<"Forcing immediate de-excitation to the ground state."<<endl;
+
+                  vector<MCActivatorParticle> ABranch = Tree[b];
+                  MCActivatorParticle NewParticle;
+                  NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(Nucleus->GetParticleName()), 0.0);
+                  NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio());
+                  NewParticle.SetProductionRate(Tree[b].back().GetProductionRate());
+                  if (MCActivatorParticle::IsStable(NewParticle.GetDefinition()) == true) {
+                     NewParticle.SetHalfLife(numeric_limits<double>::max());
+                  } else {
+                    NewParticle.SetHalfLife(NewParticle.GetDefinition()->GetPDGLifeTime()*log(2.0));
+                  }
+
+                  if (ABranch.back().GetHalfLife() < m_HalfLifeCutOff) {
+                      ABranch[ABranch.size()-1] = NewParticle;  // replace, as with normal immediate decays
+                  } else {
+                      ABranch.push_back(NewParticle);
+                  }
+                  Tree.push_back(ABranch);
+                  TreeChanged = true;
+                  NChanges++;
+
+                 Tree[b].clear(); // mark original (stuck) branch for removal
+                } else {
                   for (int h = 0; h < int(NuclearLevel->NumberOfTransitions()); ++h) {
                     vector<MCActivatorParticle> ABranch = Tree[b];
                     //cout<<"Gamma energy: "<<M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))/keV<<endl;
@@ -588,8 +623,9 @@ bool MCActivator::CalculateEquilibriumRates()
                     Tree[b].clear(); // mark for removal
                     TreeChanged = true;
                     cout<<"Original tree cleared"<<endl;
-                  }
-                } else { // level not ok
+                   } 
+                  } 
+		 } else { // level not ok
                   mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<<Nucleus->GetExcitationEnergy()<<endl;
                   mout<<"       This isotope is excluded from further analysis!"<<endl;
                   LevelsOK = false;                        
