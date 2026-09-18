@@ -143,6 +143,8 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   m_EventType = RE->GetEventType();
   m_EventID = RE->GetEventID();
   m_RejectionReason = RE->m_RejectionReason;
+  m_ExternalBadEventFlag = RE->m_ExternalBadEventFlag;
+  m_ExternalBadEventString = RE->m_ExternalBadEventString;
   m_TimeWalk = RE->m_TimeWalk;
 
   if (RE->m_HasGalacticPointing == true) { 
