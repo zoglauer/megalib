@@ -53,6 +53,7 @@ using namespace std;
 #include "MREHit.h"
 #include "MRESE.h"
 #include "MRESEIterator.h"
+#include "MExceptions.h"
 #include "MRawEventIncarnations.h"
 #include "MPhysicalEvent.h"
 #include "MComptonEvent.h"
@@ -143,8 +144,7 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   m_EventType = RE->GetEventType();
   m_EventID = RE->GetEventID();
   m_RejectionReason = RE->m_RejectionReason;
-  m_ExternalBadEventFlag = RE->m_ExternalBadEventFlag;
-  m_ExternalBadEventString = RE->m_ExternalBadEventString;
+  m_BadFlags = RE->m_BadFlags;
   m_TimeWalk = RE->m_TimeWalk;
 
   if (RE->m_HasGalacticPointing == true) { 
@@ -286,8 +286,7 @@ void MRERawEvent::Init()
   m_SubElementType = MRESE::c_Event;
   m_GoodEvent = false;
 
-  m_ExternalBadEventFlag = false;
-  m_ExternalBadEventString = "";
+  m_BadFlags.clear();
 
   m_EventID = 0;
   m_EventType = c_UnknownEvent;
@@ -1007,6 +1006,38 @@ void MRERawEvent::SetPhysicalEvent(MPhysicalEvent* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MString MRERawEvent::GetBadFlag(unsigned int i) const
+{
+  //! Get the specific flag indicating why this event is bad
+
+  if (i < m_BadFlags.size()) {
+    return m_BadFlags[i];
+  }
+
+  throw MExceptionIndexOutOfBounds(0, m_BadFlags.size(), i);
+
+  return "";
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MRERawEvent::HasBadFlag(const MString& BadFlag) const
+{
+  //! Return true if this flag is already stored
+
+  for (unsigned int b = 0; b < m_BadFlags.size(); ++b) {
+    if (m_BadFlags[b] == BadFlag) return true;
+  }
+
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
 {
   // Return a pointer to the physical event...
@@ -1153,7 +1184,6 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       U->SetEnergy(GetEnergy());
       
       m_Event = (MPhysicalEvent*) U;
-      m_Event->SetBad(true, GetRejectionReasonAsString(true));
     }
   }
 
@@ -1164,8 +1194,19 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
   m_Event->SetId(m_EventID);
   m_Event->SetTimeWalk(m_TimeWalk);
   m_Event->SetDecay(m_Decay);
-  if (m_ExternalBadEventFlag == true) {
-    m_Event->SetBad(m_ExternalBadEventFlag, m_ExternalBadEventString);
+  // The physical event may have been set from the outside and may carry flags of its own, and this
+  // event may have gained flags since the last call, so only the missing ones are added here
+  if (m_Event->GetType() == MPhysicalEvent::c_Unidentifiable && m_RejectionReason != c_RejectionExternalBadEventFlag) {
+    // The rejection reason of an externally flagged event is those flags themselves
+    MString RejectionReason = GetRejectionReasonAsString(true);
+    if (m_Event->HasBadFlag(RejectionReason) == false) {
+      m_Event->AddBadFlag(RejectionReason);
+    }
+  }
+  for (unsigned int b = 0; b < m_BadFlags.size(); ++b) {
+    if (m_Event->HasBadFlag(m_BadFlags[b]) == false) {
+      m_Event->AddBadFlag(m_BadFlags[b]);
+    }
   }
 
   for (unsigned int m = 0; m < m_Measurements.size(); ++m) {
@@ -1738,10 +1779,11 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
     }
   } else if (Line[0] == 'B' && Line[1] == 'D') {
     // Store the clustering quality factor
-    m_ExternalBadEventString = Line;
-    m_ExternalBadEventString = m_ExternalBadEventString.Remove(0, 3);
-    m_ExternalBadEventString = m_ExternalBadEventString.ReplaceAll("\n", "");
-    m_ExternalBadEventFlag = true;
+    // Every BD line of an event is one flag, so they accumulate
+    MString BadFlag = Line;
+    BadFlag = BadFlag.Remove(0, 3);
+    BadFlag = BadFlag.ReplaceAll("\n", "");
+    AddBadFlag(BadFlag);
   } else if (Line[0] == 'C' && Line[1] == 'C') {
     // A comment
     MString Comment = Line;

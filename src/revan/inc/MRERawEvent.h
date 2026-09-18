@@ -142,8 +142,16 @@ class MRERawEvent : public MRESE, public MRotationInterface
   bool IsDecay() { return m_Decay; }
   void SetDecay(bool Flag = true) { m_Decay = Flag; }
 
-  bool GetExternalBadEventFlag() { return m_ExternalBadEventFlag; }
-  MString GetExternalBadEventString() { return m_ExternalBadEventString; }
+  //! Add a flag indicating why this event is bad
+  void AddBadFlag(const MString& BadFlag) { m_BadFlags.push_back(BadFlag); }
+  //! Return true the if this event is bad
+  bool IsBad() const { return m_BadFlags.size() == 0 ? false : true; }
+  //! Return the number of flags indicating why this event is bad
+  unsigned int GetNBadFlags() const { return m_BadFlags.size(); }
+  //! Return the specific flag indicating why this event is bad -- throws MExceptionIndexOutOfBounds otherwise
+  MString GetBadFlag(unsigned int i) const;
+  //! Return true if this flag is already stored
+  bool HasBadFlag(const MString& BadFlag) const;
 
   //! Set the physical event
   //! We create a local copy, thus Event will not be owned
@@ -326,10 +334,9 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! The rejection reason, if any
   int m_RejectionReason;
 
-  //! External bad event flag has been raised
-  bool m_ExternalBadEventFlag;
-  //! External bad event String
-  MString m_ExternalBadEventString;
+  //! The flags giving the reasons this event is qualified as bad, e.g. read from the input file
+  //! They only accumulate - Init() resets them together with the physical event
+  vector<MString> m_BadFlags;
 
   //! Comments in the event
   vector<MString> m_Comments;

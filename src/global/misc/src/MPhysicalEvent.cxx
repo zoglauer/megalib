@@ -133,8 +133,7 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_Id = E->m_Id;
   m_AllHitsGood = E->m_AllHitsGood;
   m_Decay = E->m_Decay;
-  m_Bad = E->m_Bad;
-  m_BadString = E->m_BadString;
+  m_BadFlags = E->m_BadFlags;
   m_Comments = E->m_Comments;
   m_Hits = E->m_Hits;
 
@@ -170,8 +169,7 @@ void MPhysicalEvent::Reset()
   m_Id = 0;
   m_TimeWalk = -1;
   m_Decay = false;
-  m_Bad = false;
-  m_BadString = "";
+  m_BadFlags.clear();
 
   m_OIPosition = g_VectorNotDefined;
   m_OIDirection = g_VectorNotDefined;
@@ -225,6 +223,38 @@ MVector MPhysicalEvent::GetOrigin() const
   // In detector coordinates - this is the reverse travel direction!
 
   return g_VectorNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MPhysicalEvent::GetBadFlag(unsigned int i) const
+{
+  //! Get the specific flag indicating why this event is bad
+
+  if (i < m_BadFlags.size()) {
+    return m_BadFlags[i];
+  }
+
+  throw MExceptionIndexOutOfBounds(0, m_BadFlags.size(), i);
+
+  return "";
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MPhysicalEvent::HasBadFlag(const MString& BadFlag) const
+{
+  //! Return true if this flag is already stored
+
+  for (unsigned int b = 0; b < m_BadFlags.size(); ++b) {
+    if (m_BadFlags[b] == BadFlag) return true;
+  }
+
+  return false;
 }
 
 
@@ -308,8 +338,8 @@ MString MPhysicalEvent::ToTraString() const
 
   MRotationInterface::Stream(S);
 
-  if (m_Bad == true) {
-    S<<"BD "<<m_BadString<<endl;
+  for (unsigned int b = 0; b < m_BadFlags.size(); ++b) {
+    S<<"BD "<<m_BadFlags[b]<<endl;
   }
   if (m_Decay == true) {
     S<<"DC"<<endl;
@@ -487,35 +517,16 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
   } else if (Line[0] == 'H' && Line[1] == 'Z') {
     MRotationInterface::ParseLine(Line, Fast);
   } else if (Line[0] == 'B' && Line[1] == 'D') {
-    m_BadString = Line;
-    m_BadString = m_BadString.Remove(0, 3);
-    m_BadString = m_BadString.ReplaceAll("\n", "");
-
-    /*
-    m_BadString.erase(0, 3);
-    while (true) {
-      const int pos = m_BadString.find("\n");
-      if (pos==-1) break;
-      m_BadString.replace(pos, 1, "");
-    }
-    */
-
-    m_Bad = true;
+    // Every BD line of an event is one flag, so they accumulate
+    MString BadFlag = Line;
+    BadFlag = BadFlag.Remove(0, 3);
+    BadFlag = BadFlag.ReplaceAll("\n", "");
+    AddBadFlag(BadFlag);
   } else if (Line[0] == 'C' && Line[1] == 'C') {
     MString Comment = Line;
     Comment = Comment.Remove(0, 3);
     Comment = Comment.ReplaceAll("\n", "");
     m_Comments.push_back(Comment);
-
-    /*
-    m_BadString.erase(0, 3);
-    while (true) {
-      const int pos = m_BadString.find("\n");
-      if (pos==-1) break;
-      m_BadString.replace(pos, 1, "");
-    }
-    */
-
   } else if (Line[0] == 'O' && Line[1] == 'I') {
     if (Fast == true) {
       char* p;
