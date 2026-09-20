@@ -76,6 +76,10 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, con
   
   m_PreTriggerMode = RunParameters.GetPreTriggerMode();
   
+  m_AllowMaxNbofIAs = RunParameters.AllowMaxNbofIAs();
+  m_MaxNIAs = RunParameters.MaxNIAs();
+  
+  
   if (RunParameters.StoreScientific() == true) {
     m_StoreScientificPrecision = RunParameters.StoreScientificPrecision();
   } else {
@@ -450,6 +454,19 @@ void MCEventAction::AddIA(G4String ProcessID,
   if (ProcessID == "ESCP") {
     AddEnergyLoss(NewKin);
   }
+  
+  
+  //If the number of IA is too much we abort the event
+  //This prevent to have event with 50K or even more hits 
+  if(m_AllowMaxNbofIAs==true){
+      if(m_Event->GetNIAs() > m_MaxNIAs){
+          mdebug<<"Number of IA is > "<<m_MaxNIAs<<" Event aborted !"<<endl;
+          //cout<<m_Event->ToString()<<endl;
+          const_cast<G4Event*>(G4RunManager::GetRunManager()->GetCurrentEvent())->SetEventAborted();
+          m_IsAborted = true;
+      }
+    }
+  
 }
 
 /******************************************************************************
@@ -522,7 +539,7 @@ void MCEventAction::AbortEvent()
 void MCEventAction::EndOfEventAction(const G4Event* Event)
 {
   // Let's store the events...
-  size_t h;
+  G4int h;
   G4String Text;
   
   MCRun& Run = m_RunParameters.GetCurrentRun();
