@@ -1,11 +1,21 @@
 /*
  * UTPrelude.cxx
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Please see the source-file for the copyright-notice.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -87,17 +97,17 @@ bool UTPrelude::Run()
 
   MString FirstContent;
   {
-    // Keep the temporary MEGALIB tree empty so the GUI-backed license and
-    // changelog branches stay out of the headless unit test.
+    // Keep the temporary MEGALIB tree empty so the GUI-backed changelog
+    // branch stays out of the headless unit test.
     ScopedEnvironment HomeEnv("HOME", HomeDirectory);
     ScopedEnvironment MegaEnv("MEGALIB", MegaDirectory);
 
     MPrelude Prelude;
-    Passed = EvaluateTrue("Play()", "startup", "MPrelude::Play succeeds when no license or changelog files need prompting", Prelude.Play()) && Passed;
+    Passed = EvaluateTrue("Play()", "startup", "MPrelude::Play succeeds when no changelog file needs prompting", Prelude.Play()) && Passed;
     Passed = EvaluateTrue("MFile::Exists()", "settings file", "MPrelude::Play creates the global settings file in the HOME directory", MFile::Exists(SettingsFile)) && Passed;
 
     FirstContent = ReadTextFile(SettingsFile);
-    Passed = EvaluateTrue("Play()", "settings content", "MPrelude::Play writes the default global settings content", FirstContent.Contains("<LicenseHash>0</LicenseHash>") && FirstContent.Contains("<ChangeLogHash>0</ChangeLogHash>") && FirstContent.Contains("<FontScaler>normal</FontScaler>")) && Passed;
+    Passed = EvaluateTrue("Play()", "settings content", "MPrelude::Play writes the default global settings content", FirstContent.Contains("<ChangeLogHash>0</ChangeLogHash>") && FirstContent.Contains("<FontScaler>normal</FontScaler>")) && Passed;
 
     MPrelude SecondPrelude;
     Passed = EvaluateTrue("Play()", "repeat startup", "A repeated MPrelude::Play call also succeeds with unchanged inputs", SecondPrelude.Play()) && Passed;
@@ -105,7 +115,7 @@ bool UTPrelude::Run()
 
   const MString FailureSettingsFile = FailureHomeDirectory + "/.megalib.cfg";
   RemoveTemporaryFile(FailureSettingsFile);
-  Passed = EvaluateTrue("WriteTextFile()", "bad settings", "A malformed settings file can be created for the failure-path test", WriteTextFile(FailureSettingsFile, "<NotMEGAlib><LicenseHash>1</LicenseHash></NotMEGAlib>\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "bad settings", "A malformed settings file can be created for the failure-path test", WriteTextFile(FailureSettingsFile, "<NotMEGAlib><ChangeLogHash>1</ChangeLogHash></NotMEGAlib>\n")) && Passed;
   {
     ScopedEnvironment HomeEnv("HOME", FailureHomeDirectory);
     ScopedEnvironment MegaEnv("MEGALIB", FailureMegaDirectory);
@@ -116,7 +126,7 @@ bool UTPrelude::Run()
     EnableDefaultStreams();
   }
   const MString FailureContent = ReadTextFile(FailureSettingsFile);
-  Passed = EvaluateTrue("ReadTextFile()", "bad settings recovered", "MPrelude::Play rewrites a malformed settings file with the default configuration", FailureContent.Contains("<LicenseHash>0</LicenseHash>") && FailureContent.Contains("<ChangeLogHash>0</ChangeLogHash>") && FailureContent.Contains("<FontScaler>normal</FontScaler>")) && Passed;
+  Passed = EvaluateTrue("ReadTextFile()", "bad settings recovered", "MPrelude::Play rewrites a malformed settings file with the default configuration", FailureContent.Contains("<ChangeLogHash>0</ChangeLogHash>") && FailureContent.Contains("<FontScaler>normal</FontScaler>")) && Passed;
   Passed = EvaluateFalse("ReadTextFile()", "bad settings recovered", "The malformed XML root is replaced during recovery", FailureContent.Contains("<NotMEGAlib>")) && Passed;
 
   const MString SecondContent = ReadTextFile(SettingsFile);

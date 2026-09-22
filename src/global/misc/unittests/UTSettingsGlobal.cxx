@@ -1,11 +1,21 @@
 /*
  * UTSettingsGlobal.cxx
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Please see the source-file for the copyright-notice.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -71,15 +81,12 @@ bool UTSettingsGlobal::TestDefaultsAndSetters()
   bool Passed = true;
 
   SettingsGlobalTest Settings;
-  Passed = Evaluate("GetLicenseHash()", "default", "The default license hash is zero", Settings.GetLicenseHash(), 0L) && Passed;
   Passed = Evaluate("GetChangeLogHash()", "default", "The default changelog hash is zero", Settings.GetChangeLogHash(), 0L) && Passed;
   Passed = Evaluate("GetFontScaler()", "default", "The default font scaler is normal", Settings.GetFontScaler(), MString("normal")) && Passed;
   Passed = Evaluate("GetTestMasterNodeName()", "default", "The default global-settings master node is MEGAlib", Settings.GetTestMasterNodeName(), MString("MEGAlib")) && Passed;
 
-  Settings.SetLicenseHash(1234);
   Settings.SetChangeLogHash(5678);
   Settings.SetFontScaler("gigantic");
-  Passed = Evaluate("SetLicenseHash()", "set", "SetLicenseHash stores a representative value", Settings.GetLicenseHash(), 1234L) && Passed;
   Passed = Evaluate("SetChangeLogHash()", "set", "SetChangeLogHash stores a representative value", Settings.GetChangeLogHash(), 5678L) && Passed;
   Passed = Evaluate("SetFontScaler()", "set", "SetFontScaler stores a representative value", Settings.GetFontScaler(), MString("gigantic")) && Passed;
 
@@ -95,32 +102,26 @@ bool UTSettingsGlobal::TestXmlRoundTrip()
   bool Passed = true;
 
   SettingsGlobalTest Settings;
-  Settings.SetLicenseHash(11);
   Settings.SetChangeLogHash(22);
   Settings.SetFontScaler("huge");
 
   MXmlDocument Document("MEGAlib");
   Passed = Evaluate("WriteXml()", "direct xml", "WriteXml succeeds on a representative XML document", Settings.TestWriteXml(&Document), true) && Passed;
-  MXmlNode* LicenseNode = Document.GetNode("LicenseHash");
   MXmlNode* ChangeLogNode = Document.GetNode("ChangeLogHash");
   MXmlNode* FontScalerNode = Document.GetNode("FontScaler");
-  Passed = EvaluateTrue("GetNode()", "license", "WriteXml stores the representative license hash node", LicenseNode != nullptr) && Passed;
   Passed = EvaluateTrue("GetNode()", "changelog", "WriteXml stores the representative changelog hash node", ChangeLogNode != nullptr) && Passed;
   Passed = EvaluateTrue("GetNode()", "font scaler", "WriteXml stores the representative font scaler node", FontScalerNode != nullptr) && Passed;
-  if (LicenseNode != nullptr && ChangeLogNode != nullptr && FontScalerNode != nullptr) {
-    Passed = Evaluate("GetNode()", "license", "WriteXml stores the representative license hash", static_cast<long>(LicenseNode->GetValueAsLong()), 11L) && Passed;
+  if (ChangeLogNode != nullptr && FontScalerNode != nullptr) {
     Passed = Evaluate("GetNode()", "changelog", "WriteXml stores the representative changelog hash", static_cast<long>(ChangeLogNode->GetValueAsLong()), 22L) && Passed;
     Passed = Evaluate("GetNode()", "font scaler", "WriteXml stores the representative font scaler", FontScalerNode->GetValueAsString(), MString("huge")) && Passed;
   }
 
   MXmlDocument ReadDocument("MEGAlib");
-  new MXmlNode(&ReadDocument, "LicenseHash", 101L);
   new MXmlNode(&ReadDocument, "ChangeLogHash", 202L);
   new MXmlNode(&ReadDocument, "FontScaler", MString("large"));
 
   SettingsGlobalTest ReadBack;
   Passed = Evaluate("ReadXml()", "direct xml", "ReadXml accepts a representative XML document", ReadBack.TestReadXml(&ReadDocument), true) && Passed;
-  Passed = Evaluate("GetLicenseHash()", "direct xml", "ReadXml restores the representative license hash", ReadBack.GetLicenseHash(), 101L) && Passed;
   Passed = Evaluate("GetChangeLogHash()", "direct xml", "ReadXml restores the representative changelog hash", ReadBack.GetChangeLogHash(), 202L) && Passed;
   Passed = Evaluate("GetFontScaler()", "direct xml", "ReadXml restores the representative font scaler", ReadBack.GetFontScaler(), MString("large")) && Passed;
 
@@ -144,7 +145,6 @@ bool UTSettingsGlobal::TestReadWriteFiles()
 
   SettingsGlobalTest Settings;
   Settings.SetTestSettingsFileName(SettingsFile);
-  Settings.SetLicenseHash(333);
   Settings.SetChangeLogHash(444);
   Settings.SetFontScaler("huge");
   Passed = Evaluate("Write()", "representative file", "Write() stores the representative global settings file", Settings.Write(), true) && Passed;
@@ -153,16 +153,15 @@ bool UTSettingsGlobal::TestReadWriteFiles()
   SettingsGlobalTest ReadBack;
   ReadBack.SetTestSettingsFileName(SettingsFile);
   Passed = Evaluate("Read()", "representative file", "Read() restores a previously written representative file", ReadBack.Read(), true) && Passed;
-  Passed = Evaluate("GetLicenseHash()", "representative file", "Read() restores the stored license hash", ReadBack.GetLicenseHash(), 333L) && Passed;
   Passed = Evaluate("GetChangeLogHash()", "representative file", "Read() restores the stored changelog hash", ReadBack.GetChangeLogHash(), 444L) && Passed;
   Passed = Evaluate("GetFontScaler()", "representative file", "Read() restores the stored font scaler", ReadBack.GetFontScaler(), MString("huge")) && Passed;
 
   SettingsGlobalTest Missing;
   Missing.SetTestSettingsFileName(TemporaryDirectory + "/does_not_exist.cfg");
   Passed = Evaluate("Read()", "missing file", "Read() treats a missing global settings file as a clean default-state success", Missing.Read(), true) && Passed;
-  Passed = Evaluate("GetLicenseHash()", "missing file", "A missing global settings file leaves the default license hash intact", Missing.GetLicenseHash(), 0L) && Passed;
+  Passed = Evaluate("GetChangeLogHash()", "missing file", "A missing global settings file leaves the default changelog hash intact", Missing.GetChangeLogHash(), 0L) && Passed;
 
-  Passed = EvaluateTrue("WriteTextFile()", "wrong root file", "A global settings file with the wrong XML root can be written", WriteTextFile(WrongRootFile, "<NotMEGAlib><LicenseHash>1</LicenseHash></NotMEGAlib>\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "wrong root file", "A global settings file with the wrong XML root can be written", WriteTextFile(WrongRootFile, "<NotMEGAlib><ChangeLogHash>1</ChangeLogHash></NotMEGAlib>\n")) && Passed;
   SettingsGlobalTest WrongRoot;
   WrongRoot.SetTestSettingsFileName(WrongRootFile);
   DisableDefaultStreams();
