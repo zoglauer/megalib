@@ -29,6 +29,7 @@ FILES := MFretalonRegistry \
 	MReadOutDataGroup \
 	MReadOutCollection \
 	MReadOutStore \
+	MReadOutFileFormat \
 	MCalibrate \
 	MCalibrateEnergy \
 	MCalibrateEnergyAssignEnergies \

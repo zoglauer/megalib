@@ -28,6 +28,7 @@ using namespace std;
 #include "MTime.h"
 #include "MReadOut.h"
 #include "MReadOutSequence.h"
+#include "MReadOutFileFormat.h"
 
 // Forward declarations:
 
@@ -72,8 +73,10 @@ class MReadOutAssembly : public MReadOutSequence
   
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
-  //! Stream the content in MEGAlib's roa format 
-  void StreamRoa(ostream& S, bool WithDescriptor = true);
+  //! Stream the content in MEGAlib's roa format using the read-out units of ROFF
+  //! Descriptors are for debugging only - files written with them cannot be read back
+  //! Returns false and writes nothing if a read-out has no read-out unit in ROFF
+  bool StreamRoa(ostream& S, const MReadOutFileFormat& ROFF, bool WithDescriptor = false);
 
 
   // protected methods:

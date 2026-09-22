@@ -34,6 +34,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MExceptions.h"
+#include "MStreams.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -125,19 +126,32 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MReadOutAssembly::StreamRoa(ostream& S, bool WithDescriptor)
+bool MReadOutAssembly::StreamRoa(ostream& S, const MReadOutFileFormat& ROFF, bool WithDescriptor)
 {
-  //! Stream the content in MEGAlib's roa format 
+  //! Stream the content in MEGAlib's roa format
+
+  // Find the read-out unit of each read-out first, so that no partial event is written
+  vector<unsigned int> Units;
+  for (MReadOut& RO: m_ReadOuts) {
+    const unsigned int Unit = ROFF.FindByTypes(RO.GetReadOutElement().GetType(), RO.GetReadOutData().GetCombinedType());
+    if (Unit == g_UnsignedIntNotDefined) {
+      if (g_Verbosity >= c_Error) merr<<"Event "<<m_ID<<": No read-out unit defined for \""<<RO.GetReadOutElement().GetType()<<" "<<RO.GetReadOutData().GetCombinedType()<<"\""<<endl;
+      return false;
+    }
+    Units.push_back(Unit);
+  }
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
   S<<"TI "<<m_Time<<endl;
-  
-  for (MReadOut& RO: m_ReadOuts) {
-    S<<RO.ToParsableString(WithDescriptor)<<endl;
+
+  for (unsigned int r = 0; r < m_ReadOuts.size(); ++r) {
+    S<<m_ReadOuts[r].ToParsableString(WithDescriptor, ROFF.GetKeyword(Units[r]))<<endl;
   }
+
+  return true;
 }
-  
+
 
 // MReadOutAssembly.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

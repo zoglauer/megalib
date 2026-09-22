@@ -139,10 +139,10 @@ MString MReadOut::ToString() const
 
 
 //! Return the data as parsable string
-MString MReadOut::ToParsableString(bool WithDescriptor)
+MString MReadOut::ToParsableString(bool WithDescriptor, const MString& Keyword)
 {
   ostringstream os;
-  os<<"UH "<<m_ROE->ToParsableString(WithDescriptor)<<" "<<m_ROD->ToParsableString(WithDescriptor);
+  os<<Keyword<<" "<<m_ROE->ToParsableString(WithDescriptor)<<" "<<m_ROD->ToParsableString(WithDescriptor);
   return os.str();
 }
 

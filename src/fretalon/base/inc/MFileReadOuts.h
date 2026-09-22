@@ -25,9 +25,11 @@
 #include "MFile.h"
 #include "MFileEvents.h"
 #include "MTime.h"
-#include "MReadOutSequence.h"
+#include "MReadOut.h"
 #include "MReadOutData.h"
 #include "MReadOutElement.h"
+#include "MReadOutFileFormat.h"
+#include "MReadOutSequence.h"
 
 // Forward declarations:
 
@@ -44,7 +46,7 @@ class MFileReadOuts : public MFileEvents
   //! Default destructor
   virtual ~MFileReadOuts();
 
-  //! The Open method has to be derived to initialize the include file:
+  //! Open the read-out file
   virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read);
 
   //! Return the next event
@@ -56,6 +58,9 @@ class MFileReadOuts : public MFileEvents
   //!   >=2: all
   bool ReadNext(MReadOutSequence& Sequence, int SelectedDetectorID = -1, int SelectedDetectorSide = -1);
 
+  //! Return the read-out units this file declares
+  const MReadOutFileFormat& GetReadOutFileFormat() const { return m_ReadOutFileFormat; }
+
   
   // protected methods:
  protected:
@@ -64,7 +69,12 @@ class MFileReadOuts : public MFileEvents
 
   // private methods:
  private:
-
+  //! Parse a UF line containing the read-out unit data and add it to the prototypes
+  //! Return false on error
+  bool AddReadOutUnitPrototype(const MString& Line);
+  //! Build the read-out data described by a UF read-out data format such as "adc" or "adcwithtiming".
+  //! Returns nullptr on error
+  MReadOutData* CreateReadOutData(const MString& Format);
 
 
   // protected members:
@@ -84,16 +94,16 @@ class MFileReadOuts : public MFileEvents
   //! True if the end clock tag has been read
   bool m_HasEndClock;
 
-  //! The read-out element
-  MReadOutElement* m_ROE;
-  //! The read-out data
-  MReadOutData* m_ROD;
+  //! The read-out file format including the units definitions
+  MReadOutFileFormat m_ReadOutFileFormat;
+  //! The prototype read-out units at the same index as in m_ReadOutFileFormat
+  vector<MReadOut> m_ReadOutPrototypes;
   
   
 
 #ifdef ___CLING___
  public:
-  ClassDef(MFileReadOuts, 0) // no description
+  ClassDef(MFileReadOuts, 0) // The file reader for read outs
 #endif
 
 };
