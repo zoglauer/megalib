@@ -124,8 +124,11 @@ bool MReadOutDataOrigins::Parse(const MTokenizer& T, unsigned int StartElement)
   
   // Then here - we have one string in form 2;3;6 - parse it!
   MString OriginString = T.GetTokenAtAsString(StartElement + MReadOutData::GetNumberOfParsableElements());
-  vector<MString> OriginStrings = OriginString.Tokenize(";");
   m_Origins.clear();
+  if (OriginString == "-") {
+    return true;
+  }
+  vector<MString> OriginStrings = OriginString.Tokenize(";");
   for (MString S: OriginStrings) {
     m_Origins.push_back(atoi(S));
   }
@@ -142,6 +145,9 @@ MString MReadOutDataOrigins::ToString() const
 {
   ostringstream os;
   os<<MReadOutData::ToString();
+  if (m_Origins.size() == 0) {
+    os<<"-"; // Empty is just "-"
+  }
   for (unsigned int o = 0; o < m_Origins.size(); ++o) {
     if (o != 0) os<<";";
     os<<m_Origins[o];
