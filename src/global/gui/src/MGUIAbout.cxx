@@ -279,7 +279,7 @@ void MGUIAbout::Create()
     PeopleFrame->AddFrame(PeopleIntroLabel, PeopleIntroLayout);
 
     // Read the People list from file:
-    MString FileName = "$(MEGALIB)/CONTRIBUTORS.md";
+    MString FileName = "$(MEGALIB)/Contributors.md";
     vector<MString> DeveloperList;
     if (MFile::Exists(FileName) == true) {
       MParser Parser;
