@@ -1,18 +1,21 @@
 /*
  * MGUIAbout.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -71,8 +74,8 @@ MGUIAbout::MGUIAbout(const TGWindow* Parent, const TGWindow* Main)
   m_ProgrammersAlphabetic = false;
   m_AdditionalProgrammers = "";
   m_Email = "andreas@megalibtoolkit.com";
-  m_Updates = "You can find the latest version of MEGAlib at\n" + g_Homepage;
-  m_Copyright = "(C) by Andreas Zoglauer and contributors\nAll rights reserved";
+  m_Updates = "You can find the latest version of MEGAlib at\nhttps://github.com/zoglauer/megalib";
+  m_Copyright = "(C) by the MEGAlib contributors\nLicensed under the GNU LGPL v3 or later";
   m_MasterReference = "A. Zoglauer et al., \"MEGAlib - The Medium Energy Gamma-ray Astronomy Library\", NewAR 50 (7-8), 629-632, 2006";
   
   m_ShowPeopleTab = true;
@@ -276,7 +279,7 @@ void MGUIAbout::Create()
     PeopleFrame->AddFrame(PeopleIntroLabel, PeopleIntroLayout);
 
     // Read the People list from file:
-    MString FileName = "$(MEGALIB)/doc/Peoples.txt";
+    MString FileName = "$(MEGALIB)/CONTRIBUTORS.md";
     vector<MString> DeveloperList;
     if (MFile::Exists(FileName) == true) {
       MParser Parser;
@@ -284,7 +287,7 @@ void MGUIAbout::Create()
 
         for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
           if (Parser.GetTokenizerAt(i)->GetNTokens() == 0) continue;
-          if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "NM") == true) {
+          if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "-") == true) {
             DeveloperList.push_back(Parser.GetTokenizerAt(i)->GetTokenAfterAsString(1));
           }
         }
@@ -307,7 +310,7 @@ void MGUIAbout::Create()
     TGLayoutHints* DeveloperLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 5);
     PeopleFrame->AddFrame(DeveloperLabel, DeveloperLayout);
 
-    TGLabel* PeopleExtroLabel = new TGLabel(PeopleFrame, "If you do not appear here, but you think you should, then please write me an email: zog@ssl.berkeley.edu");
+    TGLabel* PeopleExtroLabel = new TGLabel(PeopleFrame, "If you do not appear here, but you think you should, then please open an issue on GitHub: https://github.com/zoglauer/megalib/issues");
     PeopleExtroLabel->SetWrapLength(TabWidth);
     PeopleExtroLabel->SetTextFont(m_ItalicFont);
     TGLayoutHints* PeopleExtroLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
@@ -361,7 +364,7 @@ void MGUIAbout::Create()
     TGLayoutHints* DisclaimerLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
     DisclaimerFrame->AddFrame(DisclaimerLabel, DisclaimerLabelLayout);
     
-    TGLabel* Disclaimer = new TGLabel(DisclaimerFrame, "Finally, the usual disclaimer applies: MEGAlib comes without warranty! Use it at your own risk! If your computer fails during a MEGAlib data simulation/analysis \"stress test\", or if MEGAlib deletes all your data, it's your fault!");
+    TGLabel* Disclaimer = new TGLabel(DisclaimerFrame, "MEGAlib is free software licensed under the GNU Lesser General Public License v3 or later (see License.md). Finally, the usual disclaimer applies: MEGAlib comes without warranty! Use it at your own risk! If your computer fails during a MEGAlib data simulation/analysis \"stress test\", or if MEGAlib deletes all your data, it's your fault!");
     Disclaimer->SetWrapLength(TabWidth);
     TGLayoutHints* DisclaimerLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 30);
     DisclaimerFrame->AddFrame(Disclaimer, DisclaimerLayout);

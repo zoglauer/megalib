@@ -1,18 +1,21 @@
 /*
  * MGUIInfo.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -71,8 +74,8 @@ void MGUIInfo::Create()
                "If you encounter bugs or have enhancement request,\n"
                "please mail a full report to\n\n"
                "zog@mpe.mpg.de\n\n\n"
-               "(C) by Andreas Zoglauer and the MEGA-team\n"
-               "All rights reserved");
+               "(C) by the MEGAlib contributors\n"
+               "Licensed under the GNU LGPL v3 or later");
 
   m_InfoFrame = new TGVerticalFrame(this, 100, 10);
   m_InfoFrameLayout =
