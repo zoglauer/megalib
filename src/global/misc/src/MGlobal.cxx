@@ -1,18 +1,21 @@
 /*
  * MGlobal.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -69,9 +72,6 @@ unsigned int g_MinorVersion = 0;
 unsigned int g_Version = 10000;
 MString g_VersionString = "1.00.00";
 
-// Remove year of copyright and replace with (C) by ....
-const MString g_CopyrightYear = "2024";
-const MString g_Homepage = "http://megalibtoolkit.com";
 const MString g_MEGAlibPath = "$(MEGALIB)";
 
 const MString g_StringNotDefined = "___NotDefined___";
@@ -321,8 +321,11 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   MEGAlibLine += g_VersionString;
   if (MEGAlibLine.Length() > LineLength) LineLength = MEGAlibLine.Length();
 
-  MString CopyrightLine = "(C) by Andreas Zoglauer and contributors";
+  MString CopyrightLine = "(C) by the MEGAlib contributors, licensed under LGPL v3+";
   if (CopyrightLine.Length() > LineLength) LineLength = CopyrightLine.Length();
+
+  MString LeadDeveloperLine = "Lead developer: Andreas Zoglauer";
+  if (LeadDeveloperLine.Length() > LineLength) LineLength = LeadDeveloperLine.Length();
 
   MString ReferenceIntroLine = "Master reference for MEGAlib:";
   if (ReferenceIntroLine.Length() > LineLength) LineLength = ReferenceIntroLine.Length();
@@ -333,8 +336,11 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   MString HomepageIntroLine = "For more information about MEGAlib please visit:";
   if (HomepageIntroLine.Length() > LineLength) LineLength = HomepageIntroLine.Length();
 
-  MString HomepageLine = "http://megalibtoolkit.com";
+  MString HomepageLine = "https://megalibtoolkit.com";
   if (HomepageLine.Length() > LineLength) LineLength = HomepageLine.Length();
+
+  MString GitHubLine = "https://github.com/zoglauer/megalib";
+  if (GitHubLine.Length() > LineLength) LineLength = GitHubLine.Length();
 
   MString DevelopmentVersion;
   if (g_MajorVersion % 2 == 1) {
@@ -356,10 +362,12 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   CenterString(ProgramLine, LineLength);
   CenterString(MEGAlibLine, LineLength);
   CenterString(CopyrightLine, LineLength);
+  CenterString(LeadDeveloperLine, LineLength);
   CenterString(ReferenceIntroLine, LineLength);
   CenterString(ReferenceLine, LineLength);
   CenterString(HomepageIntroLine, LineLength);
   CenterString(HomepageLine, LineLength);
+  CenterString(GitHubLine, LineLength);
   CenterString(DevelopmentVersion, LineLength, false);
   CenterString(Update, LineLength, false);
 
@@ -377,11 +385,14 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   cout<<MEGAlibLine<<endl;
   cout<<CopyrightLine<<endl;
   cout<<EmptyLine<<endl;
+  cout<<LeadDeveloperLine<<endl;
+  cout<<EmptyLine<<endl;
   cout<<ReferenceIntroLine<<endl;
   cout<<ReferenceLine<<endl;
   cout<<EmptyLine<<endl;
   cout<<HomepageIntroLine<<endl;
   cout<<HomepageLine<<endl;
+  cout<<GitHubLine<<endl;
   cout<<EmptyLine<<endl;
   cout<<ClosedLine<<endl;
   cout<<endl;
