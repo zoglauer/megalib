@@ -14,6 +14,8 @@
 #include "MReadOutAssembly.h"
 #include "MReadOutDataADCValue.h"
 #include "MReadOutElementStrip.h"
+#include "MReadOutFileFormat.h"
+#include "MStreams.h"
 #include "MUnitTest.h"
 
 // Standard libs:
@@ -195,20 +197,39 @@ bool UTReadOutAssembly::TestStreaming()
   Assembly.StreamEvta(Evta);
   Passed = Evaluate("StreamEvta()", "representative assembly", "EVTA streaming writes the event header, ID, and default time", MString(Evta.str()), MString("SE\nID 42\nTI 0.000000000\n")) && Passed;
 
-  ostringstream RoaWithDescriptor;
-  Assembly.StreamRoa(RoaWithDescriptor, true);
-  Passed = EvaluateTrue("StreamRoa()", "with descriptor", "ROA streaming with descriptors writes the event and read-out descriptors",
-                        MString(RoaWithDescriptor.str()).Contains("SE\nID 42\nTI 0.000000000\n") &&
-                        MString(RoaWithDescriptor.str()).Contains("UH sss 7 11") &&
-                        MString(RoaWithDescriptor.str()).Contains("adc") &&
-                        MString(RoaWithDescriptor.str()).Contains("1234")) && Passed;
+  // Read-out file format matching the representative read-out
+  MReadOutFileFormat ROFF;
+  ROFF.AddReadOutUnit(Assembly.GetReadOut(0).GetReadOutElement().GetType(), Assembly.GetReadOut(0).GetReadOutData().GetCombinedType());
 
   ostringstream RoaWithoutDescriptor;
-  Assembly.StreamRoa(RoaWithoutDescriptor, false);
-  Passed = EvaluateTrue("StreamRoa()", "without descriptor", "ROA streaming without descriptors omits read-out type descriptors",
-                        MString(RoaWithoutDescriptor.str()).Contains("SE\nID 42\nTI 0.000000000\n") &&
-                        MString(RoaWithoutDescriptor.str()).Contains("UH 7 11") &&
-                        MString(RoaWithoutDescriptor.str()).Contains("1234")) && Passed;
+  Passed = EvaluateTrue("StreamRoa()", "defined read-out unit", "ROA streaming succeeds when the read-out unit is defined", Assembly.StreamRoa(RoaWithoutDescriptor, ROFF)) && Passed;
+  Passed = Evaluate("StreamRoa()", "without descriptor", "ROA streaming writes the event header and the read-out under its keyword",
+                    MString(RoaWithoutDescriptor.str()), MString("SE\nID 42\nTI 0.000000000\nUH 7 11 1234 \n")) && Passed;
+
+  ostringstream RoaWithDescriptor;
+  Passed = EvaluateTrue("StreamRoa()", "with descriptor", "ROA streaming with descriptors succeeds", Assembly.StreamRoa(RoaWithDescriptor, ROFF, true)) && Passed;
+  Passed = EvaluateTrue("StreamRoa()", "with descriptor", "ROA streaming with descriptors writes the read-out type descriptors",
+                        MString(RoaWithDescriptor.str()).Contains("UH sss 7 11") && MString(RoaWithDescriptor.str()).Contains("adc 1234")) && Passed;
+
+  // Keyword of a second unit
+  MReadOutFileFormat SecondROFF;
+  SecondROFF.AddReadOutUnit("U7", "doublesidedstrip", "adc");
+  SecondROFF.AddReadOutUnit("U8", Assembly.GetReadOut(0).GetReadOutElement().GetType(), Assembly.GetReadOut(0).GetReadOutData().GetCombinedType());
+  ostringstream RoaSecondUnit;
+  Passed = EvaluateTrue("StreamRoa()", "second read-out unit", "ROA streaming succeeds with the read-out unit at the second position", Assembly.StreamRoa(RoaSecondUnit, SecondROFF)) && Passed;
+  Passed = EvaluateTrue("StreamRoa()", "second read-out unit", "The read-out is written under the keyword of its own read-out unit",
+                        MString(RoaSecondUnit.str()).Contains("\nU8 7 11 1234") && !MString(RoaSecondUnit.str()).Contains("U7 ")) && Passed;
+
+  // No read-out unit for this read-out
+  MReadOutFileFormat WrongROFF;
+  WrongROFF.AddReadOutUnit("doublesidedstrip", "adc");
+  ostringstream RoaUndefined;
+  const int PreviousVerbosity = g_Verbosity;
+  g_Verbosity = c_Quiet;
+  const bool UndefinedStreamed = Assembly.StreamRoa(RoaUndefined, WrongROFF);
+  g_Verbosity = PreviousVerbosity;
+  Passed = EvaluateFalse("StreamRoa()", "undefined read-out unit", "ROA streaming fails when a read-out has no read-out unit", UndefinedStreamed) && Passed;
+  Passed = EvaluateTrue("StreamRoa()", "undefined read-out unit", "Nothing is written when a read-out has no read-out unit", RoaUndefined.str().empty()) && Passed;
 
   return Passed;
 }

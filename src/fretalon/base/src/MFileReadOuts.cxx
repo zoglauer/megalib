@@ -67,9 +67,6 @@ MFileReadOuts::MFileReadOuts() : MFileEvents()
   
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
-  
-  m_ROE = 0;
-  m_ROD = 0;
 }
 
 
@@ -79,15 +76,13 @@ MFileReadOuts::MFileReadOuts() : MFileEvents()
 //! Default destructor
 MFileReadOuts::~MFileReadOuts()
 {
-  delete m_ROE;
-  delete m_ROD;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Open the file
+//! Open the read-out file
 bool MFileReadOuts::Open(MString FileName, unsigned int Way)
 {
   m_IncludeFileUsed = false;
@@ -99,17 +94,11 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   }
     
   bool Error = false;
-  bool FoundUF = false;
   bool FoundCB = false;
   m_HasEndClock = true;
-  
-  MString ReadOutElementFormat = "";
-  MString ReadOutDataFormat = "";
-  
-  delete m_ROE;
-  m_ROE = 0;
-  delete m_ROD;
-  m_ROD = 0;
+
+  m_ReadOutFileFormat.Clear();
+  m_ReadOutPrototypes.clear();
   
   int Lines = 0;
   int MaxLines = 100;
@@ -124,20 +113,11 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
     if (++Lines >= MaxLines) break;
     if (ReadLine(Line) == false) break;
     
-    if (FoundUF == false) {
-      if (Line.BeginsWith("UF") == true) {
-        MTokenizer Tokens;
-        Tokens.Analyze(Line);
-        if (Tokens.GetNTokens() != 3) {
-          mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-          mout<<"Unable to read UF keyword"<<endl;              
-          Error = true;
-        } else {
-          ReadOutElementFormat = Tokens.GetTokenAt(1);
-          ReadOutDataFormat = Tokens.GetTokenAt(2);
-          FoundUF = true;
-          //cout<<"Found: read-out element format: "<<ReadOutElementFormat<<", read-out data format: "<<ReadOutDataFormat<<endl;
-        }
+    if (Line.BeginsWith("UF") == true) {
+      if (AddReadOutUnitPrototype(Line) == false) {
+        mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+        mout<<"Unable to parse UF line, or unable to add the new read-out file format"<<endl;
+        Error = true;
       }
     }
     if (FoundCB == false) {
@@ -157,68 +137,17 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   }
   MFile::Rewind();
   
-  if (ReadOutElementFormat == "" || ReadOutDataFormat == "") {
+  if (m_ReadOutFileFormat.GetNumberOfReadOutUnits() == 0) {
     mout<<"Error in file: "<<m_FileName<<":"<<endl;
     mout<<"No read-out element type / data format found in the file!"<<endl;
     Close();
     return false;
   }
-  
-  // Create the read-out elements and data to fill
-  if ((m_ROE = MFretalonRegistry::Instance().GetReadOutElement(ReadOutElementFormat)) == 0) {
-    mout<<"Error in file: "<<m_FileName<<":"<<endl;
-    mout<<"No read-out element of type \""<<ReadOutElementFormat<<"\" is registered!"<<endl;
-    Close();
-    return false;
-  }
-  
-  // Assemble the ROD
-  vector<MString> RODNames;
-  int Underscore = ReadOutDataFormat.Tokenize("_").size();
-  int Minus = ReadOutDataFormat.Tokenize("-").size();
-  int With = ReadOutDataFormat.Tokenize("with").size();
-  if (Minus > 1 && Underscore == 1 && With == 1) {
-    RODNames = ReadOutDataFormat.Tokenize("-");
-  } else if (Minus == 1 && Underscore > 1 && With == 1) {
-    RODNames = ReadOutDataFormat.Tokenize("_");
-  } else if (Minus == 1 && Underscore == 1 && With > 1) {
-    RODNames = ReadOutDataFormat.Tokenize("with");
-  } else {
-    RODNames.push_back(ReadOutDataFormat); 
-  }
-  
-  vector<MReadOutData*> RODs;
-  for (auto Name: RODNames) {
-    MReadOutData* ROD = MFretalonRegistry::Instance().GetReadOutData(Name);
-    if (ROD == nullptr) {
-      mout<<"Error in file: "<<m_FileName<<":"<<endl;
-      mout<<"No read-out data of type "<<Name<<" is registered!"<<endl;
-      Close();
-      return false;
-    }
-    RODs.push_back(ROD);
-  }
-  
-  m_ROD = nullptr; // Should alreday be nullptr, thus no memory leak here, or not? What happens id we reuse this class?
-  for (auto ROD: RODs) {
-    MReadOutData* NewROD = ROD->Clone();
-    NewROD->SetWrapped(m_ROD);
-    m_ROD = NewROD;
-  }
-  
-  // But if we are still nullptr
-  if (m_ROD == nullptr) {
-    mout<<"Error in file: "<<m_FileName<<":"<<endl;
-    mout<<"Data was not found!"<<endl;
-    Close();
-    return false;
-  }
-
 
   // Now do the sanity checks:
   if (m_FileType != "dat" && m_FileType != "roa") {
     mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-    mout<<"The file type must be \"dat\" or \"roa\" (case is ignored) - you have \""<<m_FileType<<"\""<<endl; 
+    mout<<"The file type must be \"dat\" or \"roa\" (case is ignored) - you have \""<<m_FileType<<"\""<<endl;
     Close();
     return false;
   }
@@ -230,6 +159,87 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Build the read-out data described by a UF read-out data format such as "adc" or "adcwithtiming".
+//! Returns nullptr on error
+MReadOutData* MFileReadOuts::CreateReadOutData(const MString& ReadOutDataFormat)
+{
+  // Split the format in read-out data names
+  vector<MString> RODNames;
+  int Underscore = ReadOutDataFormat.Tokenize("_").size();
+  int Minus = ReadOutDataFormat.Tokenize("-").size();
+  int With = ReadOutDataFormat.Tokenize("with").size();
+  if (Minus > 1 && Underscore == 1 && With == 1) {
+    RODNames = ReadOutDataFormat.Tokenize("-");
+  } else if (Minus == 1 && Underscore > 1 && With == 1) {
+    RODNames = ReadOutDataFormat.Tokenize("_");
+  } else if (Minus == 1 && Underscore == 1 && With > 1) {
+    RODNames = ReadOutDataFormat.Tokenize("with");
+  } else {
+    RODNames.push_back(ReadOutDataFormat);
+  }
+
+  // Get the read-out data prototypes from the registry and wrap them if necessary
+  MReadOutData* ROD = nullptr;
+  for (auto Name: RODNames) {
+    MReadOutData* New = MFretalonRegistry::Instance().GetReadOutData(Name);
+    if (New == nullptr) {
+      mout<<"Error in file: "<<m_FileName<<":"<<endl;
+      mout<<"No read-out data of type "<<Name<<" is registered!"<<endl;
+      delete ROD;
+      return nullptr;
+    }
+    New->SetWrapped(ROD);
+    ROD = New;
+  }
+
+  return ROD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse a UF line containing the read-out unit data and add it to the prototypes
+//! Return false on error
+bool MFileReadOuts::AddReadOutUnitPrototype(const MString& Line)
+{
+  // Parse into a copy: the format is only updated once the prototype exists, so both stay index-aligned
+  MReadOutFileFormat Format = m_ReadOutFileFormat;
+  if (Format.ParseUF(Line) == false) return false;
+  // Already known, e.g. the header is read again after the rewind in Open()
+  if (Format.GetNumberOfReadOutUnits() == m_ReadOutFileFormat.GetNumberOfReadOutUnits()) return true;
+
+  const unsigned int Unit = Format.GetNumberOfReadOutUnits() - 1;
+
+  MReadOutElement* ROE = MFretalonRegistry::Instance().GetReadOutElement(Format.GetElementType(Unit));
+  if (ROE == nullptr) {
+    mout<<"Error in file: "<<m_FileName<<":"<<endl;
+    mout<<"No read-out element of type \""<<Format.GetElementType(Unit)<<"\" is registered!"<<endl;
+    return false;
+  }
+
+  MReadOutData* ROD = CreateReadOutData(Format.GetDataType(Unit));
+  if (ROD == nullptr) {
+    delete ROE;
+    // Error message written in CreateReadOutData
+    return false;
+  }
+
+  // MReadOut clones both, so the originals are released again right away
+  m_ReadOutPrototypes.push_back(MReadOut(*ROE, *ROD));
+  delete ROE;
+  delete ROD;
+
+  m_ReadOutFileFormat = Format;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse the special information at the end of file
 bool MFileReadOuts::ParseFooter(const MString& Line)
 {
   // Parse the footer
@@ -257,6 +267,13 @@ bool MFileReadOuts::ParseFooter(const MString& Line)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the next event
+//! If SelectedDetectorID is non-negative then restrict yourself to SelectedDetectorID
+//! SelectedDetectorSide:
+//!   < 0: all
+//!     0: negative side
+//!     1: positive side
+//!   >=2: all
 bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int SelectedDetectorSide)
 {
   // Return next single event from file... or 0 if there are no more.
@@ -287,7 +304,6 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int 
   }
 
   
-  
   MTokenizer T(' ', false);  
   
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
@@ -316,6 +332,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int 
       }
     } // SE
     
+
     // Part 2: Handle IN
     if (Line[0] == 'I' && Line[1] == 'N') {
 
@@ -339,26 +356,40 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int 
       continue;
     }
       
-    // Part 3: Handle UH - this can only be done here.
-    if (Line[0] == 'U' && Line[1] == 'H') {
+
+    // Part 3: Handle a UF line appearing after the header, e.g., from a different file
+    if (Line.BeginsWith("UF") == true) {
+      if (AddReadOutUnitPrototype(Line) == false) {
+        mout<<"Error in file: "<<m_FileName<<":"<<endl;
+        mout<<"Unable to use the read-out unit declared by \""<<Line<<"\""<<endl;
+      }
+      continue;
+    }
+
+
+    // Part 4: Parse the read-out and add it to the store
+    const unsigned int Unit = m_ReadOutFileFormat.FindByLine(Line);
+    if (Unit != g_UnsignedIntNotDefined) {
       T.AnalyzeFast(Line);
-      
-      m_ROE->Parse(T, 1);
-      m_ROD->Parse(T, 1 + m_ROE->GetNumberOfParsableElements());
-      
-      // cout<<"Combined: "<<m_ROD->ToString()<<" vs. "<<m_ROD->GetCombinedType()<<endl;
-      
-      if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) m_ROE->GetDetectorID() == SelectedDetectorID)) {
-        if (SelectedDetectorSide < 0 || SelectedDetectorSide >= 2 || (dynamic_cast<MReadOutElementDoubleStrip*>(m_ROE) != nullptr && (int) dynamic_cast<MReadOutElementDoubleStrip*>(m_ROE)->IsLowVoltageStrip() == SelectedDetectorSide)) {
-          MReadOut RO(*m_ROE, *m_ROD);
-          ROS.AddReadOut(RO);
-          //cout<<"Added: "<<RO.ToString()<<endl;
+
+      MReadOut& Prototype = m_ReadOutPrototypes[Unit];
+
+      MReadOutElement& ROE = Prototype.GetReadOutElement();
+      ROE.Parse(T, 1);
+
+      MReadOutData& ROD = Prototype.GetReadOutData();
+      ROD.Parse(T, 1 + ROE.GetNumberOfParsableElements());
+
+      if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) ROE.GetDetectorID() == SelectedDetectorID)) {
+        if (SelectedDetectorSide < 0 || SelectedDetectorSide >= 2 || (dynamic_cast<MReadOutElementDoubleStrip*>(&ROE) != nullptr && (int) dynamic_cast<MReadOutElementDoubleStrip*>(&ROE)->IsLowVoltageStrip() == SelectedDetectorSide)) {
+          ROS.AddReadOut(Prototype);
         }
       }
       continue;
     }
     
-    // Part 4: All the rest is handled in the MReadOutSequence and its derived class MReadOutAssembly
+
+    // Part 5: All the rest of the parsing is handled in the MReadOutSequence and its derived class MReadOutAssembly
     ROS.Parse(Line);
      
   } // End of while(m_File.good() == true)
