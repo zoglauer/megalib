@@ -45,7 +45,7 @@ ClassImp(MModuleSaver)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModuleSaver::MModuleSaver() : MModule(), MModuleInterfaceFileName(), m_RoaHeaderWritten(false)
+MModuleSaver::MModuleSaver() : MModule(), MModuleInterfaceFileName()
 {
   // Construct an instance of MNCTModuleTemplate
 
@@ -111,10 +111,15 @@ bool MModuleSaver::Initialize()
     m_Out<<endl;
   } else if (m_FileName.EndsWith("roa")) {
     m_Mode = c_RoaFile;
-    m_RoaHeaderWritten = false;
     m_Out<<endl;
     m_Out<<"TYPE ROA"<<endl;
     m_Out<<endl;
+
+    // Known read-out units form the header, new ones are declared where they first occur
+    for (unsigned int u = 0; u < m_RoaFileFormat.GetNumberOfReadOutUnits(); ++u) {
+      m_Out<<m_RoaFileFormat.GetUFLine(u)<<endl;
+    }
+    if (m_RoaFileFormat.GetNumberOfReadOutUnits() > 0) m_Out<<endl;
   } else {
     if (g_Verbosity >= c_Error) mout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;
@@ -150,26 +155,24 @@ bool MModuleSaver::AnalyzeEvent(MReadOutAssembly* Event)
   if (m_Mode == c_EvtaFile) {
     Event->StreamEvta(m_Out);  
   } else if (m_Mode == c_RoaFile) {
-    // MFileReadOuts needs the "UF <element type> <data type>" header to know which read-out classes
-    // to instantiate, and only scans the first 100 lines of the file for it. The types can only be
-    // taken from the read-outs of the first event, so if that event has none the format of the file
-    // cannot be determined and the file would be unreadable.
-    if (m_RoaHeaderWritten == false) {
-      if (Event->GetNumberOfReadOuts() == 0) {
-        if (g_Verbosity >= c_Error) mout<<m_XmlTag<<": The first event has no read-outs, thus the roa read-out format cannot be determined: "<<m_FileName<<endl;
-        // Everything written from here on would be unreadable, so stop the analysis instead of
-        // quietly dropping events -- the supervisor shuts the module sequence down in an orderly way
-        m_IsOK = false;
-        return false;
+    // Declare the read-out units first used in this event
+    const unsigned int Before = m_RoaFileFormat.GetNumberOfReadOutUnits();
+    for (unsigned int r = 0; r < Event->GetNumberOfReadOuts(); ++r) {
+      const MReadOut& RO = Event->GetReadOut(r);
+      const MString ReadOutElementType = RO.GetReadOutElement().GetType();
+      const MString ReadOutDataType = RO.GetReadOutData().GetCombinedType();
+      if (m_RoaFileFormat.FindByTypes(ReadOutElementType, ReadOutDataType) == g_UnsignedIntNotDefined) {
+        m_RoaFileFormat.AddReadOutUnit(ReadOutElementType, ReadOutDataType);
       }
-      const MReadOut& ReadOut = Event->GetReadOut(0);
-      m_Out<<"UF "<<ReadOut.GetReadOutElement().GetType()<<" "<<ReadOut.GetReadOutData().GetType()<<endl;
-      m_Out<<endl;
-      m_RoaHeaderWritten = true;
     }
-    // The reader parses the read-out values positionally, so the per-line type descriptors have to
-    // be left out -- with them every value is shifted by one token
-    Event->StreamRoa(m_Out, false);
+    for (unsigned int u = Before; u < m_RoaFileFormat.GetNumberOfReadOutUnits(); ++u) {
+      m_Out<<m_RoaFileFormat.GetUFLine(u)<<endl;
+    }
+    if (Event->StreamRoa(m_Out, m_RoaFileFormat) == false) {
+      if (g_Verbosity >= c_Error) mout<<m_XmlTag<<": Event "<<Event->GetID()<<" has read-outs not defined in the roa file format: "<<m_FileName<<endl;
+      m_IsOK = false;
+      return false;
+    }
   } else {
     if (g_Verbosity >= c_Error) mout<<m_XmlTag<<": Unsupported mode: "<<m_Mode<<endl;
     return false;

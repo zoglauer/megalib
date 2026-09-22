@@ -63,7 +63,7 @@ class MReadOut
   MReadOutData& GetReadOutData() { return *m_ROD; }
   
   //! Return the data as parsable string
-  virtual MString ToParsableString(bool WithDescriptor = false); 
+  virtual MString ToParsableString(bool WithDescriptor = false, const MString& Keyword = "UH");
   
   //! Dump a string
   virtual MString ToString() const;
