@@ -1,18 +1,21 @@
 /*
  * MGUIGeomegaMain.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -296,7 +299,6 @@ void MGUIGeomegaMain::About()
   About->SetProgramName("Geomega");
   About->SetIconPath(g_MEGAlibPath + "/resource/icons/geomega/Small.xpm");
   About->SetLeadProgrammer("Andreas Zoglauer");
-  About->SetCopyright("(C) by Andreas Zoglauer\nAll rights reserved");
   About->SetReference("Includes a chapter about the basics of Geomega", 
                       "A. Zoglauer et al., \"Cosima - The cosmic simulator of MEGAlib\", IEEE Nuclear Science Symposium Conference Record 2009, pp. 2053-2059, 2009");  
   About->Create();

@@ -1,18 +1,21 @@
 /*
  * MPrelude.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -69,28 +72,7 @@ bool MPrelude::Play()
   // First load the .megalib.cfg file
   m_Settings.Read();
 
-  // Step 1: Take care of the license file
-  MString LicenseFile = "$(MEGALIB)/LICENSE";
-  MFile::ExpandFileName(LicenseFile);
-  if (MFile::Exists(LicenseFile) == true) {
-    ifstream in;
-    in.open(LicenseFile);
-    MString License;
-    License.Read(in);
-    if (License.GetHash() != m_Settings.GetLicenseHash()) {
-      MGUIPrelude* P = new MGUIPrelude("License agreement", 
-                                       "Please read the following license agreement very carefully\n"
-                                       "You have to accept the license agreement to use the software", 
-                                       License, "Accept", "Decline");
-      P->Create();
-      if (P->IsOKed() == false) return false;
-      delete P;     
-      
-      m_Settings.SetLicenseHash(License.GetHash());
-    }
-  }
-
-  // Step 2: Take care of the change log file
+  // Show the change log once, and again whenever it changes
   MString ChangeLogFile = "$(MEGALIB)/doc/ChangeLog.txt";
   MFile::ExpandFileName(ChangeLogFile);
   if (MFile::Exists(ChangeLogFile) == true) {

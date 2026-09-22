@@ -1,11 +1,21 @@
 /*
  * MSettingsGlobal.h
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Please see the source-file for the copyright-notice.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -48,11 +58,6 @@ class MSettingsGlobal
   //! Write all data to the default/stored file
   virtual bool Write();
 
-  //! Set the license hash
-  void SetLicenseHash(long LicenseHash) { m_LicenseHash = LicenseHash; }
-  //! Get the license hash
-  long GetLicenseHash() const { return m_LicenseHash; }
-
   //! Set the changelog hash
   void SetChangeLogHash(long ChangeLogHash) { m_ChangeLogHash = ChangeLogHash; }
   //! Get the changelog hash
@@ -87,8 +92,6 @@ class MSettingsGlobal
 
   //! The hash of the change-log file
   long m_ChangeLogHash;
-  //! The hash of the license file
-  long m_LicenseHash;
   //! The font scaling type: one of normal, large, huge, gigantic
   MString m_FontScaler;
 
