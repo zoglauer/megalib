@@ -71,6 +71,87 @@ X, DataPoint, IsNonZero
 - Use single-line comments (//) to explain logic within methods.
 
 
+## Comment wording
+
+Comments in MEGAlib are short, factual labels. They name what the next block does or state a fact
+about a variable, and nothing more. Half of the inline comments are 3 words or fewer, and few are
+longer than one line.
+
+### Header (doxygen) comments
+
+- One line, no trailing period.
+- Start with a plain imperative verb: `Return`, `Set`, `Get`, `Add`, `Check if`,
+  `Create`, `Parse`, `Initialize`, `Clone`, `Dump`, `Validate`. Not `Returns` or `Sets`.
+- Member variables get a noun phrase: `The number of ...`, `Number of ...`, `Flag indicating ...`,
+  `List of ...`, `Name of ...`.
+- Yes/no results: `Return true if ...` or `True if ...`.
+- Constructors and destructors: `Default constructor`, `Default destructor`, `Standard constructor`,
+  `Copy constructor`.
+- Classes: `Class representing ...`.
+- Units and allowed values go on the same line, in parentheses or after a colon.
+  ```cpp
+  //! Return the number of data points
+  //! Set the axis in HEALPIX based on a target pixel size (deg)
+  //! Get the binning mode: 0: fixed number of bins, 1: fixed cts per bin, 2: Bayesian block
+  //! True if the clone template has already been written to the geant file
+  //! Flag indicating if the vector is zero
+  ```
+
+### Inline comments in functions
+
+- One short line above the block it describes. Fewer than 1 in 10 inline comments span several lines.
+- Start with an imperative verb, or with `Now`, `First` or `Then` for a sequence:
+  `Open the simulation file:`, `Normalize the response files:`, `Now update the short graph:`,
+  `First we get the key...`
+- End with a colon when the comment introduces the following block, with `...` when the step
+  continues. Otherwise use no punctuation; a final period is rare.
+- Use "We" to describe a condition or decision:
+  `We only continue if the input was valid!`, `We have to distinguish two different cases:`
+- Number the steps of longer procedures: `(1) ...`, `(2) ...`, or `Step 1: ...`.
+- Short comments after code, on the same line, for units or a single fact: `// keV`, `// deg`,
+  `// No spaces allowed`.
+  ```cpp
+  // Open the simulation file:
+  // Loop and search best combination:
+  // Wait until we have a first reconstructed event
+  // We have a random coincidence if we have more than one event in the list:
+  // Remove empty slots from the list - time consuming!
+  ```
+
+### Warnings and markers
+
+- `Attention:` for pitfalls, followed by the fact:
+  `Attention: Dir needs to be a unit vector`, `Attention: This event will be owned and destroyed by this class`,
+  `Attention: Simple, but very inefficient algorithm!`
+- `!` marks something the reader must not miss. Use one `!`, not several.
+- `ToDo:` / `TODO:` for open work: `TODO: Change to AreCoplanar(...)`
+- Empty function bodies: `// Intentionally left blank`
+
+### Rationale
+
+Give a reason only when the code does not make it obvious. Keep it to a short clause after
+` - `, not a new sentence:
+```cpp
+// Wait for a client to connect - we add a random amount to make sure that two instances can connect at the same time
+// Clone this fit - the returned element must be deleted!
+```
+
+### Avoid
+
+These patterns are nearly absent from the older code and should not be introduced:
+
+| Avoid | Usage in the older code | Use instead |
+|---|---|---|
+| Full sentences ending in `.`, several per comment | 8% of inline comments end in `.` | One line, no period |
+| Explanatory paragraphs above a single statement | half are ≤ 3 words | One line naming the step |
+| ` -- ` or `—` between clauses | almost never | ` - ` or a new line |
+| `ensure`, `whether`, `consistent with`, `explicitly`, `therefore`, `so that`, `unless`, `instead` | each in 0.1% of comments or fewer | `make sure`, `if`, `check if`, or drop the word |
+| `Note:`, `NOTE:`, `IMPORTANT:`, `WARNING:` | almost never | `Attention:` |
+| `Returns ...`, `Sets ...` in headers | 54 `Returns` vs. 1231 `Return` | `Return ...`, `Set ...` |
+| Explaining why an alternative was not chosen, or which other functions share this logic | almost never | Leave it out |
+| Backticks or function names like `Foo()` in the text | under 1% | Name the thing in words |
+
+
 ## Formatting
 
 ### 1. **General Whitespace Guidelines**
@@ -220,8 +301,8 @@ X, DataPoint, IsNonZero
      ```
 
 ### 2. **Use Comments Wisely**
-   - **Comments** should explain **why** something is done, not **what** is done (as the code itself should be self-explanatory).  
-   - Use comments to clarify complex or non-obvious logic and maths, not for every line of code.
+   - Label each logical block with one short line, and explain non-obvious logic and maths.
+   - Do not comment every line, and keep the wording as described in "Comment wording".
    - Example:
      ```cpp
      // Calculate the Compton scatter angle from recoil electron Ee and scattered gamma-ray energy Eg
