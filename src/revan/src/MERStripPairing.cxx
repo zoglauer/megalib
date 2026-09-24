@@ -189,7 +189,7 @@ bool MERStripPairing::Analyze(MRERawEvent* RE)
       for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
         for (unsigned int side = 0; side <=1; ++side) { // side loop
           if (StripHits[d][side].size() > MaxStripHits) {
-            RE->SetRejectionReason(MRERawEvent::c_RejectionStripPairinTooManyStrips);
+            RE->SetRejectionReason(MRERawEvent::c_RejectionStripPairingTooManyStrips);
             Rejected = true;
             break;
           }

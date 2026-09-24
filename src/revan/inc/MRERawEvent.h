@@ -306,8 +306,9 @@ class MRERawEvent : public MRESE, public MRotationInterface
   static const int c_RejectionEventClusteringNoOrigins           = 34;
   static const int c_RejectionEventClusteringEnergyOutOfBounds   = 35;
   static const int c_RejectionStripPairingMissingStrips          = 36;
-  static const int c_RejectionStripPairinTooManyStrips           = 37;
+  static const int c_RejectionStripPairingTooManyStrips          = 37;
   static const int c_RejectionStripPairingNotResolvable          = 38;
+  static const int c_RejectionEnergyDepositOutsideDetectorVolume = 39;
   
   static const double c_NoQualityFactor;
   static const double c_NoScore;

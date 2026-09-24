@@ -985,9 +985,9 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"Strip pairing failed due to missing strips";
     }
     break;
-  case c_RejectionStripPairinTooManyStrips:
+  case c_RejectionStripPairingTooManyStrips:
     if (Short == true) {
-      out<<"StripPairinTooManyStrips";
+      out<<"StripPairingTooManyStrips";
     } else {
       out<<"Strip pairing failed because of too many triggered strips in one detector";
     }
@@ -997,6 +997,13 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"StripPairingNotResolvable";
     } else {
       out<<"Strip pairing failed because the hits are not resolvable";
+    }
+    break;
+  case c_RejectionEnergyDepositOutsideDetectorVolume:
+    if (Short == true) {
+      out<<"EnergyDepositOutsideDetectorVolume";
+    } else {
+      out<<"At least one energy deposit is outside any detector volume";
     }
     break;
     
@@ -1954,7 +1961,7 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
         if (Hit->RetrieveResolutions(m_Geo) == false) {
           mout<<"Event "<<m_EventID<<": Unable to determine resolutions - removing hit"<<endl;
           mout<<Line<<endl;
-          m_IsValid = false;
+          SetRejectionReason(c_RejectionEnergyDepositOutsideDetectorVolume);
           delete Hit;
           return 2;  
         }
@@ -1964,7 +1971,7 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
         if (Hit->UpdateVolumeSequence(m_Geo) == false) {
           mout<<"Event "<<m_EventID<<": Unable to update volume sequence - removing hit"<<endl;
           mout<<Line<<endl;
-          m_IsValid = false;
+          SetRejectionReason(c_RejectionEnergyDepositOutsideDetectorVolume);
           delete Hit;
           return 2; // We need to return not parsed here since we most likely  changed the geometry (e.g. removed detectors) and don't want those hits
         }
