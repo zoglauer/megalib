@@ -199,7 +199,7 @@ bool UTModuleSaver::TestSaving()
   delete RoaEvent;
   const MString RoaText = ReadTextFile(RoaFileName);
   Passed = EvaluateTrue("Initialize()", "ROA header", "ROA output contains the representative ROA header", RoaText.Contains("TYPE ROA")) && Passed;
-  Passed = EvaluateTrue("Initialize()", "ROA read-out format", "ROA output declares the read-out element and data types MFileReadOuts needs", RoaText.Contains("UF singlesidedstrip adc")) && Passed;
+  Passed = EvaluateTrue("Initialize()", "ROA read-out format", "ROA output declares the read-out keyword, element and data types MFileReadOuts needs", RoaText.Contains("UF ") == true && RoaText.Contains(" singlesidedstrip adc") == true) && Passed;
   Passed = EvaluateTrue("AnalyzeEvent()", "ROA event", "ROA output contains the representative event ID and read-out", RoaText.Contains("ID 101") && RoaText.Contains("UH 7 11 1234")) && Passed;
   Passed = EvaluateTrue("Finalize()", "ROA trailer", "ROA output is closed with the EN trailer", RoaText.EndsWith("EN\n")) && Passed;
   RemoveTemporaryFile(RoaFileName);
@@ -298,15 +298,14 @@ bool UTModuleSaver::TestRoaRoundTrip()
 {
   bool Passed = true;
 
-  // A roa file whose first event carries no read-outs has no determinable read-out format, so the
-  // saver has to refuse it rather than produce a file MFileReadOuts cannot reopen
+  // Read-out units are declared where they first occur, thus a first event without read-outs is fine
   const MString FormatlessFileName = GetTemporaryFileName("roundtrip_formatless.roa");
   RemoveTemporaryFile(FormatlessFileName);
 
   MModuleSaver FormatlessSaver;
   FormatlessSaver.SetFileName(FormatlessFileName);
   Passed = EvaluateTrue("Initialize()", "formatless writer", "The saver initializes for a file whose first event has no read-outs", FormatlessSaver.Initialize()) && Passed;
-  Passed = EvaluateTrue("IsOK()", "before formatless event", "The saver reports itself OK before the undeterminable event arrives", FormatlessSaver.IsOK()) && Passed;
+  Passed = EvaluateTrue("IsOK()", "before formatless event", "The saver reports itself OK before the event without read-outs arrives", FormatlessSaver.IsOK()) && Passed;
 
   MReadOutAssembly Formatless;
   Formatless.SetFilteredOut(false);
@@ -315,8 +314,8 @@ bool UTModuleSaver::TestRoaRoundTrip()
   g_Verbosity = c_Quiet;
   const bool FormatlessAccepted = FormatlessSaver.AnalyzeEvent(&Formatless);
   g_Verbosity = PreviousVerbosity;
-  Passed = EvaluateFalse("AnalyzeEvent()", "first event without read-outs", "The saver rejects a first event whose read-out format cannot be determined", FormatlessAccepted) && Passed;
-  Passed = EvaluateFalse("IsOK()", "after formatless event", "The saver reports itself no longer OK so the supervisor shuts the sequence down", FormatlessSaver.IsOK()) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "first event without read-outs", "The saver accepts a first event without read-outs, since read-out units are declared where they first occur", FormatlessAccepted) && Passed;
+  Passed = EvaluateTrue("IsOK()", "after formatless event", "The saver stays OK after an event without read-outs", FormatlessSaver.IsOK()) && Passed;
   FormatlessSaver.Finalize();
   RemoveTemporaryFile(FormatlessFileName);
 
