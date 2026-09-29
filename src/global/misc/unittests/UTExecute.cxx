@@ -33,6 +33,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <signal.h>
 #include <sstream>
 #ifdef __APPLE__
 #include <sys/sysctl.h>
@@ -48,6 +49,19 @@ using namespace std;
 #include "MFile.h"
 #include "MStreams.h"
 #include "MString.h"
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set when the runner receives SIGINT or SIGTERM
+static volatile sig_atomic_t g_Interrupted = 0;
+
+//! Signal handler: only flag the interrupt, the main loop stops the tests
+static void HandleInterrupt(int)
+{
+  g_Interrupted = 1;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -103,6 +117,8 @@ class UTExecute
   MString m_BinDirectory;
   MString m_TimingFile;
   map<MString, MString> m_AllTests;
+  //! Kill a test after this many seconds (0: no timeout)
+  double m_TimeoutSeconds;
 };
 
 
@@ -112,7 +128,8 @@ class UTExecute
 UTExecute::UTExecute(const MString& Prefix, const MString& RunnerName, const MString& DashboardTitle) :
   m_Prefix(Prefix),
   m_RunnerName(RunnerName),
-  m_DashboardTitle(DashboardTitle)
+  m_DashboardTitle(DashboardTitle),
+  m_TimeoutSeconds(120.0)
 {
 }
 
@@ -325,6 +342,8 @@ bool UTExecute::LaunchTest(const MString& TestName, int& ChildPid, MString& Outp
     return false;
   }
   if (Pid == 0) {
+    // Own process group, so that a timeout also stops all processes started by the test
+    setpgid(0, 0);
     int Output = open(OutputFile.Data(), O_WRONLY | O_TRUNC);
     if (Output < 0) _exit(127);
     dup2(Output, STDOUT_FILENO);
@@ -334,6 +353,7 @@ bool UTExecute::LaunchTest(const MString& TestName, int& ChildPid, MString& Outp
     _exit(127);
   }
 
+  setpgid(Pid, Pid); // Also set here to avoid a race with the child
   ChildPid = Pid;
   return true;
 }
@@ -444,10 +464,29 @@ int UTExecute::Execute(int argc, char** argv)
     return 1;
   }
 
+  // Separate the options from the requested test names
+  vector<char*> Arguments;
+  Arguments.push_back(argc > 0 ? argv[0] : nullptr);
+  for (int a = 1; a < argc; ++a) {
+    MString Option = argv[a];
+    if (Option == "--timeout") {
+      char* End = nullptr;
+      double Timeout = (a+1 < argc) ? strtod(argv[a+1], &End) : -1.0;
+      if (a+1 >= argc || End == argv[a+1] || *End != '\0' || Timeout < 0.0) {
+        merr<<"Usage: --timeout <seconds>, with 0 meaning no timeout"<<show;
+        return 1;
+      }
+      m_TimeoutSeconds = Timeout;
+      ++a;
+    } else {
+      Arguments.push_back(argv[a]);
+    }
+  }
+
   map<MString, double> Timings;
   LoadTimings(Timings);
   vector<MString> Tests;
-  if (BuildRequestedTests(argc, argv, Tests) == false) return 1;
+  if (BuildRequestedTests(int(Arguments.size()), Arguments.data(), Tests) == false) return 1;
   SortRequestedTests(Tests, Timings);
 
   vector<EStatus> Statuses(Tests.size(), c_StatusPending);
@@ -455,6 +494,7 @@ int UTExecute::Execute(int argc, char** argv)
   vector<MString> OutputFiles(Tests.size(), "");
   vector<MString> Metrics(Tests.size(), "");
   vector<chrono::steady_clock::time_point> StartTimes(Tests.size());
+  vector<bool> TimedOut(Tests.size(), false);
   map<pid_t, size_t> PidToIndex;
   const chrono::steady_clock::time_point SuiteStart = chrono::steady_clock::now();
   unsigned int MaxParallel = 0;
@@ -536,11 +576,23 @@ int UTExecute::Execute(int argc, char** argv)
     cout<<Border()<<"\n"<<Center(Progress)<<"\n"<<Border()<<"\n"<<flush;
   };
 
+  // The tests run in their own process groups and do not receive Ctrl-C, thus stop them ourselves
+  signal(SIGINT, HandleInterrupt);
+  signal(SIGTERM, HandleInterrupt);
+
   if (UseTTY == true) cout<<"\x1b[?25l"<<flush;
   Render();
   size_t Next = 0;
   size_t Running = 0;
   while (Next < Tests.size() || Running > 0) {
+    if (g_Interrupted != 0) {
+      for (const auto& Entry : PidToIndex) kill(-Entry.first, SIGKILL);
+      while (waitpid(-1, nullptr, 0) > 0);
+      for (const MString& OutputFile : OutputFiles) if (OutputFile.IsEmpty() == false) MFile::Remove(OutputFile);
+      if (UseTTY == true) cout<<"\x1b[?25h\n"<<flush;
+      cout<<"Interrupted - all running unit tests have been stopped"<<endl;
+      return 130;
+    }
     while (Next < Tests.size() && Running < MaxParallel) {
       int Child = -1;
       if (LaunchTest(Tests[Next], Child, OutputFiles[Next]) == false) {
@@ -563,6 +615,16 @@ int UTExecute::Execute(int argc, char** argv)
       break;
     }
     if (Child == 0) {
+      // Kill tests which run longer than the timeout - they are reaped by waitpid above
+      if (m_TimeoutSeconds > 0.0) {
+        for (const auto& Entry : PidToIndex) {
+          double Elapsed = chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - StartTimes[Entry.second]).count();
+          if (TimedOut[Entry.second] == false && Elapsed > m_TimeoutSeconds) {
+            kill(-Entry.first, SIGKILL);
+            TimedOut[Entry.second] = true;
+          }
+        }
+      }
       ++Spinner;
       usleep(1000000);
       continue;
@@ -574,6 +636,9 @@ int UTExecute::Execute(int argc, char** argv)
     Outputs[Index] = ReadOutput(OutputFiles[Index]);
     MFile::Remove(OutputFiles[Index]);
     Metrics[Index] = ExtractMetric(Outputs[Index]);
+    if (TimedOut[Index] == true) {
+      Metrics[Index] = MString("timed out after ") + FormatRuntime(m_TimeoutSeconds);
+    }
     Timings[Tests[Index]] = chrono::duration_cast<chrono::duration<double>>(chrono::steady_clock::now() - StartTimes[Index]).count();
     Statuses[Index] = WIFEXITED(ChildStatus) != 0 && WEXITSTATUS(ChildStatus) == 0 ? c_StatusPassed : c_StatusFailed;
     --Running;
