@@ -40,6 +40,7 @@
 #include <sstream>
 #include <fstream>
 #include <future>
+#include <mutex>
 #include <cmath>
 #include <chrono>
 #include <thread>
@@ -66,6 +67,9 @@ public:
 protected:
   bool CreateSourceFile(MString FileNamePrefix, MString Spectrum);
   TH1D* CreateSpectrum(MString FileNamePrefix, unsigned int NumberOfBins, double EMin, double EMax);
+
+  //! Geometry loading, sim-file reading, and fitting use ROOT globals (e.g. gGeoManager) - only the cosima runs can be parallel
+  mutex m_AnalysisMutex;
 
   double TestPowerLaw();
   double TestBrokenPowerLaw();
@@ -278,6 +282,7 @@ double UTCosimaInputSpectra::TestPowerLaw()
     return -1;
   }
 
+  lock_guard<mutex> Lock(m_AnalysisMutex);
   TH1D* Spectrum = CreateSpectrum(FileNamePrefix, 100, EMin, EMax);
   if (Spectrum == nullptr) return -1;
 
@@ -316,10 +321,11 @@ double UTCosimaInputSpectra::TestComptonization()
     return -1;
   }
   cout<<"Launching cosima"<<endl;
-  if (system(MString("cosima -v 0 -z ") + FileNamePrefix + ".source &> Comptonized.log") == -1) {
+  if (system(MString("cosima -v 0 -z ") + FileNamePrefix + ".source &> /dev/null") == -1) {
     return -1;
   }
 
+  lock_guard<mutex> Lock(m_AnalysisMutex);
   TH1D* Spectrum = CreateSpectrum(FileNamePrefix, 100, EMin, EMax);
   if (Spectrum == nullptr) return -1;
 
@@ -328,12 +334,13 @@ double UTCosimaInputSpectra::TestComptonization()
 
   Spectrum->Fit(Fit, "IMNR");
 
-  TCanvas* C = new TCanvas();
-  C->cd();
-  Spectrum->Draw();
-  Fit->Draw("SAME");
-  C->Update();
-  C->SaveAs(FileNamePrefix + ".png");
+  if (m_SingleMode == true) {
+    TCanvas* C = new TCanvas();
+    C->cd();
+    Spectrum->DrawCopy();
+    Fit->DrawCopy("SAME");
+    C->Update();
+  }
 
   double FittedAlpha = Fit->GetParameter(1);
   double FittedAlphaError = Fit->GetParError(1);
@@ -366,6 +373,7 @@ double UTCosimaInputSpectra::TestBrokenPowerLaw()
   system(MString("rm -f ") + FileNamePrefix + ".inc1.id1.sim.gz");
   system(MString("mwait -p=cosima; cosima -v 0 -z ") + FileNamePrefix + ".source"); // &> /dev/null");
 
+  lock_guard<mutex> Lock(m_AnalysisMutex);
   TH1D* Spectrum = CreateSpectrum(FileNamePrefix, 100, EMin, EMax);
   if (Spectrum == nullptr) return -1;
   
@@ -412,6 +420,7 @@ double UTCosimaInputSpectra::TestCutOffPowerLaw()
   }
     
 
+  lock_guard<mutex> Lock(m_AnalysisMutex);
   TH1D* Spectrum = CreateSpectrum(FileNamePrefix, 100, EMin, EMax);
   if (Spectrum == nullptr) return -1;
 
