@@ -442,6 +442,12 @@ bool MString::IsNumber() const
 
   if (In.fail() == true) return false;
 
+  //! Reject values which underflow to zero, e.g. 1e-400: libc++ flags them as failure, but libstdc++ silently returns 0
+  if (Number == 0.0) {
+    string Mantissa = m_String.substr(0, m_String.find_first_of("eE"));
+    if (Mantissa.find_first_of("123456789") != string::npos) return false;
+  }
+
   //! Reject nonzero subnormal values so only the fully supported normal double range and zero are accepted
   if (Number != 0.0 && fabs(Number) < numeric_limits<double>::min()) return false;
 
