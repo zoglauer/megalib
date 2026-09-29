@@ -467,7 +467,7 @@ bool MREHit::Noise(MDGeometryQuest* Geometry)
   if (Geometry != 0) {
     m_NoiseFlags = "";
     Geometry->Noise(m_Position, m_Energy, m_Time, m_NoiseFlags, *m_VolumeSequence);
-    cout<<"NF: "<<m_NoiseFlags<<endl;
+    //cout<<"NF: "<<m_NoiseFlags<<endl;
   }
   //cout<<"Pos after: "<<m_Position[0]<<"!"<<m_Position[1]<<"!"<<m_Position[2]<<endl;
   
