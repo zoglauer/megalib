@@ -79,6 +79,7 @@ MFileResponse::MFileResponse() : MParser(' ', false)
   m_FarFieldStartArea = 0;
   m_SpectralType = "";
   m_BeamType = "";
+  m_PolarizationMode = "";
 }
 
 
@@ -128,6 +129,8 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
         m_SpectralType = T.GetTokenAfterAsString(1);
       } else if (T.GetTokenAt(0) == "BE") {
         m_BeamType = T.GetTokenAfterAsString(1);
+      } else if (T.GetTokenAt(0) == "PO") {
+        m_PolarizationMode = T.GetTokenAtAsString(1);
       } else if (T.GetTokenAt(0) == "HA") {
         m_Hash = T.GetTokenAtAsUnsignedLong(1);
       } else if (T.GetTokenAt(0) == "CE") {

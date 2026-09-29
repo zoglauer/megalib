@@ -70,8 +70,10 @@ class MFileResponse : public MParser
   double GetFarFieldStartArea() const { return m_FarFieldStartArea; }
   //! Return the spectral type
   MString GetSpectralType() const { return m_SpectralType; }
-  //! Return the spectral parameters
+  //! Return the beam type
   MString GetBeamType() const { return m_BeamType; }
+  //! Return the polarization mode
+  MString GetPolarizationMode() const { return m_PolarizationMode; }
   //! Are the values centered
   bool AreValuesCentered() const { return m_ValuesCentered; }
   //! Are the values centered
@@ -102,6 +104,8 @@ class MFileResponse : public MParser
   MString m_SpectralType;
   //! The beam type
   MString m_BeamType;
+  //! The polarization mode
+  MString m_PolarizationMode;
   //! Are the values stored centered
   bool m_ValuesCentered;
   //! The hash value

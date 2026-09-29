@@ -64,7 +64,7 @@ const float MResponseMatrix::c_ShowNo = numeric_limits<float>::max()/2.25;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrix::MResponseMatrix() : m_Name("Unnamed response matrix"), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0), m_SpectralType(""), m_Hash(0)
+MResponseMatrix::MResponseMatrix() : m_Name("Unnamed response matrix"), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0), m_SpectralType(""), m_PolarizationMode(""), m_Hash(0)
 {
   // default constructor
 }
@@ -73,7 +73,7 @@ MResponseMatrix::MResponseMatrix() : m_Name("Unnamed response matrix"), m_Order(
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrix::MResponseMatrix(MString Name) : m_Name(Name), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0), m_SpectralType(""), m_Hash(0)
+MResponseMatrix::MResponseMatrix(MString Name) : m_Name(Name), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0), m_SpectralType(""), m_PolarizationMode(""), m_Hash(0)
 {
   // default constructor
 }
@@ -102,6 +102,7 @@ void MResponseMatrix::Clear()
   m_SpectralType = "";
   m_BeamType = "";
   m_Hash = 0;
+  m_PolarizationMode = "";
 }
 
 
@@ -132,6 +133,9 @@ void MResponseMatrix::WriteHeader(ostringstream& out)
   out<<"# The beam parameters (empty if not set)"<<endl;
   out<<"BE "<<m_BeamType<<endl;
   out<<endl;
+  out<<"# The polarization mode (empty if not set)"<<endl;
+  out<<"PO "<<m_PolarizationMode<<endl;
+  out<<endl;
   out<<endl;
 }
 
@@ -161,6 +165,7 @@ bool MResponseMatrix::Read(MString FileName, const bool MultiThreaded)
   SetFarFieldStartArea(Parser.GetFarFieldStartArea());
   SetSpectralType(Parser.GetSpectralType());
   SetBeamType(Parser.GetBeamType());
+  SetPolarizationMode(Parser.GetPolarizationMode());
 
   Ok = ReadSpecific(Parser, Type, Version, MultiThreaded);
 

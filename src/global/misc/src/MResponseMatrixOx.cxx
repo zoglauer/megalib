@@ -294,6 +294,9 @@ bool MResponseMatrixOx::Read(MString FileName, const bool MultiThreaded)
   SetHash(Parser.GetHash());
   SetSimulatedEvents(Parser.GetSimulatedEvents());
   SetFarFieldStartArea(Parser.GetFarFieldStartArea());
+  SetSpectralType(Parser.GetSpectralType());
+  SetBeamType(Parser.GetBeamType());
+  SetPolarizationMode(Parser.GetPolarizationMode());
 
   Ok = ReadSpecific(Parser, Type, Version, MultiThreaded);
 

@@ -84,7 +84,7 @@ MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsSparse) : MResp
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(const MResponseMatrixON& M)
+MResponseMatrixON::MResponseMatrixON(const MResponseMatrixON& M) : MResponseMatrix(M)
 {
   // copy constructor
   
@@ -320,6 +320,7 @@ MResponseMatrixON& MResponseMatrixON::operator=(const MResponseMatrixON& M)
   // Assignment operator
   
   if (this != &M) { // no self-assignments
+    MResponseMatrix::operator=(M);
     m_NumberOfBins = M.m_NumberOfBins;
     m_Axes = M.m_Axes;
     m_NumberOfAxes = M.m_NumberOfAxes;
@@ -1769,6 +1770,9 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   s<<endl;
   s<<"# The beam parameters (empty if not set)"<<endl;
   s<<"BE "<<m_BeamType<<endl;
+  s<<endl;
+  s<<"# The polarization mode (empty if not set)"<<endl;
+  s<<"PO "<<m_PolarizationMode<<endl;
   s<<endl;
   s<<"# Are the values centered?"<<endl;
   s<<"CE false"<<endl;

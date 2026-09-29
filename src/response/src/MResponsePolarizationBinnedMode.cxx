@@ -283,7 +283,7 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
     return false;       
   }
   if (m_PolarizationMode != "relativex" && m_PolarizationMode != "relativey" &&m_PolarizationMode != "relativez") {
-    mout<<"Error: The polarization mode only supports relativex, relaticey, relativez modes"<<endl;
+    mout<<"Error: The polarization mode only supports relativex, relativey, relativez modes"<<endl;
     return false;
   }
 
@@ -332,6 +332,7 @@ bool MResponsePolarizationBinnedMode::ParseOptions(const MString& Options)
   mout<<"  Minimum distance:                                   "<<m_DistanceMinimum<<endl;
   mout<<"  Maximum distance:                                   "<<m_DistanceMaximum<<endl;
   mout<<"  Number of bins distance:                            "<<m_DistanceNBins<<endl;
+  mout<<"  Polarization convention:                            "<<m_PolarizationMode<<endl;
   mout<<"  Number of bins polarization angle:                  "<<m_PolarizationAngleNBins<<endl;
   mout<<"  Width of sky bins at equator for recoild electron:  "<<m_AngleBinWidthElectron<<endl;
   if (m_UseAtmosphericAbsorption == true) {
@@ -642,6 +643,7 @@ bool MResponsePolarizationBinnedMode::Save()
   MResponseBuilder::Save(); 
   
   m_PolarizationResponse.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_PolarizationResponse.SetPolarizationMode(m_PolarizationMode);
   m_PolarizationResponse.Write(GetFilePrefix() + ".11D" + m_Suffix, true);
   
   return true;

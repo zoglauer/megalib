@@ -78,7 +78,7 @@ class MResponseMatrix
   void SetSimulatedEvents(long SimulatedEvents) { m_NumberOfSimulatedEvents = SimulatedEvents; }
   // Get he number of simulated events which generated this response
   long GetSimulatedEvents() const { return m_NumberOfSimulatedEvents; }
-  
+
   //! Set the start area of far-field simulations
   void SetFarFieldStartArea(double Area) { m_FarFieldStartArea = Area; }
   //! Get the start are aof far-field simulations
@@ -93,6 +93,11 @@ class MResponseMatrix
   void SetBeamType(MString BeamType) { m_BeamType = BeamType; }
   //! Get the beam type
   MString GetBeamType() const { return m_BeamType; }
+
+  //! Set the polarization mode (relativex, relativey, relativez)
+  void SetPolarizationMode(const MString& PolarizationMode) { m_PolarizationMode = PolarizationMode; }
+  //! Get the polarization mode
+  MString GetPolarizationMode() const { return m_PolarizationMode; }
 
   virtual unsigned long GetNBins() const = 0;
   virtual float GetMaximum() const = 0;
@@ -139,6 +144,9 @@ class MResponseMatrix
 
   //! The beam type
   MString m_BeamType;
+
+  //! The polarization mode (relativex, relativey, or relativez)
+  MString m_PolarizationMode;
 
   //! A hash value --- this value is not calculated but has to be set from outside or read in via file
   unsigned long m_Hash;
