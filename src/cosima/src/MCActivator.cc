@@ -526,8 +526,11 @@ bool MCActivator::CalculateEquilibriumRates()
                       const G4NucLevel* NewNuclearLevel = M->GetLevel(NuclearLevel->FinalExcitationIndex(h));
                       if (NewNuclearLevel != 0) {
                         NewLevelEnergy = M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h));
-                        if (NewNuclearLevel->GetTimeGamma() > m_HalfLifeCutOff) {
-                          NewHalfLife = NewNuclearLevel->GetTimeGamma();
+                        // GetTimeGamma returns mean life, not the half life, plus DBL_MAX == stable
+                        double NewLevelHalfLife = NewNuclearLevel->GetTimeGamma();
+                        if (NewLevelHalfLife != numeric_limits<double>::max()) NewLevelHalfLife *= log(2.0); // ln == log
+                        if (NewLevelHalfLife > m_HalfLifeCutOff) {
+                          NewHalfLife = NewLevelHalfLife;
                         } else {
                           NewHalfLife = 0.0;
                         }
@@ -1363,9 +1366,12 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
 
         //Level->PrintAll();
         if (Level != 0) {
-          if (Level->GetTimeGamma() > m_HalfLifeCutOff || IgnoreCutOff == true) {
+          // GetTimeGamma returns mean life, not the half life, plus DBL_MAX == stable
+          double LevelHalfLife = Level->GetTimeGamma();
+          if (LevelHalfLife != numeric_limits<double>::max()) LevelHalfLife *= log(2.0); // ln == log
+          if (LevelHalfLife > m_HalfLifeCutOff || IgnoreCutOff == true) {
             //cout<<"Half life: "<<Level->HalfLife()<<endl;
-            HalfLife = Level->GetTimeGamma ();
+            HalfLife = LevelHalfLife;
           } else {
             //cout<<"Half life: "<<Level->HalfLife()<<" ---> Declared as immdiate decay!"<<endl;
             HalfLife = 0.0;
