@@ -31,13 +31,18 @@ if [[ $(uname -a) != *arwin* ]]; then
 fi
 
 # Standard options:
-CONFIGUREOPTIONS+=" -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL_DATA=ON -DGEANT4_USE_OPENGL_X11=OFF -DGEANT4_INSTALL_DATA_TIMEOUT=14400 -DGEANT4_USE_SYSTEM_EXPAT=OFF -DGEANT4_BUILD_CXXSTD=c++17"
+CONFIGUREOPTIONS+=" -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL_DATA=ON -DGEANT4_USE_OPENGL_X11=OFF -DGEANT4_INSTALL_DATA_TIMEOUT=14400 -DGEANT4_USE_SYSTEM_EXPAT=OFF"
+
+# The C++ standard to compile Geant4 against.
+CXXSTD="17"
+CONFIGUREOPTIONS+=" -DGEANT4_BUILD_CXXSTD=c++${CXXSTD} -DCMAKE_CXX_STANDARD=${CXXSTD} -DCMAKE_CXX_STANDARD_REQUIRED=ON"
+
 # To make old Geant4 versions run with the latest cmake
 CONFIGUREOPTIONS+=" -DCMAKE_POLICY_VERSION_MINIMUM=3.5"
 CONFIGUREOPTIONS+=" -DGEANT4_USE_SYSTEM_ZLIB=ON"
 
 # Reduce the warning messages:
-WARNINGS="-Wno-shadow -Wno-implicit-fallthrough -Wno-overloaded-virtual -Wno-deprecated-copy -Wno-unused-result -Wno-format-overflow="
+WARNINGS="-Wno-shadow -Wno-implicit-fallthrough -Wno-overloaded-virtual -Wno-deprecated-copy -Wno-unused-result -Wno-format-overflow"
 
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
@@ -496,8 +501,8 @@ fi
 
 echo "Configuring ..."
 cd ${GEANT4BUILDDIR}
-echo "Configure command: cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${GEANT4SOURCEDIR}"
-cmake ${CONFIGUREOPTIONS} -DCMAKE_CXX_FLAGS="${NOWARNINGS}" ${DEBUGOPTIONS} ../${GEANT4SOURCEDIR}
+echo "Configure command: cmake ${CONFIGUREOPTIONS} -DCMAKE_CXX_FLAGS=\"${WARNINGS}\" ${DEBUGOPTIONS} ../${GEANT4SOURCEDIR}"
+cmake ${CONFIGUREOPTIONS} -DCMAKE_CXX_FLAGS="${WARNINGS}" ${DEBUGOPTIONS} ../${GEANT4SOURCEDIR}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring (cmake'ing) Geant4!"
   exit 1
