@@ -140,7 +140,7 @@ class MPhysicalEvent : public MRotationInterface
   const MPhysicalEventHit& GetHit(unsigned int i) const;
   
   //! Set the OI information
-  void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy; }
+  void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy, const int ParticleID = g_IntNotDefined) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy; m_OIParticleID = ParticleID; }
   //! Get the OI position information
   MVector GetOIPosition() const { return m_OIPosition; }
   //! Get the OI direction information
@@ -149,6 +149,8 @@ class MPhysicalEvent : public MRotationInterface
   MVector GetOIPolarization() const { return m_OIPolarization; }
   //! Get the OI energy information
   double GetOIEnergy() const { return m_OIEnergy; }
+  //! Get the OI particle ID information (g_IntNotDefined if not available, e.g. older files)
+  int GetOIParticleID() const { return m_OIParticleID; }
 
   //! Convert content to a descriptive string of the event
   virtual MString ToString() const;
@@ -215,6 +217,8 @@ class MPhysicalEvent : public MRotationInterface
   MVector m_OIPolarization;
   //! OI energy (the meaning is a secret...)
   double m_OIEnergy;
+  //! OI particle ID (same as cosima particle ID)
+  int m_OIParticleID;
 
   //! Store the read lines for delayed parsing
   vector<MString> m_Lines; 

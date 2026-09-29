@@ -97,7 +97,7 @@ class MRERawEvent : public MRESE, public MRotationInterface
   MString GetEventTypeAsString();
   
   //! Set origin information
-  void SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy);
+  void SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy, int ParticleID = g_IntNotDefined);
   
   
   //! Return the complete energy of this event
