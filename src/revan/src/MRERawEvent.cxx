@@ -454,13 +454,14 @@ double MRERawEvent::GetEnergy()
 
 
 //! Set origin information
-void MRERawEvent::SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy)
+void MRERawEvent::SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy, int ParticleID)
 {
   MREAMStartInformation* OI = new MREAMStartInformation();
   OI->SetPosition(Position);
   OI->SetDirection(Direction);
   OI->SetPolarization(Polarization);
   OI->SetEnergy(Energy);
+  OI->SetParticleID(ParticleID);
   
   m_Measurements.push_back(OI);
 }
@@ -1249,7 +1250,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
   for (unsigned int m = 0; m < m_Measurements.size(); ++m) {
     if (m_Measurements[m]->GetType() == MREAM::c_StartInformation) {
       MREAMStartInformation* Start = dynamic_cast<MREAMStartInformation*>(m_Measurements[m]);
-      m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection(), Start->GetPolarization(), Start->GetEnergy());
+      m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection(), Start->GetPolarization(), Start->GetEnergy(), Start->GetParticleID());
     }
   }
   m_Event->ClearComments(); // Since this info might be added multiple times.
@@ -1883,12 +1884,16 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
     double py = 0.0;
     double pz = 0.0;
     double e = 0.0;
-    if (sscanf(Line, "OI %lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf", &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+    int id = g_IntNotDefined;
+    // The particle ID is optional (not present in older files)
+    int Parsed = sscanf(Line, "OI %lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%d", &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e, &id);
+    if (Parsed == 10 || Parsed == 11) {
       MREAMStartInformation* Start = new MREAMStartInformation();
       Start->SetPosition(MVector(x, y, z));
       Start->SetDirection(MVector(dx, dy, dz));
       Start->SetPolarization(MVector(px, py, pz));
       Start->SetEnergy(e);
+      Start->SetParticleID(id);
       m_Measurements.push_back(Start);
     } else {
       Ret = 1;
