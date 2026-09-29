@@ -601,7 +601,7 @@ vector<MDGridPoint> MDStrip3D::Grid(const MVector& PosInDetectorVolume, const do
   // Ignore the hit if it is outside the sensitive part (guard ring?):
   if (fabs(Pos.X()) > m_WidthX/2.0 - m_OffsetX || fabs(Pos.Y()) > m_WidthY/2.0 - m_OffsetY) {
     if (fabs(Pos.X()) > m_WidthX/2.0 || fabs(Pos.Y()) > m_WidthY/2.0) {
-      merr<<"Hit outside detector! ("<<Pos[0]<<", "<<Pos[1]<<", "<<Pos[2]<<")"<<endl;
+      mdebug<<"Hit outside detector! ("<<Pos[0]<<", "<<Pos[1]<<", "<<Pos[2]<<")"<<endl;
     } else {
       mdebug<<"Hit in guard ring: ("<<Pos[0]<<", "<<Pos[1]<<", "<<Pos[2]<<")"<<endl;
     }
@@ -619,7 +619,7 @@ vector<MDGridPoint> MDStrip3D::Grid(const MVector& PosInDetectorVolume, const do
   // Calculate the drift parameters
   double DriftLength = Pos.Z() + m_StructuralSize.Z();
   if (DriftLength < 0) {
-    merr<<"ERROR: DriftLength smaller than 0: "<<DriftLength<<" Setting it to 0"<<endl;
+    mdebug<<"ERROR: DriftLength smaller than 0: "<<DriftLength<<" Setting it to 0"<<endl;
     DriftLength = 0;
   }
   double DriftRadiusSigma = m_DriftConstant * sqrt(DriftLength);
@@ -671,12 +671,12 @@ vector<MDGridPoint> MDStrip3D::Grid(const MVector& PosInDetectorVolume, const do
     
     // Check if we have a reasonable strip:
     if (xStrip < 0 || xStrip >= m_NStripsX) {
-      merr<<"Invalid x-strip number: "<<xStrip<<endl
+      mdebug<<"Invalid x-strip number: "<<xStrip<<endl
       <<"   Position was "<<DriftPosition<<endl;
       continue;
     }
     if (yStrip < 0 || yStrip >= m_NStripsY) {
-      merr<<"Invalid y-strip number: "<<yStrip<<endl
+      mdebug<<"Invalid y-strip number: "<<yStrip<<endl
       <<"   Position was "<<DriftPosition<<endl;
       continue;
     }
