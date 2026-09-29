@@ -139,6 +139,11 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_BadFlags = E->m_BadFlags;
   m_Comments = E->m_Comments;
   m_Hits = E->m_Hits;
+  m_OIPosition = E->m_OIPosition;
+  m_OIDirection = E->m_OIDirection;
+  m_OIPolarization = E->m_OIPolarization;
+  m_OIEnergy = E->m_OIEnergy;
+  m_OIParticleID = E->m_OIParticleID;
 
   return true;
 }
@@ -178,6 +183,7 @@ void MPhysicalEvent::Reset()
   m_OIDirection = g_VectorNotDefined;
   m_OIPolarization = g_VectorNotDefined;
   m_OIEnergy = g_DoubleNotDefined;
+  m_OIParticleID = g_IntNotDefined;
 
   m_Lines.clear();
   m_Comments.clear();
@@ -348,7 +354,11 @@ MString MPhysicalEvent::ToTraString() const
     S<<"DC"<<endl;
   }
   if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined) {
-    S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy<<endl;
+    S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy;
+    if (m_OIParticleID != g_IntNotDefined) {
+      S<<" "<<m_OIParticleID;
+    }
+    S<<endl;
   }
   for (unsigned int c = 0; c < m_Comments.size(); ++c) {
     S<<"CC "<<m_Comments[c]<<endl;
@@ -542,9 +552,23 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
       m_OIPolarization[0] = strtod(p, &p);
       m_OIPolarization[1] = strtod(p, &p);
       m_OIPolarization[2] = strtod(p, &p);
-      m_OIEnergy = strtod(p, NULL);
+      m_OIEnergy = strtod(p, &p);
+      // Check for particle ID which is only present in newer files:
+      char* End = nullptr;
+      long ParticleID = strtol(p, &End, 10); // 10: read as decimal
+      if (End != p) {
+        m_OIParticleID = int(ParticleID);
+      } else {
+        m_OIParticleID = g_IntNotDefined;
+      }
     } else {
-      if (sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], &m_OIEnergy) != 10) {
+      // The particle ID is only present in newer files:
+      int Parsed = sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], &m_OIEnergy, &m_OIParticleID);
+      if (Parsed == 10) {
+        m_OIParticleID = g_IntNotDefined;
+      } else if (Parsed == 11) {
+        // All good as sscanf expects to parse 11
+      } else {
         Ret = 1;
       }
     }
