@@ -58,6 +58,8 @@ private:
   bool TestRewindBehavior();
   //! Test SaveOI support used by the revan analyzer
   bool TestSaveOI();
+  //! Test parsing of OI lines with and without particle ID
+  bool TestOILineParsing();
 
   //! Return the temp directory
   MString GetTempDirectory() const;
@@ -85,6 +87,7 @@ bool UTFileEventsEvta::Run()
   Passed = TestFooterOnlyObservationTime() && Passed;
   Passed = TestRewindBehavior() && Passed;
   Passed = TestSaveOI() && Passed;
+  Passed = TestOILineParsing() && Passed;
 
   Summarize();
 
@@ -384,11 +387,73 @@ bool UTFileEventsEvta::TestSaveOI()
     Passed = EvaluateTrue("dynamic_cast", "evta saveoi cast", "The saved origin information can be cast to MREAMStartInformation", Start != nullptr) && Passed;
     if (Start != nullptr) {
       Passed = EvaluateTrue("GetEnergy()", "evta saveoi energy", "The saved origin information carries a non-zero source energy", Start->GetEnergy() > 0.0) && Passed;
+      Passed = Evaluate("GetParticleID()", "evta saveoi particle id", "The saved origin information carries the particle ID of the IA INIT line (photon)", Start->GetParticleID(), 1) && Passed;
     }
     delete Event;
   }
 
   Reader.Close();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::TestOILineParsing()
+{
+  bool Passed = true;
+
+  // Old OI line without particle ID
+  MRERawEvent Old;
+  Passed = Evaluate("ParseLine()", "evta OI 10 values", "OI lines without particle ID (older files) are accepted", Old.ParseLine("OI 1;2;3;0;0;-1;1;0;0;511", 1), 0) && Passed;
+  Passed = Evaluate("GetNREAMs()", "evta OI 10 values", "An OI line without particle ID adds one measurement", Old.GetNREAMs(), 1U) && Passed;
+  if (Old.GetNREAMs() == 1) {
+    MREAMStartInformation* Start = dynamic_cast<MREAMStartInformation*>(Old.GetREAMAt(0));
+    Passed = EvaluateTrue("dynamic_cast", "evta OI 10 values", "The OI line is stored as start information", Start != nullptr) && Passed;
+    if (Start != nullptr) {
+      Passed = Evaluate("GetEnergy()", "evta OI 10 values", "The energy is read from OI lines without particle ID", Start->GetEnergy(), 511.0) && Passed;
+      Passed = Evaluate("GetParticleID()", "evta OI 10 values", "OI lines without particle ID leave the ID undefined", Start->GetParticleID(), g_IntNotDefined) && Passed;
+    }
+  }
+
+  // New OI line with particle ID
+  MRERawEvent New;
+  Passed = Evaluate("ParseLine()", "evta OI 11 values", "OI lines with particle ID are accepted", New.ParseLine("OI 1;2;3;0;0;-1;1;0;0;511;26056", 1), 0) && Passed;
+  Passed = Evaluate("GetNREAMs()", "evta OI 11 values", "An OI line with particle ID adds one measurement", New.GetNREAMs(), 1U) && Passed;
+  if (New.GetNREAMs() == 1) {
+    MREAMStartInformation* Start = dynamic_cast<MREAMStartInformation*>(New.GetREAMAt(0));
+    Passed = EvaluateTrue("dynamic_cast", "evta OI 11 values", "The OI line is stored as start information", Start != nullptr) && Passed;
+    if (Start != nullptr) {
+      Passed = Evaluate("GetEnergy()", "evta OI 11 values", "The energy is read from OI lines with particle ID", Start->GetEnergy(), 511.0) && Passed;
+      Passed = Evaluate("GetParticleID()", "evta OI 11 values", "The particle ID is read from OI lines with particle ID", Start->GetParticleID(), 26056) && Passed;
+
+      MREAMStartInformation* Clone = dynamic_cast<MREAMStartInformation*>(Start->Clone());
+      Passed = EvaluateTrue("Clone()", "evta OI clone", "Start information can be cloned", Clone != nullptr) && Passed;
+      if (Clone != nullptr) {
+        Passed = Evaluate("Clone()->GetParticleID()", "evta OI clone", "Cloning preserves the particle ID", Clone->GetParticleID(), 26056) && Passed;
+        delete Clone;
+      }
+    }
+  }
+
+  // Broken OI line
+  MRERawEvent Broken;
+  Passed = Evaluate("ParseLine()", "evta OI 9 values", "OI lines with too few values are rejected", Broken.ParseLine("OI 1;2;3;0;0;-1;1;0;0", 1), 1) && Passed;
+  Passed = Evaluate("GetNREAMs()", "evta OI 9 values", "A rejected OI line adds no measurement", Broken.GetNREAMs(), 0U) && Passed;
+
+  // SetOriginInformation with and without particle ID
+  MRERawEvent Origin;
+  Origin.SetOriginInformation(MVector(1, 2, 3), MVector(0, 0, -1), MVector(1, 0, 0), 511.0);
+  Origin.SetOriginInformation(MVector(1, 2, 3), MVector(0, 0, -1), MVector(1, 0, 0), 511.0, 3);
+  Passed = Evaluate("GetNREAMs()", "evta SetOriginInformation", "Each SetOriginInformation call adds one measurement", Origin.GetNREAMs(), 2U) && Passed;
+  if (Origin.GetNREAMs() == 2) {
+    MREAMStartInformation* Without = dynamic_cast<MREAMStartInformation*>(Origin.GetREAMAt(0));
+    MREAMStartInformation* With = dynamic_cast<MREAMStartInformation*>(Origin.GetREAMAt(1));
+    Passed = EvaluateTrue("GetParticleID()", "evta SetOriginInformation default", "SetOriginInformation without particle ID leaves the ID undefined", Without != nullptr && Without->GetParticleID() == g_IntNotDefined) && Passed;
+    Passed = EvaluateTrue("GetParticleID()", "evta SetOriginInformation id", "SetOriginInformation stores the particle ID", With != nullptr && With->GetParticleID() == 3) && Passed;
+  }
 
   return Passed;
 }

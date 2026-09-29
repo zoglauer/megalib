@@ -50,6 +50,10 @@ private:
   bool ParseTraString(MPhysicalEvent& Event, const MString& Tra, bool Fast = false);
   //! Test the base class state, flags, comments, hits, and duplication
   bool TestBaseEvent();
+  //! Return the OI line of a tra-string (without line break)
+  MString GetOILine(const MString& Tra);
+  //! Test the optional particle ID in the OI information
+  bool TestOIParticleID();
 };
 
 
@@ -62,6 +66,7 @@ bool UTPhysicalEvent::Run()
   bool Passed = true;
 
   Passed = TestBaseEvent() && Passed;
+  Passed = TestOIParticleID() && Passed;
 
   Summarize();
 
@@ -241,6 +246,99 @@ bool UTPhysicalEvent::TestBaseEvent()
 
   Passed = EvaluateException<MExceptionIndexOutOfBounds>("GetComment()", "base out-of-bounds", "Comment access outside the vector throws", [&](){ Event.GetComment(1); }) && Passed;
   Passed = EvaluateException<MExceptionIndexOutOfBounds>("GetHit()", "base out-of-bounds", "Hit access outside the vector throws", [&](){ Event.GetHit(1); }) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the OI line of a tra-string (without line break)
+MString UTPhysicalEvent::GetOILine(const MString& Tra)
+{
+  istringstream In(Tra.ToString());
+  string Line;
+  while (getline(In, Line)) {
+    if (Line.rfind("OI ", 0) == 0) {
+      return Line.c_str();
+    }
+  }
+  return "";
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the optional particle ID in the OI information
+bool UTPhysicalEvent::TestOIParticleID()
+{
+  bool Passed = true;
+
+  MVector OIPosition(1.0, 2.0, 3.0);
+  MVector OIDirection(4.0, 5.0, 6.0);
+  MVector OIPolarization(7.0, 8.0, 9.0);
+
+  MPhysicalEvent Default;
+  Passed = Evaluate("GetOIParticleID()", "OI id default", "Default physical events have no OI particle ID", Default.GetOIParticleID(), g_IntNotDefined) && Passed;
+
+  // Setting without an ID keeps the old 10-value OI line
+  MPhysicalEvent NoID;
+  NoID.SetOIInformation(OIPosition, OIDirection, OIPolarization, 10.0);
+  Passed = Evaluate("GetOIParticleID()", "OI id not set", "SetOIInformation without an ID leaves the particle ID undefined", NoID.GetOIParticleID(), g_IntNotDefined) && Passed;
+  Passed = EvaluateTrue("ToTraString()", "OI id not set", "Without an ID the OI line has the old 10 values", NoID.ToTraString().Contains("OI 1 2 3 4 5 6 7 8 9 10\n")) && Passed;
+
+  // Setting with an ID appends it as 11th value
+  MPhysicalEvent WithID;
+  WithID.SetOIInformation(OIPosition, OIDirection, OIPolarization, 10.0, 1);
+  Passed = Evaluate("GetOIParticleID()", "OI id set", "SetOIInformation stores the particle ID", WithID.GetOIParticleID(), 1) && Passed;
+  Passed = EvaluateTrue("ToTraString()", "OI id set", "With an ID the OI line has the ID as 11th value", WithID.ToTraString().Contains("OI 1 2 3 4 5 6 7 8 9 10 1\n")) && Passed;
+
+  // Parse old and new OI lines with the slow and the fast parser
+  for (bool Fast: { false, true }) {
+    MString Mode = Fast ? "fast" : "slow";
+
+    MPhysicalEvent Old;
+    Passed = Evaluate("ParseLine()", "OI 10 values " + Mode, "OI lines without particle ID (older files) are accepted", Old.ParseLine("OI 1 2 3 4 5 6 7 8 9 10", Fast), 0) && Passed;
+    Passed = Evaluate("GetOIEnergy()", "OI 10 values " + Mode, "The OI energy is read from OI lines without particle ID", Old.GetOIEnergy(), 10.0) && Passed;
+    Passed = Evaluate("GetOIParticleID()", "OI 10 values " + Mode, "OI lines without particle ID leave the ID undefined", Old.GetOIParticleID(), g_IntNotDefined) && Passed;
+
+    MPhysicalEvent New;
+    Passed = Evaluate("ParseLine()", "OI 11 values " + Mode, "OI lines with particle ID are accepted", New.ParseLine("OI 1 2 3 4 5 6 7 8 9 10 26056", Fast), 0) && Passed;
+    Passed = Evaluate("GetOIEnergy()", "OI 11 values " + Mode, "The OI energy is read from OI lines with particle ID", New.GetOIEnergy(), 10.0) && Passed;
+    Passed = Evaluate("GetOIParticleID()", "OI 11 values " + Mode, "The particle ID is read from OI lines with particle ID", New.GetOIParticleID(), 26056) && Passed;
+
+    // A later line without ID must not keep the ID of an earlier line
+    Passed = Evaluate("ParseLine()", "OI id overwrite " + Mode, "An OI line without particle ID is accepted after one with ID", New.ParseLine("OI 1 2 3 4 5 6 7 8 9 20", Fast), 0) && Passed;
+    Passed = Evaluate("GetOIParticleID()", "OI id overwrite " + Mode, "An OI line without particle ID resets a previously parsed ID", New.GetOIParticleID(), g_IntNotDefined) && Passed;
+
+    MPhysicalEvent Trailing;
+    Passed = Evaluate("ParseLine()", "OI trailing space " + Mode, "OI lines with trailing whitespace after the energy are accepted", Trailing.ParseLine("OI 1 2 3 4 5 6 7 8 9 10 ", Fast), 0) && Passed;
+    Passed = Evaluate("GetOIParticleID()", "OI trailing space " + Mode, "Trailing whitespace is not read as particle ID", Trailing.GetOIParticleID(), g_IntNotDefined) && Passed;
+
+    // Written OI lines read back identically
+    MPhysicalEvent RoundTripID;
+    Passed = Evaluate("ParseLine()", "OI id round trip " + Mode, "A written OI line with particle ID can be parsed", RoundTripID.ParseLine(GetOILine(WithID.ToTraString()), Fast), 0) && Passed;
+    Passed = Evaluate("GetOIParticleID()", "OI id round trip " + Mode, "The particle ID survives writing and reading", RoundTripID.GetOIParticleID(), 1) && Passed;
+    MPhysicalEvent RoundTripNoID;
+    Passed = Evaluate("ParseLine()", "OI no id round trip " + Mode, "A written OI line without particle ID can be parsed", RoundTripNoID.ParseLine(GetOILine(NoID.ToTraString()), Fast), 0) && Passed;
+    Passed = Evaluate("GetOIEnergy()", "OI no id round trip " + Mode, "The OI energy survives writing and reading without particle ID", RoundTripNoID.GetOIEnergy(), 10.0) && Passed;
+    Passed = Evaluate("GetOIParticleID()", "OI no id round trip " + Mode, "An undefined particle ID stays undefined after writing and reading", RoundTripNoID.GetOIParticleID(), g_IntNotDefined) && Passed;
+  }
+
+  MPhysicalEvent Broken;
+  Passed = Evaluate("ParseLine()", "OI 9 values slow", "The slow parser rejects OI lines with too few values", Broken.ParseLine("OI 1 2 3 4 5 6 7 8 9", false), 1) && Passed;
+
+  // Duplicate (Assimilate) and Reset
+  MPhysicalEvent* Duplicate = WithID.Duplicate();
+  Passed = Evaluate("Duplicate()->GetOIParticleID()", "OI id duplicate", "Duplicate preserves the OI particle ID", Duplicate->GetOIParticleID(), 1) && Passed;
+  Passed = Evaluate("Duplicate()->GetOIDirection()", "OI id duplicate", "Duplicate preserves the OI direction", Duplicate->GetOIDirection(), OIDirection) && Passed;
+  Passed = Evaluate("Duplicate()->GetOIPolarization()", "OI id duplicate", "Duplicate preserves the OI polarization", Duplicate->GetOIPolarization(), OIPolarization) && Passed;
+  delete Duplicate;
+
+  WithID.Reset();
+  Passed = Evaluate("Reset()->GetOIParticleID()", "OI id reset", "Reset clears the OI particle ID", WithID.GetOIParticleID(), g_IntNotDefined) && Passed;
 
   return Passed;
 }
