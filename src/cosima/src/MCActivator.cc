@@ -142,7 +142,8 @@ bool MCActivator::SetTimeProfile(G4String TimeProfile, double ActivationTime)
     mout<<"Activator: The time profile file name \""<<TimeProfile<<"\" must exist!"<<endl;   
     return false;
   }
-  m_ActivationMode = c_TimeProfile;
+  //m_ActivationMode = c_TimeProfile;
+  mout<<"Activator: The time profile mode is not yet implemented"<<endl;
   return false;
 }
 
