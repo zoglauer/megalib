@@ -127,6 +127,9 @@ public:
 
   // protected methods:
 protected:
+  /// Return the index of the given excitation of isotope i in volume v, or -1 if it is not stored
+  /// Excitations within 0.005 keV are the same level - the files store them with 0.01 keV precision
+  int FindExcitation(unsigned int v, unsigned int i, double Excitation) const;
   
 
   // protected members:

@@ -119,6 +119,7 @@ void MCIsotopeStore::Reset()
   m_IDs.clear();
   m_Excitations.clear();
   m_Values.clear();
+  m_Time = 0.0;
 }
 
 
@@ -136,6 +137,22 @@ G4ParticleDefinition* MCIsotopeStore::GetParticleDefinition(unsigned int v, unsi
 
 
 /******************************************************************************
+ * Return the index of the given excitation of isotope i in volume v, or -1 if it is not stored
+ * Excitations within 0.005 keV are the same level - the files store them with 0.01 keV precision
+ */
+int MCIsotopeStore::FindExcitation(unsigned int v, unsigned int i, double Excitation) const
+{
+  for (unsigned int e = 0; e < m_Excitations[v][i].size(); ++e) {
+    // Strictly below half the file precision - rounded neighbors 0.01 keV apart stay separate levels:
+    if (fabs(m_Excitations[v][i][e] - Excitation) < 0.005*keV) {
+      return e;
+    }
+  }
+  return -1;
+}
+
+
+/******************************************************************************
  *  Add a new particle to the store
  */
 void MCIsotopeStore::Add(MString VolumeName, int NucleusID, double Excitation, double Value)
@@ -146,10 +163,8 @@ void MCIsotopeStore::Add(MString VolumeName, int NucleusID, double Excitation, d
     vector<int>::iterator IDIter;
     if ((IDIter = find(m_IDs[i].begin(), m_IDs[i].end(), NucleusID)) != m_IDs[i].end()) {
       unsigned int n = IDIter - m_IDs[i].begin();
-      vector<double>::iterator ExcitationIter;
-      // The double comparision is ok since we never do any calculations on the value
-      if ((ExcitationIter = find(m_Excitations[i][n].begin(), m_Excitations[i][n].end(), Excitation)) != m_Excitations[i][n].end()) {
-        unsigned int e = ExcitationIter - m_Excitations[i][n].begin();
+      int e = FindExcitation(i, n, Excitation);
+      if (e >= 0) {
         m_Values[i][n][e] += Value;
       } else {
         m_Excitations[i][n].push_back(Excitation);
@@ -193,10 +208,13 @@ void MCIsotopeStore::Add(MString VolumeName, int NucleusID, double Excitation, d
  */
 void MCIsotopeStore::Remove(unsigned int v, unsigned int i, unsigned int e)
 {
-  cout<<"Removing: "<<m_VolumeNames[v]<<" ID: "<<m_IDs[v][i]<<" E="<<m_Excitations[v][i][e]<<"  - "<<m_Excitations[v][i].size()/keV<<endl;
+  massert(v < m_VolumeNames.size());
+  massert(i < m_IDs[v].size());
+  massert(e < m_Excitations[v][i].size());
+
+  cout<<"Removing: "<<m_VolumeNames[v]<<" ID: "<<m_IDs[v][i]<<" E="<<m_Excitations[v][i][e]/keV<<" keV"<<endl;
   m_Excitations[v][i].erase(m_Excitations[v][i].begin()+e);
   m_Values[v][i].erase(m_Values[v][i].begin()+e);
-  cout<<"Removing: "<<m_VolumeNames[v]<<" ID: "<<m_IDs[v][i]<<" E="<<m_Excitations[v][i][e]<<"  - "<<m_Excitations[v][i].size()/keV<<endl;
 }
 
 
@@ -293,8 +311,13 @@ bool MCIsotopeStore::Load(MString FileName)
 
   ifstream in;
   in.open(FileName);
+  if (in.is_open() == false) {
+    merr<<"Unable to open file: "<<FileName<<endl;
+    return false;
+  }
 
   MTokenizer Tokenizer;
+  MString CurrentVolume = "";
 
   int LineLength = 10000;
   char* LineBuffer = new char[LineLength];
@@ -302,28 +325,27 @@ bool MCIsotopeStore::Load(MString FileName)
     Tokenizer.Analyse(LineBuffer);
     if (Tokenizer.GetNTokens() <= 1) continue; 
     if (Tokenizer.GetTokenAt(0) == "VN") {
-      m_VolumeNames.push_back(Tokenizer.GetTokenAtAsString(1));
+      CurrentVolume = Tokenizer.GetTokenAtAsString(1);
+      if (find(m_VolumeNames.begin(), m_VolumeNames.end(), CurrentVolume) == m_VolumeNames.end()) {
+        m_VolumeNames.push_back(CurrentVolume);
 
-      vector<int> IDs;
-      m_IDs.push_back(IDs);
+        vector<int> IDs;
+        m_IDs.push_back(IDs);
       
-      vector<vector<double> > Values;
-      m_Values.push_back(Values);
+        vector<vector<double> > Values;
+        m_Values.push_back(Values);
       
-      vector<vector<double> > Excitations;
-      m_Excitations.push_back(Excitations);
-      
-    } else if (Tokenizer.GetTokenAt(0) == "RP") {
-      if (m_IDs.size() == 0) continue; // file is corrupt
-      if (find(m_IDs.back().begin(), m_IDs.back().end(), Tokenizer.GetTokenAtAsInt(1)) == m_IDs.back().end()) {
-        m_IDs.back().push_back(Tokenizer.GetTokenAtAsInt(1));
-        vector<double> Excitations;
-        m_Excitations.back().push_back(Excitations);
-        vector<double> Values;
-        m_Values.back().push_back(Values);
+        vector<vector<double> > Excitations;
+        m_Excitations.push_back(Excitations);
       }
-      m_Excitations.back().back().push_back(Tokenizer.GetTokenAtAsDouble(2)*keV);
-      m_Values.back().back().push_back(Tokenizer.GetTokenAtAsDouble(3));
+    } else if (Tokenizer.GetTokenAt(0) == "RP") {
+      if (CurrentVolume == "") continue; // file is corrupt
+      if (Tokenizer.GetNTokens() < 4) {
+        mout<<"Warning: Ignoring incomplete line in isotope file "<<FileName<<": "<<LineBuffer<<endl;
+        continue;
+      }
+      // Add also handles IDs which are not consecutive and duplicate entries:
+      Add(CurrentVolume, Tokenizer.GetTokenAtAsInt(1), Tokenizer.GetTokenAtAsDouble(2)*keV, Tokenizer.GetTokenAtAsDouble(3));
     } else if (Tokenizer.GetTokenAt(0) == "TT") {
       m_Time = Tokenizer.GetTokenAtAsDouble(1)*s;
     }
@@ -358,7 +380,6 @@ void MCIsotopeStore::Add(const MCIsotopeStore& RPS)
 {
   vector<MString>::iterator NameIter;
   vector<int>::iterator IDIter;
-  vector<double>::iterator ExcitationIter;
 
   for (unsigned int v = 0; v < RPS.m_VolumeNames.size(); ++v) {
     NameIter = find(m_VolumeNames.begin(), m_VolumeNames.end(), RPS.m_VolumeNames[v]);
@@ -383,20 +404,12 @@ void MCIsotopeStore::Add(const MCIsotopeStore& RPS)
           // Add to the existing ID
           unsigned int loc_i = IDIter - m_IDs[loc_v].begin();
           for (unsigned int e = 0; e < RPS.m_Excitations[v][i].size(); ++e) {
-            for (ExcitationIter = m_Excitations[loc_v][loc_i].begin(); ExcitationIter != m_Excitations[loc_v][loc_i].end(); ++ExcitationIter) {
-              if (fabs(RPS.m_Excitations[v][i][e] - *ExcitationIter) < 1*keV) {
-                // Found it
-                break;
-              }
-            }
-            //ExcitationIter = find(m_Excitations[loc_v][loc_i].begin(), m_Excitations[loc_v][loc_i].end(), RPS.m_Excitations[v][i][e]);
-            if (ExcitationIter == m_Excitations[loc_v][loc_i].end()) {
+            int loc_e = FindExcitation(loc_v, loc_i, RPS.m_Excitations[v][i][e]);
+            if (loc_e < 0) {
               // Add new excitation:
               m_Excitations[loc_v][loc_i].push_back(RPS.m_Excitations[v][i][e]);
               m_Values[loc_v][loc_i].push_back(RPS.m_Values[v][i][e]);
             } else {
-              unsigned int loc_e = ExcitationIter - m_Excitations[loc_v][loc_i].begin();
-              m_Excitations[loc_v][loc_i][loc_e] = RPS.m_Excitations[v][i][e];
               m_Values[loc_v][loc_i][loc_e] += RPS.m_Values[v][i][e];
             } // new excitations
           } // all Excitations
@@ -428,14 +441,19 @@ vector<MCSource*> MCIsotopeStore::CreateSourceListByActivity()
           Name += "]";
           Name = Name.ReplaceAll(" ", "");
           MCSource* Source = new MCSource(Name);
-          Source->SetParticleType(m_IDs[v][i]);
-          Source->SetParticleExcitation(m_Excitations[v][i][e]);
-          Source->SetSpectralType(MCSource::c_Activation);
-          Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldActivation);
-          Source->SetVolume(m_VolumeNames[v]);
-          Source->SetFlux(m_Values[v][i][e]/s);
-          cout<<"Flux: "<<m_Values[v][i][e]<<endl;
-          List.push_back(Source);
+          bool Return = true;
+          Return &= Source->SetParticleType(m_IDs[v][i]);
+          Return &= Source->SetParticleExcitation(m_Excitations[v][i][e]);
+          Return &= Source->SetSpectralType(MCSource::c_Activation);
+          Return &= Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldActivation);
+          Return &= Source->SetVolume(m_VolumeNames[v]);
+          Return &= Source->SetFlux(m_Values[v][i][e]/s);
+          if (Return == true) {
+            List.push_back(Source);
+          } else {
+            cout<<"An error occurred during source generation. Ignoring particle "<<m_IDs[v][i]<<", "<<m_Excitations[v][i][e]/keV<<" keV"<<endl;
+            delete Source;
+          }
         }
       }
     }
@@ -475,6 +493,7 @@ vector<MCSource*> MCIsotopeStore::CreateSourceListByIsotopeCount()
             List.push_back(Source);
           } else {
             cout<<"An error occurred during source generation. Ignoring particle "<<m_IDs[v][i]<<", "<<m_Excitations[v][i][e]/keV<<" keV"<<endl;
+            delete Source;
           }
         }
       }
