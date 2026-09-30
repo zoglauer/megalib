@@ -54,6 +54,7 @@
 #include "G4NucLevel.hh"
 
 #include "G4IonTable.hh"
+#include "G4NuclearDecay.hh"
 
 // Standard lib:
 #include <limits>
@@ -395,8 +396,28 @@ bool MCActivator::CalculateEquilibriumRates()
                 //Channel->DumpInfo();
                 
                 //cout<<"  Channel "<<c<<": "<<Channel->GetKinematicsName()<<" with number of daughters: "<<Channel->GetNumberOfDaughters()<<"  BR: "<<Channel->GetBR()<<endl;
+                
+                // Light ejectiles are not followed, only the residual nucleus - otherwise their channel would be counted twice
+                vector<G4ParticleDefinition*> Residuals;
                 for (int d = 0; d < Channel->GetNumberOfDaughters(); ++d) {
                   G4ParticleDefinition* ParticleDef = Channel->GetDaughter(d);
+                  ParticleName = ParticleDef->GetParticleName();
+                  if (ParticleDef->GetParticleType() == "nucleus" && ParticleName != "alpha" && ParticleName != "deuteron" && ParticleName != "triton" && ParticleName != "He3") {
+                    Residuals.push_back(ParticleDef);
+                  }
+                }
+                // If the nucleus completely disintegrates (e.g. Be8[3030] -> 2 alpha, He5 -> alpha + n), the alpha is the residual nucleus
+                if (Residuals.size() == 0) {
+                  for (int d = 0; d < Channel->GetNumberOfDaughters(); ++d) {
+                    if (Channel->GetDaughter(d)->GetParticleName() == "alpha") {
+                      Residuals.push_back(Channel->GetDaughter(d));
+                      break;
+                    }
+                  }
+                }
+                
+                for (unsigned int d = 0; d < Residuals.size(); ++d) {
+                  G4ParticleDefinition* ParticleDef = Residuals[d];
                   ParticleName = ParticleDef->GetParticleName();
                   ParticleType = ParticleDef->GetParticleType();
                   //cout<<"Daughter: "<<ParticleName<<endl;
@@ -407,18 +428,23 @@ bool MCActivator::CalculateEquilibriumRates()
                     continue; 
                   }
                   
-                  // Light ejectiles are not followed, only the residual nucleus - otherwise their channel would be counted twice
-                  if (ParticleType == "nucleus" && ParticleName != "alpha" && ParticleName != "deuteron" && ParticleName != "triton" && ParticleName != "He3") {
-                    if (DetermineHalfLife(ParticleDef, HalfLife, ExcitationEnergy, false) == true) {
-                      // An IT channel has the mother as daughter - for levels without gamma transitions this means Geant4 has no decay data for it
-                      if (Tree[b].back().GetName() == ParticleName && ExcitationEnergy > 0.0) {
-                        mout<<"Warning: Neither gamma transitions nor radioactive decay data for "<<ParticleName<<". Forcing de-excitation to the ground state."<<endl;
-                        ExcitationEnergy = 0.0;
+                  if (DetermineHalfLife(ParticleDef, HalfLife, ExcitationEnergy, false) == true) {
+                    // An IT channel has the mother as daughter
+                    if (Tree[b].back().GetName() == ParticleName && ExcitationEnergy > 0.0) {
+                      if (HasNoGammaTransitions(Tree[b].back()) == false) {
+                        // As in Geant4, the IT part of the decay table is the gamma de-excitation cascade
+                        CreateDeexcitationBranches(Tree[b], Channel->GetBR(), AdditionalTrees);
+                        NewBranchAdded = true;
+                        continue;
                       }
-                      vector<MCActivatorParticle> ABranch = Tree[b];
-                      MCActivatorParticle NewParticle;
-                      NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(ParticleDef->GetParticleName()), 
-                                                  ExcitationEnergy);
+                      // Without gamma transitions this means Geant4 has no decay data for it
+                      mout<<"Warning: Neither gamma transitions nor radioactive decay data for "<<ParticleName<<". Forcing de-excitation to the ground state."<<endl;
+                      ExcitationEnergy = 0.0;
+                    }
+                    vector<MCActivatorParticle> ABranch = Tree[b];
+                    MCActivatorParticle NewParticle;
+                    // ID from Z and A, since GetParticleType() returns special particle codes for light ions such as the alpha
+                    NewParticle.SetIDAndExcitation(1000*ParticleDef->GetAtomicNumber() + ParticleDef->GetAtomicMass(), ExcitationEnergy);
 		      //NewParticle.GetDefinition()->DumpTable();
 		      // have to compute get the Halflife with the good def (ex Tb145[0.000Y] and not Tb145 ) #g4v11.01 bug
 		      DetermineHalfLife(NewParticle.GetDefinition(), HalfLife, ExcitationEnergy, false);
@@ -427,30 +453,29 @@ bool MCActivator::CalculateEquilibriumRates()
 		      //cout<< "Name : " << ParticleName<<endl;
 		      //cout<< ParticleDef->GetPDGLifeTime()*log(2.0)/s<<" sec"<<endl; 		  
  		  
-                      if (Tree[b].back().GetBranchingRatio()* Channel->GetBR() > 1.01) {
-                        mout<<"Error (DecayLoop): Branching ratio of "<<Tree[b].back().GetName()<<" larger than one: "<<Tree[b].back().GetBranchingRatio()* Channel->GetBR()<<endl;
-                        continue;
-                      }
-                      
-                      //cout<<"Adding to branch "<<b<<", after "<<ABranch.back().GetName()<<": "<<ParticleDef->GetParticleName()<<" -> BR="<<Channel->GetBR()<<endl;
-                      NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()* Channel->GetBR());
-                      NewParticle.SetHalfLife(HalfLife);
-		      //cout<<"HALFLIFE after SetHalfLife = "<<NewParticle.GetHalfLife()<<endl;
-                      
-                      //cout<<"ID: "<<MCSteppingAction::GetParticleType(Nucleus->GetParticleName())<<":"<<Nucleus->GetExcitationEnergy()<<endl;
-                      if (Tree[b].back().GetHalfLife() < m_HalfLifeCutOff) {
-                        // Immediate decay (e.g. neutron emission of O17[5387.1]): REPLACE the last element, as in the de-excitation step
-                        NewParticle.SetProductionRate(Tree[b].back().GetProductionRate()*Channel->GetBR());
-                        ABranch[ABranch.size()-1] = NewParticle;
-                      } else {
-                        ABranch.push_back(NewParticle);
-                      }
-                      AdditionalTrees.push_back(ABranch);
-                      NewBranchAdded = true;
-                    } else {
-                      mout<<"Error: Unable to determine half life: "<<ParticleDef->GetParticleName()<<endl;
+                    if (Tree[b].back().GetBranchingRatio()* Channel->GetBR() > 1.01) {
+                      mout<<"Error (DecayLoop): Branching ratio of "<<Tree[b].back().GetName()<<" larger than one: "<<Tree[b].back().GetBranchingRatio()* Channel->GetBR()<<endl;
                       continue;
                     }
+                    
+                    //cout<<"Adding to branch "<<b<<", after "<<ABranch.back().GetName()<<": "<<ParticleDef->GetParticleName()<<" -> BR="<<Channel->GetBR()<<endl;
+                    NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()* Channel->GetBR());
+                    NewParticle.SetHalfLife(HalfLife);
+		      //cout<<"HALFLIFE after SetHalfLife = "<<NewParticle.GetHalfLife()<<endl;
+                    
+                    //cout<<"ID: "<<MCSteppingAction::GetParticleType(Nucleus->GetParticleName())<<":"<<Nucleus->GetExcitationEnergy()<<endl;
+                    if (Tree[b].back().GetHalfLife() < m_HalfLifeCutOff) {
+                      // Immediate decay (e.g. neutron emission of O17[5387.1]): REPLACE the last element, as in the de-excitation step
+                      NewParticle.SetProductionRate(Tree[b].back().GetProductionRate()*Channel->GetBR());
+                      ABranch[ABranch.size()-1] = NewParticle;
+                    } else {
+                      ABranch.push_back(NewParticle);
+                    }
+                    AdditionalTrees.push_back(ABranch);
+                    NewBranchAdded = true;
+                  } else {
+                    mout<<"Error: Unable to determine half life: "<<ParticleDef->GetParticleName()<<endl;
+                    continue;
                   }
                 }
               
@@ -509,126 +534,20 @@ bool MCActivator::CalculateEquilibriumRates()
                 continue;
               }
               // Levels without gamma transitions (e.g. Al26m, O17[5387.1]) only decay radioactively,
-              // independent of their half life. They need to be handled in step 1 - decay table
-              if (HasNoGammaTransitions(Tree[b].back()) == true) {
+              // independent of their half life. They need to be handled in step 1 - decay table.
+              // The same is true for levels with other decay channels than IT (e.g. Ge77m, O17[4551.8]): 
+              // As in Geant4, their decay table determines the decay, and its IT part is the gamma cascade
+              if (HasNoGammaTransitions(Tree[b].back()) == true || HasNonITDecayChannels(Tree[b].back(), Decay) == true) {
                 continue;
               }
-              G4Ions* Nucleus = dynamic_cast<G4Ions*>(Tree[b].back().GetDefinition()); 
-
-	      
-              bool LevelsOK = true;
-              //G4NucLearLevelManager* M = G4NucLevelStore::GetInstance()->GetManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
-              const G4LevelManager* M = G4NuclearLevelData::GetInstance()->GetLevelManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
-
-
-	      //if (M->IsValid() == true) {
-	      if (M != nullptr) {
-               const G4NucLevel* NuclearLevel = M->NearestLevel(Nucleus->GetExcitationEnergy());
-
-                //M->PrintAll();
-                cout<<"Nearest level: "<<M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())/keV<<" vs. "<<Nucleus->GetExcitationEnergy()/keV<<endl;
-                if (NuclearLevel != 0) {
-                  // Create new levels...
-                  cout<<"Number of gammas: "<<NuclearLevel->NumberOfTransitions()<<endl;
-
-                  for (int h = 0; h < int(NuclearLevel->NumberOfTransitions()); ++h) {
-                    vector<MCActivatorParticle> ABranch = Tree[b];
-                    //cout<<"Gamma energy: "<<M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))/keV<<endl;
-                    
-                    double NewLevelEnergy = 0.0;
-                    double NewHalfLife = 0.0;
-                    if (/*fabs(M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) - M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))) > 1*keV &&*/ /* NuclearLevel->GammaEnergies()[h] > 1*keV && */
-                        M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) != M->MaxLevelEnergy()) { // table has some significant uncertainties...
-                      // Make sure we know the exact energy of the new level:
-                      const G4NucLevel* NewNuclearLevel = M->GetLevel(NuclearLevel->FinalExcitationIndex(h));
-                      if (NewNuclearLevel != 0) {
-                        NewLevelEnergy = M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h));
-                        // GetTimeGamma returns mean life, not the half life, plus DBL_MAX == stable
-                        double NewLevelHalfLife = NewNuclearLevel->GetTimeGamma();
-                        if (NewLevelHalfLife != numeric_limits<double>::max()) NewLevelHalfLife *= log(2.0); // ln == log
-                        if (NewLevelHalfLife > m_HalfLifeCutOff) {
-                          NewHalfLife = NewLevelHalfLife;
-                        } else {
-                          NewHalfLife = 0.0;
-                        }
-                      } else {
-                        mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<< M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))<<endl;
-                        mout<<"       This isotope is excluded from further analysis!"<<endl;
-                        LevelsOK = false;                        
-                      }
-                    } else {
-                      mout<<"Error: Identical levels! Decaying it to the ground state"<<endl;
-                      NewLevelEnergy = 0.0;
-                      NewHalfLife = 0.0;
-                    }
-                    
-                    cout<<"NewLevel: "<<NewLevelEnergy/keV<<" with "<<NewHalfLife/s<<endl;
-
-                    if (NewLevelEnergy != 0.0 && fabs(Tree[b].back().GetExcitation() - NewLevelEnergy) < 0.1*keV) {
-                      mout<<"Error in data files: Missing level reference leads to de-excitation to the same state for "<<Nucleus->GetParticleName()<<endl;
-                      mout<<"                     Forcing IMMEDIATE de-excitation to ground state!"<<endl;
-                      NewLevelEnergy = 0.0;
-                      NewHalfLife = 0.0;
-                    }
-                    
-                    
-                    MCActivatorParticle NewParticle;
-                    NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(Nucleus->GetParticleName()), 
-                                                NewLevelEnergy);
-                    // GammaProbability() is the gamma vs. conversion electron probability - the branching of this transition is in the cumulative probabilities
-                    double TransitionProbability = NuclearLevel->GammaCumProbability(h) - (h > 0 ? NuclearLevel->GammaCumProbability(h-1) : 0.0);
-                    NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()*TransitionProbability);
-                    NewParticle.SetProductionRate(Tree[b].back().GetProductionRate()*TransitionProbability);
-                    // The PDGLifeTime is not always ok for excited states, thus we have to get it this way:
-                    if (NewLevelEnergy > 0.0) {
-                      NewParticle.SetHalfLife(NewHalfLife);
-                      cout<<NewParticle.GetName()<<":"<<NewHalfLife<<endl;
-                    } else {
-                      if (MCActivatorParticle::IsStable(NewParticle.GetDefinition()) == true) {
-                        NewParticle.SetHalfLife(numeric_limits<double>::max());
-                      } else {
-                        NewParticle.SetHalfLife(NewParticle.GetDefinition()->GetPDGLifeTime()*log(2.0)); // ln == log
-                        cout<<NewParticle.GetName()<<":"<<NewParticle.GetDefinition()->GetPDGLifeTime()*log(2)<<":"<<Nucleus->GetParticleName()<<endl;
-                      }
-                    }
-                    if (ABranch.back().GetHalfLife() < m_HalfLifeCutOff) {
-                      // REPLACE the last element, add it to the back
-                      // Since we have immediate decays we do not want to increase the length of the branch, but just determine the final population of intermediate states
-                      ABranch[ABranch.size()-1] = NewParticle;
-                      Tree.push_back(ABranch);
-                      TreeChanged = true;
-                      NChanges++;
-                      cout<<"Replacing highest entry"<<endl;
-                    } else {
-                      // We have a new branch
-                      ABranch.push_back(NewParticle);
-                      Tree.push_back(ABranch);
-                      TreeChanged = true;
-                      NChanges++;
-                      cout<<"Adding entry with energy: "<<NewParticle.GetExcitation()/keV<<endl;
-                    }
-                  } // all possible gammas
-		  
-                  if (NuclearLevel->NumberOfTransitions() > 0 && LevelsOK == true) {
-                    Tree[b].clear(); // mark for removal
-                    TreeChanged = true;
-                    cout<<"Original tree cleared"<<endl;
-                  }
-                } else { // level not ok
-                  mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<<Nucleus->GetExcitationEnergy()<<endl;
-                  mout<<"       This isotope is excluded from further analysis!"<<endl;
-                  LevelsOK = false;                        
-                }
-              } else { // level manager not ok
-                mout<<"Error: No level manager found for: "<<Nucleus->GetParticleName()<<" Excitation: "<<Nucleus->GetExcitationEnergy()<<endl;
-                mout<<"       This isotope is excluded from further analysis!"<<endl;
-                LevelsOK = false;                                        
+              vector<vector<MCActivatorParticle> > NewBranches;
+              CreateDeexcitationBranches(Tree[b], 1.0, NewBranches);
+              for (unsigned int n = 0; n < NewBranches.size(); ++n) {
+                Tree.push_back(NewBranches[n]);
+                NChanges++;
               }
-              if (LevelsOK == false) {
-                Tree[b].clear();
-                TreeChanged = true;
-                cout<<"Tree cleared - level not OK"<<endl;
-              }
+              Tree[b].clear(); // mark for removal
+              TreeChanged = true;
             } // all branches
             
             DumpTree(Tree, "Tree after generation of deexcited states: ");
@@ -649,7 +568,7 @@ bool MCActivator::CalculateEquilibriumRates()
             MoreDecays = false;
             for (unsigned int b = 0; b < Tree.size(); ++b) {
               if ((Tree[b].back().GetHalfLife() == 0 || Tree[b].back().GetExcitation() > 0.1*keV) &&
-                  HasNoGammaTransitions(Tree[b].back()) == false) {
+                  HasNoGammaTransitions(Tree[b].back()) == false && HasNonITDecayChannels(Tree[b].back(), Decay) == false) {
                 MoreDecays = true;
               }
             }
@@ -876,6 +795,129 @@ bool MCActivator::HasNoGammaTransitions(const MCActivatorParticle& P) const
   if (NuclearLevel->NumberOfTransitions() > 0) return false;
   
   return true;
+}
+
+/******************************************************************************
+ * Return true if the particle's radioactive decay table has other channels than IT (e.g. Ge77m, O17[4551.8])
+ */
+bool MCActivator::HasNonITDecayChannels(const MCActivatorParticle& P, G4RadioactiveDecay* Decay) const
+{
+  if (P.GetExcitation() < 0.1*keV) return false;
+  
+  const G4Ions* Nucleus = dynamic_cast<const G4Ions*>(P.GetDefinition());
+  if (Nucleus == nullptr) return false;
+  
+  // Geant4 caches the decay tables, thus this is cheap after the first call
+  G4DecayTable* DecayTable = Decay->LoadDecayTable(Nucleus);
+  if (DecayTable == nullptr) return false;
+  
+  for (int c = 0; c < DecayTable->entries(); ++c) {
+    G4NuclearDecay* Channel = dynamic_cast<G4NuclearDecay*>(DecayTable->GetDecayChannel(c));
+    if (Channel != nullptr && Channel->GetDecayMode() != IT) return true;
+  }
+  
+  return false;
+}
+
+
+/******************************************************************************
+ * Add the branches of the gamma de-excitation cascade of the last element of Branch to NewBranches, 
+ * scaled by Scale (e.g. the IT branching). Return false if the nuclear level data is not usable
+ */
+bool MCActivator::CreateDeexcitationBranches(const vector<MCActivatorParticle>& Branch, double Scale, vector<vector<MCActivatorParticle> >& NewBranches)
+{
+  G4Ions* Nucleus = dynamic_cast<G4Ions*>(Branch.back().GetDefinition()); 
+
+  bool LevelsOK = true;
+  const G4LevelManager* M = G4NuclearLevelData::GetInstance()->GetLevelManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
+  if (M != nullptr) {
+    const G4NucLevel* NuclearLevel = M->NearestLevel(Nucleus->GetExcitationEnergy());
+
+    cout<<"Nearest level: "<<M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())/keV<<" vs. "<<Nucleus->GetExcitationEnergy()/keV<<endl;
+    if (NuclearLevel != 0) {
+      // Create new levels...
+      cout<<"Number of gammas: "<<NuclearLevel->NumberOfTransitions()<<endl;
+
+      for (int h = 0; h < int(NuclearLevel->NumberOfTransitions()); ++h) {
+        vector<MCActivatorParticle> ABranch = Branch;
+        
+        double NewLevelEnergy = 0.0;
+        double NewHalfLife = 0.0;
+        if (M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) != M->MaxLevelEnergy()) { // table has some significant uncertainties...
+          // Make sure we know the exact energy of the new level:
+          const G4NucLevel* NewNuclearLevel = M->GetLevel(NuclearLevel->FinalExcitationIndex(h));
+          if (NewNuclearLevel != 0) {
+            NewLevelEnergy = M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h));
+            // GetTimeGamma returns mean life, not the half life, plus DBL_MAX == stable
+            double NewLevelHalfLife = NewNuclearLevel->GetTimeGamma();
+            if (NewLevelHalfLife != numeric_limits<double>::max()) NewLevelHalfLife *= log(2.0); // ln == log
+            if (NewLevelHalfLife > m_HalfLifeCutOff) {
+              NewHalfLife = NewLevelHalfLife;
+            } else {
+              NewHalfLife = 0.0;
+            }
+          } else {
+            mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<< M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))<<endl;
+            mout<<"       This isotope is excluded from further analysis!"<<endl;
+            LevelsOK = false;                        
+          }
+        } else {
+          mout<<"Error: Identical levels! Decaying it to the ground state"<<endl;
+          NewLevelEnergy = 0.0;
+          NewHalfLife = 0.0;
+        }
+        
+        cout<<"NewLevel: "<<NewLevelEnergy/keV<<" with "<<NewHalfLife/s<<endl;
+
+        if (NewLevelEnergy != 0.0 && fabs(Branch.back().GetExcitation() - NewLevelEnergy) < 0.1*keV) {
+          mout<<"Error in data files: Missing level reference leads to de-excitation to the same state for "<<Nucleus->GetParticleName()<<endl;
+          mout<<"                     Forcing IMMEDIATE de-excitation to ground state!"<<endl;
+          NewLevelEnergy = 0.0;
+          NewHalfLife = 0.0;
+        }
+        
+        MCActivatorParticle NewParticle;
+        NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(Nucleus->GetParticleName()), NewLevelEnergy);
+        // GammaProbability() is the gamma vs. conversion electron probability - the branching of this transition is in the cumulative probabilities
+        double TransitionProbability = NuclearLevel->GammaCumProbability(h) - (h > 0 ? NuclearLevel->GammaCumProbability(h-1) : 0.0);
+        NewParticle.SetBranchingRatio(Branch.back().GetBranchingRatio()*Scale*TransitionProbability);
+        NewParticle.SetProductionRate(Branch.back().GetProductionRate()*Scale*TransitionProbability);
+        // The PDGLifeTime is not always ok for excited states, thus we have to get it this way:
+        if (NewLevelEnergy > 0.0) {
+          NewParticle.SetHalfLife(NewHalfLife);
+          cout<<NewParticle.GetName()<<":"<<NewHalfLife<<endl;
+        } else {
+          if (MCActivatorParticle::IsStable(NewParticle.GetDefinition()) == true) {
+            NewParticle.SetHalfLife(numeric_limits<double>::max());
+          } else {
+            NewParticle.SetHalfLife(NewParticle.GetDefinition()->GetPDGLifeTime()*log(2.0)); // ln == log
+            cout<<NewParticle.GetName()<<":"<<NewParticle.GetDefinition()->GetPDGLifeTime()*log(2)<<":"<<Nucleus->GetParticleName()<<endl;
+          }
+        }
+        if (ABranch.back().GetHalfLife() < m_HalfLifeCutOff) {
+          // REPLACE the last element, add it to the back
+          // Since we have immediate decays we do not want to increase the length of the branch, but just determine the final population of intermediate states
+          ABranch[ABranch.size()-1] = NewParticle;
+          cout<<"Replacing highest entry"<<endl;
+        } else {
+          // We have a new branch
+          ABranch.push_back(NewParticle);
+          cout<<"Adding entry with energy: "<<NewParticle.GetExcitation()/keV<<endl;
+        }
+        NewBranches.push_back(ABranch);
+      } // all possible gammas
+    } else { // level not ok
+      mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<<Nucleus->GetExcitationEnergy()<<endl;
+      mout<<"       This isotope is excluded from further analysis!"<<endl;
+      LevelsOK = false;                        
+    }
+  } else { // level manager not ok
+    mout<<"Error: No level manager found for: "<<Nucleus->GetParticleName()<<" Excitation: "<<Nucleus->GetExcitationEnergy()<<endl;
+    mout<<"       This isotope is excluded from further analysis!"<<endl;
+    LevelsOK = false;                                        
+  }
+  
+  return LevelsOK;
 }
 
 

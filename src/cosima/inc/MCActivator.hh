@@ -42,6 +42,7 @@
 using namespace std;
 
 // Forward declarations:
+class G4RadioactiveDecay;
 
 
 /******************************************************************************/
@@ -132,6 +133,11 @@ protected:
   /// Return true if the particle is an excited state without any gamma transitions (e.g. Al26m, O17[5387.1]),
   /// i.e. a level which only decays radioactively and thus must be handled via its decay table
   bool HasNoGammaTransitions(const MCActivatorParticle& P) const;
+  /// Return true if the particle's radioactive decay table has other channels than IT (e.g. Ge77m, O17[4551.8])
+  bool HasNonITDecayChannels(const MCActivatorParticle& P, G4RadioactiveDecay* Decay) const;
+  /// Add the branches of the gamma de-excitation cascade of the last element of Branch to NewBranches, 
+  /// scaled by Scale (e.g. the IT branching). Return false if the nuclear level data is not usable
+  bool CreateDeexcitationBranches(const vector<MCActivatorParticle>& Branch, double Scale, vector<vector<MCActivatorParticle> >& NewBranches);
 
   /// Determine the counts of the first produced element after Time t 
   double CountsO1(double R, double D1, double t);
