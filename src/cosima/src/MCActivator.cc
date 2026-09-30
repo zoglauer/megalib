@@ -856,28 +856,22 @@ bool MCActivator::CreateDeexcitationBranches(const vector<MCActivatorParticle>& 
         
         double NewLevelEnergy = 0.0;
         double NewHalfLife = 0.0;
-        if (M->NearestLevelEnergy(Nucleus->GetExcitationEnergy()) != M->MaxLevelEnergy()) { // table has some significant uncertainties...
-          // Make sure we know the exact energy of the new level:
-          const G4NucLevel* NewNuclearLevel = M->GetLevel(NuclearLevel->FinalExcitationIndex(h));
-          if (NewNuclearLevel != 0) {
-            NewLevelEnergy = M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h));
-            // GetTimeGamma returns mean life, not the half life, plus DBL_MAX == stable
-            double NewLevelHalfLife = NewNuclearLevel->GetTimeGamma();
-            if (NewLevelHalfLife != numeric_limits<double>::max()) NewLevelHalfLife *= log(2.0); // ln == log
-            if (NewLevelHalfLife > m_HalfLifeCutOff) {
-              NewHalfLife = NewLevelHalfLife;
-            } else {
-              NewHalfLife = 0.0;
-            }
+        // Make sure we know the exact energy of the new level:
+        const G4NucLevel* NewNuclearLevel = M->GetLevel(NuclearLevel->FinalExcitationIndex(h));
+        if (NewNuclearLevel != 0) {
+          NewLevelEnergy = M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h));
+          // GetTimeGamma returns mean life, not the half life, plus DBL_MAX == stable
+          double NewLevelHalfLife = NewNuclearLevel->GetTimeGamma();
+          if (NewLevelHalfLife != numeric_limits<double>::max()) NewLevelHalfLife *= log(2.0); // ln == log
+          if (NewLevelHalfLife > m_HalfLifeCutOff) {
+            NewHalfLife = NewLevelHalfLife;
           } else {
-            mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<< M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))<<endl;
-            mout<<"       This isotope is excluded from further analysis!"<<endl;
-            LevelsOK = false;                        
+            NewHalfLife = 0.0;
           }
         } else {
-          mout<<"Error: Identical levels! Decaying it to the ground state"<<endl;
-          NewLevelEnergy = 0.0;
-          NewHalfLife = 0.0;
+          mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<< M->LevelEnergy(NuclearLevel->FinalExcitationIndex(h))<<endl;
+          mout<<"       This isotope is excluded from further analysis!"<<endl;
+          LevelsOK = false;                        
         }
         
         cout<<"NewLevel: "<<NewLevelEnergy/keV<<" with "<<NewHalfLife/s<<endl;
