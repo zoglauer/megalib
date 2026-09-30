@@ -129,6 +129,9 @@ protected:
   
   /// Clean the trees calculated during decay chain determination
   bool CleanDecayChains(vector<vector<MCActivatorParticle> >& Tree);
+  /// Return true if the particle is an excited state without any gamma transitions (e.g. Al26m, O17[5387.1]),
+  /// i.e. a level which only decays radioactively and thus must be handled via its decay table
+  bool HasNoGammaTransitions(const MCActivatorParticle& P) const;
 
   /// Determine the counts of the first produced element after Time t 
   double CountsO1(double R, double D1, double t);

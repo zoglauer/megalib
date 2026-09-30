@@ -407,8 +407,14 @@ bool MCActivator::CalculateEquilibriumRates()
                     continue; 
                   }
                   
-                  if (ParticleType == "nucleus" && ParticleName != "alpha") {
+                  // Light ejectiles are not followed, only the residual nucleus - otherwise their channel would be counted twice
+                  if (ParticleType == "nucleus" && ParticleName != "alpha" && ParticleName != "deuteron" && ParticleName != "triton" && ParticleName != "He3") {
                     if (DetermineHalfLife(ParticleDef, HalfLife, ExcitationEnergy, false) == true) {
+                      // An IT channel has the mother as daughter - for levels without gamma transitions this means Geant4 has no decay data for it
+                      if (Tree[b].back().GetName() == ParticleName && ExcitationEnergy > 0.0) {
+                        mout<<"Warning: Neither gamma transitions nor radioactive decay data for "<<ParticleName<<". Forcing de-excitation to the ground state."<<endl;
+                        ExcitationEnergy = 0.0;
+                      }
                       vector<MCActivatorParticle> ABranch = Tree[b];
                       MCActivatorParticle NewParticle;
                       NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(ParticleDef->GetParticleName()), 
@@ -432,7 +438,13 @@ bool MCActivator::CalculateEquilibriumRates()
 		      //cout<<"HALFLIFE after SetHalfLife = "<<NewParticle.GetHalfLife()<<endl;
                       
                       //cout<<"ID: "<<MCSteppingAction::GetParticleType(Nucleus->GetParticleName())<<":"<<Nucleus->GetExcitationEnergy()<<endl;
-                      ABranch.push_back(NewParticle);
+                      if (Tree[b].back().GetHalfLife() < m_HalfLifeCutOff) {
+                        // Immediate decay (e.g. neutron emission of O17[5387.1]): REPLACE the last element, as in the de-excitation step
+                        NewParticle.SetProductionRate(Tree[b].back().GetProductionRate()*Channel->GetBR());
+                        ABranch[ABranch.size()-1] = NewParticle;
+                      } else {
+                        ABranch.push_back(NewParticle);
+                      }
                       AdditionalTrees.push_back(ABranch);
                       NewBranchAdded = true;
                     } else {
@@ -494,6 +506,11 @@ bool MCActivator::CalculateEquilibriumRates()
               // We have to make sure that in the first round only all immidiate decays are handled, which replace individial elements
               // in the chain, only in the second round we ONCE add to the chain and then test immidiate decays again
               if (Tree[b].back().GetHalfLife() > m_HalfLifeCutOff && ImmidiateDecayRound == true) {
+                continue;
+              }
+              // Levels without gamma transitions (e.g. Al26m, O17[5387.1]) only decay radioactively,
+              // independent of their half life. They need to be handled in step 1 - decay table
+              if (HasNoGammaTransitions(Tree[b].back()) == true) {
                 continue;
               }
               G4Ions* Nucleus = dynamic_cast<G4Ions*>(Tree[b].back().GetDefinition()); 
@@ -558,8 +575,10 @@ bool MCActivator::CalculateEquilibriumRates()
                     MCActivatorParticle NewParticle;
                     NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(Nucleus->GetParticleName()), 
                                                 NewLevelEnergy);
-                    NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()*NuclearLevel->GammaProbability(h));
-                    NewParticle.SetProductionRate(Tree[b].back().GetProductionRate()*NuclearLevel->GammaProbability(h));
+                    // GammaProbability() is the gamma vs. conversion electron probability - the branching of this transition is in the cumulative probabilities
+                    double TransitionProbability = NuclearLevel->GammaCumProbability(h) - (h > 0 ? NuclearLevel->GammaCumProbability(h-1) : 0.0);
+                    NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()*TransitionProbability);
+                    NewParticle.SetProductionRate(Tree[b].back().GetProductionRate()*TransitionProbability);
                     // The PDGLifeTime is not always ok for excited states, thus we have to get it this way:
                     if (NewLevelEnergy > 0.0) {
                       NewParticle.SetHalfLife(NewHalfLife);
@@ -629,8 +648,8 @@ bool MCActivator::CalculateEquilibriumRates()
             // Check if we have anything which still can decay immediately
             MoreDecays = false;
             for (unsigned int b = 0; b < Tree.size(); ++b) {
-              if (Tree[b].back().GetHalfLife() == 0 ||
-                  Tree[b].back().GetExcitation() > 0.1*keV) {
+              if ((Tree[b].back().GetHalfLife() == 0 || Tree[b].back().GetExcitation() > 0.1*keV) &&
+                  HasNoGammaTransitions(Tree[b].back()) == false) {
                 MoreDecays = true;
               }
             }
@@ -833,6 +852,32 @@ void MCActivator::DumpTree(const vector<vector<MCActivatorParticle> >& Tree, con
     cout<<endl;
   }
 }
+
+/******************************************************************************
+ * Return true if the particle is an excited state without any gamma transitions (e.g. Al26m, O17[5387.1]),
+ * i.e. a level which only decays radioactively and thus must be handled via its decay table
+ */
+bool MCActivator::HasNoGammaTransitions(const MCActivatorParticle& P) const
+{
+  // There are a bunch of return false here - which could be handled better,
+  // But none of them should affect the executing since they are handled in the main loop too
+  
+  if (P.GetExcitation() < 0.1*keV) return false;
+  
+  G4Ions* Nucleus = dynamic_cast<G4Ions*>(P.GetDefinition());
+  if (Nucleus == nullptr) return false;
+  
+  const G4LevelManager* M = G4NuclearLevelData::GetInstance()->GetLevelManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
+  if (M == nullptr) return false;
+  
+  const G4NucLevel* NuclearLevel = M->NearestLevel(Nucleus->GetExcitationEnergy());
+  if (NuclearLevel == nullptr) return false;
+  
+  if (NuclearLevel->NumberOfTransitions() > 0) return false;
+  
+  return true;
+}
+
 
 /******************************************************************************
  * Clean the trees calculated during decay chain determination
