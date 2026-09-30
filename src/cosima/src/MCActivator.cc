@@ -277,6 +277,9 @@ bool MCActivator::CalculateEquilibriumRates()
   
   
 
+  // Start with an empty activation - otherwise repeated calls add up:
+  m_Activation.Reset();
+
   // We utilize G4RadioactiveDecay to retrieve the decay tables
   G4RadioactiveDecay* Decay = new G4RadioactiveDecay();
   G4DecayTable* DecayTable;
