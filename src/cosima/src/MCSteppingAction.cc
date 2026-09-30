@@ -680,8 +680,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       }
     } else if (ProcessID == c_ProcessIDInelasticScattering) {
 
-      // There always has to be a generated secondary, since we generate a new nucleus
-      if (GeneratedSecondaries == 0) {
+      // Geant4 does not always create secondaries here, which is OK:
+      if (GeneratedSecondaries == 0 && Track->GetTrackStatus() != fAlive) {
         mout<<"The Inelastic scattering of "<<Track->GetDefinition()->GetParticleName()<<" didn't generate secondaries! Either your thresholds for generating secondaires are too high or a simulation issue occurred!"<<endl;
       }
 
