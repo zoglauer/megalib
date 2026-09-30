@@ -167,9 +167,12 @@ void MCActivatorParticle::SetIDAndExcitation(unsigned int ID, double Excitation)
   m_MergedPaths.clear();
 
   m_ID = ID;
+  // Negative excitations are the ground state - also for the Geant4 lookups below:
+  if (Excitation < 0.0) Excitation = 0.0;
   m_Excitation = Excitation;
 
-  if (m_Excitation < 0.0) m_Excitation = 0.0;
+  // Forget the definition of a previous isotope - otherwise the last fallback below is skipped:
+  m_Definition = nullptr;
 
   //G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
   G4IonTable* Table = G4IonTable::GetIonTable();
