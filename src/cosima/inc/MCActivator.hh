@@ -163,8 +163,13 @@ protected:
   double ActivationO4(double R, double D1, double Branching12, double D2, double Branching23, double D3, double Branching34, double D4, double t);
   /// Determine the cooldown of the fourth produced element after Time t 
   double CooldownO4(double A1, double D1, double Branching12, double A2, double D2, double Branching23, double A3, double D3, double Branching34, double A4, double D4, double t) ;
+  /// Determine the activation of the last element of a chain with constant production rate R into the first after Time t (Bateman solution)
+  /// D: decay constants, B: branching ratios with B[k] from element k-1 to k
+  /// Return NaN if clustered decay constants make the result numerically unreliable
+  double ActivationOn(double R, const vector<double>& D, const vector<double>& B, double t);
   /// Determine the cooldown of the last element of a chain after Time t (Bateman solution)
   /// A: start activities, D: decay constants, B: branching ratios with B[k] from element k-1 to k
+  /// Return NaN if clustered decay constants make the result numerically unreliable
   double CooldownOn(const vector<double>& A, const vector<double>& D, const vector<double>& B, double t);
   /// Determine the counts of the fifth produced element after Time t 
   double CountsO5(double R, double D1, double Branching12, double D2, double Branching23, double D3, double Branching34, double D4, double Branching45, double D5, double t);

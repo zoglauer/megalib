@@ -85,6 +85,7 @@ public:
   using MCActivator::CooldownO3;
   using MCActivator::CooldownO4;
   using MCActivator::CooldownOn;
+  using MCActivator::ActivationOn;
 };
 
 
@@ -1537,6 +1538,19 @@ bool UTCActivator::TestAnalyticBuildUp()
   Passed = EvaluateNear("ActivationO3()", "interior", "The activation of the third element is D3 N3", A.ActivationO3(R, D[0], B[1], D[1], B[2], D[2], t), D[2]*N[2], Tolerance*D[2]*N[2]) && Passed;
   Passed = EvaluateNear("ActivationO4()", "interior", "The activation of the fourth element is D4 N4", A.ActivationO4(R, D[0], B[1], D[1], B[2], D[2], B[3], D[3], t), D[3]*N[3], Tolerance*D[3]*N[3]) && Passed;
 
+  // Extremely long-lived first element (as Ca48, 2.9e19 years) followed by three to four unstable elements (s):
+  {
+    const double RL = 1.0;
+    const double TL = 1e5;
+    const vector<double> DL = { 7.57e-28, 4.4e-6, 1.2e-5, 3.1e-6 };
+    const vector<double> BL = { 1.0, 1.0, 0.7, 0.4 };
+    vector<double> NL = IntegrateChain(RL, DL, BL, vector<double>(4, 0.0), TL);
+    double Expected3 = DL[2]*NL[2];
+    double Expected4 = DL[3]*NL[3];
+    Passed = EvaluateNear("ActivationO3()", "long-lived first element", "The activation of the third element matches the integration", A.ActivationO3(RL, DL[0], BL[1], DL[1], BL[2], DL[2], TL), Expected3, 1e-5*Expected3) && Passed;
+    Passed = EvaluateNear("ActivationO4()", "long-lived first element", "The activation of the fourth element matches the integration", A.ActivationO4(RL, DL[0], BL[1], DL[1], BL[2], DL[2], BL[3], DL[3], TL), Expected4, 1e-5*Expected4) && Passed;
+  }
+
   // Stable last element:
   for (unsigned int n = 1; n < 5; ++n) {
     vector<double> DS = D;
@@ -1635,19 +1649,75 @@ bool UTCActivator::TestActivateByEquations()
   Passed = EvaluateNear("ActivateByEquations()", "Mg28 -> Al28", "The mother activity is set", Chain[0].GetActivation(), Expected1, 1e-9*Expected1) && Passed;
   Passed = EvaluateNear("ActivateByEquations()", "Mg28 -> Al28", "The daughter activity is set", Chain[1].GetActivation(), Expected2, 1e-9*Expected2) && Passed;
 
-  // Too many elements:
-  vector<MCActivatorParticle> Long(6, Mg28);
-  for (unsigned int p = 0; p < Long.size(); ++p) Long[p].SetHalfLife((p+1)*1000*s);
-  SilenceOutput();
-  bool TooLong = A.ActivateByEquations(Long, 3600*s, 0.0);
-  RestoreOutput();
-  Passed = EvaluateFalse("ActivateByEquations()", "6 elements", "Chains with more than 5 elements are rejected", TooLong) && Passed;
+  // Long chains, with and without cooldown, against the integration:
+  {
+    vector<double> HalfLives = { 1e5, 30, 3000, 7, 600, 45000, 90, 1200 }; // s
+    vector<double> Branchings = { 1.0, 0.8, 0.35, 1.0, 0.6, 0.9, 0.5, 0.75 };
+    vector<MCActivatorParticle> Long(HalfLives.size(), Mg28);
+    vector<double> D;
+    for (unsigned int p = 0; p < Long.size(); ++p) {
+      Long[p].SetHalfLife(HalfLives[p]*s);
+      Long[p].SetBranchingRatio(Branchings[p]);
+      D.push_back(Long[p].GetDecayConstant());
+    }
+    Long[0].SetProductionRate(2.0/s);
+    const double Activation = 1e5*s;
+    const double Cooldown = 2000*s;
 
-  vector<MCActivatorParticle> Four(Long.begin(), Long.begin() + 4);
+    SilenceOutput();
+    bool LongOK = A.ActivateByEquations(Long, Activation, 0.0);
+    RestoreOutput();
+    Passed = EvaluateTrue("ActivateByEquations()", "8 elements", "Chains longer than 5 elements are calculated", LongOK) && Passed;
+    vector<double> N = IntegrateChain(2.0/s, D, Branchings, vector<double>(Long.size(), 0.0), Activation);
+    for (unsigned int p = 0; p < Long.size(); ++p) {
+      double Expected = D[p]*N[p];
+      Passed = EvaluateNear("ActivateByEquations()", MString("8 elements, element ") + (p+1), "The activity matches the integration", Long[p].GetActivation(), Expected, 1e-6*Expected) && Passed;
+    }
+
+    SilenceOutput();
+    bool CooldownOK = A.ActivateByEquations(Long, Activation, Cooldown);
+    RestoreOutput();
+    Passed = EvaluateTrue("ActivateByEquations()", "8 elements with cooldown", "Chains longer than 3 elements are calculated with cooldown", CooldownOK) && Passed;
+    N = IntegrateChain(0.0, D, Branchings, N, Cooldown);
+    for (unsigned int p = 0; p < Long.size(); ++p) {
+      double Expected = D[p]*N[p];
+      Passed = EvaluateNear("ActivateByEquations()", MString("8 elements with cooldown, element ") + (p+1), "The activity after cooldown matches the integration", Long[p].GetActivation(), Expected, 1e-6*Expected) && Passed;
+    }
+  }
+
+  // Clustered decay constants (10 elements, 2% apart) are numerically unreliable and left for the simulation:
+  {
+    vector<MCActivatorParticle> Clustered(10, Mg28);
+    for (unsigned int p = 0; p < Clustered.size(); ++p) {
+      Clustered[p].SetHalfLife(log(2.0)/pow(1.02, p)*s);
+      Clustered[p].SetBranchingRatio(1.0);
+    }
+    Clustered[0].SetProductionRate(1.0/s);
+    SilenceOutput();
+    bool ClusteredOK = A.ActivateByEquations(Clustered, 1*s, 0.0);
+    RestoreOutput();
+    Passed = EvaluateFalse("ActivateByEquations()", "10 clustered decay constants", "Numerically unreliable chains are rejected", ClusteredOK) && Passed;
+
+    vector<double> D;
+    for (unsigned int p = 0; p < 10; ++p) D.push_back(pow(1.02, p)/s);
+    Passed = EvaluateTrue("ActivationOn()", "10 clustered decay constants", "The unreliable result is marked as NaN", std::isnan(A.ActivationOn(1.0/s, D, vector<double>(10, 1.0), 1*s)) == true) && Passed;
+    vector<double> A0(10, 1.0/s);
+    Passed = EvaluateTrue("CooldownOn()", "10 clustered decay constants", "The unreliable result is marked as NaN", std::isnan(A.CooldownOn(A0, D, vector<double>(10, 1.0), 1*s)) == true) && Passed;
+
+    // Well conditioned short chains are still accepted:
+    vector<double> D3 = { 1.0/s, 1.02/s, 1.0404/s };
+    vector<double> N3 = IntegrateChain(1.0/s, D3, { 1.0, 1.0, 1.0 }, { 0.0, 0.0, 0.0 }, 1*s);
+    double Expected3 = D3[2]*N3[2];
+    Passed = EvaluateNear("ActivationOn()", "3 clustered decay constants", "A short clustered chain matches the integration", A.ActivationOn(1.0/s, D3, { 1.0, 1.0, 1.0 }, 1*s), Expected3, 1e-5*Expected3) && Passed;
+  }
+
+  // Immediate decays in the chain are left for the simulation:
+  vector<MCActivatorParticle> Prompt = { Mg28, Al28 };
+  Prompt[1].SetHalfLife(0.0);
   SilenceOutput();
-  bool FourCooldown = A.ActivateByEquations(Four, 3600*s, 60*s);
+  bool PromptOK = A.ActivateByEquations(Prompt, 3600*s, 0.0);
   RestoreOutput();
-  Passed = EvaluateFalse("ActivateByEquations()", "4 elements with cooldown", "The cooldown is only available for up to 3 elements", FourCooldown) && Passed;
+  Passed = EvaluateFalse("ActivateByEquations()", "immediate decay", "Chains with an immediately decaying element are rejected", PromptOK) && Passed;
 
   // Almost identical decay constants:
   vector<MCActivatorParticle> Identical = { Mg28, Mg28 };
@@ -1704,6 +1774,32 @@ bool UTCActivator::TestActivateBySimulation()
   Passed = EvaluateTrue("ActivateBySimulation()", "Mg28 -> Al28", "The simulation succeeds", OK) && Passed;
   Passed = EvaluateNear("ActivateBySimulation()", "Mg28 -> Al28", "The simulated mother activity agrees with the analytic one within 2%", Chain[0].GetActivation(), Expected1, 0.02*Expected1) && Passed;
   Passed = EvaluateNear("ActivateBySimulation()", "Mg28 -> Al28", "The simulated daughter activity agrees with the analytic one within 2%", Chain[1].GetActivation(), Expected2, 0.02*Expected2) && Passed;
+
+  // Clustered decay constants: the equations reject the chain, the simulation fallback must match the integration
+  for (double T: { 1.0, 100.0 }) {
+    gRandom->SetSeed(4711);
+    CLHEP::HepRandom::setTheSeed(4711);
+    vector<MCActivatorParticle> Clustered(10, Mg28);
+    vector<double> D;
+    for (unsigned int p = 0; p < Clustered.size(); ++p) {
+      Clustered[p].SetHalfLife(log(2.0)/pow(1.02, p)*s);
+      Clustered[p].SetBranchingRatio(1.0);
+      D.push_back(pow(1.02, p)/s);
+    }
+    Clustered[0].SetProductionRate(1.0/s);
+    SilenceOutput();
+    bool Equations = A.ActivateByEquations(Clustered, T*s, 0.0);
+    bool Simulation = A.ActivateByPartialSimulation(Clustered, T*s, 0.0);
+    RestoreOutput();
+    Passed = EvaluateFalse("ActivateByEquations()", MString("10 clustered, ") + T + " s", "The equations reject the clustered chain", Equations) && Passed;
+    Passed = EvaluateTrue("ActivateByPartialSimulation()", MString("10 clustered, ") + T + " s", "The simulation fallback succeeds", Simulation) && Passed;
+    vector<double> N = IntegrateChain(1.0/s, D, vector<double>(10, 1.0), vector<double>(10, 0.0), T*s);
+    for (unsigned int p = 0; p < Clustered.size(); ++p) {
+      double Expected = D[p]*N[p];
+      // Statistical accuracy: ~0.5% for the leading elements, up to ~2% for the tiny tail at 1 s - 5% margin:
+      Passed = EvaluateNear("ActivateByPartialSimulation()", MString("10 clustered, ") + T + " s, element " + (p+1), "The simulated activity matches the integration within 5%", Clustered[p].GetActivation(), Expected, 0.05*Expected) && Passed;
+    }
+  }
 
   gRandom->SetSeed(OldSeed);
 
@@ -1927,13 +2023,29 @@ bool UTCActivator::TestActivateByEquationsLongChains()
   RestoreOutput();
   Passed = EvaluateTrue("ActivateByEquations()", "Ca48 -> Sc48 -> Ti48", "The chain of an extremely long-lived mother is calculated", OK) && Passed;
   Passed = EvaluateTrue("ActivateByEquations()", "Ca48 -> Sc48 -> Ti48", "The Sc48 activity is not negative", Ca48[1].GetActivation() >= 0.0) && Passed;
+  // Independent reference - the numerical integration of the chain:
+  {
+    vector<double> D = { Ca48[0].GetDecayConstant(), Ca48[1].GetDecayConstant() };
+    vector<double> N = IntegrateChain(1.0/s, D, { 1.0, 1.0 }, { 0.0, 0.0 }, 1e5*s);
+    double Expected0 = D[0]*N[0];
+    double Expected1 = D[1]*N[1];
+    Passed = EvaluateNear("ActivateByEquations()", "Ca48 -> Sc48 -> Ti48", "The tiny Ca48 activity matches the integration", Ca48[0].GetActivation(), Expected0, 1e-6*Expected0) && Passed;
+    Passed = EvaluateNear("ActivateByEquations()", "Ca48 -> Sc48 -> Ti48", "The tiny Sc48 activity matches the integration", Ca48[1].GetActivation(), Expected1, 1e-4*Expected1) && Passed;
+  }
 
-  // Five elements with an unstable last one cannot be calculated with the equations:
+  // Five elements with an unstable last one:
   Five[4].SetHalfLife(100*s);
   SilenceOutput();
   OK = A.ActivateByEquations(Five, Activation, 0.0);
   RestoreOutput();
-  Passed = EvaluateFalse("ActivateByEquations()", "5 elements, unstable end", "A five-element chain with an unstable end is rejected", OK) && Passed;
+  Passed = EvaluateTrue("ActivateByEquations()", "5 elements, unstable end", "A five-element chain with an unstable end is calculated", OK) && Passed;
+  {
+    vector<double> D5;
+    for (unsigned int p = 0; p < 5; ++p) D5.push_back(Five[p].GetDecayConstant());
+    vector<double> N5 = IntegrateChain(1.0/s, D5, vector<double>(5, 1.0), vector<double>(5, 0.0), Activation);
+    double Expected5 = D5[4]*N5[4];
+    Passed = EvaluateNear("ActivateByEquations()", "5 elements, unstable end", "The unstable fifth element matches the integration", Five[4].GetActivation(), Expected5, 1e-6*Expected5) && Passed;
+  }
 
   // Single element:
   vector<MCActivatorParticle> One = { CreateParticle(11024, 0.0) };

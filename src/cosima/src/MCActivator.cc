@@ -288,6 +288,7 @@ bool MCActivator::CalculateEquilibriumRates()
   m_Activation.Reset();
 
   // We utilize G4RadioactiveDecay to retrieve the decay tables
+  // Attention: It is intentionally never deleted - its destructor deletes the decay tables of all G4RadioactiveDecay instances
   G4RadioactiveDecay* Decay = new G4RadioactiveDecay();
   G4DecayTable* DecayTable;
   G4String ParticleName;
@@ -324,7 +325,12 @@ bool MCActivator::CalculateEquilibriumRates()
 
         vector<vector<MCActivatorParticle> > Tree;
 
-        cout<<"Start: "<<m_Rates.GetID(v, i)<<"("<<m_Rates.GetNExcitations(v, i)<<"): Excitation: "<<m_Rates.GetExcitation(v, i, e)/keV<<" & LifeTime: "<<m_Rates.GetParticleDefinition(v, i, e)->GetPDGLifeTime()/s<<" sec"<<endl;      
+        G4ParticleDefinition* StartDefinition = m_Rates.GetParticleDefinition(v, i, e);
+        if (StartDefinition == nullptr) {
+          mout<<"Warning: Skipping isotope unknown to Geant4: "<<m_Rates.GetID(v, i)<<" excitation="<<m_Rates.GetExcitation(v, i, e)/keV<<" keV"<<endl;
+          continue;
+        }
+        cout<<"Start: "<<m_Rates.GetID(v, i)<<"("<<m_Rates.GetNExcitations(v, i)<<"): Excitation: "<<m_Rates.GetExcitation(v, i, e)/keV<<" & LifeTime: "<<StartDefinition->GetPDGLifeTime()/s<<" sec"<<endl;      
 
         /* 
         if (m_Rates.GetID(v, i) == 72154) {
@@ -444,7 +450,11 @@ bool MCActivator::CalculateEquilibriumRates()
                     if (Tree[b].back().GetName() == ParticleName && ExcitationEnergy > 0.0) {
                       if (HasNoGammaTransitions(Tree[b].back()) == false) {
                         // As in Geant4, the IT part of the decay table is the gamma de-excitation cascade
-                        CreateDeexcitationBranches(Tree[b], Channel->GetBR(), AdditionalTrees);
+                        unsigned int NBefore = AdditionalTrees.size();
+                        if (CreateDeexcitationBranches(Tree[b], Channel->GetBR(), AdditionalTrees) == false) {
+                          // The level data is not usable - discard the incomplete branches, the isotope is excluded:
+                          AdditionalTrees.resize(NBefore);
+                        }
                         NewBranchAdded = true;
                         continue;
                       }
@@ -552,7 +562,10 @@ bool MCActivator::CalculateEquilibriumRates()
                 continue;
               }
               vector<vector<MCActivatorParticle> > NewBranches;
-              CreateDeexcitationBranches(Tree[b], 1.0, NewBranches);
+              if (CreateDeexcitationBranches(Tree[b], 1.0, NewBranches) == false) {
+                // The level data is not usable - discard the incomplete branches, the isotope is excluded:
+                NewBranches.clear();
+              }
               for (unsigned int n = 0; n < NewBranches.size(); ++n) {
                 Tree.push_back(NewBranches[n]);
                 NChanges++;
@@ -956,8 +969,8 @@ bool MCActivator::CleanDecayChains(vector<vector<MCActivatorParticle> >& Tree)
         bool AreEqual = true;
         for (unsigned int a = 0; a < Tree[b1].size(); ++a) {
           //cout<<Tree[b1][a].GetID()<<":"<<Tree[b2][a].GetID()<<":"<<Tree[b1][a].GetExcitation()<<":"<<Tree[b2][a].GetExcitation()<<endl;
-          if (Tree[b1][a].GetID() != Tree[b2][a].GetID() ||
-              fabs(Tree[b1][a].GetExcitation() - Tree[b2][a].GetExcitation()) > 1*keV) { // bad data protection...
+          // The Geant4 ion table returns the same definition for the same level:
+          if (Tree[b1][a].GetDefinition() != Tree[b2][a].GetDefinition()) {
             AreEqual = false;
             break;
           }
@@ -1519,142 +1532,73 @@ bool MCActivator::ActivateByEquations(vector<MCActivatorParticle>& P, double Act
   cout<<"Cooldown time:   "<<CooldownTime/s<<endl;
   cout<<"Production rate: "<<P[0].GetProductionRate()*s<<endl;
 
-  // This method only works if we have 5 or less elements
-  if (P.size() > 3 && CooldownTime > 0) {
-    return false;
+  // The chain effectively ends with its first stable element:
+  unsigned int NUnstable = 0;
+  while (NUnstable < P.size() && P[NUnstable].GetDecayConstant() > 0) {
+    ++NUnstable;
   }
-  if (P.size() > 5) {
-    return false;
+
+  // Edge cases for the simulation - immediate decays (infinite decay constant):
+  for (unsigned int p = 0; p < NUnstable; ++p) {
+    if (P[p].GetDecayConstant() == numeric_limits<double>::max()) {
+      return false;
+    }
   }
-  // The equations for the fifth element only exist if it is stable:
-  if (P.size() == 5 && P[4].GetDecayConstant() > 0) {
-    return false;
-  }
-  // If two of the decay constants are too identical it also fails
+
+  // If two of the decay constants are too identical the equations divide by (almost) zero:
   double DecayConstantTolerance = 0.01; // this value is just a guess..
-  for (unsigned int p1 = 0; p1 < P.size(); ++p1) {
-    for (unsigned int p2 = p1+1; p2 < P.size(); ++p2) {
-      if (P[p1].GetDecayConstant() > 0 && P[p2].GetDecayConstant() > 0) {
-        if (P[p1].GetDecayConstant()/P[p2].GetDecayConstant() < 1+DecayConstantTolerance &&
-            P[p1].GetDecayConstant()/P[p2].GetDecayConstant() > 1-DecayConstantTolerance) {
-          mout<<"Found a rare case, where two decay constants are almost identical:"<<endl;
-          mout<<P[p1].GetName()<<": "<<P[p1].GetDecayConstant()<<" vs. "<<P[p2].GetName()<<": "<<P[p2].GetDecayConstant()<<endl;
-          mout<<"Switching to alternate calculation to avoid division by zero..."<<endl;
-          return false;
-        }
+  for (unsigned int p1 = 0; p1 < NUnstable; ++p1) {
+    for (unsigned int p2 = p1+1; p2 < NUnstable; ++p2) {
+      if (P[p1].GetDecayConstant()/P[p2].GetDecayConstant() < 1+DecayConstantTolerance &&
+          P[p1].GetDecayConstant()/P[p2].GetDecayConstant() > 1-DecayConstantTolerance) {
+        mout<<"Found a rare case, where two decay constants are almost identical:"<<endl;
+        mout<<P[p1].GetName()<<": "<<P[p1].GetDecayConstant()<<" vs. "<<P[p2].GetName()<<": "<<P[p2].GetDecayConstant()<<endl;
+        mout<<"Switching to alternate calculation to avoid division by zero..."<<endl;
+        return false;
       }
     }
   }
 
-
-  if (P.size() >= 1) {
-    P[0].SetActivation(ActivationO1(P[0].GetProductionRate(), 
-                                    P[0].GetDecayConstant(), 
-                                    ActivationTime));
-  }
-  if (P.size() >= 2) {
-    P[1].SetActivation(ActivationO2(P[0].GetProductionRate(), 
-                                    P[0].GetDecayConstant(), 
-                                    P[1].GetBranchingRatio(), 
-                                    P[1].GetDecayConstant(), 
-                                    ActivationTime)); 
-  }
-  if (P.size() >= 3) {
-    P[2].SetActivation(ActivationO3(P[0].GetProductionRate(), 
-                                    P[0].GetDecayConstant(), 
-                                    P[1].GetBranchingRatio(), 
-                                    P[1].GetDecayConstant(), 
-                                    P[2].GetBranchingRatio(), 
-                                    P[2].GetDecayConstant(), 
-                                    ActivationTime)); 
-  }
-  if (P.size() >= 4) {
-    P[3].SetActivation(ActivationO4(P[0].GetProductionRate(), 
-                                    P[0].GetDecayConstant(), 
-                                    P[1].GetBranchingRatio(), 
-                                    P[1].GetDecayConstant(), 
-                                    P[2].GetBranchingRatio(), 
-                                    P[2].GetDecayConstant(), 
-                                    P[3].GetBranchingRatio(), 
-                                    P[3].GetDecayConstant(), 
-                                    ActivationTime)); 
-  }
-  if (P.size() >= 5) {
-      // Since we allow only 5 elements, the last one has to be stable...
-      P[4].SetActivation(0.0);
+  // Decay constants and branching ratios of the unstable part of the chain:
+  vector<double> D;
+  vector<double> B;
+  for (unsigned int p = 0; p < NUnstable; ++p) {
+    D.push_back(P[p].GetDecayConstant());
+    B.push_back(p == 0 ? 1.0 : P[p].GetBranchingRatio());
   }
 
-  cout<<"Activities after build-up: ";
-  for (unsigned int p = 0; p < P.size(); ++p) {
-    cout<<P[p].GetName()<<"(T="<<P[p].GetHalfLife()/s<<"s, B="<<P[p].GetBranchingRatio()<<"): "<<P[p].GetActivation()*s<<"Bq   ";
+  // Build-up - stable elements have no activity:
+  vector<double> Activities(P.size(), 0.0);
+  for (unsigned int n = 1; n <= NUnstable; ++n) {
+    Activities[n-1] = ActivationOn(P[0].GetProductionRate(), vector<double>(D.begin(), D.begin() + n), vector<double>(B.begin(), B.begin() + n), ActivationTime);
   }
-  cout<<endl;
 
-//   for (unsigned int p = 0; p < P.size(); ++p) {
-//     cout<<"HACK!"<<endl;
-//     if (p != 2) P[p].SetActivation(0.0);
-//   }
-
+  // Cooldown:
   if (CooldownTime > 0.0) {
-    vector<double> Activities;
-    for (unsigned int p = 0; p < P.size(); ++p) {
-      Activities.push_back(P[p].GetActivation());
+    vector<double> Cooled(P.size(), 0.0);
+    for (unsigned int n = 1; n <= NUnstable; ++n) {
+      Cooled[n-1] = CooldownOn(vector<double>(Activities.begin(), Activities.begin() + n), vector<double>(D.begin(), D.begin() + n), vector<double>(B.begin(), B.begin() + n), CooldownTime);
     }
+    Activities = Cooled;
+  }
 
-    if (P.size() >= 1) {
-      P[0].SetActivation(CooldownO1(Activities[0], 
-                                    P[0].GetDecayConstant(), 
-                                    CooldownTime)); 
+  // Edge cases for the simulation - numerical problems:
+  for (unsigned int p = 0; p < P.size(); ++p) {
+    if (std::isfinite(Activities[p]) == false) {
+      return false;
     }
-    if (P.size() >= 2) {
-      P[1].SetActivation(CooldownO2(Activities[0], 
-                                    P[0].GetDecayConstant(), 
-                                    P[1].GetBranchingRatio(), 
-                                    Activities[1], 
-                                    P[1].GetDecayConstant(), 
-                                    CooldownTime)); 
-    }
-    if (P.size() >= 3) {
-      P[2].SetActivation(CooldownO3(Activities[0], 
-                                    P[0].GetDecayConstant(), 
-                                    P[1].GetBranchingRatio(), 
-                                    Activities[1], 
-                                    P[1].GetDecayConstant(), 
-                                    P[2].GetBranchingRatio(), 
-                                    Activities[2], 
-                                    P[2].GetDecayConstant(), 
-                                    CooldownTime)); 
-    }
-    if (P.size() >= 4) {
-      P[3].SetActivation(CooldownO4(Activities[0], 
-                                    P[0].GetDecayConstant(), 
-                                    P[1].GetBranchingRatio(), 
-                                    Activities[1], 
-                                    P[1].GetDecayConstant(), 
-                                    P[2].GetBranchingRatio(), 
-                                    Activities[2], 
-                                    P[2].GetDecayConstant(), 
-                                    P[3].GetBranchingRatio(), 
-                                    Activities[3], 
-                                    P[3].GetDecayConstant(), 
-                                    CooldownTime)); 
-    }
-    if (P.size() >= 5) {
-      // Since we allow only 5 elements, the last one has to be stable...
-      P[4].SetActivation(0.0);
-    }
-
-    cout<<"Activities after cooldown: ";
-    for (unsigned int p = 0; p < P.size(); ++p) {
-      cout<<P[p].GetName()<<"(T="<<P[p].GetHalfLife()/s<<"s, B="<<P[p].GetBranchingRatio()<<"): "<<P[p].GetActivation()*s<<"Bq   ";
-    }
-    cout<<endl;
   }
 
   // Rounding errors for extremely long-lived isotopes (e.g. the double-beta emitters Ca48, Ge76) can give tiny negative activities:
   for (unsigned int p = 0; p < P.size(); ++p) {
-    if (P[p].GetActivation() < 0.0) P[p].SetActivation(0.0);
+    P[p].SetActivation(Activities[p] < 0.0 ? 0.0 : Activities[p]);
   }
+
+  cout<<"Activities: ";
+  for (unsigned int p = 0; p < P.size(); ++p) {
+    cout<<P[p].GetName()<<"(T="<<P[p].GetHalfLife()/s<<"s, B="<<P[p].GetBranchingRatio()<<"): "<<P[p].GetActivation()*s<<"Bq   ";
+  }
+  cout<<endl;
 
   return true;
 }
@@ -1758,7 +1702,8 @@ double MCActivator::ActivationO1(double R, double D1, double t)
     return 0;
   }
 
-  return R*(1-exp(-D1*t));
+  // expm1 avoids the cancellation in 1 - exp(-D1*t) for very small decay constants:
+  return -R*expm1(-D1*t);
 }
 
 
@@ -1800,8 +1745,10 @@ double MCActivator::ActivationO2(double R, double D1, double Branching12, double
   if (D1 == 0 || D2 == 0) {
     return 0;
   }
-  //return Branching12*(R*((1-exp(-D1*t))-R/D2/(-D2+D1)*(-D2*D1*exp(-D1*t)+D1*D2*exp(-D2*t))));
-  return Branching12*R*( (1-exp(-D1*t)) - D1/(D1-D2) * (exp(-D2*t)-exp(-D1*t)) );
+  // Numerically stable form with expm1 - avoids the cancellation for very small decay constants (e.g. Ca48):
+  double X1 = -expm1(-D1*t);
+  double X2 = -expm1(-D2*t);
+  return Branching12*R*(D2*X1 - D1*X2)/(D2 - D1);
 }
 
 
@@ -1842,8 +1789,8 @@ double MCActivator::ActivationO3(double R, double D1, double Branching12, double
   if (D1 == 0 || D2 == 0 || D3 == 0) {
     return 0;
   }
-  
-  return Branching12*Branching23*(R*(1-exp(-D1*t))-R/D2/(-D2+D1)*(-D2*D1*exp(-D1*t)+D1*D2*exp(-D2*t))-(D1*exp(-D1*t)*R*D2*D3*D3-D1*exp(-D1*t)*R*D2*D2*D3-R*D2*exp(-D2*t)*D1*D3*D3+R*D2*exp(-D2*t)*D1*D1*D3+D3*D3*D3*exp(-D3*t)*D1*R*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*D3*exp(-D3*t)*D1*R*D2*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)+D3*exp(-D3*t)*D1*D1*R*D2*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*D3*D3*exp(-D3*t)*D1*D1*R*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)+D3*D3*exp(-D3*t)*D1*D1*D1*R*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*exp(-D3*t)*D1*D1*D1*R*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3))/D3/(D2*D3*D3-D2*D2*D3+D2*D2*D1-D1*D3*D3+D1*D1*D3-D1*D1*D2));
+
+  return ActivationOn(R, { D1, D2, D3 }, { 1.0, Branching12, Branching23 }, t);
 }
 
 
@@ -1888,12 +1835,45 @@ double MCActivator::ActivationO4(double R, double D1, double Branching12, double
   if (D1 == 0 || D2 == 0 || D3 == 0 || D4 == 0) {
     return 0;
   }
-  
-  return Branching12*Branching23*Branching34*(R*(1-exp(-D1*t))-R/D2/(-D2+D1)*(-D2*D1*exp(-D1*t)+D1*D2*exp(-D2*t))-(D1*exp(-D1*t)*R*D2*D3*D3-D1*exp(-D1*t)*R*D2*D2*D3-R*D2*exp(-D2*t)*D1*D3*D3+R*D2*exp(-D2*t)*D1*D1*D3+D3*D3*D3*exp(-D3*t)*D1*R*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*D3*exp(-D3*t)*D1*R*D2*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)+D3*exp(-D3*t)*D1*D1*R*D2*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*D3*D3*exp(-D3*t)*D1*D1*R*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)+D3*D3*exp(-D3*t)*D1*D1*D1*R*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*exp(-D3*t)*D1*D1*D1*R*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3))/D3/(D2*D3*D3-D2*D2*D3+D2*D2*D1-D1*D3*D3+D1*D1*D3-D1*D1*D2)-(-D4*D4*exp(-D4*t)*D2*D2*D2*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*D4*exp(-D4*t)*D2*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-R*D2*exp(-D2*t)*D1*D1*D1*D3*D4*D4+R*D3*exp(-D3*t)*D1*D1*D1*D2*D4*D4-R*D3*exp(-D3*t)*D1*D1*D1*D2*D2*D4-D4*D4*exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-
-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*D4*exp(-D4*t)*D2*D2*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*D4*exp(-D4*t)*D2*D2*D2*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*D4*exp(-D4*t)*D2*D2*D2*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*exp(-D4*t)*D2*D2*D2*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*D4*exp(-D4*t)*D2*D2*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*
-R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*exp(-D4*t)*D2*D2*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*exp(-D4*t)*D2*D2*D1*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*D4*exp(-D4*t)*D2*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*
-D4*D4*exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*exp(-D4*t)*D2*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*exp(-D4*t)*D2*D1*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+R*D2*exp(-D2*t)*D1*D1*D3*D4*D4*D4-R*D2*exp(-D2*t)*D1*D3*D3*D4*D4*D4+D1*exp(-D1*t)*R*D2*D2*D3*D3*D3*D4+D1*exp(-D1*t)*R*D2*D3*D3*D4*D4*D4-R*D2*exp(-D2*t)*D1*D1*D3*D3*D3*D4+R*D2*exp(-D2*t)*D1*D3*D3*D3*D4*D4-D1*exp(-D1*t)*R*D2*D3*D3*D3*D4*D4-R*D3*exp(-D3*t)*D1*D1*D2*D4*D4*D4-D1*exp(-D1*t)*R*D2*D2*D2*D3*D3*D4+D1*exp(-D1*t)*R*D2*D2*D2*D3*D4*D4-D1*exp(-D1*t)*R*D2*D2*D3*D4*D4*D4+R*D2*exp(-D2*t)*D1*D1*D1*D3*D3*D4+R*D3*exp(-D3*t)*D1*D1*D2*D2*D2*D4-R*D3*exp(-D3*t)*D1*D2*D2*D2*D4*D4+R*D3*exp(-D3*t)*D1*D2*D2*D4*D4*D4)/D4/(D2*D3*D3*D4*D4*D4-D2*D3*D3*D3*D4*D4+D2*D2*
-D3*D3*D3*D4-D2*D2*D3*D4*D4*D4+D2*D2*D2*D3*D4*D4-D2*D2*D2*D3*D3*D4+D2*D2*D1*D4*D4*D4-D2*D2*D2*D1*D4*D4-D1*D3*D3*D4*D4*D4+D1*D3*D3*D3*D4*D4-D1*D1*D3*D3*D3*D4+D1*D1*D3*D4*D4*D4-D1*D1*D1*D3*D4*D4+D1*D1*D1*D3*D3*D4-D1*D1*D2*D4*D4*D4+D1*D1*D1*D2*D4*D4-D1*D1*D1*D2*D2*D4-D2*D2*D3*D3*D3*D1+D2*D2*D2*D1*D1*D4+D2*D2*D1*D1*D1*D3-D2*D1*D1*D1*D3*D3+D2*D1*D1*D3*D3*D3-D2*D2*D2*D1*D1*D3+D2*D2*D2*D3*D3*D1));
+
+  return ActivationOn(R, { D1, D2, D3, D4 }, { 1.0, Branching12, Branching23, Branching34 }, t);
+}
+
+
+/******************************************************************************
+ * Determine the activation of the last element of a chain with constant production rate R into the first after Time t (Bateman solution)
+ * D: decay constants, B: branching ratios with B[k] from element k-1 to k
+ * Numerically stable with expm1 - avoids the cancellation for very small decay constants (e.g. Ca48)
+ */
+double MCActivator::ActivationOn(double R, const vector<double>& D, const vector<double>& B, double t)
+{
+  unsigned int n = D.size();
+
+  // Branching and feeding along the chain:
+  double Factor = R;
+  for (unsigned int j = 1; j < n; ++j) {
+    Factor *= B[j]*D[j-1];
+  }
+
+  // Sum over all elements with (1 - exp(-D t)) = -expm1(-D t):
+  double Sum = 0.0;
+  double SumAbs = 0.0;
+  for (unsigned int i = 0; i < n; ++i) {
+    double Denominator = D[i];
+    for (unsigned int p = 0; p < n; ++p) {
+      if (p != i) Denominator *= D[p] - D[i];
+    }
+    double Term = -expm1(-D[i]*t)/Denominator;
+    Sum += Term;
+    SumAbs += fabs(Term);
+  }
+
+  // Clustered decay constants make the terms cancel - return NaN if the rounding error is too large:
+  if (n*numeric_limits<double>::epsilon()*SumAbs > 1E-6*fabs(Sum)) {
+    return numeric_limits<double>::quiet_NaN();
+  }
+
+  return D[n-1]*Factor*Sum;
 }
 
 
@@ -1921,6 +1901,7 @@ double MCActivator::CooldownOn(const vector<double>& A, const vector<double>& D,
 
   // Sum the contributions of the start nuclei of each element k to the last element:
   double Nuclei = 0.0;
+  double NucleiAbs = 0.0;
   for (unsigned int k = 0; k < n; ++k) {
     double Factor = A[k]/D[k];
     for (unsigned int j = k+1; j < n; ++j) {
@@ -1933,8 +1914,14 @@ double MCActivator::CooldownOn(const vector<double>& A, const vector<double>& D,
         if (p != i) Denominator *= D[p] - D[i];
       }
       Sum += exp(-D[i]*t)/Denominator;
+      NucleiAbs += fabs(Factor*exp(-D[i]*t)/Denominator);
     }
     Nuclei += Factor*Sum;
+  }
+
+  // Clustered decay constants make the terms cancel - return NaN if the rounding error is too large:
+  if (n*numeric_limits<double>::epsilon()*NucleiAbs > 1E-6*fabs(Nuclei)) {
+    return numeric_limits<double>::quiet_NaN();
   }
 
   return D[n-1]*Nuclei;
