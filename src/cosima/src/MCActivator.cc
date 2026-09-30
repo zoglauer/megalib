@@ -1331,7 +1331,8 @@ bool MCActivator::ActivateByPartialSimulation(vector<MCActivatorParticle>& P, do
         // Now simulate all decays until the total time is larger than MaxTime
         for (unsigned int p = q; p < P.size(); ++p) {
           
-          TotalBR *= P[p].GetBranchingRatio();
+          // The activity of element q already contains its branching ratio:
+          if (p > q) TotalBR *= P[p].GetBranchingRatio();
 
           if (p == q) {
             // The generation time can be assumed before T = 0 thus the time we use is TimeTillCooldown
@@ -1799,9 +1800,7 @@ double MCActivator::CooldownO2(double A1, double D1, double Branching12, double 
     return 0;
   }
 
-  //cout<<"CO2 data: "<<A1*s<<":"<<D1*s<<":"<<Branching12<<":"<<A2*s<<":"<<D2*s<<":"<<t/s<<endl;
-  return Branching12*(-exp(-D2*t)*A2*D1+A1*exp(-D1*t)*D2+exp(-D2*t)*D2*A2-exp(-D2*t)*A1*D2)/(D2-D1);
-  //return Branching12*(exp(-D2*t)*A2*D1+A1*exp(-D1*t)*D2-exp(-D2*t)*D2*A2-exp(-D2*t)*A1*D2)/(D2-D1);
+  return CooldownOn({ A1, A2 }, { D1, D2 }, { 1.0, Branching12 }, t);
 }
 
 
@@ -1843,18 +1842,7 @@ double MCActivator::CooldownO3(double A1, double D1, double Branching12, double 
     return 0;
   }
 
-  return Branching12*Branching23*(D3*D1*D1*exp(-D3*t)*A2-D1*D1*exp(-D2*t)*A2*D3-D3*D1*D1*exp(-D3*t)*A3+D1*D1*exp(-D3*t)*A3*D2-D1*exp(-D2*t)*A1*D2*D3-D3*D3*D1*exp(-D3*t)*A2+D3*D1*exp(-D3*t)*A1*D2-exp(-D3*t)*D2*D2*A3*D1-D3*exp(-D3*t)*D2*A2*D1+D3*D3*D1*exp(-D3*t)*A3+exp(-D2*t)*A2*D1*D3*D3+exp(-D2*t)*D2*A2*D1*D3-D3*D3*exp(-D3*t)*D2*A3+exp(-D2*t)*A1*D2*D3*D3-D3*exp(-D3*t)*D2*D2*A1-exp(-D2*t)*D2*A2*D3*D3+D3*D3*exp(-D3*t)*D2*A2-A1*exp(-D1*t)*D2*D3*D3+D3*exp(-D3*t)*D2*D2*A3+A1*exp(-D1*t)*D2*D2*D3)/(-D2*D3*D3+D2*D2*D3-D2*D2*D1+D1*D3*D3-D1*D1*D3+D2*D1*D1);
-
-
-  //return Branching12*Branching23*(-(-D1*D1*exp(-D3*t)*A3*D2+D1*D1*exp(-D3*t)*D3*A3+D1*D1*exp(-D3*t)*A2*D3-exp(-D2*t)*D1*D1*A2*D3+D1*exp(-D3*t)*D2*D2*A3+exp(-D2*t)*D2*A2*D1*D3-D1*exp(-D3*t)*D2*A2*D3+exp(-D2*t)*D1*A1*D2*D3-D1*D2*exp(-D3*t)*A1*D3-D1*exp(-D3*t)*D3*D3*A2+exp(-D2*t)*A2*D1*D3*D3-D1*exp(-D3*t)*D3*D3*A3+exp(-D3*t)*D2*D2*A1*D3-exp(-D3*t)*A3*D2*D2*D3-A1*exp(-D1*t)*D2*D2*D3+exp(-D3*t)*D3*D3*A3*D2-exp(-D2*t)*A1*D2*D3*D3+exp(-D3*t)*D2*A2*D3*D3-exp(-D2*t)*D2*A2*D3*D3+A1*exp(-D1*t)*D2*D3*D3)/(-D2*D3*D3+D2*D2*D3-D2*D2*D1+D1*D3*D3-D1*D1*D3+D1*D1*D2));
-
-  //return Branching12*Branching23*(-D1*D1*exp(-D3*t)*A3*D2+D1*D1*exp(-D3*t)*D3*A3-D1*D1*exp(-D3*t)*A2*D3+exp(-D2*t)*D1*D1*A2*D3+D1*exp(-D3*t)*D2*D2*A3-exp(-D2*t)*D2*A2*D1*D3+D1*D2*exp(-D3*t)*A1*D3+D1*exp(-D3*t)*D2*A2*D3-exp(-D2*t)*D1*A1*D2*D3+D1*exp(-D3*t)*D3*D3*A2-D1*exp(-D3*t)*D3*D3*A3-exp(-D2*t)*A2*D1*D3*D3+A1*exp(-D1*t)*D2*D2*D3-exp(-D3*t)*A3*D2*D2*D3-exp(-D3*t)*D2*D2*A1*D3+exp(-D2*t)*D2*A2*D3*D3-A1*exp(-D1*t)*D2*D3*D3+exp(-D2*t)*A1*D2*D3*D3-exp(-D3*t)*D2*A2*D3*D3+exp(-D3*t)*D3*D3*A3*D2)/(-D2*D3*D3+D2*D2*D3-D2*D2*D1+D1*D3*D3-D1*D1*D3+D1*D1*D2);
-
-  // return Branching12*Branching23*(-D1*D1*exp(-D3*t)*A3*D2+D1*D1*exp(-D3*t)*D3*A3-D1*D1*exp(-D3*t)*A2*D3+exp(-D2*t)*D1*D1*A2*D3+D1*D2*D2*exp(-D3*t)*A3+D1*D2*exp(-D3*t)*A1*D3+D1*D2*exp(-D3*t)*A2*D3-exp(-D2*t)*D1*A1*D2*D3-exp(-D2*t)*D2*A2*D1*D3-exp(-D2*t)*A2*D1*D3*D3+D1*exp(-D3*t)*D3*D3*A2-D1*exp(-D3*t)*D3*D3*A3+A1*exp(-D1*t)*D2*D2*D3-exp(-D3*t)*A3*D2*D2*D3-D2*D2*exp(-D3*t)*A1*D3+exp(-D2*t)*A1*D2*D3*D3+D3*D3*exp(-D3*t)*A3*D2-D2*exp(-D3*t)*A2*D3*D3-A1*exp(-D1*t)*D2*D3*D3+exp(-D2*t)*D2*A2*D3*D3)/(-D2*D3*D3+D2*D2*D3-D2*D2*D1+D1*D3*D3-D1*D1*D3+D1*D1*D2);
-
-  // return Branching12*Branching23*(-D2*D2*exp(-D3*t)*A3*D1+D2*D2*exp(-D3*t)*D3*A3-A1*exp(-D1*t)*D2*D2*D3+D2*D2*exp(-D3*t)*A1*D3+D2*D1*D1*exp(-D3*t)*A3-D2*D1*exp(-D3*t)*A1*D3+D2*exp(-D2*t)*A2*D1*D3+D2*exp(-D2*t)*A1*D1*D3-D2*D1*exp(-D3*t)*A2*D3-D2*exp(-D3*t)*D3*D3*A3-D2*exp(-D2*t)*A2*D3*D3+A1*exp(-D1*t)*D2*D3*D3+D2*exp(-D3*t)*D3*D3*A2-D2*exp(-D2*t)*A1*D3*D3-exp(-D3*t)*A3*D1*D1*D3+D1*D1*exp(-D3*t)*A2*D3-exp(-D2*t)*A2*D1*D1*D3+D3*D3*exp(-D3*t)*A3*D1-exp(-D3*t)*D3*D3*A2*D1+exp(-D2*t)*A2*D1*D3*D3)/(D2*D3*D3-D2*D2*D3+D2*D2*D1-D1*D3*D3+D1*D1*D3-D1*D1*D2);
-
-  //  return Branching12*Branching23*(D3*D3*exp(-D3*t)*D2*A3-exp(-D2*t)*A2*D1*D3*D3+D2*exp(-D2*t)*A1*D3*D3-A1*exp(-D1*t)*D2*D3*D3-D3*D3*exp(-D3*t)*D2*A2+D3*D3*exp(-D3*t)*D1*A2+D2*exp(-D2*t)*A2*D3*D3-D3*D3*exp(-D3*t)*D1*A3-D3*exp(-D3*t)*D2*D2*A1+D3*exp(-D3*t)*D2*A2*D1-exp(-D2*t)*D1*A1*D2*D3-D3*exp(-D3*t)*D2*D2*A3-D3*exp(-D3*t)*D1*D1*A2+D3*exp(-D3*t)*D1*A1*D2-exp(-D2*t)*D2*A2*D1*D3+D3*exp(-D3*t)*D1*D1*A3+A1*exp(-D1*t)*D2*D2*D3+exp(-D2*t)*D1*D1*A2*D3+exp(-D3*t)*D2*D2*A3*D1-exp(-D3*t)*D1*D1*A3*D2)/(D2*D3*D3-D2*D2*D3+D2*D2*D1-D1*D3*D3+D1*D1*D3-D1*D1*D2)/D3
+  return CooldownOn({ A1, A2, A3 }, { D1, D2, D3 }, { 1.0, Branching12, Branching23 }, t);
 }
 
 
@@ -1904,19 +1892,38 @@ double MCActivator::CooldownO4(double A1, double D1, double Branching12, double 
     return 0;
   }
 
-  return Branching12*Branching23*Branching34*(D4*exp(-D4*t)*D1*D1*D3*D3*D3*A4-D4*exp(-D4*t)*D1*D1*D3*D3*D3*A2+D4*D4*exp(-D4*t)*D2*D2*D3*D3*A2-D4*D4*D2*D1*D1*D1*exp(-D4*t)*A4+D4*D4*D2*D1*D1*D1*exp(-D4*t)*A3+D4*D4*D1*D1*D1*D3*exp(-D4*t)*A4+D4*D4*D2*D2*D2*D3*exp(-D4*t)*A3-D4*D4*D2*D3*D3*D3*exp(-D4*t)*A2+D4*D4*D2*D3*D3*D3*exp(-D4*t)*A4-D4*D4*D2*D2*D3*D3*exp(-D4*t)*A3-D4*D4*exp(-D4*t)*D2*D2*D2*D1*A3+D4*D4*exp(-D4*t)*D2*D2*D2*D1*A4-D4*D4*D2*D2*D2*D3*exp(-D4*t)*A4-D4*D4*D4*exp(-D4*t)*D1*D3*D3*A3+D4*D2*D2*D1*D1*D1*exp(-D4*t)*A4-D4*D2*D2*D1*D1*D1*exp(-D4*t)*A3-D4*exp(-D4*t)*D2*D2*D2*D3*D3*A1+D4*D4*exp(-D4*t)*D1*D3*D3*D3*A2-D4*D4*D1*D1*D1*D3*exp(-D4*t)*A3+D4*D4*exp(-D4*t)*D1*D1*D3*D3*A3-D4*D4*D1*D1*D3*D3*exp(-D4*t)*A2-D4*D4*exp(-D4*t)*D1*D3*D3*D3*A4-D4*D1*D1*D1*D3*D3*exp(-D4*t)*A4-D4*D2*D2*D3*D3*D3*exp(-D4*t)*A4+D4*D2*D2*D3*D3*D3*exp(-D4*t)*A1-D4*exp(-D4*t)*D2*D2*D2*D1*D1*A4+D4*D4*exp(-D4*t)*D2*D2*D3*D1*A3+D4*D4*exp(-D4*t)*D2*D1*D1*D3*A2-D4*D4*D1*D1*D3*exp(-D4*t)*D2*A3-D4*D4*D2*D2*D1*exp(-D4*t)*D3*A2+D4*D4*D4*D2*D3*D3*
-exp(-D4*t)*A3-D4*D4*D4*D2*D2*D1*exp(-D4*t)*A4-D4*D4*D4*D2*D3*D3*exp(-D4*t)*A4-D4*D4*D4*D1*D1*D3*exp(-D4*t)*A4+D4*D4*D4*exp(-D4*t)*D2*D2*D3*A4+D4*D4*D4*exp(-D4*t)*D2*D1*D1*A4+exp(-D2*t)*D1*D1*A1*D2*D3*D4*D4+D4*D4*D4*D1*D1*D3*exp(-D4*t)*A3-D4*D4*D4*exp(-D4*t)*D2*D1*D1*A3+exp(-D3*t)*D1*A1*D2*D3*D4*D4*D4-D4*D4*D4*exp(-D4*t)*D2*D2*D3*A3+D4*D4*D4*D2*D2*D1*exp(-D4*t)*A3+D4*D4*D4*exp(-D4*t)*D1*D3*D3*A4+D4*D1*D1*D1*D3*D3*exp(-D4*t)*A2+D4*exp(-D4*t)*D2*D2*D2*D1*D1*A3+D4*D2*D2*D2*D3*D3*exp(-D4*t)*A4+exp(-D3*t)*D3*D2*D2*D2*A1*D4*D4+exp(-D2*t)*D2*A2*D3*D3*D3*D4*D4+exp(-D3*t)*D3*D3*D1*A3*D4*D4*D4+exp(-D3*t)*D2*D2*D2*A3*D1*D4*D4+exp(-D3*t)*D2*D2*A2*D3*D3*D1*D4+D1*D1*D1*exp(-D2*t)*A2*D3*D4*D4+exp(-D3*t)*D1*D1*A1*D2*D2*D3*D4+D3*D1*D1*exp(-D3*t)*A2*D4*D4*D4+D3*D1*D1*D1*exp(-D3*t)*A2*D2*D4+exp(-D3*t)*D3*D3*D1*D1*A2*D4*D4+exp(-D3*t)*D3*D3*D2*D2*A3*D4*D4+exp(-D1*t)*D3*D2*D2*A1*D4*D4*D4+exp(-D1*t)*D3*D3*D2*D2*D2*A1*D4+exp(-D3*t)*D3*D2*D2*D2*A3*D1*D4+exp(-D1*t)*A1*D2*D3*D3*D3*D4*D4+exp(-D3*t)*D3*D2*D2*A3*D4*D4*D4+exp(-D3*t)*D2*A2*
-D3*D3*D4*D4*D4-exp(-D3*t)*D1*D1*A1*D2*D3*D4*D4-exp(-D3*t)*D3*D3*D1*D1*A2*D2*D4-D3*D1*D1*D1*exp(-D3*t)*A2*D4*D4-D1*D1*exp(-D2*t)*A2*D3*D4*D4*D4-D3*D1*D1*D1*exp(-D3*t)*A3*D2*D4-D1*D1*D1*exp(-D2*t)*A2*D3*D3*D4+D3*D1*D1*exp(-D3*t)*A3*D2*D4*D4+D1*D1*exp(-D3*t)*A3*D2*D4*D4*D4+exp(-D2*t)*A1*D2*D3*D3*D3*D1*D4+D3*D1*D1*D1*exp(-D3*t)*A3*D4*D4+exp(-D2*t)*A1*D2*D3*D3*D4*D4*D4+exp(-D2*t)*D3*D3*D2*A2*D1*D1*D4-exp(-D2*t)*D3*D2*A2*D1*D1*D4*D4-D3*D1*D1*exp(-D3*t)*A3*D4*D4*D4+exp(-D2*t)*D3*D3*D1*A2*D4*D4*D4+exp(-D2*t)*D3*D2*A2*D1*D4*D4*D4-exp(-D2*t)*A1*D2*D3*D3*D3*D4*D4-D1*D1*D1*exp(-D3*t)*A3*D2*D4*D4-exp(-D2*t)*D1*D1*A1*D2*D3*D3*D4-exp(-D3*t)*D3*D3*D1*A2*D4*D4*D4-exp(-D2*t)*D1*A1*D2*D3*D4*D4*D4-exp(-D3*t)*D3*D2*A2*D1*D4*D4*D4-exp(-D3*t)*D3*D2*D2*A2*D1*D1*D4-exp(-D3*t)*D2*D2*D2*A3*D1*D1*D4-exp(-D2*t)*D3*D3*D3*D1*A2*D4*D4-exp(-D3*t)*D3*D3*D1*D1*A3*D4*D4+exp(-D2*t)*D3*D3*D3*D1*D1*A2*D4-exp(-D3*t)*D2*D2*A2*D3*D3*D4*D4-exp(-D3*t)*D3*D2*D2*D2*A3*D4*D4-exp(-D3*t)*D2*D2*A3*D1*D4*D4*D4-exp(-D3*t)*D3*D2*D2*A1*D4*D4*D4-exp(-D1*t)*A1*D2*
-D2*D3*D3*D3*D4-exp(-D3*t)*D3*D2*D2*D2*A1*D1*D4-exp(-D2*t)*D2*A2*D3*D3*D3*D1*D4-exp(-D1*t)*A1*D2*D3*D3*D4*D4*D4-exp(-D3*t)*D3*D3*D2*D2*A3*D1*D4-exp(-D3*t)*D3*D3*D2*A3*D4*D4*D4-exp(-D3*t)*D3*D2*D2*A3*D4*D4*D1+D1*D1*D1*exp(-D3*t)*A3*D2*D2*D4+exp(-D3*t)*D3*D3*D1*D1*A3*D2*D4-D4*exp(-D4*t)*D1*D1*D3*D3*D2*A3-D2*D2*D2*D3*D3*exp(-D4*t)*A4*D1+D1*D1*D1*D3*D3*exp(-D4*t)*A4*D2+exp(-D4*t)*D2*D2*D2*D1*D1*A4*D3+D2*D2*D3*D3*D3*exp(-D4*t)*A4*D1-exp(-D2*t)*D2*A2*D3*D3*D4*D4*D4+D4*D2*D2*D1*D1*exp(-D4*t)*A2*D3-D4*D2*D2*D2*D3*exp(-D4*t)*D1*A3-D4*D2*D1*D1*D1*exp(-D4*t)*D3*A2-D4*exp(-D4*t)*D2*D2*D3*D3*A2*D1-D4*exp(-D4*t)*D2*D2*D1*D1*D3*A1+D4*D2*D2*D2*D1*exp(-D4*t)*D3*A1+D4*D1*D1*D1*D3*exp(-D4*t)*D2*A3+D4*D1*D1*D3*D3*exp(-D4*t)*A1*D2+D4*D2*D3*D3*D3*exp(-D4*t)*A2*D1+D4*D2*D2*D3*D3*exp(-D4*t)*D1*A3-D4*exp(-D4*t)*D1*D3*D3*D3*A1*D2-D2*D2*D1*D1*D1*exp(-D4*t)*A4*D3-exp(-D1*t)*D3*D2*D2*D2*A1*D4*D4+exp(-D3*t)*D3*D2*D2*A2*D1*D4*D4-D1*D1*D3*D3*D3*D2*exp(-D4*t)*A4)/(D2*D2*D3*D4*D4*D4+D2*D3*D3*D3*D4*D4-D2*D3*D3*D4*D4*D4+D2*D2*D1*D1*D1*D4-D2*D1*
-D1*D1*D4*D4+D2*D1*D1*D4*D4*D4+D1*D1*D1*D3*D3*D2-D1*D1*D1*D3*D3*D4+D1*D1*D1*D3*D4*D4-D1*D1*D3*D4*D4*D4-D1*D1*D3*D3*D3*D2+D1*D1*D3*D3*D3*D4-D1*D3*D3*D3*D4*D4+D1*D3*D3*D4*D4*D4+D2*D2*D2*D1*D1*D3-D2*D2*D2*D1*D1*D4+D2*D2*D2*D1*D4*D4-D2*D2*D1*D4*D4*D4-D2*D2*D2*D3*D4*D4-D2*D2*D2*D3*D3*D1+D2*D2*D2*D3*D3*D4+D2*D2*D3*D3*D3*D1-D2*D2*D3*D3*D3*D4-D2*D2*D1*D1*D1*D3);
-  
-  /*
-  return Branching12*Branching23*Branching34*(-(-D1*D1*D3*D3*D3*exp(-D4*t)*D4*A2+D1*D1*D3*D3*exp(-D4*t)*A3*D4*D4+exp(-D4*t)*D2*D2*D3*D3*A2*D4*D4+D3*D3*D2*exp(-D4*t)*A3*D4*D4*D4-D3*D3*D3*D2*exp(-D4*t)*A2*D4*D4-D3*D3*D2*exp(-D4*t)*A4*D4*D4*D4+exp(-D4*t)*D2*D2*D2*D3*D3*D4*A1-exp(-D4*t)*D2*D2*D3*A3*D4*D4*D4+exp(-D4*t)*D2*D2*D3*A4*D4*D4*D4-D3*D3*D3*D2*D2*exp(-D4*t)*D4*A1-D1*D1*D1*D2*D2*D4*exp(-D4*t)*A3+D1*D1*D2*D2*D2*exp(-D4*t)*D3*A4-D1*D1*D2*D2*D2*D4*exp(-D4*t)*A4+D1*D1*D2*D2*D2*D4*exp(-D4*t)*A3-D1*D1*exp(-D4*t)*D4*D4*D4*A4*D3+D1*D1*D1*exp(-D4*t)*D3*D3*D4*A2+D1*D3*D3*D3*D2*D2*exp(-D4*t)*A4-D1*exp(-D4*t)*D3*D3*D3*D4*D4*A4-D1*exp(-D4*t)*D3*D3*D4*D4*D4*A3+D1*exp(-D4*t)*D3*D3*D3*D4*D4*A2-D1*D2*D2*exp(-D4*t)*D4*D4*D4*A4+D1*D4*D4*D4*D3*D3*exp(-D4*t)*A4+D1*D2*D2*exp(-D4*t)*D4*D4*D4*A3-D1*D2*D2*D2*exp(-D4*t)*D4*D4*A3+D1*D2*D2*D2*exp(-D4*t)*D4*D4*A4-D1*exp(-D4*t)*D2*D2*D2*D3*D3*A4+D1*D1*D1*exp(-D4*t)*D3*A4*D4*D4-D1*D1*D1*exp(-D4*t)*D3*A3*D4*D4+D1*D1*D1*D2*exp(-D4*t)*D3*D3*A4-D1*D1*D1*D2*exp(-D4*t)*D4*D4*A4+D1*D1*D1*D2*
-exp(-D4*t)*D4*D4*A3+D1*D1*D4*D4*D4*D3*exp(-D4*t)*A3+D1*D1*D3*D3*D3*exp(-D4*t)*A4*D4-D1*D1*D1*exp(-D4*t)*D3*D3*A4*D4-D1*D1*D2*D3*D3*D3*exp(-D4*t)*A4+D1*D1*D2*exp(-D4*t)*D4*D4*D4*A4-D1*D1*D2*exp(-D4*t)*D4*D4*D4*A3+D3*D3*exp(-D3*t)*A3*D2*D2*D4*D4-D3*D3*D2*D2*exp(-D4*t)*A3*D4*D4-D1*D1*D1*D3*exp(-D3*t)*A3*D2*D4+D1*D1*D2*exp(-D4*t)*D4*D4*A2*D3-D1*D1*D2*exp(-D4*t)*D3*A3*D4*D4+D1*D3*D3*D3*D2*exp(-D4*t)*D4*A2+D1*D3*D3*D2*D2*exp(-D4*t)*D4*A3-D1*D2*D2*exp(-D4*t)*D4*D4*A2*D3+D1*exp(-D4*t)*D2*D2*D3*A3*D4*D4-D1*exp(-D4*t)*D2*D2*D2*D3*D4*A3-D1*exp(-D4*t)*D2*D2*D3*D3*D4*A2-D1*D1*D2*D3*D3*exp(-D4*t)*D4*A3-D1*D1*D4*D4*exp(-D4*t)*A2*D3*D3+D1*D1*D1*D2*exp(-D4*t)*D3*D4*A3-D1*D1*D2*exp(-D4*t)*D3*D3*D4*A1+A1*exp(-D1*t)*D2*D3*D3*D4*D4*D4+A1*exp(-D1*t)*D2*D2*D3*D3*D3*D4+D1*D2*D2*D3*exp(-D3*t)*A2*D4*D4+D1*exp(-D2*t)*A2*D3*D3*D4*D4*D4+D1*D1*exp(-D2*t)*A2*D3*D3*D3*D4+D2*exp(-D2*t)*A2*D3*D3*D3*D4*D4+D1*D1*exp(-D3*t)*A3*D2*D4*D4*D4+D1*D1*D3*D3*exp(-D3*t)*A2*D4*D4+D3*exp(-D3*t)*A3*D2*D2*D4*D4*D4+D2*D2*D3*exp(-D3*t)*A1*D4*D4*D4+D1*D3*D3*
-exp(-D3*t)*A3*D4*D4*D4+D1*D1*D3*exp(-D3*t)*A2*D4*D4*D4+D3*exp(-D3*t)*A3*D2*D2*D2*D1*D4+D1*D1*D3*D3*exp(-D3*t)*A3*D2*D4+D1*D1*D2*D3*exp(-D3*t)*A1*D4*D4+D2*D2*D2*D3*exp(-D3*t)*A1*D1*D4+D2*exp(-D2*t)*A1*D3*D3*D3*D4*D4+D1*D1*D3*exp(-D3*t)*A3*D2*D4*D4+D1*D1*D1*D3*exp(-D3*t)*A3*D4*D4+A1*exp(-D1*t)*D2*D2*D2*D3*D4*D4+D1*D1*D2*exp(-D2*t)*A1*D3*D3*D4+D1*D1*D1*exp(-D3*t)*A3*D2*D2*D4+D2*exp(-D2*t)*A2*D1*D3*D4*D4*D4-D2*exp(-D2*t)*A2*D3*D3*D4*D4*D4-D1*D2*D3*exp(-D3*t)*A2*D4*D4*D4-D2*exp(-D2*t)*A2*D1*D1*D3*D4*D4-D2*exp(-D2*t)*A2*D3*D3*D3*D1*D4+D1*D2*D2*D2*exp(-D3*t)*A3*D4*D4+D1*D1*D1*exp(-D2*t)*A2*D3*D4*D4-D1*exp(-D2*t)*A2*D3*D3*D3*D4*D4+D1*D1*D2*D2*D4*exp(-D4*t)*D3*A1+D1*D1*D1*D3*exp(-D3*t)*A2*D2*D4-D1*D1*D3*D3*exp(-D3*t)*A2*D2*D4-D1*D2*D2*D2*D4*exp(-D4*t)*D3*A1+D1*D1*D2*D2*D4*exp(-D4*t)*A2*D3+D1*D2*D3*D3*D3*exp(-D4*t)*D4*A1-D1*D1*D2*exp(-D2*t)*A1*D3*D4*D4-D2*exp(-D2*t)*A1*D3*D3*D3*D1*D4-A1*exp(-D1*t)*D2*D2*D2*D3*D3*D4-D1*D2*D2*exp(-D3*t)*A3*D4*D4*D4-D1*D1*D2*D2*D3*exp(-D3*t)*A1*D4-D1*D2*D3*exp(-D3*t)*A1*D4*D4*D4-D1*D1*D2*
-D2*D2*exp(-D3*t)*A3*D4-D3*D3*exp(-D3*t)*A3*D2*D2*D1*D4-A1*exp(-D1*t)*D2*D3*D3*D3*D4*D4-D2*D2*D3*D3*exp(-D3*t)*A2*D4*D4-D1*D3*D3*exp(-D3*t)*A2*D4*D4*D4-D3*D3*exp(-D3*t)*A3*D2*D4*D4*D4-D1*D1*D3*D3*exp(-D3*t)*A3*D4*D4-D2*D2*D2*D3*exp(-D3*t)*A1*D4*D4-D3*exp(-D3*t)*A3*D2*D2*D2*D4*D4-D2*exp(-D2*t)*A1*D3*D3*D4*D4*D4-D1*D1*D1*exp(-D3*t)*A3*D2*D4*D4-D1*D1*D1*D2*D2*exp(-D4*t)*D3*A4-D1*D1*D3*exp(-D3*t)*A3*D4*D4*D4-D1*D1*exp(-D2*t)*A2*D3*D4*D4*D4+D1*D1*D1*D2*D2*D4*exp(-D4*t)*A4-D1*D1*D1*D2*D4*exp(-D4*t)*A2*D3-D2*D2*exp(-D4*t)*D3*D3*D3*A4*D4+D2*exp(-D4*t)*D3*D3*D3*A4*D4*D4+D2*D2*D2*exp(-D4*t)*D3*D3*A4*D4+D2*D2*D2*D4*D4*exp(-D4*t)*A3*D3-D2*D2*D2*D4*D4*exp(-D4*t)*A4*D3+D2*D3*D3*exp(-D3*t)*A2*D4*D4*D4+D2*D2*D3*D3*exp(-D3*t)*A2*D1*D4+D1*D2*exp(-D2*t)*A1*D3*D4*D4*D4-D1*D1*D1*exp(-D2*t)*A2*D3*D3*D4-D1*D1*D1*D3*exp(-D3*t)*A2*D4*D4-D3*exp(-D3*t)*A3*D2*D2*D4*D4*D1-A1*exp(-D1*t)*D2*D2*D3*D4*D4*D4+D2*exp(-D2*t)*A2*D1*D1*D3*D3*D4-D1*D1*D2*D2*D3*exp(-D3*t)*A2*D4)/(-D2*D3*D3*D4*D4*D4+D2*D3*D3*D3*D4*D4+D2*D2*D3*D4*D4*D4-D2*D2*D2*D3*D4*
-D4-D2*D2*D1*D4*D4*D4+D2*D2*D2*D1*D4*D4-D2*D2*D2*D1*D1*D4+D2*D2*D2*D1*D1*D3+D1*D3*D3*D4*D4*D4-D1*D3*D3*D3*D4*D4+D1*D1*D3*D3*D3*D4-D1*D1*D3*D3*D3*D2-D1*D1*D3*D4*D4*D4+D1*D1*D1*D3*D4*D4-D1*D1*D1*D3*D3*D4+D1*D1*D1*D3*D3*D2+D1*D1*D2*D4*D4*D4-D1*D1*D1*D2*D4*D4+D1*D1*D1*D2*D2*D4-D1*D1*D1*D2*D2*D3-D2*D2*D3*D3*D3*D4+D2*D2*D3*D3*D3*D1+D2*D2*D2*D3*D3*D4-D2*D2*D2*D3*D3*D1));
-  */
+  return CooldownOn({ A1, A2, A3, A4 }, { D1, D2, D3, D4 }, { 1.0, Branching12, Branching23, Branching34 }, t);
+}
+
+
+/******************************************************************************
+ * Determine the cooldown of the last element of a chain after Time t (Bateman solution)
+ * A: start activities, D: decay constants, B: branching ratios with B[k] from element k-1 to k
+ * The start activities already contain the branching, thus only the decays during cooldown are branched
+ */
+double MCActivator::CooldownOn(const vector<double>& A, const vector<double>& D, const vector<double>& B, double t)
+{
+  unsigned int n = A.size();
+
+  // Sum the contributions of the start nuclei of each element k to the last element:
+  double Nuclei = 0.0;
+  for (unsigned int k = 0; k < n; ++k) {
+    double Factor = A[k]/D[k];
+    for (unsigned int j = k+1; j < n; ++j) {
+      Factor *= B[j]*D[j-1];
+    }
+    double Sum = 0.0;
+    for (unsigned int i = k; i < n; ++i) {
+      double Denominator = 1.0;
+      for (unsigned int p = k; p < n; ++p) {
+        if (p != i) Denominator *= D[p] - D[i];
+      }
+      Sum += exp(-D[i]*t)/Denominator;
+    }
+    Nuclei += Factor*Sum;
+  }
+
+  return D[n-1]*Nuclei;
 }
 
 
