@@ -571,7 +571,8 @@ bool MCActivator::CalculateEquilibriumRates()
             // Check if we have anything which still can decay immediately
             MoreDecays = false;
             for (unsigned int b = 0; b < Tree.size(); ++b) {
-              if ((Tree[b].back().GetHalfLife() == 0 || Tree[b].back().GetExcitation() > 0.1*keV) &&
+              // Only excited states are de-excited in this step - everything else is handled via the decay table in step 1:
+              if (Tree[b].back().GetExcitation() >= 1.0*keV &&
                   HasNoGammaTransitions(Tree[b].back()) == false && HasNonITDecayChannels(Tree[b].back(), Decay) == false) {
                 MoreDecays = true;
               }
