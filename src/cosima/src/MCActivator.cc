@@ -845,6 +845,11 @@ bool MCActivator::CreateDeexcitationBranches(const vector<MCActivatorParticle>& 
       cout<<"Number of gammas: "<<NuclearLevel->NumberOfTransitions()<<endl;
 
       for (int h = 0; h < int(NuclearLevel->NumberOfTransitions()); ++h) {
+        // GammaProbability() is the gamma vs. conversion electron probability - the branching of this transition is in the cumulative probabilities
+        double TransitionProbability = NuclearLevel->GammaCumProbability(h) - (h > 0 ? NuclearLevel->GammaCumProbability(h-1) : 0.0);
+        // Transitions which never happen (e.g. missing intensities in the data files) would only multiply the branches:
+        if (TransitionProbability <= 0.0) continue;
+
         vector<MCActivatorParticle> ABranch = Branch;
         
         double NewLevelEnergy = 0.0;
@@ -884,8 +889,6 @@ bool MCActivator::CreateDeexcitationBranches(const vector<MCActivatorParticle>& 
         
         MCActivatorParticle NewParticle;
         NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(Nucleus->GetParticleName()), NewLevelEnergy);
-        // GammaProbability() is the gamma vs. conversion electron probability - the branching of this transition is in the cumulative probabilities
-        double TransitionProbability = NuclearLevel->GammaCumProbability(h) - (h > 0 ? NuclearLevel->GammaCumProbability(h-1) : 0.0);
         NewParticle.SetBranchingRatio(Branch.back().GetBranchingRatio()*Scale*TransitionProbability);
         NewParticle.SetProductionRate(Branch.back().GetProductionRate()*Scale*TransitionProbability);
         // The PDGLifeTime is not always ok for excited states, thus we have to get it this way:
