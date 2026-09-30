@@ -211,6 +211,10 @@ bool MCIsotopeStore::Save(MString FileName)
   
   ofstream out;
   out.open(FileName);
+  if (out.is_open() == false) {
+    merr<<"Unable to open file: "<<FileName<<endl;
+    return false;
+  }
 
   out<<"# Cosima universal isotope store"<<endl;
   out<<"# VN is followed by the volume name in which the isotope was produced"<<endl;
@@ -642,9 +646,17 @@ void MCIsotopeStore::RemoveStableElements()
       vector<double>::iterator E = m_Excitations[v][i].begin();
       vector<double>::iterator A = m_Values[v][i].begin();
       while (E != m_Excitations[v][i].end() && A != m_Values[v][i].end()) {
-        cout<<"Element: "<<GetParticleDefinition(m_IDs[v][i], (*E))->GetParticleName()<<endl;
-        if (MCActivatorParticle::IsStable(GetParticleDefinition(m_IDs[v][i], (*E))) == true) {
-          cout<<"Removing stable element: "<<GetParticleDefinition(m_IDs[v][i], (*E))->GetParticleName()<<endl;
+        G4ParticleDefinition* Definition = GetParticleDefinition(m_IDs[v][i], (*E));
+        // Isotopes which Geant4 cannot create can neither be activated nor simulated:
+        if (Definition == nullptr) {
+          mout<<"Warning: Removing isotope unknown to Geant4: ID="<<m_IDs[v][i]<<" excitation="<<(*E)/keV<<" keV"<<endl;
+          E = m_Excitations[v][i].erase(E);
+          A = m_Values[v][i].erase(A);
+          continue;
+        }
+        cout<<"Element: "<<Definition->GetParticleName()<<endl;
+        if (MCActivatorParticle::IsStable(Definition) == true) {
+          cout<<"Removing stable element: "<<Definition->GetParticleName()<<endl;
           E = m_Excitations[v][i].erase(E);
           A = m_Values[v][i].erase(A);
           continue;
