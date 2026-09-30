@@ -1323,15 +1323,6 @@ bool MCActivator::ActivateByPartialSimulation(vector<MCActivatorParticle>& P, do
     // Perform the simulation for all elements in the chain individually
     for (unsigned int q = 0; q < P.size(); ++q) {
       
-      // if the sum of all half-lifes < 1/100 Cool down time then nothing is left
-      double HalfLifes = 0.0;
-      for (unsigned int p = q; p < P.size(); ++p) {
-        if (P[p].GetHalfLife() < 1E+99) { // defined as stable for this application
-          HalfLifes += P[p].GetHalfLife();
-        }
-      }
-      //mout<<"Total halflife ("<<HalfLifes/s<<") vs ("<<CooldownTime/s<<")"<<endl;
-
       for (unsigned int p = 0; p < P.size(); ++p) {
         DecayProbs[p] = 0;
         Decays[p] = 0;
