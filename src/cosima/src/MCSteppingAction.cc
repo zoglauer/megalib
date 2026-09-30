@@ -952,8 +952,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           if (Nucleus->GetExcitationEnergy() > 1*keV) {
             //cout<<"Alignment > 1 keV"<<endl;
             const G4LevelManager* M = G4NuclearLevelData::GetInstance()->GetLevelManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
-	    bool IsValid =true ;// IsValid() method no longer available for G4LevelManager, always true for now , need to check 
-            if (IsValid == true) {
+            // Without level data we keep the nucleus as it is:
+            if (M != nullptr) {
               const G4NucLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
               if (Level != 0) {
                 G4IonTable* Table = G4IonTable::GetIonTable();
@@ -1008,7 +1008,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 		
     else { cout<<"Isotope not found from MCSteppingAction"<<endl;
            cout<< Nucleus->GetAtomicNumber() << Nucleus->GetAtomicMass()<< M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())<<endl;
-           Nucleus = nullptr;
+           // Fall back to the generic ion as before Geant4 11:
+           Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())));
     }	 	
 		
                // Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), M->NearestLevelEnergy(Nucleus->GetExcitationEnergy())));
@@ -1070,19 +1071,22 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 		
     else { cout<<"Isotope not found from MCSteppingAction"<<endl;
            cout<< "Z : "<<Nucleus->GetAtomicNumber()<< "A :"<< Nucleus->GetAtomicMass()<<"E : " <<0.0<<endl;
-           Nucleus = nullptr;
+           // Fall back to the generic ion as before Geant4 11:
+           Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0));
     }	 	
 	    
 	    
           }
           //cout<<"NE: "<<Nucleus->GetExcitationEnergy()/keV<<"keV"<<endl;
 
-          G4TouchableHistory* Hist = (G4TouchableHistory*) (Step->GetPreStepPoint()->GetTouchable());
-          MCRunManager::GetMCRunManager()->GetCurrentRun().AddIsotope(Nucleus, Hist);
+          if (Nucleus == nullptr) {
+            merr<<"Unable to store an isotope: Geant4 has no particle definition for it"<<endl;
+          } else {
+            G4TouchableHistory* Hist = (G4TouchableHistory*) (Step->GetPreStepPoint()->GetTouchable());
+            MCRunManager::GetMCRunManager()->GetCurrentRun().AddIsotope(Nucleus, Hist);
 
-          //mout<<"Storing isotope: "<<Nucleus->GetParticleName()<<endl;
-          
-          EventAction->AddComment("Storing isotope: " + Nucleus->GetParticleName());
+            EventAction->AddComment("Storing isotope: " + Nucleus->GetParticleName());
+          }
         }
         
         if (Keep == true) {
