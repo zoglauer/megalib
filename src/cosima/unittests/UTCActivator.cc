@@ -1918,6 +1918,13 @@ bool UTCActivator::TestActivateByEquationsLongChains()
   double Expected4 = A.ActivationO4(1.0/s, log(2.0)/(1000*s), 1.0, log(2.0)/(300*s), 1.0, log(2.0)/(5000*s), 1.0, log(2.0)/(70*s), Activation);
   Passed = EvaluateNear("ActivateByEquations()", "5 elements", "The fourth element follows the analytic activation", Five[3].GetActivation(), Expected4, 1e-9*Expected4) && Passed;
 
+  // Five elements with an unstable last one cannot be calculated with the equations:
+  Five[4].SetHalfLife(100*s);
+  SilenceOutput();
+  OK = A.ActivateByEquations(Five, Activation, 0.0);
+  RestoreOutput();
+  Passed = EvaluateFalse("ActivateByEquations()", "5 elements, unstable end", "A five-element chain with an unstable end is rejected", OK) && Passed;
+
   // Single element:
   vector<MCActivatorParticle> One = { CreateParticle(11024, 0.0) };
   One[0].SetProductionRate(1.0/s);

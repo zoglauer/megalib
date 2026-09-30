@@ -1521,6 +1521,10 @@ bool MCActivator::ActivateByEquations(vector<MCActivatorParticle>& P, double Act
   if (P.size() > 5) {
     return false;
   }
+  // The equations for the fifth element only exist if it is stable:
+  if (P.size() == 5 && P[4].GetDecayConstant() > 0) {
+    return false;
+  }
   // If two of the decay constants are too identical it also fails
   double DecayConstantTolerance = 0.01; // this value is just a guess..
   for (unsigned int p1 = 0; p1 < P.size(); ++p1) {
