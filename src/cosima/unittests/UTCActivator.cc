@@ -1919,6 +1919,15 @@ bool UTCActivator::TestActivateByEquationsLongChains()
   double Expected4 = A.ActivationO4(1.0/s, log(2.0)/(1000*s), 1.0, log(2.0)/(300*s), 1.0, log(2.0)/(5000*s), 1.0, log(2.0)/(70*s), Activation);
   Passed = EvaluateNear("ActivateByEquations()", "5 elements", "The fourth element follows the analytic activation", Five[3].GetActivation(), Expected4, 1e-9*Expected4) && Passed;
 
+  // Extremely long-lived mother (Ca48, 2.9e19 years): rounding errors must not give negative activities:
+  vector<MCActivatorParticle> Ca48 = { CreateParticle(20048, 0.0), CreateParticle(21048, 0.0), CreateParticle(22048, 0.0) };
+  Ca48[0].SetProductionRate(1.0/s);
+  SilenceOutput();
+  OK = A.ActivateByEquations(Ca48, 1e5*s, 0.0);
+  RestoreOutput();
+  Passed = EvaluateTrue("ActivateByEquations()", "Ca48 -> Sc48 -> Ti48", "The chain of an extremely long-lived mother is calculated", OK) && Passed;
+  Passed = EvaluateTrue("ActivateByEquations()", "Ca48 -> Sc48 -> Ti48", "The Sc48 activity is not negative", Ca48[1].GetActivation() >= 0.0) && Passed;
+
   // Five elements with an unstable last one cannot be calculated with the equations:
   Five[4].SetHalfLife(100*s);
   SilenceOutput();

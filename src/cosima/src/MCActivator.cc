@@ -1651,6 +1651,11 @@ bool MCActivator::ActivateByEquations(vector<MCActivatorParticle>& P, double Act
     cout<<endl;
   }
 
+  // Rounding errors for extremely long-lived isotopes (e.g. the double-beta emitters Ca48, Ge76) can give tiny negative activities:
+  for (unsigned int p = 0; p < P.size(); ++p) {
+    if (P[p].GetActivation() < 0.0) P[p].SetActivation(0.0);
+  }
+
   return true;
 }
 
