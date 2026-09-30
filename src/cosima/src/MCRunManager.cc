@@ -104,8 +104,14 @@ void MCRunManager::StartBeam()
     if (m_RunParameters.GetActivator(a).LoadCountsFiles() == false) {
       return;
     }
-    m_RunParameters.GetActivator(a).CalculateEquilibriumRates();
-    m_RunParameters.GetActivator(a).SaveOutputFile();
+    if (m_RunParameters.GetActivator(a).CalculateEquilibriumRates() == false) {
+      merr<<"Activator \""<<m_RunParameters.GetActivator(a).GetName()<<"\": The activation calculation failed"<<endl;
+      return;
+    }
+    if (m_RunParameters.GetActivator(a).SaveOutputFile() == false) {
+      merr<<"Activator \""<<m_RunParameters.GetActivator(a).GetName()<<"\": Unable to save the output file "<<m_RunParameters.GetActivator(a).GetOutputFileName()<<endl;
+      return;
+    }
   }
 
   for (unsigned int r = 0; r < m_RunParameters.GetNRuns(); ++r) {
