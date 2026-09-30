@@ -621,12 +621,13 @@ bool MCActivator::CalculateEquilibriumRates()
         
         DumpTree(Tree, "Current tree - before relative branching ratios: ");
         
-        // Up to now we have determined relative braching ratios.
-        // For the following calculations absolute are prefered:
+        // Up to now we have determined cumulative branching ratios.
+        // Convert them to relative branching ratios for the following calculations:
         double TotalBranchingRatio = 0.0;
         for (unsigned int br = 0; br < Tree.size(); ++br) {
           TotalBranchingRatio += Tree[br].back().GetBranchingRatio();
-          for (unsigned int a = 1; a < Tree[br].size(); ++a) {
+          // Go backwards, since each conversion needs the absolute branching ratio of the mother:
+          for (unsigned int a = Tree[br].size() - 1; a > 0; --a) {
             if (Tree[br][a-1].GetBranchingRatio() != 0) {
               Tree[br][a].SetBranchingRatio(Tree[br][a].GetBranchingRatio()/Tree[br][a-1].GetBranchingRatio());
               if (Tree[br][a].GetBranchingRatio() > 1.01) {
