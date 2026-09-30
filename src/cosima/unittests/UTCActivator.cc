@@ -723,7 +723,7 @@ bool UTCActivator::TestCountsFiles()
     A.SetOutputFileName(OutputFile);
     bool Saved = A.SaveOutputFile();
     RestoreOutput();
-    Passed = EvaluateTrue("LoadCountsFiles()", "no files", "Loading without counts files succeeds", Loaded) && Passed;
+    Passed = EvaluateFalse("LoadCountsFiles()", "no files", "Loading without counts files fails", Loaded) && Passed;
     Passed = EvaluateTrue("CalculateEquilibriumRates()", "no files", "The calculation without counts succeeds", Calculated) && Passed;
     Passed = EvaluateTrue("SaveOutputFile()", "no files", "The empty output can be saved", Saved) && Passed;
     Passed = Evaluate("SaveOutputFile()", "no files", "The output contains no isotopes", GetNumberOfStoredEntries(OutputFile), 0U) && Passed;
@@ -735,10 +735,11 @@ bool UTCActivator::TestCountsFiles()
     A.SetConstantIrradiation(Activation);
     const MString OutputFile = GetTemporaryFileName("MissingCounts.act");
     SilenceOutput();
-    A.AddCountsFile(GetTemporaryFileName("DoesNotExist.dat"));
+    bool Added = A.AddCountsFile(GetTemporaryFileName("DoesNotExist.dat"));
     bool Loaded = A.LoadCountsFiles();
     RestoreOutput();
-    Passed = EvaluateTrue("AddCountsFile()", "missing file", "A missing counts file is not added, thus loading succeeds", Loaded) && Passed;
+    Passed = EvaluateFalse("AddCountsFile()", "missing file", "A missing counts file is rejected", Added) && Passed;
+    Passed = EvaluateFalse("LoadCountsFiles()", "missing file", "Without the rejected file there is nothing to load", Loaded) && Passed;
   }
 
   // Counts file without time:

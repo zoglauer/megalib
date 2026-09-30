@@ -158,7 +158,7 @@ bool MCActivator::AddCountsFile(const MString& File)
     return true;
   } else {
     merr<<"File does not exist: "<<File<<endl;
-    return true;
+    return false;
   }
 }
 
@@ -170,6 +170,11 @@ bool MCActivator::LoadCountsFiles()
   double TotalTime = 0.0;
 
   m_Rates.Reset();
+
+  if (m_CountsFiles.size() == 0) {
+    merr<<"No counts files to load"<<endl;
+    return false;
+  }
 
 
 
