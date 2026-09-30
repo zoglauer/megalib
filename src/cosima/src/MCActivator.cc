@@ -181,6 +181,8 @@ bool MCActivator::LoadCountsFiles()
 
     if (Counts.GetTime() == 0) {
       merr<<"Isotope file does not contain a time for rates calculation: "<<m_CountsFiles[i]<<endl;
+      // Do not leave the rates of the files loaded before behind:
+      m_Rates.Reset();
       return false;
     }
 
