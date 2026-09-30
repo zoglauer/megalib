@@ -37,6 +37,10 @@
 // MEGAlib:
 
 // Standard lib:
+#include <map>
+#include <utility>
+#include <vector>
+using namespace std;
 
 // Forward declarations:
 
@@ -118,6 +122,12 @@ public:
   /// Return storage marker (meaning of value defined outside this class)
   unsigned int GetStorageMarker() const { return m_StorageMarker; }
 
+  /// Return the decay paths this particle represents: serial number -> (branching ratio, production rate)
+  /// Copies share them, every SetIDAndExcitation creates a new path, merged particles combine them
+  map<unsigned long, pair<double, double>> GetPaths() const;
+  /// Add the decay paths of A which this particle does not represent yet - including their branching ratios and production rates
+  void MergePaths(const MCActivatorParticle& A);
+
   /// Get the particle definition
   G4ParticleDefinition* GetDefinition() const { return m_Definition; }
 
@@ -135,6 +145,13 @@ protected:
 
   // private members:
 private:
+  /// The counter for the serial numbers
+  static unsigned long m_SerialCounter;
+  /// The serial number of the decay path of this particle
+  unsigned long m_Serial;
+  /// The decay paths merged into this particle: serial number -> (branching ratio, production rate) - empty if never merged
+  map<unsigned long, pair<double, double>> m_MergedPaths;
+
   /// The numerical particle ID
   unsigned int m_ID;
 

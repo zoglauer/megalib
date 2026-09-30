@@ -964,17 +964,12 @@ bool MCActivator::CleanDecayChains(vector<vector<MCActivatorParticle> >& Tree)
           }
         }
         if (AreEqual == true) {
-          // Add the branching ratios of the LAST ISOTOPE were we have the deexcitations (the previous isotopes need to be fixed)
+          // Decay paths represented by both elements (e.g. the shared mother) are already counted,
+          // only the branching ratios and production rates of the separate decay paths are added:
           for (unsigned int a = 0; a < Tree[b1].size(); ++a) {
-            // Only the last isotope (but with different excitation!):
-            if (Tree[b1][a].GetID() == Tree[b1].back().GetID()) {
-              if (a == Tree[b1].size() - 1) { 
-                Tree[b1][a].SetBranchingRatio(Tree[b1][a].GetBranchingRatio() + Tree[b2][a].GetBranchingRatio());
-                if (Tree[b1][a].GetBranchingRatio() > 1.01) {
-                  mout<<"Error (in CleanDecayChains): Branching ratio of "<<Tree[b1][a].GetName()<<" larger than one: "<<Tree[b1][a].GetBranchingRatio()<<endl;
-                }
-              }
-              Tree[b1][a].SetProductionRate(Tree[b1][a].GetProductionRate() + Tree[b2][a].GetProductionRate());
+            Tree[b1][a].MergePaths(Tree[b2][a]);
+            if (Tree[b1][a].GetBranchingRatio() > 1.01) {
+              mout<<"Error (in CleanDecayChains): Branching ratio of "<<Tree[b1][a].GetName()<<" larger than one: "<<Tree[b1][a].GetBranchingRatio()<<endl;
             }
           }
           Tree[b2].clear();

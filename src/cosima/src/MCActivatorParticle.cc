@@ -36,6 +36,9 @@
 // Standard lib:
 
 
+unsigned long MCActivatorParticle::m_SerialCounter = 0;
+
+
 /******************************************************************************
  * Not yet implemented
  */
@@ -52,6 +55,7 @@ MCActivatorParticle::MCActivatorParticle()
   m_Counts = 0;
   m_Activation = 0;
   m_StorageMarker = 0;
+  m_Serial = 0;
 }
 
 
@@ -69,6 +73,8 @@ MCActivatorParticle::MCActivatorParticle(const MCActivatorParticle& A)
   m_Counts = A.m_Counts;
   m_Activation = A.m_Activation;
   m_StorageMarker = A.m_StorageMarker;
+  m_Serial = A.m_Serial;
+  m_MergedPaths = A.m_MergedPaths;
 }
 
 
@@ -95,8 +101,41 @@ MCActivatorParticle& MCActivatorParticle::operator=(const MCActivatorParticle& A
   m_Counts = A.m_Counts;
   m_Activation = A.m_Activation;
   m_StorageMarker = A.m_StorageMarker;
+  m_Serial = A.m_Serial;
+  m_MergedPaths = A.m_MergedPaths;
 
   return *this;
+}
+
+
+/******************************************************************************
+ * Return the decay paths this particle represents: serial number -> (branching ratio, production rate)
+ */
+map<unsigned long, pair<double, double>> MCActivatorParticle::GetPaths() const
+{
+  // Never merged - only the own path with the current values:
+  if (m_MergedPaths.empty() == true) {
+    return { { m_Serial, { m_BranchingRatio, m_ProductionRate } } };
+  }
+  return m_MergedPaths;
+}
+
+
+/******************************************************************************
+ * Add the decay paths of A which this particle does not represent yet - including their branching ratios and production rates
+ */
+void MCActivatorParticle::MergePaths(const MCActivatorParticle& A)
+{
+  map<unsigned long, pair<double, double>> Paths = GetPaths();
+  for (const auto& P: A.GetPaths()) {
+    // Shared paths are copies of the same ancestor and are already counted:
+    if (Paths.find(P.first) == Paths.end()) {
+      Paths[P.first] = P.second;
+      m_BranchingRatio += P.second.first;
+      m_ProductionRate += P.second.second;
+    }
+  }
+  m_MergedPaths = Paths;
 }
 
 
@@ -123,6 +162,10 @@ bool MCActivatorParticle::operator==(const MCActivatorParticle& A)
  */
 void MCActivatorParticle::SetIDAndExcitation(unsigned int ID, double Excitation)
 {
+  // A new particle - not a copy of an existing one:
+  m_Serial = ++m_SerialCounter;
+  m_MergedPaths.clear();
+
   m_ID = ID;
   m_Excitation = Excitation;
 
