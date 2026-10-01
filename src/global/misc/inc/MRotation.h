@@ -167,6 +167,10 @@ public:
   const MRotation& Invert();
   //! Return an inverted matrix without touching this one
   MRotation GetInvers() const;
+  //! Make the axes orthonormal: keep the z-axis, make x perpendicular to it, recalculate y preserving the handedness
+  //! Call this after Set() when the axes are only approximately perpendicular
+  //! Returns false and leaves the matrix unchanged if orthonormalization is not possible
+  bool Orthonormalize();
   
   //! Return the determinant (Rule of Sarrus)
   double GetDeterminant() const {
