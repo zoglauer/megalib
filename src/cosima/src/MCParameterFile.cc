@@ -1369,7 +1369,7 @@ bool MCParameterFile::Parse()
           else if (Type == "farfielddisk" || Type == "ffd") {
             if (T->GetNTokens() == 6) {
               Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldGaussian);
+                                  MCSource::c_FarFieldDisk);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg) == true) {
@@ -3011,7 +3011,10 @@ bool MCParameterFile::Parse()
     for (unsigned int r = 0; r < m_RunList.size(); ++r) {
       vector<MCSource*>& Sources = m_RunList[r].GetSourceList();
       for (unsigned int so = 0; so < Sources.size(); ++so) {
-        Sources[so]->SetStartAreaType(StartAreaType);
+        if (Sources[so]->SetStartAreaType(StartAreaType) == false) {
+          mout<<"The start area type is not valid for source "<<Sources[so]->GetName()<<"!"<<endl;
+          return false;
+        }
         if (Sources[so]->SetStartAreaParameters(StartAreaParameters[0],
                                            StartAreaParameters[1],
                                            StartAreaParameters[2],
