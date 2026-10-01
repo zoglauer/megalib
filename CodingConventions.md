@@ -26,6 +26,10 @@ clang-format -i MSubModuleDEEIntake.cxx
 
 For new classes, copy and modify an existing one, or use the MModuleTemplate class as tempplate.
 
+## Language
+
+Use US English spelling in code, comments, and documentation, e.g., "Orthonormalize", "color", "behavior", "center", "normalize".
+
 ## Naming
 
 ### Classes
@@ -288,6 +292,15 @@ These patterns are nearly absent from the older code and should not be introduce
 
 - **Avoid Trailing Whitespace**: Do not leave trailing spaces at the end of lines. Trailing spaces can cause version control diffs to become unnecessarily cluttered.
 
+
+
+## Bug fixes and the ChangeLog
+
+- Every bug fix which could potentially change results (simulation output, reconstruction, responses, file contents, numbers printed for the user) must be mentioned in `doc/ChangeLog.txt` in the section of the upcoming version.
+- Describe the effect (what was wrong and what changes), not the code change, so that users can judge whether old results are affected.
+- This includes fixes which change the interpretation of input (e.g. units or ranges of keywords).
+- Pure crash, message, or refactoring fixes do not need an entry.
+- Add the entry in the same pull request / check-in as the fix.
 
 
 ## Good C++ practises
