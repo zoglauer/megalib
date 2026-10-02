@@ -225,6 +225,7 @@ bool UTRotation::TestInversionAndValidation()
   MRotation RotateZ(c_Pi/3.0, MVector(0.0, 0.0, 1.0));
   Passed = EvaluateNear("GetDeterminant()", "rotation", "A proper rotation has determinant +1", RotateZ.GetDeterminant(), 1.0, 1e-12) && Passed;
   Passed = EvaluateTrue("IsRotation()", "rotation", "IsRotation accepts a proper rotation", RotateZ.IsRotation()) && Passed;
+  Passed = EvaluateTrue("IsRotation()", "identity", "The identity matrix is a rotation", MRotation().IsRotation()) && Passed;
 
   MRotation Inverse = RotateZ.GetInvers();
   Passed = EvaluateTrue("GetInvers()", "rotation", "Inverse of a rotation undoes the rotation", ((Inverse * RotateZ) * MVector(1.0, 2.0, 3.0)).AreEqual(MVector(1.0, 2.0, 3.0), 1e-10)) && Passed;
@@ -263,6 +264,12 @@ bool UTRotation::TestInversionAndValidation()
   Passed = EvaluateNear("GetDeterminant()", "interior rotation", "Representative non-axis-aligned rotations still have determinant +1", InteriorRotation.GetDeterminant(), 1.0, 1e-12) && Passed;
   Passed = EvaluateTrue("IsRotation()", "interior rotation", "IsRotation accepts representative non-axis-aligned rotations", InteriorRotation.IsRotation()) && Passed;
   Passed = EvaluateTrue("GetInvers()", "interior rotation", "Representative non-axis-aligned rotations invert correctly", (InteriorRotation.GetInvers() * (InteriorRotation * MVector(0.25, -0.5, 1.75))).AreEqual(MVector(0.25, -0.5, 1.75), 1e-12)) && Passed;
+
+  // The inverse of a rotation is its transpose: the rows of the inverse are the columns of the rotation
+  const MRotation InteriorTranspose(InteriorRotation.GetXX(), InteriorRotation.GetXY(), InteriorRotation.GetXZ(),
+                                    InteriorRotation.GetYX(), InteriorRotation.GetYY(), InteriorRotation.GetYZ(),
+                                    InteriorRotation.GetZX(), InteriorRotation.GetZY(), InteriorRotation.GetZZ());
+  Passed = EvaluateRotationNear("GetInvers()", "interior rotation, transpose", "The inverse of a rotation made from angle and axis is its transpose", InteriorRotation.GetInvers(), InteriorTranspose, 1e-14) && Passed;
 
   // The inverse of general matrices (neither diagonal nor determinant +-1), expected values from the cofactor formula:
   MRotation General(2.0, 1.0, 0.0,
@@ -529,6 +536,28 @@ bool UTRotation::TestOrthonormalization()
     MRotation Twice = Skewed;
     Passed = EvaluateTrue("Orthonormalize()", Input, "A second orthonormalization works", Twice.Orthonormalize()) && Passed;
     Passed = EvaluateTrue("Orthonormalize()", Input, "A second orthonormalization changes nothing", Twice.GetX().AreEqual(X, 1e-14) && Twice.GetY().AreEqual(Y, 1e-14) && Twice.GetZ().AreEqual(Z, 1e-14)) && Passed;
+  }
+
+  // A realistic small skew, as accepted by Cosima for orientations (axes up to 1e-3 rad from perpendicular):
+  // x = (1, 0, 0), z = (cos p, sin p, 0) with p = 89.95 deg and 90.05 deg, y = +-(z cross x) = (0, 0, -+sin p).
+  // Closed form: x' = x - (x.z) z = sin p * (sin p, -cos p, 0), thus x' = (sin p, -cos p, 0), z' = z, and y' = +-(z' cross x') = (0, 0, -+1).
+  for (double Angle : { 89.95, 90.05 }) {
+    const double P = Angle*c_Pi/180.0;
+    for (int Mirror = 0; Mirror < 2; ++Mirror) {
+      const double Sign = (Mirror == 0) ? 1.0 : -1.0;
+      const MVector XAxis(1.0, 0.0, 0.0);
+      const MVector ZAxis(cos(P), sin(P), 0.0);
+      const MVector YAxis = ZAxis.Cross(XAxis);
+      MRotation SmallSkew(XAxis.X(), Sign*YAxis.X(), ZAxis.X(),
+                          XAxis.Y(), Sign*YAxis.Y(), ZAxis.Y(),
+                          XAxis.Z(), Sign*YAxis.Z(), ZAxis.Z());
+      const MRotation SmallSkewExpected(sin(P), 0.0, cos(P),
+                                        -cos(P), 0.0, sin(P),
+                                        0.0, -Sign, 0.0);
+      MString Input = MString("axes ") + Angle + " deg apart" + (Mirror == 1 ? ", mirrored" : "");
+      Passed = EvaluateTrue("Orthonormalize()", Input, "Axes 0.05 deg from perpendicular can be orthonormalized", SmallSkew.Orthonormalize()) && Passed;
+      Passed = EvaluateRotationNear("Orthonormalize()", Input, "x is projected perpendicular to z, z is kept, y has the original handedness", SmallSkew, SmallSkewExpected, 1e-14) && Passed;
+    }
   }
 
   // An exact rotation is not changed:
