@@ -45,6 +45,8 @@ using namespace std;
 #include "MStreams.h"
 
 // Forward declarations:
+class MVector;
+class MRotation;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -104,6 +106,12 @@ class MUnitTest
     RegisterSuccess();
     return true;
   }
+
+  //! Evaluate two vectors within a given tolerance: the distance between them must not exceed Tolerance, all components must be finite
+  bool EvaluateVectorNear(MString Function, MString Input, MString Description, const MVector& Output, const MVector& Truth, double Tolerance);
+
+  //! Evaluate two rotation matrices within a given tolerance: each of the nine elements may differ by at most Tolerance, all elements must be finite
+  bool EvaluateRotationNear(MString Function, MString Input, MString Description, const MRotation& Output, const MRotation& Truth, double Tolerance);
 
   //! Evaluate the expected size of a container or collection
   template <typename T> bool EvaluateSize(MString Function, T Input, MString Description, size_t Output, size_t Truth)
