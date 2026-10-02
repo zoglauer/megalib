@@ -21,7 +21,9 @@
 
 // MEGAlib:
 #include "MFile.h"
+#include "MRotation.h"
 #include "MUnitTest.h"
+#include "MVector.h"
 
 // Standard libs:
 #include <atomic>
@@ -68,6 +70,8 @@ private:
 
   //! Test exact, boolean, size, and floating-point evaluation helpers
   bool TestEvaluateHelpers();
+  //! Test the vector and rotation matrix evaluation helpers
+  bool TestVectorAndRotationHelpers();
   //! Test exception evaluation helper
   bool TestExceptionHelper();
   //! Test file-comparison helper
@@ -87,6 +91,7 @@ bool UTUnitTest::Run()
   bool Passed = true;
 
   Passed = TestEvaluateHelpers() && Passed;
+  Passed = TestVectorAndRotationHelpers() && Passed;
   Passed = TestExceptionHelper() && Passed;
   Passed = TestFileComparison() && Passed;
   Passed = TestNumericalFileComparison() && Passed;
@@ -147,6 +152,77 @@ bool UTUnitTest::TestEvaluateHelpers()
   const bool SizeFailure = Probe.EvaluateSize("inner EvaluateSize()", "two values", "The size mismatch is rejected", Values.size(), static_cast<size_t>(3));
   Probe.Unsilence();
   Passed = EvaluateFalse("EvaluateSize()", "wrong size", "EvaluateSize returns false for a representative size mismatch", SizeFailure) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestVectorAndRotationHelpers()
+{
+  bool Passed = true;
+
+  UnitTestProbe Probe("UTUnitTestVectorProbe");
+  const double Tolerance = 1e-3;
+  const MVector Reference(1.0, 2.0, 3.0);
+
+  // EvaluateVectorNear: the distance between the vectors is compared with the tolerance
+  Passed = EvaluateTrue("EvaluateVectorNear()", "identical", "Identical vectors are accepted even with the tolerance 0",
+                        Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "identical", "Identical vectors are accepted", Reference, Reference, 0.0)) && Passed;
+  Passed = EvaluateTrue("EvaluateVectorNear()", "inside", "A vector 9e-4 away is accepted with the tolerance 1e-3",
+                        Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "inside", "A nearby vector is accepted", MVector(1.0009, 2.0, 3.0), Reference, Tolerance)) && Passed;
+  // (7e-4, 7e-4, 0) has a distance of 9.9e-4: accepted, although the distance is larger than each component
+  Passed = EvaluateTrue("EvaluateVectorNear()", "euclidean inside", "The distance is the Euclidean one: (7e-4, 7e-4, 0) is 9.9e-4 away and accepted",
+                        Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "euclidean inside", "The Euclidean distance is inside", MVector(1.0007, 2.0007, 3.0), Reference, Tolerance)) && Passed;
+
+  Probe.Silence();
+  const bool Outside = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "outside", "A distant vector is rejected", MVector(1.0011, 2.0, 3.0), Reference, Tolerance);
+  // (8e-4, 8e-4, 0) has a distance of 1.13e-3: rejected, although each component is inside the tolerance
+  const bool EuclideanOutside = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "euclidean outside", "The Euclidean distance is outside", MVector(1.0008, 2.0008, 3.0), Reference, Tolerance);
+  const bool NaNOutput = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "nan output", "A NaN component is rejected", MVector(numeric_limits<double>::quiet_NaN(), 2.0, 3.0), Reference, Tolerance);
+  const bool InfOutput = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "inf output", "An infinite component is rejected", MVector(1.0, numeric_limits<double>::infinity(), 3.0), Reference, Tolerance);
+  const bool NaNTruth = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "nan truth", "A NaN expected component is rejected", Reference, MVector(1.0, 2.0, numeric_limits<double>::quiet_NaN()), Tolerance);
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateVectorNear()", "outside", "A vector 1.1e-3 away is rejected with the tolerance 1e-3", Outside) && Passed;
+  Passed = EvaluateFalse("EvaluateVectorNear()", "euclidean outside", "(8e-4, 8e-4, 0) is 1.13e-3 away and rejected although each component is inside the tolerance", EuclideanOutside) && Passed;
+  Passed = EvaluateFalse("EvaluateVectorNear()", "nan output", "A NaN component in the output is rejected", NaNOutput) && Passed;
+  Passed = EvaluateFalse("EvaluateVectorNear()", "inf output", "An infinite component in the output is rejected", InfOutput) && Passed;
+  Passed = EvaluateFalse("EvaluateVectorNear()", "nan truth", "A NaN component in the expected vector is rejected", NaNTruth) && Passed;
+
+  // EvaluateRotationNear: each of the nine elements is compared separately
+  const double Elements[9] = { 0.5, -1.0, 2.0, 3.0, 0.25, -0.75, 1.5, -2.5, 4.0 };
+  const char* Names[9] = { "XX", "YX", "ZX", "XY", "YY", "ZY", "XZ", "YZ", "ZZ" };
+  const MRotation Matrix(Elements[0], Elements[1], Elements[2], Elements[3], Elements[4], Elements[5], Elements[6], Elements[7], Elements[8]);
+  Passed = EvaluateTrue("EvaluateRotationNear()", "identical", "Identical matrices are accepted even with the tolerance 0",
+                        Probe.EvaluateRotationNear("inner EvaluateRotationNear()", "identical", "Identical matrices are accepted", Matrix, Matrix, 0.0)) && Passed;
+
+  for (unsigned int e = 0; e < 9; ++e) {
+    double Inside[9], Outside9[9], NonFinite[9];
+    for (unsigned int i = 0; i < 9; ++i) Inside[i] = Outside9[i] = NonFinite[i] = Elements[i];
+    Inside[e] += 9e-4;
+    Outside9[e] += 1.1e-3;
+    NonFinite[e] = numeric_limits<double>::quiet_NaN();
+    const MRotation InsideMatrix(Inside[0], Inside[1], Inside[2], Inside[3], Inside[4], Inside[5], Inside[6], Inside[7], Inside[8]);
+    const MRotation OutsideMatrix(Outside9[0], Outside9[1], Outside9[2], Outside9[3], Outside9[4], Outside9[5], Outside9[6], Outside9[7], Outside9[8]);
+    const MRotation NonFiniteMatrix(NonFinite[0], NonFinite[1], NonFinite[2], NonFinite[3], NonFinite[4], NonFinite[5], NonFinite[6], NonFinite[7], NonFinite[8]);
+    MString Input = MString("element ") + Names[e];
+
+    Passed = EvaluateTrue("EvaluateRotationNear()", Input, "A deviation of 9e-4 in a single element is accepted with the tolerance 1e-3",
+                          Probe.EvaluateRotationNear("inner EvaluateRotationNear()", Input, "A nearby matrix is accepted", InsideMatrix, Matrix, Tolerance)) && Passed;
+    Probe.Silence();
+    const bool ElementOutside = Probe.EvaluateRotationNear("inner EvaluateRotationNear()", Input, "A distant matrix is rejected", OutsideMatrix, Matrix, Tolerance);
+    const bool ElementNonFinite = Probe.EvaluateRotationNear("inner EvaluateRotationNear()", Input, "A NaN element is rejected", NonFiniteMatrix, Matrix, Tolerance);
+    Probe.Unsilence();
+    Passed = EvaluateFalse("EvaluateRotationNear()", Input, "A deviation of 1.1e-3 in a single element is rejected with the tolerance 1e-3", ElementOutside) && Passed;
+    Passed = EvaluateFalse("EvaluateRotationNear()", Input, "A NaN in a single element is rejected", ElementNonFinite) && Passed;
+  }
+
+  // The tolerance applies to each element separately (not to their sum): two elements 8e-4 off are accepted
+  const MRotation TwoElements(Elements[0] + 8e-4, Elements[1], Elements[2], Elements[3], Elements[4], Elements[5], Elements[6], Elements[7], Elements[8] - 8e-4);
+  Passed = EvaluateTrue("EvaluateRotationNear()", "two elements", "The tolerance is applied to each element separately",
+                        Probe.EvaluateRotationNear("inner EvaluateRotationNear()", "two elements", "Two elements 8e-4 off are accepted", TwoElements, Matrix, Tolerance)) && Passed;
 
   return Passed;
 }

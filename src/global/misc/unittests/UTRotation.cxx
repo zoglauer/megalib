@@ -50,6 +50,8 @@ private:
   bool TestAnglesAndFormatting();
   //! Test additional edge cases and numerical corner cases
   bool TestEdgeCases();
+  //! Test the orthonormalization of the axes
+  bool TestOrthonormalization();
 };
 
 
@@ -66,11 +68,15 @@ bool UTRotation::Run()
   AllPassed = TestInversionAndValidation() && AllPassed;
   AllPassed = TestAnglesAndFormatting() && AllPassed;
   AllPassed = TestEdgeCases() && AllPassed;
+  AllPassed = TestOrthonormalization() && AllPassed;
 
   Summarize();
 
   return AllPassed;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -106,6 +112,17 @@ bool UTRotation::TestConstructionAndAccess()
   MRotation Assigned;
   Assigned = Explicit;
   Passed = EvaluateTrue("operator=", "assignment", "Assignment operator duplicates all elements", Assigned == Explicit) && Passed;
+
+  // Equality compares all nine elements: changing any single one makes the matrices different
+  const double Elements[9] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
+  const char* ElementNames[9] = { "XX", "YX", "ZX", "XY", "YY", "ZY", "XZ", "YZ", "ZZ" };
+  for (unsigned int e = 0; e < 9; ++e) {
+    double Changed[9];
+    for (unsigned int i = 0; i < 9; ++i) Changed[i] = Elements[i];
+    Changed[e] += 1e-9;
+    MRotation Different(Changed[0], Changed[1], Changed[2], Changed[3], Changed[4], Changed[5], Changed[6], Changed[7], Changed[8]);
+    Passed = EvaluateFalse("operator==", MString("element ") + ElementNames[e], "Matrices which differ in a single element are not equal", Different == Explicit) && Passed;
+  }
 
   MRotation SetMatrix;
   SetMatrix.Set(1.0, 0.0, 0.0,
@@ -174,6 +191,13 @@ bool UTRotation::TestMultiplication()
   Identity.Rotate(Vector);
   Passed = EvaluateTrue("Rotate(MVector&)", "identity", "Rotate(MVector&) leaves a vector unchanged for the identity matrix", Vector.AreEqual(MVector(1.0, -2.0, 3.0), 1e-12)) && Passed;
 
+  // A rotation by 90 deg around z maps (x, y, z) to (-y, x, z), and the in-place rotation equals the matrix product:
+  MRotation QuarterZ(c_Pi/2.0, MVector(0.0, 0.0, 1.0));
+  MVector RotatedVector(1.0, -2.0, 3.0);
+  QuarterZ.Rotate(RotatedVector);
+  Passed = EvaluateTrue("Rotate(MVector&)", "pi/2 around z", "Rotate(MVector&) rotates (1, -2, 3) to (2, 1, 3)", RotatedVector.AreEqual(MVector(2.0, 1.0, 3.0), 1e-12)) && Passed;
+  Passed = EvaluateTrue("Rotate(MVector&)", "pi/2 around z", "Rotate(MVector&) gives the same result as the matrix product", RotatedVector.AreEqual(QuarterZ * MVector(1.0, -2.0, 3.0), 1e-12)) && Passed;
+
   MVector InteriorAxis(1.0, 2.0, 3.0);
   InteriorAxis.Unitize();
   MRotation InteriorRotation(0.731, InteriorAxis);
@@ -240,6 +264,61 @@ bool UTRotation::TestInversionAndValidation()
   Passed = EvaluateTrue("IsRotation()", "interior rotation", "IsRotation accepts representative non-axis-aligned rotations", InteriorRotation.IsRotation()) && Passed;
   Passed = EvaluateTrue("GetInvers()", "interior rotation", "Representative non-axis-aligned rotations invert correctly", (InteriorRotation.GetInvers() * (InteriorRotation * MVector(0.25, -0.5, 1.75))).AreEqual(MVector(0.25, -0.5, 1.75), 1e-12)) && Passed;
 
+  // The inverse of general matrices (neither diagonal nor determinant +-1), expected values from the cofactor formula:
+  MRotation General(2.0, 1.0, 0.0,
+                    0.0, 3.0, 1.0,
+                    1.0, 0.0, 4.0);
+  Passed = EvaluateNear("GetDeterminant()", "general matrix", "The determinant of a general matrix (rule of Sarrus)", General.GetDeterminant(), 25.0, 1e-12) && Passed;
+  const MRotation GeneralInverse( 12.0/25.0, -4.0/25.0,  1.0/25.0,
+                                      1.0/25.0,  8.0/25.0, -2.0/25.0,
+                                     -3.0/25.0,  1.0/25.0,  6.0/25.0 );
+  Passed = EvaluateRotationNear("GetInvers()", "general matrix", "The inverse of a general matrix with determinant 25", General.GetInvers(), GeneralInverse, 1e-14) && Passed;
+  const MRotation Identity9( 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 );
+  Passed = EvaluateRotationNear("GetInvers()", "general matrix", "A matrix times its inverse is the identity", General * General.GetInvers(), Identity9, 1e-14) && Passed;
+  MRotation GeneralInPlace = General;
+  GeneralInPlace.Invert();
+  Passed = EvaluateRotationNear("Invert()", "general matrix", "Invert gives the same matrix as GetInvers", GeneralInPlace, GeneralInverse, 1e-14) && Passed;
+
+  MRotation NegativeDeterminant(0.0, 1.0, 0.0,
+                                2.0, 0.0, 0.0,
+                                0.0, 0.0, 3.0);
+  Passed = EvaluateNear("GetDeterminant()", "negative determinant", "The determinant of a matrix with swapped rows", NegativeDeterminant.GetDeterminant(), -6.0, 1e-12) && Passed;
+  const MRotation NegativeInverse( 0.0, 0.5, 0.0,
+                                      1.0, 0.0, 0.0,
+                                      0.0, 0.0, 1.0/3.0 );
+  Passed = EvaluateRotationNear("GetInvers()", "negative determinant", "The inverse of a matrix with determinant -6", NegativeDeterminant.GetInvers(), NegativeInverse, 1e-14) && Passed;
+
+  MRotation Integer(1.0, 2.0, 3.0,
+                    0.0, 1.0, 4.0,
+                    5.0, 6.0, 0.0);
+  const MRotation IntegerInverse( -24.0, 18.0,  5.0,
+                                      20.0, -15.0, -4.0,
+                                      -5.0,  4.0,  1.0 );
+  Passed = EvaluateRotationNear("GetInvers()", "integer matrix", "The inverse of an integer matrix with determinant 1", Integer.GetInvers(), IntegerInverse, 1e-12) && Passed;
+
+  // A matrix times its inverse is the identity for every invertible matrix, thus IsRotation has to check the axes themselves:
+  Passed = EvaluateFalse("IsRotation()", "uniform scale 0.5", "A uniform scaling by 0.5 is no rotation", MRotation(0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5).IsRotation()) && Passed;
+  Passed = EvaluateFalse("IsRotation()", "uniform scale 2", "A uniform scaling by 2 is no rotation", MRotation(2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0).IsRotation()) && Passed;
+  Passed = EvaluateFalse("IsRotation()", "scale with determinant 1", "A scaling with determinant +1 is no rotation", MRotation(2.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 1.0).IsRotation()) && Passed;
+  Passed = EvaluateFalse("IsRotation()", "shear", "A shear with determinant +1 is no rotation", MRotation(1.0, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0).IsRotation()) && Passed;
+  Passed = EvaluateFalse("IsRotation()", "singular", "A singular matrix is no rotation", MRotation(1.0, 2.0, 3.0, 2.0, 4.0, 6.0, 0.0, 0.0, 1.0).IsRotation()) && Passed;
+
+  MVector MirroredY = ZAxis.Cross(XAxis);
+  MirroredY *= -1.0;
+  MRotation MirroredBasis(XAxis.X(), MirroredY.X(), ZAxis.X(),
+                          XAxis.Y(), MirroredY.Y(), ZAxis.Y(),
+                          XAxis.Z(), MirroredY.Z(), ZAxis.Z());
+  Passed = EvaluateNear("GetDeterminant()", "mirrored basis", "A basis with y = -(z cross x) has determinant -1", MirroredBasis.GetDeterminant(), -1.0, 1e-12) && Passed;
+  Passed = EvaluateFalse("IsRotation()", "mirrored basis", "A mirrored basis is no rotation", MirroredBasis.IsRotation()) && Passed;
+
+  // The tolerance applies to the lengths of the axes (here 1 + 5e-7) and their angles (here a 5e-7 rad deviation from perpendicular), the default is 1e-6:
+  MRotation LongAxis(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 + 5.0e-7);
+  Passed = EvaluateTrue("IsRotation()", "default tolerance, long axis", "The default tolerance 1e-6 accepts an axis of length 1 + 5e-7", LongAxis.IsRotation()) && Passed;
+  Passed = EvaluateFalse("IsRotation()", "default tolerance, too long axis", "The default tolerance 1e-6 rejects an axis of length 1 + 5e-6", MRotation(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 + 5.0e-6).IsRotation()) && Passed;
+  MRotation SkewedAxes(1.0, 0.0, sin(5.0e-7), 0.0, 1.0, 0.0, 0.0, 0.0, cos(5.0e-7));
+  Passed = EvaluateTrue("IsRotation()", "skewed axes within tolerance", "Axes 5e-7 rad from perpendicular are accepted with the tolerance 1e-6", SkewedAxes.IsRotation(1e-6)) && Passed;
+  Passed = EvaluateFalse("IsRotation()", "skewed axes outside tolerance", "The same axes are rejected with the tolerance 1e-8", SkewedAxes.IsRotation(1e-8)) && Passed;
+
   return Passed;
 }
 
@@ -267,10 +346,18 @@ bool UTRotation::TestAnglesAndFormatting()
   MVector InteriorAxis(1.0, 2.0, 3.0);
   InteriorAxis.Unitize();
   MRotation InteriorRotation(0.731, InteriorAxis);
-  Passed = EvaluateNear("GetThetaX()", "interior rotation", "GetThetaX returns a representative interior polar angle for non-axis-aligned rotations", InteriorRotation.GetThetaX(), 1.8777023633776777, 1e-4) && Passed;
-  Passed = EvaluateNear("GetPhiX()", "interior rotation", "GetPhiX returns a representative interior azimuth for non-axis-aligned rotations", InteriorRotation.GetPhiX(), 0.6432605226467148, 1e-4) && Passed;
-  Passed = EvaluateNear("GetThetaZ()", "interior rotation", "GetThetaZ returns a representative interior polar angle for non-axis-aligned rotations", InteriorRotation.GetThetaZ(), 0.4305113296353004, 1e-4) && Passed;
-  Passed = EvaluateNear("GetPhiZ()", "interior rotation", "GetPhiZ returns a representative interior azimuth for non-axis-aligned rotations", InteriorRotation.GetPhiZ(), -0.16592858392263796, 1e-4) && Passed;
+  // Expected values from the Rodrigues rotation formula (independent of MRotation) for 0.731 rad around (1, 2, 3)/sqrt(14):
+  Passed = EvaluateNear("GetThetaX()", "interior rotation", "GetThetaX returns the polar angle of the rotated x axis for a non-axis-aligned rotation", InteriorRotation.GetThetaX(), 1.8776979432269041, 1e-12) && Passed;
+  Passed = EvaluateNear("GetPhiX()", "interior rotation", "GetPhiX returns the azimuth of the rotated x axis for a non-axis-aligned rotation", InteriorRotation.GetPhiX(), 0.6432610203165977, 1e-12) && Passed;
+  Passed = EvaluateNear("GetThetaY()", "interior rotation", "GetThetaY returns the polar angle of the rotated y axis for a non-axis-aligned rotation", InteriorRotation.GetThetaY(), 1.2787375736944959, 1e-12) && Passed;
+  Passed = EvaluateNear("GetPhiY()", "interior rotation", "GetPhiY returns the azimuth of the rotated y axis for a non-axis-aligned rotation", InteriorRotation.GetPhiY(), 2.1186302327798257, 1e-12) && Passed;
+  Passed = EvaluateNear("GetThetaZ()", "interior rotation", "GetThetaZ returns the polar angle of the rotated z axis for a non-axis-aligned rotation", InteriorRotation.GetThetaZ(), 0.4305111265235029, 1e-12) && Passed;
+  Passed = EvaluateNear("GetPhiZ()", "interior rotation", "GetPhiZ returns the azimuth of the rotated z axis for a non-axis-aligned rotation", InteriorRotation.GetPhiZ(), -0.1659285875602620, 1e-12) && Passed;
+
+  // The stream output lists the matrix row by row, which the (symmetric) identity cannot show:
+  ostringstream OutExplicit;
+  OutExplicit << MRotation(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+  Passed = Evaluate("operator<<", "explicit matrix", "Stream output lists the matrix row by row", MString(OutExplicit.str()), MString("(1/2/3, 4/5/6, 7/8/9)")) && Passed;
 
   return Passed;
 }
@@ -354,6 +441,139 @@ bool UTRotation::TestEdgeCases()
                        0.0, 0.0, 1.0);
   Passed = EvaluateNear("GetThetaX()", "reflection", "GetThetaX handles a reflected x axis", Reflection.GetThetaX(), c_Pi / 2.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetPhiX()", "reflection", "GetPhiX returns pi for a reflected x axis", Reflection.GetPhiX(), c_Pi, 1e-12) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the orthonormalization of the axes
+bool UTRotation::TestOrthonormalization()
+{
+  bool Passed = true;
+
+  const MRotation Identity9( 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 );
+  const MRotation Mirrored9( 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0 );
+  const double Root = 1.0/sqrt(2.0);
+
+  // The z-axis keeps its direction, x is made perpendicular to z, y is z cross x (negated for a mirrored matrix).
+  // Axes: x = (1, 0, 1), y = (0, 1, 0), z = (0, 0, 2) -> x' = (1, 0, 0), y' = (0, 1, 0), z' = (0, 0, 1)
+  MRotation Tilted(1.0, 0.0, 0.0,
+                   0.0, 1.0, 0.0,
+                   1.0, 0.0, 2.0);
+  Passed = EvaluateTrue("Orthonormalize()", "tilted x, long z", "Axes which are not perpendicular and not of unit length can be orthonormalized", Tilted.Orthonormalize()) && Passed;
+  Passed = EvaluateRotationNear("Orthonormalize()", "tilted x, long z", "x = (1, 0, 1), z = (0, 0, 2) gives the identity", Tilted, Identity9, 1e-14) && Passed;
+
+  // The same with y = (0, -1, 0): the handedness (determinant -2 < 0) is preserved, y' = -(z' cross x') = (0, -1, 0)
+  MRotation TiltedMirrored(1.0,  0.0, 0.0,
+                           0.0, -1.0, 0.0,
+                           1.0,  0.0, 2.0);
+  Passed = EvaluateTrue("Orthonormalize()", "mirrored, tilted x, long z", "A mirrored matrix can be orthonormalized", TiltedMirrored.Orthonormalize()) && Passed;
+  Passed = EvaluateRotationNear("Orthonormalize()", "mirrored, tilted x, long z", "The handedness of a mirrored matrix is preserved", TiltedMirrored, Mirrored9, 1e-14) && Passed;
+
+  // Axes 45 deg from perpendicular: z = (1, 0, 1), x = (1, 0, 0) -> z' = (1, 0, 1)/sqrt(2), x' = (1, 0, -1)/sqrt(2), y' = z' cross x' = (0, 1, 0)
+  MRotation FortyFive(1.0, 0.0, 1.0,
+                      0.0, 1.0, 0.0,
+                      0.0, 0.0, 1.0);
+  const MRotation FortyFiveExpected(  Root, 0.0, Root,
+                                         0.0,  1.0, 0.0,
+                                        -Root, 0.0, Root );
+  Passed = EvaluateTrue("Orthonormalize()", "45 deg", "Axes 45 deg from perpendicular can be orthonormalized", FortyFive.Orthonormalize()) && Passed;
+  Passed = EvaluateRotationNear("Orthonormalize()", "45 deg", "z is kept, x is projected into the plane perpendicular to z", FortyFive, FortyFiveExpected, 1e-14) && Passed;
+
+  // The lengths of the input axes do not matter:
+  MRotation LongAxes(0.5, 0.0, 0.0,
+                     0.0, 7.0, 0.0,
+                     0.0, 0.0, 3.0);
+  Passed = EvaluateTrue("Orthonormalize()", "scaled axes", "Axes of different lengths can be orthonormalized", LongAxes.Orthonormalize()) && Passed;
+  Passed = EvaluateRotationNear("Orthonormalize()", "scaled axes", "Axes of the lengths 0.5, 7, 3 give the identity", LongAxes, Identity9, 1e-14) && Passed;
+
+  // Generic skewed axes, the same matrix with and without mirroring the y axis (this is also how the function is used: set first, then orthonormalize):
+  for (int Mirror = 0; Mirror < 2; ++Mirror) {
+    const double Sign = (Mirror == 0) ? 1.0 : -1.0;
+    MRotation Skewed;
+    Skewed.Set(1.0,  0.2*Sign,  0.3,
+               0.1,  1.0*Sign, -0.2,
+               0.4,  0.1*Sign,  1.2);
+    MVector XBefore = Skewed.GetX();
+    MVector ZBefore = Skewed.GetZ();
+    double DeterminantBefore = Skewed.GetDeterminant();
+    MString Input = (Mirror == 0) ? "generic skew" : "generic skew, mirrored";
+
+    Passed = EvaluateTrue("Orthonormalize()", Input, "Skewed axes can be orthonormalized", Skewed.Orthonormalize()) && Passed;
+    MVector X = Skewed.GetX();
+    MVector Y = Skewed.GetY();
+    MVector Z = Skewed.GetZ();
+    Passed = EvaluateNear("Orthonormalize()", Input, "The x axis has unit length", X.Mag(), 1.0, 1e-14) && Passed;
+    Passed = EvaluateNear("Orthonormalize()", Input, "The y axis has unit length", Y.Mag(), 1.0, 1e-14) && Passed;
+    Passed = EvaluateNear("Orthonormalize()", Input, "The z axis has unit length", Z.Mag(), 1.0, 1e-14) && Passed;
+    Passed = EvaluateNear("Orthonormalize()", Input, "x and y are perpendicular", X.Dot(Y), 0.0, 1e-14) && Passed;
+    Passed = EvaluateNear("Orthonormalize()", Input, "x and z are perpendicular", X.Dot(Z), 0.0, 1e-14) && Passed;
+    Passed = EvaluateNear("Orthonormalize()", Input, "y and z are perpendicular", Y.Dot(Z), 0.0, 1e-14) && Passed;
+    Passed = EvaluateTrue("Orthonormalize()", Input, "The z axis keeps its direction", Z.AreEqual(ZBefore.Unit(), 1e-14)) && Passed;
+    Passed = EvaluateNear("Orthonormalize()", Input, "The new x axis lies in the plane of the old x axis and the z axis", X.Dot(XBefore.Cross(ZBefore).Unit()), 0.0, 1e-14) && Passed;
+    Passed = EvaluateTrue("Orthonormalize()", Input, "The new x axis is the closest one to the old x axis (positive projection)", X.Dot(XBefore) > 0.0) && Passed;
+    Passed = EvaluateNear("Orthonormalize()", Input, "The determinant is +-1 with the original sign", Skewed.GetDeterminant(), (DeterminantBefore > 0) ? 1.0 : -1.0, 1e-14) && Passed;
+    Passed = EvaluateTrue("Orthonormalize()", Input, "The y axis is +-(z cross x) with the original handedness", Y.AreEqual((DeterminantBefore > 0) ? Z.Cross(X) : MVector(-Z.Cross(X).X(), -Z.Cross(X).Y(), -Z.Cross(X).Z()), 1e-14)) && Passed;
+
+    // The inverse of orthonormal axes is the transpose:
+    const MRotation Transposed( Skewed.GetXX(), Skewed.GetXY(), Skewed.GetXZ(),
+                                   Skewed.GetYX(), Skewed.GetYY(), Skewed.GetYZ(),
+                                   Skewed.GetZX(), Skewed.GetZY(), Skewed.GetZZ() );
+    Passed = EvaluateRotationNear("Orthonormalize()", Input, "The inverse of the orthonormalized matrix is its transpose", Skewed.GetInvers(), Transposed, 1e-14) && Passed;
+    Passed = EvaluateTrue("IsRotation()", Input, "The orthonormalized matrix is a rotation if the original handedness was right-handed", Skewed.IsRotation(1e-12) == (DeterminantBefore > 0)) && Passed;
+
+    // Orthonormalizing twice changes nothing:
+    MRotation Twice = Skewed;
+    Passed = EvaluateTrue("Orthonormalize()", Input, "A second orthonormalization works", Twice.Orthonormalize()) && Passed;
+    Passed = EvaluateTrue("Orthonormalize()", Input, "A second orthonormalization changes nothing", Twice.GetX().AreEqual(X, 1e-14) && Twice.GetY().AreEqual(Y, 1e-14) && Twice.GetZ().AreEqual(Z, 1e-14)) && Passed;
+  }
+
+  // An exact rotation is not changed:
+  MVector InteriorAxis(1.0, 2.0, 3.0);
+  InteriorAxis.Unitize();
+  MRotation Exact(0.731, InteriorAxis);
+  MRotation ExactCopy = Exact;
+  Passed = EvaluateTrue("Orthonormalize()", "exact rotation", "An exact rotation can be orthonormalized", Exact.Orthonormalize()) && Passed;
+  Passed = EvaluateTrue("Orthonormalize()", "exact rotation", "An exact rotation is not changed", Exact.GetX().AreEqual(ExactCopy.GetX(), 1e-14) && Exact.GetY().AreEqual(ExactCopy.GetY(), 1e-14) && Exact.GetZ().AreEqual(ExactCopy.GetZ(), 1e-14)) && Passed;
+  Passed = EvaluateTrue("IsRotation()", "exact rotation", "The result is still a rotation", Exact.IsRotation(1e-12)) && Passed;
+
+  // Axes which cannot be orthonormalized are rejected and the matrix is left unchanged:
+  MRotation Zero(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  MRotation ZeroCopy = Zero;
+  Passed = EvaluateFalse("Orthonormalize()", "zero matrix", "A zero matrix is rejected", Zero.Orthonormalize()) && Passed;
+  Passed = EvaluateTrue("Orthonormalize()", "zero matrix", "A rejected zero matrix is unchanged", Zero == ZeroCopy) && Passed;
+
+  MRotation ZeroZ(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+  MRotation ZeroZCopy = ZeroZ;
+  Passed = EvaluateFalse("Orthonormalize()", "zero z axis", "A matrix with a zero z axis is rejected", ZeroZ.Orthonormalize()) && Passed;
+  Passed = EvaluateTrue("Orthonormalize()", "zero z axis", "A rejected matrix with a zero z axis is unchanged", ZeroZ == ZeroZCopy) && Passed;
+
+  MRotation Singular(1.0, 2.0, 3.0, 2.0, 4.0, 6.0, 0.0, 0.0, 1.0);
+  MRotation SingularCopy = Singular;
+  Passed = EvaluateFalse("Orthonormalize()", "singular matrix", "A singular matrix is rejected", Singular.Orthonormalize()) && Passed;
+  Passed = EvaluateTrue("Orthonormalize()", "singular matrix", "A rejected singular matrix is unchanged", Singular == SingularCopy) && Passed;
+
+  MRotation Parallel(1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+  MRotation ParallelCopy = Parallel;
+  Passed = EvaluateFalse("Orthonormalize()", "x parallel to z", "Parallel x and z axes are rejected", Parallel.Orthonormalize()) && Passed;
+  Passed = EvaluateTrue("Orthonormalize()", "x parallel to z", "A rejected matrix with parallel axes is unchanged", Parallel == ParallelCopy) && Passed;
+
+  // Boundary of "x parallel to z": the part of x perpendicular to z has to be larger than 1e-12 times the length of x.
+  // x = (1, e, 0), y = (0, 0, 1), z = (1, 0, 0) has the determinant e and the perpendicular part (0, e, 0).
+  MRotation AlmostParallel(1.0, 0.0, 1.0, 1e-14, 0.0, 0.0, 0.0, 1.0, 0.0);
+  MRotation AlmostParallelCopy = AlmostParallel;
+  Passed = EvaluateFalse("Orthonormalize()", "almost parallel, 1e-14", "Axes with a perpendicular part of 1e-14 are rejected", AlmostParallel.Orthonormalize()) && Passed;
+  Passed = EvaluateTrue("Orthonormalize()", "almost parallel, 1e-14", "A rejected almost-parallel matrix is unchanged", AlmostParallel == AlmostParallelCopy) && Passed;
+
+  MRotation BarelyPerpendicular(1.0, 0.0, 1.0, 1e-6, 0.0, 0.0, 0.0, 1.0, 0.0);
+  const MRotation BarelyPerpendicularExpected( 0.0, 0.0, 1.0,
+                                                  1.0, 0.0, 0.0,
+                                                  0.0, 1.0, 0.0 );
+  Passed = EvaluateTrue("Orthonormalize()", "almost parallel, 1e-6", "Axes with a perpendicular part of 1e-6 are accepted", BarelyPerpendicular.Orthonormalize()) && Passed;
+  Passed = EvaluateRotationNear("Orthonormalize()", "almost parallel, 1e-6", "x' = (0, 1, 0), y' = z' cross x' = (0, 0, 1), z' = (1, 0, 0)", BarelyPerpendicular, BarelyPerpendicularExpected, 1e-14) && Passed;
 
   return Passed;
 }
