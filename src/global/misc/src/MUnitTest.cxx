@@ -23,6 +23,7 @@
 #include "MUnitTest.h"
 
 // Standard libs:
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -35,6 +36,8 @@
 
 // MEGAlib libs:
 #include "MFile.h"
+#include "MRotation.h"
+#include "MVector.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -651,6 +654,64 @@ bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString 
       RegisterFailure(Function, Input, Description, "identical files", Diff.str());
       return false;
     }
+  }
+
+  RegisterSuccess();
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::EvaluateVectorNear(MString Function, MString Input, MString Description, const MVector& Output, const MVector& Truth, double Tolerance)
+{
+  const bool Finite = std::isfinite(Output.X()) && std::isfinite(Output.Y()) && std::isfinite(Output.Z()) &&
+                      std::isfinite(Truth.X()) && std::isfinite(Truth.Y()) && std::isfinite(Truth.Z());
+  const double Distance = (Output - Truth).Mag();
+
+  if (Finite == false || Distance > Tolerance) {
+    ostringstream ExpectedStream;
+    ExpectedStream << setprecision(numeric_limits<long double>::max_digits10) << "(" << Truth.X() << ", " << Truth.Y() << ", " << Truth.Z() << ") +/- " << Tolerance;
+    ostringstream OutputStream;
+    OutputStream << setprecision(numeric_limits<long double>::max_digits10) << "(" << Output.X() << ", " << Output.Y() << ", " << Output.Z() << "), distance " << Distance;
+    RegisterFailure(Function, Input, Description, ExpectedStream.str(), OutputStream.str());
+    return false;
+  }
+
+  RegisterSuccess();
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::EvaluateRotationNear(MString Function, MString Input, MString Description, const MRotation& Output, const MRotation& Truth, double Tolerance)
+{
+  // Elements row by row: XX, YX, ZX, XY, YY, ZY, XZ, YZ, ZZ
+  const double O[9] = { Output.GetXX(), Output.GetYX(), Output.GetZX(), Output.GetXY(), Output.GetYY(), Output.GetZY(), Output.GetXZ(), Output.GetYZ(), Output.GetZZ() };
+  const double T[9] = { Truth.GetXX(), Truth.GetYX(), Truth.GetZX(), Truth.GetXY(), Truth.GetYY(), Truth.GetZY(), Truth.GetXZ(), Truth.GetYZ(), Truth.GetZZ() };
+
+  bool Match = true;
+  double LargestDifference = 0.0;
+  for (unsigned int i = 0; i < 9; ++i) {
+    if (std::isfinite(O[i]) == false || std::isfinite(T[i]) == false) {
+      Match = false;
+    } else {
+      LargestDifference = std::max(LargestDifference, fabs(O[i] - T[i]));
+      if (fabs(O[i] - T[i]) > Tolerance) Match = false;
+    }
+  }
+
+  if (Match == false) {
+    auto Format = [](const double (&V)[9]) {
+      ostringstream Stream;
+      Stream << setprecision(numeric_limits<long double>::max_digits10) << "(" << V[0] << "/" << V[1] << "/" << V[2] << ", " << V[3] << "/" << V[4] << "/" << V[5] << ", " << V[6] << "/" << V[7] << "/" << V[8] << ")";
+      return Stream.str();
+    };
+    RegisterFailure(Function, Input, Description, Format(T) + " +/- " + to_string(Tolerance), Format(O) + ", largest difference " + to_string(LargestDifference));
+    return false;
   }
 
   RegisterSuccess();

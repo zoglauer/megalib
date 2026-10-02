@@ -151,10 +151,8 @@ bool MModuleLoaderRoa::ReadNextEvent(MReadOutAssembly* Event)
   Event->Clear();
 
   MReadOutSequence ROS;
-  m_RoaFile.ReadNext(ROS);
-
-  if (ROS.GetNumberOfReadOuts() == 0) {
-    mout<<m_Name<<": No more read-outs available in File"<<endl;
+  if (m_RoaFile.ReadNext(ROS) == false) {
+    mout<<m_Name<<": No more events available in File"<<endl;
     return false;
   }
   

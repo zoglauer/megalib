@@ -26,6 +26,10 @@ clang-format -i MSubModuleDEEIntake.cxx
 
 For new classes, copy and modify an existing one, or use the MModuleTemplate class as tempplate.
 
+## Language
+
+Use US English spelling in code, comments, and documentation, e.g., "Orthonormalize", "color", "behavior", "center", "normalize".
+
 ## Naming
 
 ### Classes
@@ -56,6 +60,27 @@ Variables in functions *should* follow the "upper camel case" convention, e.g.,
 X, DataPoint, IsNonZero
 ```
 
+## Code organization
+
+- Prefer class member functions over free functions. If a helper is tightly related to a class, make it a private, protected, or public member of that class as appropriate.
+- Avoid namespace-scope helper functions when possible, including anonymous-namespace helpers. Use anonymous namespaces only when there is a clear reason the helper cannot reasonably be part of a class.
+- Prefer C++ standard headers and C++ standard-library functionality over C or POSIX headers and functions when practical.
+- Avoid adding C headers such as `<stdio.h>`, `<stdlib.h>`, or POSIX headers such as `<unistd.h>` and `<fcntl.h>` when a suitable C++ header and C++ mechanism exists.
+- If a C or POSIX function is required because the C++ standard library does not provide equivalent semantics, document the reason briefly near the use.
+- If new functionality is useful beyond the class it is written for (a second class needs it, or it would otherwise be copied), put it where all its users can reach it: in the lowest common base class that all of them share, or in a small dedicated class if there is none. Do not copy it into each class, and keep it a member, not a free function.
+- Generalize when the second use appears, not speculatively. Do not widen a base class with something only one derived class needs.
+
+## Conditions and error handling
+
+- Do not rely on implicit truthiness. Write explicit comparisons such as `Flag == true`, `Flag == false`, `Pointer == nullptr`, and `Error.value() != 0`.
+- For recoverable filesystem operations, prefer the `std::error_code` overloads. Print a contextual `merr` message before returning failure unless the failure is expected and intentionally ignored.
+
+## Filesystem safety
+
+- Keep user-facing labels separate from filesystem-safe names. Validate path components instead of silently sanitizing them.
+- Restrict destructive filesystem operations to a validated private root directory. Reject empty paths, traversal outside the root, sibling paths, and symlink escapes.
+- If a mutex protects a non-obvious filesystem race, add a short comment describing the race, such as preventing concurrent teardown while file I/O is in progress.
+
 ## Comments
 
 - Use doxygen-style comments (//!) for classes, member functions, and variables, including a brief description of the method's functionality.
@@ -69,6 +94,50 @@ X, DataPoint, IsNonZero
 - Document all classes and all member functions and variables in the header
 
 - Use single-line comments (//) to explain logic within methods.
+- For non-obvious logic inside methods, document the code in short step-by-step comments directly above the relevant block. The comments should describe the intent of each block, not restate every line.
+  ```cpp
+  bool MString::IsPositiveInteger() const
+  {
+    // Accept a non-negative base-10 integer with optional surrounding
+    // whitespace and an optional leading plus sign. Reject empty strings,
+    // whitespace-only strings, minus signs, decimal points, and trailing text.
+
+    // Strip leading spaces.
+    size_t Begin = 0;
+    while (Begin < m_String.size() && isspace(static_cast<unsigned char>(m_String[Begin])) != 0) {
+      ++Begin;
+    }
+
+    // Strip trailing spaces.
+    size_t End = m_String.size();
+    while (End > Begin && isspace(static_cast<unsigned char>(m_String[End-1])) != 0) {
+      --End;
+    }
+
+    // Reject empty or whitespace-only strings.
+    if (Begin == End) {
+      return false;
+    }
+
+    // Allow one optional leading plus sign.
+    if (m_String[Begin] == '+') {
+      ++Begin;
+      if (Begin == End) {
+        return false;
+      }
+    }
+
+    // The remaining content must be decimal digits only.
+    for (size_t i = Begin; i < End; ++i) {
+      if (isdigit(static_cast<unsigned char>(m_String[i])) == 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+  ```
+- Do not write directly to `cout` or `cerr` in MEGAlib code. Use the MEGAlib stream classes such as `mout`, `mlog`, `merr`, or `mgui` instead, so output can be redirected or disabled consistently.
 
 
 ## Comment wording
@@ -278,16 +347,33 @@ These patterns are nearly absent from the older code and should not be introduce
     m_X ++;  // Incorrect
   ```
 
-- **cout etc.**: White spaces before and after <<, >> are OK but not enforced
+- **MEGAlib streams**: White spaces before and after <<, >> are OK but not enforced
   ```cpp
-    cout<<"Var: "<<V<<endl;        // OK
-    cout << "Var: " << V << endl;  // OK
+    merr<<"Var: "<<V<<endl;        // OK
+    merr << "Var: " << V << endl;  // OK
+  ```
+
+- **Boolean conditions**: Prefer an explicit comparison with true or false over the bare value or the negation operator. This is a preference, not a requirement - existing code which does without it is fine, but mixing both forms within one function is not.
+  ```cpp
+    if (Line.BeginsWith("BD") == true) {   // Preferred
+    if (IsOpen() == false) {               // Preferred
+    if (Line.BeginsWith("BD")) {           // OK
+    if (!IsOpen()) {                       // OK
   ```
 
 ### 7. **Trailing Whitespace**
 
 - **Avoid Trailing Whitespace**: Do not leave trailing spaces at the end of lines. Trailing spaces can cause version control diffs to become unnecessarily cluttered.
 
+
+
+## Bug fixes and the ChangeLog
+
+- Every bug fix which could potentially change results (simulation output, reconstruction, responses, file contents, numbers printed for the user) must be mentioned in `doc/ChangeLog.txt` in the section of the upcoming version.
+- Describe the effect (what was wrong and what changes), not the code change, so that users can judge whether old results are affected.
+- This includes fixes which change the interpretation of input (e.g. units or ranges of keywords).
+- Pure crash, message, or refactoring fixes do not need an entry.
+- Add the entry in the same pull request / check-in as the fix.
 
 
 ## Good C++ practises
@@ -365,13 +451,28 @@ These patterns are nearly absent from the older code and should not be introduce
      try {
        int Result = Divide(x, y); // Some division function
      } catch (const std::exception& e) {
-       cout<<"Error: "<<e.what()<<endl;
+       merr<<"Error: "<<e.what()<<endl;
      }
      ```
    - The class MExceptions has a wide range of useful exceptions
-   - 
+   - When validating inputs before throwing, prefer the guard form
+     ```cpp
+     if (i >= Values.size()) {
+       throw MExceptionIndexOutOfBounds(0, Values.size(), i);
+     }
 
-### 10. **Avoid Global Variables**
-   - Global variables make your code harder to debug and test. Use local variables or pass parameters to functions instead.
+     return Values[i];
+     ```
+     over
+     ```cpp
+     if (i < Values.size()) return Values[i];
+     throw MExceptionIndexOutOfBounds(0, Values.size(), i);
+     ```
+   - This keeps the error path explicit and the normal return path clean.
+
+### 10. **Avoid Polluting the Top-Level Namespace**
+   - Do not add global variables, file-scope helper functions, global utility functions, or other names in the top-level namespace unless there is a strong reason.
+   - Prefer class member functions and variables or other narrowly scoped solutions so helper logic stays attached to the owning type and does not leak into the global namespace.
+
 
 ### More to follow
