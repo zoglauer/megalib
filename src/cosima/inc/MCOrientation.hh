@@ -113,9 +113,6 @@ class MCOrientation
   //! Return the stop time or zero if there is none
   double GetStopTime() const;
   
-  //! Dump content into a string
-  MString ToString() const;
-  
   // protected methods:
  protected:
   //! Read a list of orientations from file
@@ -127,9 +124,17 @@ class MCOrientation
   //! Find the closest index - always check with InRange() first to avoid exceptions
   unsigned int FindClosestIndex(double Time) const;
 
+  //! Calculate the rotation from the angles of the x- and z-axis (latitudes for Galactic, theta angles for local orientations).
+  //! The frame is always mirrored, i.e., y = -(z cross x), following the convention of MRotationInterface.
+  //! The axes are checked to be at a right angle and orthonormalized. The angles of an axis which had to be corrected are updated,
+  //! so that they describe the rotation. Nothing is changed and false is returned if the axes are invalid
+  bool CalculateRotation(double& XThetaLat, double& XPhiLong, double& ZThetaLat, double& ZPhiLong, MRotation& Rotation) const;
+
   
   // private methods:
  private:
+  //! Parse some tokenized text, the content may be partially filled if the text is rejected
+  bool ParseTokens(const MTokenizer& Tokenizer);
 
 
   // protected members:

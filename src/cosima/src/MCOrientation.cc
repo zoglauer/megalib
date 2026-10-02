@@ -93,11 +93,27 @@ void MCOrientation::Clear()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MCOrientation::Parse(const MTokenizer& Tokenizer) 
-{ 
-  // Parse some tokenized text
+//! Parse some tokenized text
+bool MCOrientation::Parse(const MTokenizer& Tokenizer)
+{
+  // Parse some tokenized text - a rejected text must not leave a partially filled orientation behind
 
   Clear();
+  if (ParseTokens(Tokenizer) == false) {
+    Clear();
+    return false;
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse some tokenized text, the content may be partially filled if the text is rejected
+bool MCOrientation::ParseTokens(const MTokenizer& Tokenizer)
+{
   
   // Orientation is used for the run and the sources, thus the content aleays starts at position 2:
   
@@ -169,12 +185,12 @@ bool MCOrientation::Parse(const MTokenizer& Tokenizer)
       }
       
       // Some sanity check:
-      if (m_XThetaLat.back() > 90 || m_XThetaLat.back() < -90) {
-        mlog<<"   ***  Error  ***  Latitude value for X axis not within [-90, 90]: "<<m_XThetaLat.back()<<endl;
+      if (m_XThetaLat.back() > c_Pi/2 + 1E-6 || m_XThetaLat.back() < -c_Pi/2 - 1E-6) {
+        mlog<<"   ***  Error  ***  Latitude value for X axis not within [-90, 90]: "<<m_XThetaLat.back()/deg<<endl;
         return false;
       }
-      if (m_ZThetaLat.back() > 90 || m_ZThetaLat.back() < -90) {
-        mlog<<"   ***  Error  ***  Latitude value for X axis not within [-90, 90]: "<<m_ZThetaLat.back()<<endl;
+      if (m_ZThetaLat.back() > c_Pi/2 + 1E-6 || m_ZThetaLat.back() < -c_Pi/2 - 1E-6) {
+        mlog<<"   ***  Error  ***  Latitude value for Z axis not within [-90, 90]: "<<m_ZThetaLat.back()/deg<<endl;
         return false;
       }     
       
@@ -191,50 +207,17 @@ bool MCOrientation::Parse(const MTokenizer& Tokenizer)
     }
     
     if (m_CoordianteSystem == MCOrientationCoordinateSystem::c_Galactic) {
-      // First compute the y-Axis vector:
-      MVector X;
-      X.SetMagThetaPhi(1.0, c_Pi/2 + m_XThetaLat.back(), m_XPhiLong.back());
-      MVector Z;
-      Z.SetMagThetaPhi(1.0, c_Pi/2 + m_ZThetaLat.back(), m_ZPhiLong.back());
-      
-      // Verify that x and z axis are at right angle:
-      if (fabs(X.Angle(Z) - c_Pi/2.0) > 0.001) {
-        mlog<<"   ***  Error  ***  GalacticPointing axes are not at right angle, but: "<<X.Angle(Z)/deg<<" deg"<<endl;
-        return false;
-      }
-      
-      MVector Y = Z.Cross(X);
-      // We need a minus here since the Galactic coordinate system in left-handed!!!!
-      Y *= -1;
-      
+      MRotation Rotation;
+      if (CalculateRotation(m_XThetaLat.back(), m_XPhiLong.back(), m_ZThetaLat.back(), m_ZPhiLong.back(), Rotation) == false) return false;
       m_Translations.push_back(MVector(0.0, 0.0, 0.0));
-      
-      m_Rotations.push_back(MRotation(X.X(), Y.X(), Z.X(),
-                                      X.Y(), Y.Y(), Z.Y(),
-                                      X.Z(), Y.Z(), Z.Z()));
-      m_RotationsInvers.push_back(m_Rotations.back().GetInvers());
+      m_Rotations.push_back(Rotation);
+      m_RotationsInvers.push_back(Rotation.GetInvers());
     } 
     else if (m_CoordianteSystem == MCOrientationCoordinateSystem::c_Local) {
-      // First compute the y-Axis vector:
-      MVector X;
-      X.SetMagThetaPhi(1.0, m_XThetaLat.back(), m_XPhiLong.back());
-      MVector Z;
-      Z.SetMagThetaPhi(1.0, m_ZThetaLat.back(), m_ZPhiLong.back());
-      
-      // Verify that x and z axis are at right angle:
-      if (fabs(X.Angle(Z) - c_Pi/2.0) > 0.001) {
-        mlog<<"   ***  Error  ***  Pointing axes are not at right angle, but: "<<X.Angle(Z)/deg<<" deg"<<endl;
-        return false;
-      }
-      
-      MVector Y = Z.Cross(X);
-      
+      // A fixed local orientation has exactly the axes x = (90 deg, 0) and z = (0, 0): the identity, which is not mirrored (nothing is oriented)
       m_Translations.push_back(MVector(0.0, 0.0, 0.0));
-      
-      m_Rotations.push_back(MRotation(X.X(), Y.X(), Z.X(),
-                                      X.Y(), Y.Y(), Z.Y(),
-                                      X.Z(), Y.Z(), Z.Z()));
-      m_RotationsInvers.push_back(m_Rotations.back().GetInvers());
+      m_Rotations.push_back(MRotation());
+      m_RotationsInvers.push_back(MRotation());
     }    
 
     
@@ -287,6 +270,10 @@ bool MCOrientation::Read(MString FileName)
   for (unsigned int l = 0; l < P.GetNLines(); ++l) {
     MTokenizer* T = P.GetTokenizerAt(l);
     if (T->IsTokenAt(0, "OG") == true) {
+      if (m_CoordianteSystem != MCOrientationCoordinateSystem::c_Galactic) {
+        mlog<<"   ***  Error  ***  OG lines are only allowed in a Galactic orientation file"<<endl;
+        return false;
+      }
       if (T->GetNTokens() != 6 && T->GetNTokens() != 9 &&(m_CoordianteSystem == MCOrientationCoordinateSystem::c_Galactic || m_CoordianteSystem == MCOrientationCoordinateSystem::c_Local) ) {
         mlog<<"   ***  Error  ***  Number of tokens for OG keyword must be 6 or 9"<<endl;
         return false;          
@@ -305,40 +292,26 @@ bool MCOrientation::Read(MString FileName)
       }
        
       
-      if (m_XThetaLat.back() > 90 || m_XThetaLat.back() < -90) {
-        mlog<<"   ***  Error  ***  Latitude value for X axis not within [-90, 90]: "<<m_XThetaLat.back()<<endl;
+      if (m_XThetaLat.back() > c_Pi/2 + 1E-6 || m_XThetaLat.back() < -c_Pi/2 - 1E-6) {
+        mlog<<"   ***  Error  ***  Latitude value for X axis not within [-90, 90]: "<<m_XThetaLat.back()/deg<<endl;
         return false;
       }
-      if (m_ZThetaLat.back() > 90 || m_ZThetaLat.back() < -90) {
-        mlog<<"   ***  Error  ***  Latitude value for Z axis not within [-90, 90]: "<<m_ZThetaLat.back()<<endl;
-        return false;
-      }
-      
-      // First compute the y-Axis vector:
-      MVector X;
-      X.SetMagThetaPhi(1.0, c_Pi/2.0 + m_XThetaLat.back(), m_XPhiLong.back());
-      MVector Z;
-      Z.SetMagThetaPhi(1.0, c_Pi/2.0 + m_ZThetaLat.back(), m_ZPhiLong.back());
-      
-      // Verify that x and z axis are at right angle:
-      if (fabs(X.Angle(Z) - c_Pi/2.0) > 0.001) {
-        mlog<<"   ***  Error  ***  GalacticPointing axes are not at right angle, but: "<<X.Angle(Z)/deg<<" deg"<<endl;
-        mlog<<"  Input: lat:"<<m_XThetaLat.back()/deg<<"  long:"<<m_XPhiLong.back()/deg<<"  vs. lat:"<<m_ZThetaLat.back()/deg<<" long:"<<m_ZPhiLong.back()/deg<<endl;
+      if (m_ZThetaLat.back() > c_Pi/2 + 1E-6 || m_ZThetaLat.back() < -c_Pi/2 - 1E-6) {
+        mlog<<"   ***  Error  ***  Latitude value for Z axis not within [-90, 90]: "<<m_ZThetaLat.back()/deg<<endl;
         return false;
       }
       
-      MVector Y = Z.Cross(X);
-      // We need a minus here since the Galactic coordinate system in left-handed!!!!
-      Y *= -1;
-      
+      MRotation Rotation;
+      if (CalculateRotation(m_XThetaLat.back(), m_XPhiLong.back(), m_ZThetaLat.back(), m_ZPhiLong.back(), Rotation) == false) return false;
       m_Translations.push_back(MVector(0.0, 0.0, 0.0));
-
-      m_Rotations.push_back(MRotation(X.X(), Y.X(), Z.X(),
-                                      X.Y(), Y.Y(), Z.Y(),
-                                      X.Z(), Y.Z(), Z.Z()));  
-      m_RotationsInvers.push_back(m_Rotations.back().GetInvers());
+      m_Rotations.push_back(Rotation);
+      m_RotationsInvers.push_back(Rotation.GetInvers());
       
     } else if (T->IsTokenAt(0, "OL") == true) {
+      if (m_CoordianteSystem != MCOrientationCoordinateSystem::c_Local) {
+        mlog<<"   ***  Error  ***  OL lines are only allowed in a Local orientation file"<<endl;
+        return false;
+      }
       if (T->GetNTokens() != 9) {
         mlog<<"   ***  Error  ***  Number of tokens for OL keyword must be 9"<<endl;
         return false;          
@@ -353,36 +326,20 @@ bool MCOrientation::Read(MString FileName)
       m_ZThetaLat.push_back(T->GetTokenAtAsDouble(7)*deg);
       m_ZPhiLong.push_back(T->GetTokenAtAsDouble(8)*deg); 
     
-      if (m_XThetaLat.back() > 180 || m_XThetaLat.back() < 0) {
-        mlog<<"   ***  Error  ***  Theta value for X axis not within [0, 180]: "<<m_XThetaLat.back()<<endl;
+      if (m_XThetaLat.back() > c_Pi + 1E-6 || m_XThetaLat.back() < -1E-6) {
+        mlog<<"   ***  Error  ***  Theta value for X axis not within [0, 180]: "<<m_XThetaLat.back()/deg<<endl;
         return false;
       }
-      if (m_ZThetaLat.back() > 180 || m_ZThetaLat.back() < 0) {
-        mlog<<"   ***  Error  ***  Theta value for Z axis not within [0, 180]: "<<m_ZThetaLat.back()<<endl;
-        return false;
-      }
-    
-      // First compute the y-Axis vector:
-      MVector X;
-      X.SetMagThetaPhi(1.0, m_XThetaLat.back(), m_XPhiLong.back());
-      MVector Z;
-      Z.SetMagThetaPhi(1.0, m_ZThetaLat.back(), m_ZPhiLong.back());
-    
-      // Verify that x and z axis are at right angle:
-      if (fabs(X.Angle(Z) - c_Pi/2.0) > 0.001) {
-        mlog<<"   ***  Error  ***  LocalPointing axes are not at right angle, but: "<<X.Angle(Z)/deg<<" deg"<<endl;
-        mlog<<"  Input: theta:"<<m_XThetaLat.back()/deg<<"  phi:"<<m_XPhiLong.back()/deg<<"  vs. theta:"<<m_ZThetaLat.back()/deg<<" phi:"<<m_ZPhiLong.back()/deg<<endl;
+      if (m_ZThetaLat.back() > c_Pi + 1E-6 || m_ZThetaLat.back() < -1E-6) {
+        mlog<<"   ***  Error  ***  Theta value for Z axis not within [0, 180]: "<<m_ZThetaLat.back()/deg<<endl;
         return false;
       }
     
-      MVector Y = Z.Cross(X);
-      // We need a minus here since the Galactic coordinate system is left-handed!!!!
-      Y *= -1;
-    
-      m_Rotations.push_back(MRotation(X.X(), Y.X(), Z.X(),
-                                      X.Y(), Y.Y(), Z.Y(),
-                                      X.Z(), Y.Z(), Z.Z()));  
-      m_RotationsInvers.push_back(m_Rotations.back().GetInvers());
+      // Local orientations are currently only applied to sources: OrientationSky and OrientationDetector accept Local Fixed only
+      MRotation Rotation;
+      if (CalculateRotation(m_XThetaLat.back(), m_XPhiLong.back(), m_ZThetaLat.back(), m_ZPhiLong.back(), Rotation) == false) return false;
+      m_Rotations.push_back(Rotation);
+      m_RotationsInvers.push_back(Rotation.GetInvers());
     }
   }
  
@@ -393,8 +350,67 @@ bool MCOrientation::Read(MString FileName)
       return false; 
     }
   }
+
+  // Earth coordinates are given either in all or in none of the lines
+  if (m_EarthAlt.size() != 0 && m_EarthAlt.size() != m_Times.size()) {
+    mlog<<"   ***  Error  ***  The Earth coordinates (altitude, latitude, longitude) must be given in all or none of the OG lines"<<endl;
+    return false;
+  }
  
  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Calculate the rotation from the angles of the x- and z-axis (latitudes for Galactic, theta angles for local orientations).
+//! The frame is always mirrored, i.e., y = -(z cross x), following the convention of MRotationInterface.
+//! The axes are checked to be at a right angle and orthonormalized. The angles of an axis which had to be corrected are updated,
+//! so that they describe the rotation. Nothing is changed and false is returned if the axes are invalid
+bool MCOrientation::CalculateRotation(double& XThetaLat, double& XPhiLong, double& ZThetaLat, double& ZPhiLong, MRotation& Rotation) const
+{
+  // Galactic angles are latitudes, local angles are theta angles
+  const double Offset = (m_CoordianteSystem == MCOrientationCoordinateSystem::c_Galactic) ? c_Pi/2 : 0.0;
+
+  MVector X;
+  X.SetMagThetaPhi(1.0, Offset + XThetaLat, XPhiLong);
+  MVector Z;
+  Z.SetMagThetaPhi(1.0, Offset + ZThetaLat, ZPhiLong);
+
+  // Verify that x and z axis are at right angle:
+  if (fabs(X.Angle(Z) - c_Pi/2.0) > 0.001) {
+    mlog<<"   ***  Error  ***  The orientation axes are not at right angle, but: "<<X.Angle(Z)/deg<<" deg"<<endl;
+    mlog<<"  Input: x: "<<XThetaLat/deg<<" "<<XPhiLong/deg<<"  vs. z: "<<ZThetaLat/deg<<" "<<ZPhiLong/deg<<endl;
+    return false;
+  }
+
+  MVector Y = Z.Cross(X);
+  // The oriented frame is left-handed on purpose (y = -(z cross x)), following the convention of MRotationInterface
+  Y *= -1;
+
+  MRotation Result(X.X(), Y.X(), Z.X(),
+                   X.Y(), Y.Y(), Z.Y(),
+                   X.Z(), Y.Z(), Z.Z());
+  if (Result.Orthonormalize() == false) {
+    mlog<<"   ***  Error  ***  The orientation axes cannot be orthonormalized"<<endl;
+    return false;
+  }
+
+  // The stored angles are the reported pointing and have to be those of the transformation:
+  // Update an axis only if it was corrected, thus exact input stays unchanged (also for axes at the poles, where the longitude is arbitrary)
+  auto Update = [Offset](const MVector& Input, const MVector& Corrected, double& ThetaLat, double& PhiLong) {
+    if ((Corrected - Input).Mag() < 1E-12) return;
+    ThetaLat = Corrected.Theta() - Offset;
+    double Phi = Corrected.Phi();
+    PhiLong = Phi + 2*c_Pi*round((PhiLong - Phi)/(2*c_Pi));
+  };
+  Update(X, Result.GetX(), XThetaLat, XPhiLong);
+  Update(Z, Result.GetZ(), ZThetaLat, ZPhiLong);
+
+  Rotation = Result;
+
   return true;
 }
 
@@ -425,6 +441,14 @@ bool MCOrientation::InRange(double Time) const
 //! Find the closest index, always check with InRange(Time) first to avoid exceptions!
 unsigned int MCOrientation::FindClosestIndex(double Time) const
 {
+  // The closest entry for a time within [front, back]
+  auto Closest = [this](double T) -> unsigned int {
+    unsigned int Index = lower_bound(m_Times.begin(), m_Times.end(), T) - m_Times.begin();
+    if (Index == 0) return 0;
+    if (Index >= m_Times.size()) return m_Times.size() - 1;
+    return (T - m_Times[Index-1] <= m_Times[Index] - T) ? Index - 1 : Index;
+  };
+
   if (m_IsLooping == true) {
     if (m_Times.size() == 1) {
       return 0;
@@ -432,10 +456,11 @@ unsigned int MCOrientation::FindClosestIndex(double Time) const
       throw MExceptionEmptyArray("m_Times");
       return 0;
     } else {
-      // Get it in range
-      Time = fabs(fmod(Time - m_Times.front(), m_Times.back() - m_Times.front()));
-      // Find and return the index
-      return lower_bound(m_Times.begin(), m_Times.end(), Time) - m_Times.begin();
+      // Wrap the time into [front, back)
+      double Span = m_Times.back() - m_Times.front();
+      double Relative = fmod(Time - m_Times.front(), Span);
+      if (Relative < 0) Relative += Span;
+      return Closest(m_Times.front() + Relative);
     }    
   } else {
     if (m_Times.size() == 0) {
@@ -446,7 +471,7 @@ unsigned int MCOrientation::FindClosestIndex(double Time) const
       throw MExceptionIndexOutOfBounds();
       return 0;     
     }
-    return lower_bound(m_Times.begin(), m_Times.end(), Time) - m_Times.begin();    
+    return Closest(Time);
   }
   
   
@@ -482,6 +507,11 @@ bool MCOrientation::GetOrientation(double Time, double& XThetaLat, double& XPhiL
 //! Get the Earth coordinates of the current spacecraft orbit position 
 bool MCOrientation::GetEarthCoordinate(double Time, double& Alt, double& Lat, double& Long) const
 {
+  if (m_EarthAlt.size() != m_Times.size() || m_EarthLat.size() != m_Times.size() || m_EarthLong.size() != m_Times.size()) {
+    mlog<<"   ***  Error  ***  The orientation file does not contain Earth coordinates (altitude, latitude, longitude) for all entries"<<endl;
+    return false;
+  }
+
   if (InRange(Time) == true) {
     unsigned int Index = FindClosestIndex(Time);
     Alt = m_EarthAlt[Index];
