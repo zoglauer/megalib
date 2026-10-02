@@ -13,7 +13,7 @@ Begin every such prompt with:
 
 ```
 Please read the MEGAlib style guide: CodingConventions.md
-Please read the MEGAlib testing rules: TestingRules.md
+Please read the MEGAlib testing rules: TestingConventions.md
 
 If you find a bug in production code, do not modify those files
 automatically — show a diff and ask before applying, and fix only one
@@ -78,7 +78,7 @@ MEGAlib requires four test tiers. Every change is covered by at least one applic
 
 1. **Unit tests** — single class or function. Fast (<1s each). Run on every commit.
 2. **Integration tests** — a few classes together, no full pipeline. Fast to medium. Run on every commit.
-3. **End-to-end regression tests** — full pipeline with small fixed inputs. Slow. Run on PR and nightly.
+3. **End-to-end regression tests** — full pipeline with small fixed inputs. Slow (under a minute each). Run on PR and nightly. Until the runner supports tier selection they run together with the unit tests, see section "Harness", item 7.
 4. **Physics validation tests** — MC output vs. analytic or reference result. Slow. Run nightly or on release.
 
 ## Workflow
@@ -90,6 +90,8 @@ MEGAlib requires four test tiers. Every change is covered by at least one applic
 6. Fix bugs one at a time. Stop after each fix for user review.
 7. Make the minimum code change needed to fix a bug.
 8. Do not refactor, restyle, or clean up unrelated code unless explicitly asked.
+9. Every bug fix comes with a regression test that fails without the fix. Write the test first and see it fail, or revert the fix temporarily and confirm the failure.
+10. For a new or extended test of non-trivial logic, check that the test can fail: reintroduce the plausible bugs (a wrong sign, a dropped term, a swapped argument, a loosened threshold) in a scratch copy of the code under test and confirm that at least one check fails for each. Do this in a scratch copy, never by editing the production file.
 
 ## File Structure and main()
 
@@ -158,6 +160,8 @@ int main()
 9. `EvaluateException<E>(Function, Input, Description, Callable)` — assert that calling `Callable` throws an exception of type `E` (or a derived type caught by reference-to-`E`). Pass a lambda.
 10. `EvaluateFilesIdentical(Function, Input, Description, GeneratedFile, ReferenceFile)` — stream both files line by line; stop and report at the first mismatch. Use for reference-file comparisons in end-to-end tests.
 11. `Summarize()` — call at the end of `Run()`, returns `void`. Return `Passed` separately.
+12. `EvaluateVectorNear(Function, Input, Description, Output, Truth, Tolerance)` — `MVector` comparison: the distance between the two vectors must not exceed the tolerance. Never compare vectors by formatting them to text.
+13. `EvaluateRotationNear(Function, Input, Description, Output, Truth, Tolerance)` — `MRotation` comparison: each of the nine elements may differ by at most the tolerance.
 
 ## Per-Function Unit Test Requirements
 1. Every public function gets a direct functional test. Indirect coverage through other APIs does not count.
@@ -174,6 +178,11 @@ int main()
 12. For I/O classes, test failure paths on reused objects and verify failed operations do not leave stale state behind.
 13. Public API consistency is part of unit testing: every declared public function should be linkable and testable, or explicitly marked unsupported/deprecated.
 14. Do not only test trivial, symmetric, or axis-point inputs. For every function, add several representative nontrivial interior-domain test cases when applicable.
+15. Derive expected values independently of the code under test: by hand, from an analytic formula, or with an independent reference implementation (e.g. a short script). Never copy a value from the output of the function being tested. Name the derivation in a comment next to every non-trivial expected value.
+16. Choose the tolerance from the precision of the expected value and of the arithmetic (e.g. 1e-12 for a value given with 16 digits), never from what makes the test pass. If a test only passes with a loose tolerance, check the expected value first.
+17. Every threshold or tolerance in the code under test (accept/reject limits, "within x of y", minimum lengths) gets a check just inside and a check just outside of it. A test that only uses exact inputs cannot tell a correct threshold from a missing one.
+18. For math and geometry helpers, also assert the invariants of the result and not only sample values: lengths and angles preserved, orthogonality, determinant sign (handedness), inverse restores the input, and idempotence where it applies.
+19. Include input which is accepted but imperfect (for example axes 1e-4 rad from perpendicular, a vector of length 1 + 1e-7) and assert that the result is still valid, not only the exact textbook inputs.
 
 ## Stream and Round-Trip Tests
 
@@ -276,16 +285,40 @@ Passed = EvaluateTrue("RemoveTemporaryFile()", "fixture",
 9. When testing filesystem helpers, cover recreation, idempotent removal, traversal rejection, sibling rejection, symlink escape rejection, and concurrent lazy initialization where applicable.
 10. When testing thread safety, force contention and validate every result, not only the final iteration.
 
+## ROOT in Tests
+1. ROOT is not thread-safe. Use ROOT objects only in the main thread. If a test starts threads or asynchronous tasks, they must not open ROOT files, create ROOT objects, or call ROOT functions. Return plain data and do the ROOT work afterwards in the main thread.
+2. A test which reads or writes ROOT objects creates `TApplication ROOT("ROOT", 0, 0);` at the start of `main()` and calls `gROOT->SetBatch(true);`, so that canvases can be read without a display. Do not rely on a display being available.
+3. Check the result of every ROOT file operation (`IsZombie()`, null pointers from `Get()` or `ReadObj()`) and report the reason with `merr` when it fails. A silent `false` is hard to diagnose.
+
+## External Programs in Tests
+1. Every external program a test starts gets an explicit time-out (for example `timeout 100 <program> ...`), so that a hang fails the test instead of the suite. 100 seconds is the upper bound for every such time-out in all unit test programs.
+2. Do not trust the exit status alone. Some programs return a non-zero status after succeeding (for example `revan --save-cfg`). Verify success by the result the test needs: the produced file exists and is not empty, and it can be read.
+3. Programs which run at the same time each get their own working directory and output file names. Never let two runs write to the same file.
+4. Give every stochastic program run an explicit seed, and a different one for each concurrent run. Seeds derived from the clock are identical for processes started within the same second.
+5. Redirect the output of the programs into log files in the test directory, so that the test output stays clean (see "Test Hygiene") and the logs can be read after a failure.
+
 ## Assertions and Diagnostics
 1. Failure messages must show expected vs. actual without requiring a rerun. The `MUnitTest` helpers do this automatically — use them, not raw `if`/`return`.
 2. One logical behavior per assertion block when practical. Group related assertions only when they describe the same behavior.
 3. Sub-test method names: `TestCamelCase`, one logical concern per method (e.g. `TestDefaultConstruction`, `TestGettersSetters`, `TestStreamDat`). See section "MUnitTest API" for the `Evaluate*` argument-order convention.
+4. A helper used by more than one test does not get copied. If it is general (comparing a vector or a matrix, writing a fixture, running a program) it belongs in `MUnitTest`; if it is specific to one module it belongs in a shared header `UT<Module>Shared.h` in that module's `unittests` directory. Check `MUnitTest` and the existing shared header before writing a new helper.
+
+## Known Defects and Intended Surprises
+1. A test of a believed defect asserts the correct behavior and fails until the defect is fixed. Never assert the buggy behavior just to get a green run: the fix would then break the test.
+2. A failing test of a known defect is committed only together with a note naming the defect (issue or commit message). It is not marked as skipped or expected-fail, so the suite stays red until the fix lands.
+3. If a behavior is intentional but surprising (for example a deliberately mirrored coordinate frame), assert it and state the reason in a comment next to the check, so that it is not reported as a bug later.
+4. If it is unclear whether a behavior is a defect, do not guess: ask, and leave the check out until the question is answered.
 
 ## Mocking
 1. Use real implementations for value types and pure functions.
 2. Mock only at I/O and system boundaries (filesystem, network, clock, external processes).
 3. Do not mock the class under test.
 4. Do not mock ROOT or Geant4. Use real instances with minimal inputs.
+
+## Special Techniques
+1. Protected members of the class under test are reached with a small test subclass which exposes them with `using` declarations (for example `class AccessFoo : public MFoo { public: using MFoo::ProtectedFunction; };`). Do not change the visibility of production code for tests.
+2. Test that a constructor initializes every member: construct the object with placement `new` into a memory block filled with a recognizable byte pattern, and verify that no member (or the object as a whole) still contains the pattern afterwards. Run it on a throw-away block, never on memory that is in use. Choose a pattern byte whose value cannot be a valid default of any member (for example not 0x00 or 0xFF), otherwise members which are legitimately set to that value are reported as uninitialized.
+3. If an input might crash the code under test (for example a missing data file or an invalid state), run the call in a forked child process and check the exit status with `waitpid`. A crash is then a failed check, and the remaining checks still run. Do not use this to hide crashes: a crash on valid input is a defect to report.
 
 ## What Not to Test
 1. Do not test ROOT, Geant4, or other third-party library behavior.
@@ -326,4 +359,5 @@ Passed = EvaluateFalse("Initialize()", "missing file", "Initialization fails whe
 4. A silently skipped test is a failure.
 5. Unit-test source files, binaries, and suite names use the `UT<ClassNameWithoutLeadingM>` convention, e.g. `MIsotope` -> `UTIsotope.cxx`, `bin/UTIsotope`, and `MUnitTest("UTIsotope")`.
 6. In directories that use the standard unit-test makefile pattern, adding a `unittests/*.cxx` source file is sufficient to register a new unit test.
-7. End-to-end and physics validation tests live outside the unit test harness and have their own runner. A change that touches simulation, reconstruction, or imaging must run the relevant end-to-end tier before merge.
+7. End-to-end tests (tier 3) which finish within the expected run time of a unit test program (60 seconds, see item 8) live in the `unittests` directory of the module they exercise. They are named `UT<Module><Topic>`, where the topic is not a class (e.g. `UTCosimaStartArea`, `UTCosimaGalacticImage`), and they are built and run by the unit-test harness like any other test. `UTExecute` has no tier selection, so they run together with the whole suite. Like all tests they must fail, not skip, when a program or data file they need is missing. Physics validation tests (tier 4) and anything slower than that live outside the unit-test harness and have their own runner. A change that touches simulation, reconstruction, or imaging must run the relevant end-to-end tier before merge.
+8. Each unit test program is expected to run in under 60 seconds. This is not enforced, but a test which needs longer must be made smaller or moved out of the unit-test harness. Time-outs for external programs started by a test are at most 100 seconds (see section "External Programs in Tests").

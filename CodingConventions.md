@@ -67,6 +67,8 @@ X, DataPoint, IsNonZero
 - Prefer C++ standard headers and C++ standard-library functionality over C or POSIX headers and functions when practical.
 - Avoid adding C headers such as `<stdio.h>`, `<stdlib.h>`, or POSIX headers such as `<unistd.h>` and `<fcntl.h>` when a suitable C++ header and C++ mechanism exists.
 - If a C or POSIX function is required because the C++ standard library does not provide equivalent semantics, document the reason briefly near the use.
+- If new functionality is useful beyond the class it is written for (a second class needs it, or it would otherwise be copied), put it where all its users can reach it: in the lowest common base class that all of them share, or in a small dedicated class if there is none. Do not copy it into each class, and keep it a member, not a free function.
+- Generalize when the second use appears, not speculatively. Do not widen a base class with something only one derived class needs.
 
 ## Conditions and error handling
 
