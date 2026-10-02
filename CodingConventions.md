@@ -353,6 +353,14 @@ These patterns are nearly absent from the older code and should not be introduce
     merr << "Var: " << V << endl;  // OK
   ```
 
+- **Boolean conditions**: Prefer an explicit comparison with true or false over the bare value or the negation operator. This is a preference, not a requirement - existing code which does without it is fine, but mixing both forms within one function is not.
+  ```cpp
+    if (Line.BeginsWith("BD") == true) {   // Preferred
+    if (IsOpen() == false) {               // Preferred
+    if (Line.BeginsWith("BD")) {           // OK
+    if (!IsOpen()) {                       // OK
+  ```
+
 ### 7. **Trailing Whitespace**
 
 - **Avoid Trailing Whitespace**: Do not leave trailing spaces at the end of lines. Trailing spaces can cause version control diffs to become unnecessarily cluttered.
