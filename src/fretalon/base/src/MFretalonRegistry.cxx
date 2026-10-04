@@ -30,6 +30,7 @@
 #include "MExceptions.h"
 #include "MReadOutElementStrip.h"
 #include "MReadOutElementDoubleStrip.h"
+#include "MReadOutElementNamedDetectorWithVoxelizedSubDetector.h"
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
 #include "MReadOutDataTemperature.h"
@@ -54,7 +55,8 @@ MFretalonRegistry::MFretalonRegistry()
   m_ROEs.push_back(new MReadOutElement());
   m_ROEs.push_back(new MReadOutElementStrip());
   m_ROEs.push_back(new MReadOutElementDoubleStrip());
-  
+  m_ROEs.push_back(new MReadOutElementNamedDetectorWithVoxelizedSubDetector());
+
   // Register the default read-out datas
   m_RODs.push_back(new MReadOutDataADCValue());
   m_RODs.push_back(new MReadOutDataTiming());

@@ -34,6 +34,7 @@ FILES := MFretalonRegistry \
 	MReadOutElement \
 	MReadOutElementStrip \
 	MReadOutElementDoubleStrip \
+	MReadOutElementNamedDetectorWithVoxelizedSubDetector \
 	MReadOutData \
 	MReadOutDataADCValue \
 	MReadOutDataTiming \
