@@ -95,20 +95,40 @@ MFretalonRegistry& MFretalonRegistry::Instance()
 
 
 //! Add another read-out element type
+//! An already registered element of the same type is replaced
 void MFretalonRegistry::Register(const MReadOutElement& ROE)
 {
-  m_ROEs.push_back(ROE.Clone());
-  m_ROEs.back()->Clear();
+  MReadOutElement* New = ROE.Clone();
+  New->Clear();
+
+  for (unsigned int e = 0; e < m_ROEs.size(); ++e) {
+    if (m_ROEs[e]->GetType() == New->GetType()) {
+      delete m_ROEs[e];
+      m_ROEs[e] = New;
+      return;
+    }
+  }
+  m_ROEs.push_back(New);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Add another read-out data type
+//! An already registered data of the same type is replaced
 void MFretalonRegistry::Register(const MReadOutData& ROD)
 {
-  m_RODs.push_back(ROD.Clone()); 
-  m_RODs.back()->Clear();
+  MReadOutData* New = ROD.Clone();
+  New->Clear();
+
+  for (unsigned int d = 0; d < m_RODs.size(); ++d) {
+    if (m_RODs[d]->GetType() == New->GetType()) {
+      delete m_RODs[d];
+      m_RODs[d] = New;
+      return;
+    }
+  }
+  m_RODs.push_back(New);
 }
 
 

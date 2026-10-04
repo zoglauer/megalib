@@ -49,9 +49,9 @@ class MFretalonRegistry
   //! Return the single instance of this class
   static MFretalonRegistry& Instance();
 
-  //! Add another read-out element type
+  //! Add another read-out element type - replaces an already registered element of the same type
   void Register(const MReadOutElement& ROE);
-  //! Add another read-out data type
+  //! Add another read-out data type - replaces an already registered data of the same type
   void Register(const MReadOutData& ROD);
   
   //! Return true if this kind of read-out element is registered
