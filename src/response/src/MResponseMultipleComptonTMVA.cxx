@@ -61,6 +61,7 @@ ClassImp(MResponseMultipleComptonTMVA)
 
 
 MString MResponseMultipleComptonTMVA::m_MLPOptionsDefault = "";
+MString MResponseMultipleComptonTMVA::m_RNNOptionsDefault = "";
 MString MResponseMultipleComptonTMVA::m_BDTDOptionsDefault = "";
 MString MResponseMultipleComptonTMVA::m_PDEFoamBoostOptionsDefault = "";
 MString MResponseMultipleComptonTMVA::m_DNNCPUOptionsDefault = "";
@@ -121,6 +122,15 @@ void MResponseMultipleComptonTMVA::SetDefaultOptions()
   m_DNNCPUOptionsDefault = DNNOptions + ":Architecture=CPU'";
   // Default option for DNN_GPU
   m_DNNGPUOptionsDefault = DNNOptions + ":Architecture=GPU'";
+
+  m_RNNOptionsDefault =  "Layout=RNN|20|4|5|0|1|RELU,RESHAPE|FLAT,DENSE|20|SIGMOID,LINEAR:";
+  TString additionalParameters1= "H=False:V=True:ErrorStrategy=CROSSENTROPY:VarTransform=None:WeightInitialization=XAVIERUNIFORM:ValidationSize=0.2:InputLayout=5|4:";
+  TString trainingString1 = "TrainingStrategy=LearningRate=5e-4,Momentum=0.0,Repetitions=1,ConvergenceSteps=50"; 
+  trainingString1 += ",TestRepetitions=1,WeightDecay=1e-2,Regularization=None,MaxEpochs=10000";
+  trainingString1 += ",Optimizer=ADAM,DropConfig=0.0+0.+0.+0.";
+  additionalParameters1+=trainingString1;
+  m_RNNOptionsDefault += additionalParameters1;
+
 }
 
 
@@ -157,6 +167,7 @@ MString MResponseMultipleComptonTMVA::Options()
   out<<"             emin:                  minimum energy (default: 100 keV)"<<endl;
   out<<"             emax:                  maximum energy (default: 10000 keV)"<<endl;
   out<<"             mlp_options:           MLP options (default: ["<<m_MLPOptionsDefault<<"])"<<endl;
+  out<<"             rnn_options:           RNN options (default: ["<<m_RNNOptionsDefault<<"])"<<endl;
   out<<"             bdtd_options:          BDTD options (default: ["<<m_BDTDOptionsDefault<<"])"<<endl;
   out<<"             pdefoamboost_options:  PDE foam boost options (default: ["<<m_PDEFoamBoostOptionsDefault<<"])"<<endl;
   out<<"             dnncpu_options:        DNN CPU (default: ["<<m_DNNCPUOptionsDefault<<"])"<<endl;
@@ -263,6 +274,7 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
   }
   
   m_MLPOptions = m_MLPOptionsDefault;
+  m_RNNOptions = m_RNNOptionsDefault;
   m_BDTDOptions = m_BDTDOptionsDefault;
   m_PDEFoamBoostOptions = m_PDEFoamBoostOptionsDefault;
   m_DNNCPUOptions = m_DNNCPUOptionsDefault;
@@ -282,6 +294,8 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
       m_EnergyMaximum = stod(Value);
     } else if (Split2[i][0] == "mlp_options") {
       m_MLPOptions = Value;
+    } else if (Split2[i][0] == "rnn_options") {
+      m_RNNOptions = Value;
     } else if (Split2[i][0] == "bdtd_options") {
       m_BDTDOptions = Value;
     } else if (Split2[i][0] == "pdefoamboost_options") {
@@ -311,6 +325,9 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
   mout<<"  Maximum energy:                          "<<m_EnergyMaximum<<endl;
   if (m_MLPOptions != m_MLPOptionsDefault) {
     mout<<"  MLP options:                             "<<m_MLPOptions<<endl; 
+  }
+  if (m_RNNOptions != m_RNNOptionsDefault) {
+    mout<<"  RNN options:                             "<<m_RNNOptions<<endl; 
   }
   if (m_BDTDOptions != m_BDTDOptionsDefault) {
     mout<<"  BDTD options:                            "<<m_BDTDOptions<<endl; 
@@ -350,6 +367,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
   
   
   m_MLPOptions.RemoveAllInPlace("'");
+  m_RNNOptions.RemoveAllInPlace("'");
   m_BDTDOptions.RemoveAllInPlace("'");
   m_PDEFoamBoostOptions.RemoveAllInPlace("'");
   m_DNNCPUOptions.RemoveAllInPlace("'");
@@ -439,7 +457,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
   out<<"EW "<<m_EnergyMinimum<<" "<<m_EnergyMaximum<<endl;
   out<<endl;
   out<<endl;
-  out<<"# Trained Algorithms (e.g. MLP, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU)"<<endl;
+  out<<"# Trained Algorithms (e.g. MLP, RNN, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU)"<<endl;
   out<<"TA "<<m_Methods.GetUsedMethodsString()<<endl;
   out<<endl;  
   out<<"# Directory name"<<endl;
@@ -600,14 +618,36 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   
   vector<TString> IgnoredBranches = { "SimulationIDs" }; //, "AbsorptionProbabilityToFirstIAAverage", "AbsorptionProbabilityToFirstIAMaximum",  "AbsorptionProbabilityToFirstIAMinimum", "ZenithAngle", "NadirAngle" };
   
+  Int_t maxInt=0;
+
   TObjArray* Branches = SourceTree->GetListOfBranches();
   for (int b = 0; b < Branches->GetEntries(); ++b) {
     TBranch* B = dynamic_cast<TBranch*>(Branches->At(b));
     TString Name = B->GetName();
     if (find(IgnoredBranches.begin(), IgnoredBranches.end(), Name) == IgnoredBranches.end()) {
-      dataloader->AddVariable(Name, 'F');
+
+      Int_t plotFunct=1;
+      if(m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_RNN) == true)
+       if( ( Name(0,1)=="X" || Name(0,1)=="Y" || Name(0,1)=="Z" || Name(0,6)=="Energy") && Name(0,6)!="Zenith")
+          plotFunct=1;
+        else
+          plotFunct=0;
+
+      if(plotFunct==1)
+         dataloader->AddVariable(Name, 'F');
+
+      if(Name(0,6)=="Energy")
+       {
+         Int_t numInteractions=stoi(Name(6,7));
+         if(numInteractions>maxInt)
+              maxInt= numInteractions;
+       }
+
     }
   }
+  Int_t numVar= dataloader->GetDataSetInfo().GetListOfVariables().size();
+  numVar/=maxInt;
+
   
   dataloader->AddSignalTree(SourceTree, 1.0);
   dataloader->AddBackgroundTree(BackgroundTree, 1.0);
@@ -622,6 +662,19 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
     factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", m_MLPOptions);
   }
   
+  m_RNNOptions =  "Layout=RNN|20|"+ TString::Format("%d",numVar) + "|" + TString::Format("%d", maxInt) + "|0|1|RELU,RNN|20|"+ TString::Format("%d",numVar) + "|" + TString::Format("%d", maxInt) + "|0|1|RELU,RNN|20|"+ TString::Format("%d",numVar) + "|" + TString::Format("%d", maxInt) + "|0|1|RELU,RESHAPE|FLAT,DENSE|20|SIGMOID,LINEAR:";
+  TString additionalParameters1= "H=False:V=True:ErrorStrategy=CROSSENTROPY:VarTransform=None:WeightInitialization=XAVIERUNIFORM:ValidationSize=0.2:RandomSeed=884844:InputLayout="+  TString::Format("%d", maxInt) + "|"+ TString::Format("%d",numVar) +":";
+  TString trainingString1 = "TrainingStrategy=LearningRate=5e-4,Momentum=0.0,Repetitions=1,ConvergenceSteps=50";
+  trainingString1 += ",TestRepetitions=1,WeightDecay=1e-2,Regularization=None,MaxEpochs=10000";
+  trainingString1 += ",Optimizer=ADAM,DropConfig=0.0+0.+0.+0.";
+  additionalParameters1+=trainingString1;
+  m_RNNOptions += additionalParameters1;
+
+  // Standard RNN 
+  if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_RNN) == true) {
+    factory->BookMethod( dataloader, TMVA::Types::kDL, "RNN", m_RNNOptions);
+  }
+
   // Boosted decision tree: Decorrelation + Adaptive Boost
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_BDTD) == true) {
     factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTD", m_BDTDOptions);

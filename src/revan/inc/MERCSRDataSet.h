@@ -63,7 +63,7 @@ class MERCSRDataSet
   void CreateTrees(vector<TTree*>& GoodTree, vector<TTree*>& BadTree);
   
   // Create readers
-  void CreateReaders(vector<TMVA::Reader*>& Readers);
+  void CreateReaders(vector<TMVA::Reader*>& Readers,MString value);
   
   // Fill the data sets from RESEs
   void Fill(Long64_t ID, vector<MRESE*>& SequencedRESEs, MDGeometryQuest* Geometry);

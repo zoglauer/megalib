@@ -107,6 +107,10 @@ class MResponseMultipleComptonTMVA : public MResponseMultipleCompton
   MString m_PDEFoamBoostOptions;
   //! Default options for PDEFoamBoost
   static MString m_PDEFoamBoostOptionsDefault;
+  // Selected options for RNN
+  MString m_RNNOptions;
+  // Default options for RNN
+  static MString m_RNNOptionsDefault;
   //! Selected options for DNN_CPU
   MString m_DNNCPUOptions;
   //! Default options for DNN_CPU

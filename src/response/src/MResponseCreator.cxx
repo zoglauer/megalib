@@ -100,7 +100,8 @@ MResponseCreator::MResponseCreator()
   m_MaxNEvents = numeric_limits<int>::max();
 
   m_NoAbsorptions = false;
-  m_TMVAMethodsString = "BDTD";
+  //m_TMVAMethodsString = "BDTD";
+  m_TMVAMethodsString = "RNN"; //TO BE CKECKED!
   m_MaxNInteractions = 7;
 
   m_SaveAfter = 100000;
