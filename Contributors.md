@@ -27,6 +27,7 @@ In alphabetical order:
 - Peter Bloser
 - Joseph Curtis
 - Henrike Fleischhack
+- Savitri Gallego
 - Michelle Galloway
 - Colin Paul Gloster
 - Clarisse Hamadache

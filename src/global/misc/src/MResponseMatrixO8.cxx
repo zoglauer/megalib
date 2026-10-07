@@ -1042,7 +1042,8 @@ MResponseMatrixO8 MResponseMatrixO8::GetSumMatrixO8(unsigned int a1,
 
 bool MResponseMatrixO8::ReadSpecific(MFileResponse& Parser, 
                                      const MString& Type, 
-                                     const int Version)
+                                     const int Version,
+                                     const bool)
 {
   // Read the data from file directly into this matrix
 

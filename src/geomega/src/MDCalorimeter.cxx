@@ -162,7 +162,7 @@ bool MDCalorimeter::SetDepthResolutionAt(const double Energy,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDCalorimeter::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDCalorimeter::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
   // Noise Position and Energy:
 
@@ -183,10 +183,10 @@ void MDCalorimeter::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* 
   IsOverflow = ApplyOverflow(Energy);
 
   // Noise threshold:
-  if (ApplyNoiseThreshold(Energy) == true) {
-    Pos[2] = 0.0; // Really needed, because when below threshold, then E = 0 -> Rejection
-    return;
-  } 
+  //if (ApplyNoiseThreshold(Energy) == true) {
+  //  Pos[2] = 0.0; // Really needed, because when below threshold, then E = 0 -> Rejection
+  // return;
+  //} 
 
   // Noise the z-coordinate:
   if (HasDepthResolution() == true) {
@@ -262,10 +262,10 @@ MDGridPoint MDCalorimeter::GetGridPoint(const MVector& Position) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MDGridPoint> MDCalorimeter::Discretize(const MVector& PosInDetectorVolume, 
-                                              const double& Energy, 
-                                              const double& Time, 
-                                              MDVolume* DetectorVolume) const
+vector<MDGridPoint> MDCalorimeter::Grid(const MVector& PosInDetectorVolume, 
+                                        const double& Energy, 
+                                        const double& Time, 
+                                        const MDVolume* DetectorVolume) const
 {
   // Discretize Pos to a voxel of this volume
 
@@ -296,7 +296,7 @@ MVector MDCalorimeter::GetPositionInDetectorVolume(const unsigned int xGrid,
                                                    const unsigned int zGrid,
                                                    const MVector PositionInGrid,
                                                    const unsigned int Type,
-                                                   MDVolume* Volume)
+                                                   const MDVolume* Volume) const
 {
   // Return the position in the detector volume
 

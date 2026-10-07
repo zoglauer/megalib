@@ -272,7 +272,7 @@ int MResponseMatrixOx::FindBin(const vector<float>& Array, float Value) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMatrixOx::Read(MString FileName)
+bool MResponseMatrixOx::Read(MString FileName, const bool MultiThreaded)
 {
   // Read the data from file directly into this matrix
 
@@ -294,8 +294,11 @@ bool MResponseMatrixOx::Read(MString FileName)
   SetHash(Parser.GetHash());
   SetSimulatedEvents(Parser.GetSimulatedEvents());
   SetFarFieldStartArea(Parser.GetFarFieldStartArea());
+  SetSpectralType(Parser.GetSpectralType());
+  SetBeamType(Parser.GetBeamType());
+  SetPolarizationMode(Parser.GetPolarizationMode());
 
-  Ok = ReadSpecific(Parser, Type, Version);
+  Ok = ReadSpecific(Parser, Type, Version, MultiThreaded);
 
   if (g_Verbosity == c_Chatty) {
     mdebug<<"File \""<<FileName<<"\" with "<<GetNBins()

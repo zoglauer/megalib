@@ -1,0 +1,11 @@
+
+# Source file format version
+Version                     	1
+
+# Physics list
+PhysicsListEM                   LivermorePol
+
+# Output formats
+StoreSimulationInfo             init-only
+
+

@@ -58,7 +58,7 @@ const long MReadOutDataTiming::m_TypeID = m_Type.GetHash();
 
 
 //! Default constructor
-MReadOutDataTiming::MReadOutDataTiming() : MReadOutData(nullptr), m_Timing(0)
+MReadOutDataTiming::MReadOutDataTiming() : MReadOutData(nullptr), m_Timing(0.0)
 {
 }
 
@@ -67,7 +67,7 @@ MReadOutDataTiming::MReadOutDataTiming() : MReadOutData(nullptr), m_Timing(0)
 
 
 //! Constructor given the data
-MReadOutDataTiming::MReadOutDataTiming(MReadOutData* Data) : MReadOutData(Data), m_Timing(0)
+MReadOutDataTiming::MReadOutDataTiming(MReadOutData* Data) : MReadOutData(Data), m_Timing(0.0)
 {
 }
   
@@ -102,7 +102,7 @@ MReadOutDataTiming* MReadOutDataTiming::Clone() const
 void MReadOutDataTiming::Clear()
 {
   MReadOutData::Clear();
-  m_Timing = 0;
+  m_Timing = 0.0;
 }
 
 
@@ -126,7 +126,7 @@ bool MReadOutDataTiming::Parse(const MTokenizer& T, unsigned int StartElement)
   if (MReadOutData::Parse(T, StartElement) == false) return false;
   
   // Then here:
-  m_Timing = T.GetTokenAtAsUnsignedIntFast(StartElement + MReadOutData::GetNumberOfParsableElements());
+  m_Timing = T.GetTokenAtAsDouble(StartElement + MReadOutData::GetNumberOfParsableElements());
   
   return true;
 }

@@ -23,7 +23,7 @@ DiscretizeHits                       true
 
 Run MyRun
 MyRun.FileName                  GalacticScan
-MyRun.NTriggers                 200000
+MyRun.NTriggers                 2000000
 # The detector rotates in the Galactic coordiante system as given in the ori file.
 # There is no loop, when the time in the ori file ends, the simulation will end
 MyRun.OrientationSky            Galactic File NoLoop GalacticScan.ori
@@ -34,13 +34,14 @@ MySource.ParticleType               1
 # The beam is a far field point source, the direction is a dummy (needs to be 0 0)
 # and will be rotated into the position given in the orientation keywork
 MySource.Beam                       FarFieldPointSource 0 0 
-# The orientation of the source in Galactiuc coordiantes, which is fixed to Crab position
+# The orientation of the source in Galactic coordinates, which is fixed to Crab position
 MySource.Orientation                Galactic Fixed -05.78 184.56
 MySource.Spectrum                   Mono 511
-MySource.Flux                       0.001
+MySource.Flux                       0.02
+MySource.Polarization               RelativeZ 1.0 20
 
 # A background covering the top 45-degres, fixed in local, i.e. detector coordinates.
-MyRun.Source MyBackground
+#MyRun.Source MyBackground
 MyBackground.ParticleType       1
 MyBackground.Beam               FarFieldAreaSource 0.0 45.0 0.0 360.0
 MyBackground.Orientation        Local Fixed

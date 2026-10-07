@@ -358,10 +358,21 @@ void MDVolumeSequence::SetDetector(MDDetector* Detector)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDDetector* MDVolumeSequence::GetDetector() const
+const MDDetector* MDVolumeSequence::GetDetector() const
 {
   // If a named detector exists returns the named detector otherwise the standard detector
+  
+  if (m_NamedDetector != nullptr) return m_NamedDetector;
+  return m_Detector;
+}
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDDetector* MDVolumeSequence::GetDetector()
+{
+  // If a named detector exists returns the named detector otherwise the standard detector
+  
   if (m_NamedDetector != nullptr) return m_NamedDetector;
   return m_Detector;
 }
@@ -416,7 +427,16 @@ void MDVolumeSequence::SetDetectorVolume(MDVolume* Volume)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDVolume* MDVolumeSequence::GetDetectorVolume() const
+MDVolume* MDVolumeSequence::GetDetectorVolume()
+{
+  return m_DetectorVolume;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+const MDVolume* MDVolumeSequence::GetDetectorVolume() const
 {
   return m_DetectorVolume;
 }
@@ -456,7 +476,16 @@ void MDVolumeSequence::SetSensitiveVolume(MDVolume* Volume)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDVolume* MDVolumeSequence::GetSensitiveVolume() const
+MDVolume* MDVolumeSequence::GetSensitiveVolume()
+{
+  return m_SensitiveVolume;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+const MDVolume* MDVolumeSequence::GetSensitiveVolume() const
 {
   return m_SensitiveVolume;
 }
@@ -569,8 +598,7 @@ bool MDVolumeSequence::HasSameDetector(MDVolumeSequence* VS) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDVolumeSequence::GetPositionInFirstVolume(const MVector& Position, 
-                                                   MDVolume* Volume) const
+MVector MDVolumeSequence::GetPositionInFirstVolume(const MVector& Position, const MDVolume* Volume) const
 {
   // Rotate "Position" from "Volume" to the first volume in the sequence
   // which is probably the world voluem...

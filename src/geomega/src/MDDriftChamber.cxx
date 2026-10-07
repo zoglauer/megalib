@@ -68,8 +68,6 @@ MDDriftChamber::MDDriftChamber(MString Name) : MDStrip3D(Name)
 
   m_LightSpeed = g_DoubleNotDefined;
   m_LightDetectorPosition = g_IntNotDefined; // No light detector
-  m_DriftConstant = g_DoubleNotDefined; // No opening angle for the drift
-  m_EnergyPerElectron = g_DoubleNotDefined; //kev: Not used if no opening angle is defined
 
   m_LightEnergyResolutionType = c_LightEnergyResolutionTypeUnknown;
 }
@@ -109,7 +107,7 @@ bool MDDriftChamber::CopyDataToNamedDetectors()
 {
   //! Copy data to named detectors
   
-  MDDetector::CopyDataToNamedDetectors();
+  MDStrip3D::CopyDataToNamedDetectors();
   
   if (m_IsNamedDetector == true) return true;
   
@@ -129,16 +127,6 @@ bool MDDriftChamber::CopyDataToNamedDetectors()
     if (D->m_LightDetectorPosition == g_IntNotDefined && 
         m_LightDetectorPosition != g_IntNotDefined) {
       D->m_LightDetectorPosition = m_LightDetectorPosition;
-    }
-
-    if (D->m_DriftConstant == g_DoubleNotDefined && 
-        m_DriftConstant != g_DoubleNotDefined) {
-      D->m_DriftConstant = m_DriftConstant;
-    }
-
-    if (D->m_EnergyPerElectron == g_DoubleNotDefined && 
-        m_EnergyPerElectron != g_DoubleNotDefined) {
-      D->m_EnergyPerElectron = m_EnergyPerElectron;
     }
     
     if (D->m_LightEnergyResolutionType == c_LightEnergyResolutionTypeUnknown && 
@@ -209,21 +197,21 @@ bool MDDriftChamber::NoiseLightEnergy(double& Energy) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDDriftChamber::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDDriftChamber::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
   // Noise Position and energy of this hit:
 
-  MDStrip3D::Noise(Pos, Energy, Time, Volume);
+  MDStrip3D::Noise(Pos, Energy, Time, Flags, Volume);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MDGridPoint> MDDriftChamber::Discretize(const MVector& PosInDetectorVolume, 
-                                               const double& Energy, 
-                                               const double& Time, 
-                                               MDVolume* DetectorVolume) const
+vector<MDGridPoint> MDDriftChamber::Grid(const MVector& PosInDetectorVolume, 
+                                         const double& Energy, 
+                                         const double& Time, 
+                                         const MDVolume* DetectorVolume) const
 {
   // Discretize Pos to a voxel of this volume and
   // calculate the new time
@@ -329,7 +317,7 @@ vector<MDGridPoint> MDDriftChamber::Discretize(const MVector& PosInDetectorVolum
     }
 
     Points.push_back(MDGridPoint(xStrip+xWafer*m_NStripsX, 
-                                 yStrip+xWafer*m_NStripsX, 
+                                 yStrip+yWafer*m_NStripsY, 
                                  0,
                                  MDGridPoint::c_VoxelDrift,
                                  MVector(0.0, 0.0, Pos.Z()), 
@@ -391,14 +379,6 @@ bool MDDriftChamber::Validate()
   
   if (m_LightDetectorPosition == g_IntNotDefined) {
      m_LightDetectorPosition = 0; // No light detector
-  }
-  
-  if (m_DriftConstant == g_DoubleNotDefined) {
-     m_DriftConstant = 0;
-  }
-  
-  if (m_EnergyPerElectron == g_DoubleNotDefined) {
-     m_EnergyPerElectron = 0.022; //keV
   }
   
   if (m_LightEnergyResolutionType == c_LightEnergyResolutionTypeUnknown) {

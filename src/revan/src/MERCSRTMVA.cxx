@@ -169,7 +169,7 @@ bool MERCSRTMVA::SetParameters(MString FileName,
   m_DS.Initialize(m_MaxNInteractions, m_UsePathToFirstIA);
   
   // Initialize the TMVA readers
-  m_DS.CreateReaders(m_Readers);
+  m_DS.CreateReaders(m_Readers,m_Methods.GetString(m_Methods.GetUsedMethods()[0]));
   
   cout<<"Max N Interactions: "<<m_MaxNInteractions<<" vs. "<<m_Readers.size()<<endl;
   

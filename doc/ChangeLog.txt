@@ -3,6 +3,21 @@
 ******************************************************************************
 
 
+Version 4.9x/5.00
+=================
+
+Geomega:
++ Rewrite of the detector effects engine
+
+Cosima:
++ Enable Geant4 11.2
+
+Response:
++ HEALPix for spherical coordinates 
+
+
+
+
 
 
 

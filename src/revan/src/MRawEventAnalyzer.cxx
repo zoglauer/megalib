@@ -54,6 +54,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MTimer.h"
 #include "MERCoincidence.h"
+#include "MERStripPairing.h"
 #include "MERHitClusterizer.h"
 #include "MEREventClusterizer.h"
 #include "MEREventClusterizerDistance.h"
@@ -222,6 +223,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_RejectAllBadEvents = true;
 
   m_TimeLoad = 0;
+  m_TimeStripPairing = 0;
   m_TimeEventClusterize = 0;
   m_TimeHitClusterize = 0;
   m_TimeTrack = 0;
@@ -231,6 +233,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_IsBatch = false;
 
   m_Coincidence = nullptr;
+  m_StripPairer = nullptr;
   m_EventClusterizer = nullptr;
   m_HitClusterizer = nullptr;
   m_Tracker = nullptr;
@@ -262,6 +265,7 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
   delete m_EventStore;
   
   delete m_Coincidence;
+  delete m_StripPairer;
   delete m_EventClusterizer;
   delete m_HitClusterizer;
   delete m_Tracker;
@@ -447,10 +451,27 @@ bool MRawEventAnalyzer::SetOutputModeFile(MString Filename)
     return false;
   }
 
+  if (m_Reader != nullptr) {
+    TransferFileInformation(m_Reader);
+  }
+
   return true;
 }
 
-  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MRawEventAnalyzer::TransferFileInformation(MFileEvents* External)
+{
+  if (m_PhysFile != nullptr && External != nullptr) {
+    m_PhysFile->TransferInformation(External);
+    m_PhysFile->SetFileType("TRA");
+  }
+
+  return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -469,6 +490,20 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
   MRERawEvent* RE = new MRERawEvent(m_Geometry);
   
   for (MString L: Lines) {
+    // A tiny hack, since, by design, the core revan library does not know anything about the simulation info:
+    if (m_SaveOI == true) {
+      if (L[0] == 'I' && L[1] == 'A') {
+        if (L[3] == 'I' && L[4] == 'N' && L[5] == 'I' && L[6] == 'T') {
+          double x, y, z, dx, dy, dz, px, py, pz, e;
+          if (sscanf(L.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf", &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+            ostringstream out;
+            out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+            L = out.str().c_str();
+          }
+        }
+      }
+    }
+
     if (RE->ParseLine(L, Version) == 1) {
       delete RE;
       cout<<"Parsing of line failed: "<<L<<endl;
@@ -479,6 +514,11 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
   if (NeedsNoising == true) {
     m_Noising->Analyze(RE);
   }
+  if (RE->GetNRESEs() == 0) {
+    delete RE;
+    return false;
+  }
+
   m_EventStore->AddRawEvent(RE);
   
   return true;
@@ -596,6 +636,8 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   mdebug<<endl;
   mdebug<<"ER - Event: "<<RE->GetEventID()<<endl;
   mdebug<<endl;
+  mdebug<<RE->ToString()<<endl;
+  mdebug<<endl;
   
   
   // Store the inital coincident event:
@@ -642,7 +684,45 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     RE->SetRejectionReason(MRERawEvent::c_RejectionTotalEnergyOutOfLimits);
     SelectionsPassed = false;
   }
-
+  
+  
+  
+  // Section Pre-B: Strip pairing:
+  
+  if (SelectionsPassed == true) { // && m_EventClusteringAlgorithm > c_EventClusteringAlgoNone) {
+    Timer.Start();
+    
+    if (m_StripPairer == nullptr) {
+      merr<<"Strip pairing pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+      return c_AnalysisUndefinedError;
+    }
+    
+    m_StripPairer->Analyze(m_RawEvents);
+    
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
+    
+    // Update the resolutions here:
+    for (unsigned int r = 0; r < m_RawEvents->Size(); ++r) {
+      MRawEventIncarnations* REI = m_RawEvents->Get(r);
+      for (int re = 0; re < REI->GetNRawEvents(); ++re) {
+        MRERawEvent* RE = REI->GetRawEventAt(re);
+        for (int rese = 0; rese < RE->GetNRESEs(); ++rese) {
+        
+          //cout<<"Before: "<<RE->GetRESEAt(rese)->ToString()<<endl;
+          MREHit* Hit = dynamic_cast<MREHit*>(RE->GetRESEAt(rese));
+          if (Hit != nullptr) {
+            Hit->UpdateVolumeSequence(m_Geometry);
+            Hit->RetrieveResolutions(m_Geometry);
+          }
+          //cout<<"After: "<<RE->GetRESEAt(rese)->ToString()<<endl;
+        }
+      }
+    }
+      
+    
+    m_TimeStripPairing += Timer.ElapsedTime();
+  }
+  
   
   
   // Section B: Event clustering:
@@ -965,8 +1045,8 @@ bool MRawEventAnalyzer::PostAnalysis()
 {
   // No more events available
   
-  if (m_PhysFile != nullptr) {
-    m_PhysFile->SetObservationTime(m_Reader->GetObservationTime());
+  if (m_PhysFile != nullptr && m_Reader != nullptr) {
+    TransferFileInformation(m_Reader);
   } 
   
   
@@ -1012,6 +1092,11 @@ bool MRawEventAnalyzer::PostAnalysis()
     out<<endl;
     out<<"----------------------------------------------------------------------------"<<endl;
     m_Reader->Close();
+  } else if ( m_Noising != nullptr) {
+    out<<endl;
+    out<<m_Noising->ToString();
+    out<<endl;
+    out<<"----------------------------------------------------------------------------"<<endl;
   }
   out<<endl;
   out<<"Event statistics for all triggered (!) events:"<<endl;
@@ -1072,8 +1157,8 @@ bool MRawEventAnalyzer::PostAnalysis()
 
 
   if (m_PhysFile != nullptr) {
-    m_PhysFile->CloseEventList();
     m_PhysFile->AddFooter(out.str().c_str());
+    m_PhysFile->WriteFooter();
     m_PhysFile->Close();
   }
 
@@ -1180,7 +1265,15 @@ bool MRawEventAnalyzer::PreAnalysis()
   }
   
   
-  // Event clustering
+  // Strip pairing
+  if (Return == true) {
+    delete m_StripPairer;
+    m_StripPairer = nullptr;
+    m_StripPairer = new MERStripPairing();
+  }
+  
+  
+    // Event clustering
   if (Return == true) {
     delete m_EventClusterizer;
     m_EventClusterizer = nullptr;

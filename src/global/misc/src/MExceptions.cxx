@@ -53,6 +53,7 @@ ClassImp(MExceptionObjectDoesNotExist)
 ClassImp(MExceptionObjectsNotIdentical)
 ClassImp(MExceptionUnknownMode)
 ClassImp(MExceptionNeverReachThatLineOfCode)
+ClassImp(MExceptionPointerIsInvalid)
 ClassImp(MExceptionArbitrary)
 #endif
 

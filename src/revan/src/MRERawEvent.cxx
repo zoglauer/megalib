@@ -438,7 +438,11 @@ double MRERawEvent::GetEnergy()
   double Energy = 0.0;
 
   for (int i = 0; i < GetNRESEs(); i++) {
-    Energy += GetRESEAt(i)->GetEnergy();
+    if (GetRESEAt(i)->GetType() == MRESE::c_StripHit) {
+      Energy += 0.5*GetRESEAt(i)->GetEnergy();
+    } else {
+      Energy += GetRESEAt(i)->GetEnergy();
+    }
   }  
   Energy += m_AdditionalEnergy;
 
@@ -975,6 +979,28 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"The energy is outside of what the event clustering was trained for";
     }
     break;
+  case c_RejectionStripPairingMissingStrips:
+    if (Short == true) {
+      out<<"StripPairingMissingStrips";
+    } else {
+      out<<"Strip pairing failed due to missing strips";
+    }
+    break;
+  case c_RejectionStripPairinTooManyStrips:
+    if (Short == true) {
+      out<<"StripPairinTooManyStrips";
+    } else {
+      out<<"Strip pairing failed because of too many triggered strips in one detector";
+    }
+    break;
+  case c_RejectionStripPairingNotResolvable:  
+    if (Short == true) {
+      out<<"StripPairingNotResolvable";
+    } else {
+      out<<"Strip pairing failed because the hits are not resolvable";
+    }
+    break;
+    
   default:
     if (Short == true) {
       out<<"";
@@ -1142,13 +1168,21 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       // Add as hits:
       MRESE* Start = m_Start;
       CE->AddHit(Start->CreatePhysicalEventHit());
+      bool NoDepth = m_Start->GetNoiseFlags().Contains("NODEPTH");
       MRESE* Middle = Start->GetLinkAt(0);
+      if (Middle->GetNoiseFlags().Contains("NODEPTH") == true) {
+        NoDepth = true;
+      }
       CE->AddHit(Middle->CreatePhysicalEventHit());
       while (Middle->GetNLinks() > 1) {
         MRESE* End = Middle->GetOtherLink(Start);
         CE->AddHit(End->CreatePhysicalEventHit());
         Start = Middle;
         Middle = End;
+      }
+      
+      if (NoDepth == true && HasBadFlag("NODEPTH") == false) {
+        AddBadFlag("NODEPTH");
       }
       
       m_Event = (MPhysicalEvent*) CE;
@@ -1690,27 +1724,6 @@ MRESE* MRERawEvent::GetNextRESE()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MRERawEvent::Parse(MString Event, int Version)
-{
-  // Return  0, if all lines got correctly parsed
-  // Return  1, and stop if a line got not correctly parsed
-  // Return  2, and stop if a line got not parsed
-  // Return -1, and stop if the end of event has been reached
-
-  vector<MString> Lines = Event.Tokenize("\n");
-  int ReturnCode = -2;
-  for (const MString& L: Lines) {
-    int ReturnCode = ParseLine(L, Version);
-    if (ReturnCode == 1) return ReturnCode;
-  }
-
-  return ReturnCode;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 int MRERawEvent::ParseLine(const char* Line, int Version)
 {
   // Return  0, if the line got correctly parsed
@@ -1841,16 +1854,19 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       if (V->GetDetector() == 0) {
         mout<<"Position of GR does not represent a detector!"<<endl; 
         Ret = 1;
-      } else if (V->GetDetector()->HasGuardRing() == false) {
+      } else if (V->GetDetector()->HasGuardRing() == false && V->GetDetector()->GetType() != MDDetector::c_GuardRing) {
         mout<<"Position of GR does not represent a detector with guard ring!"<<endl; 
         Ret = 1;
       } else {
         MREAMGuardRingHit* GR = new MREAMGuardRingHit();
+        if (V->GetDetector()->GetType() != MDDetector::c_GuardRing && V->GetDetector()->HasGuardRing() == true) {
+          V->SetDetector(V->GetDetector()->GetGuardRing());
+        }
         GR->SetVolumeSequence(V); // GR is responsible for the volume sequence!
         // We do NOT do any noising here!!
         // dynamic_cast<MDStrip2D*>(V->GetDetector())->NoiseGuardRingEnergy(Energy);
         GR->SetEnergy(Energy);
-        GR->SetEnergyResolution(V->GetDetector()->GetGuardRing()->GetEnergyResolution(Energy));
+        GR->SetEnergyResolution(V->GetDetector()->GetEnergyResolution(Energy));
         m_Measurements.push_back(GR);
       }
     } else {

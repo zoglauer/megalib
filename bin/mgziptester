@@ -1,0 +1,28 @@
+#!/bin/bash
+
+CORES=1;
+if [[ $(uname -a) == *arwin* ]]; then
+  CORES=`sysctl -n hw.logicalcpu_max`
+elif [[ $(uname -a) == *inux* ]]; then
+  CORES=`grep processor /proc/cpuinfo | wc -l`
+fi
+if [ "$?" != "0" ]; then
+  CORES=1
+fi
+
+OUT=$(mktemp)
+for i in `find . -name "*.gz"`; do
+  mwait -p=gzip -i=cores
+  echo "Lauching test of ${i}"
+  gzip -t ${i} &>> ${OUT} &
+done
+
+echo "Combined output:"
+cat ${OUT}
+echo ""
+
+echo "Total error messages : $(cat ${OUT} | sed '/^\s*$/d' | wc -l)"
+echo "Unexpected end of file: $(cat ${OUT} | grep "unexpected end of file" | wc -l)"
+echo "Invalid compressed data: $(cat ${OUT} | grep "invalid compressed data" | wc -l)"
+echo ""
+

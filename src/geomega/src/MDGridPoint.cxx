@@ -66,7 +66,7 @@ const unsigned int MDGridPoint::c_MaxType = MDGridPoint::c_GuardRing;
 
 MDGridPoint::MDGridPoint() :
   m_xGrid(0), m_yGrid(0), m_zGrid(0), m_Type(c_Unknown), 
-  m_Position(0.0, 0.0, 0.0), m_Energy(0), m_Time(0), m_Hits(1), m_Weight(1.0)
+  m_Position(0.0, 0.0, 0.0), m_Energy(0), m_Time(0), m_Hits(1), m_Weight(1.0), m_Flags(""), m_IsAboveTriggerThreshold(false), m_IsReadOut(false)
 {
   // Construct an instance of MDGridPoint
   // Type must be c_Unknown!
@@ -86,7 +86,7 @@ MDGridPoint::MDGridPoint(const unsigned int xGrid,
                          const unsigned int Hits,
                          const double Weight) :
   m_xGrid(xGrid), m_yGrid(yGrid), m_zGrid(zGrid), m_Type(Type), 
-  m_Position(Position), m_Energy(Energy), m_Time(Time), m_Hits(Hits), m_Weight(Weight)
+  m_Position(Position), m_Energy(Energy), m_Time(Time), m_Hits(Hits), m_Weight(Weight), m_Flags(""), m_IsAboveTriggerThreshold(false), m_IsReadOut(false)
 {
   // Construct an instance of MDGridPoint
 }
@@ -103,23 +103,23 @@ MDGridPoint::MDGridPoint(const MDGridPoint& GridPoint)
   m_xGrid = GridPoint.m_xGrid;
   m_yGrid = GridPoint.m_yGrid;
   m_zGrid = GridPoint.m_zGrid;
-  m_Position = GridPoint.m_Position;
+  m_Position.Set(GridPoint.m_Position);
   m_Energy = GridPoint.m_Energy;
   m_Time = GridPoint.m_Time;
   m_Type = GridPoint.m_Type;
   m_Hits = GridPoint.m_Hits;
   m_Weight = GridPoint.m_Weight;
   
-  int size = GridPoint.m_Origins.size();
-  if (size > 0) {
-    m_Origins.reserve(size);
-    vector<int>::const_iterator Iter;
-    for (Iter = GridPoint.m_Origins.begin(); Iter != GridPoint.m_Origins.end(); ++Iter) {
-      m_Origins.push_back((*Iter));
-    }
-  }
+  //m_OriginIDs.clear();
+  //m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
+  m_OriginIDs = GridPoint.m_OriginIDs;
 
-  //m_Origins = GridPoint.m_Origins;
+  if (GridPoint.m_Flags.IsEmpty() == false) {
+    m_Flags = GridPoint.m_Flags;
+  }
+  
+  m_IsAboveTriggerThreshold = GridPoint.m_IsAboveTriggerThreshold;
+  m_IsReadOut = GridPoint.m_IsReadOut;
 }
 
 
@@ -149,18 +149,15 @@ const MDGridPoint& MDGridPoint::operator=(const MDGridPoint& GridPoint)
   m_Hits = GridPoint.m_Hits;
   m_Weight = GridPoint.m_Weight;
 
-  m_Origins.clear();
-  int size = GridPoint.m_Origins.size();
-  if (size > 0) {
-    m_Origins.reserve(size);
-    vector<int>::const_iterator Iter;
-    for (Iter = GridPoint.m_Origins.begin(); Iter != GridPoint.m_Origins.end(); ++Iter) {
-      m_Origins.push_back((*Iter));
-    }
-  }
-
-  //m_Origins = GridPoint.m_Origins;
-
+  m_OriginIDs.clear();
+  m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
+  //m_OriginIDs = GridPoint.m_OriginIDs;
+  
+  m_Flags = GridPoint.m_Flags;
+  
+  m_IsAboveTriggerThreshold = GridPoint.m_IsAboveTriggerThreshold;
+  m_IsReadOut = GridPoint.m_IsReadOut;
+  
   return *this;
 }
 
@@ -180,12 +177,20 @@ bool MDGridPoint::operator==(const MDGridPoint& GridPoint)
           m_zGrid != GridPoint.m_zGrid) {
         return false;
       }
+    } else if (m_Type == c_XStrip) {
+      if (m_xGrid != GridPoint.m_xGrid) {
+        return false; 
+      }
+    } else if (m_Type == c_YStrip) {
+      if (m_yGrid != GridPoint.m_yGrid) {
+        return false; 
+      }
     } else if (m_Type == c_GuardRing || 
                m_Type == c_XYAnger ||
                m_Type == c_XYZAnger) {
       return true;
     } else {
-      merr<<"Unknown grid point type: "<<m_Type<<endl;
+      merr<<"MDGridPoint::operator==: Unknown grid point type: "<<m_Type<<endl;
       massert(false);
     }
   } else {
@@ -205,13 +210,8 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
 
   if (m_Type == GridPoint.m_Type) {
  
-    if (m_Type == c_Voxel || 
-        m_Type == c_VoxelDrift ||
-        m_Type == c_XYAnger ||
-        m_Type == c_XYZAnger) {
-      if (m_xGrid == GridPoint.m_xGrid && 
-          m_yGrid == GridPoint.m_yGrid && 
-          m_zGrid == GridPoint.m_zGrid) {
+    if (m_Type == c_Voxel || m_Type == c_VoxelDrift ||m_Type == c_XYAnger || m_Type == c_XYZAnger) {
+      if (m_xGrid == GridPoint.m_xGrid && m_yGrid == GridPoint.m_yGrid && m_zGrid == GridPoint.m_zGrid) {
         // Position, ...
         if (m_Type == c_Voxel || m_Type == c_VoxelDrift) {
           m_Position.SetX(0.0);
@@ -231,28 +231,36 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
         if (GridPoint.m_Time < m_Time) {
           m_Time = GridPoint.m_Time;
         }
-        // Origins!
-        vector<int>::const_iterator NewIter;
-        vector<int>::iterator OldIter;
-        for (NewIter = GridPoint.m_Origins.begin(); 
-             NewIter != GridPoint.m_Origins.end(); ++NewIter) {
-          bool Found = false;
-          for (OldIter = m_Origins.begin(); 
-               OldIter != m_Origins.end(); ++OldIter) {
-            if ((*NewIter) == (*OldIter)) {
-              Found = true;
-              break;
-            }
-          }
-          if (Found == false) {
-            m_Origins.push_back((*NewIter));
-          }
-        }
+        
+        // OriginIDs
+        m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
+      
+        // Make sure that if m_Weight is some cts/sec normalization factor it stays correct
+        m_Weight = (m_Weight*m_Hits + GridPoint.m_Weight*GridPoint.m_Hits)/(m_Hits+GridPoint.m_Hits);
+        // Finally add the hits:
+        m_Hits += GridPoint.m_Hits;
       }
-      // Make sure that if m_Weight is some cts/sec normalization factor it stays correct
-      m_Weight = (m_Weight*m_Hits + GridPoint.m_Weight*GridPoint.m_Hits)/(m_Hits+GridPoint.m_Hits);
-      // Finally add the hits:
-      m_Hits += GridPoint.m_Hits;
+    
+    } else if (m_Type == c_XStrip || m_Type == c_YStrip) {
+      if ((m_Type == c_XStrip && m_xGrid == GridPoint.m_xGrid) || (m_Type == c_YStrip && m_yGrid == GridPoint.m_yGrid)) {
+        
+        // Position, ...
+        m_Position.SetZ((m_Energy*m_Position.Z() + GridPoint.m_Position.Z()*GridPoint.m_Energy)/(m_Energy+GridPoint.m_Energy));
+        // ... Energy (not before depth!),  
+        m_Energy += GridPoint.m_Energy;
+        // ... Time &
+        if (GridPoint.m_Time < m_Time) {
+          m_Time = GridPoint.m_Time;
+        }
+        
+        // OriginIDs
+        m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
+        
+        // Make sure that if m_Weight is some cts/sec normalization factor it stays correct
+        m_Weight = (m_Weight*m_Hits + GridPoint.m_Weight*GridPoint.m_Hits)/(m_Hits+GridPoint.m_Hits);
+        // Finally add the hits:
+        m_Hits += GridPoint.m_Hits;
+      }
     } else if (m_Type == c_GuardRing) {
       m_Energy += GridPoint.m_Energy;
       m_Position.SetXYZ(0.0, 0.0, 0.0);
@@ -261,10 +269,22 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
       // Finally add the hits
       m_Hits += GridPoint.m_Hits;
       m_Time = 0;
-      m_Origins.clear();
+      m_OriginIDs.clear();
     } else {
-      merr<<"Unknown grid point type: "<<m_Type<<endl;
+      merr<<"MDGridPoint::operator+=: Unknown grid point type: "<<m_Type<<endl;
     }
+    
+    // Some flags might be duplicate
+    m_Flags += GridPoint.m_Flags;
+    
+    // If the new grid point is read out or above the trigger threshold then the old one is too
+    if (GridPoint.m_IsAboveTriggerThreshold == true) {
+      m_IsAboveTriggerThreshold = true;
+    }
+    if (GridPoint.m_IsReadOut == true) {
+      m_IsReadOut = true;
+    }
+    
   }
 
   return *this;
@@ -310,7 +330,10 @@ ostream& operator<<(ostream& os, const MDGridPoint& GridPoint)
     <<GridPoint.m_Energy<<" keV and "
     <<GridPoint.m_Hits<<" (original) hits after "
     <<GridPoint.m_Time<<" s with the weight "
-    <<GridPoint.m_Weight<<" (";
+    <<GridPoint.m_Weight<<" with Flags ("
+    <<GridPoint.m_Flags<<") "
+    <<(GridPoint.m_IsAboveTriggerThreshold ? "above" : "below")<<" trigger threshold and "
+    <<(GridPoint.m_IsReadOut ? "IS" : "IS NOT")<<" read out (";
   if (GridPoint.m_Type == MDGridPoint::c_Voxel) {
     os<<"Voxel)"<<endl;
   } else if (GridPoint.m_Type == MDGridPoint::c_VoxelDrift) {

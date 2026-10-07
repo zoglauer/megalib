@@ -1361,7 +1361,8 @@ MResponseMatrixO14 MResponseMatrixO14::GetSumMatrixO14(unsigned int a1,
 
 bool MResponseMatrixO14::ReadSpecific(MFileResponse& Parser, 
                                      const MString& Type, 
-                                     const int Version)
+                                     const int Version,
+                                     const bool)
 {
   // Read the data from file directly into this matrix
 

@@ -145,6 +145,11 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_OIEnergy = E->m_OIEnergy;
   m_OIParticleID = E->m_OIParticleID;
 
+  m_OIPosition = E->m_OIPosition;
+  m_OIDirection = E->m_OIDirection;
+  m_OIPolarization = E->m_OIPolarization;
+  m_OIEnergy = E->m_OIEnergy;  
+  
   return true;
 }
 

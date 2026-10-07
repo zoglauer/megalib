@@ -1,0 +1,21 @@
+Geometry  $(MEGALIB)/resource/examples/geomega/cosiballoon/COSIBalloon.9Detector.geo.setup
+StoreSimulationInfo  init-only 
+PhysicsListEM LivermorePol
+
+Run SpaceSim
+SpaceSim.FileName  PolarizedSource
+SpaceSim.Time 10.0
+SpaceSim.OrientationSky Galactic File NoLoop  test.ori
+
+
+SpaceSim.Source AlbedoPhotons
+AlbedoPhotons.ParticleType	       1
+AlbedoPhotons.Beam FarFieldPointSource 0 0
+AlbedoPhotons.Orientation Galactic Fixed -48.90 176.96
+AlbedoPhotons.Spectrum Mono 511
+AlbedoPhotons.Flux	  100
+
+#fst number is the polarization fraction (0 to 1) and the second is the polarization angle (deg)
+#following the IAU convention : https://lambda.gsfc.nasa.gov/product/about/pol_convention.html
+AlbedoPhotons.Polarization galactic 1 45
+
