@@ -125,12 +125,12 @@ unsigned int MEndToEndTest::GetRemainingTimeBudget() const
 //! Execute a program with its arguments (a shell fragment, e.g. with a redirect) in a directory with a private home directory and a timeout in seconds (0: none), return true if the exit status is zero
 bool MEndToEndTest::Execute(const MString& Directory, const MString& Executable, const MString& Arguments, unsigned int Timeout) const
 {
-  // The programs run with a private home directory: they load their default configuration (~/.revan.cfg, ~/.mimrec.cfg) from there, not the one of the user
+  // The programs run with a private home directory (they load their default configuration from there, not the one of the user) and without display
   const MString Home = GetTemporaryDirectoryName("home");
   if (MFile::CreateDirectory(Home) == false) {
     return false;
   }
-  const int Status = MSystem::RunProcess("env", MString("HOME=") + MSystem::GetShellQuoted(Home) + " " + MSystem::GetShellQuoted(Executable) + " " + Arguments, "", Directory, Timeout);
+  const int Status = MSystem::RunProcess("env", MString("-u DISPLAY HOME=") + MSystem::GetShellQuoted(Home) + " " + MSystem::GetShellQuoted(Executable) + " " + Arguments, "", Directory, Timeout);
   if (WIFEXITED(Status) == false || WEXITSTATUS(Status) != 0) {
     return false;
   }
