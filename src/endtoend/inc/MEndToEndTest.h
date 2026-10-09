@@ -104,6 +104,15 @@ public:
     }
     return Events;
   }
+  //! Return true if |cos(phi)| of the Compton event is not larger than one
+  bool HasPhysicalScatterAngle(const MComptonEvent& Event) const
+  {
+    const double CosPhi = 1.0 - c_E0*(1.0/Event.Eg() - 1.0/(Event.Eg() + Event.Ee()));
+    if (fabs(CosPhi) > 1.0) {
+      return false;
+    }
+    return true;
+  }
   //! Return the photo events (single interaction events)
   vector<shared_ptr<MPhotoEvent>> Photo() const
   {
@@ -193,7 +202,7 @@ class MEndToEndTest : public MUnitTest
 
   // Scenarios:
   //! Return a random seed (1 .. 2e9) which is printed by the tests: any seed has to pass
-  static unsigned int RandomSeed();
+  unsigned int RandomSeed() const;
   //! Prepare the directory of a scenario (no random numbers are involved: e.g. a scenario which starts from stored data)
   bool PrepareScenario(ETSimScenario& Scenario);
   //! Prepare the directory of a scenario which is simulated: as PrepareScenario, and give it a random seed unless it has one already
@@ -225,7 +234,7 @@ class MEndToEndTest : public MUnitTest
   //! Read any tra file (gzipped or not) with MFileEventsTra
   ETTraFileCoreData ReadTraFile(const MString& FileName) const;
   //! Read a plain text file (e.g. the log of a program) line by line
-  static vector<MString> ReadLines(const MString& FileName);
+  vector<MString> ReadLines(const MString& FileName) const;
   //! Return a copy of the first histogram of the class T in the first canvas of a ROOT file, nullptr if there is none
   template<class T>
   unique_ptr<T> FirstHistogram(const MString& FileName)
@@ -251,6 +260,11 @@ class MEndToEndTest : public MUnitTest
       if (Histogram != nullptr) {
         T* Copy = static_cast<T*>(Histogram->Clone());
         Copy->SetDirectory(nullptr);
+        // Delete the histogram once - the canvas of mimrec holds it twice
+        while (Canvas->GetListOfPrimitives()->Remove(Histogram) != nullptr) {
+          // Intentionally left blank
+        }
+        delete Histogram;
         return unique_ptr<T>(Copy);
       }
     }
@@ -265,13 +279,17 @@ class MEndToEndTest : public MUnitTest
 
   // Statistics and physics:
   //! Return the angular resolution measure (ARM) in degree of a Compton event relative to the unit vector to the source
-  static double ARM(const MComptonEvent& Event, const MVector& ToSource);
-  //! Return the median of a vector
-  static double Median(vector<double> Values);
+  double ARM(const MComptonEvent& Event, const MVector& ToSource) const;
+  //! Get the number, mean, and RMS (about zero) of the values with an absolute value below the limit
+  void GetTruncatedMoments(const vector<double>& Values, double Limit, unsigned int& Number, double& Mean, double& RMS) const;
+  //! Return the median of a vector, zero if it is empty
+  double GetMedian(vector<double> Values) const;
+  //! Return the standard error of the median of a vector, zero if it has no width or is empty
+  double GetMedianError(vector<double> Values) const;
   //! Return the significance in sigma of the ratio of two Poisson counts CountA/CountB relative to the expected ratio
-  static double RatioSigma(double CountA, double CountB, double ExpectedRatio);
+  double RatioSigma(double CountA, double CountB, double ExpectedRatio) const;
   //! Return the two-proportion z value of the efficiencies K1/N1 and K2/N2
-  static double ProportionSigma(double K1, double N1, double K2, double N2);
+  double ProportionSigma(double K1, double N1, double K2, double N2) const;
 
   // private methods:
  private:

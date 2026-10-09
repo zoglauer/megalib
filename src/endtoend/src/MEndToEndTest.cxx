@@ -49,11 +49,11 @@ MEndToEndTest::MEndToEndTest(const MString& Name) : MUnitTest(Name)
   m_Timeout = Settings.GetTimeout();
   m_StartTime = chrono::steady_clock::now();
 
-  // ROOT without any graphics, needed to read the ROOT files of mimrec
+  // Run ROOT without graphics - batch mode first, otherwise ROOT tries to connect to the display
+  gROOT->SetBatch(true);
   if (gROOT->GetApplication() == nullptr) {
     new TApplication("ROOT", 0, 0);
   }
-  gROOT->SetBatch(true);
 }
 
 
@@ -142,7 +142,7 @@ bool MEndToEndTest::Execute(const MString& Directory, const MString& Executable,
 
 
 //! Return a random seed (1 .. 2e9) which is printed by the tests: any seed has to pass
-unsigned int MEndToEndTest::RandomSeed()
+unsigned int MEndToEndTest::RandomSeed() const
 {
   const unsigned int MaximumSeed = 2000000000;
   static random_device Device;
@@ -404,7 +404,7 @@ ETTraFileCoreData MEndToEndTest::ReadTraFile(const MString& FileName) const
 
 
 //! Read a plain text file (e.g. the log of a program) line by line
-vector<MString> MEndToEndTest::ReadLines(const MString& FileName)
+vector<MString> MEndToEndTest::ReadLines(const MString& FileName) const
 {
   vector<MString> Lines;
   ifstream In(FileName.Data());
@@ -484,8 +484,61 @@ double MEndToEndTest::FullWidthAtHalfMaximum(const TH1* Histogram) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Get the number, mean, and RMS (about zero) of the values with an absolute value below the limit
+void MEndToEndTest::GetTruncatedMoments(const vector<double>& Values, double Limit, unsigned int& Number, double& Mean, double& RMS) const
+{
+  double Sum = 0.0;
+  double SumOfSquares = 0.0;
+  Number = 0;
+  for (double Value: Values) {
+    if (fabs(Value) < Limit) {
+      Sum += Value;
+      SumOfSquares += Value*Value;
+      ++Number;
+    }
+  }
+  Mean = 0.0;
+  RMS = 0.0;
+  if (Number > 0) {
+    Mean = Sum/Number;
+    RMS = sqrt(SumOfSquares/Number);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the standard error of the median of a vector, zero if it has no width or is empty
+double MEndToEndTest::GetMedianError(vector<double> Values) const
+{
+  if (Values.empty() == true) {
+    return 0.0;
+  }
+
+  sort(Values.begin(), Values.end());
+  const size_t Size = Values.size();
+
+  // Standard error of the median: 1/(2 f sqrt(N)), f is the density at the median from the sqrt(N) values on each side:
+  const size_t Middle = Size/2;
+  const size_t Half = max<size_t>(1, static_cast<size_t>(sqrt(static_cast<double>(Size))));
+  const size_t Lower = (Middle >= Half) ? Middle - Half : 0;
+  const size_t Upper = min(Size - 1, Middle + Half);
+  const double Width = Values[Upper] - Values[Lower];
+  if (Width <= 0.0) {
+    return 0.0;
+  }
+
+  const double Density = static_cast<double>(Upper - Lower)/(Size*Width);
+  return 1.0/(2.0*Density*sqrt(static_cast<double>(Size)));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return the angular resolution measure (ARM) in degree of a Compton event relative to the unit vector to the source
-double MEndToEndTest::ARM(const MComptonEvent& Event, const MVector& ToSource)
+double MEndToEndTest::ARM(const MComptonEvent& Event, const MVector& ToSource) const
 {
   const double ElectronMass = c_E0; // keV
   const double CosScatter = 1.0 - ElectronMass*(1.0/Event.Eg() - 1.0/(Event.Eg() + Event.Ee()));
@@ -502,8 +555,8 @@ double MEndToEndTest::ARM(const MComptonEvent& Event, const MVector& ToSource)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return the median of a vector
-double MEndToEndTest::Median(vector<double> Values)
+//! Return the median of a vector, zero if it is empty
+double MEndToEndTest::GetMedian(vector<double> Values) const
 {
   if (Values.empty() == true) {
     return 0.0;
@@ -520,7 +573,7 @@ double MEndToEndTest::Median(vector<double> Values)
 
 
 //! Return the significance in sigma of the ratio of two Poisson counts CountA/CountB relative to the expected ratio
-double MEndToEndTest::RatioSigma(double CountA, double CountB, double ExpectedRatio)
+double MEndToEndTest::RatioSigma(double CountA, double CountB, double ExpectedRatio) const
 {
   // Var(A/B) ~ (A/B)^2 * (1/A + 1/B)
   if (CountA <= 0 || CountB <= 0) {
@@ -535,7 +588,7 @@ double MEndToEndTest::RatioSigma(double CountA, double CountB, double ExpectedRa
 
 
 //! Return the two-proportion z value of the efficiencies K1/N1 and K2/N2
-double MEndToEndTest::ProportionSigma(double K1, double N1, double K2, double N2)
+double MEndToEndTest::ProportionSigma(double K1, double N1, double K2, double N2) const
 {
   const double Proportion = (K1 + K2)/(N1 + N2);
   return fabs(K1/N1 - K2/N2)/sqrt(Proportion*(1.0 - Proportion)*(1.0/N1 + 1.0/N2));
