@@ -414,7 +414,7 @@ bool UTTransceiverTcpIpBinary::Run()
     Passed = EvaluateTrue("Auto reconnect", "client reset observed", "The binary auto-reconnect client observes the peer loss", WaitForReset(Client, LiveTimeOut)) && Passed;
     vector<unsigned char> AutoReconnectPacket = BuildPacket(0xE0, 4);
     Passed = EvaluateTrue("Auto reconnect", "client send queued", "The binary auto-reconnect client accepts a packet while the peer is down", Client.Send(AutoReconnectPacket)) && Passed;
-    Passed = EvaluateTrue("Auto reconnect", "client queue pending", "The binary auto-reconnect client keeps the packet queued while the peer is down", Client.GetNPacketsToSend() > 0) && Passed;
+    Passed = Evaluate("Auto reconnect", "client queue pending", "The binary auto-reconnect client keeps exactly the one packet queued while the peer is down", Client.GetNPacketsToSend(), 1ul) && Passed;
     Passed = EvaluateTrue("Auto reconnect", "server restart", "The binary auto-reconnect server comes back up", Server.Connect(false)) && Passed;
     Passed = EvaluateTrue("Auto reconnect", "client reconnects", "The binary auto-reconnect client reconnects automatically after peer loss", WaitForConnected(Client, LiveTimeOut)) && Passed;
     Passed = EvaluateTrue("Auto reconnect", "server reconnects", "The binary auto-reconnect server reaches connected state again", WaitForConnected(Server, LiveTimeOut)) && Passed;

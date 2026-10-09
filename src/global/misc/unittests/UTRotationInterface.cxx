@@ -171,12 +171,13 @@ bool UTRotationInterface::TestBinaryRoundTrip()
     MBinaryStore Store;
     Passed = EvaluateTrue("ToBinary()", "32-bit", "32-bit binary output succeeds for representative interior data", Original.ToBinary(Store, 32)) && Passed;
 
+    // Input values (123.25, -21.75, 0.25, 0.5, 0.75, -18.0, ...) are exact in float - only the degree conversion rounds
     MRotationInterface Parsed;
     Passed = EvaluateTrue("ParseBinary()", "32-bit", "32-bit binary input succeeds for representative interior data", Parsed.ParseBinary(Store, true, true, true, 32)) && Passed;
-    Passed = EvaluateNear("ParseBinary()", "32-bit galactic x longitude", "32-bit binary round-trips the representative galactic x longitude", Parsed.GetGalacticPointingXAxisLongitude()*c_Deg, 123.25, 1e-4) && Passed;
-    Passed = EvaluateNear("ParseBinary()", "32-bit galactic x latitude", "32-bit binary round-trips the representative galactic x latitude", Parsed.GetGalacticPointingXAxisLatitude()*c_Deg, -21.75, 1e-4) && Passed;
-    Passed = EvaluateTrue("ParseBinary()", "32-bit detector x vector", "32-bit binary round-trips the representative detector x axis", Parsed.GetDetectorRotationXAxis().AreEqual(MVector(0.25, 0.5, 0.75), 1e-6)) && Passed;
-    Passed = EvaluateNear("ParseBinary()", "32-bit horizon z elevation", "32-bit binary round-trips the representative horizon z elevation", Parsed.GetHorizonPointingZAxisElevation()*c_Deg, -18.0, 1e-4) && Passed;
+    Passed = EvaluateNear("ParseBinary()", "32-bit galactic x longitude", "32-bit binary round-trips the representative galactic x longitude", Parsed.GetGalacticPointingXAxisLongitude()*c_Deg, 123.25, 1e-12) && Passed;
+    Passed = EvaluateNear("ParseBinary()", "32-bit galactic x latitude", "32-bit binary round-trips the representative galactic x latitude", Parsed.GetGalacticPointingXAxisLatitude()*c_Deg, -21.75, 1e-12) && Passed;
+    Passed = EvaluateTrue("ParseBinary()", "32-bit detector x vector", "32-bit binary round-trips the representative detector x axis", Parsed.GetDetectorRotationXAxis().AreEqual(MVector(0.25, 0.5, 0.75), 1e-12)) && Passed;
+    Passed = EvaluateNear("ParseBinary()", "32-bit horizon z elevation", "32-bit binary round-trips the representative horizon z elevation", Parsed.GetHorizonPointingZAxisElevation()*c_Deg, -18.0, 1e-12) && Passed;
   }
 
   {

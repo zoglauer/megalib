@@ -120,12 +120,55 @@ bool UTFunction2D::Run()
     None.GetRandom(X1, Y1);
     None.GetRandom(X2, Y2);
     None.GetRandom(X3, Y3);
-    Passed = EvaluateNear("GetRandom()", "representative draw 1 x", "GetRandom returns the representative first seeded golden x value", X1, 7.5277065185175756, 1e-4) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative draw 1 y", "GetRandom returns the representative first seeded golden y value", Y1, 34.028579722378756, 1e-4) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative draw 2 x", "GetRandom returns the representative second seeded golden x value", X2, 9.6292030625674019, 1e-4) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative draw 2 y", "GetRandom returns the representative second seeded golden y value", Y2, 33.840824853547192, 1e-4) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative draw 3 x", "GetRandom returns the representative third seeded golden x value", X3, 1.3040826282232657, 1e-4) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative draw 3 y", "GetRandom returns the representative third seeded golden y value", Y3, 30.028429401520969, 1e-4) && Passed;
+
+    // Expected: replay of the rejection sampling with the same seed - x = 30 u, y = 50 u, accept if 22 u <= z of the nearest grid sample
+    const vector<double> GridX = { 0.0, 10.0, 30.0 };
+    const vector<double> GridY = { 0.0, 20.0, 50.0 };
+    const vector<vector<double>> GridZ = { { 0.0, 1.0, 2.0 }, { 10.0, 11.0, 12.0 }, { 20.0, 21.0, 22.0 } };
+    gRandom->SetSeed(41);
+    vector<double> ExpectedX;
+    vector<double> ExpectedY;
+    for (unsigned int Draw = 0; Draw < 200; ++Draw) {
+      double ReplayX = 0.0;
+      double ReplayY = 0.0;
+      double ReplayZ = 0.0;
+      do {
+        ReplayX = 30.0*gRandom->Rndm();
+        ReplayY = 50.0*gRandom->Rndm();
+        unsigned int NearestX = 0;
+        for (unsigned int i = 1; i < GridX.size(); ++i) {
+          if (fabs(ReplayX - GridX[i]) < fabs(ReplayX - GridX[NearestX])) NearestX = i;
+        }
+        unsigned int NearestY = 0;
+        for (unsigned int i = 1; i < GridY.size(); ++i) {
+          if (fabs(ReplayY - GridY[i]) < fabs(ReplayY - GridY[NearestY])) NearestY = i;
+        }
+        ReplayZ = GridZ[NearestY][NearestX];
+      } while (22.0*gRandom->Rndm() > ReplayZ);
+      ExpectedX.push_back(ReplayX);
+      ExpectedY.push_back(ReplayY);
+    }
+
+    Passed = EvaluateNear("GetRandom()", "representative draw 1 x", "GetRandom returns the x value of the first accepted point of the replayed rejection sampling", X1, ExpectedX[0], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative draw 1 y", "GetRandom returns the y value of the first accepted point of the replayed rejection sampling", Y1, ExpectedY[0], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative draw 2 x", "GetRandom returns the x value of the second accepted point of the replayed rejection sampling", X2, ExpectedX[1], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative draw 2 y", "GetRandom returns the y value of the second accepted point of the replayed rejection sampling", Y2, ExpectedY[1], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative draw 3 x", "GetRandom returns the x value of the third accepted point of the replayed rejection sampling", X3, ExpectedX[2], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative draw 3 y", "GetRandom returns the y value of the third accepted point of the replayed rejection sampling", Y3, ExpectedY[2], 1e-12) && Passed;
+
+    // Compare all 200 replayed draws
+    gRandom->SetSeed(41);
+    unsigned int Mismatches = 0;
+    for (unsigned int Draw = 0; Draw < 200; ++Draw) {
+      double X = 0.0;
+      double Y = 0.0;
+      None.GetRandom(X, Y);
+      // Count a NaN as a mismatch
+      if ((fabs(X - ExpectedX[Draw]) <= 1e-12 && fabs(Y - ExpectedY[Draw]) <= 1e-12) == false) {
+        ++Mismatches;
+      }
+    }
+    Passed = Evaluate("GetRandom()", "representative later draws", "All 200 draws equal the replayed rejection sampling", Mismatches, 0U) && Passed;
   }
 
   MString InvalidXBFile = GetTemporaryFileName("invalid_xb.fun");

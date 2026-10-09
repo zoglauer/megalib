@@ -130,7 +130,8 @@ bool UTPairEvent::TestBasics()
   Passed = Evaluate("GetOpeningAngle()", "pair", "Orthogonal lepton directions produce a right angle", Event.GetOpeningAngle(), c_Pi / 2.0) && Passed;
   Passed = EvaluateTrue("MostProbableDirectionIncomingGamma()", "pair", "The incoming gamma direction can be estimated", Event.MostProbableDirectionIncomingGamma()) && Passed;
   Passed = Evaluate("m_IncomingGammaDirection", "pair", "The incoming gamma direction is the weighted average of the two lepton directions", Event.m_IncomingGammaDirection, MVector(-0.4, -0.6, 0.0)) && Passed;
-  Passed = EvaluateNear("GetARMGamma()", "pair", "Pair ARM is zero on the incoming gamma line", Event.GetARMGamma(Event.GetPosition() + Event.GetOrigin()), 0.0, 1e-6) && Passed;
+  // Tolerance: 1 ulp (2.2e-16) near 1 in the acos argument gives sqrt(2*2.2e-16) = 2.1e-8
+  Passed = EvaluateNear("GetARMGamma()", "pair", "Pair ARM is zero on the incoming gamma line", Event.GetARMGamma(Event.GetPosition() + Event.GetOrigin()), 0.0, 1e-7) && Passed;
   Passed = EvaluateNear("GetAzimuthalScatterAngle()", "pair", "Pair azimuthal scatter angle is pi/4 for a simple reference geometry", Event.GetAzimuthalScatterAngle(MVector(0.0, 0.0, 1.0)), c_Pi / 4.0, 1e-12) && Passed;
   Passed = Evaluate("Ei()", "pair", "Ei() mirrors the total pair energy", Event.Ei(), 250.0) && Passed;
   Passed = Evaluate("Data()", "pair", "Data() returns the concrete pair-event pointer", Event.Data(), static_cast<MPhysicalEvent*>(&Event)) && Passed;

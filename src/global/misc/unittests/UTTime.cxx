@@ -26,6 +26,7 @@
 
 // Standard lib:
 #include <sstream>
+#include <ctime>
 using namespace std;
 
 
@@ -358,8 +359,9 @@ bool UTTime::TestCalendarAndConversions()
   Passed = EvaluateNear("GetAsSystemSeconds()", "interior", "GetAsSystemSeconds truncates to the representative interior whole seconds", Interior.GetAsSystemSeconds(), 1310116211.0, 1e-12) && Passed;
 
   MTime LeapYearMiddle(2000, 7, 2, 12, 0, 0, 0);
-  Passed = EvaluateTrue("GetAsYears()", "middle of leap year", "GetAsYears stays within the expected calendar year bounds",
-                        LeapYearMiddle.GetAsYears() > 2000.49 && LeapYearMiddle.GetAsYears() < 2000.51) && Passed;
+  // Expected: 183.5 days (31+29+31+30+31+30 = 182 days up to July 1, plus 1.5) of a year span of 366 days minus 1 ns
+  Passed = EvaluateNear("GetAsYears()", "middle of leap year", "GetAsYears returns 2000 + 183.5/366 for July 2, 12:00 in the leap year 2000",
+                        LeapYearMiddle.GetAsYears(), 2000.0 + 183.5*86400.0/(366.0*86400.0 - 1e-9), 1e-9) && Passed;
 
   MTime OneDayLater(1970, 1, 2, 0, 0, 0, 0);
   DisableDefaultStreams();
@@ -373,13 +375,21 @@ bool UTTime::TestCalendarAndConversions()
 
   Passed = EvaluateNear("BusyWait()", "zero microseconds", "BusyWait returns zero", MTime::BusyWait(0), 0.0, 1e-12) && Passed;
 
+  // Read the wall clock before and after the call:
   MTime BeforeNow;
   BeforeNow.Set(0.0);
-  Passed = EvaluateTrue("GetElapsedSeconds()", "epoch", "GetElapsedSeconds is positive for a time in the past", BeforeNow.GetElapsedSeconds() > 0.0) && Passed;
+  const double ClockBeforeElapsed = static_cast<double>(time(nullptr));
+  const double Elapsed = BeforeNow.GetElapsedSeconds();
+  const double ClockAfterElapsed = static_cast<double>(time(nullptr));
+  // Allow one second below the lower reading - time truncates to whole seconds
+  Passed = EvaluateTrue("GetElapsedSeconds()", "epoch", "GetElapsedSeconds since the epoch is the current Unix time", Elapsed >= ClockBeforeElapsed - 1.0 && Elapsed < ClockAfterElapsed + 1.0) && Passed;
 
   MTime NowTime(0L, 0L);
+  const double ClockBeforeNow = static_cast<double>(time(nullptr));
   NowTime.Now();
-  Passed = EvaluateTrue("Now()", "system time", "Now sets the time to a value past the Unix epoch", NowTime.GetAsSeconds() > 1000000000.0) && Passed;
+  const double ClockAfterNow = static_cast<double>(time(nullptr));
+  // Allow one second below the lower reading - time truncates to whole seconds
+  Passed = EvaluateTrue("Now()", "system time", "Now sets the time to the current Unix time", NowTime.GetAsSeconds() >= ClockBeforeNow - 1.0 && NowTime.GetAsSeconds() < ClockAfterNow + 1.0) && Passed;
 
   MTime CalendarSet;
   CalendarSet.Set(static_cast<unsigned int>(1970), static_cast<unsigned int>(1), static_cast<unsigned int>(1), static_cast<unsigned int>(0), static_cast<unsigned int>(0), static_cast<unsigned int>(0), static_cast<unsigned int>(0));

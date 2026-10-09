@@ -108,7 +108,7 @@ bool UTFileResponse::Run()
   Passed = EvaluateTrue("Read()", "representative O1 dispatch", "MFileResponse dispatches the representative O1 file to a concrete matrix", O1ReadBack != 0) && Passed;
   if (O1ReadBack != 0) {
     Passed = Evaluate("Read()", "representative O1 dispatch type", "MFileResponse creates the representative O1 response type", dynamic_cast<MResponseMatrixO1*>(O1ReadBack) != 0, true) && Passed;
-    Passed = EvaluateNear("Read()", "representative O1 dispatch content", "The representative O1 bin content survives dispatch reading", dynamic_cast<MResponseMatrixO1*>(O1ReadBack)->GetBinContent(0), 3.0, 1e-6) && Passed;
+    Passed = EvaluateNear("Read()", "representative O1 dispatch content", "The representative O1 bin content survives dispatch reading", dynamic_cast<MResponseMatrixO1*>(O1ReadBack)->GetBinContent(0), 3.0, 1e-12) && Passed;
     delete O1ReadBack;
   }
 
@@ -137,7 +137,7 @@ bool UTFileResponse::Run()
   Passed = EvaluateTrue("Read()", "representative ON dispatch", "MFileResponse dispatches the representative ON file to a concrete matrix", ONReadBack != 0) && Passed;
   if (ONReadBack != 0) {
     Passed = Evaluate("Read()", "representative ON dispatch type", "MFileResponse creates the representative ON response type", dynamic_cast<MResponseMatrixON*>(ONReadBack) != 0, true) && Passed;
-    Passed = EvaluateNear("Read()", "representative ON dispatch content", "The representative ON bin content survives dispatch reading", dynamic_cast<MResponseMatrixON*>(ONReadBack)->Get(vector<unsigned long>{0, 1}), 5.0, 1e-6) && Passed;
+    Passed = EvaluateNear("Read()", "representative ON dispatch content", "The representative ON bin content survives dispatch reading", dynamic_cast<MResponseMatrixON*>(ONReadBack)->Get(vector<unsigned long>{0, 1}), 5.0, 1e-12) && Passed;
     delete ONReadBack;
   }
 

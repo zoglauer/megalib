@@ -59,6 +59,7 @@ public:
 
   TH1* GetHistogramPointer() const { return m_Histogram; }
   TCanvas* GetCanvasPointer() const { return m_Canvas; }
+  int GetID() const { return m_ID; }
   int GetXNBinsRaw() const { return m_xNBins; }
   int GetYNBinsRaw() const { return m_yNBins; }
   double GetArrayValueRaw(int Index) const { return m_IA[Index]; }
@@ -128,10 +129,11 @@ bool UTImage2D::Run()
     Default.Reset();
     Passed = EvaluateNear("Reset()", "default constructor pre-display average", "Reset is safely callable on a representative 2D image before any histogram has been created", Default.GetAverage(), 0.0, 1e-12) && Passed;
 
+    MString NoCanvasFileName = GetTemporaryFileName("no_canvas.png");
     DisableDefaultStreams();
-    Default.SaveAs(GetTemporaryDirectoryName("missing") + "/does_not_exist.png");
+    Default.SaveAs(NoCanvasFileName);
     EnableDefaultStreams();
-    Passed = EvaluateTrue("SaveAs()", "default constructor no-canvas path", "SaveAs is safely callable on a representative 2D image without a canvas", true) && Passed;
+    Passed = EvaluateFalse("SaveAs()", "default constructor no-canvas path", "SaveAs writes no file for a representative 2D image without a canvas", MFile::Exists(NoCanvasFileName)) && Passed;
   }
 
   {
@@ -252,7 +254,7 @@ bool UTImage2D::Run()
     TestImage2D EmptyCanvasTitle("EmptyCanvasTitleImage", Values, "X Axis", 0.0, 2.0, 2, "Y Axis", 0.0, 2.0, 2, "Counts");
     TCanvas UntitledCanvas("", "", 10, 10, 300, 300);
     EmptyCanvasTitle.Display(&UntitledCanvas);
-    Passed = EvaluateTrue("Display()", "representative empty existing canvas title", "Display assigns a representative non-empty title when the existing canvas title is empty", MString(EmptyCanvasTitle.GetCanvasPointer()->GetTitle()).IsEmpty() == false) && Passed;
+    Passed = Evaluate("Display()", "representative empty existing canvas title", "Display assigns the generated canvas title (sanitized image title and id) when the existing canvas title is empty", MString(EmptyCanvasTitle.GetCanvasPointer()->GetTitle()), MString("EmptyCanvasTitleImage___") + EmptyCanvasTitle.GetID()) && Passed;
   }
 
   {
@@ -367,6 +369,7 @@ bool UTImage2D::Run()
     ExtremeAspect.Display();
     Passed = EvaluateTrue("Display()", "representative extreme aspect canvas exists", "Display succeeds for a representative extreme-aspect 2D image", ExtremeAspect.CanvasExists()) && Passed;
     Passed = EvaluateTrue("Display()", "representative extreme aspect created", "Display marks a representative extreme-aspect 2D image as created", ExtremeAspect.IsCreated()) && Passed;
+    // Attention: the window size is ignored in batch mode - the clamp to 100 cannot be observed
     Passed = EvaluateTrue("Display()", "representative extreme aspect minimum height", "Display clamps the representative extreme-aspect canvas height to a practical minimum", ExtremeAspect.GetCanvasPointer()->GetWh() >= 100) && Passed;
   }
 
@@ -407,7 +410,7 @@ bool UTImage2D::Run()
     DisableDefaultStreams();
     Image.SaveAs(FileName);
     EnableDefaultStreams();
-    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates the representative 2D output file when a canvas exists", MFile::Exists(FileName)) && Passed;
+    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates a file starting with the PNG signature when a canvas exists", MFile::Exists(FileName) && ReadTextFile(FileName).BeginsWith(MString("\x89PNG\r\n\x1a\n"))) && Passed;
   }
 
   {

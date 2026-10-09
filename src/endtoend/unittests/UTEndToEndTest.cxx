@@ -66,6 +66,8 @@ private:
     bool RunIn(const MString& Directory, const MString& Executable, const MString& Arguments, unsigned int Timeout) { return Execute(Directory, Executable, Arguments, Timeout); }
     bool PrepareAll(vector<ETSimScenario>& Scenarios) { return PrepareSimulations(Scenarios); }
     double Arm(const MComptonEvent& Event, const MVector& ToSource) { return ARM(Event, ToSource); }
+    double Median(const vector<double>& Values) { return GetMedian(Values); }
+    double MedianError(const vector<double>& Values) { return GetMedianError(Values); }
   };
 
   //! Write a (gzipped if the name ends with .gz) text file
@@ -154,8 +156,12 @@ bool UTEndToEndTest::TestPathsWithSpaces()
   // ReadLines: a plain file in such a directory
   Passed = EvaluateTrue("WriteTextFile()", "plain", "A file can be written", Write(Base + "/plain file.txt", "one\ntwo\n")) && Passed;
   const vector<MString> Lines = Tester.Lines(Base + "/plain file.txt");
-  Passed = EvaluateTrue("ReadLines()", "plain", "A plain file with spaces in its path is read", Lines.size() == 2 && Lines[1] == "two") && Passed;
-  Passed = EvaluateTrue("ReadLines()", "missing", "A missing file has no lines", Tester.Lines(Base + "/missing.txt").empty()) && Passed;
+  Passed = EvaluateSize("ReadLines()", "plain, number", "A plain file with spaces in its path has two lines", Lines.size(), 2) && Passed;
+  if (Lines.size() == 2) {
+    Passed = Evaluate("ReadLines()", "plain, first", "The first line of the plain file is one", Lines[0], MString("one")) && Passed;
+    Passed = Evaluate("ReadLines()", "plain, second", "The second line of the plain file is two", Lines[1], MString("two")) && Passed;
+  }
+  Passed = EvaluateSize("ReadLines()", "missing", "A missing file has no lines", Tester.Lines(Base + "/missing.txt").size(), 0) && Passed;
 
   return Passed;
 }
@@ -239,6 +245,7 @@ bool UTEndToEndTest::TestSeeds()
   ETSimScenario Random;
   Random.m_Name = "Random";
   Passed = EvaluateTrue("PrepareSimulation()", "random", "The scenario can be prepared", Tester.PrepareSim(Random)) && Passed;
+  // The seed is random - only its range (1 to 2e9) can be checked
   Passed = EvaluateTrue("PrepareSimulation()", "random seed", "Without a seed a random seed in the valid range is chosen", Random.m_Seed >= 1 && Random.m_Seed <= 2000000000u) && Passed;
 
   // A scenario which does not simulate has no seed
@@ -269,7 +276,10 @@ bool UTEndToEndTest::TestSeeds()
     Scenarios[0].m_Name = "First";
     Scenarios[1].m_Name = "Second";
     Passed = EvaluateTrue("PrepareSimulations()", "all", "All scenarios can be prepared", Tester.PrepareAll(Scenarios)) && Passed;
-    Passed = EvaluateTrue("PrepareSimulations()", "seeds", "Every scenario has a seed", Scenarios[0].m_Seed != 0 && Scenarios[1].m_Seed != 0) && Passed;
+    // The seeds are random - only their range (1 to 2e9) can be checked
+    for (const ETSimScenario& Scenario : Scenarios) {
+      Passed = EvaluateTrue("PrepareSimulations()", "seed of " + Scenario.m_Name, "Every scenario has a seed between 1 and 2e9", Scenario.m_Seed >= 1 && Scenario.m_Seed <= 2000000000u) && Passed;
+    }
   }
 
   // Check the far field point source
@@ -333,10 +343,14 @@ bool UTEndToEndTest::TestExecution()
   if (Timeout > 0.0) {
     const unsigned int Expected = max(1U, static_cast<unsigned int>(ceil(Timeout)));
     const unsigned int First = Tester.Budget();
-    Passed = EvaluateTrue("GetRemainingTimeBudget()", "start", "At the start the time budget is the scaled time out of the test (less than a second used)", First <= Expected && First + 1 >= Expected) && Passed;
+    // Expected: the time out rounded up, at most 0.5 s less (wall clock)
+    const unsigned int Lowest = max(1U, static_cast<unsigned int>(ceil(Timeout - 0.5)));
+    Passed = EvaluateTrue("GetRemainingTimeBudget()", "start", "At the start the time budget is the scaled time out of the test rounded up (at most 0.5 s used)", First <= Expected && First >= Lowest) && Passed;
     if (Timeout >= 4.0) {
+      // Expected: time out less 1.5 s to 2.0 s, rounded up (sleep of 1.5 s, up to 0.5 s scheduling)
       this_thread::sleep_for(chrono::milliseconds(1500));
-      Passed = EvaluateTrue("GetRemainingTimeBudget()", "used up", "The time budget shrinks with the time which passes", Tester.Budget() < First) && Passed;
+      const unsigned int Second = Tester.Budget();
+      Passed = EvaluateTrue("GetRemainingTimeBudget()", "used up", "After 1.5 s (at most 2.0 s) the time budget is the time out less that time, rounded up", Second <= static_cast<unsigned int>(ceil(Timeout - 1.5)) && Second >= static_cast<unsigned int>(ceil(Timeout - 2.0))) && Passed;
     }
   } else {
     Passed = Evaluate("GetRemainingTimeBudget()", "no time out", "Without a time out of the test there is no time limit", Tester.Budget(), 0U) && Passed;
@@ -347,11 +361,23 @@ bool UTEndToEndTest::TestExecution()
   const MString Directory = GetTemporaryDirectoryName("execution");
   Passed = EvaluateTrue("Execute()", "success", "A command which succeeds is reported as success", Tester.RunIn(Directory, "true", "", 10)) && Passed;
   Passed = EvaluateFalse("Execute()", "failure", "A command which fails is reported as failure", Tester.RunIn(Directory, "false", "", 10)) && Passed;
+
+  // Run a program with a display set in the environment of the test - the program does not see it:
+  const char* OldDisplay = getenv("DISPLAY");
+  const MString OldDisplayCopy = (OldDisplay == nullptr) ? "" : OldDisplay;
+  setenv("DISPLAY", ":99", 1);
+  Passed = EvaluateTrue("Execute()", "no display", "A program does not see the display of the test", Tester.RunIn(Directory, "sh", "-c 'test -z \"$DISPLAY\"'", 10)) && Passed;
+  if (OldDisplay == nullptr) {
+    unsetenv("DISPLAY");
+  } else {
+    setenv("DISPLAY", OldDisplayCopy.Data(), 1);
+  }
   const auto Start = chrono::steady_clock::now();
   const bool Stopped = Tester.RunIn(Directory, "sleep", "20", 1);
   const double Seconds = chrono::duration<double>(chrono::steady_clock::now() - Start).count();
   Passed = EvaluateFalse("Execute()", "time limit", "A command which runs longer than its time limit fails", Stopped) && Passed;
-  Passed = EvaluateTrue("Execute()", "time limit duration", "It is stopped at the time limit (not after the full run time)", Seconds < 10.0) && Passed;
+  // Expected: between the limit of 1 s and 5 s, far below the sleep of 20 s (wall clock)
+  Passed = EvaluateTrue("Execute()", "time limit duration", "It is stopped at the time limit of 1 s, not before it and not after the full run time of 20 s", Seconds >= 1.0 && Seconds < 5.0) && Passed;
 
   return Passed;
 }
@@ -387,7 +413,8 @@ bool UTEndToEndTest::TestRootHelpers()
   }
   Passed = EvaluateTrue("FirstHistogram()", "missing", "A missing file gives no histogram", Tester.First1D(FileName + ".missing") == nullptr) && Passed;
 
-  // Use a triangle at x = 5 with the base from 2 to 8: half maximum at 3.5 and 6.5
+  // Use a triangle at x = 5 with the base from 2 to 8 and bin width 0.1 - highest bin centers 4.95 and 5.05 at 9.8333, half maximum 4.91667
+  // Expected: interpolation between bin centers 3.45 (4.8333) and 3.55 (5.1667) crosses at 3.475, symmetrically at 6.525, width 3.05
   TH1D Triangle("UTTriangle", "UTTriangle", 100, 0.0, 10.0);
   Triangle.SetDirectory(nullptr);
   for (int b = 1; b <= 100; ++b) {
@@ -397,7 +424,7 @@ bool UTEndToEndTest::TestRootHelpers()
       Triangle.SetBinContent(b, Height);
     }
   }
-  Passed = EvaluateNear("FullWidthAtHalfMaximum()", "triangle", "The width of a triangle at half its maximum", Tester.Width(&Triangle), 3.0, 0.15) && Passed;
+  Passed = EvaluateNear("FullWidthAtHalfMaximum()", "triangle", "The width of a triangle at half its maximum of the bin centers", Tester.Width(&Triangle), 3.05, 1e-9) && Passed;
   TH1D Empty("UTEmpty", "UTEmpty", 10, 0.0, 10.0);
   Empty.SetDirectory(nullptr);
   Passed = EvaluateNear("FullWidthAtHalfMaximum()", "empty", "An empty histogram has no width", Tester.Width(&Empty), 0.0, 1e-12) && Passed;
@@ -415,6 +442,37 @@ bool UTEndToEndTest::TestRootHelpers()
   TH2D EmptyImage("UTEmptyImage", "UTEmptyImage", 4, 0.0, 4.0, 4, 0.0, 4.0);
   EmptyImage.SetDirectory(nullptr);
   Passed = EvaluateFalse("ImagePeak()", "empty", "An empty image has no peak", Tester.Peak(&EmptyImage, 2.0, CentroidX, CentroidY)) && Passed;
+
+  // Test the median of the absolute values and its standard error 1/(2 f sqrt(N)) with f from the sqrt(N) values on each side of the median:
+  {
+    Probe Tester;
+    // Values (j + 0.5)/10000 for j = 0 ... 4999, each twice - median 0.25 (mean of j = 2499 and 2500)
+    // Expected error: 1/(2*2*sqrt(10000)) = 0.0025 with density 2 on [0, 0.5]
+    vector<double> Uniform;
+    for (int i = 0; i < 5000; ++i) {
+      Uniform.push_back((i + 0.5)/10000.0);
+      Uniform.push_back((i + 0.5)/10000.0);
+    }
+    Passed = EvaluateNear("GetMedian()", "uniform", "The median of a uniform distribution", Tester.Median(Uniform), 0.25, 1e-12) && Passed;
+    Passed = EvaluateNear("GetMedianError()", "uniform", "The error of a uniform distribution follows its density", Tester.MedianError(Uniform), 0.0025, 1e-9) && Passed;
+
+    // {1, 2, 3} - median 2, f = 2/6 = 1/3, error 1/(2*(1/3)*sqrt(3)) = sqrt(3)/2
+    Passed = EvaluateNear("GetMedian()", "three", "The median of an odd number of values", Tester.Median(vector<double>{3.0, 1.0, 2.0}), 2.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetMedianError()", "three", "The error of three values", Tester.MedianError(vector<double>{3.0, 1.0, 2.0}), sqrt(3.0)/2.0, 1e-12) && Passed;
+
+    // {1, 2, 3, 4} - median (2 + 3)/2, f = 3/(4*3) = 1/4, error 1/(2*(1/4)*2) = 1
+    Passed = EvaluateNear("GetMedian()", "four", "The median of an even number of values is the mean of the two in the middle", Tester.Median(vector<double>{4.0, 1.0, 3.0, 2.0}), 2.5, 1e-12) && Passed;
+    Passed = EvaluateNear("GetMedianError()", "four", "The error of four values", Tester.MedianError(vector<double>{4.0, 1.0, 3.0, 2.0}), 1.0, 1e-12) && Passed;
+
+    // {-3, -1, 2, 4} - median (-1 + 2)/2
+    Passed = EvaluateNear("GetMedian()", "negative", "The median of values with a sign", Tester.Median(vector<double>{-1.0, 2.0, -3.0, 4.0}), 0.5, 1e-12) && Passed;
+
+    // Identical values have no width - error 0; no values - median 0 and error 0
+    Passed = EvaluateNear("GetMedian()", "identical", "The median of identical values", Tester.Median(vector<double>{5.0, 5.0, 5.0, 5.0}), 5.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetMedianError()", "identical", "The error of identical values is zero", Tester.MedianError(vector<double>{5.0, 5.0, 5.0, 5.0}), 0.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetMedian()", "empty", "The median of no values is zero", Tester.Median(vector<double>()), 0.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetMedianError()", "empty", "The error of no values is zero", Tester.MedianError(vector<double>()), 0.0, 0.0) && Passed;
+  }
 
   return Passed;
 }

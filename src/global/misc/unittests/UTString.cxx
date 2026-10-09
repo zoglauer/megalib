@@ -554,10 +554,13 @@ bool UTString::TestNumericConversions()
   Passed = Evaluate("MString(double, double, MString, bool)", "12.345 +/- 1.872 mm", "Value/uncertainty formatting uses scientific rounding", WithUncertainty, MString("(12.3 ± 1.9) mm")) && Passed;
 
   MString ZeroUncertainty(12.0, 0.0, "mm");
-  Passed = EvaluateFalse("MString(double, double, MString, bool)", "12.0 +/- 0.0 mm", "Zero uncertainty should produce a finite formatted string", ZeroUncertainty.Contains("nan") || ZeroUncertainty.Contains("inf")) && Passed;
+  Passed = Evaluate("MString(double, double, MString, bool)", "12.0 +/- 0.0 mm", "A zero uncertainty is printed unrounded as 12 ± 0 mm", ZeroUncertainty, MString("12 ± 0 mm")) && Passed;
+
+  MString WithUncertaintyLatex(12.345, 1.872, "mm", true);
+  Passed = Evaluate("MString(double, double, MString, bool)", "12.345 +/- 1.872 mm, latex", "Value/uncertainty formatting with the Latex flag uses #pm", WithUncertaintyLatex, MString("(12.3 #pm 1.9) mm")) && Passed;
 
   MString NegativeUncertainty(12.0, -1.0, "mm");
-  Passed = EvaluateFalse("MString(double, double, MString, bool)", "12.0 +/- -1.0 mm", "Negative uncertainty should produce a finite formatted string", NegativeUncertainty.Contains("nan") || NegativeUncertainty.Contains("inf")) && Passed;
+  Passed = Evaluate("MString(double, double, MString, bool)", "12.0 +/- -1.0 mm", "A negative uncertainty is printed unrounded as 12 ± -1 mm", NegativeUncertainty, MString("12 ± -1 mm")) && Passed;
 
   MString HashA("hash me");
   MString HashB("hash me");

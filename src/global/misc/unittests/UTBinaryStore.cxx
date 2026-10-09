@@ -95,7 +95,7 @@ bool UTBinaryStore::TestPrimitiveRoundTrips()
     Passed = Evaluate("GetUInt32()", "representative unsigned int", "Unsigned 32-bit integers round-trip through the binary store", Store.GetUInt32(), 3456789012u) && Passed;
     Passed = Evaluate("GetInt64()", "representative signed long long", "Signed 64-bit integers round-trip through the binary store", Store.GetInt64(), static_cast<int64_t>(-1234567890123456789ll)) && Passed;
     Passed = Evaluate("GetUInt64()", "representative unsigned long long", "Unsigned 64-bit integers round-trip through the binary store", Store.GetUInt64(), static_cast<uint64_t>(12345678901234567890ull)) && Passed;
-    Passed = EvaluateNear("GetFloat()", "representative float", "Floats round-trip through the binary store", Store.GetFloat(), 1.25, 1e-7) && Passed;
+    Passed = EvaluateNear("GetFloat()", "representative float", "Floats round-trip through the binary store", Store.GetFloat(), 1.25, 1e-12) && Passed;
     Passed = EvaluateNear("GetDouble()", "representative double", "Doubles round-trip through the binary store", Store.GetDouble(), -3.141592653589793, 1e-12) && Passed;
     Passed = EvaluateNear("GetArraySizeUnread()", "all primitives consumed", "Reading all representative primitive values advances to the end of the store", Store.GetArraySizeUnread(), 0.0, 1e-12) && Passed;
   }
@@ -172,8 +172,8 @@ bool UTBinaryStore::TestPrimitiveRoundTrips()
   {
     MBinaryStore Store;
     Store.AddFloats(1.25f, -2.5f);
-    Passed = EvaluateNear("AddFloats()", "representative first float", "The AddFloats convenience helper stores the first representative float in order", Store.GetFloat(), 1.25, 1e-7) && Passed;
-    Passed = EvaluateNear("AddFloats()", "representative second float", "The AddFloats convenience helper stores the second representative float in order", Store.GetFloat(), -2.5, 1e-7) && Passed;
+    Passed = EvaluateNear("AddFloats()", "representative first float", "The AddFloats convenience helper stores the first representative float in order", Store.GetFloat(), 1.25, 1e-12) && Passed;
+    Passed = EvaluateNear("AddFloats()", "representative second float", "The AddFloats convenience helper stores the second representative float in order", Store.GetFloat(), -2.5, 1e-12) && Passed;
   }
 
   {
@@ -199,9 +199,41 @@ bool UTBinaryStore::TestVectorsAndTimes()
     MVector Normalized(0.1234, -0.5, 1.0);
     Store.AddNormalizedVectorInt16(Normalized);
     MVector ReadBack = Store.GetNormalizedVectorInt16();
-    Passed = EvaluateNear("GetNormalizedVectorInt16()", "representative x", "Normalized vectors stored as int16 preserve a representative x component", ReadBack.X(), 0.1234, 1e-4) && Passed;
-    Passed = EvaluateNear("GetNormalizedVectorInt16()", "representative y", "Normalized vectors stored as int16 preserve a representative y component", ReadBack.Y(), -0.5, 1e-4) && Passed;
-    Passed = EvaluateNear("GetNormalizedVectorInt16()", "representative z", "Normalized vectors stored as int16 preserve a representative z component", ReadBack.Z(), 1.0, 1e-4) && Passed;
+    Passed = EvaluateNear("GetNormalizedVectorInt16()", "representative x", "Normalized vectors stored as int16 preserve a representative x component", ReadBack.X(), 0.1234, 1e-12) && Passed;
+    Passed = EvaluateNear("GetNormalizedVectorInt16()", "representative y", "Normalized vectors stored as int16 preserve a representative y component", ReadBack.Y(), -0.5, 1e-12) && Passed;
+    Passed = EvaluateNear("GetNormalizedVectorInt16()", "representative z", "Normalized vectors stored as int16 preserve a representative z component", ReadBack.Z(), 1.0, 1e-12) && Passed;
+  }
+
+  {
+    // Check values between the grid points - 10000*V is truncated to int16, so the error is below the grid step of 1e-4
+    MBinaryStore Store;
+    Store.AddNormalizedVectorInt16(MVector(0.12345, -0.56785, 0.00005));
+    MVector ReadBack = Store.GetNormalizedVectorInt16();
+    Passed = EvaluateNear("GetNormalizedVectorInt16()", "off-grid x", "Normalized vectors stored as int16 preserve an off-grid x component within one grid step", ReadBack.X(), 0.12345, 1e-4) && Passed;
+    Passed = EvaluateNear("GetNormalizedVectorInt16()", "off-grid y", "Normalized vectors stored as int16 preserve an off-grid y component within one grid step", ReadBack.Y(), -0.56785, 1e-4) && Passed;
+    Passed = EvaluateNear("GetNormalizedVectorInt16()", "off-grid z", "Normalized vectors stored as int16 preserve an off-grid z component within one grid step", ReadBack.Z(), 0.00005, 1e-4) && Passed;
+  }
+
+  {
+    // Check the limits of the allowed range:
+    MBinaryStore Store;
+    Store.AddNormalizedVectorInt16(MVector(1.0, -1.0, 1.0));
+    MVector ReadBack = Store.GetNormalizedVectorInt16();
+    Passed = EvaluateVectorNear("GetNormalizedVectorInt16()", "limits", "Normalized int16 vectors accept components exactly at -1 and 1", ReadBack, MVector(1.0, -1.0, 1.0), 1e-12) && Passed;
+    Passed = EvaluateException<MExceptionValueOutOfBounds>("AddNormalizedVectorInt16()", "just above 1", "Normalized int16 vectors reject a component just above 1", [&]() { MBinaryStore Other; Other.AddNormalizedVectorInt16(MVector(1.0 + 1e-9, 0.0, 0.0)); }) && Passed;
+    Passed = EvaluateException<MExceptionValueOutOfBounds>("AddNormalizedVectorInt16()", "just below -1", "Normalized int16 vectors reject a component just below -1", [&]() { MBinaryStore Other; Other.AddNormalizedVectorInt16(MVector(0.0, -1.0 - 1e-9, 0.0)); }) && Passed;
+  }
+
+  {
+    // Check the minimum store size of three int16 values:
+    MBinaryStore Store;
+    Store.AddInt16(1);
+    Store.AddInt16(2);
+    Store.AddUInt8(0);
+    Passed = EvaluateException<MExceptionIndexOutOfBounds>("GetNormalizedVectorInt16()", "five bytes", "Normalized int16 vectors reject a store with five bytes", [&]() { Store.GetNormalizedVectorInt16(); }) && Passed;
+    Store.AddUInt8(0);
+    MVector ReadBack = Store.GetNormalizedVectorInt16();
+    Passed = EvaluateVectorNear("GetNormalizedVectorInt16()", "six bytes", "Normalized int16 vectors accept a store with exactly six bytes", ReadBack, MVector(0.0001, 0.0002, 0.0), 1e-12) && Passed;
   }
 
   {
@@ -209,9 +241,9 @@ bool UTBinaryStore::TestVectorsAndTimes()
     MVector Normalized(-1.0, 0.0, 0.0);
     Store.AddNormalizedVectorInt16(Normalized);
     MVector ReadBack = Store.GetNormalizedVectorInt16();
-    Passed = EvaluateNear("GetNormalizedVectorInt16()", "negative boundary x", "Normalized vectors stored as int16 preserve the representative negative boundary value", ReadBack.X(), -1.0, 1e-4) && Passed;
-    Passed = EvaluateNear("GetNormalizedVectorInt16()", "negative boundary y", "Normalized vectors stored as int16 preserve a representative zero y component at the negative boundary", ReadBack.Y(), 0.0, 1e-4) && Passed;
-    Passed = EvaluateNear("GetNormalizedVectorInt16()", "negative boundary z", "Normalized vectors stored as int16 preserve a representative zero z component at the negative boundary", ReadBack.Z(), 0.0, 1e-4) && Passed;
+    Passed = EvaluateNear("GetNormalizedVectorInt16()", "negative boundary x", "Normalized vectors stored as int16 preserve the representative negative boundary value", ReadBack.X(), -1.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetNormalizedVectorInt16()", "negative boundary y", "Normalized vectors stored as int16 preserve a representative zero y component at the negative boundary", ReadBack.Y(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetNormalizedVectorInt16()", "negative boundary z", "Normalized vectors stored as int16 preserve a representative zero z component at the negative boundary", ReadBack.Z(), 0.0, 1e-12) && Passed;
   }
 
   {
@@ -226,9 +258,9 @@ bool UTBinaryStore::TestVectorsAndTimes()
     MVector Value(1.25, -2.5, 3.75);
     Store.AddVectorFloat(Value);
     MVector ReadBack = Store.GetVectorFloat();
-    Passed = EvaluateNear("GetVectorFloat()", "representative x", "Vectors stored as floats preserve a representative x component", ReadBack.X(), 1.25, 1e-6) && Passed;
-    Passed = EvaluateNear("GetVectorFloat()", "representative y", "Vectors stored as floats preserve a representative y component", ReadBack.Y(), -2.5, 1e-6) && Passed;
-    Passed = EvaluateNear("GetVectorFloat()", "representative z", "Vectors stored as floats preserve a representative z component", ReadBack.Z(), 3.75, 1e-6) && Passed;
+    Passed = EvaluateNear("GetVectorFloat()", "representative x", "Vectors stored as floats preserve a representative x component", ReadBack.X(), 1.25, 1e-12) && Passed;
+    Passed = EvaluateNear("GetVectorFloat()", "representative y", "Vectors stored as floats preserve a representative y component", ReadBack.Y(), -2.5, 1e-12) && Passed;
+    Passed = EvaluateNear("GetVectorFloat()", "representative z", "Vectors stored as floats preserve a representative z component", ReadBack.Z(), 3.75, 1e-12) && Passed;
   }
 
   {

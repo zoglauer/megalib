@@ -76,8 +76,8 @@ bool UTFunction::Run()
     Passed = EvaluateNear("Evaluate()", "vector linlin extrapolation low", "Linear interpolation extrapolates a representative lower-x point consistently", LinLin.Evaluate(0.0), 1.0, 1e-12) && Passed;
     Passed = EvaluateNear("Evaluate()", "vector linlin extrapolation high", "Linear interpolation extrapolates a representative higher-x point consistently", LinLin.Evaluate(5.0), 11.0, 1e-12) && Passed;
     Passed = EvaluateNear("Eval()", "deprecated representative call", "Eval forwards to Evaluate for a representative interior point", LinLin.Eval(2.5), 6.0, 1e-12) && Passed;
-    Passed = EvaluateNear("Integrate()", "vector linlin full", "Integrate returns the exact representative full linear integral", LinLin.Integrate(), 18.0, 1e-10) && Passed;
-    Passed = EvaluateNear("Integrate(XMin, XMax)", "vector linlin partial", "Integrate over a representative interior sub-range is exact for the linear case", LinLin.Integrate(1.5, 3.5), 12.0, 1e-10) && Passed;
+    Passed = EvaluateNear("Integrate()", "vector linlin full", "Integrate returns the exact representative full linear integral", LinLin.Integrate(), 18.0, 1e-12) && Passed;
+    Passed = EvaluateNear("Integrate(XMin, XMax)", "vector linlin partial", "Integrate over a representative interior sub-range is exact for the linear case", LinLin.Integrate(1.5, 3.5), 12.0, 1e-12) && Passed;
     Passed = EvaluateNear("GetXMin()", "vector linlin", "GetXMin returns the representative minimum x value", LinLin.GetXMin(), 1.0, 1e-12) && Passed;
     Passed = EvaluateNear("GetXMax()", "vector linlin", "GetXMax returns the representative maximum x value", LinLin.GetXMax(), 4.0, 1e-12) && Passed;
     Passed = EvaluateNear("GetYMin()", "vector linlin", "GetYMin returns the representative minimum y value", LinLin.GetYMin(), 3.0, 1e-12) && Passed;
@@ -112,24 +112,24 @@ bool UTFunction::Run()
     MFunction LinLog;
     Passed = Evaluate("Set()", "vector linlog", "MFunction accepts representative vector data with lin-log interpolation",
                       LinLog.Set(vector<double>{1.0, 3.0}, vector<double>{exp(1.0), exp(5.0)}, MFunction::c_InterpolationLinLog), true) && Passed;
-    Passed = EvaluateNear("Evaluate()", "vector linlog interior", "Lin-log interpolation evaluates a representative interior point exactly", LinLog.Evaluate(2.0), exp(3.0), 1e-10) && Passed;
-    Passed = EvaluateNear("Integrate()", "vector linlog full", "Lin-log integration matches the representative analytic result", LinLog.Integrate(), 0.5*(exp(5.0) - exp(1.0)), 1e-9) && Passed;
+    Passed = EvaluateNear("Evaluate()", "vector linlog interior", "Lin-log interpolation evaluates a representative interior point exactly", LinLog.Evaluate(2.0), exp(3.0), 1e-12) && Passed;
+    Passed = EvaluateNear("Integrate()", "vector linlog full", "Lin-log integration matches the representative analytic result", LinLog.Integrate(), 0.5*(exp(5.0) - exp(1.0)), 1e-12) && Passed;
   }
 
   {
     MFunction LogLin;
     Passed = Evaluate("Set()", "vector loglin", "MFunction accepts representative vector data with log-lin interpolation",
                       LogLin.Set(vector<double>{1.0, exp(2.0)}, vector<double>{1.0, 5.0}, MFunction::c_InterpolationLogLin), true) && Passed;
-    Passed = EvaluateNear("Evaluate()", "vector loglin interior", "Log-lin interpolation evaluates a representative interior point exactly", LogLin.Evaluate(exp(1.0)), 3.0, 1e-10) && Passed;
-    Passed = EvaluateNear("Integrate()", "vector loglin full", "Log-lin integration matches the representative analytic result", LogLin.Integrate(), 3.0*exp(2.0) + 1.0, 1e-8) && Passed;
+    Passed = EvaluateNear("Evaluate()", "vector loglin interior", "Log-lin interpolation evaluates a representative interior point exactly", LogLin.Evaluate(exp(1.0)), 3.0, 1e-12) && Passed;
+    Passed = EvaluateNear("Integrate()", "vector loglin full", "Log-lin integration matches the representative analytic result", LogLin.Integrate(), 3.0*exp(2.0) + 1.0, 1e-12) && Passed;
   }
 
   {
     MFunction LogLog;
     Passed = Evaluate("Set()", "vector loglog", "MFunction accepts representative vector data with log-log interpolation",
                       LogLog.Set(vector<double>{1.0, exp(1.0)}, vector<double>{1.0, exp(2.0)}, MFunction::c_InterpolationLogLog), true) && Passed;
-    Passed = EvaluateNear("Evaluate()", "vector loglog interior", "Log-log interpolation evaluates a representative interior point exactly", LogLog.Evaluate(sqrt(exp(1.0))), exp(1.0), 1e-10) && Passed;
-    Passed = EvaluateNear("Integrate()", "vector loglog full", "Log-log integration matches the representative analytic result", LogLog.Integrate(), (exp(3.0) - 1.0)/3.0, 1e-8) && Passed;
+    Passed = EvaluateNear("Evaluate()", "vector loglog interior", "Log-log interpolation evaluates a representative interior point exactly", LogLog.Evaluate(sqrt(exp(1.0))), exp(1.0), 1e-12) && Passed;
+    Passed = EvaluateNear("Integrate()", "vector loglog full", "Log-log integration matches the representative analytic result", LogLog.Integrate(), (exp(3.0) - 1.0)/3.0, 1e-12) && Passed;
   }
 
   {
@@ -138,8 +138,8 @@ bool UTFunction::Run()
                       Discrete.Set(vector<double>{0.0, 10.0, 30.0}, vector<double>{1.0, 4.0, 9.0}, MFunction::c_InterpolationNone), true) && Passed;
     Passed = EvaluateNear("Evaluate()", "vector none low half-bin", "No interpolation returns the representative lower bin value inside a half-bin", Discrete.Evaluate(14.0), 4.0, 1e-12) && Passed;
     Passed = EvaluateNear("Evaluate()", "vector none upper half-bin", "No interpolation returns the representative upper bin value beyond the half-bin boundary", Discrete.Evaluate(21.0), 9.0, 1e-12) && Passed;
-    Passed = EvaluateNear("Integrate(XMin, XMax)", "vector none first bin edge case", "No interpolation integrates a representative range starting at the first x value without accessing invalid lower bins", Discrete.Integrate(0.0, 10.0), 25.0, 1e-10) && Passed;
-    Passed = EvaluateNear("Integrate(XMin, XMax)", "vector none multi-bin edge case", "No interpolation integrates a representative multi-bin range using each interior segment exactly once", Discrete.Integrate(0.0, 30.0), 155.0, 1e-10) && Passed;
+    Passed = EvaluateNear("Integrate(XMin, XMax)", "vector none first bin edge case", "No interpolation integrates a representative range starting at the first x value exactly", Discrete.Integrate(0.0, 10.0), 25.0, 1e-12) && Passed;
+    Passed = EvaluateNear("Integrate(XMin, XMax)", "vector none multi-bin edge case", "No interpolation integrates a representative multi-bin range", Discrete.Integrate(0.0, 30.0), 155.0, 1e-12) && Passed;
   }
 
   {
@@ -182,40 +182,54 @@ bool UTFunction::Run()
     MFunction Constant;
     Passed = Evaluate("Set()", "constant representative function", "MFunction accepts a representative constant function for FindX and random tests",
                       Constant.Set(vector<double>{0.0, 10.0}, vector<double>{2.0, 2.0}, MFunction::c_InterpolationLinLin), true) && Passed;
-    Passed = EvaluateNear("FindX()", "non-cyclic representative integral", "FindX advances a representative non-cyclic constant function by the requested area", Constant.FindX(1.0, 6.0, false), 4.0, 1e-10) && Passed;
-    Passed = EvaluateNear("FindX()", "cyclic representative integral", "FindX continues a representative cyclic search in the original x frame after wrapping internally", Constant.FindX(9.0, 6.0, true), 12.0, 1e-10) && Passed;
+    Passed = EvaluateNear("FindX()", "non-cyclic representative integral", "FindX advances a representative non-cyclic constant function by the requested area", Constant.FindX(1.0, 6.0, false), 4.0, 1e-12) && Passed;
+    Passed = EvaluateNear("FindX()", "cyclic representative integral", "FindX continues a representative cyclic search in the original x frame after wrapping internally", Constant.FindX(9.0, 6.0, true), 12.0, 1e-12) && Passed;
 
+    // Expected: 10 * u with u the seeded uniform random number - constant function on [0, 10]
     gRandom->SetSeed(17);
     long double RandomA = Constant.GetRandom();
     long double RandomB = Constant.GetRandom();
     long double RandomC = Constant.GetRandom();
-    Passed = EvaluateNear("GetRandom()", "representative draw A", "GetRandom returns the representative first seeded golden value", RandomA, 2.9466508319050074, 1e-6) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative draw B", "GetRandom returns the representative second seeded golden value", RandomB, 1.8177782750795287, 1e-6) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative draw C", "GetRandom returns the representative third seeded golden value", RandomC, 5.3058675560737306, 1e-6) && Passed;
+    gRandom->SetSeed(17);
+    const double ExpectedA = 10.0*gRandom->Rndm();
+    const double ExpectedB = 10.0*gRandom->Rndm();
+    const double ExpectedC = 10.0*gRandom->Rndm();
+    Passed = EvaluateNear("GetRandom()", "representative draw A", "GetRandom returns 10 times the first seeded uniform random number", RandomA, ExpectedA, 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative draw B", "GetRandom returns 10 times the second seeded uniform random number", RandomB, ExpectedB, 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative draw C", "GetRandom returns 10 times the third seeded uniform random number", RandomC, ExpectedC, 1e-12) && Passed;
 
+    // Expected: 10 * sqrt(u) - the cumulative function of the function times x is x^2
     gRandom->SetSeed(23);
     long double RandomTimesXA = Constant.GetRandomTimesX();
     long double RandomTimesXB = Constant.GetRandomTimesX();
     long double RandomTimesXC = Constant.GetRandomTimesX();
-    Passed = EvaluateNear("GetRandomTimesX()", "representative draw A", "GetRandomTimesX returns the representative first seeded golden value", RandomTimesXA, 7.1923381582481518, 1e-4) && Passed;
-    Passed = EvaluateNear("GetRandomTimesX()", "representative draw B", "GetRandomTimesX returns the representative second seeded golden value", RandomTimesXB, 8.1798413440764889, 1e-4) && Passed;
-    Passed = EvaluateNear("GetRandomTimesX()", "representative draw C", "GetRandomTimesX returns the representative third seeded golden value", RandomTimesXC, 9.731204644267359, 1e-4) && Passed;
+    gRandom->SetSeed(23);
+    const double ExpectedTimesXA = 10.0*sqrt(gRandom->Rndm());
+    const double ExpectedTimesXB = 10.0*sqrt(gRandom->Rndm());
+    const double ExpectedTimesXC = 10.0*sqrt(gRandom->Rndm());
+    Passed = EvaluateNear("GetRandomTimesX()", "representative draw A", "GetRandomTimesX returns 10 times the square root of the first seeded uniform random number", RandomTimesXA, ExpectedTimesXA, 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandomTimesX()", "representative draw B", "GetRandomTimesX returns 10 times the square root of the second seeded uniform random number", RandomTimesXB, ExpectedTimesXB, 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandomTimesX()", "representative draw C", "GetRandomTimesX returns 10 times the square root of the third seeded uniform random number", RandomTimesXC, ExpectedTimesXC, 1e-12) && Passed;
   }
 
   {
     MFunction ConstantOffset;
     Passed = Evaluate("Set()", "offset constant representative function", "MFunction accepts a representative non-zero-offset constant function for random range checks",
                       ConstantOffset.Set(vector<double>{5.0, 9.0}, vector<double>{2.0, 2.0}, MFunction::c_InterpolationConstant), true) && Passed;
+    // Expected: xmin + u * (xmax - xmin) with u the second seeded random number - the first one selects the bin
     gRandom->SetSeed(71);
     long double RandomOffset = ConstantOffset.GetRandom();
-    Passed = EvaluateTrue("GetRandom()", "offset constant representative draw", "GetRandom returns a representative draw inside the non-zero-offset constant x-range", RandomOffset >= 5.0 && RandomOffset <= 9.0) && Passed;
+    gRandom->SetSeed(71);
+    gRandom->Rndm();
+    const double ExpectedOffset = 5.0 + 4.0*gRandom->Rndm();
+    Passed = EvaluateNear("GetRandom()", "offset constant representative draw", "GetRandom returns 5 plus 4 times the second seeded uniform random number for the constant-interpolation function on [5, 9]", RandomOffset, ExpectedOffset, 1e-12) && Passed;
   }
 
   {
     MFunction CyclicOffset;
     Passed = Evaluate("Set()", "cyclic non-zero-offset representative function", "MFunction accepts a representative non-zero-offset constant function for cyclic FindX checks",
                       CyclicOffset.Set(vector<double>{100.0, 110.0}, vector<double>{2.0, 2.0}, MFunction::c_InterpolationLinLin), true) && Passed;
-    Passed = EvaluateNear("FindX()", "cyclic non-zero-offset representative integral", "FindX wraps a representative cyclic search to the actual minimum x value instead of zero", CyclicOffset.FindX(109.0, 6.0, true), 112.0, 1e-10) && Passed;
+    Passed = EvaluateNear("FindX()", "cyclic non-zero-offset representative integral", "FindX wraps a representative cyclic search to the actual minimum x value instead of zero", CyclicOffset.FindX(109.0, 6.0, true), 112.0, 1e-12) && Passed;
   }
 
   {
@@ -233,8 +247,11 @@ bool UTFunction::Run()
     Passed = Evaluate("Add()", "cached-random representative new point", "Add accepts a representative new point after the cumulative cache has been built", CachedRandom.Add(2.0, 1.0), true) && Passed;
     gRandom->SetSeed(101);
     long double AfterAdd = CachedRandom.GetRandom();
-    Passed = EvaluateTrue("Add()", "cached-random representative invalidation", "Add invalidates the representative cumulative cache so the same seeded draw changes after the domain changes", fabsl(AfterAdd - BeforeAdd) > 1e-8) && Passed;
-    Passed = EvaluateTrue("GetRandom()", "cached-random representative updated range", "GetRandom uses the representative updated range after Add", AfterAdd >= 0.0 && AfterAdd <= 2.0) && Passed;
+    // Expected: u before and 2 * u after the new point - constant function on [0, 1] and [0, 2]
+    gRandom->SetSeed(101);
+    const double ExpectedUniform = gRandom->Rndm();
+    Passed = EvaluateNear("GetRandom()", "cached-random representative before", "GetRandom returns the seeded uniform random number for the constant function on [0, 1]", BeforeAdd, ExpectedUniform, 1e-12) && Passed;
+    Passed = EvaluateNear("Add()", "cached-random representative invalidation", "Add changes the seeded draw to twice the uniform random number for the constant function on [0, 2]", AfterAdd, 2.0*ExpectedUniform, 1e-12) && Passed;
   }
 
   {
@@ -271,8 +288,8 @@ bool UTFunction::Run()
     double HighClamp = Clamped.Integrate(1.5, 10.0);
     double InvalidRange = Clamped.Integrate(3.5, 1.5);
     EnableDefaultStreams();
-    Passed = EvaluateNear("Integrate(XMin, XMax)", "representative low clamp", "Integrate clamps a representative lower out-of-range limit to the function minimum", LowClamp, 13.75, 1e-10) && Passed;
-    Passed = EvaluateNear("Integrate(XMin, XMax)", "representative high clamp", "Integrate clamps a representative upper out-of-range limit to the function maximum", HighClamp, 16.25, 1e-10) && Passed;
+    Passed = EvaluateNear("Integrate(XMin, XMax)", "representative low clamp", "Integrate clamps a representative lower out-of-range limit to the function minimum", LowClamp, 13.75, 1e-12) && Passed;
+    Passed = EvaluateNear("Integrate(XMin, XMax)", "representative high clamp", "Integrate clamps a representative upper out-of-range limit to the function maximum", HighClamp, 16.25, 1e-12) && Passed;
     Passed = EvaluateNear("Integrate(XMin, XMax)", "representative invalid range", "Integrate returns the representative sentinel value for XMin >= XMax", InvalidRange, 0.0, 1e-12) && Passed;
   }
 

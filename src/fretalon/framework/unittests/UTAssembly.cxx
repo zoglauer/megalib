@@ -58,6 +58,11 @@ private:
   bool TestConstructionAndInterrupt();
   //! Test command-line branches that return before launching the GUI
   bool TestSafeCommandLineParsing();
+
+  //! Return the usage text printed by the command-line parser
+  MString GetExpectedUsageOutput() const;
+  //! Return the output of a rejected command line (error line and usage text)
+  MString GetExpectedErrorOutput(const MString& ErrorLine) const;
 };
 
 
@@ -144,6 +149,47 @@ bool UTAssembly::TestConstructionAndInterrupt()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MString UTAssembly::GetExpectedUsageOutput() const
+{
+  // Expected: usage text written out by hand from the documented options
+  ostringstream Usage;
+  Usage<<endl;
+  Usage<<"  Usage: Nuclearizer <options>"<<endl;
+  Usage<<endl;
+  Usage<<"      -c --configuration <filename>.cfg:"<<endl;
+  Usage<<"             Use this file as configuration file."<<endl;
+  Usage<<"             If no configuration file is give ~/.fretalon.cfg is loaded by default"<<endl;
+  Usage<<"      -C --change-configuration <pattern>:"<<endl;
+  Usage<<"             Replace any value in the configuration file (-C can be used multiple times)"<<endl;
+  Usage<<"             E.g. to replace the geometry file name, one would set pattern to:"<<endl;
+  Usage<<"             -C GeometryFileName=/path/to/some.geo.setup"<<endl;
+  Usage<<"      -a --auto:"<<endl;
+  Usage<<"             Automatically start analysis without GUI"<<endl;
+  Usage<<"      -m --multithreading:"<<endl;
+  Usage<<"             0: false (default), else: true"<<endl;
+  Usage<<"      -v --verbosity:"<<endl;
+  Usage<<"             Verbosity: 0: Quiet, 1: Errors, 2: Warnings, 3: Info, 4: Chatty, 5: Extreme"<<endl;
+  Usage<<"      -h --help:"<<endl;
+  Usage<<"             You know the answer..."<<endl;
+  Usage<<endl;
+  Usage<<endl;
+
+  return Usage.str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTAssembly::GetExpectedErrorOutput(const MString& ErrorLine) const
+{
+  return ErrorLine + "\n" + GetExpectedUsageOutput();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool UTAssembly::TestSafeCommandLineParsing()
 {
   bool Passed = true;
@@ -166,7 +212,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
     bool HadError = Assembly.ParseCommandLine(2, HelpArgv, ReadyForUILoop);
     cout.rdbuf(OriginalCout);
     Passed = EvaluateFalse("ParseCommandLine()", MString(HelpOption), "Help-style options do not ask main() to enter the UI loop", ReadyForUILoop) && Passed;
-    Passed = EvaluateTrue("ParseCommandLine()", MString(HelpOption) + " usage", "Help-style options print the usage text", MString(HelpOutput.str()).Contains("Usage: Nuclearizer")) && Passed;
+    Passed = Evaluate("ParseCommandLine()", MString(HelpOption) + " usage", "Help-style options print exactly the usage text", MString(HelpOutput.str()), GetExpectedUsageOutput()) && Passed;
     Passed = EvaluateFalse("ParseCommandLine()", MString(HelpOption) + " error", "A help request is a clean, requested exit, not an error", HadError) && Passed;
   }
 
@@ -178,7 +224,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   bool MissingConfigurationHadError = Assembly.ParseCommandLine(2, MissingConfigurationArgv, MissingConfigurationReadyForUILoop);
   cout.rdbuf(OriginalCout);
   Passed = EvaluateFalse("ParseCommandLine()", "-c missing value", "A missing configuration-file argument does not ask main() to enter the UI loop", MissingConfigurationReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "-c missing value output", "The missing configuration-file argument prints an error and usage text", MString(MissingConfigurationOutput.str()).Contains("needs a second argument") && MString(MissingConfigurationOutput.str()).Contains("Usage: Nuclearizer")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-c missing value output", "The missing configuration-file argument prints exactly the error and the usage text", MString(MissingConfigurationOutput.str()), GetExpectedErrorOutput("Error: Option -c needs a second argument!")) && Passed;
   Passed = EvaluateTrue("ParseCommandLine()", "-c missing value error", "A missing required argument is an actual error, not a clean exit", MissingConfigurationHadError) && Passed;
 
   char MultithreadingOption[] = "--multithreading";
@@ -189,8 +235,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   bool MissingMultithreadingHadError = Assembly.ParseCommandLine(2, MissingMultithreadingArgv, MissingMultithreadingReadyForUILoop);
   cout.rdbuf(MissingMultithreadingOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "--multithreading missing value", "A missing multithreading argument does not ask main() to enter the UI loop", MissingMultithreadingReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "--multithreading missing value output", "The missing multithreading argument prints an error and usage text", MString(MissingMultithreadingOutput.str()).Contains("needs a second argument") && MString(MissingMultithreadingOutput.str()).Contains("Usage: Nuclearizer")) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "--multithreading missing value option name", "The error names the long option that was actually used, not just its second character (which for a long option is itself only a dash)", MString(MissingMultithreadingOutput.str()).Contains("Option --multithreading needs")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "--multithreading missing value output", "The missing multithreading argument prints exactly the error naming the long option and the usage text", MString(MissingMultithreadingOutput.str()), GetExpectedErrorOutput("Error: Option --multithreading needs a second argument!")) && Passed;
   Passed = EvaluateTrue("ParseCommandLine()", "--multithreading missing value error", "A missing required argument is an actual error, not a clean exit", MissingMultithreadingHadError) && Passed;
 
   // -v/--verbosity takes a value the same way -c and -m do; atoi(argv[++i]) would read argv[argc],
@@ -203,7 +248,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   bool MissingVerbosityHadError = Assembly.ParseCommandLine(2, MissingVerbosityArgv, MissingVerbosityReadyForUILoop);
   cout.rdbuf(MissingVerbosityOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "-v missing value", "A missing verbosity argument is rejected before it can be dereferenced", MissingVerbosityReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "-v missing value output", "The missing verbosity argument prints an error and usage text", MString(MissingVerbosityOutput.str()).Contains("needs a second argument") && MString(MissingVerbosityOutput.str()).Contains("Usage: Nuclearizer")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-v missing value output", "The missing verbosity argument prints exactly the error and the usage text", MString(MissingVerbosityOutput.str()), GetExpectedErrorOutput("Error: Option -v needs a second argument!")) && Passed;
   Passed = EvaluateTrue("ParseCommandLine()", "-v missing value error", "A missing required argument is an actual error, not a clean exit", MissingVerbosityHadError) && Passed;
 
   // An unrecognized option (a typo, for example) must be rejected rather than silently ignored
@@ -215,7 +260,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   bool UnknownOptionHadError = Assembly.ParseCommandLine(2, UnknownOptionArgv, UnknownOptionReadyForUILoop);
   cout.rdbuf(UnknownOptionOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "unknown option", "An unrecognized option does not ask main() to enter the UI loop", UnknownOptionReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "unknown option output", "The unrecognized option prints an error naming it and usage text", MString(UnknownOptionOutput.str()).Contains("Unknown option") && MString(UnknownOptionOutput.str()).Contains(UnknownOption) && MString(UnknownOptionOutput.str()).Contains("Usage: Nuclearizer")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "unknown option output", "The unrecognized option prints exactly the error naming it and the usage text", MString(UnknownOptionOutput.str()), GetExpectedErrorOutput("Error: Unknown option --verbositty")) && Passed;
   Passed = EvaluateTrue("ParseCommandLine()", "unknown option error", "An unrecognized option is an actual error, not a clean exit", UnknownOptionHadError) && Passed;
 
   // A non-numeric value must be rejected rather than silently read as 0 by atoi()
@@ -228,7 +273,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   bool NonNumericHadError = Assembly.ParseCommandLine(3, NonNumericVerbosityArgv, NonNumericReadyForUILoop);
   cout.rdbuf(NonNumericOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "-v non-numeric value", "A non-numeric verbosity argument is rejected rather than silently read as zero", NonNumericReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "-v non-numeric value output", "The non-numeric verbosity argument prints an error and usage text", MString(NonNumericOutput.str()).Contains("needs a plain integer second argument") && MString(NonNumericOutput.str()).Contains("Usage: Nuclearizer")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-v non-numeric value output", "The non-numeric verbosity argument prints exactly the error and the usage text", MString(NonNumericOutput.str()), GetExpectedErrorOutput("Error: Option -v needs a plain integer second argument!")) && Passed;
   Passed = EvaluateTrue("ParseCommandLine()", "-v non-numeric value error", "A non-numeric required argument is an actual error, not a clean exit", NonNumericHadError) && Passed;
 
   // A floating-point value must be rejected too: it passes a lenient "is this a number" check, but
@@ -265,7 +310,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   bool NegativeHadError = Assembly.ParseCommandLine(3, NegativeVerbosityArgv, NegativeReadyForUILoop);
   cout.rdbuf(NegativeOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "-v negative value", "A negative verbosity argument is rejected", NegativeReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "-v negative value output", "The negative verbosity argument is rejected as a missing argument, since it is indistinguishable from another option", MString(NegativeOutput.str()).Contains("needs a second argument") && MString(NegativeOutput.str()).Contains("Usage: Nuclearizer")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-v negative value output", "The negative verbosity argument is rejected as a missing argument", MString(NegativeOutput.str()), GetExpectedErrorOutput("Error: Option -v needs a second argument!")) && Passed;
   Passed = EvaluateTrue("ParseCommandLine()", "-v negative value error", "A negative required argument is an actual error, not a clean exit", NegativeHadError) && Passed;
 
   // Not caught by that heuristic: the first character is a space, not '-', and MString::Is<int>()
@@ -279,7 +324,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   bool WhitespaceNegativeHadError = Assembly.ParseCommandLine(3, WhitespaceNegativeVerbosityArgv, WhitespaceNegativeReadyForUILoop);
   cout.rdbuf(WhitespaceNegativeOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "-v whitespace-prefixed negative value", "A negative verbosity argument disguised by leading whitespace is still rejected", WhitespaceNegativeReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "-v whitespace-prefixed negative value output", "The whitespace-prefixed negative verbosity argument is rejected by the range check, not treated as a missing argument", MString(WhitespaceNegativeOutput.str()).Contains("needs a verbosity value between") && MString(WhitespaceNegativeOutput.str()).Contains("Usage: Nuclearizer")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-v whitespace-prefixed negative value output", "The whitespace-prefixed negative verbosity argument is rejected by the range check", MString(WhitespaceNegativeOutput.str()), GetExpectedErrorOutput("Error: Option -v needs a verbosity value between 0 and 5!")) && Passed;
   Passed = EvaluateTrue("ParseCommandLine()", "-v whitespace-prefixed negative value error", "A whitespace-prefixed negative required argument is an actual error, not a clean exit", WhitespaceNegativeHadError) && Passed;
 
   // The valid range's upper end is g_Verbosity's actual highest level (Chatty/Extreme), not the
@@ -293,7 +338,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
     bool ExtremeReadyForUILoop = false;
     bool ExtremeHadError = Assembly.ParseCommandLine(3, ExtremeVerbosityArgv, ExtremeReadyForUILoop);
     cout.rdbuf(ExtremeOriginal);
-    Passed = EvaluateTrue("ParseCommandLine()", "-v Extreme value output", "The highest defined verbosity level is read and reported like any other valid value", MString(ExtremeOutput.str()).Contains("Verbosity 5")) && Passed;
+    Passed = EvaluateTrue("ParseCommandLine()", "-v Extreme value output", "The highest defined verbosity level is read and reported", MString(ExtremeOutput.str()).BeginsWith("Command-line parser: Verbosity 5\n")) && Passed;
     Passed = EvaluateFalse("ParseCommandLine()", "-v Extreme value", "The value itself is well-formed and accepted, but the run still fails because no GUI could be launched", ExtremeReadyForUILoop) && Passed;
     Passed = EvaluateTrue("ParseCommandLine()", "-v Extreme value error", "The highest defined verbosity level is not itself an error, but the resulting GUI-launch failure is", ExtremeHadError) && Passed;
   } else {
@@ -308,7 +353,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   bool BeyondExtremeHadError = Assembly.ParseCommandLine(3, BeyondExtremeVerbosityArgv, BeyondExtremeReadyForUILoop);
   cout.rdbuf(BeyondExtremeOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "-v beyond Extreme value", "A verbosity level beyond the highest defined one is rejected", BeyondExtremeReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "-v beyond Extreme value output", "The out-of-range verbosity level is rejected by the range check", MString(BeyondExtremeOutput.str()).Contains("needs a verbosity value between") && MString(BeyondExtremeOutput.str()).Contains("Usage: Nuclearizer")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "-v beyond Extreme value output", "The out-of-range verbosity level is rejected by the range check", MString(BeyondExtremeOutput.str()), GetExpectedErrorOutput("Error: Option -v needs a verbosity value between 0 and 5!")) && Passed;
   Passed = EvaluateTrue("ParseCommandLine()", "-v beyond Extreme value error", "A verbosity level beyond the highest defined one is an actual error, not a clean exit", BeyondExtremeHadError) && Passed;
 
   // The three value-validation errors name the option through the same code path, once affected by
@@ -322,7 +367,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   Assembly.ParseCommandLine(2, LongMissingVerbosityArgv, LongMissingVerbosityReadyForUILoop);
   cout.rdbuf(LongMissingVerbosityOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "--verbosity missing value", "A missing verbosity argument is rejected the same way through the long option spelling", LongMissingVerbosityReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "--verbosity missing value option name", "The error names the long option that was actually used", MString(LongMissingVerbosityOutput.str()).Contains("Option --verbosity needs a second argument")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "--verbosity missing value option name", "The error names the long option that was actually used", MString(LongMissingVerbosityOutput.str()), GetExpectedErrorOutput("Error: Option --verbosity needs a second argument!")) && Passed;
 
   char LongNonNumericValue[] = "abc";
   char* LongNonNumericVerbosityArgv[] = { Program, LongVerbosityOption, LongNonNumericValue };
@@ -332,7 +377,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   Assembly.ParseCommandLine(3, LongNonNumericVerbosityArgv, LongNonNumericReadyForUILoop);
   cout.rdbuf(LongNonNumericOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "--verbosity non-numeric value", "A non-numeric verbosity argument is rejected the same way through the long option spelling", LongNonNumericReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "--verbosity non-numeric value option name", "The error names the long option that was actually used", MString(LongNonNumericOutput.str()).Contains("Option --verbosity needs a plain integer second argument")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "--verbosity non-numeric value option name", "The error names the long option that was actually used", MString(LongNonNumericOutput.str()), GetExpectedErrorOutput("Error: Option --verbosity needs a plain integer second argument!")) && Passed;
 
   char LongOutOfRangeValue[] = "6";
   char* LongOutOfRangeVerbosityArgv[] = { Program, LongVerbosityOption, LongOutOfRangeValue };
@@ -342,7 +387,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
   Assembly.ParseCommandLine(3, LongOutOfRangeVerbosityArgv, LongOutOfRangeReadyForUILoop);
   cout.rdbuf(LongOutOfRangeOriginal);
   Passed = EvaluateFalse("ParseCommandLine()", "--verbosity out-of-range value", "An out-of-range verbosity argument is rejected the same way through the long option spelling", LongOutOfRangeReadyForUILoop) && Passed;
-  Passed = EvaluateTrue("ParseCommandLine()", "--verbosity out-of-range value option name", "The error names the long option that was actually used", MString(LongOutOfRangeOutput.str()).Contains("Option --verbosity needs a verbosity value between")) && Passed;
+  Passed = Evaluate("ParseCommandLine()", "--verbosity out-of-range value option name", "The error names the long option that was actually used", MString(LongOutOfRangeOutput.str()), GetExpectedErrorOutput("Error: Option --verbosity needs a verbosity value between 0 and 5!")) && Passed;
 
   // A value-carrying option has to be read from its argument, not from the option itself. With a
   // valid argument the parser runs on to the user interface, so this needs a headless ROOT -- on a
@@ -356,7 +401,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
     bool EnabledReadyForUILoop = false;
     bool EnabledHadError = Assembly.ParseCommandLine(3, EnabledArgv, EnabledReadyForUILoop);
     cout.rdbuf(OriginalCout);
-    Passed = EvaluateTrue("ParseCommandLine()", "--multithreading 1", "The multithreading option reads its argument and enables multithreading", MString(EnabledOutput.str()).Contains("Using multithreading: yes")) && Passed;
+    Passed = EvaluateTrue("ParseCommandLine()", "--multithreading 1", "The multithreading option reads its argument and enables multithreading", MString(EnabledOutput.str()).BeginsWith("Command-line parser: Using multithreading: yes\n")) && Passed;
     Passed = EvaluateTrue("ParseCommandLine()", "--multithreading 1 error", "The option value itself is well-formed, but the run still fails because no GUI could be launched, which is a genuine error", EnabledHadError) && Passed;
 
     char DisabledValue[] = "0";
@@ -366,7 +411,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
     bool DisabledReadyForUILoop = false;
     Assembly.ParseCommandLine(3, DisabledArgv, DisabledReadyForUILoop);
     cout.rdbuf(OriginalCout);
-    Passed = EvaluateTrue("ParseCommandLine()", "--multithreading 0", "The multithreading option reads its argument and disables multithreading", MString(DisabledOutput.str()).Contains("Using multithreading: no")) && Passed;
+    Passed = EvaluateTrue("ParseCommandLine()", "--multithreading 0", "The multithreading option reads its argument and disables multithreading", MString(DisabledOutput.str()).BeginsWith("Command-line parser: Using multithreading: no\n")) && Passed;
   } else {
     mout<<"UTAssembly: a ROOT graphics client is available, skipping the multithreading argument check"<<endl;
   }
@@ -384,7 +429,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
     bool ChangeConfigReadyForUILoop = false;
     Assembly.ParseCommandLine(3, ChangeConfigArgv, ChangeConfigReadyForUILoop);
     cout.rdbuf(OriginalCout);
-    Passed = EvaluateTrue("ParseCommandLine()", "-C changes a field", "The field named by -C is reported as changed", MString(ChangeConfigOutput.str()).Contains("Changing this configuration value")) && Passed;
+    Passed = EvaluateTrue("ParseCommandLine()", "-C changes a field", "The field named by -C is reported as changed", MString(ChangeConfigOutput.str()).BeginsWith("Command-line parser: Changing this configuration value: GeometryFileName=/tmp/UTAssembly_changed.geo.setup\n")) && Passed;
     Passed = EvaluateTrue("ParseCommandLine()", "-C changes GeometryFileName", "The named field is actually updated on the shared supervisor", MSupervisor::GetSupervisor()->GetGeometryFileName() == "/tmp/UTAssembly_changed.geo.setup") && Passed;
 
     // -C can be used multiple times; both occurrences target the same field, so the final value
@@ -408,7 +453,7 @@ bool UTAssembly::TestSafeCommandLineParsing()
     bool UnknownFieldReadyForUILoop = false;
     Assembly.ParseCommandLine(3, UnknownFieldArgv, UnknownFieldReadyForUILoop);
     cout.rdbuf(OriginalCout);
-    Passed = EvaluateTrue("ParseCommandLine()", "-C unresolvable field", "An unresolvable field is reported as an error", MString(UnknownFieldOutput.str()).Contains("Unable to change this configuration value")) && Passed;
+    Passed = Evaluate("ParseCommandLine()", "-C unresolvable field", "An unresolvable field is reported as an error", RemoveErrorMessageContext(MString(UnknownFieldOutput.str())), MString("Error: Unable to find node NoSuchField under node NuclearizerData\nError: Command-line parser: Unable to change this configuration value: NoSuchField=5\nError: Trying to use a user interface but no windows can be initialized. Are you on a remote connection without X forwarding?\n")) && Passed;
   } else {
     mout<<"UTAssembly: a ROOT graphics client is available, skipping the change-configuration check"<<endl;
   }

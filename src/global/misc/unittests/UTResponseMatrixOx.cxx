@@ -87,16 +87,16 @@ bool UTResponseMatrixOx::Run()
   Matrix.SetFarFieldStartArea(3.5);
   Matrix.SetSpectrum("Mono", {2.0, 7.0});
   MString Statistics = Matrix.GetStatistics();
-  Passed = EvaluateTrue("GetStatistics()", "representative string", "The statistics string includes the representative matrix name", Statistics.Contains("Representative")) && Passed;
-  Passed = EvaluateTrue("GetStatistics()", "representative axes", "The statistics string includes the representative axis name", Statistics.Contains("X1")) && Passed;
-  Passed = EvaluateTrue("GetStatistics()", "representative sum", "The statistics string includes the representative sum", Statistics.Contains("Sum:                    6")) && Passed;
+  // Expected: maximum 5, minimum 1, sum 6, average 6/2 = 3
+  MString ExpectedStatistics("Statistics for response matrix \"Representative\":\n\nNumber of axes:         1\nNumber of dimensions:   1\nNumber of bins:         2\nMaximum:                5\nMinimum:                1\nSum:                    6\nAverage value:         3\n\nAxes:\n  x1:  X1 (from 0 to 2 in 2 bins)\n");
+  Passed = Evaluate("GetStatistics()", "representative string", "The statistics string contains exactly the representative name, counts, extrema, sum, average, and axis description", Statistics, ExpectedStatistics) && Passed;
 
   Passed = EvaluateTrue("PrepareTemporaryDirectory()", "read setup", "The temporary response-matrix directory exists for the base-class read test", PrepareTemporaryDirectory()) && Passed;
   MString FileName = GetTemporaryFileName("UTResponseMatrixOx.rsp");
   Passed = Evaluate("Write()", "base read setup", "A representative order-1 matrix can be written for the base-class read test", Matrix.Write(FileName, true), true) && Passed;
   ResponseMatrixOxTest ReadBack;
   Passed = Evaluate("Read()", "base class", "The base response-matrix read implementation initializes the representative derived matrix", ReadBack.Read(FileName), true) && Passed;
-  Passed = EvaluateNear("Read()", "base class content", "The base response-matrix read implementation restores the representative first-bin content", ReadBack.GetBinContent(0), 5.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Read()", "base class content", "The base response-matrix read implementation restores the representative first-bin content", ReadBack.GetBinContent(0), 5.0, 1e-12) && Passed;
 
   Summarize();
 

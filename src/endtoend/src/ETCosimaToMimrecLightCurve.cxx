@@ -214,7 +214,7 @@ bool ETCosimaToMimrecLightCurve::Run()
         ++Unknown;
       }
       else {
-        MaxTimeDifference = max(MaxTimeDifference, fabs(Event->GetTime().GetAsSeconds() - SimTime[Event->GetId()]));
+        MaxTimeDifference = GetMaximum(MaxTimeDifference, fabs(Event->GetTime().GetAsSeconds() - SimTime[Event->GetId()]));
       }
     }
     Passed = Evaluate("Order", Scenarios[s].m_Name + ", tra IDs", "Every reconstructed event comes from a triggered event of the sim file", Unknown, 0U) && Passed;

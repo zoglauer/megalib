@@ -19,6 +19,9 @@
  */
 
 
+// Standard libs:
+#include <csignal>
+
 // MEGAlib:
 #include "MExceptions.h"
 #include "MSystem.h"
@@ -103,7 +106,7 @@ bool UTExceptions::TestBaseBehavior()
   try {
     throw MExceptionArbitrary("Polymorphic arbitrary");
   } catch (const exception& Exception) {
-    Passed = EvaluateTrue("throw MExceptionArbitrary()", "catch std::exception", "The exception hierarchy derives from std::exception", MString(Exception.what()).Contains("Polymorphic arbitrary")) && Passed;
+    Passed = Evaluate("throw MExceptionArbitrary()", "catch std::exception", "The exception hierarchy derives from std::exception and keeps the full message", MString(Exception.what()), MString("An exception was triggered: \nPolymorphic arbitrary\n")) && Passed;
   } catch (...) {
     Passed = EvaluateTrue("throw MExceptionArbitrary()", "catch std::exception", "The exception hierarchy derives from std::exception", false) && Passed;
   }
@@ -247,7 +250,6 @@ bool UTExceptions::TestEdgeCases()
 
   {
     MExceptionValueOutOfBounds Exception(3.5);
-    Passed = EvaluateTrue("MExceptionValueOutOfBounds(value)", "single value", "The single-value constructor includes the offending value in the message", MString(Exception.what()).Contains("3.5")) && Passed;
     Passed = Evaluate("MExceptionValueOutOfBounds(value)", "single value exact", "The single-value constructor formats the full deterministic message", MString(Exception.what()), MString("Value out of bounds: 3.5")) && Passed;
   }
 
@@ -275,7 +277,6 @@ bool UTExceptions::TestEdgeCases()
 
   {
     MExceptionNeverReachThatLineOfCode Exception("Extra context");
-    Passed = EvaluateTrue("MExceptionNeverReachThatLineOfCode(description)", "custom detail", "A custom never-reach exception includes the supplied description", MString(Exception.what()).Contains("Extra context")) && Passed;
     Passed = Evaluate("MExceptionNeverReachThatLineOfCode(description)", "custom detail exact", "A custom never-reach exception formats the full deterministic message", MString(Exception.what()), MString("We should have never reached that line of code: \nExtra context\n")) && Passed;
   }
 
@@ -339,10 +340,12 @@ bool UTExceptions::TestUsagePatterns()
     MString LogFileName = GetTemporaryFileName("abort_check.log");
     int Status = MSystem::RunProcess(BinaryPath(), "--abort-check", LogFileName);
 
-    Passed = EvaluateTrue("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with a non-zero status", Status != 0 && Status != -1) && Passed;
+    // Mask the core dump flag (0x80) of the wait status
+    Passed = Evaluate("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with SIGABRT", Status & 0x7F, static_cast<int>(SIGABRT)) && Passed;
 
+    // Expect a trailing end of line
     MString Content = ReadTextFile(LogFileName);
-    Passed = EvaluateTrue("MException::UseAbort(true)", "child message", "Abort mode prints the exception message before terminating", Content.Contains("Unknown mode abort-check!")) && Passed;
+    Passed = Evaluate("MException::UseAbort(true)", "child message", "Abort mode prints the exception message before terminating", Content, MString("Unknown mode abort-check!\n\n")) && Passed;
 
     MException::UseAbort(false);
   }

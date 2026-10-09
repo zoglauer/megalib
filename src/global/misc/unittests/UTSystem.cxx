@@ -22,8 +22,14 @@
 // Standard libs:
 #include <thread>
 #include <chrono>
+#include <algorithm>
+#include <cmath>
 #include <csignal>
+#include <cstdio>
+#include <cstdlib>
 #include <ctime>
+#include <fstream>
+#include <string>
 
 // POSIX libs:
 #include <sys/time.h>
@@ -82,8 +88,7 @@ bool UTSystem::Run()
   int ChildStatus = MSystem::RunProcess("/bin/sh", "-c 'echo UTSystem child'", ChildLog);
   Passed = EvaluateTrue("RunProcess()", "successful child", "RunProcess returns a normal zero exit status for a successful child", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0) && Passed;
   MString ChildLogContent = ReadTextFile(ChildLog);
-  Passed = EvaluateTrue("RunProcess()", "redirected output", "RunProcess redirects child output to the requested file", ChildLogContent.IsEmpty() == false) && Passed;
-  Passed = EvaluateTrue("RunProcess()", "redirected output", "The redirected child output contains the expected marker", ChildLogContent.Contains("UTSystem child")) && Passed;
+  Passed = Evaluate("RunProcess()", "redirected output", "RunProcess redirects the output of the child to the requested file", ChildLogContent, MString("UTSystem child\n")) && Passed;
   const MString MissingChildLog = TempDirectory + "/missing-child.log";
   ChildStatus = MSystem::RunProcess(GetTemporaryFileName("missing_child_executable"), "", MissingChildLog);
   Passed = EvaluateTrue("RunProcess()", "missing child", "RunProcess returns the shell command-not-found status for a missing child executable", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 127) && Passed;
@@ -94,24 +99,25 @@ bool UTSystem::Run()
     Passed = EvaluateTrue("CreateDirectory()", "working directory", "The working directory with a space can be created", MFile::CreateDirectory(Directory)) && Passed;
     const MString WorkLog = TempDirectory + "/work.log";
     ChildStatus = MSystem::RunProcess("pwd", "", WorkLog, Directory);
-    Passed = EvaluateTrue("RunProcess()", "working directory", "The program runs in the working directory", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0 && ReadTextFile(WorkLog).Contains("work here")) && Passed;
+    Passed = EvaluateTrue("RunProcess()", "working directory", "The program runs in the working directory", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0 && ReadTextFile(WorkLog) == Directory + "\n") && Passed;
     ChildStatus = MSystem::RunProcess("true", "", "", TempDirectory + "/does not exist");
     Passed = EvaluateTrue("RunProcess()", "missing working directory", "A working directory which does not exist fails the program", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 126) && Passed;
 
     const chrono::steady_clock::time_point Start = chrono::steady_clock::now();
     ChildStatus = MSystem::RunProcess("sleep", "20", "", "", 1);
     const double Seconds = chrono::duration<double>(chrono::steady_clock::now() - Start).count();
-    Passed = EvaluateTrue("RunProcess()", "time out", "A program which exceeds the time out is killed", WIFSIGNALED(ChildStatus) && Seconds < 10.0) && Passed;
+    // Bounds: 1 s time out exact, upper bound of 10 s is well below the 20 s sleep and allows for a loaded machine
+    Passed = EvaluateTrue("RunProcess()", "time out", "A program which exceeds the time out of 1 s is killed by SIGKILL", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGKILL && Seconds >= 1.0 && Seconds < 10.0) && Passed;
 
     // Without its own process group, the descendants are killed too: every parent waits, so only the time out ends them
     const MString TreeMarker = TempDirectory + "/tree_marker";
     const MString Delayed = "(sleep 3; touch " + MSystem::GetShellQuoted(TreeMarker) + ") & wait";
     ChildStatus = MSystem::RunProcess("sh", MString("-c ") + MSystem::GetShellQuoted(Delayed), "", "", 1);
-    Passed = EvaluateTrue("RunProcess()", "descendant time out", "A shell which waits for a delayed descendant is ended by the time out", WIFSIGNALED(ChildStatus)) && Passed;
+    Passed = EvaluateTrue("RunProcess()", "descendant time out", "A shell which waits for a delayed descendant is ended by SIGKILL at the time out", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGKILL) && Passed;
     const MString GrandMarker = TempDirectory + "/grandchild_marker";
     const MString Nested = "sh -c " + MSystem::GetShellQuoted("(sleep 3; touch " + MSystem::GetShellQuoted(GrandMarker) + ") & wait") + " & wait";
     ChildStatus = MSystem::RunProcess("sh", MString("-c ") + MSystem::GetShellQuoted(Nested), "", "", 1);
-    Passed = EvaluateTrue("RunProcess()", "grandchild time out", "A nested shell is ended by the time out", WIFSIGNALED(ChildStatus)) && Passed;
+    Passed = EvaluateTrue("RunProcess()", "grandchild time out", "A nested shell is ended by SIGKILL at the time out", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGKILL) && Passed;
     const MString ControlMarker = TempDirectory + "/control_marker";
     ChildStatus = MSystem::RunProcess("sh", MString("-c ") + MSystem::GetShellQuoted("(sleep 1; touch " + MSystem::GetShellQuoted(ControlMarker) + ") & wait"), "", "", 10);
     Passed = EvaluateTrue("RunProcess()", "control", "Without a time out the delayed descendant creates its file", MFile::Exists(ControlMarker)) && Passed;
@@ -179,7 +185,7 @@ bool UTSystem::Run()
     const pid_t Long = MSystem::StartProcessInBackground("sleep", "20");
     Stop = 1;
     ChildStatus = MSystem::WaitForBackgroundProcess(Long, 0, &Stop);
-    Passed = EvaluateTrue("WaitForBackgroundProcess()", "stop flag", "A set stop flag kills the background process", WIFSIGNALED(ChildStatus)) && Passed;
+    Passed = EvaluateTrue("WaitForBackgroundProcess()", "stop flag", "A set stop flag kills the background process with SIGKILL", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGKILL) && Passed;
   }
 
   // GetCpuModel
@@ -208,26 +214,111 @@ bool UTSystem::Run()
   Passed = EvaluateTrue("WriteTextFile()", "spaces", "The file with spaces and a single quote in its name can be written", WriteTextFile(SpaceFile, "UTSystem spaces")) && Passed;
   const MString SpaceLog = TempDirectory + "/spaces.log";
   ChildStatus = MSystem::RunProcess("cat", MSystem::GetShellQuoted(SpaceFile), SpaceLog);
-  Passed = EvaluateTrue("GetShellQuoted()", "path", "A quoted path with spaces and a single quote is one argument", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0 && ReadTextFile(SpaceLog).Contains("UTSystem spaces")) && Passed;
+  Passed = EvaluateTrue("GetShellQuoted()", "path", "A quoted path with spaces and a single quote is one argument", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0 && ReadTextFile(SpaceLog) == MString("UTSystem spaces")) && Passed;
+
+  // Compare the memory statistics with an independent reading of the platform source (MB, rounded down)
+  struct MemoryReference {
+    bool Valid = false;
+    double RAM = 0.0;
+    double FreeRAM = 0.0;
+    double Swap = 0.0;
+    double FreeSwap = 0.0;
+  };
+  // Free RAM and free swap change while reading - allowed difference to the reference
+  const double FreeSlack = 64.0; // MB, far above the change within microseconds
+#if defined(__linux__)
+  const double SwapSlack = 0.0; // MB, the installed swap is constant
+  auto ReadReference = [&]() -> MemoryReference {
+    MemoryReference Reference;
+    ifstream In("/proc/meminfo");
+    string Line;
+    double Total = -1.0, Free = -1.0, Available = -1.0, SwapTotal = -1.0, SwapFree = -1.0;
+    while (getline(In, Line)) {
+      size_t Colon = Line.find(':');
+      if (Colon == string::npos) continue;
+      string Key = Line.substr(0, Colon);
+      double Value = atof(Line.c_str() + Colon + 1); // kB
+      if (Key == "MemTotal") Total = Value;
+      if (Key == "MemFree") Free = Value;
+      if (Key == "MemAvailable") Available = Value;
+      if (Key == "SwapTotal") SwapTotal = Value;
+      if (Key == "SwapFree") SwapFree = Value;
+    }
+    if (Total < 0.0 || Free < 0.0 || Available < 0.0 || SwapTotal < 0.0 || SwapFree < 0.0) return Reference;
+    Reference.Valid = true;
+    Reference.RAM = floor(Total/1024.0);
+    Reference.FreeRAM = floor(Available/1024.0);
+    Reference.Swap = floor(SwapTotal/1024.0);
+    Reference.FreeSwap = floor(SwapFree/1024.0);
+    return Reference;
+  };
+#elif defined(__APPLE__)
+  const double SwapSlack = 1.0; // MB, sysctl prints two digits and macOS grows the swap in large steps
+  const MString MemoryLog = TempDirectory + "/memory.log";
+  auto RunAndRead = [&](const MString& Program, const MString& Arguments) -> string {
+    int Status = MSystem::RunProcess(Program, Arguments, MemoryLog);
+    if (WIFEXITED(Status) == false || WEXITSTATUS(Status) != 0) return "";
+    return string(ReadTextFile(MemoryLog).Data());
+  };
+  auto ReadReference = [&]() -> MemoryReference {
+    MemoryReference Reference;
+    string MemSize = RunAndRead("sysctl", "-n hw.memsize");
+    string VM = RunAndRead("vm_stat", "");
+    string SwapUsage = RunAndRead("sysctl", "-n vm.swapusage");
+    // vm_stat: "Mach Virtual Memory Statistics: (page size of 16384 bytes)", "Pages free:   12345." ...
+    auto Pages = [&](const string& Key) -> double {
+      size_t Position = VM.find(Key);
+      return (Position == string::npos) ? -1.0 : atof(VM.c_str() + Position + Key.size());
+    };
+    size_t PageSizePosition = VM.find("page size of ");
+    double PageSize = (PageSizePosition == string::npos) ? -1.0 : atof(VM.c_str() + PageSizePosition + 13);
+    double FreePages = Pages("Pages free:");
+    double InactivePages = Pages("Pages inactive:");
+    // sysctl: "total = 2048.00M  used = 1025.25M  free = 1022.75M  (encrypted)"
+    double SwapTotal = -1.0, SwapUsed = -1.0, SwapFree = -1.0;
+    if (MemSize.empty() || PageSize < 0.0 || FreePages < 0.0 || InactivePages < 0.0) return Reference;
+    if (sscanf(SwapUsage.c_str(), " total = %lfM used = %lfM free = %lfM", &SwapTotal, &SwapUsed, &SwapFree) != 3) return Reference;
+    Reference.Valid = true;
+    Reference.RAM = floor(strtod(MemSize.c_str(), nullptr)/1048576.0);
+    Reference.FreeRAM = floor((FreePages + InactivePages)*PageSize/1048576.0);
+    Reference.Swap = floor(SwapTotal);
+    Reference.FreeSwap = floor(SwapFree);
+    return Reference;
+  };
+#else
+  const double SwapSlack = 0.0;
+  auto ReadReference = [&]() -> MemoryReference {
+    return MemoryReference();
+  };
+#endif
+  auto InRange = [](double Value, double First, double Second, double Slack) -> bool {
+    return Value >= min(First, Second) - Slack && Value <= max(First, Second) + Slack;
+  };
 
   int Free = -1;
   int ErrorIgnoreLevel = gErrorIgnoreLevel;
   gErrorIgnoreLevel = kFatal;
   DisableDefaultStreams();
+  MemoryReference Before = ReadReference();
   bool HasFreeMemory = System.FreeMemory(Free);
   int RAM = System.GetRAM();
   int FreeRAM = System.GetFreeRAM();
   int Swap = System.GetSwap();
   int FreeSwap = System.GetFreeSwap();
+  MemoryReference After = ReadReference();
   EnableDefaultStreams();
   gErrorIgnoreLevel = ErrorIgnoreLevel;
-  if (HasFreeMemory == true) {
-    Passed = EvaluateTrue("FreeMemory()", "free mem value", "FreeMemory returns a non-negative amount of free memory when platform memory statistics are available", Free >= 0) && Passed;
-    Passed = EvaluateTrue("GetRAM()", "ram", "GetRAM returns a non-negative amount of installed memory when platform memory statistics are available", RAM >= 0) && Passed;
-    Passed = EvaluateTrue("GetFreeRAM()", "free ram", "GetFreeRAM returns a non-negative amount of free memory when platform memory statistics are available", FreeRAM >= 0) && Passed;
-    Passed = EvaluateTrue("GetSwap()", "swap", "GetSwap returns a non-negative amount of installed swap when platform memory statistics are available", Swap >= 0) && Passed;
-    Passed = EvaluateTrue("GetFreeSwap()", "free swap", "GetFreeSwap returns a non-negative amount of free swap when platform memory statistics are available", FreeSwap >= 0) && Passed;
+  if (Before.Valid == true && After.Valid == true) {
+    Passed = EvaluateTrue("FreeMemory()", "success", "FreeMemory succeeds when platform memory statistics are available", HasFreeMemory) && Passed;
+    Passed = EvaluateTrue("FreeMemory()", "free mem value", "FreeMemory returns the free memory of the platform (within the change while reading)", InRange(Free, Before.FreeRAM, After.FreeRAM, FreeSlack)) && Passed;
+    Passed = Evaluate("GetRAM()", "ram", "GetRAM returns the installed memory of the platform in MB", RAM, static_cast<int>(Before.RAM)) && Passed;
+    Passed = EvaluateTrue("GetFreeRAM()", "free ram", "GetFreeRAM returns the free memory of the platform (within the change while reading)", InRange(FreeRAM, Before.FreeRAM, After.FreeRAM, FreeSlack)) && Passed;
+    Passed = EvaluateTrue("GetFreeRAM()", "at most installed", "GetFreeRAM is not larger than the installed memory", FreeRAM <= RAM) && Passed;
+    Passed = EvaluateTrue("GetSwap()", "swap", "GetSwap returns the installed swap of the platform in MB", InRange(Swap, Before.Swap, After.Swap, SwapSlack)) && Passed;
+    Passed = EvaluateTrue("GetFreeSwap()", "free swap", "GetFreeSwap returns the free swap of the platform (within the change while reading)", InRange(FreeSwap, Before.FreeSwap, After.FreeSwap, FreeSlack)) && Passed;
+    Passed = EvaluateTrue("GetFreeSwap()", "at most installed", "GetFreeSwap is not larger than the installed swap", FreeSwap <= Swap) && Passed;
   } else {
+    Passed = EvaluateTrue("FreeMemory()", "failure", "FreeMemory fails when platform memory statistics are unavailable", HasFreeMemory == false) && Passed;
     Passed = Evaluate("FreeMemory()", "free mem value", "FreeMemory returns -1 when platform memory statistics are unavailable", Free, -1) && Passed;
     Passed = Evaluate("GetRAM()", "ram", "GetRAM returns -1 when platform memory statistics are unavailable", RAM, -1) && Passed;
     Passed = Evaluate("GetFreeRAM()", "free ram", "GetFreeRAM returns -1 when platform memory statistics are unavailable", FreeRAM, -1) && Passed;
@@ -249,7 +340,7 @@ bool UTSystem::Run()
   gettimeofday(&EndTime, nullptr);
   long long ElapsedMicroseconds = (static_cast<long long>(EndTime.tv_sec) - static_cast<long long>(StartTime.tv_sec))*1000000LL
                                 + (static_cast<long long>(EndTime.tv_usec) - static_cast<long long>(StartTime.tv_usec));
-  Passed = EvaluateTrue("BusyWait()", "elapsed", "BusyWait waits at least the requested time", ElapsedMicroseconds >= 3000LL) && Passed;
+  Passed = EvaluateTrue("BusyWait()", "elapsed", "BusyWait waits at least the requested 5000 microseconds", ElapsedMicroseconds >= 5000LL) && Passed;
 
   Passed = EvaluateTrue("RemoveTemporaryFile()", "cleanup", "The representative MSystem file can be removed", RemoveTemporaryFile(FileName)) && Passed;
   Passed = EvaluateTrue("RemoveTemporaryFile()", "child log cleanup", "The representative child-process log can be removed", RemoveTemporaryFile(ChildLog)) && Passed;

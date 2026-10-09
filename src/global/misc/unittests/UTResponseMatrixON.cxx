@@ -146,7 +146,7 @@ bool UTResponseMatrixON::Run()
   Matrix.AddAxisLinear("X", 2, 0.0, 2.0);
   Matrix.AddAxisLinear("Y", 2, 0.0, 2.0);
   Matrix.Set(3UL, 6.0f);
-  Passed = EvaluateNear("Set(unsigned long)", "representative flat bin", "Set stores representative ON matrix content by flat-bin index", Matrix.Get(3UL), 6.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Set(unsigned long)", "representative flat bin", "Set stores representative ON matrix content by flat-bin index", Matrix.Get(3UL), 6.0, 1e-12) && Passed;
   Matrix.Set(3UL, 0.0f);
   Passed = Evaluate("InRange()", "axis values in range", "InRange accepts representative axis values inside all ranges", Matrix.InRange(vector<double>{0.5, 1.5}), true) && Passed;
   {
@@ -163,38 +163,38 @@ bool UTResponseMatrixON::Run()
   Passed = Evaluate("FindBins()", "representative axis values", "FindBins maps representative axis values to the expected axis bins", Matrix.FindBins(vector<double>{0.5, 1.5})[1], 1UL) && Passed;
 
   Matrix.Set(vector<unsigned long>{0, 1}, 5.0f);
-  Passed = EvaluateNear("Set()", "representative axis bins", "Set stores the representative bin content by axis bins", Matrix.Get(vector<unsigned long>{0, 1}), 5.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Set()", "representative axis bins", "Set stores the representative bin content by axis bins", Matrix.Get(vector<unsigned long>{0, 1}), 5.0, 1e-12) && Passed;
   Matrix.Set(vector<double>{1.5, 0.5}, 7.0f);
-  Passed = EvaluateNear("Set()", "representative axis values", "Set stores the representative bin content by axis values", Matrix.Get(vector<unsigned long>{1, 0}), 7.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Set()", "representative axis values", "Set stores the representative bin content by axis values", Matrix.Get(vector<unsigned long>{1, 0}), 7.0, 1e-12) && Passed;
   Matrix.Add(vector<unsigned long>{1, 0}, 2.0f);
-  Passed = EvaluateNear("Add()", "representative axis bins", "Add accumulates representative content by axis bins", Matrix.Get(vector<unsigned long>{1, 0}), 9.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Add()", "representative axis bins", "Add accumulates representative content by axis bins", Matrix.Get(vector<unsigned long>{1, 0}), 9.0, 1e-12) && Passed;
   Matrix.Add(vector<double>{0.5, 1.5}, 3.0f);
-  Passed = EvaluateNear("Add()", "representative axis values", "Add accumulates representative content by axis values", Matrix.Get(vector<unsigned long>{0, 1}), 8.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Add()", "representative axis values", "Add accumulates representative content by axis values", Matrix.Get(vector<unsigned long>{0, 1}), 8.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetArea()", "representative values", "GetArea returns the representative Cartesian bin area", Matrix.GetArea(vector<double>{0.5, 1.5}), 1.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetMaximum()", "representative values", "GetMaximum returns the representative maximum bin content", Matrix.GetMaximum(), 9.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetMinimum()", "representative values", "GetMinimum returns the representative minimum bin content", Matrix.GetMinimum(), 0.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetSum()", "representative values", "GetSum returns the representative total matrix content", Matrix.GetSum(), 17.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetMaximum()", "representative values", "GetMaximum returns the representative maximum bin content", Matrix.GetMaximum(), 9.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetMinimum()", "representative values", "GetMinimum returns the representative minimum bin content", Matrix.GetMinimum(), 0.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetSum()", "representative values", "GetSum returns the representative total matrix content", Matrix.GetSum(), 17.0, 1e-12) && Passed;
   {
     DisableDefaultStreams();
-    Passed = EvaluateNear("GetInterpolated()", "representative values", "GetInterpolated falls back to the representative containing-bin value", Matrix.GetInterpolated(vector<double>{0.5, 1.5}), 8.0, 1e-6) && Passed;
+    Passed = EvaluateNear("GetInterpolated()", "representative values", "GetInterpolated falls back to the representative containing-bin value", Matrix.GetInterpolated(vector<double>{0.5, 1.5}), 8.0, 1e-12) && Passed;
     EnableDefaultStreams();
   }
 
   MResponseMatrixON BulkMatrix = Matrix;
   Matrix.Add(0UL, 1.0f);
-  Passed = EvaluateNear("Add(unsigned long)", "representative flat bin", "Add accumulates representative content by flat bin", Matrix.Get(0UL), 1.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Add(unsigned long)", "representative flat bin", "Add accumulates representative content by flat bin", Matrix.Get(0UL), 1.0, 1e-12) && Passed;
   BulkMatrix.Add(vector<unsigned long>{2UL, 3UL}, vector<float>{4.0f, 5.0f});
-  Passed = EvaluateNear("Add(vector<unsigned long>, vector<float>)", "representative bulk add", "Bulk Add accumulates representative content for multiple bins", BulkMatrix.Get(2UL), 12.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Add(vector<unsigned long>, vector<float>)", "representative bulk add", "Bulk Add accumulates representative content for multiple bins", BulkMatrix.Get(2UL), 12.0, 1e-12) && Passed;
 
   MResponseMatrixON Scalar = Matrix;
   Scalar += 1.0f;
-  Passed = EvaluateNear("operator+=(float)", "representative scalar", "Adding a representative scalar affects every ON matrix bin", Scalar.Get(3UL), 1.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator+=(float)", "representative scalar", "Adding a representative scalar affects every ON matrix bin", Scalar.Get(3UL), 1.0, 1e-12) && Passed;
   Scalar -= 1.0f;
-  Passed = EvaluateNear("operator-=(float)", "representative scalar", "Subtracting a representative scalar restores the original ON matrix bin", Scalar.Get(3UL), 0.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator-=(float)", "representative scalar", "Subtracting a representative scalar restores the original ON matrix bin", Scalar.Get(3UL), 0.0, 1e-12) && Passed;
   Scalar *= 2.0f;
-  Passed = EvaluateNear("operator*=(float)", "representative scalar", "Multiplying by a representative scalar rescales every ON matrix bin", Scalar.Get(2UL), 16.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator*=(float)", "representative scalar", "Multiplying by a representative scalar rescales every ON matrix bin", Scalar.Get(2UL), 16.0, 1e-12) && Passed;
   Scalar /= 2.0f;
-  Passed = EvaluateNear("operator/=(float)", "representative scalar", "Dividing by a representative scalar restores the original ON matrix bin", Scalar.Get(2UL), 8.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator/=(float)", "representative scalar", "Dividing by a representative scalar restores the original ON matrix bin", Scalar.Get(2UL), 8.0, 1e-12) && Passed;
 
   MResponseMatrixON Other("Other");
   Other.AddAxisLinear("X", 2, 0.0, 2.0);
@@ -204,31 +204,31 @@ bool UTResponseMatrixON::Run()
   Passed = Evaluate("operator==()", "same axes", "Matrices with the same representative axes compare equal", Matrix == Other, true) && Passed;
   MResponseMatrixON MatrixPlus = Matrix;
   MatrixPlus += Other;
-  Passed = EvaluateNear("operator+=(matrix)", "representative matrix", "Matrix addition accumulates representative ON matrix content", MatrixPlus.Get(vector<unsigned long>{0, 1}), 9.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator+=(matrix)", "representative matrix", "Matrix addition accumulates representative ON matrix content", MatrixPlus.Get(vector<unsigned long>{0, 1}), 9.0, 1e-12) && Passed;
   MResponseMatrixON MatrixMinus = MatrixPlus;
   MatrixMinus -= Other;
-  Passed = EvaluateNear("operator-=(matrix)", "representative matrix", "Matrix subtraction restores representative ON matrix content", MatrixMinus.Get(vector<unsigned long>{0, 1}), 8.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator-=(matrix)", "representative matrix", "Matrix subtraction restores representative ON matrix content", MatrixMinus.Get(vector<unsigned long>{0, 1}), 8.0, 1e-12) && Passed;
   MResponseMatrixON MatrixDivide = Matrix;
   MatrixDivide /= Other;
-  Passed = EvaluateNear("operator/=(matrix)", "representative matrix", "Matrix division divides representative nonzero ON matrix content", MatrixDivide.Get(vector<unsigned long>{0, 1}), 8.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator/=(matrix)", "representative matrix", "Matrix division divides representative nonzero ON matrix content", MatrixDivide.Get(vector<unsigned long>{0, 1}), 8.0, 1e-12) && Passed;
 
   MResponseMatrixON Sparse(true);
   Sparse.AddAxisLinear("X", 2, 0.0, 2.0);
   Sparse.AddAxisLinear("Y", 2, 0.0, 2.0);
   Sparse.Set(vector<unsigned long>{1, 0}, 3.0f);
   Passed = Evaluate("GetNumberOfSparseBins()", "representative sparse set", "Setting representative sparse content creates one sparse bin", Sparse.GetNumberOfSparseBins(), 1UL) && Passed;
-  Passed = EvaluateNear("GetSparse()", "representative sparse set", "GetSparse returns the representative sparse content", Sparse.GetSparse(0), 3.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetSparse()", "representative sparse set", "GetSparse returns the representative sparse content", Sparse.GetSparse(0), 3.0, 1e-12) && Passed;
   Passed = Evaluate("FindBinsSparse()", "representative sparse set", "FindBinsSparse maps the representative sparse bin back to the axis bins", Sparse.FindBinsSparse(0)[0], 1UL) && Passed;
   Sparse.AddSparse(0, 2.0f);
-  Passed = EvaluateNear("AddSparse()", "representative sparse add", "AddSparse accumulates representative sparse content", Sparse.GetSparse(0), 5.0, 1e-6) && Passed;
+  Passed = EvaluateNear("AddSparse()", "representative sparse add", "AddSparse accumulates representative sparse content", Sparse.GetSparse(0), 5.0, 1e-12) && Passed;
   Sparse.SetSparse(0, 4.0f);
-  Passed = EvaluateNear("SetSparse()", "representative sparse set", "SetSparse overwrites representative sparse content", Sparse.GetSparse(0), 4.0, 1e-6) && Passed;
+  Passed = EvaluateNear("SetSparse()", "representative sparse set", "SetSparse overwrites representative sparse content", Sparse.GetSparse(0), 4.0, 1e-12) && Passed;
   Passed = EvaluateException<MExceptionIndexOutOfBounds>("GetSparse()", "out of bounds", "GetSparse rejects representative out-of-bounds sparse-bin access", [&](){ Sparse.GetSparse(1); }) && Passed;
   Passed = EvaluateException<MExceptionIndexOutOfBounds>("SetSparse()", "out of bounds", "SetSparse rejects representative out-of-bounds sparse-bin access", [&](){ Sparse.SetSparse(1, 1.0f); }) && Passed;
   Passed = EvaluateException<MExceptionIndexOutOfBounds>("AddSparse()", "out of bounds", "AddSparse rejects representative out-of-bounds sparse-bin access", [&](){ Sparse.AddSparse(1, 1.0f); }) && Passed;
   Sparse.SwitchToNonSparse();
   Passed = Evaluate("IsSparse()", "SwitchToNonSparse()", "SwitchToNonSparse converts the representative sparse matrix to non-sparse mode", Sparse.IsSparse(), false) && Passed;
-  Passed = EvaluateNear("SwitchToNonSparse()", "representative content", "SwitchToNonSparse preserves representative sparse content", Sparse.Get(vector<unsigned long>{1, 0}), 4.0, 1e-6) && Passed;
+  Passed = EvaluateNear("SwitchToNonSparse()", "representative content", "SwitchToNonSparse preserves representative sparse content", Sparse.Get(vector<unsigned long>{1, 0}), 4.0, 1e-12) && Passed;
   Sparse.SwitchToSparse();
   Passed = Evaluate("IsSparse()", "SwitchToSparse()", "SwitchToSparse converts the representative matrix back to sparse mode", Sparse.IsSparse(), true) && Passed;
   Passed = Evaluate("GetNumberOfSparseBins()", "SwitchToSparse()", "SwitchToSparse preserves the representative number of sparse bins", Sparse.GetNumberOfSparseBins(), 1UL) && Passed;
@@ -242,8 +242,8 @@ bool UTResponseMatrixON::Run()
   CollapseSource.Set(vector<unsigned long>{1, 1}, 4.0f);
   MResponseMatrixON Collapsed = CollapseSource.Collapse(vector<bool>{false, true});
   Passed = Evaluate("Collapse()", "representative axes", "Collapse keeps the expected representative number of axes", Collapsed.GetNumberOfAxes(), 1U) && Passed;
-  Passed = EvaluateNear("Collapse()", "representative content first bin", "Collapse sums the representative collapsed content for the first bin", Collapsed.Get(vector<unsigned long>{0}), 4.0, 1e-6) && Passed;
-  Passed = EvaluateNear("Collapse()", "representative content second bin", "Collapse sums the representative collapsed content for the second bin", Collapsed.Get(vector<unsigned long>{1}), 6.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Collapse()", "representative content first bin", "Collapse sums the representative collapsed content for the first bin", Collapsed.Get(vector<unsigned long>{0}), 4.0, 1e-12) && Passed;
+  Passed = EvaluateNear("Collapse()", "representative content second bin", "Collapse sums the representative collapsed content for the second bin", Collapsed.Get(vector<unsigned long>{1}), 6.0, 1e-12) && Passed;
 
   MString SparseFile = GetTemporaryFileName("representative_sparse.rsp");
   {
@@ -252,7 +252,7 @@ bool UTResponseMatrixON::Run()
     MResponseMatrixON SparseReadBack;
     Passed = Evaluate("Read()", "representative sparse round trip", "Reading the representative sparse ON matrix succeeds", SparseReadBack.Read(SparseFile), true) && Passed;
     EnableDefaultStreams();
-    Passed = EvaluateNear("Read()", "representative sparse round trip content", "The representative sparse ON matrix content survives a round trip", SparseReadBack.Get(vector<unsigned long>{1, 1}), 4.0, 1e-6) && Passed;
+    Passed = EvaluateNear("Read()", "representative sparse round trip content", "The representative sparse ON matrix content survives a round trip", SparseReadBack.Get(vector<unsigned long>{1, 1}), 4.0, 1e-12) && Passed;
   }
 
   MResponseMatrixON StreamMatrix("Stream");
@@ -266,7 +266,7 @@ bool UTResponseMatrixON::Run()
     MResponseMatrixON StreamReadBack;
     Passed = Evaluate("Read()", "representative stream round trip", "Reading the representative stream ON matrix succeeds", StreamReadBack.Read(StreamFile), true) && Passed;
     EnableDefaultStreams();
-    Passed = EvaluateNear("Read()", "representative stream round trip content", "The representative stream ON matrix content survives a round trip", StreamReadBack.Get(vector<unsigned long>{0, 0}), 2.0, 1e-6) && Passed;
+    Passed = EvaluateNear("Read()", "representative stream round trip content", "The representative stream ON matrix content survives a round trip", StreamReadBack.Get(vector<unsigned long>{0, 0}), 2.0, 1e-12) && Passed;
   }
 
   MResponseMatrixON ReusedRead("ReusedRead");
@@ -277,16 +277,18 @@ bool UTResponseMatrixON::Run()
     EnableDefaultStreams();
   }
   Passed = Evaluate("GetNumberOfAxes()", "reused read second file", "Reading a second ON file into the same object replaces the representative axes", ReusedRead.GetNumberOfAxes(), 2U) && Passed;
-  Passed = EvaluateNear("Read()", "reused read second file content", "Reading a second ON file into the same object replaces the representative bin content", ReusedRead.Get(vector<unsigned long>{1, 1}), 4.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Read()", "reused read second file content", "Reading a second ON file into the same object replaces the representative bin content", ReusedRead.Get(vector<unsigned long>{1, 1}), 4.0, 1e-12) && Passed;
 
-  Passed = EvaluateTrue("GetStatistics()", "representative text", "GetStatistics emits representative axis and content information", CollapseSource.GetStatistics().Contains("Number of axes:           2")) && Passed;
+  // Expected: 4 non-zero bins (sparseness 0 %), maximum 4, minimum 1, sum 10, average 10/4 = 2.5
+  MString ExpectedStatistics("\nStatistics for response matrix \"Collapse\":\n\nNumber of axes:           2\nNumber of dimensions:     2\nNumber of bins:           4\nNumber of non-zero bins:  4\nSparseness:               0 %\nMaximum:                  4\nMinimum:                  1\nSum:                      10\nAverage value:            2.5\n\nAxes:\n  x0:  X (from 0 to 2 with 2 bins)\n  x1:  Y (from 0 to 2 with 2 bins)\n");
+  Passed = Evaluate("GetStatistics()", "representative text", "GetStatistics emits exactly the representative counts, extrema, sum, average, and axis descriptions", CollapseSource.GetStatistics(), ExpectedStatistics) && Passed;
 
   MResponseMatrixON SmoothSource("Smooth");
   SmoothSource.AddAxisLinear("X", 2, 0.0, 2.0);
   SmoothSource.AddAxisLinear("Y", 2, 0.0, 2.0);
   SmoothSource.Set(vector<unsigned long>{0, 0}, 2.0f);
   SmoothSource.Smooth(0);
-  Passed = EvaluateNear("Smooth()", "zero times", "Smooth with representative zero iterations leaves the ON matrix unchanged", SmoothSource.Get(vector<unsigned long>{0, 0}), 2.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Smooth()", "zero times", "Smooth with representative zero iterations leaves the ON matrix unchanged", SmoothSource.Get(vector<unsigned long>{0, 0}), 2.0, 1e-12) && Passed;
 
   {
     bool WasBatch = gROOT->IsBatch();

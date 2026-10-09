@@ -116,14 +116,20 @@ bool UTGTI::TestLoadAndIsGood()
   MGTI GTI;
   Passed = EvaluateTrue("Load()", "basic file", "Load() accepts a representative GTI file", GTI.Load(FileName)) && Passed;
   Passed = EvaluateFalse("IsGood()", "before first interval", "Times before the first good interval are rejected", GTI.IsGood(MTime(9))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "1 ns before first interval", "A time 1 ns before the first good interval is rejected", GTI.IsGood(MTime(9, 999999999))) && Passed;
   Passed = EvaluateTrue("IsGood()", "first good interval start", "The first good interval start is inclusive", GTI.IsGood(MTime(10))) && Passed;
   Passed = EvaluateTrue("IsGood()", "inside first good interval", "A representative time inside the first good interval is accepted", GTI.IsGood(MTime(11))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "1 ns before bad interval", "A time 1 ns before the bad interval is accepted", GTI.IsGood(MTime(11, 999999999))) && Passed;
   Passed = EvaluateFalse("IsGood()", "bad interval start", "The bad interval start is excluded even inside a good interval", GTI.IsGood(MTime(12))) && Passed;
   Passed = EvaluateFalse("IsGood()", "bad interval stop", "The bad interval stop is excluded even inside a good interval", GTI.IsGood(MTime(14))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "1 ns after bad interval", "A time 1 ns after the bad interval is accepted", GTI.IsGood(MTime(14, 1))) && Passed;
   Passed = EvaluateTrue("IsGood()", "after bad interval", "Times after the bad interval but still inside the good interval are accepted", GTI.IsGood(MTime(15))) && Passed;
   Passed = EvaluateTrue("IsGood()", "first good interval stop", "The first good interval stop is inclusive", GTI.IsGood(MTime(20))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "1 ns after first interval", "A time 1 ns after the first good interval is rejected", GTI.IsGood(MTime(20, 1))) && Passed;
   Passed = EvaluateFalse("IsGood()", "gap between good intervals", "Times in the gap between good intervals are rejected", GTI.IsGood(MTime(25))) && Passed;
   Passed = EvaluateTrue("IsGood()", "second good interval", "A representative time in the second good interval is accepted", GTI.IsGood(MTime(35))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "second good interval stop", "The second good interval stop is inclusive", GTI.IsGood(MTime(40))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "1 ns after second interval", "A time 1 ns after the second good interval is rejected", GTI.IsGood(MTime(40, 1))) && Passed;
   Passed = EvaluateFalse("IsGood()", "after second interval", "Times after the second good interval are rejected", GTI.IsGood(MTime(41))) && Passed;
 
   MString FractionalFile = TemporaryDirectory + "/fractional.gti";
@@ -135,13 +141,15 @@ bool UTGTI::TestLoadAndIsGood()
 
   MGTI FractionalGTI;
   Passed = EvaluateTrue("Load()", "fractional file", "Load() accepts representative GTI files with fractional boundaries", FractionalGTI.Load(FractionalFile)) && Passed;
-  Passed = EvaluateFalse("IsGood()", "fractional before interval", "Fractional times before a representative good interval are rejected", FractionalGTI.IsGood(MTime(10.249))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional before interval", "A time 1 ns before the start of a fractional good interval is rejected", FractionalGTI.IsGood(MTime(10, 249999999))) && Passed;
   Passed = EvaluateTrue("IsGood()", "fractional interval start", "Fractional good interval starts remain inclusive", FractionalGTI.IsGood(MTime(10.25))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional 1 ns before bad interval", "A time 1 ns before a fractional bad interval is accepted", FractionalGTI.IsGood(MTime(13, 499999999))) && Passed;
   Passed = EvaluateFalse("IsGood()", "fractional bad interval start", "Fractional bad interval starts are excluded", FractionalGTI.IsGood(MTime(13.5))) && Passed;
   Passed = EvaluateFalse("IsGood()", "fractional bad interval stop", "Fractional bad interval stops are excluded", FractionalGTI.IsGood(MTime(14.25))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional 1 ns after bad interval", "A time 1 ns after a fractional bad interval is accepted", FractionalGTI.IsGood(MTime(14, 250000001))) && Passed;
   Passed = EvaluateTrue("IsGood()", "fractional after bad interval", "Fractional times after the representative bad interval but inside the good interval are accepted", FractionalGTI.IsGood(MTime(14.5))) && Passed;
   Passed = EvaluateTrue("IsGood()", "fractional interval stop", "Fractional good interval stops remain inclusive", FractionalGTI.IsGood(MTime(20.75))) && Passed;
-  Passed = EvaluateFalse("IsGood()", "fractional after interval", "Fractional times after the representative good interval are rejected", FractionalGTI.IsGood(MTime(20.751))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional after interval", "A time 1 ns after the stop of a fractional good interval is rejected", FractionalGTI.IsGood(MTime(20, 750000001))) && Passed;
 
   return Passed;
 }

@@ -96,7 +96,7 @@ bool UTMultiEvent::TestBasics()
   Passed = Evaluate("GetEvent(0)->GetType()", "add", "The first sub-event is accessible", Event.GetEvent(0)->GetType(), MPhysicalEvent::c_Unidentifiable) && Passed;
   Passed = Evaluate("GetEvent(1)->GetType()", "add", "The second sub-event is accessible", Event.GetEvent(1)->GetType(), MPhysicalEvent::c_Unidentifiable) && Passed;
   Passed = EvaluateTrue("Validate()", "add", "The populated multi event validates", Event.Validate()) && Passed;
-  Passed = EvaluateTrue("ToString()", "add", "The human-readable multi-event description includes a sub-event", Event.ToString().Contains("Unidentifiable-event")) && Passed;
+  Passed = Evaluate("ToString()", "add", "The human-readable multi-event description concatenates both sub-events", Event.ToString(), MString("The data of the Unidentifiable-event:\nEnergy: 4.000The data of the Unidentifiable-event:\nEnergy: 3.000")) && Passed;
 
   MPhysicalEvent* Duplicate = Event.Duplicate();
   Passed = EvaluateTrue("Duplicate()", "multi", "Duplicate keeps the concrete multi-event type", dynamic_cast<MMultiEvent*>(Duplicate) != nullptr) && Passed;
@@ -150,7 +150,6 @@ bool UTMultiEvent::TestRoundTrips()
     "ET UN\nID 0\nTI " + ZeroTime + "\nPE 3\n"
     "SF\n";
   Passed = Evaluate("ToTraString()", "multi tra exact", "The multi-event tra-string is deterministic for representative child events", Tra, ExpectedTra) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "multi tra", "The tra string contains the multi-event separators", Tra.Contains("SI") && Tra.Contains("SF")) && Passed;
   MFile File;
   MString FileName = GetTemporaryFileName("UTMultiEvent.tra");
   Passed = EvaluateTrue("Open()", "multi tra", "The temporary tra file can be opened for writing", File.Open(FileName, MFile::c_Write)) && Passed;

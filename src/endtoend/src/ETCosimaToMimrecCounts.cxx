@@ -137,24 +137,34 @@ bool ETCosimaToMimrecCounts::Run()
 
   // Check the events which mimrec selects:
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
-    unsigned int InWindow = 0;
-    set<int> WindowIDs;
+    set<int> ExpectedIDs;
     for (const shared_ptr<MComptonEvent>& Event: Tras[s].Compton()) {
       const double Total = Event->Eg() + Event->Ee();
-      if (Total >= 637.0 && Total <= 687.0) {
-        WindowIDs.insert(Event->GetId());
+      if (Total >= 637.0 && Total <= 687.0 && Tras[s].HasPhysicalScatterAngle(*Event) == true) {
+        ExpectedIDs.insert(Event->GetId());
       }
     }
-    InWindow = WindowIDs.size();
-    unsigned int NotInWindow = 0;
+    set<int> SelectedIDs;
+    unsigned int NotExpected = 0;
     for (const shared_ptr<MComptonEvent>& Event: Selected[s].Compton()) {
-      if (WindowIDs.count(Event->GetId()) == 0) {
-        ++NotInWindow;
+      SelectedIDs.insert(Event->GetId());
+      if (ExpectedIDs.count(Event->GetId()) == 0) {
+        ++NotExpected;
       }
     }
-    const double Kept = static_cast<double>(Selected[s].Count(MPhysicalEvent::c_Compton))/InWindow;
-    Passed = Evaluate("Mimrec", Scenarios[s].m_Name + ", subset", "Every event which mimrec extracts is a Compton event in the energy window of the own analysis", NotInWindow, 0U) && Passed;
-    Passed = EvaluateNear("Mimrec", Scenarios[s].m_Name + ", completeness", "Mimrec extracts almost all Compton events of the energy window: more than 95% (shown: the shortfall in percent)", max(95.0 - 100.0*Kept, 0.0), 0.0, 0.0) && Passed;
+    unsigned int Missing = 0;
+    for (int ID: ExpectedIDs) {
+      if (SelectedIDs.count(ID) == 0) {
+        ++Missing;
+      }
+    }
+    const unsigned int NotCompton = Selected[s].m_Events.size() - Selected[s].Count(MPhysicalEvent::c_Compton);
+    const unsigned int Duplicates = Selected[s].Compton().size() - SelectedIDs.size();
+    Passed = EvaluateTrue("Mimrec", Scenarios[s].m_Name + ", expected events", "The energy window contains more than 100 Compton events with a physical scatter angle", ExpectedIDs.size() > 100) && Passed;
+    Passed = Evaluate("Mimrec", Scenarios[s].m_Name + ", event type", "Every event which mimrec extracts is a Compton event", NotCompton, 0U) && Passed;
+    Passed = Evaluate("Mimrec", Scenarios[s].m_Name + ", subset", "Every event which mimrec extracts is a Compton event in the energy window of the own analysis", NotExpected, 0U) && Passed;
+    Passed = Evaluate("Mimrec", Scenarios[s].m_Name + ", duplicates", "Mimrec extracts every event only once", Duplicates, 0U) && Passed;
+    Passed = Evaluate("Mimrec", Scenarios[s].m_Name + ", completeness", "Mimrec extracts all Compton events of the energy window with a physical scatter angle", Missing, 0U) && Passed;
     if (s > 0) {
       Passed = EvaluateNear("MimrecEfficiency", Scenarios[s].m_Name, "The number of events selected by mimrec per generated particle is the same as for the reference (two-proportion test)", ProportionSigma(static_cast<double>(Selected[0].Count(MPhysicalEvent::c_Compton)), static_cast<double>(Sims[0].m_SimulatedParticles), static_cast<double>(Selected[s].Count(MPhysicalEvent::c_Compton)), static_cast<double>(Sims[s].m_SimulatedParticles)), 0.0, 5.0) && Passed;
     }

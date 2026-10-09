@@ -50,10 +50,13 @@ bool ETCosimaToMimrecOrientation::Run()
   const double SourceLongitude = 45.0;
   const MVector Source = Galactic(SourceLatitude, SourceLongitude);
 
-  auto SlewLines = []() {
+  // Time between two entries of the slew in the orientation file (s)
+  const double SlewStep = 0.5;
+
+  auto SlewLines = [SlewStep]() {
     vector<MString> Lines;
     for (int i = 0; i <= 200; ++i) {
-      Lines.push_back(MString("OG ") + 0.5*i + " 90 0 0 " + 0.45*i);
+      Lines.push_back(MString("OG ") + SlewStep*i + " 90 0 0 " + 0.45*i);
     }
     Lines.push_back("OG 100000 90 0 0 90");
     return Lines;
@@ -74,8 +77,8 @@ bool ETCosimaToMimrecOrientation::Run()
     { "NinetyDegrees", { "OG 0 0 45 0 135", "OG 100000 0 45 0 135" }, [&](double) { return Galactic(0, 135); }, true },
     // z 60 degrees away:
     { "SixtyDegrees", { "OG 0 90 0 0 105", "OG 100000 90 0 0 105" }, [&](double) { return Galactic(0, 105); }, false },
-    // z slews along the equator in 100 seconds - the closest entry of the file is used, thus 0.5 s steps:
-    { "Slew", SlewLines(), [&](double Time) { return Galactic(0, 0.9*Time); }, false }
+    // z slews along the equator in 100 seconds - the time is rounded to the closest entry of the file:
+    { "Slew", SlewLines(), [&](double Time) { return Galactic(0, 0.9*(SlewStep*round(Time/SlewStep))); }, false }
   };
 
   vector<ETSimScenario> Scenarios;
@@ -134,13 +137,13 @@ bool ETCosimaToMimrecOrientation::Run()
       const MVector ZAxis = Pointings[s].m_Z(Event->GetTime().GetAsSeconds());
       const double ExpectedPolar = acos(max(-1.0, min(1.0, ZAxis.Dot(Source))))*c_Deg;
       const double Polar = acos(max(-1.0, min(1.0, Direction.Z())))*c_Deg;
-      MaxPolarDifference = max(MaxPolarDifference, fabs(Polar - ExpectedPolar));
+      MaxPolarDifference = GetMaximum(MaxPolarDifference, fabs(Polar - ExpectedPolar));
       double Azimuth = atan2(Direction.Y(), Direction.X())*c_Deg;
       if (Azimuth < 0) {
         Azimuth += 360.0;
       }
       if (Pointings[s].m_XTowardsSource == true) {
-        MaxAzimuthDifference = max(MaxAzimuthDifference, min(Azimuth, 360.0 - Azimuth));
+        MaxAzimuthDifference = GetMaximum(MaxAzimuthDifference, min(Azimuth, 360.0 - Azimuth));
       }
       // Check the slew away from the axis crossing - the azimuth is undefined there
       if (Pointings[s].m_Name == "Slew" && ExpectedPolar > 8.0) {
@@ -149,34 +152,36 @@ bool ETCosimaToMimrecOrientation::Run()
             AzimuthBefore = Azimuth;
           }
           ++NBefore;
-          MaxAzimuthDifference = max(MaxAzimuthDifference, min(fabs(Azimuth - AzimuthBefore), 360.0 - fabs(Azimuth - AzimuthBefore)));
+          MaxAzimuthDifference = GetMaximum(MaxAzimuthDifference, min(fabs(Azimuth - AzimuthBefore), 360.0 - fabs(Azimuth - AzimuthBefore)));
         } else {
           if (AzimuthAfter < 0) {
             AzimuthAfter = Azimuth;
           }
           ++NAfter;
-          MaxAzimuthDifference = max(MaxAzimuthDifference, min(fabs(Azimuth - AzimuthAfter), 360.0 - fabs(Azimuth - AzimuthAfter)));
+          MaxAzimuthDifference = GetMaximum(MaxAzimuthDifference, min(fabs(Azimuth - AzimuthAfter), 360.0 - fabs(Azimuth - AzimuthAfter)));
         }
       }
     }
-    Passed = EvaluateNear("Orientation", Name + ", polar angle", "The polar angle of the direction to the source in the detector frame is the angle between the z axis and the source at the time of the event (degrees)", MaxPolarDifference, 0.0, 0.5) && Passed;
+    // Tolerance 1e-3 deg - the precision of the angles in the sim file
+    Passed = EvaluateNear("Orientation", Name + ", polar angle", "The polar angle of the direction to the source in the detector frame is the angle between the z axis and the source (degrees)", MaxPolarDifference, 0.0, 1e-3) && Passed;
     if (Pointings[s].m_XTowardsSource == true) {
-      Passed = EvaluateNear("Orientation", Name + ", azimuth", "The azimuth is zero if the x axis points to the source (degrees)", MaxAzimuthDifference, 0.0, 0.5) && Passed;
+      Passed = EvaluateNear("Orientation", Name + ", azimuth", "The azimuth is zero if the x axis points to the source (degrees)", MaxAzimuthDifference, 0.0, 1e-3) && Passed;
     }
     if (Pointings[s].m_Name == "Slew") {
       Passed = EvaluateTrue("Orientation", Name + ", azimuth sides", "The source is seen on both sides of the slew (events before and after the crossing)", NBefore > 50 && NAfter > 50) && Passed;
       // The azimuth is constant on each side ...
-      Passed = EvaluateNear("Orientation", Name + ", azimuth constant", "The azimuth of the source is constant before and after the crossing of the z axis (degrees)", MaxAzimuthDifference, 0.0, 1.0) && Passed;
+      Passed = EvaluateNear("Orientation", Name + ", azimuth constant", "The azimuth of the source is constant before and after the crossing of the z axis (degrees)", MaxAzimuthDifference, 0.0, 1e-3) && Passed;
       // ... and differs by 180 degrees between the two sides
       double Difference = fabs(AzimuthBefore - AzimuthAfter);
       if (Difference > 180.0) {
         Difference = 360.0 - Difference;
       }
-      Passed = EvaluateNear("Orientation", Name + ", azimuth flip", "The azimuth of the source flips by 180 degrees when the source crosses the z axis (degrees)", Difference, 180.0, 1.0) && Passed;
+      Passed = EvaluateNear("Orientation", Name + ", azimuth flip", "The azimuth of the source flips by 180 degrees when the source crosses the z axis (degrees)", Difference, 180.0, 1e-3) && Passed;
     }
 
     // Check the ARM relative to the true direction of each event:
     vector<double> Histogram(61, 0.0);
+    vector<double> ARMs;
     unsigned int Inside = 0, Total = 0;
     for (const shared_ptr<MComptonEvent>& Event: Tra.Compton()) {
       auto Found = ToSource.find(Event->GetId());
@@ -184,6 +189,7 @@ bool ETCosimaToMimrecOrientation::Run()
         continue;
       }
       const double Arm = ARM(*Event, Found->second);
+      ARMs.push_back(Arm);
       ++Total;
       if (fabs(Arm) < 5.0) {
         ++Inside;
@@ -209,7 +215,28 @@ bool ETCosimaToMimrecOrientation::Run()
     Passed = EvaluateTrue("ARM", Name + ", events", "There are enough full energy Compton events (> 100)", Total > 100) && Passed;
     if (Total > 100) {
       Passed = EvaluateNear("ARM", Name + ", peak", "The peak of the ARM relative to the true direction is at zero", Peak, 0.0, 2.0) && Passed;
-      Passed = EvaluateNear("ARM", Name + ", core", "A large fraction of the events has an ARM below 5 degrees (shown: the shortfall below 25%)", max(0.25 - static_cast<double>(Inside)/Total, 0.0), 0.0, 0.0) && Passed;
+      // Expected: mean zero within the statistical uncertainty, RMS 4.1 deg for |ARM| < 10 deg (baseline, measured 4.0 to 4.3 deg)
+      unsigned int NumberCore = 0;
+      double MeanCore = 0.0, RMSCore = 0.0;
+      GetTruncatedMoments(ARMs, 5.0, NumberCore, MeanCore, RMSCore);
+      unsigned int NumberWidth = 0;
+      double MeanWidth = 0.0, RMSWidth = 0.0;
+      GetTruncatedMoments(ARMs, 10.0, NumberWidth, MeanWidth, RMSWidth);
+      mout<<Name<<": ARM mean "<<MeanCore<<" deg (|ARM| < 5 deg), RMS "<<RMSWidth<<" deg (|ARM| < 10 deg)"<<endl;
+      Passed = EvaluateNear("ARM", Name + ", mean", "The mean ARM of the events with |ARM| < 5 degrees is zero (5 sigma of the mean; degrees)", MeanCore, 0.0, 5.0*RMSCore/sqrt(static_cast<double>(NumberCore))) && Passed;
+      Passed = EvaluateNear("ARM", Name + ", width", "The RMS of the ARM of the events with |ARM| < 10 degrees is 4.1 degrees (+-0.5; degrees)", RMSWidth, 4.1, 0.5) && Passed;
+      vector<double> AbsoluteARMs;
+      for (double Arm: ARMs) {
+        AbsoluteARMs.push_back(fabs(Arm));
+      }
+      const double MedianARM = GetMedian(AbsoluteARMs);
+      const double MedianError = GetMedianError(AbsoluteARMs);
+      mout<<Name<<": median |ARM| "<<MedianARM<<" +- "<<MedianError<<" deg"<<endl;
+      // Expected median of |ARM| per direction: mean of sixteen runs (deg)
+      static const map<string, double> BaselineMedians = {{"OnAxis", 7.0}, {"NinetyDegrees", 8.0}, {"SixtyDegrees", 7.9}, {"Slew", 7.2}};
+      // Tolerance: 4 sigma of the median including the baseline uncertainty (sigma/sqrt(16))
+      const double MedianTolerance = 4.0*sqrt(1.0 + 1.0/16.0)*MedianError;
+      Passed = EvaluateNear("ARM", Name + ", median", "The median of |ARM| is the baseline of this direction (4 sigma of the median; degrees)", MedianARM, BaselineMedians.at(Name.Data()), MedianTolerance) && Passed;
     }
 
     // Check the mimrec ARM plot for the static pointings:
@@ -250,7 +277,7 @@ bool ETCosimaToMimrecOrientation::Run()
           MimrecInside += ARMHistogram->GetBinContent(b + 1);
         }
         mout<<Name<<": mimrec ARM plot for theta = "<<TrueTheta<<" deg, phi = "<<TruePhi<<" deg: "<<MimrecInside<<" events in the range (own analysis "<<OwnInside<<"), peak at "<<ARMHistogram->GetXaxis()->GetBinCenter(ARMHistogram->GetMaximumBin())<<" deg"<<endl;
-        Passed = EvaluateNear("Mimrec", Name + ", ARM content", "The ARM histogram of mimrec for the true position has the same number of events in the range as the own analysis (1%)", MimrecInside, OwnInside, 0.01*OwnInside) && Passed;
+        Passed = EvaluateNear("Mimrec", Name + ", ARM content", "The ARM histogram of mimrec for the true position has the same number of events in the range as the own analysis", MimrecInside, OwnInside, 0.0) && Passed;
         Passed = EvaluateNear("Mimrec", Name + ", ARM peak", "The ARM histogram of mimrec for the true position peaks at zero (within 2 degrees)", ARMHistogram->GetXaxis()->GetBinCenter(ARMHistogram->GetMaximumBin()), 0.0, 2.0) && Passed;
       }
     }

@@ -23,12 +23,21 @@
 #include <cstdio>
 #include <list>
 #include <ostream>
+#include <sstream>
 using namespace std;
 
 // MEGAlib:
 #include "MFile.h"
 #include "MStreams.h"
 #include "MUnitTest.h"
+
+
+// Line numbers of the macro calls, recorded right before each call
+static unsigned int s_DeprecatedDuplicateLine = 0;
+static unsigned int s_DeprecatedUniqueLine = 0;
+static unsigned int s_ImplementationDuplicateLine = 0;
+static unsigned int s_ImplementationUniqueLine = 0;
+static unsigned int s_MerrLine = 0;
 
 
 //! Unit test class for the MStreams wrapper and global streams
@@ -75,6 +84,7 @@ private:
 //! Emit a deprecated warning from a stable source location
 void UTStreams::EmitDeprecatedDuplicate()
 {
+  s_DeprecatedDuplicateLine = __LINE__ + 1;
   mdep<<"Deprecated duplicate"<<show;
 }
 
@@ -85,6 +95,7 @@ void UTStreams::EmitDeprecatedDuplicate()
 //! Emit a second deprecated warning from a different source location
 void UTStreams::EmitDeprecatedUnique()
 {
+  s_DeprecatedUniqueLine = __LINE__ + 1;
   mdep<<"Deprecated unique"<<show;
 }
 
@@ -95,6 +106,7 @@ void UTStreams::EmitDeprecatedUnique()
 //! Emit an implementation-limit warning from a stable source location
 void UTStreams::EmitImplementationDuplicate()
 {
+  s_ImplementationDuplicateLine = __LINE__ + 1;
   mimp<<"Implementation duplicate"<<show;
 }
 
@@ -105,6 +117,7 @@ void UTStreams::EmitImplementationDuplicate()
 //! Emit a second implementation-limit warning from a different source location
 void UTStreams::EmitImplementationUnique()
 {
+  s_ImplementationUniqueLine = __LINE__ + 1;
   mimp<<"Implementation unique"<<show;
 }
 
@@ -115,6 +128,7 @@ void UTStreams::EmitImplementationUnique()
 //! Emit a merr message using the production macro
 void UTStreams::EmitMerrShow()
 {
+  s_MerrLine = __LINE__ + 1;
   merr<<"Macro problem"<<show;
 }
 
@@ -318,13 +332,12 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     __merr.Disconnect(MerrFileName);
 
     MString Content = ReadTextFile(MerrFileName);
-    Passed = EvaluateTrue("merr", "message text", "The merr macro writes the emitted message", Content.Contains("Macro problem")) && Passed;
 #ifdef NDEBUG
-  Passed = EvaluateFalse("merr", "debug file context", "In release builds merr does not prepend debug source context", Content.Contains("UTStreams.cxx")) && Passed;
-  Passed = EvaluateFalse("merr", "debug function context", "In release builds merr does not prepend debug function context", Content.Contains("EmitMerrShow")) && Passed;
+    Passed = Evaluate("merr", "release output", "In release builds merr writes exactly the emitted message without debug source context", Content, MString("Macro problem\n")) && Passed;
 #else
-  Passed = EvaluateTrue("merr", "file context", "The merr macro writes source file context", Content.Contains("UTStreams.cxx")) && Passed;
-  Passed = EvaluateTrue("merr", "function context", "The merr macro writes function context", Content.Contains("EmitMerrShow")) && Passed;
+    ostringstream Expected;
+    Expected<<"!!!!! Error in file \""<<__FILE__<<"\" in function \"EmitMerrShow\" at line "<<s_MerrLine<<":\nMacro problem\n";
+    Passed = Evaluate("merr", "debug output", "In debug builds merr writes the source file, function and line, then the emitted message", Content, MString(Expected.str())) && Passed;
 #endif
   }
 
@@ -339,7 +352,12 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     MString Content = ReadTextFile(MdepFileName);
     Passed = Evaluate("mdep", "duplicate suppression", "The deprecation macro suppresses repeated messages from the same source location", CountOccurrences(Content, "Deprecated duplicate"), 1U) && Passed;
     Passed = Evaluate("mdep", "unique source", "A deprecation from a different source location is still emitted", CountOccurrences(Content, "Deprecated unique"), 1U) && Passed;
-    Passed = EvaluateTrue("mdep", "header formatting", "The deprecation macro prefixes the output with a deprecation header", Content.Contains("Deprecated use of function")) && Passed;
+    // Expected: header with function, file and line of the macro call, then the message indented by two blanks
+    ostringstream ExpectedDuplicate;
+    ExpectedDuplicate<<"Deprecated use of function \"EmitDeprecatedDuplicate\" in file "<<__FILE__<<" before line "<<s_DeprecatedDuplicateLine<<":\n  Deprecated duplicate\n";
+    ostringstream ExpectedUnique;
+    ExpectedUnique<<"Deprecated use of function \"EmitDeprecatedUnique\" in file "<<__FILE__<<" before line "<<s_DeprecatedUniqueLine<<":\n  Deprecated unique\n";
+    Passed = Evaluate("mdep", "header formatting", "The deprecation macro prefixes the output with a deprecation header and indents the message", Content, MString(ExpectedDuplicate.str() + ExpectedUnique.str())) && Passed;
   }
 
   {
@@ -353,7 +371,12 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     MString Content = ReadTextFile(MimpFileName);
     Passed = Evaluate("mimp", "duplicate suppression", "The implementation-limit macro suppresses repeated messages from the same source location", CountOccurrences(Content, "Implementation duplicate"), 1U) && Passed;
     Passed = Evaluate("mimp", "unique source", "A different implementation-limit source location is still emitted", CountOccurrences(Content, "Implementation unique"), 1U) && Passed;
-    Passed = EvaluateTrue("mimp", "header formatting", "The implementation-limit macro prefixes the output with a limitation header", Content.Contains("Implementation limitation")) && Passed;
+    // Expected: header with function, file and line of the macro call, then the message indented by six blanks
+    ostringstream ExpectedDuplicate;
+    ExpectedDuplicate<<"***** Implementation limitation in function \"EmitImplementationDuplicate\" in file "<<__FILE__<<" around line "<<s_ImplementationDuplicateLine<<":\n      Implementation duplicate\n";
+    ostringstream ExpectedUnique;
+    ExpectedUnique<<"***** Implementation limitation in function \"EmitImplementationUnique\" in file "<<__FILE__<<" around line "<<s_ImplementationUniqueLine<<":\n      Implementation unique\n";
+    Passed = Evaluate("mimp", "header formatting", "The implementation-limit macro prefixes the output with a limitation header and indents the message", Content, MString(ExpectedDuplicate.str() + ExpectedUnique.str())) && Passed;
   }
 
   {

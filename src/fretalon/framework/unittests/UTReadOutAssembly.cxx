@@ -98,7 +98,9 @@ bool UTReadOutAssembly::TestDefaultsAndClear()
 
   MReadOutAssembly First;
   MReadOutAssembly Second;
-  Passed = EvaluateTrue("GetAssemblyID()", "two assemblies", "Assembly identifiers are monotonically increasing", Second.GetAssemblyID() > First.GetAssemblyID()) && Passed;
+  // Check the identifiers of two assemblies created in a row
+  const unsigned long FirstAssemblyID = First.GetAssemblyID();
+  Passed = Evaluate("GetAssemblyID()", "two assemblies", "Consecutively created assemblies have consecutive identifiers", Second.GetAssemblyID(), FirstAssemblyID + 1) && Passed;
   Passed = Evaluate("GetID()", "default", "The default event ID is undefined after construction", First.GetID(), static_cast<unsigned long>(g_UnsignedIntNotDefined)) && Passed;
   Passed = EvaluateSize("GetNumberOfReadOuts()", "default", "A new read-out assembly has no read-outs", First.GetNumberOfReadOuts(), static_cast<size_t>(0)) && Passed;
 
@@ -118,7 +120,7 @@ bool UTReadOutAssembly::TestDefaultsAndClear()
   First.Clear();
   AddRepresentativeReadOut(First);
   Passed = EvaluateSize("Clear()", "reused assembly", "A cleared assembly holds only the read-outs added after the clear", First.GetNumberOfReadOuts(), static_cast<size_t>(1)) && Passed;
-  Passed = EvaluateTrue("Clear()", "assembly ID stable", "Clear preserves the unique assembly identifier", First.GetAssemblyID() < Second.GetAssemblyID()) && Passed;
+  Passed = Evaluate("Clear()", "assembly ID stable", "Clear preserves the unique assembly identifier", First.GetAssemblyID(), FirstAssemblyID) && Passed;
 
   return Passed;
 }
@@ -218,8 +220,8 @@ bool UTReadOutAssembly::TestStreaming()
 
   ostringstream RoaWithDescriptor;
   Passed = EvaluateTrue("StreamRoa()", "with descriptor", "ROA streaming with descriptors succeeds", Assembly.StreamRoa(RoaWithDescriptor, ROFF, true)) && Passed;
-  Passed = EvaluateTrue("StreamRoa()", "with descriptor", "ROA streaming with descriptors writes the read-out type descriptors",
-                        MString(RoaWithDescriptor.str()).Contains("UH sss 7 11") && MString(RoaWithDescriptor.str()).Contains("adc 1234")) && Passed;
+  Passed = Evaluate("StreamRoa()", "with descriptor", "ROA streaming with descriptors writes the descriptors sss and adc before the values",
+                    MString(RoaWithDescriptor.str()), MString("SE\nID 42\nTI 0.000000000\nUH sss 7 11 adc 1234 \n")) && Passed;
 
   // Keyword of a second unit
   MReadOutFileFormat SecondROFF;
@@ -227,8 +229,8 @@ bool UTReadOutAssembly::TestStreaming()
   SecondROFF.AddReadOutUnit("U8", Assembly.GetReadOut(0).GetReadOutElement().GetType(), Assembly.GetReadOut(0).GetReadOutData().GetCombinedType());
   ostringstream RoaSecondUnit;
   Passed = EvaluateTrue("StreamRoa()", "second read-out unit", "ROA streaming succeeds with the read-out unit at the second position", Assembly.StreamRoa(RoaSecondUnit, SecondROFF)) && Passed;
-  Passed = EvaluateTrue("StreamRoa()", "second read-out unit", "The read-out is written under the keyword of its own read-out unit",
-                        MString(RoaSecondUnit.str()).Contains("\nU8 7 11 1234") && !MString(RoaSecondUnit.str()).Contains("U7 ")) && Passed;
+  Passed = Evaluate("StreamRoa()", "second read-out unit", "The read-out is written under the keyword of its own read-out unit",
+                    MString(RoaSecondUnit.str()), MString("SE\nID 42\nTI 0.000000000\nU8 7 11 1234 \n")) && Passed;
 
   // No read-out unit for this read-out
   MReadOutFileFormat WrongROFF;

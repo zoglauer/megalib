@@ -107,7 +107,7 @@ bool ETCosimaToMimrecImaging::Run()
     // Get the true direction from the sim file - it is the flight direction, opposite to the source
     double MaxDirectionDifference = 0.0;
     for (const shared_ptr<MSimEvent>& Event: Sim.m_Events) {
-      MaxDirectionDifference = max(MaxDirectionDifference, (Event->GetIAAt(0)->GetSecondaryDirection() + Source).Mag());
+      MaxDirectionDifference = GetMaximum(MaxDirectionDifference, (Event->GetIAAt(0)->GetSecondaryDirection() + Source).Mag());
     }
     Passed = EvaluateNear("ReadSim()", Name + ", true direction", "The flight direction of the initial particle in the sim file is opposite to the direction to the source", MaxDirectionDifference, 0.0, 1e-4) && Passed;
 
@@ -137,9 +137,11 @@ bool ETCosimaToMimrecImaging::Run()
       }
       return static_cast<double>(Inside)/Full.size();
     };
+    vector<double> ARMs;
     vector<double> Histogram(61, 0.0);
     for (const shared_ptr<MComptonEvent>& Event: Full) {
       const double Arm = ARM(*Event, Source);
+      ARMs.push_back(Arm);
       const int Bin = static_cast<int>(floor(Arm + 30.5));
       if (Bin >= 0 && Bin < 61) {
         Histogram[Bin] += 1.0;
@@ -169,7 +171,28 @@ bool ETCosimaToMimrecImaging::Run()
     }
     mout<<Name<<": ARM peak at "<<PeakARM<<" deg, fraction with |ARM| < 5 deg: "<<FractionTrue<<" (the best of eight directions displaced by 20 deg: "<<FractionRing<<")"<<endl;
     Passed = EvaluateNear("ARM", Name + ", peak", "The peak of the ARM distribution relative to the true source direction is at zero", PeakARM, 0.0, 2.0) && Passed;
-    Passed = EvaluateNear("ARM", Name + ", core", "A large fraction of the events has an ARM below 5 degrees relative to the true direction (shown: the shortfall below 25%)", max(0.25 - FractionTrue, 0.0), 0.0, 0.0) && Passed;
+    // Expected: mean zero within the statistical uncertainty, RMS 4.1 deg for |ARM| < 10 deg (baseline, measured 4.0 to 4.3 deg)
+    unsigned int NumberCore = 0;
+    double MeanCore = 0.0, RMSCore = 0.0;
+    GetTruncatedMoments(ARMs, 5.0, NumberCore, MeanCore, RMSCore);
+    unsigned int NumberWidth = 0;
+    double MeanWidth = 0.0, RMSWidth = 0.0;
+    GetTruncatedMoments(ARMs, 10.0, NumberWidth, MeanWidth, RMSWidth);
+    mout<<Name<<": ARM mean "<<MeanCore<<" deg (|ARM| < 5 deg), RMS "<<RMSWidth<<" deg (|ARM| < 10 deg)"<<endl;
+    Passed = EvaluateNear("ARM", Name + ", mean", "The mean ARM of the events with |ARM| < 5 degrees is zero (5 sigma of the mean; degrees)", MeanCore, 0.0, 5.0*RMSCore/sqrt(static_cast<double>(NumberCore))) && Passed;
+    Passed = EvaluateNear("ARM", Name + ", width", "The RMS of the ARM of the events with |ARM| < 10 degrees is 4.1 degrees (+-0.5; degrees)", RMSWidth, 4.1, 0.5) && Passed;
+    vector<double> AbsoluteARMs;
+    for (double Arm: ARMs) {
+      AbsoluteARMs.push_back(fabs(Arm));
+    }
+    const double MedianARM = GetMedian(AbsoluteARMs);
+    const double MedianError = GetMedianError(AbsoluteARMs);
+    mout<<Name<<": median |ARM| "<<MedianARM<<" +- "<<MedianError<<" deg"<<endl;
+    // Expected median of |ARM| per direction: mean of sixteen runs (deg)
+    static const map<string, double> BaselineMedians = {{"Theta0Phi0", 7.0}, {"Theta20Phi0", 7.3}, {"Theta40Phi90", 7.8}, {"Theta60Phi225", 8.1}, {"Theta75Phi315", 8.2}};
+    // Tolerance: 4 sigma of the median including the baseline uncertainty (sigma/sqrt(16))
+    const double MedianTolerance = 4.0*sqrt(1.0 + 1.0/16.0)*MedianError;
+    Passed = EvaluateNear("ARM", Name + ", median", "The median of |ARM| is the baseline of this direction (4 sigma of the median; degrees)", MedianARM, BaselineMedians.at(Name.Data()), MedianTolerance) && Passed;
     Passed = EvaluateNear("ARM", Name + ", contrast", "The true direction is clearly better than every direction displaced by 20 degrees (shown: the shortfall below 1.3 times the best displaced direction)", max(1.3*FractionRing - FractionTrue, 0.0), 0.0, 0.0) && Passed;
 
     // Check the total energy: a line at 662 keV
@@ -179,7 +202,7 @@ bool ETCosimaToMimrecImaging::Run()
         NearLine.push_back(Energy);
       }
     }
-    Passed = EvaluateNear("Energy", Name + ", line", "The median total energy of the full energy events is the line energy", Median(NearLine), 662.0, 3.0) && Passed;
+    Passed = EvaluateNear("Energy", Name + ", line", "The median total energy of the full energy events is the line energy", GetMedian(NearLine), 662.0, 3.0) && Passed;
 
     // Back project on a grid of directions - the maximum is near the true direction:
     double BestCount = -1.0, BestTheta = 0.0, BestPhi = 0.0;
@@ -252,8 +275,8 @@ bool ETCosimaToMimrecImaging::Run()
         MimrecInside += ARMHistogram->GetBinContent(b + 1);
         Difference += fabs(Own[b] - ARMHistogram->GetBinContent(b + 1));
       }
-      Passed = EvaluateNear("Mimrec", Name + ", ARM content", "The ARM histogram of mimrec has the same number of events in the range as the own ARM analysis (1%)", MimrecInside, OwnInside, 0.01*OwnInside) && Passed;
-      Passed = EvaluateNear("Mimrec", Name + ", ARM shape", "The ARM histogram of mimrec has the same shape as the own analysis: the sum of the absolute differences per bin is below 1% of the events", Difference, 0.0, 0.01*OwnInside) && Passed;
+      Passed = EvaluateNear("Mimrec", Name + ", ARM content", "The ARM histogram of mimrec has exactly the same number of events in the range as the own ARM analysis", MimrecInside, OwnInside, 0.0) && Passed;
+      Passed = EvaluateNear("Mimrec", Name + ", ARM shape", "The ARM histogram of mimrec has the same shape as the own analysis (sum of absolute bin differences is zero)", Difference, 0.0, 0.0) && Passed;
       Passed = EvaluateNear("Mimrec", Name + ", ARM peak", "The ARM histogram of mimrec peaks at zero (within 2 degrees)", ARMHistogram->GetXaxis()->GetBinCenter(ARMHistogram->GetMaximumBin()), 0.0, 2.0) && Passed;
     }
   }

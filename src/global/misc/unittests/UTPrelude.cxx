@@ -92,6 +92,9 @@ bool UTPrelude::Run()
     return false;
   }
 
+  // Default global settings: root node MEGAlib with ChangeLogHash 0 and FontScaler normal
+  const MString ExpectedSettings = "<MEGAlib>\n  <ChangeLogHash>0</ChangeLogHash>\n  <FontScaler>normal</FontScaler>\n</MEGAlib>\n";
+
   const MString SettingsFile = HomeDirectory + "/.megalib.cfg";
   RemoveTemporaryFile(SettingsFile);
 
@@ -107,7 +110,7 @@ bool UTPrelude::Run()
     Passed = EvaluateTrue("MFile::Exists()", "settings file", "MPrelude::Play creates the global settings file in the HOME directory", MFile::Exists(SettingsFile)) && Passed;
 
     FirstContent = ReadTextFile(SettingsFile);
-    Passed = EvaluateTrue("Play()", "settings content", "MPrelude::Play writes the default global settings content", FirstContent.Contains("<ChangeLogHash>0</ChangeLogHash>") && FirstContent.Contains("<FontScaler>normal</FontScaler>")) && Passed;
+    Passed = Evaluate("Play()", "settings content", "MPrelude::Play writes the default global settings content", FirstContent, ExpectedSettings) && Passed;
 
     MPrelude SecondPrelude;
     Passed = EvaluateTrue("Play()", "repeat startup", "A repeated MPrelude::Play call also succeeds with unchanged inputs", SecondPrelude.Play()) && Passed;
@@ -126,7 +129,7 @@ bool UTPrelude::Run()
     EnableDefaultStreams();
   }
   const MString FailureContent = ReadTextFile(FailureSettingsFile);
-  Passed = EvaluateTrue("ReadTextFile()", "bad settings recovered", "MPrelude::Play rewrites a malformed settings file with the default configuration", FailureContent.Contains("<ChangeLogHash>0</ChangeLogHash>") && FailureContent.Contains("<FontScaler>normal</FontScaler>")) && Passed;
+  Passed = Evaluate("ReadTextFile()", "bad settings recovered", "MPrelude::Play rewrites a malformed settings file with the default configuration", FailureContent, ExpectedSettings) && Passed;
   Passed = EvaluateFalse("ReadTextFile()", "bad settings recovered", "The malformed XML root is replaced during recovery", FailureContent.Contains("<NotMEGAlib>")) && Passed;
 
   const MString SecondContent = ReadTextFile(SettingsFile);

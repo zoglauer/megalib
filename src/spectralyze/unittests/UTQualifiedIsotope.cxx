@@ -24,6 +24,10 @@
 #include <sstream>
 using namespace std;
 
+// POSIX libs (decode the raw wait status):
+#include <csignal>
+#include <sys/wait.h>
+
 // MEGAlib:
 #include "MQualifiedIsotope.h"
 #include "MStreams.h"
@@ -182,22 +186,26 @@ bool UTQualifiedIsotope::TestOutOfBounds()
   {
     MString LogFileName = GetTemporaryFileName("setlinefound_fatal.log");
     int Status = MSystem::RunProcess(g_UTQualifiedIsotopeBinary, "--fatal-set", LogFileName);
-    Passed = EvaluateTrue("SetLineFound()", "out of bounds status", "Out-of-bounds SetLineFound access aborts the child process", Status != 0) && Passed;
+    Passed = EvaluateTrue("SetLineFound()", "out of bounds signaled", "Out-of-bounds SetLineFound access ends the child process by a signal", WIFSIGNALED(Status) != 0) && Passed;
+    // The fatal stream aborts with SIGABRT
+    Passed = Evaluate("SetLineFound()", "out of bounds signal", "Out-of-bounds SetLineFound access ends the child process with SIGABRT", WTERMSIG(Status), static_cast<int>(SIGABRT)) && Passed;
 
     ifstream In(LogFileName.Data());
     string Content((istreambuf_iterator<char>(In)), istreambuf_iterator<char>());
-    Passed = EvaluateTrue("SetLineFound()", "out of bounds message", "Out-of-bounds SetLineFound access reports the offending index and size", MString(Content).Contains("Index out of bounds: l=1 vs. size()=1")) && Passed;
+    Passed = Evaluate("SetLineFound()", "out of bounds message", "Out-of-bounds SetLineFound access reports exactly the offending index and size", MString(Content), MString("Index out of bounds: l=1 vs. size()=1\n")) && Passed;
     RemoveTemporaryFile(LogFileName);
   }
 
   {
     MString LogFileName = GetTemporaryFileName("getlinefound_fatal.log");
     int Status = MSystem::RunProcess(g_UTQualifiedIsotopeBinary, "--fatal-get", LogFileName);
-    Passed = EvaluateTrue("GetLineFound()", "out of bounds status", "Out-of-bounds GetLineFound access aborts the child process", Status != 0) && Passed;
+    Passed = EvaluateTrue("GetLineFound()", "out of bounds signaled", "Out-of-bounds GetLineFound access ends the child process by a signal", WIFSIGNALED(Status) != 0) && Passed;
+    // The fatal stream aborts with SIGABRT
+    Passed = Evaluate("GetLineFound()", "out of bounds signal", "Out-of-bounds GetLineFound access ends the child process with SIGABRT", WTERMSIG(Status), static_cast<int>(SIGABRT)) && Passed;
 
     ifstream In(LogFileName.Data());
     string Content((istreambuf_iterator<char>(In)), istreambuf_iterator<char>());
-    Passed = EvaluateTrue("GetLineFound()", "out of bounds message", "Out-of-bounds GetLineFound access reports the offending index and size", MString(Content).Contains("Index out of bounds: l=1 vs. size()=1")) && Passed;
+    Passed = Evaluate("GetLineFound()", "out of bounds message", "Out-of-bounds GetLineFound access reports exactly the offending index and size", MString(Content), MString("Index out of bounds: l=1 vs. size()=1\n")) && Passed;
     RemoveTemporaryFile(LogFileName);
   }
 

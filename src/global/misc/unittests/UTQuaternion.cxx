@@ -86,10 +86,11 @@ bool UTQuaternion::Run()
 //! Return true if two quaternions match within a tolerance
 bool UTQuaternion::AreEqual(const MQuaternion& A, const MQuaternion& B, double Tolerance)
 {
-  if (fabs(A.GetW() - B.GetW()) > Tolerance) return false;
-  if (fabs(A.GetX() - B.GetX()) > Tolerance) return false;
-  if (fabs(A.GetY() - B.GetY()) > Tolerance) return false;
-  if (fabs(A.GetZ() - B.GetZ()) > Tolerance) return false;
+  // Compare as within - a NaN is never within
+  if ((fabs(A.GetW() - B.GetW()) <= Tolerance) == false) return false;
+  if ((fabs(A.GetX() - B.GetX()) <= Tolerance) == false) return false;
+  if ((fabs(A.GetY() - B.GetY()) <= Tolerance) == false) return false;
+  if ((fabs(A.GetZ() - B.GetZ()) <= Tolerance) == false) return false;
 
   return true;
 }
@@ -176,8 +177,11 @@ bool UTQuaternion::TestArithmetic()
   MQuaternion InPlaceQuotient = A;
   InPlaceQuotient /= B;
   Passed = EvaluateTrue("operator/=", "division", "operator/= matches operator/", AreEqual(Quotient, InPlaceQuotient, 1e-12)) && Passed;
+  // Expected: A * conj(B) / |B|^2 with |B|^2 = 7.5, by hand (1.4, 11/15, 13/15, -13/15)
+  Passed = EvaluateTrue("operator/", "division", "operator/ yields the hand-computed quotient",
+                        AreEqual(Quotient, MQuaternion(1.4, 11.0/15.0, 13.0/15.0, -13.0/15.0), 1e-12)) && Passed;
   Passed = EvaluateTrue("operator/", "division", "operator/ multiplied by the divisor reconstructs the original quaternion",
-                        AreEqual(Quotient * B, A, 1e-10)) && Passed;
+                        AreEqual(Quotient * B, A, 1e-12)) && Passed;
 
   return Passed;
 }
@@ -199,8 +203,11 @@ bool UTQuaternion::TestNormAndInverse()
   Passed = EvaluateTrue("GetConjugate()", "1,2,3,4", "GetConjugate negates the vector part only", Q.GetConjugate() == MQuaternion(1.0, -2.0, -3.0, -4.0)) && Passed;
 
   MQuaternion Inverse = Q.GetInverse();
+  // Expected: conj(Q) / |Q|^2 with |Q|^2 = 30
+  Passed = EvaluateTrue("GetInverse()", "1,2,3,4", "The inverse is the conjugate divided by the norm",
+                        AreEqual(Inverse, MQuaternion(1.0/30.0, -2.0/30.0, -3.0/30.0, -4.0/30.0), 1e-12)) && Passed;
   Passed = EvaluateTrue("GetInverse()", "1,2,3,4", "The inverse multiplied by the quaternion yields the identity quaternion",
-                        AreEqual(Inverse * Q, MQuaternion(1.0, 0.0, 0.0, 0.0), 1e-10)) && Passed;
+                        AreEqual(Inverse * Q, MQuaternion(1.0, 0.0, 0.0, 0.0), 1e-12)) && Passed;
 
   MQuaternion Unit = Q.GetUnitQuaternion();
   Passed = EvaluateNear("GetUnitQuaternion()", "norm", "GetUnitQuaternion normalizes the quaternion to magnitude one", Unit.GetMagnitude(), 1.0, 1e-12) && Passed;
@@ -286,6 +293,8 @@ bool UTQuaternion::TestInterpolationAndFormatting()
 
   MQuaternion MidLerp = Identity.GetLerp(Identity, RotateZHalfTurn, 0.5);
   Passed = EvaluateNear("GetLerp()", "midpoint magnitude", "GetLerp returns a unit quaternion", MidLerp.GetMagnitude(), 1.0, 1e-12) && Passed;
+  Passed = EvaluateTrue("GetLerp()", "midpoint quaternion", "GetLerp halfway between (1,0,0,0) and (0,0,0,1) is (1,0,0,1)/sqrt(2)",
+                        AreEqual(MidLerp, MQuaternion(1.0/sqrt(2.0), 0.0, 0.0, 1.0/sqrt(2.0)), 1e-12)) && Passed;
   Passed = EvaluateTrue("GetLerp()", "midpoint rotation", "GetLerp halfway between identity and 180 degrees around z yields a 90 degree z rotation",
                         (MidLerp.GetRotation() * MVector(1.0, 0.0, 0.0)).AreEqual(MVector(0.0, 1.0, 0.0), 1e-12)) && Passed;
 
@@ -296,6 +305,8 @@ bool UTQuaternion::TestInterpolationAndFormatting()
 
   MQuaternion MidSlerp = Identity.GetSlerp(Identity, RotateZHalfTurn, 0.5);
   Passed = EvaluateNear("GetSlerp()", "midpoint magnitude", "GetSlerp returns a unit quaternion", MidSlerp.GetMagnitude(), 1.0, 1e-12) && Passed;
+  Passed = EvaluateTrue("GetSlerp()", "midpoint quaternion", "GetSlerp halfway between (1,0,0,0) and (0,0,0,1) is (cos 45, 0, 0, sin 45)",
+                        AreEqual(MidSlerp, MQuaternion(cos(c_Pi / 4.0), 0.0, 0.0, sin(c_Pi / 4.0)), 1e-12)) && Passed;
   Passed = EvaluateTrue("GetSlerp()", "midpoint rotation", "GetSlerp halfway between identity and 180 degrees around z yields a 90 degree z rotation",
                         (MidSlerp.GetRotation() * MVector(1.0, 0.0, 0.0)).AreEqual(MVector(0.0, 1.0, 0.0), 1e-12)) && Passed;
 
@@ -313,13 +324,15 @@ bool UTQuaternion::TestInterpolationAndFormatting()
   MQuaternion InteriorB(MRotation(1.1, AxisB));
   MQuaternion InteriorLerp = Identity.GetLerp(InteriorA, InteriorB, 0.35);
   Passed = EvaluateNear("GetLerp()", "interior magnitude", "GetLerp returns a normalized representative interior interpolation", InteriorLerp.GetMagnitude(), 1.0, 1e-12) && Passed;
-  Passed = EvaluateTrue("GetLerp()", "interior interpolation", "GetLerp produces a representative interior interpolation distinct from both endpoints",
-                        AreEquivalentRotations(InteriorLerp, InteriorA, 1e-12) == false && AreEquivalentRotations(InteriorLerp, InteriorB, 1e-12) == false) && Passed;
+  // Expected: normalize(0.65 * A + 0.35 * B) for A = (0.4 rad, axis (1,-1,2)), B = (1.1 rad, axis (-2,1,1)), independent python script
+  Passed = EvaluateTrue("GetLerp()", "interior interpolation", "GetLerp returns the normalized linear interpolation",
+                        AreEqual(InteriorLerp, MQuaternion(0.9766884962439407, -0.10091442574447658, 0.022934907971731776, 0.18806873737477087), 1e-12)) && Passed;
 
   MQuaternion InteriorSlerp = Identity.GetSlerp(InteriorA, InteriorB, 0.35);
   Passed = EvaluateNear("GetSlerp()", "interior magnitude", "GetSlerp returns a normalized representative interior interpolation", InteriorSlerp.GetMagnitude(), 1.0, 1e-12) && Passed;
-  Passed = EvaluateTrue("GetSlerp()", "interior interpolation", "GetSlerp produces a representative interior interpolation distinct from both endpoints",
-                        AreEquivalentRotations(InteriorSlerp, InteriorA, 1e-12) == false && AreEquivalentRotations(InteriorSlerp, InteriorB, 1e-12) == false) && Passed;
+  // Expected: sin((1-T) a)/sin(a) * A + sin(T a)/sin(a) * B with a = acos(A.B) = acos(0.8182238), independent python script
+  Passed = EvaluateTrue("GetSlerp()", "interior interpolation", "GetSlerp returns the spherical interpolation",
+                        AreEqual(InteriorSlerp, MQuaternion(0.9763612572506173, -0.10322527115069596, 0.024265861283554895, 0.1883465070343134), 1e-12)) && Passed;
 
   ostringstream Out;
   Out << MQuaternion(1.0, 2.0, 3.0, 4.0);

@@ -21,6 +21,7 @@
 
 // Standard libs:
 #include <cerrno>
+#include <csignal>
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -151,21 +152,21 @@ bool UTAssert::Run()
   RemoveTemporaryFile(CompoundMacroLog);
 
   int Status = RunChild(NullAssertionCheck, NullLog);
-  Passed = EvaluateTrue("MAssert::AssertionFailed()", "null status", "The null-safe assertion helper aborts the child process", Status != 0) && Passed;
+  Passed = Evaluate("MAssert::AssertionFailed()", "null status", "The null-safe assertion helper aborts the child process with SIGABRT", Status, 128 + SIGABRT) && Passed;
   MString NullOutput = ReadTextFile(NullLog);
-  Passed = EvaluateTrue("MAssert::AssertionFailed()", "null message", "The null-safe assertion helper prints placeholder text for null inputs", NullOutput.Contains("[unknown file name]") && NullOutput.Contains("[unknown condition]") && NullOutput.Contains("in function") == false) && Passed;
+  Passed = Evaluate("MAssert::AssertionFailed()", "null message", "The null-safe assertion helper prints the placeholder text for null inputs", NullOutput, MString("Assertion failed in file [unknown file name] at line 42:\n    Condition \"[unknown condition]\" not fulfilled!   Aborting!\n")) && Passed;
 
   Status = RunChild(NormalAssertionCheck, NormalLog);
-  Passed = EvaluateTrue("MAssert::AssertionFailed()", "normal status", "The normal assertion helper aborts the child process", Status != 0) && Passed;
+  Passed = Evaluate("MAssert::AssertionFailed()", "normal status", "The normal assertion helper aborts the child process with SIGABRT", Status, 128 + SIGABRT) && Passed;
   MString NormalOutput = ReadTextFile(NormalLog);
-  Passed = EvaluateTrue("MAssert::AssertionFailed()", "normal message", "The normal assertion helper prints the provided assertion text and line number", NormalOutput.Contains("Alpha == Beta") && NormalOutput.Contains("UTAssert.cxx") && NormalOutput.Contains("NormalAssertionCheck") && NormalOutput.Contains("4242")) && Passed;
+  Passed = Evaluate("MAssert::AssertionFailed()", "normal message", "The normal assertion helper prints the provided file, function, line, and assertion text", NormalOutput, MString("Assertion failed in file UTAssert.cxx in function NormalAssertionCheck at line 4242:\n    Condition \"Alpha == Beta\" not fulfilled!   Aborting!\n")) && Passed;
 
   const MString NullFunctionLog = GetTemporaryFileName("null_function.log");
   RemoveTemporaryFile(NullFunctionLog);
   Status = RunChild(NullFunctionAssertionCheck, NullFunctionLog);
-  Passed = EvaluateTrue("MAssert::AssertionFailed()", "null function status", "The assertion helper aborts when the function name is unavailable", Status != 0) && Passed;
+  Passed = Evaluate("MAssert::AssertionFailed()", "null function status", "The assertion helper aborts with SIGABRT when the function name is unavailable", Status, 128 + SIGABRT) && Passed;
   MString NullFunctionOutput = ReadTextFile(NullFunctionLog);
-  Passed = EvaluateTrue("MAssert::AssertionFailed()", "null function message", "The assertion helper omits the function text when it is unavailable", NullFunctionOutput.Contains("Beta != Gamma") && NullFunctionOutput.Contains("UTAssert.cxx") && NullFunctionOutput.Contains("4243") && NullFunctionOutput.Contains("in function") == false) && Passed;
+  Passed = Evaluate("MAssert::AssertionFailed()", "null function message", "The assertion helper omits the function text when it is unavailable", NullFunctionOutput, MString("Assertion failed in file UTAssert.cxx at line 4243:\n    Condition \"Beta != Gamma\" not fulfilled!   Aborting!\n")) && Passed;
 
   const MString MacroSuccessLog = GetTemporaryFileName("macro_success.log");
   RemoveTemporaryFile(MacroSuccessLog);
@@ -180,7 +181,7 @@ bool UTAssert::Run()
   MString MacroOutput = ReadTextFile(MacroLog);
   Passed = EvaluateTrue("massert()", "macro message", "A compiled-out assertion should not emit diagnostics", MacroOutput.IsEmpty()) && Passed;
 #else
-  Passed = EvaluateTrue("massert()", "macro status", "The macro forwards failures to the assertion helper", Status != 0) && Passed;
+  Passed = Evaluate("massert()", "macro status", "A failing assertion macro aborts the child process with SIGABRT", Status, 128 + SIGABRT) && Passed;
   MString MacroOutput = ReadTextFile(MacroLog);
   Passed = EvaluateTrue("massert()", "macro message", "The macro stringizes a non-trivial failed expression", MacroOutput.Contains("1 == 2")) && Passed;
   Passed = EvaluateTrue("massert()", "macro function name", "The macro reports the enclosing function name", MacroOutput.Contains("MacroAssertionCheck")) && Passed;
@@ -192,7 +193,7 @@ bool UTAssert::Run()
   MString CompoundMacroOutput = ReadTextFile(CompoundMacroLog);
   Passed = EvaluateTrue("massert()", "compound macro message", "A compiled-out compound assertion should not emit diagnostics", CompoundMacroOutput.IsEmpty()) && Passed;
 #else
-  Passed = EvaluateTrue("massert()", "compound macro status", "A failing compound assertion aborts the child process", Status != 0) && Passed;
+  Passed = Evaluate("massert()", "compound macro status", "A failing compound assertion aborts the child process with SIGABRT", Status, 128 + SIGABRT) && Passed;
   MString CompoundMacroOutput = ReadTextFile(CompoundMacroLog);
   Passed = EvaluateTrue("massert()", "compound macro message", "The macro stringizes a compound expression without expansion artifacts", CompoundMacroOutput.Contains("x > 0 && y != z")) && Passed;
   Passed = EvaluateTrue("massert()", "compound macro function name", "The compound macro failure reports the enclosing function name", CompoundMacroOutput.Contains("CompoundMacroAssertionCheck")) && Passed;

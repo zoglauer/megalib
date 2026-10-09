@@ -108,10 +108,20 @@ bool UTResponseMatrixAxisSpheric::Run()
   FourBins.SetFISBEL(4);
   Passed = Evaluate("GetNumberOfBins()", "SetFISBEL(4)", "SetFISBEL stores the representative multi-bin spherical bin count", FourBins.GetNumberOfBins(), 4UL) && Passed;
   Passed = Evaluate("GetAllBinCenters()", "SetFISBEL(4)", "GetAllBinCenters returns one representative vector per spherical bin", FourBins.GetAllBinCenters().size(), 4UL) && Passed;
-  Passed = Evaluate("GetDrawingAxisBinEdges()", "SetFISBEL(4) theta count", "GetDrawingAxisBinEdges returns a representative nontrivial theta edge set", FourBins.GetDrawingAxisBinEdges()[0].size() > 2, true) && Passed;
-  Passed = Evaluate("GetDrawingAxisBinEdges()", "SetFISBEL(4) phi count", "GetDrawingAxisBinEdges returns a representative nontrivial phi edge set", FourBins.GetDrawingAxisBinEdges()[1].size() > 2, true) && Passed;
+  // FISBEL(4): bin area pi, 3 collars with 1, 2, 1 bins, theta edges 0, 60, 120, 180 deg, middle collar split at phi 180 deg
+  Passed = EvaluateSize("GetDrawingAxisBinEdges()", "SetFISBEL(4) theta count", "GetDrawingAxisBinEdges returns four theta edges for three collars", FourBins.GetDrawingAxisBinEdges()[0].size(), 4UL) && Passed;
+  Passed = EvaluateNear("GetDrawingAxisBinEdges()", "SetFISBEL(4) theta edge 0", "GetDrawingAxisBinEdges returns the theta edge 0 of the four-bin axis in degrees", FourBins.GetDrawingAxisBinEdges()[0][0], 0.0, 1e-9) && Passed;
+  Passed = EvaluateNear("GetDrawingAxisBinEdges()", "SetFISBEL(4) theta edge 1", "GetDrawingAxisBinEdges returns the theta edge 1 of the four-bin axis in degrees", FourBins.GetDrawingAxisBinEdges()[0][1], 60.0, 1e-9) && Passed;
+  Passed = EvaluateNear("GetDrawingAxisBinEdges()", "SetFISBEL(4) theta edge 2", "GetDrawingAxisBinEdges returns the theta edge 2 of the four-bin axis in degrees", FourBins.GetDrawingAxisBinEdges()[0][2], 120.0, 1e-9) && Passed;
+  Passed = EvaluateNear("GetDrawingAxisBinEdges()", "SetFISBEL(4) theta edge 3", "GetDrawingAxisBinEdges returns the theta edge 3 of the four-bin axis in degrees", FourBins.GetDrawingAxisBinEdges()[0][3], 180.0, 1e-9) && Passed;
+  Passed = EvaluateSize("GetDrawingAxisBinEdges()", "SetFISBEL(4) phi count", "GetDrawingAxisBinEdges returns three phi edges", FourBins.GetDrawingAxisBinEdges()[1].size(), 3UL) && Passed;
+  Passed = EvaluateNear("GetDrawingAxisBinEdges()", "SetFISBEL(4) phi edge 0", "GetDrawingAxisBinEdges returns the phi edge 0 of the four-bin axis in degrees", FourBins.GetDrawingAxisBinEdges()[1][0], 0.0, 1e-9) && Passed;
+  Passed = EvaluateNear("GetDrawingAxisBinEdges()", "SetFISBEL(4) phi edge 1", "GetDrawingAxisBinEdges returns the phi edge 1 of the four-bin axis in degrees", FourBins.GetDrawingAxisBinEdges()[1][1], 180.0, 1e-9) && Passed;
+  Passed = EvaluateNear("GetDrawingAxisBinEdges()", "SetFISBEL(4) phi edge 2", "GetDrawingAxisBinEdges returns the phi edge 2 of the four-bin axis in degrees", FourBins.GetDrawingAxisBinEdges()[1][2], 360.0, 1e-9) && Passed;
   Passed = Evaluate("GetAxisBin()", "SetFISBEL(4) north pole", "GetAxisBin maps the representative north pole into the first spherical bin", FourBins.GetAxisBin(0.0, 0.0), 0UL) && Passed;
-  Passed = Evaluate("GetAxisBin()", "SetFISBEL(4) equator", "GetAxisBin maps a representative equatorial direction into a valid spherical bin", FourBins.GetAxisBin(90.0, 45.0) < FourBins.GetNumberOfBins(), true) && Passed;
+  Passed = Evaluate("GetAxisBin()", "SetFISBEL(4) equator", "GetAxisBin maps an equatorial direction at phi 45 degrees into the first bin of the middle collar", FourBins.GetAxisBin(90.0, 45.0), 1UL) && Passed;
+  Passed = Evaluate("GetAxisBin()", "SetFISBEL(4) equator second", "GetAxisBin maps an equatorial direction at phi 225 degrees into the second bin of the middle collar", FourBins.GetAxisBin(90.0, 225.0), 2UL) && Passed;
+  Passed = Evaluate("GetAxisBin()", "SetFISBEL(4) south", "GetAxisBin maps a direction at theta 150 degrees into the last bin", FourBins.GetAxisBin(150.0, 10.0), 3UL) && Passed;
 
   MResponseMatrixAxisSpheric EqualA("ThetaA", "PhiA");
   EqualA.SetFISBEL(4, 15.0);

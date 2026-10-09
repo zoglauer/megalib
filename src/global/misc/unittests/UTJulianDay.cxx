@@ -25,6 +25,10 @@
 #include "MStreams.h"
 #include "MUnitTest.h"
 
+// Standard libs:
+#include <chrono>
+using namespace std;
+
 
 //! Unit test class for MJulianDay
 class UTJulianDay : public MUnitTest
@@ -88,7 +92,7 @@ bool UTJulianDay::TestConstructionAndAccess()
 
   {
     MJulianDay Epoch(1970, 1, 1, 0, 0, 0, 0);
-    Passed = EvaluateNear("MJulianDay(UTC)", "day", "Unix epoch corresponds to Julian day 2440587.5", Epoch.GetAsDays(), 2440587.5, 1e-9) && Passed;
+    Passed = EvaluateNear("MJulianDay(UTC)", "day", "Unix epoch corresponds to Julian day 2440587.5", Epoch.GetAsDays(), 2440587.5, 1e-12) && Passed;
     Passed = Evaluate("GetUTCString()", "epoch", "The UTC string formatter returns the expected epoch string", Epoch.GetUTCString(), MString("01.01.1970 00:00:00:000000000")) && Passed;
     Passed = Evaluate("GetUTCYear()", "epoch", "The UTC year accessor returns the expected year", Epoch.GetUTCYear(), 1970) && Passed;
     Passed = Evaluate("GetUTCMonth()", "epoch", "The UTC month accessor returns the expected month", Epoch.GetUTCMonth(), 1) && Passed;
@@ -97,7 +101,7 @@ bool UTJulianDay::TestConstructionAndAccess()
     Passed = Evaluate("GetUTCMinute()", "epoch", "The UTC minute accessor returns the expected minute", Epoch.GetUTCMinute(), 0) && Passed;
     Passed = Evaluate("GetUTCSecond()", "epoch", "The UTC second accessor returns the expected second", Epoch.GetUTCSecond(), 0) && Passed;
     Passed = Evaluate("GetUTCNanoSecond()", "epoch", "The UTC nanosecond accessor returns the expected nanoseconds", Epoch.GetUTCNanoSecond(), 0) && Passed;
-    Passed = EvaluateNear("GetAsSeconds()", "epoch", "Unix epoch converted to seconds matches the Julian-day definition", Epoch.GetAsSeconds(), 2440587.5 * 86400.0, 1e-3) && Passed;
+    Passed = EvaluateNear("GetAsSeconds()", "epoch", "Unix epoch converted to seconds matches the Julian-day definition", Epoch.GetAsSeconds(), 2440587.5 * 86400.0, 1e-9) && Passed;
   }
 
   {
@@ -141,10 +145,17 @@ bool UTJulianDay::TestConstructionAndAccess()
   }
 
   {
+    // Julian day of the Unix time T in seconds: 2440587.5 + T / 86400
+    const double Before = static_cast<double>(chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count());
     DisableDefaultStreams();
     MJulianDay Now(true);
     EnableDefaultStreams();
-    Passed = EvaluateTrue("MJulianDay(true)", "current date", "The 'now' constructor creates a positive Julian day", Now.GetAsDays() > 2400000.0) && Passed;
+    const double After = static_cast<double>(chrono::duration_cast<chrono::seconds>(chrono::system_clock::now().time_since_epoch()).count()) + 1.0;
+
+    // Seconds are truncated - Before is up to 1 s early, After adds 1 s
+    const double SlackDays = 1e-6; // 86 ms - double resolution is 40 us at this Julian day
+    Passed = EvaluateTrue("MJulianDay(true)", "current date lower bound", "The 'now' constructor does not create a Julian day before the Unix time at the start of the call", Now.GetAsDays() >= 2440587.5 + Before/86400.0 - SlackDays) && Passed;
+    Passed = EvaluateTrue("MJulianDay(true)", "current date upper bound", "The 'now' constructor does not create a Julian day after the Unix time at the end of the call", Now.GetAsDays() <= 2440587.5 + After/86400.0 + SlackDays) && Passed;
   }
 
   return Passed;
@@ -196,8 +207,8 @@ bool UTJulianDay::TestArithmeticAndComparison()
   {
     MJulianDay Fractional(3.125);
     Passed = EvaluateNear("GetAsDays()", "fractional", "GetAsDays returns the combined normalized day and fraction", Fractional.GetAsDays(), 3.125, 1e-12) && Passed;
-    Passed = EvaluateNear("GetAsSeconds()", "fractional", "GetAsSeconds converts a Julian day into uniform seconds", Fractional.GetAsSeconds(), 3.125 * 86400.0, 1e-3) && Passed;
-    Passed = EvaluateNear("GetAsNanoSeconds()", "small value", "GetAsNanoSeconds converts short Julian-day intervals into nanoseconds", Fractional.GetAsNanoSeconds(), 3.125 * 86400.0 * 1.0E9, 1.0) && Passed;
+    Passed = EvaluateNear("GetAsSeconds()", "fractional", "GetAsSeconds converts a Julian day into uniform seconds", Fractional.GetAsSeconds(), 3.125 * 86400.0, 1e-9) && Passed;
+    Passed = EvaluateNear("GetAsNanoSeconds()", "small value", "GetAsNanoSeconds converts short Julian-day intervals into nanoseconds", Fractional.GetAsNanoSeconds(), 3.125 * 86400.0 * 1.0E9, 1e-6) && Passed;
   }
 
   {
@@ -278,7 +289,9 @@ bool UTJulianDay::TestEdgeCases()
     MJulianDay WaitStart(true);
     MJulianDay::BusyWait(2000);
     MJulianDay WaitStop(true);
-    Passed = EvaluateTrue("BusyWait()", "time advances", "BusyWait delays long enough for the current Julian day to advance measurably", WaitStop > WaitStart) && Passed;
+    // Resolution is about 30 us per Julian day, up to 60 us for the difference
+    const double Elapsed = WaitStop.GetAsSeconds() - WaitStart.GetAsSeconds();
+    Passed = EvaluateTrue("BusyWait()", "time advances", "BusyWait(2000) delays by at least 2 ms (minus 60 us resolution)", Elapsed >= 0.002 - 60e-6) && Passed;
   }
 
   {

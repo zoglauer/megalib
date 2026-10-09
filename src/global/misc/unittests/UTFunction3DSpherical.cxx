@@ -73,11 +73,11 @@ bool UTFunction3DSpherical::Run()
     MFunction3DSpherical Constant;
     Passed = Evaluate("Set()", "representative spherical vectors", "MFunction3DSpherical accepts representative spherical vector data", Constant.Set(Phi, Theta, Energy, Values), true) && Passed;
     MFunction3DSpherical Copied(Constant);
-    Passed = EvaluateNear("MFunction3DSpherical(const MFunction3DSpherical&)", "representative spherical copy constructor", "The representative spherical copy constructor preserves integration behavior", Copied.Integrate(), 12.0*c_Pi, 1e-10) && Passed;
+    Passed = EvaluateNear("MFunction3DSpherical(const MFunction3DSpherical&)", "representative spherical copy constructor", "The representative spherical copy constructor preserves integration behavior", Copied.Integrate(), 12.0*c_Pi, 1e-12) && Passed;
     MFunction3DSpherical Assigned;
     Assigned = Constant;
-    Passed = EvaluateNear("operator=()", "representative spherical assignment", "The representative spherical assignment operator preserves integration behavior", Assigned.Integrate(), 12.0*c_Pi, 1e-10) && Passed;
-    Passed = EvaluateNear("Integrate()", "representative spherical constant field", "Integrate returns the representative half-sphere constant-field volume exactly", Constant.Integrate(), 12.0*c_Pi, 1e-10) && Passed;
+    Passed = EvaluateNear("operator=()", "representative spherical assignment", "The representative spherical assignment operator preserves integration behavior", Assigned.Integrate(), 12.0*c_Pi, 1e-12) && Passed;
+    Passed = EvaluateNear("Integrate()", "representative spherical constant field", "Integrate returns the representative half-sphere constant-field volume exactly", Constant.Integrate(), 12.0*c_Pi, 1e-12) && Passed;
 
     gRandom->SetSeed(61);
     double X1 = 0.0;
@@ -92,15 +92,52 @@ bool UTFunction3DSpherical::Run()
     Constant.GetRandom(X1, Y1, Z1);
     Constant.GetRandom(X2, Y2, Z2);
     Constant.GetRandom(X3, Y3, Z3);
-    Passed = EvaluateNear("GetRandom()", "representative spherical draw 1 phi", "GetRandom returns the representative first seeded golden phi value", X1, 77.618846744783223, 1e-3) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative spherical draw 1 theta", "GetRandom returns the representative first seeded golden theta value", Y1, 126.20521153593072, 1e-3) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative spherical draw 1 energy", "GetRandom returns the representative first seeded golden energy value", Z1, 1.2075466869436204, 1e-3) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative spherical draw 2 phi", "GetRandom returns the representative second seeded golden phi value", X2, 134.95992042124236, 1e-3) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative spherical draw 2 theta", "GetRandom returns the representative second seeded golden theta value", Y2, 89.51270219361162, 1e-3) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative spherical draw 2 energy", "GetRandom returns the representative second seeded golden energy value", Z2, 3.8947845308464013, 1e-3) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative spherical draw 3 phi", "GetRandom returns the representative third seeded golden phi value", X3, 21.358841852168952, 1e-3) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative spherical draw 3 theta", "GetRandom returns the representative third seeded golden theta value", Y3, 57.440279976195759, 1e-3) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative spherical draw 3 energy", "GetRandom returns the representative third seeded golden energy value", Z3, 3.057554100246204, 1e-3) && Passed;
+
+    // Expected: replay with the same seed - bin weights are the cos(theta) differences 0.5, 1, 0.5 per phi bin, then phi, theta, energy, acceptance
+    const double BinPhiMin[6] = { 0.0, 90.0, 0.0, 90.0, 0.0, 90.0 };
+    const double BinThetaMin[6] = { 0.0, 0.0, 60.0, 60.0, 120.0, 120.0 };
+    const double BinThetaMax[6] = { 60.0, 60.0, 120.0, 120.0, 180.0, 180.0 };
+    const double BinCumulative[6] = { 0.5, 1.0, 2.0, 3.0, 3.5, 4.0 };
+    gRandom->SetSeed(61);
+    double ExpectedPhi[200];
+    double ExpectedTheta[200];
+    double ExpectedEnergy[200];
+    for (unsigned int Draw = 0; Draw < 200; ++Draw) {
+      const double Cumulative = 4.0*gRandom->Rndm();
+      unsigned int Bin = 0;
+      while (BinCumulative[Bin] <= Cumulative) {
+        ++Bin;
+      }
+      ExpectedPhi[Draw] = BinPhiMin[Bin] + 90.0*gRandom->Rndm();
+      ExpectedTheta[Draw] = acos(cos(BinThetaMin[Bin]*c_Rad) - gRandom->Rndm()*(cos(BinThetaMin[Bin]*c_Rad) - cos(BinThetaMax[Bin]*c_Rad)))*c_Deg;
+      ExpectedEnergy[Draw] = 1.0 + 3.0*gRandom->Rndm();
+      gRandom->Rndm();
+    }
+
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 1 phi", "GetRandom returns the phi value of the first replayed draw", X1, ExpectedPhi[0], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 1 theta", "GetRandom returns the theta value of the first replayed draw", Y1, ExpectedTheta[0], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 1 energy", "GetRandom returns the energy value of the first replayed draw", Z1, ExpectedEnergy[0], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 2 phi", "GetRandom returns the phi value of the second replayed draw", X2, ExpectedPhi[1], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 2 theta", "GetRandom returns the theta value of the second replayed draw", Y2, ExpectedTheta[1], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 2 energy", "GetRandom returns the energy value of the second replayed draw", Z2, ExpectedEnergy[1], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 3 phi", "GetRandom returns the phi value of the third replayed draw", X3, ExpectedPhi[2], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 3 theta", "GetRandom returns the theta value of the third replayed draw", Y3, ExpectedTheta[2], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 3 energy", "GetRandom returns the energy value of the third replayed draw", Z3, ExpectedEnergy[2], 1e-12) && Passed;
+
+    // Compare all 200 replayed draws
+    gRandom->SetSeed(61);
+    unsigned int Mismatches = 0;
+    for (unsigned int Draw = 0; Draw < 200; ++Draw) {
+      double X = 0.0;
+      double Y = 0.0;
+      double Z = 0.0;
+      Constant.GetRandom(X, Y, Z);
+      // Count a NaN as a mismatch
+      if ((fabs(X - ExpectedPhi[Draw]) <= 1e-12 && fabs(Y - ExpectedTheta[Draw]) <= 1e-12 && fabs(Z - ExpectedEnergy[Draw]) <= 1e-12) == false) {
+        ++Mismatches;
+      }
+    }
+    Passed = Evaluate("GetRandom()", "representative later draws", "All 200 draws equal the replayed draws", Mismatches, 0U) && Passed;
   }
 
   {
@@ -139,15 +176,15 @@ bool UTFunction3DSpherical::Run()
 
     MFunction3DSpherical RoundTripRead;
     Passed = Evaluate("Set()", "representative spherical round-trip file", "Set reads back a representative spherical function file", RoundTripRead.Set(FileName, "AP"), true) && Passed;
-    Passed = EvaluateNear("Evaluate()", "representative spherical round-trip interior", "Set preserves a representative spherical interior interpolation after a file round-trip", RoundTripRead.Evaluate(90.0, 45.0, 2.0), 5.5, 1e-10) && Passed;
+    Passed = EvaluateNear("Evaluate()", "representative spherical round-trip interior", "Set preserves a representative spherical interior interpolation after a file round-trip", RoundTripRead.Evaluate(90.0, 45.0, 2.0), 5.5, 1e-12) && Passed;
 
     MFunction3DSpherical RoundTripCopied(RoundTripRead);
-    Passed = EvaluateNear("MFunction3DSpherical(const MFunction3DSpherical&)", "file-loaded non-equidistant source", "The spherical copy constructor preserves representative file-loaded interpolation state", RoundTripCopied.Evaluate(90.0, 45.0, 2.0), 5.5, 1e-10) && Passed;
+    Passed = EvaluateNear("MFunction3DSpherical(const MFunction3DSpherical&)", "file-loaded non-equidistant source", "The spherical copy constructor preserves representative file-loaded interpolation state", RoundTripCopied.Evaluate(90.0, 45.0, 2.0), 5.5, 1e-12) && Passed;
     MFunction3DSpherical RoundTripAssigned;
     Passed = Evaluate("Set()", "equidistant spherical assignment target", "MFunction3DSpherical accepts a representative equidistant source before assignment checks",
                       RoundTripAssigned.Set(vector<double>{0.0, 90.0, 180.0}, vector<double>{0.0, 90.0, 180.0}, vector<double>{1.0, 2.0}, vector<double>(18, 1.0)), true) && Passed;
     RoundTripAssigned = RoundTripRead;
-    Passed = EvaluateNear("operator=()", "file-loaded non-equidistant source", "The spherical assignment operator preserves representative file-loaded interpolation state", RoundTripAssigned.Evaluate(90.0, 45.0, 2.0), 5.5, 1e-10) && Passed;
+    Passed = EvaluateNear("operator=()", "file-loaded non-equidistant source", "The spherical assignment operator preserves representative file-loaded interpolation state", RoundTripAssigned.Evaluate(90.0, 45.0, 2.0), 5.5, 1e-12) && Passed;
   }
 
   {

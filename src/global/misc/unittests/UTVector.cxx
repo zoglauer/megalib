@@ -145,6 +145,14 @@ bool UTVector::TestComparisonAndArithmetic()
   Passed = EvaluateTrue("AllSmaller()", "(4,5,6) vs (1,2,3)", "AllSmaller requires all components of V to be smaller than this vector", B.AllSmaller(A)) && Passed;
   Passed = EvaluateTrue("AllLarger()", "(1,2,3) vs (4,5,6)", "AllLarger requires all components of V to be larger than this vector", A.AllLarger(B)) && Passed;
   Passed = EvaluateTrue("AreEqual()", "tolerance", "AreEqual accepts component-wise tolerance", A.AreEqual(MVector(1.0 + 1e-7, 2.0 - 1e-7, 3.0), 1e-6)) && Passed;
+  Passed = EvaluateTrue("AreEqual()", "just inside", "AreEqual accepts a deviation of 9e-7 in each component with the tolerance 1e-6", A.AreEqual(MVector(1.0 + 9e-7, 2.0 - 9e-7, 3.0 + 9e-7), 1e-6)) && Passed;
+  Passed = EvaluateFalse("AreEqual()", "just outside x", "AreEqual rejects a deviation of 1.1e-6 in x with the tolerance 1e-6", A.AreEqual(MVector(1.0 + 1.1e-6, 2.0, 3.0), 1e-6)) && Passed;
+  Passed = EvaluateFalse("AreEqual()", "just outside y", "AreEqual rejects a deviation of 1.1e-6 in y with the tolerance 1e-6", A.AreEqual(MVector(1.0, 2.0 - 1.1e-6, 3.0), 1e-6)) && Passed;
+  Passed = EvaluateFalse("AreEqual()", "just outside z", "AreEqual rejects a deviation of 1.1e-6 in z with the tolerance 1e-6", A.AreEqual(MVector(1.0, 2.0, 3.0 + 1.1e-6), 1e-6)) && Passed;
+  Passed = EvaluateTrue("operator<", "z decides", "operator< compares z if x and y are equal", A < MVector(1.0, 2.0, 4.0)) && Passed;
+  Passed = EvaluateTrue("operator<", "y decides", "operator< compares y before z if x is equal", A < MVector(1.0, 3.0, 0.0)) && Passed;
+  Passed = EvaluateFalse("operator<", "x decides", "operator< compares x before y and z", MVector(2.0, 0.0, 0.0) < MVector(1.0, 9.0, 9.0)) && Passed;
+  Passed = EvaluateFalse("operator<", "equal", "operator< is false for equal vectors", A < MVector(1.0, 2.0, 3.0)) && Passed;
 
   MVector Sum = A + B;
   Passed = EvaluateTrue("operator+", "(1,2,3) + (4,5,6)", "Addition returns the component-wise sum", Sum == MVector(5.0, 7.0, 9.0)) && Passed;

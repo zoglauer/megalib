@@ -317,9 +317,9 @@ bool UTFile::TestAsciiIO()
   float FirstFloat = 0.0F;
   float SecondFloat = 0.0F;
   Passed = EvaluateTrue("Get(float)", "first float", "Get(float) reads the first float token", FloatFile.Get(FirstFloat)) && Passed;
-  Passed = EvaluateNear("Get(float)", "first float", "Get(float) parses the expected first float", FirstFloat, 1.5, 1e-6) && Passed;
+  Passed = EvaluateNear("Get(float)", "first float", "Get(float) parses the expected first float", FirstFloat, 1.5, 1e-12) && Passed;
   Passed = EvaluateTrue("Get(float)", "second float", "Get(float) reads the second float token", FloatFile.Get(SecondFloat)) && Passed;
-  Passed = EvaluateNear("Get(float)", "second float", "Get(float) parses the expected second float", SecondFloat, 2.75, 1e-6) && Passed;
+  Passed = EvaluateNear("Get(float)", "second float", "Get(float) parses the expected second float", SecondFloat, 2.75, 1e-12) && Passed;
   Passed = EvaluateTrue("Close()", "float ascii read", "Float test files can be closed after reading", FloatFile.Close()) && Passed;
 
   MString DelimiterFileName = AsciiDirectory + "/UTFile_delimiter.txt";
@@ -356,10 +356,10 @@ bool UTFile::TestAsciiIO()
   Passed = EvaluateTrue("WriteTextFile()", "scan fixture", "The representative scan fixture can be written", WriteTextFile(ScanFileName, "SE\nID 1\nSE\nID 2\n")) && Passed;
   Passed = EvaluateTrue("Open()", "scan file", "ASCII scan files can be opened for repeated scanning", File.Open(ScanFileName, MFile::c_Read, false)) && Passed;
   Passed = EvaluateTrue("ReadLine(MString)", "scan first line", "Scan files can be read line by line", File.ReadLine(Line)) && Passed;
-  Passed = EvaluateNear("GetUncompressedFilePosition()", "scan first line", "The uncompressed file position advances after reading one line", File.GetUncompressedFilePosition() > 0 ? 1.0 : 0.0, 1.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetUncompressedFilePosition()", "scan first line", "The uncompressed file position is 3 bytes (SE and the newline) after reading the first line", File.GetUncompressedFilePosition(), 3.0, 1e-12) && Passed;
   while (File.ReadLine(Line) == true) {
   }
-  Passed = EvaluateNear("GetUncompressedFilePosition()", "scan eof", "The uncompressed file position remains valid after scanning to EOF", File.GetUncompressedFilePosition() > 0 ? 1.0 : 0.0, 1.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetUncompressedFilePosition()", "scan eof", "The uncompressed file position is the file size of 16 bytes after scanning to EOF (3 + 5 + 3 + 5)", File.GetUncompressedFilePosition(), 16.0, 1e-12) && Passed;
   Passed = EvaluateTrue("Close()", "scan file", "Scan files can be closed after reaching EOF", File.Close()) && Passed;
   Passed = EvaluateTrue("Open()", "reopen scan file", "The same MFile object can be reopened for a fresh scan", File.Open(ScanFileName, MFile::c_Read, false)) && Passed;
   Passed = EvaluateTrue("ReadLine(MString)", "reopen scan first line", "Reopening restores reading from the beginning", File.ReadLine(Line)) && Passed;
@@ -467,8 +467,8 @@ bool UTFile::TestGzipIO()
 
   Passed = EvaluateTrue("Open()", "gzip read", "Gzip files can be reopened for reading", File.Open(FileName, MFile::c_Read, false)) && Passed;
   Passed = EvaluateTrue("IsOpen()", "gzip read", "Reopened gzip files report IsOpen() == true", File.IsOpen()) && Passed;
-  Passed = EvaluateNear("GetFileLength()", "gzip read", "Compressed gzip file length is nonzero after reopening", File.GetFileLength() > 0 ? 1.0 : 0.0, 1.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetUncompressedFileLength()", "gzip read", "Uncompressed gzip file length is nonzero after reopening", File.GetUncompressedFileLength() > 0 ? 1.0 : 0.0, 1.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetFileLength()", "gzip read", "Compressed gzip file length equals the size of the file on disk", File.GetFileLength(), static_cast<double>(std::filesystem::file_size(FileName.Data())), 1e-12) && Passed;
+  Passed = EvaluateNear("GetUncompressedFileLength()", "gzip read", "Uncompressed gzip file length is 17 bytes (alpha 6 + beta 5 + 3.5 4 + AB 2)", File.GetUncompressedFileLength(), 17.0, 1e-12) && Passed;
 
   MString Line;
   Passed = EvaluateTrue("ReadLine(MString)", "gzip first line", "ReadLine(MString) works on gzip files", File.ReadLine(Line)) && Passed;
@@ -477,8 +477,8 @@ bool UTFile::TestGzipIO()
   Passed = Evaluate("ReadLine(MString)", "gzip second line", "The second gzip line round-trips correctly", Line, MString("beta")) && Passed;
   Passed = EvaluateTrue("ReadLine(MString)", "gzip third line", "ReadLine(MString) can read the third gzip line", File.ReadLine(Line)) && Passed;
   Passed = Evaluate("ReadLine(MString)", "gzip third line", "The third gzip line round-trips correctly", Line, MString("3.5")) && Passed;
-  Passed = EvaluateTrue("GetCompressedFilePosition()", "gzip interior position", "Representative gzip reads advance the compressed file position", File.GetFilePosition() > 0.0) && Passed;
-  Passed = EvaluateTrue("GetUncompressedFilePosition()", "gzip interior position", "Representative gzip reads advance the uncompressed file position", File.GetUncompressedFilePosition() > 0.0) && Passed;
+  Passed = EvaluateNear("GetFilePosition()", "gzip interior position", "The compressed file position is the size of the file on disk", File.GetFilePosition(), static_cast<double>(std::filesystem::file_size(FileName.Data())), 1e-12) && Passed;
+  Passed = EvaluateNear("GetUncompressedFilePosition()", "gzip interior position", "The uncompressed file position is 15 bytes after reading the three lines alpha, beta, and 3.5", File.GetUncompressedFilePosition(), 15.0, 1e-12) && Passed;
 
   Passed = EvaluateTrue("Rewind()", "gzip read", "Gzip files can be rewound", File.Rewind()) && Passed;
   Passed = EvaluateNear("GetFilePosition()", "gzip rewind", "Compressed file position resets near the beginning after rewind", File.GetFilePosition(), 0.0, 1e-12) && Passed;
@@ -516,9 +516,9 @@ bool UTFile::TestGzipIO()
   float GzipFloat1 = 0.0F;
   float GzipFloat2 = 0.0F;
   Passed = EvaluateTrue("Get(float)", "gzip first float", "Get(float) parses the first float from gzip files", FloatFile.Get(GzipFloat1)) && Passed;
-  Passed = EvaluateNear("Get(float)", "gzip first float", "The first gzip float is parsed correctly", GzipFloat1, 1.25, 1e-6) && Passed;
+  Passed = EvaluateNear("Get(float)", "gzip first float", "The first gzip float is parsed correctly", GzipFloat1, 1.25, 1e-12) && Passed;
   Passed = EvaluateTrue("Get(float)", "gzip second float", "Get(float) parses the second float from gzip files", FloatFile.Get(GzipFloat2)) && Passed;
-  Passed = EvaluateNear("Get(float)", "gzip second float", "The second gzip float is parsed correctly", GzipFloat2, 4.5, 1e-6) && Passed;
+  Passed = EvaluateNear("Get(float)", "gzip second float", "The second gzip float is parsed correctly", GzipFloat2, 4.5, 1e-12) && Passed;
   Passed = EvaluateTrue("Close()", "gzip float read", "Gzip float files can be closed after reading", FloatFile.Close()) && Passed;
 
   MString EmptyGzipFileName = GzipDirectory + "/UTFile_empty.txt.gz";
@@ -528,7 +528,7 @@ bool UTFile::TestGzipIO()
   Passed = EvaluateTrue("Open()", "empty gzip write", "Empty gzip files can be created", EmptyFile.Open(EmptyGzipFileName, MFile::c_Write, false)) && Passed;
   Passed = EvaluateTrue("Close()", "empty gzip write", "Empty gzip files can be closed after creation", EmptyFile.Close()) && Passed;
   Passed = EvaluateTrue("Open()", "empty gzip read", "Empty gzip files can be reopened for reading", EmptyFile.Open(EmptyGzipFileName, MFile::c_Read, false)) && Passed;
-  Passed = EvaluateNear("GetFileLength()", "empty gzip", "Empty gzip files have a nonnegative compressed length", EmptyFile.GetFileLength() >= 0 ? 1.0 : 0.0, 1.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetFileLength()", "empty gzip", "Empty gzip files have the compressed length of the file on disk", EmptyFile.GetFileLength(), static_cast<double>(std::filesystem::file_size(EmptyGzipFileName.Data())), 1e-12) && Passed;
   Passed = EvaluateFalse("Get(char)", "empty gzip", "Reading a character from an empty gzip file fails", EmptyFile.Get(GzipCharacter)) && Passed;
   Passed = EvaluateTrue("Close()", "empty gzip read", "Empty gzip files can be closed after reading", EmptyFile.Close()) && Passed;
 

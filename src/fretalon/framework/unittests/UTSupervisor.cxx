@@ -419,9 +419,33 @@ bool UTSupervisor::TestConfiguration()
   Passed = EvaluateTrue("Save()", "representative configuration", "The supervisor writes a representative XML configuration", m_Supervisor->Save(SaveFile)) && Passed;
 
   MString SavedContent = ReadTextFile(SaveFile);
-  Passed = EvaluateTrue("Save()", "module sequence XML", "The saved configuration contains the selected module XML tags", SavedContent.Contains("XmlTagUTSupervisorLoader") && SavedContent.Contains("XmlTagUTSupervisorFilter")) && Passed;
-  Passed = EvaluateTrue("Save()", "geometry XML", "The saved configuration contains the configured geometry file name", SavedContent.Contains("representative-before-save.geo")) && Passed;
-  Passed = EvaluateTrue("Save()", "module options XML", "The saved configuration contains module option values for available modules", SavedContent.Contains("loader-before-save") && SavedContent.Contains("filter-before-save")) && Passed;
+  // Expected: version, module sequence, geometry, and options of all five modules (unused ones have defaults)
+  const MString ExpectedContent = MString("<NuclearizerData>\n"
+                                          "  <Version>1</Version>\n"
+                                          "  <ModuleSequence>\n"
+                                          "    <ModuleSequenceItem>XmlTagUTSupervisorLoader</ModuleSequenceItem>\n"
+                                          "    <ModuleSequenceItem>XmlTagUTSupervisorFilter</ModuleSequenceItem>\n"
+                                          "  </ModuleSequence>\n"
+                                          "  <GeometryFileName>representative-before-save.geo</GeometryFileName>\n"
+                                          "  <ModuleOptions>\n"
+                                          "    <XmlTagUTSupervisorLoader>\n"
+                                          "      <ConfigValue>loader-before-save</ConfigValue>\n"
+                                          "    </XmlTagUTSupervisorLoader>\n"
+                                          "    <XmlTagUTSupervisorFilter>\n"
+                                          "      <ConfigValue>filter-before-save</ConfigValue>\n"
+                                          "    </XmlTagUTSupervisorFilter>\n"
+                                          "    <XmlTagUTSupervisorSaver>\n"
+                                          "      <ConfigValue>default</ConfigValue>\n"
+                                          "    </XmlTagUTSupervisorSaver>\n"
+                                          "    <XmlTagUTSupervisorSoftConsumer>\n"
+                                          "      <ConfigValue>default</ConfigValue>\n"
+                                          "    </XmlTagUTSupervisorSoftConsumer>\n"
+                                          "    <XmlTagUTSupervisorSoftProvider>\n"
+                                          "      <ConfigValue>default</ConfigValue>\n"
+                                          "    </XmlTagUTSupervisorSoftProvider>\n"
+                                          "  </ModuleOptions>\n"
+                                          "</NuclearizerData>\n");
+  Passed = Evaluate("Save()", "saved XML", "The saved configuration contains the module sequence, the geometry file name, and the module options", SavedContent, ExpectedContent) && Passed;
 
   m_Supervisor->Clear();
   m_Loader->SetConfigValue("loader-after-clear");
@@ -907,7 +931,10 @@ bool UTSupervisor::TestAdditionalAnalysisBranches()
   const bool TestRunResult = m_Supervisor->Analyze(true);
   cout.rdbuf(OriginalCout);
   Passed = EvaluateTrue("Analyze()", "test run", "Test-run analysis initializes and finalizes modules without processing events", TestRunResult) && Passed;
-  Passed = EvaluateTrue("Analyze()", "test-run message", "Test-run analysis emits the documented success marker", MString(TestRunOutput.str()).Contains(">>> TEST RUN SUCCESSFUL <<<")) && Passed;
+  const MString TestRunText(TestRunOutput.str().c_str());
+  Passed = EvaluateTrue("Analyze()", "test-run message", "Test-run analysis ends its output with the documented success marker", TestRunText.EndsWith(">>> TEST RUN SUCCESSFUL <<<\n")) && Passed;
+  Passed = EvaluateTrue("Analyze()", "test-run loader summary", "The test-run summary reports that the loader processed 0 events in one instance", TestRunText.Contains("in module \"UT Supervisor Loader\" utilizing 1 instance and processed 0 events.")) && Passed;
+  Passed = EvaluateTrue("Analyze()", "test-run filter summary", "The test-run summary reports that the filter processed 0 events in one instance", TestRunText.Contains("in module \"UT Supervisor Filter\" utilizing 1 instance and processed 0 events.")) && Passed;
   Passed = EvaluateFalse("IsAnalysisisRunning()", "after test run", "The running flag is reset after a test run", m_Supervisor->IsAnalysisisRunning()) && Passed;
   Passed = EvaluateTrue("GetHardInterrupt()", "after test run", "Test-run mode leaves the hard interrupt set by the current implementation", m_Supervisor->GetHardInterrupt()) && Passed;
   Passed = Evaluate("Initialize()", "loader test run", "The start module is initialized during a test run", m_Loader->GetInitializeCalls(), 1U) && Passed;
@@ -921,7 +948,7 @@ bool UTSupervisor::TestAdditionalAnalysisBranches()
 
   const MString SaveDirectory = GetTemporaryDirectoryName("supervisor_save_directory");
   Passed = EvaluateTrue("PrepareTemporaryDirectory()", "save directory", "A temporary directory can stand in for an unwritable configuration-file path", PrepareTemporaryDirectory("supervisor_save_directory")) && Passed;
-  Passed = EvaluateTrue("Save()", "directory path", "MSupervisor::Save currently returns true even when the XML document cannot be written to a directory path", m_Supervisor->Save(SaveDirectory)) && Passed;
+  Passed = EvaluateFalse("Save()", "directory path", "Save returns false for a directory path", m_Supervisor->Save(SaveDirectory)) && Passed;
   Passed = EvaluateTrue("RemoveTemporaryDirectory()", "save directory", "The temporary save-directory fixture can be removed", RemoveTemporaryDirectory(SaveDirectory)) && Passed;
 
 

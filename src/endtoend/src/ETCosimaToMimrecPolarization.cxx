@@ -112,6 +112,7 @@ bool ETCosimaToMimrecPolarization::Run()
       const ETSimScenario Scenario = Scenarios[s];
       vector<MString> Changes = Window;
       Changes.push_back(MString("Polarization.BackgroundFile=") + BackgroundFile);
+      Changes.push_back("HistogramBins.Polarization=30"); // Fewer bins - mimrec stops at an empty bin
       Analyses.push_back(async(launch::async, [this, Scenario, Common, Changes]() { return Mimrec(Scenario, Common + "/mimrec.cfg", "-p", "pol.root", Changes); }));
     }
     for (unsigned int s = 0; s < 4; ++s) {

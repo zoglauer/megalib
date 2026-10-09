@@ -100,7 +100,7 @@ bool ETCosimaToMimrecSpectrum::Run()
     for (const shared_ptr<MSimEvent>& Event: Sim.m_Events) {
       TrueEnergy[Event->GetID()] = Event->GetIAAt(0)->GetSecondaryEnergy();
       MinTrue = min(MinTrue, Event->GetIAAt(0)->GetSecondaryEnergy());
-      MaxTrue = max(MaxTrue, Event->GetIAAt(0)->GetSecondaryEnergy());
+      MaxTrue = GetMaximum(MaxTrue, Event->GetIAAt(0)->GetSecondaryEnergy());
     }
 
     // Pair the reconstructed total energy with the true energy
@@ -119,7 +119,7 @@ bool ETCosimaToMimrecSpectrum::Run()
       }
     }
     mout<<Name<<": "<<Sim.m_Events.size()<<" triggers, "<<Pairs.size()<<" reconstructed events matched to the truth"<<endl;
-    Passed = EvaluateTrue("ReadTra()", Name + ", matching", "Most of the reconstructed events can be matched to the true event by the ID (> 90%)", Pairs.size() > 0.9*(Tra.Count(MPhysicalEvent::c_Compton) + Tra.Count(MPhysicalEvent::c_Photo))) && Passed;
+    Passed = Evaluate("ReadTra()", Name + ", matching", "Every reconstructed Compton and photo event can be matched to its true event by the ID", Tra.Count(MPhysicalEvent::c_Compton) + Tra.Count(MPhysicalEvent::c_Photo) - Pairs.size(), 0UL) && Passed;
 
     // Check that no energy is created - noise of the energy resolution is allowed
     unsigned int TooMuch = 0;
@@ -134,7 +134,7 @@ bool ETCosimaToMimrecSpectrum::Run()
       const double Line = Lines[s];
       double MaxDeviation = 0.0;
       for (const shared_ptr<MSimEvent>& Event: Sim.m_Events) {
-        MaxDeviation = max(MaxDeviation, fabs(Event->GetIAAt(0)->GetSecondaryEnergy() - Line));
+        MaxDeviation = GetMaximum(MaxDeviation, fabs(Event->GetIAAt(0)->GetSecondaryEnergy() - Line));
       }
       Passed = EvaluateNear("ReadSim()", Name + ", true energy", "The true energy of every photon is the line energy", MaxDeviation, 0.0, 1e-3) && Passed;
 
@@ -145,7 +145,7 @@ bool ETCosimaToMimrecSpectrum::Run()
           Peak.push_back(Match.m_Reconstructed);
         }
       }
-      const double PeakMedian = Median(Peak);
+      const double PeakMedian = GetMedian(Peak);
       mout<<Name<<": "<<Peak.size()<<" events within 4% of the line, median "<<PeakMedian<<" keV"<<endl;
       Passed = EvaluateTrue("Energy", Name + ", peak events", "The line is visible: > 100 full energy events", Peak.size() > 100) && Passed;
       if (Peak.size() > 100) {
@@ -155,7 +155,7 @@ bool ETCosimaToMimrecSpectrum::Run()
         for (double Energy: Peak) {
           Deviations.push_back(fabs(Energy - PeakMedian));
         }
-        const double Sigma = 1.4826*Median(Deviations);
+        const double Sigma = 1.4826*GetMedian(Deviations);
         mout<<Name<<": peak sigma "<<Sigma<<" keV ("<<100.0*Sigma/Line<<"%)"<<endl;
         Passed = EvaluateNear("Energy", Name + ", peak width", "The width of the peak is the energy resolution of the instrument: below 0.6% (shown: the excess in percent)", max(100.0*Sigma/Line - 0.6, 0.0), 0.0, 0.0) && Passed;
       }
@@ -167,7 +167,7 @@ bool ETCosimaToMimrecSpectrum::Run()
         double OwnCount = 0.0;
         for (const shared_ptr<MComptonEvent>& Event: Tra.Compton()) {
           const double Total = Event->Eg() + Event->Ee();
-          if (Total >= 0.98*Line && Total <= 1.02*Line) {
+          if (Total >= 0.98*Line && Total <= 1.02*Line && Tra.HasPhysicalScatterAngle(*Event) == true) {
             OwnCount += 1.0;
           }
         }
@@ -175,9 +175,30 @@ bool ETCosimaToMimrecSpectrum::Run()
         const double FWHM = FullWidthAtHalfMaximum(Spectrum.get());
         mout<<Name<<": mimrec spectrum with "<<Spectrum->Integral("width")<<" events (own analysis: "<<OwnCount<<"), peak at "<<PeakPosition<<" keV, FWHM "<<FWHM<<" keV ("<<100.0*FWHM/Line<<"%)"<<endl;
         // The spectrum is in counts per keV - use the integral over the bin widths
-        // Mimrec applies quality cuts - expect more than 95% of the Compton events
-        Passed = EvaluateNear("Mimrec", Name + ", events", "The spectrum of mimrec contains almost all Compton events of the window of the own analysis (95% to 100%)", Spectrum->Integral("width"), 0.9775*OwnCount, 0.0225*OwnCount + 0.001*OwnCount) && Passed;
-        Passed = EvaluateNear("Mimrec", Name + ", peak", "The spectrum of mimrec peaks at the line energy (within 0.2%)", PeakPosition, Line, 0.002*Line) && Passed;
+        Passed = EvaluateNear("Mimrec", Name + ", events", "The spectrum of mimrec contains the Compton events with a physical scatter angle of the window of the own analysis", Spectrum->Integral("width"), OwnCount, 1e-6*OwnCount) && Passed;
+        // Get the mean of the spectrum within 2 FWHM of the highest bin (counts = content * bin width) - the highest bin alone has a noise of about 0.1 keV at 150 keV:
+        double Counts = 0.0;
+        double Sum = 0.0;
+        for (int Bin = 1; Bin <= Spectrum->GetNbinsX(); ++Bin) {
+          if (fabs(Spectrum->GetBinCenter(Bin) - PeakPosition) <= 2.0*FWHM) {
+            Counts += Spectrum->GetBinContent(Bin)*Spectrum->GetBinWidth(Bin);
+            Sum += Spectrum->GetBinContent(Bin)*Spectrum->GetBinWidth(Bin)*Spectrum->GetBinCenter(Bin);
+          }
+        }
+        double PeakMean = 0.0;
+        double PeakRMS = 0.0;
+        if (Counts > 0.0) {
+          PeakMean = Sum/Counts;
+          double SumOfSquares = 0.0;
+          for (int Bin = 1; Bin <= Spectrum->GetNbinsX(); ++Bin) {
+            if (fabs(Spectrum->GetBinCenter(Bin) - PeakPosition) <= 2.0*FWHM) {
+              SumOfSquares += Spectrum->GetBinContent(Bin)*Spectrum->GetBinWidth(Bin)*pow(Spectrum->GetBinCenter(Bin) - PeakMean, 2);
+            }
+          }
+          PeakRMS = sqrt(SumOfSquares/Counts);
+        }
+        mout<<Name<<": mimrec spectrum mean within 2 FWHM of the peak "<<PeakMean<<" +- "<<PeakRMS/sqrt(Counts)<<" keV ("<<Counts<<" events)"<<endl;
+        Passed = EvaluateNear("Mimrec", Name + ", peak", "The mean of the spectrum of mimrec within 2 FWHM of its highest bin is the line energy (0.1%)", PeakMean, Line, 0.001*Line) && Passed;
         // FWHM = 2.355 sigma - below 1.5% for a resolution below 0.6%
         Passed = EvaluateNear("Mimrec", Name + ", width", "The width of the peak in the spectrum of mimrec is the energy resolution: the FWHM is below 1.5% (shown: the excess in percent)", max(100.0*FWHM/Line - 1.5, 0.0), 0.0, 0.0) && Passed;
         Passed = EvaluateTrue("Mimrec", Name + ", width resolved", "The peak is resolved: the FWHM is larger than zero", FWHM > 0.0) && Passed;
@@ -192,12 +213,12 @@ bool ETCosimaToMimrecSpectrum::Run()
         double OwnCount = 0.0;
         for (const shared_ptr<MComptonEvent>& Event: Tra.Compton()) {
           const double Total = Event->Eg() + Event->Ee();
-          if (Total >= 100.0 && Total <= 2000.0) {
+          if (Total >= 100.0 && Total <= 2000.0 && Tra.HasPhysicalScatterAngle(*Event) == true) {
             OwnCount += 1.0;
           }
         }
         mout<<Name<<": mimrec spectrum with "<<Spectrum->Integral("width")<<" events (own analysis: "<<OwnCount<<")"<<endl;
-        Passed = EvaluateNear("Mimrec", Name + ", events", "The spectrum of mimrec contains almost all Compton events between 100 and 2000 keV of the own analysis (95% to 100%)", Spectrum->Integral("width"), 0.9775*OwnCount, 0.0225*OwnCount + 0.001*OwnCount) && Passed;
+        Passed = EvaluateNear("Mimrec", Name + ", events", "The spectrum of mimrec contains the Compton events with a physical scatter angle between 100 and 2000 keV of the own analysis", Spectrum->Integral("width"), OwnCount, 1e-6*OwnCount) && Passed;
       }
       const vector<pair<double, double>> Bands = { { 100, 200 }, { 200, 400 }, { 400, 800 }, { 800, 2000 } };
       for (const auto& Band: Bands) {
@@ -210,8 +231,8 @@ bool ETCosimaToMimrecSpectrum::Run()
         const MString BandName = MString(" ") + static_cast<int>(Band.first) + "-" + static_cast<int>(Band.second) + " keV";
         Passed = EvaluateTrue("Energy", Name + BandName + ", events", "There are enough full energy events in the band (> 50)", Ratios.size() > 50) && Passed;
         if (Ratios.size() > 50) {
-          mout<<Name<<BandName<<": "<<Ratios.size()<<" full energy events, median of reconstructed/true "<<Median(Ratios)<<endl;
-          Passed = EvaluateNear("Energy", Name + BandName + ", calibration", "The reconstructed energy of the full energy events is the true energy (median ratio within 0.1%)", Median(Ratios), 1.0, 0.001) && Passed;
+          mout<<Name<<BandName<<": "<<Ratios.size()<<" full energy events, median of reconstructed/true "<<GetMedian(Ratios)<<endl;
+          Passed = EvaluateNear("Energy", Name + BandName + ", calibration", "The reconstructed energy of the full energy events is the true energy (median ratio within 0.1%)", GetMedian(Ratios), 1.0, 0.001) && Passed;
         }
       }
     }

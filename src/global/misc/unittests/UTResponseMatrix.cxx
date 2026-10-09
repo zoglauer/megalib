@@ -93,8 +93,8 @@ bool UTResponseMatrix::Run()
   Passed = Evaluate("GetSpectralParameters()", "default constructor", "The default response matrix starts with no spectral parameters", Default.GetSpectralParameters().size(), 0UL) && Passed;
   Passed = Evaluate("GetHash()", "default constructor", "The default response matrix starts with hash zero", Default.GetHash(), 0UL) && Passed;
   Passed = Evaluate("GetNBins()", "default constructor", "The representative derived response matrix reports its representative number of bins", Default.GetNBins(), 7UL) && Passed;
-  Passed = EvaluateNear("GetMaximum()", "default constructor", "The representative derived response matrix reports its representative maximum", Default.GetMaximum(), 4.5, 1e-6) && Passed;
-  Passed = EvaluateNear("GetMinimum()", "default constructor", "The representative derived response matrix reports its representative minimum", Default.GetMinimum(), -1.5, 1e-6) && Passed;
+  Passed = EvaluateNear("GetMaximum()", "default constructor", "The representative derived response matrix reports its representative maximum", Default.GetMaximum(), 4.5, 1e-12) && Passed;
+  Passed = EvaluateNear("GetMinimum()", "default constructor", "The representative derived response matrix reports its representative minimum", Default.GetMinimum(), -1.5, 1e-12) && Passed;
   Passed = EvaluateNear("GetSum()", "default constructor", "The representative derived response matrix reports its representative sum", Default.GetSum(), 10.5, 1e-12) && Passed;
   Passed = Evaluate("GetStatistics()", "default constructor", "The representative derived response matrix reports its representative statistics string", Default.GetStatistics(), MString("Representative statistics")) && Passed;
 

@@ -158,13 +158,6 @@ bool UTPhysicalEvent::TestBaseEvent()
   MString Tra = Event.ToTraString();
   MString ExpectedTra = MString("ET Unkown\nID 42\nTI ") + Event.GetTime().GetLongIntsString() + "\nTW 7\nBD bad event\nDC\nOI 1 2 3 4 5 6 7 8 9 10\nCC comment\n";
   Passed = Evaluate("ToTraString()", "base exact", "The base tra-string serialization is deterministic for representative event metadata", Tra, ExpectedTra) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string starts with an event type line", Tra.BeginsWith("ET")) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string contains the id", Tra.Contains("ID 42")) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string contains the time", Tra.Contains("TI")) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string contains the time walk", Tra.Contains("TW 7")) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string contains the bad flag", Tra.Contains("BD bad event")) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string contains the OI block", Tra.Contains("OI 1")) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "base", "The base tra-string contains the comment", Tra.Contains("CC comment")) && Passed;
   Passed = Evaluate("ParseLine()", "base id", "The base parser accepts an id line", Event.ParseLine("ID 17", false), 0) && Passed;
   Passed = Evaluate("GetId()", "base id", "Parsing an id line stores the identifier", Event.GetId(), 17L) && Passed;
   Passed = Evaluate("ParseLine()", "base comment", "The base parser accepts a comment line", Event.ParseLine("CC parsed comment", false), 0) && Passed;
@@ -193,7 +186,8 @@ bool UTPhysicalEvent::TestBaseEvent()
   Passed = Evaluate("GetBadFlag()", "two flags", "The first flag is kept in order", Flags.GetBadFlag(0), MString("first")) && Passed;
   Passed = Evaluate("GetBadFlag()", "two flags", "The second flag is kept in order", Flags.GetBadFlag(1), MString("second (reason)")) && Passed;
   MString FlagsTra = Flags.ToTraString();
-  Passed = EvaluateTrue("ToTraString()", "two flags", "Each bad flag is written as its own BD line", FlagsTra.Contains("BD first\nBD second (reason)\n")) && Passed;
+  MString ExpectedFlagsTra = MString("ET Unkown\nID 0\nTI ") + Flags.GetTime().GetLongIntsString() + "\nBD first\nBD second (reason)\n";
+  Passed = Evaluate("ToTraString()", "two flags", "Each bad flag is written as its own BD line", FlagsTra, ExpectedFlagsTra) && Passed;
   Passed = Evaluate("ParseLine()", "BD line", "The base parser accepts a BD line", Flags.ParseLine("BD third", false), 0) && Passed;
   Passed = Evaluate("GetNBadFlags()", "BD line", "A parsed BD line adds a flag instead of replacing one", Flags.GetNBadFlags(), 3U) && Passed;
   Passed = Evaluate("GetBadFlag()", "BD line", "The parsed flag is stored without the keyword", Flags.GetBadFlag(2), MString("third")) && Passed;
@@ -287,13 +281,13 @@ bool UTPhysicalEvent::TestOIParticleID()
   MPhysicalEvent NoID;
   NoID.SetOIInformation(OIPosition, OIDirection, OIPolarization, 10.0);
   Passed = Evaluate("GetOIParticleID()", "OI id not set", "SetOIInformation without an ID leaves the particle ID undefined", NoID.GetOIParticleID(), g_IntNotDefined) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "OI id not set", "Without an ID the OI line has the old 10 values", NoID.ToTraString().Contains("OI 1 2 3 4 5 6 7 8 9 10\n")) && Passed;
+  Passed = Evaluate("ToTraString()", "OI id not set", "Without an ID the OI line has the old 10 values", NoID.ToTraString(), MString("ET Unkown\nID 0\nTI ") + NoID.GetTime().GetLongIntsString() + "\nOI 1 2 3 4 5 6 7 8 9 10\n") && Passed;
 
   // Setting with an ID appends it as 11th value
   MPhysicalEvent WithID;
   WithID.SetOIInformation(OIPosition, OIDirection, OIPolarization, 10.0, 1);
   Passed = Evaluate("GetOIParticleID()", "OI id set", "SetOIInformation stores the particle ID", WithID.GetOIParticleID(), 1) && Passed;
-  Passed = EvaluateTrue("ToTraString()", "OI id set", "With an ID the OI line has the ID as 11th value", WithID.ToTraString().Contains("OI 1 2 3 4 5 6 7 8 9 10 1\n")) && Passed;
+  Passed = Evaluate("ToTraString()", "OI id set", "With an ID the OI line has the ID as 11th value", WithID.ToTraString(), MString("ET Unkown\nID 0\nTI ") + WithID.GetTime().GetLongIntsString() + "\nOI 1 2 3 4 5 6 7 8 9 10 1\n") && Passed;
 
   // Parse old and new OI lines with the slow and the fast parser
   for (bool Fast: { false, true }) {

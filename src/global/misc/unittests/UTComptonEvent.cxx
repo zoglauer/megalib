@@ -123,6 +123,12 @@ bool UTComptonEvent::TestBasics()
   Passed = EvaluateTrue("IsKinematicsOK()", "100 keV + 500 keV", "Representative Compton energies are kinematically valid", MComptonEvent::IsKinematicsOK(100.0, 500.0)) && Passed;
   Passed = EvaluateFalse("IsKinematicsOK()", "1 keV + 1 keV", "Implausible energies are rejected", MComptonEvent::IsKinematicsOK(1.0, 1.0)) && Passed;
 
+  // Compton edge for Ei = 1000 keV: Ee = 2*Ei^2/(c_E0 + 2*Ei) = 796.4957... keV (cos(phi) = -1)
+  const double ComptonEdge = 2.0*1000.0*1000.0/(c_E0 + 2.0*1000.0);
+  Passed = EvaluateTrue("IsKinematicsOK()", "just below Compton edge", "An electron energy just below the Compton edge is kinematically valid", MComptonEvent::IsKinematicsOK(ComptonEdge*(1.0 - 1e-9), 1000.0 - ComptonEdge*(1.0 - 1e-9))) && Passed;
+  Passed = EvaluateFalse("IsKinematicsOK()", "just above Compton edge", "An electron energy just above the Compton edge is kinematically invalid", MComptonEvent::IsKinematicsOK(ComptonEdge*(1.0 + 1e-9), 1000.0 - ComptonEdge*(1.0 + 1e-9))) && Passed;
+  Passed = EvaluateFalse("IsKinematicsOK()", "zero electron energy", "A zero electron energy (cos(phi) = 1) is kinematically invalid", MComptonEvent::IsKinematicsOK(0.0, 500.0)) && Passed;
+
   Passed = EvaluateNear("ComputeCosPhiViaEeEg()", "100/500", "The cosine helper returns the expected value", MComptonEvent::ComputeCosPhiViaEeEg(100.0, 500.0), 0.829667, 1e-12) && Passed;
   Passed = EvaluateNear("ComputePhiViaEeEg()", "100/500", "The phi helper returns the expected angle", MComptonEvent::ComputePhiViaEeEg(100.0, 500.0), 0.5922854048410028, 1e-12) && Passed;
   Passed = EvaluateNear("ComputeEeViaPhiEg()", "phi=1.0/Eg=500", "The Ee helper returns the expected energy", MComptonEvent::ComputeEeViaPhiEg(1.0, 500.0), 408.7652890586013, 1e-12) && Passed;
@@ -130,25 +136,41 @@ bool UTComptonEvent::TestBasics()
   Passed = EvaluateNear("ComputeEeViaPhiEi()", "phi=1.0/Ei=600", "The Ee-via-Ei helper returns the expected energy", MComptonEvent::ComputeEeViaPhiEi(1.0, 600.0), 210.32977200995623, 1e-12) && Passed;
   Passed = EvaluateNear("ComputePhiViaEeEg()", "phi=1.0/Ei=600", "The phi/Ei helper round-trips through the inverse relation", MComptonEvent::ComputePhiViaEeEg(MComptonEvent::ComputeEeViaPhiEi(1.0, 600.0), 600.0 - MComptonEvent::ComputeEeViaPhiEi(1.0, 600.0)), 1.0, 1e-12) && Passed;
   DisableDefaultStreams();
-  Passed = EvaluateNear("ComputeEgViaThetaEe()", "theta=1.0/Ee=1000", "The Eg helper returns the expected energy", MComptonEvent::ComputeEgViaThetaEe(1.0, 1000.0), 2205.372267724561, 1e-9) && Passed;
+  Passed = EvaluateNear("ComputeEgViaThetaEe()", "theta=1.0/Ee=1000", "The Eg helper returns the expected energy", MComptonEvent::ComputeEgViaThetaEe(1.0, 1000.0), 2205.372267724561, 1e-11) && Passed;
   EnableDefaultStreams();
   Passed = EvaluateNear("ComputeEeViaThetaEg()", "theta=1.2/Ee=200", "The Ee helper returns the expected energy", MComptonEvent::ComputeEeViaThetaEg(1.2, 4898.857707326749), 200.0, 1e-12) && Passed;
-  Passed = EvaluateNear("ComputeEgViaThetaEe()", "theta=1.2/Ee=200", "The inverse helper returns the expected gamma energy", MComptonEvent::ComputeEgViaThetaEe(1.2, 200.0), 4898.857707326749, 1e-9) && Passed;
+  Passed = EvaluateNear("ComputeEgViaThetaEe()", "theta=1.2/Ee=200", "The inverse helper returns the expected gamma energy", MComptonEvent::ComputeEgViaThetaEe(1.2, 200.0), 4898.857707326749, 1e-11) && Passed;
   Passed = Evaluate("ComputeEeViaThetaEg()", "no solution", "The helper returns the sentinel when no solution exists", MComptonEvent::ComputeEeViaThetaEg(1.2, 500.0), 9.99E+99) && Passed;
   gRandom->SetSeed(123456);
   const double RandomPhi = MComptonEvent::GetRandomPhi(600.0);
-  Passed = EvaluateNear("GetRandomPhi()", "600 keV", "Random Compton scatter angles are reproducible with a fixed seed", RandomPhi, 0.454195, 1e-6) && Passed;
-  Passed = EvaluateTrue("GetRandomPhi()", "600 keV", "Random Compton scatter angles are in range", RandomPhi >= 0.0 && RandomPhi <= c_Pi) && Passed;
+  Passed = EvaluateNear("GetRandomPhi()", "600 keV", "Random Compton scatter angles are reproducible with a fixed seed", RandomPhi, 0.45419464965895046, 1e-12) && Passed; // Golden value for seed 123456
 
-  Passed = EvaluateNear("GetKleinNishina()", "600/1.0", "The Klein-Nishina value matches the reference calculation", MComptonEvent::GetKleinNishina(600.0, 1.0), 2.0606955358931753e-30, 1e-34) && Passed;
-  Passed = EvaluateNear("GetDifferentalKleinNishina()", "600/1.0", "The differential Klein-Nishina value matches the reference calculation", MComptonEvent::GetDifferentalKleinNishina(600.0, 1.0), 2.448920489354272e-30, 1e-34) && Passed;
-  Passed = EvaluateNear("GetKleinNishinaNormalized()", "600/1.0", "The normalized Klein-Nishina value matches the reference calculation", MComptonEvent::GetKleinNishinaNormalized(600.0, 1.0), 0.7875232996978867, 1e-4) && Passed;
-  Passed = EvaluateNear("GetKleinNishinaNormalizedByArea()", "600/1.0", "The area-normalized Klein-Nishina value matches the reference calculation", MComptonEvent::GetKleinNishinaNormalizedByArea(600.0, 1.0), 0.49025440107901136, 1e-4) && Passed;
+  // Expected at 600 keV: mean phi = 1.1941725, standard deviation = 0.7269015, fraction below pi/2 = 0.7026068 (Simpson integration, independent script) - tolerances are 5 sigma
+  const unsigned int NumberOfSamples = 200000;
+  double PhiSum = 0.0;
+  unsigned int BelowHalfPi = 0;
+  unsigned int OutOfRange = 0;
+  for (unsigned int i = 0; i < NumberOfSamples; ++i) {
+    const double Phi = MComptonEvent::GetRandomPhi(600.0);
+    PhiSum += Phi;
+    if (Phi < 0.5*c_Pi) BelowHalfPi++;
+    if (Phi < 0.0 || Phi > c_Pi) OutOfRange++;
+  }
+  Passed = Evaluate("GetRandomPhi()", "600 keV range", "No random Compton scatter angle is outside [0, pi]", OutOfRange, 0U) && Passed;
+  Passed = EvaluateNear("GetRandomPhi()", "600 keV mean", "The mean of random Compton scatter angles matches the Klein-Nishina mean", PhiSum/NumberOfSamples, 1.1941725343421477, 5.0*0.7269015425537985/sqrt(static_cast<double>(NumberOfSamples))) && Passed;
+  Passed = EvaluateNear("GetRandomPhi()", "600 keV fraction", "The fraction of random Compton scatter angles below pi/2 matches the Klein-Nishina fraction", static_cast<double>(BelowHalfPi)/NumberOfSamples, 0.7026067714084184, 5.0*sqrt(0.7026067714084184*(1.0 - 0.7026067714084184)/NumberOfSamples)) && Passed;
 
-  Passed = EvaluateNear("GetKleinNishina()", "1000/0.5", "The Klein-Nishina value matches a second reference point", MComptonEvent::GetKleinNishina(1000.0, 0.5), 2.2217366992031657e-30, 1e-34) && Passed;
-  Passed = EvaluateNear("GetDifferentalKleinNishina()", "1000/0.5", "The differential Klein-Nishina value matches a second reference point", MComptonEvent::GetDifferentalKleinNishina(1000.0, 0.5), 4.6341642659911654e-30, 1e-34) && Passed;
-  Passed = EvaluateNear("GetKleinNishinaNormalized()", "1000/0.5", "The normalized Klein-Nishina value matches a second reference point", MComptonEvent::GetKleinNishinaNormalized(1000.0, 0.5), 0.9999008060035717, 1e-4) && Passed;
-  Passed = EvaluateNear("GetKleinNishinaNormalizedByArea()", "1000/0.5", "The area-normalized Klein-Nishina value matches a second reference point", MComptonEvent::GetKleinNishinaNormalizedByArea(1000.0, 0.5), 0.6694365458574993, 1e-4) && Passed;
+  // Expected: Klein-Nishina with P = Eg/Ei = 1/(1 + k*(1 - cos(phi))) and r = 2.8e-15 m, normalization by Simpson integration (area) and golden-section search (maximum), independent script
+  // Tolerance 1e-4 for the maximum normalization - the class searches the maximum on a grid of 0.01 rad
+  Passed = EvaluateNear("GetKleinNishina()", "600/1.0", "The Klein-Nishina value matches the reference calculation", MComptonEvent::GetKleinNishina(600.0, 1.0), 2.0606935583351033e-30, 1e-12*2.0606935583351033e-30) && Passed;
+  Passed = EvaluateNear("GetDifferentalKleinNishina()", "600/1.0", "The differential Klein-Nishina value matches the reference calculation", MComptonEvent::GetDifferentalKleinNishina(600.0, 1.0), 2.448918139233938e-30, 1e-12*2.448918139233938e-30) && Passed;
+  Passed = EvaluateNear("GetKleinNishinaNormalized()", "600/1.0", "The normalized Klein-Nishina value matches the reference calculation", MComptonEvent::GetKleinNishinaNormalized(600.0, 1.0), 0.7875229947517927, 1e-4) && Passed;
+  Passed = EvaluateNear("GetKleinNishinaNormalizedByArea()", "600/1.0", "The area-normalized Klein-Nishina value matches the reference calculation", MComptonEvent::GetKleinNishinaNormalizedByArea(600.0, 1.0), 0.49025434914503857, 1e-9) && Passed;
+
+  Passed = EvaluateNear("GetKleinNishina()", "1000/0.5", "The Klein-Nishina value matches a second reference point", MComptonEvent::GetKleinNishina(1000.0, 0.5), 2.2217352188625586e-30, 1e-12*2.2217352188625586e-30) && Passed;
+  Passed = EvaluateNear("GetDifferentalKleinNishina()", "1000/0.5", "The differential Klein-Nishina value matches a second reference point", MComptonEvent::GetDifferentalKleinNishina(1000.0, 0.5), 4.6341611782528454e-30, 1e-12*4.6341611782528454e-30) && Passed;
+  Passed = EvaluateNear("GetKleinNishinaNormalized()", "1000/0.5", "The normalized Klein-Nishina value matches a second reference point", MComptonEvent::GetKleinNishinaNormalized(1000.0, 0.5), 0.999900784604235, 1e-4) && Passed;
+  Passed = EvaluateNear("GetKleinNishinaNormalizedByArea()", "1000/0.5", "The area-normalized Klein-Nishina value matches a second reference point", MComptonEvent::GetKleinNishinaNormalizedByArea(1000.0, 0.5), 0.6694367413430911, 1e-9) && Passed;
 
   MComptonEvent ARMEvent;
   ARMEvent.SetEg(256.0);
@@ -163,7 +185,13 @@ bool UTComptonEvent::TestBasics()
   Passed = EvaluateNear("GetSPDElectron()", "arm geometry", "SPD electron is zero for a point on the reconstructed electron plane", ARMEvent.GetSPDElectron(ARMEvent.GetPosition() + ARMEvent.GetOrigin()), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetAzimuthalScatterAngle()", "arm geometry", "The azimuthal scatter angle is zero on the reference axis", ARMEvent.GetAzimuthalScatterAngle(MVector(0.0, 0.0, 1.0)), 0.0, 1e-12) && Passed;
   Passed = EvaluateTrue("Data()", "arm geometry", "Data() returns the physical-event self pointer", ARMEvent.Data() == static_cast<MPhysicalEvent*>(&ARMEvent)) && Passed;
-  Passed = EvaluateTrue("ToString()", "arm geometry", "ToString() includes the Compton event header", ARMEvent.ToString().Contains("Compton event")) && Passed;
+  // Expected: angles in degrees (6 significant digits) and energies from the Compton kinematics, independent script
+  const MString ARMText = ARMEvent.ToString();
+  Passed = EvaluateTrue("ToString()", "arm geometry header", "ToString() starts with the Compton event header and its id", ARMText.BeginsWith("\nCompton event 0:\n")) && Passed;
+  Passed = EvaluateTrue("ToString()", "arm geometry energies", "ToString() prints the scattered gamma and recoil electron energies", ARMText.Contains("  Energy of scattered gamma-ray: 256 +- 0\n  Energy of recoil electron: 257.005 +- 0\n")) && Passed;
+  Passed = EvaluateTrue("ToString()", "arm geometry positions", "ToString() prints both interaction positions", ARMText.Contains("  Position of first Compton IA: 0, 0, 0\n  Position of second Compton IA: 1, 0, 0\n")) && Passed;
+  Passed = EvaluateTrue("ToString()", "arm geometry angles", "ToString() prints the Compton, electron, and total scatter angles in degrees", ARMText.Contains("  Compton scatter angle phi: 90\n  Electron scatter angle phi: 26.5201\n  Total scatter angle theta (energies): 116.52\n  Total scatter angle theta (geo): 90\n")) && Passed;
+  Passed = EvaluateTrue("ToString()", "arm geometry lever arm", "ToString() prints the first lever arm", ARMText.Contains("  First lever arm: 1\n")) && Passed;
 
   MComptonEvent PhysicsSeed;
   PhysicsSeed.SetEg(420.0);
@@ -220,12 +248,18 @@ bool UTComptonEvent::TestBasics()
   Passed = EvaluateNear("LeverArm()", "physics seed", "The lever-arm helper is stored", PhysicsSeed.LeverArm(), sqrt(2.0), 1e-12) && Passed;
   Passed = Evaluate("CoincidenceWindow()", "physics seed", "The coincidence window defaults to zero", PhysicsSeed.CoincidenceWindow().GetAsDouble(), 0.0) && Passed;
   Passed = EvaluateTrue("HasTrack()", "physics seed", "A non-zero electron direction creates a track", PhysicsSeed.HasTrack()) && Passed;
-  Passed = EvaluateTrue("GetOrigin()", "physics seed", "A tracked Compton event exposes an origin direction", PhysicsSeed.GetOrigin() != g_VectorNotDefined) && Passed;
+  Passed = EvaluateVectorNear("GetOrigin()", "physics seed", "A tracked Compton event exposes the cone-projected incoming direction as origin", PhysicsSeed.GetOrigin(), MVector(0.4490133111297299, -0.4490133111297299, -0.7725115486881946), 1e-12) && Passed;
   Passed = EvaluateNear("CalculateThetaViaAngles()", "physics seed", "The geometric scatter angle matches the reference geometry", PhysicsSeed.CalculateThetaViaAngles(), c_Pi / 2.0, 1e-12) && Passed;
-  Passed = EvaluateNear("GetKleinNishina() const", "physics seed", "The event Klein-Nishina value matches the reference calculation", PhysicsSeed.GetKleinNishina(), 2.2729424385174867e-30, 1e-34) && Passed;
+  Passed = EvaluateNear("GetKleinNishina() const", "physics seed", "The event Klein-Nishina value matches the reference calculation", PhysicsSeed.GetKleinNishina(), 2.2729424385174867e-30, 1e-12*2.2729424385174867e-30) && Passed;
   Passed = EvaluateNear("dPhi()", "physics seed", "The Compton angle uncertainty matches the reference propagation", PhysicsSeed.dPhi(), 0.22377919495214327, 1e-12) && Passed;
   Passed = EvaluateTrue("Data()", "physics seed", "Data() returns the physical-event self pointer", PhysicsSeed.Data() == static_cast<MPhysicalEvent*>(&PhysicsSeed)) && Passed;
-  Passed = EvaluateTrue("ToString()", "physics seed", "ToString() includes the Compton event header", PhysicsSeed.ToString().Contains("Compton event")) && Passed;
+  const MString SeedText = PhysicsSeed.ToString();
+  Passed = EvaluateTrue("ToString()", "physics seed header", "ToString() starts with the Compton event header and its id", SeedText.BeginsWith("\nCompton event 0:\n")) && Passed;
+  Passed = EvaluateTrue("ToString()", "physics seed energies", "ToString() prints the energies with their uncertainties", SeedText.Contains("  Energy of scattered gamma-ray: 420 +- 4.2\n  Energy of recoil electron: 180 +- 1.8\n")) && Passed;
+  Passed = EvaluateTrue("ToString()", "physics seed positions", "ToString() prints both interaction positions", SeedText.Contains("  Position of first Compton IA: 1, 0, 0\n  Position of second Compton IA: 0, 1, 0\n")) && Passed;
+  Passed = EvaluateTrue("ToString()", "physics seed directions", "ToString() prints the electron and incoming directions", SeedText.Contains("  Electron direction: 0, 0, 1\n  Incoming direction: 0.473883, -0.473883, -0.742206\n")) && Passed;
+  Passed = EvaluateTrue("ToString()", "physics seed angles", "ToString() prints the Compton, electron, and total scatter angles in degrees", SeedText.Contains("  Compton scatter angle phi: 50.58\n  Electron scatter angle phi: 44.2296\n  Total scatter angle theta (energies): 94.8096\n  Total scatter angle theta (geo): 90\n")) && Passed;
+  Passed = EvaluateTrue("ToString()", "physics seed lever arms", "ToString() prints the first and the minimum lever arm and the sequence length", SeedText.Contains("  First lever arm: 1.41421\n  Minimum lever arm in sequence: 1.41421\n  Sequence Length: 3\n")) && Passed;
 
   MPhysicalEvent* Duplicate = ARMEvent.Duplicate();
   Passed = EvaluateTrue("Duplicate()", "Compton duplicate", "Duplicate keeps the concrete Compton type", dynamic_cast<MComptonEvent*>(Duplicate) != nullptr) && Passed;

@@ -161,7 +161,7 @@ bool UTModule::TestDefaultsAndMetadata()
   Passed = EvaluateSize("GetExpos()", "default", "The expo list is empty by default", Module.GetExpos().size(), static_cast<size_t>(0)) && Passed;
   Passed = Evaluate("GetNumberOfAnalyzedEvents()", "default", "No events have passed through analysis by default", Module.GetNumberOfAnalyzedEvents(), 0L) && Passed;
   Passed = EvaluateNear("GetSleepingTime()", "default", "No sleeping time is recorded by default", Module.GetSleepingTime(), 0.0, 1.0e-12) && Passed;
-  Passed = EvaluateNear("GetProcessingTime()", "default", "No processing time is recorded by default", Module.GetProcessingTime(), 0.0, 1.0e-6) && Passed;
+  Passed = EvaluateNear("GetProcessingTime()", "default", "No processing time is recorded by default", Module.GetProcessingTime(), 0.0, 1.0e-12) && Passed;
   Passed = EvaluateTrue("GetGeometry()", "default", "A freshly constructed module starts without a geometry pointer, not an uninitialized one", Module.GetGeometry() == nullptr) && Passed;
 
   Module.SetProbeName("ProbeModule");
@@ -487,8 +487,10 @@ bool UTModule::TestOrderingFlags()
   cout.rdbuf(OriginalCout);
   g_Verbosity = PreviousVerbosity;
 
-  Passed = EvaluateTrue("AddPreceedingModuleType()", "soft and immediate warning", "Raising a soft requirement to a hard one is reported at warning level", MString(ContradictoryOutput.str()).Contains("cannot be immediate")) && Passed;
-  Passed = EvaluateTrue("AddPreceedingModuleType()", "soft and immediate warning", "The warning names the module it came from", MString(ContradictoryOutput.str()).Contains("XmlTagWarningProbe")) && Passed;
+  // Expected: one line with the XML tag of the module, the type of the requirement, and the reason
+  ostringstream ExpectedWarning;
+  ExpectedWarning<<"XmlTagWarningProbe: A soft preceeding module requirement (type: "<<ModuleProbe::c_SoftProgress<<") cannot be immediate -- raising it to a hard requirement"<<endl;
+  Passed = Evaluate("AddPreceedingModuleType()", "soft and immediate warning", "Raising a soft requirement to a hard one is reported at warning level as one line naming the module and the requirement type", MString(ContradictoryOutput.str()), MString(ExpectedWarning.str())) && Passed;
   Passed = EvaluateTrue("AddPreceedingModuleType()", "legitimate combinations", "Neither a hard immediate nor a plain soft requirement produces a warning", LegitimateOutput.str().empty()) && Passed;
 
   // Clearing has to drop the type, the hard flag and the immediate flag together, so that a module

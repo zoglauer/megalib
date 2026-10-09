@@ -183,9 +183,10 @@ bool UTImage3D::Run()
     Passed = EvaluateNear("Reset()", "default constructor pre-display average", "Reset is safely callable on a representative 3D image before any histogram has been created", Default.GetAverage(), 0.0, 1e-12) && Passed;
 
     DisableDefaultStreams();
-    Default.SaveAs(GetTemporaryDirectoryName("missing") + "/does_not_exist.png");
+    MString NoCanvasFileName = GetTemporaryFileName("no_canvas.png");
+    Default.SaveAs(NoCanvasFileName);
     EnableDefaultStreams();
-    Passed = EvaluateTrue("SaveAs()", "default constructor no-canvas path", "SaveAs is safely callable on a representative 3D image without a canvas", true) && Passed;
+    Passed = EvaluateFalse("SaveAs()", "default constructor no-canvas path", "SaveAs writes no file for a representative 3D image without a canvas", MFile::Exists(NoCanvasFileName)) && Passed;
   }
 
   {
@@ -526,7 +527,7 @@ bool UTImage3D::Run()
     DisableDefaultStreams();
     Image.SaveAs(FileName);
     EnableDefaultStreams();
-    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates the representative 3D output file when a canvas exists", MFile::Exists(FileName)) && Passed;
+    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates a file starting with the PNG signature when a canvas exists", MFile::Exists(FileName) && ReadTextFile(FileName).BeginsWith(MString("\x89PNG\r\n\x1a\n"))) && Passed;
   }
 
   {

@@ -190,13 +190,13 @@ bool UTFileEventsEvta::TestReadSimFixtures()
   MFileEventsEvta Reader(&Geometry);
   Passed = EvaluateTrue("Open()", "evta read open", "The 1-second sim fixture opens in the evta reader", Reader.Open(SimFixture)) && Passed;
 
-  Passed = EvaluateNear("GetObservationTime()", "evta direct observation time", "Observation time can be read directly from the sim footer", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-9) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta direct observation time", "Observation time can be read directly from the sim footer", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
 
   MRERawEvent* Event = Reader.GetNextEvent();
   Passed = EvaluateTrue("GetNextEvent()", "evta first event", "The first raw event can be reconstructed from the sim fixture", Event != nullptr) && Passed;
   if (Event != nullptr) {
     Passed = Evaluate("GetEventID()", "evta first event id", "The first reconstructed raw event has the expected id", Event->GetEventID(), 1UL) && Passed;
-    Passed = EvaluateNear("GetEventTime()", "evta first event time", "The first reconstructed raw event has the expected time", Event->GetEventTime().GetAsDouble(), 0.011003748, 1e-9) && Passed;
+    Passed = EvaluateNear("GetEventTime()", "evta first event time", "The first reconstructed raw event has the expected time", Event->GetEventTime().GetAsDouble(), 0.011003748, 1e-12) && Passed;
     Passed = Evaluate("GetNRESEs()", "evta first event rese count", "The first reconstructed raw event has the expected number of RESEs", Event->GetNRESEs(), 4) && Passed;
     delete Event;
   }
@@ -207,15 +207,16 @@ bool UTFileEventsEvta::TestReadSimFixtures()
     delete Event;
   }
 
-  Passed = EvaluateTrue("GetNextEvent()", "evta full scan count", "Scanning the full sim fixture yields more reconstructed events", EventCount > 0) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "evta full scan observation time", "Observation time remains correct after scanning all raw events", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-9) && Passed;
+  // Expected: 21 SE blocks (zcat | grep -c '^SE') minus the first one read above
+  Passed = Evaluate("GetNextEvent()", "evta full scan count", "Scanning the rest of the sim fixture yields the 20 remaining reconstructed events", EventCount, 20L) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta full scan observation time", "Observation time remains correct after scanning all raw events", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
 
   Passed = EvaluateTrue("Rewind()", "evta rewind", "The evta reader can rewind to the start of the file", Reader.Rewind()) && Passed;
   Event = Reader.GetNextEvent();
   Passed = EvaluateTrue("GetNextEvent()", "evta rewind first event", "After rewinding, the first event can be read again", Event != nullptr) && Passed;
   if (Event != nullptr) {
     Passed = Evaluate("GetEventID()", "evta rewind first event id", "After rewinding, the first event id matches the original first event", Event->GetEventID(), 1UL) && Passed;
-    Passed = EvaluateNear("GetEventTime()", "evta rewind first event time", "After rewinding, the first event time matches the original first event", Event->GetEventTime().GetAsDouble(), 0.011003748, 1e-9) && Passed;
+    Passed = EvaluateNear("GetEventTime()", "evta rewind first event time", "After rewinding, the first event time matches the original first event", Event->GetEventTime().GetAsDouble(), 0.011003748, 1e-12) && Passed;
     delete Event;
   }
 
@@ -268,8 +269,9 @@ bool UTFileEventsEvta::TestIncludeObservationTime()
     delete Event;
   }
 
-  Passed = EvaluateTrue("GetNextEvent()", "evta include event count", "The include sim file yields reconstructed events from its children", EventCount > 0) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "evta include observation time", "Observation time sums across included sim files", Reader.GetObservationTime().GetAsDouble(), 7.0, 1e-9) && Passed;
+  // Expected: 21 + 31 + 73 SE blocks in the children (zcat | grep -c '^SE')
+  Passed = Evaluate("GetNextEvent()", "evta include event count", "The include sim file yields the 21 + 31 + 73 = 125 reconstructed events of its children", EventCount, 125L) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta include observation time", "Observation time sums across included sim files", Reader.GetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
 
   Reader.Close();
 
@@ -312,7 +314,7 @@ bool UTFileEventsEvta::TestFooterOnlyObservationTime()
 
   MRERawEvent* Event = Reader.GetNextEvent();
   Passed = EvaluateTrue("GetNextEvent()", "evta footer no event", "A footer-only evta file contains no raw events", Event == nullptr) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "evta footer observation time", "Observation time falls back to TE-TB for footer-only evta files", Reader.GetObservationTime().GetAsDouble(), 3.5, 1e-9) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta footer observation time", "Observation time falls back to TE-TB for footer-only evta files", Reader.GetObservationTime().GetAsDouble(), 3.5, 1e-12) && Passed;
 
   Passed = EvaluateTrue("Rewind()", "evta footer rewind", "The footer-only evta file can be rewound", Reader.Rewind()) && Passed;
   Event = Reader.GetNextEvent();
@@ -380,13 +382,13 @@ bool UTFileEventsEvta::TestSaveOI()
   MRERawEvent* Event = Reader.GetNextEvent();
   Passed = EvaluateTrue("GetNextEvent()", "evta saveoi event", "The first raw event can be reconstructed with origin information saved", Event != nullptr) && Passed;
   if (Event != nullptr) {
-    Passed = EvaluateTrue("GetNREAMs()", "evta saveoi ream count", "SaveOI adds at least one additional measurement", Event->GetNREAMs() > 0) && Passed;
+    Passed = Evaluate("GetNREAMs()", "evta saveoi ream count", "SaveOI adds exactly one additional measurement", Event->GetNREAMs(), 1U) && Passed;
     MREAM* REAM = Event->GetREAMAt(Event->GetNREAMs() - 1);
     Passed = EvaluateTrue("GetREAMAt()", "evta saveoi ream type", "The saved origin information is a start-information REAM", REAM != nullptr && REAM->GetType() == MREAM::c_StartInformation) && Passed;
     MREAMStartInformation* Start = dynamic_cast<MREAMStartInformation*>(REAM);
     Passed = EvaluateTrue("dynamic_cast", "evta saveoi cast", "The saved origin information can be cast to MREAMStartInformation", Start != nullptr) && Passed;
     if (Start != nullptr) {
-      Passed = EvaluateTrue("GetEnergy()", "evta saveoi energy", "The saved origin information carries a non-zero source energy", Start->GetEnergy() > 0.0) && Passed;
+      Passed = EvaluateNear("GetEnergy()", "evta saveoi energy", "The saved origin information carries the source energy of the IA INIT line (511 keV)", Start->GetEnergy(), 511.0, 1e-12) && Passed;
       Passed = Evaluate("GetParticleID()", "evta saveoi particle id", "The saved origin information carries the particle ID of the IA INIT line (photon)", Start->GetParticleID(), 1) && Passed;
     }
     delete Event;

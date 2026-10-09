@@ -290,7 +290,6 @@ bool UTFileEvents::TestWriting()
   FileEventsTest File;
   File.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
   Passed = Evaluate("SetGeometryFileName()", "geometry expansion exact", "SetGeometryFileName stores the exact expanded geometry path", File.GetGeometryFileName(), TemporaryDirectory + "/geometry.setup") && Passed;
-  Passed = EvaluateTrue("SetGeometryFileName()", "geometry expansion", "SetGeometryFileName stores the expanded geometry path", File.GetGeometryFileName().EndsWith("/geometry.setup")) && Passed;
   File.SetObservationTime(MTime(123.5));
   Passed = EvaluateTrue("Open(write)", "write open", "The write test file opens successfully", File.Open(FileName, MFile::c_Write)) && Passed;
   Passed = EvaluateTrue("WriteHeader()", "write header", "WriteHeader succeeds in write mode", File.WriteHeader()) && Passed;
@@ -300,11 +299,11 @@ bool UTFileEvents::TestWriting()
   Passed = EvaluateTrue("Close()", "write close", "The write test file closes cleanly", File.Close()) && Passed;
 
   MString Text = ReadTextFile(FileName);
-  Passed = EvaluateTrue("WriteHeader()", "header content type", "The header contains the event type line", Text.Contains("Type      tra")) && Passed;
-  Passed = EvaluateTrue("WriteHeader()", "header content version", "The header contains the version line", Text.Contains("Version   7")) && Passed;
-  Passed = EvaluateTrue("WriteHeader()", "header content geometry", "The header contains the geometry line", Text.Contains("Geometry  ")) && Passed;
-  Passed = EvaluateTrue("AddFooter()", "footer content", "The footer markers and payload are written", Text.Contains("FT START") && Text.Contains("FooterText") && Text.Contains("FT STOP")) && Passed;
-  Passed = EvaluateTrue("CloseEventList()", "close content", "The event-list trailer contains EN and the observation time", Text.Contains("EN\n") && Text.Contains("TE 123.5")) && Passed;
+  // Expected header begin: type, version, geometry, blank line, date line
+  const MString ExpectedHeaderBegin = MString("Type      tra\nVersion   7\nGeometry  ") + TemporaryDirectory + "/geometry.setup\n\nDate      ";
+  Passed = EvaluateTrue("WriteHeader()", "header content begin", "The file begins with the exact type, version, and geometry lines followed by the date line", Text.BeginsWith(ExpectedHeaderBegin)) && Passed;
+  Passed = EvaluateTrue("WriteHeader()", "header content version string", "The header contains the MEGAlib version line followed by a blank line", Text.Contains(MString("\nMEGAlib   ") + g_VersionString + "\n\n")) && Passed;
+  Passed = EvaluateTrue("AddFooter()", "footer and trailer content", "The file ends with the exact footer block followed by the EN and TE trailer", Text.EndsWith("\nFT START\nFooterText\nFT STOP\n\nEN\n\nTE 123.500000000\n\n")) && Passed;
 
   {
     MString BinaryFileName = TemporaryDirectory + "/write_binary.tra";
@@ -315,7 +314,7 @@ bool UTFileEvents::TestWriting()
     Passed = EvaluateTrue("Close() binary", "binary close", "The binary write test file closes cleanly", BinaryFile.Close()) && Passed;
 
     MString BinaryText = ReadTextFile(BinaryFileName);
-    Passed = EvaluateTrue("WriteHeader() binary", "binary marker content", "The binary header contains the STARTBINARYSTREAM marker", BinaryText.Contains("STARTBINARYSTREAM")) && Passed;
+    Passed = EvaluateTrue("WriteHeader() binary", "binary marker content", "The binary header ends with the STARTBINARYSTREAM marker line after a blank line", BinaryText.EndsWith("\n\nSTARTBINARYSTREAM\n")) && Passed;
 
     FileEventsTest BinaryReader;
     Passed = EvaluateTrue("Open(read) binary header", "binary reader open", "A file with STARTBINARYSTREAM can be reopened in read mode", BinaryReader.Open(BinaryFileName)) && Passed;
@@ -417,7 +416,6 @@ bool UTFileEvents::TestFileTreeHelpers()
     EnableDefaultStreams();
     Passed = EvaluateTrue("CreateNextFile()", "create next", "CreateNextFile closes the current file and opens the next split file", Created) && Passed;
     Passed = Evaluate("CreateNextFile()", "create next file name exact", "CreateNextFile advances to the exact numbered split file path", File.GetFileName(), TemporaryDirectory + "/first.id1.tra") && Passed;
-    Passed = EvaluateTrue("CreateNextFile()", "create next file name", "CreateNextFile advances to a numbered split file", File.GetFileName().Contains(".id1.tra")) && Passed;
     Passed = EvaluateTrue("Exists(split file)", "create next split exists", "The newly created split file exists on disk", MFile::Exists(File.GetFileName())) && Passed;
     File.Close();
   }
@@ -435,7 +433,6 @@ bool UTFileEvents::TestFileTreeHelpers()
     Passed = EvaluateTrue("GetIncludeFile()", "create include pointer", "Creating an include file opens the include helper", File.GetIncludeFile() != nullptr && File.GetIncludeFile()->IsOpen()) && Passed;
     if (File.GetIncludeFile() != nullptr) {
       Passed = Evaluate("GetIncludeFile()->GetFileName()", "create include file name exact", "The created include file uses the exact first numbered include path", File.GetIncludeFile()->GetFileName(), TemporaryDirectory + "/first.id2.tra") && Passed;
-      Passed = EvaluateTrue("GetIncludeFile()->GetFileName()", "create include file name", "The created include file uses the numbered include naming scheme", File.GetIncludeFile()->GetFileName().Contains(".id2.tra")) && Passed;
     }
     DisableDefaultStreams();
     bool CreatedAgain = File.TestCreateIncludeFile();
@@ -443,7 +440,6 @@ bool UTFileEvents::TestFileTreeHelpers()
     Passed = EvaluateTrue("CreateIncludeFile() second", "create include reuse", "A second CreateIncludeFile call rotates the include file to the next numbered include", CreatedAgain) && Passed;
     if (File.GetIncludeFile() != nullptr) {
       Passed = Evaluate("CreateIncludeFile() second", "create include reuse file name exact", "The rotated include file advances to the exact next numbered include path", File.GetIncludeFile()->GetFileName(), TemporaryDirectory + "/first.id3.tra") && Passed;
-      Passed = EvaluateTrue("CreateIncludeFile() second", "create include reuse file name", "The rotated include file advances to the next numbered include file", File.GetIncludeFile()->GetFileName().Contains(".id3.tra")) && Passed;
     }
     File.Close();
   }

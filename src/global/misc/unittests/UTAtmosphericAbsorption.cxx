@@ -76,6 +76,11 @@ bool UTAtmosphericAbsorption::Run()
   // MEGAlib callers currently pass altitude, azimuth, energy in this order.
   Passed = EvaluateNear("GetTransmissionProbability()", "interior", "GetTransmissionProbability returns the representative interpolated transmission probability",
                         Absorption.GetTransmissionProbability(5.0, 10.0, 150.0), 0.45, 1e-12) && Passed;
+  // Expected: T = 0.1 + 0.4*fx + 0.2*fy + 0.1*fz, with fx, fy, fz the fractions in altitude, azimuth, and energy
+  Passed = EvaluateNear("GetTransmissionProbability()", "off-center 1", "GetTransmissionProbability returns the interpolated value 0.1 + 0.4*0.25 + 0.2*0.75 + 0.1*0.25 = 0.375 at an off-center point",
+                        Absorption.GetTransmissionProbability(2.5, 15.0, 125.0), 0.375, 1e-12) && Passed;
+  Passed = EvaluateNear("GetTransmissionProbability()", "off-center 2", "GetTransmissionProbability returns the interpolated value 0.1 + 0.4*0.75 + 0.2*0.25 + 0.1*0.75 = 0.525 at an off-center point",
+                        Absorption.GetTransmissionProbability(7.5, 5.0, 175.0), 0.525, 1e-12) && Passed;
   Passed = Evaluate("GetTransmissionProbability()", "lower corner", "GetTransmissionProbability returns the representative lower-corner transmission probability",
                     Absorption.GetTransmissionProbability(0.0, 0.0, 100.0), 0.10) && Passed;
   Passed = Evaluate("GetTransmissionProbability()", "upper corner", "GetTransmissionProbability returns the representative upper-corner transmission probability",

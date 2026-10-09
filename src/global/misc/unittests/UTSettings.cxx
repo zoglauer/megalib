@@ -270,14 +270,14 @@ bool UTSettings::TestChange()
     Passed = EvaluateTrue("Change()", "missing node status", "Change() returns failure for a missing dotted-path node", Status == 0) && Passed;
 
     MString Content = ReadTextFile(LogFileName);
-    Passed = EvaluateTrue("Change()", "missing node message", "Change() reports the missing node path", MString(Content).Contains("Error: Unable to find node MissingNode")) && Passed;
+    Passed = Evaluate("Change()", "missing node message", "Change() reports the missing node and the master node under which it was searched", RemoveErrorMessageContext(Content), MString("Error: Unable to find node MissingNode under node UTSettingsRoot\n")) && Passed;
   }
 
   {
     SettingsTest Malformed;
     Malformed.SetVersion(3);
-    Passed = Evaluate("Change()", "missing equal status", "Change() currently accepts malformed input without an equals sign when the node itself exists", Malformed.Change("Version"), true) && Passed;
-    Passed = Evaluate("GetVersion()", "missing equal result", "Malformed change input without an equals sign rewrites the Version node and reads back as zero", Malformed.GetVersion(), 0U) && Passed;
+    Passed = Evaluate("Change()", "missing equal status", "Change() rejects malformed input without an equals sign", Malformed.Change("Version"), false) && Passed;
+    Passed = Evaluate("GetVersion()", "missing equal result", "Rejected malformed change input without an equals sign leaves the Version unchanged", Malformed.GetVersion(), 3U) && Passed;
   }
 
   return Passed;

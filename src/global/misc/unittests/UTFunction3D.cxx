@@ -173,7 +173,7 @@ bool UTFunction3D::Run()
     Scaled.ScaleY(0.5);
     Scaled.ScaleZ(3.0);
     Scaled.ScaleV(2.0);
-    Passed = EvaluateNear("ScaleX()/ScaleY()/ScaleZ()/ScaleV()", "representative 3D affine field", "Scaling axes and values keeps a representative transformed interior point consistent", Scaled.Evaluate(1.0, 1.5, 0.0), -14.0, 1e-10) && Passed;
+    Passed = EvaluateNear("ScaleX()/ScaleY()/ScaleZ()/ScaleV()", "representative 3D affine field", "Scaling axes and values gives the expected value at a representative interior point", Scaled.Evaluate(1.0, 1.5, 0.0), -14.0, 1e-12) && Passed;
     Passed = EvaluateNear("GetVMax()", "representative 3D scaled range", "ScaleV updates the representative maximum value", Scaled.GetVMax(), 18.0, 1e-12) && Passed;
   }
 
@@ -204,7 +204,7 @@ bool UTFunction3D::Run()
     Rescaled.RescaleX(10.0, 16.0);
     Rescaled.RescaleY(-2.0, 1.0);
     Rescaled.RescaleZ(4.0, 10.0);
-    Passed = EvaluateNear("RescaleX()/RescaleY()/RescaleZ()", "representative 3D affine field", "Rescaling axes keeps a representative transformed interior point consistent", Rescaled.Evaluate(11.0, -1.0, 6.0), -7.0, 1e-10) && Passed;
+    Passed = EvaluateNear("RescaleX()/RescaleY()/RescaleZ()", "representative 3D affine field", "Rescaling axes gives the expected value at a representative interior point", Rescaled.Evaluate(11.0, -1.0, 6.0), -7.0, 1e-12) && Passed;
     Passed = EvaluateNear("GetXMin()", "representative 3D rescaled range", "RescaleX updates the representative minimum x value", Rescaled.GetXMin(), 10.0, 1e-12) && Passed;
     Passed = EvaluateNear("GetYMax()", "representative 3D rescaled range", "RescaleY updates the representative maximum y value", Rescaled.GetYMax(), 1.0, 1e-12) && Passed;
     Passed = EvaluateNear("GetZMax()", "representative 3D rescaled range", "RescaleZ updates the representative maximum z value", Rescaled.GetZMax(), 10.0, 1e-12) && Passed;
@@ -229,9 +229,23 @@ bool UTFunction3D::Run()
     double YR = 0.0;
     double ZR = 0.0;
     Affine.GetRandom(XR, YR, ZR);
-    Passed = EvaluateNear("GetRandom()", "representative 3D draw x", "GetRandom returns the representative seeded golden x value", XR, 2.2639156126804718, 1e-4) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative 3D draw y", "GetRandom returns the representative seeded golden y value", YR, 3.2432868623669222, 1e-4) && Passed;
-    Passed = EvaluateNear("GetRandom()", "representative 3D draw z", "GetRandom returns the representative seeded golden z value", ZR, 1.1861309729513574, 1e-4) && Passed;
+
+    // Expected: replay of the rejection sampling with the same seed - x = 3 u, y = 2 + 3 u, z = -1 + 3 u, accept if 9 u <= 1 + 2x - 3y + 4z
+    gRandom->SetSeed(51);
+    double ExpectedX = 0.0;
+    double ExpectedY = 0.0;
+    double ExpectedZ = 0.0;
+    double ExpectedV = 0.0;
+    do {
+      ExpectedX = 3.0*gRandom->Rndm();
+      ExpectedY = 2.0 + 3.0*gRandom->Rndm();
+      ExpectedZ = -1.0 + 3.0*gRandom->Rndm();
+      ExpectedV = 1.0 + 2.0*ExpectedX - 3.0*ExpectedY + 4.0*ExpectedZ;
+    } while (9.0*gRandom->Rndm() > ExpectedV);
+
+    Passed = EvaluateNear("GetRandom()", "representative 3D draw x", "GetRandom returns the x value of the first accepted point of the replayed rejection sampling", XR, ExpectedX, 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative 3D draw y", "GetRandom returns the y value of the first accepted point of the replayed rejection sampling", YR, ExpectedY, 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative 3D draw z", "GetRandom returns the z value of the first accepted point of the replayed rejection sampling", ZR, ExpectedZ, 1e-12) && Passed;
   }
 
   {
@@ -244,7 +258,7 @@ bool UTFunction3D::Run()
 
     MFunction3D RoundTripRead;
     Passed = Evaluate("Set()", "representative 3D round-trip file", "Set reads back a representative 3D function file", RoundTripRead.Set(FileName, "DP"), true) && Passed;
-    Passed = EvaluateNear("Evaluate()", "representative 3D round-trip interior", "Set preserves representative trilinear interpolation after a zero-based file round-trip", RoundTripRead.Evaluate(0.5, 1.25, 1.5), 4.25, 1e-10) && Passed;
+    Passed = EvaluateNear("Evaluate()", "representative 3D round-trip interior", "Set preserves representative trilinear interpolation after a zero-based file round-trip", RoundTripRead.Evaluate(0.5, 1.25, 1.5), 4.25, 1e-12) && Passed;
   }
 
   {

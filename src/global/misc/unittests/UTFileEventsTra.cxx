@@ -169,15 +169,15 @@ bool UTFileEventsTra::TestNormalOperationObservationTime()
   Passed = EvaluateTrue("ReadObservationTime()", "normal incomplete tra4 open", "The 4-second incomplete tra fixture can be opened", ReadObservationTime(IncompleteTra4, TimeIncomplete4)) && Passed;
   Passed = EvaluateTrue("ReadObservationTime()", "normal incomplete trax open", "The concatenated incomplete tra fixture can be opened", ReadObservationTime(IncompleteTraX, TimeIncompleteX)) && Passed;
 
-  Passed = EvaluateNear("GetObservationTime()", "normal tra1 observation time", "The 1-second complete tra fixture preserves its observation time", Time1, 1.0, 1e-9) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "normal tra2 observation time", "The 2-second complete tra fixture preserves its observation time", Time2, 2.0, 1e-9) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "normal tra4 observation time", "The 4-second complete tra fixture preserves its observation time", Time4, 4.0, 1e-9) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "normal trax observation time", "The concatenated complete tra fixture preserves the summed observation time", TimeX, 7.0, 1e-9) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "normal tra1 observation time", "The 1-second complete tra fixture preserves its observation time", Time1, 1.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "normal tra2 observation time", "The 2-second complete tra fixture preserves its observation time", Time2, 2.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "normal tra4 observation time", "The 4-second complete tra fixture preserves its observation time", Time4, 4.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "normal trax observation time", "The concatenated complete tra fixture preserves the summed observation time", TimeX, 7.0, 1e-12) && Passed;
 
-  Passed = EvaluateNear("GetObservationTime()", "normal incomplete tra1 observation time", "The 1-second incomplete tra fixture falls back to the last TI value", TimeIncomplete1, 0.909178909, 1e-9) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "normal incomplete tra2 observation time", "The 2-second incomplete tra fixture falls back to the last TI value", TimeIncomplete2, 1.974501093, 1e-9) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "normal incomplete tra4 observation time", "The 4-second incomplete tra fixture falls back to the last TI value", TimeIncomplete4, 3.868021586, 1e-9) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "normal incomplete trax observation time", "The concatenated incomplete tra fixture preserves the summed observation time", TimeIncompleteX, 6.751701588, 1e-8) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "normal incomplete tra1 observation time", "The 1-second incomplete tra fixture falls back to the last TI value", TimeIncomplete1, 0.909178909, 1e-12) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "normal incomplete tra2 observation time", "The 2-second incomplete tra fixture falls back to the last TI value", TimeIncomplete2, 1.974501093, 1e-12) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "normal incomplete tra4 observation time", "The 4-second incomplete tra fixture falls back to the last TI value", TimeIncomplete4, 3.868021586, 1e-12) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "normal incomplete trax observation time", "The concatenated incomplete tra fixture preserves the summed observation time", TimeIncompleteX, 6.751701588, 1e-12) && Passed;
 
   return Passed;
 }
@@ -234,8 +234,6 @@ bool UTFileEventsTra::TestOpenAndGuards()
     MString Text = ReadTextFile(FileName);
     MString ExpectedTail = MString("SE\nET UN\nID 7\nTI 5.500000000\nPE 12.5\nCC extra\nEN\n\nTE 9.000000000\n\n");
     Passed = EvaluateTrue("AddEvent()", "guards exact event tail", "The written tra file ends with the exact deterministic event payload and trailer", Text.EndsWith(ExpectedTail)) && Passed;
-    Passed = EvaluateTrue("AddEvent()", "guards event content", "The file contains the unidentifiable-event markers", Text.Contains("ET UN") && Text.Contains("PE 12.5")) && Passed;
-    Passed = EvaluateTrue("AddText()", "guards text content", "The file contains the appended raw text", Text.Contains("CC extra")) && Passed;
 
     MFileEventsTra Reader;
     Passed = EvaluateTrue("Open(read)", "guards open read", "The file reopens in read mode", Reader.Open(FileName)) && Passed;

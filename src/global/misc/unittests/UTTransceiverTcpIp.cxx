@@ -578,7 +578,7 @@ bool UTTransceiverTcpIpHelpers::RunForcedReset(MUnitTest& Test, unsigned int Por
     }
     gSystem->Sleep(1);
   }
-  Passed = Test.EvaluateTrue("Forced reset", "reset count", "The reset client observes at least one reset", Client.GetNResets() > 0) && Passed;
+  Passed = Test.Evaluate("Forced reset", "reset count", "The reset client observes exactly one reset for the one lost connection", Client.GetNResets(), 1ul) && Passed;
   Passed = Test.EvaluateFalse("Forced reset", "client disconnected", "The reset client is disconnected after the peer loss", Client.IsConnected()) && Passed;
   if (Passed == false) {
     mout<<"Forced reset: reset counter not incremented"<<endl;

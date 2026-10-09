@@ -147,12 +147,16 @@ bool UTUnitTest::TestEvaluateHelpers()
 
   Passed = EvaluateTrue("EvaluateNear()", "inside tolerance", "EvaluateNear accepts representative values inside the tolerance",
                         Probe.EvaluateNear("inner EvaluateNear()", "inside tolerance", "Nearby values are accepted", 1.0005, 1.0, 0.001)) && Passed;
+  Passed = EvaluateTrue("EvaluateNear()", "just inside tolerance", "EvaluateNear accepts a value 9e-4 away with the tolerance 1e-3",
+                        Probe.EvaluateNear("inner EvaluateNear()", "just inside tolerance", "A value just inside is accepted", 1.0009, 1.0, 0.001)) && Passed;
 
   Probe.Silence();
   const bool NearFailure = Probe.EvaluateNear("inner EvaluateNear()", "outside tolerance", "Distant values are rejected", 1.01, 1.0, 0.001);
+  const bool JustOutsideFailure = Probe.EvaluateNear("inner EvaluateNear()", "just outside tolerance", "A value just outside is rejected", 1.0011, 1.0, 0.001);
   const bool NonFiniteFailure = Probe.EvaluateNear("inner EvaluateNear()", "non-finite", "Non-finite values are rejected", numeric_limits<double>::infinity(), 1.0, 0.001);
   Probe.Unsilence();
   Passed = EvaluateFalse("EvaluateNear()", "outside tolerance", "EvaluateNear returns false outside the representative tolerance", NearFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateNear()", "just outside tolerance", "EvaluateNear returns false for a value 1.1e-3 away with the tolerance 1e-3", JustOutsideFailure) && Passed;
   Passed = EvaluateFalse("EvaluateNear()", "non-finite", "EvaluateNear returns false for a non-finite representative value", NonFiniteFailure) && Passed;
 
   vector<int> Values;
@@ -165,6 +169,22 @@ bool UTUnitTest::TestEvaluateHelpers()
   const bool SizeFailure = Probe.EvaluateSize("inner EvaluateSize()", "two values", "The size mismatch is rejected", Values.size(), 3);
   Probe.Unsilence();
   Passed = EvaluateFalse("EvaluateSize()", "wrong size", "EvaluateSize returns false for a representative size mismatch", SizeFailure) && Passed;
+
+  // Remove the source context of error messages in debug builds:
+  const MString Context = "!!!!! Error in file \"/a/File.cxx\" in function \"Function\" at line 12:\n";
+  Passed = Evaluate("RemoveErrorMessageContext()", "release", "A message without source context is unchanged", RemoveErrorMessageContext("Error: one\nError: two\n"), MString("Error: one\nError: two\n")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "debug", "The source context of one message is removed", RemoveErrorMessageContext(Context + "Error: one\n"), MString("Error: one\n")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "two messages", "The source context of every message is removed, the text in between stays", RemoveErrorMessageContext("Info\n" + Context + "Error: one\n" + Context + "Error: two\n"), MString("Info\nError: one\nError: two\n")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "no final newline", "A last line without newline is kept", RemoveErrorMessageContext(Context + "Error: one"), MString("Error: one")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "similar text", "A line which only contains the text of the context is kept", RemoveErrorMessageContext("Error: !!!!! Error in file \"x\"\n"), MString("Error: !!!!! Error in file \"x\"\n")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "empty", "An empty text stays empty", RemoveErrorMessageContext(""), MString("")) && Passed;
+
+  // Check that the maximum keeps a NaN:
+  const double NotANumber = numeric_limits<double>::quiet_NaN();
+  Passed = EvaluateNear("GetMaximum()", "larger second", "GetMaximum returns the larger of two numbers", GetMaximum(1.0, 2.0), 2.0, 0.0) && Passed;
+  Passed = EvaluateNear("GetMaximum()", "larger first", "GetMaximum returns the larger of two numbers also if it is first", GetMaximum(3.0, -2.0), 3.0, 0.0) && Passed;
+  Passed = EvaluateTrue("GetMaximum()", "NaN first", "A NaN as first value gives NaN", isnan(GetMaximum(NotANumber, 1.0))) && Passed;
+  Passed = EvaluateTrue("GetMaximum()", "NaN second", "A NaN as second value gives NaN", isnan(GetMaximum(1.0, NotANumber))) && Passed;
 
   return Passed;
 }
@@ -714,7 +734,7 @@ bool UTUnitTest::TestTemporaryPaths()
   const MString SecondRoot = Second.TemporaryDirectory();
 
   Passed = EvaluateTrue("GetTemporaryDirectoryName()", "first randomized root", "The first randomized temporary root can be created", FirstRoot.IsEmpty() == false) && Passed;
-  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "valid test name", "A valid unit-test name is used directly as the temporary basename", FirstRoot.Contains("_FirstProbe")) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "valid test name", "A valid unit-test name is used directly as the temporary basename", FirstRoot.EndsWith("_FirstProbe")) && Passed;
   Passed = EvaluateTrue("GetTemporaryDirectoryName()", "second randomized root", "The second randomized temporary root can be created", SecondRoot.IsEmpty() == false) && Passed;
   Passed = EvaluateFalse("GetTemporaryDirectoryName()", "distinct randomized roots", "Separate unit-test instances use distinct randomized temporary roots", FirstRoot == SecondRoot) && Passed;
 

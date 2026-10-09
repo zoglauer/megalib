@@ -174,7 +174,7 @@ bool UTTokenizer::TestTypedAccessors()
   Passed = EvaluateTrue("Analyze()", "typed tokens", "Analyze succeeds on numeric and boolean tokens", Types.Analyze("3.5 7 42 123456789 255 true false")) && Passed;
 
   Passed = EvaluateNear("GetTokenAtAsDouble()", "double", "GetTokenAtAsDouble parses floating-point tokens", Types.GetTokenAtAsDouble(0), 3.5, 1e-12) && Passed;
-  Passed = EvaluateNear("GetTokenAtAsFloat()", "float", "GetTokenAtAsFloat parses floating-point tokens", Types.GetTokenAtAsFloat(0), 3.5, 1e-6) && Passed;
+  Passed = EvaluateNear("GetTokenAtAsFloat()", "float", "GetTokenAtAsFloat parses floating-point tokens", Types.GetTokenAtAsFloat(0), 3.5, 1e-12) && Passed;
   Passed = EvaluateNear("GetTokenAtAsInt()", "int", "GetTokenAtAsInt parses integer tokens", Types.GetTokenAtAsInt(1), 7.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetTokenAtAsUnsignedInt()", "unsigned int", "GetTokenAtAsUnsignedInt parses non-negative tokens", Types.GetTokenAtAsUnsignedInt(2), 42.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetTokenAtAsUnsignedIntFast()", "unsigned int fast", "GetTokenAtAsUnsignedIntFast parses digit-only tokens", Types.GetTokenAtAsUnsignedIntFast(4), 255.0, 1e-12) && Passed;
@@ -243,7 +243,7 @@ bool UTTokenizer::TestContainerAccessors()
 
   vector<float> FloatVector = Numbers.GetTokenAtAsFloatVector(2);
   Passed = EvaluateSize("GetTokenAtAsFloatVector()", "vector size", "GetTokenAtAsFloatVector returns the expected number of elements", FloatVector.size(), 2) && Passed;
-  Passed = EvaluateNear("GetTokenAtAsFloatVector()", "vector content", "GetTokenAtAsFloatVector preserves numeric order", FloatVector[0], 3.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetTokenAtAsFloatVector()", "vector content", "GetTokenAtAsFloatVector preserves numeric order", FloatVector[0], 3.0, 1e-12) && Passed;
 
   vector<int> IntVector = Numbers.GetTokenAtAsIntVector(0);
   Passed = EvaluateSize("GetTokenAtAsIntVector()", "vector size", "GetTokenAtAsIntVector returns the expected number of elements", IntVector.size(), 4) && Passed;

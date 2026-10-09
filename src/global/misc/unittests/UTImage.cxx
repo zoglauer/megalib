@@ -221,7 +221,7 @@ bool UTImage::Run()
     TestImage EmptyCanvasTitle("EmptyCanvasTitleImage", Values, "Energy", 0.0, 3.0, 3, "Counts", MImage::c_Viridis, MImage::c_COLZ);
     TCanvas UntitledCanvas("", "", 10, 10, 300, 300);
     EmptyCanvasTitle.Display(&UntitledCanvas);
-    Passed = EvaluateTrue("Display()", "representative empty existing canvas title", "Display assigns a representative non-empty title when the existing 1D canvas title is empty", MString(EmptyCanvasTitle.GetCanvasPointer()->GetTitle()).IsEmpty() == false) && Passed;
+    Passed = Evaluate("Display()", "representative empty existing canvas title", "Display assigns the generated canvas title (sanitized image title and id) when the existing 1D canvas title is empty", MString(EmptyCanvasTitle.GetCanvasPointer()->GetTitle()), MString("EmptyCanvasTitleImage___") + EmptyCanvasTitle.GetID()) && Passed;
   }
 
   {
@@ -264,17 +264,18 @@ bool UTImage::Run()
   {
     double Values[3] = {1.0, 2.0, 3.0};
     TestImage Saved("SavedImage", Values, "Energy", 0.0, 3.0, 3, "Counts", MImage::c_Viridis, MImage::c_COLZ);
+    MString NoCanvasFileName = GetTemporaryFileName("no_canvas.png");
     DisableDefaultStreams();
-    Saved.SaveAs(GetTemporaryDirectoryName("missing") + "/does_not_exist.png");
+    Saved.SaveAs(NoCanvasFileName);
     EnableDefaultStreams();
-    Passed = EvaluateTrue("SaveAs()", "representative no-canvas path", "SaveAs is safely callable on a representative image without a canvas", true) && Passed;
+    Passed = EvaluateFalse("SaveAs()", "representative no-canvas path", "SaveAs writes no file for a representative image without a canvas", MFile::Exists(NoCanvasFileName)) && Passed;
 
     Saved.Display();
     MString FileName = GetTemporaryFileName("existing_canvas.png");
     DisableDefaultStreams();
     Saved.SaveAs(FileName);
     EnableDefaultStreams();
-    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates the representative output file when a canvas exists", MFile::Exists(FileName)) && Passed;
+    Passed = EvaluateTrue("SaveAs()", "representative existing canvas path", "SaveAs creates a file starting with the PNG signature when a canvas exists", MFile::Exists(FileName) && ReadTextFile(FileName).BeginsWith(MString("\x89PNG\r\n\x1a\n"))) && Passed;
   }
 
   {

@@ -176,13 +176,20 @@ bool UTImageSpheric::Run()
     Passed = EvaluateTrue("CanvasExists()", "representative hammer canvas", "Display creates a representative Hammer-projected spherical canvas", Image.CanvasExists()) && Passed;
     TH2* Hist = dynamic_cast<TH2*>(Image.GetHistogramPointer());
     if (Hist != nullptr) {
-      Passed = EvaluateTrue("Display()", "representative hammer binning", "The representative Hammer histogram has a finer grid than the source image", Hist->GetNbinsX() > Image.GetNEntries()) && Passed;
-      Passed = EvaluateTrue("Display()", "representative hammer nonzero bins", "The representative Hammer histogram has projected content after display", CountNonZeroBins(Hist) > 0) && Passed;
+      // Expected: 8 bins per source bin, 8 * 2 = 16 bins in both axes
+      Passed = Evaluate("Display()", "representative hammer x binning", "The representative Hammer histogram has 8 bins per source bin in x", Hist->GetNbinsX(), 16) && Passed;
+      Passed = Evaluate("Display()", "representative hammer y binning", "The representative Hammer histogram has 8 bins per source bin in y", Hist->GetNbinsY(), 16) && Passed;
+      // Expected: 164 bin centers inside the map, 41 per source bin - independent script, inverse Hammer projection of the 16x16 bin centers, central meridian 180 deg
+      Passed = Evaluate("Display()", "representative hammer nonzero bins", "The representative Hammer histogram has 164 projected bins with content after display", CountNonZeroBins(Hist), 164) && Passed;
+      Passed = EvaluateNear("Display()", "representative hammer integral", "The representative Hammer histogram integral is 41 * (1 + 2 + 3 + 4)", Hist->Integral(), 410.0, 1e-9) && Passed;
     }
     double HammerUpdated[4] = {0.0, 0.0, 0.0, 10.0};
     Image.SetImageArray(HammerUpdated);
     if (Hist != nullptr) {
-      Passed = EvaluateTrue("SetImageArray()", "representative hammer updated bins", "SetImageArray(newData) updates the projected Hammer histogram", Hist->GetMaximum() > 0.0) && Passed;
+      Passed = EvaluateNear("SetImageArray()", "representative hammer updated maximum", "SetImageArray(newData) updates the projected Hammer histogram to the new maximum of 10", Hist->GetMaximum(), 10.0, 1e-12) && Passed;
+      // Expected: 41 projected bins of the last source bin
+      Passed = Evaluate("SetImageArray()", "representative hammer updated bins", "SetImageArray(newData) leaves exactly the 41 projected bins of the last source bin filled", CountNonZeroBins(Hist), 41) && Passed;
+      Passed = EvaluateNear("SetImageArray()", "representative hammer updated integral", "The updated Hammer histogram integral is 41 * 10", Hist->Integral(), 410.0, 1e-9) && Passed;
     }
     Image.SetImageArray(nullptr);
     if (Hist != nullptr) {

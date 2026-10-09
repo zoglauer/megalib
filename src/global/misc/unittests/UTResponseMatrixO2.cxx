@@ -62,17 +62,17 @@ bool UTResponseMatrixO2::Run()
   Passed = Evaluate("GetNBins()", "set axis", "Setting representative axes creates the expected number of bins", Default.GetNBins(), 4UL) && Passed;
   Passed = Evaluate("GetAxisName()", "first axis", "The first axis name is stored correctly", Default.GetAxisName(1), MString("X1")) && Passed;
   Passed = Evaluate("GetAxisName()", "last axis", "The last axis name is stored correctly", Default.GetAxisName(2), MString("X2")) && Passed;
-  Passed = EvaluateNear("GetAxis()", "first axis last edge", "GetAxis returns the expected edge vector for the first axis", Default.GetAxis(1).back(), 2.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetAxisContent()", "first axis first edge", "The first axis edge content is correct", Default.GetAxisContent(0, 1), 0.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetAxisContent()", "last axis last edge", "The last axis edge content is correct", Default.GetAxisContent(2, 2), 2.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetAxis()", "first axis last edge", "GetAxis returns the expected edge vector for the first axis", Default.GetAxis(1).back(), 2.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetAxisContent()", "first axis first edge", "The first axis edge content is correct", Default.GetAxisContent(0, 1), 0.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetAxisContent()", "last axis last edge", "The last axis edge content is correct", Default.GetAxisContent(2, 2), 2.0, 1e-12) && Passed;
   Passed = Evaluate("GetAxisBins()", "first axis", "The first axis has the expected number of bins", Default.GetAxisBins(1), 2U) && Passed;
   Passed = Evaluate("GetAxisBins()", "last axis", "The last axis has the expected number of bins", Default.GetAxisBins(2), 2U) && Passed;
-  Passed = EvaluateNear("GetAxisBinCenter()", "first axis", "The first bin center is correct", Default.GetAxisBinCenter(0, 1), 0.5, 1e-6) && Passed;
+  Passed = EvaluateNear("GetAxisBinCenter()", "first axis", "The first bin center is correct", Default.GetAxisBinCenter(0, 1), 0.5, 1e-12) && Passed;
   Passed = Evaluate("GetAxisBin()", "first axis", "The representative coordinate maps to the first bin", Default.GetAxisBin(0.5f, 1), 0U) && Passed;
-  Passed = EvaluateNear("GetAxisMinimum()", "first axis", "The first axis minimum is correct", Default.GetAxisMinimum(1), 0.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetAxisMaximum()", "last axis", "The last axis maximum is correct", Default.GetAxisMaximum(2), 2.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetAxisLowEdge()", "last axis", "The last axis low edge is correct", Default.GetAxisLowEdge(0, 2), 0.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetAxisHighEdge()", "last axis", "The last axis high edge is correct", Default.GetAxisHighEdge(0, 2), 1.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetAxisMinimum()", "first axis", "The first axis minimum is correct", Default.GetAxisMinimum(1), 0.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetAxisMaximum()", "last axis", "The last axis maximum is correct", Default.GetAxisMaximum(2), 2.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetAxisLowEdge()", "last axis", "The last axis low edge is correct", Default.GetAxisLowEdge(0, 2), 0.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetAxisHighEdge()", "last axis", "The last axis high edge is correct", Default.GetAxisHighEdge(0, 2), 1.0, 1e-12) && Passed;
 
   MResponseMatrixO2 DifferentAxis("Different", A1, ADifferent);
   MResponseMatrixO2 Matrix("Representative", A1, A2);
@@ -80,15 +80,15 @@ bool UTResponseMatrixO2::Run()
   Passed = Evaluate("operator==()", "same axes", "Matrices with identical axes compare equal", Matrix == Default, true) && Passed;
   Passed = Evaluate("operator==()", "different axes", "Matrices with different axes compare unequal", Matrix == DifferentAxis, false) && Passed;
   Matrix.SetBinContent(0, 0, 5.0f);
-  Passed = EvaluateNear("GetBinContent()", "set bin content", "SetBinContent stores the representative first-bin value", Matrix.GetBinContent(0, 0), 5.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetBinContent()", "set bin content", "SetBinContent stores the representative first-bin value", Matrix.GetBinContent(0, 0), 5.0, 1e-12) && Passed;
   Matrix.Add(0.25f, 0.25f, 1.0f);
-  Passed = EvaluateNear("Add()", "representative add", "Add accumulates into the representative first bin", Matrix.GetBinContent(0, 0), 6.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetBinArea()", "first bin", "The representative first bin has the expected volume", Matrix.GetBinArea(0, 0), 1.0, 1e-6) && Passed;
-  Passed = EvaluateNear("Get()", "representative lookup", "Get returns the representative first-bin content", Matrix.Get(0.25f, 0.25f), 6.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetInterpolated()", "bin center", "Interpolation at the representative first-bin center returns the stored content", Matrix.GetInterpolated(0.5f, 0.5f, false), 6.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetMaximum()", "representative content", "GetMaximum returns the representative maximum", Matrix.GetMaximum(), 6.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetMinimum()", "representative content", "GetMinimum returns the representative minimum", Matrix.GetMinimum(), 0.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetSum()", "representative content", "GetSum returns the total representative content", Matrix.GetSum(), 6.0, 1e-6) && Passed;
+  Passed = EvaluateNear("Add()", "representative add", "Add accumulates into the representative first bin", Matrix.GetBinContent(0, 0), 6.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetBinArea()", "first bin", "The representative first bin has the expected volume", Matrix.GetBinArea(0, 0), 1.0, 1e-12) && Passed;
+  Passed = EvaluateNear("Get()", "representative lookup", "Get returns the representative first-bin content", Matrix.Get(0.25f, 0.25f), 6.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetInterpolated()", "bin center", "Interpolation at the representative first-bin center returns the stored content", Matrix.GetInterpolated(0.5f, 0.5f, false), 6.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetMaximum()", "representative content", "GetMaximum returns the representative maximum", Matrix.GetMaximum(), 6.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetMinimum()", "representative content", "GetMinimum returns the representative minimum", Matrix.GetMinimum(), 0.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetSum()", "representative content", "GetSum returns the total representative content", Matrix.GetSum(), 6.0, 1e-12) && Passed;
 
   MResponseMatrixO1 Lower(A1);
   Lower.SetAxisNames("X1");
@@ -96,37 +96,37 @@ bool UTResponseMatrixO2::Run()
   MResponseMatrixO2 WithSlice("WithSlice", A1, A2);
   WithSlice.SetAxisNames("X1", "X2");
   WithSlice.SetMatrix(0, Lower);
-  Passed = EvaluateNear("SetMatrix()", "first slice", "SetMatrix installs the representative lower-order slice", WithSlice.GetBinContent(0, 0), 3.0, 1e-6) && Passed;
+  Passed = EvaluateNear("SetMatrix()", "first slice", "SetMatrix installs the representative lower-order slice", WithSlice.GetBinContent(0, 0), 3.0, 1e-12) && Passed;
 
   MResponseMatrixO2 Other("Other", A1, A2);
   Other.SetBinContent(0, 0, 2.0f);
   MResponseMatrixO2 Combined = Matrix;
   Combined += Other;
-  Passed = EvaluateNear("operator+=()", "matrix addition", "Matrix addition accumulates the representative first bin", Combined.GetBinContent(0, 0), 8.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator+=()", "matrix addition", "Matrix addition accumulates the representative first bin", Combined.GetBinContent(0, 0), 8.0, 1e-12) && Passed;
   Combined -= Other;
-  Passed = EvaluateNear("operator-=()", "matrix subtraction", "Matrix subtraction restores the representative first bin", Combined.GetBinContent(0, 0), 6.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator-=()", "matrix subtraction", "Matrix subtraction restores the representative first bin", Combined.GetBinContent(0, 0), 6.0, 1e-12) && Passed;
   MResponseMatrixO2 Divided = Matrix;
   Divided /= Other;
-  Passed = EvaluateNear("operator/=()", "matrix division", "Matrix division divides the representative first bin", Divided.GetBinContent(0, 0), 3.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator/=()", "matrix division", "Matrix division divides the representative first bin", Divided.GetBinContent(0, 0), 3.0, 1e-12) && Passed;
   MResponseMatrixO2 Scalar("Scalar", A1, A2);
   Scalar += 1.0f;
-  Passed = EvaluateNear("operator+=(float)", "scalar addition", "Scalar addition affects every bin", Scalar.GetSum(), 4.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator+=(float)", "scalar addition", "Scalar addition affects every bin", Scalar.GetSum(), 4.0, 1e-12) && Passed;
   Scalar *= 2.0f;
-  Passed = EvaluateNear("operator*=(float)", "scalar multiplication", "Scalar multiplication rescales every bin", Scalar.GetSum(), 8.0, 1e-6) && Passed;
+  Passed = EvaluateNear("operator*=(float)", "scalar multiplication", "Scalar multiplication rescales every bin", Scalar.GetSum(), 8.0, 1e-12) && Passed;
 
   MResponseMatrixO1 Sum1 = Matrix.GetSumMatrixO1(1);
-  Passed = EvaluateNear("GetSumMatrixO1()", "representative projection", "GetSumMatrixO1 preserves the representative first-bin content", Sum1.GetBinContent(0), 6.0, 1e-6) && Passed;
-  Passed = EvaluateNear("GetSumMatrixO1()", "representative projection empty bin", "GetSumMatrixO1 preserves the representative empty second bin", Sum1.GetBinContent(1), 0.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetSumMatrixO1()", "representative projection", "GetSumMatrixO1 preserves the representative first-bin content", Sum1.GetBinContent(0), 6.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetSumMatrixO1()", "representative projection empty bin", "GetSumMatrixO1 preserves the representative empty second bin", Sum1.GetBinContent(1), 0.0, 1e-12) && Passed;
   MResponseMatrixO2 Sum2 = Matrix.GetSumMatrixO2(1, 2);
-  Passed = EvaluateNear("GetSumMatrixO2()", "identity projection", "The full-order sum projection preserves the representative first-bin content", Sum2.GetBinContent(0, 0), 6.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetSumMatrixO2()", "identity projection", "The full-order sum projection preserves the representative first-bin content", Sum2.GetBinContent(0, 0), 6.0, 1e-12) && Passed;
   MResponseMatrixO1 Slice = Matrix.GetSliceInterpolated(0.5f, 2);
-  Passed = EvaluateNear("GetSliceInterpolated()", "representative slice", "The representative order-1 slice preserves the first-bin content", Slice.GetBinContent(0), 6.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetSliceInterpolated()", "representative slice", "The representative order-1 slice preserves the first-bin content", Slice.GetBinContent(0), 6.0, 1e-12) && Passed;
 
   MString FileName = GetTemporaryFileName("UTResponseMatrixO2.rsp");
   Passed = Evaluate("Write()", "stream round trip", "Writing the representative matrix in stream mode succeeds", Matrix.Write(FileName, true), true) && Passed;
   MResponseMatrixO2 ReadBack;
   Passed = Evaluate("Read()", "stream round trip", "Reading the representative matrix written in stream mode succeeds", ReadBack.Read(FileName), true) && Passed;
-  Passed = EvaluateNear("GetBinContent()", "stream round trip", "The representative first-bin content survives a stream round trip", ReadBack.GetBinContent(0, 0), 6.0, 1e-6) && Passed;
+  Passed = EvaluateNear("GetBinContent()", "stream round trip", "The representative first-bin content survives a stream round trip", ReadBack.GetBinContent(0, 0), 6.0, 1e-12) && Passed;
 
   DisableDefaultStreams();
   TH1* Histogram = Matrix.GetHistogram(MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY, false);
@@ -134,7 +134,7 @@ bool UTResponseMatrixO2::Run()
   Passed = EvaluateTrue("GetHistogram()", "representative histogram", "GetHistogram returns a representative ROOT histogram", Histogram != nullptr) && Passed;
   if (Histogram != nullptr) {
     Passed = EvaluateTrue("GetHistogram()", "representative histogram dimensionality", "GetHistogram returns a two-dimensional histogram when both axes are selected for display", dynamic_cast<TH2*>(Histogram) != nullptr) && Passed;
-    Passed = EvaluateNear("GetHistogram()", "representative histogram content", "GetHistogram preserves the representative first-bin content", Histogram->GetBinContent(1, 1), 6.0, 1e-6) && Passed;
+    Passed = EvaluateNear("GetHistogram()", "representative histogram content", "GetHistogram preserves the representative first-bin content", Histogram->GetBinContent(1, 1), 6.0, 1e-12) && Passed;
     delete Histogram;
   }
 

@@ -198,10 +198,9 @@ bool UTModuleSaver::TestSaving()
   RoaModule.Finalize();
   delete RoaEvent;
   const MString RoaText = ReadTextFile(RoaFileName);
-  Passed = EvaluateTrue("Initialize()", "ROA header", "ROA output contains the representative ROA header", RoaText.Contains("TYPE ROA")) && Passed;
-  Passed = EvaluateTrue("Initialize()", "ROA read-out format", "ROA output declares the read-out keyword, element and data types MFileReadOuts needs", RoaText.Contains("UF ") == true && RoaText.Contains(" singlesidedstrip adc") == true) && Passed;
-  Passed = EvaluateTrue("AnalyzeEvent()", "ROA event", "ROA output contains the representative event ID and read-out", RoaText.Contains("ID 101") && RoaText.Contains("UH 7 11 1234")) && Passed;
-  Passed = EvaluateTrue("Finalize()", "ROA trailer", "ROA output is closed with the EN trailer", RoaText.EndsWith("EN\n")) && Passed;
+  // Expected: blank line, header, read-out format declaration, event, and EN trailer
+  Passed = Evaluate("AnalyzeEvent()", "ROA file", "ROA output is exactly the header, the read-out format declaration, the representative event, and the EN trailer",
+                    RoaText, MString("\nTYPE ROA\n\nUF UH singlesidedstrip adc\nSE\nID 101\nTI 0.000000000\nUH 7 11 1234 \nEN\n")) && Passed;
   RemoveTemporaryFile(RoaFileName);
 
   MModuleSaver EvtaModule;
@@ -214,9 +213,9 @@ bool UTModuleSaver::TestSaving()
   EvtaModule.Finalize();
   delete EvtaEvent;
   const MString EvtaText = ReadTextFile(EvtaFileName);
-  Passed = EvaluateTrue("Initialize()", "EVTA header", "EVTA output contains the representative EVTA header", EvtaText.Contains("Version 21") && EvtaText.Contains("Type EVTA")) && Passed;
-  Passed = EvaluateTrue("AnalyzeEvent()", "EVTA event", "EVTA output contains the representative event ID", EvtaText.Contains("ID 202")) && Passed;
-  Passed = EvaluateTrue("Finalize()", "EVTA trailer", "EVTA output is closed with the EN trailer", EvtaText.EndsWith("EN\n")) && Passed;
+  // Expected: blank line, header, event, and EN trailer
+  Passed = Evaluate("AnalyzeEvent()", "EVTA file", "EVTA output is exactly the header, the representative event, and the EN trailer",
+                    EvtaText, MString("\nVersion 21\nType EVTA\n\nSE\nID 202\nTI 0.000000000\nEN\n")) && Passed;
   RemoveTemporaryFile(EvtaFileName);
 
   MModuleSaver ReopenModule;
@@ -234,8 +233,12 @@ bool UTModuleSaver::TestSaving()
   Passed = EvaluateTrue("AnalyzeEvent()", "second reopen output", "The event saver writes to the second representative output file after reinitialization", ReopenModule.AnalyzeEvent(ReopenEvent)) && Passed;
   ReopenModule.Finalize();
   delete ReopenEvent;
-  Passed = EvaluateTrue("Finalize()", "first reopen output", "The first reopen output was written and closed", ReadTextFile(ReopenFirstFileName).Contains("ID 303") && ReadTextFile(ReopenFirstFileName).EndsWith("EN\n")) && Passed;
-  Passed = EvaluateTrue("Finalize()", "second reopen output", "The second reopen output was written and closed", ReadTextFile(ReopenSecondFileName).Contains("ID 303") && ReadTextFile(ReopenSecondFileName).EndsWith("EN\n")) && Passed;
+  // Expected: header, format declaration, single event, and EN trailer
+  Passed = Evaluate("Finalize()", "first reopen output", "The first reopen output was written and closed with exactly one event",
+                    ReadTextFile(ReopenFirstFileName), MString("\nTYPE ROA\n\nUF UH singlesidedstrip adc\nSE\nID 303\nTI 0.000000000\nUH 7 11 1234 \nEN\n")) && Passed;
+  // The second file has an additional blank line after the format declaration
+  Passed = Evaluate("Finalize()", "second reopen output", "The second reopen output was written and closed with exactly one event",
+                    ReadTextFile(ReopenSecondFileName), MString("\nTYPE ROA\n\nUF UH singlesidedstrip adc\n\nSE\nID 303\nTI 0.000000000\nUH 7 11 1234 \nEN\n")) && Passed;
   RemoveTemporaryFile(ReopenFirstFileName);
   RemoveTemporaryFile(ReopenSecondFileName);
 
@@ -269,7 +272,8 @@ bool UTModuleSaver::TestInheritedFlow()
   FlowModule.Finalize();
 
   const MString FlowText = ReadTextFile(FlowFileName);
-  Passed = EvaluateTrue("DoSingleAnalysis()", "flow output content", "The inherited analysis flow writes the representative event to disk", FlowText.Contains("ID 404") && FlowText.EndsWith("EN\n")) && Passed;
+  Passed = Evaluate("DoSingleAnalysis()", "flow output content", "The inherited analysis flow writes exactly the representative event to disk",
+                    FlowText, MString("\nTYPE ROA\n\nUF UH singlesidedstrip adc\nSE\nID 404\nTI 0.000000000\nUH 7 11 1234 \nEN\n")) && Passed;
   RemoveTemporaryFile(FlowFileName);
 
   MModuleSaver MissingRequirementModule;
@@ -284,7 +288,7 @@ bool UTModuleSaver::TestInheritedFlow()
   Passed = EvaluateFalse("AnalyzeEvent()", "missing predecessor progress", "The event saver does not mark or save events missing event-loader progress", UnsavedEvent->HasAnalysisProgress(MAssembly::c_EventSaver)) && Passed;
   delete UnsavedEvent;
   MissingRequirementModule.Finalize();
-  Passed = EvaluateFalse("DoSingleAnalysis()", "missing predecessor output", "The output file does not contain the event that missed required predecessor progress", ReadTextFile(MissingRequirementFileName).Contains("ID 505")) && Passed;
+  Passed = Evaluate("DoSingleAnalysis()", "missing predecessor output", "The output file holds no event for an event which missed required predecessor progress", ReadTextFile(MissingRequirementFileName), MString("\nTYPE ROA\n\nEN\n")) && Passed;
   RemoveTemporaryFile(MissingRequirementFileName);
 
   return Passed;
@@ -347,7 +351,7 @@ bool UTModuleSaver::TestRoaRoundTrip()
   ReadBack.SetFilteredOut(false);
   Passed = EvaluateTrue("AnalyzeEvent()", "round-trip read", "The written event can be read back from the roa file", Loader.AnalyzeEvent(&ReadBack)) && Passed;
   Passed = Evaluate("GetID()", "round trip", "The event ID survives the write-read round trip", ReadBack.GetID(), Written.GetID()) && Passed;
-  Passed = EvaluateNear("GetTime()", "round trip", "The event time survives the write-read round trip", ReadBack.GetTime().GetAsSeconds(), Written.GetTime().GetAsSeconds(), 1.0e-9) && Passed;
+  Passed = EvaluateNear("GetTime()", "round trip", "The event time survives the write-read round trip", ReadBack.GetTime().GetAsSeconds(), 2.25, 1.0e-12) && Passed;
   Passed = EvaluateSize("GetNumberOfReadOuts()", "round trip", "The number of read-outs survives the write-read round trip", ReadBack.GetNumberOfReadOuts(), static_cast<size_t>(Written.GetNumberOfReadOuts())) && Passed;
   if (ReadBack.GetNumberOfReadOuts() == 1) {
     Passed = Evaluate("GetDetectorID()", "round trip", "The read-out detector ID survives the write-read round trip", ReadBack.GetReadOut(0).GetReadOutElement().GetDetectorID(), 7U) && Passed;

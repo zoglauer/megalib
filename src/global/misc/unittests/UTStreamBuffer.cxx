@@ -27,6 +27,7 @@ using namespace std;
 // MEGAlib:
 #include "MFile.h"
 #include "MStreamBuffer.h"
+#include "MTime.h"
 #include "MUnitTest.h"
 
 
@@ -190,12 +191,18 @@ bool UTStreamBuffer::TestStreamBuffer()
     ostream Stream(&Buffer);
 
     Passed = EvaluateTrue("Connect()", "time prefix file", "Connecting with time prefix succeeds", Buffer.Connect(TimePrefixFileName, false, true)) && Passed;
+    MTime Before;
     Stream<<"Timed";
     Buffer.show();
+    MTime After;
 
+    // Line layout: timestamp YYYYMMDD_HHMMSS (15 characters), separator ":  ", message
     MString Content = ReadTextFile(TimePrefixFileName);
-    Passed = EvaluateTrue("Connect(..., TimePrefix=true)", "contains payload", "Timed file output still contains the emitted message", Content.Contains("Timed\n")) && Passed;
-    Passed = EvaluateTrue("Connect(..., TimePrefix=true)", "contains separator", "Timed file output prefixes the line with a timestamp separator", Content.Contains(":  ")) && Passed;
+    Passed = EvaluateSize("Connect(..., TimePrefix=true)", "length", "Timed file output has 15 characters timestamp, 3 characters separator, and the 6 characters message with its newline", Content.Length(), 24) && Passed;
+    Passed = Evaluate("Connect(..., TimePrefix=true)", "separator and payload", "Timed file output continues with the separator and the emitted message after the timestamp", Content.GetSubString(15), MString(":  Timed\n")) && Passed;
+    const MString Timestamp = Content.GetSubString(0, 15);
+    Passed = EvaluateTrue("Connect(..., TimePrefix=true)", "timestamp", "The timestamp lies between the readings of the clock before and after the emission",
+                          Before.GetShortString().ToString() <= Timestamp.ToString() && Timestamp.ToString() <= After.GetShortString().ToString()) && Passed;
   }
 
   CleanFile(BasicFileName);

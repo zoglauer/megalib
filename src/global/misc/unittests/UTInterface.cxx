@@ -285,9 +285,12 @@ bool UTInterface::Run()
   {
     TF1 Gaussian("Gaussian", "[0]*exp(-0.5*((x-[1])/[2])*((x-[1])/[2]))", -20.0, 20.0);
     Gaussian.SetParameters(1.0, 0.0, 2.0);
+    // FWHM = 2 sqrt(2 ln 2) sigma with sigma = 2
     const double ExpectedFWHM = 2.0*sqrt(2.0*log(2.0))*2.0;
-    Passed = EvaluateNear("GetFWHM()", "gaussian default bounds", "GetFWHM uses the fallback range when no bounds are given", MInterface::GetFWHM(&Gaussian), ExpectedFWHM, 1e-2) && Passed;
-    Passed = EvaluateNear("GetFWHM()", "gaussian", "GetFWHM returns the representative Gaussian full width at half maximum", MInterface::GetFWHM(&Gaussian, -20.0, 20.0), ExpectedFWHM, 1e-2) && Passed;
+    // Grid step (peak - min)/100/100 = 0.002, each border at most one step off - width off by at most 0.004
+    const double FWHMResolution = 0.004;
+    Passed = EvaluateNear("GetFWHM()", "gaussian default bounds", "GetFWHM uses the fallback range when no bounds are given", MInterface::GetFWHM(&Gaussian), ExpectedFWHM, FWHMResolution) && Passed;
+    Passed = EvaluateNear("GetFWHM()", "gaussian", "GetFWHM returns the representative Gaussian full width at half maximum", MInterface::GetFWHM(&Gaussian, -20.0, 20.0), ExpectedFWHM, FWHMResolution) && Passed;
     Passed = Evaluate("GetFWHM()", "null function", "GetFWHM rejects a null function pointer", MInterface::GetFWHM(nullptr, -20.0, 20.0), numeric_limits<double>::max()) && Passed;
   }
 

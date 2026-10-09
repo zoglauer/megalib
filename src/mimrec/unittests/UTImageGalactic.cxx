@@ -152,7 +152,7 @@ bool UTImageGalactic::Run()
       Passed = EvaluateNear("Display()", "representative bin (1,2)", "Display stores the representative fourth galactic bin with the expected inverted x-axis mapping", Hist->GetBinContent(3, 2), 4.0, 1e-12) && Passed;
       Passed = EvaluateNear("Display()", "representative bin (2,2)", "Display stores the representative fifth galactic bin with the expected inverted x-axis mapping", Hist->GetBinContent(2, 2), 5.0, 1e-12) && Passed;
       Passed = EvaluateNear("Display()", "representative bin (3,2)", "Display stores the representative sixth galactic bin with the expected inverted x-axis mapping", Hist->GetBinContent(1, 2), 6.0, 1e-12) && Passed;
-      Passed = EvaluateTrue("Display()", "representative non-zero bins", "The representative galactic histogram has rendered content after display", CountNonZeroBins(Hist) > 0) && Passed;
+      Passed = Evaluate("Display()", "representative non-zero bins", "All 6 bins of the representative galactic histogram have the non-zero content after display", CountNonZeroBins(Hist), 6) && Passed;
     }
 
     Image.SetImageArray((double*) nullptr);
@@ -396,15 +396,21 @@ bool UTImageGalactic::Run()
     Passed = EvaluateTrue("CanvasExists()", "representative hammer canvas", "Display creates a representative Hammer-projected galactic canvas", Image.CanvasExists()) && Passed;
     TH2* Hist = dynamic_cast<TH2*>(Image.GetHistogramPointer());
     if (Hist != nullptr) {
-      Passed = EvaluateTrue("Display()", "representative hammer binning", "The representative Hammer histogram has a finer grid than the source image", Hist->GetNbinsX() > Image.GetNEntries()) && Passed;
-      Passed = EvaluateTrue("Display()", "representative hammer content", "The representative Hammer histogram has projected content after display", CountNonZeroBins(Hist) > 0) && Passed;
+      // Expected: 8 bins per source bin, 8 * 2 = 16 bins in both axes
+      Passed = Evaluate("Display()", "representative hammer x binning", "The representative Hammer histogram has 8 bins per source bin in x", Hist->GetNbinsX(), 16) && Passed;
+      Passed = Evaluate("Display()", "representative hammer y binning", "The representative Hammer histogram has 8 bins per source bin in y", Hist->GetNbinsY(), 16) && Passed;
+      // Expected: 164 bin centers inside the map, 41 per source bin - independent script, inverse Hammer projection of the 16x16 bin centers, central meridian 180 deg
+      Passed = Evaluate("Display()", "representative hammer content", "The representative Hammer histogram has 164 projected bins with content after display", CountNonZeroBins(Hist), 164) && Passed;
+      Passed = EvaluateNear("Display()", "representative hammer integral", "The representative Hammer histogram integral is 41 * (1 + 2 + 3 + 4)", Hist->Integral(), 410.0, 1e-9) && Passed;
     }
 
     double UpdatedValues[4] = {0.0, 0.0, 0.0, 10.0};
     Image.SetImageArray(UpdatedValues);
     if (Hist != nullptr) {
-      Passed = EvaluateTrue("SetImageArray()", "representative hammer update", "SetImageArray(newData) updates the representative Hammer-projected galactic histogram", Hist->GetMaximum() > 0.0) && Passed;
-      Passed = EvaluateTrue("SetImageArray()", "representative hammer update content", "SetImageArray(newData) leaves projected Hammer content in the representative galactic histogram", CountNonZeroBins(Hist) > 0) && Passed;
+      Passed = EvaluateNear("SetImageArray()", "representative hammer update", "SetImageArray(newData) updates the representative Hammer-projected galactic histogram to the new maximum of 10", Hist->GetMaximum(), 10.0, 1e-12) && Passed;
+      // Expected: 41 projected bins of the last source bin
+      Passed = Evaluate("SetImageArray()", "representative hammer update content", "SetImageArray(newData) leaves exactly the 41 projected bins of the last source bin filled", CountNonZeroBins(Hist), 41) && Passed;
+      Passed = EvaluateNear("SetImageArray()", "representative hammer update integral", "The updated Hammer histogram integral is 41 * 10", Hist->Integral(), 410.0, 1e-9) && Passed;
     }
 
     Image.Display(Image.GetCanvasPointer());
@@ -577,7 +583,7 @@ bool UTImageGalactic::Run()
     Image.Display();
     TH2* Hist = dynamic_cast<TH2*>(Image.GetHistogramPointer());
     if (Hist != nullptr) {
-      Passed = EvaluateTrue("Reset()", "representative displayed reset", "Reset clears the representative galactic histogram after display", Hist->GetMaximum() > 0.0) && Passed;
+      Passed = EvaluateNear("Reset()", "representative displayed reset", "The displayed unprojected galactic histogram has the maximum 4 before Reset", Hist->GetMaximum(), 4.0, 1e-12) && Passed;
       Image.Reset();
       Passed = Evaluate("Reset()", "representative reset clears bins", "Reset zeroes the representative galactic histogram after display", CountNonZeroBins(Hist), 0) && Passed;
     }

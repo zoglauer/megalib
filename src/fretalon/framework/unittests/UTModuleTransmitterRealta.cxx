@@ -397,8 +397,8 @@ bool UTModuleTransmitterRealta::TestTransmissionRoundTrip()
     const bool Received = WaitForMessage(Client, Message, c_ReceiveTimeOut);
     Passed = EvaluateTrue("Send()", "round-trip event", "The transmitted event reaches the connected client", Received) && Passed;
     if (Received == true) {
-      Passed = EvaluateTrue("StreamEvta()", "round-trip event", "The received message carries the event header of the transmitted event", MString(Message).Contains("SE")) && Passed;
-      Passed = EvaluateTrue("StreamEvta()", "round-trip event ID", "The received message carries the ID of the transmitted event", MString(Message).Contains("ID 4242")) && Passed;
+      // Expected: event header, ID, and default time without read-outs
+      Passed = Evaluate("StreamEvta()", "round-trip event", "The received message is exactly the EVTA text of the transmitted event", Message, MString("SE\nID 4242\nTI 0.000000000\n")) && Passed;
     }
     delete Event;
   }
