@@ -37,6 +37,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <cerrno>
+#include <cstdint>
 #include <cstdio>
 #include <ctime>
 #include <vector>
@@ -46,6 +47,7 @@
 #include <fcntl.h>
 #ifdef __APPLE__
 #include <sys/sysctl.h>
+#include <mach/mach.h>
 #endif
 #include <sys/wait.h>
 #include <unistd.h>
@@ -417,178 +419,106 @@ void MSystem::Reset()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Get the free RAM in MB, return false and set it to -1 if unknown
 bool MSystem::FreeMemory(int &Free)
 {
-#ifdef ___UNIX___
+  bool Success = GetMemory();
+  Free = m_FreeRAM;
 
-  /*
-   * The amount of total and used memory is read from the /proc/meminfo.
-   * It also contains the information about the swap space.
-   * The 'file' looks like this:
-   *
-   *         total:    used:    free:  shared: buffers:  cached:
-   * Mem:  64593920 60219392  4374528 49426432  6213632 33689600
-   * Swap: 69636096   761856 68874240
-   * MemTotal:     63080 kB
-   * MemFree:       4272 kB
-   * MemShared:    48268 kB
-   * Buffers:       6068 kB
-   * Cached:       32900 kB
-   * SwapTotal:    68004 kB
-   * SwapFree:     67260 kB
-   */
-
-  int total, used, mfree, buffers, cached;
-  
-  FILE* meminfo;
-  
-  if ((meminfo = fopen("/proc/meminfo", "r")) == NULL) {
-    Warning("bool MSystem::FreeMemory(int &Free)",
-            "Cannot open file \'/proc/meminfo\'!\n"
-            "The kernel needs to be compiled with support\n"
-            "for /proc filesystem enabled!");
-    Free = -1;
-    return false;
-  }
-
-  if (fscanf(meminfo, "%*[^\n]\n") == EOF) {
-    Warning("bool MSystem::FreeMemory(int &Free)",
-            "Cannot read memory info file \'/proc/meminfo\'!\n");
-    Free = -1;
-    fclose(meminfo);
-    return false;
-  }
-
-  /*
-   * The following works only on systems with 4GB or less. Currently this
-   * is no problem but what happens if Linus changes his mind?
-   */
-  if (fscanf(meminfo, "%*s %d %d %d %*d %d %d\n",
-             &total, &used, &mfree, &buffers, &cached) != 5) {
-    Free = -1;
-    fclose(meminfo);
-    return false;
-  }
-  
-  total /= 1024;
-  mfree /= 1024;
-  used /= 1024;
-  buffers /= 1024;
-  cached /= 1024;
-  
-  fclose(meminfo);
-  
-  Free = mfree + buffers + cached;
-  return true;
-
-#else
-
-  // If we do not have a Linux-system
-  Free = -1;
-  return false;
-
-#endif
+  return Success;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Fill the RAM and swap values in MB (rounded down), return false and set them to -1 if unknown
 bool MSystem::GetMemory()
 {
-  // Fill all memory variables 
-  // Return false if an error occurred
+  Reset();
 
-  // Check if it's update time:
-  //cout<<(gSystem->Now() - m_LastCheck).AsString()<<"!"<<m_CheckInterval.AsString()<<endl;
-  //if ((long) (gSystem->Now() - m_LastCheck) < (long) m_CheckInterval) {
-  //cout<<(gSystem->Now() - m_LastCheck).AsString()<<"!"<<m_CheckInterval.AsString()<<endl;
-  //return true;
-  //} 
-  //cout<<gSystem->Now().AsString()<<"!"<<m_LastCheck.AsString()<<"!"<<m_CheckInterval.AsString()<<endl;
+#if defined(__APPLE__)
 
-#ifdef ___UNIX___
-
-  /*
-   * The amount of total and used memory is read from the /proc/meminfo.
-   * It also contains the information about the swap space.
-   * The 'file' looks like this:
-   *
-   *         total:    used:    free:  shared: buffers:  cached:
-   * Mem:  64593920 60219392  4374528 49426432  6213632 33689600
-   * Swap: 69636096   761856 68874240
-   * MemTotal:     63080 kB
-   * MemFree:       4272 kB
-   * MemShared:    48268 kB
-   * Buffers:       6068 kB
-   * Cached:       32900 kB
-   * SwapTotal:    68004 kB
-   * SwapFree:     67260 kB
-   */
-
-  int total, used, mfree, buffers, cached;
-  
-  FILE* meminfo;
-  
-  if ((meminfo = fopen("/proc/meminfo", "r")) == NULL) {
-    Warning("bool MSystem::FreeMemory(int &Free)",
-            "Cannot open file \'/proc/meminfo\'!\n"
-            "The kernel needs to be compiled with support\n"
-            "for /proc filesystem enabled!");
-    Reset();
+  // Get the installed RAM (bytes):
+  uint64_t MemSize = 0;
+  size_t MemSizeLength = sizeof(MemSize);
+  if (sysctlbyname("hw.memsize", &MemSize, &MemSizeLength, nullptr, 0) != 0) {
+    merr<<"Unable to read hw.memsize"<<endl;
     return false;
   }
 
-  if (fscanf(meminfo, "%*[^\n]\n") == EOF) {
-    Warning("bool MSystem::FreeMemory(int &Free)",
-            "Cannot read memory info file \'/proc/meminfo\'!\n");
-    Reset();
-    fclose(meminfo);
+  // Get the free RAM - free plus inactive pages:
+  mach_port_t Host = mach_host_self();
+  vm_size_t PageSize = 0;
+  vm_statistics64_data_t VM;
+  mach_msg_type_number_t VMCount = HOST_VM_INFO64_COUNT;
+  kern_return_t PageSizeResult = host_page_size(Host, &PageSize);
+  kern_return_t StatisticsResult = host_statistics64(Host, HOST_VM_INFO64, reinterpret_cast<host_info64_t>(&VM), &VMCount);
+  // Release the host port - mach_host_self() added a send right
+  mach_port_deallocate(mach_task_self(), Host);
+  if (PageSizeResult != KERN_SUCCESS || StatisticsResult != KERN_SUCCESS) {
+    merr<<"Unable to read the virtual memory statistics"<<endl;
+    return false;
+  }
+  uint64_t FreeBytes = (static_cast<uint64_t>(VM.free_count) + VM.inactive_count) * PageSize;
+
+  // Get the swap (bytes):
+  struct xsw_usage SwapUsage;
+  size_t SwapUsageLength = sizeof(SwapUsage);
+  if (sysctlbyname("vm.swapusage", &SwapUsage, &SwapUsageLength, nullptr, 0) != 0) {
+    merr<<"Unable to read vm.swapusage"<<endl;
     return false;
   }
 
-  // Read the RAM information:
-  if (fscanf(meminfo, "%*s %d %d %d %*d %d %d\n",
-             &total, &used, &mfree, &buffers, &cached) != 5) {
-    Reset();
-    fclose(meminfo);
+  m_RAM = MemSize/1048576;
+  m_FreeRAM = FreeBytes/1048576;
+  m_Swap = SwapUsage.xsw_total/1048576;
+  m_FreeSwap = SwapUsage.xsw_avail/1048576;
+  return true;
+
+#elif defined(__linux__)
+
+  FILE* MemInfo = fopen("/proc/meminfo", "r");
+  if (MemInfo == nullptr) {
+    merr<<"Cannot open file '/proc/meminfo'!"<<endl;
     return false;
-    merr<<"Unable to read /proc/meminfo... What Kernel are you using???"<<endl;
   }
 
-  total /= 1048576;
-  mfree /= 1048576;
-  used /= 1048576;
-  buffers /= 1048576;
-  cached /= 1048576;
+  // Read the values (kB), -1: not found:
+  long MemTotal = -1, MemFree = -1, MemAvailable = -1, Buffers = -1, Cached = -1, SwapTotal = -1, SwapFree = -1;
+  char Line[256];
+  while (fgets(Line, sizeof(Line), MemInfo) != nullptr) {
+    char Name[64];
+    long Value = 0;
+    if (sscanf(Line, "%63[^:]: %ld", Name, &Value) != 2) continue;
+    MString Key(Name);
+    if (Key == "MemTotal") MemTotal = Value;
+    else if (Key == "MemFree") MemFree = Value;
+    else if (Key == "MemAvailable") MemAvailable = Value;
+    else if (Key == "Buffers") Buffers = Value;
+    else if (Key == "Cached") Cached = Value;
+    else if (Key == "SwapTotal") SwapTotal = Value;
+    else if (Key == "SwapFree") SwapFree = Value;
+  }
+  fclose(MemInfo);
 
-  m_RAM = total;
-  m_FreeRAM = mfree + buffers + cached;
-
-  // Read the swap information:
-  if (fscanf(meminfo, "%*s %d %d %d\n",
-             &total, &used, &mfree) != 3) {
-    Reset();
-    fclose(meminfo);
+  if (MemTotal < 0 || MemFree < 0 || SwapTotal < 0 || SwapFree < 0) {
+    merr<<"Unable to read the memory values from /proc/meminfo"<<endl;
     return false;
-    merr<<"Unable to read /proc/meminfo... What Kernel are you using???"<<endl;    
   }
 
-  total /= 1048576;
-  mfree /= 1048576;
-  used /= 1048576;
+  // Free RAM - MemAvailable if the kernel has it (>= 3.14), otherwise free plus buffers and cache:
+  long FreeRAM = MemFree + (Buffers > 0 ? Buffers : 0) + (Cached > 0 ? Cached : 0);
+  if (MemAvailable >= 0) FreeRAM = MemAvailable;
 
-  m_Swap = total;
-  m_FreeSwap = mfree;
-  
-  fclose(meminfo);
-  
+  m_RAM = MemTotal/1024;
+  m_FreeRAM = FreeRAM/1024;
+  m_Swap = SwapTotal/1024;
+  m_FreeSwap = SwapFree/1024;
   return true;
 
 #else
 
-  // If we do not have a Linux-system
-  Reset();
   return false;
 
 #endif
@@ -759,10 +689,7 @@ bool MSystem::GetProcessInfo(int ProcessID)
   // Open the file - c-mode - sorry...
   FILE *PIDStatus;
   if ((PIDStatus = fopen(S.str().c_str(), "r")) == 0) {
-    Warning("bool MSystem::GetProcessInfo(int ProcessID)",
-            "Cannot open file \'%s\'!\n"
-            "The kernel needs to be compiled with support\n"
-            "for /proc filesystem enabled!", S.str().c_str());
+    merr<<"Cannot open file '"<<S.str()<<"'! The kernel needs to be compiled with support for the /proc filesystem"<<endl;
 
     return false;
   }

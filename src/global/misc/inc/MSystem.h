@@ -53,10 +53,15 @@ class MSystem
   MSystem();
   virtual ~MSystem();
 
+  //! Get the free RAM in MB, return false and set it to -1 if unknown
   bool FreeMemory(int &Free);
+  //! Return the installed RAM in MB, -1 if unknown
   int GetRAM();
+  //! Return the RAM in MB which is available without swapping, -1 if unknown
   int GetFreeRAM();
+  //! Return the installed swap in MB, -1 if unknown
   int GetSwap();
+  //! Return the free swap in MB, -1 if unknown
   int GetFreeSwap();
 
   static bool GetTime(long int& Seconds, long int& NanoSeconds);
