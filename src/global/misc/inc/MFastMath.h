@@ -120,7 +120,7 @@ class MFastMath
     
     static const double a2 = -0.4999999963;
     static const double a4 = +0.0416666418;
-    static const double a6 = -0.0013888387;
+    static const double a6 = -0.0013888397;
     static const double a8 = +0.0000247609;
     static const double a10 = -0.0000002605;
     
