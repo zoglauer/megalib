@@ -869,6 +869,14 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   
   if (Event != nullptr) {
     if (m_PhysFile != nullptr) {
+      if (m_Reader != nullptr &&
+          m_PhysFile->HasStartObservationTime() == false &&
+          m_Reader->HasStartObservationTime() == true) {
+        m_PhysFile->SetStartObservationTime(m_Reader->GetStartObservationTime());
+        ostringstream TB;
+        TB<<"TB "<<m_Reader->GetStartObservationTime()<<endl;
+        m_PhysFile->AddText(TB.str().c_str());
+      }
       if (m_PhysFile->AddEvent(Event) == false) {
         merr<<"Saving of the event failed!"<<show;
         return c_AnalysisSavingEventFailed;
@@ -1473,6 +1481,9 @@ bool MRawEventAnalyzer::PreAnalysis()
     if (m_PhysFile != nullptr) {
       m_PhysFile->SetVersion(1);
       m_PhysFile->SetGeometryFileName(m_Geometry->GetFileName());
+      if (m_Reader != nullptr && m_Reader->HasStartObservationTime() == true) {
+        m_PhysFile->SetStartObservationTime(m_Reader->GetStartObservationTime());
+      }
       m_PhysFile->WriteHeader();
     }
   }

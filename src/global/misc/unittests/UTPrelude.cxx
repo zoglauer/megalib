@@ -1,0 +1,159 @@
+/*
+ * UTPrelude.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+
+// Standard libs:
+#include <cstdlib>
+
+// MEGAlib:
+#include "MFile.h"
+#include "MPrelude.h"
+#include "MUnitTest.h"
+
+
+//! Unit test class for MPrelude
+class UTPrelude : public MUnitTest
+{
+public:
+  //! Default constructor
+  UTPrelude() : MUnitTest("UTPrelude") {}
+  //! Default destructor
+  virtual ~UTPrelude() {}
+
+  //! Run all tests
+  virtual bool Run();
+
+private:
+  //! Restore an environment variable after the test
+  class ScopedEnvironment
+  {
+  public:
+    ScopedEnvironment(const char* Name, const MString& Value) : m_Name(Name), m_HadValue(false) {
+      const char* OldValue = getenv(Name);
+      if (OldValue != nullptr) {
+        m_HadValue = true;
+        m_OldValue = OldValue;
+      }
+      setenv(Name, Value.Data(), 1);
+    }
+
+    ~ScopedEnvironment() {
+      if (m_HadValue == true) {
+        setenv(m_Name.Data(), m_OldValue.Data(), 1);
+      } else {
+        unsetenv(m_Name.Data());
+      }
+    }
+
+  private:
+    MString m_Name;
+    MString m_OldValue;
+    bool m_HadValue;
+  };
+
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Run all tests
+bool UTPrelude::Run()
+{
+  bool Passed = true;
+
+  const MString HomeDirectory = GetTemporaryDirectoryName("Home");
+  const MString MegaDirectory = GetTemporaryDirectoryName("Mega");
+  const MString FailureHomeDirectory = GetTemporaryDirectoryName("FailureHome");
+  const MString FailureMegaDirectory = GetTemporaryDirectoryName("FailureMega");
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "home", "A temporary HOME directory can be created for MPrelude tests", PrepareTemporaryDirectory("Home")) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "megalib", "A temporary MEGALIB directory can be created for MPrelude tests", PrepareTemporaryDirectory("Mega")) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "failure home", "A temporary failure HOME directory can be created for MPrelude tests", PrepareTemporaryDirectory("FailureHome")) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "failure megalib", "A temporary failure MEGALIB directory can be created for MPrelude tests", PrepareTemporaryDirectory("FailureMega")) && Passed;
+  if (MFile::CreateDirectory(HomeDirectory) == false || MFile::CreateDirectory(MegaDirectory) == false || MFile::CreateDirectory(FailureHomeDirectory) == false || MFile::CreateDirectory(FailureMegaDirectory) == false) {
+    Summarize();
+    return false;
+  }
+
+  // Default global settings: root node MEGAlib with ChangeLogHash 0 and FontScaler normal
+  const MString ExpectedSettings = "<MEGAlib>\n  <ChangeLogHash>0</ChangeLogHash>\n  <FontScaler>normal</FontScaler>\n</MEGAlib>\n";
+
+  const MString SettingsFile = HomeDirectory + "/.megalib.cfg";
+  RemoveTemporaryFile(SettingsFile);
+
+  MString FirstContent;
+  {
+    // Keep the temporary MEGALIB tree empty so the GUI-backed changelog
+    // branch stays out of the headless unit test.
+    ScopedEnvironment HomeEnv("HOME", HomeDirectory);
+    ScopedEnvironment MegaEnv("MEGALIB", MegaDirectory);
+
+    MPrelude Prelude;
+    Passed = EvaluateTrue("Play()", "startup", "MPrelude::Play succeeds when no changelog file needs prompting", Prelude.Play()) && Passed;
+    Passed = EvaluateTrue("MFile::Exists()", "settings file", "MPrelude::Play creates the global settings file in the HOME directory", MFile::Exists(SettingsFile)) && Passed;
+
+    FirstContent = ReadTextFile(SettingsFile);
+    Passed = Evaluate("Play()", "settings content", "MPrelude::Play writes the default global settings content", FirstContent, ExpectedSettings) && Passed;
+
+    MPrelude SecondPrelude;
+    Passed = EvaluateTrue("Play()", "repeat startup", "A repeated MPrelude::Play call also succeeds with unchanged inputs", SecondPrelude.Play()) && Passed;
+  }
+
+  const MString FailureSettingsFile = FailureHomeDirectory + "/.megalib.cfg";
+  RemoveTemporaryFile(FailureSettingsFile);
+  Passed = EvaluateTrue("WriteTextFile()", "bad settings", "A malformed settings file can be created for the failure-path test", WriteTextFile(FailureSettingsFile, "<NotMEGAlib><ChangeLogHash>1</ChangeLogHash></NotMEGAlib>\n")) && Passed;
+  {
+    ScopedEnvironment HomeEnv("HOME", FailureHomeDirectory);
+    ScopedEnvironment MegaEnv("MEGALIB", FailureMegaDirectory);
+
+    MPrelude FailingPrelude;
+    DisableDefaultStreams();
+    Passed = EvaluateTrue("Play()", "bad settings", "MPrelude::Play recovers from a malformed settings file by starting with the defaults", FailingPrelude.Play()) && Passed;
+    EnableDefaultStreams();
+  }
+  const MString FailureContent = ReadTextFile(FailureSettingsFile);
+  Passed = Evaluate("ReadTextFile()", "bad settings recovered", "MPrelude::Play rewrites a malformed settings file with the default configuration", FailureContent, ExpectedSettings) && Passed;
+  Passed = EvaluateFalse("ReadTextFile()", "bad settings recovered", "The malformed XML root is replaced during recovery", FailureContent.Contains("<NotMEGAlib>")) && Passed;
+
+  const MString SecondContent = ReadTextFile(SettingsFile);
+  Passed = Evaluate("Play()", "repeat content", "Repeated startup keeps the saved settings file stable", SecondContent, FirstContent) && Passed;
+
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "settings cleanup", "The temporary settings file can be removed", RemoveTemporaryFile(SettingsFile)) && Passed;
+  Passed = EvaluateFalse("MFile::Exists()", "settings cleanup", "The temporary settings file is gone after cleanup", MFile::Exists(SettingsFile)) && Passed;
+  RemoveTemporaryFile(FailureSettingsFile);
+
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "home cleanup", "The temporary HOME directory can be removed", RemoveTemporaryDirectory(HomeDirectory)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "megalib cleanup", "The temporary MEGALIB directory can be removed", RemoveTemporaryDirectory(MegaDirectory)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "failure home cleanup", "The temporary failure HOME directory can be removed", RemoveTemporaryDirectory(FailureHomeDirectory)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "failure megalib cleanup", "The temporary failure MEGALIB directory can be removed", RemoveTemporaryDirectory(FailureMegaDirectory)) && Passed;
+
+  Summarize();
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+  UTPrelude Test;
+  return Test.Run() == true ? 0 : 1;
+}

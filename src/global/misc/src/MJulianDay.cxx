@@ -37,6 +37,7 @@ using namespace std;
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MExceptions.h"
 #include "MStreams.h"
 #include "MSystem.h"
 
@@ -68,7 +69,7 @@ MJulianDay::MJulianDay(bool Now)
     time_t tloc = (time_t) Seconds;  // There might be problems on 64 bit systems
 
     struct tm *tp;
-    tp = localtime(&tloc);
+    tp = gmtime(&tloc);
     
     CalculateJD(tp->tm_year + 1900, tp->tm_mon + 1, tp->tm_mday, tp->tm_hour, tp->tm_min, tp->tm_sec, NanoSeconds);
   }
@@ -106,7 +107,7 @@ MJulianDay::MJulianDay(int Year, int Month, int Day, int Hour,
                        int Minute, int Second, int NanoSecond)
 {
   if (CalculateJD(Year, Month, Day, Hour, Minute, Second, NanoSecond) == false) {
-    Warning("MJulianDay:::MJulianDay", "Invalid date! Setting date to zero!");
+    mout<<"MJulianDay:::MJulianDay: Invalid date! Setting date to zero!"<<endl;
     SetJulianDay(0.0, 0.0);
   }
 }
@@ -145,42 +146,33 @@ bool MJulianDay::CalculateJD(int Year, int Month, int Day,
   double JDDay, JDFraction;
 
   // Check if everything is ok:
-  if (Month <= 0 || Month >= 12) {
-    Fatal("MJulianDay::SetJD", 
-            "No valid month: %d (allowed: 0..12)", Month);
-    return false;
+  if (Month <= 0 || Month > 12) {
+    throw MExceptionParameterOutOfRange(Month, 1, 12, "UTCMonth");
   }
   if (Day <= 0) {
-    Warning("MJulianDay::SetJD", 
-            "No valid day: %d (allowed: 0..31)", Day);
+    mout<<"MJulianDay::SetJD: No valid day: "<<Day<<" (allowed: 0..31)"<<endl;
     return false;
   }
   if (Day > 28 && Day < 32) {
-    Warning("MJulianDay::SetJD", 
-            "No maximum allowed day check for days 28, 29, 30, 31!");
+    mout<<"MJulianDay::SetJD: No maximum allowed day check for days 28, 29, 30, 31!"<<endl;
   }
   if (Day > 31) {
-    Warning("MJulianDay::SetJD", 
-            "No valid day: %d (allowed: 0..31)", Day);
+    mout<<"MJulianDay::SetJD: No valid day: "<<Day<<" (allowed: 0..31)"<<endl;
   }
   if (Hour < 0 || Hour > 23) {
-    Warning("MJulianDay::SetJD", 
-            "No valid hour: %d (allowed: 0..23)", Hour);
+    mout<<"MJulianDay::SetJD: No valid hour: "<<Hour<<" (allowed: 0..23)"<<endl;
     return false;
   }
   if (Minute < 0 || Minute > 59) {
-    Warning("MJulianDay::SetJD", 
-            "No valid minute: %d (allowed: 0..59)", Minute);
+    mout<<"MJulianDay::SetJD: No valid minute: "<<Minute<<" (allowed: 0..59)"<<endl;
     return false;
   }
   if (Second < 0 || Second > 59) {
-    Warning("MJulianDay::SetJD", 
-            "No valid second: %d (allowed: 0..59)", Second);
+    mout<<"MJulianDay::SetJD: No valid second: "<<Second<<" (allowed: 0..59)"<<endl;
     return false;
   }
   if (NanoSecond < 0 || NanoSecond > 999999999) {
-    Warning("MJulianDay::SetJD", 
-            "No valid microsecond: %d (allowed: 0..999999999)", NanoSecond);
+    mout<<"MJulianDay::SetJD: No valid microsecond: "<<NanoSecond<<" (allowed: 0..999999999)"<<endl;
     return false;
   }
 
@@ -514,19 +506,15 @@ double MJulianDay::GetAsNanoSeconds()
 {
   // Warning: Value has to be small enough to suit into one double!
   if (m_Day > 10 || m_Day < -10) {
-    Error("double MJulianDay::GetAsNanoSeconds()",
-          "GetAsNanoSeconds: Only valid for values < 10 days!"
-          "Otherwise you loose your microsecond precision!");
+    mout<<"GetAsNanoSeconds: Only valid for values < 10 days! Otherwise you loose your microsecond precision!"<<endl;
   }
-  
-  return (m_Day + m_Fraction)*24*60*60*1000000000;
 
   // Round to nanoseconds
   // OK since no better accurancy needed and actual accuarany is 100x larger
   if ((m_Day + m_Fraction) >= 0) {
-    return (double)(int) ((m_Day + m_Fraction)*24*60*60*1000000000 + 0.5);
+    return (double)(long long) ((m_Day + m_Fraction)*24*60*60*1000000000 + 0.5);
   } else {
-    return (double)(int) ((m_Day + m_Fraction)*24*60*60*1000000000 - 0.5);
+    return (double)(long long) ((m_Day + m_Fraction)*24*60*60*1000000000 - 0.5);
   }
 }
 

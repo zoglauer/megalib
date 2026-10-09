@@ -44,6 +44,7 @@
 #include "MPETEvent.h"
 #include "MMultiEvent.h"
 #include "MUnidentifiableEvent.h"
+#include "MTokenizer.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,6 +75,7 @@ MFileEventsTra::MFileEventsTra() : MFileEvents()
   m_EventType = MPhysicalEvent::c_Unknown;
 
   m_FileType = "tra";
+  m_FooterTENeedsEN = true;
 
   m_Fast = false;
   m_ParseDelayed = false;
@@ -133,11 +135,107 @@ bool MFileEventsTra::Close()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MTime MFileEventsTra::GetObservationTime()
+{
+  if (m_IncludeFileUsed == false && m_NOpenedIncludeFiles == 0 && m_NIncludeFiles > 0 && m_HasObservationTime == false) {
+    streampos Position = GetUncompressedFilePosition();
+
+    MTime ObservationTime = 0.0;
+    MString Line;
+
+    MFile::Rewind(!m_IsIncludeFile);
+    while (IsGood() == true) {
+      if (ReadLine(Line) == false) {
+        break;
+      }
+      if (Line.Length() < 2) continue;
+      if (Line[0] == 'I' && Line[1] == 'N') {
+        MTokenizer Tokens;
+        Tokens.Analyze(Line);
+        if (Tokens.GetNTokens() < 2) continue;
+
+        MString FileName = Tokens.GetTokenAfterAsString(1);
+        if (FileName.BeginsWith("/") == false) {
+          FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
+        }
+        if (m_WasZipped == true && FileName.EndsWith(".gz") == false) {
+          FileName += ".gz";
+        }
+        ExpandFileName(FileName);
+
+        MFileEventsTra IncludeFile;
+        if (IncludeFile.Open(FileName) == true) {
+          ObservationTime += IncludeFile.GetObservationTime();
+          IncludeFile.Close();
+        }
+      }
+    }
+
+    Clear();
+    Seek(Position);
+
+    m_ObservationTime = ObservationTime;
+    m_HasObservationTime = true;
+  }
+
+  return MFileEvents::GetObservationTime();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFileEventsTra::WriteHeader()
+{
+  if (MFileEvents::WriteHeader() == false) return false;
+
+  if (m_HasStartObservationTime == true) {
+    ostringstream Header;
+    Header<<"TB "<<m_StartObservationTime<<endl;
+    Write(Header);
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFileEventsTra::CloseEventList()
+{
+  if (m_Way == c_Read) {
+    merr<<"Only valid if file is in write-mode!"<<endl;
+    massert(m_Way != c_Read);
+    return false;
+  }
+
+  ostringstream ToWrite;
+  ToWrite<<"EN"<<endl;
+  ToWrite<<endl;
+  if (m_HasEndObservationTime == true) {
+    ToWrite<<"TE "<<m_EndObservationTime<<endl;
+  } else {
+    ToWrite<<"TE "<<m_ObservationTime<<endl;
+  }
+  ToWrite<<endl;
+  Write(ToWrite);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MFileEventsTra::Open(MString FileName, unsigned int Way, bool IsBinary)
 {
   // Derived open which initializes the include file
 
   m_IncludeFileUsed = false;
+  if (m_IncludeFile != nullptr) {
+    delete m_IncludeFile;
+  }
   MFileEventsTra* I = new MFileEventsTra();
   I->SetIsIncludeFile(true);
   I->SetFastFileParsing(m_Fast);
@@ -216,7 +314,7 @@ void* MFileEventsTra::ThreadedReading()
             Ps.clear();
             TThread::UnLock();
             // Missing: end thread here
-            cout<<"Time reader thread slept: "<<TimeReaderThreadSlept<<" sec (the thread will most likely sleep during worker thread initialization)"<<endl;
+            mout<<"Time reader thread slept: "<<TimeReaderThreadSlept<<" sec (the thread will most likely sleep during worker thread initialization)"<<endl;
             return 0;
           }
           Ps.push_back(P);
@@ -346,7 +444,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
       if (m_IncludeFile->IsCanceled() == true) {
         m_Canceled = true;
       }
-      m_IncludeFile->Close();
+      CloseIncludeFile();
       m_IncludeFileUsed = false;
 
       if (m_Canceled == true) return nullptr;
@@ -363,7 +461,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
 
     if (Line[0] == 'E' && Line[1] == 'T') {
       if (Line.Length() < 5) {
-        cout<<"Error reading event type"<<endl;
+        mout<<"Error reading event type"<<endl;
         m_EventType = MPhysicalEvent::c_Unknown;
         break;
       }
@@ -410,7 +508,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
         Phys = (MPhysicalEvent*) P;
         break;
       } else {
-        cout<<"Unknown event"<<endl;
+        mout<<"Unknown event"<<endl;
         m_EventType = MPhysicalEvent::c_Unknown;
         break;
       }

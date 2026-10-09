@@ -61,7 +61,7 @@ const size_t MString::npos = string::npos;
 
 istream& operator>>(istream& in, MString& S) 
 { 
-  in>>S.GetStringRef(); 
+  in >> S.GetStringRef(); 
   return in; 
 }
 
@@ -71,7 +71,7 @@ istream& operator>>(istream& in, MString& S)
 
 ostream& operator<<(ostream& out, const MString& S) 
 { 
-  out<<S.GetString(); 
+  out << S.GetString(); 
   return out; 
 }
 
@@ -81,10 +81,10 @@ ostream& operator<<(ostream& out, const MString& S)
 
 MString::MString(const double D, unsigned int Precision)
 {
-  //! Construct with double of given precision
+  // Construct with double of given precision
 
   ostringstream in;
-  in<<setprecision(Precision)<<D;
+  in << setprecision(Precision) << D;
 
   m_String = in.str();
 }
@@ -95,8 +95,28 @@ MString::MString(const double D, unsigned int Precision)
 
 MString::MString(double Value, double Uncertainty, MString Units, bool Latex)
 {
-  //! Construct from value, uncertainty, unit using scientific rounding
-  //! Will be something like (12.345, 1.872, "mm") -> "(12.3 +- 1.9) mm"
+  // Construct from value, uncertainty, unit using scientific rounding
+  // Will be something like (12.345, 1.872, "mm") -> "(12.3 +- 1.9) mm"
+
+  if (Uncertainty <= 0) {
+    ostringstream Out;
+    if (Units != "") {
+      if (Latex == true) {
+        Out << Value << " #pm " << Uncertainty << " " << Units;
+      } else {
+        Out << Value << " ± " << Uncertainty << " " << Units;
+      }
+    } else {
+      if (Latex == true) {
+        Out << Value << " #pm " << Uncertainty;
+      } else {
+        Out << Value << " ± " << Uncertainty;
+      }
+    }
+
+    m_String = Out.str();
+    return;
+  }
 
   // Find at which position the first digit is, e.g.:
   // 187.2 = 2, 3.23 = 0, 0.348 = -1, etc.
@@ -115,15 +135,15 @@ MString::MString(double Value, double Uncertainty, MString Units, bool Latex)
   ostringstream out;
   if (Units != "") {
     if (Latex == true) {
-      out<<"("<<Value<<" #pm "<<Uncertainty<<") "<<Units;
+      out << "(" << Value << " #pm " << Uncertainty << ") " << Units;
     } else {
-      out<<"("<<Value<<" ± "<<Uncertainty<<") "<<Units;
+      out << "(" << Value << " ± " << Uncertainty << ") " << Units;
     }
   } else {
     if (Latex == true) {
-      out<<Value<<" #pm "<<Uncertainty;
+      out << Value << " #pm " << Uncertainty;
     } else {
-      out<<Value<<" ± "<<Uncertainty;
+      out << Value << " ± " << Uncertainty;
     }
   }
 
@@ -157,7 +177,7 @@ bool MString::AreIdentical(const MString& S, bool IgnoreCase) const
   if (IgnoreCase == true) {
     size_t Size = m_String.size();
     for (unsigned int l = Size-1; l < Size; --l) {
-      if (tolower(m_String[l]) != tolower(S[l])) return false;
+      if (tolower(static_cast<unsigned char>(m_String[l])) != tolower(static_cast<unsigned char>(S[l]))) return false;
     }
     return true;
   } else {
@@ -175,6 +195,14 @@ bool MString::AreIdentical(const MString& S, bool IgnoreCase) const
 
 vector<MString> MString::Tokenize(const MString& Delimeter, bool IgnoreEmpty)  const
 { 
+  if (Delimeter.Length() == 0) {
+    vector<MString> Tokens;
+    if (IgnoreEmpty == false || IsEmpty() == false) {
+      Tokens.push_back(*this);
+    }
+    return Tokens;
+  }
+
   MString S;
   vector<MString> T;
   size_t OldPos = 0; 
@@ -186,7 +214,7 @@ vector<MString> MString::Tokenize(const MString& Delimeter, bool IgnoreEmpty)  c
     }
     OldPos = NewPos + Delimeter.Length();
   }
-  if (Length() > OldPos) {
+  if (Length() > OldPos || (IgnoreEmpty == false && OldPos == Length())) {
     S = MString(m_String.substr(OldPos, Length() - OldPos));
     if (IgnoreEmpty == false || (IgnoreEmpty == true && S != "")) { 
       T.push_back(S);
@@ -199,11 +227,15 @@ vector<MString> MString::Tokenize(const MString& Delimeter, bool IgnoreEmpty)  c
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return the string between two strings
+// Return the string between two strings
 MString MString::Extract(MString Before, MString After)
 {
-  size_t PosBefore = Index(Before) + Before.Length();
+  size_t BeforeStart = Index(Before);
+  if (BeforeStart == string::npos) return "";
+
+  size_t PosBefore = BeforeStart + Before.Length();
   size_t PosAfter = Index(After, PosBefore);
+  if (PosAfter == string::npos) return "";
   
   return GetSubString(PosBefore, PosAfter-PosBefore);
 }
@@ -304,6 +336,51 @@ bool MString::EndsWith(const MString& S) const
   if (Length() < S.Length()) return false;
   return (S == GetSubString(Length()-S.Length(), S.Length()));
 }
+ 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MString::IsPositiveInteger() const
+{
+  // Accept a non-negative base-10 integer with optional surrounding
+  // whitespace and an optional leading plus sign. Reject empty strings,
+  // whitespace-only strings, minus signs, decimal points, and trailing text.
+
+  // Strip leading spaces.
+  size_t Begin = 0;
+  while (Begin < m_String.size() && isspace(static_cast<unsigned char>(m_String[Begin])) != 0) {
+    ++Begin;
+  }
+
+  // Strip trailing spaces.
+  size_t End = m_String.size();
+  while (End > Begin && isspace(static_cast<unsigned char>(m_String[End-1])) != 0) {
+    --End;
+  }
+
+  // Reject empty or whitespace-only strings.
+  if (Begin == End) {
+    return false;
+  }
+
+  // Allow one optional leading plus sign.
+  if (m_String[Begin] == '+') {
+    ++Begin;
+    if (Begin == End) {
+      return false;
+    }
+  }
+
+  // The remaining content must be decimal digits only.
+  for (size_t i = Begin; i < End; ++i) {
+    if (isdigit(static_cast<unsigned char>(m_String[i])) == 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -362,7 +439,14 @@ bool MString::IsNumber() const
 
   double Number;
   In>>skipws>>Number; // ignore white spaces at the beginning
+
   if (In.fail() == true) return false;
+
+  //! Reject values which underflow to zero, e.g. 1e-400: libc++ flags them as failure, but libstdc++ silently returns 0
+  if (Number == 0.0) {
+    string Mantissa = m_String.substr(0, m_String.find_first_of("eE"));
+    if (Mantissa.find_first_of("123456789") != string::npos) return false;
+  }
 
   //! Reject nonzero subnormal values so only the fully supported normal double range and zero are accepted
   if (Number != 0.0 && fabs(Number) < numeric_limits<double>::min()) return false;

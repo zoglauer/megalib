@@ -31,6 +31,10 @@ all:
 	@$(MAKE) -C base
 	@$(MAKE) -C melinator
 
+tests:
+	@$(MAKE) -C base
+	@$(MAKE) tests -C framework
+
 link:
 	@$(MAKE) link -C base
 	@$(MAKE) link -C melinator

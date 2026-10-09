@@ -43,6 +43,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MAssert.h"
+#include "MExceptions.h"
 #include "MStreams.h"
 
 
@@ -91,6 +92,7 @@ MFunction::MFunction(const MFunction& F)
   m_X = F.m_X;
   m_Y = F.m_Y;
   m_Cumulative = F.m_Cumulative;
+  m_CumulativeTimesX = F.m_CumulativeTimesX;
   m_YNonNegative = F.m_YNonNegative;
 }
 
@@ -116,6 +118,7 @@ const MFunction& MFunction::operator=(const MFunction& F)
   m_X = F.m_X;
   m_Y = F.m_Y;
   m_Cumulative = F.m_Cumulative;
+  m_CumulativeTimesX = F.m_CumulativeTimesX;
   m_YNonNegative = F.m_YNonNegative;
 
   CheckDynamicRange();
@@ -165,7 +168,9 @@ bool MFunction::Set(const MString FileName, const MString KeyWord)
 
       MString IP = Parser.GetTokenizerAt(i)->GetTokenAt(1);
       IP.ToLower();
-      if (IP == "no" || IP == "none") {
+      if (IP == "const" || IP == "constant") {
+        m_InterpolationType = c_InterpolationConstant;
+      } else if (IP == "no" || IP == "none") {
         m_InterpolationType = c_InterpolationNone;
       } else if (IP == "lin" || IP == "linlin") {
         m_InterpolationType = c_InterpolationLinLin;
@@ -218,6 +223,8 @@ bool MFunction::Set(const MString FileName, const MString KeyWord)
 
   // Determine interpolation type:
   if (m_X.size() > 1 && m_InterpolationType == c_InterpolationConstant) {
+    mout<<"In the function defined by: "<<FileName<<endl;
+    mout<<"Constant interpolation with more than one data point is not supported. Using linear interpolation."<<endl;
     m_InterpolationType = c_InterpolationLinLin;
   } 
 
@@ -239,6 +246,7 @@ bool MFunction::Set(const MString FileName, const MString KeyWord)
 
   // Clean up:
   m_Cumulative.clear();
+  m_CumulativeTimesX.clear();
 
   CheckDynamicRange();
 
@@ -256,12 +264,14 @@ bool MFunction::Save(const MString FileName, const MString Keyword)
   ofstream out;
   out.open(FileName);
   if (out.is_open() == false) {
-    mout<<"Unable to open file \""<<FileName<<"\" for writting."<<endl;
+    mout<<"Unable to open file \""<<FileName<<"\" for writing."<<endl;
     return false;
   }
   
   if (m_InterpolationType == c_InterpolationNone) {
     out<<"IP None"<<endl;
+  } else if (m_InterpolationType == c_InterpolationConstant) {
+    out<<"IP Constant"<<endl;
   } else if (m_InterpolationType == c_InterpolationLinLin) {
     out<<"IP LinLin"<<endl;
   } else if (m_InterpolationType == c_InterpolationLinLog) {
@@ -309,6 +319,7 @@ bool MFunction::Set(const MResponseMatrixO1& Response)
 
   // Clean up:
   m_Cumulative.clear();
+  m_CumulativeTimesX.clear();
 
   CheckDynamicRange();
 
@@ -323,6 +334,16 @@ bool MFunction::Set(const vector<long double>& X, const vector<long double>& Y, 
 {
   //! Set the basic data from a 1D ResponseMatrix
 
+  if (X.size() != Y.size()) {
+    throw MExceptionTestFailed("The x and y vectors must have the same size", X.size(), "!=", Y.size());
+  }
+
+  for (unsigned int i = 1; i < X.size(); ++i) {
+    if (X[i-1] >= X[i]) {
+      throw MExceptionTestFailed("The x values must be in strictly increasing order", X[i-1], ">=", X[i]);
+    }
+  }
+
   m_X = X;
   m_Y = Y;
 
@@ -336,6 +357,7 @@ bool MFunction::Set(const vector<long double>& X, const vector<long double>& Y, 
 
   // Clean up:
   m_Cumulative.clear();
+  m_CumulativeTimesX.clear();
 
   CheckDynamicRange();
 
@@ -349,6 +371,16 @@ bool MFunction::Set(const vector<long double>& X, const vector<long double>& Y, 
 bool MFunction::Set(const vector<double>& X, const vector<double>& Y, unsigned int InterpolationType)
 {
   //! Set the basic data from a 1D ResponseMatrix
+
+  if (X.size() != Y.size()) {
+    throw MExceptionTestFailed("The x and y vectors must have the same size", X.size(), "!=", Y.size());
+  }
+
+  for (unsigned int i = 1; i < X.size(); ++i) {
+    if (X[i-1] >= X[i]) {
+      throw MExceptionTestFailed("The x values must be in strictly increasing order", X[i-1], ">=", X[i]);
+    }
+  }
 
   m_X.clear();
   for (auto& V: X) m_X.push_back(V);
@@ -365,6 +397,7 @@ bool MFunction::Set(const vector<double>& X, const vector<double>& Y, unsigned i
 
   // Clean up:
   m_Cumulative.clear();
+  m_CumulativeTimesX.clear();
 
   CheckDynamicRange();
 
@@ -395,6 +428,7 @@ bool MFunction::Add(const long double x, const long double y)
           mout<<"   ***  Warning  ***  "<<endl;
           mout<<"X-value (x="<<x<<", y="<<y<<") defined twice! Replacing the original value!"<<endl;
           m_Y[i] = y;
+          break;
         } else if (x < m_X[i]) {
           m_X.insert(m_X.begin()+i, x);
           m_Y.insert(m_Y.begin()+i, y);
@@ -403,6 +437,9 @@ bool MFunction::Add(const long double x, const long double y)
       }
     }
   }
+
+  m_Cumulative.clear();
+  m_CumulativeTimesX.clear();
 
   return true;
 }
@@ -417,7 +454,9 @@ void MFunction::CheckDynamicRange()
   static bool FirstCall = true;
   if (FirstCall == true && m_X.size() > 0) {
     if (sizeof(long double) < 16) {
-      if (m_X.back() / m_X.front() >= 100000000 && m_X.back() - m_X.front() >= 100000000) { // best guess how to handle zero
+      if (m_X.front() != 0 &&
+          m_X.back() / m_X.front() >= 100000000 &&
+          m_X.back() - m_X.front() >= 100000000) {
         mout<<endl;
         mout<<"Attention:"<<endl;
         mout<<"The size of \"long double\" on this system is just "<<sizeof(long double)<<" bytes."<<endl;
@@ -456,6 +495,7 @@ void MFunction::ScaleY(long double Scaler)
 
   // Clean up:
   m_Cumulative.clear();
+  m_CumulativeTimesX.clear();
 }
 
 
@@ -472,6 +512,7 @@ void MFunction::ScaleX(long double Scaler)
 
   // We clear the cumulative function:
   m_Cumulative.clear();
+  m_CumulativeTimesX.clear();
 }
 
 
@@ -498,9 +539,7 @@ long double MFunction::Evaluate(long double x) const
   }
 
   if (m_X.size() == 0) {
-    merr<<"This function contains no data points for evaluation!"<<show;
-    massert(false);
-    return 0;
+    throw MExceptionEmptyObject("function data points");
   }
 
   if (m_InterpolationType == c_InterpolationConstant || m_X.size() == 1) {
@@ -583,7 +622,7 @@ long double MFunction::Evaluate(long double x) const
     }
     
     if (std::isnan(y)) { // std:: is required here due to multiple definitions
-      merr<<"Interpolation error for interpolation type "<<m_InterpolationType<<": y is NaN!"<<endl;;
+      merr<<"Interpolation error for interpolation type "<<m_InterpolationType<<": y is NaN!"<<endl;
       merr<<"   m="<<m<<"  t="<<t<<"  x1="<<x1<<"  y1="<<y1<<"  x2="<<x2<<"  y2="<<y2<<show;
     }
 
@@ -600,6 +639,10 @@ long double MFunction::Evaluate(long double x) const
 long double MFunction::Integrate() const
 {
   // Integrate all the data from min to max
+
+  if (m_X.size() == 0) {
+    throw MExceptionEmptyObject("function x values");
+  }
 
   return Integrate(m_X.front(), m_X.back());
 }
@@ -672,37 +715,28 @@ long double MFunction::Integrate(long double XMin, long double XMax) const
     Integral = (XMax - XMin) * m_Y[0];
   } else if (m_InterpolationType == c_InterpolationNone) {
     // Just sum rectangular bins:
+    auto GetLowerCenter = [&](unsigned int i) -> long double {
+      if (i == 0) {
+        return -numeric_limits<long double>::infinity();
+      }
+      return m_X[i-1] + 0.5*(m_X[i] - m_X[i-1]);
+    };
+    auto GetUpperCenter = [&](unsigned int i) -> long double {
+      if (i == m_Y.size()-1) {
+        return numeric_limits<long double>::infinity();
+      }
+      return m_X[i] + 0.5*(m_X[i+1] - m_X[i]);
+    };
 
-    long double BinCenterMin = m_X[BinMin-1] + 0.5*(m_X[BinMin] - m_X[BinMin-1]);
-    long double BinCenterMax = m_X[BinMax-1] + 0.5*(m_X[BinMax] - m_X[BinMax-1]);
-
-    if (BinMin != BinMax) {
-      if (XMin < BinCenterMin) {
-        Integral += (BinCenterMin - XMin)*m_Y[BinMin-1];
-        Integral += (m_X[BinMin] - BinCenterMin)*m_Y[BinMin];
-      } else {
-        Integral += (m_X[BinMin] - XMin)*m_Y[BinMin];
+    for (unsigned int i = 0; i < m_Y.size(); ++i) {
+      long double Lower = GetLowerCenter(i);
+      long double Upper = GetUpperCenter(i);
+      long double Start = max(XMin, Lower);
+      long double Stop = min(XMax, Upper);
+      if (Stop > Start) {
+        Integral += (Stop - Start)*m_Y[i];
       }
-      for (int b = BinMin; b < BinMax; ++b) {
-        Integral += 0.5*(m_X[BinMin+1] - m_X[BinMin])*m_Y[BinMin];
-        Integral += 0.5*(m_X[BinMin+1] - m_X[BinMin])*m_Y[BinMin+1];
-      }
-      if (XMax > BinCenterMax) {
-        Integral += (BinCenterMax - m_X[BinMax-1])*m_Y[BinMax-1];
-        Integral += (XMax - BinCenterMax)*m_Y[BinMax];
-      } else {
-        Integral += (XMax - m_X[BinMax-1])*m_Y[BinMax-1];
-      }
-    } else {
-      if (XMin < BinCenterMin && XMax < BinCenterMin) {
-        Integral += (XMax - XMin)*m_Y[BinMin-1];
-      } else if (XMin > BinCenterMin && XMax > BinCenterMin) {
-        Integral += (XMax - XMin)*m_Y[BinMin];
-      } else {
-        Integral += (BinCenterMin - XMin)*m_Y[BinMin-1];
-        Integral += (XMax - BinCenterMax)*m_Y[BinMin];
-      }
-    }      
+    }
   } else if (m_InterpolationType == c_InterpolationLinLin ||
              m_InterpolationType == c_InterpolationLinLog ||
              m_InterpolationType == c_InterpolationLogLin ||
@@ -718,7 +752,7 @@ long double MFunction::Integrate(long double XMin, long double XMax) const
         x1 = m_X[i];
         y1 = m_Y[i];
       }
-      if (i == BinMax) {
+      if (i == BinMax-1) {
         x2 = XMax;
         y2 = Evaluate(x2);
       } else {
@@ -791,12 +825,140 @@ long double MFunction::Integrate(long double XMin, long double XMax) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+long double MFunction::IntegrateTimesX(long double XMin, long double XMax) const
+{
+  // Integrate x*f(x) from min to max
+
+  if (XMin < m_X.front()) {
+    merr<<"XMin ("<<XMin<<") smaller than minimum x-value ("<<m_X.front()<<") --- starting at minimum x-value"<<endl;
+    XMin = m_X.front();
+  }
+  if (XMax > m_X.back()) {
+    merr<<"XMax ("<<XMax<<") larger than maximum x-value ("<<m_X.back()<<") --- ending at maximum x-value"<<endl;
+    XMax = m_X.back();
+  }
+  if (XMin >= XMax) {
+    merr<<"XMin ("<<XMin<<") not smaller than XMax ("<<XMax<<")"<<endl;
+    return 0.0;
+  }
+
+  int BinMin = 0;
+  if (XMin > m_X.front()) {
+    BinMin = find_if(m_X.begin(), m_X.end(), bind(greater<long double>(), placeholders::_1, XMin)) - m_X.begin() - 1;
+  }
+  int BinMax = m_X.size()-1;
+  if (XMax < m_X.back()) {
+    BinMax = find_if(m_X.begin(), m_X.end(), bind(greater_equal<long double>(), placeholders::_1, XMax)) - m_X.begin();
+  }
+
+  long double Integral = 0.0;
+  if (m_InterpolationType == c_InterpolationConstant) {
+    Integral = 0.5*m_Y[0]*(XMax*XMax - XMin*XMin);
+  } else if (m_InterpolationType == c_InterpolationNone) {
+    auto GetLowerCenter = [&](unsigned int i) -> long double {
+      if (i == 0) {
+        return m_X.front();
+      }
+      return m_X[i-1] + 0.5*(m_X[i] - m_X[i-1]);
+    };
+    auto GetUpperCenter = [&](unsigned int i) -> long double {
+      if (i == m_Y.size()-1) {
+        return m_X.back();
+      }
+      return m_X[i] + 0.5*(m_X[i+1] - m_X[i]);
+    };
+
+    for (unsigned int i = 0; i < m_Y.size(); ++i) {
+      long double Lower = GetLowerCenter(i);
+      long double Upper = GetUpperCenter(i);
+      long double Start = max(XMin, Lower);
+      long double Stop = min(XMax, Upper);
+      if (Stop > Start) {
+        Integral += 0.5*(Stop*Stop - Start*Start)*m_Y[i];
+      }
+    }
+  } else if (m_InterpolationType == c_InterpolationLinLin ||
+             m_InterpolationType == c_InterpolationLinLog ||
+             m_InterpolationType == c_InterpolationLogLin ||
+             m_InterpolationType == c_InterpolationLogLog) {
+
+    long double x1, x2, y1, y2;
+    for (int i = BinMin; i < BinMax; ++i) {
+
+      if (i == BinMin) {
+        x1 = XMin;
+        y1 = Evaluate(x1);
+      } else {
+        x1 = m_X[i];
+        y1 = m_Y[i];
+      }
+      if (i == BinMax-1) {
+        x2 = XMax;
+        y2 = Evaluate(x2);
+      } else {
+        x2 = m_X[i+1];
+        y2 = m_Y[i+1];
+      }
+
+      if (m_InterpolationType == c_InterpolationLinLog ||
+          m_InterpolationType == c_InterpolationLogLog) {
+        y1 = log(y1);
+        y2 = log(y2);
+      }
+      if (m_InterpolationType == c_InterpolationLogLin ||
+          m_InterpolationType == c_InterpolationLogLog) {
+        x1 = log(x1);
+        x2 = log(x2);
+      }
+
+      long double m = (y2-y1)/(x2-x1);
+      long double t = y2 - m*x2;
+
+      if (m_InterpolationType == c_InterpolationLinLog ||
+          m_InterpolationType == c_InterpolationLogLog) {
+        y1 = exp(y1);
+        y2 = exp(y2);
+      }
+      if (m_InterpolationType == c_InterpolationLogLin ||
+          m_InterpolationType == c_InterpolationLogLog) {
+        x1 = exp(x1);
+        x2 = exp(x2);
+      }
+
+      if (m_InterpolationType == c_InterpolationLinLin) {
+        Integral += m/3.0*(x2*x2*x2 - x1*x1*x1) + 0.5*t*(x2*x2 - x1*x1);
+      } else if (m_InterpolationType == c_InterpolationLinLog) {
+        if (fabs(m) < 10E-8) {
+          Integral += 0.5*exp(t)*(x2*x2 - x1*x1);
+        } else {
+          Integral += exp(t)*(((x2/m) - 1.0/(m*m))*exp(m*x2) - ((x1/m) - 1.0/(m*m))*exp(m*x1));
+        }
+      } else if (m_InterpolationType == c_InterpolationLogLin) {
+        Integral += m*(0.5*x2*x2*log(x2) - 0.25*x2*x2 - (0.5*x1*x1*log(x1) - 0.25*x1*x1))
+                  + 0.5*t*(x2*x2 - x1*x1);
+      } else if (m_InterpolationType == c_InterpolationLogLog) {
+        if (fabs(m+2) < 10E-8) {
+          Integral += exp(t)*(log(x2) - log(x1));
+        } else {
+          Integral += exp(t)/(m+2) * (pow(x2, m+2) - pow(x1, m+2));
+        }
+      }
+    }
+  }
+
+  return Integral;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 long double MFunction::GetRandom()
 {
   // Return a random number distributed as the underlying function
 
   if (m_YNonNegative == false) {
-    merr<<"GetRandom only works if all y-values are positive ot zero."<<show;      
+    merr<<"GetRandom only works if all y-values are positive or zero."<<show;
     return 0;
   }
 
@@ -825,21 +987,28 @@ long double MFunction::GetRandomTimesX()
   // Return a random number distributed as the underlying function times X
 
   if (m_YNonNegative == false) {
-    merr<<"GetRandom only works if all y-values are positive ot zero."<<show;      
+    merr<<"GetRandom only works if all y-values are positive or zero."<<show;      
     return 0;
+  }
+  if (GetXMin() < 0) {
+    merr<<"GetRandomTimesX only works if all x-values are positive or zero."<<show;
+    return 0;
+  }
+  if (m_X.size() == 1) {
+    return m_X.front();
   }
 
   // Check if we have to determine the cumulative function:
-  if (m_Cumulative.size() == 0) {
-    m_Cumulative.push_back(0);
+  if (m_CumulativeTimesX.size() == 0) {
+    m_CumulativeTimesX.push_back(0);
     for (unsigned int i = 1; i < m_Y.size(); ++i) {
-      m_Cumulative.push_back(m_Cumulative.back() + Integrate(m_X[i-1], m_X[i]));
+      m_CumulativeTimesX.push_back(m_CumulativeTimesX.back() + IntegrateTimesX(m_X[i-1], m_X[i]));
     }
   }
 
   // Find a random number on the total intensity scale and then (function call)
   // the appropriate x-value
-  return GetRandomInterpolate(sqrt(gRandom->Rndm())*m_Cumulative.back());
+  return GetRandomTimesXInterpolate(gRandom->Rndm()*m_CumulativeTimesX.back());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -883,7 +1052,7 @@ long double MFunction::GetRandomInterpolate(long double Itot)
     // Constant is just a dummy if something went wrong dramatically, thus:
     // Just a random number between x_min and x_max:
     if (m_X.size() > 1) {
-      return gRandom->Rndm()*(m_X.back()-m_X.front());
+      return m_X.front() + gRandom->Rndm()*(m_X.back()-m_X.front());
     } else {
       return m_X.front();
     }
@@ -1046,9 +1215,48 @@ long double MFunction::GetRandomInterpolate(long double Itot)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+long double MFunction::GetRandomTimesXInterpolate(long double Itot)
+{
+  // Second stage of the GetRandomTimesX function
+
+  int Bin = find_if(m_CumulativeTimesX.begin(), m_CumulativeTimesX.end(), bind(greater_equal<long double>(), placeholders::_1, Itot)) - m_CumulativeTimesX.begin();
+
+  if (Bin <= 0) {
+    return m_X.front();
+  }
+
+  long double Target = Itot - m_CumulativeTimesX[Bin-1];
+  if (Target <= 0) {
+    return m_X[Bin-1];
+  }
+
+  long double Lower = m_X[Bin-1];
+  long double Upper = m_X[Bin];
+
+  for (unsigned int i = 0; i < 100; ++i) {
+    long double Middle = 0.5*(Lower + Upper);
+    long double Integral = IntegrateTimesX(m_X[Bin-1], Middle);
+    if (Integral < Target) {
+      Lower = Middle;
+    } else {
+      Upper = Middle;
+    }
+  }
+
+  return 0.5*(Lower + Upper);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 long double MFunction::GetXMin() const
 {
   //! Get the minimum x-value
+
+  if (m_X.size() == 0) {
+    throw MExceptionEmptyObject("function x values");
+  }
 
   return m_X.front();
 }
@@ -1060,6 +1268,10 @@ long double MFunction::GetXMin() const
 long double MFunction::GetXMax() const
 {
   //! Get the maximum x-value
+
+  if (m_X.size() == 0) {
+    throw MExceptionEmptyObject("function x values");
+  }
 
   return m_X.back();
 }
@@ -1131,6 +1343,17 @@ long double MFunction::FindX(long double XStart, long double Integral, bool Cycl
     //merr<<"XStart ("<<XStart<<") larger than maximum x-value ("<<m_X.back()<<") --- starting at minimum x-value"<<endl;
     X = m_X.front();
   }
+  if (X == m_X.back()) {
+    if (Cyclic == false || Integral == 0) {
+      return X - Modulo;
+    } else {
+      X = m_X.front();
+      Modulo -= m_X.back() - m_X.front();
+    }
+  }
+
+  // TODO: Rewrite FindX() to normalize the start point into the function frame once,
+  // keep the frame offset separately, and use one consistent cyclic wrap path.
 
   // Step 1: Go from bin to bin until we find an upper limit bin, where iIntegral > I
 
@@ -1160,10 +1383,10 @@ long double MFunction::FindX(long double XStart, long double Integral, bool Cycl
       if (Cyclic == false) {
         break;
       } else {
-        X = 0;
+        X = m_X.front();
         NewUpperBin = 0;
         Modulo -= m_X.back() - m_X.front();
-        cout<<"New Modulo (while): "<<Modulo<<endl;
+        // mout<<"New Modulo (while): "<<Modulo<<endl;
       }
     }
   } while (true);
@@ -1174,6 +1397,7 @@ long double MFunction::FindX(long double XStart, long double Integral, bool Cycl
   //cout<<"UpperBin: "<<NewUpperBin<<endl;
   
   // Step 2: Interpolate --- only linear at the moment --- within the given bin to find the right x-value
+  // TODO: Extend this final sub-bin solve to respect LinLog, LogLin, and LogLog interpolation modes.
   
   long double m = (m_Y[NewUpperBin-1] - m_Y[NewUpperBin]) / (m_X[NewUpperBin-1] - m_X[NewUpperBin]);
   long double t = m_Y[NewUpperBin] - m*m_X[NewUpperBin];
@@ -1259,7 +1483,7 @@ long double MFunction::LambertW(long double x, int Branch)
   if (Branch == 0) {
 
     if (x < -1/TMath::E()) {
-      merr<<"This branch (\"0\") of the Labert W function is only defined within ["<<-1/TMath::E()<<";inf[! Input is "<<x<<". Returning zero..."<<endl;
+      merr<<"This branch (\"0\") of the Lambert W function is only defined within ["<<-1/TMath::E()<<";inf[! Input is "<<x<<". Returning zero..."<<endl;
       return 0.0;
     }
     
@@ -1304,12 +1528,12 @@ long double MFunction::LambertW(long double x, int Branch)
       LW = -1 + p - 1.0/3.0*pow(p, 2) + 11.0/72.0*pow(p, 3) - 43.0/540.0*pow(p, 4) + 769.0/17280.0*pow(p, 5) - 221.0/8505*pow(p, 6);
     } else if (x >= -0.333 && x <= -0.033) {
       LW = (-8.0960+391.0025*x-47.4252*x*x - 4877.6330*pow(x, 3) - 5532.7760*pow(x, 4))/(1 - 82.9423*x + 433.8688*pow(x, 2) + 1515.3060*pow(x, 3));
-    } else if (x >= -0.333 && x < 0) {
+    } else if (x > -0.033 && x < 0) {
       long double l1 = log(-x);
       long double l2 = log(-log(-x));
       LW = l1 -l2 + l2/l1 + (-2 + l2)*l2/(2*l1*l1) + (6 - 9*l2 + 2*l2*l2)*l2/(6*l1*l1*l1) + (-12 + 36*l2 - 22*l2*l2 + 3*l2*l2*l2)*l2/(12*l1*l1*l1*l1) + (60 - 300*l2 + 350*l2*l2 - 125*l2*l2*l2 + 12*l2*l2*l2*l2)*l2/(60*l1*l1*l1*l1*l1);
     } else {
-      cout<<"This branch (\"-1\") of the LabertW function is only defined within ["<<-1/TMath::E()<<";0[! Input is "<<x<<". Returning zero..."<<endl;
+      mout<<"This branch (\"-1\") of the LambertW function is only defined within ["<<-1/TMath::E()<<";0[! Input is "<<x<<". Returning zero..."<<endl;
       LW = 0;
     }
 

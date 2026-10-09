@@ -40,7 +40,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! A dummy definition of a class
+//! Atmospheric absorption transmission lookup table
 class MAtmosphericAbsorption
 {
   // public interface:
@@ -53,8 +53,8 @@ class MAtmosphericAbsorption
   //! Read the data from file
   bool Read(MString FileName);
   
-  //! Get transmission probability a value
-  double GetTransmissionProbability(double Energy, double Azimuth, double Altitude) const;
+  //! Get transmission probability for a given altitude, azimuth, and energy.
+  double GetTransmissionProbability(double Altitude, double Azimuth, double Energy) const;
   
   
   // protected methods:

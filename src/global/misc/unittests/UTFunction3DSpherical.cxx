@@ -1,0 +1,271 @@
+/*
+ * UTFunction3DSpherical.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+
+// Standard libs:
+#include <vector>
+using namespace std;
+
+// ROOT libs:
+#include <TCanvas.h>
+#include <TROOT.h>
+#include <TRandom.h>
+
+// MEGAlib:
+#include "MExceptions.h"
+#include "MFile.h"
+#include "MFunction3DSpherical.h"
+#include "MUnitTest.h"
+
+
+//! Unit test class for MFunction3DSpherical
+class UTFunction3DSpherical : public MUnitTest
+{
+public:
+  UTFunction3DSpherical() : MUnitTest("UTFunction3DSpherical") {}
+  virtual ~UTFunction3DSpherical() {}
+
+  virtual bool Run();
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFunction3DSpherical::Run()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temporary directory", "The temporary directory for MFunction3DSpherical fixtures can be created", PrepareTemporaryDirectory()) && Passed;
+
+  MFunction3DSpherical Default;
+  Passed = Evaluate("MFunction3DSpherical()", "construction", "A representative MFunction3DSpherical instance can be constructed", true, true) && Passed;
+  Passed = EvaluateException<MExceptionEmptyObject>("GetRandom()", "default constructor", "GetRandom throws for a representative empty spherical function", [&]() {
+    double X = 0.0;
+    double Y = 0.0;
+    double Z = 0.0;
+    Default.GetRandom(X, Y, Z);
+  }) && Passed;
+
+  {
+    vector<double> Phi{0.0, 90.0, 180.0};
+    vector<double> Theta{0.0, 60.0, 120.0, 180.0};
+    vector<double> Energy{1.0, 4.0};
+    vector<double> Values(Phi.size()*Theta.size()*Energy.size(), 2.0);
+
+    MFunction3DSpherical Constant;
+    Passed = Evaluate("Set()", "representative spherical vectors", "MFunction3DSpherical accepts representative spherical vector data", Constant.Set(Phi, Theta, Energy, Values), true) && Passed;
+    MFunction3DSpherical Copied(Constant);
+    Passed = EvaluateNear("MFunction3DSpherical(const MFunction3DSpherical&)", "representative spherical copy constructor", "The representative spherical copy constructor preserves integration behavior", Copied.Integrate(), 12.0*c_Pi, 1e-12) && Passed;
+    MFunction3DSpherical Assigned;
+    Assigned = Constant;
+    Passed = EvaluateNear("operator=()", "representative spherical assignment", "The representative spherical assignment operator preserves integration behavior", Assigned.Integrate(), 12.0*c_Pi, 1e-12) && Passed;
+    Passed = EvaluateNear("Integrate()", "representative spherical constant field", "Integrate returns the representative half-sphere constant-field volume exactly", Constant.Integrate(), 12.0*c_Pi, 1e-12) && Passed;
+
+    gRandom->SetSeed(61);
+    double X1 = 0.0;
+    double Y1 = 0.0;
+    double Z1 = 0.0;
+    double X2 = 0.0;
+    double Y2 = 0.0;
+    double Z2 = 0.0;
+    double X3 = 0.0;
+    double Y3 = 0.0;
+    double Z3 = 0.0;
+    Constant.GetRandom(X1, Y1, Z1);
+    Constant.GetRandom(X2, Y2, Z2);
+    Constant.GetRandom(X3, Y3, Z3);
+
+    // Expected: replay with the same seed - bin weights are the cos(theta) differences 0.5, 1, 0.5 per phi bin, then phi, theta, energy, acceptance
+    const double BinPhiMin[6] = { 0.0, 90.0, 0.0, 90.0, 0.0, 90.0 };
+    const double BinThetaMin[6] = { 0.0, 0.0, 60.0, 60.0, 120.0, 120.0 };
+    const double BinThetaMax[6] = { 60.0, 60.0, 120.0, 120.0, 180.0, 180.0 };
+    const double BinCumulative[6] = { 0.5, 1.0, 2.0, 3.0, 3.5, 4.0 };
+    gRandom->SetSeed(61);
+    double ExpectedPhi[200];
+    double ExpectedTheta[200];
+    double ExpectedEnergy[200];
+    for (unsigned int Draw = 0; Draw < 200; ++Draw) {
+      const double Cumulative = 4.0*gRandom->Rndm();
+      unsigned int Bin = 0;
+      while (BinCumulative[Bin] <= Cumulative) {
+        ++Bin;
+      }
+      ExpectedPhi[Draw] = BinPhiMin[Bin] + 90.0*gRandom->Rndm();
+      ExpectedTheta[Draw] = acos(cos(BinThetaMin[Bin]*c_Rad) - gRandom->Rndm()*(cos(BinThetaMin[Bin]*c_Rad) - cos(BinThetaMax[Bin]*c_Rad)))*c_Deg;
+      ExpectedEnergy[Draw] = 1.0 + 3.0*gRandom->Rndm();
+      gRandom->Rndm();
+    }
+
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 1 phi", "GetRandom returns the phi value of the first replayed draw", X1, ExpectedPhi[0], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 1 theta", "GetRandom returns the theta value of the first replayed draw", Y1, ExpectedTheta[0], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 1 energy", "GetRandom returns the energy value of the first replayed draw", Z1, ExpectedEnergy[0], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 2 phi", "GetRandom returns the phi value of the second replayed draw", X2, ExpectedPhi[1], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 2 theta", "GetRandom returns the theta value of the second replayed draw", Y2, ExpectedTheta[1], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 2 energy", "GetRandom returns the energy value of the second replayed draw", Z2, ExpectedEnergy[1], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 3 phi", "GetRandom returns the phi value of the third replayed draw", X3, ExpectedPhi[2], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 3 theta", "GetRandom returns the theta value of the third replayed draw", Y3, ExpectedTheta[2], 1e-12) && Passed;
+    Passed = EvaluateNear("GetRandom()", "representative spherical draw 3 energy", "GetRandom returns the energy value of the third replayed draw", Z3, ExpectedEnergy[2], 1e-12) && Passed;
+
+    // Compare all 200 replayed draws
+    gRandom->SetSeed(61);
+    unsigned int Mismatches = 0;
+    for (unsigned int Draw = 0; Draw < 200; ++Draw) {
+      double X = 0.0;
+      double Y = 0.0;
+      double Z = 0.0;
+      Constant.GetRandom(X, Y, Z);
+      // Count a NaN as a mismatch
+      if ((fabs(X - ExpectedPhi[Draw]) <= 1e-12 && fabs(Y - ExpectedTheta[Draw]) <= 1e-12 && fabs(Z - ExpectedEnergy[Draw]) <= 1e-12) == false) {
+        ++Mismatches;
+      }
+    }
+    Passed = Evaluate("GetRandom()", "representative later draws", "All 200 draws equal the replayed draws", Mismatches, 0U) && Passed;
+  }
+
+  {
+    vector<double> Phi{0.0, 90.0, 180.0};
+    vector<double> Theta{0.0, 60.0, 120.0, 180.0};
+    vector<double> Energy{1.0, 4.0};
+    vector<double> Values(Phi.size()*Theta.size()*Energy.size(), 0.0);
+
+    MFunction3DSpherical ZeroTotal;
+    Passed = Evaluate("Set()", "representative zero-total spherical vectors", "MFunction3DSpherical accepts representative zero-total spherical vector data", ZeroTotal.Set(Phi, Theta, Energy, Values), true) && Passed;
+    Passed = EvaluateException<MExceptionInvalidState>("GetRandom()", "zero-total spherical function", "GetRandom throws for a representative spherical function with zero total content", [&]() {
+      double X = 0.0;
+      double Y = 0.0;
+      double Z = 0.0;
+      ZeroTotal.GetRandom(X, Y, Z);
+    }) && Passed;
+  }
+
+  {
+    vector<double> Phi{0.0, 180.0};
+    vector<double> Theta{0.0, 90.0, 180.0};
+    vector<double> Energy{1.0, 3.0};
+    vector<double> Values{
+      1.0, 2.0,
+      3.0, 4.0,
+      5.0, 6.0,
+      7.0, 8.0,
+      9.0, 10.0,
+      11.0, 12.0
+    };
+
+    MFunction3DSpherical RoundTripSource;
+    Passed = Evaluate("Set()", "representative spherical round-trip source", "MFunction3DSpherical accepts representative source data for a file round-trip", RoundTripSource.Set(Phi, Theta, Energy, Values), true) && Passed;
+    MString FileName = GetTemporaryFileName("roundtrip.fun");
+    Passed = Evaluate("Save()", "representative spherical round-trip file", "Save writes a representative spherical function file", RoundTripSource.Save(FileName, "AP"), true) && Passed;
+
+    MFunction3DSpherical RoundTripRead;
+    Passed = Evaluate("Set()", "representative spherical round-trip file", "Set reads back a representative spherical function file", RoundTripRead.Set(FileName, "AP"), true) && Passed;
+    Passed = EvaluateNear("Evaluate()", "representative spherical round-trip interior", "Set preserves a representative spherical interior interpolation after a file round-trip", RoundTripRead.Evaluate(90.0, 45.0, 2.0), 5.5, 1e-12) && Passed;
+
+    MFunction3DSpherical RoundTripCopied(RoundTripRead);
+    Passed = EvaluateNear("MFunction3DSpherical(const MFunction3DSpherical&)", "file-loaded non-equidistant source", "The spherical copy constructor preserves representative file-loaded interpolation state", RoundTripCopied.Evaluate(90.0, 45.0, 2.0), 5.5, 1e-12) && Passed;
+    MFunction3DSpherical RoundTripAssigned;
+    Passed = Evaluate("Set()", "equidistant spherical assignment target", "MFunction3DSpherical accepts a representative equidistant source before assignment checks",
+                      RoundTripAssigned.Set(vector<double>{0.0, 90.0, 180.0}, vector<double>{0.0, 90.0, 180.0}, vector<double>{1.0, 2.0}, vector<double>(18, 1.0)), true) && Passed;
+    RoundTripAssigned = RoundTripRead;
+    Passed = EvaluateNear("operator=()", "file-loaded non-equidistant source", "The spherical assignment operator preserves representative file-loaded interpolation state", RoundTripAssigned.Evaluate(90.0, 45.0, 2.0), 5.5, 1e-12) && Passed;
+  }
+
+  {
+    MFunction3DSpherical SaveFailure;
+    Passed = Evaluate("Set()", "representative spherical save-failure source", "MFunction3DSpherical accepts representative source data for save failure checks",
+                      SaveFailure.Set(vector<double>{0.0, 180.0}, vector<double>{0.0, 90.0, 180.0}, vector<double>{1.0, 3.0}, vector<double>{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0}), true) && Passed;
+    DisableDefaultStreams();
+    Passed = Evaluate("Save()", "unwritable representative spherical target", "Save returns false for a representative unwritable spherical target path", SaveFailure.Save(GetTemporaryDirectoryName("missing_directory") + "/out.fun"), false) && Passed;
+    EnableDefaultStreams();
+  }
+
+  {
+    MString InvalidThetaFile = GetTemporaryFileName("invalid_theta.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "invalid theta file", "The representative invalid-theta spherical file can be written",
+                          WriteTextFile(InvalidThetaFile, "IP LIN\nPA 0 180\nTA -10 90 180\nEA 1 2\nAP 0 0 0 1\nAP 1 0 0 1\nAP 0 1 0 1\nAP 1 1 0 1\nAP 0 2 0 1\nAP 1 2 0 1\nAP 0 0 1 1\nAP 1 0 1 1\nAP 0 1 1 1\nAP 1 1 1 1\nAP 0 2 1 1\nAP 1 2 1 1\n")) && Passed;
+
+    MFunction3DSpherical InvalidTheta;
+    DisableDefaultStreams();
+    Passed = Evaluate("Set()", "invalid theta axis", "MFunction3DSpherical rejects a representative theta axis outside the physical range", InvalidTheta.Set(InvalidThetaFile, "AP"), false) && Passed;
+    EnableDefaultStreams();
+  }
+
+  {
+    MString InvalidIndexFile = GetTemporaryFileName("invalid_index.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "invalid index file", "The representative invalid-index spherical file can be written",
+                          WriteTextFile(InvalidIndexFile, "IP LIN\nPA 0 180\nTA 0 90 180\nEA 1 2\nAP 2 0 0 1\n")) && Passed;
+
+    MFunction3DSpherical InvalidIndex;
+    DisableDefaultStreams();
+    Passed = Evaluate("Set()", "out-of-range spherical file index", "MFunction3DSpherical rejects a representative file index equal to the phi-axis size", InvalidIndex.Set(InvalidIndexFile, "AP"), false) && Passed;
+    EnableDefaultStreams();
+  }
+
+  {
+    MString CompleteFile = GetTemporaryFileName("complete.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "complete file", "The representative complete spherical file can be written",
+                          WriteTextFile(CompleteFile, "IP LIN\nPA 0 180\nTA 0 90 180\nEA 1 2\nAP 0 0 0 1\nAP 1 0 0 2\nAP 0 1 0 3\nAP 1 1 0 4\nAP 0 2 0 5\nAP 1 2 0 6\nAP 0 0 1 7\nAP 1 0 1 8\nAP 0 1 1 9\nAP 1 1 1 10\nAP 0 2 1 11\nAP 1 2 1 12\n")) && Passed;
+
+    MString MissingEAFile = GetTemporaryFileName("missing_ea.fun");
+    Passed = EvaluateTrue("WriteTextFile()", "missing EA file", "The representative missing-EA spherical file can be written",
+                          WriteTextFile(MissingEAFile, "IP LIN\nPA 0 180\nTA 0 90 180\nAP 0 0 0 1\nAP 1 0 0 2\nAP 0 1 0 3\nAP 1 1 0 4\nAP 0 2 0 5\nAP 1 2 0 6\n")) && Passed;
+
+    MFunction3DSpherical ReRead;
+    Passed = Evaluate("Set()", "representative complete spherical file before reread", "MFunction3DSpherical accepts a representative complete file before reread failure checks", ReRead.Set(CompleteFile, "AP"), true) && Passed;
+    DisableDefaultStreams();
+    Passed = Evaluate("Set()", "representative missing EA on reread", "MFunction3DSpherical rejects a representative reread file that is missing the energy axis instead of reusing stale state", ReRead.Set(MissingEAFile, "AP"), false) && Passed;
+    EnableDefaultStreams();
+  }
+
+  {
+    MFunction3DSpherical Plotted;
+    Passed = Evaluate("Set()", "representative spherical plot source", "MFunction3DSpherical accepts representative source data for plot checks",
+                      Plotted.Set(vector<double>{0.0, 180.0}, vector<double>{0.0, 90.0, 180.0}, vector<double>{1.0, 3.0}, vector<double>{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0}), true) && Passed;
+    Bool_t WasBatch = gROOT->IsBatch();
+    int Before = gROOT->GetListOfCanvases()->GetSize();
+    gROOT->SetBatch(true);
+    Plotted.Plot(false);
+    gROOT->SetBatch(WasBatch);
+    Passed = EvaluateTrue("Plot()", "representative spherical plot", "Plot creates the representative spherical diagnostics canvases", gROOT->GetListOfCanvases()->GetSize() == Before + 3) && Passed;
+    TCanvas* Canvas = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->Last());
+    Passed = EvaluateTrue("Plot()", "representative spherical plotted canvas", "Plot leaves a representative spherical diagnostics canvas accessible through ROOT", Canvas != 0) && Passed;
+    if (Canvas != 0) {
+      while (gROOT->GetListOfCanvases()->GetSize() > Before) {
+        TCanvas* ToClose = dynamic_cast<TCanvas*>(gROOT->GetListOfCanvases()->Last());
+        if (ToClose == 0) break;
+        ToClose->Close();
+      }
+    }
+  }
+
+  Summarize();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+  UTFunction3DSpherical Test;
+  return Test.Run() == true ? 0 : 1;
+}

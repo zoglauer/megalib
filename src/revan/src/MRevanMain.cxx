@@ -52,7 +52,16 @@ int main(int argc, char** argv)
   // Main function... the beginning...
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Revan", "real event analysis");
+  if (MGlobal::Initialize("Revan", "real event analysis") == false) {
+    return 1;
+  }
+
+  // Switch to batch mode before the TApplication starts
+  for (int i = 1; i < argc; i++) {
+    if (MString(argv[i]) == "--no-gui" || MString(argv[i]) == "-n") {
+      gROOT->SetBatch(true);
+    }
+  }
 
   TApplication* AppRevan = new TApplication("Revan", 0, 0);
 

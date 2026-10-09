@@ -1,0 +1,194 @@
+/*
+ * UTSettingsGlobal.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+
+// Standard libs:
+
+// MEGAlib:
+#include "MFile.h"
+#include "MSettingsGlobal.h"
+#include "MStreams.h"
+#include "MUnitTest.h"
+
+
+//! Unit test class for MSettingsGlobal
+class UTSettingsGlobal : public MUnitTest
+{
+public:
+  UTSettingsGlobal() : MUnitTest("UTSettingsGlobal") {}
+  virtual ~UTSettingsGlobal() {}
+
+  virtual bool Run();
+
+private:
+  //! Test helper exposing protected MSettingsGlobal functionality
+  class SettingsGlobalTest : public MSettingsGlobal
+  {
+  public:
+    SettingsGlobalTest() : MSettingsGlobal() {}
+    virtual ~SettingsGlobalTest() {}
+
+    bool TestReadXml(MXmlNode* Node) { return ReadXml(Node); }
+    bool TestWriteXml(MXmlNode* Node) { return WriteXml(Node); }
+    void SetTestSettingsFileName(const MString& FileName) { m_SettingsFileName = FileName; }
+    MString GetTestSettingsFileName() const { return m_SettingsFileName; }
+    void SetTestMasterNodeName(const MString& Name) { m_NameMasterNode = Name; }
+    MString GetTestMasterNodeName() const { return m_NameMasterNode; }
+  };
+
+  bool TestDefaultsAndSetters();
+  bool TestXmlRoundTrip();
+  bool TestReadWriteFiles();
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTSettingsGlobal::Run()
+{
+  bool Passed = true;
+
+  Passed = TestDefaultsAndSetters() && Passed;
+  Passed = TestXmlRoundTrip() && Passed;
+  Passed = TestReadWriteFiles() && Passed;
+
+  Summarize();
+
+  return Passed;
+}
+
+
+bool UTSettingsGlobal::TestDefaultsAndSetters()
+{
+  bool Passed = true;
+
+  SettingsGlobalTest Settings;
+  Passed = Evaluate("GetChangeLogHash()", "default", "The default changelog hash is zero", Settings.GetChangeLogHash(), 0L) && Passed;
+  Passed = Evaluate("GetFontScaler()", "default", "The default font scaler is normal", Settings.GetFontScaler(), MString("normal")) && Passed;
+  Passed = Evaluate("GetTestMasterNodeName()", "default", "The default global-settings master node is MEGAlib", Settings.GetTestMasterNodeName(), MString("MEGAlib")) && Passed;
+
+  Settings.SetChangeLogHash(5678);
+  Settings.SetFontScaler("gigantic");
+  Passed = Evaluate("SetChangeLogHash()", "set", "SetChangeLogHash stores a representative value", Settings.GetChangeLogHash(), 5678L) && Passed;
+  Passed = Evaluate("SetFontScaler()", "set", "SetFontScaler stores a representative value", Settings.GetFontScaler(), MString("gigantic")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTSettingsGlobal::TestXmlRoundTrip()
+{
+  bool Passed = true;
+
+  SettingsGlobalTest Settings;
+  Settings.SetChangeLogHash(22);
+  Settings.SetFontScaler("huge");
+
+  MXmlDocument Document("MEGAlib");
+  Passed = Evaluate("WriteXml()", "direct xml", "WriteXml succeeds on a representative XML document", Settings.TestWriteXml(&Document), true) && Passed;
+  MXmlNode* ChangeLogNode = Document.GetNode("ChangeLogHash");
+  MXmlNode* FontScalerNode = Document.GetNode("FontScaler");
+  Passed = EvaluateTrue("GetNode()", "changelog", "WriteXml stores the representative changelog hash node", ChangeLogNode != nullptr) && Passed;
+  Passed = EvaluateTrue("GetNode()", "font scaler", "WriteXml stores the representative font scaler node", FontScalerNode != nullptr) && Passed;
+  if (ChangeLogNode != nullptr && FontScalerNode != nullptr) {
+    Passed = Evaluate("GetNode()", "changelog", "WriteXml stores the representative changelog hash", static_cast<long>(ChangeLogNode->GetValueAsLong()), 22L) && Passed;
+    Passed = Evaluate("GetNode()", "font scaler", "WriteXml stores the representative font scaler", FontScalerNode->GetValueAsString(), MString("huge")) && Passed;
+  }
+
+  MXmlDocument ReadDocument("MEGAlib");
+  new MXmlNode(&ReadDocument, "ChangeLogHash", 202L);
+  new MXmlNode(&ReadDocument, "FontScaler", MString("large"));
+
+  SettingsGlobalTest ReadBack;
+  Passed = Evaluate("ReadXml()", "direct xml", "ReadXml accepts a representative XML document", ReadBack.TestReadXml(&ReadDocument), true) && Passed;
+  Passed = Evaluate("GetChangeLogHash()", "direct xml", "ReadXml restores the representative changelog hash", ReadBack.GetChangeLogHash(), 202L) && Passed;
+  Passed = Evaluate("GetFontScaler()", "direct xml", "ReadXml restores the representative font scaler", ReadBack.GetFontScaler(), MString("large")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTSettingsGlobal::TestReadWriteFiles()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "file temp dir", "The temporary directory for global-settings file tests can be created", PrepareTemporaryDirectory()) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName();
+
+  MString SettingsFile = TemporaryDirectory + "/global.cfg";
+  MString WrongRootFile = TemporaryDirectory + "/wrong_root.cfg";
+  MString EmptyFile = TemporaryDirectory + "/empty.cfg";
+
+  SettingsGlobalTest Settings;
+  Settings.SetTestSettingsFileName(SettingsFile);
+  Settings.SetChangeLogHash(444);
+  Settings.SetFontScaler("huge");
+  Passed = Evaluate("Write()", "representative file", "Write() stores the representative global settings file", Settings.Write(), true) && Passed;
+  Passed = EvaluateTrue("Exists()", "representative file", "Write() creates the representative global settings file", MFile::Exists(SettingsFile)) && Passed;
+
+  SettingsGlobalTest ReadBack;
+  ReadBack.SetTestSettingsFileName(SettingsFile);
+  Passed = Evaluate("Read()", "representative file", "Read() restores a previously written representative file", ReadBack.Read(), true) && Passed;
+  Passed = Evaluate("GetChangeLogHash()", "representative file", "Read() restores the stored changelog hash", ReadBack.GetChangeLogHash(), 444L) && Passed;
+  Passed = Evaluate("GetFontScaler()", "representative file", "Read() restores the stored font scaler", ReadBack.GetFontScaler(), MString("huge")) && Passed;
+
+  SettingsGlobalTest Missing;
+  Missing.SetTestSettingsFileName(TemporaryDirectory + "/does_not_exist.cfg");
+  Passed = Evaluate("Read()", "missing file", "Read() treats a missing global settings file as a clean default-state success", Missing.Read(), true) && Passed;
+  Passed = Evaluate("GetChangeLogHash()", "missing file", "A missing global settings file leaves the default changelog hash intact", Missing.GetChangeLogHash(), 0L) && Passed;
+
+  Passed = EvaluateTrue("WriteTextFile()", "wrong root file", "A global settings file with the wrong XML root can be written", WriteTextFile(WrongRootFile, "<NotMEGAlib><ChangeLogHash>1</ChangeLogHash></NotMEGAlib>\n")) && Passed;
+  SettingsGlobalTest WrongRoot;
+  WrongRoot.SetTestSettingsFileName(WrongRootFile);
+  DisableDefaultStreams();
+  Passed = Evaluate("Read()", "wrong root", "Read() falls back to default settings when the XML root is wrong", WrongRoot.Read(), true) && Passed;
+  EnableDefaultStreams();
+
+  Passed = EvaluateTrue("WriteTextFile()", "empty file", "An empty global settings file can be written", WriteTextFile(EmptyFile, "")) && Passed;
+  SettingsGlobalTest Empty;
+  Empty.SetTestSettingsFileName(EmptyFile);
+  DisableDefaultStreams();
+  Passed = Evaluate("Read()", "empty file", "Read() falls back to default settings for an empty global settings file", Empty.Read(), true) && Passed;
+  EnableDefaultStreams();
+
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "wrong root cleanup", "The wrong-root temporary file can be removed", RemoveTemporaryFile(WrongRootFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty cleanup", "The empty temporary file can be removed", RemoveTemporaryFile(EmptyFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "settings cleanup", "The representative global-settings file can be removed", RemoveTemporaryFile(SettingsFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "file temp cleanup", "The global-settings temp directory can be removed", RemoveTemporaryDirectory(TemporaryDirectory)) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+  UTSettingsGlobal Test;
+  return Test.Run() == true ? 0 : 1;
+}

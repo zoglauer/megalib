@@ -1,0 +1,897 @@
+/*
+ * UTUnitTest.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+
+// MEGAlib libs:
+#include "MFile.h"
+#include "MRotation.h"
+#include "MUnitTest.h"
+#include "MSettingsTesting.h"
+#include "MVector.h"
+
+// Standard libs:
+#include <atomic>
+#include <filesystem>
+#include <fstream>
+#include <limits>
+#include <stdexcept>
+#include <thread>
+
+// POSIX libs:
+#include <fcntl.h>
+#include <sys/file.h>
+#include <unistd.h>
+using namespace std;
+
+
+//! Unit test class for MUnitTest
+class UTUnitTest : public MUnitTest
+{
+public:
+  //! Default constructor
+  UTUnitTest() : MUnitTest("UTUnitTest") {}
+  //! Default destructor
+  virtual ~UTUnitTest() {}
+
+  //! Run all tests
+  virtual bool Run();
+
+private:
+  //! Test helper exposing protected MUnitTest functionality
+  class UnitTestProbe : public MUnitTest
+  {
+  public:
+    UnitTestProbe(const MString& Name) : MUnitTest(Name) {}
+    virtual ~UnitTestProbe() {}
+
+    virtual bool Run() { return true; }
+
+    const MString& GetProbeName() const { return GetName(); }
+    void Silence() { DisableDefaultStreams(); }
+    void Unsilence() { EnableDefaultStreams(); }
+    MString TemporaryFile(const MString& Name) const { return GetTemporaryFileName(Name); }
+    MString TemporaryDirectory(const MString& Name = "") const { return GetTemporaryDirectoryName(Name); }
+    bool PrepareDirectory(const MString& Name = "") const { return PrepareTemporaryDirectory(Name); }
+    bool RemoveFile(const MString& FileName) const { return RemoveTemporaryFile(FileName); }
+    bool RemoveDirectory(const MString& DirectoryName = "") const { return RemoveTemporaryDirectory(DirectoryName); }
+    bool WriteFile(const MString& FileName, const MString& Content) const { return WriteTextFile(FileName, Content); }
+    MString ReadFile(const MString& FileName) const { return ReadTextFile(FileName); }
+  };
+
+  //! Test exact, boolean, size, and floating-point evaluation helpers
+  bool TestEvaluateHelpers();
+  //! Test the vector and rotation matrix evaluation helpers
+  bool TestVectorAndRotationHelpers();
+  //! Test exception evaluation helper
+  bool TestExceptionHelper();
+  //! Test file-comparison helper
+  bool TestFileComparison();
+  //! Test numerical line and file-comparison helpers
+  bool TestNumericalFileComparison();
+  //! Test randomized temporary roots and guarded cleanup helpers
+  bool TestTemporaryPaths();
+  //! Test the temporary roots below the log directory of the testing settings file (~/.testdrive.cfg)
+  bool TestLogDirectory();
+  //! Test the reading of the numbers of the summary
+  bool TestParseSummary();
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::Run()
+{
+  bool Passed = true;
+
+  Passed = TestEvaluateHelpers() && Passed;
+  Passed = TestVectorAndRotationHelpers() && Passed;
+  Passed = TestExceptionHelper() && Passed;
+  Passed = TestFileComparison() && Passed;
+  Passed = TestNumericalFileComparison() && Passed;
+  Passed = TestTemporaryPaths() && Passed;
+  Passed = TestLogDirectory() && Passed;
+  Passed = TestParseSummary() && Passed;
+
+  Summarize();
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestEvaluateHelpers()
+{
+  bool Passed = true;
+
+  UnitTestProbe Probe("Probe");
+  Passed = Evaluate("MUnitTest()", "name", "The unit-test base stores the representative test name", Probe.GetProbeName(), MString("Probe")) && Passed;
+
+  Passed = EvaluateTrue("Evaluate()", "matching integers", "Evaluate returns true when representative integer values match",
+                        Probe.Evaluate("inner Evaluate()", "matching integers", "Matching values are accepted", 7, 7)) && Passed;
+
+  Probe.Silence();
+  const bool ExactFailure = Probe.Evaluate("inner Evaluate()", "different integers", "Different values are rejected", 7, 8);
+  Probe.Unsilence();
+  Passed = EvaluateFalse("Evaluate()", "different integers", "Evaluate returns false when representative integer values differ", ExactFailure) && Passed;
+
+  Passed = EvaluateTrue("EvaluateTrue()", "true value", "EvaluateTrue returns true for a true representative boolean",
+                        Probe.EvaluateTrue("inner EvaluateTrue()", "true value", "True values are accepted", true)) && Passed;
+  Passed = EvaluateTrue("EvaluateFalse()", "false value", "EvaluateFalse returns true for a false representative boolean",
+                        Probe.EvaluateFalse("inner EvaluateFalse()", "false value", "False values are accepted", false)) && Passed;
+
+  Probe.Silence();
+  const bool TrueFailure = Probe.EvaluateTrue("inner EvaluateTrue()", "false value", "False values are rejected", false);
+  const bool FalseFailure = Probe.EvaluateFalse("inner EvaluateFalse()", "true value", "True values are rejected", true);
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateTrue()", "false value", "EvaluateTrue returns false for a false representative boolean", TrueFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFalse()", "true value", "EvaluateFalse returns false for a true representative boolean", FalseFailure) && Passed;
+
+  Passed = EvaluateTrue("EvaluateNear()", "inside tolerance", "EvaluateNear accepts representative values inside the tolerance",
+                        Probe.EvaluateNear("inner EvaluateNear()", "inside tolerance", "Nearby values are accepted", 1.0005, 1.0, 0.001)) && Passed;
+  Passed = EvaluateTrue("EvaluateNear()", "just inside tolerance", "EvaluateNear accepts a value 9e-4 away with the tolerance 1e-3",
+                        Probe.EvaluateNear("inner EvaluateNear()", "just inside tolerance", "A value just inside is accepted", 1.0009, 1.0, 0.001)) && Passed;
+
+  Probe.Silence();
+  const bool NearFailure = Probe.EvaluateNear("inner EvaluateNear()", "outside tolerance", "Distant values are rejected", 1.01, 1.0, 0.001);
+  const bool JustOutsideFailure = Probe.EvaluateNear("inner EvaluateNear()", "just outside tolerance", "A value just outside is rejected", 1.0011, 1.0, 0.001);
+  const bool NonFiniteFailure = Probe.EvaluateNear("inner EvaluateNear()", "non-finite", "Non-finite values are rejected", numeric_limits<double>::infinity(), 1.0, 0.001);
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateNear()", "outside tolerance", "EvaluateNear returns false outside the representative tolerance", NearFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateNear()", "just outside tolerance", "EvaluateNear returns false for a value 1.1e-3 away with the tolerance 1e-3", JustOutsideFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateNear()", "non-finite", "EvaluateNear returns false for a non-finite representative value", NonFiniteFailure) && Passed;
+
+  vector<int> Values;
+  Values.push_back(1);
+  Values.push_back(2);
+  Passed = EvaluateTrue("EvaluateSize()", "two values", "EvaluateSize accepts the representative container size",
+                        Probe.EvaluateSize("inner EvaluateSize()", "two values", "The size matches", Values.size(), 2)) && Passed;
+
+  Probe.Silence();
+  const bool SizeFailure = Probe.EvaluateSize("inner EvaluateSize()", "two values", "The size mismatch is rejected", Values.size(), 3);
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateSize()", "wrong size", "EvaluateSize returns false for a representative size mismatch", SizeFailure) && Passed;
+
+  // Remove the source context of error messages in debug builds:
+  const MString Context = "!!!!! Error in file \"/a/File.cxx\" in function \"Function\" at line 12:\n";
+  Passed = Evaluate("RemoveErrorMessageContext()", "release", "A message without source context is unchanged", RemoveErrorMessageContext("Error: one\nError: two\n"), MString("Error: one\nError: two\n")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "debug", "The source context of one message is removed", RemoveErrorMessageContext(Context + "Error: one\n"), MString("Error: one\n")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "two messages", "The source context of every message is removed, the text in between stays", RemoveErrorMessageContext("Info\n" + Context + "Error: one\n" + Context + "Error: two\n"), MString("Info\nError: one\nError: two\n")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "no final newline", "A last line without newline is kept", RemoveErrorMessageContext(Context + "Error: one"), MString("Error: one")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "similar text", "A line which only contains the text of the context is kept", RemoveErrorMessageContext("Error: !!!!! Error in file \"x\"\n"), MString("Error: !!!!! Error in file \"x\"\n")) && Passed;
+  Passed = Evaluate("RemoveErrorMessageContext()", "empty", "An empty text stays empty", RemoveErrorMessageContext(""), MString("")) && Passed;
+
+  // Check that the maximum keeps a NaN:
+  const double NotANumber = numeric_limits<double>::quiet_NaN();
+  Passed = EvaluateNear("GetMaximum()", "larger second", "GetMaximum returns the larger of two numbers", GetMaximum(1.0, 2.0), 2.0, 0.0) && Passed;
+  Passed = EvaluateNear("GetMaximum()", "larger first", "GetMaximum returns the larger of two numbers also if it is first", GetMaximum(3.0, -2.0), 3.0, 0.0) && Passed;
+  Passed = EvaluateTrue("GetMaximum()", "NaN first", "A NaN as first value gives NaN", isnan(GetMaximum(NotANumber, 1.0))) && Passed;
+  Passed = EvaluateTrue("GetMaximum()", "NaN second", "A NaN as second value gives NaN", isnan(GetMaximum(1.0, NotANumber))) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestVectorAndRotationHelpers()
+{
+  bool Passed = true;
+
+  UnitTestProbe Probe("UTUnitTestVectorProbe");
+  const double Tolerance = 1e-3;
+  const MVector Reference(1.0, 2.0, 3.0);
+
+  // EvaluateVectorNear: the distance between the vectors is compared with the tolerance
+  Passed = EvaluateTrue("EvaluateVectorNear()", "identical", "Identical vectors are accepted even with the tolerance 0",
+                        Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "identical", "Identical vectors are accepted", Reference, Reference, 0.0)) && Passed;
+  Passed = EvaluateTrue("EvaluateVectorNear()", "inside", "A vector 9e-4 away is accepted with the tolerance 1e-3",
+                        Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "inside", "A nearby vector is accepted", MVector(1.0009, 2.0, 3.0), Reference, Tolerance)) && Passed;
+  // The distance 9.9e-4 is accepted although it is larger than each component
+  Passed = EvaluateTrue("EvaluateVectorNear()", "euclidean inside", "The distance is the Euclidean one: (7e-4, 7e-4, 0) is 9.9e-4 away and accepted",
+                        Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "euclidean inside", "The Euclidean distance is inside", MVector(1.0007, 2.0007, 3.0), Reference, Tolerance)) && Passed;
+
+  Probe.Silence();
+  const bool Outside = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "outside", "A distant vector is rejected", MVector(1.0011, 2.0, 3.0), Reference, Tolerance);
+  // The distance 1.13e-3 is rejected although each component is inside
+  const bool EuclideanOutside = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "euclidean outside", "The Euclidean distance is outside", MVector(1.0008, 2.0008, 3.0), Reference, Tolerance);
+  const bool NaNOutput = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "nan output", "A NaN component is rejected", MVector(numeric_limits<double>::quiet_NaN(), 2.0, 3.0), Reference, Tolerance);
+  const bool InfOutput = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "inf output", "An infinite component is rejected", MVector(1.0, numeric_limits<double>::infinity(), 3.0), Reference, Tolerance);
+  const bool NaNTruth = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "nan truth", "A NaN expected component is rejected", Reference, MVector(1.0, 2.0, numeric_limits<double>::quiet_NaN()), Tolerance);
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateVectorNear()", "outside", "A vector 1.1e-3 away is rejected with the tolerance 1e-3", Outside) && Passed;
+  Passed = EvaluateFalse("EvaluateVectorNear()", "euclidean outside", "(8e-4, 8e-4, 0) is 1.13e-3 away and rejected although each component is inside the tolerance", EuclideanOutside) && Passed;
+  Passed = EvaluateFalse("EvaluateVectorNear()", "nan output", "A NaN component in the output is rejected", NaNOutput) && Passed;
+  Passed = EvaluateFalse("EvaluateVectorNear()", "inf output", "An infinite component in the output is rejected", InfOutput) && Passed;
+  Passed = EvaluateFalse("EvaluateVectorNear()", "nan truth", "A NaN component in the expected vector is rejected", NaNTruth) && Passed;
+
+  // EvaluateRotationNear: each of the nine elements is compared separately
+  const vector<double> Elements = { 0.5, -1.0, 2.0, 3.0, 0.25, -0.75, 1.5, -2.5, 4.0 };
+  const vector<MString> Names = { "XX", "YX", "ZX", "XY", "YY", "ZY", "XZ", "YZ", "ZZ" };
+  const MRotation Matrix(Elements[0], Elements[1], Elements[2], Elements[3], Elements[4], Elements[5], Elements[6], Elements[7], Elements[8]);
+  Passed = EvaluateTrue("EvaluateRotationNear()", "identical", "Identical matrices are accepted even with the tolerance 0",
+                        Probe.EvaluateRotationNear("inner EvaluateRotationNear()", "identical", "Identical matrices are accepted", Matrix, Matrix, 0.0)) && Passed;
+
+  for (unsigned int e = 0; e < 9; ++e) {
+    vector<double> Inside = Elements;
+    vector<double> Outside9 = Elements;
+    vector<double> NonFinite = Elements;
+    Inside[e] += 9e-4;
+    Outside9[e] += 1.1e-3;
+    NonFinite[e] = numeric_limits<double>::quiet_NaN();
+    const MRotation InsideMatrix(Inside[0], Inside[1], Inside[2], Inside[3], Inside[4], Inside[5], Inside[6], Inside[7], Inside[8]);
+    const MRotation OutsideMatrix(Outside9[0], Outside9[1], Outside9[2], Outside9[3], Outside9[4], Outside9[5], Outside9[6], Outside9[7], Outside9[8]);
+    const MRotation NonFiniteMatrix(NonFinite[0], NonFinite[1], NonFinite[2], NonFinite[3], NonFinite[4], NonFinite[5], NonFinite[6], NonFinite[7], NonFinite[8]);
+    MString Input = MString("element ") + Names[e];
+
+    Passed = EvaluateTrue("EvaluateRotationNear()", Input, "A deviation of 9e-4 in a single element is accepted with the tolerance 1e-3",
+                          Probe.EvaluateRotationNear("inner EvaluateRotationNear()", Input, "A nearby matrix is accepted", InsideMatrix, Matrix, Tolerance)) && Passed;
+    Probe.Silence();
+    const bool ElementOutside = Probe.EvaluateRotationNear("inner EvaluateRotationNear()", Input, "A distant matrix is rejected", OutsideMatrix, Matrix, Tolerance);
+    const bool ElementNonFinite = Probe.EvaluateRotationNear("inner EvaluateRotationNear()", Input, "A NaN element is rejected", NonFiniteMatrix, Matrix, Tolerance);
+    Probe.Unsilence();
+    Passed = EvaluateFalse("EvaluateRotationNear()", Input, "A deviation of 1.1e-3 in a single element is rejected with the tolerance 1e-3", ElementOutside) && Passed;
+    Passed = EvaluateFalse("EvaluateRotationNear()", Input, "A NaN in a single element is rejected", ElementNonFinite) && Passed;
+  }
+
+  // The tolerance applies to each element, not to their sum
+  const MRotation TwoElements(Elements[0] + 8e-4, Elements[1], Elements[2], Elements[3], Elements[4], Elements[5], Elements[6], Elements[7], Elements[8] - 8e-4);
+  Passed = EvaluateTrue("EvaluateRotationNear()", "two elements", "The tolerance is applied to each element separately",
+                        Probe.EvaluateRotationNear("inner EvaluateRotationNear()", "two elements", "Two elements 8e-4 off are accepted", TwoElements, Matrix, Tolerance)) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestExceptionHelper()
+{
+  bool Passed = true;
+
+  UnitTestProbe Probe("Probe");
+  Passed = EvaluateTrue("EvaluateException()", "matching exception", "EvaluateException accepts the representative expected exception type",
+                        Probe.EvaluateException<runtime_error>("inner EvaluateException()", "matching exception", "The expected exception is thrown",
+                                                               [](){ throw runtime_error("representative"); })) && Passed;
+
+  Probe.Silence();
+  const bool MissingException = Probe.EvaluateException<runtime_error>("inner EvaluateException()", "no exception", "Missing exceptions are rejected",
+                                                                       [](){});
+  const bool WrongException = Probe.EvaluateException<runtime_error>("inner EvaluateException()", "wrong exception", "Wrong exception types are rejected",
+                                                                     [](){ throw logic_error("representative"); });
+  Probe.Unsilence();
+
+  Passed = EvaluateFalse("EvaluateException()", "no exception", "EvaluateException returns false when no representative exception is thrown", MissingException) && Passed;
+  Passed = EvaluateFalse("EvaluateException()", "wrong exception", "EvaluateException returns false for a representative wrong exception type", WrongException) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestFileComparison()
+{
+  bool Passed = true;
+
+  const MString ReferenceFile = GetTemporaryFileName("reference.txt");
+  const MString MatchingFile = GetTemporaryFileName("matching.txt");
+  const MString DifferentFile = GetTemporaryFileName("different.txt");
+  const MString WhitespaceFile = GetTemporaryFileName("whitespace.txt");
+  const MString CrlfFile = GetTemporaryFileName("crlf.txt");
+  const MString NoFinalNewlineFile = GetTemporaryFileName("no_final_newline.txt");
+  const MString ShortFile = GetTemporaryFileName("short.txt");
+  const MString LongFile = GetTemporaryFileName("long.txt");
+  const MString EmptyReferenceFile = GetTemporaryFileName("empty_reference.txt");
+  const MString EmptyTestFile = GetTemporaryFileName("empty_test.txt");
+  const MString MissingGeneratedFile = GetTemporaryFileName("missing_generated.txt");
+  const MString MissingReferenceFile = GetTemporaryFileName("missing_reference.txt");
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("file_comparison");
+
+  RemoveTemporaryFile(ReferenceFile);
+  RemoveTemporaryFile(MatchingFile);
+  RemoveTemporaryFile(DifferentFile);
+  RemoveTemporaryFile(WhitespaceFile);
+  RemoveTemporaryFile(CrlfFile);
+  RemoveTemporaryFile(NoFinalNewlineFile);
+  RemoveTemporaryFile(ShortFile);
+  RemoveTemporaryFile(LongFile);
+  RemoveTemporaryFile(EmptyReferenceFile);
+  RemoveTemporaryFile(EmptyTestFile);
+  RemoveTemporaryFile(MissingGeneratedFile);
+  RemoveTemporaryFile(MissingReferenceFile);
+
+  Passed = EvaluateTrue("WriteTextFile()", "reference fixture", "The representative reference file can be written",
+                        WriteTextFile(ReferenceFile, "alpha\nbeta\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "matching fixture", "The representative matching file can be written",
+                        WriteTextFile(MatchingFile, "alpha\nbeta\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "different fixture", "The representative different file can be written",
+                        WriteTextFile(DifferentFile, "alpha\ngamma\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "whitespace fixture", "The representative whitespace-different file can be written",
+                        WriteTextFile(WhitespaceFile, "alpha \nbeta\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "CRLF fixture", "The representative CRLF file can be written",
+                        WriteTextFile(CrlfFile, "alpha\r\nbeta\r\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "no-final-newline fixture", "The representative file without a final newline can be written",
+                        WriteTextFile(NoFinalNewlineFile, "alpha\nbeta")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "short fixture", "The representative short file can be written",
+                        WriteTextFile(ShortFile, "alpha\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "long fixture", "The representative long file can be written",
+                        WriteTextFile(LongFile, "alpha\nbeta\ngamma\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "empty reference fixture", "The empty reference file can be written",
+                        WriteTextFile(EmptyReferenceFile, "")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "empty test fixture", "The empty test file can be written",
+                        WriteTextFile(EmptyTestFile, "")) && Passed;
+  Passed = EvaluateTrue("ReadTextFile()", "reference fixture", "The unit-test helper can read back a representative fixture file",
+                        ReadTextFile(ReferenceFile) == "alpha\nbeta\n") && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "scratch directory", "The unit-test helper can create a clean temporary directory",
+                        PrepareTemporaryDirectory("file_comparison")) && Passed;
+  Passed = EvaluateTrue("std::filesystem::is_directory()", "scratch directory", "The generated temporary directory exists after preparation",
+                        std::filesystem::is_directory(TemporaryDirectory.Data())) && Passed;
+  const MString NestedFixture = TemporaryDirectory + "/nested.txt";
+  Passed = EvaluateTrue("WriteTextFile()", "nested scratch fixture", "The unit-test helper can write a representative fixture into a prepared nested directory",
+                        WriteTextFile(NestedFixture, "nested\n")) && Passed;
+  Passed = EvaluateTrue("ReadTextFile()", "nested scratch fixture", "The unit-test helper can read back a representative fixture from a prepared nested directory",
+                        ReadTextFile(NestedFixture) == "nested\n") && Passed;
+  UnitTestProbe Probe("Probe");
+  Passed = EvaluateTrue("EvaluateFilesIdentical()", "matching files", "EvaluateFilesIdentical accepts representative identical files",
+                        Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "matching files", "The files match", MatchingFile, ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesIdentical()", "empty files", "EvaluateFilesIdentical accepts two empty files",
+                        Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "empty files", "The empty files match", EmptyTestFile, EmptyReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesIdentical()", "LF and CRLF files", "EvaluateFilesIdentical consumes LF and CRLF line-ending characters",
+                        Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "LF and CRLF files", "The files contain the same lines", CrlfFile, ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesIdentical()", "optional final newline", "EvaluateFilesIdentical accepts files differing only by a final line-ending character",
+                        Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "optional final newline", "The files contain the same lines", NoFinalNewlineFile, ReferenceFile)) && Passed;
+
+  Probe.Silence();
+  const bool DifferentFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "different files", "Different files are rejected", DifferentFile, ReferenceFile);
+  const bool WhitespaceFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "whitespace difference", "Whitespace differences are rejected", WhitespaceFile, ReferenceFile);
+  const bool ShortFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "short file", "Short files are rejected", ShortFile, ReferenceFile);
+  const bool LongFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "long file", "Long files are rejected", LongFile, ReferenceFile);
+  const bool MissingGeneratedFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "missing generated", "Missing generated files are rejected", MissingGeneratedFile, ReferenceFile);
+  const bool MissingReferenceFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "missing reference", "Missing reference files are rejected", MatchingFile, MissingReferenceFile);
+  Probe.Unsilence();
+
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "different files", "EvaluateFilesIdentical returns false for representative different files", DifferentFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "whitespace difference", "EvaluateFilesIdentical returns false for a difference in trailing whitespace", WhitespaceFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "short file", "EvaluateFilesIdentical returns false when the representative generated file is shorter", ShortFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "long file", "EvaluateFilesIdentical returns false when the representative test file is longer", LongFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "missing generated", "EvaluateFilesIdentical returns false when the representative generated file is missing", MissingGeneratedFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "missing reference", "EvaluateFilesIdentical returns false when the representative reference file is missing", MissingReferenceFailure) && Passed;
+
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "reference cleanup", "The representative reference file can be removed", RemoveTemporaryFile(ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "matching cleanup", "The representative matching file can be removed", RemoveTemporaryFile(MatchingFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "different cleanup", "The representative different file can be removed", RemoveTemporaryFile(DifferentFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "whitespace cleanup", "The representative whitespace-different file can be removed", RemoveTemporaryFile(WhitespaceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "CRLF cleanup", "The representative CRLF file can be removed", RemoveTemporaryFile(CrlfFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "no-final-newline cleanup", "The representative file without a final newline can be removed", RemoveTemporaryFile(NoFinalNewlineFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "short cleanup", "The representative short file can be removed", RemoveTemporaryFile(ShortFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "long cleanup", "The representative long file can be removed", RemoveTemporaryFile(LongFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty reference cleanup", "The empty reference file can be removed", RemoveTemporaryFile(EmptyReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty test cleanup", "The empty test file can be removed", RemoveTemporaryFile(EmptyTestFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "scratch cleanup", "The prepared nested directory can be removed recursively", RemoveTemporaryDirectory(TemporaryDirectory)) && Passed;
+  Passed = EvaluateFalse("std::filesystem::exists()", "scratch cleanup", "The prepared nested directory no longer exists after removal",
+                         std::filesystem::exists(TemporaryDirectory.Data())) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestNumericalFileComparison()
+{
+  bool Passed = true;
+
+  UnitTestProbe Probe("NumericalProbe");
+  const MString EmptyReferenceFile = GetTemporaryFileName("numerical_empty_reference.txt");
+  const MString EmptyTestFile = GetTemporaryFileName("numerical_empty_test.txt");
+  const MString ReferenceFile = GetTemporaryFileName("numerical_reference.txt");
+  const MString MatchingFile = GetTemporaryFileName("numerical_matching.txt");
+  const MString CrlfFile = GetTemporaryFileName("numerical_crlf.txt");
+  const MString ExtremeExponentReferenceFile = GetTemporaryFileName("numerical_extreme_exponent_reference.txt");
+  const MString ExtremeExponentFile = GetTemporaryFileName("numerical_extreme_exponent.txt");
+  const MString LargeReferenceFile = GetTemporaryFileName("numerical_large_reference.txt");
+  const MString LargeOppositeFile = GetTemporaryFileName("numerical_large_opposite.txt");
+  const MString ZeroToleranceFile = GetTemporaryFileName("numerical_zero_tolerance.txt");
+  const MString ZeroToleranceDifferentFile = GetTemporaryFileName("numerical_zero_tolerance_different.txt");
+  const MString EmptyLineReferenceFile = GetTemporaryFileName("numerical_empty_line_reference.txt");
+  const MString WhitespaceLineFile = GetTemporaryFileName("numerical_whitespace_line.txt");
+  const MString CustomToleranceFile = GetTemporaryFileName("numerical_custom_tolerance.txt");
+  const MString DifferentTokenFile = GetTemporaryFileName("numerical_different_token.txt");
+  const MString DifferentIntegerFile = GetTemporaryFileName("numerical_different_integer.txt");
+  const MString ExtraTokenFile = GetTemporaryFileName("numerical_extra_token.txt");
+  const MString MissingTokenFile = GetTemporaryFileName("numerical_missing_token.txt");
+  const MString OutsideToleranceFile = GetTemporaryFileName("numerical_outside_tolerance.txt");
+  const MString ShortFile = GetTemporaryFileName("numerical_short.txt");
+  const MString LongFile = GetTemporaryFileName("numerical_long.txt");
+  const MString MissingTestFile = GetTemporaryFileName("numerical_missing_test.txt");
+  const MString MissingReferenceFile = GetTemporaryFileName("numerical_missing_reference.txt");
+
+  RemoveTemporaryFile(EmptyReferenceFile);
+  RemoveTemporaryFile(EmptyTestFile);
+  RemoveTemporaryFile(ReferenceFile);
+  RemoveTemporaryFile(MatchingFile);
+  RemoveTemporaryFile(CrlfFile);
+  RemoveTemporaryFile(ExtremeExponentReferenceFile);
+  RemoveTemporaryFile(ExtremeExponentFile);
+  RemoveTemporaryFile(LargeReferenceFile);
+  RemoveTemporaryFile(LargeOppositeFile);
+  RemoveTemporaryFile(ZeroToleranceFile);
+  RemoveTemporaryFile(ZeroToleranceDifferentFile);
+  RemoveTemporaryFile(EmptyLineReferenceFile);
+  RemoveTemporaryFile(WhitespaceLineFile);
+  RemoveTemporaryFile(CustomToleranceFile);
+  RemoveTemporaryFile(DifferentTokenFile);
+  RemoveTemporaryFile(DifferentIntegerFile);
+  RemoveTemporaryFile(ExtraTokenFile);
+  RemoveTemporaryFile(MissingTokenFile);
+  RemoveTemporaryFile(OutsideToleranceFile);
+  RemoveTemporaryFile(ShortFile);
+  RemoveTemporaryFile(LongFile);
+  RemoveTemporaryFile(MissingTestFile);
+  RemoveTemporaryFile(MissingReferenceFile);
+
+  Passed = EvaluateTrue("WriteTextFile()", "empty numerical reference fixture", "The empty numerical reference fixture can be written",
+                        WriteTextFile(EmptyReferenceFile, "")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "empty numerical test fixture", "The empty numerical test fixture can be written",
+                        WriteTextFile(EmptyTestFile, "")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "numerical reference fixture", "The numerical reference fixture can be written",
+                        WriteTextFile(ReferenceFile, "CT 0.518236 0.481764\nscale 1.234e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "numerically matching fixture", "The numerically matching fixture can be written",
+                        WriteTextFile(MatchingFile, "CT\t0.518237  0.481763\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "numerical CRLF fixture", "The numerically matching CRLF fixture can be written",
+                        WriteTextFile(CrlfFile, "CT\t0.518237  0.481763\r\nscale 1.235e-4\r\nbins 16\r\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "extreme-exponent reference fixture", "The extreme-exponent reference fixture can be written",
+                        WriteTextFile(ExtremeExponentReferenceFile, "value 0.0\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "extreme-exponent fixture", "The extreme-exponent numerical fixture can be written",
+                        WriteTextFile(ExtremeExponentFile, "value 0.0e-2147483648\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "large-value reference fixture", "The large-value reference fixture can be written",
+                        WriteTextFile(LargeReferenceFile, "value 1e308\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "opposite-sign large-value fixture", "The opposite-sign large-value fixture can be written",
+                        WriteTextFile(LargeOppositeFile, "value -1e308\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "zero-tolerance fixture", "The equal-value zero-tolerance fixture can be written",
+                        WriteTextFile(ZeroToleranceFile, "CT 0.5182360 0.4817640\nscale 0.0001234\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "zero-tolerance difference fixture", "The unequal-value zero-tolerance fixture can be written",
+                        WriteTextFile(ZeroToleranceDifferentFile, "CT 0.518237 0.481764\nscale 1.234e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "empty-line reference fixture", "The empty-line reference fixture can be written",
+                        WriteTextFile(EmptyLineReferenceFile, "CT 0.518236 0.481764\n\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "whitespace-line fixture", "The whitespace-line fixture can be written",
+                        WriteTextFile(WhitespaceLineFile, "CT 0.518237 0.481763\n\t   \nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "custom-tolerance fixture", "The custom-tolerance fixture can be written",
+                        WriteTextFile(CustomToleranceFile, "CT 0.518239 0.481763\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "different-token fixture", "The changed-token fixture can be written",
+                        WriteTextFile(DifferentTokenFile, "CH 0.518237 0.481763\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "different-integer fixture", "The changed-integer fixture can be written",
+                        WriteTextFile(DifferentIntegerFile, "CT 0.518237 0.481763\nscale 1.235e-4\nbins 17\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "extra-token fixture", "The extra-token fixture can be written",
+                        WriteTextFile(ExtraTokenFile, "CT 0.518237 0.481763 extra\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "missing-token fixture", "The missing-token fixture can be written",
+                        WriteTextFile(MissingTokenFile, "CT 0.518237\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "outside-tolerance fixture", "The outside-tolerance fixture can be written",
+                        WriteTextFile(OutsideToleranceFile, "CT 0.518240 0.481763\nscale 1.235e-4\nbins 16\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "short numerical fixture", "The short numerical fixture can be written",
+                        WriteTextFile(ShortFile, "CT 0.518237 0.481763\nscale 1.235e-4\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "long numerical fixture", "The long numerical fixture can be written",
+                        WriteTextFile(LongFile, "CT 0.518237 0.481763\nscale 1.235e-4\nbins 16\nextra\n")) && Passed;
+
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "empty files", "EvaluateFilesNumericallyEquivalent accepts two empty files",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "empty files", "The empty files match", EmptyTestFile, EmptyReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "numerically matching files", "EvaluateFilesNumericallyEquivalent accepts representative files with matching numeric tokens",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "numerically matching files", "The files match numerically", MatchingFile, ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "LF and CRLF files", "EvaluateFilesNumericallyEquivalent accepts matching files with LF and CRLF line endings",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "LF and CRLF files", "The files match numerically", CrlfFile, ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "extreme exponent", "EvaluateFilesNumericallyEquivalent handles fractional zero at the minimum integer exponent",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "extreme exponent", "The zero values match numerically", ExtremeExponentFile, ExtremeExponentReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "equal values at zero tolerance", "EvaluateFilesNumericallyEquivalent accepts equal numeric values with different representations at zero tolerance",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "equal values at zero tolerance", "The files have equal numeric values", ZeroToleranceFile, ReferenceFile, 0)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "whitespace-only line", "EvaluateFilesNumericallyEquivalent treats whitespace-only lines as equivalent",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "whitespace-only line", "The whitespace-only line matches an empty line", WhitespaceLineFile, EmptyLineReferenceFile)) && Passed;
+  Passed = EvaluateTrue("EvaluateFilesNumericallyEquivalent()", "custom tolerance of three units", "EvaluateFilesNumericallyEquivalent honors a custom last-printed-digit tolerance",
+                        Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "custom tolerance of three units", "The files match at the custom tolerance", CustomToleranceFile, ReferenceFile, 3)) && Passed;
+
+  Probe.Silence();
+  const bool DefaultToleranceFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "default tolerance", "The default tolerance rejects a three-unit difference", CustomToleranceFile, ReferenceFile);
+  const bool ZeroToleranceFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "unequal values at zero tolerance", "Zero tolerance rejects unequal numeric values", ZeroToleranceDifferentFile, ReferenceFile, 0);
+  const bool LargeOppositeFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "large opposite-sign values", "Large opposite-sign values are rejected", LargeOppositeFile, LargeReferenceFile);
+  const bool DifferentTokenFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "different text token", "Changed text tokens are rejected", DifferentTokenFile, ReferenceFile);
+  const bool DifferentIntegerFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "different integer token", "Changed integer tokens are rejected", DifferentIntegerFile, ReferenceFile);
+  const bool ExtraTokenFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "extra token", "Different token counts are rejected", ExtraTokenFile, ReferenceFile);
+  const bool MissingTokenFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "missing token", "Different token counts are rejected in the opposite direction", MissingTokenFile, ReferenceFile);
+  const bool OutsideToleranceFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "outside tolerance", "Numeric differences outside the tolerance are rejected", OutsideToleranceFile, ReferenceFile);
+  const bool ShortFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "short file", "Short files are rejected", ShortFile, ReferenceFile);
+  const bool LongFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "long file", "Long files are rejected", LongFile, ReferenceFile);
+  const bool MissingTestFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "missing test file", "Missing test files are rejected", MissingTestFile, ReferenceFile);
+  const bool MissingReferenceFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "missing reference file", "Missing reference files are rejected", MatchingFile, MissingReferenceFile);
+  Probe.Unsilence();
+
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "default tolerance", "EvaluateFilesNumericallyEquivalent rejects a three-unit difference at the default tolerance", DefaultToleranceFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "unequal values at zero tolerance", "EvaluateFilesNumericallyEquivalent rejects unequal numeric values at zero tolerance", ZeroToleranceFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "large opposite-sign values", "EvaluateFilesNumericallyEquivalent rejects values whose difference overflows double", LargeOppositeFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "different text token", "EvaluateFilesNumericallyEquivalent returns false for a changed non-numeric token", DifferentTokenFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "different integer token", "EvaluateFilesNumericallyEquivalent returns false for a changed integer-only token", DifferentIntegerFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "extra token", "EvaluateFilesNumericallyEquivalent returns false for different token counts", ExtraTokenFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "missing token", "EvaluateFilesNumericallyEquivalent returns false when the test line has fewer tokens", MissingTokenFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "outside tolerance", "EvaluateFilesNumericallyEquivalent returns false for a numeric difference outside the tolerance", OutsideToleranceFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "short file", "EvaluateFilesNumericallyEquivalent returns false when the test file is shorter", ShortFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "long file", "EvaluateFilesNumericallyEquivalent returns false when the test file is longer", LongFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "missing test file", "EvaluateFilesNumericallyEquivalent returns false when the test file is missing", MissingTestFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "missing reference file", "EvaluateFilesNumericallyEquivalent returns false when the reference file is missing", MissingReferenceFailure) && Passed;
+
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty numerical reference cleanup", "The empty numerical reference fixture can be removed", RemoveTemporaryFile(EmptyReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty numerical test cleanup", "The empty numerical test fixture can be removed", RemoveTemporaryFile(EmptyTestFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "numerical reference cleanup", "The numerical reference fixture can be removed", RemoveTemporaryFile(ReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "numerically matching cleanup", "The numerically matching fixture can be removed", RemoveTemporaryFile(MatchingFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "numerical CRLF cleanup", "The numerically matching CRLF fixture can be removed", RemoveTemporaryFile(CrlfFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "extreme-exponent reference cleanup", "The extreme-exponent reference fixture can be removed", RemoveTemporaryFile(ExtremeExponentReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "extreme-exponent cleanup", "The extreme-exponent numerical fixture can be removed", RemoveTemporaryFile(ExtremeExponentFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "large-value reference cleanup", "The large-value reference fixture can be removed", RemoveTemporaryFile(LargeReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "opposite-sign large-value cleanup", "The opposite-sign large-value fixture can be removed", RemoveTemporaryFile(LargeOppositeFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "zero-tolerance cleanup", "The equal-value zero-tolerance fixture can be removed", RemoveTemporaryFile(ZeroToleranceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "zero-tolerance difference cleanup", "The unequal-value zero-tolerance fixture can be removed", RemoveTemporaryFile(ZeroToleranceDifferentFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "empty-line reference cleanup", "The empty-line reference fixture can be removed", RemoveTemporaryFile(EmptyLineReferenceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "whitespace-line cleanup", "The whitespace-line fixture can be removed", RemoveTemporaryFile(WhitespaceLineFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "custom-tolerance cleanup", "The custom-tolerance fixture can be removed", RemoveTemporaryFile(CustomToleranceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "different-token cleanup", "The changed-token fixture can be removed", RemoveTemporaryFile(DifferentTokenFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "different-integer cleanup", "The changed-integer fixture can be removed", RemoveTemporaryFile(DifferentIntegerFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "extra-token cleanup", "The extra-token fixture can be removed", RemoveTemporaryFile(ExtraTokenFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "missing-token cleanup", "The missing-token fixture can be removed", RemoveTemporaryFile(MissingTokenFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "outside-tolerance cleanup", "The outside-tolerance fixture can be removed", RemoveTemporaryFile(OutsideToleranceFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "short numerical cleanup", "The short numerical fixture can be removed", RemoveTemporaryFile(ShortFile)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "long numerical cleanup", "The long numerical fixture can be removed", RemoveTemporaryFile(LongFile)) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestParseSummary()
+{
+  bool Passed = true;
+  unsigned int Passes = 99;
+  unsigned int Fails = 99;
+
+  Passed = EvaluateTrue("ParseSummary()", "plain", "The numbers of a summary are read", MUnitTest::ParseSummary("Unit test: X\nPassed tests: 12\nFailed tests: 3\n", Passes, Fails)) && Passed;
+  Passed = Evaluate("ParseSummary()", "passed", "The number of passed tests is read", Passes, 12U) && Passed;
+  Passed = Evaluate("ParseSummary()", "failed", "The number of failed tests is read", Fails, 3U) && Passed;
+
+  Passed = EvaluateTrue("ParseSummary()", "one line", "The numbers on one line (the form of the test driver) are read", MUnitTest::ParseSummary("Passed tests: 5, Failed tests: 1", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "one line numbers", "The numbers of the one-line form are right", Passes == 5U && Fails == 1U) && Passed;
+
+  Passed = EvaluateTrue("ParseSummary()", "last summary", "The last summary of the output counts", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 1\nmore output\nPassed tests: 7\nFailed tests: 0\n", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "last summary numbers", "The numbers of the last summary are used", Passes == 7U && Fails == 0U) && Passed;
+
+  Passed = EvaluateTrue("ParseSummary()", "no blank", "A summary without a blank after the colon is read", MUnitTest::ParseSummary("Passed tests:4\nFailed tests:\t2\n", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "no blank numbers", "The numbers of the summary without blanks are right", Passes == 4U && Fails == 2U) && Passed;
+
+  Passed = EvaluateFalse("ParseSummary()", "empty", "Empty output has no summary", MUnitTest::ParseSummary("", Passes, Fails)) && Passed;
+  Passed = Evaluate("ParseSummary()", "empty numbers", "Without a summary both numbers are zero", Passes + Fails, 0U) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "only passed", "Output with only the passed tests has no summary", MUnitTest::ParseSummary("Passed tests: 3\n", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "wrong order", "Failed tests before passed tests are no summary", MUnitTest::ParseSummary("Failed tests: 1\nPassed tests: 3\n", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "no number", "A label without a number is no summary", MUnitTest::ParseSummary("Passed tests: many\nFailed tests: few\n", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "done", "The text of a test without a summary is none either", MUnitTest::ParseSummary("done", Passes, Fails)) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestLogDirectory()
+{
+  bool Passed = true;
+
+  // Use the private temporary root - everything is removed in the end
+  PrepareTemporaryDirectory("log_directory");
+  const MString Directory = GetTemporaryDirectoryName("log_directory");
+  const MString Missing = Directory + "/does/not/exist/yet";
+
+  // Use ~/.testdrive.cfg in a private home directory (HOME is global: restore it)
+  struct HomeGuard {
+    bool m_Had = false;
+    MString m_Value;
+    HomeGuard() {
+      const char* Value = getenv("HOME");
+      if (Value != nullptr) {
+        m_Had = true;
+        m_Value = Value;
+      }
+    }
+    ~HomeGuard() {
+      if (m_Had == true) {
+        setenv("HOME", m_Value.Data(), 1);
+      } else {
+        unsetenv("HOME");
+      }
+    }
+  } Guard;
+  const MString Home = GetTemporaryDirectoryName("log_home");
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "home", "The private home directory can be created", PrepareTemporaryDirectory("log_home")) && Passed;
+  setenv("HOME", Home.Data(), 1);
+  const MString SettingsFile = Home + "/.testdrive.cfg";
+
+  // Write the settings file like the test driver:
+  {
+    MSettingsTesting Settings;
+    Settings.SetLogDirectory(Missing);
+    Passed = EvaluateTrue("MSettingsTesting::Write()", "settings file", "The testing settings file can be written", Settings.Write(SettingsFile)) && Passed;
+    MSettingsTesting Read;
+    Passed = EvaluateTrue("MSettingsTesting::Read()", "settings file", "The testing settings file can be read", Read.Read(SettingsFile)) && Passed;
+    Passed = Evaluate("MSettingsTesting::GetLogDirectory()", "round trip", "The log directory survives writing and reading", Read.GetLogDirectory(), Missing) && Passed;
+  }
+
+  // A passing test: the root is below the log directory and removed in the end
+  MString PassingRoot;
+  bool PassingRootExisted = false, FileExisted = false;
+  {
+    UnitTestProbe Passing("LogDirectoryPassing");
+    PassingRoot = Passing.TemporaryDirectory();
+    const MString File = Passing.TemporaryFile("passing.txt");
+    PassingRootExisted = filesystem::is_directory(PassingRoot.Data());
+    FileExisted = Passing.WriteFile(File, "content") && filesystem::exists(File.Data());
+  }
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "below the log directory", "The root is created below the log directory of the settings file (also if it does not exist yet)", PassingRoot.BeginsWith(Missing + "/MEGAlib_")) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "root exists", "The root below the log directory exists while the test runs", PassingRootExisted) && Passed;
+  Passed = EvaluateTrue("GetTemporaryFileName()", "file in the root", "Files can be written below the root in the log directory", FileExisted) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "name", "The root below the log directory ends with the name of the test", PassingRoot.EndsWith("_LogDirectoryPassing")) && Passed;
+  Passed = EvaluateFalse("~MUnitTest()", "passing test", "The files of a passing test are removed", filesystem::exists(PassingRoot.Data())) && Passed;
+
+  // A failing test: the files are kept
+  MString FailingRoot;
+  MString FailingFile;
+  DisableDefaultStreams();
+  {
+    UnitTestProbe Failing("LogDirectoryFailing");
+    FailingRoot = Failing.TemporaryDirectory();
+    FailingFile = Failing.TemporaryFile("failing.txt");
+    Failing.WriteFile(FailingFile, "kept content");
+    Failing.EvaluateTrue("inner EvaluateTrue()", "false value", "A failing check", false);
+  }
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("~MUnitTest()", "failing test", "The files of a failing test are kept in the log directory", filesystem::exists(FailingFile.Data())) && Passed;
+  // Use plain streams - the guarded helpers only know the files of this test
+  ifstream Kept(FailingFile.Data());
+  string KeptContent;
+  getline(Kept, KeptContent);
+  Passed = EvaluateTrue("~MUnitTest()", "failing test content", "The kept files have their content", KeptContent == "kept content") && Passed;
+
+  // Without a settings file it is created with the default log directory
+  const MString NewHome = Directory + "/new/home";
+  const MString NewSettingsFile = NewHome + "/.testdrive.cfg";
+  setenv("HOME", NewHome.Data(), 1);
+  MString DefaultRoot;
+  {
+    UnitTestProbe Default("LogDirectoryDefault");
+    DefaultRoot = Default.TemporaryDirectory();
+  }
+  MSettingsTesting Defaults;
+  MSettingsTesting Created;
+  Passed = EvaluateTrue("MUnitTest()", "settings file created", "A missing testing settings file is created", filesystem::exists(NewSettingsFile.Data())) && Passed;
+  Passed = EvaluateTrue("MUnitTest()", "settings file defaults", "The created testing settings file has the default log directory", Created.Read(NewSettingsFile) && Created.GetLogDirectory() == Defaults.GetLogDirectory()) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "default log directory", "Without a settings file the root is below the default log directory", DefaultRoot.BeginsWith(Defaults.GetLogDirectory() + "/MEGAlib_")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestTemporaryPaths()
+{
+  bool Passed = true;
+
+  DisableDefaultStreams();
+  UnitTestProbe EmptyNameProbe("");
+  UnitTestProbe TraversalNameProbe("../TraversalProbe");
+  UnitTestProbe WhitespaceNameProbe("Whitespace Probe");
+  UnitTestProbe SpecialCharacterNameProbe("Special@Probe");
+  UnitTestProbe NoCharacterNameProbe("@ /");
+  EnableDefaultStreams();
+  const MString EmptyNameRoot = EmptyNameProbe.TemporaryDirectory();
+  const MString TraversalNameRoot = TraversalNameProbe.TemporaryDirectory();
+  const MString WhitespaceNameRoot = WhitespaceNameProbe.TemporaryDirectory();
+  const MString SpecialCharacterNameRoot = SpecialCharacterNameProbe.TemporaryDirectory();
+  const MString NoCharacterNameRoot = NoCharacterNameProbe.TemporaryDirectory();
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "empty test name", "An empty unit-test name uses the default temporary basename UnitTest", EmptyNameRoot.EndsWith("_UnitTest")) && Passed;
+  Passed = Evaluate("MUnitTest()", "traversal test name", "An unsafe traversal-style unit-test name remains unchanged for reporting", TraversalNameProbe.GetProbeName(), MString("../TraversalProbe")) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "traversal test name", "An unsafe traversal-style unit-test name keeps only the acceptable characters in the temporary basename", TraversalNameRoot.EndsWith("_TraversalProbe")) && Passed;
+  Passed = Evaluate("MUnitTest()", "whitespace test name", "An unsafe whitespace-containing unit-test name remains unchanged for reporting", WhitespaceNameProbe.GetProbeName(), MString("Whitespace Probe")) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "whitespace test name", "An unsafe whitespace-containing unit-test name keeps only the acceptable characters in the temporary basename", WhitespaceNameRoot.EndsWith("_WhitespaceProbe")) && Passed;
+  Passed = Evaluate("MUnitTest()", "special-character test name", "An unsafe special-character unit-test name remains unchanged for reporting", SpecialCharacterNameProbe.GetProbeName(), MString("Special@Probe")) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "special-character test name", "An unsafe special-character unit-test name keeps only the acceptable characters in the temporary basename", SpecialCharacterNameRoot.EndsWith("_SpecialProbe")) && Passed;
+
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "no acceptable character", "A unit-test name without any acceptable character uses the default temporary basename UnitTest", NoCharacterNameRoot.EndsWith("_UnitTest")) && Passed;
+  Passed = EvaluateFalse("GetTemporaryDirectoryName()", "same basename", "Probes with the same temporary basename still receive distinct randomized roots", EmptyNameRoot == NoCharacterNameRoot) && Passed;
+
+  UnitTestProbe First("FirstProbe");
+  UnitTestProbe Second("SecondProbe");
+  const MString FirstRoot = First.TemporaryDirectory();
+  const MString SecondRoot = Second.TemporaryDirectory();
+
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "first randomized root", "The first randomized temporary root can be created", FirstRoot.IsEmpty() == false) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "valid test name", "A valid unit-test name is used directly as the temporary basename", FirstRoot.EndsWith("_FirstProbe")) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "second randomized root", "The second randomized temporary root can be created", SecondRoot.IsEmpty() == false) && Passed;
+  Passed = EvaluateFalse("GetTemporaryDirectoryName()", "distinct randomized roots", "Separate unit-test instances use distinct randomized temporary roots", FirstRoot == SecondRoot) && Passed;
+
+  const MString FileName = First.TemporaryFile("representative.txt");
+  Passed = EvaluateTrue("GetTemporaryFileName()", "representative file", "Generated file paths remain below the randomized private root", FileName.BeginsWith(FirstRoot + "/")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "representative file", "A representative temporary file can be written", First.WriteFile(FileName, "temporary\n")) && Passed;
+  Passed = EvaluateTrue("ReadTextFile()", "representative file", "A representative temporary file can be read", First.ReadFile(FileName) == "temporary\n") && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "representative file", "A representative temporary file can be removed through the guarded helper", First.RemoveFile(FileName)) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "missing representative file", "Removing an already absent temporary file succeeds", First.RemoveFile(FileName)) && Passed;
+
+  First.Silence();
+  const MString InvalidTraversal = First.TemporaryFile("../outside");
+  const MString InvalidDot = First.TemporaryDirectory(".");
+  const MString InvalidDotDot = First.TemporaryDirectory("..");
+  const MString InvalidSeparator = First.TemporaryDirectory("nested/directory");
+  const MString InvalidNull = First.TemporaryFile(MString(std::string("nul\0suffix", 10)));
+  First.Unsilence();
+  Passed = EvaluateTrue("GetTemporaryFileName()", "traversal name", "Temporary file names containing parent traversal are rejected", InvalidTraversal.IsEmpty()) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "dot name", "The current-directory path component is rejected", InvalidDot.IsEmpty()) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "dot-dot name", "The parent-directory path component is rejected", InvalidDotDot.IsEmpty()) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "separator name", "Temporary directory names containing path separators are rejected", InvalidSeparator.IsEmpty()) && Passed;
+  Passed = EvaluateTrue("GetTemporaryFileName()", "embedded NUL name", "Temporary file names containing an embedded NUL byte are rejected", InvalidNull.IsEmpty()) && Passed;
+
+  const MString NestedDirectory = First.TemporaryDirectory("nested");
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "nested directory", "A nested temporary directory can be prepared", First.PrepareDirectory("nested")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "nested file", "A nested representative fixture can be written", First.WriteFile(NestedDirectory + "/fixture.txt", "temporary\n")) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "existing nested directory", "Preparing an existing nested directory recreates it", First.PrepareDirectory("nested")) && Passed;
+  Passed = EvaluateFalse("std::filesystem::exists()", "removed nested fixture", "Recreating a nested temporary directory removes its previous contents", std::filesystem::exists((NestedDirectory + "/fixture.txt").Data())) && Passed;
+  Passed = EvaluateTrue("std::filesystem::is_directory()", "recreated nested directory", "Recreating a nested temporary directory leaves the directory available", std::filesystem::is_directory(NestedDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "nested directory", "A nested temporary directory can be removed recursively", First.RemoveDirectory(NestedDirectory)) && Passed;
+  Passed = EvaluateFalse("std::filesystem::exists()", "nested directory", "The nested temporary directory no longer exists after removal", std::filesystem::exists(NestedDirectory.Data())) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "missing nested directory", "Removing an already absent temporary directory succeeds", First.RemoveDirectory(NestedDirectory)) && Passed;
+
+  const MString SiblingDirectory = MFile::CreateTemporaryDirectory("UTUnitTestSibling");
+  Passed = EvaluateTrue("MFile::CreateTemporaryDirectory()", "sibling directory", "A representative sibling directory can be created below the system temporary directory", SiblingDirectory.IsEmpty() == false) && Passed;
+  const MString SiblingFile = SiblingDirectory + "/outside.txt";
+  First.Silence();
+  const bool WroteSibling = First.WriteFile(SiblingFile, "unsafe\n");
+  const MString ReadSibling = First.ReadFile(SiblingFile);
+  const bool RemovedSibling = First.RemoveDirectory(SiblingDirectory);
+  const bool RemovedTraversal = First.RemoveDirectory(FirstRoot + "/../../home/andreas");
+  First.Unsilence();
+  Passed = EvaluateFalse("WriteTextFile()", "sibling file", "Writing outside the randomized private root is rejected", WroteSibling) && Passed;
+  Passed = EvaluateTrue("ReadTextFile()", "sibling file", "Reading outside the randomized private root is rejected", ReadSibling.IsEmpty()) && Passed;
+  Passed = EvaluateFalse("std::filesystem::exists()", "sibling file", "A rejected write does not create a sibling file", std::filesystem::exists(SiblingFile.Data())) && Passed;
+  Passed = EvaluateFalse("RemoveTemporaryDirectory()", "sibling directory", "A sibling directory below the system temporary directory is rejected", RemovedSibling) && Passed;
+  Passed = EvaluateFalse("RemoveTemporaryDirectory()", "traversal path", "A path escaping the randomized private root is rejected", RemovedTraversal) && Passed;
+
+  const MString Symlink = FirstRoot + "/outside_link";
+  std::error_code Error;
+  std::filesystem::create_directory_symlink(SiblingDirectory.Data(), Symlink.Data(), Error);
+  Passed = EvaluateTrue("std::filesystem::create_directory_symlink()", "outside symlink", "A representative symlink to a sibling temporary directory can be created", Error.value() == 0) && Passed;
+  First.Silence();
+  const bool WroteThroughSymlink = First.WriteFile(Symlink + "/outside.txt", "unsafe\n");
+  const bool RemovedSymlinkTarget = First.RemoveDirectory(Symlink);
+  First.Unsilence();
+  Passed = EvaluateFalse("WriteTextFile()", "outside symlink", "Writing through a symlink that resolves outside the randomized private root is rejected", WroteThroughSymlink) && Passed;
+  Passed = EvaluateFalse("RemoveTemporaryDirectory()", "outside symlink", "A symlink resolving outside the randomized private root is rejected", RemovedSymlinkTarget) && Passed;
+
+  std::filesystem::remove(Symlink.Data(), Error);
+  Passed = EvaluateTrue("std::filesystem::remove()", "sibling directory cleanup", "The representative sibling directory can be removed explicitly", std::filesystem::remove(SiblingDirectory.Data())) && Passed;
+  First.Silence();
+  const bool RemovedRootAsFile = First.RemoveFile(FirstRoot);
+  First.Unsilence();
+  Passed = EvaluateFalse("RemoveTemporaryFile()", "first randomized root", "The randomized private root cannot be removed through the file-removal helper", RemovedRootAsFile) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "first randomized root", "The first randomized private root can be removed during teardown without repeating its path", First.RemoveDirectory()) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "second randomized root", "The second randomized private root can be removed during teardown", Second.RemoveDirectory(SecondRoot)) && Passed;
+
+  const MString RecreatedRoot = First.TemporaryDirectory();
+  Passed = EvaluateFalse("GetTemporaryDirectoryName()", "recreated randomized root", "Requesting another path after teardown creates a fresh randomized private root", RecreatedRoot == FirstRoot) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryDirectory()", "recreated randomized root", "The recreated randomized private root can be removed during teardown", First.RemoveDirectory(RecreatedRoot)) && Passed;
+
+  MString DestructorRoot;
+  {
+    UnitTestProbe DestructorProbe("DestructorProbe");
+    DestructorRoot = DestructorProbe.TemporaryDirectory();
+  }
+  Passed = EvaluateFalse("~MUnitTest()", "automatic root cleanup", "Destroying a unit-test instance removes its randomized private root",
+                         std::filesystem::exists(DestructorRoot.Data())) && Passed;
+
+  UnitTestProbe RootResetProbe("RootResetProbe");
+  const MString RootResetDirectory = RootResetProbe.TemporaryDirectory();
+  const MString RootResetFile = RootResetProbe.TemporaryFile("before_reset.txt");
+  Passed = EvaluateTrue("WriteTextFile()", "root reset fixture", "A representative fixture can be written before resetting the randomized root", RootResetProbe.WriteFile(RootResetFile, "temporary\n")) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "randomized root", "Preparing the randomized root without a child name clears the entire root", RootResetProbe.PrepareDirectory()) && Passed;
+  Passed = EvaluateFalse("std::filesystem::exists()", "root reset fixture", "Resetting the randomized root removes its previous contents", std::filesystem::exists(RootResetFile.Data())) && Passed;
+  Passed = EvaluateTrue("std::filesystem::is_directory()", "randomized root", "Resetting the randomized root leaves the root directory available", std::filesystem::is_directory(RootResetDirectory.Data())) && Passed;
+  {
+    // The root is the same directory as before, so that the lock which the test driver respects is still on it
+    const int RootLock = open(RootResetDirectory.Data(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    const bool Locked = (RootLock >= 0 && flock(RootLock, LOCK_EX | LOCK_NB) != 0);
+    if (RootLock >= 0) {
+      close(RootLock);
+    }
+    Passed = EvaluateTrue("PrepareTemporaryDirectory()", "root lock", "Resetting the randomized root keeps the lock of the running test on it", Locked) && Passed;
+  }
+
+  UnitTestProbe ValidationProbe("ValidationProbe");
+  ValidationProbe.Silence();
+  const MString EmptyFileName = ValidationProbe.TemporaryFile("");
+  const MString InvalidBackslash = ValidationProbe.TemporaryDirectory("nested\\directory");
+  // This is rejected by the empty-root guard before path resolution. The
+  // representative literal path is intentionally irrelevant.
+  const bool RemovedBeforeRootCreation = ValidationProbe.RemoveFile("/tmp/UTUnitTest_pre_root.txt");
+  ValidationProbe.Unsilence();
+  Passed = EvaluateTrue("GetTemporaryFileName()", "empty file name", "An empty temporary file name is rejected", EmptyFileName.IsEmpty()) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "backslash name", "Temporary directory names containing a backslash are rejected", InvalidBackslash.IsEmpty()) && Passed;
+  Passed = EvaluateFalse("RemoveTemporaryFile()", "pre-root path", "Removing a temporary file before creating a randomized root is rejected", RemovedBeforeRootCreation) && Passed;
+
+  UnitTestProbe ThreadProbe("ThreadProbe");
+  std::vector<MString> ThreadPaths[2];
+  std::atomic<unsigned int> ReadyThreads{0};
+  std::atomic<bool> StartThreads{false};
+  std::thread Threads[2];
+  for (unsigned int t = 0; t < 2; ++t) {
+    Threads[t] = std::thread([&ThreadProbe, &ThreadPaths, &ReadyThreads, &StartThreads, t]() {
+      ++ReadyThreads;
+      while (StartThreads.load() == false) {
+        std::this_thread::yield();
+      }
+      for (unsigned int i = 0; i < 100; ++i) {
+        ThreadPaths[t].push_back(ThreadProbe.TemporaryFile(MString("thread_") + t + "_" + i + ".txt"));
+      }
+    });
+  }
+  while (ReadyThreads.load() < 2) {
+    std::this_thread::yield();
+  }
+  StartThreads.store(true);
+  for (unsigned int t = 0; t < 2; ++t) {
+    Threads[t].join();
+  }
+  const MString ThreadRoot = ThreadProbe.TemporaryDirectory();
+  for (unsigned int t = 0; t < 2; ++t) {
+    bool PathsUseSharedRoot = ThreadPaths[t].size() == 100;
+    for (const MString& Path: ThreadPaths[t]) {
+      PathsUseSharedRoot = Path.BeginsWith(ThreadRoot + "/") && PathsUseSharedRoot;
+    }
+    Passed = EvaluateTrue("GetTemporaryFileName()", MString("concurrent thread ") + t, "Every concurrently generated temporary path remains below the shared randomized root", PathsUseSharedRoot) && Passed;
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+  UTUnitTest Test;
+  if (Test.Run() == true) {
+    return 0;
+  }
+  return 1;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+

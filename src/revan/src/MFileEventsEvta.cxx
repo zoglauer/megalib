@@ -105,6 +105,9 @@ bool MFileEventsEvta::Open(MString FileName, unsigned int Way, bool IsBinary)
   // Open the file, check if the type is correct
 
   m_IncludeFileUsed = false;
+  if (m_IncludeFile != nullptr) {
+    delete m_IncludeFile;
+  }
   m_IncludeFile = new MFileEventsEvta(m_Geometry);
   m_IncludeFile->SetIsIncludeFile(true);
   
@@ -210,7 +213,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
     if (RE == nullptr) {
       m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
-      m_IncludeFile->Close();
+      CloseIncludeFile();
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
@@ -283,6 +286,10 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
         m_IsFirstEvent = false;
       } else {
         if (m_IsFirstEvent == false) {
+          if ((Line[0] == 'E' && Line[1] == 'N') ||
+              (Line[0] == 'N' && Line[1] == 'F')) {
+            ReadFooter(true);
+          }
           UpdateObservationTimes(Event);
           return Event;
         } else {
@@ -303,7 +310,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
         MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
         if (RE == 0) {
           m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
-          m_IncludeFile->Close();
+          CloseIncludeFile();
           m_IncludeFileUsed = false;
         } else {
           UpdateObservationTimes(RE);
@@ -374,7 +381,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
     if (RE == nullptr) {
       m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
-      m_IncludeFile->Close();
+      CloseIncludeFile();
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
@@ -408,7 +415,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
           Event = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
           if (Event == nullptr) {
             m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
-            m_IncludeFile->Close();
+            CloseIncludeFile();
             m_IncludeFileUsed = false;
             break;
           } else {

@@ -56,7 +56,6 @@ using namespace std;
 #include "MGUIGeometry.h"
 #include "MTimer.h"
 #include "MMuonEvent.h"
-#include "MFileManager.h"
 #include "MGUIERAlgorithm.h"
 #include "MGUIOptionsCoincidence.h"
 #include "MGUIOptionsHitClustering.h"
@@ -1079,13 +1078,21 @@ void MGUIEviewMain::Print()
   Types[8] = 0;
   Types[9] = 0;
 
-  MString FileName = "Image.eps";
-  MFileManager FM;
-  if (FM.SelectFileToSave(FileName, Types) == false) {
+  TGFileInfo Info;
+  Info.fFileTypes = (const char **) Types;
+  Info.fIniDir = StrDup(gSystem->DirName("Image.eps"));
+  new TGFileDialog(gClient->GetRoot(), this, kFDSave, &Info);
+
+  delete [] Types;
+
+  if ((char *) Info.fFilename == 0) {
     return;
   }
 
-  delete [] Types;
+  MString FileName = Info.fFilename;
+  if (FileName.IsEmpty() == true) {
+    return;
+  }
 
   m_Canvas->SaveAs(FileName);
 }

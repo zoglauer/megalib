@@ -58,7 +58,6 @@ class MUnitTest
   // public interface:
  public:
   //! Construct a named unit test
-  //! For the name, use only ASCII letters, digits, '_' and '-' so the name can also serve as the temporary-directory basename, otherwise temporary files use c_FallbackTemporaryBaseName
   MUnitTest(const MString& Name);
   //! Default destuctor 
   virtual ~MUnitTest();
@@ -68,9 +67,9 @@ class MUnitTest
   {
     if (Output != Truth) {
       ostringstream ExpectedStream;
-      ExpectedStream << setprecision(numeric_limits<long double>::max_digits10) << Truth;
+      ExpectedStream<<setprecision(numeric_limits<long double>::max_digits10)<<Truth;
       ostringstream OutputStream;
-      OutputStream << setprecision(numeric_limits<long double>::max_digits10) << Output;
+      OutputStream<<setprecision(numeric_limits<long double>::max_digits10)<<Output;
       RegisterFailure(Function, Input, Description, ExpectedStream.str(), OutputStream.str());
       return false;
     }
@@ -96,9 +95,9 @@ class MUnitTest
   {
     if (std::isfinite(Output) == false || std::isfinite(Truth) == false || fabs(Output - Truth) > Tolerance) {
       ostringstream ExpectedStream;
-      ExpectedStream << setprecision(numeric_limits<long double>::max_digits10) << Truth << " +/- " << Tolerance;
+      ExpectedStream<<setprecision(numeric_limits<long double>::max_digits10)<<Truth<<" +/- "<<Tolerance;
       ostringstream OutputStream;
-      OutputStream << setprecision(numeric_limits<long double>::max_digits10) << Output;
+      OutputStream<<setprecision(numeric_limits<long double>::max_digits10)<<Output;
       RegisterFailure(Function, Input, Description, ExpectedStream.str(), OutputStream.str());
       return false;
     }
@@ -107,6 +106,12 @@ class MUnitTest
     return true;
   }
 
+  //! Make merr look like mout
+  MString RemoveErrorMessageContext(const MString& Text) const;
+
+  //! Return the larger of two values or NaN if one of them is NaN
+  double GetMaximum(double First, double Second) const;
+
   //! Evaluate two vectors within a given tolerance: the distance between them must not exceed Tolerance, all components must be finite
   bool EvaluateVectorNear(MString Function, MString Input, MString Description, const MVector& Output, const MVector& Truth, double Tolerance);
 
@@ -114,7 +119,7 @@ class MUnitTest
   bool EvaluateRotationNear(MString Function, MString Input, MString Description, const MRotation& Output, const MRotation& Truth, double Tolerance);
 
   //! Evaluate the expected size of a container or collection
-  template <typename T> bool EvaluateSize(MString Function, T Input, MString Description, size_t Output, size_t Truth)
+  template <typename T> bool EvaluateSize(MString Function, T Input, MString Description, unsigned int Output, unsigned int Truth)
   {
     return Evaluate(Function, Input, Description, Output, Truth);
   }
@@ -129,20 +134,20 @@ class MUnitTest
       return true;
     } catch (const std::exception& Exception) {
       ostringstream ExpectedStream;
-      ExpectedStream << "exception of type " << typeid(TException).name();
+      ExpectedStream<<"exception of type "<<typeid(TException).name();
       ostringstream OutputStream;
-      OutputStream << "std::exception: " << Exception.what();
+      OutputStream<<"std::exception: "<<Exception.what();
       RegisterFailure(Function, Input, Description, ExpectedStream.str(), OutputStream.str());
       return false;
     } catch (...) {
       ostringstream ExpectedStream;
-      ExpectedStream << "exception of type " << typeid(TException).name();
+      ExpectedStream<<"exception of type "<<typeid(TException).name();
       RegisterFailure(Function, Input, Description, ExpectedStream.str(), "unknown exception");
       return false;
     }
 
     ostringstream ExpectedStream;
-    ExpectedStream << "exception of type " << typeid(TException).name();
+    ExpectedStream<<"exception of type "<<typeid(TException).name();
     RegisterFailure(Function, Input, Description, ExpectedStream.str(), "no exception");
     return false;
   }
@@ -167,9 +172,8 @@ class MUnitTest
 
   //! Summarize the test run
   void Summarize();
-
-  //! Fallback basename used when a unit-test name cannot safely name a temporary directory
-  static const MString c_FallbackTemporaryBaseName;
+  //! Read the numbers of passed and failed tests from the output of Summarize (the last "Passed tests: N" followed by "Failed tests: M"), return false if there are none
+  static bool ParseSummary(const MString& Output, unsigned int& Passed, unsigned int& Failed);
 
   // protected methods:
  protected:
@@ -207,7 +211,7 @@ class MUnitTest
   //! Return a process-local temporary directory name for this test; the directory is not created
   MString GetTemporaryDirectoryName(const MString& Name = "") const;
 
-  //! Remove and recreate a process-local temporary directory for this test
+  //! Remove and recreate a process-local temporary directory for this test, the root itself (no name) is only cleared
   bool PrepareTemporaryDirectory(const MString& Name = "") const;
 
   //! Remove a temporary file only if it is inside this test's randomized temporary root
@@ -230,17 +234,23 @@ class MUnitTest
 
   // private methods:
  private:
+  //! Release the lock on the temporary root
+  void ReleaseTemporaryRootLock() const;
   //! Create this test's randomized private temporary root if necessary
   bool CreateTemporaryRootDirectory() const;
 
   //! Return the randomized private temporary root for this test
   MString GetTemporaryRootDirectory() const;
+  //! The log directory name 
+  MString GetLogDirectory() const { return m_LogDirectory; }
+  //! Read the log directory from the testing settings file
+  void LoadLogDirectory();
 
   //! Return true only for a plain child file or directory name without path components; see IsValidTemporaryBaseName() for the root-basename rule
   bool IsValidTemporaryPathName(const MString& Name, bool AllowEmpty = false) const;
 
-  //! Return true only if Name is suitable as the unit-test-derived temporary directory basename; see IsValidTemporaryPathName() for child names
-  bool IsValidTemporaryBaseName(const MString& Name) const;
+  //! Return the basename of the temporary directory: the characters of the name which are ASCII letters, digits, '_' and '-', or "UnitTest" if there are none
+  MString CreateTemporaryDirectoryBaseName(const MString& Name) const;
 
   //! Return true only if Path resolves inside this test's randomized temporary root
   bool IsSafeTemporaryPath(const MString& Path, bool AllowRoot) const;
@@ -271,6 +281,10 @@ class MUnitTest
    unsigned int m_NumberOfFailedTests;
    //! Randomized private temporary root, created lazily
    mutable MString m_TemporaryRootDirectory;
+   //! The open temporary root with a lock on it as long as the root exists: the test driver does not remove the root of a running test (-1: none)
+   mutable int m_TemporaryRootLock;
+   //! The log directory
+   MString m_LogDirectory;
    //! Serialize lazy temporary-root creation and guarded filesystem operations
    mutable recursive_mutex m_TemporaryPathMutex;
 

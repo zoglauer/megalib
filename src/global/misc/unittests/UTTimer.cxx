@@ -1,0 +1,190 @@
+/*
+ * UTTimer.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+
+// MEGAlib:
+#include "MTimer.h"
+#include "MTime.h"
+#include "MUnitTest.h"
+
+
+//! Unit test class for the MTimer helper
+class UTTimer : public MUnitTest
+{
+public:
+  //! Default constructor
+  UTTimer() : MUnitTest("UTTimer") {}
+  //! Default destructor
+  virtual ~UTTimer() {}
+
+  //! Run all tests
+  virtual bool Run();
+
+private:
+  //! Test construction, assignment and reset helpers
+  bool TestConstructionAndReset();
+  //! Test pause and continue behavior
+  bool TestPauseAndContinue();
+  //! Test timeout behavior
+  bool TestTimeouts();
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Run all tests
+bool UTTimer::Run()
+{
+  bool AllPassed = true;
+
+  AllPassed = TestConstructionAndReset() && AllPassed;
+  AllPassed = TestPauseAndContinue() && AllPassed;
+  AllPassed = TestTimeouts() && AllPassed;
+
+  Summarize();
+
+  return AllPassed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test construction, assignment and reset helpers
+bool UTTimer::TestConstructionAndReset()
+{
+  bool Passed = true;
+
+  MTimer Running;
+  MTime::BusyWait(2000);
+  // Check the elapsed time after a 2 ms busy wait - the factor 0.99 allows for the clock rate difference
+  Passed = EvaluateTrue("MTimer(bool)", "default running", "The default constructor starts the timer immediately", Running.GetElapsed() >= 0.99*0.002) && Passed;
+
+  MTimer Paused(false);
+  MTime::BusyWait(2000);
+  Passed = EvaluateNear("MTimer(false)", "paused constructor", "Constructing with Start = false leaves the timer paused at zero", Paused.GetElapsed(), 0.0, 1e-12) && Passed;
+
+  MTimer WithTimeout(0.25);
+  Passed = EvaluateNear("MTimer(double)", "timeout constructor", "The timeout constructor stores the requested timeout", WithTimeout.GetTimeOut(), 0.25, 1e-12) && Passed;
+
+  MTimer Copy(WithTimeout);
+  Passed = EvaluateNear("MTimer(const MTimer&)", "copy timeout", "The copy constructor preserves the timeout value", Copy.GetTimeOut(), 0.25, 1e-12) && Passed;
+
+  MTimer Assigned(false);
+  Assigned = WithTimeout;
+  Passed = EvaluateNear("operator=", "assignment timeout", "Assignment preserves the timeout value", Assigned.GetTimeOut(), 0.25, 1e-12) && Passed;
+
+  Paused.Start();
+  MTime::BusyWait(2000);
+  Passed = EvaluateTrue("Start()", "start after paused", "Start begins timing from zero on a paused timer", Paused.GetElapsed() >= 0.99*0.002) && Passed;
+
+  double BeforeReset = Paused.GetElapsed();
+  Paused.Reset();
+  double AfterReset = Paused.GetElapsed();
+  Passed = EvaluateTrue("Reset()", "restart", "Reset restarts timing from approximately zero", AfterReset < BeforeReset) && Passed;
+
+  Paused.Clear();
+  Passed = EvaluateNear("Clear()", "elapsed", "Clear resets the elapsed time to zero", Paused.GetElapsed(), 0.0, 1e-12) && Passed;
+  Passed = EvaluateNear("Clear()", "timeout", "Clear resets the timeout to zero", Paused.GetTimeOut(), 0.0, 1e-12) && Passed;
+
+  MTimer AliasTimer;
+  MTime::BusyWait(2000);
+  AliasTimer.Pause(); // A paused timer returns a fixed value
+  Passed = EvaluateNear("ElapsedTime()", "alias of GetElapsed", "ElapsedTime returns the same value as GetElapsed", AliasTimer.ElapsedTime(), AliasTimer.GetElapsed(), 1e-12) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test pause and continue behavior
+bool UTTimer::TestPauseAndContinue()
+{
+  bool Passed = true;
+
+  MTimer Timer;
+  MTime::BusyWait(3000);
+  Timer.Pause();
+  double PausedValue = Timer.GetElapsed();
+  MTime::BusyWait(3000);
+  Passed = EvaluateNear("Pause()", "frozen elapsed time", "Pause freezes the elapsed time while the timer is paused", Timer.GetElapsed(), PausedValue, 1e-12) && Passed;
+
+  Timer.Continue();
+  MTime::BusyWait(3000);
+  Passed = EvaluateTrue("Continue()", "resume", "Continue resumes timing after a pause", Timer.GetElapsed() - PausedValue >= 0.99*0.003) && Passed;
+
+  Timer.Pause();
+  double AfterFirstPause = Timer.GetElapsed();
+  MTime::BusyWait(2000);
+  Timer.Pause();
+  Passed = EvaluateNear("Pause()", "idempotent", "Calling Pause twice leaves the elapsed time unchanged", Timer.GetElapsed(), AfterFirstPause, 1e-12) && Passed;
+
+  Timer.Continue();
+  Timer.Continue();
+  MTime::BusyWait(2000);
+  Passed = EvaluateTrue("Continue()", "idempotent", "Calling Continue twice keeps the timer running", Timer.GetElapsed() - AfterFirstPause >= 0.99*0.002) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test timeout behavior
+bool UTTimer::TestTimeouts()
+{
+  bool Passed = true;
+
+  MTimer NoTimeout;
+  Passed = EvaluateFalse("HasTimedOut()", "default timeout", "A timer without a positive timeout never times out", NoTimeout.HasTimedOut()) && Passed;
+
+  NoTimeout.SetTimeOut(0.01);
+  Passed = EvaluateNear("SetTimeOut()", "store timeout", "SetTimeOut stores the requested timeout", NoTimeout.GetTimeOut(), 0.01, 1e-12) && Passed;
+  MTime::BusyWait(20000); // 20 ms is twice the 10 ms time out
+  Passed = EvaluateTrue("HasTimedOut()", "configured timeout", "HasTimedOut reports true after the configured timeout elapsed", NoTimeout.HasTimedOut()) && Passed;
+
+  MTimer ExplicitTimeout;
+  ExplicitTimeout.SetTimeOut(10.0);
+  MTime::BusyWait(2000); // 2 ms is far below the 0.5 s override and the 10 s time out
+  Passed = EvaluateFalse("HasTimedOut()", "custom override", "HasTimedOut respects the explicit Seconds override", ExplicitTimeout.HasTimedOut(0.5)) && Passed;
+  MTime::BusyWait(600000); // 0.6 s is above the 0.5 s override but far below the 10 s time out
+  Passed = EvaluateTrue("HasTimedOut()", "custom override", "HasTimedOut with an explicit Seconds value ignores the stored timeout", ExplicitTimeout.HasTimedOut(0.5)) && Passed;
+
+  MTimer NegativeTimeout;
+  NegativeTimeout.SetTimeOut(-1.0);
+  MTime::BusyWait(2000);
+  Passed = EvaluateFalse("HasTimedOut()", "negative timeout", "A non-positive timeout disables timeout detection", NegativeTimeout.HasTimedOut()) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+  UTTimer Test;
+  return Test.Run() == true ? 0 : 1;
+}

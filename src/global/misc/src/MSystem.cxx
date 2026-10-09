@@ -30,14 +30,25 @@
 #include "MSystem.h"
 
 // Standard libs:
+#include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <csignal>
 #include <cstdlib>
 #include <cerrno>
+#include <cstdint>
+#include <cstdio>
 #include <ctime>
+#include <vector>
+
+// POSIX libs:
 #include <dlfcn.h>
 #include <fcntl.h>
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#include <mach/mach.h>
+#endif
 #include <sys/wait.h>
 #include <unistd.h>
 using namespace std;
@@ -46,6 +57,7 @@ using namespace std;
 #include "TSystem.h"
 
 // MEGAlib libs:
+#include "MFile.h"
 #include "MStreams.h"
 
 // Special libs:
@@ -237,41 +249,160 @@ bool MSystem::HasDisplay()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MSystem::RunChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName)
+//! Return the argument quoted for a POSIX shell: it is one word whatever it contains (spaces, quotes, $, backticks, ...), the empty string gives ''
+MString MSystem::GetShellQuoted(const MString& Argument)
 {
-  pid_t Child = fork();
-  if (Child == 0) {
-    if (OutputFileName.IsEmpty() == false) {
-      int Log = open(OutputFileName.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  // One shell word: in single quotes, a single quote inside becomes '\''
+  MString Quoted = "'";
+  for (unsigned int c = 0; c < Argument.Length(); ++c) {
+    if (Argument[c] == '\'') {
+      Quoted += "'\\''";
+    } else {
+      Quoted += Argument[c];
+    }
+  }
+  Quoted += "'";
+  return Quoted;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Launch a program in the background and return its process ID, or -1 on failure
+//! With OwnProcessGroup it starts a new process group, otherwise it stays in the process group of the caller
+//! The arguments are a shell fragment and may contain redirects, &&, quoted words, etc.
+//! The output (stdout and stderr) goes to the output file
+//! The program runs in the working directory if one is given
+pid_t MSystem::StartProcessInBackground(const MString& Executable, const MString& Arguments, const MString& OutputFile, const MString& WorkingDirectory, bool OwnProcessGroup)
+{
+  // Everything which allocates memory is done before the fork: the process may have other threads
+  const MString Command = GetShellQuoted(Executable) + " " + Arguments;
+
+  pid_t Process = fork();
+  if (Process < 0) {
+    return -1;
+  }
+  if (Process == 0) {
+    if (OwnProcessGroup == true) {
+      setpgid(0, 0);
+    }
+    if (WorkingDirectory.IsEmpty() == false && chdir(WorkingDirectory.Data()) != 0) {
+      _exit(126);
+    }
+    if (OutputFile.IsEmpty() == false) {
+      int Log = open(OutputFile.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
       if (Log >= 0) {
         dup2(Log, STDOUT_FILENO);
         dup2(Log, STDERR_FILENO);
         close(Log);
       }
     }
-
-    MString Command = Executable + " " + Argument;
     execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(0));
-    // If execl() returns, the child failed to start the command. Use _exit()
+    // If execl() returns, the process failed to start the command. Use _exit()
     // after fork() to avoid running parent-owned C++ cleanup/stdio flushing.
     // Exit code 127 is the shell convention for "command could not be run".
     _exit(127);
   }
 
-  if (Child < 0) {
-    return -1;
+  if (OwnProcessGroup == true) {
+    setpgid(Process, Process); // Also set here to avoid a race with the new process
   }
-
-  int ChildStatus = 0;
-  if (waitpid(Child, &ChildStatus, 0) < 0) {
-    return -1;
-  }
-
-  return ChildStatus;
+  return Process;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+//! Wait for a background process and return its raw wait status (see WIFEXITED), or -1 on failure.
+//! After the time out in seconds (0: none), or as soon as the stop flag (if given) is set, the process is killed, with its group if it has its own, otherwise with its descendants (best effort)
+int MSystem::WaitForBackgroundProcess(pid_t Process, unsigned int TimeOut, const volatile sig_atomic_t* Stop)
+{
+  const chrono::steady_clock::time_point Start = chrono::steady_clock::now();
+  bool Killed = false;
+  while (true) {
+    int Status = 0;
+    const pid_t Done = waitpid(Process, &Status, WNOHANG);
+    if (Done == Process) {
+      return Status;
+    }
+    if (Done < 0 && errno != EINTR) {
+      return -1;
+    }
+    if (Killed == false) {
+      const double Elapsed = chrono::duration<double>(chrono::steady_clock::now() - Start).count();
+      if ((TimeOut > 0 && Elapsed > TimeOut) || (Stop != nullptr && *Stop != 0)) {
+        // Kill the whole group if the process leads its own, otherwise the process and its descendants
+        if (getpgid(Process) == Process) {
+          kill(-Process, SIGKILL);
+        } else {
+          KillProcessTree(Process);
+        }
+        Killed = true;
+      }
+    }
+    usleep(10000);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Kill the process and all its descendants, the descendants first (best effort: reparented or newly started ones can survive)
+void MSystem::KillProcessTree(pid_t Process)
+{
+  if (Process <= 0) { // Zero and negative values would address groups
+    return;
+  }
+
+  // Freeze the process - it cannot start new children while we look for them
+  kill(Process, SIGSTOP);
+
+  // Read the process table with POSIX ps - the C++ library cannot list processes
+  FILE* Table = popen("ps -A -o pid= -o ppid=", "r");
+  if (Table == nullptr) {
+    merr<<"KillProcessTree: cannot read the process table, only process "<<Process<<" is killed"<<endl;
+  } else {
+    vector<pid_t> Children;
+    long Id = 0;
+    long Parent = 0;
+    while (fscanf(Table, "%ld %ld", &Id, &Parent) == 2) {
+      if (Parent == Process) {
+        Children.push_back(static_cast<pid_t>(Id));
+      }
+    }
+    bool ReadFailed = false;
+    if (ferror(Table) != 0) {
+      ReadFailed = true;
+    }
+    const int Status = pclose(Table); // Always close, also after a read error
+    if (ReadFailed == true || Status != 0) {
+      merr<<"KillProcessTree: reading the process table failed, descendants of "<<Process<<" may survive"<<endl;
+    }
+    // Kill the children first - once the parent is dead they are reparented and cannot be found any more
+    for (pid_t Child: Children) {
+      KillProcessTree(Child);
+    }
+  }
+
+  kill(Process, SIGKILL);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Start a program, wait for it and return its raw wait status, or -1 on failure (see StartProcessInBackground and WaitForBackgroundProcess)
+int MSystem::RunProcess(const MString& Executable, const MString& Arguments, const MString& OutputFile, const MString& WorkingDirectory, unsigned int TimeOut)
+{
+  const pid_t Process = StartProcessInBackground(Executable, Arguments, OutputFile, WorkingDirectory);
+  if (Process < 0) {
+    return -1;
+  }
+  return WaitForBackgroundProcess(Process, TimeOut);
+}
 
 
 void MSystem::Reset()
@@ -288,178 +419,106 @@ void MSystem::Reset()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Get the free RAM in MB, return false and set it to -1 if unknown
 bool MSystem::FreeMemory(int &Free)
 {
-#ifdef ___UNIX___
+  bool Success = GetMemory();
+  Free = m_FreeRAM;
 
-  /*
-   * The amount of total and used memory is read from the /proc/meminfo.
-   * It also contains the information about the swap space.
-   * The 'file' looks like this:
-   *
-   *         total:    used:    free:  shared: buffers:  cached:
-   * Mem:  64593920 60219392  4374528 49426432  6213632 33689600
-   * Swap: 69636096   761856 68874240
-   * MemTotal:     63080 kB
-   * MemFree:       4272 kB
-   * MemShared:    48268 kB
-   * Buffers:       6068 kB
-   * Cached:       32900 kB
-   * SwapTotal:    68004 kB
-   * SwapFree:     67260 kB
-   */
-
-  int total, used, mfree, buffers, cached;
-  
-  FILE* meminfo;
-  
-  if ((meminfo = fopen("/proc/meminfo", "r")) == NULL) {
-    Warning("bool MSystem::FreeMemory(int &Free)",
-            "Cannot open file \'/proc/meminfo\'!\n"
-            "The kernel needs to be compiled with support\n"
-            "for /proc filesystem enabled!");
-    Free = -1;
-    return false;
-  }
-
-  if (fscanf(meminfo, "%*[^\n]\n") == EOF) {
-    Warning("bool MSystem::FreeMemory(int &Free)",
-            "Cannot read memory info file \'/proc/meminfo\'!\n");
-    Free = -1;
-    fclose(meminfo);
-    return false;
-  }
-
-  /*
-   * The following works only on systems with 4GB or less. Currently this
-   * is no problem but what happens if Linus changes his mind?
-   */
-  if (fscanf(meminfo, "%*s %d %d %d %*d %d %d\n",
-             &total, &used, &mfree, &buffers, &cached) != 5) {
-    Free = -1;
-    fclose(meminfo);
-    return false;
-  }
-  
-  total /= 1024;
-  mfree /= 1024;
-  used /= 1024;
-  buffers /= 1024;
-  cached /= 1024;
-  
-  fclose(meminfo);
-  
-  Free = mfree + buffers + cached;
-  return true;
-
-#else
-
-  // If we do not have a Linux-system
-  Free = -1;
-  return false;
-
-#endif
+  return Success;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Fill the RAM and swap values in MB (rounded down), return false and set them to -1 if unknown
 bool MSystem::GetMemory()
 {
-  // Fill all memory variables 
-  // Return false if an error occurred
+  Reset();
 
-  // Check if it's update time:
-  //cout<<(gSystem->Now() - m_LastCheck).AsString()<<"!"<<m_CheckInterval.AsString()<<endl;
-  //if ((long) (gSystem->Now() - m_LastCheck) < (long) m_CheckInterval) {
-  //cout<<(gSystem->Now() - m_LastCheck).AsString()<<"!"<<m_CheckInterval.AsString()<<endl;
-  //return true;
-  //} 
-  //cout<<gSystem->Now().AsString()<<"!"<<m_LastCheck.AsString()<<"!"<<m_CheckInterval.AsString()<<endl;
+#if defined(__APPLE__)
 
-#ifdef ___UNIX___
-
-  /*
-   * The amount of total and used memory is read from the /proc/meminfo.
-   * It also contains the information about the swap space.
-   * The 'file' looks like this:
-   *
-   *         total:    used:    free:  shared: buffers:  cached:
-   * Mem:  64593920 60219392  4374528 49426432  6213632 33689600
-   * Swap: 69636096   761856 68874240
-   * MemTotal:     63080 kB
-   * MemFree:       4272 kB
-   * MemShared:    48268 kB
-   * Buffers:       6068 kB
-   * Cached:       32900 kB
-   * SwapTotal:    68004 kB
-   * SwapFree:     67260 kB
-   */
-
-  int total, used, mfree, buffers, cached;
-  
-  FILE* meminfo;
-  
-  if ((meminfo = fopen("/proc/meminfo", "r")) == NULL) {
-    Warning("bool MSystem::FreeMemory(int &Free)",
-            "Cannot open file \'/proc/meminfo\'!\n"
-            "The kernel needs to be compiled with support\n"
-            "for /proc filesystem enabled!");
-    Reset();
+  // Get the installed RAM (bytes):
+  uint64_t MemSize = 0;
+  size_t MemSizeLength = sizeof(MemSize);
+  if (sysctlbyname("hw.memsize", &MemSize, &MemSizeLength, nullptr, 0) != 0) {
+    merr<<"Unable to read hw.memsize"<<endl;
     return false;
   }
 
-  if (fscanf(meminfo, "%*[^\n]\n") == EOF) {
-    Warning("bool MSystem::FreeMemory(int &Free)",
-            "Cannot read memory info file \'/proc/meminfo\'!\n");
-    Reset();
-    fclose(meminfo);
+  // Get the free RAM - free plus inactive pages:
+  mach_port_t Host = mach_host_self();
+  vm_size_t PageSize = 0;
+  vm_statistics64_data_t VM;
+  mach_msg_type_number_t VMCount = HOST_VM_INFO64_COUNT;
+  kern_return_t PageSizeResult = host_page_size(Host, &PageSize);
+  kern_return_t StatisticsResult = host_statistics64(Host, HOST_VM_INFO64, reinterpret_cast<host_info64_t>(&VM), &VMCount);
+  // Release the host port - mach_host_self() added a send right
+  mach_port_deallocate(mach_task_self(), Host);
+  if (PageSizeResult != KERN_SUCCESS || StatisticsResult != KERN_SUCCESS) {
+    merr<<"Unable to read the virtual memory statistics"<<endl;
+    return false;
+  }
+  uint64_t FreeBytes = (static_cast<uint64_t>(VM.free_count) + VM.inactive_count) * PageSize;
+
+  // Get the swap (bytes):
+  struct xsw_usage SwapUsage;
+  size_t SwapUsageLength = sizeof(SwapUsage);
+  if (sysctlbyname("vm.swapusage", &SwapUsage, &SwapUsageLength, nullptr, 0) != 0) {
+    merr<<"Unable to read vm.swapusage"<<endl;
     return false;
   }
 
-  // Read the RAM information:
-  if (fscanf(meminfo, "%*s %d %d %d %*d %d %d\n",
-             &total, &used, &mfree, &buffers, &cached) != 5) {
-    Reset();
-    fclose(meminfo);
+  m_RAM = MemSize/1048576;
+  m_FreeRAM = FreeBytes/1048576;
+  m_Swap = SwapUsage.xsw_total/1048576;
+  m_FreeSwap = SwapUsage.xsw_avail/1048576;
+  return true;
+
+#elif defined(__linux__)
+
+  FILE* MemInfo = fopen("/proc/meminfo", "r");
+  if (MemInfo == nullptr) {
+    merr<<"Cannot open file '/proc/meminfo'!"<<endl;
     return false;
-    merr<<"Unable to read /proc/meminfo... What Kernel are you using???"<<endl;
   }
 
-  total /= 1048576;
-  mfree /= 1048576;
-  used /= 1048576;
-  buffers /= 1048576;
-  cached /= 1048576;
+  // Read the values (kB), -1: not found:
+  long MemTotal = -1, MemFree = -1, MemAvailable = -1, Buffers = -1, Cached = -1, SwapTotal = -1, SwapFree = -1;
+  char Line[256];
+  while (fgets(Line, sizeof(Line), MemInfo) != nullptr) {
+    char Name[64];
+    long Value = 0;
+    if (sscanf(Line, "%63[^:]: %ld", Name, &Value) != 2) continue;
+    MString Key(Name);
+    if (Key == "MemTotal") MemTotal = Value;
+    else if (Key == "MemFree") MemFree = Value;
+    else if (Key == "MemAvailable") MemAvailable = Value;
+    else if (Key == "Buffers") Buffers = Value;
+    else if (Key == "Cached") Cached = Value;
+    else if (Key == "SwapTotal") SwapTotal = Value;
+    else if (Key == "SwapFree") SwapFree = Value;
+  }
+  fclose(MemInfo);
 
-  m_RAM = total;
-  m_FreeRAM = mfree + buffers + cached;
-
-  // Read the swap information:
-  if (fscanf(meminfo, "%*s %d %d %d\n",
-             &total, &used, &mfree) != 3) {
-    Reset();
-    fclose(meminfo);
+  if (MemTotal < 0 || MemFree < 0 || SwapTotal < 0 || SwapFree < 0) {
+    merr<<"Unable to read the memory values from /proc/meminfo"<<endl;
     return false;
-    merr<<"Unable to read /proc/meminfo... What Kernel are you using???"<<endl;    
   }
 
-  total /= 1048576;
-  mfree /= 1048576;
-  used /= 1048576;
+  // Free RAM - MemAvailable if the kernel has it (>= 3.14), otherwise free plus buffers and cache:
+  long FreeRAM = MemFree + (Buffers > 0 ? Buffers : 0) + (Cached > 0 ? Cached : 0);
+  if (MemAvailable >= 0) FreeRAM = MemAvailable;
 
-  m_Swap = total;
-  m_FreeSwap = mfree;
-  
-  fclose(meminfo);
-  
+  m_RAM = MemTotal/1024;
+  m_FreeRAM = FreeRAM/1024;
+  m_Swap = SwapTotal/1024;
+  m_FreeSwap = SwapFree/1024;
   return true;
 
 #else
 
-  // If we do not have a Linux-system
-  Reset();
   return false;
 
 #endif
@@ -537,6 +596,34 @@ bool MSystem::GetTime(long int& Seconds, long int& NanoSeconds)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the model name of the CPU, empty if it is unknown
+MString MSystem::GetCpuModel()
+{
+#ifdef __APPLE__
+  char Brand[256];
+  size_t Size = sizeof(Brand);
+  if (sysctlbyname("machdep.cpu.brand_string", Brand, &Size, nullptr, 0) == 0) {
+    return Brand;
+  }
+  return "";
+#else
+  ifstream In("/proc/cpuinfo");
+  string Line;
+  while (getline(In, Line)) {
+    if (Line.compare(0, 10, "model name") == 0) {
+      size_t Colon = Line.find(':');
+      if (Colon != string::npos) {
+        return Line.substr(Colon + 1).c_str();
+      }
+    }
+  }
+  return "";
+#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 int MSystem::GetRAM()
 {
   // Return the amount of installed RAM or -1 if it can not be detrmined
@@ -602,10 +689,7 @@ bool MSystem::GetProcessInfo(int ProcessID)
   // Open the file - c-mode - sorry...
   FILE *PIDStatus;
   if ((PIDStatus = fopen(S.str().c_str(), "r")) == 0) {
-    Warning("bool MSystem::GetProcessInfo(int ProcessID)",
-            "Cannot open file \'%s\'!\n"
-            "The kernel needs to be compiled with support\n"
-            "for /proc filesystem enabled!", S.str().c_str());
+    merr<<"Cannot open file '"<<S.str()<<"'! The kernel needs to be compiled with support for the /proc filesystem"<<endl;
 
     return false;
   }
@@ -724,9 +808,7 @@ bool MSystem::GetFileSuffix(MString Filename, MString* Suffix)
 
 bool MSystem::GetFileDirectory(MString Filename, MString* Directory)
 {
-  //  *Directory = MString(Filename.Replace(0, Filename.Last('/'), ""));
-  *Directory = MString(gSystem->BaseName((char *) Filename.Data()));
-
+  *Directory = MFile::GetDirectoryName(Filename);
   return true;
 }
 
@@ -747,18 +829,7 @@ bool MSystem::GetFileWithoutSuffix(MString Filename, MString* NewFilename)
 
 bool MSystem::FileExist(MString Filename)
 {
-  // Return true if the file exists in the current directory (selected in the dialog)
-
-  if (Filename == gSystem->DirName((char *) Filename.Data())) {
-    return false;
-  }
-
-  FILE *File;
-  if ((File = fopen((char *) Filename.Data(), "r")) == NULL)
-    return false;
-
-  fclose(File);
-  return true;
+  return MFile::Exists(Filename);
 }
 
 

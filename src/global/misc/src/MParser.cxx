@@ -37,7 +37,6 @@
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
-#include "MFileManager.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -66,7 +65,7 @@ MParser::MParser(char Separator, bool AllowComposed) : MFile()
 MParser::~MParser()
 {
   // Delete this instance of MParser
-  
+
   for (unsigned int l = 0; l < m_Lines.size(); ++l) { 
     delete m_Lines[l];
   }
@@ -87,10 +86,14 @@ bool MParser::Open(MString FileName, unsigned int Way)
 
   Rewind();
   if (Way == c_Read) {
+    for (unsigned int l = 0; l < m_Lines.size(); ++l) {
+      delete m_Lines[l];
+    }
+    m_Lines.clear();
 
     MString Line;
-    while (IsGood() == true) {
-      if (ReadLine(Line) == false) break;
+    while (ReadLine(Line) == true) {
+      if (IsGood() == false && Line == "") break;
       AddLine(Line);
     }
  
@@ -158,7 +161,7 @@ bool MParser::AddLine(MString Line)
 
 MTokenizer* MParser::GetTokenizerAt(unsigned int LineNumber)
 {
-  // Return the line with nume LineNumber
+  // Return the tokenizer at line number LineNumber
 
   if (m_Way != c_Read) {
     merr<<"Only valid if file is in read-mode!"<<endl;
@@ -179,19 +182,17 @@ MTokenizer* MParser::GetTokenizerAt(unsigned int LineNumber)
 
 MString MParser::GetLine(unsigned int LineNumber)
 {
-  //! READ-MODE ONLY: Return the line as text
+  // READ-MODE ONLY: Return the line as text
 
-  MString Line;
-  
   if (m_Way != c_Read) {
     merr<<"Only valid if file is in read-mode!"<<endl;
     massert(m_Way == c_Read);
-    return 0;
+    return MString("");
   }
 
   if (LineNumber >= GetNLines()) {
     merr<<"Index out of bounds"<<endl;
-    return 0;
+    return MString("");
   }   
   
   return m_Lines[LineNumber]->GetText();
@@ -203,7 +204,7 @@ MString MParser::GetLine(unsigned int LineNumber)
 
 bool MParser::InsertLineBefore(MString Line, unsigned int LineNumber)
 {
-  // Insert Before position i
+  // Insert a line before position LineNumber
 
   if (LineNumber > GetNLines()) {
     massert(LineNumber <= GetNLines());
@@ -265,22 +266,8 @@ bool MParser::TokenizeLine(MTokenizer& T, bool Fast)
 
   MString Line;
   if (ReadLine(Line) == false) return false;
-  /*
-  char c;
-  MString Line;
-  while (true) {
-    Get(c);
-    if (IsGood() == false) {
-      return false;
-    }
-    if (c != '\n' && c != '\0') {
-      Line += c;
-    } else {
-      break;
-    }
-  }
-  */
-  
+  if (IsGood() == false && Line == "") return false;
+
   if (Fast == true) {
     T.AnalyzeFast(Line);    
   } else {
@@ -304,9 +291,7 @@ bool MParser::GetFloat(float& f)
     return false;
   }
 
-  Get(f);
-
-  return true;
+  return Get(f);
 }
 
 

@@ -136,6 +136,10 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_Id = E->m_Id;
   m_AllHitsGood = E->m_AllHitsGood;
   m_Decay = E->m_Decay;
+  m_OIPosition = E->m_OIPosition;
+  m_OIDirection = E->m_OIDirection;
+  m_OIPolarization = E->m_OIPolarization;
+  m_OIEnergy = E->m_OIEnergy;
   m_BadFlags = E->m_BadFlags;
   m_Comments = E->m_Comments;
   m_Hits = E->m_Hits;
@@ -191,6 +195,7 @@ void MPhysicalEvent::Reset()
   m_OIParticleID = g_IntNotDefined;
 
   m_Lines.clear();
+  m_Hits.clear();
   m_Comments.clear();
 }
 
@@ -453,46 +458,46 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
   if (Line[0] == 'E' && Line[1] == 'T') {
     if (Line[3] == 'C' && Line[4] == 'O') {
       if (m_EventType != c_Compton) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Compton event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        mout<<"int MPhysicalEvent::ParseLine: Event is no Compton event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'P' && Line[4] == 'A') {
       if (m_EventType != c_Pair) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Pair event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        mout<<"int MPhysicalEvent::ParseLine: Event is no Pair event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'P' && Line[4] == 'H') {
       if (m_EventType != c_Photo) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Photo event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        mout<<"int MPhysicalEvent::ParseLine: Event is no Photo event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'M' && Line[4] == 'U') {
       if (m_EventType != c_Muon) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Muon event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        mout<<"int MPhysicalEvent::ParseLine: Event is no Muon event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'D' && Line[4] == 'Y') {
       if (m_EventType != c_Decay) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Decay event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        mout<<"int MPhysicalEvent::ParseLine: Event is no Decay event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'P' && Line[4] == 'T') {
       if (m_EventType != c_PET) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no PET event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        mout<<"int MPhysicalEvent::ParseLine: Event is no PET event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'M' && Line[4] == 'T') {
       if (m_EventType != c_Multi) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Multi event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        mout<<"int MPhysicalEvent::ParseLine: Event is no Multi event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'U' && Line[4] == 'N') {
       if (m_EventType != c_Unidentifiable) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Unidentifiable event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        mout<<"int MPhysicalEvent::ParseLine: Event is no Unidentifiable event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else {
-      cout<<"int MPhysicalEvent::ParseLine: Unkown event type..."<<endl;
+      mout<<"int MPhysicalEvent::ParseLine: Unkown event type..."<<endl;
       Ret = 1;
     }
   } else if (Line[0] == 'T' && Line[1] == 'I') {

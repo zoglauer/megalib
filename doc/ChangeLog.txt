@@ -21,6 +21,46 @@ Response:
 
 
 
+Version 4.03/4.04
+=================
+
+This is mostly a compatibility, bug fix, hardening, and infrastructure release.
+
+General:
++ Updated the license headers (LGPL v3 SPDX) and created contributors list (Contributors.md)
++ Default ROOT version is now 6.40
++ C++17 is now required on all platforms for all tools
++ Compatibility with latest OSes
++ New coding and unit testing conventions: CodingConventions.md, TestingConventions.md, .clang-format
++ Removed unused classes: MImageContainer, MFileHistograms, MFileInfo, MCSVFunctionLoader, MFileEventsRawa, MFileEventsPev
+
+Global library:
++ Bug fixes in MRotation and MTime
++ MFile: Improved Exists(), new IsExecutable(), CreateDirectory(), temporary files/directories
++ MSystem: New RunChildProcess()
++ MPhysicalEvent: Reworked bad flags interface, particle ID in origin information (OI)
++ MUnitTest: Many updates for new unit tests including temporary-file sandbox, file comparisons (identical & numerically equivalent), matrix/vector evaluation, many new unit tests
+
+Revan:
++ Option to print the total energy in the reconstructed spectrum histogram
++ Particle ID is stored in the OI information of evta files
++ Fixes in CSR
+
+Fretalon / Melinator:
++ New sub-module framework
++ Module ordering controls for building sequences in the GUI
++ roa files can contain multiple read-out types
++ Events without hits are no longer rejected
++ Fixed queue ordering (unique IDs), event counting, and thread spawning
++ Geometry window handling aligned with MEGAlib; geometry selection blocked while running
++ Many hardening and bug fixes from new unit tests
+
+Realta:
++ Runs again
+
+And many smaller bug fixes and optimizations
+
+
 
 Version 4.01/4.02
 =================

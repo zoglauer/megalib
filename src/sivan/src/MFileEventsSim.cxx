@@ -156,6 +156,23 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way, bool IsBinary)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MFileEventsSim::WriteHeader()
+{
+  if (MFileEvents::WriteHeader() == false) return false;
+
+  if (m_HasStartObservationTime == true) {
+    ostringstream Header;
+    Header<<"TB "<<m_StartObservationTime<<endl;
+    Write(Header);
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MFileEventsSim::ParseFooter(const MString& Line)
 {
   // Parse the footer
@@ -190,6 +207,10 @@ long MFileEventsSim::GetSimulatedEvents()
 void MFileEventsSim::UpdateObservationTimes(MSimEvent* Event)
 {
   //! Update the observation times using the given event
+
+  // Include masters accumulate observation time from the included files.
+  // Tracking child event times here would add a second partial interval on top.
+  if (m_IncludeFileUsed == true || m_NOpenedIncludeFiles > 0) return;
   
   // If the overall observation time has alreday been set, don't change anything
   if (m_HasObservationTime == true) return;
@@ -237,7 +258,7 @@ MSimEvent* MFileEventsSim::GetNextEventBinary(bool Analyze)
     SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
     if (SimEvent == nullptr) {
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
-      m_IncludeFile->Close();
+      CloseIncludeFile();
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
@@ -267,7 +288,7 @@ MSimEvent* MFileEventsSim::GetNextEventBinary(bool Analyze)
         
           SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
           if (SimEvent == nullptr) {
-            m_IncludeFile->Close();
+            CloseIncludeFile();
             m_IncludeFileUsed = false;;
           } else {
             UpdateObservationTimes(SimEvent);
@@ -374,7 +395,7 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
     SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
     if (SimEvent == nullptr) {
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
-      m_IncludeFile->Close();
+      CloseIncludeFile();
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
@@ -432,7 +453,7 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
         
         SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
         if (SimEvent == nullptr) {
-          m_IncludeFile->Close();
+          CloseIncludeFile();
           m_IncludeFileUsed = false;;
         } else {
           UpdateObservationTimes(SimEvent);
@@ -567,6 +588,7 @@ bool MFileEventsSim::OpenIncludeFile(const MString& Line)
 
   if (Return == true) {
     m_SimulatedEvents += dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetSimulatedEvents();
+    m_HasSimulatedEvents = true;
   }
 
   return Return;
@@ -596,7 +618,11 @@ bool MFileEventsSim::CloseEventList()
     out<<"EN"<<endl;
   }
   out<<endl;
-  out<<"TE "<<m_ObservationTime<<endl;
+  if (m_HasEndObservationTime == true) {
+    out<<"TE "<<m_EndObservationTime<<endl;
+  } else {
+    out<<"TE "<<m_ObservationTime<<endl;
+  }
   out<<"TS "<<m_SimulatedEvents<<endl;
   out<<endl;
   Write(out);

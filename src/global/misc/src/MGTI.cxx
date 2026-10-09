@@ -29,6 +29,7 @@
 // MEGAlib libs:
 #include "MParser.h"
 #include "MFile.h"
+#include "MStreams.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -127,7 +128,7 @@ bool MGTI::Load(const MString& FileName)
   MParser P;
   P.Open(FileName);
   if (P.IsOpen() == false) {
-    cout<<"Error: Unable to open GTI file: "<<FileName<<endl;
+    merr<<"Error: Unable to open GTI file: "<<FileName<<endl;
     Reset(true);
     return false;
   }
@@ -145,7 +146,7 @@ bool MGTI::Load(const MString& FileName)
         //cout<<"Added: "<<Name<<endl;
         Add(GTI);
       } else {
-        cout<<"Error: Unable to load GTI file: "<<Name<<endl;
+        merr<<"Error: Unable to load GTI file: "<<Name<<endl;
         return false;
       }
     }

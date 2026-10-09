@@ -228,6 +228,11 @@ class MFileEvents : public MFile
   //! Number of simulated events
   long m_SimulatedEvents;
 
+  //! True if a TE keyword should only be interpreted as footer TE after an EN line
+  bool m_FooterTENeedsEN;
+  //! True if we have already seen the EN line of the footer
+  bool m_FooterENSeen;
+ 
   //! Has a start observation time
   bool m_HasStartObservationTime;
   //! The start of the observation time

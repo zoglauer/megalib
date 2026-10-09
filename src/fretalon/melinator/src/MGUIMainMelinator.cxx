@@ -2090,14 +2090,23 @@ bool MGUIMainMelinator::OnGeometry()
   // Returns the geometry file name
   
   MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), this, m_Settings->GetGeometryFileName());
-  gClient->WaitForUnmap(Geo);
+
+  // Closing the file dialog of the file selector already raises an unmap of Geo,
+  // thus keep waiting until the geometry dialog itself is closed
+  do {
+    gClient->WaitForUnmap(Geo);
+  } while (Geo->IsMapped() == true);
+
+  bool OkPressed = Geo->OkPressed();
   MString Name = Geo->GetGeometryFileName();
   delete Geo;
   for (unsigned int i = 0; i < 100; ++i) {
     gSystem->ProcessEvents();
   }
 
-  m_Settings->SetGeometryFileName(Name);
+  if (OkPressed == true) {
+    m_Settings->SetGeometryFileName(Name);
+  }
 
   return true;
 }

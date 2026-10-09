@@ -31,6 +31,7 @@
 
 // Standard libs:
 #include <cstdlib>
+#include <cctype>
 #include <limits>
 #include <iostream>
 #include <fstream>
@@ -42,7 +43,6 @@ using namespace std;
 #include <TROOT.h>
 #include <TStyle.h>
 #include <TError.h>
-#include <TSystem.h>
 #include <TObjArray.h>
 #include <TObjString.h>
 
@@ -137,12 +137,16 @@ MGlobal g_Global;
 
 bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 {
+  static bool Initialized = false;
+  if (Initialized == true) {
+    return true;
+  }
 
 #ifdef DEBUG1
   g_Verbosity = 1;
 #endif
 
-  // Find the operating systenm type
+  // Find the operating system type
 #if defined(_WIN32) || defined(_WIN64)
   g_OSType = "Windows";
 #elif defined(__linux__)
@@ -167,7 +171,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   __merr.DumpToStdErr(true);
   __merr.DumpToStdOut(false);
 
-  // Initilize some global ROOT variables:
+  // Initialize some global ROOT variables:
   gEnv->SetValue("Gui.BackgroundColor", "#e3dfdf");
 
   // Font smoothing:
@@ -244,15 +248,20 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
     in.close();
     // Now parse:
     vector<MString> Tokens = g_VersionString.Tokenize(".");
-    if (Tokens.size() == 3) {
+    if (Tokens.size() == 3 &&
+        Tokens[0].IsPositiveInteger() == true &&
+        Tokens[1].IsPositiveInteger() == true &&
+        Tokens[2].IsPositiveInteger() == true) {
       g_MajorVersion = Tokens[0].ToInt()*100 + Tokens[1].ToInt();
       g_MinorVersion = Tokens[2].ToInt();
       g_Version = 100*g_MajorVersion + g_MinorVersion;
     } else {
-      cout<<"BAD ERROR: Version could not be parsed correctly: \""<<g_VersionString<<"\""<<endl;
+      cout<<"INITIALIZATION ERROR: Version could not be parsed correctly: \""<<g_VersionString<<"\""<<endl;
+      return false;
     }
   } else {
-    cout<<"BAD ERROR: Cannot open file with version information (i.e. "<<FileName<<")!"<<endl;
+    cout<<"INITIALIZATION ERROR: Cannot open file with version information (i.e. "<<FileName<<")!"<<endl;
+    return false;
   }
 
   // Show the intro
@@ -265,13 +274,10 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
     gROOT->SetBatch(true);
   }
 
-  // Launch the update check at the end:
-#if defined(___LINUX___) || defined(___MACOSX___)
-  gSystem->Exec("bash ${MEGALIB}/config/configure_updatetest &");
-#endif
-
   g_Mutex = new TMutex();
   g_MainThreadID = TThread::SelfId();
+
+  Initialized = true;
 
   return true;
 }
@@ -354,9 +360,6 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
     if (DevelopmentVersion.Length() > LineLength) LineLength = DevelopmentVersion.Length();
   }
 
-  MString Update = MString("If you wish to update, make a backup, and then run \"make update\"");
-  if (Update.Length() > LineLength) LineLength = Update.Length();
-
   LineLength += 10;
 
   CenterString(ProgramLine, LineLength);
@@ -369,7 +372,6 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   CenterString(HomepageLine, LineLength);
   CenterString(GitHubLine, LineLength);
   CenterString(DevelopmentVersion, LineLength, false);
-  CenterString(Update, LineLength, false);
 
   MString ClosedLine;
   for (unsigned int i = 0; i < LineLength; ++i) ClosedLine += '*';
@@ -402,32 +404,6 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
     cout<<DevelopmentVersion<<endl;
     cout<<endl;
   }
-
-  // Check if we have found a newer version
-  MString FileName = "$(MEGALIB)/config/UpdateCheck.txt";
-  MFile::ExpandFileName(FileName);
-
-  ifstream in;
-  in.open(FileName);
-  if (in.is_open()) {
-    MString VersionString;
-    in>>VersionString;
-    in.close();
-    // Now parse:
-    vector<MString> Tokens = VersionString.Tokenize(".");
-    if (Tokens.size() == 3) {
-      unsigned int NewVersion = Tokens[0].ToInt()*10000 + Tokens[1].ToInt()*100 + Tokens[2].ToInt();
-      if (NewVersion > g_Version) {
-        MString NewVersion = MString("An updated MEGAlib version (") + VersionString + MString(") is in the repository!");
-        CenterString(NewVersion, LineLength, false);
-        cout<<NewVersion<<endl;
-        cout<<Update<<endl;
-        cout<<endl;
-      }
-    }
-  }
-
-
 }
 
 

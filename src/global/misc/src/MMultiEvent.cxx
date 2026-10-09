@@ -184,9 +184,9 @@ MString MMultiEvent::ToTraString() const
   T += MPhysicalEvent::ToTraString();
 
   for (unsigned int i = 0; i < m_Events.size(); ++i) {
-    T += "SI";
+    T += "SI\n";
     T += m_Events[i]->ToTraString();
-    T += "SF";
+    T += "SF\n";
   }
 
   return T;
@@ -199,15 +199,12 @@ MString MMultiEvent::ToTraString() const
 bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
 {
   // Stream data from and to a file than ROOT...
-
   bool Return = true;
   
   if (Read == true) {
     // That's copy and paste from MPhysicalEvent:
-
     Reset();
     int Ret = 0;
-    
     if (ReadDelayed == true) {
       MString Line;
       while (File.IsGood() == true) {
@@ -218,20 +215,26 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
         }
         m_Lines.push_back(Line);
       }
+      return false;
     } else {
       // Doing it purely in C is faster than using strings
       const int LineLength = 1000;
       char LineBuffer[LineLength];
+      bool SelfParsed = false;
       while (File.ReadLine(LineBuffer, LineLength, '\n')) {
         // First do the normal parse line - nothing is happening if we have anything specific for this class
         
         //cout<<LineBuffer<<endl;
         
         Ret = 2;
-        if (LineBuffer[0] != 'E' && LineBuffer[1] != 'T') {
+        if (LineBuffer[0] == 'E' && LineBuffer[1] == 'T') {
+          if (SelfParsed == false) {
+            Ret = ParseLine(LineBuffer, Fast);
+            SelfParsed = true;
+          }
+        } else {
           Ret = ParseLine(LineBuffer, Fast);
         }
-        //cout<<"Ret: "<<Ret<<endl;
         if (Ret == 2) {
           // Nothing got parsed, thus look what we can do here:
           MString Line(LineBuffer);
@@ -239,7 +242,7 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
           MPhysicalEvent* Phys = nullptr;
           if (Line[0] == 'E' && Line[1] == 'T') {
             if (Line.Length() < 5) {
-              cout<<"Error reading event type"<<endl;
+              mout<<"Error reading event type"<<endl;
             } else if (Line[3] == 'C' && Line[4] == 'O') {
               MComptonEvent* P = new MComptonEvent();
               P->Stream(File, Version, Read, Fast, false);
@@ -269,7 +272,7 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
               P->Stream(File, Version, Read, Fast, false);
               Phys = (MPhysicalEvent*) P;
             } else {
-              cout<<"Unknown event"<<endl;
+              mout<<"Unknown event"<<endl;
             }
           }
           if (Phys != nullptr) {
@@ -288,7 +291,7 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
       
       // end of file reached ... so return false
       return false;
-    }     
+    }
 
   } else {
     // Write Multi specific infos:
@@ -313,7 +316,7 @@ bool MMultiEvent::ParseDelayed(bool Fast)
         MPhysicalEvent* Phys = nullptr;
         if (m_Lines[l][0] == 'E' && m_Lines[l][1] == 'T') {
           if (m_Lines[l].Length() < 5) {
-            cout<<"Error reading event type"<<endl;
+            mout<<"Error reading event type"<<endl;
           } else if (m_Lines[l][3] == 'C' && m_Lines[l][4] == 'O') {
             MComptonEvent* P = new MComptonEvent();
             Phys = (MPhysicalEvent*) P;
@@ -336,7 +339,7 @@ bool MMultiEvent::ParseDelayed(bool Fast)
             MUnidentifiableEvent* P = new MUnidentifiableEvent();
             Phys = (MPhysicalEvent*) P;
           } else {
-            cout<<"Unknown event"<<endl;
+            mout<<"Unknown event"<<endl;
           }
         }
         if (Phys != nullptr) {

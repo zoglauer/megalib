@@ -94,9 +94,6 @@ confhelp() {
   echo "    To setup distcc, install it and make sure the following environment variable is exported, e.g.:"
   echo "    export DISTCC_HOSTS='@remote1/16 @remote2/8 localhost'"
   echo " "
-  echo "--updates=[off/no, on/yes - first launch default: off]"
-  echo "    Check periodically for updates. Default is off."
-  echo "    Even if set to on, update checks will only be performed, if the user has write access to the MEGAlib installation."
   echo " "
   #echo "--allowroot"
   #echo "    By default this script does not allow to be installed as ROOT. This option allows it."
@@ -196,7 +193,6 @@ HEASOFTPATH="off"
 OSTYPE=$(uname -s)
 OPT="normal"
 DEBUG="off"
-UPDATES="off"
 PATCH="on"
 CLEANUP="off"
 BRANCH=""
@@ -259,7 +255,7 @@ for C in "${CMD[@]}"; do
   elif [[ ${C} == *-de*=* ]]; then
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-u*=* ]]; then
-    UPDATES=`echo ${C} | awk -F"=" '{ print $2 }'`
+    echo " * Ignoring no longer supported \"update\" option"
   elif [[ ${C} == *-co*=* ]]; then
     COMP=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-cl*=* ]]; then
@@ -300,7 +296,6 @@ OSTYPE=`echo ${OSTYPE} | tr '[:upper:]' '[:lower:]'`
 OPT=`echo ${OPT} | tr '[:upper:]' '[:lower:]'`
 DEBUG=`echo ${DEBUG} | tr '[:upper:]' '[:lower:]'`
 COMP=`echo ${COMP} | tr '[:upper:]' '[:lower:]'`
-UPDATES=`echo ${UPDATES} | tr '[:upper:]' '[:lower:]'`
 PATCH=`echo ${PATCH} | tr '[:upper:]' '[:lower:]'`
 CLEANUP=`echo ${CLEANUP} | tr '[:upper:]' '[:lower:]'`
 KEEPMEGALIBASIS=`echo ${KEEPMEGALIBASIS} | tr '[:upper:]' '[:lower:]'`
@@ -532,19 +527,6 @@ else
   echo " * Using this maximum number of threads: ${MAXTHREADS}"
 fi
 
-
-if ( [[ ${UPDATES} == of* ]] || [[ ${UPDATES} == n* ]] ); then
-  UPDATES="off"
-  echo " * Don't check for updates"
-elif ( [[ ${UPDATES} == on ]] || [[ ${UPDATES} == y* ]] ); then
-  UPDATES="on"
-  echo " * Check for updates if the user has write access to the MEGAlib installation"
-else
-  echo " "
-  echo "ERROR: Unknown option for updates: ${UPDATES}"
-  confhelp
-  exit 1
-fi
 
 
 if ( [[ ${PATCH} == of* ]] || [[ ${PATCH} == n* ]] ); then
@@ -1007,7 +989,7 @@ source ${ENVFILE}
 cd ${MEGALIB}
 
 echo "Configuring MEGAlib..."
-bash configure --os=${OSTYPE} --debug=${DEBUG} --opt=${OPT} --updates=${UPDATES}
+bash configure --os=${OSTYPE} --debug=${DEBUG} --opt=${OPT}
 if [ "$?" != "0" ]; then
   echo " "
   echo "ERROR: Something went wrong during MEGAlib configuration"
@@ -1031,7 +1013,7 @@ mv ${ENVFILE} bin/source-megalib.sh
 
 echo "Storing last good options..."
 rm -f ${MEGALIBDIR}/config/SetupOptions.txt
-SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES} --patch=${PATCH} --cleanup=${CLEANUP} --keepmegalibasis=${KEEPMEGALIBASIS} --keepenvironmentasis=${KEEPENVASIS} --maxthreads=${MAXTHREADS} --distcc=${DISTCC}"
+SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --patch=${PATCH} --cleanup=${CLEANUP} --keepmegalibasis=${KEEPMEGALIBASIS} --keepenvironmentasis=${KEEPENVASIS} --maxthreads=${MAXTHREADS} --distcc=${DISTCC}"
 if [[ ${BRANCH} != "" ]]; then
   SETUP+=" --branch=${BRANCH}"
 fi

@@ -331,10 +331,16 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   
   // Determine how many events to store:
   MSystem System;
-  int RAM = System.GetFreeRAM();
+  int RAM = System.GetFreeRAM(); // MB, -1 if unknown
   
-  m_EventsToStore = RAM/(2*sizeof(double)*TotalInputDoubles);
-  mout<<"Events to store per IOStore list (limited by RAM: "<<RAM<<"): "<<m_EventsToStore<<endl;
+  if (RAM < 0 || TotalInputDoubles == 0) {
+    mout<<"Warning: The free RAM is unknown - the number of events to store per IOStore list is not limited"<<endl;
+    m_EventsToStore = numeric_limits<unsigned int>::max();
+  } else {
+    unsigned long long Events = static_cast<unsigned long long>(RAM)*1048576ULL / (2*sizeof(double)*TotalInputDoubles);
+    m_EventsToStore = static_cast<unsigned int>(min<unsigned long long>(Events, numeric_limits<unsigned int>::max()));
+  }
+  mout<<"Events to store per IOStore list (limited by the free RAM of "<<RAM<<" MB): "<<m_EventsToStore<<endl;
   
   return true;
 }

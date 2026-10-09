@@ -48,6 +48,7 @@ MResponseMatrixAxisSpheric::MResponseMatrixAxisSpheric(const MString& ThetaAxisN
 {
   m_Dimension = 2;
   m_Names.push_back(PhiAxisName);
+  m_Binner = std::make_shared<MBinnerFISBEL>();
 }
 
 
@@ -187,6 +188,10 @@ unsigned long MResponseMatrixAxisSpheric::GetAxisBin(double Theta, double Phi) c
 //! Return the area of the given axis bin
 double MResponseMatrixAxisSpheric::GetArea(unsigned long Bin) const
 {
+  if (Bin >= m_Binner->GetNBins()) {
+    throw MExceptionIndexOutOfBounds(0, m_Binner->GetNBins(), Bin);
+  }
+
   return 4*c_Pi/m_Binner->GetNBins() * c_Deg*c_Deg;
 }
 
@@ -251,8 +256,8 @@ vector<double> MResponseMatrixAxisSpheric::GetMaxima() const
 //! Can throw: MExceptionIndexOutOfBounds
 vector<double> MResponseMatrixAxisSpheric::GetBinCenters(unsigned long Bin) const
 {
-  if (Bin >= m_BinEdges.size() - 1) {
-    throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);
+  if (Bin >= m_Binner->GetNBins()) {
+    throw MExceptionIndexOutOfBounds(0, m_Binner->GetNBins(), Bin);
   }
   
   vector<double> Centers = m_Binner->GetBinCenters(Bin);

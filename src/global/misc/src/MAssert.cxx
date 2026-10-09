@@ -19,39 +19,67 @@
  */
 
 
-// Dame classes:
+// Include the header:
 #include "MAssert.h"
 
-// External classes:
-#include <iostream>
+// Standard libs:
 #include <cstdlib>
+
+// ROOT libs:
+
+// MEGAlib libs:
+#include "MStreams.h"
+
 using namespace std;
 
-// Namespaces:
-//using namespace Zogy;
 
-/******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
 
 
-/******************************************************************************
- * Print a pretty "Assertion failed" message
- * e.g. Assertion failed in file ZDObst.cpp at line 135:
- *          Condition "Apfel == Birne" not fulfilled!   Aborting!
- */
-void /*Zogy::*/AssertionFailed(const char* assertion, const char* file,
-                           unsigned int line, const char* function)
+#ifdef ___CLING___
+ClassImp(MAssert)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Default constructor
+MAssert::MAssert()
 {
-  if (function != 0) {
-    cerr<<"Assertion failed in file "<<file<<" in function "<<function
-        <<" at line "<<line<<":"<<endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Default destructor
+MAssert::~MAssert()
+{
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Print a pretty "Assertion failed" message
+//! e.g. Assertion failed in file MFruits.cxx at line 135:
+//!          Condition "Apple == Pear" not fulfilled!   Aborting!
+[[noreturn]] void MAssert::AssertionFailed(const char* Assertion, const char* File, unsigned int Line, const char* Function)
+{
+  const char* SafeAssertion = (Assertion != nullptr) ? Assertion : "[unknown condition]";
+  const char* SafeFile = (File != nullptr) ? File : "[unknown file name]";
+  const char* SafeFunction = Function;
+
+  if (SafeFunction != nullptr) {
+    __merr<<"Assertion failed in file "<<SafeFile<<" in function "<<SafeFunction<<" at line "<<Line<<":"<<endl;
   } else {
-    cerr<<"Assertion failed in file "<<file<<" at line "<<line<<":"<<endl;
+    __merr<<"Assertion failed in file "<<SafeFile<<" at line "<<Line<<":"<<endl;
   }
-  cerr<<"    Condition \""<<assertion<<"\" not fulfilled!   Aborting!"<<endl;
+  __merr<<"    Condition \""<<SafeAssertion<<"\" not fulfilled!   Aborting!"<<endl;
+  
   abort();
 }
 
-/*
- * MAssert end...
- ******************************************************************************/
 
+// MAssert.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

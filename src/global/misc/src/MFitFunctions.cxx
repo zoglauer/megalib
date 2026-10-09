@@ -50,6 +50,7 @@
 
 double Linear(double* x, double* par)
 {
+  // Parameters:
   // 0: Offset
   // 1: Gradient
   
@@ -64,6 +65,10 @@ double Linear(double* x, double* par)
 
 double Lorentz2(double* x, double* par)
 {
+  // Parameters:
+  // 0: Height
+  // 1: Sigma
+
   double fitval = par[0]/(par[1]*par[1]+x[0]*x[0]);
   
   return fitval;
@@ -75,6 +80,7 @@ double Lorentz2(double* x, double* par)
 
 double Gauss(double* x, double* par)
 {
+  // Parameters:
   // 0: Scaler
   // 1: Mean
   // 2: Sigma
@@ -91,10 +97,11 @@ double Gauss(double* x, double* par)
 
 double Gauss2(double *x, double *par)
 {
-  // par[0] is Offset
-  // par[1] is Gaus-height
-  // par[2] is Gaus-mean
-  // par[3] is Gaus-sigma
+  // Parameters:
+  // 0: Offset
+  // 1: Gaussian height
+  // 2: Gaussian mean
+  // 3: Gaussian sigma
 
   double fitval = par[0];
   double arg = 0;
@@ -111,13 +118,14 @@ double Gauss2(double *x, double *par)
 
 double GaussLandau(double *x, double *par)
 {
-  // par[0] is Offset
-  // par[1] is Landau-height
-  // par[2] is Landau-mean
-  // par[3] is Landau-sigma
-  // par[4] is Gaus-height
-  // par[5] is Gaus-mean
-  // par[6] is Gaus-sigma
+  // Parameters:
+  // 0: Offset
+  // 1: Landau height
+  // 2: Landau mean
+  // 3: Landau sigma
+  // 4: Gaussian height
+  // 5: Gaussian mean
+  // 6: Gaussian sigma
 
   double fitval = par[0];
   double arg = 0;
@@ -136,6 +144,11 @@ double GaussLandau(double *x, double *par)
 
 double Lorentz(double* x, double* par)
 {
+  // Parameters:
+  // 0: Height
+  // 1: Sigma
+  // 2: Mean
+
   double fitval = par[0]/(par[1]*par[1]+(x[0]-par[2])*(x[0]-par[2]));
 
   return fitval;
@@ -147,6 +160,12 @@ double Lorentz(double* x, double* par)
 
 double LorentzARM(double* x, double* par)
 {
+  // Parameters:
+  // 0: Height
+  // 1: Sigma
+  // 2: Mean
+  // 3: Offset
+
   if ((par[1]*par[1]+(x[0]-par[2])*(x[0]-par[2])) == 0) return 0.0;
   return par[0]/(par[1]*par[1]+(x[0]-par[2])*(x[0]-par[2]))+par[3];
 }
@@ -161,8 +180,8 @@ double AsymGaus(double* x, double* par)
   // 0: Offset
   // 1: Height
   // 2: Mean
-  // 3: Sigma of left gaus
-  // 4: Sigma of right gaus
+  // 3: Sigma of right gaus
+  // 4: Sigma of left gaus
 
   double Ret = par[0];
 
@@ -188,6 +207,16 @@ double AsymGaus(double* x, double* par)
 
 double LorentzLogNormalARM(double* x, double* par)
 {
+  // Parameters:
+  // 0: Lorentz height
+  // 1: Lorentz sigma
+  // 2: Lorentz mean
+  // 3: Offset
+  // 4: Log-normal height
+  // 5: Log-normal scale
+  // 6: Log-normal sigma
+  // 7: Log-normal shift
+
   if (par[5] == 0 || par[6] == 0) return 0.0;
 
   if ((x[0]-par[7])/par[5] > 0) {
@@ -204,6 +233,16 @@ double LorentzLogNormalARM(double* x, double* par)
 
 double LorentzAsymGausArm(double* x, double* par)
 {
+  // Parameters:
+  // 0: Lorentz height
+  // 1: Lorentz sigma
+  // 2: Lorentz mean
+  // 3: Offset
+  // 4: Gaussian height
+  // 5: Gaussian mean
+  // 6: Sigma of right gaus
+  // 7: Sigma of left gaus
+
   double Ret = par[0]/(par[1]*par[1]+(x[0]-par[2])*(x[0]-par[2]))+par[3];
 
   double arg = 0;
@@ -228,6 +267,17 @@ double LorentzAsymGausArm(double* x, double* par)
 
 double DoubleLorentzAsymGausArm(double* x, double* par)
 {
+  // Parameters:
+  // 0: Offset
+  // 1: Common mean
+  // 2: Sigma of Lorentz component 1
+  // 3: Height of Lorentz component 1
+  // 4: Sigma of Lorentz component 2
+  // 5: Height of Lorentz component 2
+  // 6: Height of asymmetric Gaussian component
+  // 7: Sigma of right gaus
+  // 8: Sigma of left gaus
+
   double Ret = par[0];
   //Ret += fabs(par[3])/(par[2]*par[2]+(x[0]-par[1])*(x[0]-par[1]));
   //Ret += fabs(par[5])/(par[4]*par[4]+(x[0]-par[1])*(x[0]-par[1]));
@@ -257,15 +307,16 @@ double DoubleLorentzAsymGausArm(double* x, double* par)
 
 double ArcTanLorentzGausArm(double* x, double* par)
 {
+  // Parameters:
   // 0: Offset
-  // 1: Tan height
-  // 2: Tan width
-  // 3: Gaus-height
-  // 4: Gaus-mean
-  // 5: Gaus-sigma
-  // 6: Lorentz-height
-  // 7: Lorentz-mean
-  // 8: Lorentz-sigma
+  // 1: Arctan height
+  // 2: Arctan width
+  // 3: Gaussian height
+  // 4: Gaussian mean
+  // 5: Gaussian sigma
+  // 6: Lorentz height
+  // 7: Lorentz mean
+  // 8: Lorentz sigma
 
   double arg = 0;
   double Ret = par[0];
@@ -289,6 +340,12 @@ double ArcTanLorentzGausArm(double* x, double* par)
 
 double GaussSPD(double* x, double* par)
 {
+  // Parameters:
+  // 0: Height
+  // 1: Mean
+  // 2: Sigma
+  // 3: Offset
+
   double arg = 0;
   if (par[2] != 0) arg = (x[0] - par[1])/par[2];
   
@@ -301,6 +358,13 @@ double GaussSPD(double* x, double* par)
 
 double LorentzGaussSPD(double* x, double* par)
 {
+  // Parameters:
+  // 0: Offset
+  // 1: Gaussian sigma
+  // 2: Gaussian height
+  // 3: Lorentz height
+  // 4: Lorentz sigma
+
   double arg = 0;
   if (par[1] != 0) arg = x[0]/par[1];
 
@@ -316,6 +380,15 @@ double LorentzGaussSPD(double* x, double* par)
 
 double TrippleGaussSPD(double* x, double* par)
 {
+  // Parameters:
+  // 0: Offset
+  // 1: Sigma of Gaussian 1
+  // 2: Height of Gaussian 1
+  // 3: Sigma of Gaussian 2
+  // 4: Height of Gaussian 2
+  // 5: Sigma of Gaussian 3
+  // 6: Height of Gaussian 3
+
   double val = par[0];
   double arg = 0;
   if (par[1] != 0) arg = x[0]/par[1];
@@ -334,15 +407,14 @@ double TrippleGaussSPD(double* x, double* par)
 
 double DoubleGauss(double* x, double* par)
 {
-//   L->SetParameters(1, 1, 1, 1, 1, 1, 1);
-//   L->SetParLimits(1, 0, 1E10);
-//   L->SetParLimits(2, 0, 1E10);
-//   L->SetParLimits(3, 0, 1E10);
-//   L->SetParLimits(4, 0, 1E10);
-//   L->SetParLimits(5, 0, 1E10);
-//   L->SetParLimits(6, 0, 1E10);
-//   L->SetParNames("Offset", "Sigma1", "Mean1", "Height1", 
-//                  "Sigma2", "Mean2", "Height2");
+  // Parameters:
+  // 0: Offset
+  // 1: Sigma of Gaussian 1
+  // 2: Mean of Gaussian 1
+  // 3: Height of Gaussian 1
+  // 4: Sigma of Gaussian 2
+  // 5: Mean of Gaussian 2
+  // 6: Height of Gaussian 2
 
   double val = par[0];
   double arg = 0;
@@ -361,16 +433,17 @@ double DoubleGauss(double* x, double* par)
 
 double TrippleGauss(double* x, double* par)
 {
-//   L->SetParameters(1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-//   L->SetParLimits(1, 0, 1E10);
-//   L->SetParLimits(2, 0, 1E10);
-//   L->SetParLimits(3, 0, 1E10);
-//   L->SetParLimits(4, 0, 1E10);
-//   L->SetParLimits(5, 0, 1E10);
-//   L->SetParLimits(6, 0, 1E10);
-//   L->SetParNames("Offset", "Sigma1", "Mean1", "Height1", 
-//                  "Sigma2", "Mean2", "Height2",
-//                  "Sigma3", "Mean3", "Height3");
+  // Parameters:
+  // 0: Offset
+  // 1: Sigma of Gaussian 1
+  // 2: Mean of Gaussian 1
+  // 3: Height of Gaussian 1
+  // 4: Sigma of Gaussian 2
+  // 5: Mean of Gaussian 2
+  // 6: Height of Gaussian 2
+  // 7: Sigma of Gaussian 3
+  // 8: Mean of Gaussian 3
+  // 9: Height of Gaussian 3
 
   double val = par[0];
   double arg = 0;
@@ -392,16 +465,23 @@ double TrippleGauss(double* x, double* par)
 
 double QuintupleGauss(double* x, double* par)
 {
-//   L->SetParameters(1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-//   L->SetParLimits(1, 0, 1E10);
-//   L->SetParLimits(2, 0, 1E10);
-//   L->SetParLimits(3, 0, 1E10);
-//   L->SetParLimits(4, 0, 1E10);
-//   L->SetParLimits(5, 0, 1E10);
-//   L->SetParLimits(6, 0, 1E10);
-//   L->SetParNames("Offset", "Sigma1", "Mean1", "Height1", 
-//                  "Sigma2", "Mean2", "Height2",
-//                  "Sigma3", "Mean3", "Height3");
+  // Parameters:
+  // 0: Offset
+  // 1: Sigma of Gaussian 1
+  // 2: Mean of Gaussian 1
+  // 3: Height of Gaussian 1
+  // 4: Sigma of Gaussian 2
+  // 5: Mean of Gaussian 2
+  // 6: Height of Gaussian 2
+  // 7: Sigma of Gaussian 3
+  // 8: Mean of Gaussian 3
+  // 9: Height of Gaussian 3
+  // 10: Sigma of Gaussian 4
+  // 11: Mean of Gaussian 4
+  // 12: Height of Gaussian 4
+  // 13: Sigma of Gaussian 5
+  // 14: Mean of Gaussian 5
+  // 15: Height of Gaussian 5
 
   double val = par[0];
   double arg = 0;
@@ -429,17 +509,13 @@ double QuintupleGauss(double* x, double* par)
 
 double LandauGauss(double* x, double* par)
 {
-//   L->SetParameters(600, 600, 100, 1, 1, 1);
-//   L->SetParLimits(1, 0, 1E10);
-//   L->SetParLimits(2, 0, 1E10);
-//   L->SetParLimits(3, 0, 1E10);
-//   L->SetParLimits(4, 0, 1E10);
-//   L->SetParLimits(5, 0, 1E10);
-//   L->SetParLimits(6, 0, 1E10);
-//   L->SetParNames("Offset", "MVP", "Sigma1", 
-//                  "Sigma2", "Mean2", "Height2");
-//   Hist->Fit("LandauGauss", "R");  double val = par[0];
-
+  // Parameters:
+  // 0: Offset
+  // 1: Landau most probable value
+  // 2: Landau sigma
+  // 3: Gaussian sigma
+  // 4: Gaussian mean
+  // 5: Gaussian height
 
   double val = par[0];
   double arg = 0;
@@ -456,6 +532,11 @@ double LandauGauss(double* x, double* par)
 
 double PolarizationModulation(double* x, double* par)
 {
+  // Parameters:
+  // 0: Offset
+  // 1: Modulation amplitude
+  // 2: Modulation phase in degree
+
   return par[0] + par[1]*cos(2*(x[0]-par[2] + 90.0)*c_Rad);
 }
 
@@ -465,6 +546,13 @@ double PolarizationModulation(double* x, double* par)
 
 double SpikyPolarizationModulation(double* x, double* par)
 {
+  // Parameters:
+  // 0: Offset
+  // 1: Modulation amplitude
+  // 2: Modulation phase in degree
+  // 3..11: Spike half-widths for angles -180, -135, -90, -45, 0, 45, 90, 135, 180
+  // 12..20: Spike heights for angles -180, -135, -90, -45, 0, 45, 90, 135, 180
+
   double Mod = par[0] - par[1]*cos(2*x[0]*c_Rad+par[2]*c_Rad);
 
   int Angle;

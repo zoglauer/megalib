@@ -42,29 +42,30 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Shared XML name/value storage for the lightweight MEGAlib XML classes
 class MXmlData
 {
   // public interface:
  public:
   //! Default constructor
   MXmlData();
-  //! Constructor -- no values
+  //! Constructor without a value
   MXmlData(const MString& Name);
-  //! Constructor -- content is string
+  //! Constructor with a string value
   MXmlData(const MString& Name, const MString& Value);
-  //! Constructor -- content is a time
+  //! Constructor with a time value
   MXmlData(const MString& Name, const MTime& Value);
-  //! Constructor -- content is integer
+  //! Constructor with an integer value
   MXmlData(const MString& Name, int Value);
-  //! Constructor -- content is long
+  //! Constructor with a long value
   MXmlData(const MString& Name, long Value);
-  //! Constructor -- content is unsigned integer
+  //! Constructor with an unsigned integer value
   MXmlData(const MString& Name, unsigned int Value);
-  //! Constructor -- content is unsigned long
+  //! Constructor with an unsigned long value
   MXmlData(const MString& Name, unsigned long Value);
-  //! Constructor -- content is double
+  //! Constructor with a double value
   MXmlData(const MString& Name, double Value);
-  //! Constructor -- content is a boolean
+  //! Constructor with a boolean value
   MXmlData(const MString& Name, bool Value);
   //! Default destructor
   virtual ~MXmlData();
@@ -82,7 +83,7 @@ class MXmlData
   //! Return the value of the node
   MString GetValue() const { return m_Value; }
 
-  //! Return the value of the node
+  //! Return the value of the node as string
   MString GetValueAsString() const { return m_Value; }
   //! Return the value of the node as time
   MTime GetValueAsTime() const { MTime T(0); T.Set(m_Value); return T; }
@@ -93,7 +94,7 @@ class MXmlData
   //! Return the value of the node as unsigned int
   unsigned int GetValueAsUnsignedInt() const { return atoi(m_Value); }
   //! Return the value of the node as unsigned long
-  unsigned int GetValueAsUnsignedLong() const { return strtoul(m_Value, NULL, 0); }
+  unsigned long GetValueAsUnsignedLong() const { return strtoul(m_Value, NULL, 0); }
   //! Return the value of the node as double
   double GetValueAsDouble() const { return atof(m_Value); }
   //! Return the value of the node as boolean

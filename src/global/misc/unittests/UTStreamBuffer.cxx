@@ -1,0 +1,225 @@
+/*
+ * UTStreamBuffer.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+
+// Standard libs:
+#include <cstdio>
+#include <ostream>
+using namespace std;
+
+// MEGAlib:
+#include "MFile.h"
+#include "MStreamBuffer.h"
+#include "MTime.h"
+#include "MUnitTest.h"
+
+
+//! Unit test class for the low-level MStreamBuffer
+class UTStreamBuffer : public MUnitTest
+{
+public:
+  //! Default constructor
+  UTStreamBuffer() : MUnitTest("UTStreamBuffer") {}
+  //! Default destructor
+  virtual ~UTStreamBuffer() {}
+
+  //! Run all tests
+  virtual bool Run();
+
+private:
+  //! Remove a temporary file
+  void CleanFile(const MString& FileName) const;
+
+  //! Test the direct MStreamBuffer API
+  bool TestStreamBuffer();
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Remove a temporary file
+void UTStreamBuffer::CleanFile(const MString& FileName) const
+{
+  if (MFile::Exists(FileName) == true) {
+    RemoveTemporaryFile(FileName);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Run all tests
+bool UTStreamBuffer::Run()
+{
+  bool Passed = true;
+
+  Passed = TestStreamBuffer() && Passed;
+
+  Summarize();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the direct MStreamBuffer API
+bool UTStreamBuffer::TestStreamBuffer()
+{
+  bool Passed = true;
+
+  MString BasicFileName = GetTemporaryFileName("Basic.txt");
+  MString RejectionFileName = GetTemporaryFileName("Rejection.txt");
+  MString DisabledFileName = GetTemporaryFileName("Disabled.txt");
+  MString ShowOnceFileName = GetTemporaryFileName("ShowOnce.txt");
+  MString TimePrefixFileName = GetTemporaryFileName("TimePrefix.txt");
+
+  CleanFile(BasicFileName);
+  CleanFile(RejectionFileName);
+  CleanFile(DisabledFileName);
+  CleanFile(ShowOnceFileName);
+  CleanFile(TimePrefixFileName);
+
+  {
+    MStreamBuffer Buffer;
+    Buffer.DumpToStdOut(false);
+    Buffer.DumpToStdErr(false);
+    Buffer.DumpToGui(false);
+    ostream Stream(&Buffer);
+
+    Passed = EvaluateTrue("Connect()", "new file", "Connecting a new file succeeds", Buffer.Connect(BasicFileName, false, false)) && Passed;
+    Passed = EvaluateFalse("Connect()", "duplicate file", "Connecting the same file twice fails", Buffer.Connect(BasicFileName, false, false)) && Passed;
+    Passed = EvaluateFalse("Disconnect()", "unknown file", "Disconnecting an unknown file fails", Buffer.Disconnect(GetTemporaryFileName("DoesNotExist.txt"))) && Passed;
+
+    Stream<<"Alpha";
+    Buffer.show();
+    Passed = Evaluate("show()", "plain output", "show() flushes the buffered line to the file", ReadTextFile(BasicFileName), MString("Alpha\n")) && Passed;
+
+    Buffer.SetHeader("Header");
+    Buffer.SetPrefix("  ");
+    Stream<<"Line1\nLine2";
+    Buffer.show();
+    Passed = Evaluate("SetHeader()/SetPrefix()", "multi-line output", "Header and prefix are added to all shown lines", ReadTextFile(BasicFileName), MString("Alpha\nHeader\n  Line1\n  Line2\n")) && Passed;
+
+    Stream<<"Line3";
+    Buffer.show();
+    Passed = Evaluate("show()", "header reset", "The header is shown again for each newly shown message block", ReadTextFile(BasicFileName), MString("Alpha\nHeader\n  Line1\n  Line2\nHeader\n  Line3\n")) && Passed;
+
+    Passed = EvaluateTrue("Disconnect()", "known file", "Disconnecting a connected file succeeds", Buffer.Disconnect(BasicFileName)) && Passed;
+
+    Stream<<"Ignored";
+    Buffer.show();
+    Passed = Evaluate("Disconnect()", "no file output", "After disconnecting no further output reaches the file", ReadTextFile(BasicFileName), MString("Alpha\nHeader\n  Line1\n  Line2\nHeader\n  Line3\n")) && Passed;
+  }
+
+  {
+    MStreamBuffer Buffer;
+    Buffer.DumpToStdOut(false);
+    Buffer.DumpToStdErr(false);
+    Buffer.DumpToGui(false);
+    ostream Stream(&Buffer);
+
+    Passed = EvaluateTrue("Connect()", "rejection file", "Connecting the rejection file succeeds", Buffer.Connect(RejectionFileName, false, false)) && Passed;
+
+    Buffer.SetRejection("RejectMe");
+    Stream<<"First";
+    Buffer.show();
+    Buffer.SetRejection("RejectMe");
+    Stream<<"Second";
+    Buffer.show();
+    Passed = Evaluate("SetRejection()", "duplicate rejection", "Using the same rejection key twice suppresses the second message", ReadTextFile(RejectionFileName), MString("First\n")) && Passed;
+  }
+
+  {
+    MStreamBuffer Buffer;
+    Buffer.DumpToStdOut(false);
+    Buffer.DumpToStdErr(false);
+    Buffer.DumpToGui(false);
+    ostream Stream(&Buffer);
+
+    Buffer.Enable(false);
+    Passed = EvaluateFalse("Connect()", "disabled stream", "A disabled stream cannot connect to a file", Buffer.Connect(DisabledFileName, false, false)) && Passed;
+
+    Stream<<"Muted";
+    Buffer.show();
+    Passed = EvaluateFalse("Enable(false)", "muted file", "A disabled stream does not create the target file implicitly", MFile::Exists(DisabledFileName)) && Passed;
+  }
+
+  {
+    MStreamBuffer Buffer;
+    Buffer.DumpToStdOut(false);
+    Buffer.DumpToStdErr(false);
+    Buffer.DumpToGui(false);
+    ostream Stream(&Buffer);
+
+    Passed = EvaluateTrue("Connect()", "show once file", "Connecting the show-once file succeeds", Buffer.Connect(ShowOnceFileName, false, false)) && Passed;
+    Buffer.ShowOnce();
+
+    Stream<<"First";
+    Buffer.show();
+    Stream<<"Second";
+    Buffer.show();
+
+    Passed = Evaluate("ShowOnce()", "single emission", "ShowOnce disables the stream after the first shown message", ReadTextFile(ShowOnceFileName), MString("First\n")) && Passed;
+  }
+
+  {
+    MStreamBuffer Buffer;
+    Buffer.DumpToStdOut(false);
+    Buffer.DumpToStdErr(false);
+    Buffer.DumpToGui(false);
+    ostream Stream(&Buffer);
+
+    Passed = EvaluateTrue("Connect()", "time prefix file", "Connecting with time prefix succeeds", Buffer.Connect(TimePrefixFileName, false, true)) && Passed;
+    MTime Before;
+    Stream<<"Timed";
+    Buffer.show();
+    MTime After;
+
+    // Line layout: timestamp YYYYMMDD_HHMMSS (15 characters), separator ":  ", message
+    MString Content = ReadTextFile(TimePrefixFileName);
+    Passed = EvaluateSize("Connect(..., TimePrefix=true)", "length", "Timed file output has 15 characters timestamp, 3 characters separator, and the 6 characters message with its newline", Content.Length(), 24) && Passed;
+    Passed = Evaluate("Connect(..., TimePrefix=true)", "separator and payload", "Timed file output continues with the separator and the emitted message after the timestamp", Content.GetSubString(15), MString(":  Timed\n")) && Passed;
+    const MString Timestamp = Content.GetSubString(0, 15);
+    Passed = EvaluateTrue("Connect(..., TimePrefix=true)", "timestamp", "The timestamp lies between the readings of the clock before and after the emission",
+                          Before.GetShortString().ToString() <= Timestamp.ToString() && Timestamp.ToString() <= After.GetShortString().ToString()) && Passed;
+  }
+
+  CleanFile(BasicFileName);
+  CleanFile(RejectionFileName);
+  CleanFile(DisabledFileName);
+  CleanFile(ShowOnceFileName);
+  CleanFile(TimePrefixFileName);
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+  UTStreamBuffer Test;
+  return Test.Run() == true ? 0 : 1;
+}

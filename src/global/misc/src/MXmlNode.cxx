@@ -64,7 +64,7 @@ MXmlNode::MXmlNode() : MXmlData()
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name) : MXmlData(Name)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -77,7 +77,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name) : MXmlData(Name)
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, const MString& Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -90,7 +90,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, const MString& Val
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, int Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -103,7 +103,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, int Value) : MXmlD
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, long Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -116,7 +116,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, long Value) : MXml
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned int Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
   
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -129,7 +129,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned int Value
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned long Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
   
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -142,7 +142,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned long Valu
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, double Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -155,7 +155,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, double Value) : MX
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, bool Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -168,7 +168,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, bool Value) : MXml
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& Value) : MXmlData(Name, Value)
 {
-  //! Constructor
+  // Constructor
 
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
@@ -181,7 +181,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& Value
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, MVector Value)
 {
-  //! Constructor
+  // Constructor
 
   m_Name = Name;
   
@@ -200,7 +200,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, MVector Value)
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, int ValueMin, int ValueMax)
 {
-  //! Constructor
+  // Constructor
 
   MString Temp;
 
@@ -220,7 +220,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, int ValueMin, int 
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, long ValueMin, long ValueMax)
 {
-  //! Constructor
+  // Constructor
 
   MString Temp;
 
@@ -240,7 +240,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, long ValueMin, lon
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, double ValueMin, double ValueMax)
 {
-  //! Constructor
+  // Constructor
 
   MString Temp;
 
@@ -260,7 +260,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, double ValueMin, d
 
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& ValueMin, const MTime& ValueMax)
 {
-  //! Constructor
+  // Constructor
 
   MString Temp;
 
@@ -298,6 +298,12 @@ void MXmlNode::Clear()
 {
   // Reset the node
 
+  for (unsigned int n = 0; n < m_Nodes.size(); ++n) {
+    delete m_Nodes[n];
+  }
+  for (unsigned int a = 0; a < m_Attributes.size(); ++a) {
+    delete m_Attributes[a];
+  }
   MXmlData::Clear();
   m_Nodes.clear();
   m_Attributes.clear();
@@ -309,7 +315,7 @@ void MXmlNode::Clear()
 
 MXmlNode* MXmlNode::GetNode(unsigned int i)
 {
-  //! Return a given node
+  // Return a given node
   if (i < m_Nodes.size()) {
     return m_Nodes.at(i);
   } else {
@@ -323,7 +329,7 @@ MXmlNode* MXmlNode::GetNode(unsigned int i)
 
 MXmlNode* MXmlNode::GetNode(const MString& Name)
 {
-  //! Return a node
+  // Return a node
 
   for (unsigned int m = 0; m < m_Nodes.size(); ++m) {
     if (m_Nodes[m]->GetName() == Name) {
@@ -340,7 +346,7 @@ MXmlNode* MXmlNode::GetNode(const MString& Name)
 
 void MXmlNode::AddNode(MXmlNode* Node)
 {
-  //! Add a node
+  // Add a node
   m_Value = "";
   return m_Nodes.push_back(Node);
 }
@@ -351,7 +357,7 @@ void MXmlNode::AddNode(MXmlNode* Node)
 
 MXmlAttribute* MXmlNode::GetAttribute(unsigned int i)
 {
-  //! Return a given attribute
+  // Return a given attribute
   if (i < m_Attributes.size()) {
     return m_Attributes.at(i);
   } else {
@@ -365,7 +371,7 @@ MXmlAttribute* MXmlNode::GetAttribute(unsigned int i)
 
 MXmlAttribute* MXmlNode::GetAttribute(const MString& Name)
 {
-  //! Return a attribute
+  // Return an attribute
 
   for (unsigned int m = 0; m < m_Attributes.size(); ++m) {
     if (m_Attributes[m]->GetName() == Name) {
@@ -382,7 +388,7 @@ MXmlAttribute* MXmlNode::GetAttribute(const MString& Name)
 
 void MXmlNode::AddAttribute(MXmlAttribute* Attribute)
 {
-  //! Add a attribute
+  // Add an attribute
   return m_Attributes.push_back(Attribute);
 }
 
@@ -419,7 +425,7 @@ MVector MXmlNode::GetValueAsVector() const
 
 int MXmlNode::GetMinValueAsInt() const
 {
-  //! Return the minimum value of the node as int
+  // Return the minimum value of the node as int
 
   if (m_Nodes.size() == 2) {
     if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
@@ -437,7 +443,7 @@ int MXmlNode::GetMinValueAsInt() const
 
 int MXmlNode::GetMaxValueAsInt() const
 {
-  //! Return the minimum value of the node as int
+  // Return the maximum value of the node as int
 
   if (m_Nodes.size() == 2) {
     if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
@@ -455,7 +461,7 @@ int MXmlNode::GetMaxValueAsInt() const
 
 long MXmlNode::GetMinValueAsLong() const
 {
-  //! Return the minimum value of the node as long
+  // Return the minimum value of the node as long
 
   if (m_Nodes.size() == 2) {
     if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
@@ -473,7 +479,7 @@ long MXmlNode::GetMinValueAsLong() const
 
 long MXmlNode::GetMaxValueAsLong() const
 {
-  //! Return the minimum value of the node as long
+  // Return the maximum value of the node as long
 
   if (m_Nodes.size() == 2) {
     if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
@@ -491,7 +497,7 @@ long MXmlNode::GetMaxValueAsLong() const
 
 double MXmlNode::GetMinValueAsDouble() const
 {
-  //! Return the value of the node as double
+  // Return the minimum value of the node as double
 
   if (m_Nodes.size() == 2) {
     if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
@@ -509,7 +515,7 @@ double MXmlNode::GetMinValueAsDouble() const
 
 double MXmlNode::GetMaxValueAsDouble() const
 {
-  //! Return the value of the node as double
+  // Return the maximum value of the node as double
 
   if (m_Nodes.size() == 2) {
     if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
@@ -527,7 +533,7 @@ double MXmlNode::GetMaxValueAsDouble() const
 
 MTime MXmlNode::GetMinValueAsTime() const
 {
-  //! Return the value of the node as time
+  // Return the minimum value of the node as time
 
   if (m_Nodes.size() == 2) {
     if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
@@ -545,7 +551,7 @@ MTime MXmlNode::GetMinValueAsTime() const
 
 MTime MXmlNode::GetMaxValueAsTime() const
 {
-  //! Return the value of the node as double
+  // Return the maximum value of the node as time
 
   if (m_Nodes.size() == 2) {
     if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
@@ -563,7 +569,7 @@ MTime MXmlNode::GetMaxValueAsTime() const
 
 MString MXmlNode::ToString(unsigned int Indent)
 {
-  //! Returns the XML text
+  // Return the XML text
 
   MString Ind;
   for (unsigned int i = 0; i < Indent; ++i) Ind += " ";
@@ -588,7 +594,11 @@ MString MXmlNode::ToString(unsigned int Indent)
       Xml += "\n";
       Xml += Ind;
     } else {
-      Xml += m_Value;
+      MString Value = m_Value;
+      Value.ReplaceAll("&", "&amp;");
+      Value.ReplaceAll("<", "&lt;");
+      Value.ReplaceAll(">", "&gt;");
+      Xml += Value;
     } 
     Xml += "</";
     Xml += m_Name;
@@ -604,7 +614,7 @@ MString MXmlNode::ToString(unsigned int Indent)
 
 bool MXmlNode::IsClosed(MString Text)
 {
-  //! Parse text into this node
+  // Check if the next tag is closed
 
   if (Text.Length() >= 2 && Text[0] == '<' && Text[Text.Length()-1] == '>') {
   
@@ -646,7 +656,7 @@ bool MXmlNode::IsClosed(MString Text)
 
 bool MXmlNode::Parse(MString Text)
 {
-  //! Parse text into this node
+  // Parse text into this node
 
   Text = Text.Strip();
   
@@ -698,7 +708,15 @@ bool MXmlNode::Parse(MString Text)
       size_t LastBegin = FirstEnd;
       size_t SecondBegin = FirstEnd;
       while (true) {
-        SecondBegin = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+        size_t WithAttributes = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+        size_t WithoutAttributes = Text.Index(MString("<") + Name + MString(">"), SecondBegin+1);
+        if (WithAttributes == MString::npos) {
+          SecondBegin = WithoutAttributes;
+        } else if (WithoutAttributes == MString::npos) {
+          SecondBegin = WithAttributes;
+        } else {
+          SecondBegin = min(WithAttributes, WithoutAttributes);
+        }
         if (SecondBegin != MString::npos) {
           if (IsClosed(Text.GetSubString(SecondBegin)) == false) break;
         } else {
@@ -712,7 +730,15 @@ bool MXmlNode::Parse(MString Text)
         while (SecondBegin < LastBegin) {
           ++NBegins;
           while (true) {
-            SecondBegin = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+            size_t WithAttributes = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+            size_t WithoutAttributes = Text.Index(MString("<") + Name + MString(">"), SecondBegin+1);
+            if (WithAttributes == MString::npos) {
+              SecondBegin = WithoutAttributes;
+            } else if (WithoutAttributes == MString::npos) {
+              SecondBegin = WithAttributes;
+            } else {
+              SecondBegin = min(WithAttributes, WithoutAttributes);
+            }
             if (SecondBegin != MString::npos) {
               if (IsClosed(Text.GetSubString(SecondBegin)) == false) break;
             } else {
@@ -728,9 +754,11 @@ bool MXmlNode::Parse(MString Text)
         merr<<"Xml: Parse error in node \""<<m_Name<<"\" with "<<Attributes<<" --- cannot find: "<<MString("</") + Name + MString(">")<<endl;
         return false;
       }
-    
+      
       // And parse the new node
-      Node->Parse(Text.GetSubString(FirstEnd+1, LastBegin-FirstEnd-1));
+      if (Node->Parse(Text.GetSubString(FirstEnd+1, LastBegin-FirstEnd-1)) == false) {
+        return false;
+      }
       Text = Text.Replace(0, LastBegin+LastSize, "");
       
     } else {
@@ -758,6 +786,10 @@ bool MXmlNode::Parse(MString Text)
         return false;
       }
       MString AttributeValue = Attributes.GetSubString(FirstQuote+1, SecondQuote-FirstQuote-1);
+      AttributeValue.ReplaceAll("&quot;", "\"");
+      AttributeValue.ReplaceAll("&lt;", "<");
+      AttributeValue.ReplaceAll("&gt;", ">");
+      AttributeValue.ReplaceAll("&amp;", "&");
       
       new MXmlAttribute(Node, AttributeName, AttributeValue);
       
@@ -772,6 +804,9 @@ bool MXmlNode::Parse(MString Text)
       merr<<"Xml: Parse error in node \""<<m_Name<<"\" --- node has text and sub-nodes. Remaining text: "<<Text<<endl;
       return false;      
     } else {
+      Text.ReplaceAll("&lt;", "<");
+      Text.ReplaceAll("&gt;", ">");
+      Text.ReplaceAll("&amp;", "&");
       m_Value = Text;
     }
   }

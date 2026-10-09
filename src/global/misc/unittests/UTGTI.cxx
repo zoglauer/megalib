@@ -1,0 +1,302 @@
+/*
+ * UTGTI.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
+
+
+// MEGAlib:
+#include "MFile.h"
+#include "MGTI.h"
+#include "MStreams.h"
+#include "MString.h"
+#include "MUnitTest.h"
+
+
+//! Unit test class for MGTI
+class UTGTI : public MUnitTest
+{
+public:
+  //! Default constructor
+  UTGTI() : MUnitTest("UTGTI") {}
+  //! Default destructor
+  virtual ~UTGTI() {}
+
+  //! Run all tests
+  virtual bool Run();
+
+private:
+  //! Test constructor and reset behavior
+  bool TestDefaultAndReset();
+  //! Test loading representative GTI and BTI intervals
+  bool TestLoadAndIsGood();
+  //! Test adding a second GTI
+  bool TestAdd();
+  //! Test nested include loading
+  bool TestIncludes();
+  //! Test parser details such as EN handling and ignored malformed lines
+  bool TestLoadParsingDetails();
+  //! Test load failure fallback behavior
+  bool TestLoadFailure();
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTGTI::Run()
+{
+  bool Passed = true;
+
+  Passed = TestDefaultAndReset() && Passed;
+  Passed = TestLoadAndIsGood() && Passed;
+  Passed = TestAdd() && Passed;
+  Passed = TestIncludes() && Passed;
+  Passed = TestLoadParsingDetails() && Passed;
+  Passed = TestLoadFailure() && Passed;
+
+  Summarize();
+
+  return Passed;
+}
+
+
+bool UTGTI::TestDefaultAndReset()
+{
+  bool Passed = true;
+
+  MGTI GTI;
+  Passed = EvaluateTrue("MGTI()", "default lower bound", "The default constructor creates an all-open interval including time zero", GTI.IsGood(MTime(0))) && Passed;
+  Passed = EvaluateTrue("MGTI()", "default upper bound", "The default constructor creates an all-open interval including the configured upper edge", GTI.IsGood(MTime(2000000000))) && Passed;
+  Passed = EvaluateFalse("MGTI()", "outside default interval", "Times above the default open interval are rejected", GTI.IsGood(MTime(2000000001))) && Passed;
+
+  GTI.Reset(false);
+  Passed = EvaluateFalse("Reset(false)", "empty intervals", "Reset(false) clears all intervals and rejects representative times", GTI.IsGood(MTime(100))) && Passed;
+
+  GTI.Reset(true);
+  Passed = EvaluateTrue("Reset(true)", "reopen interval", "Reset(true) restores the default open interval", GTI.IsGood(MTime(100))) && Passed;
+  Passed = EvaluateFalse("Reset(true)", "outside reopened interval", "Reset(true) still keeps the configured upper bound", GTI.IsGood(MTime(2000000001))) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTGTI::TestLoadAndIsGood()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "load temp dir", "The temporary directory for GTI load tests can be created", PrepareTemporaryDirectory("load")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("load");
+
+  MString FileName = TemporaryDirectory + "/basic.gti";
+  MString Content =
+    "GT 10 20\n"
+    "BT 12 14\n"
+    "GT 30 40\n"
+    "EN\n";
+  Passed = EvaluateTrue("WriteTextFile()", "basic file", "A representative GTI file can be written", WriteTextFile(FileName, Content)) && Passed;
+
+  MGTI GTI;
+  Passed = EvaluateTrue("Load()", "basic file", "Load() accepts a representative GTI file", GTI.Load(FileName)) && Passed;
+  Passed = EvaluateFalse("IsGood()", "before first interval", "Times before the first good interval are rejected", GTI.IsGood(MTime(9))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "1 ns before first interval", "A time 1 ns before the first good interval is rejected", GTI.IsGood(MTime(9, 999999999))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "first good interval start", "The first good interval start is inclusive", GTI.IsGood(MTime(10))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "inside first good interval", "A representative time inside the first good interval is accepted", GTI.IsGood(MTime(11))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "1 ns before bad interval", "A time 1 ns before the bad interval is accepted", GTI.IsGood(MTime(11, 999999999))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "bad interval start", "The bad interval start is excluded even inside a good interval", GTI.IsGood(MTime(12))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "bad interval stop", "The bad interval stop is excluded even inside a good interval", GTI.IsGood(MTime(14))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "1 ns after bad interval", "A time 1 ns after the bad interval is accepted", GTI.IsGood(MTime(14, 1))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "after bad interval", "Times after the bad interval but still inside the good interval are accepted", GTI.IsGood(MTime(15))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "first good interval stop", "The first good interval stop is inclusive", GTI.IsGood(MTime(20))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "1 ns after first interval", "A time 1 ns after the first good interval is rejected", GTI.IsGood(MTime(20, 1))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "gap between good intervals", "Times in the gap between good intervals are rejected", GTI.IsGood(MTime(25))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "second good interval", "A representative time in the second good interval is accepted", GTI.IsGood(MTime(35))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "second good interval stop", "The second good interval stop is inclusive", GTI.IsGood(MTime(40))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "1 ns after second interval", "A time 1 ns after the second good interval is rejected", GTI.IsGood(MTime(40, 1))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "after second interval", "Times after the second good interval are rejected", GTI.IsGood(MTime(41))) && Passed;
+
+  MString FractionalFile = TemporaryDirectory + "/fractional.gti";
+  MString FractionalContent =
+    "GT 10.25 20.75\n"
+    "BT 13.5 14.25\n"
+    "EN\n";
+  Passed = EvaluateTrue("WriteTextFile()", "fractional file", "A representative GTI file with fractional boundaries can be written", WriteTextFile(FractionalFile, FractionalContent)) && Passed;
+
+  MGTI FractionalGTI;
+  Passed = EvaluateTrue("Load()", "fractional file", "Load() accepts representative GTI files with fractional boundaries", FractionalGTI.Load(FractionalFile)) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional before interval", "A time 1 ns before the start of a fractional good interval is rejected", FractionalGTI.IsGood(MTime(10, 249999999))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional interval start", "Fractional good interval starts remain inclusive", FractionalGTI.IsGood(MTime(10.25))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional 1 ns before bad interval", "A time 1 ns before a fractional bad interval is accepted", FractionalGTI.IsGood(MTime(13, 499999999))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional bad interval start", "Fractional bad interval starts are excluded", FractionalGTI.IsGood(MTime(13.5))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional bad interval stop", "Fractional bad interval stops are excluded", FractionalGTI.IsGood(MTime(14.25))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional 1 ns after bad interval", "A time 1 ns after a fractional bad interval is accepted", FractionalGTI.IsGood(MTime(14, 250000001))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional after bad interval", "Fractional times after the representative bad interval but inside the good interval are accepted", FractionalGTI.IsGood(MTime(14.5))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "fractional interval stop", "Fractional good interval stops remain inclusive", FractionalGTI.IsGood(MTime(20.75))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "fractional after interval", "A time 1 ns after the stop of a fractional good interval is rejected", FractionalGTI.IsGood(MTime(20, 750000001))) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTGTI::TestAdd()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "add temp dir", "The temporary directory for GTI add tests can be created", PrepareTemporaryDirectory("add")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("add");
+
+  MString FirstFile = TemporaryDirectory + "/first.gti";
+  MString SecondFile = TemporaryDirectory + "/second.gti";
+
+  Passed = EvaluateTrue("WriteTextFile()", "first add file", "The first GTI input file can be written", WriteTextFile(FirstFile, "GT 1 3\nBT 2 2\nEN\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "second add file", "The second GTI input file can be written", WriteTextFile(SecondFile, "GT 8 10\nBT 9 9\nEN\n")) && Passed;
+
+  MGTI First;
+  MGTI Second;
+  Passed = EvaluateTrue("Load()", "first add file", "The first GTI file loads successfully", First.Load(FirstFile)) && Passed;
+  Passed = EvaluateTrue("Load()", "second add file", "The second GTI file loads successfully", Second.Load(SecondFile)) && Passed;
+
+  First.Add(Second);
+  Passed = EvaluateTrue("Add()", "first preserved", "Add() preserves the original GTI intervals", First.IsGood(MTime(1))) && Passed;
+  Passed = EvaluateFalse("Add()", "first bad interval preserved", "Add() preserves the original bad intervals", First.IsGood(MTime(2))) && Passed;
+  Passed = EvaluateTrue("Add()", "second interval added", "Add() appends good intervals from the added GTI", First.IsGood(MTime(8))) && Passed;
+  Passed = EvaluateFalse("Add()", "second bad interval added", "Add() appends bad intervals from the added GTI", First.IsGood(MTime(9))) && Passed;
+  Passed = EvaluateTrue("Add()", "second interval stop", "Added good interval stops remain inclusive", First.IsGood(MTime(10))) && Passed;
+  Passed = EvaluateFalse("Add()", "outside combined intervals", "Times outside both GTIs remain rejected", First.IsGood(MTime(11))) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTGTI::TestIncludes()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "include temp dir", "The temporary directory for GTI include tests can be created", PrepareTemporaryDirectory("include")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("include");
+
+  MString IncludedFile = TemporaryDirectory + "/included.gti";
+  MString MainFile = TemporaryDirectory + "/main.gti";
+
+  Passed = EvaluateTrue("WriteTextFile()", "included file", "The included GTI file can be written", WriteTextFile(IncludedFile, "GT 70 80\nBT 75 76\nEN\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile()", "main include file", "The main GTI file referencing the include can be written", WriteTextFile(MainFile, "IN included.gti\nGT 50 60\nEN\n")) && Passed;
+
+  MGTI GTI;
+  Passed = EvaluateTrue("Load()", "include file", "Load() resolves relative IN directives and loads nested GTIs", GTI.Load(MainFile)) && Passed;
+  Passed = EvaluateTrue("IsGood()", "main interval", "The main file interval is loaded", GTI.IsGood(MTime(55))) && Passed;
+  Passed = EvaluateTrue("IsGood()", "included interval", "The included file interval is loaded", GTI.IsGood(MTime(74))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "included bad interval", "Bad intervals from included files are loaded too", GTI.IsGood(MTime(75))) && Passed;
+  Passed = EvaluateFalse("IsGood()", "outside included interval", "Times outside all included and local intervals are rejected", GTI.IsGood(MTime(81))) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTGTI::TestLoadParsingDetails()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "parsing temp dir", "The temporary directory for GTI parsing-detail tests can be created", PrepareTemporaryDirectory("parsing")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("parsing");
+
+  {
+    MString FileName = TemporaryDirectory + "/early_end.gti";
+    MString Content =
+      "GT 1 2\n"
+      "EN\n"
+      "GT 100 200\n";
+    Passed = EvaluateTrue("WriteTextFile()", "early EN file", "A GTI file with an early EN marker can be written", WriteTextFile(FileName, Content)) && Passed;
+
+    MGTI GTI;
+    Passed = EvaluateTrue("Load()", "early EN file", "Load() accepts GTI files with an early EN marker", GTI.Load(FileName)) && Passed;
+    Passed = EvaluateTrue("IsGood()", "early EN first interval", "Intervals before EN are loaded", GTI.IsGood(MTime(1))) && Passed;
+    Passed = EvaluateFalse("IsGood()", "early EN ignored tail", "Intervals after EN are ignored", GTI.IsGood(MTime(150))) && Passed;
+  }
+
+  {
+    MString FileName = TemporaryDirectory + "/malformed_lines.gti";
+    MString Content =
+      "GT 10 11\n"
+      "GT 20\n"
+      "BT 30 31 32\n"
+      "XX 40 41\n"
+      "BT 50 51\n"
+      "EN\n";
+    Passed = EvaluateTrue("WriteTextFile()", "malformed line file", "A GTI file containing malformed and unrelated lines can be written", WriteTextFile(FileName, Content)) && Passed;
+
+    MGTI GTI;
+    Passed = EvaluateTrue("Load()", "malformed line file", "Load() ignores malformed and unrelated lines while keeping valid intervals", GTI.Load(FileName)) && Passed;
+    Passed = EvaluateTrue("IsGood()", "malformed line valid GT", "Valid GT lines in mixed files are still loaded", GTI.IsGood(MTime(10))) && Passed;
+    Passed = EvaluateFalse("IsGood()", "malformed line ignored GT", "Malformed GT lines are ignored", GTI.IsGood(MTime(20))) && Passed;
+    Passed = EvaluateFalse("IsGood()", "malformed line valid BT", "Valid BT lines in mixed files are still loaded", GTI.IsGood(MTime(50))) && Passed;
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTGTI::TestLoadFailure()
+{
+  bool Passed = true;
+
+  MGTI GTI;
+  DisableDefaultStreams();
+  Passed = EvaluateFalse("Load()", "missing file", "Load() reports failure for missing GTI files", GTI.Load(GetTemporaryFileName("does_not_exist.gti"))) && Passed;
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("Load()", "missing file fallback", "A failed load falls back to the default open interval", GTI.IsGood(MTime(12345))) && Passed;
+  Passed = EvaluateFalse("Load()", "missing file fallback upper bound", "The failed-load fallback still keeps the configured upper bound", GTI.IsGood(MTime(2000000001))) && Passed;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "failure temp dir", "The temporary directory for GTI failure tests can be created", PrepareTemporaryDirectory("failure")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("failure");
+
+  MString MainFile = TemporaryDirectory + "/missing_include.gti";
+  Passed = EvaluateTrue("WriteTextFile()", "missing include file", "A GTI file with a missing include can be written", WriteTextFile(MainFile, "IN does_not_exist.gti\nGT 1 2\nEN\n")) && Passed;
+
+  MGTI IncludeFailure;
+  DisableDefaultStreams();
+  Passed = EvaluateFalse("Load()", "missing include", "Load() reports failure when a referenced include file cannot be loaded", IncludeFailure.Load(MainFile)) && Passed;
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("IsGood()", "missing include partial state", "Load() keeps the intervals parsed before the failing include load without falling back to all-open", IncludeFailure.IsGood(MTime(100))) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+  UTGTI Test;
+
+  return Test.Run() == true ? 0 : 1;
+}

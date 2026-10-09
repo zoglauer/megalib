@@ -70,6 +70,7 @@ MFileReadOuts::MFileReadOuts() : MFileEvents()
   
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
+  m_IsReadingEvent = false;
 }
 
 
@@ -102,6 +103,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
 
   m_ReadOutFileFormat.Clear();
   m_ReadOutPrototypes.clear();
+  m_IsReadingEvent = false;
   
   int Lines = 0;
   int MaxLines = 100;
@@ -297,7 +299,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int 
   // If we have an include file, we get the event from it!
   if (m_IncludeFileUsed == true) {
     bool Return = dynamic_cast<MFileReadOuts*>(m_IncludeFile)->ReadNext(ROS, SelectedDetectorID, SelectedDetectorSide);
-    if (ROS.GetNumberOfReadOuts() == 0 || Return == false) {
+    if (Return == false) {
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
     } else {
@@ -320,11 +322,17 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int 
       // If the event is empty, then we ignore it and prepare for the next event:
       //mout << "MNCTFileEventsDat::ReadNextEvent: Done reading event" << endl;
       m_NEventsInFile++;
-      if (ROS.GetNumberOfReadOuts() == 0) {
+      // An event without read-outs is an event too, so the SE line decides where one ends
+      if (m_IsReadingEvent == false) {
         ROS.Clear();
+        if (Line[0] == 'S' && Line[1] == 'E') m_IsReadingEvent = true;
       } else {
-        // Done reading a non-empty event.  Return it:
-        //mout<<"MNCTFileEventsDat::ReadNextEvent: Returning good event: "<<long(Event)<<endl;
+        // A master file contains either IN directives or events, never events followed by an IN
+        if (Line[0] == 'I' && Line[1] == 'N') {
+          mout<<"Error in file: "<<m_FileName<<":"<<endl;
+          mout<<"The include file directive \""<<Line<<"\" appears after event data - the include file is ignored"<<endl;
+          m_IsReadingEvent = false;
+        }
         m_NGoodEventsInFile++;
         if (Error == true) {
           mout<<"An error occured during reading the event with ID "<<ROS.GetID()<<endl;
@@ -343,7 +351,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int 
         //mout<<"Switched to new include file: "<<m_IncludeFile->GetFileName()<<endl;
         // Now we have to read the first event:
         bool Return = dynamic_cast<MFileReadOuts*>(m_IncludeFile)->ReadNext(ROS, SelectedDetectorID, SelectedDetectorSide);
-        if (ROS.GetNumberOfReadOuts() == 0 || Return == false) {
+        if (Return == false) {
           //mout<<"Closing: "<<m_IncludeFile->GetFileName()<<endl;
           m_IncludeFile->Close();
           m_IncludeFileUsed = false;
@@ -398,11 +406,11 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID, int 
   } // End of while(m_File.good() == true)
   
   // Done reading.  No more new events.
-  if (ROS.GetNumberOfReadOuts() == 0) {
+  if (m_IsReadingEvent == false) {
     ROS.Clear();
   } else {
-    // Done reading a non-empty event.  Return it:
-    //mout << "MNCTFileEventsDat::GetNextEvent: Returning good event (at end of function)" << endl;
+    // Done reading the last event of the file. Return it:
+    m_IsReadingEvent = false;
     m_NGoodEventsInFile++;
     if (Error == true) {
       mout<<"An error occured during reading the event with ID "<<ROS.GetID()<<endl;

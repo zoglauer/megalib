@@ -193,7 +193,7 @@ bool MPETEvent::Validate()
   if (m_PositionResolution2[2] < 0) return false;
   
   if (m_TimingResolution1 < 0) return false;
-  if (m_TimingResolution1 < 0) return false;
+  if (m_TimingResolution2 < 0) return false;
   
   m_IsGoodEvent = true;
 
@@ -248,7 +248,7 @@ int MPETEvent::ParseLine(const char* Line, bool Fast)
       m_EnergyResolution1 = strtod(Line+3, NULL);
     } else {
       if (sscanf(Line, "EF %lf %lf", &m_Energy1, &m_EnergyResolution1) != 2) {
-        cout<<"Unable to parse EF of PET event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse EF of PET event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -263,7 +263,7 @@ int MPETEvent::ParseLine(const char* Line, bool Fast)
       m_PositionResolution1[2] = strtod(p, NULL);
     } else {
       if (sscanf(Line, "PF %lf %lf %lf %lf %lf %lf", &m_Position1[0], &m_Position1[1], &m_Position1[2], &m_PositionResolution1[0], &m_PositionResolution1[1], &m_PositionResolution1[2]) != 6) {
-        cout<<"Unable to parse PF of PET event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse PF of PET event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -283,7 +283,7 @@ int MPETEvent::ParseLine(const char* Line, bool Fast)
       m_Energy2 = strtod(Line+3, NULL);
     } else {
       if (sscanf(Line, "ES %lf", &m_Energy2) != 1) {
-        cout<<"Unable to parse ES of PET event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse ES of PET event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -295,7 +295,7 @@ int MPETEvent::ParseLine(const char* Line, bool Fast)
       m_Position2[2] = strtod(p, NULL);
     } else {
       if (sscanf(Line, "PS %lf %lf %lf", &m_Position2[0], &m_Position2[1], &m_Position2[2]) != 3) {
-        cout<<"Unable to parse PF of PET event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse PF of PET event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }

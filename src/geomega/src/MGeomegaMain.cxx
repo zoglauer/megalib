@@ -52,7 +52,16 @@ int main(int argc, char** argv)
   // Main function... the beginning...
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Geomega", "geometry for MEGAlib");
+  if (MGlobal::Initialize("Geomega", "geometry for MEGAlib") == false) {
+    return 1;
+  }
+
+  // Switch to batch mode before the TApplication starts
+  for (int i = 1; i < argc; i++) {
+    if (MString(argv[i]) == "--no-gui" || MString(argv[i]) == "-n") {
+      gROOT->SetBatch(true);
+    }
+  }
 
   TApplication* AppGeomega = new TApplication("Geomega", 0, 0);
 

@@ -48,6 +48,7 @@ class MGUIProgressBar;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! A MEGAlib file helper for ASCII, binary, and gzip-compressed files
 class MFile
 {
   // public interface:
@@ -62,9 +63,9 @@ class MFile
 
   //! Open the file for reading or writing in binary or ASCII mode
   virtual bool Open(MString FileName, unsigned int Way, bool IsBinary);
-  //! Open the file for reading or writing - this assumes we are always in ASCII mode
+  //! Open the file for reading or writing in ASCII mode
   virtual bool Open(MString FileName, unsigned int Way) { return Open(FileName, Way, false); }
-  //! Open the file for reading - this assumes we are always read in ASCII mode
+  //! Open the file for reading in ASCII mode
   virtual bool Open(MString FileName) { return Open(FileName, c_Read, false); }
   //! Close the file
   virtual bool Close();
@@ -73,7 +74,7 @@ class MFile
 
   //! Return true if the file is open
   virtual bool IsOpen();
-  //! Return true is the file is good
+  //! Return true if the file is good
   virtual bool IsGood();
   //! Clear all flags
   virtual void Clear();
@@ -104,9 +105,9 @@ class MFile
 
   //! Write a new line
   virtual void WriteLine();
-  //! Write some text and clear the stream
+  //! Write some text
   virtual void Write(const ostringstream& S);
-  //! Write some text, a new line, and clear the stream
+  //! Write some text followed by a new line
   virtual void WriteLine(const ostringstream& S);
   //! Write some text
   virtual void Write(const MString& S);
@@ -133,7 +134,7 @@ class MFile
   //! Read one line the C way - returns false if before the read IsGood() would return false
   virtual bool ReadLine(char* String, streamsize Size, char Delimeter);
 
-  //! Read CharactersToRead (or until end of file)  - returns false if before the read IsGood() would return false
+  //! Read CharactersToRead characters, or stop at end of file
   virtual bool Read(MBinaryStore& Store, unsigned int CharactersToRead);
   
   //! Set the file name - this does not open any file and you have to give the file name when you call Open()
@@ -164,7 +165,7 @@ class MFile
   //! Return true if the cancel button has been pressed
   bool IsCanceled() const { return m_Canceled; }
 
-  //! Return true if the file extensions are correct
+  //! Return true if the file extension matches
   virtual bool CheckFileExtension(MString Extension);
 
   //! Return true if the file exists and if it is readable
@@ -192,26 +193,30 @@ class MFile
   static MString GetWorkingDirectory();
   //! Return true if the path points to an executable regular file
   static bool IsExecutable(const MString& Path);
+  //! Return true if the path exists and is a directory
+  static bool IsDirectory(const MString& Path);
   //! Create the directory and all parent directories; return true on success or if it already exists
   static bool CreateDirectory(const MString& Path);
+  //! Read a plain text file completely into the content, return false if it could not be opened
+  static bool ReadTextFile(const MString& FileName, MString& Content);
   //! Create a randomized temporary file and return the full file name, e.g. /tmp/MEGAlib_aB3xYz9Qp1_results.tra, or an empty string on failure; NumberOfRandomChars is clamped to a minimum of 5
   static MString CreateTemporaryFile(const MString& Name, unsigned int NumberOfRandomChars = 10, const MString& DirectoryWhereToCreateTheFile = "");
   //! Create a randomized temporary directory and return the full directory name, e.g. /tmp/MEGAlib_aB3xYz9Qp1_WorkDirectory, or an empty string on failure; NumberOfRandomChars is clamped to a minimum of 5
   static MString CreateTemporaryDirectory(const MString& Name, unsigned int NumberOfRandomChars = 10, const MString& DirectoryWhereToCreateTheDirectory = "");
 
 
-  //! The file modes: Write to a new file
+  //! File mode: write to a file
   static unsigned int c_Write;
-  //! The file modes: Write to a new file
+  //! File mode: create a new file
   static unsigned int c_Create;
-  //! The file modes: Read from an existing file
+  //! File mode: read from an existing file
   static unsigned int c_Read;
 
   // protected methods:
  protected:
-  //! The show progress functions without mutex locking
+  //! Show or hide the progress bar without mutex locking
   void ShowProgressNoLock(bool Show = true);
-  //! Return true is the file is good without mutex locking
+  //! Return true if the file is good without mutex locking
   virtual bool IsGoodNoLock();
 
 
@@ -236,7 +241,7 @@ class MFile
   //! True if the file is open
   bool m_IsOpen;
 
-  //! The Mode: read or write
+  //! The mode: read or write
   unsigned int m_Way;
 
   //! Is this a binary file
@@ -255,12 +260,12 @@ class MFile
   //! The mutex guarding multithreaded access to the progress bar
   TMutex m_ProgressMutex;
 
-  //! True if the original file was compress
+  //! True if the original file was compressed
   bool m_WasZipped;
   //! FileName of the original zipped file
   MString m_ZippedFileName;
 
-  //! String indicating an unknwon file type
+  //! String indicating an unknown file type
   static const MString c_TypeUnknown;
   //! ID indicating an unknown version ID
   static const int c_VersionUnknown;
@@ -280,7 +285,7 @@ class MFile
   //! True if the file length has already been determined
   bool m_HasFileLength;
 
-  //! The known uncompressed file length -- if it has not yet been determined m_HasFileLength is false
+  //! The known uncompressed file length -- if it has not yet been determined m_HasUncompressedFileLength is false
   streampos m_UncompressedFileLength;
   //! True if the file length has already been determined
   bool m_HasUncompressedFileLength;
@@ -290,7 +295,7 @@ class MFile
 
   //! A frequently used buffer
   char* m_ReadLineBuffer;
-  //! The length of the frquently used read-line buffer
+  //! The length of the frequently used read-line buffer
   unsigned long m_ReadLineBufferLength;
 
   //! Compression level (gzip: 1..9)

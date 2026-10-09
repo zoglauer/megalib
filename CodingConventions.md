@@ -46,11 +46,27 @@ The naming follows the "upper camel case" convention, e.g.,
 MVector, Clear, IsNull, SetMagThetaPhi
 ```
 
+A name says what the function does or returns:
+* A function which returns a stored or looked-up value is `Get...` (`GetRemainingTimeBudget`, `GetGeometry`), not a bare noun (`RemainingTimeBudget`). A function which computes a quantity from its arguments may be named after the quantity (`Mag`, `Dot`, `Median`, `ARM`).
+* A function which returns a flag is `Is...`, `Has...`, or `Can...` (`IsExecutable`, `HasDisplay`); one which only checks something and reports it may be `Check...` or `Verify...`.
+* A function which changes the object is `Set...`, `Add...`, `Remove...`, `Clear`, ...; one which does some work is a verb (`Execute`, `Simulate`).
+* The name matches the result: a function which returns the path of an executable is not called `GetProgram`.
+
 ### Member variables
 
 Member variables start with "m_", and the remainder of the name follow the "upper camel case" convention, e.g.,
 ```
 m_X, m_DataPoint, m_IsNonZero
+```
+
+The name says what the value is, so that no comment has to explain it: `m_SimulationTime` and `m_SimulatedParticles`, not `m_Time` and `m_Generated`; `m_FileSuccessfullyRead`, not `m_Valid`. A flag is named for the fact it records.
+
+### Enumerations
+
+* Use `enum class`, defined at namespace scope above the class which uses it, named like a class with the prefix M, e.g., `MTestStatus`.
+* The enumerators start with `c_` and follow the "upper camel case" convention; the name of the enumeration is not repeated in them. They are always used qualified, e.g., `MTestStatus::c_Pending`, not `c_StatusPending`.
+```
+enum class MTestingScope { c_UnitTests, c_All, c_EndToEnd };
 ```
 
 ### Variables in functions
@@ -68,14 +84,54 @@ X, DataPoint, IsNonZero
 - Avoid adding C headers such as `<stdio.h>`, `<stdlib.h>`, or POSIX headers such as `<unistd.h>` and `<fcntl.h>` when a suitable C++ header and C++ mechanism exists.
 - If a C or POSIX function is required because the C++ standard library does not provide equivalent semantics, document the reason briefly near the use.
 - If new functionality is useful beyond the class it is written for (a second class needs it, or it would otherwise be copied), put it where all its users can reach it: in the lowest common base class that all of them share, or in a small dedicated class if there is none. Do not copy it into each class, and keep it a member, not a free function.
+- In the source file, the member functions are defined in the order of their declaration in the header, with the constructors and the destructor first.
+- Callbacks and signal handlers are static member functions of the class, not file-scope functions.
+- A module has the directories `inc` (headers), `src` (implementations, and the programs), and `unittests`. A class or program belongs to the directory of the module which it serves: a base class for the end-to-end tests is in `src/endtoend`, not in a library below it.
+- Small data classes which have no implementation of their own (only data members and short inline functions) may be defined in the header of the class which they serve, instead of in files of their own. They start with the prefix of their module (e.g. `ET` for the end-to-end tests) instead of `M`, to make clear that they are only a part of it.
+- Group the declarations of the member functions in the header by purpose, in the order in which a reader needs them (for example environment, running programs, the chain of programs, reading the results, analysis), with one short comment line above each group.
+- Group the includes under the comments `// Standard libs:`, `// POSIX libs:` (only if there are POSIX headers such as `<unistd.h>`, `<fcntl.h>`, `<sys/wait.h>`; directly after the standard libs), `// ROOT libs:`, and `// MEGAlib libs:`, spelled exactly like this (plural, with `libs`), and in the header and source files alike. `using namespace std;` follows the last of the system groups.
 - Generalize when the second use appears, not speculatively. Do not widen a base class with something only one derived class needs.
+- Search MEGAlib before you write a new function, class, or constant (`grep -rn "Keyword" src`, and look at the classes which fit the job), and use what exists; if it lacks something, extend it instead of copying it. Look at least at `MFile` (files, directories, paths, `$(MEGALIB)` expansion with `ExpandFileName`, `CreateDirectory`, `IsDirectory`, `ProgramExists`), `MSystem` (processes, the shell, `GetShellQuoted`), `MString`, `MGlobal` (constants), `MVector` and the other physics classes, and the readers (`MFileEventsSim`, `MFileEventsTra`). Use their classes and constants (`c_Pi`, `c_Rad`, `c_Deg`, `c_E0`, ...) instead of private structs, `M_PI`, hand-written parsers, or your own `std::filesystem`/`getenv` code for the same job.
+- A helper which is useful beyond the class that needs it first belongs to the class that matches its job (a shell-quoting function is in `MSystem`, not in the end-to-end test base class), see also the rule above about the lowest common base class.
+- Do not write a function which only renames or wraps a single call or expression and adds no meaning (a `UnitVector()` around one vector constructor); call it directly.
+- Give types and helpers the smallest access level which works: what only derived classes use is `protected`, what only the class uses is `private`. A class does not export types only for a single outside user (e.g. a test); that user gets access through a derived class.
+
+## C++ language use
+
+- The code is C++17. Do not use features of later standards.
+- Use C++ casts (`static_cast`, `dynamic_cast`, `const_cast`, `reinterpret_cast`) everywhere, never C-style casts.
+- Do not use `auto` for simple types (`int`, `double`, `bool`, `MString`, ...) or ordinary classes. Use it for complex types where the type name carries no information: iterators, lambdas, template-heavy return types.
+- Prefer smart pointers (`unique_ptr`, `shared_ptr`) in new code. Use `new` only where it is necessary, e.g. when ROOT or another API takes the ownership of the object.
+- A function which hands an object over to the caller returns a smart pointer (`unique_ptr` for one owner, `shared_ptr` if the object is shared, e.g. the events of a file which several lists hold), never a raw pointer which the caller has to delete.
+- Prefer the C++ threads, mutexes, and futures (`std::thread`, `std::mutex`, `std::async`) over the ROOT ones (`TThread`).
+- Use `MString`, not `std::string`; `std::string` only where an API requires it.
+- Counts, sizes, and loop indices are unsigned, not `size_t`: `unsigned int` by default, `unsigned long` where the count can exceed 4 billion (e.g. the number of simulated particles or events of a long run).
+- End lines of streams with `endl`, not `"\n"`.
 
 ## Conditions and error handling
 
+- Do not return or assign the result of a comparison or of a combination of conditions. Write an `if` which returns `true` or `false` (or sets the variable) explicitly, and compare every flag explicitly (`Flag == true`), also inside such conditions:
+  ```cpp
+  // Instead of: return system(Command.Data()) == 0;
+  if (system(Command.Data()) != 0) return false;
+  return true;
+
+  // Instead of: Valid = Time > 0 && Generated > 0 && HasInitialInteraction;
+  Valid = false;
+  if (Time > 0 && Generated > 0 && HasInitialInteraction == true) Valid = true;
+  ```
+- Do not use the conditional operator `?:` to choose between values or to build return values. Write an `if` instead, so that each branch is visible and can be commented. A very short, plain selection of one of two simple values in an argument or a stream output (e.g. `Count == 1 ? "event" : "events"`) is the only exception.
+  ```cpp
+  // Instead of: return (Root == nullptr) ? MString("") : MString(Root) + "/resource/examples/geomega/special/Max.geo.setup";
+  if (Root == nullptr) return "";
+  return MString(Root) + "/resource/examples/geomega/special/Max.geo.setup";
+  ```
 - Do not rely on implicit truthiness. Write explicit comparisons such as `Flag == true`, `Flag == false`, `Pointer == nullptr`, and `Error.value() != 0`.
 - For recoverable filesystem operations, prefer the `std::error_code` overloads. Print a contextual `merr` message before returning failure unless the failure is expected and intentionally ignored.
 
 ## Filesystem safety
+
+- Every argument which is not a fixed word (a path, a file name, user input) is passed to the shell through `MSystem::GetShellQuoted()`, never pasted into a command line: a space, a quote, or a `$` in a path must neither break the command nor run something else. Only a glob (`*`) stays outside the quotes. Prefer a function of `MFile` or `MSystem` over a shell command for the same job (`MFile::Remove`, `MFile::CreateDirectory`, `MSystem::RunChildProcess`).
 
 - Keep user-facing labels separate from filesystem-safe names. Validate path components instead of silently sanitizing them.
 - Restrict destructive filesystem operations to a validated private root directory. Reject empty paths, traversal outside the root, sibling paths, and symlink escapes.
@@ -92,6 +148,14 @@ X, DataPoint, IsNonZero
   bool m_IsZero;
   ```
 - Document all classes and all member functions and variables in the header
+- Repeat the description of a member function above its definition in the source file, so that the source file can be read on its own:
+  ```cpp
+  //! Return the number of data points
+  unsigned int MData::GetNumberOfDataPoints() const
+  {
+    return m_DataPoints.size();
+  }
+  ```
 
 - Use single-line comments (//) to explain logic within methods.
 - For non-obvious logic inside methods, document the code in short step-by-step comments directly above the relevant block. The comments should describe the intent of each block, not restate every line.
@@ -194,7 +258,7 @@ longer than one line.
   `Attention: Simple, but very inefficient algorithm!`
 - `!` marks something the reader must not miss. Use one `!`, not several.
 - `ToDo:` / `TODO:` for open work: `TODO: Change to AreCoplanar(...)`
-- Empty function bodies: `// Intentionally left blank`
+- Empty function bodies in source files, constructors and destructors included, always contain `// Intentionally left blank` (also if a constructor only has an initializer list). The only exception is a one-line inline `{}` in a header.
 
 ### Rationale
 
@@ -265,6 +329,24 @@ These patterns are nearly absent from the older code and should not be introduce
   }
   ```
 
+- **At the End and Around main()**: The separating block is also used after the last function of the file, and before and after `main()`. A source file ends with the line `// <FileName>: the end...` above the final separator line:
+  ```cpp
+  }
+
+
+  ////////////////////////////////////////////////////////////////////////////////
+
+
+  int main()
+  {
+    ...
+  }
+
+
+  // ETCosimaToMimrecSpectrum.cxx: the end...
+  ////////////////////////////////////////////////////////////////////////////////
+  ```
+
 - **Within Functions**: Use blank lines to separate logical blocks of code within a function. For example, separate initialization, computation, and return statements:
   ```cpp
     void SetMagThetaPhi(double mag, double theta, double phi)
@@ -280,6 +362,7 @@ These patterns are nearly absent from the older code and should not be introduce
 
 ### 4. **Spaces Around Braces inside functions**
 
+- **Braces**: The body of `if`, `else`, `for`, and `while` is always in braces, also if it is a single statement (`.clang-format` has `AllowShortIfStatementsOnASingleLine: Never`).
 - **Opening Brace**: The opening brace { should be placed at the end of the line for function definitions, conditionals, loops, and class definitions - the exception are meber functions, where it is placed on a single new line
 
 - **Closing Brace**: The closing brace } should be on its own line, aligned with the line where the corresponding opening brace appeared.
@@ -347,10 +430,18 @@ These patterns are nearly absent from the older code and should not be introduce
     m_X ++;  // Incorrect
   ```
 
-- **MEGAlib streams**: White spaces before and after <<, >> are OK but not enforced
+- **MEGAlib streams**: No white spaces before and after <<, >> (97% of the existing code does it this way)
   ```cpp
-    merr<<"Var: "<<V<<endl;        // OK
-    merr << "Var: " << V << endl;  // OK
+    merr<<"Var: "<<V<<endl;        // Correct
+    merr << "Var: " << V << endl;  // Incorrect
+  ```
+
+- **Boolean conditions**: Prefer an explicit comparison with true or false over the bare value or the negation operator. This is a preference, not a requirement - existing code which does without it is fine, but mixing both forms within one function is not.
+  ```cpp
+    if (Line.BeginsWith("BD") == true) {   // Preferred
+    if (IsOpen() == false) {               // Preferred
+    if (Line.BeginsWith("BD")) {           // OK
+    if (!IsOpen()) {                       // OK
   ```
 
 ### 7. **Trailing Whitespace**

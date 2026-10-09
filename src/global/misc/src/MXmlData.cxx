@@ -65,7 +65,7 @@ MXmlData::MXmlData()
 
 MXmlData::MXmlData(const MString& Name)
 {
-  //! Constructor
+  // Constructor
 
   m_Name = Name;
   m_Value = "";
@@ -77,7 +77,7 @@ MXmlData::MXmlData(const MString& Name)
 
 MXmlData::MXmlData(const MString& Name, const MString& Value)
 {
-  //! Constructor
+  // Constructor
 
   m_Name = Name;
   m_Value = Value;
@@ -89,7 +89,7 @@ MXmlData::MXmlData(const MString& Name, const MString& Value)
 
 MXmlData::MXmlData(const MString& Name, const MTime& Value)
 {
-  //! Constructor
+  // Constructor
 
   m_Name = Name;
   m_Value = Value.GetLongIntsString();
@@ -101,7 +101,7 @@ MXmlData::MXmlData(const MString& Name, const MTime& Value)
 
 MXmlData::MXmlData(const MString& Name, int Value)
 {
-  //! Constructor
+  // Constructor
 
   m_Name = Name;
   ostringstream out;
@@ -115,7 +115,7 @@ MXmlData::MXmlData(const MString& Name, int Value)
 
 MXmlData::MXmlData(const MString& Name, long Value)
 {
-  //! Constructor
+  // Constructor
 
   m_Name = Name;
   ostringstream out;
@@ -129,7 +129,7 @@ MXmlData::MXmlData(const MString& Name, long Value)
 
 MXmlData::MXmlData(const MString& Name, unsigned int Value)
 {
-  //! Constructor
+  // Constructor
   
   m_Name = Name;
   ostringstream out;
@@ -143,7 +143,7 @@ MXmlData::MXmlData(const MString& Name, unsigned int Value)
 
 MXmlData::MXmlData(const MString& Name, unsigned long Value)
 {
-  //! Constructor
+  // Constructor
   
   m_Name = Name;
   ostringstream out;
@@ -157,7 +157,7 @@ MXmlData::MXmlData(const MString& Name, unsigned long Value)
 
 MXmlData::MXmlData(const MString& Name, double Value)
 {
-  //! Constructor
+  // Constructor
 
   m_Name = Name;
   ostringstream out;
@@ -172,7 +172,7 @@ MXmlData::MXmlData(const MString& Name, double Value)
 
 MXmlData::MXmlData(const MString& Name, bool Value)
 {
-  //! Constructor
+  // Constructor
 
   m_Name = Name;
   m_Value = ((Value == true) ? "true" : "false");
@@ -204,7 +204,7 @@ void MXmlData::Clear()
 
 bool MXmlData::GetValueAsBoolean() const
 {
-  //! Return the value of the node as boolean
+  // Return the value of the node as boolean
   
   if (m_Value == "true" || m_Value == "TRUE") {
     return true;

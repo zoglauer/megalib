@@ -51,7 +51,16 @@ int main(int argc, char** argv)
   // Main function... the beginning...
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Sivan", "simulated event analysis");
+  if (MGlobal::Initialize("Sivan", "simulated event analysis") == false) {
+    return 1;
+  }
+
+  // Switch to batch mode before the TApplication starts
+  for (int i = 1; i < argc; i++) {
+    if (MString(argv[i]) == "--no-gui" || MString(argv[i]) == "-n") {
+      gROOT->SetBatch(true);
+    }
+  }
 
   TApplication* AppSivan = new TApplication("Sivan", 0, 0);
 

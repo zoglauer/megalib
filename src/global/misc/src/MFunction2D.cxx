@@ -42,6 +42,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MAssert.h"
+#include "MExceptions.h"
 #include "MStreams.h"
 
 
@@ -66,7 +67,8 @@ const unsigned int MFunction2D::c_InterpolationLinear   = 3;
 
 
 MFunction2D::MFunction2D() 
-  : m_InterpolationType(c_InterpolationUnknown)
+  : m_InterpolationType(c_InterpolationUnknown),
+    m_Maximum(g_DoubleNotDefined)
 {
   // Construct an instance of MFunction2D
 }
@@ -224,10 +226,6 @@ bool MFunction2D::Set(const MString FileName, const MString KeyWord,
       }
     }
   }
-  m_Z.clear();
-  m_Z.resize(m_X.size()*m_Y.size());
-
-
   // Sanity checks:
 
   // We need at least two bins in x and y direction:
@@ -259,6 +257,9 @@ bool MFunction2D::Set(const MString FileName, const MString KeyWord,
     }
   }
 
+  m_Z.clear();
+  m_Z.resize(m_X.size()*m_Y.size());
+
   // Round two: Parse the actual data
   for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
     if (Parser.GetTokenizerAt(i)->GetNTokens() == 0) continue;
@@ -269,13 +270,13 @@ bool MFunction2D::Set(const MString FileName, const MString KeyWord,
         return false;
       } else {
         if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1) < 0 ||
-            Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1) > (int) m_X.size()) {
+            Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1) >= (int) m_X.size()) {
           mout<<"In the function defined by: "<<FileName<<endl;
           mout<<"X-axis out of bounds!"<<endl;
           return false;          
         }
         if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2) < 0 ||
-            Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2) > (int) m_Y.size()) {
+            Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2) >= (int) m_Y.size()) {
           mout<<"In the function defined by: "<<FileName<<endl;
           mout<<"Y-axis out of bounds!"<<endl;
           return false;                    
@@ -283,18 +284,18 @@ bool MFunction2D::Set(const MString FileName, const MString KeyWord,
 
         m_Z[Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1) + m_X.size()*Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2)] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3);
       }
-    } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "GR") == true) {
-      if (Parser.GetTokenizerAt(i)->GetNTokens() != 2 + m_X.size()) {
-        mout<<"In the function defined by: "<<FileName<<endl;
-        mout<<"Wrong number of arguments!"<<endl;
-        return false;
-      } else {
-        if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1) < 0 ||
-            Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1) > (int) m_Y.size()) {
-          mout<<"In the function defined by: "<<FileName<<endl;
-          mout<<"Y-axis out of bounds!"<<endl;
-          return false;                    
-        }
+	    } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "GR") == true) {
+	      if (Parser.GetTokenizerAt(i)->GetNTokens() != 2 + m_X.size()) {
+	        mout<<"In the function defined by: "<<FileName<<endl;
+	        mout<<"Wrong number of arguments!"<<endl;
+	        return false;
+	      } else {
+	        if (Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1) < 0 ||
+	            Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1) >= (int) m_Y.size()) {
+	          mout<<"In the function defined by: "<<FileName<<endl;
+	          mout<<"Y-axis out of bounds!"<<endl;
+	          return false;                    
+	        }
 
         vector<double> V = Parser.GetTokenizerAt(i)->GetTokenAtAsDoubleVector(2);
 
@@ -308,16 +309,6 @@ bool MFunction2D::Set(const MString FileName, const MString KeyWord,
   // Determine interpolation type:
   if (m_X.size() > 1 && m_InterpolationType == c_InterpolationConstant) {
     m_InterpolationType = c_InterpolationLinear;
-  } 
-
-  if (m_X.size() == 1) {
-    m_InterpolationType = c_InterpolationConstant;
-  } 
-  
-  if (m_X.size() == 0) {
-    m_InterpolationType = c_InterpolationConstant;
-    m_X.push_back(0);
-    m_Y.push_back(0);
   } 
 
   // Clean up:
@@ -401,9 +392,12 @@ double MFunction2D::Evaluate(double x, double y) const
     return 0;
   }
 
-  if (m_InterpolationType == c_InterpolationConstant) {
-    return m_Z[0];
-  } else if (m_InterpolationType == c_InterpolationNone) {
+	  if (m_InterpolationType == c_InterpolationConstant) {
+	    if (m_Z.size() == 0) {
+      throw MExceptionEmptyObject("function z values");
+	    }
+	    return m_Z[0];
+	  } else if (m_InterpolationType == c_InterpolationNone) {
 
     // Get Position:
     int xPosition = -1; 
@@ -585,6 +579,10 @@ double MFunction2D::GetXMin() const
 {
   //! Get the minimum x-value
 
+  if (m_X.size() == 0) {
+    throw MExceptionEmptyObject("function x values");
+  }
+
   return m_X.front();
 }
 
@@ -595,6 +593,10 @@ double MFunction2D::GetXMin() const
 double MFunction2D::GetXMax() const
 {
   //! Get the maximum x-value
+
+  if (m_X.size() == 0) {
+    throw MExceptionEmptyObject("function x values");
+  }
 
   return m_X.back();
 }
@@ -607,6 +609,10 @@ double MFunction2D::GetYMin() const
 {
   //! Get the minimum y-value
 
+  if (m_Y.size() == 0) {
+    throw MExceptionEmptyObject("function y values");
+  }
+
   return m_Y.front();
 }
 
@@ -618,6 +624,10 @@ double MFunction2D::GetYMax() const
 {
   //! Get the maximum y-value
 
+  if (m_Y.size() == 0) {
+    throw MExceptionEmptyObject("function y values");
+  }
+
   return m_Y.back();
 }
 
@@ -625,9 +635,13 @@ double MFunction2D::GetYMax() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MFunction2D::GetZMin()
+double MFunction2D::GetZMin() const
 {
   //! Get the minimum z-value
+
+  if (m_Z.size() == 0) {
+    throw MExceptionEmptyObject("function z values");
+  }
 
   double Min = numeric_limits<double>::max();
   for (unsigned int i = 0; i < m_Z.size(); ++i) {
@@ -644,6 +658,10 @@ double MFunction2D::GetZMin()
 double MFunction2D::GetZMax()
 {
   //! Get the maximum z-value
+
+  if (m_Z.size() == 0) {
+    throw MExceptionEmptyObject("function z values");
+  }
 
   if (m_Maximum == g_DoubleNotDefined) {
     m_Maximum = -numeric_limits<double>::max();

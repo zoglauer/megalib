@@ -270,7 +270,7 @@ int MMuonEvent::ParseLine(const char* Line, bool Fast)
       m_Energy = strtod(Line+3, NULL);
     } else {
       if (sscanf(Line, "ME %lf", &m_Energy) != 1) {
-        cout<<"Unable to parse ME of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse ME of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -283,7 +283,7 @@ int MMuonEvent::ParseLine(const char* Line, bool Fast)
     } else {
       if (sscanf(Line, "MD %lf %lf %lf", 
                  &m_Direction[0], &m_Direction[1], &m_Direction[2]) != 3) {
-        cout<<"Unable to parse MD of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse MD of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }
@@ -296,7 +296,7 @@ int MMuonEvent::ParseLine(const char* Line, bool Fast)
     } else {
       if (sscanf(Line, "MG %lf %lf %lf", 
                  &m_CenterOfGravity[0], &m_CenterOfGravity[1], &m_CenterOfGravity[2]) != 3) {
-        cout<<"Unable to parse MG of event "<<m_Id<<"!"<<endl;
+        mout<<"Unable to parse MG of event "<<m_Id<<"!"<<endl;
         Ret = 1;
       }
     }

@@ -43,7 +43,7 @@ using namespace std;
 #include <TClass.h>
 #include <TRandom.h>
 
-// MIWorks libs:
+// MEGAlib libs:
 #include "MStreams.h"
 #include "MTimer.h"
 
@@ -62,7 +62,7 @@ ClassImp(MTransceiverTcpIpBinary)
 void* StartTcpIpBinaryTransceiverThread(void* Transceiver)
 {
   ((MTransceiverTcpIpBinary *) Transceiver)->TransceiverLoop();
-  return 0;
+  return nullptr;
 }
 
 
@@ -70,6 +70,7 @@ void* StartTcpIpBinaryTransceiverThread(void* Transceiver)
 
 
 int MTransceiverTcpIpBinary::m_ThreadId = 0;
+const int MTransceiverTcpIpBinary::c_ReadPacketSize = 1024*1024;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,7 +109,7 @@ MTransceiverTcpIpBinary::MTransceiverTcpIpBinary(MString Name, MString Host, uns
   
   m_IsThreadRunning = false;
 
-  m_TransceiverThread = 0;
+  m_TransceiverThread = nullptr;
   
   m_Verbosity = 2;
 }
@@ -124,7 +125,7 @@ MTransceiverTcpIpBinary::~MTransceiverTcpIpBinary()
   if (m_IsConnected == true) {
     Disconnect();
   }
-  if (m_TransceiverThread != 0) {
+  if (m_TransceiverThread != nullptr) {
     StopTransceiving();  
   }
 }
@@ -163,8 +164,11 @@ bool MTransceiverTcpIpBinary::Connect(bool WaitForConnection, double TimeOut)
 {
   // Connect to the given host.
   
-  m_AutomaticReconnection = true; // must come before any return
   if (m_IsConnected == true) return true;
+  if (m_WishClient == false && m_WishServer == false) {
+    if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Connection request ignored because both client and server roles are disabled"<<endl;
+    return false;
+  }
   m_WishConnection = true;
   
   if (m_IsThreadRunning == false) {
@@ -178,6 +182,7 @@ bool MTransceiverTcpIpBinary::Connect(bool WaitForConnection, double TimeOut)
       gSystem->Sleep(10);
     }
     if (m_IsConnected == false) {
+      m_WishConnection = false;
       StopTransceiving();
       if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Connection to "<<m_Host<<":"<<m_Port<<" failed!"<<endl;
       return false;
@@ -197,28 +202,31 @@ bool MTransceiverTcpIpBinary::Disconnect(bool WaitForDisconnection, double TimeO
   // Disconnect from host
 
   m_WishConnection = false;
-  StopTransceiving();
-
-  if (m_IsConnected == true) {
-    if (WaitForDisconnection == true) {
-      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Waiting for disconnection!"<<endl;
-      MTimer Passed;
-      while (Passed.GetElapsed() <= TimeOut && m_IsConnected == true) {
-        gSystem->Sleep(10);
-      }
-      if (m_IsConnected == true) {
-        if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Disconnection from "<<m_Host<<":"<<m_Port<<" failed!"<<endl;
-        return false;
-      }
-      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Disconnected from "<<m_Host<<":"<<m_Port<<endl;
+  if (WaitForDisconnection == true) {
+    if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Waiting for disconnection!"<<endl;
+    MTimer Passed;
+    while (Passed.GetElapsed() <= TimeOut && m_IsConnected == true) {
+      gSystem->Sleep(10);
     }
+    if (m_IsConnected == true) {
+      if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Disconnection from "<<m_Host<<":"<<m_Port<<" failed!"<<endl;
+      StopTransceiving();
+      return false;
+    }
+    if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Disconnected from "<<m_Host<<":"<<m_Port<<endl;
   }
 
+  StopTransceiving();
+
   // Clean up:
-  // TODO: Why not clear buffers
+  // Clear the send and receive buffers on disconnect.
   m_PacketsToSend.clear();
   m_NPacketsToSend = 0;
   m_NBytesToSend = 0;
+  m_ReceiveMutex.Lock();
+  m_PacketsToReceive.clear();
+  m_NPacketsToReceive = 0;
+  m_ReceiveMutex.UnLock();
   
   return true;
 }
@@ -231,7 +239,7 @@ void MTransceiverTcpIpBinary::StartTransceiving()
 {
   // Starts the multithreaded TransceiverLoop
 
-  if (m_TransceiverThread != 0) return;
+  if (m_TransceiverThread != nullptr) return;
 
   m_StopThread = false;
   
@@ -268,9 +276,11 @@ void MTransceiverTcpIpBinary::StopTransceiving()
     // Never do this in a thread! gSystem->ProcessEvents();
     gSystem->Sleep(10);
   }
-    
-  //m_TransceiverThread->Kill();
-  m_TransceiverThread = 0;
+
+  if (m_TransceiverThread != nullptr) {
+    delete m_TransceiverThread;
+    m_TransceiverThread = nullptr;
+  }
   m_IsThreadRunning = false;
 }
 
@@ -309,7 +319,7 @@ bool MTransceiverTcpIpBinary::Send(const vector<unsigned char>& Packet)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTransceiverTcpIpBinary::SyncedReceive(vector<unsigned char>& Packet, vector<unsigned char>& Sync, unsigned int MaxPackets)
+bool MTransceiverTcpIpBinary::SyncedReceive(vector<unsigned char>& Packet, const vector<unsigned char>& Sync, unsigned int MaxPackets)
 {
   // Check if something is in the received list, 
   // If it starts with Sync, and there is more starting with Sync store the first one with sync
@@ -335,6 +345,7 @@ bool MTransceiverTcpIpBinary::SyncedReceive(vector<unsigned char>& Packet, vecto
       advance(SearchStart, Sync.size());
     }
     if (Stop != Start) {
+      Packet.clear();
       for (auto I = Start; I != Stop; ++I) {
         Packet.push_back((*I));
       }
@@ -396,25 +407,25 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
   m_IsThreadRunning = true;
 
   int Status = 0;
-  TServerSocket* ServerSocket = 0;    // A server
-  TSocket* Socket = 0;                // A full-duplex connection to another host
+  TServerSocket* ServerSocket = nullptr;    // A server
+  TSocket* Socket = nullptr;                // A full-duplex connection to another host
   bool SleepAllowed = true;
 
-  int ReadPacketSize = 1024*1024;
+  int ReadPacketSize = c_ReadPacketSize;
   vector<unsigned char> ReadPacket(ReadPacketSize+1, '\0'); // it's 2011, no need to be humble...
   
-  int SleepAmount = 20;
+  int SleepAmount = 2;
   
  
   while (true) {
     //cout<<"Transceiver loop"<<endl;
     
     // This is the main loop of the thread. It consists of five parts:
-    // (1) Handle stopping the thread if necessary
-    // (2) Establish contact to remote host
-    // (3) Receive messages
-    // (4) Send messages
-    // (5) Sleep if not other tasks have to be done
+    // Step 0: Handle stopping the thread if necessary
+    // Step 1: Establish contact to remote host
+    // Step 2: Receive messages
+    // Step 3: Send messages
+    // Step 4: Sleep if no other tasks have to be done
 
     SleepAllowed = true;
     
@@ -422,18 +433,21 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     if (m_IsConnected == true) {
       m_TimeSinceLastConnection.Reset();
       
-      if (Socket->IsValid() == false || Socket->TestBit(TSocket::kBrokenConn)) {
+      if (Socket == nullptr || Socket->IsValid() == false || Socket->TestBit(TSocket::kBrokenConn)) {
         if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Found a broken connection... Resetting!"<<endl;
         
-        if (Socket != 0) {
+        if (Socket != nullptr) {
           Socket->Close("force");
           delete Socket;
-          Socket = 0;
+          Socket = nullptr;
           ++m_NResets;
         }
         
         m_IsConnected = false;
         m_IsServer = false;
+        if (m_AutomaticReconnection == false && m_NResets > 0) {
+          m_WishConnection = false;
+        }
       }
     }
     
@@ -444,11 +458,10 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     if (m_StopThread == true) {
       if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Stopping thread...!"<<endl;
 
-      if (Socket != 0) {
+      if (Socket != nullptr) {
         Socket->Close("force");
         delete Socket;
-        Socket = 0;
-        ++m_NResets;
+        Socket = nullptr;
       }
 
       m_IsConnected = false;
@@ -462,7 +475,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     // Connect if not connected and a connection is wished
     
     if (m_IsConnected == false) {
-      if (m_WishConnection == true && m_AutomaticReconnection == true) {
+      if (m_WishConnection == true) {
         
         // Try to (re-) connect as client:
         if (m_WishClient == true) {
@@ -482,8 +495,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Unable to connect as client..."<<endl;
             Socket->Close("force");
             delete Socket;
-            Socket = 0;
-            ++m_NResets;
+            Socket = nullptr;
             if (m_WishServer == false) {
               gSystem->Sleep(SleepAmount);
               continue;
@@ -496,6 +508,16 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
 
           m_SocketMutex.Lock(); // socket initilization is not reentrant as of 5.34.22 (bu bug report is submitted)!
           ServerSocket = new TServerSocket(m_Port, true, 10000000);
+          if (ServerSocket == nullptr || ServerSocket->IsValid() == false) {
+            if (ServerSocket != nullptr) {
+              delete ServerSocket;
+              ServerSocket = nullptr;
+            }
+            m_SocketMutex.UnLock();
+            if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Unable to bind server socket, trying again later..."<<endl;
+            gSystem->Sleep(SleepAmount);
+            continue;
+          }
           ServerSocket->SetOption(kNoBlock,1);
           m_SocketMutex.UnLock();
 
@@ -507,13 +529,13 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
           delete ServerSocket;
 
 
-          if (long(Socket) > 0) {
+          if (reinterpret_cast<intptr_t>(Socket) > 0) {
             Socket->SetOption(kNoBlock, 1);
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Connection established as server!"<<endl;
             m_IsServer = true;
             m_IsConnected = true;  
           } else {
-            Socket = 0; // Since it can be negative... yes...
+            Socket = nullptr; // Since it can be negative... yes...
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Unable to connect as server, trying again later..."<<endl;
             gSystem->Sleep(SleepAmount);
             continue;
@@ -532,8 +554,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
 
       Socket->Close("force");
       delete Socket;
-      Socket = 0;
-      ++m_NResets;
+      Socket = nullptr;
 
       m_IsConnected = false;
       m_IsServer = false;
@@ -542,7 +563,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     }
 
     
-    // Step 3: 
+    // Step 2: 
     // Receive data
       
     // Add the object to the list:
@@ -573,18 +594,22 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       
       Socket->Close("force");
       delete Socket;
-      Socket = 0;
+      Socket = nullptr;
       ++m_NResets;
       
       m_IsConnected = false;
+      m_IsServer = false;
+      if (m_AutomaticReconnection == false && m_NResets > 0) {
+        m_WishConnection = false;
+      }
       
       continue; // back to the beginning....
     } 
-    // If status == 0 we have either no message received or lost connection
-    else if (Status == -4) {
+    // If status == -4 and we did not receive any bytes, we have nothing to do
+    else if (Status == -4 && NewPacket.empty() == true) {
       // Empty...
     } 
-    // If status > 0, we got a message
+    // If we received any bytes, we got data
     else {
       m_TimeSinceLastIO.Reset();
       unsigned long NewPacketSize = NewPacket.size();
@@ -593,19 +618,31 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       
         //cout<<"Transceiver "<<m_Name<<": Received something from "<<m_Host<<":"<<m_Port<<" of size "<<NewPacket.size()<<endl;
       
-        if (m_NPacketsToReceive + NewPacketSize > m_MaxBufferSize) {
-          if (NewPacketSize > m_NPacketsToReceive) {
+        if (NewPacketSize > m_MaxBufferSize) {
+          unsigned long RemoveSize = NewPacketSize - m_MaxBufferSize;
+          deque<unsigned char>::iterator Stop = NewPacket.begin();
+          advance(Stop, RemoveSize);
+          NewPacket.erase(NewPacket.begin(), Stop);
+          m_NLostPackets += m_NPacketsToReceive + RemoveSize;
+          m_NPacketsToReceive = 0;
+          m_PacketsToReceive.clear();
+          NewPacketSize = NewPacket.size();
+          if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Buffer overflow: Deleted oldest "<<RemoveSize<<" bytes from incoming packet"<<endl;
+        }
+        else if (m_NPacketsToReceive + NewPacketSize > m_MaxBufferSize) {
+          unsigned long RemoveSize = m_NPacketsToReceive + NewPacketSize - m_MaxBufferSize;
+          if (RemoveSize >= m_NPacketsToReceive) {
             m_NLostPackets += m_NPacketsToReceive;
             m_NPacketsToReceive = 0;
             m_PacketsToReceive.clear();
           } else {
             deque<unsigned char>::iterator Stop = m_PacketsToReceive.begin();
-            advance(Stop, NewPacketSize);
+            advance(Stop, RemoveSize);
             m_PacketsToReceive.erase(m_PacketsToReceive.begin(), Stop);
-            m_NLostPackets += NewPacketSize;
-            m_NPacketsToReceive -= NewPacketSize;
+            m_NLostPackets += RemoveSize;
+            m_NPacketsToReceive -= RemoveSize;
           }
-          if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Buffer overflow: Deleted oldest "<<NewPacketSize<<" bytes! Now "<<m_NPacketsToReceive<<" bytes are in the buffer"<<endl;
+          if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Buffer overflow: Deleted oldest "<<RemoveSize<<" bytes! Now "<<m_NPacketsToReceive<<" bytes are in the buffer"<<endl;
         }
         
         m_PacketsToReceive.insert(m_PacketsToReceive.end(), NewPacket.begin(), NewPacket.end());
@@ -623,7 +660,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
 
 
 
-    // Step 4:
+    // Step 3:
     // Send data:
     m_SendMutex.Lock();
     bool SomethingToSend = (m_NPacketsToSend > 0) ? true : false;
@@ -640,27 +677,40 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
         m_SendMutex.UnLock();
         continue;
       }
-      vector<unsigned char>& Packet = m_PacketsToSend.front(); // Make sure we don't copy the string...
-      m_SendMutex.UnLock();
+      vector<unsigned char> Packet = m_PacketsToSend.front();
+
+      if (Packet.empty() == true) {
+        if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Warning: Ignoring empty packet"<<endl;
+        m_PacketsToSend.pop_front();
+        if (m_NPacketsToSend > 0) {
+          m_NPacketsToSend--;
+        }
+        m_SendMutex.UnLock();
+        continue;
+      }
       
-      if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Trying to send something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
+      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Trying to send something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
       Socket->SetOption(kNoBlock, 0); // Not sure about this...
       Status = Socket->SendRaw((void*) &Packet[0], Packet.size());
 
       
-      if (Status < 0) {
+        if (Status < 0) {
+          m_SendMutex.UnLock();
         if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Error (ERR="<<Status<<"): Sending failed!"<<endl;
 
         Socket->Close("force");
         delete Socket;
-        Socket = 0;
+        Socket = nullptr;
         ++m_NResets;
         m_IsConnected = false;
+        m_IsServer = false;
+        if (m_AutomaticReconnection == false && m_NResets > 0) {
+          m_WishConnection = false;
+        }
         
         continue; // Back --- we have to open a new socket
       } else {
         m_TimeSinceLastIO.Reset();
-        m_SendMutex.Lock();
         //cout<<"Sent "<<Packet.size()<<" bytes --- "<<m_NPacketsToSend<<":"<<m_PacketsToSend.size()<<endl;
         
         if (m_PacketsToSend.empty() == true) {
@@ -676,7 +726,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
           continue;
         }
 
-        cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Successfully sent something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
+        if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Successfully sent something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
         m_NPacketsToSend--;
         m_NBytesToSend -= Packet.size();
         m_NSentBytes += Packet.size();
@@ -692,7 +742,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     }
 
 
-    // Step 5:
+    // Step 4:
     // We reach this part of the code, if we are connected, have nothing to send and didn't receive anything
     // Thus sleep...
     

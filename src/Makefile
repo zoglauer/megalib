@@ -37,6 +37,18 @@
 glo:
 	$(MAKE) -C global
 
+tests:
+	$(MAKE) tests -C global
+	$(MAKE) tests -C spectralyze
+	$(MAKE) tests -C mimrec
+	$(MAKE) tests -C revan
+	$(MAKE) tests -C sivan
+	$(MAKE) tests -C fretalon
+ifeq "$(strip $(GEANT4INSTALLED))" "0"
+	$(MAKE) tests -C cosima
+endif
+	$(MAKE) tests -C endtoend
+
 clean_glomisc:
 	@$(MAKE) clean_misc -C global
 
@@ -84,6 +96,7 @@ frelib:
 
 clean_fre:
 	@$(MAKE) clean -C fretalon
+	@$(MAKE) clean -C endtoend
 
 fretalonframework:
 	@$(MAKE) framework -C fretalon
@@ -187,11 +200,22 @@ cos:
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
 	@$(MAKE) -C cosima
 endif
+	@$(MAKE) -C endtoend
 
 clean_cos:
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
 	@$(MAKE) clean -C cosima -f Makefile
 endif
+
+
+#------------------------------------------------------------------------------
+# End-to-end tests (programs ET*.cxx, they use the other programs, thus they are built last):
+
+ete:
+	@$(MAKE) -C endtoend
+
+clean_ete:
+	@$(MAKE) clean -C endtoend
 
 
 #------------------------------------------------------------------------------
@@ -257,6 +281,7 @@ link:
 	@$(MAKE) link -C eview
 	@$(MAKE) link -C spectralyze
 	@$(MAKE) link -C fretalon
+	@$(MAKE) link -C endtoend
 	@$(MAKE) link -C response
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
 	@$(MAKE) link -C cosima
@@ -313,6 +338,4 @@ clean:
 
 #
 #----------------------------------------------------------------
-
-
 

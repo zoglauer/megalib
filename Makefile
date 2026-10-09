@@ -76,9 +76,9 @@ CMD :=
 .SILENT:
 .NOTPARALLEL:
 .SUFFIXES:
-.PHONY: all info link glo geolib geo spelib spe revlib rev sivlib siv res mimlib mim evi rea fre add cos clean
+.PHONY: all info link glo geolib geo spelib spe revlib rev sivlib siv res mimlib mim evi rea fre add cos ete tests clean
 
-all: info link glo geo spe rev siv res mim evi rea fre add cos
+all: info link glo geo spe rev siv res mim evi rea fre add cos ete
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(shell cat $(LB)/AllObjects.txt) $(GLIBS) $(LIBS) -o $(LB)/libMEGAlib.so
 
 
@@ -262,6 +262,12 @@ cos: link glo geolib sivlib revlib
 clean_cosima:
 	@$(MAKE) clean_cos -C src
 
+ete: link glo geolib sivlib revlib mimlib
+	@$(MAKE) ete -C src
+
+clean_endtoend:
+	@$(MAKE) clean_ete -C src
+
 
 #------------------------------------------------------------------------------
 # Addon
@@ -273,6 +279,13 @@ res: link glo geolib revlib sivlib spelib mimlib mim rev
 
 clean_response:
 	@$(MAKE) clean_res -C src
+
+
+#------------------------------------------------------------------------------
+# Unit tests:
+
+tests: info link glo geo spe rev siv res mim evi rea fre add cos ete
+	@$(MAKE) tests -C src
 
 
 #------------------------------------------------------------------------------
@@ -315,10 +328,6 @@ man:
 	@sh resource/doxy
 	@doxygen resource/Doxyfile
 
-update:
-	@bash config/configure_update
-	@if ( `test -f config/configure_lastgoodoptions` ); then bash configure `cat config/configure_lastgoodoptions`; $(MAKE) all; else echo "MEGAlib updated. Please reconfigure and compile!"; fi 
-
 changelog:
 	@sh bin/changelog.sh
 	@less doc/ChangeLog
@@ -343,5 +352,4 @@ TAROPT="
 
 #
 #------------------------------------------------------------------------------
-
 

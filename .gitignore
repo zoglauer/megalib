@@ -10,6 +10,10 @@ bin/realta
 bin/revan
 bin/sivan
 bin/spectralyze
+bin/UT*
+bin/ET*
+bin/testdrive
+bin/testdrivercalibration
 
 BackgroundMixer
 ConvertACTtools
