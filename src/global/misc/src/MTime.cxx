@@ -53,6 +53,7 @@
 #include <iomanip>
 #include <ctime>
 #include <cstddef>
+#include <cmath>
 #include <cstring>
 using namespace std;
 
@@ -367,7 +368,7 @@ bool MTime::Set(double Time)
   //
 
   m_Seconds = (long int) Time;
-  m_NanoSeconds = (long int) TMath::FloorNint((Time - m_Seconds) * 1000000000);
+  m_NanoSeconds = llround((Time - m_Seconds) * 1000000000.0);
 
   Normalize();
 
