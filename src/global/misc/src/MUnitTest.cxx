@@ -826,6 +826,45 @@ bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Make merr read like mout
+MString MUnitTest::RemoveErrorMessageContext(const MString& Text) const
+{
+  const MString Prefix = "!!!!! Error in file \"";
+
+  // Copy all lines except the ones with the source context:
+  MString Result;
+  size_t Start = 0;
+  while (Start < Text.Length()) {
+    size_t End = Text.Index("\n", Start);
+    size_t Size = (End == string::npos) ? Text.Length() - Start : End + 1 - Start;
+    MString Line = Text.GetSubString(Start, Size);
+    if (Line.BeginsWith(Prefix) == false) {
+      Result.AppendInPlace(Line);
+    }
+    Start += Size;
+  }
+
+  return Result;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the larger of two values, or NaN if one of them is NaN
+double MUnitTest::GetMaximum(double First, double Second) const
+{
+  if (std::isnan(First) == true || std::isnan(Second) == true) {
+    return numeric_limits<double>::quiet_NaN();
+  }
+
+  return (First > Second) ? First : Second;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Evaluate two vectors within a given tolerance
 bool MUnitTest::EvaluateVectorNear(MString Function, MString Input, MString Description, const MVector& Output, const MVector& Truth, double Tolerance)
 {

@@ -106,6 +106,12 @@ class MUnitTest
     return true;
   }
 
+  //! Make merr look like mout
+  MString RemoveErrorMessageContext(const MString& Text) const;
+
+  //! Return the larger of two values or NaN if one of them is NaN
+  double GetMaximum(double First, double Second) const;
+
   //! Evaluate two vectors within a given tolerance: the distance between them must not exceed Tolerance, all components must be finite
   bool EvaluateVectorNear(MString Function, MString Input, MString Description, const MVector& Output, const MVector& Truth, double Tolerance);
 
