@@ -94,7 +94,6 @@ MString UTModuleLoaderRoa::WriteRoaFixture(const MString& Name)
   Content<<"ID 42\n";
   Content<<"TI 12.5\n";
   Content<<ReadOut.ToParsableString(false)<<"\n";
-  Content<<"SE\n";
   Content<<"EN\n";
 
   WriteTextFile(FileName, Content.str().c_str());
@@ -236,6 +235,46 @@ bool UTModuleLoaderRoa::TestLoading()
   Passed = EvaluateTrue("IsFinished()", "flow end of file", "The inherited flow marks the loader finished at end of file", FlowModule.IsFinished()) && Passed;
   Passed = EvaluateFalse("HasAnalyzedReadOutAssemblies()", "flow end of file", "The terminal generated event is not queued", FlowModule.HasAnalyzedReadOutAssemblies()) && Passed;
   RemoveTemporaryFile(FlowModule.GetFileName());
+
+  // A file with an event without read-outs followed by one with a read-out - the format of the saver: SE, ID, TI, read-outs, ..., EN
+  MReadOutElementStrip EmptyElement(7, 11);
+  MReadOutDataADCValue EmptyData;
+  EmptyData.SetADCValue(1234);
+  MReadOut EmptyReadOut(EmptyElement, EmptyData);
+  ostringstream EmptyContent;
+  EmptyContent<<"Type roa\n";
+  EmptyContent<<"Version 1\n";
+  EmptyContent<<"UF "<<EmptyElement.GetType()<<" "<<EmptyData.GetType()<<"\n";
+  EmptyContent<<"CB 0\n";
+  EmptyContent<<"SE\n";
+  EmptyContent<<"ID 1\n";
+  EmptyContent<<"TI 1.5\n";
+  EmptyContent<<"SE\n";
+  EmptyContent<<"ID 2\n";
+  EmptyContent<<"TI 2.5\n";
+  EmptyContent<<EmptyReadOut.ToParsableString(false)<<"\n";
+  EmptyContent<<"EN\n";
+  const MString EmptyFileName = GetTemporaryFileName("loader_empty_event.roa");
+  WriteTextFile(EmptyFileName, EmptyContent.str().c_str());
+
+  MModuleLoaderRoa EmptyModule;
+  EmptyModule.SetFileName(EmptyFileName);
+  Passed = EvaluateTrue("Initialize()", "empty event fixture", "Initialization succeeds for a file with an event without read-outs", EmptyModule.Initialize()) && Passed;
+  MReadOutAssembly EmptyEvent;
+  EmptyEvent.SetFilteredOut(false);
+  Passed = EvaluateTrue("AnalyzeEvent()", "event without read-outs", "An event without read-outs is read as an event", EmptyModule.AnalyzeEvent(&EmptyEvent)) && Passed;
+  Passed = Evaluate("GetID()", "event without read-outs", "The ID of the event without read-outs is read", EmptyEvent.GetID(), static_cast<unsigned long>(1)) && Passed;
+  Passed = EvaluateSize("GetNumberOfReadOuts()", "event without read-outs", "The event without read-outs has no read-outs", EmptyEvent.GetNumberOfReadOuts(), static_cast<size_t>(0)) && Passed;
+  Passed = EvaluateTrue("AnalyzeEvent()", "event after empty event", "The event after an event without read-outs is read", EmptyModule.AnalyzeEvent(&EmptyEvent)) && Passed;
+  Passed = Evaluate("GetID()", "event after empty event", "The ID of the event after the event without read-outs is read", EmptyEvent.GetID(), static_cast<unsigned long>(2)) && Passed;
+  Passed = EvaluateSize("GetNumberOfReadOuts()", "event after empty event", "The event after the event without read-outs has its read-out", EmptyEvent.GetNumberOfReadOuts(), static_cast<size_t>(1)) && Passed;
+  DisableDefaultStreams();
+  const bool HasThirdEvent = EmptyModule.AnalyzeEvent(&EmptyEvent);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("AnalyzeEvent()", "end after empty event", "No event follows the last event of the file", HasThirdEvent) && Passed;
+  Passed = EvaluateTrue("IsFinished()", "end after empty event", "The loader is finished after the last event", EmptyModule.IsFinished()) && Passed;
+  EmptyModule.Finalize();
+  RemoveTemporaryFile(EmptyFileName);
 
   return Passed;
 }
