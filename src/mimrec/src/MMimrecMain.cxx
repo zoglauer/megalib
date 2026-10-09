@@ -56,6 +56,13 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  // Switch to batch mode before the TApplication starts
+  for (int i = 1; i < argc; i++) {
+    if (MString(argv[i]) == "--no-gui" || MString(argv[i]) == "-n") {
+      gROOT->SetBatch(true);
+    }
+  }
+
   TApplication AppMimrec("Mimrec", 0, 0);
 
   MInterfaceMimrec Mimrec;
