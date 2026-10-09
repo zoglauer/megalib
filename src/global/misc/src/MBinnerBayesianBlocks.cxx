@@ -176,8 +176,11 @@ void MBinnerBayesianBlocks::Histogram()
     //
     vector<float> Fits;
     for (unsigned int i = 0; i <= s; ++i) {
-      float Fit = BlockCounts[i] * (log(BlockCounts[i]) - log(Width[i]));
-      Fit -= m_Prior;
+      // An empty block has the limit x*log(x) = 0, log(0) would make the fitness NaN
+      float Fit = -m_Prior;
+      if (BlockCounts[i] > 0) {
+        Fit += BlockCounts[i] * (log(BlockCounts[i]) - log(Width[i]));
+      }
       Fits.push_back(Fit);
     }
     //cout<<"Fits (2): "<<endl;
@@ -198,8 +201,8 @@ void MBinnerBayesianBlocks::Histogram()
   
   // Scargle's implementation breaks when Size == 1
   // Step 6: Find the change points:
-  vector<unsigned int> ChangePoints(Size, 0);
-  unsigned int ChangePointsIndex = Size;
+  vector<unsigned int> ChangePoints(Size + 1, 0);  // Size cells have up to Size + 1 edges
+  unsigned int ChangePointsIndex = Size + 1;
   unsigned int CurrentIndex = Size;
   
   while (true) {
@@ -239,7 +242,7 @@ void MBinnerBayesianBlocks::Histogram()
   //Print(ChangePoints);
   //cout<<"Minimum index: "<<ChangePointsIndex<<endl;
   
-  for (unsigned int i = ChangePointsIndex; i < Size; ++i) {
+  for (unsigned int i = ChangePointsIndex; i < Size + 1; ++i) {
     m_BinEdges.push_back(Edges[ChangePoints[i]]);
   }  
   
@@ -285,15 +288,21 @@ void MBinnerBayesianBlocks::Histogram()
 
   // Step 9: Reject bins with less than X elements
   if (m_MinimumCountsPerBin > 0) {
-    for (unsigned int e = 0; e < m_BinEdges.size()-1; ++e) {
-      //cout<<"Content: "<<m_BinnedData[e]<<" going from "<<m_BinEdges[e]<<" - "<<m_BinEdges[e+1]<<endl;
-      if (m_BinnedData[e] < m_MinimumCountsPerBin && e < m_BinEdges.size() - 1) {
-        //cout<<"Erasing..."<<endl;
-        // Move higher content down and erase bins
+    unsigned int e = 0;
+    while (e < m_BinnedData.size() && m_BinnedData.size() > 1) {
+      if (m_BinnedData[e] >= m_MinimumCountsPerBin) {
+        ++e;
+      } else if (e + 1 < m_BinnedData.size()) {
+        // Move the content of the next bin down and erase it, then check this bin again
         m_BinnedData[e] += m_BinnedData[e+1];
         m_BinnedData.erase(m_BinnedData.begin()+e+1);
         m_BinEdges.erase(m_BinEdges.begin()+e+1);
-        e--;
+      } else {
+        // The last bin has no next bin: add it to the one before
+        m_BinnedData[e-1] += m_BinnedData[e];
+        m_BinnedData.pop_back();
+        m_BinEdges.erase(m_BinEdges.end()-2);
+        break;
       }
     }
   }
