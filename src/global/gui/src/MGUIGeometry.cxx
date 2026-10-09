@@ -56,6 +56,8 @@ MGUIGeometry::MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, const M
   m_GeometryFileName = FileName;
   if (m_GeometryFileName == g_StringNotDefined) m_GeometryFileName = "";
 
+  m_OkPressed = false;
+
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
 

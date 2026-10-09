@@ -46,8 +46,11 @@ CONFIGUREOPTIONS+=("-Dxft=ON")
 CONFIGUREOPTIONS+=("-Dasimage=ON")
 # Stuff for linking, paths in so files, versioning etc
 CONFIGUREOPTIONS+=("-Dexplicitlink=ON" "-Drpath=ON" "-Dsoversion=ON")
-# enable builtin glew
+# Use builtin openGL components glew, ftgl and gl2ps
 CONFIGUREOPTIONS+=("-Dbuiltin_glew=ON")
+if [[ ${OSTYPE} != *arwin* ]]; then
+  CONFIGUREOPTIONS+=("-Dbuiltin_ftgl=ON" "-Dbuiltin_gl2ps=ON")
+fi
 # Stick with ROOT 6 for the time being
 CONFIGUREOPTIONS+=("-Droot7=OFF")
 # macOS specific fixes:

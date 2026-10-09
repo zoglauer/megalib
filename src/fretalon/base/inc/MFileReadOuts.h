@@ -103,6 +103,8 @@ class MFileReadOuts : public MFileEvents
   unsigned long m_EndClock;
   //! True if the end clock tag has been read
   bool m_HasEndClock;
+  //! True while the SE line of an event has been read but the event has not been returned yet
+  bool m_IsReadingEvent;
 
   //! The read-out file format including the units definitions
   MReadOutFileFormat m_ReadOutFileFormat;
