@@ -80,7 +80,7 @@ class MSystem
   //! The program runs in the working directory if one is given
   static pid_t StartProcessInBackground(const MString& Executable, const MString& Arguments, const MString& OutputFile = "", const MString& WorkingDirectory = "", bool OwnProcessGroup = false);
   //! Wait for a background process and return its raw wait status (see WIFEXITED), or -1 on failure.
-  //! After the time out in seconds (0: none), or as soon as the stop flag (if given) is set, the process is killed, including its group (if it has one)
+  //! After the time out in seconds (0: none), or as soon as the stop flag (if given) is set, the process is killed, with its group if it has its own, otherwise with its descendants (best effort)
   static int WaitForBackgroundProcess(pid_t Process, unsigned int TimeOut = 0, const volatile sig_atomic_t* Stop = nullptr);
   //! Start a program, wait for it and return its raw wait status, or -1 on failure
   static int RunProcess(const MString& Executable, const MString& Arguments, const MString& OutputFile = "", const MString& WorkingDirectory = "", unsigned int TimeOut = 0);
@@ -94,6 +94,9 @@ class MSystem
 
   // private methods:
  private:
+  //! Kill the process and all its descendants, the descendants first (best effort: reparented or newly started ones can survive)
+  static void KillProcessTree(pid_t Process);
+
   //! Test whether an X11 display can be opened.
   //!
   //! INTERNAL: must be called exactly once during MGlobal::Initialize(),

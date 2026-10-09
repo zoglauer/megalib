@@ -37,7 +37,9 @@
 #include <csignal>
 #include <cstdlib>
 #include <cerrno>
+#include <cstdio>
 #include <ctime>
+#include <vector>
 
 // POSIX libs:
 #include <dlfcn.h>
@@ -312,7 +314,7 @@ pid_t MSystem::StartProcessInBackground(const MString& Executable, const MString
 
 
 //! Wait for a background process and return its raw wait status (see WIFEXITED), or -1 on failure.
-//! After the time out in seconds (0: none), or as soon as the stop flag (if given) is set, the process is killed, with its group if it has its own
+//! After the time out in seconds (0: none), or as soon as the stop flag (if given) is set, the process is killed, with its group if it has its own, otherwise with its descendants (best effort)
 int MSystem::WaitForBackgroundProcess(pid_t Process, unsigned int TimeOut, const volatile sig_atomic_t* Stop)
 {
   const chrono::steady_clock::time_point Start = chrono::steady_clock::now();
@@ -329,17 +331,61 @@ int MSystem::WaitForBackgroundProcess(pid_t Process, unsigned int TimeOut, const
     if (Killed == false) {
       const double Elapsed = chrono::duration<double>(chrono::steady_clock::now() - Start).count();
       if ((TimeOut > 0 && Elapsed > TimeOut) || (Stop != nullptr && *Stop != 0)) {
-        // Kill the whole group only if the process leads its own
+        // Kill the whole group if the process leads its own, otherwise the process and its descendants
         if (getpgid(Process) == Process) {
           kill(-Process, SIGKILL);
         } else {
-          kill(Process, SIGKILL);
+          KillProcessTree(Process);
         }
         Killed = true;
       }
     }
     usleep(10000);
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Kill the process and all its descendants, the descendants first (best effort: reparented or newly started ones can survive)
+void MSystem::KillProcessTree(pid_t Process)
+{
+  if (Process <= 0) { // Zero and negative values would address groups
+    return;
+  }
+
+  // Freeze the process - it cannot start new children while we look for them
+  kill(Process, SIGSTOP);
+
+  // Read the process table with POSIX ps - the C++ library cannot list processes
+  FILE* Table = popen("ps -A -o pid= -o ppid=", "r");
+  if (Table == nullptr) {
+    merr<<"KillProcessTree: cannot read the process table, only process "<<Process<<" is killed"<<endl;
+  } else {
+    vector<pid_t> Children;
+    long Id = 0;
+    long Parent = 0;
+    while (fscanf(Table, "%ld %ld", &Id, &Parent) == 2) {
+      if (Parent == Process) {
+        Children.push_back(static_cast<pid_t>(Id));
+      }
+    }
+    bool ReadFailed = false;
+    if (ferror(Table) != 0) {
+      ReadFailed = true;
+    }
+    const int Status = pclose(Table); // Always close, also after a read error
+    if (ReadFailed == true || Status != 0) {
+      merr<<"KillProcessTree: reading the process table failed, descendants of "<<Process<<" may survive"<<endl;
+    }
+    // Kill the children first - once the parent is dead they are reparented and cannot be found any more
+    for (pid_t Child: Children) {
+      KillProcessTree(Child);
+    }
+  }
+
+  kill(Process, SIGKILL);
 }
 
 

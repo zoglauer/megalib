@@ -103,6 +103,22 @@ bool UTSystem::Run()
     const double Seconds = chrono::duration<double>(chrono::steady_clock::now() - Start).count();
     Passed = EvaluateTrue("RunProcess()", "time out", "A program which exceeds the time out is killed", WIFSIGNALED(ChildStatus) && Seconds < 10.0) && Passed;
 
+    // Without its own process group, the descendants are killed too: every parent waits, so only the time out ends them
+    const MString TreeMarker = TempDirectory + "/tree_marker";
+    const MString Delayed = "(sleep 3; touch " + MSystem::GetShellQuoted(TreeMarker) + ") & wait";
+    ChildStatus = MSystem::RunProcess("sh", MString("-c ") + MSystem::GetShellQuoted(Delayed), "", "", 1);
+    Passed = EvaluateTrue("RunProcess()", "descendant time out", "A shell which waits for a delayed descendant is ended by the time out", WIFSIGNALED(ChildStatus)) && Passed;
+    const MString GrandMarker = TempDirectory + "/grandchild_marker";
+    const MString Nested = "sh -c " + MSystem::GetShellQuoted("(sleep 3; touch " + MSystem::GetShellQuoted(GrandMarker) + ") & wait") + " & wait";
+    ChildStatus = MSystem::RunProcess("sh", MString("-c ") + MSystem::GetShellQuoted(Nested), "", "", 1);
+    Passed = EvaluateTrue("RunProcess()", "grandchild time out", "A nested shell is ended by the time out", WIFSIGNALED(ChildStatus)) && Passed;
+    const MString ControlMarker = TempDirectory + "/control_marker";
+    ChildStatus = MSystem::RunProcess("sh", MString("-c ") + MSystem::GetShellQuoted("(sleep 1; touch " + MSystem::GetShellQuoted(ControlMarker) + ") & wait"), "", "", 10);
+    Passed = EvaluateTrue("RunProcess()", "control", "Without a time out the delayed descendant creates its file", MFile::Exists(ControlMarker)) && Passed;
+    this_thread::sleep_for(chrono::milliseconds(3500));
+    Passed = EvaluateFalse("RunProcess()", "descendant", "The time out also stops the descendants of a program without its own process group", MFile::Exists(TreeMarker)) && Passed;
+    Passed = EvaluateFalse("RunProcess()", "grandchild", "The time out also stops the grandchildren", MFile::Exists(GrandMarker)) && Passed;
+
     // A program in its own process group is killed with its group, also the children of the shell:
     const MString Marker = TempDirectory + "/group_marker";
     const pid_t Group = MSystem::StartProcessInBackground("sh", MString("-c ") + MSystem::GetShellQuoted("sleep 3 && touch " + MSystem::GetShellQuoted(Marker) + " & wait"), "", "", true);
