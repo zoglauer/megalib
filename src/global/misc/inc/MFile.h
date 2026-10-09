@@ -193,8 +193,12 @@ class MFile
   static MString GetWorkingDirectory();
   //! Return true if the path points to an executable regular file
   static bool IsExecutable(const MString& Path);
+  //! Return true if the path exists and is a directory
+  static bool IsDirectory(const MString& Path);
   //! Create the directory and all parent directories; return true on success or if it already exists
   static bool CreateDirectory(const MString& Path);
+  //! Read a plain text file completely into the content, return false if it could not be opened
+  static bool ReadTextFile(const MString& FileName, MString& Content);
   //! Create a randomized temporary file and return the full file name, e.g. /tmp/MEGAlib_aB3xYz9Qp1_results.tra, or an empty string on failure; NumberOfRandomChars is clamped to a minimum of 5
   static MString CreateTemporaryFile(const MString& Name, unsigned int NumberOfRandomChars = 10, const MString& DirectoryWhereToCreateTheFile = "");
   //! Create a randomized temporary directory and return the full directory name, e.g. /tmp/MEGAlib_aB3xYz9Qp1_WorkDirectory, or an empty string on failure; NumberOfRandomChars is clamped to a minimum of 5

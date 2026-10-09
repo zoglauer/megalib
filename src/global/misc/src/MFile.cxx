@@ -40,6 +40,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <random>
 using namespace std;
 
@@ -1258,6 +1260,22 @@ bool MFile::IsExecutable(const MString& Path)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return true if the path exists and is a directory
+bool MFile::IsDirectory(const MString& Path)
+{
+  // Return true if Path exists and is a directory
+
+  std::error_code Error;
+  if (std::filesystem::is_directory(Path.Data(), Error) == true && Error.value() == 0) {
+    return true;
+  }
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MFile::CreateDirectory(const MString& Path)
 {
   // Create the directory at Path including all missing parent directories.
@@ -1265,13 +1283,37 @@ bool MFile::CreateDirectory(const MString& Path)
 
   if (Path.IsEmpty() == true) return false;
 
-  std::error_code Error; // Avoid exceptions; mkdir below determines final success.
-  if (std::filesystem::is_directory(Path.Data(), Error) == true) return true;
+  if (IsDirectory(Path) == true) return true;
 
   if (gSystem->mkdir(Path.Data(), kTRUE) == 0) return true;
 
   merr<<"Error in MFile::CreateDirectory: unable to create directory "<<Path<<endl;
   return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Read a plain text file completely into the content, return false if it could not be opened
+bool MFile::ReadTextFile(const MString& FileName, MString& Content)
+{
+  Content = "";
+
+  MString ExpandedName = FileName;
+  ExpandFileName(ExpandedName);
+  if (IsDirectory(ExpandedName) == true) {
+    return false;
+  }
+  ifstream In(ExpandedName.Data());
+  if (In.is_open() == false) {
+    return false;
+  }
+
+  stringstream Buffer;
+  Buffer<<In.rdbuf();
+  Content = Buffer.str().c_str();
+  return true;
 }
 
 

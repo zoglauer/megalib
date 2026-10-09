@@ -337,7 +337,7 @@ bool UTExceptions::TestUsagePatterns()
     MException::UseAbort(false);
 
     MString LogFileName = GetTemporaryFileName("abort_check.log");
-    int Status = MSystem::RunChildProcess(BinaryPath(), "--abort-check", LogFileName);
+    int Status = MSystem::RunProcess(BinaryPath(), "--abort-check", LogFileName);
 
     Passed = EvaluateTrue("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with a non-zero status", Status != 0 && Status != -1) && Passed;
 

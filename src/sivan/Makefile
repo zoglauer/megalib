@@ -100,7 +100,7 @@ EXE_UT := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
 
 all: $(EXECUTABLE)
 
-unittests: $(EXE_UT)
+tests: $(EXE_UT)
 
 lib: $(SHAREDLIB) 
 

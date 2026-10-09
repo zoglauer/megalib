@@ -27,6 +27,8 @@
 // Standard libs:
 #include <filesystem>
 #include <sstream>
+
+// POSIX libs:
 #include <sys/stat.h>
 using namespace std;
 
@@ -135,6 +137,35 @@ bool UTFile::TestStaticHelpers()
   MString CreatedDirectory = StaticDirectory + "/created_directory";
   Passed = EvaluateTrue("CreateDirectory()", "new directory", "CreateDirectory creates a representative missing directory", MFile::CreateDirectory(CreatedDirectory)) && Passed;
   Passed = EvaluateTrue("CreateDirectory()", "existing directory", "CreateDirectory accepts a representative directory that already exists", MFile::CreateDirectory(CreatedDirectory)) && Passed;
+  Passed = EvaluateTrue("IsDirectory()", "directory", "IsDirectory accepts an existing directory", MFile::IsDirectory(CreatedDirectory)) && Passed;
+  Passed = EvaluateFalse("IsDirectory()", "regular file", "IsDirectory rejects a regular file", MFile::IsDirectory(ExecutableFile)) && Passed;
+  Passed = EvaluateFalse("IsDirectory()", "missing path", "IsDirectory rejects a missing path", MFile::IsDirectory(StaticDirectory + "/missing_directory")) && Passed;
+  Passed = EvaluateFalse("IsDirectory()", "empty path", "IsDirectory rejects an empty path", MFile::IsDirectory("")) && Passed;
+
+  // ReadTextFile
+  {
+    const MString TextFile = StaticDirectory + "/read_text_file.txt";
+    {
+      ofstream Out(TextFile.Data(), ios::binary);
+      Out<<"first line\r\nsecond line\n\nlast line without newline";
+    }
+    MString Content = "stale";
+    Passed = EvaluateTrue("ReadTextFile()", "existing file", "ReadTextFile reads an existing file", MFile::ReadTextFile(TextFile, Content)) && Passed;
+    Passed = Evaluate("ReadTextFile()", "content", "ReadTextFile keeps the line endings, the empty line, and a missing final newline", Content, MString("first line\r\nsecond line\n\nlast line without newline")) && Passed;
+
+    const MString EmptyFile = StaticDirectory + "/read_text_file_empty.txt";
+    {
+      ofstream Out(EmptyFile.Data());
+    }
+    Content = "stale";
+    Passed = EvaluateTrue("ReadTextFile()", "empty file", "ReadTextFile reads an empty file", MFile::ReadTextFile(EmptyFile, Content)) && Passed;
+    Passed = Evaluate("ReadTextFile()", "empty content", "The content of an empty file is empty", Content, MString("")) && Passed;
+
+    Content = "stale";
+    Passed = EvaluateFalse("ReadTextFile()", "missing file", "ReadTextFile fails for a missing file", MFile::ReadTextFile(StaticDirectory + "/missing_text_file.txt", Content)) && Passed;
+    Passed = Evaluate("ReadTextFile()", "missing content", "The content is empty if the file could not be read", Content, MString("")) && Passed;
+    Passed = EvaluateFalse("ReadTextFile()", "directory", "ReadTextFile fails for a directory", MFile::ReadTextFile(CreatedDirectory, Content)) && Passed;
+  }
   DisableDefaultStreams();
   Passed = EvaluateFalse("CreateDirectory()", "regular file path", "CreateDirectory rejects a representative path that already names a regular file", MFile::CreateDirectory(ExecutableFile)) && Passed;
   Passed = EvaluateFalse("CreateDirectory()", "empty path", "CreateDirectory rejects an empty path", MFile::CreateDirectory("")) && Passed;

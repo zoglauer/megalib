@@ -31,9 +31,9 @@ all:
 	@$(MAKE) -C base
 	@$(MAKE) -C melinator
 
-unittests:
+tests:
 	@$(MAKE) -C base
-	@$(MAKE) unittests -C framework
+	@$(MAKE) tests -C framework
 
 link:
 	@$(MAKE) link -C base

@@ -181,7 +181,7 @@ bool UTQualifiedIsotope::TestOutOfBounds()
 
   {
     MString LogFileName = GetTemporaryFileName("setlinefound_fatal.log");
-    int Status = MSystem::RunChildProcess(g_UTQualifiedIsotopeBinary, "--fatal-set", LogFileName);
+    int Status = MSystem::RunProcess(g_UTQualifiedIsotopeBinary, "--fatal-set", LogFileName);
     Passed = EvaluateTrue("SetLineFound()", "out of bounds status", "Out-of-bounds SetLineFound access aborts the child process", Status != 0) && Passed;
 
     ifstream In(LogFileName.Data());
@@ -192,7 +192,7 @@ bool UTQualifiedIsotope::TestOutOfBounds()
 
   {
     MString LogFileName = GetTemporaryFileName("getlinefound_fatal.log");
-    int Status = MSystem::RunChildProcess(g_UTQualifiedIsotopeBinary, "--fatal-get", LogFileName);
+    int Status = MSystem::RunProcess(g_UTQualifiedIsotopeBinary, "--fatal-get", LogFileName);
     Passed = EvaluateTrue("GetLineFound()", "out of bounds status", "Out-of-bounds GetLineFound access aborts the child process", Status != 0) && Passed;
 
     ifstream In(LogFileName.Data());

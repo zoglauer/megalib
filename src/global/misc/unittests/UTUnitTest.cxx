@@ -19,18 +19,25 @@
  */
 
 
-// MEGAlib:
+// MEGAlib libs:
 #include "MFile.h"
 #include "MRotation.h"
 #include "MUnitTest.h"
+#include "MSettingsTesting.h"
 #include "MVector.h"
 
 // Standard libs:
 #include <atomic>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <stdexcept>
 #include <thread>
+
+// POSIX libs:
+#include <fcntl.h>
+#include <sys/file.h>
+#include <unistd.h>
 using namespace std;
 
 
@@ -80,6 +87,10 @@ private:
   bool TestNumericalFileComparison();
   //! Test randomized temporary roots and guarded cleanup helpers
   bool TestTemporaryPaths();
+  //! Test the temporary roots below the log directory of the testing settings file (~/.testdrive.cfg)
+  bool TestLogDirectory();
+  //! Test the reading of the numbers of the summary
+  bool TestParseSummary();
 };
 
 
@@ -96,6 +107,8 @@ bool UTUnitTest::Run()
   Passed = TestFileComparison() && Passed;
   Passed = TestNumericalFileComparison() && Passed;
   Passed = TestTemporaryPaths() && Passed;
+  Passed = TestLogDirectory() && Passed;
+  Passed = TestParseSummary() && Passed;
 
   Summarize();
   return Passed;
@@ -146,10 +159,10 @@ bool UTUnitTest::TestEvaluateHelpers()
   Values.push_back(1);
   Values.push_back(2);
   Passed = EvaluateTrue("EvaluateSize()", "two values", "EvaluateSize accepts the representative container size",
-                        Probe.EvaluateSize("inner EvaluateSize()", "two values", "The size matches", Values.size(), static_cast<size_t>(2))) && Passed;
+                        Probe.EvaluateSize("inner EvaluateSize()", "two values", "The size matches", Values.size(), 2)) && Passed;
 
   Probe.Silence();
-  const bool SizeFailure = Probe.EvaluateSize("inner EvaluateSize()", "two values", "The size mismatch is rejected", Values.size(), static_cast<size_t>(3));
+  const bool SizeFailure = Probe.EvaluateSize("inner EvaluateSize()", "two values", "The size mismatch is rejected", Values.size(), 3);
   Probe.Unsilence();
   Passed = EvaluateFalse("EvaluateSize()", "wrong size", "EvaluateSize returns false for a representative size mismatch", SizeFailure) && Passed;
 
@@ -173,13 +186,13 @@ bool UTUnitTest::TestVectorAndRotationHelpers()
                         Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "identical", "Identical vectors are accepted", Reference, Reference, 0.0)) && Passed;
   Passed = EvaluateTrue("EvaluateVectorNear()", "inside", "A vector 9e-4 away is accepted with the tolerance 1e-3",
                         Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "inside", "A nearby vector is accepted", MVector(1.0009, 2.0, 3.0), Reference, Tolerance)) && Passed;
-  // (7e-4, 7e-4, 0) has a distance of 9.9e-4: accepted, although the distance is larger than each component
+  // The distance 9.9e-4 is accepted although it is larger than each component
   Passed = EvaluateTrue("EvaluateVectorNear()", "euclidean inside", "The distance is the Euclidean one: (7e-4, 7e-4, 0) is 9.9e-4 away and accepted",
                         Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "euclidean inside", "The Euclidean distance is inside", MVector(1.0007, 2.0007, 3.0), Reference, Tolerance)) && Passed;
 
   Probe.Silence();
   const bool Outside = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "outside", "A distant vector is rejected", MVector(1.0011, 2.0, 3.0), Reference, Tolerance);
-  // (8e-4, 8e-4, 0) has a distance of 1.13e-3: rejected, although each component is inside the tolerance
+  // The distance 1.13e-3 is rejected although each component is inside
   const bool EuclideanOutside = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "euclidean outside", "The Euclidean distance is outside", MVector(1.0008, 2.0008, 3.0), Reference, Tolerance);
   const bool NaNOutput = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "nan output", "A NaN component is rejected", MVector(numeric_limits<double>::quiet_NaN(), 2.0, 3.0), Reference, Tolerance);
   const bool InfOutput = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "inf output", "An infinite component is rejected", MVector(1.0, numeric_limits<double>::infinity(), 3.0), Reference, Tolerance);
@@ -192,15 +205,16 @@ bool UTUnitTest::TestVectorAndRotationHelpers()
   Passed = EvaluateFalse("EvaluateVectorNear()", "nan truth", "A NaN component in the expected vector is rejected", NaNTruth) && Passed;
 
   // EvaluateRotationNear: each of the nine elements is compared separately
-  const double Elements[9] = { 0.5, -1.0, 2.0, 3.0, 0.25, -0.75, 1.5, -2.5, 4.0 };
-  const char* Names[9] = { "XX", "YX", "ZX", "XY", "YY", "ZY", "XZ", "YZ", "ZZ" };
+  const vector<double> Elements = { 0.5, -1.0, 2.0, 3.0, 0.25, -0.75, 1.5, -2.5, 4.0 };
+  const vector<MString> Names = { "XX", "YX", "ZX", "XY", "YY", "ZY", "XZ", "YZ", "ZZ" };
   const MRotation Matrix(Elements[0], Elements[1], Elements[2], Elements[3], Elements[4], Elements[5], Elements[6], Elements[7], Elements[8]);
   Passed = EvaluateTrue("EvaluateRotationNear()", "identical", "Identical matrices are accepted even with the tolerance 0",
                         Probe.EvaluateRotationNear("inner EvaluateRotationNear()", "identical", "Identical matrices are accepted", Matrix, Matrix, 0.0)) && Passed;
 
   for (unsigned int e = 0; e < 9; ++e) {
-    double Inside[9], Outside9[9], NonFinite[9];
-    for (unsigned int i = 0; i < 9; ++i) Inside[i] = Outside9[i] = NonFinite[i] = Elements[i];
+    vector<double> Inside = Elements;
+    vector<double> Outside9 = Elements;
+    vector<double> NonFinite = Elements;
     Inside[e] += 9e-4;
     Outside9[e] += 1.1e-3;
     NonFinite[e] = numeric_limits<double>::quiet_NaN();
@@ -219,7 +233,7 @@ bool UTUnitTest::TestVectorAndRotationHelpers()
     Passed = EvaluateFalse("EvaluateRotationNear()", Input, "A NaN in a single element is rejected", ElementNonFinite) && Passed;
   }
 
-  // The tolerance applies to each element separately (not to their sum): two elements 8e-4 off are accepted
+  // The tolerance applies to each element, not to their sum
   const MRotation TwoElements(Elements[0] + 8e-4, Elements[1], Elements[2], Elements[3], Elements[4], Elements[5], Elements[6], Elements[7], Elements[8] - 8e-4);
   Passed = EvaluateTrue("EvaluateRotationNear()", "two elements", "The tolerance is applied to each element separately",
                         Probe.EvaluateRotationNear("inner EvaluateRotationNear()", "two elements", "Two elements 8e-4 off are accepted", TwoElements, Matrix, Tolerance)) && Passed;
@@ -534,6 +548,139 @@ bool UTUnitTest::TestNumericalFileComparison()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool UTUnitTest::TestParseSummary()
+{
+  bool Passed = true;
+  unsigned int Passes = 99;
+  unsigned int Fails = 99;
+
+  Passed = EvaluateTrue("ParseSummary()", "plain", "The numbers of a summary are read", MUnitTest::ParseSummary("Unit test: X\nPassed tests: 12\nFailed tests: 3\n", Passes, Fails)) && Passed;
+  Passed = Evaluate("ParseSummary()", "passed", "The number of passed tests is read", Passes, 12U) && Passed;
+  Passed = Evaluate("ParseSummary()", "failed", "The number of failed tests is read", Fails, 3U) && Passed;
+
+  Passed = EvaluateTrue("ParseSummary()", "one line", "The numbers on one line (the form of the test driver) are read", MUnitTest::ParseSummary("Passed tests: 5, Failed tests: 1", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "one line numbers", "The numbers of the one-line form are right", Passes == 5U && Fails == 1U) && Passed;
+
+  Passed = EvaluateTrue("ParseSummary()", "last summary", "The last summary of the output counts", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 1\nmore output\nPassed tests: 7\nFailed tests: 0\n", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "last summary numbers", "The numbers of the last summary are used", Passes == 7U && Fails == 0U) && Passed;
+
+  Passed = EvaluateTrue("ParseSummary()", "no blank", "A summary without a blank after the colon is read", MUnitTest::ParseSummary("Passed tests:4\nFailed tests:\t2\n", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "no blank numbers", "The numbers of the summary without blanks are right", Passes == 4U && Fails == 2U) && Passed;
+
+  Passed = EvaluateFalse("ParseSummary()", "empty", "Empty output has no summary", MUnitTest::ParseSummary("", Passes, Fails)) && Passed;
+  Passed = Evaluate("ParseSummary()", "empty numbers", "Without a summary both numbers are zero", Passes + Fails, 0U) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "only passed", "Output with only the passed tests has no summary", MUnitTest::ParseSummary("Passed tests: 3\n", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "wrong order", "Failed tests before passed tests are no summary", MUnitTest::ParseSummary("Failed tests: 1\nPassed tests: 3\n", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "no number", "A label without a number is no summary", MUnitTest::ParseSummary("Passed tests: many\nFailed tests: few\n", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "done", "The text of a test without a summary is none either", MUnitTest::ParseSummary("done", Passes, Fails)) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestLogDirectory()
+{
+  bool Passed = true;
+
+  // Use the private temporary root - everything is removed in the end
+  PrepareTemporaryDirectory("log_directory");
+  const MString Directory = GetTemporaryDirectoryName("log_directory");
+  const MString Missing = Directory + "/does/not/exist/yet";
+
+  // Use ~/.testdrive.cfg in a private home directory (HOME is global: restore it)
+  struct HomeGuard {
+    bool m_Had = false;
+    MString m_Value;
+    HomeGuard() {
+      const char* Value = getenv("HOME");
+      if (Value != nullptr) {
+        m_Had = true;
+        m_Value = Value;
+      }
+    }
+    ~HomeGuard() {
+      if (m_Had == true) {
+        setenv("HOME", m_Value.Data(), 1);
+      } else {
+        unsetenv("HOME");
+      }
+    }
+  } Guard;
+  const MString Home = GetTemporaryDirectoryName("log_home");
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "home", "The private home directory can be created", PrepareTemporaryDirectory("log_home")) && Passed;
+  setenv("HOME", Home.Data(), 1);
+  const MString SettingsFile = Home + "/.testdrive.cfg";
+
+  // Write the settings file like the test driver:
+  {
+    MSettingsTesting Settings;
+    Settings.SetLogDirectory(Missing);
+    Passed = EvaluateTrue("MSettingsTesting::Write()", "settings file", "The testing settings file can be written", Settings.Write(SettingsFile)) && Passed;
+    MSettingsTesting Read;
+    Passed = EvaluateTrue("MSettingsTesting::Read()", "settings file", "The testing settings file can be read", Read.Read(SettingsFile)) && Passed;
+    Passed = Evaluate("MSettingsTesting::GetLogDirectory()", "round trip", "The log directory survives writing and reading", Read.GetLogDirectory(), Missing) && Passed;
+  }
+
+  // A passing test: the root is below the log directory and removed in the end
+  MString PassingRoot;
+  bool PassingRootExisted = false, FileExisted = false;
+  {
+    UnitTestProbe Passing("LogDirectoryPassing");
+    PassingRoot = Passing.TemporaryDirectory();
+    const MString File = Passing.TemporaryFile("passing.txt");
+    PassingRootExisted = filesystem::is_directory(PassingRoot.Data());
+    FileExisted = Passing.WriteFile(File, "content") && filesystem::exists(File.Data());
+  }
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "below the log directory", "The root is created below the log directory of the settings file (also if it does not exist yet)", PassingRoot.BeginsWith(Missing + "/MEGAlib_")) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "root exists", "The root below the log directory exists while the test runs", PassingRootExisted) && Passed;
+  Passed = EvaluateTrue("GetTemporaryFileName()", "file in the root", "Files can be written below the root in the log directory", FileExisted) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "name", "The root below the log directory ends with the name of the test", PassingRoot.EndsWith("_LogDirectoryPassing")) && Passed;
+  Passed = EvaluateFalse("~MUnitTest()", "passing test", "The files of a passing test are removed", filesystem::exists(PassingRoot.Data())) && Passed;
+
+  // A failing test: the files are kept
+  MString FailingRoot;
+  MString FailingFile;
+  DisableDefaultStreams();
+  {
+    UnitTestProbe Failing("LogDirectoryFailing");
+    FailingRoot = Failing.TemporaryDirectory();
+    FailingFile = Failing.TemporaryFile("failing.txt");
+    Failing.WriteFile(FailingFile, "kept content");
+    Failing.EvaluateTrue("inner EvaluateTrue()", "false value", "A failing check", false);
+  }
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("~MUnitTest()", "failing test", "The files of a failing test are kept in the log directory", filesystem::exists(FailingFile.Data())) && Passed;
+  // Use plain streams - the guarded helpers only know the files of this test
+  ifstream Kept(FailingFile.Data());
+  string KeptContent;
+  getline(Kept, KeptContent);
+  Passed = EvaluateTrue("~MUnitTest()", "failing test content", "The kept files have their content", KeptContent == "kept content") && Passed;
+
+  // Without a settings file it is created with the default log directory
+  const MString NewHome = Directory + "/new/home";
+  const MString NewSettingsFile = NewHome + "/.testdrive.cfg";
+  setenv("HOME", NewHome.Data(), 1);
+  MString DefaultRoot;
+  {
+    UnitTestProbe Default("LogDirectoryDefault");
+    DefaultRoot = Default.TemporaryDirectory();
+  }
+  MSettingsTesting Defaults;
+  MSettingsTesting Created;
+  Passed = EvaluateTrue("MUnitTest()", "settings file created", "A missing testing settings file is created", filesystem::exists(NewSettingsFile.Data())) && Passed;
+  Passed = EvaluateTrue("MUnitTest()", "settings file defaults", "The created testing settings file has the default log directory", Created.Read(NewSettingsFile) && Created.GetLogDirectory() == Defaults.GetLogDirectory()) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "default log directory", "Without a settings file the root is below the default log directory", DefaultRoot.BeginsWith(Defaults.GetLogDirectory() + "/MEGAlib_")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool UTUnitTest::TestTemporaryPaths()
 {
   bool Passed = true;
@@ -543,20 +690,23 @@ bool UTUnitTest::TestTemporaryPaths()
   UnitTestProbe TraversalNameProbe("../TraversalProbe");
   UnitTestProbe WhitespaceNameProbe("Whitespace Probe");
   UnitTestProbe SpecialCharacterNameProbe("Special@Probe");
+  UnitTestProbe NoCharacterNameProbe("@ /");
   EnableDefaultStreams();
   const MString EmptyNameRoot = EmptyNameProbe.TemporaryDirectory();
   const MString TraversalNameRoot = TraversalNameProbe.TemporaryDirectory();
   const MString WhitespaceNameRoot = WhitespaceNameProbe.TemporaryDirectory();
   const MString SpecialCharacterNameRoot = SpecialCharacterNameProbe.TemporaryDirectory();
-  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "empty test name", "An empty unit-test name uses the safe fallback temporary basename", EmptyNameRoot.Contains("_" + c_FallbackTemporaryBaseName)) && Passed;
+  const MString NoCharacterNameRoot = NoCharacterNameProbe.TemporaryDirectory();
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "empty test name", "An empty unit-test name uses the default temporary basename UnitTest", EmptyNameRoot.EndsWith("_UnitTest")) && Passed;
   Passed = Evaluate("MUnitTest()", "traversal test name", "An unsafe traversal-style unit-test name remains unchanged for reporting", TraversalNameProbe.GetProbeName(), MString("../TraversalProbe")) && Passed;
-  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "traversal test name", "An unsafe traversal-style unit-test name uses the safe fallback temporary basename", TraversalNameRoot.Contains("_" + c_FallbackTemporaryBaseName)) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "traversal test name", "An unsafe traversal-style unit-test name keeps only the acceptable characters in the temporary basename", TraversalNameRoot.EndsWith("_TraversalProbe")) && Passed;
   Passed = Evaluate("MUnitTest()", "whitespace test name", "An unsafe whitespace-containing unit-test name remains unchanged for reporting", WhitespaceNameProbe.GetProbeName(), MString("Whitespace Probe")) && Passed;
-  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "whitespace test name", "An unsafe whitespace-containing unit-test name uses the safe fallback temporary basename", WhitespaceNameRoot.Contains("_" + c_FallbackTemporaryBaseName)) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "whitespace test name", "An unsafe whitespace-containing unit-test name keeps only the acceptable characters in the temporary basename", WhitespaceNameRoot.EndsWith("_WhitespaceProbe")) && Passed;
   Passed = Evaluate("MUnitTest()", "special-character test name", "An unsafe special-character unit-test name remains unchanged for reporting", SpecialCharacterNameProbe.GetProbeName(), MString("Special@Probe")) && Passed;
-  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "special-character test name", "An unsafe special-character unit-test name uses the safe fallback temporary basename", SpecialCharacterNameRoot.Contains("_" + c_FallbackTemporaryBaseName)) && Passed;
-  Passed = EvaluateFalse("GetTemporaryDirectoryName()", "fallback distinctness", "Probes with different unsafe names but the same fallback basename still receive distinct randomized roots", TraversalNameRoot == WhitespaceNameRoot) && Passed;
-  Passed = EvaluateFalse("GetTemporaryDirectoryName()", "fallback distinctness", "Three probes with different unsafe names but the same fallback basename receive three distinct randomized roots", WhitespaceNameRoot == SpecialCharacterNameRoot) && Passed;
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "special-character test name", "An unsafe special-character unit-test name keeps only the acceptable characters in the temporary basename", SpecialCharacterNameRoot.EndsWith("_SpecialProbe")) && Passed;
+
+  Passed = EvaluateTrue("GetTemporaryDirectoryName()", "no acceptable character", "A unit-test name without any acceptable character uses the default temporary basename UnitTest", NoCharacterNameRoot.EndsWith("_UnitTest")) && Passed;
+  Passed = EvaluateFalse("GetTemporaryDirectoryName()", "same basename", "Probes with the same temporary basename still receive distinct randomized roots", EmptyNameRoot == NoCharacterNameRoot) && Passed;
 
   UnitTestProbe First("FirstProbe");
   UnitTestProbe Second("SecondProbe");
@@ -649,9 +799,18 @@ bool UTUnitTest::TestTemporaryPaths()
   const MString RootResetDirectory = RootResetProbe.TemporaryDirectory();
   const MString RootResetFile = RootResetProbe.TemporaryFile("before_reset.txt");
   Passed = EvaluateTrue("WriteTextFile()", "root reset fixture", "A representative fixture can be written before resetting the randomized root", RootResetProbe.WriteFile(RootResetFile, "temporary\n")) && Passed;
-  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "randomized root", "Preparing the randomized root without a child name recreates the entire root", RootResetProbe.PrepareDirectory()) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "randomized root", "Preparing the randomized root without a child name clears the entire root", RootResetProbe.PrepareDirectory()) && Passed;
   Passed = EvaluateFalse("std::filesystem::exists()", "root reset fixture", "Resetting the randomized root removes its previous contents", std::filesystem::exists(RootResetFile.Data())) && Passed;
   Passed = EvaluateTrue("std::filesystem::is_directory()", "randomized root", "Resetting the randomized root leaves the root directory available", std::filesystem::is_directory(RootResetDirectory.Data())) && Passed;
+  {
+    // The root is the same directory as before, so that the lock which the test driver respects is still on it
+    const int RootLock = open(RootResetDirectory.Data(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    const bool Locked = (RootLock >= 0 && flock(RootLock, LOCK_EX | LOCK_NB) != 0);
+    if (RootLock >= 0) {
+      close(RootLock);
+    }
+    Passed = EvaluateTrue("PrepareTemporaryDirectory()", "root lock", "Resetting the randomized root keeps the lock of the running test on it", Locked) && Passed;
+  }
 
   UnitTestProbe ValidationProbe("ValidationProbe");
   ValidationProbe.Silence();
@@ -707,5 +866,12 @@ bool UTUnitTest::TestTemporaryPaths()
 int main()
 {
   UTUnitTest Test;
-  return Test.Run() == true ? 0 : 1;
+  if (Test.Run() == true) {
+    return 0;
+  }
+  return 1;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+

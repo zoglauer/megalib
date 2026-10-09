@@ -30,14 +30,21 @@
 #include "MSystem.h"
 
 // Standard libs:
+#include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <csignal>
 #include <cstdlib>
 #include <cerrno>
 #include <ctime>
+
+// POSIX libs:
 #include <dlfcn.h>
 #include <fcntl.h>
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#endif
 #include <sys/wait.h>
 #include <unistd.h>
 using namespace std;
@@ -238,41 +245,116 @@ bool MSystem::HasDisplay()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MSystem::RunChildProcess(const MString& Executable, const MString& Argument, const MString& OutputFileName)
+//! Return the argument quoted for a POSIX shell: it is one word whatever it contains (spaces, quotes, $, backticks, ...), the empty string gives ''
+MString MSystem::GetShellQuoted(const MString& Argument)
 {
-  pid_t Child = fork();
-  if (Child == 0) {
-    if (OutputFileName.IsEmpty() == false) {
-      int Log = open(OutputFileName.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  // One shell word: in single quotes, a single quote inside becomes '\''
+  MString Quoted = "'";
+  for (unsigned int c = 0; c < Argument.Length(); ++c) {
+    if (Argument[c] == '\'') {
+      Quoted += "'\\''";
+    } else {
+      Quoted += Argument[c];
+    }
+  }
+  Quoted += "'";
+  return Quoted;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Launch a program in the background and return its process ID, or -1 on failure
+//! With OwnProcessGroup it starts a new process group, otherwise it stays in the process group of the caller
+//! The arguments are a shell fragment and may contain redirects, &&, quoted words, etc.
+//! The output (stdout and stderr) goes to the output file
+//! The program runs in the working directory if one is given
+pid_t MSystem::StartProcessInBackground(const MString& Executable, const MString& Arguments, const MString& OutputFile, const MString& WorkingDirectory, bool OwnProcessGroup)
+{
+  // Everything which allocates memory is done before the fork: the process may have other threads
+  const MString Command = GetShellQuoted(Executable) + " " + Arguments;
+
+  pid_t Process = fork();
+  if (Process < 0) {
+    return -1;
+  }
+  if (Process == 0) {
+    if (OwnProcessGroup == true) {
+      setpgid(0, 0);
+    }
+    if (WorkingDirectory.IsEmpty() == false && chdir(WorkingDirectory.Data()) != 0) {
+      _exit(126);
+    }
+    if (OutputFile.IsEmpty() == false) {
+      int Log = open(OutputFile.Data(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
       if (Log >= 0) {
         dup2(Log, STDOUT_FILENO);
         dup2(Log, STDERR_FILENO);
         close(Log);
       }
     }
-
-    MString Command = Executable + " " + Argument;
     execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(0));
-    // If execl() returns, the child failed to start the command. Use _exit()
+    // If execl() returns, the process failed to start the command. Use _exit()
     // after fork() to avoid running parent-owned C++ cleanup/stdio flushing.
     // Exit code 127 is the shell convention for "command could not be run".
     _exit(127);
   }
 
-  if (Child < 0) {
-    return -1;
+  if (OwnProcessGroup == true) {
+    setpgid(Process, Process); // Also set here to avoid a race with the new process
   }
-
-  int ChildStatus = 0;
-  if (waitpid(Child, &ChildStatus, 0) < 0) {
-    return -1;
-  }
-
-  return ChildStatus;
+  return Process;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+//! Wait for a background process and return its raw wait status (see WIFEXITED), or -1 on failure.
+//! After the time out in seconds (0: none), or as soon as the stop flag (if given) is set, the process is killed, with its group if it has its own
+int MSystem::WaitForBackgroundProcess(pid_t Process, unsigned int TimeOut, const volatile sig_atomic_t* Stop)
+{
+  const chrono::steady_clock::time_point Start = chrono::steady_clock::now();
+  bool Killed = false;
+  while (true) {
+    int Status = 0;
+    const pid_t Done = waitpid(Process, &Status, WNOHANG);
+    if (Done == Process) {
+      return Status;
+    }
+    if (Done < 0 && errno != EINTR) {
+      return -1;
+    }
+    if (Killed == false) {
+      const double Elapsed = chrono::duration<double>(chrono::steady_clock::now() - Start).count();
+      if ((TimeOut > 0 && Elapsed > TimeOut) || (Stop != nullptr && *Stop != 0)) {
+        // Kill the whole group only if the process leads its own
+        if (getpgid(Process) == Process) {
+          kill(-Process, SIGKILL);
+        } else {
+          kill(Process, SIGKILL);
+        }
+        Killed = true;
+      }
+    }
+    usleep(10000);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Start a program, wait for it and return its raw wait status, or -1 on failure (see StartProcessInBackground and WaitForBackgroundProcess)
+int MSystem::RunProcess(const MString& Executable, const MString& Arguments, const MString& OutputFile, const MString& WorkingDirectory, unsigned int TimeOut)
+{
+  const pid_t Process = StartProcessInBackground(Executable, Arguments, OutputFile, WorkingDirectory);
+  if (Process < 0) {
+    return -1;
+  }
+  return WaitForBackgroundProcess(Process, TimeOut);
+}
 
 
 void MSystem::Reset()
@@ -533,6 +615,34 @@ bool MSystem::GetTime(long int& Seconds, long int& NanoSeconds)
 #endif
 
   return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the model name of the CPU, empty if it is unknown
+MString MSystem::GetCpuModel()
+{
+#ifdef __APPLE__
+  char Brand[256];
+  size_t Size = sizeof(Brand);
+  if (sysctlbyname("machdep.cpu.brand_string", Brand, &Size, nullptr, 0) == 0) {
+    return Brand;
+  }
+  return "";
+#else
+  ifstream In("/proc/cpuinfo");
+  string Line;
+  while (getline(In, Line)) {
+    if (Line.compare(0, 10, "model name") == 0) {
+      size_t Colon = Line.find(':');
+      if (Colon != string::npos) {
+        return Line.substr(Colon + 1).c_str();
+      }
+    }
+  }
+  return "";
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////

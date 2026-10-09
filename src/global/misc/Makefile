@@ -100,6 +100,7 @@ FILES := MGlobal \
 	MIsotopeStore \
 	MSettingsInterface \
 	MSettings \
+	MSettingsTesting \
 	MSettingsGlobal \
 	MSettingsBasicFiles \
 	MBinner \
@@ -140,7 +141,7 @@ EXE_UT := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
 
 all: $(SHAREDLIB)
 
-unittests: $(EXE_UT)
+tests: $(EXE_UT)
 
 link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)

@@ -22,7 +22,7 @@
 #ifndef __UTResponseMatrixOrderShared__
 #define __UTResponseMatrixOrderShared__
 
-// Standard libs:
+// POSIX libs:
 #include <sys/wait.h>
 
 // MEGAlib:
@@ -40,7 +40,7 @@
 
 inline bool RunInvalidAxisUnitTest(const MString& Executable, const MString& Argument)
 {
-  int Status = MSystem::RunChildProcess(Executable, Argument, "/dev/null");
+  int Status = MSystem::RunProcess(Executable, Argument, "/dev/null");
   if (Status < 0) {
     return false;
   }

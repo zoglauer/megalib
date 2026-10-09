@@ -26,6 +26,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+// Standard libs:
+#include <csignal>
+
+// POSIX libs:
+#include <sys/types.h>
+
 // ROOT libs:
 #include <TROOT.h>
 #include <TTime.h>
@@ -56,13 +62,28 @@ class MSystem
   static bool GetTime(long int& Seconds, long int& NanoSeconds);
   static void BusyWait(int musec);
 
+  //! Return the model name of the CPU, empty if it is unknown
+  static MString GetCpuModel();
+
+  //! Return the argument quoted for a POSIX shell: it is one word whatever it contains (spaces, quotes, $, backticks, ...), the empty string gives ''
+  static MString GetShellQuoted(const MString& Argument);
+
   bool FileExist(MString Filename);
   bool GetFileDirectory(MString Filename, MString* Directory);
   bool GetFileSuffix(MString Filename, MString* Suffix);
   bool GetFileWithoutSuffix(MString Filename, MString* NewFilename);
   
-  //! Run a child process with arguments and optionally redirect its output to a file
-  static int RunChildProcess(const MString& Executable, const MString& Arguments, const MString& OutputFileName = "");
+  //! Launch a program in the background and return its process ID, or -1 on failure
+  //! With OwnProcessGroup it starts a new process group, otherwise it stays in the process group of the caller
+  //! The arguments are a shell fragment and may contain redirects, &&, quoted words, etc.
+  //! The output (stdout and stderr) goes to the output file
+  //! The program runs in the working directory if one is given
+  static pid_t StartProcessInBackground(const MString& Executable, const MString& Arguments, const MString& OutputFile = "", const MString& WorkingDirectory = "", bool OwnProcessGroup = false);
+  //! Wait for a background process and return its raw wait status (see WIFEXITED), or -1 on failure.
+  //! After the time out in seconds (0: none), or as soon as the stop flag (if given) is set, the process is killed, including its group (if it has one)
+  static int WaitForBackgroundProcess(pid_t Process, unsigned int TimeOut = 0, const volatile sig_atomic_t* Stop = nullptr);
+  //! Start a program, wait for it and return its raw wait status, or -1 on failure
+  static int RunProcess(const MString& Executable, const MString& Arguments, const MString& OutputFile = "", const MString& WorkingDirectory = "", unsigned int TimeOut = 0);
 
   // protected methods:
  protected:

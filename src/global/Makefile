@@ -26,8 +26,8 @@ all:
 	$(MAKE) -C misc
 	$(MAKE) -C gui
 
-unittests:
-	$(MAKE) unittests -C misc
+tests:
+	$(MAKE) tests -C misc
 
 link:
 	@$(MAKE) link -C gui

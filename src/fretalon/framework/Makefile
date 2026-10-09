@@ -53,13 +53,13 @@ EXE_UT     := $(patsubst unittests/%,$(BN)/%,$(EXE_UT))
 # Commands:
 #
 
-.PHONY: all unittests lib link headers clean
+.PHONY: all tests lib link headers clean
 
 all:
 	@$(MAKE) headers
 	@$(MAKE) $(PRG)
 
-unittests:
+tests:
 	@$(MAKE) headers
 	@$(MAKE) $(EXE_UT)
 

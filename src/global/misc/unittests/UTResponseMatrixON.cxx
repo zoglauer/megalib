@@ -20,8 +20,10 @@
 
 
 // Standard libs:
-#include <sys/wait.h>
 #include <vector>
+
+// POSIX libs:
+#include <sys/wait.h>
 using namespace std;
 
 // ROOT:
@@ -333,7 +335,7 @@ void UTResponseMatrixON::CleanupCanvases(int TargetCount)
 
 bool UTResponseMatrixON::RunChildExpectingSuccess(const MString& Argument)
 {
-  int Status = MSystem::RunChildProcess("bin/UTResponseMatrixON", Argument, "/dev/null");
+  int Status = MSystem::RunProcess("bin/UTResponseMatrixON", Argument, "/dev/null");
   if (Status < 0) return false;
   return WIFEXITED(Status) && WEXITSTATUS(Status) == 0;
 }

@@ -24,11 +24,17 @@
 
 // Standard libs:
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <system_error>
+
+// POSIX libs:
+#include <fcntl.h>
+#include <sys/file.h>
+#include <unistd.h>
 
 // ROOT libs:
 #include "TSystem.h"
@@ -36,6 +42,7 @@
 // MEGAlib libs:
 #include "MFile.h"
 #include "MRotation.h"
+#include "MSettingsTesting.h"
 #include "MVector.h"
 
 
@@ -50,25 +57,17 @@ ClassImp(MUnitTest)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-const MString MUnitTest::c_FallbackTemporaryBaseName = "AUnitTest";
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 //! Default constructor
 MUnitTest::MUnitTest(const MString& Name)
 {
   m_Name = Name;
-  m_TemporaryBaseName = Name;
-  if (IsValidTemporaryBaseName(m_TemporaryBaseName) == false) {
-    merr<<"Warning in MUnitTest::MUnitTest: unit-test name cannot be used as a temporary directory name: "
-        <<m_Name<<". Using "<<c_FallbackTemporaryBaseName<<" instead."<<endl;
-    m_TemporaryBaseName = c_FallbackTemporaryBaseName;
-  }
+  m_TemporaryBaseName = CreateTemporaryDirectoryBaseName(Name);
+
+  LoadLogDirectory();
+
   m_NumberOfPassedTests = 0;
   m_NumberOfFailedTests = 0;
-  
+  m_TemporaryRootLock = -1;
 }
 
 
@@ -78,17 +77,29 @@ MUnitTest::MUnitTest(const MString& Name)
 //! Default destructor
 MUnitTest::~MUnitTest()
 {
-  if (m_TemporaryRootDirectory.IsEmpty() == true) return;
+  if (m_TemporaryRootDirectory.IsEmpty() == true) {
+    ReleaseTemporaryRootLock();
+    return;
+  }
+
+  // Keep the files of a failed test for inspection
+  if (m_NumberOfFailedTests > 0) {
+    mout<<"The files of the failed test "<<m_Name<<" are kept for inspection: "<<m_TemporaryRootDirectory<<endl;
+    ReleaseTemporaryRootLock();
+    return;
+  }
 
   if (RemoveTemporaryDirectory() == false) {
     merr<<"Error in MUnitTest::~MUnitTest: unable to remove the private temporary root: "<<m_TemporaryRootDirectory<<endl;
   }
+  ReleaseTemporaryRootLock();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Summarize the test run
 void MUnitTest::Summarize()
 {
   mout<<"Unit test: "<<m_Name<<endl;
@@ -100,10 +111,50 @@ void MUnitTest::Summarize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Read the numbers of passed and failed tests from the output of Summarize (the last "Passed tests: N" followed by "Failed tests: M"), return false if there are none
+bool MUnitTest::ParseSummary(const MString& Output, unsigned int& Passed, unsigned int& Failed)
+{
+  Passed = 0;
+  Failed = 0;
+
+  const string Text = Output.Data();
+  const string PassedLabel = "Passed tests:";
+  const string FailedLabel = "Failed tests:";
+  const string::size_type PassedPosition = Text.rfind(PassedLabel);
+  const string::size_type FailedPosition = Text.rfind(FailedLabel);
+  if (PassedPosition == string::npos || FailedPosition == string::npos || FailedPosition < PassedPosition) {
+    return false;
+  }
+
+  // The number follows the label after optional blanks
+  unsigned int Numbers[2] = { 0, 0 };
+  const string::size_type Positions[2] = { PassedPosition + PassedLabel.size(), FailedPosition + FailedLabel.size() };
+  for (unsigned int n = 0; n < 2; ++n) {
+    string::size_type Position = Positions[n];
+    while (Position < Text.size() && (Text[Position] == ' ' || Text[Position] == '\t')) {
+      ++Position;
+    }
+    char* End = nullptr;
+    const unsigned long Value = strtoul(Text.c_str() + Position, &End, 10);
+    if (End == Text.c_str() + Position) {
+      return false;
+    }
+    Numbers[n] = static_cast<unsigned int>(Value);
+  }
+
+  Passed = Numbers[0];
+  Failed = Numbers[1];
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write complete text content to a test fixture file
 bool MUnitTest::WriteTextFile(const MString& FileName, const MString& Content) const
 {
-  // Keep validation and writing atomic with respect to concurrent teardown, i.e.
-  // make sure the temporary directory is not removed while we execute this function.
+  // Lock to prevent a concurrent teardown of the temporary directory
   lock_guard<recursive_mutex> Lock(m_TemporaryPathMutex);
 
   if (IsSafeTemporaryPath(FileName, false) == false) {
@@ -127,11 +178,12 @@ bool MUnitTest::WriteTextFile(const MString& FileName, const MString& Content) c
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Evaluate that two text files are equivalent, numbers may differ in the last digits
 bool MUnitTest::EvaluateFilesNumericallyEquivalent(MString Function, MString Input, MString Description,
                                                    const MString& TestFile, const MString& ReferenceFile,
                                                    unsigned int MaximumLastDigitDifference)
 {
-  //! Open both files independently so failures identify which input is unavailable
+  // Open the files
   ifstream TestStream(TestFile.Data());
   if (TestStream.is_open() == false) {
     RegisterFailure(Function, Input, Description,
@@ -148,7 +200,7 @@ bool MUnitTest::EvaluateFilesNumericallyEquivalent(MString Function, MString Inp
     return false;
   }
 
-  //! Read both files in lockstep so line count and line content are checked together
+  // Read both files in synchronized so line count and line content are checked together
   unsigned int LineNumber = 0;
   MString TestLine;
   MString ReferenceLine;
@@ -157,30 +209,32 @@ bool MUnitTest::EvaluateFilesNumericallyEquivalent(MString Function, MString Inp
     const bool GotTest = static_cast<bool>(TestLine.ReadLine(TestStream));
     const bool GotReference = static_cast<bool>(ReferenceLine.ReadLine(ReferenceStream));
 
-    //! Reaching the end of both files at the same time completes the comparison
-    if (GotTest == false && GotReference == false) break;
+    // Reaching the end of both files at the same time completes the comparison
+    if (GotTest == false && GotReference == false) {
+      break;
+    }
 
     ++LineNumber;
 
-    //! If only one read succeeded, the files contain a different number of lines
+    // If only one read succeeded, the files contain a different number of lines
     if (GotTest != GotReference) {
       ostringstream LengthOutput;
       if (GotTest == false) {
-        LengthOutput << "test file is shorter (ends at line " << LineNumber << ")";
+        LengthOutput<<"test file is shorter (ends at line "<<LineNumber<<")";
       } else {
-        LengthOutput << "test file is longer (reference ends at line " << LineNumber << ")";
+        LengthOutput<<"test file is longer (reference ends at line "<<LineNumber<<")";
       }
       RegisterFailure(Function, Input, Description + MString(" (line count)"),
                       "same number of lines", LengthOutput.str());
       return false;
     }
 
-    //! Stop at the first unequal line and report both complete lines for diagnosis
+    // Stop at the first unequal line and report both complete lines for diagnosis
     if (LinesMatchNumerically(TestLine, ReferenceLine, MaximumLastDigitDifference) == false) {
       ostringstream Diff;
-      Diff << "\n      line " << LineNumber << ":"
-           << "\n        expected:  " << ReferenceLine
-           << "\n        test:      " << TestLine;
+      Diff<<endl<<"      line "<<LineNumber<<":"
+           <<endl<<"        expected:  "<<ReferenceLine
+           <<endl<<"        test:      "<<TestLine;
       RegisterFailure(Function, Input, Description, "numerically equivalent files", Diff.str());
       return false;
     }
@@ -194,27 +248,37 @@ bool MUnitTest::EvaluateFilesNumericallyEquivalent(MString Function, MString Inp
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return true if two lines have the same tokens, numbers may differ in the last digits
 bool MUnitTest::LinesMatchNumerically(const MString& TestLine, const MString& ReferenceLine,
                                       unsigned int MaximumLastDigitDifference) const
 {
-  //! Stream extraction splits both lines at whitespace and ignores whitespace differences
+  // Stream extraction splits both lines at whitespace and ignores whitespace differences
   istringstream TestStream(TestLine.ToString());
   istringstream ReferenceStream(ReferenceLine.ToString());
 
   MString TestToken;
   MString ReferenceToken;
   while (true) {
-    const bool HasTestToken = static_cast<bool>(TestStream >> TestToken);
-    const bool HasReferenceToken = static_cast<bool>(ReferenceStream >> ReferenceToken);
+    const bool HasTestToken = static_cast<bool>(TestStream>>TestToken);
+    const bool HasReferenceToken = static_cast<bool>(ReferenceStream>>ReferenceToken);
 
-    //! If either stream is exhausted, both must be exhausted to have equal token counts
-    if (HasTestToken == false || HasReferenceToken == false) return HasTestToken == HasReferenceToken;
+    // If either stream is exhausted, both must be exhausted to have equal token counts
+    if (HasTestToken == false || HasReferenceToken == false) {
+      if (HasTestToken == HasReferenceToken) {
+        return true;
+      }
+      return false;
+    }
 
-    //! Identical tokens match directly, including non-numeric and integer-only tokens
-    if (TestToken == ReferenceToken) continue;
+    // Identical tokens match directly, including non-numeric and integer-only tokens
+    if (TestToken == ReferenceToken) {
+      continue;
+    }
 
-    //! Differing tokens must be floating-point numbers matching within their printed precision
-    if (TestToken.AreNumbersNumericallyMatching(ReferenceToken, MaximumLastDigitDifference) == false) return false;
+    // Differing tokens must be floating-point numbers matching within their printed precision
+    if (TestToken.AreNumbersNumericallyMatching(ReferenceToken, MaximumLastDigitDifference) == false) {
+      return false;
+    }
   }
   return true;
 }
@@ -223,10 +287,10 @@ bool MUnitTest::LinesMatchNumerically(const MString& TestLine, const MString& Re
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Read complete text content from a test fixture file, return an empty string on failure
 MString MUnitTest::ReadTextFile(const MString& FileName) const
 {
   // Keep validation and reading atomic with respect to concurrent teardown, i.e.
-  // make sure the temporary directory is not removed while we execute this function.
   lock_guard<recursive_mutex> Lock(m_TemporaryPathMutex);
 
   if (IsSafeTemporaryPath(FileName, false) == false) {
@@ -234,29 +298,26 @@ MString MUnitTest::ReadTextFile(const MString& FileName) const
     return "";
   }
 
-  ifstream In(FileName.Data());
-  if (In.is_open() == false) {
+  MString Content;
+  if (MFile::ReadTextFile(FileName, Content) == false) {
     merr<<"Error in MUnitTest::ReadTextFile: unable to open temporary file: "<<FileName<<endl;
     return "";
   }
 
-  ostringstream Buffer;
-  Buffer<<In.rdbuf();
-
-  return Buffer.str().c_str();
+  return Content;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return a process-local temporary file name for this test, the file is not created
 MString MUnitTest::GetTemporaryFileName(const MString& Name) const
 {
-  // Keep path generation atomic with respect to concurrent teardown, i.e.
-  // make sure the randomized temporary root remains stable while we execute this function.
+  // Lock to keep the randomized temporary root stable
   lock_guard<recursive_mutex> Lock(m_TemporaryPathMutex);
 
-  // Files must use plain names and always live directly below the private root.
+  // Use plain names directly below the private root
   if (IsValidTemporaryPathName(Name) == false) {
     merr<<"Error in MUnitTest::GetTemporaryFileName: invalid temporary file name: "<<Name<<endl;
     return "";
@@ -275,10 +336,10 @@ MString MUnitTest::GetTemporaryFileName(const MString& Name) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return a process-local temporary directory name for this test, the directory is not created
 MString MUnitTest::GetTemporaryDirectoryName(const MString& Name) const
 {
-  // Keep path generation atomic with respect to concurrent teardown, i.e.
-  // make sure the randomized temporary root remains stable while we execute this function.
+  // Lock to keep the randomized temporary root stable
   lock_guard<recursive_mutex> Lock(m_TemporaryPathMutex);
 
   // An empty name selects the private root itself. Named directories are
@@ -293,7 +354,9 @@ MString MUnitTest::GetTemporaryDirectoryName(const MString& Name) const
     merr<<"Error in MUnitTest::GetTemporaryDirectoryName: unable to create the randomized temporary root"<<endl;
     return "";
   }
-  if (Name.IsEmpty() == true) return Root;
+  if (Name.IsEmpty() == true) {
+    return Root;
+  }
 
   return Root + "/" + Name;
 }
@@ -302,6 +365,7 @@ MString MUnitTest::GetTemporaryDirectoryName(const MString& Name) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Remove and recreate a process-local temporary directory for this test
 bool MUnitTest::PrepareTemporaryDirectory(const MString& Name) const
 {
   // Keep validation and recreation atomic with respect to concurrent access, i.e.
@@ -316,6 +380,18 @@ bool MUnitTest::PrepareTemporaryDirectory(const MString& Name) const
   }
 
   std::error_code Error;
+  if (Name.IsEmpty() == true) {
+    // The root itself: only clear its content, a new directory would not have the lock which the test driver respects
+    for (const std::filesystem::directory_entry& Entry : std::filesystem::directory_iterator(Directory.Data(), Error)) {
+      std::filesystem::remove_all(Entry.path(), Error);
+      if (Error.value() != 0) {
+        merr<<"Error in MUnitTest::PrepareTemporaryDirectory: unable to clear the temporary root: "<<Directory<<endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
   std::filesystem::remove_all(Directory.Data(), Error);
   if (Error.value() != 0) {
     merr<<"Error in MUnitTest::PrepareTemporaryDirectory: unable to remove existing temporary directory: "<<Directory<<endl;
@@ -334,6 +410,7 @@ bool MUnitTest::PrepareTemporaryDirectory(const MString& Name) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Remove a temporary file only if it is inside this test's private temporary root
 bool MUnitTest::RemoveTemporaryFile(const MString& FileName) const
 {
   // Keep validation and removal atomic with respect to concurrent access, i.e.
@@ -357,12 +434,8 @@ bool MUnitTest::RemoveTemporaryFile(const MString& FileName) const
   }
 
   // Directories must be removed only through RemoveTemporaryDirectory().
-  if (std::filesystem::is_directory(FileName.Data(), Error) == true) {
+  if (MFile::IsDirectory(FileName) == true) {
     merr<<"Error in MUnitTest::RemoveTemporaryFile: file is actually a directory: "<<FileName<<endl;
-    return false;
-  }
-  if (Error.value() != 0) {
-    merr<<"Error in MUnitTest::RemoveTemporaryFile: unable to inspect temporary file: "<<FileName<<endl;
     return false;
   }
 
@@ -378,6 +451,7 @@ bool MUnitTest::RemoveTemporaryFile(const MString& FileName) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Recursively remove a temporary directory only if it is inside this test's private temporary root
 bool MUnitTest::RemoveTemporaryDirectory(const MString& DirectoryName) const
 {
   // Keep validation and removal atomic with respect to concurrent access, i.e.
@@ -385,8 +459,13 @@ bool MUnitTest::RemoveTemporaryDirectory(const MString& DirectoryName) const
   lock_guard<recursive_mutex> Lock(m_TemporaryPathMutex);
 
   // If no directory name is given, uses m_TemporaryRootDirectory.
-  const MString Path = DirectoryName.IsEmpty() == true ? m_TemporaryRootDirectory : DirectoryName;
-  if (Path.IsEmpty() == true) return true;
+  MString Path = DirectoryName;
+  if (DirectoryName.IsEmpty() == true) {
+    Path = m_TemporaryRootDirectory;
+  }
+  if (Path.IsEmpty() == true) {
+    return true;
+  }
 
   // Recursive deletion is permitted only inside this test's randomized
   // private root. Passing the private root itself is allowed for teardown.
@@ -404,7 +483,10 @@ bool MUnitTest::RemoveTemporaryDirectory(const MString& DirectoryName) const
 
   // Clear the cached root on the normal generated-path teardown. Equivalent
   // spellings such as a trailing slash self-heal on the next root access.
-  if (Path == m_TemporaryRootDirectory) m_TemporaryRootDirectory = "";
+  if (Path == m_TemporaryRootDirectory) {
+    m_TemporaryRootDirectory = "";
+    ReleaseTemporaryRootLock();
+  }
   return true;
 }
 
@@ -412,6 +494,7 @@ bool MUnitTest::RemoveTemporaryDirectory(const MString& DirectoryName) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Create this test's randomized private temporary root if necessary
 bool MUnitTest::CreateTemporaryRootDirectory() const
 {
   // Serialize lazy root creation, i.e. make sure concurrent callers share one
@@ -420,45 +503,47 @@ bool MUnitTest::CreateTemporaryRootDirectory() const
 
   // Reuse the existing randomized root if it still exists.
   if (m_TemporaryRootDirectory.IsEmpty() == false) {
-    std::error_code Error;
-    if (std::filesystem::is_directory(m_TemporaryRootDirectory.Data(), Error) == true && Error.value() == 0) {
+    if (MFile::IsDirectory(m_TemporaryRootDirectory) == true) {
       return true;
     }
 
     m_TemporaryRootDirectory = "";
+    ReleaseTemporaryRootLock();
   }
 
-  // The test name becomes part of the randomized directory name and must
-  // therefore be a plain name without path components.
-  if (IsValidTemporaryBaseName(m_TemporaryBaseName) == false) {
-    merr<<"Error in MUnitTest::CreateTemporaryRootDirectory: invalid temporary directory basename: "<<m_TemporaryBaseName<<endl;
+  // MFile creates the directory atomically below the log directory
+  // and adds the default 10-character random component.
+  const MString LogDirectory = GetLogDirectory();
+  if (MFile::CreateDirectory(LogDirectory) == false) {
     return false;
   }
-
-  // MFile creates the directory atomically below the system temporary
-  // directory and adds the default 10-character random component.
-  m_TemporaryRootDirectory = MFile::CreateTemporaryDirectory(m_TemporaryBaseName);
+  m_TemporaryRootDirectory = MFile::CreateTemporaryDirectory(m_TemporaryBaseName, 10, LogDirectory);
   if (m_TemporaryRootDirectory.IsEmpty() == true) {
     merr<<"Error in MUnitTest::CreateTemporaryRootDirectory: unable to create the private temporary root for "<<m_Name<<endl;
     return false;
   }
 
   std::error_code Error;
-  const MString SystemTemporaryDirectory = gSystem->TempDirectory();
-  const std::filesystem::path TemporaryDirectory =
-    std::filesystem::weakly_canonical(SystemTemporaryDirectory.Data(), Error);
+  const std::filesystem::path LogPath =
+    std::filesystem::weakly_canonical(LogDirectory.Data(), Error);
   if (Error.value() != 0) {
-    merr<<"Error in MUnitTest::CreateTemporaryRootDirectory: unable to resolve the system temporary directory"<<endl;
+    merr<<"Error in MUnitTest::CreateTemporaryRootDirectory: unable to resolve the log directory"<<endl;
     m_TemporaryRootDirectory = "";
     return false;
   }
 
   const std::filesystem::path Root =
     std::filesystem::weakly_canonical(m_TemporaryRootDirectory.Data(), Error);
-  if (Error.value() != 0 || IsPathContained(TemporaryDirectory, Root) == false || Root == TemporaryDirectory) {
-    merr<<"Error in MUnitTest::CreateTemporaryRootDirectory: generated root is not safely contained in the system temporary directory: "<<m_TemporaryRootDirectory<<endl;
+  if (Error.value() != 0 || IsPathContained(LogPath, Root) == false || Root == LogPath) {
+    merr<<"Error in MUnitTest::CreateTemporaryRootDirectory: generated root is not safely contained in the log directory: "<<m_TemporaryRootDirectory<<endl;
     m_TemporaryRootDirectory = "";
     return false;
+  }
+
+  // Lock the root as long as it exists: the test driver does not remove the roots of running tests
+  m_TemporaryRootLock = open(m_TemporaryRootDirectory.Data(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+  if (m_TemporaryRootLock >= 0) {
+    flock(m_TemporaryRootLock, LOCK_EX | LOCK_NB);
   }
 
   return true;
@@ -468,6 +553,20 @@ bool MUnitTest::CreateTemporaryRootDirectory() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Release the lock on the temporary root
+void MUnitTest::ReleaseTemporaryRootLock() const
+{
+  if (m_TemporaryRootLock >= 0) {
+    close(m_TemporaryRootLock);
+    m_TemporaryRootLock = -1;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the randomized private temporary root for this test
 MString MUnitTest::GetTemporaryRootDirectory() const
 {
   // Serialize lazy root access, i.e. make sure concurrent callers observe one
@@ -475,7 +574,9 @@ MString MUnitTest::GetTemporaryRootDirectory() const
   lock_guard<recursive_mutex> Lock(m_TemporaryPathMutex);
 
   // All generated temporary paths are rooted below this randomized directory.
-  if (CreateTemporaryRootDirectory() == false) return "";
+  if (CreateTemporaryRootDirectory() == false) {
+    return "";
+  }
 
   return m_TemporaryRootDirectory;
 }
@@ -484,11 +585,14 @@ MString MUnitTest::GetTemporaryRootDirectory() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return true only for a plain child file or directory name without path components
 bool MUnitTest::IsValidTemporaryPathName(const MString& Name, bool AllowEmpty) const
 {
   // Empty names are permitted only when the caller explicitly requests
   // the test's private temporary root.
-  if (Name.IsEmpty() == true) return AllowEmpty;
+  if (Name.IsEmpty() == true) {
+    return AllowEmpty;
+  }
 
   // Temporary names must not contain path components. This rejects
   // traversal attempts such as "../home/andreas" before a path is built.
@@ -504,17 +608,112 @@ bool MUnitTest::IsValidTemporaryPathName(const MString& Name, bool AllowEmpty) c
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MUnitTest::IsValidTemporaryBaseName(const MString& Name) const
+//! Return the basename of the temporary directory: the acceptable characters of the name, or "UnitTest" if there are none
+MString MUnitTest::CreateTemporaryDirectoryBaseName(const MString& Name) const
 {
-  if (Name.IsEmpty() == true) return false;
-
-  for (const char Character: Name.GetString()) {
+  // Keep the acceptable characters of the name
+  MString BaseName;
+  for (unsigned int c = 0; c < Name.Length(); ++c) {
+    const char Character = Name[c];
     if ((Character >= 'a' && Character <= 'z') ||
         (Character >= 'A' && Character <= 'Z') ||
         (Character >= '0' && Character <= '9') ||
         Character == '_' || Character == '-') {
-      continue;
+      BaseName += Character;
     }
+  }
+
+  // Use a default name if nothing is left
+  if (BaseName.IsEmpty() == true) {
+    return "UnitTest";
+  }
+
+  return BaseName;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Read the log directory from the testing settings file
+void MUnitTest::LoadLogDirectory()
+{
+  // Create the settings file with the defaults if it does not exist
+  MSettingsTesting Settings;
+  MString FileName = Settings.GetSettingsFileName();
+  MFile::ExpandFileName(FileName);
+  if (MFile::Exists(FileName) == true) {
+    Settings.Read(FileName);
+  } else {
+    MFile::CreateDirectory(MFile::GetDirectoryName(FileName));
+    Settings.Write(FileName);
+  }
+
+  m_LogDirectory = Settings.GetLogDirectory();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true only if the path resolves inside this test's randomized temporary root
+bool MUnitTest::IsSafeTemporaryPath(const MString& Path, bool AllowRoot) const
+{
+  // An empty path must never reach a guarded filesystem operation.
+  if (Path.IsEmpty() == true) {
+    return false;
+  }
+
+  // Validation must never create a new temporary root as a side effect.
+  // Only paths generated earlier by this test are eligible for access.
+  if (m_TemporaryRootDirectory.IsEmpty() == true) {
+    return false;
+  }
+
+  std::error_code Error;
+  const MString LogDirectory = GetLogDirectory();
+
+  // Resolve the log directory. This normalizes "." and ".."
+  // and resolves symlinks before any containment decision is made.
+  const std::filesystem::path LogPath = std::filesystem::weakly_canonical(LogDirectory.Data(), Error);
+  if (Error.value() != 0) {
+    return false;
+  }
+
+  // Resolve this test's randomized private root.
+  const std::filesystem::path Root = std::filesystem::weakly_canonical(m_TemporaryRootDirectory.Data(), Error);
+  if (Error.value() != 0) {
+    return false;
+  }
+
+  // Resolve currently visible traversal and symlink escapes. The later
+  // remove() and remove_all() calls remove symlinks themselves instead of
+  // following them during deletion, which keeps the removal path safe even
+  // if a symlink changes after this check.
+  const std::filesystem::path Candidate = std::filesystem::weakly_canonical(Path.Data(), Error);
+  if (Error.value() != 0) {
+    return false;
+  }
+
+  // Never permit an operation on the log directory itself.
+  if (Root == LogPath) {
+    return false;
+  }
+
+  // The randomized private root must itself remain inside the system
+  // temporary directory.
+  if (IsPathContained(LogPath, Root) == false) {
+    return false;
+  }
+
+  // The path must be inside the private root - this rejects /tmp/root/../../home
+  if (IsPathContained(Root, Candidate) == false) {
+    return false;
+  }
+
+  // File removal must not remove the root. Directory removal can permit
+  // this explicitly for final test cleanup.
+  if (AllowRoot == false && Candidate == Root) {
     return false;
   }
 
@@ -525,76 +724,35 @@ bool MUnitTest::IsValidTemporaryBaseName(const MString& Name) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MUnitTest::IsSafeTemporaryPath(const MString& Path, bool AllowRoot) const
-{
-  // An empty path must never reach a guarded filesystem operation.
-  if (Path.IsEmpty() == true) return false;
-
-  // Validation must never create a new temporary root as a side effect.
-  // Only paths generated earlier by this test are eligible for access.
-  if (m_TemporaryRootDirectory.IsEmpty() == true) return false;
-
-  std::error_code Error;
-  const MString SystemTemporaryDirectory = gSystem->TempDirectory();
-
-  // Resolve the system temporary directory. This normalizes "." and ".."
-  // and resolves symlinks before any containment decision is made.
-  const std::filesystem::path TemporaryDirectory = std::filesystem::weakly_canonical(SystemTemporaryDirectory.Data(), Error);
-  if (Error.value() != 0) return false;
-
-  // Resolve this test's randomized private root.
-  const std::filesystem::path Root = std::filesystem::weakly_canonical(m_TemporaryRootDirectory.Data(), Error);
-  if (Error.value() != 0) return false;
-
-  // Resolve currently visible traversal and symlink escapes. The later
-  // remove() and remove_all() calls remove symlinks themselves instead of
-  // following them during deletion, which keeps the removal path safe even
-  // if a symlink changes after this check.
-  const std::filesystem::path Candidate = std::filesystem::weakly_canonical(Path.Data(), Error);
-  if (Error.value() != 0) return false;
-
-  // Never permit an operation on the system temporary directory itself.
-  if (Root == TemporaryDirectory) return false;
-
-  // The randomized private root must itself remain inside the system
-  // temporary directory.
-  if (IsPathContained(TemporaryDirectory, Root) == false) return false;
-
-  // The requested path must resolve to the private root or one of its
-  // descendants. Paths such as "/tmp/root/../../home/andreas" fail here.
-  if (IsPathContained(Root, Candidate) == false) return false;
-
-  // File removal must not remove the root. Directory removal can permit
-  // this explicitly for final test cleanup.
-  if (AllowRoot == false && Candidate == Root) return false;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
+//! Return true if Child is Parent or is contained below Parent
 bool MUnitTest::IsPathContained(const std::filesystem::path& Parent, const std::filesystem::path& Child) const
 {
   // A lexical relative path avoids string-prefix mistakes such as treating
   // "/tmp/test-other" as a child of "/tmp/test" and tolerates trailing
   // separators after canonicalization.
   const std::filesystem::path Relative = Child.lexically_normal().lexically_relative(Parent.lexically_normal());
-  if (Relative.empty() == true) return false;
-  if (Relative == ".") return true;
+  if (Relative.empty() == true) {
+    return false;
+  }
+  if (Relative == ".") {
+    return true;
+  }
 
   const std::filesystem::path::const_iterator First = Relative.begin();
-  return First != Relative.end() && *First != "..";
+  if (First != Relative.end() && *First != "..") {
+    return true;
+  }
+  return false;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Evaluate that two text files contain exactly the same lines
 bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString Description, const MString& TestFile, const MString& ReferenceFile)
 {
-  //! Open both files independently so failures identify which input is unavailable
+  // Open both files independently so failures identify which input is unavailable
   ifstream TestStream(TestFile.Data());
   if (TestStream.is_open() == false) {
     RegisterFailure(Function, Input, Description,
@@ -611,7 +769,7 @@ bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString 
     return false;
   }
 
-  //! Read both files in lockstep so line count and line content are checked together
+  // Read both files in lockstep so line count and line content are checked together
   unsigned int LineNumber = 0;
   MString TestLine;
   MString ReferenceLine;
@@ -620,35 +778,41 @@ bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString 
     const bool GotTest = static_cast<bool>(TestLine.ReadLine(TestStream));
     const bool GotReference = static_cast<bool>(ReferenceLine.ReadLine(ReferenceStream));
 
-    //! Remove the carriage-return component of CRLF line endings
-    if (GotTest == true && TestLine.EndsWith("\r")) TestLine.RemoveLast(1);
-    if (GotReference == true && ReferenceLine.EndsWith("\r")) ReferenceLine.RemoveLast(1);
+    // Remove the carriage-return component of CRLF line endings
+    if (GotTest == true && TestLine.EndsWith("\r")) {
+      TestLine.RemoveLast(1);
+    }
+    if (GotReference == true && ReferenceLine.EndsWith("\r")) {
+      ReferenceLine.RemoveLast(1);
+    }
 
-    //! Reaching the end of both files at the same time completes the comparison
-    if (GotTest == false && GotReference == false) break;
+    // Reaching the end of both files at the same time completes the comparison
+    if (GotTest == false && GotReference == false) {
+      break;
+    }
 
     ++LineNumber;
 
-    //! If only one read succeeded, the files contain a different number of lines
+    // If only one read succeeded, the files contain a different number of lines
     if (GotTest != GotReference) {
       ostringstream LengthOutput;
       if (GotTest == false) {
-        LengthOutput << "test file is shorter (ends at line " << LineNumber << ")";
+        LengthOutput<<"test file is shorter (ends at line "<<LineNumber<<")";
       } else {
-        LengthOutput << "test file is longer (reference ends at line " << LineNumber << ")";
+        LengthOutput<<"test file is longer (reference ends at line "<<LineNumber<<")";
       }
       RegisterFailure(Function, Input, Description + MString(" (line count)"),
                       "same number of lines", LengthOutput.str());
       return false;
     }
 
-    //! Exact comparison preserves all characters within the line, including whitespace
-    //! Stop at the first unequal line and report both complete lines for diagnosis
+    // Exact comparison preserves all characters within the line, including whitespace
+    // Stop at the first unequal line and report both complete lines for diagnosis
     if (TestLine != ReferenceLine) {
       ostringstream Diff;
-      Diff << "\n      line " << LineNumber << ":"
-           << "\n        expected:  " << ReferenceLine
-           << "\n        test:      " << TestLine;
+      Diff<<endl<<"      line "<<LineNumber<<":"
+           <<endl<<"        expected:  "<<ReferenceLine
+           <<endl<<"        test:      "<<TestLine;
       RegisterFailure(Function, Input, Description, "identical files", Diff.str());
       return false;
     }
@@ -662,6 +826,7 @@ bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Evaluate two vectors within a given tolerance
 bool MUnitTest::EvaluateVectorNear(MString Function, MString Input, MString Description, const MVector& Output, const MVector& Truth, double Tolerance)
 {
   const bool Finite = std::isfinite(Output.X()) && std::isfinite(Output.Y()) && std::isfinite(Output.Z()) &&
@@ -670,9 +835,9 @@ bool MUnitTest::EvaluateVectorNear(MString Function, MString Input, MString Desc
 
   if (Finite == false || Distance > Tolerance) {
     ostringstream ExpectedStream;
-    ExpectedStream << setprecision(numeric_limits<long double>::max_digits10) << "(" << Truth.X() << ", " << Truth.Y() << ", " << Truth.Z() << ") +/- " << Tolerance;
+    ExpectedStream<<setprecision(numeric_limits<long double>::max_digits10)<<"("<<Truth.X()<<", "<<Truth.Y()<<", "<<Truth.Z()<<") +/- "<<Tolerance;
     ostringstream OutputStream;
-    OutputStream << setprecision(numeric_limits<long double>::max_digits10) << "(" << Output.X() << ", " << Output.Y() << ", " << Output.Z() << "), distance " << Distance;
+    OutputStream<<setprecision(numeric_limits<long double>::max_digits10)<<"("<<Output.X()<<", "<<Output.Y()<<", "<<Output.Z()<<"), distance "<<Distance;
     RegisterFailure(Function, Input, Description, ExpectedStream.str(), OutputStream.str());
     return false;
   }
@@ -685,11 +850,12 @@ bool MUnitTest::EvaluateVectorNear(MString Function, MString Input, MString Desc
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Evaluate two rotation matrices within a given tolerance
 bool MUnitTest::EvaluateRotationNear(MString Function, MString Input, MString Description, const MRotation& Output, const MRotation& Truth, double Tolerance)
 {
   // Elements row by row: XX, YX, ZX, XY, YY, ZY, XZ, YZ, ZZ
-  const double O[9] = { Output.GetXX(), Output.GetYX(), Output.GetZX(), Output.GetXY(), Output.GetYY(), Output.GetZY(), Output.GetXZ(), Output.GetYZ(), Output.GetZZ() };
-  const double T[9] = { Truth.GetXX(), Truth.GetYX(), Truth.GetZX(), Truth.GetXY(), Truth.GetYY(), Truth.GetZY(), Truth.GetXZ(), Truth.GetYZ(), Truth.GetZZ() };
+  const vector<double> O = { Output.GetXX(), Output.GetYX(), Output.GetZX(), Output.GetXY(), Output.GetYY(), Output.GetZY(), Output.GetXZ(), Output.GetYZ(), Output.GetZZ() };
+  const vector<double> T = { Truth.GetXX(), Truth.GetYX(), Truth.GetZX(), Truth.GetXY(), Truth.GetYY(), Truth.GetZY(), Truth.GetXZ(), Truth.GetYZ(), Truth.GetZZ() };
 
   bool Match = true;
   double LargestDifference = 0.0;
@@ -698,14 +864,16 @@ bool MUnitTest::EvaluateRotationNear(MString Function, MString Input, MString De
       Match = false;
     } else {
       LargestDifference = std::max(LargestDifference, fabs(O[i] - T[i]));
-      if (fabs(O[i] - T[i]) > Tolerance) Match = false;
+      if (fabs(O[i] - T[i]) > Tolerance) {
+        Match = false;
+      }
     }
   }
 
   if (Match == false) {
-    auto Format = [](const double (&V)[9]) {
+    auto Format = [](const vector<double>& V) {
       ostringstream Stream;
-      Stream << setprecision(numeric_limits<long double>::max_digits10) << "(" << V[0] << "/" << V[1] << "/" << V[2] << ", " << V[3] << "/" << V[4] << "/" << V[5] << ", " << V[6] << "/" << V[7] << "/" << V[8] << ")";
+      Stream<<setprecision(numeric_limits<long double>::max_digits10)<<"("<<V[0]<<"/"<<V[1]<<"/"<<V[2]<<", "<<V[3]<<"/"<<V[4]<<"/"<<V[5]<<", "<<V[6]<<"/"<<V[7]<<"/"<<V[8]<<")";
       return Stream.str();
     };
     RegisterFailure(Function, Input, Description, Format(T) + " +/- " + to_string(Tolerance), Format(O) + ", largest difference " + to_string(LargestDifference));
