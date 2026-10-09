@@ -815,12 +815,12 @@ bool MSupervisor::Save(MString FileName)
 
   // Store the module content
   MFile::ExpandFileName(FileName);
-  Document->Save(FileName);
+  bool Success = Document->Save(FileName);
 
   // Clean up
   delete Document;
 
-  return true;
+  return Success;
 }
 
 
