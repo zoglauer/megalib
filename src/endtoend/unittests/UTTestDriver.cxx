@@ -464,6 +464,9 @@ bool UTTestDriver::TestCommandLine()
   Passed = Evaluate("Execute()", "unknown option", "An unknown option gives the exit code 1", Drive(Bin, { "--nonsense" }, Logs + "/option").m_ExitCode, 1) && Passed;
   Passed = Evaluate("Execute()", "--timeout without value", "--timeout without a value gives the exit code 1", Drive(Bin, { "--timeout" }, Logs + "/timeout_missing").m_ExitCode, 1) && Passed;
   Passed = Evaluate("Execute()", "--timeout with text", "--timeout with a value which is no number gives the exit code 1", Drive(Bin, { "--timeout", "soon" }, Logs + "/timeout_text").m_ExitCode, 1) && Passed;
+  for (const MString& Value: vector<MString>({ "nan", "inf", "-inf", "1e9999", "-1", "3601", "1e12" })) {
+    Passed = Evaluate("Execute()", "--timeout " + Value, "--timeout with the value " + Value + " (not finite, negative, or above 3600 s) gives the exit code 1", Drive(Bin, { "--timeout", Value }, Logs + "/timeout_" + Value).m_ExitCode, 1) && Passed;
+  }
   Passed = Evaluate("Execute()", "--help", "--help gives the exit code 0", Drive(Bin, { "--help" }, Logs + "/help").m_ExitCode, 0) && Passed;
   Passed = EvaluateFalse("Execute()", "--help runs nothing", "--help does not run any test", Has(Logs + "/help", "UTAlpha.log")) && Passed;
 

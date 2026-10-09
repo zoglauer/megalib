@@ -26,6 +26,7 @@
 #include <cerrno>
 #include <cctype>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -103,6 +104,7 @@ int MTestDriver::Execute(int argc, char** argv)
 {
   const unsigned int PollIntervalMicroseconds = 1000000; // Check the running tests once per second
   const int InterruptedExitCode = 130; // The shell convention for a program stopped by Ctrl-C
+  const double MaximumTimeout = 3600.0; // Seconds
   const unsigned int DefaultTerminalWidth = 100; // If the width of the terminal is unknown
   const unsigned int MinimumPaneWidth = 24; // Characters of a pane of the dashboard
 
@@ -129,8 +131,9 @@ int MTestDriver::Execute(int argc, char** argv)
       if (a+1 < argc) {
         Timeout = strtod(argv[a+1], &End);
       }
-      if (a+1 >= argc || End == argv[a+1] || *End != '\0' || Timeout < 0.0) {
-        merr<<"Usage: --timeout (-t) <seconds>, with 0 meaning no timeout"<<show;
+      // Reject text, negative values, and nan, inf, or overflows (1e9999) - they would never reach the deadline
+      if (a+1 >= argc || End == argv[a+1] || *End != '\0' || isfinite(Timeout) == false || Timeout < 0.0 || Timeout > MaximumTimeout) {
+        merr<<"Usage: --timeout (-t) T, with T = [0...3600] seconds and T = 0: no timeout"<<show;
         return 1;
       }
       m_TimeoutSeconds = Timeout;
@@ -499,7 +502,7 @@ void MTestDriver::PrintUsage() const
       <<"  -e, --endtoend      Run only the end-to-end tests"<<endl
       <<"  -c, --calibrate     Measure the speed of this machine again (the program testdrivercalibration): it runs before the first test, the time out is scaled with the result"<<endl
       <<"  -l, --logdir <directory> All logs and the working files of failed tests go here (default: the one in ~/.testdrive.cfg, initially /tmp/$USER/megalib_testing_logs)"<<endl
-      <<"  -t, --timeout <seconds> Kill a test after this time, 0 means no timeout (default: 120)"<<endl
+      <<"  -t, --timeout <T>       Kill a test after T = [0...3600] seconds, T = 0: no timeout (default: 120)"<<endl
       <<"  test                The name of a test (the prefix is optional): the tests which are named run independent of the options above"<<endl
       <<"  -h, --help          This help"<<endl;
 }
