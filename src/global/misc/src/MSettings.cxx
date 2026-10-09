@@ -237,6 +237,11 @@ bool MSettings::Change(MString NewField)
 {
   // Change one settings field
   
+  if (NewField.Contains("=") == false) {
+    merr<<"Error: Malformed change request, it needs the form Node.Subnode=Value: "<<NewField<<endl;
+    return false;
+  }
+
   // Parse the data
   MString Nodes = NewField.GetSubString(0, NewField.First('='));
   vector<MString> NodeNames = Nodes.Tokenize(".");
@@ -254,6 +259,7 @@ bool MSettings::Change(MString NewField)
     MXmlNode* Node = Iter->GetNode(S);
     if (Node == nullptr) {
       merr<<"Error: Unable to find node "<<S<<" under node "<<Iter->GetName()<<endl;
+      delete Master;
       return false;
     }
     Iter = Node;
