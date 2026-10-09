@@ -43,9 +43,6 @@ confhelp() {
   echo "--compiler=[gcc, clang, icc]"
   echo "    This currently only works on Linux. Default is gcc. On a Mac always the default compiler is used."
   echo " "
-  echo "--updates=[off/no, on/yes]"
-  echo "    Check periodically for updates. Default is off."
-  echo "    Even if set to on, update checks will only be performed, if the user has write access to the MEGAlib installation."
   echo " "
   echo "--help or -h"
   echo "    Show this help."
@@ -108,7 +105,6 @@ OS=`uname -s`
 OPT="normal"
 DEBUG="on"
 COMP="gcc"
-UPDATES="off"
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
@@ -119,7 +115,7 @@ for C in ${CMD}; do
   elif [[ ${C} == *-d*=* ]]; then
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-u*=* ]]; then
-    UPDATES=`echo ${C} | awk -F"=" '{ print $2 }'`
+    echo " * Ignoring no longer supported \"update\" option"
   elif [[ ${C} == *-c*=* ]]; then
     COMP=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == --linux ]]; then
@@ -148,7 +144,6 @@ OS=`echo ${OS} | tr '[:upper:]' '[:lower:]'`
 OPT=`echo ${OPT} | tr '[:upper:]' '[:lower:]'`
 DEBUG=`echo ${DEBUG} | tr '[:upper:]' '[:lower:]'`
 COMP=`echo ${COMP} | tr '[:upper:]' '[:lower:]'`
-UPDATES=`echo ${UPDATES} | tr '[:upper:]' '[:lower:]'`
 
 
 # provide feed back and perform error checks:
@@ -220,19 +215,6 @@ else
   exit 1
 fi
 
-
-if ( [[ ${UPDATES} == of* ]] || [[ ${UPDATES} == n* ]] ); then
-  UPDATES="off"
-  echo " * Don't check for updates"
-elif ( [[ ${UPDATES} == on ]] || [[ ${UPDATES} == y* ]] ); then
-  UPDATES="on"
-  echo " * Check for updates if the user has write access to the MEGAlib installation"
-else
-  echo " "
-  echo "ERROR: Unknown option for updates: ${UPDATES}"
-  confhelp
-  exit 1
-fi
 
 
 # Part 4:
@@ -612,19 +594,6 @@ fi
 
 # Store the current options:
 echo "${CMD}" >> config/configure_lastgoodoptions
-
-# Set the updates interval:
-if [[ ${UPDATES} == off ]]; then
-  echo ""
-  echo "Making config/UpdateCheck.txt read-only to prevent periodical update checks..."
-  touch config/UpdateCheck.txt
-  chmod a-w config/UpdateCheck.txt
-else
-  echo ""
-  echo "Setting up config/UpdateCheck.txt for periodical update checks..."
-  rm -f config/UpdateCheck.txt
-  cp config/Version.txt config/UpdateCheck.txt
-fi
 
 # Remove the old build
 echo ""

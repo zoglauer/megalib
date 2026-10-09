@@ -328,10 +328,6 @@ man:
 	@sh resource/doxy
 	@doxygen resource/Doxyfile
 
-update:
-	@bash config/configure_update
-	@if ( `test -f config/configure_lastgoodoptions` ); then bash configure `cat config/configure_lastgoodoptions`; $(MAKE) all; else echo "MEGAlib updated. Please reconfigure and compile!"; fi 
-
 changelog:
 	@sh bin/changelog.sh
 	@less doc/ChangeLog

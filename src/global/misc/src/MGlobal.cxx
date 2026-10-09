@@ -43,7 +43,6 @@ using namespace std;
 #include <TROOT.h>
 #include <TStyle.h>
 #include <TError.h>
-#include <TSystem.h>
 #include <TObjArray.h>
 #include <TObjString.h>
 
@@ -275,13 +274,6 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
     gROOT->SetBatch(true);
   }
 
-  // Launch the update check at the end:
-#if defined(___LINUX___) || defined(___MACOSX___)
-  MString UpdateScript = "$(MEGALIB)/config/configure_updatetest";
-  MFile::ExpandFileName(UpdateScript);
-  gSystem->Exec(MString("bash \"") + UpdateScript + "\" &");
-#endif
-
   g_Mutex = new TMutex();
   g_MainThreadID = TThread::SelfId();
 
@@ -368,9 +360,6 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
     if (DevelopmentVersion.Length() > LineLength) LineLength = DevelopmentVersion.Length();
   }
 
-  MString Update = MString("If you wish to update, make a backup, and then run \"make update\"");
-  if (Update.Length() > LineLength) LineLength = Update.Length();
-
   LineLength += 10;
 
   CenterString(ProgramLine, LineLength);
@@ -383,7 +372,6 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   CenterString(HomepageLine, LineLength);
   CenterString(GitHubLine, LineLength);
   CenterString(DevelopmentVersion, LineLength, false);
-  CenterString(Update, LineLength, false);
 
   MString ClosedLine;
   for (unsigned int i = 0; i < LineLength; ++i) ClosedLine += '*';
@@ -416,35 +404,6 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
     cout<<DevelopmentVersion<<endl;
     cout<<endl;
   }
-
-  // Check if we have found a newer version
-  MString FileName = "$(MEGALIB)/config/UpdateCheck.txt";
-  MFile::ExpandFileName(FileName);
-
-  ifstream in;
-  in.open(FileName);
-  if (in.is_open()) {
-    MString VersionString;
-    in>>VersionString;
-    in.close();
-    // Now parse:
-    vector<MString> Tokens = VersionString.Tokenize(".");
-    if (Tokens.size() == 3 &&
-        Tokens[0].IsPositiveInteger() == true &&
-        Tokens[1].IsPositiveInteger() == true &&
-        Tokens[2].IsPositiveInteger() == true) {
-      unsigned int NewVersion = Tokens[0].ToInt()*10000 + Tokens[1].ToInt()*100 + Tokens[2].ToInt();
-      if (NewVersion > g_Version) {
-        MString NewVersion = MString("An updated MEGAlib version (") + VersionString + MString(") is in the repository!");
-        CenterString(NewVersion, LineLength, false);
-        cout<<NewVersion<<endl;
-        cout<<Update<<endl;
-        cout<<endl;
-      }
-    }
-  }
-
-
 }
 
 
