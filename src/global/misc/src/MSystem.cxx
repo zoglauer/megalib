@@ -45,6 +45,7 @@
 // POSIX libs:
 #include <dlfcn.h>
 #include <fcntl.h>
+#include <sys/utsname.h>
 #ifdef __APPLE__
 #include <sys/sysctl.h>
 #include <mach/mach.h>
@@ -838,21 +839,13 @@ bool MSystem::FileExist(MString Filename)
 
 MString MSystem::GetOS()
 {
-  MString Result;
-
-  array<char, 128> Buffer;
-  unique_ptr<FILE, decltype(&pclose)> Pipe(popen("uname -sr", "r"), pclose);
-  if (!Pipe) {
-     mout<<"Error: Unable to open pipe"<<endl;
-     return Result;
-  }
-  while (fgets(Buffer.data(), Buffer.size(), Pipe.get()) != nullptr) {
-    Result += Buffer.data();
+  struct utsname Info;
+  if (uname(&Info) != 0) {
+    mout<<"Error: Unable to determine the OS"<<endl;
+    return "";
   }
 
-  Result.TrimInPlace();
-
-  return Result;
+  return MString(Info.sysname) + " " + Info.release;
 }
 
 
