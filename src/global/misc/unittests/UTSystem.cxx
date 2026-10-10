@@ -198,6 +198,16 @@ bool UTSystem::Run()
     Passed = Evaluate("GetCpuModel()", "stable", "The model of the CPU is the same on every call", MSystem::GetCpuModel(), Cpu) && Passed;
   }
 
+  // GetOS: the same as the output of "uname -sr"
+  {
+    const MString UnameFile = GetTemporaryFileName("uname.txt");
+    const int UnameStatus = MSystem::RunProcess("uname", "-sr", UnameFile);
+    Passed = EvaluateTrue("RunProcess()", "uname", "The reference command uname -sr runs", WIFEXITED(UnameStatus) && WEXITSTATUS(UnameStatus) == 0) && Passed;
+    MString Reference = ReadTextFile(UnameFile);
+    Reference.TrimInPlace();
+    Passed = Evaluate("GetOS()", "uname", "The OS is the output of uname -sr (kernel name and release)", MSystem::GetOS(), Reference) && Passed;
+  }
+
   // GetShellQuoted: the shell sees exactly the argument, whatever it contains
   Passed = Evaluate("GetShellQuoted()", "plain", "A plain word is put in single quotes", MSystem::GetShellQuoted("word"), MString("'word'")) && Passed;
   Passed = Evaluate("GetShellQuoted()", "empty", "The empty string gives two single quotes: an empty word", MSystem::GetShellQuoted(""), MString("''")) && Passed;
