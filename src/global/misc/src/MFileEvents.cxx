@@ -82,6 +82,8 @@ MFileEvents::MFileEvents() : MFile()
   m_FooterTENeedsEN = false;
   m_FooterENSeen = false;
 
+  m_EventListClosed = false;
+
   m_HasStartObservationTime = false;
   m_HasEndObservationTime = false;
 
@@ -145,6 +147,9 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     return false;
   }
 
+  m_ExtraFooterText = "";
+  m_EventListClosed = false;
+
   // If we are in read mode, we search for version, type, etc. information....
   // Since this function is time critical it is written partly in C
   if (Way == c_Read) {
@@ -188,6 +193,9 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
 
     m_HasSpectralType = false;
     m_SpectralType = "";
+
+    m_HasSimulatedEvents = false;
+    m_SimulatedEvents = 0;
 
     int Lines = 0;
     int MaxLines = 100;
@@ -257,7 +265,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
           Tokens.Analyze(Line);
           if (Tokens.GetNTokens() < 2) {
             mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-            mout<<"Unable to read geometry name."<<endl;
+            mout<<"Unable to read Geant4 version."<<endl;
           } else {
             m_HasGeant4Version = true;
             m_Geant4Version = Tokens.GetTokenAfterAsString(1);
@@ -619,6 +627,26 @@ MString MFileEvents::GetGeometryFileName() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MTime MFileEvents::GetFooterEndTime() const
+{
+  // The end time is the end of the observation, or the start plus the observation time
+
+  if (m_HasEndObservationTime == true) {
+    return m_EndObservationTime;
+  }
+
+  MTime End = m_ObservationTime;
+  if (m_HasStartObservationTime == true) {
+    End += m_StartObservationTime;
+  }
+
+  return End;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MFileEvents::TransferInformation(MFileEvents* File)
 {
   // Transfer header information
@@ -648,8 +676,9 @@ void MFileEvents::TransferInformation(MFileEvents* File)
   m_HasEndObservationTime = File->HasEndObservationTime();
   m_EndObservationTime = File->GetEndObservationTime();
 
-  m_HasSimulatedEvents = File->HasSimulatedEvents();
+  // Get the number of events first, since a derived class might read it from the footer when asked
   m_SimulatedEvents = File->GetSimulatedEvents();
+  m_HasSimulatedEvents = File->HasSimulatedEvents();
 }
 
 
@@ -738,15 +767,16 @@ bool MFileEvents::WriteFooter()
   ostringstream Footer;
 
   if (m_IsBinary == true) {
-    Footer<<"STARTBINARYSTREAM"<<endl;
+    // The binary data does not end with a line break
+    Footer<<endl<<"ENDBINARYSTREAM"<<endl;
   } else {
     Footer<<"EN"<<endl;
   }
   Footer<<endl;
 
   Footer<<endl;
-  if (m_HasEndObservationTime == true) {
-    Footer<<"TE "<<m_EndObservationTime.GetLongIntsString()<<endl;
+  if (m_HasEndObservationTime == true || m_HasObservationTime == true) {
+    Footer<<"TE "<<GetFooterEndTime().GetLongIntsString()<<endl;
   }
   if (m_HasSimulatedEvents == true) {
     Footer<<"TS "<<m_SimulatedEvents<<endl;
@@ -761,6 +791,9 @@ bool MFileEvents::WriteFooter()
 
   Footer<<endl<<endl;
   Write(Footer);
+
+  m_ExtraFooterText = "";
+  m_EventListClosed = true;
 
   return true;
 }
@@ -780,7 +813,26 @@ bool MFileEvents::AddFooter(const MString& Text)
     return false;
   }
 
-  m_ExtraFooterText += Text;
+  if (m_IsOpen == false) return false;
+  if (Text.IsEmpty() == true) return true;
+
+  // Before the event list is closed, WriteFooter() writes the text
+  if (m_EventListClosed == false) {
+    m_ExtraFooterText += Text;
+    return true;
+  }
+
+  // Afterwards, write it right away
+  ostringstream ToWrite;
+  ToWrite<<endl<<"FT START"<<endl;
+  ToWrite<<Text<<endl;
+  ToWrite<<"FT STOP"<<endl<<endl;
+  Write(ToWrite);
+
+  if (GetFileLength() >= numeric_limits<streamsize>::max()) {
+    mout<<"Warning: Writing footer resulted in exceeding of max file size..."<<endl;
+    mout<<"         Some closing remarks might be lost..."<<endl;
+  }
 
   return true;
 }
@@ -801,9 +853,11 @@ bool MFileEvents::CloseEventList()
   ostringstream ToWrite;
   ToWrite<<"EN"<<endl;
   ToWrite<<endl;
-  ToWrite<<"TE "<<m_ObservationTime<<endl;
+  ToWrite<<"TE "<<GetFooterEndTime()<<endl;
   ToWrite<<endl;
   Write(ToWrite);
+
+  m_EventListClosed = true;
 
   return true;
 }

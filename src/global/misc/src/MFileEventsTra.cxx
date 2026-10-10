@@ -187,15 +187,7 @@ MTime MFileEventsTra::GetObservationTime()
 
 bool MFileEventsTra::WriteHeader()
 {
-  if (MFileEvents::WriteHeader() == false) return false;
-
-  if (m_HasStartObservationTime == true) {
-    ostringstream Header;
-    Header<<"TB "<<m_StartObservationTime<<endl;
-    Write(Header);
-  }
-
-  return true;
+  return MFileEvents::WriteHeader();
 }
 
 
@@ -213,13 +205,11 @@ bool MFileEventsTra::CloseEventList()
   ostringstream ToWrite;
   ToWrite<<"EN"<<endl;
   ToWrite<<endl;
-  if (m_HasEndObservationTime == true) {
-    ToWrite<<"TE "<<m_EndObservationTime<<endl;
-  } else {
-    ToWrite<<"TE "<<m_ObservationTime<<endl;
-  }
+  ToWrite<<"TE "<<GetFooterEndTime()<<endl;
   ToWrite<<endl;
   Write(ToWrite);
+
+  m_EventListClosed = true;
 
   return true;
 }

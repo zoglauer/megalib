@@ -158,6 +158,9 @@ class MFileEvents : public MFile
 
   // protected methods:
  protected:
+  //! Return the end time for the footer: the end time if known, otherwise the start time plus the observation time
+  MTime GetFooterEndTime() const;
+
   //! Open a file given by the "NF" keyword
   virtual bool OpenNextFile(const MString& Line);
   //! Create a file indicated by a "NF" keyword
@@ -212,8 +215,10 @@ class MFileEvents : public MFile
   //! True is this is an included file:
   bool m_IsIncludeFile;
 
-  //! Extra footer text
+  //! Extra footer text, written by WriteFooter()
   MString m_ExtraFooterText;
+  //! True after the event list has been closed or the footer has been written
+  bool m_EventListClosed;
 
   //! The original file name (different from m_FileName in case ofjumping from file to file via NF keyword)
   MString m_OriginalFileName;

@@ -299,7 +299,7 @@ bool UTFileEvents::TestWriting()
   Passed = EvaluateTrue("WriteHeader()", "write header", "WriteHeader succeeds in write mode", File.WriteHeader()) && Passed;
   Passed = EvaluateTrue("AddFooter(empty)", "empty footer", "AddFooter is a no-op success for empty footer text", File.AddFooter("")) && Passed;
   Passed = EvaluateTrue("AddFooter()", "write footer", "AddFooter succeeds in write mode", File.AddFooter("FooterText")) && Passed;
-  Passed = EvaluateTrue("CloseEventList()", "write close event list", "CloseEventList writes the EN and TE trailer", File.CloseEventList()) && Passed;
+  Passed = EvaluateTrue("WriteFooter()", "write footer block", "WriteFooter writes the EN line, the TE trailer, and the footer text", File.WriteFooter()) && Passed;
   Passed = EvaluateTrue("Close()", "write close", "The write test file closes cleanly", File.Close()) && Passed;
 
   MString Text = ReadTextFile(FileName);
@@ -328,7 +328,8 @@ bool UTFileEvents::TestWriting()
     const double Difference = HeaderTime - static_cast<double>(time(nullptr));
     Passed = EvaluateTrue("WriteHeader()", "date is now", "The header date is the current UTC time (within one minute of the clock)", fabs(Difference) < 60.0) && Passed;
   }
-  Passed = EvaluateTrue("AddFooter()", "footer and trailer content", "The file ends with the exact footer block followed by the EN and TE trailer", Text.EndsWith("\nFT START\nFooterText\nFT STOP\n\nEN\n\nTE 123.500000000\n\n")) && Passed;
+  // Footer: EN, two blank lines, TE (the observation time, since there is no end time), blank line, FT block, blank line
+  Passed = EvaluateTrue("WriteFooter()", "footer and trailer content", "The file ends with the EN line, the TE trailer, and the exact footer block", Text.EndsWith("EN\n\n\nTE 123.500000000\n\nFT START\nFooterText\nFT STOP\n\n")) && Passed;
 
   {
     MString BinaryFileName = TemporaryDirectory + "/write_binary.tra";
@@ -345,6 +346,70 @@ bool UTFileEvents::TestWriting()
     Passed = EvaluateTrue("Open(read) binary header", "binary reader open", "A file with STARTBINARYSTREAM can be reopened in read mode", BinaryReader.Open(BinaryFileName)) && Passed;
     Passed = Evaluate("IsBinary()", "binary reader flag", "Opening a file with STARTBINARYSTREAM marks the event file as binary", BinaryReader.IsBinary(), true) && Passed;
     BinaryReader.Close();
+  }
+
+  {
+    // A Geant4 line without a version is reported as such
+    MString BadGeant4FileName = TemporaryDirectory + "/bad_geant4.tra";
+    Passed = EvaluateTrue("WriteTextFile()", "bad Geant4 file", "The file with a Geant4 line without version can be written",
+                          WriteTextFile(BadGeant4FileName, "Type      tra\nVersion   7\nGeometry  bad.setup\n\nGeant4\nMEGAlib   1.00.00\n\nSE\nEN\n")) && Passed;
+    MString BadGeant4LogName = TemporaryDirectory + "/bad_geant4.log";
+    mout.DumpToStdOut(false);
+    mout.Connect(BadGeant4LogName);
+    FileEventsTest BadGeant4;
+    BadGeant4.Open(BadGeant4FileName);
+    mout.Disconnect(BadGeant4LogName);
+    mout.DumpToStdOut(true);
+    BadGeant4.Close();
+    MString BadGeant4Log = ReadTextFile(BadGeant4LogName);
+    Passed = EvaluateTrue("Open()", "Geant4 error message", "A Geant4 line without version reports that the Geant4 version cannot be read", BadGeant4Log.Contains("Unable to read Geant4 version.")) && Passed;
+    Passed = EvaluateFalse("Open()", "Geant4 error not geometry", "The Geant4 error message does not talk about the geometry name", BadGeant4Log.Contains("geometry name")) && Passed;
+    Passed = Evaluate("HasGeant4Version()", "bad Geant4 file", "A Geant4 line without version leaves the Geant4 version unset", BadGeant4.HasGeant4Version(), false) && Passed;
+  }
+
+  {
+    // CloseEventList: without an end time, TE is the start time plus the observation time
+    MString NoEndFileName = TemporaryDirectory + "/close_no_end.tra";
+    FileEventsTest NoEnd;
+    NoEnd.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
+    NoEnd.SetStartObservationTime(MTime(10.0));
+    NoEnd.SetObservationTime(MTime(20.0));
+    Passed = EvaluateTrue("Open(write)", "close no end open", "The file without end time opens in write mode", NoEnd.Open(NoEndFileName, MFile::c_Write)) && Passed;
+    Passed = EvaluateTrue("WriteHeader()", "close no end header", "WriteHeader succeeds without an end time", NoEnd.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("CloseEventList()", "close no end list", "CloseEventList succeeds without an end time", NoEnd.CloseEventList()) && Passed;
+    Passed = EvaluateTrue("Close()", "close no end close", "The file without end time closes cleanly", NoEnd.Close()) && Passed;
+    // End time = start + observation time = 10 + 20
+    Passed = EvaluateTrue("CloseEventList()", "close no end TE", "TE is the start time plus the observation time", ReadTextFile(NoEndFileName).Contains("\nTE 30.000000000\n")) && Passed;
+  }
+
+  {
+    // The header starts the binary stream, the footer ends it
+    MString BinaryFooterFileName = TemporaryDirectory + "/binary_footer.tra";
+    FileEventsTest BinaryFooter;
+    BinaryFooter.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
+    BinaryFooter.SetEndObservationTime(MTime(5.0));
+    BinaryFooter.SetSimulatedEvents(7);
+    Passed = EvaluateTrue("Open(write,binary)", "binary footer open", "The binary file for the footer test opens in write mode", BinaryFooter.Open(BinaryFooterFileName, MFile::c_Write, true)) && Passed;
+    Passed = EvaluateTrue("WriteHeader() binary", "binary footer header", "WriteHeader succeeds for the binary footer test", BinaryFooter.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("WriteFooter() binary", "binary footer", "WriteFooter succeeds for a binary file", BinaryFooter.WriteFooter()) && Passed;
+    Passed = EvaluateTrue("Close() binary", "binary footer close", "The binary file for the footer test closes cleanly", BinaryFooter.Close()) && Passed;
+
+    MString BinaryFooterText = ReadTextFile(BinaryFooterFileName);
+    unsigned int StartMarkers = 0;
+    for (const char* Position = strstr(BinaryFooterText.Data(), "STARTBINARYSTREAM"); Position != nullptr; Position = strstr(Position + 1, "STARTBINARYSTREAM")) {
+      ++StartMarkers;
+    }
+    Passed = Evaluate("WriteFooter() binary", "single start marker", "The binary stream is started once (in the header), not again in the footer", StartMarkers, 1U) && Passed;
+    Passed = EvaluateTrue("WriteFooter() binary", "end marker", "The footer of a binary file ends the binary stream with ENDBINARYSTREAM (as MFileEventsSim::CloseEventList does)", BinaryFooterText.Contains("\nENDBINARYSTREAM\n")) && Passed;
+
+    FileEventsTest BinaryFooterReader;
+    Passed = EvaluateTrue("Open(read) binary footer", "binary footer reader open", "The binary file with a footer opens in read mode", BinaryFooterReader.Open(BinaryFooterFileName)) && Passed;
+    Passed = EvaluateTrue("ReadFooter() binary", "binary footer read", "The footer of the binary file can be read", BinaryFooterReader.TestReadFooter()) && Passed;
+    Passed = Evaluate("ReadFooter() binary", "binary end time flag", "The end time is found in the footer of the binary file", BinaryFooterReader.HasEndObservationTime(), true) && Passed;
+    Passed = EvaluateNear("ReadFooter() binary", "binary end time", "The end time of the binary file is read exactly", BinaryFooterReader.GetEndObservationTime().GetAsSeconds(), 5.0, 1e-12) && Passed;
+    Passed = Evaluate("ReadFooter() binary", "binary simulated events flag", "The number of simulated events is found in the footer of the binary file", BinaryFooterReader.HasSimulatedEvents(), true) && Passed;
+    Passed = Evaluate("ReadFooter() binary", "binary simulated events", "The number of simulated events of the binary file is read exactly", BinaryFooterReader.GetSimulatedEvents(), 7L) && Passed;
+    BinaryFooterReader.Close();
   }
 
   {

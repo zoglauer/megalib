@@ -329,6 +329,23 @@ bool UTFileEventsSim::TestWriteHeaderAndFooter()
     Reader.Close();
   }
 
+  // Without an end time, TE is the start time plus the observation time
+  {
+    MString NoEndFileName = GetTempDirectory() + "/footer_no_end.sim";
+    MFileEventsSim Writer(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim no end open", "The sim file without end time opens in write mode", Writer.Open(NoEndFileName, MFile::c_Write)) && Passed;
+    Writer.SetGeometryFileName(GetGeometryFileName());
+    Writer.SetStartObservationTime(MTime(1.25));
+    Writer.SetObservationTime(MTime(3.5));
+    Writer.SetSimulatedEvents(12);
+    Passed = EvaluateTrue("WriteHeader()", "sim no end header", "The sim header without end time can be written", Writer.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("CloseEventList()", "sim no end footer", "The sim footer without end time can be written", Writer.CloseEventList()) && Passed;
+    Passed = EvaluateTrue("Close()", "sim no end close", "The sim file without end time closes cleanly", Writer.Close()) && Passed;
+
+    // End time = start + observation time = 1.25 + 3.5
+    Passed = EvaluateTrue("CloseEventList()", "sim no end TE", "TE is the start time plus the observation time", ReadTextFile(NoEndFileName).Contains("TE 4.750000000")) && Passed;
+  }
+
   return Passed;
 }
 

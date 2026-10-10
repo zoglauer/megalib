@@ -20,6 +20,7 @@
 
 
 // Standard libs:
+#include <cstring>
 #include <limits>
 using namespace std;
 
@@ -58,6 +59,8 @@ private:
   bool TestEOFBehavior();
   //! Test threaded and parser-mode variants
   bool TestParserModesAndThreading();
+  //! Test the header and footer information (Geant4 version, seed, beam, spectrum, times, simulated events)
+  bool TestHeaderAndFooterInformation();
 
   //! Return the data directory
   MString GetDataDirectory() const;
@@ -82,6 +85,7 @@ bool UTFileEventsTra::Run()
   Passed = TestIncludeFiles() && Passed;
   Passed = TestEOFBehavior() && Passed;
   Passed = TestParserModesAndThreading() && Passed;
+  Passed = TestHeaderAndFooterInformation() && Passed;
 
   Summarize();
 
@@ -178,6 +182,180 @@ bool UTFileEventsTra::TestNormalOperationObservationTime()
   Passed = EvaluateNear("GetObservationTime()", "normal incomplete tra2 observation time", "The 2-second incomplete tra fixture falls back to the last TI value", TimeIncomplete2, 1.974501093, 1e-12) && Passed;
   Passed = EvaluateNear("GetObservationTime()", "normal incomplete tra4 observation time", "The 4-second incomplete tra fixture falls back to the last TI value", TimeIncomplete4, 3.868021586, 1e-12) && Passed;
   Passed = EvaluateNear("GetObservationTime()", "normal incomplete trax observation time", "The concatenated incomplete tra fixture preserves the summed observation time", TimeIncompleteX, 6.751701588, 1e-12) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the header and footer information (Geant4 version, seed, beam, spectrum, times, simulated events)
+bool UTFileEventsTra::TestHeaderAndFooterInformation()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "information temp dir", "The temporary directory for the header and footer information tests can be created", PrepareTemporaryDirectory("information")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("information");
+
+  MString FullFileName = TemporaryDirectory + "/full.tra";
+  MString ReusedFileName = TemporaryDirectory + "/reused.tra";
+
+  MFileEventsTra Writer;
+  Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
+  Writer.SetGeant4Version("11.2.2");
+  Writer.SetSimulationStartAreaFarField(123.5);
+  Writer.SetSimulationSeed(4242);
+  Writer.SetBeamType("FarFieldPointSource 0 0");
+  Writer.SetSpectralType("Mono 511");
+  Writer.SetStartObservationTime(MTime(10.0));
+  Writer.SetEndObservationTime(MTime(30.0));
+  Writer.SetSimulatedEvents(1000);
+  Passed = EvaluateTrue("Open(write)", "full open", "The tra file with all header and footer information opens in write mode", Writer.Open(FullFileName, MFile::c_Write)) && Passed;
+  Passed = EvaluateTrue("WriteHeader()", "full header", "WriteHeader succeeds with all header information set", Writer.WriteHeader()) && Passed;
+  MUnidentifiableEvent Event = CreateUnidentifiableEvent(1, 12.0, 100.0);
+  Passed = EvaluateTrue("AddEvent()", "full event", "An event can be added to the tra file with all information", Writer.AddEvent(&Event)) && Passed;
+  Passed = EvaluateTrue("AddFooter()", "full footer text", "AddFooter accepts the footer text", Writer.AddFooter("FooterText")) && Passed;
+  Passed = EvaluateTrue("WriteFooter()", "full footer", "WriteFooter succeeds", Writer.WriteFooter()) && Passed;
+  Passed = EvaluateTrue("Close()", "full close", "The tra file with all information closes cleanly", Writer.Close()) && Passed;
+
+  MString Text = ReadTextFile(FullFileName);
+  // The TB line is written once: count the lines starting with TB
+  unsigned int TBLines = 0;
+  for (const char* Position = strstr(Text.Data(), "\nTB "); Position != nullptr; Position = strstr(Position + 1, "\nTB ")) {
+    ++TBLines;
+  }
+  Passed = Evaluate("WriteHeader()", "start time line count", "The start of the observation time is written exactly once (one TB line)", TBLines, 1U) && Passed;
+  // Footer: EN, two blank lines (EN + 2 line breaks), TE end time, TS simulated events, blank line, FT block, blank line
+  Passed = EvaluateTrue("WriteFooter()", "footer content", "The file ends with EN, the end time (TE), the simulated events (TS), and the footer text block",
+                        Text.EndsWith("EN\n\n\nTE 30.000000000\nTS 1000\n\nFT START\nFooterText\nFT STOP\n\n")) && Passed;
+
+  // The information survives a read
+  MFileEventsTra Reader;
+  Passed = EvaluateTrue("Open(read)", "full read", "The tra file with all information opens in read mode", Reader.Open(FullFileName)) && Passed;
+  Passed = Evaluate("HasGeant4Version()", "full read", "The Geant4 version is read from the header", Reader.HasGeant4Version(), true) && Passed;
+  Passed = Evaluate("GetGeant4Version()", "full read", "The Geant4 version is read exactly", Reader.GetGeant4Version(), MString("11.2.2")) && Passed;
+  Passed = Evaluate("HasSimulationStartAreaFarField()", "full read", "The far-field start area is read from the header", Reader.HasSimulationStartAreaFarField(), true) && Passed;
+  Passed = EvaluateNear("GetSimulationStartAreaFarField()", "full read", "The far-field start area is read exactly", Reader.GetSimulationStartAreaFarField(), 123.5, 1e-12) && Passed;
+  Passed = Evaluate("HasSimulationSeed()", "full read", "The simulation seed is read from the header", Reader.HasSimulationSeed(), true) && Passed;
+  Passed = Evaluate("GetSimulationSeed()", "full read", "The simulation seed is read exactly", Reader.GetSimulationSeed(), 4242UL) && Passed;
+  Passed = Evaluate("HasBeamType()", "full read", "The beam type is read from the header", Reader.HasBeamType(), true) && Passed;
+  Passed = Evaluate("GetBeamType()", "full read", "The beam type is read exactly", Reader.GetBeamType(), MString("FarFieldPointSource 0 0")) && Passed;
+  Passed = Evaluate("HasSpectralType()", "full read", "The spectral type is read from the header", Reader.HasSpectralType(), true) && Passed;
+  Passed = Evaluate("GetSpectralType()", "full read", "The spectral type is read exactly", Reader.GetSpectralType(), MString("Mono 511")) && Passed;
+  Passed = Evaluate("HasStartObservationTime()", "full read", "The start of the observation time is read from the header", Reader.HasStartObservationTime(), true) && Passed;
+  Passed = EvaluateNear("GetStartObservationTime()", "full read", "The start of the observation time is read exactly", Reader.GetStartObservationTime().GetAsSeconds(), 10.0, 1e-12) && Passed;
+  // End time minus start time = 30 - 10
+  Passed = EvaluateNear("GetObservationTime()", "full read", "The observation time is the end minus the start time", Reader.GetObservationTime().GetAsSeconds(), 20.0, 1e-12) && Passed;
+  Passed = Evaluate("HasEndObservationTime()", "full read", "The end of the observation time is read from the footer", Reader.HasEndObservationTime(), true) && Passed;
+  Passed = Evaluate("GetSimulatedEvents()", "full read", "The number of simulated events is read from the footer", Reader.GetSimulatedEvents(), 1000L) && Passed;
+
+  // TransferInformation copies everything, including the number of simulated events from the not yet read footer
+  {
+    MFileEventsTra Source;
+    Passed = EvaluateTrue("Open(read)", "transfer source", "The source of the information transfer opens", Source.Open(FullFileName)) && Passed;
+    MFileEventsTra Target;
+    Target.TransferInformation(&Source);
+    Passed = Evaluate("TransferInformation()", "Geant4 version", "The Geant4 version is transferred", Target.GetGeant4Version(), MString("11.2.2")) && Passed;
+    Passed = EvaluateNear("TransferInformation()", "far-field area", "The far-field start area is transferred", Target.GetSimulationStartAreaFarField(), 123.5, 1e-12) && Passed;
+    Passed = Evaluate("TransferInformation()", "seed", "The simulation seed is transferred", Target.GetSimulationSeed(), 4242UL) && Passed;
+    Passed = Evaluate("TransferInformation()", "beam type", "The beam type is transferred", Target.GetBeamType(), MString("FarFieldPointSource 0 0")) && Passed;
+    Passed = Evaluate("TransferInformation()", "spectral type", "The spectral type is transferred", Target.GetSpectralType(), MString("Mono 511")) && Passed;
+    Passed = EvaluateNear("TransferInformation()", "start time", "The start of the observation time is transferred", Target.GetStartObservationTime().GetAsSeconds(), 10.0, 1e-12) && Passed;
+    const bool HasSimulatedEvents = Target.HasSimulatedEvents();
+    Passed = Evaluate("TransferInformation()", "simulated events flag", "The information that the number of simulated events is known is transferred", HasSimulatedEvents, true) && Passed;
+    if (HasSimulatedEvents == true) {
+      Passed = Evaluate("TransferInformation()", "simulated events", "The number of simulated events is transferred", Target.GetSimulatedEvents(), 1000L) && Passed;
+    }
+  }
+
+  // A reader which is reused for a second file does not keep the information of the first one
+  {
+    MFileEventsTra Plain;
+    Plain.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
+    Passed = EvaluateTrue("Open(write)", "plain open", "The tra file without simulation information opens in write mode", Plain.Open(ReusedFileName, MFile::c_Write)) && Passed;
+    Passed = EvaluateTrue("WriteHeader()", "plain header", "WriteHeader succeeds without simulation information", Plain.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("AddEvent()", "plain event", "An event can be added to the tra file without simulation information", Plain.AddEvent(&Event)) && Passed;
+    Passed = EvaluateTrue("WriteFooter()", "plain footer", "WriteFooter succeeds without simulation information", Plain.WriteFooter()) && Passed;
+    Passed = EvaluateTrue("Close()", "plain close", "The tra file without simulation information closes cleanly", Plain.Close()) && Passed;
+
+    Passed = EvaluateTrue("Close()", "reader close", "The reader of the full file closes", Reader.Close()) && Passed;
+    Passed = EvaluateTrue("Open(read)", "reused open", "The reader opens a second file", Reader.Open(ReusedFileName)) && Passed;
+    Passed = Evaluate("HasGeant4Version()", "reused read", "A reused reader forgets the Geant4 version of the previous file", Reader.HasGeant4Version(), false) && Passed;
+    Passed = Evaluate("HasSimulationSeed()", "reused read", "A reused reader forgets the simulation seed of the previous file", Reader.HasSimulationSeed(), false) && Passed;
+    Passed = Evaluate("HasStartObservationTime()", "reused read", "A reused reader forgets the start time of the previous file", Reader.HasStartObservationTime(), false) && Passed;
+    Passed = Evaluate("GetSimulatedEvents()", "reused read", "A reused reader forgets the number of simulated events of the previous file", Reader.GetSimulatedEvents(), 0L) && Passed;
+    Passed = Evaluate("HasSimulatedEvents()", "reused read", "A reused reader knows no number of simulated events for a file without TS", Reader.HasSimulatedEvents(), false) && Passed;
+    Reader.Close();
+  }
+
+  // A writer which is reused for a second file does not write the footer text of the first one
+  {
+    MString SecondFileName = TemporaryDirectory + "/second.tra";
+    Passed = EvaluateTrue("Open(write)", "second open", "The writer opens a second file", Writer.Open(SecondFileName, MFile::c_Write)) && Passed;
+    Passed = EvaluateTrue("WriteHeader()", "second header", "WriteHeader succeeds for the second file", Writer.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("WriteFooter()", "second footer", "WriteFooter succeeds for the second file", Writer.WriteFooter()) && Passed;
+    Passed = EvaluateTrue("Close()", "second close", "The second file closes cleanly", Writer.Close()) && Passed;
+    Passed = EvaluateFalse("WriteFooter()", "second footer text", "The footer text of the first file is not written into the second file", ReadTextFile(SecondFileName).Contains("FT START")) && Passed;
+  }
+
+  // Without an end time, the footer uses the observation time (the time at which the simulation finished) as TE
+  {
+    MFileEventsTra OnlyObservationTime;
+    MString OnlyObservationTimeFileName = TemporaryDirectory + "/only_observation_time.tra";
+    OnlyObservationTime.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
+    OnlyObservationTime.SetObservationTime(MTime(9.0));
+    Passed = EvaluateTrue("Open(write)", "observation time open", "The tra file with only an observation time opens in write mode", OnlyObservationTime.Open(OnlyObservationTimeFileName, MFile::c_Write)) && Passed;
+    Passed = EvaluateTrue("WriteHeader()", "observation time header", "WriteHeader succeeds with only an observation time", OnlyObservationTime.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("WriteFooter()", "observation time footer", "WriteFooter succeeds with only an observation time", OnlyObservationTime.WriteFooter()) && Passed;
+    Passed = EvaluateTrue("Close()", "observation time close", "The tra file with only an observation time closes cleanly", OnlyObservationTime.Close()) && Passed;
+    Passed = EvaluateTrue("WriteFooter()", "TE from observation time", "Without start and end time, TE is the observation time", ReadTextFile(OnlyObservationTimeFileName).Contains("\nTE 9.000000000\n")) && Passed;
+
+    MFileEventsTra StartAndObservationTime;
+    MString StartAndObservationTimeFileName = TemporaryDirectory + "/start_and_observation_time.tra";
+    StartAndObservationTime.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
+    StartAndObservationTime.SetStartObservationTime(MTime(10.0));
+    StartAndObservationTime.SetObservationTime(MTime(20.0));
+    Passed = EvaluateTrue("Open(write)", "start and observation time open", "The tra file with a start and an observation time opens in write mode", StartAndObservationTime.Open(StartAndObservationTimeFileName, MFile::c_Write)) && Passed;
+    Passed = EvaluateTrue("WriteHeader()", "start and observation time header", "WriteHeader succeeds with a start and an observation time", StartAndObservationTime.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("WriteFooter()", "start and observation time footer", "WriteFooter succeeds with a start and an observation time", StartAndObservationTime.WriteFooter()) && Passed;
+    Passed = EvaluateTrue("Close()", "start and observation time close", "The tra file with a start and an observation time closes cleanly", StartAndObservationTime.Close()) && Passed;
+    // End time = start + observation time = 10 + 20
+    Passed = EvaluateTrue("WriteFooter()", "TE from start and observation time", "Without end time, TE is the start time plus the observation time", ReadTextFile(StartAndObservationTimeFileName).Contains("\nTE 30.000000000\n")) && Passed;
+  }
+
+  // CloseEventList: without an end time, TE is the start time plus the observation time
+  {
+    MFileEventsTra NoEnd;
+    MString NoEndFileName = TemporaryDirectory + "/close_no_end.tra";
+    NoEnd.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
+    NoEnd.SetStartObservationTime(MTime(10.0));
+    NoEnd.SetObservationTime(MTime(20.0));
+    Passed = EvaluateTrue("Open(write)", "close no end open", "The tra file without end time opens in write mode", NoEnd.Open(NoEndFileName, MFile::c_Write)) && Passed;
+    Passed = EvaluateTrue("WriteHeader()", "close no end header", "WriteHeader succeeds without an end time", NoEnd.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("CloseEventList()", "close no end list", "CloseEventList succeeds without an end time", NoEnd.CloseEventList()) && Passed;
+    Passed = EvaluateTrue("Close()", "close no end close", "The tra file without end time closes cleanly", NoEnd.Close()) && Passed;
+    // End time = start + observation time = 10 + 20
+    Passed = EvaluateTrue("CloseEventList()", "close no end TE", "TE is the start time plus the observation time", ReadTextFile(NoEndFileName).Contains("\nTE 30.000000000\n")) && Passed;
+
+    MFileEventsTra NoEndReader;
+    Passed = EvaluateTrue("Open(read)", "close no end read", "The tra file without end time opens in read mode", NoEndReader.Open(NoEndFileName)) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "close no end read", "The observation time survives writing without an end time", NoEndReader.GetObservationTime().GetAsSeconds(), 20.0, 1e-12) && Passed;
+    NoEndReader.Close();
+  }
+
+  // A footer added after the event list has been closed is still written (ConvertMGGPOD does it in this order)
+  {
+    MString LateFileName = TemporaryDirectory + "/late.tra";
+    MFileEventsTra Late;
+    Late.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
+    Passed = EvaluateTrue("Open(write)", "late open", "The tra file for the late footer opens in write mode", Late.Open(LateFileName, MFile::c_Write)) && Passed;
+    Passed = EvaluateTrue("WriteHeader()", "late header", "WriteHeader succeeds for the late footer", Late.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("CloseEventList()", "late close list", "CloseEventList succeeds before the late footer", Late.CloseEventList()) && Passed;
+    Passed = EvaluateTrue("AddFooter()", "late footer", "AddFooter succeeds after CloseEventList", Late.AddFooter("LateText")) && Passed;
+    Passed = EvaluateTrue("Close()", "late close", "The tra file for the late footer closes cleanly", Late.Close()) && Passed;
+    Passed = EvaluateTrue("AddFooter()", "late footer content", "A footer added after CloseEventList is in the file", ReadTextFile(LateFileName).Contains("FT START\nLateText\nFT STOP")) && Passed;
+  }
 
   return Passed;
 }

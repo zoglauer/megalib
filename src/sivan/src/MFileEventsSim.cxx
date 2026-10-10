@@ -618,15 +618,13 @@ bool MFileEventsSim::CloseEventList()
     out<<"EN"<<endl;
   }
   out<<endl;
-  if (m_HasEndObservationTime == true) {
-    out<<"TE "<<m_EndObservationTime<<endl;
-  } else {
-    out<<"TE "<<m_ObservationTime<<endl;
-  }
+  out<<"TE "<<GetFooterEndTime()<<endl;
   out<<"TS "<<m_SimulatedEvents<<endl;
   out<<endl;
   Write(out);
-  
+
+  m_EventListClosed = true;
+
   return true;
 }
 
