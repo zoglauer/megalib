@@ -590,11 +590,11 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
       if (Pos != MString::npos) {
         MString Suffix = FileName.GetSubString(Pos, FileName.Length() - Pos);
         FileName = FileName.GetSubString(0, Pos+1);
-        MTime Now;
+        MTime Now(true);
         FileName += Now.GetShortString();
         FileName += Suffix; 
       } else {
-        MTime Now;
+        MTime Now(true);
         FileName += ".";
         FileName += Now.GetShortString();
       }
@@ -1053,11 +1053,11 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
       if (Pos != MString::npos) {
         MString Suffix = FileName.GetSubString(Pos, FileName.Length() - Pos);
         FileName = FileName.GetSubString(0, Pos+1);
-        MTime Now;
+        MTime Now(true);
         FileName += Now.GetShortString();
         FileName += Suffix; 
       } else {
-        MTime Now;
+        MTime Now(true);
         FileName += ".";
         FileName += Now.GetShortString();
       }

@@ -528,7 +528,7 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   m_TheadMutex.lock();
   cout<<"Launching thread "<<ThreadID<<endl;
   
-  MTime Now;
+  MTime Now(true);
   MString TimeString = Now.GetShortString();
   
   unsigned int SequenceLength = m_SequenceLengths[ThreadID];

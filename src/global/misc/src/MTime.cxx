@@ -28,7 +28,8 @@
 //
 // Examples:
 //
-// MTime Time; // Contains the current calendar time
+// MTime Time(true); // Contains the current calendar time
+// MTime Time; // Time span: 0
 // MTime Time(0); // Time span: 0  or  Start of (Linux-) Epoch : 01-01-1970 01:00:00:00
 // MTime Time(1243344); // Time span in seconds or a date in 1970...
 // MTime Time(2002, 06, 05, 13, 52, 36, 0); // A Calendar time
@@ -79,6 +80,19 @@ ClassImp(MTime)
 MTime::MTime() : m_Seconds(0), m_NanoSeconds(0)
 {
   // Construct an instance of MTime
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime::MTime(const bool SetCurrentTime) : m_Seconds(0), m_NanoSeconds(0)
+{
+  // Construct an instance of MTime and set it to the current time if requested
+
+  if (SetCurrentTime == true) {
+    Now();
+  }
 }
 
 
@@ -507,7 +521,7 @@ double MTime::GetElapsedSeconds()
 {
   // Return the number of seconds which are elapsed since MTime
 
-  MTime Now;
+  MTime Now(true);
 
   return Now.GetAsSeconds() - GetAsSeconds();
 }

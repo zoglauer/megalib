@@ -84,6 +84,18 @@ bool UTTime::TestConstructionAndSetters()
 {
   bool Passed = true;
 
+  MTime Default;
+  Passed = EvaluateNear("MTime()", "seconds", "The default constructor starts at zero seconds", Default.GetAsSeconds(), 0.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetInternalNanoSeconds()", "default nanoseconds", "The default constructor starts at zero nanoseconds", Default.GetInternalNanoSeconds(), 0.0, 1e-12) && Passed;
+
+  const double ClockBeforeConstruction = static_cast<double>(time(nullptr));
+  MTime CurrentTime(true);
+  const double ClockAfterConstruction = static_cast<double>(time(nullptr));
+  // Allow one second below the lower reading - time truncates to whole seconds
+  Passed = EvaluateTrue("MTime(bool)", "true", "The bool constructor with true sets the current Unix time", CurrentTime.GetAsSeconds() >= ClockBeforeConstruction - 1.0 && CurrentTime.GetAsSeconds() < ClockAfterConstruction + 1.0) && Passed;
+  MTime NotCurrentTime(false);
+  Passed = EvaluateNear("MTime(bool)", "false", "The bool constructor with false sets the time to zero", NotCurrentTime.GetAsSeconds(), 0.0, 1e-12) && Passed;
+
   MTime EpochLong(0L, 0L);
   Passed = EvaluateNear("MTime(long, long)", "epoch seconds", "The long constructor stores the seconds component", EpochLong.GetAsSeconds(), 0.0, 1e-12) && Passed;
   Passed = EvaluateNear("GetInternalNanoSeconds()", "epoch nanoseconds", "The long constructor stores the nanoseconds component", EpochLong.GetInternalNanoSeconds(), 0.0, 1e-12) && Passed;

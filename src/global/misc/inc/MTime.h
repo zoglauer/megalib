@@ -45,6 +45,8 @@ class MTime
  public:
   //! Default constructor, set the time to 0
   MTime();
+  //! Set the time to the current time if true, otherwise to 0
+  explicit MTime(const bool SetCurrentTime);
   //! Extract the time from a formatted string
   //! Deprecated: this parser has limited error handling
   explicit MTime(MString String, int Format);

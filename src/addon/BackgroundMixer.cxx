@@ -148,7 +148,7 @@ BackgroundMixer::BackgroundMixer() : m_Interrupt(false)
   m_GeometryFileName = g_StringNotDefined;
   m_ConfigurationFileName = g_StringNotDefined;
   m_MaximumTime = g_DoubleNotDefined;
-  MTime Time;
+  MTime Time(true);
   m_Prefix = MString("Prefix_") + Time.GetShortString();
   
   m_Extract = false;

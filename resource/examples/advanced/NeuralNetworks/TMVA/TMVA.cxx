@@ -177,7 +177,7 @@ bool TMVAAnalyzer::Analyze()
 {
   if (m_Interrupt == true) return false;
 
-  MTime Now;
+  MTime Now(true);
   MString TimeString = Now.GetShortString();
   
   MString ResultsFileName = MString("Results.") + TimeString + ".root";

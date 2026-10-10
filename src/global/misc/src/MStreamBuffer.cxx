@@ -179,7 +179,7 @@ void  MStreamBuffer::put_buffer()
       
       for (unsigned int i = 0; i < m_FileStream.size(); i++) {
         if (m_FileTimePrefix[i] == true) {
-          MTime Now;
+          MTime Now(true);
           *(m_FileStream[i])<<Now.GetShortString()<<":  ";
         }
         *(m_FileStream[i])<<out.str();

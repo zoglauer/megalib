@@ -86,7 +86,7 @@ void MGUIETime::Create()
   int i; 
   const int Length = 5;
   char Text[Length];
-  MTime Time;
+  MTime Time(true);
 
   m_ComboLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 0, 0);
   m_LabelLayout =

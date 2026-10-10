@@ -665,7 +665,7 @@ bool MFileEvents::WriteHeader()
     return false;
   }
 
-  MTime Now;
+  MTime Now(true);
 
   ostringstream Header;
   Header<<"Type      "<<m_FileType<<endl;

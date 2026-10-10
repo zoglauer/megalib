@@ -275,7 +275,7 @@ bool MGUIExpoCombinedViewer::OnPrint()
   MString FileName;
   for (char c : TabTitle.GetString()) if (isalnum(c)) FileName += c;
   FileName += ".";
-  FileName += MTime().GetShortString();
+  FileName += MTime(true).GetShortString();
   FileName += ".pdf";
   
   m_Expos[m_MainTab->GetCurrent()]->Print(FileName);

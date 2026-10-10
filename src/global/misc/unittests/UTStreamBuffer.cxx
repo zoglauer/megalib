@@ -191,10 +191,10 @@ bool UTStreamBuffer::TestStreamBuffer()
     ostream Stream(&Buffer);
 
     Passed = EvaluateTrue("Connect()", "time prefix file", "Connecting with time prefix succeeds", Buffer.Connect(TimePrefixFileName, false, true)) && Passed;
-    MTime Before;
+    MTime Before(true);
     Stream<<"Timed";
     Buffer.show();
-    MTime After;
+    MTime After(true);
 
     // Line layout: timestamp YYYYMMDD_HHMMSS (15 characters), separator ":  ", message
     MString Content = ReadTextFile(TimePrefixFileName);

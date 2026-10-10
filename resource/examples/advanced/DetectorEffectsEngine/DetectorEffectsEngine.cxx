@@ -242,7 +242,7 @@ bool DetectorEffectsEngine::Analyze()
     FileName += "_r=";
     FileName += gROOT->GetVersionInt();
     FileName += "_d=";
-    MTime Now;
+    MTime Now(true);
     FileName += Now.GetShortString();
     FileName += ".root";
     
@@ -266,7 +266,7 @@ bool DetectorEffectsEngine::Analyze()
     FileName += "_r=";
     FileName += gROOT->GetVersionInt();
     FileName += "_d=";
-    MTime Now;
+    MTime Now(true);
     FileName += Now.GetShortString();
     FileName += ".root";
     
@@ -290,7 +290,7 @@ bool DetectorEffectsEngine::Analyze()
     FileName += "_r=";
     FileName += gROOT->GetVersionInt();
     FileName += "_d=";
-    MTime Now;
+    MTime Now(true);
     FileName += Now.GetShortString();
     FileName += ".root";
     

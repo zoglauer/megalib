@@ -1206,7 +1206,7 @@ bool TraFitsConverter::ToFits()
   fits_write_key(m_File, TSTRING, "DATLEVEL",  const_cast<char*>("3"), "Data is COSI LEVEL 3 data", &Status);  
   fits_write_key(m_File, TINT, "LEVELVER",  &FileVersion, "Version of this Level 3 fits data format", &Status);  
   
-  MTime Now;
+  MTime Now(true);
   fits_write_key(m_File, TSTRING, "DATE",  const_cast<char*>(Now.GetFitsDateString().Data()), "Date that FITS file was created", &Status);  
 
   fits_write_key(m_File, TSTRING, "DATE-OBS",  const_cast<char*>(Start.GetFitsDateString().Data()), "Start date of the observation (dd/mm/yy)", &Status);  

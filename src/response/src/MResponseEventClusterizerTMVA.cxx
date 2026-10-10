@@ -374,7 +374,7 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   m_TheadMutex.lock();
   cout<<"Launching thread "<<ThreadID<<endl;
   
-  MTime Now;
+  MTime Now(true);
   MString TimeString = Now.GetShortString();
   
   unsigned int FileBin = ThreadID % m_FileHits.size();

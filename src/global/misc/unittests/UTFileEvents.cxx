@@ -20,6 +20,10 @@
 
 
 // Standard libs:
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
 
 // ROOT libs:
 #include "TSystem.h"
@@ -303,6 +307,27 @@ bool UTFileEvents::TestWriting()
   const MString ExpectedHeaderBegin = MString("Type      tra\nVersion   7\nGeometry  ") + TemporaryDirectory + "/geometry.setup\n\nDate      ";
   Passed = EvaluateTrue("WriteHeader()", "header content begin", "The file begins with the exact type, version, and geometry lines followed by the date line", Text.BeginsWith(ExpectedHeaderBegin)) && Passed;
   Passed = EvaluateTrue("WriteHeader()", "header content version string", "The header contains the MEGAlib version line followed by a blank line", Text.Contains(MString("\nMEGAlib   ") + g_VersionString + "\n\n")) && Passed;
+  // Header date: "Date      YYYY-MM-DD HH:MM:SS" in UTC, written now
+  {
+    const char* DateLine = strstr(Text.Data(), "\nDate      ");
+    int Year = 0, Month = 0, Day = 0, Hour = 0, Minute = 0, Second = 0;
+    bool DateParsed = false;
+    if (DateLine != nullptr) {
+      DateParsed = (sscanf(DateLine + 11, "%d-%d-%d %d:%d:%d", &Year, &Month, &Day, &Hour, &Minute, &Second) == 6);
+    }
+    Passed = EvaluateTrue("WriteHeader()", "date parsed", "The header contains a date line of the form YYYY-MM-DD HH:MM:SS", DateParsed) && Passed;
+    struct tm Parsed;
+    Parsed.tm_year = Year - 1900;
+    Parsed.tm_mon = Month - 1;
+    Parsed.tm_mday = Day;
+    Parsed.tm_hour = Hour;
+    Parsed.tm_min = Minute;
+    Parsed.tm_sec = Second;
+    Parsed.tm_isdst = 0;
+    const double HeaderTime = static_cast<double>(timegm(&Parsed));
+    const double Difference = HeaderTime - static_cast<double>(time(nullptr));
+    Passed = EvaluateTrue("WriteHeader()", "date is now", "The header date is the current UTC time (within one minute of the clock)", fabs(Difference) < 60.0) && Passed;
+  }
   Passed = EvaluateTrue("AddFooter()", "footer and trailer content", "The file ends with the exact footer block followed by the EN and TE trailer", Text.EndsWith("\nFT START\nFooterText\nFT STOP\n\nEN\n\nTE 123.500000000\n\n")) && Passed;
 
   {
