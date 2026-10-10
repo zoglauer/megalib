@@ -293,6 +293,147 @@ bool UTResponseMatrixON::Run()
     gROOT->SetBatch(WasBatch);
   }
 
+  // Sparse matrix: reading with one thread and with several threads gives the same content
+  {
+    MResponseMatrixON SparseSource("SparseSource", true);
+    SparseSource.AddAxisLinear("X", 3, 0.0, 3.0);
+    SparseSource.AddAxisLinear("Y", 3, 0.0, 3.0);
+    SparseSource.Set(vector<unsigned long>{0, 1}, 2.5f);
+    SparseSource.Set(vector<unsigned long>{2, 2}, 4.0f);
+    SparseSource.Set(vector<unsigned long>{1, 0}, -1.5f);
+    MString SparseThreadFile = GetTemporaryFileName("sparse_threads.rsp");
+    MResponseMatrixON SingleThread;
+    MResponseMatrixON MultiThread;
+    DisableDefaultStreams();
+    const bool WrittenSparse = SparseSource.Write(SparseThreadFile, false);
+    const bool ReadSingle = SingleThread.Read(SparseThreadFile, false);
+    const bool ReadMulti = MultiThread.Read(SparseThreadFile, true);
+    EnableDefaultStreams();
+    Passed = Evaluate("Write()", "sparse threads", "Writing the sparse ON matrix succeeds", WrittenSparse, true) && Passed;
+    Passed = Evaluate("Read(single)", "sparse threads", "Reading the sparse ON matrix with one thread succeeds", ReadSingle, true) && Passed;
+    Passed = Evaluate("Read(multi)", "sparse threads", "Reading the sparse ON matrix with several threads succeeds", ReadMulti, true) && Passed;
+    Passed = Evaluate("IsSparse()", "sparse threads single", "The matrix read with one thread is sparse", SingleThread.IsSparse(), true) && Passed;
+    Passed = Evaluate("IsSparse()", "sparse threads multi", "The matrix read with several threads is sparse", MultiThread.IsSparse(), true) && Passed;
+    Passed = EvaluateNear("GetSum()", "sparse threads single", "The sum is 2.5 + 4 - 1.5 (one thread)", SingleThread.GetSum(), 5.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetSum()", "sparse threads multi", "The sum is 2.5 + 4 - 1.5 (several threads)", MultiThread.GetSum(), 5.0, 1e-12) && Passed;
+    Passed = EvaluateNear("Get()", "sparse threads single 0,1", "The content of bin (0,1) survives (one thread)", SingleThread.Get(vector<unsigned long>{0, 1}), 2.5, 1e-12) && Passed;
+    Passed = EvaluateNear("Get()", "sparse threads multi 0,1", "The content of bin (0,1) survives (several threads)", MultiThread.Get(vector<unsigned long>{0, 1}), 2.5, 1e-12) && Passed;
+    Passed = EvaluateNear("Get()", "sparse threads single 1,0", "The negative content of bin (1,0) survives (one thread)", SingleThread.Get(vector<unsigned long>{1, 0}), -1.5, 1e-12) && Passed;
+    Passed = EvaluateNear("Get()", "sparse threads multi 1,0", "The negative content of bin (1,0) survives (several threads)", MultiThread.Get(vector<unsigned long>{1, 0}), -1.5, 1e-12) && Passed;
+    Passed = EvaluateNear("Get()", "sparse threads multi 2,2", "The content of bin (2,2) survives (several threads)", MultiThread.Get(vector<unsigned long>{2, 2}), 4.0, 1e-12) && Passed;
+    Passed = EvaluateNear("Get()", "sparse threads multi empty bin", "A bin which was never set is zero (several threads)", MultiThread.Get(vector<unsigned long>{1, 1}), 0.0, 1e-12) && Passed;
+  }
+
+  // Sparse matrix with only negative values: the implicit zeros are the maximum
+  {
+    MResponseMatrixON Negative("Negative", true);
+    Negative.AddAxisLinear("X", 2, 0.0, 2.0);
+    Negative.AddAxisLinear("Y", 2, 0.0, 2.0);
+    Negative.Set(vector<unsigned long>{0, 0}, -3.0f);
+    Negative.Set(vector<unsigned long>{1, 1}, -1.0f);
+    Passed = EvaluateNear("GetMaximum()", "sparse negative", "The maximum of a sparse matrix with negative values and empty bins is zero", Negative.GetMaximum(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetMinimum()", "sparse negative", "The minimum of a sparse matrix with negative values is the most negative value", Negative.GetMinimum(), -3.0, 1e-12) && Passed;
+    Passed = EvaluateTrue("GetStatistics()", "sparse negative maximum", "The statistics report the same maximum as GetMaximum() (zero)", Negative.GetStatistics().Contains("\nMaximum:                  0\n")) && Passed;
+    Passed = EvaluateTrue("GetStatistics()", "sparse negative minimum", "The statistics report the same minimum as GetMinimum() (-3)", Negative.GetStatistics().Contains("\nMinimum:                  -3\n")) && Passed;
+  }
+
+  // Empty sparse matrix: all extrema are zero and it can be written and read back
+  {
+    MResponseMatrixON EmptySparse("EmptySparse", true);
+    EmptySparse.AddAxisLinear("X", 2, 0.0, 2.0);
+    EmptySparse.AddAxisLinear("Y", 2, 0.0, 2.0);
+    Passed = EvaluateNear("GetMaximum()", "sparse empty", "The maximum of an empty sparse matrix is zero", EmptySparse.GetMaximum(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetMinimum()", "sparse empty", "The minimum of an empty sparse matrix is zero", EmptySparse.GetMinimum(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateTrue("GetStatistics()", "sparse empty maximum", "The statistics report a maximum of zero for an empty sparse matrix", EmptySparse.GetStatistics().Contains("\nMaximum:                  0\n")) && Passed;
+    MString EmptyFile = GetTemporaryFileName("sparse_empty.rsp");
+    MResponseMatrixON EmptySingle;
+    MResponseMatrixON EmptyMulti;
+    DisableDefaultStreams();
+    const bool WrittenEmpty = EmptySparse.Write(EmptyFile, false);
+    const bool ReadEmptySingle = EmptySingle.Read(EmptyFile, false);
+    const bool ReadEmptyMulti = EmptyMulti.Read(EmptyFile, true);
+    EnableDefaultStreams();
+    Passed = Evaluate("Write()", "sparse empty", "Writing the empty sparse ON matrix succeeds", WrittenEmpty, true) && Passed;
+    Passed = Evaluate("Read(single)", "sparse empty", "Reading the empty sparse ON matrix with one thread succeeds", ReadEmptySingle, true) && Passed;
+    Passed = Evaluate("Read(multi)", "sparse empty", "Reading the empty sparse ON matrix with several threads succeeds", ReadEmptyMulti, true) && Passed;
+    Passed = EvaluateNear("GetSum()", "sparse empty multi", "The sum of the empty sparse matrix read with several threads is zero", EmptyMulti.GetSum(), 0.0, 1e-12) && Passed;
+  }
+
+  // Sparse file without any data line, read with several threads
+  {
+    MString NoDataFile = GetTemporaryFileName("sparse_no_data.rsp");
+    Passed = EvaluateTrue("WriteTextFile()", "sparse no data file", "The sparse ON file without data lines can be written",
+                          WriteTextFile(NoDataFile, "Version 1\nNM NoData\nOD 1\nTS 0\nSA 0\nCE false\n\nAN \"X\"\nAT 1D BinEdges\nAD 0 1 2\n\nType ResponseMatrixONSparse\n\n")) && Passed;
+    MResponseMatrixON NoDataSingle;
+    MResponseMatrixON NoDataMulti;
+    DisableDefaultStreams();
+    const bool ReadNoDataSingle = NoDataSingle.Read(NoDataFile, false);
+    const bool ReadNoDataMulti = NoDataMulti.Read(NoDataFile, true);
+    EnableDefaultStreams();
+    Passed = Evaluate("Read(single)", "sparse no data", "Reading a sparse ON file without data lines with one thread succeeds", ReadNoDataSingle, true) && Passed;
+    Passed = Evaluate("Read(multi)", "sparse no data", "Reading a sparse ON file without data lines with several threads succeeds", ReadNoDataMulti, true) && Passed;
+    Passed = EvaluateNear("GetSum()", "sparse no data multi", "A sparse ON file without data lines has the sum zero (several threads)", NoDataMulti.GetSum(), 0.0, 1e-12) && Passed;
+
+    // The same file ending directly after the Type line
+    MString NoLineFile = GetTemporaryFileName("sparse_no_line.rsp");
+    Passed = EvaluateTrue("WriteTextFile()", "sparse no line file", "The sparse ON file ending after the type line can be written",
+                          WriteTextFile(NoLineFile, "Version 1\nNM NoLine\nOD 1\nTS 0\nSA 0\nCE false\n\nAN \"X\"\nAT 1D BinEdges\nAD 0 1 2\n\nType ResponseMatrixONSparse\n")) && Passed;
+    MResponseMatrixON NoLineMulti;
+    DisableDefaultStreams();
+    const bool ReadNoLineMulti = NoLineMulti.Read(NoLineFile, true);
+    EnableDefaultStreams();
+    Passed = Evaluate("Read(multi)", "sparse no line", "Reading a sparse ON file which ends after the type line with several threads succeeds", ReadNoLineMulti, true) && Passed;
+  }
+
+  // A sparse matrix which is too big for the dense mode stays sparse and keeps its content
+  {
+    // 3 axes of 100000 bins: 1e15 bins, 4 PB as dense floats
+    MResponseMatrixON TooBig("TooBig", true);
+    TooBig.AddAxisLinear("X", 100000, 0.0, 1.0);
+    TooBig.AddAxisLinear("Y", 100000, 0.0, 1.0);
+    TooBig.AddAxisLinear("Z", 100000, 0.0, 1.0);
+    TooBig.Set(vector<unsigned long>{1, 2, 3}, 5.0f);
+    DisableDefaultStreams();
+    const bool Switched = TooBig.SwitchToNonSparse();
+    EnableDefaultStreams();
+    Passed = Evaluate("SwitchToNonSparse()", "too big", "SwitchToNonSparse returns false if the dense matrix does not fit into memory", Switched, false) && Passed;
+    Passed = Evaluate("IsSparse()", "too big", "A matrix which could not be switched stays sparse", TooBig.IsSparse(), true) && Passed;
+    Passed = EvaluateNear("Get()", "too big", "A matrix which could not be switched keeps its content", TooBig.Get(vector<unsigned long>{1, 2, 3}), 5.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetSum()", "too big", "A matrix which could not be switched keeps its sum", TooBig.GetSum(), 5.0, 1e-12) && Passed;
+    // Scalar arithmetic needs the dense matrix: it reports the failure with an exception and leaves the matrix as it was
+    bool AddThrew = false;
+    try {
+      TooBig += 1.0f;
+    } catch (const MExceptionArbitrary&) {
+      AddThrew = true;
+    }
+    bool SubtractThrew = false;
+    try {
+      TooBig -= 1.0f;
+    } catch (const MExceptionArbitrary&) {
+      SubtractThrew = true;
+    }
+    Passed = Evaluate("operator+=(float)", "too big", "Adding a value to a matrix which cannot become dense throws", AddThrew, true) && Passed;
+    Passed = Evaluate("operator-=(float)", "too big", "Subtracting a value from a matrix which cannot become dense throws", SubtractThrew, true) && Passed;
+    Passed = Evaluate("IsSparse()", "too big after arithmetic", "A matrix which could not become dense stays sparse after the failed arithmetic", TooBig.IsSparse(), true) && Passed;
+    Passed = EvaluateNear("GetSum()", "too big after arithmetic", "A matrix which could not become dense keeps its content after the failed arithmetic", TooBig.GetSum(), 5.0, 1e-12) && Passed;
+    Passed = Evaluate("SwitchToNonSparse()", "already dense", "SwitchToNonSparse returns true if the matrix is already dense", MResponseMatrixON("Dense").SwitchToNonSparse(), true) && Passed;
+  }
+
+  // Files written before the keyword MS existed carry the flag whether the matrix is sparse in an "SP true/false" line
+  {
+    MString OldFile = GetTemporaryFileName("sparse_old_format.rsp");
+    Passed = EvaluateTrue("WriteTextFile()", "old format file", "The ON file in the old format with SP true can be written",
+                          WriteTextFile(OldFile, "Version 1\nNM OldFormat\nOD 1\nTS 5\nSA 0\nCE false\nSP true\n\nAN \"X\"\nAT 1D BinEdges\nAD 0 1 2\n\nType ResponseMatrixONSparse\n\nRD 1 3.5\n")) && Passed;
+    MResponseMatrixON OldFormat;
+    DisableDefaultStreams();
+    const bool ReadOldFormat = OldFormat.Read(OldFile);
+    EnableDefaultStreams();
+    Passed = Evaluate("Read()", "old format", "Reading an ON file in the old format succeeds", ReadOldFormat, true) && Passed;
+    Passed = EvaluateNear("Get()", "old format content", "The content of an ON file in the old format is read", OldFormat.Get(vector<unsigned long>{1}), 3.5, 1e-12) && Passed;
+    Passed = Evaluate("GetSpectralType()", "old format", "The sparse flag SP true of the old format is not a spectral type", OldFormat.GetSpectralType(), MString("")) && Passed;
+  }
+
   Summarize();
 
   return Passed;

@@ -138,7 +138,11 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
       } else if (T.GetTokenAt(0) == "SA") {
         m_FarFieldStartArea = T.GetTokenAtAsDouble(1);
       } else if (T.GetTokenAt(0) == "SP" || T.GetTokenAt(0) == "SM") { // SM is the old keyword
-        m_SpectralType = T.GetTokenAfterAsString(1);
+        // Older ON files used SP for the flag whether the matrix is sparse
+        MString Spectrum = T.GetTokenAfterAsString(1);
+        if (Spectrum != "true" && Spectrum != "false") {
+          m_SpectralType = Spectrum;
+        }
       } else if (T.GetTokenAt(0) == "BE") {
         m_BeamType = T.GetTokenAfterAsString(1);
       } else if (T.GetTokenAt(0) == "PO") {

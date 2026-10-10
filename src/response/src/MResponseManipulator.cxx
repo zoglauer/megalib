@@ -553,19 +553,22 @@ bool MResponseManipulator::Analyze()
 {
   if (m_Interrupt == true) return false;
 
-  if (m_Statistics == true) Statistics();
-  if (m_Show == true) Show();
-  if (m_Collapse == true) Collapse();
-  if (m_SwitchSparseness == true) SwitchSparseness();
+  // Run all requested operations, and report if any of them failed
+  bool Ok = true;
 
-  if (m_Divide == true) Divide();
-  if (m_Ratio == true) Ratio();
-  if (m_Probability == true) Probability();
+  if (m_Statistics == true && Statistics() == false) Ok = false;
+  if (m_Show == true && Show() == false) Ok = false;
+  if (m_Collapse == true && Collapse() == false) Ok = false;
+  if (m_SwitchSparseness == true && SwitchSparseness() == false) Ok = false;
 
-  if (m_Append == true) Append();
-  if (m_Join == true) Join();
+  if (m_Divide == true && Divide() == false) Ok = false;
+  if (m_Ratio == true && Ratio() == false) Ok = false;
+  if (m_Probability == true && Probability() == false) Ok = false;
 
-  return true;
+  if (m_Append == true && Append() == false) Ok = false;
+  if (m_Join == true && Join() == false) Ok = false;
+
+  return Ok;
 }
 
 
@@ -705,7 +708,7 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
     cout<<"Considering "<<Added<<" files..."<<endl;
   } else {
     cout<<"No files found to join..."<<endl;
-    return false;
+    return true; // Nothing to do is not an error
   }
 
 
@@ -725,11 +728,15 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
     MResponseMatrix* First = File.Read(SortedFiles[t][0], m_MultiThreaded);
     if (First == nullptr) {
       merr<<"Error: Unable to read first response file \""<<SortedFiles[t][0]<<"\" - aborting..."<<endl;
-      break;
+      return false;
     }
     if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
       mout<<"Converting the response to non-sparse"<<endl;
-      dynamic_cast<MResponseMatrixON*>(First)->SwitchToNonSparse();
+      if (dynamic_cast<MResponseMatrixON*>(First)->SwitchToNonSparse() == false) {
+        merr<<"Error: Unable to convert the response to non-sparse - aborting..."<<endl;
+        delete First;
+        return false;
+      }
     }
     
     for (unsigned int f = 1; f < SortedFiles[t].size(); ++f) {
@@ -859,7 +866,7 @@ bool MResponseManipulator::JoinROOTFiles(MString Prefix, vector<MString> Types)
     cout<<"Considering "<<Added<<" files..."<<endl;
   } else {
     cout<<"No files found to join..."<<endl;
-    return false;
+    return true; // Nothing to do is not an error
   }
   
   // Limit the file size to one file above 10 GB...
@@ -974,7 +981,7 @@ bool MResponseManipulator::Join()
  
   Types.push_back(".compteldataspace.rsp");
  
-  JoinRSPFiles(m_Prefix, Types);
+  if (JoinRSPFiles(m_Prefix, Types) == false) return false;
   
   
   vector<MString> RootTypes;
@@ -1011,10 +1018,7 @@ bool MResponseManipulator::Join()
     }
   }
 
-  JoinROOTFiles(m_Prefix, RootTypes);
-
-
-  return true;
+  return JoinROOTFiles(m_Prefix, RootTypes);
 }
 
 
@@ -1359,7 +1363,11 @@ bool MResponseManipulator::SwitchSparseness()
     NewFileName.ReplaceAtEndInPlace(".rsp", "");
     if (RON->IsSparse() == true) {
       cout<<"Switching to non-sparse"<<endl;
-      RON->SwitchToNonSparse();
+      if (RON->SwitchToNonSparse() == false) {
+        merr<<"Error: Unable to switch to non-sparse - not writing the file"<<endl;
+        delete R;
+        return false;
+      }
       NewFileName += ".nonsparse.rsp";
     } else {
       cout<<"Switching to sparse"<<endl;

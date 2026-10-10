@@ -74,8 +74,8 @@ class MResponseMatrixON : public MResponseMatrix
   
   //! Switch to sparse mode 
   void SwitchToSparse();
-  //! Switch to non-sparse mode
-  void SwitchToNonSparse();
+  //! Switch to non-sparse mode, return false and stay sparse if the dense matrix does not fit into memory
+  bool SwitchToNonSparse();
   
   //! Add an axis
   void AddAxis(const MResponseMatrixAxis& Axis);

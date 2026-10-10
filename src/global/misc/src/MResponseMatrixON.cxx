@@ -178,17 +178,17 @@ void MResponseMatrixON::SwitchToSparse()
 
 
 //! Switch to non-sparse mode
-void MResponseMatrixON::SwitchToNonSparse()
+bool MResponseMatrixON::SwitchToNonSparse()
 {
-  if (m_IsSparse == false) return;
+  if (m_IsSparse == false) return true;
   
   m_Values.clear();
   try {
     m_Values.resize(m_NumberOfBins, 0);
-  } catch (std::bad_alloc& Exception) {
-    cout<<"Your repsonse is too big too handle on this system: "<<m_NumberOfBins<<" bins = "<<double(m_NumberOfBins)*sizeof(float)/1024/1024/1024<<" GB"<<endl;
-    cout<<"Aborting!"<<endl;
-    abort();
+  } catch (const std::exception& Exception) {
+    m_Values.clear();
+    merr<<"Your response is too big to handle on this system: "<<m_NumberOfBins<<" bins = "<<double(m_NumberOfBins)*sizeof(float)/1024/1024/1024<<" GB - it stays sparse"<<endl;
+    return false;
   }
 
   for (const auto& X: m_ValuesSparse) {
@@ -201,6 +201,8 @@ void MResponseMatrixON::SwitchToNonSparse()
   
   m_ValuesSparse.clear();
   //m_BinsSparse.clear();
+
+  return true;
 }
 
 
@@ -507,7 +509,9 @@ MResponseMatrixON& MResponseMatrixON::operator+=(const float& Value)
   
   // We will be non-sparse now:
   if (m_IsSparse == true) {
-    SwitchToNonSparse(); 
+    if (SwitchToNonSparse() == false) {
+      throw MExceptionArbitrary("The response is too big to be converted to non-sparse");
+    }
   }
   
   for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
@@ -531,7 +535,9 @@ MResponseMatrixON& MResponseMatrixON::operator-=(const float& Value)
   
   // we will be non-sparse now:
   if (m_IsSparse == true) {
-    SwitchToNonSparse(); 
+    if (SwitchToNonSparse() == false) {
+      throw MExceptionArbitrary("The response is too big to be converted to non-sparse");
+    }
   }
   
   for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
@@ -1850,7 +1856,8 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   } else {
     s<<"Type ResponseMatrixONSparse"<<endl;
     s<<endl;
-    
+    File.Write(s);
+
     bool IsParallel = false;
 
     if (IsParallel == false) {
@@ -2243,8 +2250,10 @@ MString MResponseMatrixON::GetStatistics() const
         ++NumberOfNonZeroBins;
       }
     }
-    if (NumberOfNonZeroBins != m_NumberOfBins) {
-      Min = 0;
+    // The bins which are not stored are zero
+    if (m_ValuesSparse.size() < m_NumberOfBins) {
+      if (Max < 0) Max = 0;
+      if (Min > 0) Min = 0;
     }
     /*
     for (unsigned long i = 0; i < m_ValuesSparse.size(); ++i) {
