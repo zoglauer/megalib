@@ -50,7 +50,7 @@ public:
   MString GetRecordedType() const { return RecordedType; }
 
 protected:
-  virtual bool ReadSpecific(MFileResponse&, const MString& Type, const int Version)
+  virtual bool ReadSpecific(MFileResponse&, const MString& Type, const int Version, const bool) override
   {
     ReadSpecificCalled = true;
     RecordedType = Type;
@@ -104,16 +104,20 @@ bool UTResponseMatrix::Run()
   Named.SetHash(12345UL);
   Named.SetSimulatedEvents(42);
   Named.SetFarFieldStartArea(17.5);
-  Named.SetSpectralType("PowerLaw");
+  Named.SetSpectralType("PowerLaw 1 2 3");
+  Named.SetBeamType("FarFieldPointSource 0 0");
+  Named.SetPolarizationMode("relativez");
   Passed = Evaluate("SetName()", "representative update", "SetName updates the representative matrix name", Named.GetName(), MString("Updated")) && Passed;
   Passed = Evaluate("SetHash()", "representative update", "SetHash updates the representative matrix hash", Named.GetHash(), 12345UL) && Passed;
   Passed = Evaluate("SetSimulatedEvents()", "representative update", "SetSimulatedEvents updates the representative simulated-event count", Named.GetSimulatedEvents(), 42L) && Passed;
   Passed = EvaluateNear("SetFarFieldStartArea()", "representative update", "SetFarFieldStartArea updates the representative far-field area", Named.GetFarFieldStartArea(), 17.5, 1e-12) && Passed;
-  Passed = Evaluate("SetSpectrum()", "representative update", "SetSpectrum stores the representative spectral type", Named.GetSpectralType(), MString("PowerLaw")) && Passed;
+  Passed = Evaluate("SetSpectralType()", "representative update", "SetSpectralType stores the representative spectral type including its parameters", Named.GetSpectralType(), MString("PowerLaw 1 2 3")) && Passed;
+  Passed = Evaluate("SetBeamType()", "representative update", "SetBeamType stores the representative beam type", Named.GetBeamType(), MString("FarFieldPointSource 0 0")) && Passed;
+  Passed = Evaluate("SetPolarizationMode()", "representative update", "SetPolarizationMode stores the representative polarization mode", Named.GetPolarizationMode(), MString("relativez")) && Passed;
 
   ostringstream Header;
   Named.ExposeWriteHeader(Header);
-  Passed = Evaluate("WriteHeader()", "representative header", "WriteHeader serializes the representative base response header deterministically", MString(Header.str()), MString("# Response Matrix 0\nVersion 1\n\n# Name\nNM Updated\n\n# The order of the matrix\nOD 0\n\n# The number of simulated events\nTS 42\n\n# The far-field start area (if zero a non-far-field simulation, or non-spherical start area was used)\nSA 17.5\n\n# The spectral parameters (empty if not set)\nSM PowerLaw 1 2 3\n\n")) && Passed;
+  Passed = Evaluate("WriteHeader()", "representative header", "WriteHeader serializes the representative base response header deterministically", MString(Header.str()), MString("# Response Matrix 0\nVersion 1\n\n# Name\nNM Updated\n\n# The order of the matrix\nOD 0\n\n# The number of simulated events\nTS 42\n\n# The far-field start area (if zero a non-far-field simulation, or non-spherical start area was used)\nSA 17.5\n\n# The spectral parameters (empty if not set)\nSP PowerLaw 1 2 3\n\n# The beam parameters (empty if not set)\nBE FarFieldPointSource 0 0\n\n# The polarization mode (empty if not set)\nPO relativez\n\n\n")) && Passed;
 
   Named.Clear();
   Passed = Evaluate("Clear()", "representative state", "Clear resets the representative matrix name", Named.GetName(), MString("Unnamed response matrix")) && Passed;
@@ -122,6 +126,30 @@ bool UTResponseMatrix::Run()
   Passed = EvaluateNear("Clear()", "representative state area", "Clear resets the representative far-field area", Named.GetFarFieldStartArea(), 0.0, 1e-12) && Passed;
   Passed = Evaluate("Clear()", "representative state spectrum", "Clear resets the representative spectral type", Named.GetSpectralType(), MString("")) && Passed;
   Passed = Evaluate("Clear()", "representative state hash", "Clear resets the representative hash", Named.GetHash(), 0UL) && Passed;
+
+  // Beam type and polarization mode are part of the copy, the assignment, and Clear()
+  {
+    TestResponseMatrix Source("Source");
+    Source.SetHash(7UL);
+    Source.SetSpectralType("Mono 511");
+    Source.SetBeamType("FarFieldPointSource 0 0");
+    Source.SetPolarizationMode("relativey");
+
+    TestResponseMatrix Copied(Source);
+    Passed = Evaluate("CopyConstructor()", "spectral type", "The copy constructor copies the spectral type", Copied.GetSpectralType(), MString("Mono 511")) && Passed;
+    Passed = Evaluate("CopyConstructor()", "beam type", "The copy constructor copies the beam type", Copied.GetBeamType(), MString("FarFieldPointSource 0 0")) && Passed;
+    Passed = Evaluate("CopyConstructor()", "polarization mode", "The copy constructor copies the polarization mode", Copied.GetPolarizationMode(), MString("relativey")) && Passed;
+
+    TestResponseMatrix Assigned("Assigned");
+    Assigned = Source;
+    Passed = Evaluate("operator=", "spectral type", "The assignment operator copies the spectral type", Assigned.GetSpectralType(), MString("Mono 511")) && Passed;
+    Passed = Evaluate("operator=", "beam type", "The assignment operator copies the beam type", Assigned.GetBeamType(), MString("FarFieldPointSource 0 0")) && Passed;
+    Passed = Evaluate("operator=", "polarization mode", "The assignment operator copies the polarization mode", Assigned.GetPolarizationMode(), MString("relativey")) && Passed;
+
+    Source.Clear();
+    Passed = Evaluate("Clear()", "beam type", "Clear resets the beam type", Source.GetBeamType(), MString("")) && Passed;
+    Passed = Evaluate("Clear()", "polarization mode", "Clear resets the polarization mode", Source.GetPolarizationMode(), MString("")) && Passed;
+  }
 
   Passed = EvaluateTrue("PrepareTemporaryDirectory()", "temporary directory", "The temporary directory for MResponseMatrix fixtures can be created", PrepareTemporaryDirectory()) && Passed;
   MString TempFile = GetTemporaryFileName("UTResponseMatrix_base.rsp");
@@ -132,7 +160,9 @@ bool UTResponseMatrix::Run()
                                       "NM ReadBack\n"
                                       "TS 123\n"
                                       "SA 4.5\n"
-                                      "SM Mono 511\n"
+                                      "SP Mono 511\n"
+                                      "BE FarFieldPointSource 0 0\n"
+                                      "PO relativex\n"
                                       "HA 999\n"
                                       "CE true\n")) && Passed;
 
@@ -146,7 +176,9 @@ bool UTResponseMatrix::Run()
   Passed = Evaluate("Read()", "representative hash", "Read stores the representative matrix hash from the file header", ReadBack.GetHash(), 999UL) && Passed;
   Passed = Evaluate("Read()", "representative simulated events", "Read stores the representative simulated-event count from the file header", ReadBack.GetSimulatedEvents(), 123L) && Passed;
   Passed = EvaluateNear("Read()", "representative area", "Read stores the representative far-field area from the file header", ReadBack.GetFarFieldStartArea(), 4.5, 1e-12) && Passed;
-  Passed = Evaluate("Read()", "representative spectral type", "Read stores the representative spectral type from the file header", ReadBack.GetSpectralType(), MString("Mono")) && Passed;
+  Passed = Evaluate("Read()", "representative spectral type", "Read stores the representative spectral type from the file header", ReadBack.GetSpectralType(), MString("Mono 511")) && Passed;
+  Passed = Evaluate("Read()", "representative beam type", "Read stores the representative beam type from the file header", ReadBack.GetBeamType(), MString("FarFieldPointSource 0 0")) && Passed;
+  Passed = Evaluate("Read()", "representative polarization mode", "Read stores the representative polarization mode from the file header", ReadBack.GetPolarizationMode(), MString("relativex")) && Passed;
 
   TestResponseMatrix ReadFail;
   ReadFail.SetReadSpecificResult(false);

@@ -66,26 +66,41 @@ bool UTFileResponse::Run()
   Passed = EvaluateTrue("WriteTextFile()", "header file", "The representative response header file can be written",
                         WriteTextFile(HeaderFile, "Version 1\nType ResponseMatrixO1Stream\nNM HeaderOnly\nTS 88\nSA 7.5\nSM Mono 511\nHA 1234\nCE false\nStartStream 0\n")) && Passed;
 
+  // Header with the keywords SP, BE, and PO, and a reader which is reused for a file without them
+  MString NewHeaderFile = GetTemporaryFileName("header_new.rsp");
+  Passed = EvaluateTrue("WriteTextFile()", "new header file", "The response header file with spectrum, beam, and polarization can be written",
+                        WriteTextFile(NewHeaderFile, "Version 1\nType ResponseMatrixO1Stream\nNM NewHeader\nTS 88\nSA 7.5\nSP Mono 511\nBE FarFieldPointSource 0 0\nPO relativex\nHA 1234\nCE false\nStartStream 0\n")) && Passed;
+
+  MFileResponse NewHeaderReader;
+  Passed = Evaluate("Open()", "new header", "Open reads the response header with SP, BE, and PO", NewHeaderReader.Open(NewHeaderFile), true) && Passed;
+  Passed = Evaluate("GetSpectralType()", "new header", "SP stores the whole spectral type including its parameters", NewHeaderReader.GetSpectralType(), MString("Mono 511")) && Passed;
+  Passed = Evaluate("GetBeamType()", "new header", "BE stores the whole beam type including its parameters", NewHeaderReader.GetBeamType(), MString("FarFieldPointSource 0 0")) && Passed;
+  Passed = Evaluate("GetPolarizationMode()", "new header", "PO stores the polarization mode", NewHeaderReader.GetPolarizationMode(), MString("relativex")) && Passed;
+  NewHeaderReader.Close();
+
   MFileResponse HeaderReader;
   Passed = Evaluate("Open()", "representative header", "Open reads the representative response header successfully", HeaderReader.Open(HeaderFile), true) && Passed;
   Passed = Evaluate("GetName()", "representative header", "Open stores the representative matrix name", HeaderReader.GetName(), MString("HeaderOnly")) && Passed;
   Passed = Evaluate("GetSimulatedEvents()", "representative header", "Open stores the representative simulated-event count", HeaderReader.GetSimulatedEvents(), 88L) && Passed;
   Passed = EvaluateNear("GetFarFieldStartArea()", "representative header", "Open stores the representative far-field area", HeaderReader.GetFarFieldStartArea(), 7.5, 1e-12) && Passed;
-  Passed = Evaluate("GetSpectralType()", "representative header", "Open stores the representative spectral type", HeaderReader.GetSpectralType(), MString("Mono")) && Passed;
+  Passed = Evaluate("GetSpectralType()", "representative header", "Open reads the old SM keyword as spectral type (the whole line after the keyword, as SP does)", HeaderReader.GetSpectralType(), MString("Mono 511")) && Passed;
   Passed = Evaluate("AreValuesCentered()", "representative header", "Open stores the representative centered flag", HeaderReader.AreValuesCentered(), false) && Passed;
   Passed = Evaluate("GetHash()", "representative header", "Open stores the representative hash", HeaderReader.GetHash(), 1234UL) && Passed;
   HeaderReader.Close();
 
+
   MString PartialHeaderFile = GetTemporaryFileName("header_partial.rsp");
   Passed = EvaluateTrue("WriteTextFile()", "partial header file", "The representative partial response header file can be written",
                         WriteTextFile(PartialHeaderFile, "Version 1\nType ResponseMatrixO1Stream\nCE true\nStartStream 0\n")) && Passed;
-  Passed = Evaluate("Open()", "reused parser first header", "Open reads the first representative header before the parser is reused", HeaderReader.Open(HeaderFile), true) && Passed;
+  Passed = Evaluate("Open()", "reused parser first header", "Open reads the first representative header before the parser is reused", HeaderReader.Open(NewHeaderFile), true) && Passed;
   HeaderReader.Close();
   Passed = Evaluate("Open()", "reused parser second header", "Open also succeeds on a representative partial second header", HeaderReader.Open(PartialHeaderFile), true) && Passed;
   Passed = Evaluate("GetName()", "reused parser second header", "Reusing the parser does not keep a stale representative matrix name", HeaderReader.GetName(), g_StringNotDefined) && Passed;
   Passed = Evaluate("GetHash()", "reused parser second header", "Reusing the parser does not keep a stale representative hash", HeaderReader.GetHash(), 0UL) && Passed;
   Passed = Evaluate("GetSimulatedEvents()", "reused parser second header", "Reusing the parser does not keep a stale representative simulated-event count", HeaderReader.GetSimulatedEvents(), 0L) && Passed;
   Passed = EvaluateNear("GetFarFieldStartArea()", "reused parser second header", "Reusing the parser does not keep a stale representative far-field area", HeaderReader.GetFarFieldStartArea(), 0.0, 1e-12) && Passed;
+  Passed = Evaluate("GetBeamType()", "reused parser second header", "Reusing the parser does not keep a stale beam type", HeaderReader.GetBeamType(), MString("")) && Passed;
+  Passed = Evaluate("GetPolarizationMode()", "reused parser second header", "Reusing the parser does not keep a stale polarization mode", HeaderReader.GetPolarizationMode(), MString("")) && Passed;
   Passed = Evaluate("GetSpectralType()", "reused parser second header", "Reusing the parser does not keep a stale representative spectral type", HeaderReader.GetSpectralType(), MString("")) && Passed;
   HeaderReader.Close();
 
@@ -94,10 +109,22 @@ bool UTFileResponse::Run()
   O1.SetBinContent(0, 3.0f);
   O1.SetSimulatedEvents(21);
   O1.SetFarFieldStartArea(4.0);
-  O1.SetSpectralType("Mono");
+  O1.SetSpectralType("Mono 511");
+  O1.SetBeamType("FarFieldPointSource 0 0");
+  O1.SetPolarizationMode("relativex");
   O1.SetHash(999UL);
   MString O1File = GetTemporaryFileName("o1_stream.rsp");
   Passed = Evaluate("Write()", "representative O1 stream file", "The representative O1 matrix can be written for MFileResponse dispatch", O1.Write(O1File, true), true) && Passed;
+
+  // The written header carries spectral type, beam type, and polarization mode
+  {
+    MFileResponse O1HeaderReader;
+    Passed = Evaluate("Open()", "O1 header", "The written O1 file opens", O1HeaderReader.Open(O1File), true) && Passed;
+    Passed = Evaluate("GetSpectralType()", "O1 header", "The spectral type survives writing and reading", O1HeaderReader.GetSpectralType(), MString("Mono 511")) && Passed;
+    Passed = Evaluate("GetBeamType()", "O1 header", "The beam type survives writing and reading", O1HeaderReader.GetBeamType(), MString("FarFieldPointSource 0 0")) && Passed;
+    Passed = Evaluate("GetPolarizationMode()", "O1 header", "The polarization mode survives writing and reading", O1HeaderReader.GetPolarizationMode(), MString("relativex")) && Passed;
+    O1HeaderReader.Close();
+  }
 
   MFileResponse O1Reader;
   MResponseMatrix* O1ReadBack = O1Reader.Read(O1File);

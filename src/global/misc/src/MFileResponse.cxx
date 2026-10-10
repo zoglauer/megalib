@@ -137,7 +137,7 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
         m_NumberOfSimulatedEvents = T.GetTokenAtAsLong(1);
       } else if (T.GetTokenAt(0) == "SA") {
         m_FarFieldStartArea = T.GetTokenAtAsDouble(1);
-      } else if (T.GetTokenAt(0) == "SP") {
+      } else if (T.GetTokenAt(0) == "SP" || T.GetTokenAt(0) == "SM") { // SM is the old keyword
         m_SpectralType = T.GetTokenAfterAsString(1);
       } else if (T.GetTokenAt(0) == "BE") {
         m_BeamType = T.GetTokenAfterAsString(1);
