@@ -133,6 +133,7 @@ MDGeometry::MDGeometry()
   m_System = new MDSystem("NoName");
   m_DetectorEffectsEngine = new MDDetectorEffectsEngine();
   m_DetectorEffectsEngine->SetGeometry(this);
+  m_DetectorEffectsEngineVersion = 1;
 
   // Make sure we ignore the default ROOT geometry...
   // BUG: In case we are multi-threaded and some one interact with the geometry
@@ -205,6 +206,8 @@ void MDGeometry::Reset()
 
   m_NDetectorTypes.clear();
   m_NDetectorTypes.resize(MDDetector::c_MaxDetector+1);
+
+  m_DetectorEffectsEngineVersion = 1;
 
   for (unsigned int i = 0; i < m_TriggerList.size(); ++i) {
     delete m_TriggerList[i];
@@ -1260,6 +1263,22 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
 
       m_SurroundingSphereShow = Tokenizer.GetTokenAtAsBoolean(1);
+
+      continue;
+    }
+
+    else if (Tokenizer.IsTokenAt(0, "DetectorEffectsEngine") == true) {
+      if (Tokenizer.GetNTokens() != 2) {
+        Typo("Line must contain two values: DetectorEffectsEngine 1/2");
+        return false;
+      }
+
+      unsigned int Version = Tokenizer.GetTokenAtAsUnsignedInt(1);
+      if (Version != 1 && Version != 2) {
+        Typo("The version of the detector effects engine must be 1 (MEGAlib 1-4 engine, default) or 2 (MEGAlib 5 onward engine)");
+        return false;
+      }
+      m_DetectorEffectsEngineVersion = Version;
 
       continue;
     }
@@ -3657,6 +3676,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
   for (unsigned int i = 0; i < GetNDetectors(); i++) {
+    m_DetectorList[i]->SetDetectorEffectsEngineVersion(m_DetectorEffectsEngineVersion);
     if (m_DetectorList[i]->CopyDataToNamedDetectors() == false) {
       return false;
     }

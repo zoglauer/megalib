@@ -43,7 +43,7 @@ class MDGeometry;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! The default MEGAlib detector effects engine v3
+//! The MEGAlib 5 onward detector effects engine (version 2)
 //! 
 //! The commands have to be run in a very defined way
 //! Create -> Set -> Validate -> Reset -> Add -> Run -> Get

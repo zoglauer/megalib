@@ -164,6 +164,8 @@ class MDGeometry
   
   //! Return the default detectior effects engine
   MDDetectorEffectsEngine* GetDetectorEffectsEngine() { return m_DetectorEffectsEngine; }
+  //! Return the version of the detector effects engine: 1 = MEGAlib 1-4 engine (default), 2 = MEGAlib 5 onward engine
+  unsigned int GetDetectorEffectsEngineVersion() const { return m_DetectorEffectsEngineVersion; }
   
   // Interface to all stored vectors
   
@@ -267,6 +269,8 @@ class MDGeometry
 
   //! The detector effects engine
   MDDetectorEffectsEngine* m_DetectorEffectsEngine;
+  //! The version of the detector effects engine: 1 = MEGAlib 1-4 engine (default), 2 = MEGAlib 5 onward engine
+  unsigned int m_DetectorEffectsEngineVersion;
   
   //! A list of all vectors
   vector<MDVector*> m_VectorList;

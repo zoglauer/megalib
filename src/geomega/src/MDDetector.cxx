@@ -169,6 +169,7 @@ MDDetector::MDDetector(MString Name)
   m_PulseShapeMax = 0;
 
   m_NoiseActive = true;
+  m_DetectorEffectsEngineVersion = 1;
 
   m_UseDivisions = false;
   m_ShortNameDivisionX = g_StringNotDefined;
@@ -260,6 +261,7 @@ MDDetector::MDDetector(const MDDetector& D)
   m_PulseShapeMax = D.m_PulseShapeMax;
 
   m_NoiseActive = D.m_NoiseActive;
+  m_DetectorEffectsEngineVersion = D.m_DetectorEffectsEngineVersion;
 
   m_AreBlockedTriggerChannelsUsed = D.m_AreBlockedTriggerChannelsUsed;
   m_BlockedTriggerChannels = D.m_BlockedTriggerChannels;
@@ -364,6 +366,7 @@ bool MDDetector::CopyDataToNamedDetectors()
     m_NamedDetectors[d]->m_PulseShapeMax = m_PulseShapeMax;
 
     m_NamedDetectors[d]->m_NoiseActive = m_NoiseActive;
+    m_NamedDetectors[d]->m_DetectorEffectsEngineVersion = m_DetectorEffectsEngineVersion;
 
     m_NamedDetectors[d]->m_AreBlockedTriggerChannelsUsed = m_AreBlockedTriggerChannelsUsed;
     m_NamedDetectors[d]->m_BlockedTriggerChannels = m_BlockedTriggerChannels;
@@ -837,9 +840,11 @@ bool MDDetector::IsAboveTriggerThreshold(const double& Energy, const MDGridPoint
   }
   
   // Given this flag, in case we passed the noise criteria, we already have a trigger:
-  //if (m_NoiseThresholdEqualsTriggerThreshold == true) {
-  //  return true;
-  //}
+  if (m_DetectorEffectsEngineVersion == 1) {
+    if (m_NoiseThresholdEqualsTriggerThreshold == true) {
+      return true;
+    }
+  }
   
   // If you change anything here, make sure to change GetSecureUpperLimitTriggerThreshold !!!!
   double NoisedThreshold = 

@@ -141,9 +141,11 @@ void MDACS::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MD
   }
   
   // Noise threshold:
-  //if (ApplyNoiseThreshold(Energy) == true) {
-  //  return;
-  //}
+  if (m_DetectorEffectsEngineVersion == 1) {
+    if (ApplyNoiseThreshold(Energy) == true) {
+      return;
+    }
+  }
 
   // Noise the time:
   ApplyTimeResolution(Time, Energy);

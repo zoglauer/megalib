@@ -738,10 +738,12 @@ void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags
   }
 
   // Noise threshold:
-  //if (ApplyNoiseThreshold(Energy, Pos) == true) {
-  //  Pos[2] = 0.0; 
-  // return;
-  //} 
+  if (m_DetectorEffectsEngineVersion == 1) {
+    if (ApplyNoiseThreshold(Energy, Pos) == true) {
+      Pos[2] = 0.0; 
+      return;
+    }
+  }
   
   // Noise depth:
   if (IsOverflow == true || m_DepthResolution.GetNDataPoints() == 0 || Energy < m_DepthResolutionThreshold) {

@@ -105,6 +105,23 @@ bool MERNoising::Analyze(MRERawEvent* Event)
 {
   // Do all the things required for simulated events such as noising, triggering, etc.
 
+  switch (m_Geometry->GetDetectorEffectsEngineVersion()) {
+  case 1:
+    return AnalyzeEngine1(Event);
+  case 2:
+    return AnalyzeEngine2(Event);
+  default:
+    merr<<"Unknown version of the detector effects engine: "<<m_Geometry->GetDetectorEffectsEngineVersion()<<endl;
+    return false;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MERNoising::AnalyzeEngine2(MRERawEvent* Event)
+{
   // Reset the data of the engine
   MDDetectorEffectsEngine& DEE = *(m_Geometry->GetDetectorEffectsEngine());
   DEE.Reset();
@@ -210,8 +227,14 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   Event->SetEventTime(DEE.GetEventTime());
   
   return true;
-  
-  /*
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MERNoising::AnalyzeEngine1(MRERawEvent* Event)
+{
   MRESE* RESE = 0;
   MString TriggerName;
   MDTriggerUnit* Trigger = m_Geometry->GetTriggerUnit();
@@ -226,74 +249,15 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     Event->SetEventTime(Time);
   }
   
-  
-  // Step 1.1: Split hits (e.g. charge sharing onto multiple strips)
-  vector<MDGridPointCollection> Collections;
+  // Step 1.1: Noise hits:
   int h_max = Event->GetNRESEs();
-  for (int h = 0; h < h_max; ++h) {
-    MRESE* RESE = Event->GetRESEAt(h);
-    if (RESE->GetType() == MRESE::c_Hit) {
-      //if (((MREHit *) (RESE))->GetDetector() != MDDetector::c_Scintillator) {
-      mdebug<<"TG - Event: "<<Event->GetEventID()<<": Splitting..."<<RESE->GetEnergy()<<endl;
-      // Split
-      MDGridPointCollection C = ((MREHit *) (RESE))->Grid(m_Geometry);
-      // Remove the hit if the collection is larger than 0 and store the collection:
-      if (C.GetNGridPoints() > 0) {
-        Collections.push_back(C);
-        Event->RemoveRESE(RESE);
-        delete RESE;
-      }
-    } else {
-      mout<<"MRERawEvent* MFileEventsEvta::GetNextEvent(): Cannot noise a hit which is no single hit!"<<endl;
-      mout<<RESE->ToString()<<endl;
-    }
-  }
-  Event->CompressRESEs();
-  
-
-  if (Collections.size() > 0) {
-    // Merge Collections
-    vector<MDGridPointCollection> CompactCollections;
-    CompactCollections.push_back(Collections[0]);
-    for (unsigned int c = 1; c < Collections.size(); ++c) {
-      bool Found = false;
-      for (unsigned int cc = 0; cc < CompactCollections.size(); ++cc) {
-        if (Collections[c].HasSameDetector(CompactCollections[cc])) {
-          CompactCollections[cc].Add(Collections[c]);
-          Found = true;
-          break;
-        }
-      }
-      if (Found == false) {
-        CompactCollections.push_back(Collections[c]);
-      }
-    }
-  
-    // Create hits:
-    for (unsigned int c = 0; c < CompactCollections.size(); ++c) {
-      for (unsigned int p = 0; p < CompactCollections[c].GetNGridPoints(); ++p) {
-        MDGridPoint P = CompactCollections[c].GetGridPointAt(p);
-        MREHit* Hit = new MREHit();
-        Hit->SetEnergy(P.GetEnergy());
-        Hit->SetPosition(CompactCollections[c].GetWorldPositionGridPointAt(p));
-        Hit->SetTime(P.GetTime());
-        Hit->UpdateVolumeSequence(m_Geometry);
-        Hit->SetDetector(Hit->GetVolumeSequence()->GetDetector()->GetType());
-        Hit->RetrieveResolutions(m_Geometry);
-        Event->AddRESE(Hit);
-      }
-    }
-  }
-  
-  
-  
-  // Step 1.2: Noise hits:
-  h_max = Event->GetNRESEs();
   for (int h = 0; h < h_max; ++h) {
     if (Event->GetRESEAt(h)->GetType() == MRESE::c_Hit) {
       //if (((MREHit *) (Event->GetRESEAt(h)))->GetDetector() != MDDetector::c_Scintillator) {
       mdebug<<"TG - Event: "<<Event->GetEventID()<<": Noising..."<<Event->GetRESEAt(h)->GetEnergy()<<endl;
-      if (((MREHit *) (Event->GetRESEAt(h)))->Noise(m_Geometry) == false) {
+      bool Kept = ((MREHit *) (Event->GetRESEAt(h)))->Noise(m_Geometry);
+      ((MREHit *) (Event->GetRESEAt(h)))->SetNoiseFlags("");
+      if (Kept == false) {
         // No energy: voxel bad, not in detector volume, etc:
         mdebug<<"TG - Event: "<<Event->GetEventID()<<": Rejecting hit (noise)!"<<endl;
         RESE = Event->GetRESEAt(h);
@@ -307,11 +271,9 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   }
   Event->CompressRESEs();
 
-  
-  
-  // Step 1.3: Noise additional measurements:
+  // Step 1.2: Noise additional measurements:
   for (vector<MREAM*>::iterator Iter = Event->GetREAMBegin();
-       Iter != Event->GetREAMEnd(); ) {
+       Iter != Event->GetREAMEnd(); /* handled externally due to delete */) {
     if ((*Iter)->GetType() == MREAM::c_DriftChamberEnergy) {
       MREAMDriftChamberEnergy* DCE = dynamic_cast<MREAMDriftChamberEnergy*>(*Iter);
       double Energy = DCE->GetEnergy();
@@ -324,14 +286,19 @@ bool MERNoising::Analyze(MRERawEvent* Event)
       MREAMGuardRingHit* GR = dynamic_cast<MREAMGuardRingHit*>(*Iter);
       double Energy = GR->GetEnergy();
       MDVolumeSequence* V = GR->GetVolumeSequence();
-      if (V->GetDetector()->HasGuardRing() == false || V->GetDetector()->GetGuardRing()->IsActive() == false) {
+      MDGuardRing* GuardRing = dynamic_cast<MDGuardRing*>(V->GetDetector());
+      if (GuardRing == nullptr && V->GetDetector()->HasGuardRing() == true) {
+        GuardRing = V->GetDetector()->GetGuardRing();
+      }
+      if (GuardRing == nullptr || GuardRing->IsActive() == false) {
         Event->DeleteREAM(Iter);
       } else {
         MVector DummyPosition;
         double DummyTime = 0.0;
-        V->GetDetector()->GetGuardRing()->Noise(DummyPosition, Energy, DummyTime, nullptr);
+        MString DummyFlags;
+        GuardRing->Noise(DummyPosition, Energy, DummyTime, DummyFlags, nullptr);
         GR->SetEnergy(Energy);
-        GR->SetEnergyResolution(V->GetDetector()->GetGuardRing()->GetEnergyResolution(Energy));
+        GR->SetEnergyResolution(GuardRing->GetEnergyResolution(Energy));
         if (Energy == 0) {
           Event->DeleteREAM(Iter);
         } else {
@@ -360,16 +327,22 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     }
   }
 
-  
-  
-  // Step 1.4: Test trigger
+  // Step b: Test trigger
   Trigger->Reset();
   h_max = Event->GetNRESEs();
   for (int h = 0; h < h_max; ++h) {
     RESE = Event->GetRESEAt(h);
     if (RESE->GetType() == MRESE::c_Hit) {
       if (Trigger->AddHit(RESE->GetEnergy(), *(RESE->GetVolumeSequence())) == false) {
-        //
+        /*
+        if (RESE->GetDetector() == MDDetector::c_Scintillator) {
+          mimp<<"Removing scintillator hits which have not triggered..."<<show;
+          RESE = Event->GetRESEAt(h);
+          Event->RemoveRESE(RESE);
+          mdebug<<"TG - Event: "<<Event->GetEventID()<<": Rejecting hit (trigger not added)!"<<endl;
+          delete RESE;
+        }
+        */
       }
     } else {
       merr<<"We shouldn't have anything else but hits at this point!"<<endl;
@@ -379,7 +352,11 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   for (unsigned int a = 0; a < Event->GetNREAMs(); ++a) {
     if (Event->GetREAMAt(a)->GetType() == MREAM::c_GuardRingHit) {
       MREAMGuardRingHit* GR = dynamic_cast<MREAMGuardRingHit*>(Event->GetREAMAt(a));
-      Trigger->AddGuardRingHit(GR->GetEnergy(), *(GR->GetVolumeSequence()));
+      MDVolumeSequence GuardRingSequence(*(GR->GetVolumeSequence()));
+      if (GuardRingSequence.GetDetector()->GetType() != MDDetector::c_GuardRing && GuardRingSequence.GetDetector()->HasGuardRing() == true) {
+        GuardRingSequence.SetDetector(GuardRingSequence.GetDetector()->GetGuardRing());
+      }
+      Trigger->AddGuardRingHit(GR->GetEnergy(), GuardRingSequence);
     }
   }
 
@@ -473,7 +450,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   }
   // Remove all REAMs with no RESE:
   for (vector<MREAM*>::iterator Iter = Event->GetREAMBegin();
-       Iter != Event->GetREAMEnd(); ) {
+       Iter != Event->GetREAMEnd(); /* handled externally due to delete ++Iter */) {
     if ((*Iter)->GetType() == MREAM::c_Directional) {
       MREAMDirectional* DR = dynamic_cast<MREAMDirectional*>(*Iter);
       // If there is none remove the info:
@@ -486,7 +463,6 @@ bool MERNoising::Analyze(MRERawEvent* Event)
       ++Iter;
     }
   }
-  */
 
   return true;
 }

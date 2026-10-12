@@ -218,9 +218,11 @@ void MDAngerCamera::Noise(MVector& Pos, double& Energy, double& Time, MString& F
   ApplyOverflow(Energy);
   
   // Noise threshold:
-  //if (ApplyNoiseThreshold(Energy) == true) {
-  //  return;
-  //}
+  if (m_DetectorEffectsEngineVersion == 1) {
+    if (ApplyNoiseThreshold(Energy) == true) {
+      return;
+    }
+  }
 
   // Noise the position:
   MDShape* Shape = Volume->GetShape();

@@ -84,6 +84,11 @@ class MERNoising : public MERConstruction
   //! Hide the base classes Analyze
   bool Analyze(MRawEventIncarnations*) { return false; }
 
+  //! Perform the analysis with the detector effects engine 1 (MEGAlib 1-4): noise each hit and trigger on each hit
+  bool AnalyzeEngine1(MRERawEvent* Event);
+  //! Perform the analysis with the detector effects engine 2 (MEGAlib 5 onward): strip signals and strip pairing
+  bool AnalyzeEngine2(MRERawEvent* Event);
+
 
 
   // protected members:

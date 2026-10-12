@@ -235,6 +235,11 @@ class MDDetector
 
   virtual void ActivateNoising(const bool Activate = true);
 
+  //! Set the version of the detector effects engine: 1 = MEGAlib 1-4 engine, 2 = MEGAlib 5 onward engine
+  void SetDetectorEffectsEngineVersion(unsigned int Version) { m_DetectorEffectsEngineVersion = Version; }
+  //! Return the version of the detector effects engine
+  unsigned int GetDetectorEffectsEngineVersion() const { return m_DetectorEffectsEngineVersion; }
+
   virtual MVector GetPositionResolution(const MVector& Pos, const double Energy) const;
 
   virtual bool IsVeto(const MVector& Pos, const double Energy) const;
@@ -460,6 +465,8 @@ class MDDetector
   double m_PulseShapeMax;
 
   bool m_NoiseActive;
+  //! The version of the detector effects engine: 1 = MEGAlib 1-4 engine, 2 = MEGAlib 5 onward engine
+  unsigned int m_DetectorEffectsEngineVersion;
 
   // private members:
  private:

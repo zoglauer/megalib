@@ -183,10 +183,12 @@ void MDCalorimeter::Noise(MVector& Pos, double& Energy, double& Time, MString& F
   IsOverflow = ApplyOverflow(Energy);
 
   // Noise threshold:
-  //if (ApplyNoiseThreshold(Energy) == true) {
-  //  Pos[2] = 0.0; // Really needed, because when below threshold, then E = 0 -> Rejection
-  // return;
-  //} 
+  if (m_DetectorEffectsEngineVersion == 1) {
+    if (ApplyNoiseThreshold(Energy) == true) {
+      Pos[2] = 0.0; // Really needed, because when below threshold, then E = 0 -> Rejection
+      return;
+    }
+  }
 
   // Noise the z-coordinate:
   if (HasDepthResolution() == true) {
