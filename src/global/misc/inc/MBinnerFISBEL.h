@@ -56,10 +56,8 @@ class MBinnerFISBEL : public MBinnerSpherical
   //! Set the binning
   void Set(vector<unsigned int>& LongitudeBins, vector<double>& LatitudeBinEdges, unsigned int NumberOfBins, double LongitudeShift = 0);
   
-  // //! Check if we have equal bins
-  // bool operator ==(const MBinnerFISBEL& Binner) const;
-  // //! ... or not
-  // bool operator !=(const MBinnerFISBEL& Binner) const { return !operator==(Binner); }
+  //! Check if the binners are equal by checking if they have equal bins
+  virtual bool operator==(const MBinnerSpherical& Binner) const;
   
   //! Find a bin
   //! Theta (= latitude) and phi (= longitude) are in (mathematical) spherical coordinates
@@ -77,13 +75,13 @@ class MBinnerFISBEL : public MBinnerSpherical
   //! Get the longitude bins
   vector<unsigned int> GetLongitudeBins() const { return m_LongitudeBins; }
   
-  //! Get the latitude bin edges (in degree)
+  //! Get the latitude bin edges (in radians)
   vector<double> GetLatitudeBinEdges() const { return m_LatitudeBinEdges; } 
 
-  //! Return the minimum axis values [min theta, min phi]
+  //! Return the minimum axis values [min theta, min phi] in degrees
   vector<double> GetMinima() const;
 
-  //! Return the minimum axis values [max theta, max phi]
+  //! Return the maximum axis values [max theta, max phi] in degrees
   vector<double> GetMaxima() const;
 
   //! Get the bin center (returns: theta, phi in radians)

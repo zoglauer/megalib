@@ -49,6 +49,11 @@ ClassImp(MBinnerHEALPix)
 //! Default constructor
 MBinnerHEALPix::MBinnerHEALPix(int Order)
 {
+  // The HEALPix library (Healpix_Base) supports orders up to 13
+  if (Order > 13) {
+    throw MExceptionParameterOutOfRange(Order, 0, 13, "Order");
+  }
+
   if (Order >= 0) {
     m_HealPix = Healpix_Base(Order, Healpix_Ordering_Scheme::RING);
     m_Order = Order;
@@ -70,9 +75,31 @@ MBinnerHEALPix::~MBinnerHEALPix()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Check if the binners are equal by checking if they have equal bins
+bool MBinnerHEALPix::operator==(const MBinnerSpherical& Binner) const
+{
+  const MBinnerHEALPix* Other = dynamic_cast<const MBinnerHEALPix*>(&Binner);
+  if (Other == nullptr) {
+    return false;
+  }
+  if (m_Order != Other->m_Order) {
+    return false;
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Find a bin
 unsigned int MBinnerHEALPix::FindBin(double Theta, double Phi) const
 {
+  if (Theta < 0 || Theta > c_Pi) {
+    throw MExceptionParameterOutOfRange(Theta, 0, c_Pi, "Theta/Latitude");
+  }
+
   if (m_Order < 0) {
     return 0;
   } else {
@@ -132,6 +159,10 @@ vector<vector<double>> MBinnerHEALPix::GetDrawingAxisBinEdges() const
 //! Can throw: MExceptionIndexOutOfBounds
 vector<double> MBinnerHEALPix::GetBinCenters(unsigned int Bin) const
 {
+  if (Bin >= GetNBins()) {
+    throw MExceptionIndexOutOfBounds(0, GetNBins(), Bin);
+  }
+
   if (m_Order < 0 ) {
     return { 0, 0 };
   } else {

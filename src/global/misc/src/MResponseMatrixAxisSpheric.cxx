@@ -24,6 +24,7 @@
 
 // Standard libs:
 #include <math.h>
+#include <limits>
 using namespace std;
 
 // ROOT libs:
@@ -82,20 +83,22 @@ MResponseMatrixAxisSpheric* MResponseMatrixAxisSpheric::Clone() const
 
 
 //! Equality operator
-// bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Axis) const
-// {
-//   // We don't care about names, only the physical properties
-  
-//   if (m_Dimension != Axis.m_Dimension) {
-//     return false;
-//   }
-  
-//   if (*m_Binner != *Axis.m_Binner) {
-//     return false;
-//   }
-  
-//   return true;
-// }
+bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxis& Axis) const
+{
+  // We don't care about names, only the physical properties
+  const MResponseMatrixAxisSpheric* Other = dynamic_cast<const MResponseMatrixAxisSpheric*>(&Axis);
+  if (Other == nullptr) {
+    return false;
+  }
+  if (MResponseMatrixAxis::operator==(Axis) == false) {
+    return false;
+  }
+  if (*m_Binner != *Other->m_Binner) {
+    return false;
+  }
+
+  return true;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -133,6 +136,10 @@ void MResponseMatrixAxisSpheric::SetHEALPixByOrder(int Order)
 //! Set the axis in FISBEL based on a target pixel size
 void MResponseMatrixAxisSpheric::SetFISBELByPixelSize(double PixelSize)
 {
+  if (PixelSize <= 0) {
+    throw MExceptionParameterOutOfRange(PixelSize, 0, numeric_limits<double>::max(), "PixelSize");
+  }
+
   int AngleBins = 4*c_Pi*c_Deg*c_Deg / PixelSize / PixelSize;
   if (AngleBins < 1) AngleBins = 1;
 
@@ -148,6 +155,10 @@ void MResponseMatrixAxisSpheric::SetFISBELByPixelSize(double PixelSize)
 //! O(-1): 1 bin, O(0): 12, O(1): 48, O(2): 192, O(3): 768, O(4): 3072, O(5): 12288, O(6): 49152, O(7): 196608, O(8): 786432, etc. (x4 each further increase)
 void MResponseMatrixAxisSpheric::SetHEALPixByNumberOfBins(unsigned long NBins)
 {
+  if (NBins == 0) {
+    throw MExceptionParameterOutOfRange(NBins, 1, numeric_limits<unsigned long>::max(), "NBins");
+  }
+
   // Find closest order:
   int Order = int(floor(log2(sqrt(NBins/12.0))));
 
@@ -161,7 +172,9 @@ void MResponseMatrixAxisSpheric::SetHEALPixByNumberOfBins(unsigned long NBins)
 //! Set the axis in HEALPIX based on a target pixel size
 void MResponseMatrixAxisSpheric::SetHEALPixByPixelSize(double PixelSize)
 {
-  // Make sure pixel size is > 0
+  if (PixelSize <= 0) {
+    throw MExceptionParameterOutOfRange(PixelSize, 0, numeric_limits<double>::max(), "PixelSize");
+  }
 
   // First find ideal angle bins
   double AngleBins = 4*c_Pi*c_Deg*c_Deg / PixelSize / PixelSize;

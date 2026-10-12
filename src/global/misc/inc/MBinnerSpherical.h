@@ -71,19 +71,19 @@ class MBinnerSpherical
     //! Returns all bin centers as vector
     virtual vector<MVector> GetAllBinCenters() const = 0;
 
-    //! Return the minimum axis values [min theta, min phi]
+    //! Return the minimum axis values [min theta, min phi] in degrees
     virtual vector<double> GetMinima() const = 0;
 
-    //! Return the minimum axis values [max theta, max phi]
+    //! Return the maximum axis values [max theta, max phi] in degrees
     virtual vector<double> GetMaxima() const = 0;
 
     //! Return axis bins edges for external drawing (1st array: longitude/phi, 2nd array: latitude/theta)
     virtual vector<vector<double> > GetDrawingAxisBinEdges() const = 0;
 
-    // //! Check if we have equal bins
-    // virtual bool operator ==(const MBinnerSpherical&) const = 0;
-    // //! ... or not
-    // virtual bool operator !=(const MBinnerSpherical&) const = 0;
+    //! Check if the binners are equal by checking if they have equal bins - binners of different types are never equal
+    virtual bool operator==(const MBinnerSpherical& Binner) const = 0;
+    //! Check if the bins differ - the inverse of operator==
+    bool operator!=(const MBinnerSpherical& Binner) const { return !operator==(Binner); }
   
     //! Write the content to a stream
     virtual void Write(MString name, ostringstream& out) const = 0;

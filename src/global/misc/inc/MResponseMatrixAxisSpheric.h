@@ -53,10 +53,8 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Default destuctor 
   virtual ~MResponseMatrixAxisSpheric();
   
-  // //! Equality operator
-  // bool operator==(const MResponseMatrixAxisSpheric& Axis) const;
-  // //! Inequality operator
-  // bool operator!=(const MResponseMatrixAxisSpheric& Axis) const { return !(operator==(Axis)); }
+  //! Equality operator: same dimension, same type of binning, and equal binning
+  virtual bool operator==(const MResponseMatrixAxis& Axis) const;
 
   //! Clone this axis
   virtual MResponseMatrixAxisSpheric* Clone() const;
@@ -64,17 +62,21 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Set the axis in FISBEL mode with a longitude shift in degrees
   void SetFISBELByNumberOfBins(unsigned long NBins, double LongitudeShift = 0);
   //! Set the axis in FISBEL based on a target pixel size (deg)
+  //! Can throw: MExceptionParameterOutOfRange for a pixel size <= 0
   void SetFISBELByPixelSize(double PixelSize);
 
   //! Set the axis in HEALPIX based on the Order (ring scheme)
+  //! Can throw: MExceptionParameterOutOfRange for orders above 13
   void SetHEALPixByOrder(int Order);
   //! Set the axis in HEALPIX based on the targeted number of bins
   //! The actual number of bins is downscaled to the nearest order
   //! O(-1): 1 bin, O(0): 12, O(1): 48, O(2): 192, O(3): 768, O(4): 3072, O(5): 12288, O(6): 49152, O(7): 196608, O(8): 786432, etc. (x4 each further increase)
+  //! Can throw: MExceptionParameterOutOfRange for 0 bins
   void SetHEALPixByNumberOfBins(unsigned long NBins);
   //! Set the axis in HEALPIX based on a target pixel size (deg)
   //! The actual pixel size of bins is downscaled to the nearest order
   //! O(-1): 180, O(0): 58.632, O(1): 29.316, O(2): 14.658, O(3): 7.329, O(4): 3.664, O(5): 1.832, O(6): 0.916, O(7): 0.458, O(8): 0.229, etc. (div 2 each further decrease)
+  //! Can throw: MExceptionParameterOutOfRange for a pixel size <= 0
   void SetHEALPixByPixelSize(double PixelSize);
     
   //! Return the axis bin, given theta=latitude and phi=longitude in degrees

@@ -420,6 +420,46 @@ bool UTResponseMatrixON::Run()
     Passed = Evaluate("SwitchToNonSparse()", "already dense", "SwitchToNonSparse returns true if the matrix is already dense", MResponseMatrixON("Dense").SwitchToNonSparse(), true) && Passed;
   }
 
+  // Axes of both spherical types survive writing and reading
+  {
+    MResponseMatrixAxisSpheric FISBELSky("#nu", "#lambda");
+    // A shift with many digits: the file must keep enough precision for equality after reading
+    FISBELSky.SetFISBELByNumberOfBins(12, 12.3456789);
+    MResponseMatrixAxisSpheric HEALPixSky("#nu", "#lambda");
+    HEALPixSky.SetHEALPixByOrder(1);
+
+    for (unsigned int Type = 0; Type < 2; ++Type) {
+      MString Name = "FISBEL";
+      unsigned long SkyBins = 12;
+      MResponseMatrixAxisSpheric SkyAxis = FISBELSky;
+      if (Type == 1) {
+        Name = "HEALPix";
+        SkyBins = 48;
+        SkyAxis = HEALPixSky;
+      }
+      MResponseMatrixON Sky(Name);
+      Sky.AddAxis(SkyAxis);
+      Sky.AddAxisLinear("Energy", 2, 0.0, 2.0);
+      // Bin (sky bin 5, energy bin 1)
+      Sky.Set(vector<unsigned long>{5, 1}, 7.0f);
+      MString SkyFile = GetTemporaryFileName(Name + "_sky.rsp");
+      DisableDefaultStreams();
+      const bool SkyWritten = Sky.Write(SkyFile, true);
+      MResponseMatrixON SkyReadBack;
+      const bool SkyRead = SkyReadBack.Read(SkyFile);
+      EnableDefaultStreams();
+      Passed = EvaluateTrue("Write()", Name + " sky", "The matrix with a spherical axis is written", SkyWritten) && Passed;
+      Passed = EvaluateTrue("Read()", Name + " sky", "The matrix with a spherical axis is read", SkyRead) && Passed;
+      Passed = Evaluate("GetNumberOfAxes()", Name + " sky", "The matrix has two axes after reading", SkyReadBack.GetNumberOfAxes(), 2U) && Passed;
+      if (SkyReadBack.GetNumberOfAxes() == 2) {
+        Passed = Evaluate("GetAxis()", Name + " sky bins", "The spherical axis has the same number of bins after reading", SkyReadBack.GetAxis(0).GetNumberOfBins(), SkyBins) && Passed;
+        Passed = Evaluate("GetDimension()", Name + " sky", "The spherical axis has two dimensions after reading", SkyReadBack.GetAxis(0).GetDimension(), 2U) && Passed;
+        Passed = EvaluateNear("Get()", Name + " sky content", "The content of the matrix with a spherical axis survives", SkyReadBack.Get(vector<unsigned long>{5, 1}), 7.0, 1e-12) && Passed;
+        Passed = EvaluateTrue("operator==()", Name + " sky identical", "The spherical axis after reading is identical to the one before", Sky == SkyReadBack) && Passed;
+      }
+    }
+  }
+
   // Files written before the keyword MS existed carry the flag whether the matrix is sparse in an "SP true/false" line
   {
     MString OldFile = GetTemporaryFileName("sparse_old_format.rsp");

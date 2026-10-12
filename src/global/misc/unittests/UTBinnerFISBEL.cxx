@@ -198,9 +198,48 @@ bool UTBinnerFISBEL::Run()
   Copied.Set(LongitudeBins, LatitudeEdges, FourBins.GetNBins(), FourBins.GetLongitudeShift());
   Passed = Evaluate("Set()", "copied binning", "Set reproduces the representative FISBEL binning exactly (bins, collars, edges, shift)", Copied.GetNBins() == FourBins.GetNBins() && Copied.GetLongitudeBins() == LongitudeBins && Copied.GetLatitudeBinEdges() == LatitudeEdges && Copied.GetLongitudeShift() == FourBins.GetLongitudeShift(), true) && Passed;
 
+  Passed = EvaluateTrue("operator==", "copied binning", "A copy of the binning compares equal", Copied == FourBins) && Passed;
+  Passed = EvaluateFalse("operator!=", "copied binning", "A copy of the binning is not unequal", Copied != FourBins) && Passed;
+  MBinnerFISBEL SingleBin(1);
+  Passed = EvaluateFalse("operator==", "different bins", "Binnings with different numbers of bins are not equal", SingleBin == FourBins) && Passed;
+  Passed = EvaluateTrue("operator!=", "different bins", "Binnings with different numbers of bins are unequal", SingleBin != FourBins) && Passed;
+
   MBinnerFISBEL ShiftedCopied;
   ShiftedCopied.Set(LongitudeBins, LatitudeEdges, FourBins.GetNBins(), 30.0*c_Rad);
   Passed = EvaluateNear("Set()", "shifted longitude", "Set stores the representative longitude shift exactly", ShiftedCopied.GetLongitudeShift(), 30.0*c_Rad, 1e-12) && Passed;
+  MBinnerFISBEL RoundingShift;
+  RoundingShift.Set(LongitudeBins, LatitudeEdges, FourBins.GetNBins(), FourBins.GetLongitudeShift() + 1e-14);
+  Passed = EvaluateTrue("operator==", "rounding shift", "A shift differing by 1e-14 rad (rounding of a file round trip) is still equal", RoundingShift == FourBins) && Passed;
+  // The tolerance of the comparison is 1e-12 rad: a file round trip (15 digits in degrees) is exact to about 1e-14 rad
+  MBinnerFISBEL InsideShift;
+  InsideShift.Set(LongitudeBins, LatitudeEdges, FourBins.GetNBins(), FourBins.GetLongitudeShift() + 0.9e-12);
+  Passed = EvaluateTrue("operator==", "inside tolerance", "A shift differing by 0.9e-12 rad (just inside the tolerance) is equal", InsideShift == FourBins) && Passed;
+  MBinnerFISBEL OutsideShift;
+  OutsideShift.Set(LongitudeBins, LatitudeEdges, FourBins.GetNBins(), FourBins.GetLongitudeShift() + 1.1e-12);
+  Passed = EvaluateFalse("operator==", "outside tolerance", "A shift differing by 1.1e-12 rad (just outside the tolerance) is not equal", OutsideShift == FourBins) && Passed;
+
+  // Same number of bins, but a different layout
+  vector<unsigned int> OtherLongitudeBins = { 2, 1, 1 };
+  MBinnerFISBEL OtherCollars;
+  OtherCollars.Set(OtherLongitudeBins, LatitudeEdges, FourBins.GetNBins(), FourBins.GetLongitudeShift());
+  Passed = EvaluateFalse("operator==", "other longitude bins", "Binnings with the same number of bins but another longitude partition are not equal", OtherCollars == FourBins) && Passed;
+  vector<double> OtherLatitudeEdges = LatitudeEdges;
+  OtherLatitudeEdges[1] += 0.1;
+  MBinnerFISBEL OtherEdges;
+  OtherEdges.Set(LongitudeBins, OtherLatitudeEdges, FourBins.GetNBins(), FourBins.GetLongitudeShift());
+  Passed = EvaluateFalse("operator==", "other latitude edges", "Binnings with the same number of bins but other latitude edges are not equal", OtherEdges == FourBins) && Passed;
+  Passed = EvaluateFalse("operator==", "different shift", "Binnings that differ only in the longitude shift are not equal", ShiftedCopied == FourBins) && Passed;
+
+  // Write must leave the precision of the caller's stream as it found it
+  {
+    MBinnerFISBEL Shifted;
+    Shifted.Create(4, 12.3456789*c_Rad);
+    ostringstream PrecisionStream;
+    PrecisionStream.precision(3);
+    Shifted.Write("Axis", PrecisionStream);
+    Passed = Evaluate("Write()", "stream precision", "Write leaves the precision of the stream unchanged", PrecisionStream.precision(), static_cast<streamsize>(3)) && Passed;
+    Passed = EvaluateTrue("Write()", "stream precision shift", "The shift is written with more digits than the default precision", MString(PrecisionStream.str()).Contains("12.3456789")) && Passed;
+  }
 
   {
     bool WasBatch = gROOT->IsBatch();

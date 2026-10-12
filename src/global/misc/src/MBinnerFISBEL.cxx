@@ -69,16 +69,30 @@ MBinnerFISBEL::~MBinnerFISBEL()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-// //! Check if we have equal bins
-// bool MBinnerFISBEL::operator==(const MBinnerFISBEL& Binner) const
-// {
-//   if (m_NumberOfBins != Binner.m_NumberOfBins) return false;
-//   if (m_LongitudeBins != Binner.m_LongitudeBins) return false;
-//   if (m_LatitudeBinEdges != Binner.m_LatitudeBinEdges) return false;
-//   if (m_LongitudeShift != Binner.m_LongitudeShift) return false;
-  
-//   return true;
-// }
+//! Check if the binners are equal by checking if they have equal bins
+bool MBinnerFISBEL::operator==(const MBinnerSpherical& Binner) const
+{
+  const MBinnerFISBEL* Other = dynamic_cast<const MBinnerFISBEL*>(&Binner);
+  if (Other == nullptr) {
+    return false;
+  }
+  if (m_NumberOfBins != Other->m_NumberOfBins) {
+    return false;
+  }
+  if (m_LongitudeBins != Other->m_LongitudeBins) {
+    return false;
+  }
+  if (m_LatitudeBinEdges != Other->m_LatitudeBinEdges) {
+    return false;
+  }
+  // Shifts are equal within 1e-12 rad (about 6e-11 degrees): far below any meaningful difference in binning,
+  // but well above the double precision rounding (about 1e-15 rad) of converting between degrees and radians
+  if (fabs(m_LongitudeShift - Other->m_LongitudeShift) > 1e-12) {
+    return false;
+  }
+
+  return true;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -466,7 +480,10 @@ void MBinnerFISBEL::Write(MString name, ostringstream& out) const
   out<<"# Axis type"<<endl;
   out<<"AT 2D FISBEL"<<endl;
   out<<"# Axis data"<<endl;
+  // Write the shift with 15 digits to cover the double precision
+  streamsize OldPrecision = out.precision(15);
   out<<"AD "<< GetNBins() << " " << GetLongitudeShift() * c_Deg<<endl;
+  out.precision(OldPrecision);
 }  
 
 // MBinnerFISBEL.cxx: the end...

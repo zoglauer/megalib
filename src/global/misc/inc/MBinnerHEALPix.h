@@ -54,19 +54,19 @@ class MBinnerHEALPix : public MBinnerSpherical
  public:
   //! Default constructor taking the order of the HEALPix grid
   //! A negative order means to use just one bin
+  //! Can throw: MExceptionParameterOutOfRange for orders above 13
   MBinnerHEALPix(int Order);
   //! Default destuctor 
   virtual ~MBinnerHEALPix();
     
-  // //! Check if we have equal bins
-  // bool operator ==(const MBinnerFISBEL& Binner) const;
-  // //! ... or not
-  // bool operator !=(const MBinnerFISBEL& Binner) const { return !operator==(Binner); }
+  //! Check if the binners are equal by checking if they have equal bins
+  virtual bool operator==(const MBinnerSpherical& Binner) const;
   
   //! Find a bin
   //! Theta (= latitude) and phi (= longitude) are in (mathematical) spherical coordinates
   //! The bins are arranged along the iso-latitude lines starting at the north pole (theta = latitude = 0)
   //! Theta and phi are in radians!
+  //! Can throw: MExceptionParameterOutOfRange
   unsigned int FindBin(double Theta, double Phi) const;
   
   //! Get number of bins
@@ -78,10 +78,10 @@ class MBinnerHEALPix : public MBinnerSpherical
   //! Get the Order parameters
   int GetOrder() const { return m_Order; }
     
-  //! Return the minimum axis values [min theta, min phi]
+  //! Return the minimum axis values [min theta, min phi] in degrees
   vector<double> GetMinima() const;
 
-  //! Return the minimum axis values [max theta, max phi]
+  //! Return the maximum axis values [max theta, max phi] in degrees
   vector<double> GetMaxima() const;
     
   //! Get the bin center (returns: theta, phi in radians)

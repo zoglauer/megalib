@@ -20,12 +20,15 @@
 
 
 // Standard libs:
+#include <cmath>
 #include <sstream>
 using namespace std;
 
 // MEGAlib:
 #include "MExceptions.h"
 #include "MResponseMatrixAxisSpheric.h"
+#include "MResponseMatrixON.h"
+#include "MGlobal.h"
 #include "MUnitTest.h"
 
 
@@ -140,11 +143,145 @@ bool UTResponseMatrixAxisSpheric::Run()
 
   ostringstream Stream;
   Shifted.Write(Stream);
-  Passed = Evaluate("Write()", "representative text", "Write serializes the representative spherical axis deterministically", MString(Stream.str()), MString("# Axis name\nAN \"Theta\" \"Phi\"\n# Axis type\nAT 2D FISBEL\n# Axis data\nAD 1  30\n")) && Passed;
+  Passed = Evaluate("Write()", "representative text", "Write serializes the representative spherical axis deterministically", MString(Stream.str()), MString("# Axis name\nAN \"Theta\" \"Phi\"\n# Axis type\nAT 2D FISBEL\n# Axis data\nAD 1 30\n")) && Passed;
 
   ostringstream FourBinStream;
   FourBins.Write(FourBinStream);
-  Passed = Evaluate("Write()", "multi-bin text", "Write serializes the representative multi-bin spherical axis deterministically", MString(FourBinStream.str()), MString("# Axis name\nAN \"Theta\" \"Phi\"\n# Axis type\nAT 2D FISBEL\n# Axis data\nAD 4  0\n")) && Passed;
+  Passed = Evaluate("Write()", "multi-bin text", "Write serializes the representative multi-bin spherical axis deterministically", MString(FourBinStream.str()), MString("# Axis name\nAN \"Theta\" \"Phi\"\n# Axis type\nAT 2D FISBEL\n# Axis data\nAD 4 0\n")) && Passed;
+
+  // HEALPix axis
+  {
+    MResponseMatrixAxisSpheric Sky("Theta", "Phi");
+    Sky.SetHEALPixByOrder(0);
+    Passed = Evaluate("GetNumberOfBins()", "HEALPix order 0", "A HEALPix axis of order 0 has 12 bins", Sky.GetNumberOfBins(), 12UL) && Passed;
+    // Base pixels of order 0: pixel 4 is the first equatorial pixel (theta = 90 degrees, phi = 0 degrees)
+    Passed = Evaluate("GetAxisBin()", "HEALPix equator", "A direction at theta = 90 degrees, phi = 5 degrees is in the first equatorial pixel", Sky.GetAxisBin(90.0, 5.0), 4UL) && Passed;
+    Passed = Evaluate("GetAxisBin()", "HEALPix north", "A direction at theta = 5 degrees, phi = 5 degrees is in the first north-cap pixel", Sky.GetAxisBin(5.0, 5.0), 0UL) && Passed;
+    // The center of the first pixel is at theta = acos(2/3) = 48.19 degrees, phi = 45 degrees
+    Passed = EvaluateNear("GetBinCenters()", "HEALPix pixel 0 theta", "The center of the first pixel is at theta = acos(2/3) in degrees", Sky.GetBinCenters(0)[0], acos(2.0/3.0)/c_Rad, 1e-7) && Passed;
+    Passed = EvaluateNear("GetBinCenters()", "HEALPix pixel 0 phi", "The center of the first pixel is at phi = 45 degrees", Sky.GetBinCenters(0)[1], 45.0, 1e-7) && Passed;
+    Passed = Evaluate("GetAllBinCenters()", "HEALPix", "There is one center vector per pixel", Sky.GetAllBinCenters().size(), 12UL) && Passed;
+    // 4 pi steradian in square degrees / 12 pixels
+    Passed = EvaluateNear("GetArea()", "HEALPix", "All pixels have the same area: 4 pi (in square degrees) / 12", Sky.GetArea(3), 4.0*c_Pi*c_Deg*c_Deg/12.0, 1e-6) && Passed;
+    Passed = EvaluateException<MExceptionIndexOutOfBounds>("GetArea()", "HEALPix out of bounds", "GetArea throws on a pixel which does not exist", [&](){ Sky.GetArea(12); }) && Passed;
+    Passed = EvaluateException<MExceptionIndexOutOfBounds>("GetBinCenters()", "HEALPix out of bounds", "GetBinCenters throws on a pixel which does not exist", [&](){ Sky.GetBinCenters(12); }) && Passed;
+    Passed = EvaluateNear("GetMinima()", "HEALPix theta", "The minimum of theta is 0 degrees", Sky.GetMinima()[0], 0.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetMinima()", "HEALPix phi", "The minimum of phi is 0 degrees", Sky.GetMinima()[1], 0.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetMaxima()", "HEALPix theta", "The maximum of theta is 180 degrees", Sky.GetMaxima()[0], 180.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetMaxima()", "HEALPix phi", "The maximum of phi is 360 degrees", Sky.GetMaxima()[1], 360.0, 1e-12) && Passed;
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("GetAxisBin()", "HEALPix theta underflow", "GetAxisBin rejects a negative theta (as for the FISBEL axis)", [&](){ Sky.GetAxisBin(-1.0, 0.0); }) && Passed;
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("GetAxisBin()", "HEALPix theta overflow", "GetAxisBin rejects a theta above 180 degrees (as for the FISBEL axis)", [&](){ Sky.GetAxisBin(181.0, 0.0); }) && Passed;
+
+    ostringstream Out;
+    Sky.Write(Out);
+    Passed = Evaluate("Write()", "HEALPix", "A HEALPix axis is written as 2D HEALPix with the order and the ring scheme", MString(Out.str()), MString("# Axis name\nAN \"Theta\" \"Phi\"\n# Axis type\nAT 2D HEALPix\n# Axis data\nAD 0 RING\n")) && Passed;
+
+    MResponseMatrixAxisSpheric* CloneOfSky = Sky.Clone();
+    Passed = Evaluate("Clone()", "HEALPix bins", "A clone of a HEALPix axis has the same number of bins", CloneOfSky->GetNumberOfBins(), 12UL) && Passed;
+    Passed = Evaluate("Clone()", "HEALPix bin", "A clone of a HEALPix axis finds the same bin", CloneOfSky->GetAxisBin(90.0, 5.0), 4UL) && Passed;
+    delete CloneOfSky;
+
+    // Changing the type: FISBEL axis to HEALPix axis
+    MResponseMatrixAxisSpheric Changing("Theta", "Phi");
+    Changing.SetFISBELByNumberOfBins(4);
+    Changing.SetHEALPixByOrder(1);
+    Passed = Evaluate("SetHEALPixByOrder()", "after FISBEL", "A FISBEL axis becomes a HEALPix axis of order 1 with 48 bins", Changing.GetNumberOfBins(), 48UL) && Passed;
+  }
+
+  // The number of bins is rounded down to the nearest order: 12 * 4^order
+  {
+    const vector<unsigned long> Requested = { 12, 47, 48, 191, 192, 200, 800 };
+    const vector<unsigned long> Expected  = { 12, 12, 48,  48, 192, 192, 768 };
+    for (unsigned int i = 0; i < Requested.size(); ++i) {
+      MResponseMatrixAxisSpheric Sky("Theta", "Phi");
+      Sky.SetHEALPixByNumberOfBins(Requested[i]);
+      Passed = Evaluate("SetHEALPixByNumberOfBins()", Requested[i], "The requested number of bins is rounded down to 12 * 4^order", Sky.GetNumberOfBins(), Expected[i]) && Passed;
+    }
+  }
+
+  // The pixel sizes of the documentation (in degrees) give the documented orders
+  {
+    const vector<double> PixelSize = { 58.632, 29.316, 14.658, 7.329, 3.664 };
+    const vector<unsigned long> Expected = { 12, 48, 192, 768, 3072 };
+    for (unsigned int i = 0; i < PixelSize.size(); ++i) {
+      MResponseMatrixAxisSpheric Sky("Theta", "Phi");
+      Sky.SetHEALPixByPixelSize(PixelSize[i]);
+      Passed = Evaluate("SetHEALPixByPixelSize()", PixelSize[i], "The pixel size of the documentation gives the documented order", Sky.GetNumberOfBins(), Expected[i]) && Passed;
+    }
+  }
+
+  // FISBEL by pixel size: 4 pi / (pixel size)^2 bins, at least one
+  {
+    MResponseMatrixAxisSpheric Sky("Theta", "Phi");
+    // 4 pi sr = 41252.96 square degrees, / 90^2 = 5.09 bins -> 5
+    Sky.SetFISBELByPixelSize(90.0);
+    Passed = Evaluate("SetFISBELByPixelSize()", "90", "A pixel size of 90 degrees gives 5 bins", Sky.GetNumberOfBins(), 5UL) && Passed;
+    Sky.SetFISBELByPixelSize(1000.0);
+    Passed = Evaluate("SetFISBELByPixelSize()", "1000", "A pixel size larger than the sky gives one bin", Sky.GetNumberOfBins(), 1UL) && Passed;
+  }
+
+  // Invalid sizes and numbers are rejected instead of giving a silent single-bin axis
+  {
+    MResponseMatrixAxisSpheric Sky("Theta", "Phi");
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("SetFISBELByPixelSize()", "0", "A pixel size of zero is rejected", [&](){ Sky.SetFISBELByPixelSize(0.0); }) && Passed;
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("SetHEALPixByPixelSize()", "0", "A pixel size of zero is rejected", [&](){ Sky.SetHEALPixByPixelSize(0.0); }) && Passed;
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("SetHEALPixByNumberOfBins()", "0", "Zero bins are rejected", [&](){ Sky.SetHEALPixByNumberOfBins(0); }) && Passed;
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("SetFISBELByPixelSize()", "-1", "A negative pixel size is rejected", [&](){ Sky.SetFISBELByPixelSize(-1.0); }) && Passed;
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("SetHEALPixByPixelSize()", "-1", "A negative pixel size is rejected", [&](){ Sky.SetHEALPixByPixelSize(-1.0); }) && Passed;
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("SetFISBELByPixelSize()", "-0.001", "A tiny negative pixel size is rejected", [&](){ Sky.SetFISBELByPixelSize(-0.001); }) && Passed;
+  }
+
+  // A rejected setter leaves an already configured axis unchanged
+  {
+    MResponseMatrixAxisSpheric Sky("Theta", "Phi");
+    Sky.SetHEALPixByOrder(2);
+    MResponseMatrixAxisSpheric Reference("Theta", "Phi");
+    Reference.SetHEALPixByOrder(2);
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("SetFISBELByPixelSize()", "rejected", "A rejected pixel size", [&](){ Sky.SetFISBELByPixelSize(0.0); }) && Passed;
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("SetHEALPixByPixelSize()", "rejected", "A rejected pixel size", [&](){ Sky.SetHEALPixByPixelSize(-2.0); }) && Passed;
+    Passed = EvaluateException<MExceptionParameterOutOfRange>("SetHEALPixByNumberOfBins()", "rejected", "Rejected zero bins", [&](){ Sky.SetHEALPixByNumberOfBins(0); }) && Passed;
+    Passed = EvaluateTrue("Set*()", "rejected", "The axis is unchanged after rejected setters (same binning)", Sky == Reference) && Passed;
+    Passed = Evaluate("GetNumberOfBins()", "rejected", "The number of bins is unchanged after rejected setters", Sky.GetNumberOfBins(), 192UL) && Passed;
+  }
+
+  // Axes of different binning are different, also if they have the same number of bins
+  {
+    MResponseMatrixAxisSpheric FISBEL12("Theta", "Phi");
+    FISBEL12.SetFISBELByNumberOfBins(12);
+    MResponseMatrixAxisSpheric FISBEL12Again("Theta", "Phi");
+    FISBEL12Again.SetFISBELByNumberOfBins(12);
+    MResponseMatrixAxisSpheric FISBEL48("Theta", "Phi");
+    FISBEL48.SetFISBELByNumberOfBins(48);
+    MResponseMatrixAxisSpheric HEALPix0("Theta", "Phi");
+    HEALPix0.SetHEALPixByOrder(0);
+    MResponseMatrixAxisSpheric HEALPix0Again("Theta", "Phi");
+    HEALPix0Again.SetHEALPixByOrder(0);
+    MResponseMatrixAxisSpheric HEALPix1("Theta", "Phi");
+    HEALPix1.SetHEALPixByOrder(1);
+
+    // Compare through the base class, as MResponseMatrixON does
+    const MResponseMatrixAxis& A = FISBEL12;
+    Passed = EvaluateTrue("operator==()", "FISBEL 12 = FISBEL 12", "Two FISBEL axes with 12 bins are equal", A == FISBEL12Again) && Passed;
+    Passed = EvaluateFalse("operator==()", "FISBEL 12 = FISBEL 48", "FISBEL axes with 12 and 48 bins are different", A == FISBEL48) && Passed;
+    Passed = EvaluateFalse("operator==()", "FISBEL 12 = HEALPix 0", "A FISBEL axis and a HEALPix axis with 12 bins each are different", A == HEALPix0) && Passed;
+    const MResponseMatrixAxis& B = HEALPix0;
+    Passed = EvaluateTrue("operator==()", "HEALPix 0 = HEALPix 0", "Two HEALPix axes of order 0 are equal", B == HEALPix0Again) && Passed;
+    Passed = EvaluateFalse("operator==()", "HEALPix 0 = HEALPix 1", "HEALPix axes of order 0 and 1 are different", B == HEALPix1) && Passed;
+  }
+
+  // ON matrices with different spherical axes are not identical
+  {
+    MResponseMatrixAxisSpheric FISBEL12("#nu", "#lambda");
+    FISBEL12.SetFISBELByNumberOfBins(12);
+    MResponseMatrixAxisSpheric HEALPix0("#nu", "#lambda");
+    HEALPix0.SetHEALPixByOrder(0);
+    MResponseMatrixON FISBELMatrix("FISBEL");
+    FISBELMatrix.AddAxis(FISBEL12);
+    MResponseMatrixON HEALPixMatrix("HEALPix");
+    HEALPixMatrix.AddAxis(HEALPix0);
+    Passed = EvaluateFalse("operator==()", "ON different spherical axes", "Response matrices with a FISBEL and a HEALPix axis of 12 bins each are different", FISBELMatrix == HEALPixMatrix) && Passed;
+    Passed = EvaluateException<MExceptionObjectsNotIdentical>("operator+=()", "ON different spherical axes", "Adding response matrices with different spherical axes throws", [&](){ FISBELMatrix += HEALPixMatrix; }) && Passed;
+  }
 
   Summarize();
 
