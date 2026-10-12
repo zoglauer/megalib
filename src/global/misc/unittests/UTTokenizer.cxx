@@ -25,6 +25,8 @@
 #include "MStreams.h"
 
 // Standard lib:
+#include <functional>
+#include <limits>
 #include <sstream>
 using namespace std;
 
@@ -50,6 +52,11 @@ private:
   bool TestContainerAccessors();
   //! Test maths handling and diagnostics helpers
   bool TestMathsAndDiagnostics();
+  //! Test the range of the unsigned conversions and the messages naming the function
+  bool TestUnsignedRangeAndMessages();
+
+  //! Run the call and return everything which was written to mout
+  MString CaptureMout(const function<void()>& Call);
 };
 
 
@@ -65,6 +72,7 @@ bool UTTokenizer::Run()
   AllPassed = TestTypedAccessors() && AllPassed;
   AllPassed = TestContainerAccessors() && AllPassed;
   AllPassed = TestMathsAndDiagnostics() && AllPassed;
+  AllPassed = TestUnsignedRangeAndMessages() && AllPassed;
 
   Summarize();
 
@@ -360,6 +368,124 @@ bool UTTokenizer::TestMathsAndDiagnostics()
 
   return Passed;
 }
+
+
+//! Run the call and return everything which was written to mout
+MString UTTokenizer::CaptureMout(const function<void()>& Call)
+{
+  MString LogFileName = GetTemporaryFileName("mout_capture.log");
+  const bool StdOutBefore = mout.GetDumpToStdOut();
+  mout.DumpToStdOut(false);
+  const bool Connected = mout.Connect(LogFileName, false);
+  Call();
+  mout.Disconnect(LogFileName);
+  mout.DumpToStdOut(StdOutBefore);
+  EvaluateTrue("CaptureMout()", LogFileName, "The log for the output of the call is connected", Connected);
+
+  return ReadTextFile(LogFileName);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the range of the unsigned conversions and the messages naming the function
+bool UTTokenizer::TestUnsignedRangeAndMessages()
+{
+  bool Passed = true;
+
+  MTokenizer Tokens(' ', false);
+  Tokens.Analyze("4000000000 4294967295 42 -1");
+
+  // The whole range of an unsigned int is valid: 2^32 - 1 = 4294967295
+  Passed = Evaluate("GetTokenAtAsUnsignedInt()", "4000000000", "A value above the range of an int is a valid unsigned int", Tokens.GetTokenAtAsUnsignedInt(0), 4000000000U) && Passed;
+  Passed = Evaluate("GetTokenAtAsUnsignedInt()", "4294967295", "The largest unsigned int is converted", Tokens.GetTokenAtAsUnsignedInt(1), numeric_limits<unsigned int>::max()) && Passed;
+  Passed = Evaluate("GetTokenAtAsUnsignedInt()", "42", "A small unsigned int is converted", Tokens.GetTokenAtAsUnsignedInt(2), 42U) && Passed;
+  Passed = Evaluate("GetTokenAtAsUnsignedIntFast()", "4000000000", "The fast conversion handles a value above the range of an int", Tokens.GetTokenAtAsUnsignedIntFast(0), 4000000000U) && Passed;
+
+  // The messages name the function which was called
+  MString Negative;
+  unsigned int NegativeValue = 1;
+  Negative = CaptureMout([&]() { NegativeValue = Tokens.GetTokenAtAsUnsignedInt(3); });
+  Passed = Evaluate("GetTokenAtAsUnsignedInt()", "-1", "A negative token gives 0", NegativeValue, 0U) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsUnsignedInt()", "-1", "The message for a negative token names the function", Negative.Contains("unsigned int MTokenizer::GetTokenAtAsUnsignedInt(int i)")) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsUnsignedInt()", "-1", "The message for a negative token says that the value is negative", Negative.Contains("Value is negative")) && Passed;
+
+  MString Message = CaptureMout([&]() { Tokens.GetTokenAtAsInt(99); });
+  Passed = EvaluateTrue("GetTokenAtAsInt()", "out of bounds", "The message names GetTokenAtAsInt", Message.Contains("int MTokenizer::GetTokenAtAsInt(int i)")) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsInt()", "out of bounds", "The message gives the index and the maximum", Message.Contains("Index (99) out of bounds (min=0, max=3)")) && Passed;
+  Message = CaptureMout([&]() { Tokens.GetTokenAtAsUnsignedInt(99); });
+  Passed = EvaluateTrue("GetTokenAtAsUnsignedInt()", "out of bounds", "The message names GetTokenAtAsUnsignedInt", Message.Contains("unsigned int MTokenizer::GetTokenAtAsUnsignedInt(int i)")) && Passed;
+  Message = CaptureMout([&]() { Tokens.GetTokenAtAsUnsignedIntFast(99); });
+  Passed = EvaluateTrue("GetTokenAtAsUnsignedIntFast()", "out of bounds", "The message names GetTokenAtAsUnsignedIntFast", Message.Contains("unsigned int MTokenizer::GetTokenAtAsUnsignedIntFast(int i)")) && Passed;
+  Message = CaptureMout([&]() { Tokens.GetTokenAtAsLong(99); });
+  Passed = EvaluateTrue("GetTokenAtAsLong()", "out of bounds", "The message names GetTokenAtAsLong", Message.Contains("long MTokenizer::GetTokenAtAsLong(int i)")) && Passed;
+  Message = CaptureMout([&]() { Tokens.GetTokenAtAsUnsignedLong(99); });
+  Passed = EvaluateTrue("GetTokenAtAsUnsignedLong()", "out of bounds", "The message names GetTokenAtAsUnsignedLong", Message.Contains("unsigned long MTokenizer::GetTokenAtAsUnsignedLong(int i)")) && Passed;
+
+  // Out of range: a message and 0, like all the other errors of the tokenizer
+  const unsigned int IntMax = static_cast<unsigned int>(numeric_limits<int>::max());
+  MTokenizer Ranges(' ', false);
+  Ranges.Analyze(MString(to_string(IntMax)) + " " + to_string(static_cast<long>(numeric_limits<int>::min())) + " " + to_string(static_cast<long>(IntMax) + 1) + " " + to_string(static_cast<long>(numeric_limits<int>::min()) - 1) + " 2.35e+02");
+  Passed = Evaluate("GetTokenAtAsInt()", "INT_MAX", "The largest int is converted", Ranges.GetTokenAtAsInt(0), numeric_limits<int>::max()) && Passed;
+  Passed = Evaluate("GetTokenAtAsInt()", "INT_MIN", "The smallest int is converted", Ranges.GetTokenAtAsInt(1), numeric_limits<int>::min()) && Passed;
+  Passed = Evaluate("GetTokenAtAsInt()", "2.35e+02", "A number in scientific notation is converted", Ranges.GetTokenAtAsInt(4), 235) && Passed;
+  int TooLarge = 1;
+  Message = CaptureMout([&]() { TooLarge = Ranges.GetTokenAtAsInt(2); });
+  Passed = Evaluate("GetTokenAtAsInt()", "INT_MAX+1", "A value above the range of an int gives 0", TooLarge, 0) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsInt()", "INT_MAX+1", "The message for a value above the range names the function and the range", Message.Contains("int MTokenizer::GetTokenAtAsInt(int i)") && Message.Contains("out of range")) && Passed;
+  int TooSmall = 1;
+  Message = CaptureMout([&]() { TooSmall = Ranges.GetTokenAtAsInt(3); });
+  Passed = Evaluate("GetTokenAtAsInt()", "INT_MIN-1", "A value below the range of an int gives 0", TooSmall, 0) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsInt()", "INT_MIN-1", "The message for a value below the range says so", Message.Contains("out of range")) && Passed;
+
+  MTokenizer UnsignedRanges(' ', false);
+  UnsignedRanges.Analyze("4294967296 010 007 -1 18446744073709551616 184467440737095516150");
+  unsigned int TooLargeUnsigned = 1;
+  Message = CaptureMout([&]() { TooLargeUnsigned = UnsignedRanges.GetTokenAtAsUnsignedInt(0); });
+  Passed = Evaluate("GetTokenAtAsUnsignedInt()", "UINT_MAX+1", "A value above the range of an unsigned int gives 0", TooLargeUnsigned, 0U) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsUnsignedInt()", "UINT_MAX+1", "The message for a value above the range says so", Message.Contains("unsigned int MTokenizer::GetTokenAtAsUnsignedInt(int i)") && Message.Contains("out of range")) && Passed;
+
+  // All numbers are decimal: a leading zero is not octal
+  Passed = Evaluate("GetTokenAtAsUnsignedLong()", "010", "A leading zero does not make the number octal", UnsignedRanges.GetTokenAtAsUnsignedLong(1), 10UL) && Passed;
+  Passed = Evaluate("GetTokenAtAsUnsignedLong()", "007", "Leading zeros are ignored", UnsignedRanges.GetTokenAtAsUnsignedLong(2), 7UL) && Passed;
+  Passed = Evaluate("GetTokenAtAsLong()", "010", "A leading zero does not make the long number octal either", UnsignedRanges.GetTokenAtAsLong(1), 10L) && Passed;
+  unsigned long NegativeLong = 1;
+  Message = CaptureMout([&]() { NegativeLong = UnsignedRanges.GetTokenAtAsUnsignedLong(3); });
+  Passed = Evaluate("GetTokenAtAsUnsignedLong()", "-1", "A negative token does not wrap around, it gives 0", NegativeLong, 0UL) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsUnsignedLong()", "-1", "The message for a negative token names the function and says so", Message.Contains("unsigned long MTokenizer::GetTokenAtAsUnsignedLong(int i)") && Message.Contains("Value is negative")) && Passed;
+  unsigned long TooLargeLong = 1;
+  Message = CaptureMout([&]() { TooLargeLong = UnsignedRanges.GetTokenAtAsUnsignedLong(5); });
+  Passed = Evaluate("GetTokenAtAsUnsignedLong()", "10 * ULONG_MAX", "A value above the range of an unsigned long gives 0", TooLargeLong, 0UL) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsUnsignedLong()", "10 * ULONG_MAX", "The message for a value above the range says so", Message.Contains("out of range")) && Passed;
+  MTokenizer LargestLong(' ', false);
+  LargestLong.Analyze(MString(to_string(numeric_limits<unsigned long>::max())));
+  Passed = Evaluate("GetTokenAtAsUnsignedLong()", "ULONG_MAX", "The largest unsigned long is converted", LargestLong.GetTokenAtAsUnsignedLong(0), numeric_limits<unsigned long>::max()) && Passed;
+
+  // Long: the limits come from std::to_string, so that the test does not depend on the width of long
+  MTokenizer LongRanges(' ', false);
+  LongRanges.Analyze(MString(to_string(numeric_limits<long>::max())) + " " + to_string(numeric_limits<long>::min()) + " " + to_string(numeric_limits<long>::max()) + "0 " + to_string(numeric_limits<long>::min()) + "0 -17");
+  Passed = Evaluate("GetTokenAtAsLong()", "LONG_MAX", "The largest long is converted", LongRanges.GetTokenAtAsLong(0), numeric_limits<long>::max()) && Passed;
+  Passed = Evaluate("GetTokenAtAsLong()", "LONG_MIN", "The smallest long is converted", LongRanges.GetTokenAtAsLong(1), numeric_limits<long>::min()) && Passed;
+  Passed = Evaluate("GetTokenAtAsLong()", "-17", "A negative long is converted", LongRanges.GetTokenAtAsLong(4), -17L) && Passed;
+  long TooLargeLongValue = 1;
+  Message = CaptureMout([&]() { TooLargeLongValue = LongRanges.GetTokenAtAsLong(2); });
+  Passed = Evaluate("GetTokenAtAsLong()", "10 * LONG_MAX", "A value above the range of a long gives 0", TooLargeLongValue, 0L) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsLong()", "10 * LONG_MAX", "The message for a value above the range names the function and says so", Message.Contains("long MTokenizer::GetTokenAtAsLong(int i)") && Message.Contains("out of range")) && Passed;
+  long TooSmallLongValue = 1;
+  Message = CaptureMout([&]() { TooSmallLongValue = LongRanges.GetTokenAtAsLong(3); });
+  Passed = Evaluate("GetTokenAtAsLong()", "10 * LONG_MIN", "A value below the range of a long gives 0", TooSmallLongValue, 0L) && Passed;
+  Passed = EvaluateTrue("GetTokenAtAsLong()", "10 * LONG_MIN", "The message for a value below the range says so", Message.Contains("out of range")) && Passed;
+
+  MTokenizer Empty(' ', false);
+  Message = CaptureMout([&]() { Empty.GetTokenAtAsInt(0); });
+  Passed = EvaluateTrue("GetTokenAtAsInt()", "empty tokenizer", "An empty tokenizer says so", Message.Contains("The Tokenizer is empty!")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////

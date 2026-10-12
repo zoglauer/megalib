@@ -30,7 +30,9 @@
 #include "MTokenizer.h"
 
 // Standard libs:
+#include <cerrno>
 #include <iomanip>
+#include <limits>
 using namespace std;
 
 // ROOT libs:
@@ -282,7 +284,14 @@ int MTokenizer::GetTokenAtAsInt(const unsigned int i) const
 
 
   if (i < m_Tokens.size()) {
-    return int(atof(m_Tokens[i])); // atoi(m_Tokens[i]); is not working in cases such as 2.35e+02
+    // atof and not atoi, since atoi does not work in cases such as 2.35e+02
+    double Value = atof(m_Tokens[i]);
+    if (!(Value >= numeric_limits<int>::min() && Value <= numeric_limits<int>::max())) {
+      mout<<"int MTokenizer::GetTokenAtAsInt(int i)"<<endl;
+      mout<<"Value is out of range!!!"<<endl;
+      return 0;
+    }
+    return static_cast<int>(Value);
   } else {
     mout<<"int MTokenizer::GetTokenAtAsInt(int i): "<<endl;
     if (m_Tokens.size() > 0) {
@@ -302,7 +311,8 @@ int MTokenizer::GetTokenAtAsInt(const unsigned int i) const
 unsigned int MTokenizer::GetTokenAtAsUnsignedIntFast(const unsigned int i) const
 {
   // Return the token at position i as unsigned integer
-  
+  // Attention: There is no check - the token has to contain only the digits of a number below 2^32
+
   if (i < m_Tokens.size()) {
     // From: http://stackoverflow.com/questions/16826422/c-most-efficient-way-to-convert-string-to-int-faster-than-atoi
     uint32_t val = 0;
@@ -332,13 +342,19 @@ unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const unsigned int i) const
   // Return the token at position i as unsigned integer
   
   if (i < m_Tokens.size()) {
-    int Value = int(atof(m_Tokens[i]));
+    // The conversion is done in double, since the range of an unsigned int is larger than the one of an int
+    double Value = atof(m_Tokens[i]);
     if (Value < 0) {
       mout<<"unsigned int MTokenizer::GetTokenAtAsUnsignedInt(int i)"<<endl;
       mout<<"Value is negative!!!"<<endl;
       return 0;
     }
-    return (unsigned int) Value;
+    if (!(Value <= numeric_limits<unsigned int>::max())) {
+      mout<<"unsigned int MTokenizer::GetTokenAtAsUnsignedInt(int i)"<<endl;
+      mout<<"Value is out of range!!!"<<endl;
+      return 0;
+    }
+    return static_cast<unsigned int>(Value);
   } else {
     mout<<"unsigned int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
     if (m_Tokens.size() > 0) {
@@ -357,10 +373,18 @@ unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const unsigned int i) const
 
 long MTokenizer::GetTokenAtAsLong(const unsigned int i) const
 {
-  // Return the token at position i as unsigned long integer
+  // Return the token at position i as long integer
 
   if (i < m_Tokens.size()) {
-    return atol(m_Tokens[i]);
+    // Decimal like all the other conversions, and a value outside of the range is an error
+    errno = 0;
+    long Value = strtol(m_Tokens[i].Data(), nullptr, 10);
+    if (errno == ERANGE) {
+      mout<<"long MTokenizer::GetTokenAtAsLong(int i)"<<endl;
+      mout<<"Value is out of range!!!"<<endl;
+      return 0;
+    }
+    return Value;
   } else {
     mout<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
     if (m_Tokens.size() > 0) {
@@ -382,9 +406,23 @@ unsigned long MTokenizer::GetTokenAtAsUnsignedLong(const unsigned int i) const
   // Return the token at position i as long integer
 
   if (i < m_Tokens.size()) {
-    return strtoul(m_Tokens[i].Data(), NULL, 0);
+    // Decimal like all the other conversions - base 0 would read 010 as octal and 0x10 as hex
+    errno = 0;
+    unsigned long Value = strtoul(m_Tokens[i].Data(), nullptr, 10);
+    if (errno == ERANGE) {
+      mout<<"unsigned long MTokenizer::GetTokenAtAsUnsignedLong(int i)"<<endl;
+      mout<<"Value is out of range!!!"<<endl;
+      return 0;
+    }
+    // strtoul wraps a negative number around, except for -0
+    if (Value != 0 && m_Tokens[i].Contains("-") && atof(m_Tokens[i]) < 0) {
+      mout<<"unsigned long MTokenizer::GetTokenAtAsUnsignedLong(int i)"<<endl;
+      mout<<"Value is negative!!!"<<endl;
+      return 0;
+    }
+    return Value;
   } else {
-    mout<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
+    mout<<"unsigned long MTokenizer::GetTokenAtAsUnsignedLong(int i): "<<endl;
     if (m_Tokens.size() > 0) {
       mout<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mout<<"The text line was: \""<<m_Text<<"\""<<endl;
