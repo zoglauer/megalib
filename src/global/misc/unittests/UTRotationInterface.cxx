@@ -42,6 +42,8 @@ private:
   bool TestParseAndStream();
   bool TestBinaryRoundTrip();
   bool TestGalacticRotationCache();
+  //! Test that the constructor and Reset give the same state, for all axes, rotations, and cached rotations
+  bool TestConstructorAndReset();
 };
 
 
@@ -56,6 +58,7 @@ bool UTRotationInterface::Run()
   Passed = TestParseAndStream() && Passed;
   Passed = TestBinaryRoundTrip() && Passed;
   Passed = TestGalacticRotationCache() && Passed;
+  Passed = TestConstructorAndReset() && Passed;
 
   Summarize();
 
@@ -240,6 +243,75 @@ bool UTRotationInterface::TestGalacticRotationCache()
 
   return Passed;
 }
+
+
+//! Test that the constructor and Reset give the same state, for all axes, rotations, and cached rotations
+bool UTRotationInterface::TestConstructorAndReset()
+{
+  bool Passed = true;
+
+  const MVector XAxis(1.0, 0.0, 0.0);
+  const MVector ZAxis(0.0, 0.0, 1.0);
+  const MRotation Identity;
+  // The galactic system is left-handed, so the y axis is negated: Y = -(Z x X) = -((0, 0, 1) x (1, 0, 0)) = (0, -1, 0)
+  const MRotation DefaultGalactic(1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0);
+
+  // The default state: all x axes are (1, 0, 0), all z axes are (0, 0, 1), nothing is present, all rotations are the identity (except the galactic one)
+  MRotationInterface Fresh;
+  Passed = EvaluateVectorNear("MRotationInterface()", "galactic x", "The default galactic x axis is (1, 0, 0)", Fresh.GetGalacticPointingXAxis(), XAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("MRotationInterface()", "galactic z", "The default galactic z axis is (0, 0, 1)", Fresh.GetGalacticPointingZAxis(), ZAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("MRotationInterface()", "detector x", "The default detector x axis is (1, 0, 0)", Fresh.GetDetectorRotationXAxis(), XAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("MRotationInterface()", "detector z", "The default detector z axis is (0, 0, 1)", Fresh.GetDetectorRotationZAxis(), ZAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("MRotationInterface()", "horizon x", "The default horizon x axis is (1, 0, 0)", Fresh.GetHorizonPointingXAxis(), XAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("MRotationInterface()", "horizon z", "The default horizon z axis is (0, 0, 1)", Fresh.GetHorizonPointingZAxis(), ZAxis, 1e-15) && Passed;
+  Passed = EvaluateRotationNear("MRotationInterface()", "galactic rotation", "The default galactic rotation mirrors the y axis (left-handed system)", Fresh.GetGalacticPointingRotationMatrix(), DefaultGalactic, 1e-15) && Passed;
+  Passed = EvaluateRotationNear("MRotationInterface()", "galactic inverse rotation", "The default inverse galactic rotation mirrors the y axis as well", Fresh.GetGalacticPointingInverseRotationMatrix(), DefaultGalactic, 1e-15) && Passed;
+  Passed = EvaluateRotationNear("MRotationInterface()", "detector rotation", "The default detector rotation is the identity", Fresh.GetDetectorRotationMatrix(), Identity, 1e-15) && Passed;
+  Passed = EvaluateRotationNear("MRotationInterface()", "detector inverse rotation", "The default inverse detector rotation is the identity", Fresh.GetDetectorInverseRotationMatrix(), Identity, 1e-15) && Passed;
+  Passed = EvaluateRotationNear("MRotationInterface()", "horizon rotation", "The default horizon rotation is the identity", Fresh.GetHorizonPointingRotationMatrix(), Identity, 1e-15) && Passed;
+
+  // Change everything, compute (and so cache) the galactic rotations, and reset: the state must be the default again
+  MRotationInterface Used;
+  Used.SetGalacticPointingXAxis(0.0, 90.0);
+  Used.SetGalacticPointingZAxis(0.0, 0.0);
+  Used.SetDetectorPointingXAxis(90.0, 90.0);
+  Used.SetDetectorPointingZAxis(0.0, 0.0);
+  Used.SetHorizonPointingXAxis(90.0, 0.0);
+  Used.SetHorizonPointingZAxis(0.0, 90.0);
+  const MRotation ChangedGalactic = Used.GetGalacticPointingRotationMatrix();
+  const MRotation ChangedGalacticInverse = Used.GetGalacticPointingInverseRotationMatrix();
+  Passed = EvaluateTrue("MRotationInterface()", "changed galactic rotation", "The changed galactic axes give a rotation which is not the identity", ChangedGalactic.GetXX() < 0.5) && Passed;
+  Used.Reset();
+  Passed = EvaluateVectorNear("Reset()", "galactic x", "Reset restores the galactic x axis", Used.GetGalacticPointingXAxis(), XAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("Reset()", "galactic z", "Reset restores the galactic z axis", Used.GetGalacticPointingZAxis(), ZAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("Reset()", "detector x", "Reset restores the detector x axis", Used.GetDetectorRotationXAxis(), XAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("Reset()", "detector z", "Reset restores the detector z axis", Used.GetDetectorRotationZAxis(), ZAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("Reset()", "horizon x", "Reset restores the horizon x axis", Used.GetHorizonPointingXAxis(), XAxis, 1e-15) && Passed;
+  Passed = EvaluateVectorNear("Reset()", "horizon z", "Reset restores the horizon z axis", Used.GetHorizonPointingZAxis(), ZAxis, 1e-15) && Passed;
+  Passed = EvaluateRotationNear("Reset()", "galactic rotation", "Reset discards the cached galactic rotation", Used.GetGalacticPointingRotationMatrix(), DefaultGalactic, 1e-15) && Passed;
+  Passed = EvaluateRotationNear("Reset()", "galactic inverse rotation", "Reset discards the cached inverse galactic rotation", Used.GetGalacticPointingInverseRotationMatrix(), DefaultGalactic, 1e-15) && Passed;
+  Passed = EvaluateRotationNear("Reset()", "detector rotation", "Reset restores the detector rotation", Used.GetDetectorRotationMatrix(), Identity, 1e-15) && Passed;
+  Passed = EvaluateRotationNear("Reset()", "horizon rotation", "Reset restores the horizon rotation", Used.GetHorizonPointingRotationMatrix(), Identity, 1e-15) && Passed;
+  Passed = EvaluateFalse("Reset()", "galactic flag", "Reset clears the galactic pointing flag", Used.HasGalacticPointing()) && Passed;
+  Passed = EvaluateFalse("Reset()", "detector flag", "Reset clears the detector rotation flag", Used.HasDetectorRotation()) && Passed;
+  Passed = EvaluateFalse("Reset()", "horizon flag", "Reset clears the horizon pointing flag", Used.HasHorizonPointing()) && Passed;
+
+  // Copying the data with Set takes over the axes and flags, and discards the cached rotation of the target
+  MRotationInterface Source;
+  Source.SetGalacticPointingXAxis(MVector(0.0, 1.0, 0.0));
+  Source.SetGalacticPointingZAxis(MVector(0.0, 0.0, 1.0));
+  MRotationInterface Target;
+  const MRotation TargetBefore = Target.GetGalacticPointingRotationMatrix();
+  Target.Set(Source);
+  Passed = EvaluateRotationNear("Set()", "stale cache", "Set discards the cached galactic rotation of the target", Target.GetGalacticPointingRotationMatrix(), Source.GetGalacticPointingRotationMatrix(), 1e-15) && Passed;
+  Passed = EvaluateRotationNear("Set()", "cache before", "The cached rotation of the target was the default one before", TargetBefore, DefaultGalactic, 1e-15) && Passed;
+  Passed = EvaluateTrue("Set()", "flag", "Set takes over the galactic pointing flag", Target.HasGalacticPointing()) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////

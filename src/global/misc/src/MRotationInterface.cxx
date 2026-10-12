@@ -42,9 +42,9 @@ ClassImp(MRotationInterface)
 
 
 //! Default constructor
-MRotationInterface::MRotationInterface() : m_Id(0), m_HasGalacticPointing(false), m_GalacticPointingXAxis(1.0, 0.0, 0.0), m_GalacticPointingZAxis(0.0, 0.0, 1.0), m_HasDetectorRotation(false), m_DetectorRotationXAxis(1.0, 0.0, 0.0), m_DetectorRotationZAxis(0.0, 0.0, 1.0), m_HasHorizonPointing(false), m_HorizonPointingXAxis(1.0, 0.0, 0.0), m_HorizonPointingZAxis(0.0, 0.0, 1.0), m_IsGalacticPointingRotationCalculated(false), m_IsGalacticPointingInverseRotationCalculated(false)
+MRotationInterface::MRotationInterface()
 {
-  // Too slow: Reset();
+  Reset();
 }
 
 
