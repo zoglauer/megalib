@@ -64,12 +64,12 @@ class MString
   MString(MString&& String) : m_String(std::move(String.m_String)) {}
   //! Initialize with string
   MString(const string& S) { m_String = S; }
-  //! Initilaize with ostringstream
+  //! Initialize with ostringstream
   MString(const ostringstream& S) { m_String = S.str(); }
   //! Initialize with C string
-  MString(const char* S) { if (S!= nullptr) m_String = S; }
+  MString(const char* S) { if (S!= nullptr) { m_String = S; } }
   //! Copy first n characters of S
-  MString(const char* S, unsigned int N) { if (S != nullptr) m_String = string(S, N); /* slower: m_String.assign(S, N); */ }
+  MString(const char* S, unsigned int N) { if (S != nullptr) { m_String = string(S, N); } /* slower: m_String.assign(S, N); */ }
   //! Initialize with a single character
   MString(const char S) { m_String = S; }
   //! Initialize with a short integer
@@ -88,10 +88,10 @@ class MString
   MString(const float i) { operator+=(i); }
   //! Initialize with a double
   MString(const double i) { operator+=(i); }
-  //! Constrcut with double of given precision
+  //! Construct with double of given precision
   MString(const double i, unsigned int Precision);
   //! Construct from value, uncertainty, unit using scientific rounding
-  //! If Latex is true, the +- will be repalce by #pm for display with ROOT
+  //! If Latex is true, the +- will be replaced by #pm for display with ROOT
   //! Will be something like (12.345, 1.872, "mm") -> "(12.3 +- 1.9) mm"
   MString(double Value, double Uncertainty, MString Units = "", bool Latex = false);
   //! Default destructor
@@ -107,7 +107,7 @@ class MString
   //! Assign from a single character
   MString& operator=(char S) { m_String = S; return *this; }
   //! Assign from a C string
-  MString& operator=(const char* S) { if (S != nullptr) m_String = S; return *this; }
+  MString& operator=(const char* S) { if (S != nullptr) { m_String = S; } return *this; }
   //MString& operator=(const TString& S) { m_String = S; return *this; }
   //! Assign from a C++ string
   MString& operator=(const string& S) { m_String = S; return *this; }
@@ -152,9 +152,9 @@ class MString
   size_t Length() const { return m_String.size(); }
 
   //! Return a substring
-  MString GetSubString(size_t Start, size_t Size) const { if (Start >= Length()) return ""; return m_String.substr(Start, Size); }
+  MString GetSubString(size_t Start, size_t Size) const { if (Start >= Length()) { return ""; } return m_String.substr(Start, Size); }
   //! Return a substring starting at start with the remaining length of the string
-  MString GetSubString(size_t Start) const { if (Start >= Length()) return ""; return m_String.substr(Start, m_String.size() - Start); }
+  MString GetSubString(size_t Start) const { if (Start >= Length()) { return ""; } return m_String.substr(Start, m_String.size() - Start); }
 
   //! Return the string between two strings
   MString Extract(MString Before, MString After);
@@ -164,13 +164,13 @@ class MString
   //! Get position of last character or string::npos if none is found
   size_t First(char c) const { return m_String.find(c); }
   
-  //! Find first occurance
+  //! Find first occurrence
   size_t Index(const MString& S, size_t Start = 0) const { return m_String.find(S.m_String, Start); }
 
-  //! Find First occurance
+  //! Find First occurrence
   size_t FindFirst(const MString& S) const  { return m_String.find(S.m_String); }
   
-  //! Find last occurance
+  //! Find last occurrence
   size_t FindLast(const MString& S) const  { return m_String.rfind(S.m_String); }
   
   
@@ -187,16 +187,22 @@ class MString
   //! Convert to integer
   int ToInt() const { return atoi(m_String.c_str()); }
   //! Convert to unsigned integer
-  unsigned int ToUnsignedInt() const { return (unsigned int) stoul(m_String.c_str()); }
+  //! A minus sign is not allowed, also not in front of zero
+  //! Can throw: MExceptionArbitrary if there is no number, MExceptionParameterOutOfRange for a negative number or if the value does not fit into an unsigned int
+  unsigned int ToUnsignedInt() const;
   //! Convert to long integer
-  long ToLong() const { return stol(m_String.c_str()); }
+  //! Can throw: MExceptionArbitrary if there is no number, MExceptionParameterOutOfRange if the value does not fit into a long
+  long ToLong() const;
   //! Convert to unsigned long integer
-  unsigned long ToUnsignedLong() const { return stoul(m_String.c_str()); }
+  //! A minus sign is not allowed, also not in front of zero
+  //! Can throw: MExceptionArbitrary if there is no number, MExceptionParameterOutOfRange for a negative number or if the value does not fit into an unsigned long
+  unsigned long ToUnsignedLong() const;
   //! Convert to double
   double ToDouble() const { return atof(m_String.c_str()); }
 
-  // Trim beginning and end:
+  //! Remove all leading and trailing characters which are in the given set (default: white space) in place
   void TrimInPlace(MString Characters = " \t\n\r\f\v") { m_String.erase(m_String.find_last_not_of(Characters) + 1); m_String.erase(0, m_String.find_first_not_of(Characters)); }
+  //! Remove all leading and trailing characters which are in the given set (default: white space)
   MString& Trim(MString Characters = " \t\n\r\f\v") { m_String.erase(m_String.find_last_not_of(Characters) + 1); m_String.erase(0, m_String.find_first_not_of(Characters)); return *this; }
 
 
@@ -256,32 +262,32 @@ class MString
   //! Append a double
   MString& operator+=(double N) { ostringstream out; out.precision(15); out << N; m_String += out.str(); return *this; }
   //! Append a long double
-  MString& operator+=(long double N) { ostringstream out; (sizeof(long double) == 128) ? out.precision(31) : out.precision(15); out << N; m_String += out.str(); return *this; }
+  MString& operator+=(long double N) { ostringstream out; out.precision(numeric_limits<long double>::max_digits10); out << N; m_String += out.str(); return *this; }
 
 
   //! Remove all characters from Start to the End
-  void RemoveInPlace(size_t Start) { if (Start >= Length()) return; m_String.erase(Start, Length() - Start); }
+  void RemoveInPlace(size_t Start) { if (Start >= Length()) { return; } m_String.erase(Start, Length() - Start); }
   //! Remove all characters from Start to the End and return the new string
-  MString& Remove(size_t Start) { if (Start >= Length()) return *this; m_String.erase(Start, Length() - Start); return *this; }
+  MString& Remove(size_t Start) { if (Start >= Length()) { return *this; } m_String.erase(Start, Length() - Start); return *this; }
   //! Remove all characters from Start with the given length
-  void RemoveInPlace(size_t Start, size_t Size) { if (Start >= Length()) return; m_String.erase(Start, Size); }
+  void RemoveInPlace(size_t Start, size_t Size) { if (Start >= Length()) { return; } m_String.erase(Start, Size); }
   //! Remove all characters from Start with the given length and return the new string
-  MString& Remove(size_t Start, size_t Size) { if (Start >= Length()) return *this; m_String.erase(Start, Size); return *this; }
+  MString& Remove(size_t Start, size_t Size) { if (Start >= Length()) { return *this; } m_String.erase(Start, Size); return *this; }
   //! Remove the last N characters from the string and return the new string
   //! If the string is smaller than Last, remove everything
-  void RemoveLastInPlace(size_t Size) { if (Length() < Size) Size = Length(); m_String.erase(Length() - Size, Size); }
+  void RemoveLastInPlace(size_t Size) { if (Length() < Size) { Size = Length(); } m_String.erase(Length() - Size, Size); }
   //! Remove the last N characters from the string and return the new string
   //! If the string is smaller than Last, remove everything
-  MString& RemoveLast(size_t Size) { if (Length() < Size) Size = Length(); m_String.erase(Length() - Size, Size); return *this; }
+  MString& RemoveLast(size_t Size) { if (Length() < Size) { Size = Length(); } m_String.erase(Length() - Size, Size); return *this; }
 
   //! Replace the characters starting at Start with Size with the string S
-  void ReplaceInPlace(size_t Start, size_t Size, const MString& S) { if (Start >= Length()) return; m_String.replace(Start, Size, S.m_String); }
+  void ReplaceInPlace(size_t Start, size_t Size, const MString& S) { if (Start >= Length()) { return; } m_String.replace(Start, Size, S.m_String); }
   //! Replace the characters starting at Start with Size with the string S and return the new string
-  MString& Replace(size_t Start, size_t Size, const MString& S) { if (Start >= Length()) return *this; m_String.replace(Start, Size, S.m_String); return *this; }
+  MString& Replace(size_t Start, size_t Size, const MString& S) { if (Start >= Length()) { return *this; } m_String.replace(Start, Size, S.m_String); return *this; }
 
-  //! Replace all occurances of from with string
+  //! Replace all occurrences of from with string
   void ReplaceAllInPlace(const MString& From, const MString& To);
-  //! Replace all occurances of from with string and return the new string
+  //! Replace all occurrences of from with string and return the new string
   MString& ReplaceAll(const MString& From, const MString& To);
 
   //! Replace the string "From" at the end of the string with "To", if "From" is at the end of the string
@@ -289,17 +295,17 @@ class MString
   //! Replace the string "From" at the end of the string with "To", if "From" is at the end of the string and return the new string
   MString& ReplaceAtEnd(const MString& From, const MString& To);
 
-  //! Remove all occurances of From
+  //! Remove all occurrences of From
   void RemoveAllInPlace(const MString& From);
-  //! Remove all occurances of From and return the new string
+  //! Remove all occurrences of From and return the new string
   MString& RemoveAll(const MString& From);
 
   //! Strip matching characters from the front in place
-  void StripFrontInPlace(const char S = ' ') { while (Length() > 0 && m_String[0] == S) m_String.erase(0, 1); }
+  void StripFrontInPlace(const char S = ' ') { while (Length() > 0 && m_String[0] == S) { m_String.erase(0, 1); } }
   //! Strip matching characters from the front
   MString& StripFront(const char S = ' ') { StripFrontInPlace(S); return *this; }
   //! Strip matching characters from the back in place
-  void StripBackInPlace(const char S = ' ') { while (Length() > 0 && m_String[Length()-1] == S) m_String.erase(Length()-1, 1); }
+  void StripBackInPlace(const char S = ' ') { while (Length() > 0 && m_String[Length()-1] == S) { m_String.erase(Length()-1, 1); } }
   //! Strip matching characters from the back
   MString& StripBack(const char S = ' ') { StripBackInPlace(S); return *this; }
   //! Strip matching characters from front and back in place
@@ -308,11 +314,11 @@ class MString
   MString& Strip(const char S = ' ') { StripInPlace(S); return *this; }
 
   //! Convert all letters to lower case in place
-  void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::tolower(static_cast<unsigned char>(m_String[p])); }
+  void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) { m_String[p] = std::tolower(static_cast<unsigned char>(m_String[p])); } }
   //! Convert all letters to lower case
   MString& ToLower() { ToLowerInPlace(); return *this; }
   //! Convert all letters to upper case in place
-  void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::toupper(static_cast<unsigned char>(m_String[p])); }
+  void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) { m_String[p] = std::toupper(static_cast<unsigned char>(m_String[p])); } }
   //! Convert all letters to upper case
   MString& ToUpper() { ToUpperInPlace(); return *this; }
 
@@ -328,14 +334,14 @@ class MString
   // Analyze
 
   //! Return true if the string contains the given string
-  bool Contains(const MString& S) const { return (m_String.find(S.m_String) != string::npos); }
+  bool Contains(const MString& S) const { if (m_String.find(S.m_String) == string::npos) { return false; } return true; }
   //! Return true if the string begins with the given string
   bool BeginsWith(const MString& S) const;
   //! Return true if the string end with the given string
   bool EndsWith(const MString& S) const;
 
-  //! Split the string in substring using the delimeter
-  vector<MString> Tokenize(const MString& Delimeter, bool IgnoreEmpty = true) const;
+  //! Split the string in substring using the delimiter
+  vector<MString> Tokenize(const MString& Delimiter, bool IgnoreEmpty = true) const;
 
   //! Test if the string is zero or a finite normal double -- ignores all leading and trailing whitespace (spaces, tabs, newlines, etc.)
   //! Subnormal values and representations that underflow, overflow, or are non-finite return false
@@ -347,6 +353,8 @@ class MString
 
   //! Return true if both strings are floating-point numbers differing by no more than MaximumLastDigitDifference times the smaller last-printed-digit unit
   //! Both values must be zero or finite normal doubles; subnormal and out-of-range representations return false
+  //! The comparison uses doubles and is only valid up to about 15 significant digits: from 16 digits on, one unit of the
+  //! last printed digit is smaller than the resolution of a double (about 2.2e-16 relative) and the result is not reliable
   //! For example, with MaximumLastDigitDifference = 2, 0.518236 and 0.518237 match because their difference of 0.000001 is less than 2 * 0.000001
   //! Likewise, 1.234e-4 and 1.235e-4 match because their difference of 0.001e-4 is less than 2 * 0.001e-4
   bool AreNumbersNumericallyMatching(const MString& Number, unsigned int MaximumLastDigitDifference = 2) const;
@@ -369,6 +377,8 @@ class MString
 
   // private methods:
  private:
+  //! Return true if the first character which is not white space is a minus sign
+  bool HasLeadingMinus() const;
    //! This function ONLY exists to prevent the compiler to make a built-in one --- DO NOT USE
   //const char* operator[](int) { return 0; }
 
@@ -394,14 +404,21 @@ class MString
 istream& operator>>(istream& in, MString& S);
 ostream& operator<<(ostream& out, const MString& S);
 
-inline bool operator==(const MString& S1, const MString& S2) { return ((S1.GetString() == S2.GetString()) ? true : false); }
-inline bool operator==(const MString& S1, const char* S2) { return ((S1.GetString() == S2) ? true : false); }
-inline bool operator==(const char* S1, const MString& S2) { return ((S1 == S2.GetString()) ? true : false); }
+//! Compare two strings: equal if they have the same content
+inline bool operator==(const MString& S1, const MString& S2) { if (S1.GetString() == S2.GetString()) { return true; } return false; }
+//! Compare a string with a C string: equal if they have the same content
+inline bool operator==(const MString& S1, const char* S2) { if (S1.GetString() == S2) { return true; } return false; }
+//! Compare a C string with a string: equal if they have the same content
+inline bool operator==(const char* S1, const MString& S2) { if (S1 == S2.GetString()) { return true; } return false; }
 
-inline bool operator!=(const MString& S1, const MString& S2) { return ((S1.GetString() != S2.GetString()) ? true : false); }
-inline bool operator!=(const MString& S1, const char* S2) { return ((S1.GetString() != S2) ? true : false); }
-inline bool operator!=(const char* S1, const MString& S2) { return ((S1 != S2.GetString()) ? true : false); }
+//! Compare two strings: unequal if they have different content
+inline bool operator!=(const MString& S1, const MString& S2) { if (S1.GetString() != S2.GetString()) { return true; } return false; }
+//! Compare a string with a C string: unequal if they have different content
+inline bool operator!=(const MString& S1, const char* S2) { if (S1.GetString() != S2) { return true; } return false; }
+//! Compare a C string with a string: unequal if they have different content
+inline bool operator!=(const char* S1, const MString& S2) { if (S1 != S2.GetString()) { return true; } return false; }
 
+//! Concatenate a string with a string, a C string, a character, or a number: the number is printed as in operator+= and can be on either side
 inline MString operator+(const MString& S1, const MString& S2) { return MString(S1.GetString() + S2.GetString()); }
 inline MString operator+(const MString& S1,  const char* S2) { return MString(S1.GetString() + S2); }
 inline MString operator+(const char* S1, const MString& S2) { return MString(S1) + S2; }
@@ -420,15 +437,17 @@ inline MString operator+(long N, const MString& S2) { ostringstream out; out<<N;
 inline MString operator+(const MString& S1, unsigned long N) { MString S(S1); S += N; return S; }
 inline MString operator+(unsigned long N, const MString& S2) { ostringstream out; out<<N; MString S = out.str(); return S + S2; }
 inline MString operator+(const MString& S1, float N) { MString S(S1); S += N; return S; }
-inline MString operator+(float N, const MString& S2) { ostringstream out; out<<N; MString S = out.str(); return S + S2; }
+inline MString operator+(float N, const MString& S2) { MString S; S += N; return S + S2; }
 inline MString operator+(const MString& S1, double N) { MString S(S1); S += N; return S; }
-inline MString operator+(double N, const MString& S2) { ostringstream out; out<<N; MString S = out.str(); return S + S2; }
+inline MString operator+(double N, const MString& S2) { MString S; S += N; return S + S2; }
 
 template <typename T> bool MString::Is() const
 {
   if (std::is_unsigned<T>::value == true) {
     for (size_t i = 0; i < m_String.size(); ++i) {
-      if (m_String[i] == '-') return false;
+      if (m_String[i] == '-') {
+        return false;
+      }
     }
   }
 
