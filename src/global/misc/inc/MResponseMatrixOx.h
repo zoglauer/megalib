@@ -69,7 +69,7 @@ class MResponseMatrixOx : public MResponseMatrix
   virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int order = 0) const = 0;
 
   //! Return a string with statistics numbers
-  virtual MString GetStatistics() const;
+  virtual MString GetStatistics() const override;
   
   // protected methods:
  protected:
@@ -117,7 +117,7 @@ class MResponseMatrixOx : public MResponseMatrix
 
 #ifdef ___CLING___
  public:
-  ClassDef(MResponseMatrixOx, 1) // base class for all response matrices
+  ClassDefOverride(MResponseMatrixOx, 1) // base class for all response matrices
 #endif
 
 };

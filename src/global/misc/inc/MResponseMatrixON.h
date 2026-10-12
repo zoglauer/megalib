@@ -67,7 +67,7 @@ class MResponseMatrixON : public MResponseMatrix
   virtual ~MResponseMatrixON();
   
   //! Clear all data
-  virtual void Clear();
+  virtual void Clear() override;
 
   //! True if the matrix is sparse
   bool IsSparse() const { return m_IsSparse; }
@@ -114,7 +114,7 @@ class MResponseMatrixON : public MResponseMatrix
   vector<MString> GetAxisNames(unsigned int AxisIndex) const;
   
   //! Return the number of bins
-  virtual unsigned long GetNBins() const { return m_NumberOfBins; }
+  virtual unsigned long GetNBins() const override { return m_NumberOfBins; }
   
   //! Return the number of sparse bins
   //virtual unsigned long GetNumberOfSparseBins() const { return m_ValuesSparse.size(); }
@@ -201,14 +201,14 @@ class MResponseMatrixON : public MResponseMatrix
   // Miscellaneous
   
   //! Find the maximum value 
-  virtual float GetMaximum() const;
+  virtual float GetMaximum() const override;
   //! Find the minimum value
-  virtual float GetMinimum() const;
+  virtual float GetMinimum() const override;
   //! Return the sum
-  virtual double GetSum() const;
+  virtual double GetSum() const override;
 
   //! Write the values of the response to file
-  virtual bool Write(MString FileName, bool Stream = false);
+  virtual bool Write(MString FileName, bool Stream = false) override;
 
   //! Smooth the content of the response
   virtual void Smooth(unsigned int Times = 1);
@@ -217,7 +217,7 @@ class MResponseMatrixON : public MResponseMatrix
   void ShowSlice(vector<float> Axes, bool Normalized = true, MString Title = "");
   
   //! Return a string with statistics numbers
-  virtual MString GetStatistics() const;
+  virtual MString GetStatistics() const override;
   
 
   // protected methods:
@@ -287,7 +287,7 @@ class MResponseMatrixON : public MResponseMatrix
 
 #ifdef ___CLING___
  public:
-  ClassDef(MResponseMatrixON, 1) 
+  ClassDefOverride(MResponseMatrixON, 1) 
 #endif
 
 };

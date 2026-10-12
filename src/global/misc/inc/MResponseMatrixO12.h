@@ -86,7 +86,7 @@ class MResponseMatrixO12 : public MResponseMatrixOx
                     MString x7Name, MString x8Name, 
                     MString x9Name, MString x10Name, 
                     MString x11Name, MString x12Name);
-  MString GetAxisName(unsigned int order = 12) const;
+  MString GetAxisName(unsigned int order = 12) const override;
 
   /// Set a value & expand if it does not exist
   void SetBinContent(unsigned int x1, unsigned int x2, unsigned int x3, 
@@ -99,17 +99,17 @@ class MResponseMatrixO12 : public MResponseMatrixOx
            float x9, float x10, float x11, float x12, float Value = 1);
   void SetMatrix(unsigned int b, MResponseMatrixO11 R11);
 
-  virtual unsigned long GetNBins() const;
+  virtual unsigned long GetNBins() const override;
 
-  virtual float GetAxisContent(unsigned int b, unsigned int order = 12) const;
-  virtual vector<float> GetAxis(unsigned int order = 12) const;
-  virtual unsigned int GetAxisBins(unsigned int order = 12) const;
+  virtual float GetAxisContent(unsigned int b, unsigned int order = 12) const override;
+  virtual vector<float> GetAxis(unsigned int order = 12) const override;
+  virtual unsigned int GetAxisBins(unsigned int order = 12) const override;
   virtual float GetAxisBinCenter(unsigned int b, unsigned int order = 12) const;
   virtual unsigned int GetAxisBin(float v, unsigned int order = 12) const;
-  virtual float GetAxisMinimum(unsigned int order = 12) const;
-  virtual float GetAxisMaximum(unsigned int order = 12) const;
-  virtual float GetAxisLowEdge(unsigned int b, unsigned int order = 12) const;
-  virtual float GetAxisHighEdge(unsigned int b, unsigned int order = 12) const;
+  virtual float GetAxisMinimum(unsigned int order = 12) const override;
+  virtual float GetAxisMaximum(unsigned int order = 12) const override;
+  virtual float GetAxisLowEdge(unsigned int b, unsigned int order = 12) const override;
+  virtual float GetAxisHighEdge(unsigned int b, unsigned int order = 12) const override;
 
   virtual float GetBinContent(unsigned int x1, unsigned int x2, 
                               unsigned int x3, unsigned int x4, 
@@ -143,11 +143,11 @@ class MResponseMatrixO12 : public MResponseMatrixOx
                                 float x9, float x10, float x11, float x12, 
                                 bool DoExtrapolate = false) const;
 
-  virtual float GetMaximum() const;
-  virtual float GetMinimum() const;
-  virtual double GetSum() const;
+  virtual float GetMaximum() const override;
+  virtual float GetMinimum() const override;
+  virtual double GetSum() const override;
 
-  virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int a1) const;
+  virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int a1) const override;
   virtual MResponseMatrixO2 GetSumMatrixO2(unsigned int a1, unsigned int a2) const;
   virtual MResponseMatrixO3 GetSumMatrixO3(unsigned int a1, unsigned int a2, 
                                            unsigned int a3) const;
@@ -190,7 +190,7 @@ class MResponseMatrixO12 : public MResponseMatrixOx
                                              unsigned int a9, unsigned int a10, 
                                              unsigned int a11, unsigned int a12) const;
 
-  virtual bool Write(MString FileName, bool Stream = false);
+  virtual bool Write(MString FileName, bool Stream = false) override;
 
   void Show(float x1, float x2, float x3, float x4, 
             float x5, float x6, float x7, float x8, 
@@ -223,7 +223,7 @@ class MResponseMatrixO12 : public MResponseMatrixOx
 
 #ifdef ___CLING___
  public:
-  ClassDef(MResponseMatrixO12, 1) // response matrix of order 12
+  ClassDefOverride(MResponseMatrixO12, 1) // response matrix of order 12
 #endif
 
 };
