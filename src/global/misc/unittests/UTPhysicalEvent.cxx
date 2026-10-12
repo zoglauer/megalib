@@ -54,6 +54,8 @@ private:
   MString GetOILine(const MString& Tra);
   //! Test the optional particle ID in the OI information
   bool TestOIParticleID();
+  //! Test that Assimilate and Duplicate take over all data and make an independent copy
+  bool TestAssimilate();
 };
 
 
@@ -67,6 +69,7 @@ bool UTPhysicalEvent::Run()
 
   Passed = TestBaseEvent() && Passed;
   Passed = TestOIParticleID() && Passed;
+  Passed = TestAssimilate() && Passed;
 
   Summarize();
 
@@ -333,6 +336,107 @@ bool UTPhysicalEvent::TestOIParticleID()
 
   WithID.Reset();
   Passed = Evaluate("Reset()->GetOIParticleID()", "OI id reset", "Reset clears the OI particle ID", WithID.GetOIParticleID(), g_IntNotDefined) && Passed;
+
+  return Passed;
+}
+
+
+//! Test that Assimilate and Duplicate take over all data and make an independent copy
+bool UTPhysicalEvent::TestAssimilate()
+{
+  bool Passed = true;
+
+  MPhysicalEvent Source;
+  Source.SetTime(MTime(12.5));
+  Source.SetId(42);
+  Source.SetTimeWalk(7);
+  Source.SetDecay(true);
+  Source.SetAllHitsGood(false);
+  Source.AddBadFlag("first bad");
+  Source.AddBadFlag("second bad");
+  MString FirstComment("first comment");
+  MString SecondComment("second comment");
+  Source.AddComment(FirstComment);
+  Source.AddComment(SecondComment);
+  MPhysicalEventHit FirstHit;
+  FirstHit.Set(MVector(1.0, 2.0, 3.0), MVector(0.1, 0.1, 0.1), 14.0, 0.5, MTime(1.0), MTime(0.1));
+  MPhysicalEventHit SecondHit;
+  SecondHit.Set(MVector(4.0, 5.0, 6.0), MVector(0.1, 0.1, 0.1), 28.0, 0.5, MTime(2.0), MTime(0.1));
+  Source.AddHit(FirstHit);
+  Source.AddHit(SecondHit);
+  MVector OIPosition(1.0, 2.0, 3.0);
+  MVector OIDirection(4.0, 5.0, 6.0);
+  MVector OIPolarization(7.0, 8.0, 9.0);
+  Source.SetOIInformation(OIPosition, OIDirection, OIPolarization, 10.0, 11);
+  MVector DetectorX(1.0, 0.0, 0.0);
+  MVector DetectorZ(0.0, 0.0, 1.0);
+  Source.SetDetectorRotationXAxis(DetectorX);
+  Source.SetDetectorRotationZAxis(DetectorZ);
+  MVector GalacticX(0.0, 1.0, 0.0);
+  MVector GalacticZ(0.0, 0.0, 1.0);
+  Source.SetGalacticPointingXAxis(GalacticX);
+  Source.SetGalacticPointingZAxis(GalacticZ);
+
+  // The target has old content, which must not survive
+  MPhysicalEvent Target;
+  Target.SetId(1);
+  Target.AddBadFlag("old bad");
+  MString OldComment("old comment");
+  Target.AddComment(OldComment);
+  Target.AddHit(SecondHit);
+  Target.AddHit(SecondHit);
+  Target.AddHit(SecondHit);
+
+  Passed = EvaluateTrue("Assimilate()", "base event", "Assimilate returns true", Target.Assimilate(&Source)) && Passed;
+  Passed = Evaluate("Assimilate()", "type", "The event type is taken over", Target.GetType(), Source.GetType()) && Passed;
+  Passed = Evaluate("Assimilate()", "time", "The time is taken over", Target.GetTime().GetAsDouble(), Source.GetTime().GetAsDouble()) && Passed;
+  Passed = Evaluate("Assimilate()", "id", "The id is taken over", Target.GetId(), 42L) && Passed;
+  Passed = Evaluate("Assimilate()", "time walk", "The time walk is taken over", Target.GetTimeWalk(), 7) && Passed;
+  Passed = EvaluateTrue("Assimilate()", "decay", "The decay flag is taken over", Target.IsDecay()) && Passed;
+  Passed = EvaluateFalse("Assimilate()", "all hits good", "A false all-hits-good flag is taken over", Target.AllHitsGood()) && Passed;
+  Passed = Evaluate("Assimilate()", "bad flags", "The old bad flags are replaced, not extended", Target.GetNBadFlags(), 2U) && Passed;
+  Passed = Evaluate("Assimilate()", "first bad flag", "The first bad flag is taken over", Target.GetBadFlag(0), MString("first bad")) && Passed;
+  Passed = Evaluate("Assimilate()", "second bad flag", "The second bad flag is taken over", Target.GetBadFlag(1), MString("second bad")) && Passed;
+  Passed = Evaluate("Assimilate()", "comments", "The old comments are replaced, not extended", Target.GetNComments(), 2U) && Passed;
+  Passed = Evaluate("Assimilate()", "first comment", "The first comment is taken over", Target.GetComment(0), FirstComment) && Passed;
+  Passed = Evaluate("Assimilate()", "second comment", "The second comment is taken over", Target.GetComment(1), SecondComment) && Passed;
+  Passed = Evaluate("Assimilate()", "hits", "The old hits are replaced, not extended", Target.GetNHits(), 2U) && Passed;
+  Passed = EvaluateNear("Assimilate()", "first hit", "The first hit is taken over", Target.GetHit(0).GetEnergy(), 14.0, 1e-12) && Passed;
+  Passed = EvaluateNear("Assimilate()", "second hit", "The second hit is taken over", Target.GetHit(1).GetEnergy(), 28.0, 1e-12) && Passed;
+  Passed = Evaluate("Assimilate()", "OI position", "The OI position is taken over", Target.GetOIPosition(), OIPosition) && Passed;
+  Passed = Evaluate("Assimilate()", "OI direction", "The OI direction is taken over", Target.GetOIDirection(), OIDirection) && Passed;
+  Passed = Evaluate("Assimilate()", "OI polarization", "The OI polarization is taken over", Target.GetOIPolarization(), OIPolarization) && Passed;
+  Passed = EvaluateNear("Assimilate()", "OI energy", "The OI energy is taken over", Target.GetOIEnergy(), 10.0, 1e-12) && Passed;
+  Passed = Evaluate("Assimilate()", "OI particle id", "The OI particle id is taken over", Target.GetOIParticleID(), 11) && Passed;
+  Passed = EvaluateTrue("Assimilate()", "detector rotation", "The detector rotation is taken over", Target.HasDetectorRotation()) && Passed;
+  Passed = Evaluate("Assimilate()", "detector x axis", "The x-axis of the detector rotation is taken over", Target.GetDetectorRotationXAxis(), DetectorX) && Passed;
+  Passed = Evaluate("Assimilate()", "detector z axis", "The z-axis of the detector rotation is taken over", Target.GetDetectorRotationZAxis(), DetectorZ) && Passed;
+  Passed = EvaluateTrue("Assimilate()", "galactic pointing", "The galactic pointing is taken over", Target.HasGalacticPointing()) && Passed;
+  Passed = Evaluate("Assimilate()", "galactic x axis", "The x-axis of the galactic pointing is taken over", Target.GetGalacticPointingXAxis(), GalacticX) && Passed;
+  Passed = Evaluate("Assimilate()", "galactic z axis", "The z-axis of the galactic pointing is taken over", Target.GetGalacticPointingZAxis(), GalacticZ) && Passed;
+
+  // The copy is independent of the source
+  Source.AddBadFlag("late bad");
+  Source.AddHit(FirstHit);
+  MString LateComment("late comment");
+  Source.AddComment(LateComment);
+  Source.SetOIInformation(MVector(0.0, 0.0, 0.0), MVector(0.0, 0.0, 0.0), MVector(0.0, 0.0, 0.0), 0.0, 99);
+  Source.SetId(43);
+  Passed = Evaluate("Assimilate()", "independent bad flags", "A later bad flag of the source does not appear in the copy", Target.GetNBadFlags(), 2U) && Passed;
+  Passed = Evaluate("Assimilate()", "independent hits", "A later hit of the source does not appear in the copy", Target.GetNHits(), 2U) && Passed;
+  Passed = Evaluate("Assimilate()", "independent comments", "A later comment of the source does not appear in the copy", Target.GetNComments(), 2U) && Passed;
+  Passed = Evaluate("Assimilate()", "independent OI", "A later change of the OI information of the source does not change the copy", Target.GetOIParticleID(), 11) && Passed;
+  Passed = Evaluate("Assimilate()", "independent id", "A later change of the id of the source does not change the copy", Target.GetId(), 42L) && Passed;
+
+  // Duplicate makes a complete copy as well
+  MPhysicalEvent* Duplicate = Target.Duplicate();
+  Passed = EvaluateTrue("Duplicate()", "decay", "Duplicate keeps the decay flag", Duplicate->IsDecay()) && Passed;
+  Passed = EvaluateFalse("Duplicate()", "all hits good", "Duplicate keeps a false all-hits-good flag", Duplicate->AllHitsGood()) && Passed;
+  Passed = Evaluate("Duplicate()", "OI particle id", "Duplicate keeps the OI particle id", Duplicate->GetOIParticleID(), 11) && Passed;
+  Passed = Evaluate("Duplicate()", "second hit", "Duplicate keeps the hits", Duplicate->GetNHits(), 2U) && Passed;
+  Passed = Evaluate("Duplicate()", "detector x axis", "Duplicate keeps the detector rotation", Duplicate->GetDetectorRotationXAxis(), DetectorX) && Passed;
+  Passed = Evaluate("Duplicate()", "galactic z axis", "Duplicate keeps the galactic pointing", Duplicate->GetGalacticPointingZAxis(), GalacticZ) && Passed;
+  delete Duplicate;
 
   return Passed;
 }
