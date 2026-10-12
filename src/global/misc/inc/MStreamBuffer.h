@@ -65,8 +65,14 @@ class MStreamBuffer : public streambuf
   bool Disconnect(MString FileName);
 
   void DumpToStdOut(bool EnableFlag) { m_StdOut = EnableFlag; }
+  //! Return true if the stream is written to stdout
+  bool GetDumpToStdOut() const { return m_StdOut; }
   void DumpToStdErr(bool EnableFlag) { m_StdErr = EnableFlag; }
+  //! Return true if the stream is written to stderr
+  bool GetDumpToStdErr() const { return m_StdErr; }
   void DumpToGui(bool EnableFlag) { m_Gui = EnableFlag; }
+  //! Return true if the stream is shown in the GUI
+  bool GetDumpToGui() const { return m_Gui; }
 
   void ShowOnce() { m_ShowOnce = true; }
 
