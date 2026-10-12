@@ -51,6 +51,13 @@ public:
     new MExceptionUnknownMode("abort-check");
     return 1;
   }
+  //! Helper entry point for the abort-check child process of the pointer exception
+  static int AbortCheckPointer()
+  {
+    MException::UseAbort(true);
+    new MExceptionPointerIsInvalid("Pointer", nullptr);
+    return 1;
+  }
 private:
   //! Test the base class and polymorphic throwing behavior
   bool TestBaseBehavior();
@@ -213,6 +220,29 @@ bool UTExceptions::TestSpecificMessages()
   }
 
   {
+    // The pointer is written as a decimal number, 0 for a null pointer
+    MExceptionPointerIsInvalid Exception("Detector", nullptr);
+    Passed = Evaluate("MExceptionPointerIsInvalid()", "null pointer", "The invalid-pointer exception names the pointer and writes a null pointer as 0", MString(Exception.what()), MString("The pointer \"Detector\" is invalid: 0\n")) && Passed;
+  }
+
+  {
+    int Value = 0;
+    MExceptionPointerIsInvalid Exception("Local", &Value);
+    Passed = Evaluate("MExceptionPointerIsInvalid()", "local variable", "The invalid-pointer exception writes the address of the pointer as a decimal number", MString(Exception.what()), MString("The pointer \"Local\" is invalid: " + to_string(reinterpret_cast<size_t>(&Value)) + "\n")) && Passed;
+  }
+
+  {
+    MException::UseAbort(false);
+    try {
+      throw MExceptionPointerIsInvalid("Thrown", nullptr);
+    } catch (const MException& Exception) {
+      Passed = Evaluate("throw MExceptionPointerIsInvalid()", "catch base", "The invalid-pointer exception can be caught as MException", MString(Exception.what()), MString("The pointer \"Thrown\" is invalid: 0\n")) && Passed;
+    } catch (...) {
+      Passed = EvaluateTrue("throw MExceptionPointerIsInvalid()", "catch base", "The invalid-pointer exception can be caught as MException", false) && Passed;
+    }
+  }
+
+  {
     MExceptionNeverReachThatLineOfCode Exception;
     Passed = Evaluate("MExceptionNeverReachThatLineOfCode()", "message", "The never-reach exception has the expected default text", MString(Exception.what()), MString("We should have never reached that line of code!")) && Passed;
   }
@@ -343,11 +373,20 @@ bool UTExceptions::TestUsagePatterns()
     // Mask the core dump flag (0x80) of the wait status
     Passed = Evaluate("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with SIGABRT", Status & 0x7F, static_cast<int>(SIGABRT)) && Passed;
 
-    // Expect a trailing end of line
+    // The message ends with an end of line of the exception and one of the stream - libraries can print warnings at the start of the child
     MString Content = ReadTextFile(LogFileName);
-    Passed = Evaluate("MException::UseAbort(true)", "child message", "Abort mode prints the exception message before terminating", Content, MString("Unknown mode abort-check!\n\n")) && Passed;
+    Passed = EvaluateTrue("MException::UseAbort(true)", "child message", "Abort mode prints the exception message before terminating", Content.EndsWith("Unknown mode abort-check!\n\n")) && Passed;
 
     MException::UseAbort(false);
+  }
+
+  {
+    // The invalid-pointer exception aborts in abort mode like all the other exceptions
+    MString PointerLogFileName = GetTemporaryFileName("abort_check_pointer.log");
+    int PointerStatus = MSystem::RunProcess(BinaryPath(), "--abort-check-pointer", PointerLogFileName);
+    Passed = Evaluate("MExceptionPointerIsInvalid()", "abort status", "The abort mode terminates the child process with SIGABRT also for the invalid-pointer exception", PointerStatus & 0x7F, static_cast<int>(SIGABRT)) && Passed;
+    MString PointerContent = ReadTextFile(PointerLogFileName);
+    Passed = EvaluateTrue("MExceptionPointerIsInvalid()", "abort message", "Abort mode prints the invalid-pointer message before terminating", PointerContent.EndsWith("The pointer \"Pointer\" is invalid: 0\n\n")) && Passed;
   }
 
   return Passed;
@@ -363,6 +402,9 @@ int main(int argc, char** argv)
     MString Argument = argv[1];
     if (Argument == "--abort-check") {
       return UTExceptions::AbortCheck();
+    }
+    if (Argument == "--abort-check-pointer") {
+      return UTExceptions::AbortCheckPointer();
     }
   }
 
