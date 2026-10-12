@@ -185,7 +185,7 @@ $(DICTIONARYOBJECT): $(DICTIONARY)
 
 $(EXE_UT): $(BN)/%: unittests/%.cxx $(SHAREDLIB)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< $(SHAREDLIB) -lCommonGui $(GLIBS) $(LIBS) -o $@
+	@$(LD) $(CXXFLAGS) $(HEALPIXCFLAGS) $(LDFLAGS) $< $(SHAREDLIB) -lCommonGui $(GLIBS) $(LIBS) -o $@
 
 #
 #----------------------------------------------------------------
