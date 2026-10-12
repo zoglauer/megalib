@@ -538,6 +538,7 @@ These patterns are nearly absent from the older code and should not be introduce
      }
      ```
    - The class MExceptions has a wide range of useful exceptions
+   - Document the exceptions a function can throw in its header comment, one line after the description: `//! Can throw: MExceptionIndexOutOfBounds` (several types separated by commas). This applies to public and protected functions, since callers cannot see a throw from the signature.
    - When validating inputs before throwing, prefer the guard form
      ```cpp
      if (i >= Values.size()) {
