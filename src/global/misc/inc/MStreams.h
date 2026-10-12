@@ -77,8 +77,14 @@ public:
   }
 
   void DumpToStdOut(bool EnableFlag) { TThread::Lock(); m_Streams->DumpToStdOut(EnableFlag); TThread::UnLock(); }
+  //! Return true if the stream is written to stdout
+  bool GetDumpToStdOut() const { TThread::Lock(); const bool Flag = m_Streams->GetDumpToStdOut(); TThread::UnLock(); return Flag; }
   void DumpToStdErr(bool EnableFlag) { TThread::Lock(); m_Streams->DumpToStdErr(EnableFlag); TThread::UnLock(); }
+  //! Return true if the stream is written to stderr
+  bool GetDumpToStdErr() const { TThread::Lock(); const bool Flag = m_Streams->GetDumpToStdErr(); TThread::UnLock(); return Flag; }
   void DumpToGui(bool EnableFlag) { TThread::Lock(); m_Streams->DumpToGui(EnableFlag); TThread::UnLock(); }
+  //! Return true if the stream is shown in the GUI
+  bool GetDumpToGui() const { TThread::Lock(); const bool Flag = m_Streams->GetDumpToGui(); TThread::UnLock(); return Flag; }
 
   void ShowOnce() { TThread::Lock(); m_Streams->ShowOnce(); TThread::UnLock(); }
 

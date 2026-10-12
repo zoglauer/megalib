@@ -28,6 +28,7 @@ using namespace std;
 
 // MEGAlib:
 #include "MFile.h"
+#include "MStreamBuffer.h"
 #include "MStreams.h"
 #include "MUnitTest.h"
 
@@ -73,6 +74,8 @@ private:
 
   //! Test the direct MStreams wrapper API
   bool TestStreams();
+  //! Test the getters of the output routing
+  bool TestRouting();
   //! Test global streams and macros as they are used in MEGAlib
   bool TestGlobalStreamsAndMacros();
 };
@@ -187,6 +190,7 @@ bool UTStreams::Run()
   bool Passed = true;
 
   Passed = TestStreams() && Passed;
+  Passed = TestRouting() && Passed;
   Passed = TestGlobalStreamsAndMacros() && Passed;
 
   Summarize();
@@ -245,6 +249,69 @@ bool UTStreams::TestStreams()
 
   CleanFile(WrapperFileName);
   CleanFile(LogOnlyFileName);
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the getters of the output routing
+bool UTStreams::TestRouting()
+{
+  bool Passed = true;
+
+  // The defaults are set in the constructor of MStreamBuffer: stdout on, stderr off, GUI off
+  MStreamBuffer Buffer;
+  Passed = EvaluateTrue("MStreamBuffer::GetDumpToStdOut()", "default", "A new buffer writes to stdout", Buffer.GetDumpToStdOut()) && Passed;
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToStdErr()", "default", "A new buffer does not write to stderr", Buffer.GetDumpToStdErr()) && Passed;
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToGui()", "default", "A new buffer does not show in the GUI", Buffer.GetDumpToGui()) && Passed;
+
+  // Each route follows its own setter and does not change the other two
+  Buffer.DumpToStdOut(false);
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToStdOut()", "off", "The stdout route is off after switching it off", Buffer.GetDumpToStdOut()) && Passed;
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToStdErr()", "stdout off", "Switching stdout off does not change stderr", Buffer.GetDumpToStdErr()) && Passed;
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToGui()", "stdout off", "Switching stdout off does not change the GUI", Buffer.GetDumpToGui()) && Passed;
+  Buffer.DumpToStdErr(true);
+  Passed = EvaluateTrue("MStreamBuffer::GetDumpToStdErr()", "on", "The stderr route is on after switching it on", Buffer.GetDumpToStdErr()) && Passed;
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToStdOut()", "stderr on", "Switching stderr on does not change stdout", Buffer.GetDumpToStdOut()) && Passed;
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToGui()", "stderr on", "Switching stderr on does not change the GUI", Buffer.GetDumpToGui()) && Passed;
+  Buffer.DumpToGui(true);
+  Passed = EvaluateTrue("MStreamBuffer::GetDumpToGui()", "on", "The GUI route is on after switching it on", Buffer.GetDumpToGui()) && Passed;
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToStdOut()", "GUI on", "Switching the GUI on does not change stdout", Buffer.GetDumpToStdOut()) && Passed;
+  Passed = EvaluateTrue("MStreamBuffer::GetDumpToStdErr()", "GUI on", "Switching the GUI on does not change stderr", Buffer.GetDumpToStdErr()) && Passed;
+  Buffer.DumpToStdOut(true);
+  Buffer.DumpToStdErr(false);
+  Buffer.DumpToGui(false);
+  Passed = EvaluateTrue("MStreamBuffer::GetDumpToStdOut()", "back on", "The stdout route is on again after switching it on", Buffer.GetDumpToStdOut()) && Passed;
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToStdErr()", "back off", "The stderr route is off again after switching it off", Buffer.GetDumpToStdErr()) && Passed;
+  Passed = EvaluateFalse("MStreamBuffer::GetDumpToGui()", "back off", "The GUI route is off again after switching it off", Buffer.GetDumpToGui()) && Passed;
+
+  // The wrapper forwards the same state
+  MStreams Stream;
+  Passed = EvaluateTrue("MStreams::GetDumpToStdOut()", "default", "A new wrapper writes to stdout", Stream.GetDumpToStdOut()) && Passed;
+  Passed = EvaluateFalse("MStreams::GetDumpToStdErr()", "default", "A new wrapper does not write to stderr", Stream.GetDumpToStdErr()) && Passed;
+  Passed = EvaluateFalse("MStreams::GetDumpToGui()", "default", "A new wrapper does not show in the GUI", Stream.GetDumpToGui()) && Passed;
+  Stream.DumpToStdOut(false);
+  Stream.DumpToStdErr(true);
+  Stream.DumpToGui(true);
+  Passed = EvaluateFalse("MStreams::GetDumpToStdOut()", "set", "The wrapper reports stdout off", Stream.GetDumpToStdOut()) && Passed;
+  Passed = EvaluateTrue("MStreams::GetDumpToStdErr()", "set", "The wrapper reports stderr on", Stream.GetDumpToStdErr()) && Passed;
+  Passed = EvaluateTrue("MStreams::GetDumpToGui()", "set", "The wrapper reports the GUI on", Stream.GetDumpToGui()) && Passed;
+  Stream.DumpToStdOut(true);
+  Stream.DumpToStdErr(false);
+  Stream.DumpToGui(false);
+  Passed = EvaluateTrue("MStreams::GetDumpToStdOut()", "reset", "The wrapper reports stdout on again", Stream.GetDumpToStdOut()) && Passed;
+  Passed = EvaluateFalse("MStreams::GetDumpToStdErr()", "reset", "The wrapper reports stderr off again", Stream.GetDumpToStdErr()) && Passed;
+  Passed = EvaluateFalse("MStreams::GetDumpToGui()", "reset", "The wrapper reports the GUI off again", Stream.GetDumpToGui()) && Passed;
+
+  // The global streams keep their configuration of the test run
+  const bool StdOutBefore = mout.GetDumpToStdOut();
+  mout.DumpToStdOut(!StdOutBefore);
+  Passed = Evaluate("MStreams::GetDumpToStdOut()", "mout toggled", "The global stream reports the changed stdout state", mout.GetDumpToStdOut(), !StdOutBefore) && Passed;
+  mout.DumpToStdOut(StdOutBefore);
+  Passed = Evaluate("MStreams::GetDumpToStdOut()", "mout restored", "The global stream reports the restored stdout state", mout.GetDumpToStdOut(), StdOutBefore) && Passed;
 
   return Passed;
 }
