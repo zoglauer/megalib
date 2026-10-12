@@ -29,6 +29,7 @@
 #include <filesystem>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <thread>
 #include <fstream>
 using namespace std;
@@ -68,6 +69,14 @@ private:
     double Arm(const MComptonEvent& Event, const MVector& ToSource) { return ARM(Event, ToSource); }
     double Median(const vector<double>& Values) { return GetMedian(Values); }
     double MedianError(const vector<double>& Values) { return GetMedianError(Values); }
+    double Quantile(const vector<double>& Values, double Fraction) { return GetQuantile(Values, Fraction); }
+    double RobustSigma(const vector<double>& Values) { return GetRobustSigma(Values); }
+    double HalfWidth(const vector<double>& Values, double Fraction) { return GetHalfWidthContaining(Values, Fraction); }
+    double Fwhm(const vector<double>& Values, double BinWidth) { return FullWidthAtHalfMaximum(Values, BinWidth); }
+    double Bootstrap(const vector<double>& Values, const ETStatistic& Statistic, unsigned int NResamples) { return GetBootstrapError(Values, Statistic, NResamples); }
+    ETMeasuredValue Measured(const vector<double>& Values, const ETStatistic& Statistic, unsigned int NResamples) { return Measure(Values, Statistic, NResamples); }
+    void References(const ETReferences& R) { SetReferences(R); }
+    bool Compare(const ETMeasuredValue& Value) { return CompareToReference("S", "O", "Test", Value); }
   };
 
   //! Write a (gzipped if the name ends with .gz) text file
@@ -472,6 +481,90 @@ bool UTEndToEndTest::TestRootHelpers()
     Passed = EvaluateNear("GetMedianError()", "identical", "The error of identical values is zero", Tester.MedianError(vector<double>{5.0, 5.0, 5.0, 5.0}), 0.0, 0.0) && Passed;
     Passed = EvaluateNear("GetMedian()", "empty", "The median of no values is zero", Tester.Median(vector<double>()), 0.0, 0.0) && Passed;
     Passed = EvaluateNear("GetMedianError()", "empty", "The error of no values is zero", Tester.MedianError(vector<double>()), 0.0, 0.0) && Passed;
+  }
+
+  // Test the statistics of the detector effects tests:
+  {
+    Probe Tester;
+    const vector<double> Five = { 4.0, 1.0, 5.0, 2.0, 3.0 };
+    Passed = EvaluateNear("GetQuantile()", "median", "The 0.5 quantile of 1 ... 5", Tester.Quantile(Five, 0.5), 3.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetQuantile()", "minimum", "The 0 quantile is the minimum", Tester.Quantile(Five, 0.0), 1.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetQuantile()", "maximum", "The 1 quantile is the maximum", Tester.Quantile(Five, 1.0), 5.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetQuantile()", "interpolation", "The 0.125 quantile of 1 ... 5 lies at position 0.5: 1.5", Tester.Quantile(Five, 0.125), 1.5, 1e-12) && Passed;
+    Passed = EvaluateNear("GetQuantile()", "single", "The quantile of a single value", Tester.Quantile(vector<double>{7.0}, 0.3), 7.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetQuantile()", "empty", "The quantile of no values is zero", Tester.Quantile(vector<double>(), 0.5), 0.0, 0.0) && Passed;
+
+    // 1 ... 5: median 3, absolute deviations 2, 1, 0, 1, 2 with the median 1
+    Passed = EvaluateNear("GetRobustSigma()", "five", "1.4826 times the median absolute deviation of 1 ... 5", Tester.RobustSigma(Five), 1.4826, 1e-12) && Passed;
+    Passed = EvaluateNear("GetRobustSigma()", "identical", "The robust sigma of identical values is zero", Tester.RobustSigma(vector<double>{2.0, 2.0, 2.0}), 0.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetRobustSigma()", "empty", "The robust sigma of no values is zero", Tester.RobustSigma(vector<double>()), 0.0, 0.0) && Passed;
+
+    // 1, 2, 3, 4, 10: 80% are four values: the shortest interval is 1 ... 4 (width 3), 100% need 1 ... 10 (width 9)
+    const vector<double> Outlier = { 10.0, 1.0, 3.0, 2.0, 4.0 };
+    Passed = EvaluateNear("GetHalfWidthContaining()", "80%", "The shortest interval with four of five values is 1 ... 4", Tester.HalfWidth(Outlier, 0.8), 1.5, 1e-12) && Passed;
+    Passed = EvaluateNear("GetHalfWidthContaining()", "just above 80%", "More than four of five values need the whole range", Tester.HalfWidth(Outlier, 0.81), 4.5, 1e-12) && Passed;
+    Passed = EvaluateNear("GetHalfWidthContaining()", "100%", "All values need the whole range", Tester.HalfWidth(Outlier, 1.0), 4.5, 1e-12) && Passed;
+    Passed = EvaluateNear("GetHalfWidthContaining()", "small", "A tiny fraction needs one value: width zero", Tester.HalfWidth(Outlier, 0.01), 0.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetHalfWidthContaining()", "empty", "No values: zero", Tester.HalfWidth(vector<double>(), 0.5), 0.0, 0.0) && Passed;
+
+    // A triangle: 100 - 10|k| values at k*0.5, k = -10 ... 10 (1000 values, median 0). The smoothing with a triangle of three bins
+    // lowers only the apex (100 -> 95), the half maximum 47.5 is reached at |k| = 5.25: FWHM = 10.5 bins = 5.25
+    vector<double> Triangle;
+    for (int k = -10; k <= 10; ++k) {
+      for (int n = 0; n < 100 - 10*abs(k); ++n) {
+        Triangle.push_back(0.5*k);
+      }
+    }
+    Passed = EvaluateNear("FullWidthAtHalfMaximum()", "triangle", "The FWHM of a triangle after the smoothing: 10.5 bins of 0.5", Tester.Fwhm(Triangle, 0.5), 5.25, 1e-9) && Passed;
+    Passed = EvaluateNear("FullWidthAtHalfMaximum()", "few", "Fewer than 20 values: no peak", Tester.Fwhm(vector<double>(19, 1.0), 0.5), 0.0, 0.0) && Passed;
+    Passed = EvaluateNear("FullWidthAtHalfMaximum()", "bin width", "A bin width of zero: no peak", Tester.Fwhm(Triangle, 0.0), 0.0, 0.0) && Passed;
+
+    // Alternating 0 and 1 (400 values): standard deviation 0.5, the standard error of the mean is 0.5/sqrt(400) = 0.025,
+    // the standard deviation of the 1000 resamples has an uncertainty of 0.025/sqrt(2*999) = 0.00056
+    vector<double> Alternating;
+    for (int i = 0; i < 200; ++i) {
+      Alternating.push_back(0.0);
+      Alternating.push_back(1.0);
+    }
+    const ETStatistic Mean = [](const vector<double>& V) { double Sum = 0.0; for (double X: V) { Sum += X; } return Sum/V.size(); };
+    Passed = EvaluateNear("GetBootstrapError()", "mean", "The bootstrap error of a mean is the standard error of the mean (five sigma of the estimate)", Tester.Bootstrap(Alternating, Mean, 1000), 0.025, 0.0028) && Passed;
+    Passed = EvaluateNear("GetBootstrapError()", "repeat", "The same data give the same uncertainty", Tester.Bootstrap(Alternating, Mean, 50) - Tester.Bootstrap(Alternating, Mean, 50), 0.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetBootstrapError()", "constant", "A constant has no uncertainty", Tester.Bootstrap(vector<double>(50, 3.0), Mean, 50), 0.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetBootstrapError()", "single", "A single value has no uncertainty", Tester.Bootstrap(vector<double>{1.0}, Mean, 50), 0.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetBootstrapError()", "empty", "No values: no uncertainty", Tester.Bootstrap(vector<double>(), Mean, 50), 0.0, 0.0) && Passed;
+    const double OneResample = Tester.Bootstrap(Alternating, Mean, 1);
+    Passed = EvaluateTrue("GetBootstrapError()", "one resample", "One resample is raised to two: the uncertainty is finite", isfinite(OneResample) == true) && Passed;
+    Passed = EvaluateTrue("GetBootstrapError()", "zero resamples", "Zero resamples are raised to two: the uncertainty is finite", isfinite(Tester.Bootstrap(Alternating, Mean, 0)) == true) && Passed;
+    const ETMeasuredValue Measured = Tester.Measured(Alternating, Mean, 50);
+    Passed = EvaluateNear("Measure()", "value", "The value is the statistic of the data", Measured.m_Value, 0.5, 1e-12) && Passed;
+    Passed = EvaluateNear("Measure()", "error", "The error is the bootstrap error", Measured.m_Error, Tester.Bootstrap(Alternating, Mean, 50), 0.0) && Passed;
+
+    // Reference 10 +- 0.6 and measurement +- 0.8: the combined error is 1.0, the tolerance five
+    Tester.References({ { "S/O", { 10.0, 0.6 } } });
+    ETMeasuredValue Value;
+    Value.m_Error = 0.8;
+    Value.m_Value = 14.9;
+    Passed = EvaluateTrue("CompareToReference()", "just inside", "A measurement 4.9 combined errors from the reference passes", Tester.Compare(Value)) && Passed;
+    Value.m_Value = 5.1;
+    Passed = EvaluateTrue("CompareToReference()", "just inside, below", "A measurement 4.9 combined errors below the reference passes", Tester.Compare(Value)) && Passed;
+    Value.m_Value = 15.1;
+    Passed = EvaluateFalse("CompareToReference()", "just outside", "A measurement 5.1 combined errors from the reference fails", Tester.Compare(Value)) && Passed;
+    Value.m_Value = 4.9;
+    Passed = EvaluateFalse("CompareToReference()", "just outside, below", "A measurement 5.1 combined errors below the reference fails", Tester.Compare(Value)) && Passed;
+    Value.m_Value = 100.0;
+    Value.m_Error = numeric_limits<double>::quiet_NaN();
+    Passed = EvaluateFalse("CompareToReference()", "NaN error", "A NaN uncertainty does not accept a wrong measurement", Tester.Compare(Value)) && Passed;
+    Value.m_Error = numeric_limits<double>::infinity();
+    Passed = EvaluateFalse("CompareToReference()", "infinite error", "An infinite uncertainty does not accept a wrong measurement", Tester.Compare(Value)) && Passed;
+    Value.m_Value = numeric_limits<double>::quiet_NaN();
+    Value.m_Error = 0.8;
+    Passed = EvaluateFalse("CompareToReference()", "NaN value", "A NaN measurement fails", Tester.Compare(Value)) && Passed;
+    Tester.References({ { "S/O", { 10.0, numeric_limits<double>::quiet_NaN() } } });
+    Value.m_Value = 100.0;
+    Passed = EvaluateFalse("CompareToReference()", "NaN reference error", "A NaN reference uncertainty does not accept a wrong measurement", Tester.Compare(Value)) && Passed;
+    Tester.References({ });
+    Value.m_Value = 10.0;
+    Passed = EvaluateFalse("CompareToReference()", "no reference", "Without a reference the comparison fails", Tester.Compare(Value)) && Passed;
   }
 
   return Passed;

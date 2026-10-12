@@ -572,6 +572,189 @@ double MEndToEndTest::GetMedian(vector<double> Values) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the quantile (0..1) of a vector, zero if empty
+double MEndToEndTest::GetQuantile(vector<double> Values, double Fraction)
+{
+  if (Values.empty() == true) {
+    return 0.0;
+  }
+  sort(Values.begin(), Values.end());
+  const double Position = Fraction*(Values.size() - 1);
+  const unsigned int Lower = static_cast<unsigned int>(floor(Position));
+  const unsigned int Upper = min(Lower + 1, static_cast<unsigned int>(Values.size()) - 1);
+  return Values[Lower] + (Position - Lower)*(Values[Upper] - Values[Lower]);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the robust sigma: 1.4826 times the median absolute deviation, zero if empty
+double MEndToEndTest::GetRobustSigma(const vector<double>& Values)
+{
+  if (Values.empty() == true) {
+    return 0.0;
+  }
+  const double Center = GetQuantile(Values, 0.5);
+  vector<double> Deviations;
+  Deviations.reserve(Values.size());
+  for (double V: Values) {
+    Deviations.push_back(fabs(V - Center));
+  }
+  return 1.4826*GetQuantile(Deviations, 0.5);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the half width of the shortest interval which contains the fraction of the values, zero if empty
+double MEndToEndTest::GetHalfWidthContaining(vector<double> Values, double Fraction)
+{
+  if (Values.empty() == true) {
+    return 0.0;
+  }
+  sort(Values.begin(), Values.end());
+  const unsigned int Needed = max(1U, static_cast<unsigned int>(ceil(Fraction*Values.size())));
+  double Shortest = Values.back() - Values.front();
+  for (unsigned int i = 0; i + Needed - 1 < Values.size(); ++i) {
+    Shortest = min(Shortest, Values[i + Needed - 1] - Values[i]);
+  }
+  return 0.5*Shortest;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the full width at half maximum of the peak of the values (histogram of 80 bins around the median), zero if there is no peak
+double MEndToEndTest::FullWidthAtHalfMaximum(const vector<double>& Values, double BinWidth)
+{
+  if (Values.size() < 20 || BinWidth <= 0.0) {
+    return 0.0;
+  }
+  const double Center = GetQuantile(Values, 0.5);
+  // Use a window of +-40 bin widths around the median - wide enough for the peak, narrow enough for no tails
+  const int NBins = 80;
+  vector<double> Content(NBins, 0.0);
+  for (double V: Values) {
+    const int Bin = static_cast<int>(floor((V - Center)/BinWidth + 0.5*NBins));
+    if (Bin >= 0 && Bin < NBins) {
+      Content[Bin] += 1.0;
+    }
+  }
+  vector<double> Smoothed(NBins, 0.0);
+  for (int b = 1; b < NBins - 1; ++b) {
+    Smoothed[b] = 0.25*Content[b - 1] + 0.5*Content[b] + 0.25*Content[b + 1];
+  }
+  int Max = 1;
+  for (int b = 1; b < NBins - 1; ++b) {
+    if (Smoothed[b] > Smoothed[Max]) {
+      Max = b;
+    }
+  }
+  const double Half = 0.5*Smoothed[Max];
+  if (Half <= 0.0) {
+    return 0.0;
+  }
+  double Left = 0.0;
+  bool LeftFound = false;
+  for (int b = Max; b > 1; --b) {
+    if (Smoothed[b - 1] < Half) {
+      Left = (b - 1) + (Half - Smoothed[b - 1])/(Smoothed[b] - Smoothed[b - 1]);
+      LeftFound = true;
+      break;
+    }
+  }
+  double Right = 0.0;
+  bool RightFound = false;
+  for (int b = Max; b < NBins - 2; ++b) {
+    if (Smoothed[b + 1] < Half) {
+      Right = b + (Smoothed[b] - Half)/(Smoothed[b] - Smoothed[b + 1]);
+      RightFound = true;
+      break;
+    }
+  }
+  if (LeftFound == false || RightFound == false) {
+    return 0.0;
+  }
+  return (Right - Left)*BinWidth;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the bootstrap uncertainty of a statistic of the values (fixed seed, at least two resamples)
+double MEndToEndTest::GetBootstrapError(const vector<double>& Values, const ETStatistic& Statistic, unsigned int NResamples)
+{
+  if (Values.size() < 2) {
+    return 0.0;
+  }
+  // The standard deviation needs two resamples
+  NResamples = max(2U, NResamples);
+  mt19937 Generator(12345);
+  uniform_int_distribution<unsigned int> Pick(0, static_cast<unsigned int>(Values.size()) - 1);
+  vector<double> Results;
+  Results.reserve(NResamples);
+  vector<double> Resample(Values.size());
+  for (unsigned int r = 0; r < NResamples; ++r) {
+    for (unsigned int i = 0; i < Values.size(); ++i) {
+      Resample[i] = Values[Pick(Generator)];
+    }
+    Results.push_back(Statistic(Resample));
+  }
+  double Mean = 0.0;
+  for (double R: Results) {
+    Mean += R;
+  }
+  Mean /= Results.size();
+  double Sum = 0.0;
+  for (double R: Results) {
+    Sum += (R - Mean)*(R - Mean);
+  }
+  return sqrt(Sum/(Results.size() - 1));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Measure a statistic of the values together with its bootstrap uncertainty
+ETMeasuredValue MEndToEndTest::Measure(const vector<double>& Values, const ETStatistic& Statistic, unsigned int NResamples)
+{
+  ETMeasuredValue Measured;
+  Measured.m_Value = Statistic(Values);
+  Measured.m_Error = GetBootstrapError(Values, Statistic, NResamples);
+  return Measured;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Compare a measured value with its reference: inside five combined standard errors, prints a REFERENCE line
+bool MEndToEndTest::CompareToReference(const MString& Scenario, const MString& Observable, const MString& Description, const ETMeasuredValue& Measured)
+{
+  const MString Key = Scenario + "/" + Observable;
+  mout<<"REFERENCE "<<GetName()<<"/"<<Key<<" "<<Measured.m_Value<<" "<<Measured.m_Error<<endl;
+  auto Found = m_References.find(Key);
+  if (Found == m_References.end()) {
+    return EvaluateTrue("Reference", Scenario + ", " + Observable, "A reference value exists for this observable", false);
+  }
+  // A NaN uncertainty would give a NaN tolerance, which accepts everything
+  const bool Finite = (isfinite(Measured.m_Value) == true && isfinite(Measured.m_Error) == true && isfinite(Found->second.first) == true && isfinite(Found->second.second) == true);
+  if (EvaluateTrue("Reference", Scenario + ", " + Observable, "The measurement and the reference are finite", Finite) == false) {
+    return false;
+  }
+  const double Tolerance = 5.0*sqrt(Measured.m_Error*Measured.m_Error + Found->second.second*Found->second.second);
+  return EvaluateNear("Reference", Scenario + ", " + Observable, Description + " (five combined standard errors)", Measured.m_Value, Found->second.first, Tolerance);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return the significance in sigma of the ratio of two Poisson counts CountA/CountB relative to the expected ratio
 double MEndToEndTest::RatioSigma(double CountA, double CountB, double ExpectedRatio) const
 {

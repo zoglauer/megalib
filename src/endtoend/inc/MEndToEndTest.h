@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -170,6 +172,26 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! A measured value with its uncertainty
+class ETMeasuredValue
+{
+public:
+  //! The value
+  double m_Value = 0.0;
+  //! The uncertainty (standard error)
+  double m_Error = 0.0;
+};
+
+//! A statistic of a vector of values, e.g. a width: used for the bootstrap uncertainties
+typedef function<double(const vector<double>&)> ETStatistic;
+
+//! The reference values: key "scenario/observable", mean of independent runs and its standard error
+typedef map<MString, pair<double, double>> ETReferences;
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Class representing an end-to-end test (base class): runs MEGAlib programs in private directories and compares the results with independent expectations
 //! * The sim and tra files are read with the MEGAlib readers
 //! * The functions which run external programs can be called from std::async threads, the Evaluate* functions and everything which uses ROOT only from the main thread
@@ -284,8 +306,25 @@ class MEndToEndTest : public MUnitTest
   void GetTruncatedMoments(const vector<double>& Values, double Limit, unsigned int& Number, double& Mean, double& RMS) const;
   //! Return the median of a vector, zero if it is empty
   double GetMedian(vector<double> Values) const;
+  // Comparison with reference values:
+  //! Set the reference values
+  void SetReferences(const ETReferences& References) { m_References = References; }
+  //! Compare a measured value with its reference: inside five combined standard errors, prints a REFERENCE line
+  bool CompareToReference(const MString& Scenario, const MString& Observable, const MString& Description, const ETMeasuredValue& Measured);
   //! Return the standard error of the median of a vector, zero if it has no width or is empty
   double GetMedianError(vector<double> Values) const;
+  //! Return the quantile (0..1) of a vector, zero if empty
+  static double GetQuantile(vector<double> Values, double Fraction);
+  //! Return the robust sigma: 1.4826 times the median absolute deviation, zero if empty
+  static double GetRobustSigma(const vector<double>& Values);
+  //! Return the half width of the shortest interval which contains the fraction of the values, zero if empty
+  static double GetHalfWidthContaining(vector<double> Values, double Fraction);
+  //! Return the full width at half maximum of the peak of the values (histogram of 80 bins around the median), zero if there is no peak
+  static double FullWidthAtHalfMaximum(const vector<double>& Values, double BinWidth);
+  //! Return the bootstrap uncertainty of a statistic of the values (fixed seed, at least two resamples)
+  static double GetBootstrapError(const vector<double>& Values, const ETStatistic& Statistic, unsigned int NResamples = 100);
+  //! Measure a statistic of the values together with its bootstrap uncertainty
+  static ETMeasuredValue Measure(const vector<double>& Values, const ETStatistic& Statistic, unsigned int NResamples = 100);
   //! Return the significance in sigma of the ratio of two Poisson counts CountA/CountB relative to the expected ratio
   double RatioSigma(double CountA, double CountB, double ExpectedRatio) const;
   //! Return the two-proportion z value of the efficiencies K1/N1 and K2/N2
@@ -305,6 +344,8 @@ class MEndToEndTest : public MUnitTest
   double m_Timeout;
   //! The time when this test was created: the time out counts from here
   chrono::steady_clock::time_point m_StartTime;
+  //! The reference values for CompareToReference
+  ETReferences m_References;
   //! The geometry which the sim file reader needs, loaded when it is needed for the first time
   shared_ptr<MDGeometryQuest> m_ReaderGeometry;
 
