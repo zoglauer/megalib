@@ -63,7 +63,10 @@ class MMelinator
   void Clear();
   
   //! Set the ID of the selected detector (use all detectors when negative)
-  void SetSelectedDetectorID(int SelectedDetector) { m_SelectedDetectorID = SelectedDetector; }
+  //void SetSelectedDetectorID(int SelectedDetector) { m_SelectedDetectorID = SelectedDetector; }
+  // ADDED
+  //! Set the IDs of the selected detectors (use all detectors when empty)
+  void SetSelectedDetectorIDs(const vector<int>& SelectedDetectors) { m_SelectedDetectorIDs = SelectedDetectors; }
   
   //! Set the ID of the selected detector (use all detectors when negative)
   void SetSelectedTemperatureWindow(double Min, double Max) { m_SelectedTemperatureMin = Min; m_SelectedTemperatureMax = Max; }
@@ -243,7 +246,9 @@ class MMelinator
   MCalibrationStore m_CalibrationStore;
 
   //! The selected detector ID (negative means all detectors)
-  int m_SelectedDetectorID;
+  //int m_SelectedDetectorID;
+  // ADDED
+  vector<int> m_SelectedDetectorIDs;
   
   //! The selected temperature window minimum
   double m_SelectedTemperatureMin;

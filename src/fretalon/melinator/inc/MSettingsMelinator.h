@@ -32,6 +32,10 @@
 #include "MGlobal.h"
 #include "MSettings.h"
 
+// Standard libs:
+#include <vector>
+using namespace std;
+
 // Forward declarations:
 
 
@@ -164,9 +168,15 @@ class MSettingsMelinator : public MSettings
 
 
   //! Set the single detector to use (negative means use all)
-  void SetSelectedDetectorID(int ID) { m_SelectedDetectorID = ID; }
+  //void SetSelectedDetectorID(int ID) { m_SelectedDetectorID = ID; }
   //! Get the single detector to use (negative means use all)
-  int GetSelectedDetectorID() const { return m_SelectedDetectorID; }
+  //int GetSelectedDetectorID() const { return m_SelectedDetectorID; }
+
+  // ADDED
+  //! Set the detectors to use (empty means use all)
+  void SetSelectedDetectorIDs(const vector<int>& IDs) { m_SelectedDetectorIDs = IDs; }
+  //! Get the detectors to use (empty means use all)
+  vector<int> GetSelectedDetectorIDs() const { return m_SelectedDetectorIDs; }
 
   //! Set the detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
   void SetSelectedDetectorSide(int Side) { m_SelectedDetectorSide = Side; }
@@ -306,7 +316,9 @@ class MSettingsMelinator : public MSettings
   MString m_SaveAsFileName;
   
   //! The single detector to use (negative means use all)
-  int m_SelectedDetectorID;
+  //int m_SelectedDetectorID;
+  // ADDED
+  vector<int> m_SelectedDetectorIDs;
   //! The detector side to use (< 0: all, 0: negative side, 1: positive side, >=2: all)
   int m_SelectedDetectorSide;
 

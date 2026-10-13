@@ -1379,7 +1379,9 @@ bool MGUIMainMelinator::OnLoadLast()
   // Closes the application
    
   m_Melinator.Clear();
-  m_Melinator.SetSelectedDetectorID(m_Settings->GetSelectedDetectorID());
+  //m_Melinator.SetSelectedDetectorID(m_Settings->GetSelectedDetectorID());
+  // ADDED
+  m_Melinator.SetSelectedDetectorIDs(m_Settings->GetSelectedDetectorIDs());
   m_Melinator.SetSelectedDetectorSide(m_Settings->GetSelectedDetectorSide());
   m_Melinator.SetSelectedTemperatureWindow(m_Settings->GetMinimumTemperature(), m_Settings->GetMaximumTemperature());
   m_Melinator.SetPeakFindingPrior(m_Settings->GetPeakFindingPrior());
