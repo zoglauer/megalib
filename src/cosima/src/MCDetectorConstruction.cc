@@ -18,9 +18,34 @@
  * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
+// ============================================================================
+// [SPEEDUP] SUMMARY OF THE CHANGES IN THIS FILE
+//
+// Problem: for geometries with a very large number of volumes (e.g. 232,000 from
+// a CAD conversion) the start-up of Cosima took hours. The reason was several
+// LINEAR searches that run once PER VOLUME, i.e. O(N^2) in total:
+//   (1) ConstructVolumes(): for each volume, scan the whole list of solids
+//       (AllSolids) to find the solid with a given name.
+//       G4VSolid::GetName() returns a G4String BY VALUE, so every step of the
+//       scan also allocates and copies a string.
+//   (2) PositionVolumes(): for each volume, scan the whole G4LogicalVolumeStore
+//       twice (for the volume itself and for its mother).
+//
+// Fix: look the objects up by name in a hash map (std::unordered_map), which
+// is filled once while the solids / logical volumes are created. Lookups then
+// cost O(1) instead of O(N).
+//
+// Everything marked with "[SPEEDUP]" below is new or changed. The behaviour is
+// identical as long as the names of the solids / logical volumes are unique
+// (they are, since they are derived from the unique Geomega volume names).
+// ============================================================================
+
 
 // Standard:
 #include <sstream>
+// [SPEEDUP] NEW: needed for the hash maps
+#include <unordered_map>
+#include <string>
 using namespace std;
 
 // Cosima:
@@ -105,6 +130,31 @@ using namespace std;
 //#include "TColor.h"
 
 
+// ----------------------------------------------------------------------------
+// [SPEEDUP] NEW: name -> G4LogicalVolume lookup table
+//
+// Filled in ConstructVolumes() whenever a logical volume is created, used in
+// PositionVolumes() instead of scanning the whole G4LogicalVolumeStore for each
+// volume. It lives here in the .cc file (file-local) so that no change to
+// MCDetectorConstruction.hh is necessary. It is cleared at the beginning of
+// Initialize() / ConstructVolumes(), i.e. whenever the Geant4 stores are
+// cleaned, so it can never contain stale pointers.
+// (Cosima's geometry construction is single-threaded; if that ever changes,
+// make this a member of the class instead.)
+// ----------------------------------------------------------------------------
+namespace {
+  unordered_map<std::string, G4LogicalVolume*> g_LogicalVolumeByName;
+
+  // Return the logical volume with the given name (e.g. "SomeVolumeLog") or 0
+  G4LogicalVolume* FindLogicalVolumeByName(const MString& LogicalName)
+  {
+    unordered_map<std::string, G4LogicalVolume*>::const_iterator It = 
+      g_LogicalVolumeByName.find(std::string(LogicalName.Data()));
+    return (It == g_LogicalVolumeByName.end()) ? 0 : It->second;
+  }
+}
+
+
 /******************************************************************************
  * Default constructor
  */
@@ -152,6 +202,8 @@ bool MCDetectorConstruction::Initialize()
   G4PhysicalVolumeStore::GetInstance()->Clean();
   G4LogicalVolumeStore::GetInstance()->Clean();
   G4SolidStore::GetInstance()->Clean();
+  // [SPEEDUP] NEW: the logical volumes were just deleted, so forget their pointers
+  g_LogicalVolumeByName.clear();
 
   m_Geometry = new MDGeometryQuest(); 
 
@@ -612,19 +664,42 @@ bool MCDetectorConstruction::ConstructVolumes()
     //cout<<"Input shapes: "<<AllShapes.back()->GetName()<<endl;
   }
   list<G4VSolid*> AllSolids;
+
+  // ---------------------------------------------------------------------------
+  // [SPEEDUP] NEW: hash map  solid name -> G4VSolid*  (+ a small lookup helper)
+  //
+  // Replaces all the linear scans "for (J in AllSolids) if (J->GetName() == name)".
+  // Those scans were executed once per volume (O(N^2)), and every step of the
+  // scan also copied a std::string because G4VSolid::GetName() returns by value.
+  // The map is filled right after each solid is created (see "AllSolids.push_back"
+  // below). The list AllSolids is kept for compatibility, but is no longer searched.
+  // ---------------------------------------------------------------------------
+  unordered_map<std::string, G4VSolid*> SolidsByName;
+  SolidsByName.reserve(2*m_Geometry->GetNShapes() + 16);
+  // Returns the solid with the given name, or 0 if it does not exist (yet)
+  auto FindSolid = [&SolidsByName](const std::string& SolidName) -> G4VSolid* {
+    unordered_map<std::string, G4VSolid*>::const_iterator It = SolidsByName.find(SolidName);
+    return (It == SolidsByName.end()) ? (G4VSolid*) 0 : It->second;
+  };
+
+  // [SPEEDUP] NEW: start with an empty logical-volume lookup table
+  // (it is filled in Step 2 below and used by PositionVolumes())
+  g_LogicalVolumeByName.clear();
+  g_LogicalVolumeByName.reserve(2*m_Geometry->GetNVolumes() + 16);
+
   for (list<MDShape*>::iterator I = AllShapes.begin(); I != AllShapes.end(); ++I) {
     MDShape* Shape = (*I);
     // A. If not all sub shapes of this shape are defined, then push it back to the end to take care of it later
     bool AllSubShapesDefined = true;
     for (unsigned int sh = 0; sh < Shape->GetNSubShapes(); ++sh) {
-      G4String Name = Shape->GetSubShape(sh)->GetName().GetString();
-      bool Found = false;
-      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
-        if ((*J)->GetName() == Name) {
-          Found = true;
-          break;
-        }
-      }
+      // [SPEEDUP] CHANGED: was
+      //     G4String Name = Shape->GetSubShape(sh)->GetName().GetString();
+      //     bool Found = false;
+      //     for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
+      //       if ((*J)->GetName() == Name) { Found = true; break; }
+      //     }
+      // now: one hash lookup
+      bool Found = (FindSolid(std::string(Shape->GetSubShape(sh)->GetName().Data())) != 0);
       if (Found == false) {
         AllSubShapesDefined = false;
         break;
@@ -838,16 +913,10 @@ bool MCDetectorConstruction::ConstructVolumes()
       G4String MinuendName = Subtraction->GetMinuend()->GetName().GetString();
       G4String SubtrahendName = Subtraction->GetSubtrahend()->GetName().GetString();
 
-      G4VSolid* MinuendSolid = 0;
-      G4VSolid* SubtrahendSolid = 0;
-      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
-        if ((*J)->GetName() == MinuendName) {
-          MinuendSolid = *J;
-        }
-        if ((*J)->GetName() == SubtrahendName) {
-          SubtrahendSolid = *J;
-        }
-      }
+      // [SPEEDUP] CHANGED: was a "for (J in AllSolids)" linear scan over all solids,
+      // now two hash lookups
+      G4VSolid* MinuendSolid = FindSolid(std::string(MinuendName.c_str()));
+      G4VSolid* SubtrahendSolid = FindSolid(std::string(SubtrahendName.c_str()));
       if (MinuendSolid == 0) {
         merr<<"Fatal error: No solid found with name "<<MinuendName<<endl;
         return false;
@@ -868,16 +937,10 @@ bool MCDetectorConstruction::ConstructVolumes()
       G4String MinuendName = Intersection->GetShapeA()->GetName().GetString();
       G4String SubtrahendName = Intersection->GetShapeB()->GetName().GetString();
 
-      G4VSolid* MinuendSolid = 0;
-      G4VSolid* SubtrahendSolid = 0;
-      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
-        if ((*J)->GetName() == MinuendName) {
-          MinuendSolid = *J;
-        }
-        if ((*J)->GetName() == SubtrahendName) {
-          SubtrahendSolid = *J;
-        }
-      }
+      // [SPEEDUP] CHANGED: was a "for (J in AllSolids)" linear scan over all solids,
+      // now two hash lookups
+      G4VSolid* MinuendSolid = FindSolid(std::string(MinuendName.c_str()));
+      G4VSolid* SubtrahendSolid = FindSolid(std::string(SubtrahendName.c_str()));
       if (MinuendSolid == 0) {
         merr<<"Fatal error: No solid found with name "<<MinuendName<<endl;
         return false;
@@ -898,16 +961,10 @@ bool MCDetectorConstruction::ConstructVolumes()
       G4String MinuendName = Union->GetAugend()->GetName().GetString();
       G4String SubtrahendName = Union->GetAddend()->GetName().GetString();
 
-      G4VSolid* MinuendSolid = 0;
-      G4VSolid* SubtrahendSolid = 0;
-      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
-        if ((*J)->GetName() == MinuendName) {
-          MinuendSolid = *J;
-        }
-        if ((*J)->GetName() == SubtrahendName) {
-          SubtrahendSolid = *J;
-        }
-      }
+      // [SPEEDUP] CHANGED: was a "for (J in AllSolids)" linear scan over all solids,
+      // now two hash lookups
+      G4VSolid* MinuendSolid = FindSolid(std::string(MinuendName.c_str()));
+      G4VSolid* SubtrahendSolid = FindSolid(std::string(SubtrahendName.c_str()));
       if (MinuendSolid == 0) {
         merr<<"Fatal error: No solid found with name "<<MinuendName<<endl;
         return false;
@@ -926,6 +983,10 @@ bool MCDetectorConstruction::ConstructVolumes()
       return false;
     }
     AllSolids.push_back(Solid);
+    // [SPEEDUP] NEW: register the new solid in the lookup table.
+    // emplace() keeps the FIRST solid if two had the same name, which is what the
+    // old linear search in Step 2 (with its "break") also found.
+    SolidsByName.emplace(std::string(Solid->GetName().c_str()), Solid);
   }
   
   //for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
@@ -944,13 +1005,14 @@ bool MCDetectorConstruction::ConstructVolumes()
       MaterialName = m_Geometry->GetVolumeAt(v)->GetMaterial()->GetName();
       LogName = VolumeName + "Log";
 
-      Solid = 0;
-      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
-        if ((*J)->GetName() == ShapeName) {
-          Solid = *J;
-          break;
-        }
-      }
+      // [SPEEDUP] CHANGED: this was the main bottleneck. It was
+      //     Solid = 0;
+      //     for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
+      //       if ((*J)->GetName() == ShapeName) { Solid = *J; break; }
+      //     }
+      // i.e. a linear scan (with a string copy in every step) over ALL solids for
+      // EVERY volume: O(N^2). Now it is a single hash lookup.
+      Solid = FindSolid(std::string(ShapeName.c_str()));
       if (Solid == 0) {
         merr<<"Fatal error: No solid found with name "<<ShapeName<<" for volume "<<VolumeName<<endl;
         return false;
@@ -979,6 +1041,10 @@ bool MCDetectorConstruction::ConstructVolumes()
       }
       */
       LV->SetVisAttributes(Vis);
+
+      // [SPEEDUP] NEW: remember this logical volume by name, so that PositionVolumes()
+      // does not have to search the G4LogicalVolumeStore for it
+      g_LogicalVolumeByName.emplace(std::string(LogName.Data()), LV);
    
       mdebug<<"Generating Log: "<<LogName.Data()<<" mat="<<MaterialName.Data()<<endl;
     } // no clone 
@@ -1135,19 +1201,19 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
     MotherName = Volume->GetMother()->GetName() + "Log";
  
 
-    G4LogicalVolume* ThisLog = 0;
-    G4LogicalVolume* MotherLog = 0;
-
-    G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-    for (unsigned lv = 0; lv < SS->size(); ++lv) {
-      if (ThisLog == 0 && CopyName == SS->at(lv)->GetName().c_str()) {
-        ThisLog = SS->at(lv);
-      }
-      if (MotherLog == 0 && MotherName == SS->at(lv)->GetName().c_str()) {
-        MotherLog = SS->at(lv);
-      }
-      if (ThisLog != 0 && MotherLog != 0) break;
-    }
+    // [SPEEDUP] CHANGED: was
+    //     G4LogicalVolume* ThisLog = 0;
+    //     G4LogicalVolume* MotherLog = 0;
+    //     G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
+    //     for (unsigned lv = 0; lv < SS->size(); ++lv) {
+    //       if (ThisLog == 0 && CopyName == SS->at(lv)->GetName().c_str()) ThisLog = SS->at(lv);
+    //       if (MotherLog == 0 && MotherName == SS->at(lv)->GetName().c_str()) MotherLog = SS->at(lv);
+    //       if (ThisLog != 0 && MotherLog != 0) break;
+    //     }
+    // i.e. a linear scan through the whole logical volume store for EVERY placed
+    // volume (O(N^2)). Now: two hash lookups in g_LogicalVolumeByName.
+    G4LogicalVolume* ThisLog = FindLogicalVolumeByName(CopyName);
+    G4LogicalVolume* MotherLog = FindLogicalVolumeByName(MotherName);
 
     if (ThisLog == 0) {
       mout<<"Unable to find copy-log: "<<CopyName<<endl;
@@ -1193,19 +1259,11 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
         MotherName = Volume->GetMother()->GetName() + "Log";
       }
 
-      G4LogicalVolume* ThisLog = 0;
-      G4LogicalVolume* MotherLog = 0;
-
-      G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-      for (unsigned lv = 0; lv < SS->size(); ++lv) {
-        if (ThisLog == 0 && Name == SS->at(lv)->GetName().c_str()) {
-          ThisLog = SS->at(lv);
-        }
-        if (MotherLog == 0 && MotherName == SS->at(lv)->GetName().c_str()) {
-          MotherLog = SS->at(lv);
-        }
-        if (ThisLog != 0 && MotherLog != 0) break;
-      }
+      // [SPEEDUP] CHANGED: same as above - the linear scan through the whole
+      // G4LogicalVolumeStore (done for every volume) is replaced by two hash lookups.
+      // For the world volume MotherName is empty, so MotherLog stays 0, as before.
+      G4LogicalVolume* ThisLog = FindLogicalVolumeByName(Name);
+      G4LogicalVolume* MotherLog = FindLogicalVolumeByName(MotherName);
 
       if (ThisLog == 0) {
         merr<<"Unable to find this-log: "<<Name<<endl;
