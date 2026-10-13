@@ -32,6 +32,7 @@
 // Standard libs:
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <locale>
 #include <iomanip>
@@ -419,12 +420,19 @@ void MString::Read(istream& in)
 
 long MString::GetHash() const
 {
-  //! Return a hash value
+  //! Return a 64-bit FNV-1a hash value of the string
 
-  locale loc;
-  const collate<char>& coll = use_facet<collate<char> >(loc);
-  
-  return coll.hash(m_String.data(), m_String.data() + m_String.length());
+  // The offset and the prime of FNV-1a for 64 bits
+  const uint64_t Offset = 14695981039346656037ULL;
+  const uint64_t Prime = 1099511628211ULL;
+
+  uint64_t Hash = Offset;
+  for (const char Character : m_String) {
+    Hash ^= static_cast<uint64_t>(static_cast<unsigned char>(Character));
+    Hash *= Prime;
+  }
+
+  return static_cast<long>(Hash);
 }
 
 

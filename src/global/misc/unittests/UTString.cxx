@@ -568,6 +568,12 @@ bool UTString::TestNumericConversions()
   Passed = Evaluate("GetHash()", "equal strings", "GetHash returns the same value for equal strings", HashA.GetHash(), HashB.GetHash()) && Passed;
   Passed = EvaluateFalse("GetHash()", "different strings", "GetHash distinguishes simple different strings", HashA.GetHash() == HashC.GetHash()) && Passed;
 
+  // The test vectors of FNV-1a with 64 bits (from the specification of the hash): the same on every machine
+  Passed = Evaluate("GetHash()", "empty", "The hash of the empty string is the offset of FNV-1a", static_cast<unsigned long>(MString("").GetHash()), 0xcbf29ce484222325UL) && Passed;
+  Passed = Evaluate("GetHash()", "a", "The hash of a", static_cast<unsigned long>(MString("a").GetHash()), 0xaf63dc4c8601ec8cUL) && Passed;
+  Passed = Evaluate("GetHash()", "foobar", "The hash of foobar", static_cast<unsigned long>(MString("foobar").GetHash()), 0x85944171f73967e8UL) && Passed;
+  Passed = Evaluate("GetHash()", "non-ASCII", "A byte above 127 is hashed as unsigned byte", static_cast<unsigned long>(MString("\xff").GetHash()), 0xaf64724c8602eb6eUL) && Passed;
+
   ostringstream Out;
   Out << MString("stream");
   Passed = Evaluate("operator<<", "stream", "operator<< writes the string content to a stream", MString(Out.str()), MString("stream")) && Passed;

@@ -318,7 +318,7 @@ class MString
   istream& ReadLine(istream& in);
   //! Read one line into this string replace all previous content
   void Read(istream& in);
-  //! Return a hash value of the string
+  //! Return a 64-bit FNV-1a hash value of the string
   long GetHash() const;
 
   // Analyze
