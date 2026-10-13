@@ -26,6 +26,12 @@
 #include <iostream>
 #include <map>
 
+// ROOT libs:
+#include "TGraphErrors.h"
+#include "TLegend.h"
+#include "TLine.h"
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -91,7 +97,7 @@ ETCosimaToMimrecThresholds::ETCosimaToMimrecThresholds() : MEndToEndTest("ETCosi
 
 
 //! Run all tests
-bool ETCosimaToMimrecThresholds::Run()
+bool ETCosimaToMimrecThresholds::RunTest()
 {
   bool Passed = true;
 
@@ -130,6 +136,21 @@ bool ETCosimaToMimrecThresholds::Run()
     }));
   }
 
+  // The summary: the areas, and the fractions over the line energy
+  TGraphErrors* SimulatedAreas = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraphErrors* ReconstructedAreas = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraphErrors* PeakFractions = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraphErrors* LostFractions = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraphErrors* ReferenceSimulatedAreas = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraphErrors* ReferenceReconstructedAreas = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraphErrors* ReferencePeakFractions = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraphErrors* ReferenceLostFractions = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  auto AddReference = [this](TGraphErrors* Graph, double X, const MString& Name, const MString& Observable) {
+    const ETMeasuredValue Reference = GetReference(Name, Observable);
+    Graph->SetPoint(Graph->GetN(), X, Reference.m_Value);
+    Graph->SetPointError(Graph->GetN() - 1, 0.0, Reference.m_Error);
+  };
+
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
     const MString Name = Scenarios[s].m_Name;
     const double Line = Lines[s];
@@ -151,6 +172,13 @@ bool ETCosimaToMimrecThresholds::Run()
     if (Tra.m_FileSuccessfullyRead == false) {
       continue;
     }
+
+    ReconstructedAreas->SetPoint(ReconstructedAreas->GetN(), Line, Tra.m_Events.size()/(Flux*Time));
+    ReconstructedAreas->SetPointError(ReconstructedAreas->GetN() - 1, 0.0, sqrt(static_cast<double>(Tra.m_Events.size()))/(Flux*Time));
+    AddReference(ReferenceSimulatedAreas, Line, Name, "simulated events area / cm2");
+    AddReference(ReferenceReconstructedAreas, Line, Name, "reconstructed area / cm2");
+    SimulatedAreas->SetPoint(SimulatedAreas->GetN(), Line, TriggerArea.m_Value);
+    SimulatedAreas->SetPointError(SimulatedAreas->GetN() - 1, 0.0, TriggerArea.m_Error);
 
     if (Line + 2.5 < TriggerThreshold) {
       // The line plus 2.5 keV (six sigma of the energy resolution) is below the trigger threshold: nothing can trigger
@@ -212,10 +240,76 @@ bool ETCosimaToMimrecThresholds::Run()
       }
       return Sum/Values.size();
     };
-    Passed = CompareToReference(Name, "peak fraction", "The fraction of the reconstructed events in the peak (3% around the line)", Measure(All, InPeak, 50)) && Passed;
-    Passed = CompareToReference(Name, "lost fluorescence fraction", "The fraction of the reconstructed events 10 keV (+-2 keV) below the line: a germanium fluorescence photon was lost", Measure(All, LostFluorescence, 50)) && Passed;
+    const ETMeasuredValue PeakFraction = Measure(All, InPeak, 50);
+    const ETMeasuredValue LostFraction = Measure(All, LostFluorescence, 50);
+    Passed = CompareToReference(Name, "peak fraction", "The fraction of the reconstructed events in the peak (3% around the line)", PeakFraction) && Passed;
+    Passed = CompareToReference(Name, "lost fluorescence fraction", "The fraction of the reconstructed events 10 keV (+-2 keV) below the line: a germanium fluorescence photon was lost", LostFraction) && Passed;
+    AddReference(ReferencePeakFractions, Line, Name, "peak fraction");
+    AddReference(ReferenceLostFractions, Line, Name, "lost fluorescence fraction");
+    PeakFractions->SetPoint(PeakFractions->GetN(), Line, PeakFraction.m_Value);
+    PeakFractions->SetPointError(PeakFractions->GetN() - 1, 0.0, PeakFraction.m_Error);
+    LostFractions->SetPoint(LostFractions->GetN(), Line, LostFraction.m_Value);
+    LostFractions->SetPointError(LostFractions->GetN() - 1, 0.0, LostFraction.m_Error);
     Passed = CompareToReference(Name, "mean energy / keV", "The mean reconstructed energy", Measure(All, Mean, 50)) && Passed;
   }
+
+  // The turn-on of the trigger at 30 keV
+  TPad* TurnOnPage = GetReport().AddPage("Trigger turn-on: events per fluence, measured (filled) and reference (open), trigger threshold 30 keV (dashed)", 1, 1);
+  TurnOnPage->cd(1);
+  gPad->SetGrid();
+  if (SimulatedAreas->GetN() == 0) {
+    // No scenario could be evaluated, the report shows why the page is empty
+    GetReport().DrawLabel(0.1, 0.5, "No scenario was evaluated: there are no events to show");
+  }
+  SimulatedAreas->SetTitle(";line energy / keV;events per fluence / cm^{2}");
+  SimulatedAreas->SetMarkerStyle(20);
+  SimulatedAreas->Draw("AP");
+  SimulatedAreas->SetMinimum(0.0);
+  ReferenceSimulatedAreas->SetMarkerStyle(24);
+  ReferenceSimulatedAreas->SetMarkerSize(1.5);
+  ReferenceSimulatedAreas->SetMarkerColor(kGray + 2);
+  ReferenceSimulatedAreas->Draw("P SAME");
+  ReferenceReconstructedAreas->SetMarkerStyle(25);
+  ReferenceReconstructedAreas->SetMarkerSize(1.5);
+  ReferenceReconstructedAreas->SetMarkerColor(kRed - 7);
+  ReferenceReconstructedAreas->Draw("P SAME");
+  ReconstructedAreas->SetMarkerStyle(21);
+  ReconstructedAreas->SetMarkerColor(kRed);
+  ReconstructedAreas->SetLineColor(kRed);
+  ReconstructedAreas->Draw("P SAME");
+  TLine* Threshold = new TLine(TriggerThreshold, 0.0, TriggerThreshold, GetMaximumY(SimulatedAreas));
+  Threshold->SetLineStyle(2);
+  Threshold->Draw();
+  TLegend* TurnOnLegend = new TLegend(0.55, 0.2, 0.88, 0.32);
+  TurnOnLegend->AddEntry(SimulatedAreas, "events in the sim file", "p");
+  TurnOnLegend->AddEntry(ReferenceSimulatedAreas, "reference: sim file", "p");
+  TurnOnLegend->AddEntry(ReferenceReconstructedAreas, "reference: reconstructed", "p");
+  TurnOnLegend->AddEntry(ReconstructedAreas, "reconstructed events", "p");
+  TurnOnLegend->Draw();
+
+  // The fractions of the reconstructed events
+  TPad* FractionPage = GetReport().AddPage("Fraction in the peak (left) and with a lost fluorescence photon (right): measured (filled), reference (open)", 2, 1);
+  FractionPage->cd(1);
+  gPad->SetGrid();
+  if (PeakFractions->GetN() == 0) {
+    GetReport().DrawLabel(0.1, 0.5, "No scenario has reconstructed events: there are no fractions to show");
+  }
+  PeakFractions->SetTitle(";line energy / keV;fraction in the peak");
+  PeakFractions->SetMarkerStyle(20);
+  PeakFractions->Draw("AP");
+  ReferencePeakFractions->SetMarkerStyle(24);
+  ReferencePeakFractions->SetMarkerSize(1.5);
+  ReferencePeakFractions->SetMarkerColor(kGray + 2);
+  ReferencePeakFractions->Draw("P SAME");
+  FractionPage->cd(2);
+  gPad->SetGrid();
+  LostFractions->SetTitle(";line energy / keV;fraction 10 keV below the line");
+  LostFractions->SetMarkerStyle(20);
+  LostFractions->Draw("AP");
+  ReferenceLostFractions->SetMarkerStyle(24);
+  ReferenceLostFractions->SetMarkerSize(1.5);
+  ReferenceLostFractions->SetMarkerColor(kGray + 2);
+  ReferenceLostFractions->Draw("P SAME");
 
   Summarize();
   return Passed;

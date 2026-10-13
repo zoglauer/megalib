@@ -52,7 +52,7 @@ public:
   virtual ~ETCosimaToMimrecOrientation() {}
 
   //! Run all tests
-  virtual bool Run();
+  virtual bool RunTest();
 
 private:
   //! Return the Galactic unit vector of a latitude and longitude in degrees

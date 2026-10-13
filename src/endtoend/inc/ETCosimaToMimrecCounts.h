@@ -51,7 +51,7 @@ public:
   virtual ~ETCosimaToMimrecCounts() {}
 
   //! Run all tests
-  virtual bool Run();
+  virtual bool RunTest();
 
 private:
   //! Return the scenario of a point source (polar angle and azimuth in degree) with a flux in ph/cm2/s

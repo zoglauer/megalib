@@ -60,25 +60,25 @@ clean:
 # Dependencies:
 #
 
-$(EXE_ET): $(BN)/%: src/%.cxx inc/%.h src/MEndToEndTest.cxx inc/MEndToEndTest.h $(LB)/libSivan.$(DLL)
+$(EXE_ET): $(BN)/%: src/%.cxx inc/%.h src/MEndToEndTest.cxx inc/MEndToEndTest.h src/MEndToEndReport.cxx inc/MEndToEndReport.h $(LB)/libSivan.$(DLL)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< src/MEndToEndTest.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
+	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< src/MEndToEndTest.cxx src/MEndToEndReport.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
 
-$(BN)/testdrive: src/TestDriver.cxx src/MTestDriver.cxx inc/MTestDriver.h $(LB)/libCommonMisc.$(DLL)
+$(BN)/testdrive: src/TestDriver.cxx src/MTestDriver.cxx inc/MTestDriver.h src/MEndToEndReport.cxx inc/MEndToEndReport.h $(LB)/libCommonMisc.$(DLL)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) src/TestDriver.cxx src/MTestDriver.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
+	@$(LD) $(CXXFLAGS) $(LDFLAGS) src/TestDriver.cxx src/MTestDriver.cxx src/MEndToEndReport.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
 
-$(BN)/testdrivercalibration: src/TestDriverCalibration.cxx inc/TestDriverCalibration.h src/MEndToEndTest.cxx inc/MEndToEndTest.h $(LB)/libSivan.$(DLL)
+$(BN)/testdrivercalibration: src/TestDriverCalibration.cxx inc/TestDriverCalibration.h src/MEndToEndTest.cxx inc/MEndToEndTest.h src/MEndToEndReport.cxx inc/MEndToEndReport.h $(LB)/libSivan.$(DLL)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) src/TestDriverCalibration.cxx src/MEndToEndTest.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
+	@$(LD) $(CXXFLAGS) $(LDFLAGS) src/TestDriverCalibration.cxx src/MEndToEndTest.cxx src/MEndToEndReport.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
 
-$(EXE_UT_DRIVER): $(BN)/%: unittests/%.cxx src/MTestDriver.cxx inc/MTestDriver.h $(LB)/libCommonMisc.$(DLL)
+$(EXE_UT_DRIVER): $(BN)/%: unittests/%.cxx src/MTestDriver.cxx inc/MTestDriver.h src/MEndToEndReport.cxx inc/MEndToEndReport.h $(LB)/libCommonMisc.$(DLL)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< src/MTestDriver.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
+	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< src/MTestDriver.cxx src/MEndToEndReport.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
 
-$(EXE_UT_ET): $(BN)/%: unittests/%.cxx src/MEndToEndTest.cxx inc/MEndToEndTest.h $(LB)/libSivan.$(DLL)
+$(EXE_UT_ET): $(BN)/%: unittests/%.cxx src/MEndToEndTest.cxx inc/MEndToEndTest.h src/MEndToEndReport.cxx inc/MEndToEndReport.h $(LB)/libSivan.$(DLL)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< src/MEndToEndTest.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
+	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< src/MEndToEndTest.cxx src/MEndToEndReport.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
 
 #
 #----------------------------------------------------------------

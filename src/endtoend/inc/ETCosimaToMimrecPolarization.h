@@ -53,7 +53,7 @@ public:
   virtual ~ETCosimaToMimrecPolarization() {}
 
   //! Run all tests
-  virtual bool Run();
+  virtual bool RunTest();
 
 private:
   //! The modulation vector of the full energy events relative to the axis E1 in the plane perpendicular to the incident direction D (E2 = D x E1, or given)
@@ -74,8 +74,8 @@ private:
     }
   };
 
-  //! Measure the modulation of the events of a tra file
-  static Modulation Measure(const ETTraFileCoreData& Tra, const MVector& E1, const MVector& E2, const MVector& Direction);
+  //! Measure the modulation of the events of a tra file, optionally return the azimuthal scattering angles in degree
+  static Modulation Measure(const ETTraFileCoreData& Tra, const MVector& E1, const MVector& E2, const MVector& Direction, vector<double>* Azimuths = nullptr);
 };
 
 #endif

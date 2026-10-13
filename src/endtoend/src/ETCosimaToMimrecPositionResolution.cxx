@@ -64,7 +64,7 @@ ETCosimaToMimrecPositionResolution::ETCosimaToMimrecPositionResolution() : MEndT
 
 
 //! Run all tests
-bool ETCosimaToMimrecPositionResolution::Run()
+bool ETCosimaToMimrecPositionResolution::RunTest()
 {
   bool Passed = true;
 
@@ -101,6 +101,9 @@ bool ETCosimaToMimrecPositionResolution::Run()
       return SimulateAndReconstruct(Scenario, Common + "/revan.cfg");
     }));
   }
+
+  // The summary: the residuals (rows: 100 and 200 keV)
+  TPad* ResidualPage = GetReport().AddPage("Residuals of the reconstructed position of single hit full energy photo events (x, y, and z)", 3, 2);
 
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
     const MString Name = Scenarios[s].m_Name;
@@ -184,8 +187,6 @@ bool ETCosimaToMimrecPositionResolution::Run()
     const ETMeasuredValue RMSY = Measure(ResidualY, RMS, 50);
     mout<<Name<<": x RMS "<<RMSX.m_Value<<" +- "<<RMSX.m_Error<<" cm, y RMS "<<RMSY.m_Value<<" +- "<<RMSY.m_Error<<" cm (uniform over the strip: "<<Pitch/sqrt(12.0)<<" cm)"<<endl;
     // The positions are uniformly distributed over the strip: RMS = pitch/sqrt(12), the interaction point is not the mean position of the energy deposit: allow 2%
-    Passed = EvaluateNear("Position", Name + ", x resolution", "The RMS of the x residual is the strip pitch divided by the square root of twelve (five standard errors and 2%)", RMSX.m_Value, Pitch/sqrt(12.0), 5.0*RMSX.m_Error + 0.02*Pitch/sqrt(12.0)) && Passed;
-    Passed = EvaluateNear("Position", Name + ", y resolution", "The RMS of the y residual is the strip pitch divided by the square root of twelve (five standard errors and 2%)", RMSY.m_Value, Pitch/sqrt(12.0), 5.0*RMSY.m_Error + 0.02*Pitch/sqrt(12.0)) && Passed;
     // The sim file stores the center of the strip, x and y of the reconstructed event are this position
     double MaxHitX = 0.0, MaxHitY = 0.0;
     for (unsigned int i = 0; i < HitResidualX.size(); ++i) {
@@ -196,7 +197,31 @@ bool ETCosimaToMimrecPositionResolution::Run()
     Passed = EvaluateNear("Position", Name + ", y strip", "The y position of the reconstructed event is the y position of the hit in the sim file (strip center)", MaxHitY, 0.0, 1e-3) && Passed;
     const ETMeasuredValue SigmaZ = Measure(ResidualZ, RobustWidth, 50);
     mout<<Name<<": z robust sigma "<<SigmaZ.m_Value<<" +- "<<SigmaZ.m_Error<<" cm (depth resolution "<<DepthSigma<<" cm)"<<endl;
-    Passed = EvaluateNear("Position", Name + ", z resolution", "The robust sigma of the z residual relative to the hit of the sim file is the depth resolution of the geometry (five standard errors)", SigmaZ.m_Value, DepthSigma, 5.0*SigmaZ.m_Error) && Passed;
+
+    ResidualPage->cd(3*s + 1);
+    GetReport().DrawHistogram(Name + ", x;x - x_{true} / cm;events", ResidualX, 60, -0.15, 0.15);
+    // The interaction point is not the mean position of the deposit: the tolerance is five standard errors and 2%, a limit and not a statistical pull
+    ETMeasuredValue UniformX;
+    UniformX.m_Value = Pitch/sqrt(12.0);
+    const double RMSToleranceX = MEndToEndReport::c_PullLimit*RMSX.m_Error + 0.02*UniformX.m_Value;
+    const double RMSToleranceY = MEndToEndReport::c_PullLimit*RMSY.m_Error + 0.02*UniformX.m_Value;
+    Passed = CompareValues("Position", Name + ", x resolution", "The RMS of the x residual is the strip pitch divided by the square root of twelve (five standard errors and 2%)", Name + "/x RMS vs pitch/sqrt(12) / cm", RMSX, UniformX, RMSToleranceX, false) && Passed;
+    Passed = CompareValues("Position", Name + ", y resolution", "The RMS of the y residual is the strip pitch divided by the square root of twelve (five standard errors and 2%)", Name + "/y RMS vs pitch/sqrt(12) / cm", RMSY, UniformX, RMSToleranceY, false) && Passed;
+    GetReport().DrawComparison(0, "RMS vs pitch/#sqrt{12}", RMSX, UniformX, RMSToleranceX, false);
+    GetReport().DrawComparison(1, "RMS vs reference", RMSX, GetReference(Name, "x RMS / cm"));
+    ResidualPage->cd(3*s + 2);
+    GetReport().DrawHistogram(Name + ", y;y - y_{true} / cm;events", ResidualY, 60, -0.15, 0.15);
+    GetReport().DrawComparison(0, "RMS vs pitch/#sqrt{12}", RMSY, UniformX, RMSToleranceY, false);
+    GetReport().DrawComparison(1, "RMS vs reference", RMSY, GetReference(Name, "y RMS / cm"));
+    ResidualPage->cd(3*s + 3);
+    GetReport().DrawHistogram(Name + ", z;z - z_{hit} / cm;events", ResidualZ, 80, -0.1, 0.1);
+    // The depth resolution of the geometry is exact: the tolerance is five standard errors of the measurement
+    ETMeasuredValue DepthExpected;
+    DepthExpected.m_Value = DepthSigma;
+    const double DepthTolerance = MEndToEndReport::c_PullLimit*SigmaZ.m_Error;
+    Passed = CompareValues("Position", Name + ", z resolution", "The robust sigma of the z residual relative to the hit of the sim file is the depth resolution of the geometry (five standard errors)", Name + "/z sigma vs depth resolution / cm", SigmaZ, DepthExpected, DepthTolerance, true) && Passed;
+    GetReport().DrawComparison(0, "sigma vs depth resolution", SigmaZ, DepthExpected, DepthTolerance, true);
+    GetReport().DrawComparison(1, "sigma vs reference", SigmaZ, GetReference(Name, "z robust sigma / cm"));
 
     Passed = CompareToReference(Name, "x RMS / cm", "The RMS of the x residual", RMSX) && Passed;
     Passed = CompareToReference(Name, "y RMS / cm", "The RMS of the y residual", RMSY) && Passed;

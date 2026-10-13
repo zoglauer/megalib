@@ -34,6 +34,9 @@
 #include <fstream>
 using namespace std;
 
+// ROOT libs:
+#include "TFile.h"
+
 
 //! Unit test class for the helpers of MEndToEndTest (no external program is run)
 class UTEndToEndTest : public MUnitTest
@@ -50,8 +53,8 @@ private:
   {
   public:
     Probe() : MEndToEndTest("Probe") {}
-    virtual bool Run() { return true; }
-    bool Run(const MString& Directory, const MString& Executable, const MString& Arguments) { return Execute(Directory, Executable, Arguments, 10); }
+    virtual bool RunTest() { return true; }
+    bool Execute10(const MString& Directory, const MString& Executable, const MString& Arguments) { return Execute(Directory, Executable, Arguments, 10); }
     vector<MString> Lines(const MString& FileName) { return ReadLines(FileName); }
     ETTraFileCoreData Tra(const MString& FileName) { return ReadTraFile(FileName); }
     ETSimFileCoreData Read(const ETSimScenario& Scenario) { return ReadSim(Scenario); }
@@ -77,6 +80,13 @@ private:
     ETMeasuredValue Measured(const vector<double>& Values, const ETStatistic& Statistic, unsigned int NResamples) { return Measure(Values, Statistic, NResamples); }
     void References(const ETReferences& R) { SetReferences(R); }
     bool Compare(const ETMeasuredValue& Value) { return CompareToReference("S", "O", "Test", Value); }
+    bool CompareLimit(const ETMeasuredValue& Value, const ETMeasuredValue& Expected, double Tolerance, bool IsStatistical) { return CompareValues("Probe", "limit", "Test", "Limit", Value, Expected, Tolerance, IsStatistical); }
+    static double MaximumY(const TGraph* Graph) { return GetMaximumY(Graph); }
+    const ETKeyResult& Last() { return GetReport().GetKeyResults().back(); }
+    void SummaryDirectory(const MString& Directory) { GetReport().SetDirectory(Directory); }
+    ETMeasuredValue Reference(const MString& Scenario, const MString& Observable) { return GetReference(Scenario, Observable); }
+    void Key(const MString& Name, double Value, double Error) { GetReport().AddKeyResult(Name, Value, Error); }
+    void Page() { TPad* Pad = GetReport().AddPage("Page", 1, 1); Pad->cd(1); GetReport().DrawHistogram("Test;x;y", vector<double>{ 1.0, 2.0, 2.0 }, 4, 0.0, 4.0); }
   };
 
   //! Write a (gzipped if the name ends with .gz) text file
@@ -147,11 +157,11 @@ bool UTEndToEndTest::TestPathsWithSpaces()
   Passed = EvaluateTrue("PrepareTemporaryDirectory()", "directory", "A directory with spaces and quotes can be created", PrepareTemporaryDirectory("with spaces and 'quotes'")) && Passed;
 
   // Execute: the directory is one word
-  Passed = EvaluateTrue("Execute()", "spaces", "A command runs in a directory with spaces and quotes", Tester.Run(Base, "touch", "executed.txt")) && Passed;
+  Passed = EvaluateTrue("Execute()", "spaces", "A command runs in a directory with spaces and quotes", Tester.Execute10(Base, "touch", "executed.txt")) && Passed;
   Passed = EvaluateTrue("Execute()", "result", "The command ran in that directory", filesystem::exists((Base + "/executed.txt").Data())) && Passed;
 
   // The programs have a private home directory, not the one of the user
-  Passed = EvaluateTrue("Execute()", "home", "A program can write the home directory it sees", Tester.Run(Base, "sh", "-c 'echo \"$HOME\" > home.txt'")) && Passed;
+  Passed = EvaluateTrue("Execute()", "home", "A program can write the home directory it sees", Tester.Execute10(Base, "sh", "-c 'echo \"$HOME\" > home.txt'")) && Passed;
   MString SeenHome;
   MFile::ReadTextFile(Base + "/home.txt", SeenHome);
   SeenHome.RemoveAllInPlace("\n");
@@ -373,7 +383,10 @@ bool UTEndToEndTest::TestExecution()
 
   // Run a program with a display set in the environment of the test - the program does not see it:
   const char* OldDisplay = getenv("DISPLAY");
-  const MString OldDisplayCopy = (OldDisplay == nullptr) ? "" : OldDisplay;
+  MString OldDisplayCopy;
+  if (OldDisplay != nullptr) {
+    OldDisplayCopy = OldDisplay;
+  }
   setenv("DISPLAY", ":99", 1);
   Passed = EvaluateTrue("Execute()", "no display", "A program does not see the display of the test", Tester.RunIn(Directory, "sh", "-c 'test -z \"$DISPLAY\"'", 10)) && Passed;
   if (OldDisplay == nullptr) {
@@ -565,6 +578,81 @@ bool UTEndToEndTest::TestRootHelpers()
     Tester.References({ });
     Value.m_Value = 10.0;
     Passed = EvaluateFalse("CompareToReference()", "no reference", "Without a reference the comparison fails", Tester.Compare(Value)) && Passed;
+  }
+
+  // Test the summary: Run() writes the pages (title, key results, pulls, and the page of the test) as PDF and ROOT file, and the key results as text
+  {
+    const MString Directory = GetTemporaryDirectoryName("summary");
+    Passed = EvaluateTrue("MFile::CreateDirectory()", "summary", "The directory for the summary can be created", MFile::CreateDirectory(Directory)) && Passed;
+    bool Result = false;
+    {
+      Probe Tester;
+      Tester.SummaryDirectory(Directory);
+      Tester.References({ { "S/O", { 10.0, 0.5 } } });
+      ETMeasuredValue Value;
+      Value.m_Value = 10.2;
+      Value.m_Error = 0.3;
+      Tester.Compare(Value);
+      Tester.Key("Free", 1.0, 0.1);
+      Tester.Page();
+      DisableDefaultStreams();
+      Result = Tester.Run();
+      EnableDefaultStreams();
+    }
+    Passed = EvaluateTrue("Run()", "result", "Run() returns the result of the test", Result) && Passed;
+    Passed = EvaluateTrue("Run()", "PDF", "Run() writes the summary PDF", MFile::Exists(Directory + "/Probe.pdf")) && Passed;
+    Passed = EvaluateTrue("Run()", "ROOT file", "Run() writes the ROOT file with the canvases", MFile::Exists(Directory + "/Probe.summary.root")) && Passed;
+    Passed = EvaluateTrue("Run()", "key results", "Run() writes the key results as text", MFile::Exists(Directory + "/Probe.keyresults.tsv")) && Passed;
+  }
+  {
+    // Without pages and key results nothing is written
+    const MString Directory = GetTemporaryDirectoryName("empty");
+    Passed = EvaluateTrue("MFile::CreateDirectory()", "empty", "The directory for the empty summary can be created", MFile::CreateDirectory(Directory)) && Passed;
+    {
+      Probe Tester;
+      Tester.SummaryDirectory(Directory);
+      DisableDefaultStreams();
+      Tester.Run();
+      EnableDefaultStreams();
+    }
+    Passed = EvaluateFalse("Run()", "empty", "A test without pages and key results writes no summary", MFile::Exists(Directory + "/Probe.pdf")) && Passed;
+  }
+
+  // Test the comparison with a limit: the outcome of the check is the outcome in the key results
+  {
+    Probe Tester;
+    ETMeasuredValue Expected, Value;
+    Expected.m_Value = 4.1;
+    Value.m_Value = 4.5;
+    Passed = EvaluateTrue("CompareValues()", "inside", "A difference of 0.4 is inside the tolerance 0.5", Tester.CompareLimit(Value, Expected, 0.5, false)) && Passed;
+    Passed = EvaluateTrue("CompareValues()", "recorded inside", "The key result records the passed check", Tester.Last().m_Passed) && Passed;
+    Value.m_Value = 4.7;
+    Passed = EvaluateFalse("CompareValues()", "outside", "A difference of 0.6 is outside the tolerance 0.5", Tester.CompareLimit(Value, Expected, 0.5, false)) && Passed;
+    Passed = EvaluateFalse("CompareValues()", "recorded outside", "The key result records the failed check", Tester.Last().m_Passed) && Passed;
+    Passed = EvaluateNear("CompareValues()", "recorded tolerance", "The key result records the tolerance of the check", Tester.Last().m_Tolerance, 0.5, 0.0) && Passed;
+    Value.m_Error = numeric_limits<double>::quiet_NaN();
+    Passed = EvaluateFalse("CompareValues()", "NaN", "A NaN uncertainty fails the comparison", Tester.CompareLimit(Value, Expected, 100.0, true)) && Passed;
+    Passed = EvaluateFalse("CompareValues()", "recorded invalid", "The key result of a NaN uncertainty is marked invalid", Tester.Last().m_IsValid) && Passed;
+  }
+
+  // Test the maximum of a graph: an empty graph has no maximum
+  {
+    TGraph Empty;
+    Passed = EvaluateNear("GetMaximumY()", "empty", "A graph without points has the maximum zero", Probe::MaximumY(&Empty), 0.0, 0.0) && Passed;
+    TGraph Points;
+    Points.SetPoint(0, 1.0, 2.5);
+    Points.SetPoint(1, 2.0, 7.5);
+    Points.SetPoint(2, 3.0, 4.0);
+    Passed = EvaluateNear("GetMaximumY()", "points", "The maximum of the y values", Probe::MaximumY(&Points), 7.5, 0.0) && Passed;
+  }
+
+  // Test the references
+  {
+    Probe Tester;
+    Tester.References({ { "S/O", { 10.0, 0.5 } } });
+    Passed = EvaluateNear("GetReference()", "value", "The reference value of a known key", Tester.Reference("S", "O").m_Value, 10.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetReference()", "error", "The reference error of a known key", Tester.Reference("S", "O").m_Error, 0.5, 0.0) && Passed;
+    Passed = EvaluateNear("GetReference()", "unknown", "An unknown key has the reference zero", Tester.Reference("S", "X").m_Value, 0.0, 0.0) && Passed;
   }
 
   return Passed;

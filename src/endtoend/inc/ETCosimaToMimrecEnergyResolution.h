@@ -47,7 +47,7 @@ public:
   virtual ~ETCosimaToMimrecEnergyResolution() {}
 
   //! Run all tests
-  virtual bool Run();
+  virtual bool RunTest();
 
 };
 

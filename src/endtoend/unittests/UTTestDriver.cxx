@@ -465,13 +465,27 @@ bool UTTestDriver::TestLogDirectory()
     Passed = Evaluate("Execute()", "timeout run", "A run with only a passing test gives the exit code 0", Timeout.m_ExitCode, 0) && Passed;
     Passed = Evaluate("Execute()", "timeout in settings", "The driver writes its time out into the testing settings file", ElementOf(ReadAll(Bin + "/.testdrive.cfg"), "Timeout"), MString("77")) && Passed;
 
-    // Without --logdir the directory of the settings file is used again
+    // Without --logdir the default directory /tmp/$USER/megalib_testing_logs is used, not the one of the earlier run:
+    // the user name is a unique one, thus the test does not touch the directory of the real user
+    const MString User = MString("utdriver") + static_cast<long>(getpid());
+    const char* OldUser = getenv("USER");
+    const MString OldUserValue = (OldUser != nullptr) ? OldUser : "";
+    setenv("USER", User.Data(), 1);
+    const MString Default = MString("/tmp/") + User + "/megalib_testing_logs";
     error_code Error;
     filesystem::remove((Directory + "/UTAlpha.log").Data(), Error);
     const Result Stored = Drive(Bin, { }, "");
-    Passed = Evaluate("Execute()", "stored log directory, exit code", "A run with a failing unit test without --logdir gives the exit code 1", Stored.m_ExitCode, 1) && Passed;
-    Passed = Evaluate("Execute()", "stored log directory", "Without --logdir the log directory of the settings file is used", ReadAll(Directory + "/UTAlpha.log"), MString("Passed tests: 3\nFailed tests: 0\n")) && Passed;
-    Passed = Evaluate("Execute()", "stored log directory, settings", "Without --logdir the settings file keeps the log directory", ElementOf(ReadAll(Bin + "/.testdrive.cfg"), "LogDirectory"), Directory) && Passed;
+    if (OldUser != nullptr) {
+      setenv("USER", OldUserValue.Data(), 1);
+    } else {
+      unsetenv("USER");
+    }
+    Passed = Evaluate("Execute()", "default log directory, exit code", "A run with a failing unit test without --logdir gives the exit code 1", Stored.m_ExitCode, 1) && Passed;
+    Passed = Evaluate("Execute()", "default log directory", "Without --logdir the log is in /tmp/$USER/megalib_testing_logs", ReadAll(Default + "/UTAlpha.log"), MString("Passed tests: 3\nFailed tests: 0\n")) && Passed;
+    Passed = Evaluate("Execute()", "default log directory, settings", "Without --logdir the settings file holds the default, not the directory of the earlier run", ElementOf(ReadAll(Bin + "/.testdrive.cfg"), "LogDirectory"), Default) && Passed;
+    Passed = EvaluateFalse("Execute()", "earlier directory untouched", "The log directory of the earlier run is not used again", filesystem::exists((Directory + "/UTAlpha.log").Data())) && Passed;
+    error_code CleanError;
+    filesystem::remove_all((MString("/tmp/") + User).Data(), CleanError);
   }
 
   // Remove the stale files only of the tests which run, not of tests with the name as prefix

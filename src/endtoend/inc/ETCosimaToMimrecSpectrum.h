@@ -49,7 +49,7 @@ public:
   virtual ~ETCosimaToMimrecSpectrum() {}
 
   //! Run all tests
-  virtual bool Run();
+  virtual bool RunTest();
 
 };
 

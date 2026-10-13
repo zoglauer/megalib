@@ -50,7 +50,7 @@ public:
   virtual ~ETCosimaToMimrecImaging() {}
 
   //! Run all tests
-  virtual bool Run();
+  virtual bool RunTest();
 
 };
 

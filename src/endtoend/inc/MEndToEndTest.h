@@ -41,6 +41,7 @@ using namespace std;
 #include "TApplication.h"
 #include "TCanvas.h"
 #include "TFile.h"
+#include "TGraph.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TKey.h"
@@ -57,6 +58,7 @@ using namespace std;
 #include "MSimIA.h"
 #include "MPhysicalEvent.h"
 #include "MComptonEvent.h"
+#include "MEndToEndReport.h"
 #include "MPhotoEvent.h"
 #include "MUnitTest.h"
 #include "MVector.h"
@@ -172,16 +174,6 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! A measured value with its uncertainty
-class ETMeasuredValue
-{
-public:
-  //! The value
-  double m_Value = 0.0;
-  //! The uncertainty (standard error)
-  double m_Error = 0.0;
-};
-
 //! A statistic of a vector of values, e.g. a width: used for the bootstrap uncertainties
 typedef function<double(const vector<double>&)> ETStatistic;
 
@@ -202,7 +194,15 @@ class MEndToEndTest : public MUnitTest
   //! Standard constructor giving the name of the test
   MEndToEndTest(const MString& Name);
   //! Default destructor
-  virtual ~MEndToEndTest();
+  virtual ~MEndToEndTest() = default;
+
+  //! Run the test and write the summary (title page, key results, pages) into the log directory: tests implement RunTest()
+  virtual bool Run() final
+  {
+    const bool Passed = RunTest();
+    m_Report.Write(GetGeometry());
+    return Passed;
+  }
 
   //! Set the geometry file name, the default is the Max.geo.setup of the examples
   void SetGeometry(const MString& FileName) { m_Geometry = FileName; }
@@ -212,6 +212,9 @@ class MEndToEndTest : public MUnitTest
 
   // protected methods:
  protected:
+  //! The test itself: run it and evaluate the results, the summary is written afterwards
+  virtual bool RunTest() = 0;
+
   // Environment and programs:
   //! Check (as a test) that MEGAlib is set up ($(MEGALIB), the geometry file, and the programs cosima, revan, and mimrec in the path)
   bool VerifyEnvironment();
@@ -306,11 +309,6 @@ class MEndToEndTest : public MUnitTest
   void GetTruncatedMoments(const vector<double>& Values, double Limit, unsigned int& Number, double& Mean, double& RMS) const;
   //! Return the median of a vector, zero if it is empty
   double GetMedian(vector<double> Values) const;
-  // Comparison with reference values:
-  //! Set the reference values
-  void SetReferences(const ETReferences& References) { m_References = References; }
-  //! Compare a measured value with its reference: inside five combined standard errors, prints a REFERENCE line
-  bool CompareToReference(const MString& Scenario, const MString& Observable, const MString& Description, const ETMeasuredValue& Measured);
   //! Return the standard error of the median of a vector, zero if it has no width or is empty
   double GetMedianError(vector<double> Values) const;
   //! Return the quantile (0..1) of a vector, zero if empty
@@ -325,16 +323,29 @@ class MEndToEndTest : public MUnitTest
   static double GetBootstrapError(const vector<double>& Values, const ETStatistic& Statistic, unsigned int NResamples = 100);
   //! Measure a statistic of the values together with its bootstrap uncertainty
   static ETMeasuredValue Measure(const vector<double>& Values, const ETStatistic& Statistic, unsigned int NResamples = 100);
+  //! Return the largest y value of the graph, zero if it has no points
+  static double GetMaximumY(const TGraph* Graph);
+
+  // Comparison with reference values and expectations:
+  //! Check that the measured value is the expected value within the tolerance, add the comparison with the outcome of this check to the key results under the name, return the outcome
+  bool CompareValues(const MString& Function, const MString& Input, const MString& Description, const MString& Name, const ETMeasuredValue& Measured, const ETMeasuredValue& Expected, double Tolerance, bool IsStatistical);
+  //! Set the reference values
+  void SetReferences(const ETReferences& References) { m_References = References; }
+  //! Compare a measured value with its reference: inside five combined standard errors, prints a REFERENCE line
+  bool CompareToReference(const MString& Scenario, const MString& Observable, const MString& Description, const ETMeasuredValue& Measured);
+
+  // Summary (PDF pages and key results): fill the report directly
+  //! Return the report of the test
+  MEndToEndReport& GetReport() { return m_Report; }
+  //! Return the report of the test
+  const MEndToEndReport& GetReport() const { return m_Report; }
+  //! Return the reference value of "scenario/observable" (zero if there is none)
+  ETMeasuredValue GetReference(const MString& Scenario, const MString& Observable) const;
+
   //! Return the significance in sigma of the ratio of two Poisson counts CountA/CountB relative to the expected ratio
   double RatioSigma(double CountA, double CountB, double ExpectedRatio) const;
   //! Return the two-proportion z value of the efficiencies K1/N1 and K2/N2
   double ProportionSigma(double K1, double N1, double K2, double N2) const;
-
-  // private methods:
- private:
-
-  // protected members:
- protected:
 
   // private members:
  private:
@@ -346,6 +357,8 @@ class MEndToEndTest : public MUnitTest
   chrono::steady_clock::time_point m_StartTime;
   //! The reference values for CompareToReference
   ETReferences m_References;
+  //! The summary: key results and pages
+  MEndToEndReport m_Report;
   //! The geometry which the sim file reader needs, loaded when it is needed for the first time
   shared_ptr<MDGeometryQuest> m_ReaderGeometry;
 

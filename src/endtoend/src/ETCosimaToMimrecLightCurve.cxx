@@ -31,12 +31,15 @@
 #include <set>
 #include <sstream>
 
+// ROOT libs:
+#include "TGraph.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Run all tests
-bool ETCosimaToMimrecLightCurve::Run()
+bool ETCosimaToMimrecLightCurve::RunTest()
 {
   bool Passed = true;
 
@@ -124,11 +127,14 @@ bool ETCosimaToMimrecLightCurve::Run()
     return false;
   }
 
+  // The summary: the arrival times of the triggered events with the light curve of the source, and the light curve of mimrec
+  TPad* CurvePage = GetReport().AddPage("Light curve: triggered events (left) and light curve of mimrec (right), expected from the source (red)", 2, 1);
+
   // The light curve:
   {
     const ETSimFileCoreData& Sim = Sims[0];
     const double Expected = 3.0*Sim.m_StartArea*Duration;
-    Passed = EvaluateNear("LightCurve", "generated", "The light curve is normalized so that its mean is the flux: generated particles = flux * area * time (5 sigma Poisson)", static_cast<double>(Sim.m_SimulatedParticles), Expected, 5*sqrt(Expected)) && Passed;
+    Passed = EvaluateNear("LightCurve", "generated", "The light curve is normalized so that its mean is the flux: generated particles = flux * area * time (5 sigma Poisson)", static_cast<double>(Sim.m_SimulatedParticles), Expected, MEndToEndReport::c_PullLimit*sqrt(Expected)) && Passed;
 
     vector<double> Times;
     vector<unsigned int> Count(3, 0);
@@ -138,9 +144,22 @@ bool ETCosimaToMimrecLightCurve::Run()
       ++Count[GetTimeBin(Time)];
     }
     const vector<double> Fractions = { 30.0/Total, 80.0/Total, 50.0/Total };
+    {
+      CurvePage->cd(1);
+      const unsigned int Bins = 80;
+      TH1D* Arrivals = GetReport().DrawHistogram(";time / s;triggered events", Times, Bins, 0.0, Duration);
+      TH1D* Expectation = GetReport().KeepObject(unique_ptr<TH1D>(new TH1D("ExpectedArrivals", "", Bins, 0.0, Duration)));
+      Expectation->SetDirectory(nullptr);
+      for (unsigned int b = 1; b <= Bins; ++b) {
+        Expectation->SetBinContent(b, Times.size()*(Integral(Expectation->GetBinLowEdge(b) + Expectation->GetBinWidth(b)) - Integral(Expectation->GetBinLowEdge(b)))/Total);
+      }
+      Expectation->SetLineColor(kRed);
+      Expectation->SetMaximum(Arrivals->GetMaximum());
+      Expectation->Draw("HIST SAME");
+    }
     for (unsigned int i = 0; i < 3; ++i) {
       const double Triggers = static_cast<double>(Times.size());
-      Passed = EvaluateNear("LightCurve", MString("interval ") + i, "The triggered events are distributed over the intervals as the integral of the light curve (5 sigma binomial)", static_cast<double>(Count[i]), Triggers*Fractions[i], 5*sqrt(Triggers*Fractions[i]*(1.0 - Fractions[i])) + 1) && Passed;
+      Passed = EvaluateNear("LightCurve", MString("interval ") + i, "The triggered events are distributed over the intervals as the integral of the light curve (5 sigma binomial)", static_cast<double>(Count[i]), Triggers*Fractions[i], MEndToEndReport::c_PullLimit*sqrt(Triggers*Fractions[i]*(1.0 - Fractions[i])) + 1) && Passed;
     }
     sort(Times.begin(), Times.end());
     double Distance = 0.0;
@@ -156,6 +175,13 @@ bool ETCosimaToMimrecLightCurve::Run()
     unique_ptr<TH1D> Curve = FirstHistogram<TH1D>(Scenarios[0].m_Directory + "/lightcurve.root");
     const ETTraFileCoreData Extracted = ReadTraFile(Scenarios[0].m_Directory + "/selected.tra");
     Passed = EvaluateTrue("Mimrec", "light curve", "The light curve and the extracted events of mimrec can be read", Curve != nullptr && Extracted.m_FileSuccessfullyRead == true) && Passed;
+    if (Curve != nullptr) {
+      CurvePage->cd(2);
+      TH1D* MimrecCurve = GetReport().KeepObject(unique_ptr<TH1D>(static_cast<TH1D*>(Curve->Clone("MimrecLightCurve"))));
+      MimrecCurve->SetDirectory(nullptr);
+      MimrecCurve->SetStats(false);
+      MimrecCurve->Draw("HIST");
+    }
     if (Curve != nullptr && Extracted.m_FileSuccessfullyRead == true) {
       // Multiply the rates with the bin widths:
       vector<double> Count(3, 0.0);
@@ -168,12 +194,24 @@ bool ETCosimaToMimrecLightCurve::Run()
         OwnCount[GetTimeBin(Event->GetTime().GetAsSeconds())] += 1.0;
       }
       const double MimrecTotal = Count[0] + Count[1] + Count[2];
+      {
+        // The expectation: the light curve of the source, scaled to the counts of mimrec
+        CurvePage->cd(2);
+        TGraph* ExpectedRate = GetReport().KeepObject(unique_ptr<TGraph>(new TGraph()));
+        const double Step = 0.5;
+        for (double Time = 0.0; Time + Step <= Duration; Time += Step) {
+          ExpectedRate->SetPoint(ExpectedRate->GetN(), Time + 0.5*Step, MimrecTotal*(Integral(Time + Step) - Integral(Time))/Step/Total);
+        }
+        ExpectedRate->SetLineColor(kRed);
+        ExpectedRate->SetLineWidth(2);
+        ExpectedRate->Draw("L SAME");
+      }
       const double OwnTotal = OwnCount[0] + OwnCount[1] + OwnCount[2];
       mout<<"Mimrec light curve: counts per interval "<<Count[0]<<", "<<Count[1]<<", "<<Count[2]<<" (source: 30, 80, 50 relative; extracted events "<<OwnCount[0]<<", "<<OwnCount[1]<<", "<<OwnCount[2]<<")"<<endl;
       Passed = EvaluateNear("Mimrec", "light curve, total", "The light curve of mimrec contains the events which mimrec extracted (1%)", MimrecTotal, OwnTotal, 0.01*OwnTotal) && Passed;
       const vector<double> Fractions = { 30.0/160.0, 80.0/160.0, 50.0/160.0 };
       for (unsigned int i = 0; i < 3; ++i) {
-        Passed = EvaluateNear("Mimrec", MString("light curve, interval ") + i, "The counts of the light curve of mimrec in the interval follow the light curve of the source (5 sigma binomial)", Count[i], MimrecTotal*Fractions[i], 5*sqrt(MimrecTotal*Fractions[i]*(1.0 - Fractions[i])) + 1) && Passed;
+        Passed = EvaluateNear("Mimrec", MString("light curve, interval ") + i, "The counts of the light curve of mimrec in the interval follow the light curve of the source (5 sigma binomial)", Count[i], MimrecTotal*Fractions[i], MEndToEndReport::c_PullLimit*sqrt(MimrecTotal*Fractions[i]*(1.0 - Fractions[i])) + 1) && Passed;
       }
     }
   }
@@ -187,7 +225,7 @@ bool ETCosimaToMimrecLightCurve::Run()
     // Expect the relative uncertainty sqrt(1/4000 + 1/8000) of the ratio
     const double Ratio = Sims[2].m_SimulationTime/Sims[1].m_SimulationTime;
     const double Sigma = Ratio*sqrt(1.0/4000.0 + 1.0/8000.0);
-    Passed = EvaluateNear("Triggers", "run time", "Twice the triggers take twice the time (5 sigma)", Ratio, 2.0, 5.0*Sigma) && Passed;
+    Passed = EvaluateNear("Triggers", "run time", "Twice the triggers take twice the time (5 sigma)", Ratio, 2.0, MEndToEndReport::c_PullLimit*Sigma) && Passed;
   }
 
   // Ordering and completeness:

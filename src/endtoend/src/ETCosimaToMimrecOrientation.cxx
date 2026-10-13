@@ -36,7 +36,7 @@
 
 
 //! Run all tests
-bool ETCosimaToMimrecOrientation::Run()
+bool ETCosimaToMimrecOrientation::RunTest()
 {
   bool Passed = true;
 
@@ -110,6 +110,9 @@ bool ETCosimaToMimrecOrientation::Run()
   for (const ETSimScenario& Scenario: Scenarios) {
     Runs.push_back(async(launch::async, [this, Scenario, Common]() { return SimulateAndReconstruct(Scenario, Common + "/revan.cfg"); }));
   }
+
+  // The summary: the ARM relative to the true direction of the events for every pointing
+  TPad* ARMPage = GetReport().AddPage("ARM relative to the true direction of the full energy Compton events: on axis, 90 deg, 60 deg, slew", 2, 2);
 
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
     const MString Name = Scenarios[s].m_Name;
@@ -211,6 +214,8 @@ bool ETCosimaToMimrecOrientation::Run()
     if (Total > 0) {
       InsideFraction = static_cast<double>(Inside)/Total;
     }
+    ARMPage->cd(s + 1);
+    GetReport().DrawHistogram(Name + ";ARM / deg;events", ARMs, 60, -30.0, 30.0);
     mout<<Name<<": "<<Total<<" full energy Compton events, ARM peak at "<<Peak<<" deg, "<<InsideFraction<<" with |ARM| < 5 deg"<<endl;
     Passed = EvaluateTrue("ARM", Name + ", events", "There are enough full energy Compton events (> 100)", Total > 100) && Passed;
     if (Total > 100) {
@@ -223,8 +228,7 @@ bool ETCosimaToMimrecOrientation::Run()
       double MeanWidth = 0.0, RMSWidth = 0.0;
       GetTruncatedMoments(ARMs, 10.0, NumberWidth, MeanWidth, RMSWidth);
       mout<<Name<<": ARM mean "<<MeanCore<<" deg (|ARM| < 5 deg), RMS "<<RMSWidth<<" deg (|ARM| < 10 deg)"<<endl;
-      Passed = EvaluateNear("ARM", Name + ", mean", "The mean ARM of the events with |ARM| < 5 degrees is zero (5 sigma of the mean; degrees)", MeanCore, 0.0, 5.0*RMSCore/sqrt(static_cast<double>(NumberCore))) && Passed;
-      Passed = EvaluateNear("ARM", Name + ", width", "The RMS of the ARM of the events with |ARM| < 10 degrees is 4.1 degrees (+-0.5; degrees)", RMSWidth, 4.1, 0.5) && Passed;
+      Passed = EvaluateNear("ARM", Name + ", mean", "The mean ARM of the events with |ARM| < 5 degrees is zero (5 sigma of the mean; degrees)", MeanCore, 0.0, MEndToEndReport::c_PullLimit*RMSCore/sqrt(static_cast<double>(NumberCore))) && Passed;
       vector<double> AbsoluteARMs;
       for (double Arm: ARMs) {
         AbsoluteARMs.push_back(fabs(Arm));
@@ -236,7 +240,22 @@ bool ETCosimaToMimrecOrientation::Run()
       static const map<string, double> BaselineMedians = {{"OnAxis", 7.0}, {"NinetyDegrees", 8.0}, {"SixtyDegrees", 7.9}, {"Slew", 7.2}};
       // Tolerance: 4 sigma of the median including the baseline uncertainty (sigma/sqrt(16))
       const double MedianTolerance = 4.0*sqrt(1.0 + 1.0/16.0)*MedianError;
-      Passed = EvaluateNear("ARM", Name + ", median", "The median of |ARM| is the baseline of this direction (4 sigma of the median; degrees)", MedianARM, BaselineMedians.at(Name.Data()), MedianTolerance) && Passed;
+      ARMPage->cd(s + 1);
+      {
+        ETMeasuredValue WidthValue, WidthExpected, MedianValue, MedianExpected;
+        WidthValue.m_Value = RMSWidth;
+        WidthValue.m_Error = RMSWidth/sqrt(2.0*NumberWidth);
+        WidthExpected.m_Value = 4.1;
+        WidthExpected.m_Error = 0.0; // The limit of the test (0.5 degrees) is a tolerance, not a standard error
+        MedianValue.m_Value = MedianARM;
+        MedianValue.m_Error = MedianError;
+        MedianExpected.m_Value = BaselineMedians.at(Name.Data());
+        MedianExpected.m_Error = MedianError/4.0; // The uncertainty of the baseline: sigma/sqrt(16)
+        Passed = CompareValues("ARM", Name + ", width", "The RMS of the ARM of the events with |ARM| < 10 degrees is 4.1 degrees (+-0.5; degrees)", Name + "/RMS of ARM, |ARM| < 10 deg", WidthValue, WidthExpected, 0.5, false) && Passed;
+        Passed = CompareValues("ARM", Name + ", median", "The median of |ARM| is the baseline of this direction (4 sigma of the median; degrees)", Name + "/median of |ARM|", MedianValue, MedianExpected, MedianTolerance, true) && Passed;
+        GetReport().DrawComparison(0, "RMS(|ARM|<10)", WidthValue, WidthExpected, 0.5, false);
+        GetReport().DrawComparison(1, "median|ARM|", MedianValue, MedianExpected, MedianTolerance, true);
+      }
     }
 
     // Check the mimrec ARM plot for the static pointings:

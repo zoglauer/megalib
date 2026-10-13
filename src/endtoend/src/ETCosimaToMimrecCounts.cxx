@@ -31,12 +31,16 @@
 #include <set>
 #include <sstream>
 
+// ROOT libs:
+#include "TH1.h"
+#include "TLine.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Run all tests
-bool ETCosimaToMimrecCounts::Run()
+bool ETCosimaToMimrecCounts::RunTest()
 {
   bool Passed = true;
 
@@ -90,6 +94,17 @@ bool ETCosimaToMimrecCounts::Run()
     return false;
   }
 
+  // The summary: the arrival times of the triggered events, and the efficiency and Compton fraction of the scenarios
+  TPad* TimePage = GetReport().AddPage("Arrival times of the triggered events, expected: uniform in the simulated time (red)", 3, 2);
+  TPad* EfficiencyPage = GetReport().AddPage("Detection efficiency (left) and Compton fraction (right) of the scenarios, expected: the reference scenario (red)", 2, 1);
+  TH1D* EfficiencyHistogram = GetReport().KeepObject(unique_ptr<TH1D>(new TH1D("Efficiency", ";scenario;triggers / generated particles", Scenarios.size(), 0.5, Scenarios.size() + 0.5)));
+  TH1D* ComptonHistogram = GetReport().KeepObject(unique_ptr<TH1D>(new TH1D("ComptonFraction", ";scenario;Compton events / triggers", Scenarios.size(), 0.5, Scenarios.size() + 0.5)));
+  for (TH1D* Histogram: { EfficiencyHistogram, ComptonHistogram }) {
+    Histogram->SetDirectory(nullptr);
+    Histogram->SetStats(false);
+    Histogram->SetMarkerStyle(20);
+  }
+
   // Absolute counts, simulated time, uniform arrival times:
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
     const ETSimScenario& Sc = Scenarios[s];
@@ -103,20 +118,34 @@ bool ETCosimaToMimrecCounts::Run()
     const double Expected = Flux*Sim.m_StartArea*Sc.m_Time;
     Passed = EvaluateNear("ReadSim()", Sc.m_Name + ", start area", "The start area of the far field source is the area of the surrounding sphere of the geometry (10 cm radius)", Sim.m_StartArea, c_Pi*10.0*10.0, 1e-3) && Passed;
     Passed = EvaluateNear("Simulate()", Sc.m_Name + ", time", "The simulated time is the requested time", Sim.m_SimulationTime, Sc.m_Time, 1e-6) && Passed;
-    Passed = EvaluateNear("Simulate()", Sc.m_Name + ", generated", "The number of generated particles is flux * start area * time (5 sigma Poisson)", static_cast<double>(Sim.m_SimulatedParticles), Expected, 5*sqrt(Expected)) && Passed;
+    Passed = EvaluateNear("Simulate()", Sc.m_Name + ", generated", "The number of generated particles is flux * start area * time (5 sigma Poisson)", static_cast<double>(Sim.m_SimulatedParticles), Expected, MEndToEndReport::c_PullLimit*sqrt(Expected)) && Passed;
 
     vector<double> Times;
     for (const shared_ptr<MSimEvent>& Event: Sim.m_Events) {
       Times.push_back(Event->GetTime().GetAsSeconds());
     }
+    TimePage->cd(s + 1);
+    GetReport().DrawHistogram(Sc.m_Name + ";time / s;events", Times, 50, 0.0, Sc.m_Time);
     const double Critical = 2.7/sqrt(static_cast<double>(Times.size()));
-    Passed = EvaluateNear("Simulate()", Sc.m_Name + ", arrival times", "The arrival times of the triggered events are uniform in the simulated time (KS)", UniformDistance(Times, Sc.m_Time), 0.0, Critical) && Passed;
+    const double Distance = UniformDistance(Times, Sc.m_Time);
+    {
+      // The expectation is the same number of events in every bin
+      TLine* Expectation = new TLine(0.0, Times.size()/50.0, Sc.m_Time, Times.size()/50.0);
+      Expectation->SetLineColor(kRed);
+      Expectation->SetLineWidth(2);
+      Expectation->Draw();
+      // The distance of the KS test has no standard error: the critical distance is the limit
+      ETMeasuredValue KS, KSExpected;
+      KS.m_Value = Distance;
+      Passed = CompareValues("Simulate()", Sc.m_Name + ", arrival times", "The arrival times of the triggered events are uniform in the simulated time (KS)", Sc.m_Name + "/KS distance of the arrival times", KS, KSExpected, Critical, false) && Passed;
+      GetReport().DrawComparison(0, "KS distance", KS, KSExpected, Critical, false);
+    }
     Passed = EvaluateTrue("Simulate()", Sc.m_Name + ", enough events", "The scenario has enough triggered events for the statistical checks (> 500)", Sim.m_Events.size() > 500) && Passed;
   }
 
   // Scaling with time and flux (the generated particles; independent of the detector):
-  Passed = EvaluateNear("Scaling", "time", "Twice the time gives twice the generated particles", RatioSigma(static_cast<double>(Sims[1].m_SimulatedParticles), static_cast<double>(Sims[0].m_SimulatedParticles), 2.0), 0.0, 5.0) && Passed;
-  Passed = EvaluateNear("Scaling", "flux", "Twice the flux gives twice the generated particles", RatioSigma(static_cast<double>(Sims[2].m_SimulatedParticles), static_cast<double>(Sims[0].m_SimulatedParticles), 2.0), 0.0, 5.0) && Passed;
+  Passed = EvaluateNear("Scaling", "time", "Twice the time gives twice the generated particles", RatioSigma(static_cast<double>(Sims[1].m_SimulatedParticles), static_cast<double>(Sims[0].m_SimulatedParticles), 2.0), 0.0, MEndToEndReport::c_PullLimit) && Passed;
+  Passed = EvaluateNear("Scaling", "flux", "Twice the flux gives twice the generated particles", RatioSigma(static_cast<double>(Sims[2].m_SimulatedParticles), static_cast<double>(Sims[0].m_SimulatedParticles), 2.0), 0.0, MEndToEndReport::c_PullLimit) && Passed;
 
   // Compare the efficiency and the Compton fraction of the scenarios:
   auto Efficiency = [&](unsigned int s, double& Successes, double& Trials) { Successes = static_cast<double>(Sims[s].m_Events.size()); Trials = static_cast<double>(Sims[s].m_SimulatedParticles); };
@@ -129,11 +158,40 @@ bool ETCosimaToMimrecCounts::Run()
     if (s >= 3) {
       What = "The detection efficiency is the same for a source direction rotated by 90, 180, and 270 degrees around the detector axis";
     }
-    Passed = EvaluateNear("Efficiency", Scenarios[s].m_Name, What + " (two-proportion test)", ProportionSigma(K0, N0, K1, N1), 0.0, 5.0) && Passed;
+    // The two-proportion z value has no uncertainty of its own, the scenarios share the reference: it is not a statistical pull, the limit is five
+    ETMeasuredValue Difference, NoDifference;
+    Difference.m_Value = ProportionSigma(K0, N0, K1, N1);
+    Passed = CompareValues("Efficiency", Scenarios[s].m_Name, What + " (two-proportion test)", Scenarios[s].m_Name + "/efficiency vs the reference scenario (two-proportion z)", Difference, NoDifference, MEndToEndReport::c_PullLimit, false) && Passed;
     ComptonFraction(0, K0, N0);
     ComptonFraction(s, K1, N1);
-    Passed = EvaluateNear("ComptonFraction", Scenarios[s].m_Name, "The fraction of reconstructed Compton events is the same as for the reference", ProportionSigma(K0, N0, K1, N1), 0.0, 5.0) && Passed;
+    Difference.m_Value = ProportionSigma(K0, N0, K1, N1);
+    Passed = CompareValues("ComptonFraction", Scenarios[s].m_Name, "The fraction of reconstructed Compton events is the same as for the reference", Scenarios[s].m_Name + "/Compton fraction vs the reference scenario (two-proportion z)", Difference, NoDifference, MEndToEndReport::c_PullLimit, false) && Passed;
   }
+
+  for (unsigned int s = 0; s < Scenarios.size(); ++s) {
+    Efficiency(s, K0, N0);
+    EfficiencyHistogram->GetXaxis()->SetBinLabel(s + 1, Scenarios[s].m_Name.Data());
+    EfficiencyHistogram->SetBinContent(s + 1, K0/N0);
+    EfficiencyHistogram->SetBinError(s + 1, sqrt(K0*(1.0 - K0/N0))/N0);
+    ComptonFraction(s, K0, N0);
+    ComptonHistogram->GetXaxis()->SetBinLabel(s + 1, Scenarios[s].m_Name.Data());
+    ComptonHistogram->SetBinContent(s + 1, K0/N0);
+    ComptonHistogram->SetBinError(s + 1, sqrt(K0*(1.0 - K0/N0))/N0);
+  }
+  EfficiencyPage->cd(1);
+  gPad->SetBottomMargin(0.2);
+  EfficiencyHistogram->SetMinimum(0.0);
+  EfficiencyHistogram->Draw("P E");
+  TLine* EfficiencyExpectation = new TLine(0.5, EfficiencyHistogram->GetBinContent(1), Scenarios.size() + 0.5, EfficiencyHistogram->GetBinContent(1));
+  EfficiencyExpectation->SetLineColor(kRed);
+  EfficiencyExpectation->Draw();
+  EfficiencyPage->cd(2);
+  gPad->SetBottomMargin(0.2);
+  ComptonHistogram->SetMinimum(0.0);
+  ComptonHistogram->Draw("P E");
+  TLine* ComptonExpectation = new TLine(0.5, ComptonHistogram->GetBinContent(1), Scenarios.size() + 0.5, ComptonHistogram->GetBinContent(1));
+  ComptonExpectation->SetLineColor(kRed);
+  ComptonExpectation->Draw();
 
   // Check the events which mimrec selects:
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
@@ -166,7 +224,7 @@ bool ETCosimaToMimrecCounts::Run()
     Passed = Evaluate("Mimrec", Scenarios[s].m_Name + ", duplicates", "Mimrec extracts every event only once", Duplicates, 0U) && Passed;
     Passed = Evaluate("Mimrec", Scenarios[s].m_Name + ", completeness", "Mimrec extracts all Compton events of the energy window with a physical scatter angle", Missing, 0U) && Passed;
     if (s > 0) {
-      Passed = EvaluateNear("MimrecEfficiency", Scenarios[s].m_Name, "The number of events selected by mimrec per generated particle is the same as for the reference (two-proportion test)", ProportionSigma(static_cast<double>(Selected[0].Count(MPhysicalEvent::c_Compton)), static_cast<double>(Sims[0].m_SimulatedParticles), static_cast<double>(Selected[s].Count(MPhysicalEvent::c_Compton)), static_cast<double>(Sims[s].m_SimulatedParticles)), 0.0, 5.0) && Passed;
+      Passed = EvaluateNear("MimrecEfficiency", Scenarios[s].m_Name, "The number of events selected by mimrec per generated particle is the same as for the reference (two-proportion test)", ProportionSigma(static_cast<double>(Selected[0].Count(MPhysicalEvent::c_Compton)), static_cast<double>(Sims[0].m_SimulatedParticles), static_cast<double>(Selected[s].Count(MPhysicalEvent::c_Compton)), static_cast<double>(Sims[s].m_SimulatedParticles)), 0.0, MEndToEndReport::c_PullLimit) && Passed;
     }
   }
 

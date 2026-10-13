@@ -26,6 +26,11 @@
 #include <iostream>
 #include <map>
 
+// ROOT libs:
+#include "TGraphErrors.h"
+#include "TLegend.h"
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -78,7 +83,7 @@ ETCosimaToMimrecEnergyResolution::ETCosimaToMimrecEnergyResolution() : MEndToEnd
 
 
 //! Run all tests
-bool ETCosimaToMimrecEnergyResolution::Run()
+bool ETCosimaToMimrecEnergyResolution::RunTest()
 {
   bool Passed = true;
 
@@ -114,6 +119,13 @@ bool ETCosimaToMimrecEnergyResolution::Run()
       return SimulateAndReconstruct(Scenario, Common + "/revan.cfg");
     }));
   }
+
+  // The summary: the peaks, and the widths over the energy
+  TPad* PeakPage = GetReport().AddPage("Energy peaks: all events (black) and single hit events with the full energy (red)", 3, 2);
+  TGraphErrors* PeakWidths = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraphErrors* SingleWidths = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraphErrors* ReferenceWidths = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+  TGraph* TableWidths = GetReport().KeepObject(unique_ptr<TGraph>(new TGraph()));
 
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
     const MString Name = Scenarios[s].m_Name;
@@ -197,6 +209,16 @@ bool ETCosimaToMimrecEnergyResolution::Run()
     const ETMeasuredValue PeakSigma = Measure(Peak, RobustWidth);
     mout<<Name<<": peak sigma "<<PeakSigma.m_Value<<" +- "<<PeakSigma.m_Error<<" keV (resolution table: "<<Sigma<<" keV)"<<endl;
     Passed = CompareToReference(Name, "peak sigma / keV", "The robust sigma of the peak", PeakSigma) && Passed;
+    PeakPage->cd(s + 1);
+    GetReport().DrawHistogram(Name + ";energy / keV;events", Peak, 60, 0.97*Line, 1.03*Line);
+    TH1D* SingleHistogram = GetReport().DrawHistogram("", PhotoPeak, 60, 0.97*Line, 1.03*Line, "HIST SAME");
+    SingleHistogram->SetLineColor(kRed);
+    GetReport().DrawComparison(0, "sigma", PeakSigma, GetReference(Name, "peak sigma / keV"));
+    ReferenceWidths->SetPoint(ReferenceWidths->GetN(), Line, GetReference(Name, "peak sigma / keV").m_Value);
+    ReferenceWidths->SetPointError(ReferenceWidths->GetN() - 1, 0.0, GetReference(Name, "peak sigma / keV").m_Error);
+    PeakWidths->SetPoint(PeakWidths->GetN(), Line, PeakSigma.m_Value);
+    PeakWidths->SetPointError(PeakWidths->GetN() - 1, 0.0, PeakSigma.m_Error);
+    TableWidths->SetPoint(TableWidths->GetN(), Line, Sigma);
     Passed = CompareToReference(Name, "peak FWHM / keV", "The full width at half maximum of the peak", Measure(Peak, Fwhm, 50)) && Passed;
     Passed = CompareToReference(Name, "peak 90% half width / keV", "The half width of the shortest interval which contains 90% of the events of the peak window", Measure(Peak, Width90, 50)) && Passed;
 
@@ -205,9 +227,51 @@ bool ETCosimaToMimrecEnergyResolution::Run()
     if (PhotoPeak.size() > 200) {
       const ETMeasuredValue PhotoSigma = Measure(PhotoPeak, RobustWidth);
       mout<<Name<<": single hit full energy photo events: sigma "<<PhotoSigma.m_Value<<" +- "<<PhotoSigma.m_Error<<" keV (resolution table: "<<Sigma<<" keV)"<<endl;
-      Passed = EvaluateNear("Energy", Name + ", resolution", "The robust sigma of the photo events with a single hit and the full energy is the energy resolution of the geometry (four standard errors)", PhotoSigma.m_Value, Sigma, 4.0*PhotoSigma.m_Error) && Passed;
       Passed = CompareToReference(Name, "single hit sigma / keV", "The robust sigma of the photo events with a single hit and the full energy", PhotoSigma) && Passed;
+      // The table is exact: the tolerance is four standard errors of the measurement
+      ETMeasuredValue TableValue;
+      TableValue.m_Value = Sigma;
+      const double TableTolerance = 4.0*PhotoSigma.m_Error;
+      Passed = CompareValues("Energy", Name + ", resolution", "The robust sigma of the photo events with a single hit and the full energy is the energy resolution of the geometry (four standard errors)", Name + "/single hit sigma vs the table / keV", PhotoSigma, TableValue, TableTolerance, true) && Passed;
+      PeakPage->cd(s + 1);
+      GetReport().DrawComparison(1, "single hit sigma", PhotoSigma, TableValue, TableTolerance, true);
+      SingleWidths->SetPoint(SingleWidths->GetN(), Line, PhotoSigma.m_Value);
+      SingleWidths->SetPointError(SingleWidths->GetN() - 1, 0.0, PhotoSigma.m_Error);
     }
+  }
+
+  // The widths over the energy
+  TPad* WidthPage = GetReport().AddPage("Energy resolution (robust sigma) over the energy: expected (table, reference) and measured", 1, 1);
+  WidthPage->cd(1);
+  if (TableWidths->GetN() == 0) {
+    // No scenario could be evaluated, the report shows why the page is empty
+    GetReport().DrawLabel(0.1, 0.5, "No scenario has enough events: there are no widths to show");
+  } else {
+    gPad->SetLogx();
+    gPad->SetGrid();
+    TableWidths->SetTitle(";line energy / keV;sigma / keV");
+    TableWidths->SetLineColor(kRed);
+    TableWidths->SetLineWidth(2);
+    TableWidths->Draw("AL");
+    TableWidths->SetMinimum(0.0);
+    double MaximumWidth = GetMaximumY(PeakWidths);
+    TableWidths->SetMaximum(1.2*max(MaximumWidth, GetMaximumY(TableWidths)));
+    ReferenceWidths->SetMarkerStyle(24);
+    ReferenceWidths->SetMarkerColor(kGray + 2);
+    ReferenceWidths->SetLineColor(kGray + 2);
+    ReferenceWidths->Draw("P SAME");
+    PeakWidths->SetMarkerStyle(20);
+    PeakWidths->Draw("P SAME");
+    SingleWidths->SetMarkerStyle(21);
+    SingleWidths->SetMarkerColor(kBlue);
+    SingleWidths->SetLineColor(kBlue);
+    SingleWidths->Draw("P SAME");
+    TLegend* Legend = new TLegend(0.15, 0.66, 0.6, 0.88);
+    Legend->AddEntry(TableWidths, "resolution table of the geometry", "l");
+    Legend->AddEntry(ReferenceWidths, "reference of all events in the peak", "p");
+    Legend->AddEntry(PeakWidths, "all events in the peak", "p");
+    Legend->AddEntry(SingleWidths, "single hit events with the full energy", "p");
+    Legend->Draw();
   }
 
   Summarize();

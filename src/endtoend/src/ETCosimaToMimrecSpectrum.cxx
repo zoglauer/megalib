@@ -31,12 +31,15 @@
 #include <set>
 #include <sstream>
 
+// ROOT libs:
+#include "TLine.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Run all tests
-bool ETCosimaToMimrecSpectrum::Run()
+bool ETCosimaToMimrecSpectrum::RunTest()
 {
   bool Passed = true;
 
@@ -83,6 +86,9 @@ bool ETCosimaToMimrecSpectrum::Run()
       return Mimrec(Scenario, Common + "/mimrec.cfg", "-s", "spectrum.root", Window);
     }));
   }
+
+  // The summary: the peaks of the lines, and the spectrum of the power law
+  TPad* SpectrumPage = GetReport().AddPage("Reconstructed total energy: lines (150, 662, 1500 keV) and power law source", 2, 2);
 
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
     const MString Name = Scenarios[s].m_Name;
@@ -145,11 +151,16 @@ bool ETCosimaToMimrecSpectrum::Run()
           Peak.push_back(Match.m_Reconstructed);
         }
       }
+      SpectrumPage->cd(s + 1);
+      TH1D* PeakHistogram = GetReport().DrawHistogram(Name + ";energy / keV;events", Peak, 80, 0.96*Line, 1.04*Line);
+      // The expectation is the line energy
+      TLine* LineMarker = new TLine(Line, 0.0, Line, PeakHistogram->GetMaximum());
+      LineMarker->SetLineColor(kRed);
+      LineMarker->Draw();
       const double PeakMedian = GetMedian(Peak);
       mout<<Name<<": "<<Peak.size()<<" events within 4% of the line, median "<<PeakMedian<<" keV"<<endl;
       Passed = EvaluateTrue("Energy", Name + ", peak events", "The line is visible: > 100 full energy events", Peak.size() > 100) && Passed;
       if (Peak.size() > 100) {
-        Passed = EvaluateNear("Energy", Name + ", peak position", "The median reconstructed energy of the peak is the line energy (0.1%)", PeakMedian, Line, 0.001*Line) && Passed;
         // Check the width with the median absolute deviation (robust sigma = 1.4826*MAD)
         vector<double> Deviations;
         for (double Energy: Peak) {
@@ -157,6 +168,17 @@ bool ETCosimaToMimrecSpectrum::Run()
         }
         const double Sigma = 1.4826*GetMedian(Deviations);
         mout<<Name<<": peak sigma "<<Sigma<<" keV ("<<100.0*Sigma/Line<<"%)"<<endl;
+        {
+          SpectrumPage->cd(s + 1);
+          ETMeasuredValue Position, PositionExpected;
+          Position.m_Value = PeakMedian;
+          Position.m_Error = GetMedianError(Peak);
+          PositionExpected.m_Value = Line;
+          // The limit of the test (0.1%) is a tolerance, not a standard error
+          Passed = CompareValues("Energy", Name + ", peak position", "The median reconstructed energy of the peak is the line energy (0.1%)", Name + "/peak position / keV", Position, PositionExpected, 0.001*Line, false) && Passed;
+          GetReport().DrawComparison(0, "median", Position, PositionExpected, 0.001*Line, false);
+          GetReport().DrawLabel(0.12, 0.7, MString("sigma ") + MString(Sigma, 3U) + " keV, limit " + MString(0.006*Line, 3U) + " keV");
+        }
         Passed = EvaluateNear("Energy", Name + ", peak width", "The width of the peak is the energy resolution of the instrument: below 0.6% (shown: the excess in percent)", max(100.0*Sigma/Line - 0.6, 0.0), 0.0, 0.0) && Passed;
       }
 
@@ -204,6 +226,13 @@ bool ETCosimaToMimrecSpectrum::Run()
         Passed = EvaluateTrue("Mimrec", Name + ", width resolved", "The peak is resolved: the FWHM is larger than zero", FWHM > 0.0) && Passed;
       }
     } else {
+      vector<double> Reconstructed;
+      for (const Pair& Match: Pairs) {
+        Reconstructed.push_back(Match.m_Reconstructed);
+      }
+      SpectrumPage->cd(s + 1);
+      gPad->SetLogy();
+      GetReport().DrawHistogram(Name + ";energy / keV;events", Reconstructed, 95, 100.0, 2000.0);
       // Check the power law source: true energies in range, reconstructed energy unbiased
       Passed = EvaluateNear("ReadSim()", Name + ", range", "The true energies of the triggered photons are inside the energy range of the source (shown: the excess outside of 100 to 2000 keV)", max(max(100.0 - MinTrue, MaxTrue - 2000.0), 0.0), 0.0, 1e-3) && Passed;
       // Check the mimrec spectrum between 100 and 2000 keV

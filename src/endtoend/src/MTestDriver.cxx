@@ -51,7 +51,15 @@
 #include <unistd.h>
 using namespace std;
 
+// ROOT libs:
+#include "TCanvas.h"
+#include "TFile.h"
+#include "TKey.h"
+#include "TLatex.h"
+#include "TROOT.h"
+
 // MEGAlib libs:
+#include "MEndToEndReport.h"
 #include "MFile.h"
 #include "MSettingsTesting.h"
 #include "MSystem.h"
@@ -480,6 +488,10 @@ int MTestDriver::Execute(int argc, char** argv)
       mout<<"Failed test output report: unable to write report file"<<endl;
     }
   }
+  const MString SummaryReport = WriteSummaryReport(Tests, Statuses, Metrics, Timings);
+  if (SummaryReport.IsEmpty() == false) {
+    mout<<"Summary report of the tests: "<<SummaryReport<<endl;
+  }
   mout<<"Logs of all tests and the working files of failed tests: "<<m_LogDirectory<<endl;
   SaveTimings(Timings);
   if (Failed == 0 && CalibrationFailed == false) {
@@ -501,7 +513,7 @@ void MTestDriver::PrintUsage() const
       <<"  -a, --all           Run the unit tests and the end-to-end tests"<<endl
       <<"  -e, --endtoend      Run only the end-to-end tests"<<endl
       <<"  -c, --calibrate     Measure the speed of this machine again (the program testdrivercalibration): it runs before the first test, the time out is scaled with the result"<<endl
-      <<"  -l, --logdir <directory> All logs and the working files of failed tests go here (default: the one in ~/.testdrive.cfg, initially /tmp/$USER/megalib_testing_logs)"<<endl
+      <<"  -l, --logdir <directory> All logs and the working files of failed tests go here, for this run only (default: /tmp/$USER/megalib_testing_logs)"<<endl
       <<"  -t, --timeout <T>       Kill a test after T = [0...3600] seconds, T = 0: no timeout (default: 120)"<<endl
       <<"  test                The name of a test (the prefix is optional): the tests which are named run independent of the options above"<<endl
       <<"  -h, --help          This help"<<endl;
@@ -514,13 +526,14 @@ void MTestDriver::PrintUsage() const
 //! Create the log directory, and write it and the time out into the testing settings file, return false on failure
 bool MTestDriver::PrepareLogDirectory()
 {
-  // Use the log directory of the settings file without --logdir
+  // The log directory is the default, unless --logdir overwrites it for this run
   MSettingsTesting Settings;
   MString SettingsFileName = Settings.GetSettingsFileName();
   MFile::ExpandFileName(SettingsFileName);
   if (MFile::Exists(SettingsFileName) == true) {
     Settings.Read(SettingsFileName);
   }
+  Settings.SetLogDirectory(Settings.GetDefaultLogDirectory());
   if (m_LogDirectory.IsEmpty() == true) {
     m_LogDirectory = Settings.GetLogDirectory();
   }
@@ -913,6 +926,12 @@ void MTestDriver::RemoveStaleTestFiles(const vector<MString>& Tests) const
       }
     }
   }
+  // The summaries of an earlier run of the tests which run now
+  for (const MString& Test : Tests) {
+    filesystem::remove((m_LogDirectory + "/" + Test + ".summary.root").Data(), Error);
+    filesystem::remove((m_LogDirectory + "/" + Test + ".pdf").Data(), Error);
+    filesystem::remove((m_LogDirectory + "/" + Test + ".keyresults.tsv").Data(), Error);
+  }
   for (const filesystem::path& Path : Stale) {
     // A running test (of this or of another driver) holds a lock on its root
     const int Root = open(Path.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
@@ -968,6 +987,99 @@ MString MTestDriver::FormatRuntime(double Seconds) const
   Output.precision(1);
   Output<<Seconds<<"s";
   return Output.str().c_str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write the summary report: the overview of the tests and the summary pages of the end-to-end tests as one PDF in the log directory, return its file name (empty if no test has summary pages)
+MString MTestDriver::WriteSummaryReport(const vector<MString>& RequestedTests, const vector<MTestStatus>& Statuses, const vector<MString>& Metrics, const map<MString, double>& Timings) const
+{
+  // Collect the pages of the tests: every test which has pages wrote its canvases into a ROOT file
+  vector<unique_ptr<TCanvas>> Pages;
+  for (const MString& Test : RequestedTests) {
+    const MString FileName = m_LogDirectory + "/" + Test + ".summary.root";
+    if (MFile::Exists(FileName) == false) {
+      continue;
+    }
+    TFile File(FileName.Data());
+    if (File.IsZombie() == true) {
+      continue;
+    }
+    TIter NextKey(File.GetListOfKeys());
+    TKey* Key = nullptr;
+    while ((Key = static_cast<TKey*>(NextKey())) != nullptr) {
+      TCanvas* Page = dynamic_cast<TCanvas*>(Key->ReadObj());
+      if (Page != nullptr) {
+        Pages.push_back(unique_ptr<TCanvas>(Page));
+      }
+    }
+  }
+  if (Pages.empty() == true) {
+    return "";
+  }
+
+  // The pulls of the key results of all tests together
+  MEndToEndReport Combined("All tests");
+  for (const MString& Test : RequestedTests) {
+    for (const ETKeyResult& Result : MEndToEndReport::ReadKeyResults(m_LogDirectory + "/" + Test + ".keyresults.tsv")) {
+      Combined.AddKeyResult(Result);
+    }
+  }
+  Combined.AddPullsPage();
+
+  // The overview page: every test with its result and run time
+  gROOT->SetBatch(true);
+  vector<unique_ptr<TCanvas>> Overview;
+  const unsigned int RowsPerPage = 30;
+  for (unsigned int Start = 0; Start < RequestedTests.size(); Start += RowsPerPage) {
+    unique_ptr<TCanvas> Page(new TCanvas(MString("Overview") + Start, "Overview", 1123, 794));
+    TLatex Text;
+    Text.SetNDC();
+    Text.SetTextFont(62);
+    Text.SetTextSize(0.035);
+    Text.DrawLatex(0.02, 0.945, (m_DashboardTitle + ": overview").Data());
+    Text.SetTextFont(82);
+    Text.SetTextSize(0.02);
+    Text.DrawLatex(0.02, 0.89, "test");
+    Text.DrawLatex(0.50, 0.89, "result");
+    Text.DrawLatex(0.62, 0.89, "checks");
+    Text.DrawLatex(0.90, 0.89, "time");
+    for (unsigned int t = Start; t < RequestedTests.size() && t < Start + RowsPerPage; ++t) {
+      const double Y = 0.85 - 0.0275*(t - Start);
+      if (Statuses[t] == MTestStatus::c_Passed) {
+        Text.SetTextColor(kGreen + 2);
+        Text.DrawLatex(0.50, Y, "passed");
+      } else {
+        Text.SetTextColor(kRed);
+        Text.DrawLatex(0.50, Y, "FAILED");
+      }
+      Text.SetTextColor(kBlack);
+      Text.DrawLatex(0.02, Y, RequestedTests[t].Data());
+      Text.DrawLatex(0.62, Y, Metrics[t].Data());
+      const auto Time = Timings.find(RequestedTests[t]);
+      if (Time != Timings.end()) {
+        Text.DrawLatex(0.90, Y, FormatRuntime(Time->second).Data());
+      }
+    }
+    Overview.push_back(std::move(Page));
+  }
+
+  // One PDF with the overview first, then the pulls of all tests, then the pages of the tests
+  vector<TCanvas*> All;
+  for (unique_ptr<TCanvas>& Page : Overview) {
+    All.push_back(Page.get());
+  }
+  for (TCanvas* Page : Combined.GetPages()) {
+    All.push_back(Page);
+  }
+  for (unique_ptr<TCanvas>& Page : Pages) {
+    All.push_back(Page.get());
+  }
+  const MString Report = m_LogDirectory + "/" + m_DriverName + "_report.pdf";
+  MEndToEndReport::PrintPdf(All, Report);
+  return Report;
 }
 
 

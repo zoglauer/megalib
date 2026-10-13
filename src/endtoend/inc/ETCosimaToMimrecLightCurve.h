@@ -49,7 +49,7 @@ public:
   virtual ~ETCosimaToMimrecLightCurve() {}
 
   //! Run all tests
-  virtual bool Run();
+  virtual bool RunTest();
 
 private:
   //! Return the index of the interval of the light curve which contains the time in seconds: 0: before 30 s, 1: before 50 s, 2: later

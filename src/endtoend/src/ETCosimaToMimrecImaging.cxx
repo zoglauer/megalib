@@ -36,7 +36,7 @@
 
 
 //! Run all tests
-bool ETCosimaToMimrecImaging::Run()
+bool ETCosimaToMimrecImaging::RunTest()
 {
   bool Passed = true;
 
@@ -88,6 +88,9 @@ bool ETCosimaToMimrecImaging::Run()
       return Mimrec(Scenario, Common + "/mimrec.cfg", "-x", "selected.tra", Window);
     }));
   }
+
+  // The summary: the ARM relative to the true direction for every source direction
+  TPad* ARMPage = GetReport().AddPage("ARM relative to the true source direction of the full energy Compton events", 3, 2);
 
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
     const MString Name = Scenarios[s].m_Name;
@@ -169,6 +172,8 @@ bool ETCosimaToMimrecImaging::Run()
       const MVector Ring = (Source*cos(20.0*c_Rad) + (FirstAxis*cos(Angle) + Direction*sin(Angle))*sin(20.0*c_Rad)).Unit();
       FractionRing = max(FractionRing, Fraction(Ring, 5.0));
     }
+    ARMPage->cd(s + 1);
+    GetReport().DrawHistogram(Name + ";ARM / deg;events", ARMs, 80, -40.0, 40.0);
     mout<<Name<<": ARM peak at "<<PeakARM<<" deg, fraction with |ARM| < 5 deg: "<<FractionTrue<<" (the best of eight directions displaced by 20 deg: "<<FractionRing<<")"<<endl;
     Passed = EvaluateNear("ARM", Name + ", peak", "The peak of the ARM distribution relative to the true source direction is at zero", PeakARM, 0.0, 2.0) && Passed;
     // Expected: mean zero within the statistical uncertainty, RMS 4.1 deg for |ARM| < 10 deg (baseline, measured 4.0 to 4.3 deg)
@@ -179,8 +184,7 @@ bool ETCosimaToMimrecImaging::Run()
     double MeanWidth = 0.0, RMSWidth = 0.0;
     GetTruncatedMoments(ARMs, 10.0, NumberWidth, MeanWidth, RMSWidth);
     mout<<Name<<": ARM mean "<<MeanCore<<" deg (|ARM| < 5 deg), RMS "<<RMSWidth<<" deg (|ARM| < 10 deg)"<<endl;
-    Passed = EvaluateNear("ARM", Name + ", mean", "The mean ARM of the events with |ARM| < 5 degrees is zero (5 sigma of the mean; degrees)", MeanCore, 0.0, 5.0*RMSCore/sqrt(static_cast<double>(NumberCore))) && Passed;
-    Passed = EvaluateNear("ARM", Name + ", width", "The RMS of the ARM of the events with |ARM| < 10 degrees is 4.1 degrees (+-0.5; degrees)", RMSWidth, 4.1, 0.5) && Passed;
+    Passed = EvaluateNear("ARM", Name + ", mean", "The mean ARM of the events with |ARM| < 5 degrees is zero (5 sigma of the mean; degrees)", MeanCore, 0.0, MEndToEndReport::c_PullLimit*RMSCore/sqrt(static_cast<double>(NumberCore))) && Passed;
     vector<double> AbsoluteARMs;
     for (double Arm: ARMs) {
       AbsoluteARMs.push_back(fabs(Arm));
@@ -192,7 +196,22 @@ bool ETCosimaToMimrecImaging::Run()
     static const map<string, double> BaselineMedians = {{"Theta0Phi0", 7.0}, {"Theta20Phi0", 7.3}, {"Theta40Phi90", 7.8}, {"Theta60Phi225", 8.1}, {"Theta75Phi315", 8.2}};
     // Tolerance: 4 sigma of the median including the baseline uncertainty (sigma/sqrt(16))
     const double MedianTolerance = 4.0*sqrt(1.0 + 1.0/16.0)*MedianError;
-    Passed = EvaluateNear("ARM", Name + ", median", "The median of |ARM| is the baseline of this direction (4 sigma of the median; degrees)", MedianARM, BaselineMedians.at(Name.Data()), MedianTolerance) && Passed;
+    ARMPage->cd(s + 1);
+    {
+      ETMeasuredValue WidthValue, WidthExpected, MedianValue, MedianExpected;
+      WidthValue.m_Value = RMSWidth;
+      WidthValue.m_Error = RMSWidth/sqrt(2.0*NumberWidth);
+      WidthExpected.m_Value = 4.1;
+      WidthExpected.m_Error = 0.0; // The limit of the test (0.5 degrees) is a tolerance, not a standard error
+      MedianValue.m_Value = MedianARM;
+      MedianValue.m_Error = MedianError;
+      MedianExpected.m_Value = BaselineMedians.at(Name.Data());
+      MedianExpected.m_Error = MedianError/4.0; // The uncertainty of the baseline: sigma/sqrt(16)
+      Passed = CompareValues("ARM", Name + ", width", "The RMS of the ARM of the events with |ARM| < 10 degrees is 4.1 degrees (+-0.5; degrees)", Name + "/RMS of ARM, |ARM| < 10 deg", WidthValue, WidthExpected, 0.5, false) && Passed;
+      Passed = CompareValues("ARM", Name + ", median", "The median of |ARM| is the baseline of this direction (4 sigma of the median; degrees)", Name + "/median of |ARM|", MedianValue, MedianExpected, MedianTolerance, true) && Passed;
+      GetReport().DrawComparison(0, "RMS(|ARM|<10)", WidthValue, WidthExpected, 0.5, false);
+      GetReport().DrawComparison(1, "median|ARM|", MedianValue, MedianExpected, MedianTolerance, true);
+    }
     Passed = EvaluateNear("ARM", Name + ", contrast", "The true direction is clearly better than every direction displaced by 20 degrees (shown: the shortfall below 1.3 times the best displaced direction)", max(1.3*FractionRing - FractionTrue, 0.0), 0.0, 0.0) && Passed;
 
     // Check the total energy: a line at 662 keV

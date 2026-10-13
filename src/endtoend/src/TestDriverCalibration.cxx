@@ -42,7 +42,7 @@ const unsigned int c_CalibrationSeed = 20261008;
 
 
 //! Run all tests
-bool TestDriverCalibration::Run()
+bool TestDriverCalibration::RunTest()
 {
   bool Passed = true;
 

@@ -47,7 +47,7 @@ public:
   virtual ~ETCosimaToMimrecAngularResolution() {}
 
   //! Run all tests
-  virtual bool Run();
+  virtual bool RunTest();
 
 };
 

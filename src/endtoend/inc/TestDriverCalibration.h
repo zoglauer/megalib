@@ -43,7 +43,7 @@ public:
   virtual ~TestDriverCalibration() {}
 
   //! Run all tests
-  virtual bool Run();
+  virtual bool RunTest();
 
 private:
   //! Run the fixed chain cosima -> revan -> mimrec in a scenario of the given name, return the time in seconds, or a negative value if one of the programs failed

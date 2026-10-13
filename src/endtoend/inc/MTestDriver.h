@@ -28,6 +28,7 @@
 // Standard libs:
 #include <csignal>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 using namespace std;
@@ -65,7 +66,8 @@ enum class MTestingScope {
 //! Class representing the driver which finds the test programs (UT*, ET*) in the bin directory and runs them in parallel with a dashboard
 //! * By default the unit tests run, --all (-a) adds the end-to-end tests, --endtoend (-e) runs only them, tests named on the command line always run
 //! * Before the end-to-end tests it runs testdrivercalibration if the machine is not calibrated yet (or with --calibrate (-c)): the time out scales with it
-//! * All logs and the working files of failed tests go to the log directory of ~/.testdrive.cfg (--logdir (-l))
+//! * Every end-to-end test writes summary pages (PDF and the canvases in a ROOT file) into the log directory, the driver puts them with an overview into <driver>_report.pdf
+//! * All logs and the working files of failed tests go to /tmp/$USER/megalib_testing_logs, or to the directory of --logdir (-l) for this run only
 class MTestDriver
 {
   // public interface:
@@ -132,6 +134,8 @@ class MTestDriver
   MString FormatFailureMetric(const MString& Metric) const;
   //! Return the time in seconds with one decimal and the unit
   MString FormatRuntime(double Seconds) const;
+  //! Write the summary report: the overview of the tests and the summary pages of the end-to-end tests as one PDF in the log directory, return its file name (empty if no test has summary pages)
+  MString WriteSummaryReport(const vector<MString>& RequestedTests, const vector<MTestStatus>& Statuses, const vector<MString>& Metrics, const map<MString, double>& Timings) const;
   //! Write the report with the output of the failed tests into the log directory, return its file name (empty if it could not be written)
   MString WriteFailureReport(const vector<MString>& RequestedTests, const vector<MTestStatus>& Statuses,
                              const vector<MString>& Metrics, const vector<MString>& Outputs) const;

@@ -26,6 +26,11 @@
 #include <iostream>
 #include <map>
 
+// ROOT libs:
+#include "TGraphErrors.h"
+#include "TLegend.h"
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -84,7 +89,7 @@ ETCosimaToMimrecAngularResolution::ETCosimaToMimrecAngularResolution() : MEndToE
 
 
 //! Run all tests
-bool ETCosimaToMimrecAngularResolution::Run()
+bool ETCosimaToMimrecAngularResolution::RunTest()
 {
   bool Passed = true;
 
@@ -118,6 +123,19 @@ bool ETCosimaToMimrecAngularResolution::Run()
     Runs.push_back(async(launch::async, [this, Scenario, Common]() {
       return SimulateAndReconstruct(Scenario, Common + "/revan.cfg");
     }));
+  }
+
+  // The summary: the ARM distributions, and the widths over the energy for the two directions
+  TPad* ARMPage = GetReport().AddPage("ARM of the full energy Compton events: 200, 500, 1000 keV, 0 and 40 deg", 2, 3);
+  TGraphErrors* FwhmGraph[2];
+  TGraphErrors* ContainmentGraph[2];
+  TGraphErrors* ReferenceFwhmGraph[2];
+  TGraphErrors* ReferenceContainmentGraph[2];
+  for (unsigned int d = 0; d < 2; ++d) {
+    FwhmGraph[d] = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+    ContainmentGraph[d] = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+    ReferenceFwhmGraph[d] = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
+    ReferenceContainmentGraph[d] = GetReport().KeepObject(unique_ptr<TGraphErrors>(new TGraphErrors()));
   }
 
   for (unsigned int s = 0; s < Scenarios.size(); ++s) {
@@ -196,10 +214,62 @@ bool ETCosimaToMimrecAngularResolution::Run()
     const ETMeasuredValue ARMFwhm = Measure(ARMs, Fwhm, 50);
     mout<<Name<<": ARM FWHM "<<ARMFwhm.m_Value<<" +- "<<ARMFwhm.m_Error<<" deg"<<endl;
     Passed = CompareToReference(Name, "ARM FWHM / deg", "The full width at half maximum of the ARM distribution (0.5 degree bins, three bin smoothing)", ARMFwhm) && Passed;
-    Passed = CompareToReference(Name, "ARM 68% containment / deg", "The 68% containment of |ARM|", Measure(ARMs, Containment68, 50)) && Passed;
+    const ETMeasuredValue ARM68 = Measure(ARMs, Containment68, 50);
+    Passed = CompareToReference(Name, "ARM 68% containment / deg", "The 68% containment of |ARM|", ARM68) && Passed;
+    ARMPage->cd(s + 1);
+    GetReport().DrawHistogram(Name + ";ARM / deg;events", ARMs, 80, -40.0, 40.0);
+    GetReport().DrawComparison(0, "FWHM", ARMFwhm, GetReference(Name, "ARM FWHM / deg"));
+    GetReport().DrawComparison(1, "68%", ARM68, GetReference(Name, "ARM 68% containment / deg"));
+    const unsigned int Direction = s % 2;
+    const ETMeasuredValue ReferenceFwhm = GetReference(Name, "ARM FWHM / deg");
+    const ETMeasuredValue ReferenceContainment = GetReference(Name, "ARM 68% containment / deg");
+    ReferenceFwhmGraph[Direction]->SetPoint(ReferenceFwhmGraph[Direction]->GetN(), Line, ReferenceFwhm.m_Value);
+    ReferenceFwhmGraph[Direction]->SetPointError(ReferenceFwhmGraph[Direction]->GetN() - 1, 0.0, ReferenceFwhm.m_Error);
+    ReferenceContainmentGraph[Direction]->SetPoint(ReferenceContainmentGraph[Direction]->GetN(), Line, ReferenceContainment.m_Value);
+    ReferenceContainmentGraph[Direction]->SetPointError(ReferenceContainmentGraph[Direction]->GetN() - 1, 0.0, ReferenceContainment.m_Error);
+    FwhmGraph[Direction]->SetPoint(FwhmGraph[Direction]->GetN(), Line, ARMFwhm.m_Value);
+    FwhmGraph[Direction]->SetPointError(FwhmGraph[Direction]->GetN() - 1, 0.0, ARMFwhm.m_Error);
+    ContainmentGraph[Direction]->SetPoint(ContainmentGraph[Direction]->GetN(), Line, ARM68.m_Value);
+    ContainmentGraph[Direction]->SetPointError(ContainmentGraph[Direction]->GetN() - 1, 0.0, ARM68.m_Error);
     Passed = CompareToReference(Name, "ARM 90% containment / deg", "The 90% containment of |ARM|", Measure(ARMs, Containment90, 50)) && Passed;
     Passed = CompareToReference(Name, "ARM core fraction (|ARM| < 5 deg)", "The fraction of the events with |ARM| < 5 degrees", Measure(ARMs, CoreFraction, 50)) && Passed;
     Passed = CompareToReference(Name, "ARM mean (|ARM| < 10 deg) / deg", "The mean ARM of the events with |ARM| < 10 degrees", Measure(ARMs, Core, 50)) && Passed;
+  }
+
+  // The widths over the energy
+  TPad* WidthPage = GetReport().AddPage("ARM FWHM and 68% containment: measured (filled) and reference (open), 0 deg (black), 40 deg (red)", 2, 1);
+  for (unsigned int g = 0; g < 2; ++g) {
+    WidthPage->cd(g + 1);
+    gPad->SetGrid();
+    gPad->SetLogx();
+    for (unsigned int d = 0; d < 2; ++d) {
+      TGraphErrors* Graph = FwhmGraph[d];
+      if (g == 1) {
+        Graph = ContainmentGraph[d];
+      }
+      Graph->SetMarkerStyle(20 + d);
+      Graph->SetMarkerColor(1 + d);
+      Graph->SetLineColor(1 + d);
+      if (d == 0) {
+        if (g == 0) {
+          Graph->SetTitle(";line energy / keV;FWHM / deg");
+        } else {
+          Graph->SetTitle(";line energy / keV;68% containment / deg");
+        }
+        Graph->SetMinimum(0.0);
+        Graph->Draw("AP");
+      } else {
+        Graph->Draw("P SAME");
+      }
+      TGraphErrors* Reference = ReferenceFwhmGraph[d];
+      if (g == 1) {
+        Reference = ReferenceContainmentGraph[d];
+      }
+      Reference->SetMarkerStyle(24 + d);
+      Reference->SetMarkerSize(1.6);
+      Reference->SetMarkerColor(1 + d);
+      Reference->Draw("P SAME");
+    }
   }
 
   Summarize();

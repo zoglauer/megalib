@@ -25,11 +25,26 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <random>
+#include <sstream>
 using namespace std;
 
 // ROOT libs:
+#include "TFile.h"
+#include "TGraph.h"
+#include "TH1.h"
+#include "TLatex.h"
+#include "TBox.h"
+#include "TColor.h"
+#include "TLine.h"
+#include "TMath.h"
+#include "TPaveText.h"
+#include "TPad.h"
+#include "TError.h"
+#include "TStyle.h"
 
 // MEGAlib libs:
 #include "MFile.h"
@@ -41,12 +56,13 @@ using namespace std;
 
 
 //! Standard constructor giving the name of the test
-MEndToEndTest::MEndToEndTest(const MString& Name) : MUnitTest(Name)
+MEndToEndTest::MEndToEndTest(const MString& Name) : MUnitTest(Name), m_Report(Name)
 {
   // Read the time out of the test driver (it is adapted to the speed of this machine), it counts from now
   MSettingsTesting Settings;
   Settings.Read();
   m_Timeout = Settings.GetTimeout();
+  m_Report.SetDirectory(Settings.GetLogDirectory());
   m_StartTime = chrono::steady_clock::now();
 
   // Run ROOT without graphics - batch mode first, otherwise ROOT tries to connect to the display
@@ -54,16 +70,6 @@ MEndToEndTest::MEndToEndTest(const MString& Name) : MUnitTest(Name)
   if (gROOT->GetApplication() == nullptr) {
     new TApplication("ROOT", 0, 0);
   }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Default destructor
-MEndToEndTest::~MEndToEndTest()
-{
-  // Intentionally left blank
 }
 
 
@@ -733,26 +739,72 @@ ETMeasuredValue MEndToEndTest::Measure(const vector<double>& Values, const ETSta
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the largest y value of the graph, zero if it has no points
+double MEndToEndTest::GetMaximumY(const TGraph* Graph)
+{
+  // TMath::MaxElement reads beyond the end of an empty graph
+  if (Graph->GetN() == 0) {
+    return 0.0;
+  }
+  return TMath::MaxElement(Graph->GetN(), Graph->GetY());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Check that the measured value is the expected value within the tolerance, add the comparison with the outcome of this check to the key results under the name, return the outcome
+bool MEndToEndTest::CompareValues(const MString& Function, const MString& Input, const MString& Description, const MString& Name, const ETMeasuredValue& Measured, const ETMeasuredValue& Expected, double Tolerance, bool IsStatistical)
+{
+  ETKeyResult& Result = m_Report.AddComparison(Name, Measured, Expected, Tolerance, IsStatistical);
+
+  // A NaN uncertainty would give a NaN tolerance, which accepts everything
+  Result.m_Passed = false;
+  if (EvaluateTrue(Function, Input, "The measurement and the expectation are valid (finite, uncertainties not negative)", Result.m_IsValid) == true) {
+    Result.m_Passed = EvaluateNear(Function, Input, Description, Measured.m_Value, Expected.m_Value, Tolerance);
+  }
+  return Result.m_Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Compare a measured value with its reference: inside five combined standard errors, prints a REFERENCE line
 bool MEndToEndTest::CompareToReference(const MString& Scenario, const MString& Observable, const MString& Description, const ETMeasuredValue& Measured)
 {
   const MString Key = Scenario + "/" + Observable;
   mout<<"REFERENCE "<<GetName()<<"/"<<Key<<" "<<Measured.m_Value<<" "<<Measured.m_Error<<endl;
-  auto Found = m_References.find(Key);
+  const auto Found = m_References.find(Key);
   if (Found == m_References.end()) {
+    m_Report.AddKeyResult(Key, Measured.m_Value, Measured.m_Error).m_Passed = false;
     return EvaluateTrue("Reference", Scenario + ", " + Observable, "A reference value exists for this observable", false);
   }
-  // A NaN uncertainty would give a NaN tolerance, which accepts everything
-  const bool Finite = (isfinite(Measured.m_Value) == true && isfinite(Measured.m_Error) == true && isfinite(Found->second.first) == true && isfinite(Found->second.second) == true);
-  if (EvaluateTrue("Reference", Scenario + ", " + Observable, "The measurement and the reference are finite", Finite) == false) {
-    return false;
-  }
-  const double Tolerance = 5.0*sqrt(Measured.m_Error*Measured.m_Error + Found->second.second*Found->second.second);
-  return EvaluateNear("Reference", Scenario + ", " + Observable, Description + " (five combined standard errors)", Measured.m_Value, Found->second.first, Tolerance);
+  ETMeasuredValue Expected;
+  Expected.m_Value = Found->second.first;
+  Expected.m_Error = Found->second.second;
+  const double Tolerance = MEndToEndReport::c_PullLimit*sqrt(Measured.m_Error*Measured.m_Error + Expected.m_Error*Expected.m_Error);
+  return CompareValues("Reference", Scenario + ", " + Observable, Description + " (five combined standard errors)", Key, Measured, Expected, Tolerance, true);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the reference value of "scenario/observable" (zero if there is none)
+ETMeasuredValue MEndToEndTest::GetReference(const MString& Scenario, const MString& Observable) const
+{
+  ETMeasuredValue Reference;
+  auto Found = m_References.find(Scenario + "/" + Observable);
+  if (Found != m_References.end()) {
+    Reference.m_Value = Found->second.first;
+    Reference.m_Error = Found->second.second;
+  }
+  return Reference;
+}
+
+
+////////
 
 
 //! Return the significance in sigma of the ratio of two Poisson counts CountA/CountB relative to the expected ratio

@@ -36,7 +36,7 @@
 
 
 //! Run all tests
-bool ETCosimaToMimrecPolarization::Run()
+bool ETCosimaToMimrecPolarization::RunTest()
 {
   bool Passed = true;
 
@@ -144,16 +144,30 @@ bool ETCosimaToMimrecPolarization::Run()
   const MVector AxisX(1.0, 0.0, 0.0);
   const MVector AxisY(0.0, 1.0, 0.0);
   const MVector DownZ(0.0, 0.0, -1.0);
+  const double Limit = MEndToEndReport::c_PullLimit;
   vector<Modulation> Modulations;
+  TPad* AzimuthPage = GetReport().AddPage("Azimuthal scattering angle of the full energy Compton events: unpolarized, 0, 45, 90 deg polarization angle", 2, 2);
   for (unsigned int s = 0; s < 4; ++s) {
-    Modulations.push_back(Measure(Tras[s], AxisX, AxisY, DownZ));
+    vector<double> Azimuths;
+    Modulations.push_back(Measure(Tras[s], AxisX, AxisY, DownZ, &Azimuths));
+    AzimuthPage->cd(s + 1);
+    GetReport().DrawHistogram(Scenarios[s].m_Name + ";azimuthal scattering angle / deg;events", Azimuths, 36, -180.0, 180.0);
+    if (s == 0) {
+      // Unpolarized: no modulation expected
+      ETMeasuredValue Cos, Sin, Zero;
+      Cos.m_Value = Modulations.back().m_Cos;
+      Cos.m_Error = Modulations.back().Sigma();
+      Sin.m_Value = Modulations.back().m_Sin;
+      Sin.m_Error = Modulations.back().Sigma();
+      // Unpolarized: zero modulation
+      Passed = CompareValues("Polarization", "Unpolarized, cos", "Unpolarized photons have no modulation: <cos 2 eta> (5 sigma)", "Unpolarized/<cos 2 eta>", Cos, Zero, Limit*Cos.m_Error, true) && Passed;
+      Passed = CompareValues("Polarization", "Unpolarized, sin", "Unpolarized photons have no modulation: <sin 2 eta> (5 sigma)", "Unpolarized/<sin 2 eta>", Sin, Zero, Limit*Sin.m_Error, true) && Passed;
+      GetReport().DrawComparison(0, "<cos 2#eta>", Cos, Zero, Limit*Cos.m_Error, true);
+      GetReport().DrawComparison(1, "<sin 2#eta>", Sin, Zero, Limit*Sin.m_Error, true);
+    }
     mout<<Scenarios[s].m_Name<<": "<<Modulations.back().m_N<<" full energy Compton events, modulation vector ("<<Modulations.back().m_Cos<<", "<<Modulations.back().m_Sin<<") +- "<<Modulations.back().Sigma()<<endl;
     Passed = EvaluateTrue("Polarization", Scenarios[s].m_Name + ", events", "There are enough full energy Compton events (> 3000)", Modulations.back().m_N > 3000) && Passed;
   }
-  const double Five = 5.0;
-  // Unpolarized: zero modulation
-  Passed = EvaluateNear("Polarization", "Unpolarized, cos", "Unpolarized photons have no modulation: <cos 2 eta> (5 sigma)", Modulations[0].m_Cos, 0.0, Five*Modulations[0].Sigma()) && Passed;
-  Passed = EvaluateNear("Polarization", "Unpolarized, sin", "Unpolarized photons have no modulation: <sin 2 eta> (5 sigma)", Modulations[0].m_Sin, 0.0, Five*Modulations[0].Sigma()) && Passed;
 
   // Expect the modulation (-M cos 2 alpha, -M sin 2 alpha) - the acceptance changes the amplitude, not the phase:
   const vector<double> Angles = { 0.0, 45.0, 90.0 };
@@ -162,16 +176,30 @@ bool ETCosimaToMimrecPolarization::Run()
     const double Size = sqrt(Measured.m_Cos*Measured.m_Cos + Measured.m_Sin*Measured.m_Sin);
     const MString Name = MString("Angle") + static_cast<int>(Angles[a]);
     // Check the significance of the modulation:
-    Passed = EvaluateNear("Polarization", Name + ", modulation", "Photons which are polarized scatter perpendicular to their polarization: the modulation is significant (> 5 sigma; shown: the shortfall) and below 100%", max(Five*Measured.Sigma() - Size, 0.0) + max(Size - 1.0, 0.0), 0.0, 0.0) && Passed;
+    Passed = EvaluateNear("Polarization", Name + ", modulation", "Photons which are polarized scatter perpendicular to their polarization: the modulation is significant (> 5 sigma; shown: the shortfall) and below 100%", max(Limit*Measured.Sigma() - Size, 0.0) + max(Size - 1.0, 0.0), 0.0, 0.0) && Passed;
     double Angle = 0.5*atan2(-Measured.m_Sin, -Measured.m_Cos)*c_Deg;
-    double Difference = fabs(Angle - Angles[a]);
-    if (Difference > 90.0) {
-      Difference = 180.0 - Difference;
-    }
     // Get the uncertainty of the angle: sigma/(2*size) in radians
     const double AngleSigma = 0.5*Measured.Sigma()/Size*c_Deg;
     mout<<Name<<": modulation "<<Size<<", measured polarization angle "<<Angle<<" +- "<<AngleSigma<<" deg"<<endl;
-    Passed = EvaluateNear("Polarization", Name + ", phase", "The polarization angle which is measured from the modulation is the polarization angle of the source (5 sigma + 2 degrees)", Difference, 0.0, Five*AngleSigma + 2.0) && Passed;
+    {
+      // The angle is only defined modulo 180 degrees: show it next to the angle of the source
+      double Signed = Angle - Angles[a];
+      while (Signed > 90.0) {
+        Signed -= 180.0;
+      }
+      while (Signed <= -90.0) {
+        Signed += 180.0;
+      }
+      ETMeasuredValue AngleValue, AngleExpected;
+      AngleValue.m_Value = Angles[a] + Signed;
+      AngleValue.m_Error = AngleSigma;
+      AngleExpected.m_Value = Angles[a];
+      AzimuthPage->cd(a + 2);
+      // The tolerance is five standard errors and two degrees: a limit with a systematic allowance, not a statistical pull
+      const double AngleTolerance = Limit*AngleSigma + 2.0;
+      Passed = CompareValues("Polarization", Name + ", phase", "The polarization angle which is measured from the modulation is the polarization angle of the source (5 sigma + 2 degrees)", Name + "/polarization angle / deg", AngleValue, AngleExpected, AngleTolerance, false) && Passed;
+      GetReport().DrawComparison(0, "polarization angle", AngleValue, AngleExpected, AngleTolerance, false);
+    }
   }
 
   // Off axis: project the polarization vector onto the plane perpendicular to the flight direction
@@ -187,9 +215,9 @@ bool ETCosimaToMimrecPolarization::Run()
   // Expect <cos 2 eta> below the unpolarized control:
   const double Difference = Control.m_Cos - Polarized.m_Cos;
   const double DifferenceSigma = sqrt(Control.Sigma()*Control.Sigma() + Polarized.Sigma()*Polarized.Sigma());
-  Passed = EvaluateNear("Polarization", "OffAxis, modulation", "The photons which are polarized along the projected vector scatter perpendicular to it: <cos 2 eta> is lower than for the unpolarized control (> 5 sigma; shown: the shortfall)", max(Five*DifferenceSigma - Difference, 0.0), 0.0, 0.0) && Passed;
+  Passed = EvaluateNear("Polarization", "OffAxis, modulation", "The photons which are polarized along the projected vector scatter perpendicular to it: <cos 2 eta> is lower than for the unpolarized control (> 5 sigma; shown: the shortfall)", max(Limit*DifferenceSigma - Difference, 0.0), 0.0, 0.0) && Passed;
   // Expect the sin component of the control:
-  Passed = EvaluateNear("Polarization", "OffAxis, phase", "The modulation is along the projected polarization vector: the sin component equals the one of the control (5 sigma)", Polarized.m_Sin, Control.m_Sin, Five*DifferenceSigma) && Passed;
+  Passed = EvaluateNear("Polarization", "OffAxis, phase", "The modulation is along the projected polarization vector: the sin component equals the one of the control (5 sigma)", Polarized.m_Sin, Control.m_Sin, Limit*DifferenceSigma) && Passed;
 
   // Check the mimrec results: angle, modulation, and no modulation unpolarized
   for (unsigned int a = 0; a < 3; ++a) {
@@ -205,14 +233,14 @@ bool ETCosimaToMimrecPolarization::Run()
     }
     mout<<Name<<": mimrec modulation "<<Analysis.m_Modulation<<" +- "<<Analysis.m_ModulationError<<", polarization angle "<<Analysis.m_Angle<<" +- "<<Analysis.m_AngleError<<" deg"<<endl;
     Passed = EvaluateNear("Mimrec", Name + ", modulation", "The modulation which mimrec measures is significant (> 4 sigma; shown: the shortfall)", max(4.0*Analysis.m_ModulationError - Analysis.m_Modulation, 0.0), 0.0, 0.0) && Passed;
-    Passed = EvaluateNear("Mimrec", Name + ", angle", "The polarization angle which mimrec measures is the polarization angle of the source (5 sigma + 2 degrees)", Difference, 0.0, 5.0*Analysis.m_AngleError + 2.0) && Passed;
+    Passed = EvaluateNear("Mimrec", Name + ", angle", "The polarization angle which mimrec measures is the polarization angle of the source (5 sigma + 2 degrees)", Difference, 0.0, MEndToEndReport::c_PullLimit*Analysis.m_AngleError + 2.0) && Passed;
     // Compare with the own analysis - the mimrec modulation is twice <cos 2 eta>
     const Modulation& Own = Modulations[a + 1];
     const double OwnAmplitude = 2.0*sqrt(Own.m_Cos*Own.m_Cos + Own.m_Sin*Own.m_Sin);
     Passed = EvaluateNear("Mimrec", Name + ", modulation size", "The modulation of mimrec is twice the modulation of the own analysis (within 4 sigma of the two uncertainties and 30% of the amplitude)", Analysis.m_Modulation, OwnAmplitude, 4.0*sqrt(Analysis.m_ModulationError*Analysis.m_ModulationError + 4.0*Own.Sigma()*Own.Sigma()) + 0.3*OwnAmplitude) && Passed;
   }
   if (Mimrecs[0].m_Valid == true) {
-    Passed = EvaluateNear("Mimrec", "Unpolarized, modulation", "An unpolarized source has no significant modulation in mimrec (5 sigma)", Mimrecs[0].m_Modulation, 0.0, 5.0*Mimrecs[0].m_ModulationError) && Passed;
+    Passed = EvaluateNear("Mimrec", "Unpolarized, modulation", "An unpolarized source has no significant modulation in mimrec (5 sigma)", Mimrecs[0].m_Modulation, 0.0, MEndToEndReport::c_PullLimit*Mimrecs[0].m_ModulationError) && Passed;
   }
 
   Summarize();
@@ -223,8 +251,8 @@ bool ETCosimaToMimrecPolarization::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Measure the modulation of the events of a tra file
-ETCosimaToMimrecPolarization::Modulation ETCosimaToMimrecPolarization::Measure(const ETTraFileCoreData& Tra, const MVector& E1, const MVector& E2, const MVector& Direction)
+//! Measure the modulation of the events of a tra file, optionally return the azimuthal scattering angles in degree
+ETCosimaToMimrecPolarization::Modulation ETCosimaToMimrecPolarization::Measure(const ETTraFileCoreData& Tra, const MVector& E1, const MVector& E2, const MVector& Direction, vector<double>* Azimuths)
 {
   Modulation Result;
   double SumCos = 0.0, SumSin = 0.0;
@@ -238,6 +266,9 @@ ETCosimaToMimrecPolarization::Modulation ETCosimaToMimrecPolarization::Measure(c
       continue;
     }
     const double Eta = atan2(Perpendicular.Dot(E2), Perpendicular.Dot(E1));
+    if (Azimuths != nullptr) {
+      Azimuths->push_back(Eta*c_Deg);
+    }
     SumCos += cos(2.0*Eta);
     SumSin += sin(2.0*Eta);
     ++Result.m_N;
