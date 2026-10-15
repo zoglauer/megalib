@@ -100,6 +100,8 @@ class MDGeometry
   
   
   MString GetFileName();
+  //! Return the hash of the contents of the geometry file including all Includes (0 if no geometry was read)
+  long GetHash();
   MString GetName();
 
   bool IsScanned();
