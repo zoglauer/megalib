@@ -5512,6 +5512,27 @@ int MDGeometry::GetNIncludes()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the hash of the contents of the geometry file including all Includes (0 if no geometry was read)
+long MDGeometry::GetHash()
+{
+  // Make sure we have read a geometry:
+  if (m_IncludeList.size() != m_IncludeListHashes.size() || m_IncludeList.empty() == true) {
+    return 0;
+  }
+
+  // Collect the checksums of the files in the order in which they were read:
+  MString Checksums;
+  for (const MString& Checksum: m_IncludeListHashes) {
+    Checksums += Checksum + "\n";
+  }
+
+  return Checksums.GetHash();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MDGeometry::RequiresReload()
 {
   // Return true if the geometry needs to be reloaded since files have changed
