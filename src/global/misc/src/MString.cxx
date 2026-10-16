@@ -292,7 +292,7 @@ MString& MString::RemoveAll(const MString& S)
 bool MString::BeginsWith(const MString& S) const
 {
   if (Length() < S.Length()) return false;
-  return (S == GetSubString(0, S.Length()));
+  return (m_String.compare(0, S.m_String.size(), S.m_String) == 0);
 }
  
 
@@ -302,7 +302,7 @@ bool MString::BeginsWith(const MString& S) const
 bool MString::EndsWith(const MString& S) const
 {
   if (Length() < S.Length()) return false;
-  return (S == GetSubString(Length()-S.Length(), S.Length()));
+  return (m_String.compare(m_String.size() - S.m_String.size(), S.m_String.size(), S.m_String) == 0);
 }
 
 

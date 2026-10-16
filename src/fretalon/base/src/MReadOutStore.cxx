@@ -38,6 +38,9 @@ using namespace std;
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MExceptions.h"
+#include "MReadOutElementDoubleStrip.h"
+
+#include <typeinfo>
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -73,6 +76,7 @@ void MReadOutStore::Clear()
 {
   m_Collection.clear();
   m_ReadOutDataGroups.clear();
+  m_LookupCache.clear();
 }
 
 
@@ -140,15 +144,33 @@ bool MReadOutStore::Add(const MReadOutSequence& Sequence, unsigned int Group)
       }
       */
       
-      MReadOutCollection C(Sequence.GetReadOut(r).GetReadOutElement());
-      vector<MReadOutCollection>::iterator I = lower_bound(m_Collection.begin(), m_Collection.end(), C);
+      const MReadOutElement& ROE = Sequence.GetReadOut(r).GetReadOutElement();
+
+      // Fast path for double strips: look at the cached position of the collection first
+      int Key = -1;
+      if (typeid(ROE) == typeid(MReadOutElementDoubleStrip)) {
+        const MReadOutElementDoubleStrip& Strip = static_cast<const MReadOutElementDoubleStrip&>(ROE);
+        Key = ((Strip.GetDetectorID() & 0x3F) << 9) | ((Strip.GetStripID() & 0xFF) << 1) | (Strip.IsLowVoltageStrip() ? 1 : 0);
+        if (m_LookupCache.empty() == true) m_LookupCache.assign(1 << 15, -1);
+        int Index = m_LookupCache[Key];
+        if (Index >= 0 && Index < (int) m_Collection.size() && m_Collection[Index].GetReadOutElement() == ROE) {
+          m_Collection[Index].Add(Sequence.GetReadOut(r).GetReadOutData(), Group);
+          continue;
+        }
+      }
+
+      // Search directly with the read-out element --- no need to construct (and clone) a temporary collection for every hit
+      vector<MReadOutCollection>::iterator I = lower_bound(m_Collection.begin(), m_Collection.end(), ROE, 
+        [](const MReadOutCollection& Collection, const MReadOutElement& Element) { return Collection.GetReadOutElement() < Element; });
       // We have a lower bound, i.e. the first which is not "<", so we might not yet have found it and we have to check a final time:
       if (I == m_Collection.end() || (*I).Add(Sequence.GetReadOut(r), Group) == false) {
+        MReadOutCollection C(ROE);
         C.AddReadOutDataGroups(m_ReadOutDataGroups);
         C.Add(Sequence, Group);
-        m_Collection.insert(I, C);
+        I = m_Collection.insert(I, std::move(C));
         //cout<<ToString()<<endl;
       }
+      if (Key >= 0) m_LookupCache[Key] = (int) (I - m_Collection.begin());
     }
     return true;
   }

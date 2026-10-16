@@ -433,6 +433,50 @@ bool MTime::Set(const char* Line)
 
 bool MTime::Set(const MString& String, unsigned int I)
 {
+  // Fast path for the most common format "[TI] <seconds>[.<fraction>]" - everything else goes via the slow but safe version below
+  {
+    const char* p = String.Data() + I;
+    const char* End = String.Data() + String.Length();
+    if (p <= End) {
+      while (p < End && (*p == ' ' || *p == '\t')) ++p;
+      if (End - p >= 2 && p[0] == 'T' && p[1] == 'I') p += 2;
+      while (p < End && (*p == ' ' || *p == '\t')) ++p;
+      const char* SecStart = p;
+      while (p < End && *p >= '0' && *p <= '9') ++p;
+      int SecDigits = p - SecStart;
+      int FracDigits = 0;
+      const char* FracStart = p;
+      if (p < End && *p == '.') {
+        FracStart = ++p;
+        while (p < End && *p >= '0' && *p <= '9') ++p;
+        FracDigits = p - FracStart;
+      }
+      const char* Tail = p;
+      while (Tail < End && (*Tail == ' ' || *Tail == '\t' || *Tail == '\n' || *Tail == '\r')) ++Tail;
+      bool HadDot = (FracStart != SecStart + SecDigits);
+      if (Tail == End && SecDigits > 0 && SecDigits <= 10 && FracDigits <= 18 && (HadDot == false || FracDigits > 0)) {
+        long Sec = 0;
+        for (const char* c = SecStart; c < SecStart + SecDigits; ++c) Sec = Sec*10 + (*c - '0');
+        if (Sec <= 2147483647L) { // Otherwise it does not fit into an int --> let the slow version handle this
+        int Seconds = (int) Sec;
+        int NanoSeconds = 0;
+        if (FracDigits > 0) {
+          long Frac = 0;
+          for (const char* c = FracStart; c < FracStart + FracDigits; ++c) Frac = Frac*10 + (*c - '0');
+          NanoSeconds = (int) Frac;
+          if (FracDigits < 9) {
+            NanoSeconds *= int(pow(10.0, 9.0 - FracDigits));
+          } else if (FracDigits > 9) {
+            NanoSeconds /= int(pow(10.0, FracDigits - 9.0));
+          }
+        }
+        Set(Seconds, NanoSeconds);
+        return true;
+        }
+      }
+    }
+  }
+
   // Slow but safe version of setting a time
   
   int Seconds = 0;

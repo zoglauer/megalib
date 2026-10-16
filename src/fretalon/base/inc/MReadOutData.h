@@ -71,6 +71,8 @@ class MReadOutData
   virtual void Clear() { if (m_Wrapped != 0) m_Wrapped->Clear(); }
 
   void SetWrapped(MReadOutData* ROD) { m_Wrapped = ROD; }
+  //! Return true if this read-out data wraps another read-out data
+  bool IsWrapping() const { return m_Wrapped != 0; }
   
   //! Return this read-out data as the given type - return nullptr if not possible
   virtual MReadOutData* Get(long TypeID);

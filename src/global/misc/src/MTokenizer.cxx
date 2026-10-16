@@ -706,59 +706,57 @@ bool MTokenizer::IsComposited() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTokenizer::AnalyzeFast(MString Text)
+bool MTokenizer::AnalyzeFast(const MString& Text)
 {
   // Split the Text into its tokens
 
   // Reset();
+  if (m_Tokens.capacity() < 16) m_Tokens.reserve(16); // Avoid repeated re-allocations when starting with an empty list
   unsigned int ExistingTokens = m_Tokens.size();
   unsigned int NewTokens = 0;
   
   m_Text = Text;
 
-  int Length = Text.Length();
+  const int Length = Text.Length();
   const char* pText = Text.Data();
+  const char Separator = m_Separator;
 
-  int TokenStart = 0;
-  int TokenLength = 0;
-  for (int i = 0; i < Length; ++i) {
-        
-    if (pText[i] != m_Separator && pText[i] != '\t' && pText[i] != '\n' && pText[i] != '\0') { 
-      TokenLength++;
-      if (i < Length-1) continue;
-    }
-
-    // Now we have a separator and data
-
-    if (TokenLength == 0) {
-      TokenStart = i+1;
+  // Same behavior as the original character-by-character state machine, but scanning each token in one go:
+  // separators are the separator, tab, new line, and '\0'; a token starting with "//" or "#" ends the line;
+  // a new line or '\0' directly behind a token ends the line, too
+  int i = 0;
+  while (i < Length) {
+    if (pText[i] == Separator || pText[i] == '\t' || pText[i] == '\n' || pText[i] == '\0') {
+      ++i;
       continue;
-    } else { // Token length > 0
-      if (TokenLength > 1 && pText[TokenStart] == '/' && pText[TokenStart+1] == '/') {
-        // Standard comment
-        break;
-      } else if (pText[TokenStart] == '#') {
-        // Standard comment
-        break;
-      } else {
-        // Now we have a good token.
-        if (NewTokens < ExistingTokens) {
-          //m_Tokens[NewTokens] = Text.GetSubString(TokenStart, TokenLength);
-          m_Tokens[NewTokens] = MString(&pText[TokenStart], TokenLength);
-        } else {
-          //m_Tokens.push_back(Text.GetSubString(TokenStart, TokenLength));
-          m_Tokens.push_back(MString(&pText[TokenStart], TokenLength));
-        }
-        ++NewTokens;
-        //m_Tokens.push_back(MString(&pText[TokenStart], TokenLength));
-      }
     }
 
-    if (pText[i] == '\n' || pText[i] == '\0') {
+    const int TokenStart = i;
+    int j = i + 1;
+    while (j < Length && pText[j] != Separator && pText[j] != '\t' && pText[j] != '\n' && pText[j] != '\0') ++j;
+    const int TokenLength = j - TokenStart;
+
+    if (TokenLength > 1 && pText[TokenStart] == '/' && pText[TokenStart+1] == '/') {
+      // Standard comment
+      break;
+    } else if (pText[TokenStart] == '#') {
+      // Standard comment
       break;
     }
-    TokenStart = i+1;
-    TokenLength = 0;
+
+    // Now we have a good token
+    if (NewTokens < ExistingTokens) {
+      // Build the token in place --- no temporary string
+      m_Tokens[NewTokens].GetStringRef().assign(&pText[TokenStart], TokenLength);
+    } else {
+      m_Tokens.emplace_back(&pText[TokenStart], TokenLength);
+    }
+    ++NewTokens;
+
+    if (j >= Length || pText[j] == '\n' || pText[j] == '\0') {
+      break;
+    }
+    i = j + 1;
   }
 
   if (m_Tokens.size() != NewTokens) m_Tokens.resize(NewTokens);

@@ -190,9 +190,9 @@ unsigned int MReadOutFileFormat::FindByLine(const MString& Line) const
 {
   for (unsigned int u = 0; u < m_ReadOutKeywords.size(); ++u) {
     const MString& Keyword = m_ReadOutKeywords[u];
-    if (Line.BeginsWith(Keyword) == false) continue;
     // The line length must be longer than the keyword + space
     if (Line.Length() <= Keyword.Length() + 1 ) continue;
+    if (Line.BeginsWith(Keyword) == false) continue;
     // The must be a space after the keyword - then we have found it
     if (Line[Keyword.Length()] == ' ') {
       return u;

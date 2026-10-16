@@ -36,8 +36,105 @@
 #include <new>
 #include <map>
 #include <thread>
+#include <cstring>
+#include <sys/stat.h>
 #include <iomanip>
 using namespace std;
+
+// Standard libs:
+#include <algorithm>
+#include <atomic>
+#include <condition_variable>
+#include <deque>
+#include <mutex>
+#include <thread>
+#include <cstring>
+#include <zlib.h>
+#include <cstdio>
+#include <fstream>
+#include <string>
+#if defined(__APPLE__)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <mach/mach.h>
+#endif
+
+//! Set as soon as any loading thread detects that the system is close to out of memory
+static std::atomic<bool> g_MelinatorOutOfMemory(false);
+
+//! One block of raw text from a calibration file, cut at the beginning of an event, which is passed from the reader to the parser threads
+struct MelinatorBlock
+{
+  //! The text (owned by the pipeline's buffer pool)
+  char* Data = nullptr;
+  //! The number of valid bytes
+  size_t Size = 0;
+  //! The index of the file in the list of calibration files
+  unsigned int FileID = 0;
+  //! The progress in the file (in bytes) which is completed when this block is parsed
+  double Progress = 0.0;
+};
+
+//! The pipeline between the one reader thread and the many parser threads
+struct MelinatorPipeline
+{
+  std::mutex Mutex;
+  //! Parsers wait on this for new blocks
+  std::condition_variable BlockAvailable;
+  //! The reader waits on this for free buffers
+  std::condition_variable BufferAvailable;
+  //! Blocks filled by the reader, waiting for a parser
+  std::deque<MelinatorBlock> Queue;
+  //! Unused buffers
+  std::vector<char*> FreeBuffers;
+  //! All buffers allocated so far
+  unsigned int NAllocated = 0;
+  //! Maximum number of buffers (= maximum number of blocks in flight)
+  unsigned int MaxBuffers = 0;
+  //! Size of the block (without the slack)
+  size_t BlockSize = 0;
+  //! The number of reader threads which have not yet finished
+  unsigned int ReadersRunning = 0;
+  //! All readers have finished (or have stopped)
+  bool ReaderDone = false;
+  //! Everyone should stop
+  bool Stop = false;
+  
+  //! Free everything and prepare for a new load
+  void Reset(size_t NewBlockSize, unsigned int NewMaxBuffers, unsigned int NewReaders) {
+    std::lock_guard<std::mutex> Lock(Mutex);
+    for (char* B: FreeBuffers) delete [] B;
+    FreeBuffers.clear();
+    for (MelinatorBlock& B: Queue) delete [] B.Data;
+    Queue.clear();
+    NAllocated = 0;
+    MaxBuffers = NewMaxBuffers;
+    BlockSize = NewBlockSize;
+    ReadersRunning = NewReaders;
+    ReaderDone = (NewReaders == 0);
+    Stop = false;
+  }
+};
+
+static MelinatorPipeline g_MelinatorPipeline;
+
+//! One task of a reader thread: Read the events of a part of one file
+//! The part contains all events whose "SE" line starts in [Start, End) --- End = 0 means until the end of the file
+struct MelinatorReadTask
+{
+  unsigned int FileID = 0;
+  long long Start = 0;
+  long long End = 0;
+};
+
+//! All reader tasks of the current load (one reader thread per task)
+static std::vector<MelinatorReadTask> g_MelinatorReadTasks;
+
+//! Bytes of the buffer behind the block size, to hold the beginning of the next event
+static const size_t g_MelinatorBlockSlack = 1024*1024;
+
+//! Only one thread at a time is allowed to open a file (the opening of read-out files is not thread-safe)
+static std::mutex g_MelinatorOpenMutex;
 
 // ROOT libs:
 #include "TROOT.h"
@@ -172,7 +269,9 @@ void MMelinator::Clear()
   m_CalibrationFileNames.clear();
   m_Isotopes.clear();
   
-  m_SelectedDetectorID = -1;
+  //m_SelectedDetectorID = -1;
+  // ADDED
+  m_SelectedDetectorIDs.clear();
   m_SelectedDetectorSide = -1;
 
   m_SelectedTemperatureMin = -numeric_limits<double>::max();
@@ -330,8 +429,44 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
     m_CalibrationFileLoadingProgress[c] = 0.0;
   }
   
-  unsigned int NThreads = m_CalibrationFileNames.size();
+  // All files are read in parallel: One reader thread per file, and additional readers for the larger files, 
+  // which read different parts of the same file, so that all readers have about the same amount of work.
+  // As many parser threads as we have cores (the readers are mostly waiting for the disk)
+  unsigned int NCores = std::thread::hardware_concurrency();
+  if (NCores < 2) NCores = 2;
+  
+  g_MelinatorReadTasks.clear();
+  {
+    // Only uncompressed files can be split
+    vector<long long> Sizes(m_CalibrationFileNames.size(), 0);
+    long long TotalSize = 0;
+    for (unsigned int f = 0; f < m_CalibrationFileNames.size(); ++f) {
+      struct stat Info;
+      if (stat(m_CalibrationFileNames[f].Data(), &Info) == 0) Sizes[f] = (long long) Info.st_size;
+      TotalSize += Sizes[f];
+    }
+    // Aim for roughly NCores/2 readers' worth of work, but never parts smaller than 1 GB
+    const long long PartSize = std::max(1LL << 30, TotalSize / (long long) std::max(1U, NCores/2));
+    for (unsigned int f = 0; f < m_CalibrationFileNames.size(); ++f) {
+      const bool Zipped = m_CalibrationFileNames[f].EndsWith(".gz");
+      long long NParts = Zipped ? 1 : std::max(1LL, (Sizes[f] + PartSize/2) / PartSize);
+      for (long long p = 0; p < NParts; ++p) {
+        MelinatorReadTask Task;
+        Task.FileID = f;
+        Task.Start = (NParts == 1) ? 0 : Sizes[f] * p / NParts;
+        Task.End = (NParts == 1 || p == NParts-1) ? 0 : Sizes[f] * (p+1) / NParts;
+        g_MelinatorReadTasks.push_back(Task);
+      }
+    }
+  }
+  const unsigned int NReaders = g_MelinatorReadTasks.size();
+  const unsigned int NParsers = NCores;
+  unsigned int NThreads = (NReaders > 0) ? NReaders + NParsers : 0;
+  if (g_Verbosity >= c_Info) cout<<"Loading with "<<NReaders<<" reader threads and "<<NParsers<<" parser threads"<<endl;
+  // 32 MB blocks, and a few more buffers than threads, so that the readers are always ahead
+  g_MelinatorPipeline.Reset(32*1024*1024, NReaders + NParsers + 3, NReaders);
 
+  g_MelinatorOutOfMemory = false;
   m_ThreadNextItem = 0;
   m_Threads.resize(NThreads);
   m_ThreadIsInitialized.resize(NThreads);
@@ -434,103 +569,390 @@ void MMelinatorCallParallelLoadingThread(void* Address)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Perform the calibration of the given collection
+//! Get the total and the available (free + easily reclaimable) system memory in GB
+//! Returns false if this cannot be determined on this platform
+static bool MelinatorGetMemory(double& TotalGB, double& AvailableGB)
+{
+#if defined(__APPLE__)
+  int64_t Total = 0;
+  size_t Size = sizeof(Total);
+  if (sysctlbyname("hw.memsize", &Total, &Size, nullptr, 0) != 0 || Total <= 0) return false;
+
+  vm_size_t PageSize = 0;
+  if (host_page_size(mach_host_self(), &PageSize) != KERN_SUCCESS) return false;
+  vm_statistics64_data_t VM;
+  mach_msg_type_number_t Count = HOST_VM_INFO64_COUNT;
+  if (host_statistics64(mach_host_self(), HOST_VM_INFO64, (host_info64_t) &VM, &Count) != KERN_SUCCESS) return false;
+
+  // Free + inactive (file cache) + purgeable pages can be reclaimed without swapping; speculative pages are included in free
+  double AvailableBytes = (double) (VM.free_count + VM.inactive_count + VM.purgeable_count) * (double) PageSize;
+  TotalGB = (double) Total/1024.0/1024.0/1024.0;
+  AvailableGB = AvailableBytes/1024.0/1024.0/1024.0;
+  return true;
+#elif defined(__linux__)
+  std::ifstream In("/proc/meminfo");
+  if (In.is_open() == false) return false;
+
+  double TotalKB = 0.0;
+  double AvailableKB = -1.0;
+  std::string Key;
+  double Value;
+  std::string Rest;
+  while (In >> Key >> Value) {
+    std::getline(In, Rest);
+    if (Key == "MemTotal:") TotalKB = Value;
+    if (Key == "MemAvailable:") AvailableKB = Value;
+    if (TotalKB > 0 && AvailableKB >= 0) break;
+  }
+  if (TotalKB <= 0 || AvailableKB < 0) return false;
+  TotalGB = TotalKB/1024.0/1024.0;
+  AvailableGB = AvailableKB/1024.0/1024.0;
+
+  // On ZFS the ARC cache is NOT part of MemAvailable, even though it is given back under memory pressure:
+  // Count everything above the minimum ARC size as available
+  std::ifstream Arc("/proc/spl/kstat/zfs/arcstats");
+  if (Arc.is_open() == true) {
+    double ArcSize = -1.0;
+    double ArcMin = -1.0;
+    std::string ArcLine;
+    while (std::getline(Arc, ArcLine)) {
+      // Lines look like "<name> <type> <data>" - the two header lines do not match this and are skipped
+      char Name[128];
+      int Type;
+      double Data;
+      if (sscanf(ArcLine.c_str(), "%127s %d %lf", Name, &Type, &Data) == 3) {
+        if (std::string(Name) == "size") ArcSize = Data;
+        if (std::string(Name) == "c_min") ArcMin = Data;
+        if (ArcSize >= 0 && ArcMin >= 0) break;
+      }
+    }
+    if (ArcSize > ArcMin && ArcMin >= 0) {
+      AvailableGB += (ArcSize - ArcMin)/1024.0/1024.0/1024.0;
+    }
+  }
+  return true;
+#else
+  return false;
+#endif
+}
+
+//! Return true if the memory available to the system is below the safety limit:
+//! max(8 GB, 5% of the total memory). If the memory cannot be determined, return false
+static bool MelinatorMemoryIsLow(double& AvailableGB, double& ThresholdGB)
+{
+  double TotalGB = 0.0;
+  if (MelinatorGetMemory(TotalGB, AvailableGB) == false) return false;
+  ThresholdGB = std::max(8.0, 0.05*TotalGB);
+  return AvailableGB < ThresholdGB;
+}
+
+//! Get a free buffer from the pool --- blocks until one is available, returns nullptr if we should stop
+static char* MelinatorAcquireBuffer()
+{
+  MelinatorPipeline& P = g_MelinatorPipeline;
+  std::unique_lock<std::mutex> Lock(P.Mutex);
+  while (true) {
+    if (P.Stop == true) return nullptr;
+    if (P.FreeBuffers.empty() == false) {
+      char* B = P.FreeBuffers.back();
+      P.FreeBuffers.pop_back();
+      return B;
+    }
+    if (P.NAllocated < P.MaxBuffers) {
+      ++P.NAllocated;
+      Lock.unlock();
+      return new char[P.BlockSize + g_MelinatorBlockSlack];
+    }
+    P.BufferAvailable.wait_for(Lock, std::chrono::milliseconds(100));
+  }
+}
+
+//! Give a buffer back to the pool
+static void MelinatorReleaseBuffer(char* Buffer)
+{
+  MelinatorPipeline& P = g_MelinatorPipeline;
+  {
+    std::lock_guard<std::mutex> Lock(P.Mutex);
+    P.FreeBuffers.push_back(Buffer);
+  }
+  P.BufferAvailable.notify_one();
+}
+
+//! Hand a filled block to the parsers
+static void MelinatorPushBlock(const MelinatorBlock& Block)
+{
+  MelinatorPipeline& P = g_MelinatorPipeline;
+  {
+    std::lock_guard<std::mutex> Lock(P.Mutex);
+    P.Queue.push_back(Block);
+  }
+  P.BlockAvailable.notify_one();
+}
+
+//! Return true if there is a "\nSE" + (new line, return, or space) at index i (needs i+3 < Size)
+static inline bool MelinatorIsEventStart(const char* Buffer, size_t i)
+{
+  return (Buffer[i] == '\n' && Buffer[i+1] == 'S' && Buffer[i+2] == 'E' && (Buffer[i+3] == '\n' || Buffer[i+3] == '\r' || Buffer[i+3] == ' '));
+}
+
+//! A reader thread: Read one part of a file in big blocks of raw text, cut each block at the start of an event, and hand it to the parser threads
+//! Plain and gzip-compressed files are both supported (gzread handles both), but only plain files can be read in parts
+static void MelinatorReadRange(const MString& FileName, const MelinatorReadTask& Task, const std::vector<bool>& ShouldTerminate)
+{
+  MelinatorPipeline& P = g_MelinatorPipeline;
+  
+  const bool Ranged = (Task.Start > 0 || Task.End > 0);
+  
+  gzFile File = gzopen(FileName.Data(), "rb");
+  if (File == nullptr) {
+    cout<<"ERROR: Unable to open file for reading: "<<FileName<<endl;
+  } else {
+    gzbuffer(File, 1024*1024);
+    
+    std::vector<char> Carry; // The beginning of the next event, which did not fit into the last block
+    
+    // Absolute file position of the first byte in the buffer (only used for ranges)
+    long long AbsStart = 0; 
+    bool Aligned = true;
+    if (Task.Start > 0) {
+      // Start one byte early, so that we can see a new line right in front of Start
+      AbsStart = Task.Start - 1;
+      gzseek(File, (z_off_t) AbsStart, SEEK_SET);
+      Aligned = false;
+    }
+    
+    double LastOffset = 0.0;
+    bool Finished = false;
+    
+    while (Finished == false) {
+      // Stop on request, or if we are close to out of memory
+      for (bool T: ShouldTerminate) {
+        if (T == true) {
+          std::lock_guard<std::mutex> Lock(P.Mutex);
+          P.Stop = true;
+        }
+      }
+      if (g_MelinatorOutOfMemory.load() == false) {
+        double AvailableGB = 0.0;
+        double ThresholdGB = 0.0;
+        if (MelinatorMemoryIsLow(AvailableGB, ThresholdGB) == true) {
+          if (g_MelinatorOutOfMemory.exchange(true) == false) {
+            cout<<endl;
+            cout<<"WARNING: Close to out of memory (available: "<<AvailableGB<<" GB, limit: "<<ThresholdGB<<" GB)"<<endl;
+            cout<<"         Stopping to read more events in ALL files --> the loaded data is incomplete!"<<endl;
+            cout<<endl;
+          }
+        }
+      }
+      if (g_MelinatorOutOfMemory.load() == true) break;
+      
+      char* Buffer = MelinatorAcquireBuffer();
+      if (Buffer == nullptr) break;
+      
+      // Start with the left-overs of the last block, then fill up
+      if (Carry.empty() == false) memcpy(Buffer, Carry.data(), Carry.size());
+      const size_t CarrySize = Carry.size();
+      Carry.clear();
+      int NRead = gzread(File, Buffer + CarrySize, (unsigned int) P.BlockSize);
+      if (NRead < 0) {
+        cout<<"ERROR: Reading failed in file: "<<FileName<<endl;
+        NRead = 0;
+      }
+      size_t Total = CarrySize + (size_t) NRead;
+      const bool EndOfFile = (NRead < (int) P.BlockSize);
+      
+      // (1) The first block of a part in the middle of a file: skip everything up to the first event start 
+      if (Aligned == false) {
+        size_t Begin = 0;
+        bool Found = false;
+        for (size_t i = 0; i + 3 < Total; ++i) {
+          if (MelinatorIsEventStart(Buffer, i)) {
+            Begin = i + 1;
+            Found = true;
+            break;
+          }
+        }
+        if (Found == false) {
+          // Keep the last bytes, since an event start could be split by the block border
+          const size_t Keep = (Total > 4) ? 4 : Total;
+          Carry.assign(Buffer + Total - Keep, Buffer + Total);
+          AbsStart += (long long) (Total - Keep);
+          MelinatorReleaseBuffer(Buffer);
+          if (EndOfFile == true) Finished = true;
+          continue;
+        }
+        memmove(Buffer, Buffer + Begin, Total - Begin);
+        Total -= Begin;
+        AbsStart += (long long) Begin;
+        Aligned = true;
+      }
+      
+      // (2) Where do we cut?
+      size_t Cut = Total;
+      bool EndReached = EndOfFile; 
+      if (Task.End > 0 && AbsStart >= Task.End) {
+        // Already everything here belongs to the next part
+        Cut = 0;
+        EndReached = true;
+      } else if (Task.End > 0 && AbsStart + (long long) Total > Task.End) {
+        // The end of our part is in this block: Cut at the first event start at or behind the end
+        EndReached = false;
+        for (size_t i = (size_t) (Task.End - AbsStart - 1); i + 3 < Total; ++i) {
+          if (MelinatorIsEventStart(Buffer, i)) {
+            Cut = i + 1;
+            EndReached = true;
+            break;
+          }
+        }
+      }
+      
+      if (EndReached == false && Total > 4) {
+        // Cut in front of the last "SE" line, so that the block ends with a complete event
+        // If we cannot find one (extremely long event), we just cut here --- individual events at the border don't matter
+        for (size_t i = Total - 4; i > 0; --i) {
+          if (MelinatorIsEventStart(Buffer, i)) {
+            if (Total - (i+1) <= g_MelinatorBlockSlack) Cut = i + 1;
+            break;
+          }
+        }
+        Carry.assign(Buffer + Cut, Buffer + Total);
+      }
+      
+      if (Cut > 0) {
+        MelinatorBlock Block;
+        Block.Data = Buffer;
+        Block.Size = Cut;
+        Block.FileID = Task.FileID;
+        if (Ranged == true) {
+          Block.Progress = (double) Cut;
+        } else {
+          const double Offset = (double) gzoffset(File);
+          Block.Progress = Offset - LastOffset;
+          LastOffset = Offset;
+        }
+        MelinatorPushBlock(Block);
+        AbsStart += (long long) Cut;
+      } else {
+        MelinatorReleaseBuffer(Buffer);
+      }
+      
+      if (EndReached == true) Finished = true;
+    }
+    
+    gzclose(File);
+  }
+  
+  // We are done
+  {
+    std::lock_guard<std::mutex> Lock(P.Mutex);
+    if (P.ReadersRunning > 0) --P.ReadersRunning;
+    if (P.ReadersRunning == 0) P.ReaderDone = true;
+  }
+  P.BlockAvailable.notify_all();
+}
+
+
+//! The parallel loading: The first threads are the readers (one per part of a file), all others are parsers
 bool MMelinator::LoadParallel(unsigned int ThreadID)
 {
   if (g_Verbosity >= c_Info) cout<<"Parallel loading thread #"<<ThreadID<<" has started"<<endl;
   
+  TThread::Lock();
   m_ThreadIsInitialized[ThreadID] = true;
+  TThread::UnLock();
+  
+  MelinatorPipeline& P = g_MelinatorPipeline;
   
   // We are likely to run out of memory so catch some bad_alloc exceptions
   try {
-    while (true) {
-      TThread::Lock();
-      unsigned int ID = m_ThreadNextItem;
-      ++m_ThreadNextItem;
-      TThread::UnLock();
+    if (ThreadID < g_MelinatorReadTasks.size()) {
+      // ---- A reader: Each one reads one part of one file
+      const MelinatorReadTask& Task = g_MelinatorReadTasks[ThreadID];
+      MelinatorReadRange(m_CalibrationFileNames[Task.FileID], Task, m_ThreadShouldTerminate);
+    } else {
+      // ---- A parser
       
-      if (ID >= m_CalibrationFileNames.size()) break;
+      // With exactly one detector, let the reader do the filtering (as before);
+      // with several, read all detectors and remove the unwanted read-outs below
+      const int ReaderDetectorID = (m_SelectedDetectorIDs.size() == 1) ? m_SelectedDetectorIDs[0] : -1;
       
-      MFileReadOuts Reader;
-      if (Reader.Open(m_CalibrationFileNames[ID]) == false) {
-        return false;
-      }
-      
-      unsigned int GroupID = m_GroupIDs[ID];
-      
-      // Cannot show progress this way 
-      // Reader.ShowProgress();
-      // Reader.SetProgressTitle("Melinator: Loading", MString("Loading ") + MFile::GetBaseName(m_CalibrationFileNames[ID]) + MString(" ..."));
+      // One reader per file, since each file can declare different read-out units
+      // Files are opened to read the read-out units, but closed again right away since we parse from memory
+      map<unsigned int, MFileReadOuts*> Readers;
       
       MReadOutStore Store;
       Store.AddReadOutDataGroup("Dummy");
-      
       MReadOutSequence Sequence;
-      long Counter = 0;
-      long NewCounter = 0;
-      while (Reader.ReadNext(Sequence, m_SelectedDetectorID, m_SelectedDetectorSide) == true) {
-        // Since we do energy calibration, exclude everything with more than the number of good hits
-        //if (Sequence.HasIdenticalReadOutElementTypes() == true) {
-        //  if (Sequence.GetNumberOfReadOuts() > 0 && 
-        //    Sequence.GetNumberOfReadOuts() != Sequence.GetReadOut(0).GetReadOutElement().GetMinimumNumberOfReadOutsForGoodInteraction()) {
-        //    continue;
-        //  }
-        //}
-        vector<unsigned int> ToRemove;
-        for (unsigned int d = 0; d < Sequence.GetNumberOfReadOuts(); ++d) { 
-          MReadOutDataTemperature* T = dynamic_cast<MReadOutDataTemperature*>(Sequence.GetReadOut(d).GetReadOutData().Get(MReadOutDataTemperature::m_TypeID));
-          if (T != nullptr) {
-            if (T->GetTemperature() < m_SelectedTemperatureMin || T->GetTemperature() > m_SelectedTemperatureMax) {
-              ToRemove.push_back(d);
+      
+      while (true) {
+        MelinatorBlock Block;
+        {
+          std::unique_lock<std::mutex> Lock(P.Mutex);
+          while (P.Queue.empty() == true && P.ReaderDone == false && P.Stop == false) {
+            P.BlockAvailable.wait_for(Lock, std::chrono::milliseconds(100));
+          }
+          if (P.Queue.empty() == true) break; // Reader is done or we should stop
+          Block = P.Queue.front();
+          P.Queue.pop_front();
+        }
+        
+        if (m_ThreadShouldTerminate[ThreadID] == true) {
+          MelinatorReleaseBuffer(Block.Data);
+          continue;
+        }
+        
+        MFileReadOuts*& Reader = Readers[Block.FileID];
+        if (Reader == nullptr) {
+          Reader = new MFileReadOuts();
+          bool Opened = false;
+          {
+            std::lock_guard<std::mutex> Lock(g_MelinatorOpenMutex);
+            Opened = Reader->Open(m_CalibrationFileNames[Block.FileID]);
+          }
+          if (Opened == false) {
+            cout<<"ERROR: Unable to read the read-out units of file "<<m_CalibrationFileNames[Block.FileID]<<endl;
+          }
+          Reader->Close();
+        }
+        
+        Reader->ResetEventState();
+        const char* Cursor = Block.Data;
+        const char* End = Block.Data + Block.Size;
+        while (Reader->ReadNextFromMemory(Sequence, Cursor, End, ReaderDetectorID, m_SelectedDetectorSide) == true) {
+          vector<unsigned int> ToRemove;
+          for (unsigned int d = 0; d < Sequence.GetNumberOfReadOuts(); ++d) { 
+            // ADDED
+            if (m_SelectedDetectorIDs.size() > 1) {
+              int DetID = (int) Sequence.GetReadOut(d).GetReadOutElement().GetDetectorID();
+              if (find(m_SelectedDetectorIDs.begin(), m_SelectedDetectorIDs.end(), DetID) == m_SelectedDetectorIDs.end()) {
+                ToRemove.push_back(d);
+                continue;
+              }
+            }
+            MReadOutDataTemperature* T = dynamic_cast<MReadOutDataTemperature*>(Sequence.GetReadOut(d).GetReadOutData().Get(MReadOutDataTemperature::m_TypeID));
+            if (T != nullptr) {
+              if (T->GetTemperature() < m_SelectedTemperatureMin || T->GetTemperature() > m_SelectedTemperatureMax) {
+                ToRemove.push_back(d);
+              }
             }
           }
-        }
-        for (unsigned int t = ToRemove.size() - 1; t < ToRemove.size(); --t) {
-          Sequence.RemoveReadOut(ToRemove[t]); 
-        }
-        
-        
-        Store.Add(Sequence, 0);
-        
-        if (m_ThreadShouldTerminate[ThreadID] == true) break;
-        
-        ++NewCounter;
-        if (++Counter%10000 == 0) {
-          double Pos = Reader.GetFilePosition();
-          if (Pos > 0) {
-            m_CalibrationFileLoadingProgress[ID] = Pos; 
+          for (unsigned int t = ToRemove.size() - 1; t < ToRemove.size(); --t) {
+            Sequence.RemoveReadOut(ToRemove[t]); 
           }
           
-          
-          // Check that we still have enough memory left:
-          //cout<<"Check: "<<sizeof(Sequence)*NewCounter<<":"<<160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections()<<":"<<m_NLinesToConsider<<":"<<m_Store.GetNumberOfReadOutCollections()<<endl;
-          unsigned long Reserve = 5000000 + sizeof(Sequence)*NewCounter + 160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections();
-          char* Memory = new(nothrow) char[Reserve];
-          if (Memory == 0) {
-            if (g_Verbosity >= c_Warning) cout<<"Cannot reserve "<<sizeof(char)*Reserve<<" bytes --> Close to out of memory... Stopping to read more events..."<<endl;
-            break;
-          } else {
-            delete [] Memory;
-          }
-        
-          
-          //cout<<GroupID<<": "<<Counter<<endl;
-          if (Counter == 10000 || Counter % 100000 == 0) { 
-            if (TThread::TryLock() == 0) {
-              m_Store.Move(Store, GroupID);
-              TThread::UnLock();
-              NewCounter = 0;
-            }
-          }
+          Store.Add(Sequence, 0);
         }
+        
+        MelinatorReleaseBuffer(Block.Data);
+        
+        // Hand the parsed data over to the main store
+        TThread::Lock();
+        m_Store.Move(Store, m_GroupIDs[Block.FileID]);
+        m_CalibrationFileLoadingProgress[Block.FileID] += Block.Progress;
+        TThread::UnLock();
       }
-      Reader.Close();
       
-      TThread::Lock();
-      m_Store.Move(Store, GroupID);
-      TThread::UnLock();
-      
-      m_CalibrationFileLoadingProgress[ID] = numeric_limits<double>::max(); 
+      for (auto R: Readers) delete R.second;
     }
   } catch (bad_alloc&) {
     ProcInfo_t Info;
@@ -542,10 +964,10 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
     abort();
   }
   
+  TThread::Lock();
   m_ThreadIsFinished[ThreadID] = true;
-
-  if (g_Verbosity >= c_Info) cout<<"Parallel loading thread #"<<ThreadID<<" has finished"<<endl;
-
+  TThread::UnLock();
+  
   return true;
 }
 
@@ -722,11 +1144,15 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
     }
   }
 
+  // The first histogram which exists creates the frame with the axes --- this is not necessarily histogram 0,
+  // since a read-out data group without any counts in the range has no histogram
+  bool FirstHistogram = true;
   for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
     if (m_Histograms[h] == nullptr) continue;
     
-    if (h == 0) {
+    if (FirstHistogram == true) {
       m_Histograms[h]->DrawCopy("HIST");
+      FirstHistogram = false;
     } else {
       m_Histograms[h]->DrawCopy("HIST SAME");
     }
@@ -741,6 +1167,8 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   
   unsigned int LineID = 0;
   for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
+    if (m_Histograms[h] == nullptr) continue; // No histogram, no spectrum, nothing to mark
+    
     //! Draw the line-fit regions:
     unsigned int CalibrationIndex = m_CalibrationStore.FindCalibration(C.GetReadOutElement());
     if (CalibrationIndex != g_UnsignedIntNotDefined) {

@@ -107,6 +107,10 @@ class MReadOutStore
 
   //! The read-out group names
   vector<MString> m_ReadOutDataGroups;
+
+  //! Cache for finding the collection of a double-strip read-out element quickly: key --> index in m_Collection (-1: unknown)
+  //! The cached index is always validated against the real element, i.e. it can be outdated but never wrong
+  vector<int> m_LookupCache;
   
 #ifdef ___CLING___
  public:

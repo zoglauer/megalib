@@ -31,6 +31,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <atomic>
 using namespace std;
 
 // ROOT libs:
@@ -39,6 +40,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MExceptions.h"
+#include "MReadOutDataADCValue.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,6 +49,24 @@ using namespace std;
 #ifdef ___CLING___
 ClassImp(MReadOutDataGroup)
 #endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Global switch for the compact storage of plain ADC values
+static std::atomic<bool> g_CompactStorage(true);
+
+//! Per-thread temporary which is returned for compactly stored ADC values
+static MReadOutDataADCValue& TemporaryADC(unsigned int Value)
+{
+  static thread_local MReadOutDataADCValue Temporary;
+  Temporary.SetADCValue(Value);
+  return Temporary;
+}
+
+void MReadOutDataGroup::SetCompactStorage(bool Compact) { g_CompactStorage = Compact; }
+bool MReadOutDataGroup::GetCompactStorage() { return g_CompactStorage; }
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,9 +97,42 @@ MReadOutDataGroup::MReadOutDataGroup(const MReadOutDataGroup& ReadOutDataGroup)
 {
   m_Name = ReadOutDataGroup.m_Name;
   
+  m_ADCs = ReadOutDataGroup.m_ADCs;
   for (unsigned int d = 0; d < ReadOutDataGroup.m_RODs.size(); ++d) {
     m_RODs.push_back(ReadOutDataGroup.m_RODs[d]->Clone());
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! The move constructor
+MReadOutDataGroup::MReadOutDataGroup(MReadOutDataGroup&& RODG) noexcept :
+  m_Name(std::move(RODG.m_Name)), m_ADCs(std::move(RODG.m_ADCs)), m_RODs(std::move(RODG.m_RODs))
+{
+  RODG.m_ADCs.clear();
+  RODG.m_RODs.clear();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Move assignment operator
+MReadOutDataGroup& MReadOutDataGroup::operator=(MReadOutDataGroup&& RODG) noexcept
+{
+  if (this != &RODG) {
+    for (unsigned int i = 0; i < m_RODs.size(); ++i) {
+      delete m_RODs[i];
+    }
+    m_Name = std::move(RODG.m_Name);
+    m_ADCs = std::move(RODG.m_ADCs);
+    RODG.m_ADCs.clear();
+    m_RODs = std::move(RODG.m_RODs);
+    RODG.m_RODs.clear();
+  }
+  return *this;
 }
 
 
@@ -109,6 +162,7 @@ MReadOutDataGroup& MReadOutDataGroup::operator=(const MReadOutDataGroup& ReadOut
   }
   m_RODs.clear();
   
+  m_ADCs = ReadOutDataGroup.m_ADCs;
   for (unsigned int d = 0; d < ReadOutDataGroup.m_RODs.size(); ++d) {
     m_RODs.push_back(ReadOutDataGroup.m_RODs[d]->Clone());
   }
@@ -123,6 +177,15 @@ MReadOutDataGroup& MReadOutDataGroup::operator=(const MReadOutDataGroup& ReadOut
 //! Add this read-out data 
 void MReadOutDataGroup::Add(const MReadOutData& ROD)
 {
+  // Plain ADC values (no wrapped data) are stored compactly
+  if (g_CompactStorage.load(std::memory_order_relaxed) == true && ROD.IsWrapping() == false) {
+    const MReadOutDataADCValue* ADC = dynamic_cast<const MReadOutDataADCValue*>(&ROD);
+    if (ADC != nullptr) {
+      m_ADCs.push_back(ADC->GetADCValue());
+      return;
+    }
+  }
+  
   m_RODs.push_back(ROD.Clone());
 }
 
@@ -133,6 +196,8 @@ void MReadOutDataGroup::Add(const MReadOutData& ROD)
 //! Move the content from the given into this read-out data group
 void MReadOutDataGroup::Move(MReadOutDataGroup& RODG)
 {
+  m_ADCs.insert(m_ADCs.end(), RODG.m_ADCs.begin(), RODG.m_ADCs.end());
+  RODG.m_ADCs.clear();
   m_RODs.insert(m_RODs.end(), RODG.m_RODs.begin(), RODG.m_RODs.end());
   RODG.m_RODs.clear();
 }
@@ -144,11 +209,16 @@ void MReadOutDataGroup::Move(MReadOutDataGroup& RODG)
 //! Return a specific read-out data, in case it doesn't exist throw the exception MExceptionIndexOutOfBounds
 MReadOutData& MReadOutDataGroup::GetReadOutData(unsigned int d)
 {
+  if (d < m_ADCs.size()) {
+    return TemporaryADC(m_ADCs[d]);
+  }
+  d -= m_ADCs.size();
+  
   if (d < m_RODs.size()) {
     return *m_RODs[d]; 
   }
   
-  throw MExceptionIndexOutOfBounds(0, m_RODs.size(), d);
+  throw MExceptionIndexOutOfBounds(0, m_ADCs.size() + m_RODs.size(), d + m_ADCs.size());
   
   // The following is wrong and might crash, but we still need a return value... 
   return *m_RODs[0];
@@ -161,11 +231,16 @@ MReadOutData& MReadOutDataGroup::GetReadOutData(unsigned int d)
 //! Return a specific read-out data, in case it doesn't exist throw the exception MExceptionIndexOutOfBounds
 const MReadOutData& MReadOutDataGroup::GetReadOutData(unsigned int d) const
 {
+  if (d < m_ADCs.size()) {
+    return TemporaryADC(m_ADCs[d]);
+  }
+  d -= m_ADCs.size();
+  
   if (d < m_RODs.size()) {
     return *m_RODs[d]; 
   }
   
-  throw MExceptionIndexOutOfBounds(0, m_RODs.size(), d);
+  throw MExceptionIndexOutOfBounds(0, m_ADCs.size() + m_RODs.size(), d + m_ADCs.size());
   
   // The following is wrong and might crash, but we still need a return value... 
   return *m_RODs[0];
@@ -179,7 +254,7 @@ const MReadOutData& MReadOutDataGroup::GetReadOutData(unsigned int d) const
 MString MReadOutDataGroup::ToString() const
 {
   ostringstream os;
-  os<<"Data group with "<<m_RODs.size()<<" entries";
+  os<<"Data group with "<<m_ADCs.size() + m_RODs.size()<<" entries";
   return os.str();
 }
 

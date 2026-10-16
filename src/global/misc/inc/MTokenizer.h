@@ -70,7 +70,7 @@ class MTokenizer
   void AllowComposed(const bool Composed);
 
   //! Split the text into tokens - this assumes we just have space separated tokens, no math mode, no ".", etc.
-  bool AnalyzeFast(MString Text);
+  bool AnalyzeFast(const MString& Text);
 
   //! Split the text into tokens - this includes all the bells and whistles, math mode, combined tokens with "." etc 
   bool Analyze(MString Text, const bool AllowMaths = true);

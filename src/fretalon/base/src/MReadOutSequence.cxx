@@ -178,12 +178,12 @@ const MSimIA& MReadOutSequence::GetSimIA(unsigned int i) const
 //! Always returns true - an unrecognized line is treated as consumed, not an error.
 bool MReadOutSequence::Parse(MString& Line, int Version)
 {
-  if (Line.BeginsWith("TI")) {
+  if ((Line.Length() >= 2 && Line[0] == 'T' && Line[1] == 'I')) {
     m_Time.Set(Line);
     return true;
   }
       
-  if (Line.BeginsWith("ID")) {
+  if ((Line.Length() >= 2 && Line[0] == 'I' && Line[1] == 'D')) {
     unsigned long ID = 0;
     if (sscanf(Line.Data(), "ID %lu\n", &ID) == 1) {
       m_ID = ID;
@@ -193,7 +193,7 @@ bool MReadOutSequence::Parse(MString& Line, int Version)
     return true;
   }
    
-  if (Line.BeginsWith("IA")) {
+  if ((Line.Length() >= 2 && Line[0] == 'I' && Line[1] == 'A')) {
     MSimIA IA;
     if (IA.AddRawInput(Line, 25) == true) {
       m_SimIAs.push_back(IA);

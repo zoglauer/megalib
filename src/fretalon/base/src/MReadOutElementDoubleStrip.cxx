@@ -29,6 +29,8 @@
 // Include the header:
 #include "MReadOutElementDoubleStrip.h"
 
+#include <typeinfo>
+
 // Standard libs:
 
 // ROOT libs:
@@ -122,8 +124,9 @@ MString MReadOutElementDoubleStrip::GetType() const
 //! Test for equality
 bool MReadOutElementDoubleStrip::operator==(const MReadOutElement& R) const
 {
-  const MReadOutElementDoubleStrip* S = dynamic_cast<const MReadOutElementDoubleStrip*>(&R);
-  if (S == 0) return false;
+  // typeid is much faster than dynamic_cast, and there are no classes derived from this one
+  if (typeid(R) != typeid(MReadOutElementDoubleStrip)) return false;
+  const MReadOutElementDoubleStrip* S = static_cast<const MReadOutElementDoubleStrip*>(&R);
   
   if (m_StripID != S->m_StripID) return false;
   if (m_DetectorID != S->m_DetectorID) return false;
@@ -139,8 +142,9 @@ bool MReadOutElementDoubleStrip::operator==(const MReadOutElement& R) const
 //! Smaller than operator
 bool MReadOutElementDoubleStrip::operator<(const MReadOutElement& R) const
 {
-  const MReadOutElementDoubleStrip* S = dynamic_cast<const MReadOutElementDoubleStrip*>(&R);
-  if (S == 0) return false;
+  // typeid is much faster than dynamic_cast, and there are no classes derived from this one
+  if (typeid(R) != typeid(MReadOutElementDoubleStrip)) return false;
+  const MReadOutElementDoubleStrip* S = static_cast<const MReadOutElementDoubleStrip*>(&R);
   
   if (m_DetectorID < S->m_DetectorID) return true;
   if (m_DetectorID == S->m_DetectorID) {

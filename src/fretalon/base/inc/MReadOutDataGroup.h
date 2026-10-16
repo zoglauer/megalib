@@ -28,6 +28,9 @@
 
 // Standard libs:
 
+// Standard libs:
+#include <deque>
+
 // ROOT libs:
 #include "TH1.h"
 #include "TF1.h"
@@ -53,11 +56,15 @@ class MReadOutDataGroup
   MReadOutDataGroup(const MString& Name);
   //! The copy constructor 
   MReadOutDataGroup(const MReadOutDataGroup& ReadOutDataGroup);
+  //! The move constructor (needed so that vector reallocation/insertion does not deep-copy all hits)
+  MReadOutDataGroup(MReadOutDataGroup&& RODG) noexcept;
   //! Default destructor
   virtual ~MReadOutDataGroup();
 
   //! Assignment operator
   MReadOutDataGroup& operator=(const MReadOutDataGroup& RO);
+  //! Move assignment operator
+  MReadOutDataGroup& operator=(MReadOutDataGroup&& RODG) noexcept;
 
   //! Return the name of the group
   MString GetName() const { return m_Name; }
@@ -69,15 +76,22 @@ class MReadOutDataGroup
   void Move(MReadOutDataGroup& RODG);
     
   //! Return the number of available read-out data's
-  unsigned int GetNumberOfReadOutDatas() const { return m_RODs.size(); }
+  unsigned int GetNumberOfReadOutDatas() const { return m_ADCs.size() + m_RODs.size(); }
   
   //! Return a specific read-out data, in case it doesn't exist throw the exception MExceptionIndexOutOfBounds
+  //! ATTENTION: Plain ADC values are stored in a compact way. For those the returned reference points to a per-thread 
+  //! temporary, which is only valid until the next call of GetReadOutData() in the same thread --- use it immediately
   MReadOutData& GetReadOutData(unsigned int i);
   //! Return a specific read-out data, in case it doesn't exist throw the exception MExceptionIndexOutOfBounds
   const MReadOutData& GetReadOutData(unsigned int i) const;
   
   //! Dump a string
   virtual MString ToString() const;
+  
+  //! Switch the compact storage of plain ADC values on or off (global, default on) --- only affects data added afterwards
+  static void SetCompactStorage(bool Compact);
+  //! Return true if plain ADC values are stored compactly
+  static bool GetCompactStorage();
   
   // protected methods:
  protected:
@@ -97,7 +111,10 @@ class MReadOutDataGroup
   //! Name of this group
   MString m_Name;
    
-  //! A list of all data
+  //! Plain ADC values (without any wrapped data) are stored compactly: 4 bytes instead of ~45 bytes per entry
+  //! They are at the indices [0..m_ADCs.size()-1], followed by the m_RODs
+  deque<unsigned int> m_ADCs;
+  //! A list of all other data
   vector<MReadOutData*> m_RODs;
   
   

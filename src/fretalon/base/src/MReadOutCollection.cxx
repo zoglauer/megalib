@@ -84,6 +84,35 @@ MReadOutCollection::MReadOutCollection(const MReadOutCollection& ReadOutCollecti
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The move constructor
+MReadOutCollection::MReadOutCollection(MReadOutCollection&& ReadOutCollection) noexcept :
+  m_ROE(ReadOutCollection.m_ROE), m_ROGs(std::move(ReadOutCollection.m_ROGs))
+{
+  ReadOutCollection.m_ROE = nullptr;
+  ReadOutCollection.m_ROGs.clear();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Move assignment operator
+MReadOutCollection& MReadOutCollection::operator=(MReadOutCollection&& ROC) noexcept
+{
+  if (this != &ROC) {
+    delete m_ROE;
+    m_ROE = ROC.m_ROE;
+    ROC.m_ROE = nullptr;
+    m_ROGs = std::move(ROC.m_ROGs);
+    ROC.m_ROGs.clear();
+  }
+  return *this;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Default destructor
 MReadOutCollection::~MReadOutCollection()
 {

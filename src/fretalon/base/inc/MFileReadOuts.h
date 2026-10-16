@@ -68,6 +68,15 @@ class MFileReadOuts : public MFileEvents
   //!   >=2: all
   bool ReadNext(MReadOutSequence& Sequence, int SelectedDetectorID = -1, int SelectedDetectorSide = -1);
 
+  //! Return the next event from a block of text in memory (instead of from the file), e.g. a part of this file read by another thread:
+  //! Cursor is advanced behind the consumed text, End is the end of the text. The text must contain complete lines.
+  //! Parameters as in ReadNext(). Before the first block call ResetEventState().
+  //! The file must have been opened once before (to read the read-out units) but can be closed afterwards.
+  //! Different from ReadNext() include-file directives are not supported.
+  bool ReadNextFromMemory(MReadOutSequence& Sequence, const char*& Cursor, const char* End, int SelectedDetectorID = -1, int SelectedDetectorSide = -1);
+  //! Forget that we are in the middle of an event (call before starting with a new block of text)
+  void ResetEventState() { m_IsReadingEvent = false; }
+
   //! Return the read-out units this file declares
   const MReadOutFileFormat& GetReadOutFileFormat() const { return m_ReadOutFileFormat; }
 

@@ -58,11 +58,15 @@ class MReadOutCollection
   MReadOutCollection(const MReadOutElement& ROE);
   //! The copy constructor 
   MReadOutCollection(const MReadOutCollection& ReadOutCollection);
+  //! The move constructor (needed so that vector insertion does not deep-copy all hits)
+  MReadOutCollection(MReadOutCollection&& ReadOutCollection) noexcept;
   //! Default destructor
   virtual ~MReadOutCollection();
 
   //! Assignment operator
   MReadOutCollection& operator=(const MReadOutCollection& RO);
+  //! Move assignment operator
+  MReadOutCollection& operator=(MReadOutCollection&& ROC) noexcept;
   //! Smaller than operator - comparing the read-out element
   bool operator<(const MReadOutCollection& R) const;
 

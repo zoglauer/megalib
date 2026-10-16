@@ -272,6 +272,83 @@ bool MFileReadOuts::ParseFooter(const MString& Line)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the next event from a block of text in memory --- see header
+bool MFileReadOuts::ReadNextFromMemory(MReadOutSequence& ROS, const char*& Cursor, const char* End, int SelectedDetectorID, int SelectedDetectorSide)
+{
+  ROS.Clear();
+  
+  MString Line;
+  MTokenizer T(' ', false);  
+  
+  while (Cursor < End) {
+    // Get the next line
+    const char* NewLine = (const char*) memchr(Cursor, '\n', End - Cursor);
+    const size_t Length = (NewLine != nullptr) ? (size_t) (NewLine - Cursor) : (size_t) (End - Cursor);
+    Line.GetStringRef().assign(Cursor, Length);
+    Cursor = (NewLine != nullptr) ? NewLine + 1 : End;
+    if (Line.Length() < 2) continue;
+          
+    // Part 1: The event is completed.  Check to see if we're at the following "SE".
+    if (Line[0] == 'S' && Line[1] == 'E') {
+      m_NEventsInFile++;
+      // An event without read-outs is an event too, so the SE line decides where one ends
+      if (m_IsReadingEvent == false) {
+        ROS.Clear();
+        m_IsReadingEvent = true;
+      } else {
+        m_NGoodEventsInFile++;
+        return true;
+      }
+    }
+
+    // Part 3: Handle a UF line appearing after the header, e.g., from a different file
+    if (Line.BeginsWith("UF") == true) {
+      if (AddReadOutUnitPrototype(Line) == false) {
+        mout<<"Error in file: "<<m_FileName<<":"<<endl;
+        mout<<"Unable to use the read-out unit declared by \""<<Line<<"\""<<endl;
+      }
+      continue;
+    }
+
+    // Part 4: Parse the read-out and add it to the store
+    const unsigned int Unit = m_ReadOutFileFormat.FindByLine(Line);
+    if (Unit != g_UnsignedIntNotDefined) {
+      T.AnalyzeFast(Line);
+
+      MReadOut& Prototype = m_ReadOutPrototypes[Unit];
+
+      MReadOutElement& ROE = Prototype.GetReadOutElement();
+      ROE.Parse(T, 1);
+
+      MReadOutData& ROD = Prototype.GetReadOutData();
+      ROD.Parse(T, 1 + ROE.GetNumberOfParsableElements());
+
+      if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) ROE.GetDetectorID() == SelectedDetectorID)) {
+        if (SelectedDetectorSide < 0 || SelectedDetectorSide >= 2 || (dynamic_cast<MReadOutElementDoubleStrip*>(&ROE) != nullptr && (int) dynamic_cast<MReadOutElementDoubleStrip*>(&ROE)->IsLowVoltageStrip() == SelectedDetectorSide)) {
+          ROS.AddReadOut(Prototype);
+        }
+      }
+      continue;
+    }
+
+    // Part 5: All the rest of the parsing is handled in the MReadOutSequence and its derived class MReadOutAssembly
+    ROS.Parse(Line);
+  }
+  
+  // End of the text: The last event is complete since the text ends with a complete event
+  if (m_IsReadingEvent == false) {
+    ROS.Clear();
+    return false;
+  }
+  m_IsReadingEvent = false;
+  m_NGoodEventsInFile++;
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return the next event
 //! If SelectedDetectorID is non-negative then restrict yourself to SelectedDetectorID
 //! SelectedDetectorSide:
