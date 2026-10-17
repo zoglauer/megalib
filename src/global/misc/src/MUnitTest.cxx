@@ -24,6 +24,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -68,7 +69,19 @@ MUnitTest::MUnitTest(const MString& Name)
   }
   m_NumberOfPassedTests = 0;
   m_NumberOfFailedTests = 0;
-  
+  m_NumberOfKnownFailures = 0;
+  m_IsExpectedFailureModeActive = false;
+  m_NumberOfExpectedFailureChecks = 0;
+  m_HasUnexpectedPass = false;
+
+  // Settings classes like MSettingsRevan save themselves to ~/.<program>.cfg, others write into the working directory:
+  // never let a test run unless both are a private temporary directory
+  if (RedirectHomeDirectory() == false) {
+    mout<<"ABORTED: HOME and the working directory are not a private temporary directory - no check was run"<<endl;
+    // exit() skips the destructor
+    RemoveTemporaryDirectory();
+    exit(1);
+  }
 }
 
 
@@ -78,6 +91,9 @@ MUnitTest::MUnitTest(const MString& Name)
 //! Default destructor
 MUnitTest::~MUnitTest()
 {
+  // HOME and the working directory are not restored: the process ends with the test,
+  // and nothing running afterwards can reach the user's files
+
   if (m_TemporaryRootDirectory.IsEmpty() == true) return;
 
   if (RemoveTemporaryDirectory() == false) {
@@ -94,6 +110,93 @@ void MUnitTest::Summarize()
   mout<<"Unit test: "<<m_Name<<endl;
   mout<<"Passed tests: "<<m_NumberOfPassedTests<<endl;
   mout<<"Failed tests: "<<m_NumberOfFailedTests<<endl;
+  if (m_NumberOfKnownFailures > 0) {
+    mout<<"Known failures: "<<m_NumberOfKnownFailures<<endl;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::RedirectHomeDirectory()
+{
+  if (PrepareTemporaryDirectory("home") == false) {
+    merr<<"Error in MUnitTest::RedirectHomeDirectory: unable to create the temporary home directory"<<endl;
+    return false;
+  }
+
+  MString TemporaryHome = GetTemporaryDirectoryName("home");
+  if (setenv("HOME", TemporaryHome.Data(), 1) != 0) {
+    merr<<"Error in MUnitTest::RedirectHomeDirectory: unable to set HOME"<<endl;
+    return false;
+  }
+
+  // Verify that MEGAlib's file name expansion follows HOME
+  MString Check = "~/.redirect";
+  MFile::ExpandFileName(Check);
+  if (Check.BeginsWith(TemporaryHome) == false) {
+    merr<<"Error in MUnitTest::RedirectHomeDirectory: ~ does not expand into the temporary home directory: "<<Check<<endl;
+    return false;
+  }
+
+  // Through ROOT, so that gSystem->WorkingDirectory() follows as well
+  if (gSystem->ChangeDirectory(TemporaryHome) == false) {
+    merr<<"Error in MUnitTest::RedirectHomeDirectory: unable to change into the temporary home directory"<<endl;
+    return false;
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MUnitTest::BeginExpectedFailure()
+{
+  if (m_IsExpectedFailureModeActive == true) {
+    mout<<endl;
+    mout<<"FAILED: ExpectedToFail()"<<endl;
+    mout<<"   Description: ExpectedToFail() must not be nested"<<endl;
+    mout<<endl;
+    ++m_NumberOfFailedTests;
+    return;
+  }
+
+  m_IsExpectedFailureModeActive = true;
+  m_NumberOfExpectedFailureChecks = 0;
+  m_HasUnexpectedPass = false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::EndExpectedFailure()
+{
+  // The outcome is taken from the checks registered since BeginExpectedFailure()
+  if (m_IsExpectedFailureModeActive == false) {
+    mout<<endl;
+    mout<<"FAILED: ExpectedToFail()"<<endl;
+    mout<<"   Description: EndExpectedFailure() without BeginExpectedFailure() - ExpectedToFail() must not be nested"<<endl;
+    mout<<endl;
+    ++m_NumberOfFailedTests;
+    return false;
+  }
+
+  m_IsExpectedFailureModeActive = false;
+
+  if (m_NumberOfExpectedFailureChecks == 0) {
+    mout<<endl;
+    mout<<"FAILED: ExpectedToFail()"<<endl;
+    mout<<"   Description: ExpectedToFail() must wrap at least one Evaluate*() call"<<endl;
+    mout<<endl;
+    ++m_NumberOfFailedTests;
+    return false;
+  }
+
+  return m_HasUnexpectedPass == false;
 }
 
 
@@ -186,7 +289,7 @@ bool MUnitTest::EvaluateFilesNumericallyEquivalent(MString Function, MString Inp
     }
   }
 
-  RegisterSuccess();
+  RegisterSuccess(Function, Input, Description);
   return true;
 }
 
@@ -654,7 +757,7 @@ bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString 
     }
   }
 
-  RegisterSuccess();
+  RegisterSuccess(Function, Input, Description);
   return true;
 }
 
@@ -677,7 +780,7 @@ bool MUnitTest::EvaluateVectorNear(MString Function, MString Input, MString Desc
     return false;
   }
 
-  RegisterSuccess();
+  RegisterSuccess(Function, Input, Description);
   return true;
 }
 
@@ -712,7 +815,7 @@ bool MUnitTest::EvaluateRotationNear(MString Function, MString Input, MString De
     return false;
   }
 
-  RegisterSuccess();
+  RegisterSuccess(Function, Input, Description);
   return true;
 }
 
