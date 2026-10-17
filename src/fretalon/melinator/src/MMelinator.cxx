@@ -715,6 +715,9 @@ static void MelinatorReadRange(const MString& FileName, const MelinatorReadTask&
     long long AbsStart = 0; 
     bool Aligned = true;
     if (Task.Start > 0) {
+      // Right after gzopen zlib does not yet know that the file is uncompressed, and gzseek would read and discard
+      // everything up to the seek position. gzdirect makes zlib look at the file, after which gzseek is a real lseek
+      gzdirect(File);
       // Start one byte early, so that we can see a new line right in front of Start
       AbsStart = Task.Start - 1;
       gzseek(File, (z_off_t) AbsStart, SEEK_SET);
