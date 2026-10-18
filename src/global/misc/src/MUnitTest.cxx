@@ -109,6 +109,17 @@ MUnitTest::~MUnitTest()
 
 void MUnitTest::Summarize()
 {
+  // Handle a skipped EndExpectedFailureMode()
+  if (m_IsExpectedFailureModeActive == true) {
+    mout<<endl;
+    mout<<"FAILED: ExpectedToFail()"<<endl;
+    mout<<"   Description: EndExpectedFailureMode() was not reached"<<endl;
+    mout<<endl;
+    ++m_NumberOfFailedTests;
+    m_IsExpectedFailureModeActive = false;
+    m_NumberOfNestedExpectedFailureModes = 0;
+  }
+
   mout<<"Unit test: "<<m_Name<<endl;
   mout<<"Passed tests: "<<m_NumberOfPassedTests<<endl;
   mout<<"Failed tests: "<<m_NumberOfFailedTests<<endl;
@@ -123,12 +134,13 @@ void MUnitTest::Summarize()
 
 bool MUnitTest::RedirectHomeDirectory()
 {
-  if (PrepareTemporaryDirectory("home") == false) {
+  // Randomized name, so that no temporary directory of the test can collide with it
+  MString TemporaryHome = MFile::CreateTemporaryDirectory("home", 10, GetTemporaryRootDirectory());
+  if (TemporaryHome.IsEmpty() == true) {
     merr<<"Error in MUnitTest::RedirectHomeDirectory: unable to create the temporary home directory"<<endl;
     return false;
   }
 
-  MString TemporaryHome = GetTemporaryDirectoryName("home");
   if (setenv("HOME", TemporaryHome.Data(), 1) != 0) {
     merr<<"Error in MUnitTest::RedirectHomeDirectory: unable to set HOME"<<endl;
     return false;
