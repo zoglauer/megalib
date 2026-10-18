@@ -71,7 +71,8 @@ MUnitTest::MUnitTest(const MString& Name)
   m_NumberOfFailedTests = 0;
   m_NumberOfKnownFailures = 0;
   m_IsExpectedFailureModeActive = false;
-  m_NumberOfExpectedFailureChecks = 0;
+  m_NumberOfNestedExpectedFailureModes = 0;
+  m_NumberOfExpectedFailureModeChecks = 0;
   m_HasUnexpectedPass = false;
 
   // Settings classes like MSettingsRevan save themselves to ~/.<program>.cfg, others write into the working directory:
@@ -153,19 +154,16 @@ bool MUnitTest::RedirectHomeDirectory()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MUnitTest::BeginExpectedFailure()
+void MUnitTest::BeginExpectedFailureMode()
 {
+  // A nested ExpectedToFail() is ignored: the outer one already marks the check
   if (m_IsExpectedFailureModeActive == true) {
-    mout<<endl;
-    mout<<"FAILED: ExpectedToFail()"<<endl;
-    mout<<"   Description: ExpectedToFail() must not be nested"<<endl;
-    mout<<endl;
-    ++m_NumberOfFailedTests;
+    ++m_NumberOfNestedExpectedFailureModes;
     return;
   }
 
   m_IsExpectedFailureModeActive = true;
-  m_NumberOfExpectedFailureChecks = 0;
+  m_NumberOfExpectedFailureModeChecks = 0;
   m_HasUnexpectedPass = false;
 }
 
@@ -173,13 +171,18 @@ void MUnitTest::BeginExpectedFailure()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MUnitTest::EndExpectedFailure()
+bool MUnitTest::EndExpectedFailureMode()
 {
-  // The outcome is taken from the checks registered since BeginExpectedFailure()
+  if (m_NumberOfNestedExpectedFailureModes > 0) {
+    --m_NumberOfNestedExpectedFailureModes;
+    return true;
+  }
+
+  // The outcome is taken from the checks registered since BeginExpectedFailureMode()
   if (m_IsExpectedFailureModeActive == false) {
     mout<<endl;
     mout<<"FAILED: ExpectedToFail()"<<endl;
-    mout<<"   Description: EndExpectedFailure() without BeginExpectedFailure() - ExpectedToFail() must not be nested"<<endl;
+    mout<<"   Description: EndExpectedFailureMode() without BeginExpectedFailureMode()"<<endl;
     mout<<endl;
     ++m_NumberOfFailedTests;
     return false;
@@ -187,10 +190,19 @@ bool MUnitTest::EndExpectedFailure()
 
   m_IsExpectedFailureModeActive = false;
 
-  if (m_NumberOfExpectedFailureChecks == 0) {
+  if (m_NumberOfExpectedFailureModeChecks == 0) {
     mout<<endl;
     mout<<"FAILED: ExpectedToFail()"<<endl;
     mout<<"   Description: ExpectedToFail() must wrap at least one Evaluate*() call"<<endl;
+    mout<<endl;
+    ++m_NumberOfFailedTests;
+    return false;
+  }
+
+  if (m_NumberOfExpectedFailureModeChecks > 1) {
+    mout<<endl;
+    mout<<"FAILED: ExpectedToFail()"<<endl;
+    mout<<"   Description: ExpectedToFail() must wrap exactly one Evaluate*() call, not "<<m_NumberOfExpectedFailureModeChecks<<endl;
     mout<<endl;
     ++m_NumberOfFailedTests;
     return false;

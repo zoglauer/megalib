@@ -49,7 +49,7 @@ class MVector;
 class MRotation;
 
 //! Mark one check as a known failure, see MUnitTest
-#define ExpectedToFail(...) (BeginExpectedFailure(), __VA_ARGS__, EndExpectedFailure())
+#define ExpectedToFail(...) (BeginExpectedFailureMode(), __VA_ARGS__, EndExpectedFailureMode())
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -185,7 +185,7 @@ class MUnitTest
   //! Register a passed test; inside ExpectedToFail() it is reported and counted as an unexpected pass
   template <typename T> void RegisterSuccess(MString Function, T Input, MString Description) {
     if (m_IsExpectedFailureModeActive == true) {
-      ++m_NumberOfExpectedFailureChecks;
+      ++m_NumberOfExpectedFailureModeChecks;
       m_HasUnexpectedPass = true;
       mout<<endl;
       mout<<"UNEXPECTED PASS: "<<Function<<"  <-- "<<Input<<endl;
@@ -198,10 +198,10 @@ class MUnitTest
     }
   }
 
-  //! Start an expected-failure block - use the ExpectedToFail() macro instead of calling this directly
-  void BeginExpectedFailure();
-  //! End an expected-failure block; returns true if all checks in it failed - use the ExpectedToFail() macro instead of calling this directly
-  bool EndExpectedFailure();
+  //! Start the expected-failure mode - use the ExpectedToFail() macro instead of calling this directly
+  void BeginExpectedFailureMode();
+  //! End the expected-failure mode; returns true if the check in it failed - use the ExpectedToFail() macro instead of calling this directly
+  bool EndExpectedFailureMode();
 
   //! Return the unit test name
   const MString& GetName() const { return m_Name; }
@@ -257,7 +257,7 @@ class MUnitTest
     mout<<endl;
 
     if (m_IsExpectedFailureModeActive == true) {
-      ++m_NumberOfExpectedFailureChecks;
+      ++m_NumberOfExpectedFailureModeChecks;
       ++m_NumberOfKnownFailures;
     } else {
       ++m_NumberOfFailedTests;
@@ -310,11 +310,13 @@ class MUnitTest
    unsigned int m_NumberOfFailedTests;
    //! Failed tests marked with ExpectedToFail()
    unsigned int m_NumberOfKnownFailures;
-   //! True between BeginExpectedFailure() and EndExpectedFailure()
+   //! True between BeginExpectedFailureMode() and EndExpectedFailureMode()
    bool m_IsExpectedFailureModeActive;
-   //! Number of checks evaluated in the active expected-failure block
-   unsigned int m_NumberOfExpectedFailureChecks;
-   //! True if a check in the active expected-failure block passed
+   //! Expected-failure modes nested inside the active one; they are ignored
+   unsigned int m_NumberOfNestedExpectedFailureModes;
+   //! Number of checks evaluated in the active expected-failure mode
+   unsigned int m_NumberOfExpectedFailureModeChecks;
+   //! True if a check in the active expected-failure mode passed
    bool m_HasUnexpectedPass;
    //! Randomized private temporary root, created lazily
    mutable MString m_TemporaryRootDirectory;
