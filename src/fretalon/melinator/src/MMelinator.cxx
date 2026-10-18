@@ -154,6 +154,7 @@ static std::mutex g_MelinatorOpenMutex;
 #include "TPad.h"
 #include "TCanvas.h"
 #include "TLatex.h"
+#include "TVirtualX.h"
 
 // MEGAlib libs:
 #include "MFile.h"
@@ -176,6 +177,31 @@ static std::mutex g_MelinatorOpenMutex;
 #include "MBinnerFixedCountsPerBin.h"
 #include "MBinnerBayesianBlocks.h"
 #include "MReadOutDataADCValue.h"
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Draw canvases off-screen while this object exists, and restore the previous state afterwards
+//! gROOT->SetBatch(true) alone is no longer enough in an interactive session: Since ROOT 6.40, canvases created in batch mode
+//! still paint via the X11 backend (gVirtualX) without a window, and crash --- thus also switch gVirtualX to the batch backend
+class MMelinatorBatchDrawing
+{
+public:
+  MMelinatorBatchDrawing() : m_WasBatch(gROOT->IsBatch()), m_VirtualX(gVirtualX) {
+    gROOT->SetBatch(true);
+    if (gGXBatch != nullptr) gVirtualX = gGXBatch;
+  }
+  ~MMelinatorBatchDrawing() {
+    gVirtualX = m_VirtualX;
+    gROOT->SetBatch(m_WasBatch);
+  }
+private:
+  //! The batch mode before
+  bool m_WasBatch;
+  //! The graphics backend before
+  TVirtualX* m_VirtualX;
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2168,7 +2194,7 @@ bool MMelinator::SaveHistograms(MString FileName)
       CurrentDir = NewDir;
     }
 
-    gROOT->SetBatch(true);
+    MMelinatorBatchDrawing BatchDrawing; // Until the end of this loop iteration
     TCanvas SpectralCanvas;
     DrawSpectrum(SpectralCanvas, c, -1);
     SpectralCanvas.SetName("Spectrum");
@@ -2194,7 +2220,6 @@ bool MMelinator::SaveHistograms(MString FileName)
       LineFitCanvas.SetName(Text.str().c_str());
       LineFitCanvas.Write();
     }
-    gROOT->SetBatch(false);
   }
 
   // ROOT bug I guess:
@@ -2428,7 +2453,7 @@ bool MMelinator::CreateReport()
 
   // Create the canvases
 
-  gROOT->SetBatch(true);
+  MMelinatorBatchDrawing BatchDrawing; // Until the end of this function
 
   auto IterTitles = TitlesMap.begin();
   auto IterEnergies = EnergiesMap.begin();
@@ -2685,8 +2710,6 @@ bool MMelinator::CreateReport()
   TheEnd->Draw();
 
   EndPageCanvas->Print(m_ReportFileName + ")");  // close PDF
-
-  gROOT->SetBatch(false);
 
   return true;
 }
