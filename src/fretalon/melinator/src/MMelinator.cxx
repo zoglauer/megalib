@@ -1589,7 +1589,8 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool 
     Graph->Draw("A*");
   }
   
-  if (C != nullptr && C->HasEnergyModel() == true) {
+  // Check for the model we actually draw: A spectrum can have an energy model but no line-width model
+  if (C != nullptr && ((UseEnergy == true) ? C->HasEnergyModel() : C->HasFWHMModel()) == true) {
     MCalibrationModel& Model = (UseEnergy == true) ? C->GetEnergyModel() : C->GetFWHMModel();
     Model.Draw("SAME");
 
