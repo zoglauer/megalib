@@ -834,6 +834,18 @@ bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
   int Length = Text.Length();
   const char* pText = Text.Data();
 
+  // Try to reserve the exact amount of tokens to minimize memory overhead and speed up the analysis
+  if (Length > 0 && pText[0] != '#' && pText[0] != '!') {
+    unsigned int MaxTokens = (m_AllowComposed == true) ? 1 : 0; // the first token might be split at a dot
+    for (int i = 0; i < Length; ++i) {
+      // We have a new token if this is not a separator and the previous character was either a separator or the start
+      if (pText[i] != m_Separator && pText[i] != '\t' && (i == 0 || pText[i-1] == m_Separator || pText[i-1] == '\t')) {
+        ++MaxTokens;
+      }
+    }
+    m_Tokens.reserve(MaxTokens);
+  }
+
   const char* pToken = 0;
   int TokenStart = 0;
   int TokenLength = 0;
