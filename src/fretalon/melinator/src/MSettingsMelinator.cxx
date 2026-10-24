@@ -83,7 +83,9 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
   
   m_SaveAsFileName = "Out.ecal";
   
-  m_SelectedDetectorID = -1;
+  //m_SelectedDetectorID = -1;
+  // ADDED
+  m_SelectedDetectorIDs.clear();
   m_SelectedDetectorSide = -1;
   
   m_MinimumTemperature = -numeric_limits<double>::max();
