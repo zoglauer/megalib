@@ -87,6 +87,8 @@ MFileEvents::MFileEvents() : MFile()
 
   m_AccumulatedIncludeTimes = false;
   m_IncludeTimeOffset = 0.0;
+  m_IncludeIDOffset = 0;
+  m_LastEventID = 0;
 
   m_NIncludeFiles = 0;
   m_NOpenedIncludeFiles = 0;
@@ -136,6 +138,8 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
 
     m_AccumulatedIncludeTimes = false;
     m_IncludeTimeOffset = 0.0;
+    m_IncludeIDOffset = 0;
+    m_LastEventID = 0;
 
     m_NIncludeFiles = 0;
     m_NOpenedIncludeFiles = 0;
@@ -791,6 +795,8 @@ bool MFileEvents::CloseIncludeFile()
     m_HasObservationTime = true;
     if (m_AccumulatedIncludeTimes == true) {
       m_IncludeTimeOffset += IncludeObservationTime;
+      m_IncludeIDOffset += m_IncludeFile->GetLastEventID();
+      m_LastEventID = m_IncludeIDOffset;
     }
     m_IncludeFile->Close();
     if (m_NOpenedIncludeFiles > 0) {

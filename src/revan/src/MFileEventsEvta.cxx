@@ -157,17 +157,22 @@ bool MFileEventsEvta::Close()
 
 void MFileEventsEvta::UpdateObservationTimes(MRERawEvent* Event)
 {
-  //! Update the observation times using the given event
-  
+  //! Update the observation times and the last event ID using the given event
+
+  m_LastEventID = Event->GetEventID();
+
+  // Include masters accumulate observation time from the included files:
+  if (m_IncludeFileUsed == true || m_NOpenedIncludeFiles > 0) return;
+
   // If the overall observation time has alreday been set, don't change anything
   if (m_HasObservationTime == true) return;
-  
+
   // Otherwise set everything
   if (m_HasStartObservationTime == false) {
-    m_StartObservationTime = Event->GetTime();
+    m_StartObservationTime = Event->GetEventTime();
     m_HasStartObservationTime = true;
   }
-  m_EndObservationTime = Event->GetTime();
+  m_EndObservationTime = Event->GetEventTime();
   m_HasEndObservationTime = true;
   
   // Do not set m_HasObservationTime
@@ -177,14 +182,16 @@ void MFileEventsEvta::UpdateObservationTimes(MRERawEvent* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Add the include time offset to the event time
-void MFileEventsEvta::ApplyIncludeTimeOffset(MRERawEvent* Event)
+//! Add the include offsets to the event time and ID
+void MFileEventsEvta::ApplyIncludeOffsets(MRERawEvent* Event)
 {
   if (m_AccumulatedIncludeTimes == false) return;
 
   MTime Time = Event->GetEventTime();
   Time += m_IncludeTimeOffset;
   Event->SetEventTime(Time);
+
+  Event->SetEventID(Event->GetEventID() + m_IncludeIDOffset);
 }
 
 
@@ -231,7 +238,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
-      ApplyIncludeTimeOffset(RE);
+      ApplyIncludeOffsets(RE);
       UpdateObservationTimes(RE);
       return RE;
     }
@@ -294,6 +301,9 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
       }
       
       // If the event is empty, then we ignore it and prepare for the next event:
+      if (m_IsFirstEvent == false) {
+        m_LastEventID = Event->GetEventID();
+      }
       if (Event->GetNRESEs() == 0) {
         delete Event;
         MRESE::ResetIDCounter();
@@ -328,7 +338,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
           CloseIncludeFile();
           m_IncludeFileUsed = false;
         } else {
-          ApplyIncludeTimeOffset(RE);
+          ApplyIncludeOffsets(RE);
           UpdateObservationTimes(RE);
           return RE;
         }
@@ -401,7 +411,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
-      ApplyIncludeTimeOffset(RE);
+      ApplyIncludeOffsets(RE);
       UpdateObservationTimes(RE);
       return RE;
     }
@@ -436,7 +446,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
             m_IncludeFileUsed = false;
             break;
           } else {
-            ApplyIncludeTimeOffset(Event);
+            ApplyIncludeOffsets(Event);
             UpdateObservationTimes(Event);
             return Event;
           }
@@ -534,6 +544,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
         } // Is simulation
         
         if (Event->GetNRESEs() == 0) {
+          m_LastEventID = Event->GetEventID();
           delete Event;
           Event = nullptr;
           MRESE::ResetIDCounter();

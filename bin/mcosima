@@ -63,7 +63,7 @@ help() {
   echo "    -u:            Do not gzip the simulations files (default is gzip them)"
   echo "    -e:            Use the given special cosima executable instead"
   echo "    -a:            Abstain from creating a concatenation sim file"
-  echo "    -c:            Add the AT keyword to the concatenation file: the event times of the included files are accumulated"
+  echo "    -c:            Add the AT keyword to the concatenation file: the event times and IDs of the included files are accumulated"
   echo "    -w:            If set, wait until all jobs have finished."
   echo "";
   echo "Example:";
@@ -523,7 +523,7 @@ if [[ ${Concatenate} == yes ]]; then
       echo "Exiting"
       exit 1
     else
-      while [[ ${FirstPID} == "" ]] && [ ! -f ${FirstFileName} ]; do
+      while [[ ${FirstPID} != "" ]] && [ ! -f ${FirstFileName} ]; do
         sleep 1
         echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..."
         FirstPID=$(ps -Af | grep "[ ]${FirstTag}" | grep -v "bash -c " | awk '{ print $2 }')

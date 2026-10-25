@@ -58,11 +58,16 @@ private:
   bool TestBinaryRoundTripAndRewind();
   //! Test the AT keyword (accumulated include times)
   bool TestAccumulatedIncludeTimes();
+  //! Test the AT keyword with an included file whose last event has no hits
+  bool TestAccumulatedIncludeIDsWithEmptyLastEvent();
+
+  //! Write the 1-second fixture with an additional last event without hits (ID 22)
+  bool WriteChildWithEmptyLastEvent(const MString& FileName);
 
   //! Write an include master for the three observation-time fixtures with an extra header line
   bool WriteIncludeMaster(const MString& FileName, const MString& ExtraHeaderLine);
-  //! Read all event times of a sim file
-  vector<double> ReadEventTimes(MDGeometryQuest& Geometry, const MString& FileName);
+  //! Read the times, IDs, and simulation IDs of all events of a sim file
+  void ReadEvents(MDGeometryQuest& Geometry, const MString& FileName, vector<double>& Times, vector<long>& IDs, vector<long>& SimulationIDs);
 
   //! Return the temp directory
   MString GetTempDirectory() const;
@@ -90,6 +95,7 @@ bool UTFileEventsSim::Run()
   Passed = TestWriteHeaderAndFooter() && Passed;
   Passed = TestBinaryRoundTripAndRewind() && Passed;
   Passed = TestAccumulatedIncludeTimes() && Passed;
+  Passed = TestAccumulatedIncludeIDsWithEmptyLastEvent() && Passed;
 
   Summarize();
 
@@ -450,21 +456,23 @@ bool UTFileEventsSim::WriteIncludeMaster(const MString& FileName, const MString&
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<double> UTFileEventsSim::ReadEventTimes(MDGeometryQuest& Geometry, const MString& FileName)
+void UTFileEventsSim::ReadEvents(MDGeometryQuest& Geometry, const MString& FileName, vector<double>& Times, vector<long>& IDs, vector<long>& SimulationIDs)
 {
-  vector<double> Times;
+  Times.clear();
+  IDs.clear();
+  SimulationIDs.clear();
 
   MFileEventsSim Reader(&Geometry);
-  if (Reader.Open(FileName) == false) return Times;
+  if (Reader.Open(FileName) == false) return;
 
   MSimEvent* Event = nullptr;
   while ((Event = Reader.GetNextEvent(false)) != nullptr) {
     Times.push_back(Event->GetTime().GetAsDouble());
+    IDs.push_back(Event->GetID());
+    SimulationIDs.push_back(Event->GetSimulationEventID());
     delete Event;
   }
   Reader.Close();
-
-  return Times;
 }
 
 
@@ -480,18 +488,52 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
   MDGeometryQuest Geometry;
   Passed = EvaluateTrue("ScanSetupFile()", "sim AT scan geometry", "The quest geometry can be scanned for AT tests", LoadGeometry(Geometry)) && Passed;
 
-  // Event times of the children read on their own:
-  vector<double> Times1 = ReadEventTimes(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz");
-  vector<double> Times2 = ReadEventTimes(Geometry, GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz");
-  vector<double> Times4 = ReadEventTimes(Geometry, GetDataDirectory() + "/ObsTime_4sec_complete.inc1.id1.sim.gz");
+  // Times and IDs of the children read on their own:
+  vector<double> Times1;
+  vector<double> Times2;
+  vector<double> Times4;
+  vector<long> IDs1;
+  vector<long> IDs2;
+  vector<long> IDs4;
+  vector<long> SimulationIDs1;
+  vector<long> SimulationIDs2;
+  vector<long> SimulationIDs4;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz", Times1, IDs1, SimulationIDs1);
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz", Times2, IDs2, SimulationIDs2);
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_4sec_complete.inc1.id1.sim.gz", Times4, IDs4, SimulationIDs4);
   Passed = EvaluateSize("GetNextEvent()", "sim AT child event count", "The three children hold 21 + 31 + 73 = 125 events", Times1.size() + Times2.size() + Times4.size(), (size_t) 125) && Passed;
 
-  // Expected times without and with the offsets 0, 1, and 1 + 2 s of the preceding children:
+  // Expected values without and with the offsets of the preceding children: times 0, 1, 1 + 2 s, event IDs 0, 21, 21 + 31, simulation IDs 0, 310, 310 + 631:
   vector<double> Unshifted;
   vector<double> Shifted;
-  for (double Time: Times1) { Unshifted.push_back(Time); Shifted.push_back(Time); }
-  for (double Time: Times2) { Unshifted.push_back(Time); Shifted.push_back(Time + 1.0); }
-  for (double Time: Times4) { Unshifted.push_back(Time); Shifted.push_back(Time + 3.0); }
+  vector<long> UnshiftedIDs;
+  vector<long> ShiftedIDs;
+  vector<long> UnshiftedSimulationIDs;
+  vector<long> ShiftedSimulationIDs;
+  for (size_t i = 0; i < Times1.size(); ++i) {
+    Unshifted.push_back(Times1[i]);
+    Shifted.push_back(Times1[i]);
+    UnshiftedIDs.push_back(IDs1[i]);
+    ShiftedIDs.push_back(IDs1[i]);
+    UnshiftedSimulationIDs.push_back(SimulationIDs1[i]);
+    ShiftedSimulationIDs.push_back(SimulationIDs1[i]);
+  }
+  for (size_t i = 0; i < Times2.size(); ++i) {
+    Unshifted.push_back(Times2[i]);
+    Shifted.push_back(Times2[i] + 1.0);
+    UnshiftedIDs.push_back(IDs2[i]);
+    ShiftedIDs.push_back(IDs2[i] + 21);
+    UnshiftedSimulationIDs.push_back(SimulationIDs2[i]);
+    ShiftedSimulationIDs.push_back(SimulationIDs2[i] + 310);
+  }
+  for (size_t i = 0; i < Times4.size(); ++i) {
+    Unshifted.push_back(Times4[i]);
+    Shifted.push_back(Times4[i] + 3.0);
+    UnshiftedIDs.push_back(IDs4[i]);
+    ShiftedIDs.push_back(IDs4[i] + 52);
+    UnshiftedSimulationIDs.push_back(SimulationIDs4[i]);
+    ShiftedSimulationIDs.push_back(SimulationIDs4[i] + 941);
+  }
 
   // AT true:
   MString MasterTrue = GetTempDirectory() + "/ObsTime_AT_true.sim";
@@ -504,9 +546,13 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
     Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT true initial offset", "The include time offset starts at zero", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
 
     vector<double> Times;
+    vector<long> IDs;
+    vector<long> SimulationIDs;
     MSimEvent* Event = nullptr;
     while ((Event = Reader.GetNextEvent(false)) != nullptr) {
       Times.push_back(Event->GetTime().GetAsDouble());
+      IDs.push_back(Event->GetID());
+      SimulationIDs.push_back(Event->GetSimulationEventID());
       delete Event;
     }
     Passed = EvaluateSize("GetNextEvent()", "sim AT true event count", "All 125 events of the children are read with AT true", Times.size(), Shifted.size()) && Passed;
@@ -515,6 +561,8 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
         ostringstream Input;
         Input<<"sim AT true event "<<i;
         Passed = EvaluateNear("GetTime()", Input.str().c_str(), "The event time is offset by the observation time of the preceding children", Times[i], Shifted[i], 1e-9) && Passed;
+        Passed = Evaluate("GetID()", Input.str().c_str(), "The event ID is offset by the last event ID of the preceding children", IDs[i], ShiftedIDs[i]) && Passed;
+        Passed = Evaluate("GetSimulationEventID()", Input.str().c_str(), "The simulation event ID is offset by the simulated events of the preceding children", SimulationIDs[i], ShiftedSimulationIDs[i]) && Passed;
       }
     }
     bool Monotonic = true;
@@ -523,10 +571,12 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
     }
     Passed = EvaluateTrue("GetTime()", "sim AT true monotonic", "With AT true the event times never decrease across the included files", Monotonic) && Passed;
     Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT true final offset", "After all children are closed the offset is the sum of their observation times", Reader.GetIncludeTimeOffset().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeIDOffset()", "sim AT true final ID offset", "After all children are closed the ID offset is the last event ID", Reader.GetIncludeIDOffset(), 125L) && Passed;
     Passed = EvaluateNear("GetObservationTime()", "sim AT true observation time", "The observation time still sums across the included files", Reader.GetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
 
     Passed = EvaluateTrue("Rewind()", "sim AT true rewind", "The include master with AT true can be rewound", Reader.Rewind()) && Passed;
     Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT true rewind offset", "Rewinding resets the include time offset", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeIDOffset()", "sim AT true rewind ID offset", "Rewinding resets the include ID offset", Reader.GetIncludeIDOffset(), 0L) && Passed;
     Event = Reader.GetNextEvent(false);
     Passed = EvaluateTrue("GetNextEvent()", "sim AT true rewind first event", "After rewinding the first event can be read again", Event != nullptr) && Passed;
     if (Event != nullptr && Shifted.empty() == false) {
@@ -546,9 +596,13 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
     Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "sim AT false flag", "The AT false header line leaves the accumulated include times flag unset", Reader.HasAccumulatedIncludeTimes()) && Passed;
 
     vector<double> Times;
+    vector<long> IDs;
+    vector<long> SimulationIDs;
     MSimEvent* Event = nullptr;
     while ((Event = Reader.GetNextEvent(false)) != nullptr) {
       Times.push_back(Event->GetTime().GetAsDouble());
+      IDs.push_back(Event->GetID());
+      SimulationIDs.push_back(Event->GetSimulationEventID());
       delete Event;
     }
     Passed = EvaluateSize("GetNextEvent()", "sim AT false event count", "All 125 events of the children are read with AT false", Times.size(), Unshifted.size()) && Passed;
@@ -557,9 +611,12 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
         ostringstream Input;
         Input<<"sim AT false event "<<i;
         Passed = EvaluateNear("GetTime()", Input.str().c_str(), "The event time is not offset with AT false", Times[i], Unshifted[i], 1e-9) && Passed;
+        Passed = Evaluate("GetID()", Input.str().c_str(), "The event ID is not offset with AT false", IDs[i], UnshiftedIDs[i]) && Passed;
+        Passed = Evaluate("GetSimulationEventID()", Input.str().c_str(), "The simulation event ID is not offset with AT false", SimulationIDs[i], UnshiftedSimulationIDs[i]) && Passed;
       }
     }
     Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT false final offset", "The include time offset stays zero with AT false", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeIDOffset()", "sim AT false final ID offset", "The include ID offset stays zero with AT false", Reader.GetIncludeIDOffset(), 0L) && Passed;
     Reader.Close();
   }
 
@@ -611,6 +668,99 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
     Passed = EvaluateTrue("HasAccumulatedIncludeTimes()", "sim AT write reopen flag", "The AT keyword round-trips through WriteHeader()", Reader.HasAccumulatedIncludeTimes()) && Passed;
     Reader.Close();
   }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::WriteChildWithEmptyLastEvent(const MString& FileName)
+{
+  MFile In;
+  if (In.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz") == false) return false;
+
+  ostringstream Content;
+  MString Line;
+  while (In.ReadLine(Line) == true) {
+    if (Line.BeginsWith("EN") == true) {
+      Content<<"SE"<<endl;
+      Content<<"ID 22 309"<<endl;
+      Content<<"TI 0.95"<<endl;
+    }
+    Content<<Line<<endl;
+  }
+  In.Close();
+
+  return WriteTextFile(FileName, Content.str().c_str());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::TestAccumulatedIncludeIDsWithEmptyLastEvent()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "sim AT empty last event temp dir", "The temporary directory can be recreated for the empty last event test", PrepareTempDirectory()) && Passed;
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "sim AT empty last event geometry", "The quest geometry can be scanned for the empty last event test", LoadGeometry(Geometry)) && Passed;
+
+  MString Child1 = GetTempDirectory() + "/ObsTime_1sec_empty_last.sim";
+  MString Child2 = GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz";
+  Passed = EvaluateTrue("WriteTextFile()", "sim AT empty last event child", "The child with an empty last event can be written", WriteChildWithEmptyLastEvent(Child1)) && Passed;
+
+  // Child with the empty last event read on its own:
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim AT empty last event child open", "The child with an empty last event opens", Reader.Open(Child1)) && Passed;
+    MSimEvent* Event = nullptr;
+    while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+      delete Event;
+    }
+    Passed = Evaluate("GetLastEventID()", "sim AT empty last event child last ID", "The last read event ID is the ID of the empty last event", Reader.GetLastEventID(), 22L) && Passed;
+    Reader.Close();
+  }
+
+  vector<double> Times2;
+  vector<long> IDs2;
+  vector<long> SimulationIDs2;
+  ReadEvents(Geometry, Child2, Times2, IDs2, SimulationIDs2);
+
+  ostringstream Content;
+  Content<<"Type       sim"<<endl;
+  Content<<"Version    101"<<endl;
+  Content<<"Geometry   "<<GetGeometryFileName()<<endl;
+  Content<<"AT         true"<<endl;
+  Content<<endl;
+  Content<<"IN "<<Child1<<endl;
+  Content<<"IN "<<Child2<<endl;
+  Content<<"EN"<<endl;
+  MString Master = GetTempDirectory() + "/ObsTime_AT_empty_last.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "sim AT empty last event master", "The include master can be written", WriteTextFile(Master, Content.str().c_str())) && Passed;
+
+  MFileEventsSim Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "sim AT empty last event master open", "The include master opens", Reader.Open(Master)) && Passed;
+
+  vector<long> IDs;
+  MSimEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+    IDs.push_back(Event->GetID());
+    delete Event;
+  }
+  Passed = EvaluateSize("GetNextEvent()", "sim AT empty last event count", "The master yields the 22 events of the first child and all events of the second", IDs.size(), 22 + IDs2.size()) && Passed;
+  if (IDs.size() == 22 + IDs2.size()) {
+    for (size_t i = 0; i < IDs2.size(); ++i) {
+      ostringstream Input;
+      Input<<"sim AT empty last event, second child event "<<i;
+      Passed = Evaluate("GetID()", Input.str().c_str(), "The event IDs of the second child continue after the empty last event of the first child", IDs[22 + i], IDs2[i] + 22) && Passed;
+    }
+  }
+  Passed = Evaluate("GetIncludeIDOffset()", "sim AT empty last event final ID offset", "The final ID offset is the sum of the last event IDs of both children", Reader.GetIncludeIDOffset(), 53L) && Passed;
+  Reader.Close();
 
   return Passed;
 }

@@ -106,12 +106,16 @@ class MFileEvents : public MFile
   //! Set the end observation time
   void SetEndObservationTime(MTime ObservationTime) { m_EndObservationTime = ObservationTime; m_HasEndObservationTime = true; }
 
-  //! Return true if the event times of included files are accumulated (keyword AT)
+  //! Return true if the event times and IDs of included files are accumulated (keyword AT)
   bool HasAccumulatedIncludeTimes() const { return m_AccumulatedIncludeTimes; }
-  //! Set if the event times of included files are accumulated (keyword AT)
+  //! Set if the event times and IDs of included files are accumulated (keyword AT)
   void SetAccumulatedIncludeTimes(bool AccumulatedIncludeTimes) { m_AccumulatedIncludeTimes = AccumulatedIncludeTimes; }
   //! Return the time offset of the current included file
   MTime GetIncludeTimeOffset() const { return m_IncludeTimeOffset; }
+  //! Return the event ID offset of the current included file
+  long GetIncludeIDOffset() const { return m_IncludeIDOffset; }
+  //! Return the ID of the last event read, including events not returned
+  long GetLastEventID() const { return m_LastEventID; }
 
   // protected methods:
  protected:
@@ -192,10 +196,14 @@ class MFileEvents : public MFile
   //! The total observation time
   MTime m_ObservationTime;
   
-  //! True if the event times of included files are accumulated (keyword AT)
+  //! True if the event times and IDs of included files are accumulated (keyword AT)
   bool m_AccumulatedIncludeTimes;
   //! Time offset of the current included file: sum of the observation times of the previous included files
   MTime m_IncludeTimeOffset;
+  //! Event ID offset of the current included file: sum of the last event IDs of the previous included files
+  long m_IncludeIDOffset;
+  //! ID of the last event read, including events not returned
+  long m_LastEventID;
 
   // private members:
  private:
