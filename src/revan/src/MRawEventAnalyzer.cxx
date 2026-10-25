@@ -1047,6 +1047,14 @@ bool MRawEventAnalyzer::PostAnalysis()
   
   if (m_PhysFile != nullptr && m_Reader != nullptr) {
     TransferFileInformation(m_Reader);
+    // Include masters have no end time of their own:
+    if (m_Reader->HasEndObservationTime() == false) {
+      MTime End = m_Reader->GetObservationTime();
+      if (m_Reader->HasStartObservationTime() == true) {
+        End += m_Reader->GetStartObservationTime();
+      }
+      m_PhysFile->SetEndObservationTime(End);
+    }
   } 
   
   

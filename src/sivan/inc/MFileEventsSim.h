@@ -93,11 +93,13 @@ class MFileEventsSim : public MFileEvents
   //! Open a file given by the "IN" keyword
   virtual bool OpenIncludeFile(const MString& Line);
 
-  //! Update the observation times using the given event
+  //! Update the observation times and the last event ID using the given event
   void UpdateObservationTimes(MSimEvent* Event);
-  //! Add the include time offset to the event time
-  void ApplyIncludeTimeOffset(MSimEvent* Event);
-  
+  //! Close the current include file and accumulate its simulated events
+  virtual bool CloseIncludeFile();
+  //! Add the include offsets to the event time and IDs
+  void ApplyIncludeOffsets(MSimEvent* Event);
+
   // private methods:
  private:
 
@@ -111,6 +113,9 @@ class MFileEventsSim : public MFileEvents
  private:
   //! The geometry representation
   MDGeometryQuest* m_Geometry;
+
+  //! Simulation event ID offset of the current included file: sum of the simulated events of the previous included files
+  long m_IncludeSimulationIDOffset;
 
   //! The binary stire
   MBinaryStore m_BinaryStore;

@@ -111,6 +111,8 @@ MFileEvents::MFileEvents() : MFile()
 
   m_AccumulatedIncludeTimes = false;
   m_IncludeTimeOffset = 0.0;
+  m_IncludeIDOffset = 0;
+  m_LastEventID = 0;
 }
 
 
@@ -170,6 +172,8 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
 
     m_AccumulatedIncludeTimes = false;
     m_IncludeTimeOffset = 0.0;
+    m_IncludeIDOffset = 0;
+    m_LastEventID = 0;
 
     m_HasSimulationStartAreaFarField = false;
     m_SimulationStartAreaFarField = 0.0;
@@ -565,8 +569,6 @@ void MFileEvents::TransferInformation(MFileEvents* File)
 
   m_HasSimulatedEvents = File->HasSimulatedEvents();
   m_SimulatedEvents = File->GetSimulatedEvents();
-
-  m_AccumulatedIncludeTimes = File->HasAccumulatedIncludeTimes();
 }
 
 
@@ -930,6 +932,8 @@ bool MFileEvents::CloseIncludeFile()
     m_HasObservationTime = true;
     if (m_AccumulatedIncludeTimes == true) {
       m_IncludeTimeOffset += IncludeObservationTime;
+      m_IncludeIDOffset += m_IncludeFile->GetLastEventID();
+      m_LastEventID = m_IncludeIDOffset;
     }
     m_IncludeFile->Close();
   }
