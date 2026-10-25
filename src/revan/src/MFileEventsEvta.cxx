@@ -174,6 +174,20 @@ void MFileEventsEvta::UpdateObservationTimes(MRERawEvent* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Add the include time offset to the event time
+void MFileEventsEvta::ApplyIncludeTimeOffset(MRERawEvent* Event)
+{
+  if (m_AccumulatedIncludeTimes == false) return;
+
+  MTime Time = Event->GetEventTime();
+  Time += m_IncludeTimeOffset;
+  Event->SetEventTime(Time);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MRERawEvent* MFileEventsEvta::GetNextEvent()
 {
   if (m_IsBinary == true) {
@@ -210,10 +224,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
     if (RE == nullptr) {
       m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
-      m_IncludeFile->Close();
+      CloseIncludeFile();
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
+      ApplyIncludeTimeOffset(RE);
       UpdateObservationTimes(RE);
       return RE;
     }
@@ -303,9 +318,10 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
         MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
         if (RE == 0) {
           m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
-          m_IncludeFile->Close();
+          CloseIncludeFile();
           m_IncludeFileUsed = false;
         } else {
+          ApplyIncludeTimeOffset(RE);
           UpdateObservationTimes(RE);
           return RE;
         }
@@ -374,10 +390,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
     if (RE == nullptr) {
       m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
-      m_IncludeFile->Close();
+      CloseIncludeFile();
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
+      ApplyIncludeTimeOffset(RE);
       UpdateObservationTimes(RE);
       return RE;
     }
@@ -408,10 +425,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
           Event = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
           if (Event == nullptr) {
             m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
-            m_IncludeFile->Close();
+            CloseIncludeFile();
             m_IncludeFileUsed = false;
             break;
           } else {
+            ApplyIncludeTimeOffset(Event);
             UpdateObservationTimes(Event);
             return Event;
           }

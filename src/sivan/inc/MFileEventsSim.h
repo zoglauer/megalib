@@ -95,6 +95,8 @@ class MFileEventsSim : public MFileEvents
 
   //! Update the observation times using the given event
   void UpdateObservationTimes(MSimEvent* Event);
+  //! Add the include time offset to the event time
+  void ApplyIncludeTimeOffset(MSimEvent* Event);
   
   // private methods:
  private:

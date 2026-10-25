@@ -74,6 +74,8 @@ class MFileEventsEvta : public MFileEvents
  protected:
   //! Update the observation times using the given event
   void UpdateObservationTimes(MRERawEvent* Event);
+  //! Add the include time offset to the event time
+  void ApplyIncludeTimeOffset(MRERawEvent* Event);
   
 
   // private methods:

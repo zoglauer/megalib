@@ -109,6 +109,8 @@ MFileEvents::MFileEvents() : MFile()
   m_HasSimulatedEvents = false;
   m_SimulatedEvents = 0;
 
+  m_AccumulatedIncludeTimes = false;
+  m_IncludeTimeOffset = 0.0;
 }
 
 
@@ -143,6 +145,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     bool FoundMEGAlibVersion = false;
     bool FoundGeant4Version = false;
     bool FoundTB = false;
+    bool FoundAT = false;
     bool FoundIN = false;
     bool FoundSimulationStartAreaFarField = false;
     bool FoundSimulationSeed = false;
@@ -164,6 +167,9 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
 
     m_NIncludeFiles = 0;
     m_NOpenedIncludeFiles = 0;
+
+    m_AccumulatedIncludeTimes = false;
+    m_IncludeTimeOffset = 0.0;
 
     m_HasSimulationStartAreaFarField = false;
     m_SimulationStartAreaFarField = 0.0;
@@ -264,6 +270,21 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
             m_StartObservationTime = Tokens.GetTokenAtAsDouble(1);
             m_HasStartObservationTime = true;
             FoundTB = true;
+          }
+        }
+      }
+      if (FoundAT == false) {
+        if (Line.BeginsWith("AT") == true) {
+          MTokenizer Tokens;
+          Tokens.Analyze(Line);
+          if (Tokens.GetTokenAtAsString(0) == "AT") {
+            if (Tokens.GetNTokens() != 2) {
+              mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+              mout<<"Unable to read AT keyword"<<endl;
+            } else {
+              m_AccumulatedIncludeTimes = Tokens.GetTokenAtAsBoolean(1);
+              FoundAT = true;
+            }
           }
         }
       }
@@ -544,6 +565,8 @@ void MFileEvents::TransferInformation(MFileEvents* File)
 
   m_HasSimulatedEvents = File->HasSimulatedEvents();
   m_SimulatedEvents = File->GetSimulatedEvents();
+
+  m_AccumulatedIncludeTimes = File->HasAccumulatedIncludeTimes();
 }
 
 
@@ -576,6 +599,9 @@ bool MFileEvents::WriteHeader()
     Header<<"Geant4    "<<m_Geant4Version<<endl;
   }
   Header<<"MEGAlib   "<<g_VersionString<<endl;
+  if (m_AccumulatedIncludeTimes == true) {
+    Header<<"AT        true"<<endl;
+  }
 
   if (m_HasSimulationStartAreaFarField == true || m_HasSimulationSeed == true) {
     Header<<endl;
@@ -899,8 +925,12 @@ bool MFileEvents::CreateIncludeFile()
 bool MFileEvents::CloseIncludeFile()
 {
   if (m_IncludeFile != nullptr && m_IncludeFile->IsOpen()) {
-    m_ObservationTime += m_IncludeFile->GetObservationTime();
+    MTime IncludeObservationTime = m_IncludeFile->GetObservationTime();
+    m_ObservationTime += IncludeObservationTime;
     m_HasObservationTime = true;
+    if (m_AccumulatedIncludeTimes == true) {
+      m_IncludeTimeOffset += IncludeObservationTime;
+    }
     m_IncludeFile->Close();
   }
 

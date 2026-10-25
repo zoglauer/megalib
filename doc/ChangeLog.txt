@@ -11,6 +11,8 @@ Geomega:
 
 Cosima:
 + Enable Geant4 11.2
++ New sim file header keyword "AT true": the event times of included files are accumulated, i.e. each included file continues where the previous one ended
++ mcosima has the new option "-c" to add the AT keyword to the concatenation file
 
 Response:
 + HEALPix for spherical coordinates 

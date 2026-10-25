@@ -209,6 +209,20 @@ void MFileEventsSim::UpdateObservationTimes(MSimEvent* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Add the include time offset to the event time
+void MFileEventsSim::ApplyIncludeTimeOffset(MSimEvent* Event)
+{
+  if (m_AccumulatedIncludeTimes == false) return;
+
+  MTime Time = Event->GetTime();
+  Time += m_IncludeTimeOffset;
+  Event->SetTime(Time);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
 {
   if (m_IsBinary == true) {
@@ -237,10 +251,11 @@ MSimEvent* MFileEventsSim::GetNextEventBinary(bool Analyze)
     SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
     if (SimEvent == nullptr) {
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
-      m_IncludeFile->Close();
+      CloseIncludeFile();
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
+      ApplyIncludeTimeOffset(SimEvent);
       UpdateObservationTimes(SimEvent);
       return SimEvent;
     }
@@ -267,9 +282,10 @@ MSimEvent* MFileEventsSim::GetNextEventBinary(bool Analyze)
         
           SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
           if (SimEvent == nullptr) {
-            m_IncludeFile->Close();
+            CloseIncludeFile();
             m_IncludeFileUsed = false;;
           } else {
+            ApplyIncludeTimeOffset(SimEvent);
             UpdateObservationTimes(SimEvent);
             return SimEvent;
           }
@@ -374,10 +390,11 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
     SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
     if (SimEvent == nullptr) {
       if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
-      m_IncludeFile->Close();
+      CloseIncludeFile();
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
+      ApplyIncludeTimeOffset(SimEvent);
       UpdateObservationTimes(SimEvent);
       return SimEvent;
     }
@@ -432,9 +449,10 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
         
         SimEvent = dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetNextEvent(Analyze);
         if (SimEvent == nullptr) {
-          m_IncludeFile->Close();
+          CloseIncludeFile();
           m_IncludeFileUsed = false;;
         } else {
+          ApplyIncludeTimeOffset(SimEvent);
           UpdateObservationTimes(SimEvent);
           return SimEvent;
         }

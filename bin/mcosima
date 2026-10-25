@@ -63,6 +63,7 @@ help() {
   echo "    -u:            Do not gzip the simulations files (default is gzip them)"
   echo "    -e:            Use the given special cosima executable instead"
   echo "    -a:            Abstain from creating a concatenation sim file"
+  echo "    -c:            Add the AT keyword to the concatenation file: the event times of the included files are accumulated"
   echo "    -w:            If set, wait until all jobs have finished."
   echo "";
   echo "Example:";
@@ -90,6 +91,7 @@ RandomIDs="no"
 Nice=0;
 Wait="no"
 Concatenate="yes"
+AccumulatedTimes="no"
 Zip="yes"
 Delay=0.5
 ExecuteString="cosima"
@@ -138,6 +140,10 @@ while [ $# -gt 0 ] ; do
   -a|--abstain)
     Found=1;
     Concatenate="no"
+    ;;
+  -c|--continuous)
+    Found=1;
+    AccumulatedTimes="yes"
     ;;
   -z|--zip)
     Found=1;
@@ -354,6 +360,7 @@ elif [[ ${IncarnationID} -gt 0 ]]; then
 fi
 echo "Gzip'ing the output file: ${Zip}"
 echo "Creating concatenation file ${Concatenate}"
+echo "Accumulating the include times: ${AccumulatedTimes}"
 echo "Waiting until all threads have finished: ${Wait}"
 
 
@@ -569,6 +576,10 @@ if [[ ${Concatenate} == yes ]]; then
       fi
     done < /tmp/mcosima.head
     rm /tmp/mcosima.head
+
+    if [[ ${AccumulatedTimes} == yes ]]; then
+      echo "AT true" >> ${ConcatFileName}
+    fi
 
     echo " " >> ${ConcatFileName}
 

@@ -155,6 +155,13 @@ class MFileEvents : public MFile
   //! Set the spectral type
   void SetSpectralType(MString SpectralType) { m_SpectralType = SpectralType; m_HasSpectralType = true; }
 
+  //! Return true if the event times of included files are accumulated (keyword AT)
+  bool HasAccumulatedIncludeTimes() const { return m_AccumulatedIncludeTimes; }
+  //! Set if the event times of included files are accumulated (keyword AT)
+  void SetAccumulatedIncludeTimes(bool AccumulatedIncludeTimes) { m_AccumulatedIncludeTimes = AccumulatedIncludeTimes; }
+  //! Return the time offset of the current included file
+  MTime GetIncludeTimeOffset() const { return m_IncludeTimeOffset; }
+
 
   // protected methods:
  protected:
@@ -262,6 +269,11 @@ class MFileEvents : public MFile
   bool m_HasSpectralType;
   //! The spectral type
   MString m_SpectralType;
+
+  //! True if the event times of included files are accumulated (keyword AT)
+  bool m_AccumulatedIncludeTimes;
+  //! Time offset of the current included file: sum of the observation times of the previous included files
+  MTime m_IncludeTimeOffset;
 
 
   // private members:
