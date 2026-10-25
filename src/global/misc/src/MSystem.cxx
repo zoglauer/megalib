@@ -472,8 +472,8 @@ bool MSystem::GetMemory()
 
   m_RAM = MemSize/1048576;
   m_FreeRAM = FreeBytes/1048576;
-  m_Swap = SwapUsage.xsw_total/1048576;
-  m_FreeSwap = SwapUsage.xsw_avail/1048576;
+  m_Swap = SwapUsage.xsu_total/1048576;
+  m_FreeSwap = SwapUsage.xsu_avail/1048576;
   return true;
 
 #elif defined(__linux__)
