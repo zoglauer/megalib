@@ -106,6 +106,13 @@ class MFileEvents : public MFile
   //! Set the end observation time
   void SetEndObservationTime(MTime ObservationTime) { m_EndObservationTime = ObservationTime; m_HasEndObservationTime = true; }
 
+  //! Return true if the event times of included files are accumulated (keyword AT)
+  bool HasAccumulatedIncludeTimes() const { return m_AccumulatedIncludeTimes; }
+  //! Set if the event times of included files are accumulated (keyword AT)
+  void SetAccumulatedIncludeTimes(bool AccumulatedIncludeTimes) { m_AccumulatedIncludeTimes = AccumulatedIncludeTimes; }
+  //! Return the time offset of the current included file
+  MTime GetIncludeTimeOffset() const { return m_IncludeTimeOffset; }
+
   // protected methods:
  protected:
   //! Open a file given by the "NF" keyword
@@ -185,6 +192,11 @@ class MFileEvents : public MFile
   //! The total observation time
   MTime m_ObservationTime;
   
+  //! True if the event times of included files are accumulated (keyword AT)
+  bool m_AccumulatedIncludeTimes;
+  //! Time offset of the current included file: sum of the observation times of the previous included files
+  MTime m_IncludeTimeOffset;
+
   // private members:
  private:
 

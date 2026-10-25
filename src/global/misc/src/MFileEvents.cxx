@@ -85,6 +85,9 @@ MFileEvents::MFileEvents() : MFile()
   m_ObservationTime = 0.0;
   m_HasObservationTime = false;
 
+  m_AccumulatedIncludeTimes = false;
+  m_IncludeTimeOffset = 0.0;
+
   m_NIncludeFiles = 0;
   m_NOpenedIncludeFiles = 0;
 }
@@ -120,6 +123,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     bool FoundGeometry = false;
     bool FoundMEGAlibVersion = false;
     bool FoundTB = false;
+    bool FoundAT = false;
     bool FoundIN = false;
     bool FoundBinaryStream = false;
     
@@ -129,6 +133,9 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
 
     m_ObservationTime = 0.0;
     m_HasObservationTime = false;
+
+    m_AccumulatedIncludeTimes = false;
+    m_IncludeTimeOffset = 0.0;
 
     m_NIncludeFiles = 0;
     m_NOpenedIncludeFiles = 0;
@@ -209,6 +216,21 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
             m_StartObservationTime = Tokens.GetTokenAtAsDouble(1);
             m_HasStartObservationTime = true;
             FoundTB = true;
+          }
+        }
+      }
+      if (FoundAT == false) {
+        if (Line.BeginsWith("AT") == true) {
+          MTokenizer Tokens;
+          Tokens.Analyze(Line);
+          if (Tokens.GetTokenAtAsString(0) == "AT") {
+            if (Tokens.GetNTokens() != 2) {
+              mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+              mout<<"Unable to read AT keyword"<<endl;
+            } else {
+              m_AccumulatedIncludeTimes = Tokens.GetTokenAtAsBoolean(1);
+              FoundAT = true;
+            }
           }
         }
       }
@@ -493,6 +515,9 @@ bool MFileEvents::WriteHeader()
   Header<<endl;
   Header<<"Date      "<<Now.GetSQLString()<<endl;
   Header<<"MEGAlib   "<<g_VersionString<<endl;
+  if (m_AccumulatedIncludeTimes == true) {
+    Header<<"AT        true"<<endl;
+  }
   Header<<endl;
   if (m_IsBinary == true) {
     Header<<"STARTBINARYSTREAM"<<endl; 
@@ -761,8 +786,12 @@ bool MFileEvents::CreateIncludeFile()
 bool MFileEvents::CloseIncludeFile()
 {
   if (m_IncludeFile != nullptr && m_IncludeFile->IsOpen()) {
-    m_ObservationTime += m_IncludeFile->GetObservationTime();
+    MTime IncludeObservationTime = m_IncludeFile->GetObservationTime();
+    m_ObservationTime += IncludeObservationTime;
     m_HasObservationTime = true;
+    if (m_AccumulatedIncludeTimes == true) {
+      m_IncludeTimeOffset += IncludeObservationTime;
+    }
     m_IncludeFile->Close();
     if (m_NOpenedIncludeFiles > 0) {
       --m_NOpenedIncludeFiles;

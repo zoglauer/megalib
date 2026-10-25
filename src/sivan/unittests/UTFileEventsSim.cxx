@@ -21,6 +21,7 @@
 
 // Standard libs:
 #include <sstream>
+#include <vector>
 using namespace std;
 
 // ROOT libs:
@@ -55,6 +56,13 @@ private:
   bool TestWriteHeaderAndFooter();
   //! Test binary round-trip and rewind behavior
   bool TestBinaryRoundTripAndRewind();
+  //! Test the AT keyword (accumulated include times)
+  bool TestAccumulatedIncludeTimes();
+
+  //! Write an include master for the three observation-time fixtures with an extra header line
+  bool WriteIncludeMaster(const MString& FileName, const MString& ExtraHeaderLine);
+  //! Read all event times of a sim file
+  vector<double> ReadEventTimes(MDGeometryQuest& Geometry, const MString& FileName);
 
   //! Return the temp directory
   MString GetTempDirectory() const;
@@ -81,6 +89,7 @@ bool UTFileEventsSim::Run()
   Passed = TestIncludeObservationTime() && Passed;
   Passed = TestWriteHeaderAndFooter() && Passed;
   Passed = TestBinaryRoundTripAndRewind() && Passed;
+  Passed = TestAccumulatedIncludeTimes() && Passed;
 
   Summarize();
 
@@ -407,6 +416,201 @@ bool UTFileEventsSim::TestBinaryRoundTripAndRewind()
   Passed = Evaluate("GetNextEvent()", "sim binary reopen event count", "The binary output file holds the remaining 20 events after the first one", ReadBackCount, 20L) && Passed;
 
   BinaryReader.Close();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::WriteIncludeMaster(const MString& FileName, const MString& ExtraHeaderLine)
+{
+  ostringstream Content;
+  Content<<"Type       sim"<<endl;
+  Content<<"Version    101"<<endl;
+  Content<<"Geometry   "<<GetGeometryFileName()<<endl;
+  Content<<endl;
+  Content<<"Date       2026-04-20 00:00:00"<<endl;
+  Content<<"MEGAlib    "<<g_VersionString<<endl;
+  if (ExtraHeaderLine.IsEmpty() == false) {
+    Content<<ExtraHeaderLine<<endl;
+  }
+  Content<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_1sec_complete.inc1.id1.sim.gz"<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_2sec_complete.inc1.id1.sim.gz"<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_4sec_complete.inc1.id1.sim.gz"<<endl;
+  Content<<"EN"<<endl;
+  Content<<endl;
+
+  return WriteTextFile(FileName, Content.str().c_str());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<double> UTFileEventsSim::ReadEventTimes(MDGeometryQuest& Geometry, const MString& FileName)
+{
+  vector<double> Times;
+
+  MFileEventsSim Reader(&Geometry);
+  if (Reader.Open(FileName) == false) return Times;
+
+  MSimEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+    Times.push_back(Event->GetTime().GetAsDouble());
+    delete Event;
+  }
+  Reader.Close();
+
+  return Times;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::TestAccumulatedIncludeTimes()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "sim AT temp dir", "The temporary directory can be recreated for AT tests", PrepareTempDirectory()) && Passed;
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "sim AT scan geometry", "The quest geometry can be scanned for AT tests", LoadGeometry(Geometry)) && Passed;
+
+  // Event times of the children read on their own:
+  vector<double> Times1 = ReadEventTimes(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz");
+  vector<double> Times2 = ReadEventTimes(Geometry, GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz");
+  vector<double> Times4 = ReadEventTimes(Geometry, GetDataDirectory() + "/ObsTime_4sec_complete.inc1.id1.sim.gz");
+  Passed = EvaluateSize("GetNextEvent()", "sim AT child event count", "The three children hold 21 + 31 + 73 = 125 events", Times1.size() + Times2.size() + Times4.size(), (size_t) 125) && Passed;
+
+  // Expected times without and with the offsets 0, 1, and 1 + 2 s of the preceding children:
+  vector<double> Unshifted;
+  vector<double> Shifted;
+  for (double Time: Times1) { Unshifted.push_back(Time); Shifted.push_back(Time); }
+  for (double Time: Times2) { Unshifted.push_back(Time); Shifted.push_back(Time + 1.0); }
+  for (double Time: Times4) { Unshifted.push_back(Time); Shifted.push_back(Time + 3.0); }
+
+  // AT true:
+  MString MasterTrue = GetTempDirectory() + "/ObsTime_AT_true.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "sim AT true fixture", "The include master with AT true can be written", WriteIncludeMaster(MasterTrue, "AT         true")) && Passed;
+
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim AT true open", "The include master with AT true opens in the sim reader", Reader.Open(MasterTrue)) && Passed;
+    Passed = EvaluateTrue("HasAccumulatedIncludeTimes()", "sim AT true flag", "The AT true header line sets the accumulated include times flag", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT true initial offset", "The include time offset starts at zero", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+
+    vector<double> Times;
+    MSimEvent* Event = nullptr;
+    while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+      Times.push_back(Event->GetTime().GetAsDouble());
+      delete Event;
+    }
+    Passed = EvaluateSize("GetNextEvent()", "sim AT true event count", "All 125 events of the children are read with AT true", Times.size(), Shifted.size()) && Passed;
+    if (Times.size() == Shifted.size()) {
+      for (size_t i = 0; i < Times.size(); ++i) {
+        ostringstream Input;
+        Input<<"sim AT true event "<<i;
+        Passed = EvaluateNear("GetTime()", Input.str().c_str(), "The event time is offset by the observation time of the preceding children", Times[i], Shifted[i], 1e-9) && Passed;
+      }
+    }
+    bool Monotonic = true;
+    for (size_t i = 1; i < Times.size(); ++i) {
+      if (Times[i] < Times[i-1]) Monotonic = false;
+    }
+    Passed = EvaluateTrue("GetTime()", "sim AT true monotonic", "With AT true the event times never decrease across the included files", Monotonic) && Passed;
+    Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT true final offset", "After all children are closed the offset is the sum of their observation times", Reader.GetIncludeTimeOffset().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "sim AT true observation time", "The observation time still sums across the included files", Reader.GetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+
+    Passed = EvaluateTrue("Rewind()", "sim AT true rewind", "The include master with AT true can be rewound", Reader.Rewind()) && Passed;
+    Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT true rewind offset", "Rewinding resets the include time offset", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Event = Reader.GetNextEvent(false);
+    Passed = EvaluateTrue("GetNextEvent()", "sim AT true rewind first event", "After rewinding the first event can be read again", Event != nullptr) && Passed;
+    if (Event != nullptr && Shifted.empty() == false) {
+      Passed = EvaluateNear("GetTime()", "sim AT true rewind first time", "After rewinding the first event is unshifted again", Event->GetTime().GetAsDouble(), Shifted[0], 1e-9) && Passed;
+      delete Event;
+    }
+    Reader.Close();
+  }
+
+  // AT false:
+  MString MasterFalse = GetTempDirectory() + "/ObsTime_AT_false.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "sim AT false fixture", "The include master with AT false can be written", WriteIncludeMaster(MasterFalse, "AT         false")) && Passed;
+
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim AT false open", "The include master with AT false opens in the sim reader", Reader.Open(MasterFalse)) && Passed;
+    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "sim AT false flag", "The AT false header line leaves the accumulated include times flag unset", Reader.HasAccumulatedIncludeTimes()) && Passed;
+
+    vector<double> Times;
+    MSimEvent* Event = nullptr;
+    while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+      Times.push_back(Event->GetTime().GetAsDouble());
+      delete Event;
+    }
+    Passed = EvaluateSize("GetNextEvent()", "sim AT false event count", "All 125 events of the children are read with AT false", Times.size(), Unshifted.size()) && Passed;
+    if (Times.size() == Unshifted.size()) {
+      for (size_t i = 0; i < Times.size(); ++i) {
+        ostringstream Input;
+        Input<<"sim AT false event "<<i;
+        Passed = EvaluateNear("GetTime()", Input.str().c_str(), "The event time is not offset with AT false", Times[i], Unshifted[i], 1e-9) && Passed;
+      }
+    }
+    Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT false final offset", "The include time offset stays zero with AT false", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  // No AT line:
+  MString MasterNone = GetTempDirectory() + "/ObsTime_AT_none.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "sim AT none fixture", "The include master without AT can be written", WriteIncludeMaster(MasterNone, "")) && Passed;
+
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim AT none open", "The include master without AT opens in the sim reader", Reader.Open(MasterNone)) && Passed;
+    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "sim AT none flag", "Without an AT header line the accumulated include times flag is unset", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Reader.Close();
+  }
+
+  // Malformed AT line:
+  MString MasterBad = GetTempDirectory() + "/ObsTime_AT_bad.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "sim AT malformed fixture", "The include master with a malformed AT line can be written", WriteIncludeMaster(MasterBad, "AT")) && Passed;
+
+  {
+    MFileEventsSim Reader(&Geometry);
+    DisableDefaultStreams();
+    bool Opened = Reader.Open(MasterBad);
+    EnableDefaultStreams();
+    bool Flag = Reader.HasAccumulatedIncludeTimes();
+    Passed = EvaluateTrue("Open()", "sim AT malformed open", "The include master with a malformed AT line still opens", Opened) && Passed;
+    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "sim AT malformed flag", "A malformed AT line leaves the accumulated include times flag unset", Flag) && Passed;
+    Reader.Close();
+  }
+
+  // Write side:
+  MString Written = GetTempDirectory() + "/AT_header.sim";
+  {
+    MFileEventsSim Writer(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim AT write open", "A sim file for the AT header opens in write mode", Writer.Open(Written, MFile::c_Write)) && Passed;
+    Writer.SetGeometryFileName(GetGeometryFileName());
+    Writer.SetAccumulatedIncludeTimes(true);
+    Passed = EvaluateTrue("HasAccumulatedIncludeTimes()", "sim AT write flag", "SetAccumulatedIncludeTimes(true) sets the flag", Writer.HasAccumulatedIncludeTimes()) && Passed;
+    Passed = EvaluateTrue("WriteHeader()", "sim AT write header", "The header with the AT keyword can be written", Writer.WriteHeader()) && Passed;
+    Passed = EvaluateTrue("CloseEventList()", "sim AT write footer", "The footer can be written after the AT header", Writer.CloseEventList()) && Passed;
+    Passed = EvaluateTrue("Close()", "sim AT write close", "The sim file with the AT header closes cleanly", Writer.Close()) && Passed;
+  }
+
+  MString Text = ReadTextFile(Written);
+  Passed = EvaluateTrue("WriteHeader()", "sim AT write header text", "The written header contains the AT keyword", Text.Contains("AT        true")) && Passed;
+
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim AT write reopen", "The sim file with the AT header reopens in read mode", Reader.Open(Written)) && Passed;
+    Passed = EvaluateTrue("HasAccumulatedIncludeTimes()", "sim AT write reopen flag", "The AT keyword round-trips through WriteHeader()", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Reader.Close();
+  }
 
   return Passed;
 }

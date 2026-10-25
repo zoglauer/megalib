@@ -31,6 +31,10 @@ Revan:
 + Particle ID is stored in the OI information of evta files
 + Fixes in CSR
 
+Cosima / Sivan:
++ New sim file header keyword "AT true": the event times of included files are accumulated, i.e. each included file continues where the previous one ended
++ mcosima has the new option "-c" to add the AT keyword to the concatenation file
+
 Fretalon / Melinator:
 + New sub-module framework
 + Module ordering controls for building sequences in the GUI
