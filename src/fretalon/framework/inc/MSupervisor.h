@@ -146,6 +146,8 @@ class MSupervisor
   
   //! Choose if to use multi-threading
   void UseMultiThreading(bool Flag = true) { m_UseMultiThreading = Flag; }
+  //! Return true if multi-threading is used
+  bool IsUsingMultiThreading() const { return m_UseMultiThreading; }
 
   //! Use the UI
   void UseUI(bool UIUse) { m_UIUse = UIUse; }
