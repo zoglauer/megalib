@@ -31,6 +31,7 @@
 #include "MGUIMGeant.h"
 #include "MGUIPosition.h"
 #include "MGUIPathLength.h"
+#include "MGUICADConverter.h"
 #include "MInterfaceGeomega.h"
 #include "MSystem.h"
 #include "MFile.h"
@@ -52,6 +53,7 @@ MGUIGeomegaMain::MGUIGeomegaMain(MInterfaceGeomega* Interface, MSettingsGeomega*
 {
   m_Interface = Interface;
   m_Data = Data;
+  m_CADConverter = nullptr;
 }
 
 
@@ -60,6 +62,7 @@ MGUIGeomegaMain::MGUIGeomegaMain(MInterfaceGeomega* Interface, MSettingsGeomega*
 
 MGUIGeomegaMain::~MGUIGeomegaMain()
 {
+  delete m_CADConverter;
   // Standard destructor - in all normal exit cases the session have already 
   // been deleted in CloseWindow
 }
@@ -76,6 +79,9 @@ void MGUIGeomegaMain::Create()
 
   // We start with a name and an icon...
   SetWindowName("Geomega - GEOmetry for MEGA");  
+
+  m_MenuFile->AddSeparator();
+  m_MenuFile->AddEntry("Convert STEP CAD...", c_ConvertCAD);
 
   m_MenuAnalysis = new TGPopupMenu(fClient->GetRoot());
   m_MenuAnalysis->AddEntry("Scan setup file", c_Scan);
@@ -201,6 +207,14 @@ bool MGUIGeomegaMain::ProcessMessage(long Message, long Parameter1,
         m_Interface->TestOnly();
         break;
 
+      case c_ConvertCAD:
+        if (m_CADConverter == nullptr) {
+          m_CADConverter = new MGUICADConverter(gClient->GetRoot(), this);
+        } else {
+          m_CADConverter->MapRaised();
+        }
+        break;
+
       default:
         break;
       }
@@ -250,6 +264,28 @@ void MGUIGeomegaMain::Open()
   }
 
   return;
+}
+
+
+bool MGUIGeomegaMain::ViewGeometryFile(const MString& FileName)
+{
+  if (!m_Data->SetCurrentFileName(FileName)) return false;
+  UpdateConfiguration();
+  // Always reload: a conversion may have replaced the currently loaded file.
+  // A CAD preview only needs geometry; cross sections require final materials.
+  if (!m_Interface->ReadGeometry(false)) return false;
+  m_Interface->ViewGeometry();
+  return true;
+}
+
+
+void MGUIGeomegaMain::Exit()
+{
+  // Terminate() exits the process without unwinding the GUI's destructors.
+  // Stop/reap any active conversion before delegating to the normal exit path.
+  delete m_CADConverter;
+  m_CADConverter = nullptr;
+  MGUIMain::Exit();
 }
 
 

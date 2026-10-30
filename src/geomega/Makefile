@@ -43,6 +43,7 @@ FILES := MSettingsGeomega \
 	MDShapeGTRA \
 	MDShapePCON \
 	MDShapePGON \
+	MDShapeTessellated \
 	MDShapeCONE \
 	MDShapeCONS \
 	MDShapeUnion \
@@ -68,6 +69,7 @@ LIBRARY_UI := GeomegaGui
 FILES_UI := \
 	MInterfaceGeomega \
 	MGUIGeomegaMain \
+	MGUICADConverter \
 	MGUIPosition \
 	MGUIPathLength 
 
@@ -170,6 +172,10 @@ $(SHAREDLIB_UI): $(DICTIONARYOBJECT_UI) $(OBJECTS_UI)
 $(OBJECTS_UI): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# These objects construct/use the CAD dialog and main window across headers.
+$(LB)/MInterfaceGeomega.o $(LB)/MGUICADConverter.o: inc/MGUIGeomegaMain.h
+$(LB)/MGUIGeomegaMain.o: inc/MGUICADConverter.h inc/MInterfaceGeomega.h
 
 $(DICTIONARYOBJECT_UI): $(DICTIONARY_UI)
 	@echo "Compiling dictionary ..."

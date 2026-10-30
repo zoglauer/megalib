@@ -65,6 +65,8 @@ $(LB)/%.o: src/%.cc inc/%.hh
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) $(G4_CFLAGS) -c -o $@ $<
 
+$(LB)/MCDetectorConstruction.o: $(IN)/MDShapeTessellated.h
+
 $(PRG_UT): $(BN)/%: unittests/%.cc $(SOBJ)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
 	@$(LD) $(CXXFLAGS) $(G4_CFLAGS) $(LDFLAGS) $< $(SOBJ) $(LIBRARIES) $(GLIBS) $(LIBS) $(G4_LIBS) -o $@

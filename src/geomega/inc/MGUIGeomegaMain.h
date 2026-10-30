@@ -36,6 +36,7 @@ using namespace std;
 #include "MGUIEStatusBar.h"
 
 class MInterfaceGeomega;
+class MGUICADConverter;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -49,6 +50,8 @@ class MGUIGeomegaMain : public MGUIMain
   virtual ~MGUIGeomegaMain();
 
   virtual void Create();
+  //! Load and display the setup produced by the CAD converter.
+  bool ViewGeometryFile(const MString& FileName);
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
 
   // protected members:
@@ -56,6 +59,7 @@ class MGUIGeomegaMain : public MGUIMain
   virtual void Open();
   virtual void Launch();
   virtual void About();
+  virtual void Exit();
   void Position();
   void PathLengths();
 
@@ -68,6 +72,7 @@ class MGUIGeomegaMain : public MGUIMain
  private:
   MInterfaceGeomega* m_Interface;
   MSettingsGeomega* m_Data;
+  MGUICADConverter* m_CADConverter; //! Owned dialog, reused when reopened
 
   // Additional menu items:
   TGPopupMenu* m_MenuAnalysis;
@@ -90,7 +95,8 @@ class MGUIGeomegaMain : public MGUIMain
                    c_WriteMG, 
                    c_Position,
                    c_PathLengths,
-                   c_Test }; 
+                   c_Test,
+                   c_ConvertCAD };
 
 
 #ifdef ___CLING___

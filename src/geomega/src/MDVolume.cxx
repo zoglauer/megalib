@@ -46,6 +46,7 @@ using namespace std;
 #include "MDDetector.h"
 #include "MStreams.h"
 #include "MDVolumeSequence.h"
+#include "MDShapeTessellated.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2634,7 +2635,13 @@ MString MDVolume::GetGeomega()
       // Write first the template, later *once* its daughters...
       out<<"Volume "<<Template->GetName()<<endl;
       if (Template->GetShape() != 0) {
-        out<<Template->GetName()<<".Shape "<<Template->GetShape()->GetGeomega()<<endl;
+        MDShapeTessellated* Tessellated = dynamic_cast<MDShapeTessellated*>(Template->GetShape());
+        if (Tessellated != nullptr) {
+          out<<Template->GetName()<<".Shape "
+             <<Tessellated->GetGeomega(Template->GetName() + "_Shape")<<endl;
+        } else {
+          out<<Template->GetName()<<".Shape "<<Template->GetShape()->GetGeomega()<<endl;
+        }
       }
       if (Template->GetMaterial() != 0) {
         out<<Template->GetName()<<".Material "<<Template->GetMaterial()->GetName()<<endl;
@@ -2648,7 +2655,12 @@ MString MDVolume::GetGeomega()
     WriteDaughters = true;
     out<<"Volume "<<GetName()<<endl;
     if (GetShape() != 0) {
-      out<<GetName()<<".Shape "<<GetShape()->GetGeomega()<<endl;
+      MDShapeTessellated* Tessellated = dynamic_cast<MDShapeTessellated*>(GetShape());
+      if (Tessellated != nullptr) {
+        out<<GetName()<<".Shape "<<Tessellated->GetGeomega(GetName() + "_Shape")<<endl;
+      } else {
+        out<<GetName()<<".Shape "<<GetShape()->GetGeomega()<<endl;
+      }
     }
     if (GetMaterial() != 0) {
       out<<GetName()<<".Material "<<GetMaterial()->GetName()<<endl;

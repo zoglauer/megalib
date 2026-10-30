@@ -68,6 +68,7 @@ using namespace std;
 #include "MDShapeGTRA.h"
 #include "MDShapePCON.h"
 #include "MDShapePGON.h"
+#include "MDShapeTessellated.h"
 #include "MDShapeSubtraction.h"
 #include "MDShapeUnion.h"
 #include "MDShapeIntersection.h"
@@ -2245,6 +2246,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(PGON);
           AddShape(PGON);
+
+        } else if (ShapeID.AreIdentical("tessellated") == true) {
+          MDShapeTessellated* Tessellated = new MDShapeTessellated(V->GetName() + "_Shape");
+          if (Tessellated->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
+            return false;
+          }
+          V->SetShape(Tessellated);
+          AddShape(Tessellated);
         }
 
         // Sphere:
@@ -5050,6 +5060,8 @@ bool MDGeometry::AddShape(const MString& Type, const MString& Name)
     AddShape(new MDShapePCON(Name));
   } else if (S == "pgon") {
     AddShape(new MDShapePGON(Name));
+  } else if (S == "tessellated" || S == "tess") {
+    AddShape(new MDShapeTessellated(Name));
   } else if (S == "tubs" || S == "tube") {
     AddShape(new MDShapeTUBS(Name));
   } else if (S == "trap") {

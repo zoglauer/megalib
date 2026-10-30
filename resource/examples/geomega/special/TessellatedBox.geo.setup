@@ -1,0 +1,37 @@
+# A 2 x 4 x 6 cm aluminium box, defined as a closed triangular mesh.
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+SurroundingSphere 20 0 0 0 20
+
+Volume World
+World.Material Vacuum
+World.Shape BRIK 30 30 30
+World.Visibility 0
+World.Mother 0
+
+Volume Target
+Target.Material Aluminium
+Target.Mother World
+Target.Position 0 0 0
+Target.Shape TESSELLATED 8 12
+Target_Shape.Vertices 8
+Target_Shape.Vertex -1 -2 -3
+Target_Shape.Vertex 1 -2 -3
+Target_Shape.Vertex 1 2 -3
+Target_Shape.Vertex -1 2 -3
+Target_Shape.Vertex -1 -2 3
+Target_Shape.Vertex 1 -2 3
+Target_Shape.Vertex 1 2 3
+Target_Shape.Vertex -1 2 3
+Target_Shape.Facets 12
+Target_Shape.Facet 0 2 1
+Target_Shape.Facet 0 3 2
+Target_Shape.Facet 4 5 6
+Target_Shape.Facet 4 6 7
+Target_Shape.Facet 0 1 5
+Target_Shape.Facet 0 5 4
+Target_Shape.Facet 3 7 6
+Target_Shape.Facet 3 6 2
+Target_Shape.Facet 0 4 7
+Target_Shape.Facet 0 7 3
+Target_Shape.Facet 1 2 6
+Target_Shape.Facet 1 6 5

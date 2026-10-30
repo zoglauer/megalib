@@ -325,9 +325,15 @@ bool MInterfaceGeomega::SaveConfiguration(MString FileName)
 
 bool MInterfaceGeomega::ReadGeometry()
 {
+  return ReadGeometry(true);
+}
+
+
+bool MInterfaceGeomega::ReadGeometry(bool AllowCrossSectionCreation)
+{
   // We do not ignore short names here since we might generate Geant3/MGGPOD files
   m_Geometry->LaunchedByGeomega();
-  return m_Geometry->ScanSetupFile(m_Data->GetCurrentFileName());
+  return m_Geometry->ScanSetupFile(m_Data->GetCurrentFileName(), true, false, AllowCrossSectionCreation);
 }
 
 

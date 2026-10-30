@@ -59,6 +59,8 @@ class MInterfaceGeomega : public MInterface
   
   //! Read the geoemtry
   bool ReadGeometry();
+  //! Read for preview without generating simulation cross sections when false.
+  bool ReadGeometry(bool AllowCrossSectionCreation);
   
   //! Display the geometry
   void ViewGeometry();

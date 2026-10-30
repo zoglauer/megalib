@@ -18,6 +18,7 @@
 
 // Standard:
 #include <sstream>
+#include <memory>
 using namespace std;
 
 // Cosima:
@@ -51,6 +52,8 @@ using namespace std;
 #include "G4SubtractionSolid.hh"
 #include "G4UnionSolid.hh"
 #include "G4IntersectionSolid.hh"
+#include "G4TessellatedSolid.hh"
+#include "G4TriangularFacet.hh"
 #include "G4LogicalVolume.hh"
 #include "G4ThreeVector.hh"
 #include "G4PVPlacement.hh"
@@ -82,6 +85,7 @@ using namespace std;
 #include "MDShapeIntersection.h"
 #include "MDShapeUnion.h"
 #include "MDShapeSubtraction.h"
+#include "MDShapeTessellated.h"
 #include "MDMaterial.h"
 #include "MDMaterialComponent.h"
 #include "MDDetector.h"
@@ -635,7 +639,36 @@ bool MCDetectorConstruction::ConstructVolumes()
     // B. Convert it
     Type = Shape->GetType();
     
-    if (Type == "BRIK") {
+    if (Type == "TESSELLATED") {
+      MDShapeTessellated* Mesh = dynamic_cast<MDShapeTessellated*>(Shape);
+      if (Mesh == nullptr || !Mesh->Validate()) {
+        merr<<"Unable to validate tessellated shape "<<Shape->GetName()<<endl;
+        return false;
+      }
+      std::unique_ptr<G4TessellatedSolid> Tessellated(new G4TessellatedSolid(Shape->GetName().GetString()));
+      const auto& Vertices = Mesh->GetVertices();
+      const auto& Facets = Mesh->GetFacets();
+      for (size_t f = 0; f < Facets.size(); ++f) {
+        const auto& A = Vertices[Facets[f][0]];
+        const auto& B = Vertices[Facets[f][1]];
+        const auto& C = Vertices[Facets[f][2]];
+        // Preserve local coordinates and outward winding. PositionVolumes()
+        // applies placement transforms later, as it does for analytic solids.
+        std::unique_ptr<G4TriangularFacet> Triangle(new G4TriangularFacet(
+          G4ThreeVector(A[0]*cm, A[1]*cm, A[2]*cm),
+          G4ThreeVector(B[0]*cm, B[1]*cm, B[2]*cm),
+          G4ThreeVector(C[0]*cm, C[1]*cm, C[2]*cm), ABSOLUTE));
+        if (!Triangle->IsDefined() || !Tessellated->AddFacet(Triangle.get())) {
+          merr<<"Geant4 rejected facet "<<f<<" of tessellated shape "<<Shape->GetName()<<endl;
+          return false;
+        }
+        Triangle.release(); // The solid owns successfully added facets.
+      }
+      // This finalizes navigation/voxelization; mesh topology was checked by
+      // MEGAlib above. GetSolidClosed() alone is not a topology validation.
+      Tessellated->SetSolidClosed(true);
+      Solid = Tessellated.release();
+    } else if (Type == "BRIK") {
       MDShapeBRIK* BRIK = dynamic_cast<MDShapeBRIK*>(Shape);
       Solid = new G4Box(Shape->GetName().GetString(), BRIK->GetSizeX()*cm, BRIK->GetSizeY()*cm, BRIK->GetSizeZ()*cm);
     } else if (Type == "TUBS") {

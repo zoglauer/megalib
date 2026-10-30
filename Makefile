@@ -150,6 +150,12 @@ geolib: link glo
 geo: link glo
 	@$(MAKE) geo -C src
 
+# Optional STEP converter (OpenCASCADE/Manifold are managed by its vcpkg preset).
+.PHONY: cad-converter
+cad-converter:
+	cd $(SR)/geomega/cad-conversion-dev/cad_converter && cmake --preset linux-release
+	cd $(SR)/geomega/cad-conversion-dev/cad_converter && cmake --build --preset linux-release --parallel
+
 clean_geomega:
 	@$(MAKE) clean_geo -C src
 
@@ -244,6 +250,10 @@ endif
 
 cos: link glo geolib sivlib revlib
 	@$(MAKE) cos -C src
+
+.PHONY: test-tessellated
+test-tessellated: cos
+	@bash $(SR)/cosima/tests/run-tessellated.sh
 
 clean_cosima:
 	@$(MAKE) clean_cos -C src

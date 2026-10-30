@@ -1,0 +1,17 @@
+# Passive tessellated-solid transport example. Output goes in the current directory.
+Version 1
+Geometry $(MEGALIB)/resource/examples/geomega/special/TessellatedBox.geo.setup
+PhysicsListEM Standard
+StoreSimulationInfo all
+StoreOnlyTriggeredEvents false
+DiscretizeHits false
+DefaultRange 0.01
+
+Run TessellatedBox
+TessellatedBox.FileName TessellatedBox
+TessellatedBox.NEvents 200
+TessellatedBox.Source Beam
+Beam.ParticleType 1
+Beam.Beam HomogeneousBeam 0 0 10 0 0 -1 0.1
+Beam.Spectrum Mono 100
+Beam.Flux 1
