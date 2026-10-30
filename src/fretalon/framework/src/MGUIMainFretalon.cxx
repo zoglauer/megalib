@@ -1,19 +1,22 @@
 /*
-* MGUIMainFretalon.cxx
-*
-*
-* Copyright (C) by Andreas Zoglauer.
-* All rights reserved.
-*
-*
-* This code implementation is the intellectual property of
-* Andreas Zoglauer.
-*
-* By copying, distributing or modifying the Program (or any work
-* based on the Program) you indicate your acceptance of this statement,
-* and all its terms.
-*
-*/
+ * MGUIMainFretalon.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
 
 
 // Include the header:
@@ -295,6 +298,7 @@ void MGUIMainFretalon::LockModifications()
     m_Modules[m]->SetEnabled(false);
   }
   m_MenuOptions->DisableEntry(c_LoadConfig);
+  m_MenuOptions->DisableEntry(c_Geometry);
 }
 
 
@@ -307,6 +311,7 @@ void MGUIMainFretalon::UnlockModifications()
     m_Modules[m]->SetEnabled(true);
   }
   m_MenuOptions->EnableEntry(c_LoadConfig);
+  m_MenuOptions->EnableEntry(c_Geometry);
 }
 
 
@@ -657,14 +662,21 @@ bool MGUIMainFretalon::OnGeometry()
 
   MString Name = m_Supervisor->GetGeometryFileName();
   MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), gClient->GetRoot(), Name);
-  gClient->WaitForUnmap(Geo);
-  if (Geo->OkPressed() == true) {
-    Name = Geo->GetGeometryFileName();
-    delete Geo;
-    for (unsigned int i = 0; i < 100; ++i) {
-      gSystem->ProcessEvents();
-    }
 
+  // Closing the file dialog of the file selector already raises an unmap of Geo,
+  // thus keep waiting until the geometry dialog itself is closed
+  do {
+    gClient->WaitForUnmap(Geo);
+  } while (Geo->IsMapped() == true);
+
+  bool OkPressed = Geo->OkPressed();
+  Name = Geo->GetGeometryFileName();
+  delete Geo;
+  for (unsigned int i = 0; i < 100; ++i) {
+    gSystem->ProcessEvents();
+  }
+
+  if (OkPressed == true) {
     m_Supervisor->SetGeometryFileName(Name);
   }
 
@@ -687,7 +699,7 @@ bool MGUIMainFretalon::OnAbout()
   if (m_CoAuthors != "") {
     About->SetProgrammers(m_CoAuthors);
   }
-  About->SetCopyright("All rights reserved");
+  About->SetCopyright("");
   About->ShowReferencesTab(false);
   About->ShowPeopleTab(false);
   About->ShowBugsTab(false);

@@ -1,18 +1,21 @@
 /*
  * MGUIRevanMain.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -434,7 +437,6 @@ void MGUIRevanMain::About()
   About->SetProgramName("Revan");
   About->SetIconPath(g_MEGAlibPath + "/resource/icons/revan/Small.xpm");
   About->SetLeadProgrammer("Andreas Zoglauer");
-  About->SetCopyright("(C) by Andreas Zoglauer\nAll rights reserved");
   About->SetReference("Chapter 4: Description of classic and Bayesian event reconstruction approach",
                       "A. Zoglauer, \"First Light for the Next Generation of Compton and Pair Telescopes\", Doctoral thesis, TU Munich, 2005");
   About->SetReference("Description of the Bayesian event reconstruction approach",

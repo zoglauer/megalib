@@ -1,18 +1,21 @@
 /*
  * MReadOutAssembly.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -34,6 +37,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MExceptions.h"
+#include "MStreams.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -125,19 +129,32 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MReadOutAssembly::StreamRoa(ostream& S, bool WithDescriptor)
+bool MReadOutAssembly::StreamRoa(ostream& S, const MReadOutFileFormat& ROFF, bool WithDescriptor)
 {
-  //! Stream the content in MEGAlib's roa format 
+  //! Stream the content in MEGAlib's roa format
+
+  // Find the read-out unit of each read-out first, so that no partial event is written
+  vector<unsigned int> Units;
+  for (MReadOut& RO: m_ReadOuts) {
+    const unsigned int Unit = ROFF.FindByTypes(RO.GetReadOutElement().GetType(), RO.GetReadOutData().GetCombinedType());
+    if (Unit == g_UnsignedIntNotDefined) {
+      if (g_Verbosity >= c_Error) merr<<"Event "<<m_ID<<": No read-out unit defined for \""<<RO.GetReadOutElement().GetType()<<" "<<RO.GetReadOutData().GetCombinedType()<<"\""<<endl;
+      return false;
+    }
+    Units.push_back(Unit);
+  }
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
   S<<"TI "<<m_Time<<endl;
-  
-  for (MReadOut& RO: m_ReadOuts) {
-    S<<RO.ToParsableString(WithDescriptor)<<endl;
+
+  for (unsigned int r = 0; r < m_ReadOuts.size(); ++r) {
+    S<<m_ReadOuts[r].ToParsableString(WithDescriptor, ROFF.GetKeyword(Units[r]))<<endl;
   }
+
+  return true;
 }
-  
+
 
 // MReadOutAssembly.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

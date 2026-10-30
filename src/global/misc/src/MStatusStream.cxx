@@ -1,16 +1,23 @@
-/* 
- * MStatusStream
+/*
+ * MStatusStream.cxx
  *
- * Copyright (C) by Andreas Zoglauer
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * This code implementation is the intellectual property of Andreas Zoglauer.
- * By copying or distributing this file or any program based on this file,
- * you accept this statement and all its terms.
+ * This file is part of MEGAlib.
  *
- * For further information see the file License.doc. 
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
+
 
 //---------------------------------------------------------------------------------------------
 

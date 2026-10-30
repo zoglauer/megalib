@@ -1,19 +1,22 @@
 /*
-* MGUIMainMelinator.cxx
-*
-*
-* Copyright (C) by Andreas Zoglauer.
-* All rights reserved.
-*
-*
-* This code implementation is the intellectual property of
-* Andreas Zoglauer.
-*
-* By copying, distributing or modifying the Program (or any work
-* based on the Program) you indicate your acceptance of this statement,
-* and all its terms.
-*
-*/
+ * MGUIMainMelinator.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
 
 
 // Include the header:
@@ -2002,14 +2005,23 @@ bool MGUIMainMelinator::OnGeometry()
   // Returns the geometry file name
   
   MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), this, m_Settings->GetGeometryFileName());
-  gClient->WaitForUnmap(Geo);
+
+  // Closing the file dialog of the file selector already raises an unmap of Geo,
+  // thus keep waiting until the geometry dialog itself is closed
+  do {
+    gClient->WaitForUnmap(Geo);
+  } while (Geo->IsMapped() == true);
+
+  bool OkPressed = Geo->OkPressed();
   MString Name = Geo->GetGeometryFileName();
   delete Geo;
   for (unsigned int i = 0; i < 100; ++i) {
     gSystem->ProcessEvents();
   }
 
-  m_Settings->SetGeometryFileName(Name);
+  if (OkPressed == true) {
+    m_Settings->SetGeometryFileName(Name);
+  }
 
   return true;
 }
@@ -2026,7 +2038,6 @@ bool MGUIMainMelinator::OnAbout()
   About->SetProgramName("Melinator");
   About->SetIconPath(g_MEGAlibPath + "/resource/icons/melinator/Melinator.xpm");
   About->SetLeadProgrammer("Andreas Zoglauer");
-  About->SetCopyright("(C) by Andreas Zoglauer\nAll rights reserved");
   //About->SetReference("Implementation details of the imaging approach", 
   //                    "A. Zoglauer et al., \"Design, implementation, and optimization of MEGAlib's image reconstruction tool Mimrec \", NIM A 652, 2011");
   //About->SetReference("A detailed description of list-mode likelihood image reconstruction - in German", 

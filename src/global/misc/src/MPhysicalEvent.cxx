@@ -1,18 +1,21 @@
 /*
  * MPhysicalEvent.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -133,9 +136,14 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_Id = E->m_Id;
   m_AllHitsGood = E->m_AllHitsGood;
   m_Decay = E->m_Decay;
-  m_Bad = E->m_Bad;
-  m_BadString = E->m_BadString;
+  m_BadFlags = E->m_BadFlags;
   m_Comments = E->m_Comments;
+  m_Hits = E->m_Hits;
+  m_OIPosition = E->m_OIPosition;
+  m_OIDirection = E->m_OIDirection;
+  m_OIPolarization = E->m_OIPolarization;
+  m_OIEnergy = E->m_OIEnergy;
+  m_OIParticleID = E->m_OIParticleID;
 
   return true;
 }
@@ -169,13 +177,13 @@ void MPhysicalEvent::Reset()
   m_Id = 0;
   m_TimeWalk = -1;
   m_Decay = false;
-  m_Bad = false;
-  m_BadString = "";
+  m_BadFlags.clear();
 
   m_OIPosition = g_VectorNotDefined;
   m_OIDirection = g_VectorNotDefined;
   m_OIPolarization = g_VectorNotDefined;
   m_OIEnergy = g_DoubleNotDefined;
+  m_OIParticleID = g_IntNotDefined;
 
   m_Lines.clear();
   m_Comments.clear();
@@ -224,6 +232,38 @@ MVector MPhysicalEvent::GetOrigin() const
   // In detector coordinates - this is the reverse travel direction!
 
   return g_VectorNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MPhysicalEvent::GetBadFlag(unsigned int i) const
+{
+  //! Get the specific flag indicating why this event is bad
+
+  if (i < m_BadFlags.size()) {
+    return m_BadFlags[i];
+  }
+
+  throw MExceptionIndexOutOfBounds(0, m_BadFlags.size(), i);
+
+  return "";
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MPhysicalEvent::HasBadFlag(const MString& BadFlag) const
+{
+  //! Return true if this flag is already stored
+
+  for (unsigned int b = 0; b < m_BadFlags.size(); ++b) {
+    if (m_BadFlags[b] == BadFlag) return true;
+  }
+
+  return false;
 }
 
 
@@ -307,14 +347,18 @@ MString MPhysicalEvent::ToTraString() const
 
   MRotationInterface::Stream(S);
 
-  if (m_Bad == true) {
-    S<<"BD "<<m_BadString<<endl;
+  for (unsigned int b = 0; b < m_BadFlags.size(); ++b) {
+    S<<"BD "<<m_BadFlags[b]<<endl;
   }
   if (m_Decay == true) {
     S<<"DC"<<endl;
   }
   if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined) {
-    S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy<<endl;
+    S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy;
+    if (m_OIParticleID != g_IntNotDefined) {
+      S<<" "<<m_OIParticleID;
+    }
+    S<<endl;
   }
   for (unsigned int c = 0; c < m_Comments.size(); ++c) {
     S<<"CC "<<m_Comments[c]<<endl;
@@ -486,35 +530,16 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
   } else if (Line[0] == 'H' && Line[1] == 'Z') {
     MRotationInterface::ParseLine(Line, Fast);
   } else if (Line[0] == 'B' && Line[1] == 'D') {
-    m_BadString = Line;
-    m_BadString = m_BadString.Remove(0, 3);
-    m_BadString = m_BadString.ReplaceAll("\n", "");
-
-    /*
-    m_BadString.erase(0, 3);
-    while (true) {
-      const int pos = m_BadString.find("\n");
-      if (pos==-1) break;
-      m_BadString.replace(pos, 1, "");
-    }
-    */
-
-    m_Bad = true;
+    // Every BD line of an event is one flag, so they accumulate
+    MString BadFlag = Line;
+    BadFlag = BadFlag.Remove(0, 3);
+    BadFlag = BadFlag.ReplaceAll("\n", "");
+    AddBadFlag(BadFlag);
   } else if (Line[0] == 'C' && Line[1] == 'C') {
     MString Comment = Line;
     Comment = Comment.Remove(0, 3);
     Comment = Comment.ReplaceAll("\n", "");
     m_Comments.push_back(Comment);
-
-    /*
-    m_BadString.erase(0, 3);
-    while (true) {
-      const int pos = m_BadString.find("\n");
-      if (pos==-1) break;
-      m_BadString.replace(pos, 1, "");
-    }
-    */
-
   } else if (Line[0] == 'O' && Line[1] == 'I') {
     if (Fast == true) {
       char* p;
@@ -527,9 +552,23 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
       m_OIPolarization[0] = strtod(p, &p);
       m_OIPolarization[1] = strtod(p, &p);
       m_OIPolarization[2] = strtod(p, &p);
-      m_OIEnergy = strtod(p, NULL);
+      m_OIEnergy = strtod(p, &p);
+      // Check for particle ID which is only present in newer files:
+      char* End = nullptr;
+      long ParticleID = strtol(p, &End, 10); // 10: read as decimal
+      if (End != p) {
+        m_OIParticleID = int(ParticleID);
+      } else {
+        m_OIParticleID = g_IntNotDefined;
+      }
     } else {
-      if (sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], &m_OIEnergy) != 10) {
+      // The particle ID is only present in newer files:
+      int Parsed = sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], &m_OIEnergy, &m_OIParticleID);
+      if (Parsed == 10) {
+        m_OIParticleID = g_IntNotDefined;
+      } else if (Parsed == 11) {
+        // All good as sscanf expects to parse 11
+      } else {
         Ret = 1;
       }
     }

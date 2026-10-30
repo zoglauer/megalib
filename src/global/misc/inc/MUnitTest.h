@@ -1,11 +1,21 @@
 /*
  * MUnitTest.h
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Please see the source-file for the copyright-notice.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -35,12 +45,23 @@ using namespace std;
 #include "MStreams.h"
 
 // Forward declarations:
+class MVector;
+class MRotation;
+
+//! Mark one check as a known failure, see MUnitTest
+#define ExpectedToFail(...) (BeginExpectedFailureMode(), __VA_ARGS__, EndExpectedFailureMode())
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! The base class for unit testing
+//!
+//! Known failures: a check of a not yet fixed bug is wrapped with the ExpectedToFail() macro, e.g.
+//!   Passed = ExpectedToFail(Evaluate("Foo()", "input", "description", Output, Truth)) && Passed;
+//! A failing check is reported as KNOWN FAILURE and does not fail the test,
+//! a passing check is reported as UNEXPECTED PASS and fails it.
+//! Wrap exactly one check; the macro only works inside member functions of derived classes.
 class MUnitTest
 {
   // public interface:
@@ -63,7 +84,7 @@ class MUnitTest
       return false;
     }
     
-    RegisterSuccess();
+    RegisterSuccess(Function, Input, Description);
     return true;
   }
 
@@ -91,9 +112,15 @@ class MUnitTest
       return false;
     }
 
-    RegisterSuccess();
+    RegisterSuccess(Function, Input, Description);
     return true;
   }
+
+  //! Evaluate two vectors within a given tolerance: the distance between them must not exceed Tolerance, all components must be finite
+  bool EvaluateVectorNear(MString Function, MString Input, MString Description, const MVector& Output, const MVector& Truth, double Tolerance);
+
+  //! Evaluate two rotation matrices within a given tolerance: each of the nine elements may differ by at most Tolerance, all elements must be finite
+  bool EvaluateRotationNear(MString Function, MString Input, MString Description, const MRotation& Output, const MRotation& Truth, double Tolerance);
 
   //! Evaluate the expected size of a container or collection
   template <typename T> bool EvaluateSize(MString Function, T Input, MString Description, size_t Output, size_t Truth)
@@ -107,7 +134,7 @@ class MUnitTest
     try {
       Callable();
     } catch (const TException&) {
-      RegisterSuccess();
+      RegisterSuccess(Function, Input, Description);
       return true;
     } catch (const std::exception& Exception) {
       ostringstream ExpectedStream;
@@ -155,8 +182,26 @@ class MUnitTest
 
   // protected methods:
  protected:
-  //! Register a passed test
-  void RegisterSuccess() { ++m_NumberOfPassedTests; }
+  //! Register a passed test; inside ExpectedToFail() it is reported and counted as an unexpected pass
+  template <typename T> void RegisterSuccess(MString Function, T Input, MString Description) {
+    if (m_IsExpectedFailureModeActive == true) {
+      ++m_NumberOfExpectedFailureModeChecks;
+      m_HasUnexpectedPass = true;
+      mout<<endl;
+      mout<<"UNEXPECTED PASS: "<<Function<<"  <-- "<<Input<<endl;
+      mout<<"   Description: "<<Description<<endl;
+      mout<<"   The check passes now: remove ExpectedToFail()"<<endl;
+      mout<<endl;
+      ++m_NumberOfFailedTests;
+    } else {
+      ++m_NumberOfPassedTests;
+    }
+  }
+
+  //! Start the expected-failure mode - use the ExpectedToFail() macro instead of calling this directly
+  void BeginExpectedFailureMode();
+  //! End the expected-failure mode; returns true if the check in it failed - use the ExpectedToFail() macro instead of calling this directly
+  bool EndExpectedFailureMode();
 
   //! Return the unit test name
   const MString& GetName() const { return m_Name; }
@@ -198,16 +243,25 @@ class MUnitTest
   //! Recursively remove a temporary directory only if it is inside this test's randomized temporary root; an empty name removes the root itself
   bool RemoveTemporaryDirectory(const MString& DirectoryName = "") const;
 
-  //! Register and report a failed test
+  //! Register and report a failed test; inside ExpectedToFail() it is reported and counted as a known failure
   template <typename T> void RegisterFailure(MString Function, T Input, MString Description, MString Expected, MString Output) {
     mout<<endl;
-    mout<<"FAILED: "<<Function<<"  <-- "<<Input<<endl;
+    if (m_IsExpectedFailureModeActive == true) {
+      mout<<"KNOWN FAILURE: "<<Function<<"  <-- "<<Input<<endl;
+    } else {
+      mout<<"FAILED: "<<Function<<"  <-- "<<Input<<endl;
+    }
     mout<<"   Description: "<<Description<<endl;
     mout<<"   Expected:    "<<Expected<<endl;
     mout<<"   Output:      "<<Output<<endl;
     mout<<endl;
 
-    ++m_NumberOfFailedTests;
+    if (m_IsExpectedFailureModeActive == true) {
+      ++m_NumberOfExpectedFailureModeChecks;
+      ++m_NumberOfKnownFailures;
+    } else {
+      ++m_NumberOfFailedTests;
+    }
   }
 
   // private methods:
@@ -217,6 +271,9 @@ class MUnitTest
 
   //! Return the randomized private temporary root for this test
   MString GetTemporaryRootDirectory() const;
+
+  //! Point HOME and the working directory to a private temporary directory, so that tested code cannot modify the user's files (e.g. ~/.revan.cfg)
+  bool RedirectHomeDirectory();
 
   //! Return true only for a plain child file or directory name without path components; see IsValidTemporaryBaseName() for the root-basename rule
   bool IsValidTemporaryPathName(const MString& Name, bool AllowEmpty = false) const;
@@ -251,6 +308,16 @@ class MUnitTest
    unsigned int m_NumberOfPassedTests;
    //! Failed tests
    unsigned int m_NumberOfFailedTests;
+   //! Failed tests marked with ExpectedToFail()
+   unsigned int m_NumberOfKnownFailures;
+   //! True between BeginExpectedFailureMode() and EndExpectedFailureMode()
+   bool m_IsExpectedFailureModeActive;
+   //! Expected-failure modes nested inside the active one; they are ignored
+   unsigned int m_NumberOfNestedExpectedFailureModes;
+   //! Number of checks evaluated in the active expected-failure mode
+   unsigned int m_NumberOfExpectedFailureModeChecks;
+   //! True if a check in the active expected-failure mode passed
+   bool m_HasUnexpectedPass;
    //! Randomized private temporary root, created lazily
    mutable MString m_TemporaryRootDirectory;
    //! Serialize lazy temporary-root creation and guarded filesystem operations
@@ -263,6 +330,7 @@ class MUnitTest
 #endif
 
 };
+
 
 #endif
 

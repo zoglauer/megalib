@@ -1,18 +1,21 @@
 /*
  * MFileEventsEvta.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -317,10 +320,11 @@ MRERawEvent* MFileEventsEvta::GetNextEventASCII()
         if (Line[0] == 'I' && Line[1] == 'A') {
           if (Line[3] == 'I' && Line[4] == 'N' && Line[5] == 'I' && Line[6] == 'T') {
             double x, y, z, dx, dy, dz, px, py, pz, e;
-            if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
-              &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+            int id;
+            if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+              &x, &y, &z, &id, &dx, &dy, &dz, &px, &py, &pz, &e) == 11) {
               ostringstream out;
-              out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+              out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<";"<<id<<endl;
               Line = out.str().c_str();
             }
           }
@@ -493,7 +497,7 @@ MRERawEvent* MFileEventsEvta::GetNextEventBinary()
           Event->AddREAM(GR);
         }
         if (m_SaveOI == true && SimEvent->GetNIAs() > 0) {
-          Event->SetOriginInformation(SimEvent->GetIAAt(0)->GetPosition(), SimEvent->GetIAAt(0)->GetSecondaryDirection(), SimEvent->GetIAAt(0)->GetSecondaryPolarization(), SimEvent->GetIAAt(0)->GetSecondaryEnergy());
+          Event->SetOriginInformation(SimEvent->GetIAAt(0)->GetPosition(), SimEvent->GetIAAt(0)->GetSecondaryDirection(), SimEvent->GetIAAt(0)->GetSecondaryPolarization(), SimEvent->GetIAAt(0)->GetSecondaryEnergy(), SimEvent->GetIAAt(0)->GetSecondaryParticleID());
         }
         
         delete SimEvent;

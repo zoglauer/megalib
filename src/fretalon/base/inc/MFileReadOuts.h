@@ -1,11 +1,21 @@
 /*
  * MFileReadOuts.h
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Please see the source-file for the copyright-notice.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -25,9 +35,11 @@
 #include "MFile.h"
 #include "MFileEvents.h"
 #include "MTime.h"
-#include "MReadOutSequence.h"
+#include "MReadOut.h"
 #include "MReadOutData.h"
 #include "MReadOutElement.h"
+#include "MReadOutFileFormat.h"
+#include "MReadOutSequence.h"
 
 // Forward declarations:
 
@@ -44,7 +56,7 @@ class MFileReadOuts : public MFileEvents
   //! Default destructor
   virtual ~MFileReadOuts();
 
-  //! The Open method has to be derived to initialize the include file:
+  //! Open the read-out file
   virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read);
 
   //! Return the next event
@@ -56,6 +68,9 @@ class MFileReadOuts : public MFileEvents
   //!   >=2: all
   bool ReadNext(MReadOutSequence& Sequence, int SelectedDetectorID = -1, int SelectedDetectorSide = -1);
 
+  //! Return the read-out units this file declares
+  const MReadOutFileFormat& GetReadOutFileFormat() const { return m_ReadOutFileFormat; }
+
   
   // protected methods:
  protected:
@@ -64,7 +79,12 @@ class MFileReadOuts : public MFileEvents
 
   // private methods:
  private:
-
+  //! Parse a UF line containing the read-out unit data and add it to the prototypes
+  //! Return false on error
+  bool AddReadOutUnitPrototype(const MString& Line);
+  //! Build the read-out data described by a UF read-out data format such as "adc" or "adcwithtiming".
+  //! Returns nullptr on error
+  MReadOutData* CreateReadOutData(const MString& Format);
 
 
   // protected members:
@@ -83,17 +103,19 @@ class MFileReadOuts : public MFileEvents
   unsigned long m_EndClock;
   //! True if the end clock tag has been read
   bool m_HasEndClock;
+  //! True while the SE line of an event has been read but the event has not been returned yet
+  bool m_IsReadingEvent;
 
-  //! The read-out element
-  MReadOutElement* m_ROE;
-  //! The read-out data
-  MReadOutData* m_ROD;
+  //! The read-out file format including the units definitions
+  MReadOutFileFormat m_ReadOutFileFormat;
+  //! The prototype read-out units at the same index as in m_ReadOutFileFormat
+  vector<MReadOut> m_ReadOutPrototypes;
   
   
 
 #ifdef ___CLING___
  public:
-  ClassDef(MFileReadOuts, 0) // no description
+  ClassDef(MFileReadOuts, 0) // The file reader for read outs
 #endif
 
 };

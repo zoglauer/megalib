@@ -1,19 +1,22 @@
 /*
-* MGUIEReadOutElementView.cxx
-*
-*
-* Copyright (C) by Andreas Zoglauer.
-* All rights reserved.
-*
-*
-* This code implementation is the intellectual property of
-* Andreas Zoglauer.
-*
-* By copying, distributing or modifying the Program (or any work
-* based on the Program) you indicate your acceptance of this statement,
-* and all its terms.
-*
-*/
+ * MGUIEReadOutElementView.cxx
+ *
+ * Copyright (C) by the MEGAlib contributors.
+ *
+ * This file is part of MEGAlib.
+ *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ */
 
 
 // Include the header:

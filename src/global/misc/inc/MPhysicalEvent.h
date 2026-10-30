@@ -1,11 +1,21 @@
 /*
  * MPhysicalEvent.h
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Please see the source-file for the copyright-notice.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -100,12 +110,18 @@ class MPhysicalEvent : public MRotationInterface
   //! Return true if this event originated from a decay
   bool IsDecay() const { return m_Decay; }
 
-  //! Set a flag indicating that this event is bad
-  void SetBad(const bool Flag, const MString BadString = "") { m_Bad = Flag; if (Flag == false) m_BadString = ""; else m_BadString = BadString; }
+  //! Add a flag indicating why this event is bad
+  void AddBadFlag(const MString& BadFlag) { m_BadFlags.push_back(BadFlag); }
   //! Return true the if this event is bad
-  bool IsBad() const { return m_Bad; }
-  //! Return a string indicating why this event is bad
-  MString GetBadString() const { return m_BadString; }
+  bool IsBad() const { return m_BadFlags.size() == 0 ? false : true; }
+  //! Return the number of flags indicating why this event is bad
+  unsigned int GetNBadFlags() const { return m_BadFlags.size(); }
+  //! Return the specific flag indicating why this event is bad -- throws MExceptionIndexOutOfBounds otherwise
+  MString GetBadFlag(unsigned int i) const;
+  //! Return true if this flag is already stored
+  bool HasBadFlag(const MString& BadFlag) const;
+  //! Remove all bad flags
+  void ClearBadFlags() { m_BadFlags.clear(); }
 
   //! Add a comment
   void AddComment(MString& Comment) { m_Comments.push_back(Comment); }
@@ -124,7 +140,7 @@ class MPhysicalEvent : public MRotationInterface
   const MPhysicalEventHit& GetHit(unsigned int i) const;
   
   //! Set the OI information
-  void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy; }
+  void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy, const int ParticleID = g_IntNotDefined) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy; m_OIParticleID = ParticleID; }
   //! Get the OI position information
   MVector GetOIPosition() const { return m_OIPosition; }
   //! Get the OI direction information
@@ -133,6 +149,8 @@ class MPhysicalEvent : public MRotationInterface
   MVector GetOIPolarization() const { return m_OIPolarization; }
   //! Get the OI energy information
   double GetOIEnergy() const { return m_OIEnergy; }
+  //! Get the OI particle ID information (g_IntNotDefined if not available, e.g. older files)
+  int GetOIParticleID() const { return m_OIParticleID; }
 
   //! Convert content to a descriptive string of the event
   virtual MString ToString() const;
@@ -182,10 +200,8 @@ class MPhysicalEvent : public MRotationInterface
 
   //! True if this event has a decay flag
   bool m_Decay;
-  //! True if this event has be qualified as bad event
-  bool m_Bad;
-  //! String giving the reason this event is qualified as bad
-  MString m_BadString;
+  //! The flags giving the reasons this event is qualified as bad
+  vector<MString> m_BadFlags;
 
   //! A set of comments store with the event
   vector<MString> m_Comments;
@@ -201,6 +217,8 @@ class MPhysicalEvent : public MRotationInterface
   MVector m_OIPolarization;
   //! OI energy (the meaning is a secret...)
   double m_OIEnergy;
+  //! OI particle ID (same as cosima particle ID)
+  int m_OIParticleID;
 
   //! Store the read lines for delayed parsing
   vector<MString> m_Lines; 

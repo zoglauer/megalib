@@ -1,11 +1,21 @@
 /*
  * MREAMStartInformation.h
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Please see the source-file for the copyright-notice.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -61,6 +71,8 @@ class MREAMStartInformation : public MREAM
   void SetPolarization(const MVector Polarization) { m_Polarization = Polarization; }
   //! Set original energy
   void SetEnergy(const double Energy) { m_Energy = Energy; }
+  //! Set original particle ID
+  void SetParticleID(const int ParticleID) { m_ParticleID = ParticleID; }
   //! Return original position
   MVector GetPosition() const { return m_Position; }
   //! Return original position
@@ -69,6 +81,8 @@ class MREAMStartInformation : public MREAM
   MVector GetDirection() const { return m_Direction; }
   //! Return original energy 
   double GetEnergy() const { return m_Energy; }
+  //! Return original particle ID (g_IntNotDefined if not available)
+  int GetParticleID() const { return m_ParticleID; }
 
   // protected methods:
  protected:
@@ -89,6 +103,8 @@ class MREAMStartInformation : public MREAM
   MVector m_Polarization;
   //! Original energy
   double m_Energy;
+  //! Original particle ID
+  int m_ParticleID;
 
 #ifdef ___CLING___
  public:

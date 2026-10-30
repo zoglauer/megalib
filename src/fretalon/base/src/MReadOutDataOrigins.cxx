@@ -1,18 +1,21 @@
 /*
  * MReadOutDataOrigins.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -124,8 +127,11 @@ bool MReadOutDataOrigins::Parse(const MTokenizer& T, unsigned int StartElement)
   
   // Then here - we have one string in form 2;3;6 - parse it!
   MString OriginString = T.GetTokenAtAsString(StartElement + MReadOutData::GetNumberOfParsableElements());
-  vector<MString> OriginStrings = OriginString.Tokenize(";");
   m_Origins.clear();
+  if (OriginString == "-") {
+    return true;
+  }
+  vector<MString> OriginStrings = OriginString.Tokenize(";");
   for (MString S: OriginStrings) {
     m_Origins.push_back(atoi(S));
   }
@@ -142,6 +148,9 @@ MString MReadOutDataOrigins::ToString() const
 {
   ostringstream os;
   os<<MReadOutData::ToString();
+  if (m_Origins.size() == 0) {
+    os<<"-"; // Empty is just "-"
+  }
   for (unsigned int o = 0; o < m_Origins.size(); ++o) {
     if (o != 0) os<<";";
     os<<m_Origins[o];

@@ -1,18 +1,21 @@
 /*
  * MUnitTest.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -20,6 +23,8 @@
 #include "MUnitTest.h"
 
 // Standard libs:
+#include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -31,6 +36,8 @@
 
 // MEGAlib libs:
 #include "MFile.h"
+#include "MRotation.h"
+#include "MVector.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +69,20 @@ MUnitTest::MUnitTest(const MString& Name)
   }
   m_NumberOfPassedTests = 0;
   m_NumberOfFailedTests = 0;
-  
+  m_NumberOfKnownFailures = 0;
+  m_IsExpectedFailureModeActive = false;
+  m_NumberOfNestedExpectedFailureModes = 0;
+  m_NumberOfExpectedFailureModeChecks = 0;
+  m_HasUnexpectedPass = false;
+
+  // Settings classes like MSettingsRevan save themselves to ~/.<program>.cfg, others write into the working directory:
+  // never let a test run unless both are a private temporary directory
+  if (RedirectHomeDirectory() == false) {
+    mout<<"ABORTED: HOME and the working directory are not a private temporary directory - no check was run"<<endl;
+    // exit() skips the destructor
+    RemoveTemporaryDirectory();
+    exit(1);
+  }
 }
 
 
@@ -72,6 +92,9 @@ MUnitTest::MUnitTest(const MString& Name)
 //! Default destructor
 MUnitTest::~MUnitTest()
 {
+  // HOME and the working directory are not restored: the process ends with the test,
+  // and nothing running afterwards can reach the user's files
+
   if (m_TemporaryRootDirectory.IsEmpty() == true) return;
 
   if (RemoveTemporaryDirectory() == false) {
@@ -85,9 +108,119 @@ MUnitTest::~MUnitTest()
 
 void MUnitTest::Summarize()
 {
+  // Handle a skipped EndExpectedFailureMode()
+  if (m_IsExpectedFailureModeActive == true) {
+    mout<<endl;
+    mout<<"FAILED: ExpectedToFail()"<<endl;
+    mout<<"   Description: EndExpectedFailureMode() was not reached"<<endl;
+    mout<<endl;
+    ++m_NumberOfFailedTests;
+    m_IsExpectedFailureModeActive = false;
+    m_NumberOfNestedExpectedFailureModes = 0;
+  }
+
   mout<<"Unit test: "<<m_Name<<endl;
   mout<<"Passed tests: "<<m_NumberOfPassedTests<<endl;
   mout<<"Failed tests: "<<m_NumberOfFailedTests<<endl;
+  if (m_NumberOfKnownFailures > 0) {
+    mout<<"Known failures: "<<m_NumberOfKnownFailures<<endl;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::RedirectHomeDirectory()
+{
+  // Randomized name, so that no temporary directory of the test can collide with it
+  MString TemporaryHome = MFile::CreateTemporaryDirectory("home", 10, GetTemporaryRootDirectory());
+  if (TemporaryHome.IsEmpty() == true) {
+    merr<<"Error in MUnitTest::RedirectHomeDirectory: unable to create the temporary home directory"<<endl;
+    return false;
+  }
+
+  if (setenv("HOME", TemporaryHome.Data(), 1) != 0) {
+    merr<<"Error in MUnitTest::RedirectHomeDirectory: unable to set HOME"<<endl;
+    return false;
+  }
+
+  // Verify that MEGAlib's file name expansion follows HOME
+  MString Check = "~/.redirect";
+  MFile::ExpandFileName(Check);
+  if (Check.BeginsWith(TemporaryHome) == false) {
+    merr<<"Error in MUnitTest::RedirectHomeDirectory: ~ does not expand into the temporary home directory: "<<Check<<endl;
+    return false;
+  }
+
+  // Through ROOT, so that gSystem->WorkingDirectory() follows as well
+  if (gSystem->ChangeDirectory(TemporaryHome) == false) {
+    merr<<"Error in MUnitTest::RedirectHomeDirectory: unable to change into the temporary home directory"<<endl;
+    return false;
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MUnitTest::BeginExpectedFailureMode()
+{
+  // A nested ExpectedToFail() is ignored: the outer one already marks the check
+  if (m_IsExpectedFailureModeActive == true) {
+    ++m_NumberOfNestedExpectedFailureModes;
+    return;
+  }
+
+  m_IsExpectedFailureModeActive = true;
+  m_NumberOfExpectedFailureModeChecks = 0;
+  m_HasUnexpectedPass = false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::EndExpectedFailureMode()
+{
+  if (m_NumberOfNestedExpectedFailureModes > 0) {
+    --m_NumberOfNestedExpectedFailureModes;
+    return true;
+  }
+
+  // The outcome is taken from the checks registered since BeginExpectedFailureMode()
+  if (m_IsExpectedFailureModeActive == false) {
+    mout<<endl;
+    mout<<"FAILED: ExpectedToFail()"<<endl;
+    mout<<"   Description: EndExpectedFailureMode() without BeginExpectedFailureMode()"<<endl;
+    mout<<endl;
+    ++m_NumberOfFailedTests;
+    return false;
+  }
+
+  m_IsExpectedFailureModeActive = false;
+
+  if (m_NumberOfExpectedFailureModeChecks == 0) {
+    mout<<endl;
+    mout<<"FAILED: ExpectedToFail()"<<endl;
+    mout<<"   Description: ExpectedToFail() must wrap at least one Evaluate*() call"<<endl;
+    mout<<endl;
+    ++m_NumberOfFailedTests;
+    return false;
+  }
+
+  if (m_NumberOfExpectedFailureModeChecks > 1) {
+    mout<<endl;
+    mout<<"FAILED: ExpectedToFail()"<<endl;
+    mout<<"   Description: ExpectedToFail() must wrap exactly one Evaluate*() call, not "<<m_NumberOfExpectedFailureModeChecks<<endl;
+    mout<<endl;
+    ++m_NumberOfFailedTests;
+    return false;
+  }
+
+  return m_HasUnexpectedPass == false;
 }
 
 
@@ -180,7 +313,7 @@ bool MUnitTest::EvaluateFilesNumericallyEquivalent(MString Function, MString Inp
     }
   }
 
-  RegisterSuccess();
+  RegisterSuccess(Function, Input, Description);
   return true;
 }
 
@@ -648,7 +781,65 @@ bool MUnitTest::EvaluateFilesIdentical(MString Function, MString Input, MString 
     }
   }
 
-  RegisterSuccess();
+  RegisterSuccess(Function, Input, Description);
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::EvaluateVectorNear(MString Function, MString Input, MString Description, const MVector& Output, const MVector& Truth, double Tolerance)
+{
+  const bool Finite = std::isfinite(Output.X()) && std::isfinite(Output.Y()) && std::isfinite(Output.Z()) &&
+                      std::isfinite(Truth.X()) && std::isfinite(Truth.Y()) && std::isfinite(Truth.Z());
+  const double Distance = (Output - Truth).Mag();
+
+  if (Finite == false || Distance > Tolerance) {
+    ostringstream ExpectedStream;
+    ExpectedStream << setprecision(numeric_limits<long double>::max_digits10) << "(" << Truth.X() << ", " << Truth.Y() << ", " << Truth.Z() << ") +/- " << Tolerance;
+    ostringstream OutputStream;
+    OutputStream << setprecision(numeric_limits<long double>::max_digits10) << "(" << Output.X() << ", " << Output.Y() << ", " << Output.Z() << "), distance " << Distance;
+    RegisterFailure(Function, Input, Description, ExpectedStream.str(), OutputStream.str());
+    return false;
+  }
+
+  RegisterSuccess(Function, Input, Description);
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MUnitTest::EvaluateRotationNear(MString Function, MString Input, MString Description, const MRotation& Output, const MRotation& Truth, double Tolerance)
+{
+  // Elements row by row: XX, YX, ZX, XY, YY, ZY, XZ, YZ, ZZ
+  const double O[9] = { Output.GetXX(), Output.GetYX(), Output.GetZX(), Output.GetXY(), Output.GetYY(), Output.GetZY(), Output.GetXZ(), Output.GetYZ(), Output.GetZZ() };
+  const double T[9] = { Truth.GetXX(), Truth.GetYX(), Truth.GetZX(), Truth.GetXY(), Truth.GetYY(), Truth.GetZY(), Truth.GetXZ(), Truth.GetYZ(), Truth.GetZZ() };
+
+  bool Match = true;
+  double LargestDifference = 0.0;
+  for (unsigned int i = 0; i < 9; ++i) {
+    if (std::isfinite(O[i]) == false || std::isfinite(T[i]) == false) {
+      Match = false;
+    } else {
+      LargestDifference = std::max(LargestDifference, fabs(O[i] - T[i]));
+      if (fabs(O[i] - T[i]) > Tolerance) Match = false;
+    }
+  }
+
+  if (Match == false) {
+    auto Format = [](const double (&V)[9]) {
+      ostringstream Stream;
+      Stream << setprecision(numeric_limits<long double>::max_digits10) << "(" << V[0] << "/" << V[1] << "/" << V[2] << ", " << V[3] << "/" << V[4] << "/" << V[5] << ", " << V[6] << "/" << V[7] << "/" << V[8] << ")";
+      return Stream.str();
+    };
+    RegisterFailure(Function, Input, Description, Format(T) + " +/- " + to_string(Tolerance), Format(O) + ", largest difference " + to_string(LargestDifference));
+    return false;
+  }
+
+  RegisterSuccess(Function, Input, Description);
   return true;
 }
 

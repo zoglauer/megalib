@@ -1,11 +1,21 @@
 /*
  * MModuleSaver.h
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Please see the source-file for the copyright-notice.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -28,6 +38,7 @@ using namespace std;
 
 // Nuclearizer libs:
 #include "MModule.h"
+#include "MReadOutFileFormat.h"
 #include "MModuleInterfaceFileName.h"
 
 // Forward declarations:
@@ -60,6 +71,9 @@ class MModuleSaver : public MModule, public MModuleInterfaceFileName
   //! Show the options GUI
   virtual void ShowOptionsGUI();
 
+  //! Set the read-out file fomat to be written in the header
+  void SetReadOutAssemblyFileFormat(const MReadOutFileFormat& Format) { m_RoaFileFormat = Format; }
+
   //! Read the configuration data from an XML node
   virtual bool ReadXmlConfiguration(MXmlNode* Node);
   //! Create an XML node tree from the configuration
@@ -88,9 +102,8 @@ class MModuleSaver : public MModule, public MModuleInterfaceFileName
   //! Output stream for dat file
   ofstream m_Out;
 
-  //! True once the roa UF header has been written to the current file -- it can only be written
-  //! after the first event has arrived, since that is when the read-out element and data types are known
-  bool m_RoaHeaderWritten;
+  //! The read-out file fomat to be written in the header
+  MReadOutFileFormat m_RoaFileFormat;
 
   
 #ifdef ___CLING___

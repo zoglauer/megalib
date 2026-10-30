@@ -1,18 +1,21 @@
 /*
  * MERCSR.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -187,11 +190,11 @@ MRawEventIncarnations* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
   // 3 left shift 3... and so on.)
 
   if (RE->GetNRESEs() > m_MaxNInteractions) {
-    mout<<"BCT - Sequence: Too Many hits: "<<RE->GetNRESEs()<<" > "<<m_MaxNInteractions<<endl;
+    mdebug<<"BCT - Sequence: Too Many hits: "<<RE->GetNRESEs()<<" > "<<m_MaxNInteractions<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyHitsCSR);
     return 0;
   } else if (RE->GetNRESEs() == 0) {
-    mout<<"BCT - Sequence: Event without hits"<<endl;
+    mdebug<<"BCT - Sequence: Event without hits"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionNoHits);
     return 0; 
   }
@@ -235,7 +238,7 @@ MRawEventIncarnations* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
 
 void MERCSR::FindComptonSequence(MRERawEvent* RE)
 {
-  mout<<"CSR - Sequence: Searching Compton sequence of event with "
+  mdebug<<"CSR - Sequence: Searching Compton sequence of event with "
       <<RE->GetNRESEs()<<" hits ("<<RE->GetEventID()<<")..."<<endl;
 
   RE->SetComptonQualityFactors(DBL_MAX, DBL_MAX);
@@ -244,11 +247,11 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   
   // Check if we have a 3+ Compton:
   if (RE->GetNRESEs() > m_MaxNInteractions) {
-    mout<<"CSR - Sequence: Too Many hits: "<<RE->GetNRESEs()<<" > "<<m_MaxNInteractions<<endl;
+    mdebug<<"CSR - Sequence: Too Many hits: "<<RE->GetNRESEs()<<" > "<<m_MaxNInteractions<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionTooManyHitsCSR);
     return;
   } else if (RE->GetNRESEs() == 1) {
-    mout<<"CSR - Sequence: Only single hit event!"<<endl;
+    mdebug<<"CSR - Sequence: Only single hit event!"<<endl;
     //RE->SetRejectionReason(MRERawEvent::c_RejectionSingleSiteEvent);
     if (RE->GetRESEAt(0)->GetType() == MRESE::c_Hit || 
         RE->GetRESEAt(0)->GetType() == MRESE::c_Cluster) {
@@ -259,7 +262,7 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
     }
     return; 
   } else if (RE->GetNRESEs() == 0) {
-    mout<<"CSR - Sequence: Event without hits"<<endl;
+    mdebug<<"CSR - Sequence: Event without hits"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionNoHits);
     return; 
   }
@@ -271,24 +274,24 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   if (g_Verbosity >= 1) {
     // Dump all permutations:
     int NShownCombis = 120;
-    mout<<"CSR - Sequence: Top "<< NShownCombis<<" valid permutations ("<<m_QualityFactors.size()<<")"<<endl;
+    mdebug<<"CSR - Sequence: Top "<< NShownCombis<<" valid permutations ("<<m_QualityFactors.size()<<")"<<endl;
     for (m_QualityFactorsIterator = m_QualityFactors.begin(); 
          (m_QualityFactorsIterator != m_QualityFactors.end() && NShownCombis > 0); 
          m_QualityFactorsIterator++, NShownCombis--) {
-      mout<<"   Combi "/*<<m_QualityFactorsIterator*/<<": ";
+      mdebug<<"   Combi "/*<<m_QualityFactorsIterator*/<<": ";
       for (unsigned int r = 0; r < (*m_QualityFactorsIterator).second.size(); ++r) {
-        mout<<(*m_QualityFactorsIterator).second[r]->GetID();
+        mdebug<<(*m_QualityFactorsIterator).second[r]->GetID();
         if ( r < (*m_QualityFactorsIterator).second.size()-1) {
-          mout<<" - ";
+          mdebug<<" - ";
         }
       }
-      mout<<"  -->  "<<(*m_QualityFactorsIterator).first<<endl;
+      mdebug<<"  -->  "<<(*m_QualityFactorsIterator).first<<endl;
     }
   }
 
   if (NGoodSequences == 0) {
     RE->SetRejectionReason(MRERawEvent::c_RejectionCSRNoGoodCombination);
-    mout<<"CSR - Sequence: None of the sequences is valid!"<<endl;
+    mdebug<<"CSR - Sequence: None of the sequences is valid!"<<endl;
     return;    
   }
 
@@ -309,7 +312,7 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   // Test if we have at least one good sequence:
   if (BestQualityFactor == c_CSRFailed) {
     RE->SetRejectionReason(MRERawEvent::c_RejectionCSRNoGoodCombination);
-    mout<<"CSR - Sequence: None of the sequences is valid!"<<endl;
+    mdebug<<"CSR - Sequence: None of the sequences is valid!"<<endl;
     return;    
   }
 
@@ -334,7 +337,7 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   if (BestQualityFactor < m_QualityFactorMin || 
       BestQualityFactor > m_QualityFactorMax) {
     RE->SetRejectionReason(MRERawEvent::c_RejectionCSRThreshold);
-    mout<<"CSR - Sequence: Teststatistics ("<<BestQualityFactor
+    mdebug<<"CSR - Sequence: Teststatistics ("<<BestQualityFactor
         <<") out of threshold ("<<m_QualityFactorMin<<" - "<<m_QualityFactorMax<<")"<<endl;
     return;
   }
@@ -344,8 +347,8 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
       BestSequence[0]->GetDetector() != 5 && 
       m_GuaranteeStartD1 == true) {
     RE->SetRejectionReason(MRERawEvent::c_RejectionEventStartNotD1);
-    mout<<"CSR - Sequence: Event starts in not in D1/D5 but in "<<BestSequence[0]->GetDetector()<<endl;
-    mout<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
+    mdebug<<"CSR - Sequence: Event starts in not in D1/D5 but in "<<BestSequence[0]->GetDetector()<<endl;
+    mdebug<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
     return;
   }
  
@@ -359,12 +362,12 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   if (BestSequence[0]->GetType() == MRESE::c_Track && 
       RE->TestElectronDirection(E1, E2) == false) {
     RE->SetRejectionReason(MRERawEvent::c_RejectionElectronDirectionBad);
-    mout<<"CSR - Sequence: Electron direction test failed!"<<endl;
-    mout<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
+    mdebug<<"CSR - Sequence: Electron direction test failed!"<<endl;
+    mdebug<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
     return;
   }
 
-  mout<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
+  mdebug<<"CSR - Sequence: Good event with TS: "<<BestQualityFactor<<endl;
     
   RE->SetComptonQualityFactors(BestQualityFactor, SecondBestQualityFactor);
   RE->SetEventType(MRERawEvent::c_ComptonEvent);

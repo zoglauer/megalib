@@ -1,18 +1,21 @@
 /*
  * MRotation.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -49,12 +52,12 @@ ClassImp(MRotation)
 
 /******************************************************************************
  * Return true if the matrix really is (within tolerances) a rotation matrix
- * i.e. det A = +1, A*A_inv = I
+ * i.e. det A = +1 and orthonormal axes (A^T*A = I)
  */
 bool MRotation::IsRotation(double Tolerance) const
 {
   double Det = GetDeterminant();
-  if (fabs(Det) - 1 > Tolerance) return false;
+  if (fabs(Det - 1.0) > Tolerance) return false;
   
   MRotation Inv = GetInvers();
   MRotation Unity = Inv*(*this);
@@ -70,6 +73,13 @@ bool MRotation::IsRotation(double Tolerance) const
       fabs(Unity.GetXZ()) > Tolerance || 
       fabs(Unity.GetYZ()) > Tolerance) return false;
   
+  // A matrix times its inverse is the identity for every invertible matrix, thus also check that the axes are orthonormal
+  MVector X = GetX();
+  MVector Y = GetY();
+  MVector Z = GetZ();
+  if (fabs(X.Mag() - 1) > Tolerance || fabs(Y.Mag() - 1) > Tolerance || fabs(Z.Mag() - 1) > Tolerance) return false;
+  if (fabs(X.Dot(Y)) > Tolerance || fabs(X.Dot(Z)) > Tolerance || fabs(Y.Dot(Z)) > Tolerance) return false;
+
   return true;
 }
     
@@ -104,11 +114,44 @@ MRotation MRotation::GetInvers() const
     New.SetXZ(GetSubDeterminant(m_XY, m_YY, m_XZ, m_YZ));
     New.SetYZ(GetSubDeterminant(m_YX, m_XX, m_YZ, m_XZ));
     New.SetZZ(GetSubDeterminant(m_XX, m_YX, m_XY, m_YY));
-    New *= Det;
+    New *= 1.0 / Det;
   }
   
   return New;
 } 
+
+
+/******************************************************************************
+ * Make the axes (the columns of the matrix) orthonormal:
+ * The z-axis keeps its direction, the x-axis is made perpendicular to it, and the y-axis is
+ * recalculated from both such that the handedness of the matrix is preserved.
+ * Return false and leave the matrix unchanged if the axes cannot be orthonormalized
+ */
+bool MRotation::Orthonormalize()
+{
+  MVector X = GetX();
+  MVector Z = GetZ();
+
+  double Det = GetDeterminant();
+  if (Det == 0 || Z.Mag() == 0) return false;
+
+  Z.Unitize();
+
+  // Remove the part of the x-axis which is parallel to the z-axis
+  double Parallel = X.Dot(Z);
+  MVector Perpendicular(X.X() - Parallel*Z.X(), X.Y() - Parallel*Z.Y(), X.Z() - Parallel*Z.Z());
+  if (Perpendicular.Mag() <= 1.0E-12*X.Mag()) return false;
+  X = Perpendicular.Unit();
+
+  MVector Y = Z.Cross(X);
+  if (Det < 0) Y = MVector(-Y.X(), -Y.Y(), -Y.Z());
+
+  Set(X.X(), Y.X(), Z.X(),
+      X.Y(), Y.Y(), Z.Y(),
+      X.Z(), Y.Z(), Z.Z());
+
+  return true;
+}
 
 
 /******************************************************************************

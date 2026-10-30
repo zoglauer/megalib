@@ -1,18 +1,21 @@
 /*
  * MSettingsGlobal.cxx
  *
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This code implementation is the intellectual property of
- * Andreas Zoglauer.
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
  *
- * By copying, distributing or modifying the Program (or any work
- * based on the Program) you indicate your acceptance of this statement,
- * and all its terms.
- *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -60,7 +63,6 @@ MSettingsGlobal::MSettingsGlobal()
 
   m_NameMasterNode = "MEGAlib";
   
-  m_LicenseHash = 0;
   m_ChangeLogHash = 0;
   m_FontScaler = "normal";
 }
@@ -134,10 +136,6 @@ bool MSettingsGlobal::ReadXml(MXmlNode* Node)
 
   MXmlNode* aNode = 0;
 
-  if ((aNode = Node->GetNode("LicenseHash")) != 0) {
-    m_LicenseHash = aNode->GetValueAsLong();
-  }
-
   if ((aNode = Node->GetNode("ChangeLogHash")) != 0) {
     m_ChangeLogHash = aNode->GetValueAsLong();
   }
@@ -157,7 +155,6 @@ bool MSettingsGlobal::WriteXml(MXmlNode* Node)
 {
   //! Writes all data to an XML tree
   
-  new MXmlNode(Node, "LicenseHash", m_LicenseHash);
   new MXmlNode(Node, "ChangeLogHash", m_ChangeLogHash);
   new MXmlNode(Node, "FontScaler", m_FontScaler);
   

@@ -26,6 +26,10 @@ clang-format -i MSubModuleDEEIntake.cxx
 
 For new classes, copy and modify an existing one, or use the MModuleTemplate class as tempplate.
 
+## Language
+
+Use US English spelling in code, comments, and documentation, e.g., "Orthonormalize", "color", "behavior", "center", "normalize".
+
 ## Naming
 
 ### Classes
@@ -56,6 +60,27 @@ Variables in functions *should* follow the "upper camel case" convention, e.g.,
 X, DataPoint, IsNonZero
 ```
 
+## Code organization
+
+- Prefer class member functions over free functions. If a helper is tightly related to a class, make it a private, protected, or public member of that class as appropriate.
+- Avoid namespace-scope helper functions when possible, including anonymous-namespace helpers. Use anonymous namespaces only when there is a clear reason the helper cannot reasonably be part of a class.
+- Prefer C++ standard headers and C++ standard-library functionality over C or POSIX headers and functions when practical.
+- Avoid adding C headers such as `<stdio.h>`, `<stdlib.h>`, or POSIX headers such as `<unistd.h>` and `<fcntl.h>` when a suitable C++ header and C++ mechanism exists.
+- If a C or POSIX function is required because the C++ standard library does not provide equivalent semantics, document the reason briefly near the use.
+- If new functionality is useful beyond the class it is written for (a second class needs it, or it would otherwise be copied), put it where all its users can reach it: in the lowest common base class that all of them share, or in a small dedicated class if there is none. Do not copy it into each class, and keep it a member, not a free function.
+- Generalize when the second use appears, not speculatively. Do not widen a base class with something only one derived class needs.
+
+## Conditions and error handling
+
+- Do not rely on implicit truthiness. Write explicit comparisons such as `Flag == true`, `Flag == false`, `Pointer == nullptr`, and `Error.value() != 0`.
+- For recoverable filesystem operations, prefer the `std::error_code` overloads. Print a contextual `merr` message before returning failure unless the failure is expected and intentionally ignored.
+
+## Filesystem safety
+
+- Keep user-facing labels separate from filesystem-safe names. Validate path components instead of silently sanitizing them.
+- Restrict destructive filesystem operations to a validated private root directory. Reject empty paths, traversal outside the root, sibling paths, and symlink escapes.
+- If a mutex protects a non-obvious filesystem race, add a short comment describing the race, such as preventing concurrent teardown while file I/O is in progress.
+
 ## Comments
 
 - Use doxygen-style comments (//!) for classes, member functions, and variables, including a brief description of the method's functionality.
@@ -69,6 +94,131 @@ X, DataPoint, IsNonZero
 - Document all classes and all member functions and variables in the header
 
 - Use single-line comments (//) to explain logic within methods.
+- For non-obvious logic inside methods, document the code in short step-by-step comments directly above the relevant block. The comments should describe the intent of each block, not restate every line.
+  ```cpp
+  bool MString::IsPositiveInteger() const
+  {
+    // Accept a non-negative base-10 integer with optional surrounding
+    // whitespace and an optional leading plus sign. Reject empty strings,
+    // whitespace-only strings, minus signs, decimal points, and trailing text.
+
+    // Strip leading spaces.
+    size_t Begin = 0;
+    while (Begin < m_String.size() && isspace(static_cast<unsigned char>(m_String[Begin])) != 0) {
+      ++Begin;
+    }
+
+    // Strip trailing spaces.
+    size_t End = m_String.size();
+    while (End > Begin && isspace(static_cast<unsigned char>(m_String[End-1])) != 0) {
+      --End;
+    }
+
+    // Reject empty or whitespace-only strings.
+    if (Begin == End) {
+      return false;
+    }
+
+    // Allow one optional leading plus sign.
+    if (m_String[Begin] == '+') {
+      ++Begin;
+      if (Begin == End) {
+        return false;
+      }
+    }
+
+    // The remaining content must be decimal digits only.
+    for (size_t i = Begin; i < End; ++i) {
+      if (isdigit(static_cast<unsigned char>(m_String[i])) == 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+  ```
+- Do not write directly to `cout` or `cerr` in MEGAlib code. Use the MEGAlib stream classes such as `mout`, `mlog`, `merr`, or `mgui` instead, so output can be redirected or disabled consistently.
+
+
+## Comment wording
+
+Comments in MEGAlib are short, factual labels. They name what the next block does or state a fact
+about a variable, and nothing more. Half of the inline comments are 3 words or fewer, and few are
+longer than one line.
+
+### Header (doxygen) comments
+
+- One line, no trailing period.
+- Start with a plain imperative verb: `Return`, `Set`, `Get`, `Add`, `Check if`,
+  `Create`, `Parse`, `Initialize`, `Clone`, `Dump`, `Validate`. Not `Returns` or `Sets`.
+- Member variables get a noun phrase: `The number of ...`, `Number of ...`, `Flag indicating ...`,
+  `List of ...`, `Name of ...`.
+- Yes/no results: `Return true if ...` or `True if ...`.
+- Constructors and destructors: `Default constructor`, `Default destructor`, `Standard constructor`,
+  `Copy constructor`.
+- Classes: `Class representing ...`.
+- Units and allowed values go on the same line, in parentheses or after a colon.
+  ```cpp
+  //! Return the number of data points
+  //! Set the axis in HEALPIX based on a target pixel size (deg)
+  //! Get the binning mode: 0: fixed number of bins, 1: fixed cts per bin, 2: Bayesian block
+  //! True if the clone template has already been written to the geant file
+  //! Flag indicating if the vector is zero
+  ```
+
+### Inline comments in functions
+
+- One short line above the block it describes. Fewer than 1 in 10 inline comments span several lines.
+- Start with an imperative verb, or with `Now`, `First` or `Then` for a sequence:
+  `Open the simulation file:`, `Normalize the response files:`, `Now update the short graph:`,
+  `First we get the key...`
+- End with a colon when the comment introduces the following block, with `...` when the step
+  continues. Otherwise use no punctuation; a final period is rare.
+- Use "We" to describe a condition or decision:
+  `We only continue if the input was valid!`, `We have to distinguish two different cases:`
+- Number the steps of longer procedures: `(1) ...`, `(2) ...`, or `Step 1: ...`.
+- Short comments after code, on the same line, for units or a single fact: `// keV`, `// deg`,
+  `// No spaces allowed`.
+  ```cpp
+  // Open the simulation file:
+  // Loop and search best combination:
+  // Wait until we have a first reconstructed event
+  // We have a random coincidence if we have more than one event in the list:
+  // Remove empty slots from the list - time consuming!
+  ```
+
+### Warnings and markers
+
+- `Attention:` for pitfalls, followed by the fact:
+  `Attention: Dir needs to be a unit vector`, `Attention: This event will be owned and destroyed by this class`,
+  `Attention: Simple, but very inefficient algorithm!`
+- `!` marks something the reader must not miss. Use one `!`, not several.
+- `ToDo:` / `TODO:` for open work: `TODO: Change to AreCoplanar(...)`
+- Empty function bodies: `// Intentionally left blank`
+
+### Rationale
+
+Give a reason only when the code does not make it obvious. Keep it to a short clause after
+` - `, not a new sentence:
+```cpp
+// Wait for a client to connect - we add a random amount to make sure that two instances can connect at the same time
+// Clone this fit - the returned element must be deleted!
+```
+
+### Avoid
+
+These patterns are nearly absent from the older code and should not be introduced:
+
+| Avoid | Usage in the older code | Use instead |
+|---|---|---|
+| Full sentences ending in `.`, several per comment | 8% of inline comments end in `.` | One line, no period |
+| Explanatory paragraphs above a single statement | half are ≤ 3 words | One line naming the step |
+| ` -- ` or `—` between clauses | almost never | ` - ` or a new line |
+| `ensure`, `whether`, `consistent with`, `explicitly`, `therefore`, `so that`, `unless`, `instead` | each in 0.1% of comments or fewer | `make sure`, `if`, `check if`, or drop the word |
+| `Note:`, `NOTE:`, `IMPORTANT:`, `WARNING:` | almost never | `Attention:` |
+| `Returns ...`, `Sets ...` in headers | 54 `Returns` vs. 1231 `Return` | `Return ...`, `Set ...` |
+| Explaining why an alternative was not chosen, or which other functions share this logic | almost never | Leave it out |
+| Backticks or function names like `Foo()` in the text | under 1% | Name the thing in words |
 
 
 ## Formatting
@@ -197,16 +347,33 @@ X, DataPoint, IsNonZero
     m_X ++;  // Incorrect
   ```
 
-- **cout etc.**: White spaces before and after <<, >> are OK but not enforced
+- **MEGAlib streams**: White spaces before and after <<, >> are OK but not enforced
   ```cpp
-    cout<<"Var: "<<V<<endl;        // OK
-    cout << "Var: " << V << endl;  // OK
+    merr<<"Var: "<<V<<endl;        // OK
+    merr << "Var: " << V << endl;  // OK
+  ```
+
+- **Boolean conditions**: Prefer an explicit comparison with true or false over the bare value or the negation operator. This is a preference, not a requirement - existing code which does without it is fine, but mixing both forms within one function is not.
+  ```cpp
+    if (Line.BeginsWith("BD") == true) {   // Preferred
+    if (IsOpen() == false) {               // Preferred
+    if (Line.BeginsWith("BD")) {           // OK
+    if (!IsOpen()) {                       // OK
   ```
 
 ### 7. **Trailing Whitespace**
 
 - **Avoid Trailing Whitespace**: Do not leave trailing spaces at the end of lines. Trailing spaces can cause version control diffs to become unnecessarily cluttered.
 
+
+
+## Bug fixes and the ChangeLog
+
+- Every bug fix which could potentially change results (simulation output, reconstruction, responses, file contents, numbers printed for the user) must be mentioned in `doc/ChangeLog.txt` in the section of the upcoming version.
+- Describe the effect (what was wrong and what changes), not the code change, so that users can judge whether old results are affected.
+- This includes fixes which change the interpretation of input (e.g. units or ranges of keywords).
+- Pure crash, message, or refactoring fixes do not need an entry.
+- Add the entry in the same pull request / check-in as the fix.
 
 
 ## Good C++ practises
@@ -220,8 +387,8 @@ X, DataPoint, IsNonZero
      ```
 
 ### 2. **Use Comments Wisely**
-   - **Comments** should explain **why** something is done, not **what** is done (as the code itself should be self-explanatory).  
-   - Use comments to clarify complex or non-obvious logic and maths, not for every line of code.
+   - Label each logical block with one short line, and explain non-obvious logic and maths.
+   - Do not comment every line, and keep the wording as described in "Comment wording".
    - Example:
      ```cpp
      // Calculate the Compton scatter angle from recoil electron Ee and scattered gamma-ray energy Eg
@@ -284,13 +451,28 @@ X, DataPoint, IsNonZero
      try {
        int Result = Divide(x, y); // Some division function
      } catch (const std::exception& e) {
-       cout<<"Error: "<<e.what()<<endl;
+       merr<<"Error: "<<e.what()<<endl;
      }
      ```
    - The class MExceptions has a wide range of useful exceptions
-   - 
+   - When validating inputs before throwing, prefer the guard form
+     ```cpp
+     if (i >= Values.size()) {
+       throw MExceptionIndexOutOfBounds(0, Values.size(), i);
+     }
 
-### 10. **Avoid Global Variables**
-   - Global variables make your code harder to debug and test. Use local variables or pass parameters to functions instead.
+     return Values[i];
+     ```
+     over
+     ```cpp
+     if (i < Values.size()) return Values[i];
+     throw MExceptionIndexOutOfBounds(0, Values.size(), i);
+     ```
+   - This keeps the error path explicit and the normal return path clean.
+
+### 10. **Avoid Polluting the Top-Level Namespace**
+   - Do not add global variables, file-scope helper functions, global utility functions, or other names in the top-level namespace unless there is a strong reason.
+   - Prefer class member functions and variables or other narrowly scoped solutions so helper logic stays attached to the owning type and does not leak into the global namespace.
+
 
 ### More to follow

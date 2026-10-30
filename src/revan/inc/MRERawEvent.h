@@ -1,11 +1,21 @@
 /*
  * MRERawEvent.h
  *
- * Copyright (C) by Andreas Zoglauer.
- * All rights reserved.
+ * Copyright (C) by the MEGAlib contributors.
  *
- * Please see the source-file for the copyright-notice.
+ * This file is part of MEGAlib.
  *
+ * MEGAlib is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MEGAlib is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+ * License (License.md) for more details.
+ *
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  */
 
 
@@ -87,7 +97,7 @@ class MRERawEvent : public MRESE, public MRotationInterface
   MString GetEventTypeAsString();
   
   //! Set origin information
-  void SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy);
+  void SetOriginInformation(MVector Position, MVector Direction, MVector Polarization, double Energy, int ParticleID = g_IntNotDefined);
   
   
   //! Return the complete energy of this event
@@ -142,8 +152,16 @@ class MRERawEvent : public MRESE, public MRotationInterface
   bool IsDecay() { return m_Decay; }
   void SetDecay(bool Flag = true) { m_Decay = Flag; }
 
-  bool GetExternalBadEventFlag() { return m_ExternalBadEventFlag; }
-  MString GetExternalBadEventString() { return m_ExternalBadEventString; }
+  //! Add a flag indicating why this event is bad
+  void AddBadFlag(const MString& BadFlag) { m_BadFlags.push_back(BadFlag); }
+  //! Return true the if this event is bad
+  bool IsBad() const { return m_BadFlags.size() == 0 ? false : true; }
+  //! Return the number of flags indicating why this event is bad
+  unsigned int GetNBadFlags() const { return m_BadFlags.size(); }
+  //! Return the specific flag indicating why this event is bad -- throws MExceptionIndexOutOfBounds otherwise
+  MString GetBadFlag(unsigned int i) const;
+  //! Return true if this flag is already stored
+  bool HasBadFlag(const MString& BadFlag) const;
 
   //! Set the physical event
   //! We create a local copy, thus Event will not be owned
@@ -326,10 +344,9 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! The rejection reason, if any
   int m_RejectionReason;
 
-  //! External bad event flag has been raised
-  bool m_ExternalBadEventFlag;
-  //! External bad event String
-  MString m_ExternalBadEventString;
+  //! The flags giving the reasons this event is qualified as bad, e.g. read from the input file
+  //! They only accumulate - Init() resets them together with the physical event
+  vector<MString> m_BadFlags;
 
   //! Comments in the event
   vector<MString> m_Comments;
