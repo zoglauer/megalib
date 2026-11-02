@@ -58,6 +58,8 @@ public:
   virtual ~MStreams() {}
   
   void Enable(bool EnableFlag) { TThread::Lock(); m_Streams->Enable(EnableFlag); TThread::UnLock(); }
+  //! Return true if the stream is enabled
+  bool IsEnabled() { TThread::Lock(); const bool Enabled = m_Streams->IsEnabled(); TThread::UnLock(); return Enabled; }
 
   void SetHeader(MString Header) { TThread::Lock(); m_Streams->SetHeader(Header); TThread::UnLock(); }
   void SetPrefix(MString Prefix) { TThread::Lock(); m_Streams->SetPrefix(Prefix); TThread::UnLock(); }
