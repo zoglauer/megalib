@@ -285,13 +285,11 @@ bool MFileEvents::ReadFooter(bool Continue)
   }
 
   MString Line;
-  int NLinesRead = 0;
   while (IsGood() == true) {
     if (ReadLine(Line) == false) {
       break;
     }
 
-    NLinesRead++;
     if (Line.Length() < 2) continue;
 
     if (Line[0] == 'E' && Line[1] == 'N') {
