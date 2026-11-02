@@ -415,6 +415,14 @@ bool MCOrientation::InRange(double Time) const
 //! Find the closest index, always check with InRange(Time) first to avoid exceptions!
 unsigned int MCOrientation::FindClosestIndex(double Time) const
 {
+  // The closest entry for a time within [front, back]
+  auto Closest = [this](double T) -> unsigned int {
+    unsigned int Index = lower_bound(m_Times.begin(), m_Times.end(), T) - m_Times.begin();
+    if (Index == 0) return 0;
+    if (Index >= m_Times.size()) return m_Times.size() - 1;
+    return (T - m_Times[Index-1] <= m_Times[Index] - T) ? Index - 1 : Index;
+  };
+
   if (m_IsLooping == true) {
     if (m_Times.size() == 1) {
       return 0;
@@ -422,10 +430,11 @@ unsigned int MCOrientation::FindClosestIndex(double Time) const
       throw MExceptionEmptyArray("m_Times");
       return 0;
     } else {
-      // Get it in range
-      Time = fabs(fmod(Time - m_Times.front(), m_Times.back() - m_Times.front()));
-      // Find and return the index
-      return lower_bound(m_Times.begin(), m_Times.end(), Time) - m_Times.begin();
+      // Wrap the time into [front, back)
+      double Span = m_Times.back() - m_Times.front();
+      double Relative = fmod(Time - m_Times.front(), Span);
+      if (Relative < 0) Relative += Span;
+      return Closest(m_Times.front() + Relative);
     }    
   } else {
     if (m_Times.size() == 0) {
@@ -436,7 +445,7 @@ unsigned int MCOrientation::FindClosestIndex(double Time) const
       throw MExceptionIndexOutOfBounds();
       return 0;     
     }
-    return lower_bound(m_Times.begin(), m_Times.end(), Time) - m_Times.begin();    
+    return Closest(Time);
   }
   
   
