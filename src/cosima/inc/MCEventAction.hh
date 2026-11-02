@@ -190,7 +190,10 @@ private:
   bool m_RelegateEvents;
   /// The function pointer for relegation
   void (*m_Relegator)(MSimEvent*);
-  
+  ///If you want to set a maximum number of IA
+  bool m_AllowMaxNbofIAs ;
+  /// Maximum number of IA for an event
+  int m_MaxNIAs;
 
   /// True if the events should be reconstructed
   bool m_ReconstructEvents;
