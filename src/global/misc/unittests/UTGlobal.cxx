@@ -118,13 +118,13 @@ bool UTGlobal::Run()
   const MString NoneLog = GetTemporaryFileName("none.log");
   RemoveTemporaryFile(NoneLog);
   Passed = Evaluate("MGlobal::Initialize()", "no MEGALIB status", "Without MEGALIB the initialization fails", RunChild(WithoutMEGAlib, NoneLog), 0) && Passed;
-  Passed = EvaluateTrue("MGlobal::Initialize()", "no MEGALIB message", "Without MEGALIB the initialization says that MEGALIB is not set", ReadTextFile(NoneLog).Contains("MEGALIB is not set")) && Passed;
+  Passed = EvaluateTrue("MGlobal::Initialize()", "no MEGALIB message", "Without MEGALIB the initialization says that MEGALIB is not set", ReadTextFile(NoneLog).Contains("MEGALIB environment variable is not set")) && Passed;
   RemoveTemporaryFile(NoneLog);
 
   const MString EmptyLog = GetTemporaryFileName("empty.log");
   RemoveTemporaryFile(EmptyLog);
   Passed = Evaluate("MGlobal::Initialize()", "empty MEGALIB status", "With an empty MEGALIB the initialization fails", RunChild(EmptyMEGAlib, EmptyLog), 0) && Passed;
-  Passed = EvaluateTrue("MGlobal::Initialize()", "empty MEGALIB message", "With an empty MEGALIB the initialization says that MEGALIB is not set", ReadTextFile(EmptyLog).Contains("MEGALIB is not set")) && Passed;
+  Passed = EvaluateTrue("MGlobal::Initialize()", "empty MEGALIB message", "With an empty MEGALIB the initialization says that MEGALIB is not set", ReadTextFile(EmptyLog).Contains("MEGALIB environment variable is not set")) && Passed;
   RemoveTemporaryFile(EmptyLog);
 
   // With MEGALIB the initialization works - if the environment of this test has it
