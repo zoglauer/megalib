@@ -247,6 +247,16 @@ bool UTStreams::TestStreams()
     Passed = Evaluate("logonly()", "file logging", "logonly flushes to the file without breaking subsequent show calls", ReadTextFile(LogOnlyFileName), MString("OnlyToFile\nShown\n")) && Passed;
   }
 
+  // The enabled state can be read (a local stream, so that mout stays available for the failure diagnostics)
+  {
+    MStreams Stream;
+    Passed = EvaluateTrue("MStreams::IsEnabled()", "default", "A new stream is enabled", Stream.IsEnabled()) && Passed;
+    Stream.Enable(false);
+    Passed = EvaluateFalse("MStreams::IsEnabled()", "disabled", "A disabled stream reports that it is disabled", Stream.IsEnabled()) && Passed;
+    Stream.Enable(true);
+    Passed = EvaluateTrue("MStreams::IsEnabled()", "enabled", "An enabled stream reports that it is enabled", Stream.IsEnabled()) && Passed;
+  }
+
   CleanFile(WrapperFileName);
   CleanFile(LogOnlyFileName);
 
@@ -485,9 +495,12 @@ bool UTStreams::TestGlobalStreamsAndMacros()
     CleanFile(*I);
   }
 
-  mout.DumpToStdOut(true);
-  mout.DumpToStdErr(true);
-  mout.DumpToGui(true);
+  // Back to the defaults of a stream which no program initialized (stdout only): the summary of this test is printed once
+  for (MStreams* Stream: { &mout, &mlog, &mgui, &__merr, &__mdep, &__mimp }) {
+    Stream->DumpToStdOut(true);
+    Stream->DumpToStdErr(false);
+    Stream->DumpToGui(false);
+  }
 
   return Passed;
 }

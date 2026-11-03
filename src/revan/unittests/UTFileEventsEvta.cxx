@@ -21,6 +21,7 @@
 
 // Standard libs:
 #include <sstream>
+#include <vector>
 using namespace std;
 
 // ROOT libs:
@@ -60,6 +61,20 @@ private:
   bool TestSaveOI();
   //! Test parsing of OI lines with and without particle ID
   bool TestOILineParsing();
+  //! Test the AT keyword (accumulated include times)
+  bool TestAccumulatedIncludeTimes();
+  //! Test the AT keyword with an included file whose last event has no hits
+  bool TestAccumulatedIncludeIDsWithEmptyLastEvent();
+
+  //! Write the 1-second fixture with an additional last event without hits (ID 22)
+  bool WriteChildWithEmptyLastEvent(const MString& FileName);
+  //! Test the start and end observation times of a file without TE
+  bool TestObservationTimesWithoutTE();
+
+  //! Write an include master for the three observation-time fixtures with an extra header line
+  bool WriteIncludeMaster(const MString& FileName, const MString& ExtraHeaderLine);
+  //! Read the times and IDs of all events of a sim file through the evta reader
+  void ReadEvents(MGeometryRevan& Geometry, const MString& FileName, vector<double>& Times, vector<long>& IDs);
 
   //! Return the temp directory
   MString GetTempDirectory() const;
@@ -88,6 +103,9 @@ bool UTFileEventsEvta::Run()
   Passed = TestRewindBehavior() && Passed;
   Passed = TestSaveOI() && Passed;
   Passed = TestOILineParsing() && Passed;
+  Passed = TestAccumulatedIncludeTimes() && Passed;
+  Passed = TestAccumulatedIncludeIDsWithEmptyLastEvent() && Passed;
+  Passed = TestObservationTimesWithoutTE() && Passed;
 
   Summarize();
 
@@ -456,6 +474,342 @@ bool UTFileEventsEvta::TestOILineParsing()
     Passed = EvaluateTrue("GetParticleID()", "evta SetOriginInformation default", "SetOriginInformation without particle ID leaves the ID undefined", Without != nullptr && Without->GetParticleID() == g_IntNotDefined) && Passed;
     Passed = EvaluateTrue("GetParticleID()", "evta SetOriginInformation id", "SetOriginInformation stores the particle ID", With != nullptr && With->GetParticleID() == 3) && Passed;
   }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::WriteIncludeMaster(const MString& FileName, const MString& ExtraHeaderLine)
+{
+  ostringstream Content;
+  Content<<"Type       sim"<<endl;
+  Content<<"Version    101"<<endl;
+  Content<<"Geometry   "<<GetGeometryFileName()<<endl;
+  Content<<endl;
+  Content<<"Date       2026-04-20 00:00:00"<<endl;
+  Content<<"MEGAlib    "<<g_VersionString<<endl;
+  if (ExtraHeaderLine.IsEmpty() == false) {
+    Content<<ExtraHeaderLine<<endl;
+  }
+  Content<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_1sec_complete.inc1.id1.sim.gz"<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_2sec_complete.inc1.id1.sim.gz"<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_4sec_complete.inc1.id1.sim.gz"<<endl;
+  Content<<"EN"<<endl;
+  Content<<endl;
+
+  return WriteTextFile(FileName, Content.str().c_str());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void UTFileEventsEvta::ReadEvents(MGeometryRevan& Geometry, const MString& FileName, vector<double>& Times, vector<long>& IDs)
+{
+  Times.clear();
+  IDs.clear();
+
+  MFileEventsEvta Reader(&Geometry);
+  if (Reader.Open(FileName) == false) return;
+
+  MRERawEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    Times.push_back(Event->GetEventTime().GetAsDouble());
+    IDs.push_back((long) Event->GetEventID());
+    delete Event;
+  }
+  Reader.Close();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::TestAccumulatedIncludeTimes()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta AT temp dir", "The temporary directory can be recreated for AT tests", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta AT scan geometry", "The revan geometry can be scanned for AT tests", LoadGeometry(Geometry)) && Passed;
+
+  // Times and IDs of the children read on their own:
+  vector<double> Times1;
+  vector<double> Times2;
+  vector<double> Times4;
+  vector<long> IDs1;
+  vector<long> IDs2;
+  vector<long> IDs4;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz", Times1, IDs1);
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz", Times2, IDs2);
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_4sec_complete.inc1.id1.sim.gz", Times4, IDs4);
+  Passed = EvaluateSize("GetNextEvent()", "evta AT child event count", "The three children hold 21 + 31 + 73 = 125 events", Times1.size() + Times2.size() + Times4.size(), (size_t) 125) && Passed;
+
+  // Expected values without and with the offsets of the preceding children: times 0, 1, 1 + 2 s, event IDs 0, 21, 21 + 31:
+  vector<double> Unshifted;
+  vector<double> Shifted;
+  vector<long> UnshiftedIDs;
+  vector<long> ShiftedIDs;
+  for (size_t i = 0; i < Times1.size(); ++i) {
+    Unshifted.push_back(Times1[i]);
+    Shifted.push_back(Times1[i]);
+    UnshiftedIDs.push_back(IDs1[i]);
+    ShiftedIDs.push_back(IDs1[i]);
+  }
+  for (size_t i = 0; i < Times2.size(); ++i) {
+    Unshifted.push_back(Times2[i]);
+    Shifted.push_back(Times2[i] + 1.0);
+    UnshiftedIDs.push_back(IDs2[i]);
+    ShiftedIDs.push_back(IDs2[i] + 21);
+  }
+  for (size_t i = 0; i < Times4.size(); ++i) {
+    Unshifted.push_back(Times4[i]);
+    Shifted.push_back(Times4[i] + 3.0);
+    UnshiftedIDs.push_back(IDs4[i]);
+    ShiftedIDs.push_back(IDs4[i] + 52);
+  }
+
+  // AT true:
+  MString MasterTrue = GetTempDirectory() + "/ObsTime_AT_true.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "evta AT true fixture", "The include master with AT true can be written", WriteIncludeMaster(MasterTrue, "AT         true")) && Passed;
+
+  {
+    MFileEventsEvta Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "evta AT true open", "The include master with AT true opens in the evta reader", Reader.Open(MasterTrue)) && Passed;
+    Passed = EvaluateTrue("HasAccumulatedIncludeTimes()", "evta AT true flag", "The AT true header line sets the accumulated include times flag", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Passed = EvaluateNear("GetIncludeTimeOffset()", "evta AT true initial offset", "The include time offset starts at zero", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+
+    vector<double> Times;
+    vector<long> IDs;
+    MRERawEvent* Event = nullptr;
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      Times.push_back(Event->GetEventTime().GetAsDouble());
+      IDs.push_back((long) Event->GetEventID());
+      delete Event;
+    }
+    Passed = EvaluateSize("GetNextEvent()", "evta AT true event count", "All 125 events of the children are read with AT true", Times.size(), Shifted.size()) && Passed;
+    if (Times.size() == Shifted.size()) {
+      for (size_t i = 0; i < Times.size(); ++i) {
+        ostringstream Input;
+        Input<<"evta AT true event "<<i;
+        Passed = EvaluateNear("GetEventTime()", Input.str().c_str(), "The event time is offset by the observation time of the preceding children", Times[i], Shifted[i], 1e-9) && Passed;
+        Passed = Evaluate("GetEventID()", Input.str().c_str(), "The event ID is offset by the last event ID of the preceding children", IDs[i], ShiftedIDs[i]) && Passed;
+      }
+    }
+    bool Monotonic = true;
+    for (size_t i = 1; i < Times.size(); ++i) {
+      if (Times[i] < Times[i-1]) Monotonic = false;
+    }
+    Passed = EvaluateTrue("GetEventTime()", "evta AT true monotonic", "With AT true the event times never decrease across the included files", Monotonic) && Passed;
+    Passed = EvaluateNear("GetIncludeTimeOffset()", "evta AT true final offset", "After all children are closed the offset is the sum of their observation times", Reader.GetIncludeTimeOffset().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeIDOffset()", "evta AT true final ID offset", "After all children are closed the ID offset is the last event ID", Reader.GetIncludeIDOffset(), 125L) && Passed;
+    Passed = EvaluateFalse("HasEndObservationTime()", "evta AT true end time", "An include master without TE has no end observation time of its own", Reader.HasEndObservationTime()) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "evta AT true observation time", "The observation time still sums across the included files", Reader.GetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+
+    Passed = EvaluateTrue("Rewind()", "evta AT true rewind", "The include master with AT true can be rewound", Reader.Rewind()) && Passed;
+    Passed = EvaluateNear("GetIncludeTimeOffset()", "evta AT true rewind offset", "Rewinding resets the include time offset", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeIDOffset()", "evta AT true rewind ID offset", "Rewinding resets the include ID offset", Reader.GetIncludeIDOffset(), 0L) && Passed;
+    Event = Reader.GetNextEvent();
+    Passed = EvaluateTrue("GetNextEvent()", "evta AT true rewind first event", "After rewinding the first event can be read again", Event != nullptr) && Passed;
+    if (Event != nullptr && Shifted.empty() == false) {
+      Passed = EvaluateNear("GetEventTime()", "evta AT true rewind first time", "After rewinding the first event is unshifted again", Event->GetEventTime().GetAsDouble(), Shifted[0], 1e-9) && Passed;
+      delete Event;
+    }
+    Reader.Close();
+  }
+
+  // AT false:
+  MString MasterFalse = GetTempDirectory() + "/ObsTime_AT_false.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "evta AT false fixture", "The include master with AT false can be written", WriteIncludeMaster(MasterFalse, "AT         false")) && Passed;
+
+  {
+    MFileEventsEvta Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "evta AT false open", "The include master with AT false opens in the evta reader", Reader.Open(MasterFalse)) && Passed;
+    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "evta AT false flag", "The AT false header line leaves the accumulated include times flag unset", Reader.HasAccumulatedIncludeTimes()) && Passed;
+
+    vector<double> Times;
+    vector<long> IDs;
+    MRERawEvent* Event = nullptr;
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      Times.push_back(Event->GetEventTime().GetAsDouble());
+      IDs.push_back((long) Event->GetEventID());
+      delete Event;
+    }
+    Passed = EvaluateSize("GetNextEvent()", "evta AT false event count", "All 125 events of the children are read with AT false", Times.size(), Unshifted.size()) && Passed;
+    if (Times.size() == Unshifted.size()) {
+      for (size_t i = 0; i < Times.size(); ++i) {
+        ostringstream Input;
+        Input<<"evta AT false event "<<i;
+        Passed = EvaluateNear("GetEventTime()", Input.str().c_str(), "The event time is not offset with AT false", Times[i], Unshifted[i], 1e-9) && Passed;
+        Passed = Evaluate("GetEventID()", Input.str().c_str(), "The event ID is not offset with AT false", IDs[i], UnshiftedIDs[i]) && Passed;
+      }
+    }
+    Passed = EvaluateNear("GetIncludeTimeOffset()", "evta AT false final offset", "The include time offset stays zero with AT false", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeIDOffset()", "evta AT false final ID offset", "The include ID offset stays zero with AT false", Reader.GetIncludeIDOffset(), 0L) && Passed;
+    Passed = EvaluateFalse("HasEndObservationTime()", "evta AT false end time", "An include master without TE has no end observation time of its own", Reader.HasEndObservationTime()) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "evta AT false observation time", "The observation time sums across the included files with AT false", Reader.GetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  // No AT line:
+  MString MasterNone = GetTempDirectory() + "/ObsTime_AT_none.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "evta AT none fixture", "The include master without AT can be written", WriteIncludeMaster(MasterNone, "")) && Passed;
+
+  {
+    MFileEventsEvta Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "evta AT none open", "The include master without AT opens in the evta reader", Reader.Open(MasterNone)) && Passed;
+    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "evta AT none flag", "Without an AT header line the accumulated include times flag is unset", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::WriteChildWithEmptyLastEvent(const MString& FileName)
+{
+  MFile In;
+  if (In.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz") == false) return false;
+
+  ostringstream Content;
+  MString Line;
+  while (In.ReadLine(Line) == true) {
+    if (Line.BeginsWith("EN") == true) {
+      Content<<"SE"<<endl;
+      Content<<"ID 22 309"<<endl;
+      Content<<"TI 0.95"<<endl;
+    }
+    Content<<Line<<endl;
+  }
+  In.Close();
+
+  return WriteTextFile(FileName, Content.str().c_str());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::TestAccumulatedIncludeIDsWithEmptyLastEvent()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta AT empty last event temp dir", "The temporary directory can be recreated for the empty last event test", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta AT empty last event geometry", "The revan geometry can be scanned for the empty last event test", LoadGeometry(Geometry)) && Passed;
+
+  MString Child1 = GetTempDirectory() + "/ObsTime_1sec_empty_last.sim";
+  MString Child2 = GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz";
+  Passed = EvaluateTrue("WriteTextFile()", "evta AT empty last event child", "The child with an empty last event can be written", WriteChildWithEmptyLastEvent(Child1)) && Passed;
+
+  // Child with the empty last event read on its own:
+  vector<double> Times1;
+  vector<long> IDs1;
+  {
+    MFileEventsEvta Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "evta AT empty last event child open", "The child with an empty last event opens", Reader.Open(Child1)) && Passed;
+    MRERawEvent* Event = nullptr;
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      IDs1.push_back((long) Event->GetEventID());
+      delete Event;
+    }
+    Passed = Evaluate("GetLastEventID()", "evta AT empty last event child last ID", "The last read event ID is the ID of the dropped empty last event", Reader.GetLastEventID(), 22L) && Passed;
+    Passed = EvaluateTrue("GetNextEvent()", "evta AT empty last event child dropped", "The empty last event is not returned", IDs1.empty() == false && IDs1.back() < 22) && Passed;
+    Reader.Close();
+  }
+
+  vector<double> Times2;
+  vector<long> IDs2;
+  ReadEvents(Geometry, Child2, Times2, IDs2);
+
+  ostringstream Content;
+  Content<<"Type       sim"<<endl;
+  Content<<"Version    101"<<endl;
+  Content<<"Geometry   "<<GetGeometryFileName()<<endl;
+  Content<<"AT         true"<<endl;
+  Content<<endl;
+  Content<<"IN "<<Child1<<endl;
+  Content<<"IN "<<Child2<<endl;
+  Content<<"EN"<<endl;
+  MString Master = GetTempDirectory() + "/ObsTime_AT_empty_last.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "evta AT empty last event master", "The include master can be written", WriteTextFile(Master, Content.str().c_str())) && Passed;
+
+  MFileEventsEvta Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "evta AT empty last event master open", "The include master opens", Reader.Open(Master)) && Passed;
+
+  vector<long> IDs;
+  MRERawEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    IDs.push_back((long) Event->GetEventID());
+    delete Event;
+  }
+  Passed = EvaluateSize("GetNextEvent()", "evta AT empty last event count", "The master yields the returned events of both children", IDs.size(), IDs1.size() + IDs2.size()) && Passed;
+  if (IDs.size() == IDs1.size() + IDs2.size()) {
+    for (size_t i = 0; i < IDs2.size(); ++i) {
+      ostringstream Input;
+      Input<<"evta AT empty last event, second child event "<<i;
+      Passed = Evaluate("GetEventID()", Input.str().c_str(), "The event IDs of the second child continue after the dropped empty last event of the first child", IDs[IDs1.size() + i], IDs2[i] + 22) && Passed;
+    }
+  }
+  Passed = Evaluate("GetIncludeIDOffset()", "evta AT empty last event final ID offset", "The final ID offset is the sum of the last event IDs of both children", Reader.GetIncludeIDOffset(), 53L) && Passed;
+  Reader.Close();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::TestObservationTimesWithoutTE()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta no TE temp dir", "The temporary directory can be recreated for the test without TE", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta no TE geometry", "The revan geometry can be scanned for the test without TE", LoadGeometry(Geometry)) && Passed;
+
+  // Copy of the 1-second fixture without the TE line:
+  MString FileName = GetTempDirectory() + "/ObsTime_1sec_noTE.sim";
+  MFile In;
+  bool Opened = In.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz");
+  Passed = EvaluateTrue("Open()", "evta no TE fixture source", "The 1-second fixture opens", Opened) && Passed;
+  ostringstream Content;
+  if (Opened == true) {
+    MString Line;
+    while (In.ReadLine(Line) == true) {
+      if (Line.BeginsWith("TE") == true) continue;
+      Content<<Line<<endl;
+    }
+    In.Close();
+  }
+  Passed = EvaluateTrue("WriteTextFile()", "evta no TE fixture", "The fixture without TE can be written", WriteTextFile(FileName, Content.str().c_str())) && Passed;
+
+  MFileEventsEvta Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "evta no TE open", "The fixture without TE opens", Reader.Open(FileName)) && Passed;
+
+  vector<double> Times;
+  MRERawEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    Times.push_back(Event->GetEventTime().GetAsDouble());
+    delete Event;
+  }
+  Passed = EvaluateTrue("GetNextEvent()", "evta no TE events", "Events are read from the fixture without TE", Times.empty() == false) && Passed;
+  Passed = EvaluateTrue("HasEndObservationTime()", "evta no TE end flag", "Without TE the end observation time is taken from the events", Reader.HasEndObservationTime()) && Passed;
+  if (Times.empty() == false) {
+    Passed = EvaluateNear("GetEndObservationTime()", "evta no TE end time", "Without TE the end observation time is the time of the last event", Reader.GetEndObservationTime().GetAsDouble(), Times.back(), 1e-9) && Passed;
+  }
+  Reader.Close();
 
   return Passed;
 }

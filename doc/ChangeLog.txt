@@ -3,21 +3,35 @@
 ******************************************************************************
 
 
-Version 4.9x/5.00
-=================
+Version 4.99 (5.0 alpha)
+========================
+
+This is the development version leading up to MEGAlib 5.0.
+
+General:
++ Added end-to-end tests (ET*, src/endtoend/tests) that run cosima, revan, and mimrec on small scenarios and compare the results with independent expectations and reference tables (resource/endtoend). The tests use the new libEndToEnd framework (src/endtoend/framework).
++ Added testdrive, a test driver that runs unit and end-to-end tests in parallel, displays a dashboard, scales timeouts to the machine's speed, and produces logs and a summary PDF. Reference tables can be generated with testdrive --reference-campaign.
++ Fixed the histogram full width at half maximum used in end-to-end spectrum tests: it now returns zero if either half-maximum crossing is missing. Previously, it returned the full histogram width.
+
+Global library:
++ MString: GetHash() now uses 64-bit FNV-1a, producing the same hash across machines and locales. This changes the stored hash of the change log once, causing it to be displayed again.
++ MProcessManager: Added a class for starting child processes in the background, waiting with a timeout, and running programs in parallel in separate process groups. It stops process groups when their timeout expires and stops all managed processes if the parent program is interrupted. Process functions previously in MSystem have moved to this class.
++ MStatistics: Added a class for statistics on lists of values, including mean, standard deviation, median and its uncertainty, quantiles, robust sigma, containment, binned and unbinned peak positions, full width at a fraction of the maximum, bootstrap uncertainties, and significances for ratios and proportions.
++ MStreams: Added IsEnabled() to query whether a stream is enabled.
++ MGlobal: Initialize() now fails with a clear message if the MEGALIB environment variable is not set.
 
 Geomega:
 + Rewrite of the detector effects engine
++ MDGeometry: GetHash() now hashes the contents of the geometry file and all included files.
 
-Cosima:
+Cosima / Sivan:
 + Enable Geant4 11.2
++ Added the sim file header keyword "AT true" to accumulate event times and IDs across included files, so each file continues where the previous one ended.
++ Added the mcosima option "-c" to insert the AT keyword into the concatenation file.
++ Orientation files now use the entry closest to the event time. Previously, they used the first entry at or after that time, which could select a pointing up to one sampling interval too late. This fix was backported from develop-cosi-dc6.
 
 Response:
-+ HEALPix for spherical coordinates 
-
-
-
-
++ HEALPix for spherical coordinates
 
 
 

@@ -1,9 +1,7 @@
 #----------------------------------------------------------------
 #
-# Makefile of the end-to-end tests
+# Makefile of the end-to-end testing: the framework (library libEndToEnd with the test driver) and the tests
 #
-# Every ET*.cxx in this directory is a program which is placed in bin/
-# The tests need the programs cosima, revan, and mimrec at run time (they fail, not skip, without them), the build only needs the common libraries
 #
 # Copyright (C) by the MEGAlib contributors.
 #
@@ -24,61 +22,23 @@
 #----------------------------------------------------------------
 
 
-#----------------------------------------------------------------
-# Definitions:
-#
+.PHONY: all tests lib link clean
 
-LIBRARIES := -lSivan -lGeomega -lCommonMisc -lCommonGui
-CXX_ET := $(wildcard src/ET*.cxx)
-EXE_ET := $(patsubst src/%.cxx,$(BN)/%,$(CXX_ET))
-# The test driver and its calibration: the programs are named in lower case like the main MEGAlib programs, the source files are named after their class
-EXE_DRIVER := $(BN)/testdrive $(BN)/testdrivercalibration
-CXX_UT := $(wildcard unittests/UT*.cxx)
-EXE_UT := $(patsubst unittests/%.cxx,$(BN)/%,$(CXX_UT))
-EXE_UT_DRIVER := $(BN)/UTTestDriver
-EXE_UT_ET := $(filter-out $(EXE_UT_DRIVER),$(EXE_UT))
+all:
+	@$(MAKE) -C framework
+	@$(MAKE) -C tests
 
-
-#----------------------------------------------------------------
-# Commands:
-#
-
-all: $(EXE_ET) $(EXE_DRIVER)
-
-tests: $(EXE_ET) $(EXE_DRIVER) $(EXE_UT)
+tests:
+	@$(MAKE) tests -C framework
+	@$(MAKE) tests -C tests
 
 lib:
+	@$(MAKE) lib -C framework
 
 link:
-	@$(LINK) $(shell pwd)/inc/*.h $(IN)
+	@$(MAKE) link -C framework
+	@$(MAKE) link -C tests
 
 clean:
-	@rm -f $(EXE_ET) $(EXE_DRIVER) $(EXE_UT)
-
-
-#----------------------------------------------------------------
-# Dependencies:
-#
-
-$(EXE_ET): $(BN)/%: src/%.cxx inc/%.h src/MEndToEndTest.cxx inc/MEndToEndTest.h $(LB)/libSivan.$(DLL)
-	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< src/MEndToEndTest.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
-
-$(BN)/testdrive: src/TestDriver.cxx src/MTestDriver.cxx inc/MTestDriver.h $(LB)/libCommonMisc.$(DLL)
-	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) src/TestDriver.cxx src/MTestDriver.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
-
-$(BN)/testdrivercalibration: src/TestDriverCalibration.cxx inc/TestDriverCalibration.h src/MEndToEndTest.cxx inc/MEndToEndTest.h $(LB)/libSivan.$(DLL)
-	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) src/TestDriverCalibration.cxx src/MEndToEndTest.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
-
-$(EXE_UT_DRIVER): $(BN)/%: unittests/%.cxx src/MTestDriver.cxx inc/MTestDriver.h $(LB)/libCommonMisc.$(DLL)
-	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< src/MTestDriver.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
-
-$(EXE_UT_ET): $(BN)/%: unittests/%.cxx src/MEndToEndTest.cxx inc/MEndToEndTest.h $(LB)/libSivan.$(DLL)
-	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(CXXFLAGS) $(LDFLAGS) $< src/MEndToEndTest.cxx $(LIBRARIES) $(GLIBS) $(LIBS) -o $@
-
-#
-#----------------------------------------------------------------
+	@$(MAKE) clean -C framework
+	@$(MAKE) clean -C tests

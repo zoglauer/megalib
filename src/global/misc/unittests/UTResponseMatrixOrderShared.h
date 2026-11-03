@@ -28,6 +28,7 @@
 // MEGAlib:
 #include "MFile.h"
 #include "MStreams.h"
+#include "MProcessManager.h"
 #include "MSystem.h"
 #include "MUnitTest.h"
 
@@ -40,7 +41,7 @@
 
 inline bool RunInvalidAxisUnitTest(const MString& Executable, const MString& Argument)
 {
-  int Status = MSystem::RunProcess(Executable, Argument, "/dev/null");
+  int Status = MProcessManager::Run(Executable, Argument, "/dev/null");
   if (Status < 0) {
     return false;
   }

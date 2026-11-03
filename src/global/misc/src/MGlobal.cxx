@@ -142,6 +142,13 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
     return true;
   }
 
+  // MEGAlib requires the MEGALIB environment variable to be set
+  const char* MEGAlib = getenv("MEGALIB");
+  if (MEGAlib == nullptr || MString(MEGAlib).IsEmpty() == true) {
+    cout<<"INITIALIZATION ERROR: The MEGALIB environment variable is not set."<<endl;
+    return false;
+  }
+
 #ifdef DEBUG1
   g_Verbosity = 1;
 #endif
