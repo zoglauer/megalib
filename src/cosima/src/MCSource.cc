@@ -3637,8 +3637,7 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
     if (CLHEP::RandFlat::shoot(1) < m_PolarizationDegree) {
       if (m_PolarizationType == c_PolarizationAbsolute) {
         m_Polarization.set(m_PolarizationParam1, m_PolarizationParam2, m_PolarizationParam3);
-      }
-      if (m_PolarizationType == c_PolarizationGalactic) {
+      } else if (m_PolarizationType == c_PolarizationGalactic) {
       
         //get the Earth aspect information from the orientation file
         const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
