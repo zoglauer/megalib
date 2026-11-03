@@ -58,6 +58,48 @@ in parallel with other tests, and pin the geometry, source, event count,
 seed, Geant4 physics list, and ROOT version.
 ```
 
+### Running the end-to-end tests and the reference campaign by hand:
+
+Run all end-to-end tests (or selected ones) with the test driver; it writes
+a merged PDF report and the logs into the log directory it prints:
+
+```
+testdrive --endtoend
+testdrive --endtoend ETCosimaToMimrecEnergyResolution
+```
+
+Four end-to-end tests (energy resolution, thresholds, angular resolution,
+position resolution) compare their results with reference tables in
+`resource/endtoend/<Test>.references.tsv`. The tables are made by a
+reference campaign: many independent runs (default 50) of each test, from
+which the mean, the error, the scatter, and the calibration of the
+bootstrap errors of every observable are derived. Regenerate them when
+something changes which really changes the values: a new Geant4 or ROOT
+version, a change of the detector effects engine, the geometry, or the
+scenarios of a test. The test warns if the recorded environment differs.
+
+```
+testdrive --reference-campaign                  # all tests with a references file
+testdrive -r ETCosimaToMimrecThresholds         # selected tests
+testdrive -r --runs 50 --timeout 900            # more runs, longer time-out per run
+testdrive -r --install --reason "Geant4 11.2"   # install the references if there is no error
+```
+
+* Without `--install` the candidates and a PDF report per test are only
+  written into `<log directory>/campaign`; read the report first.
+* A campaign always starts over: the directory of every run is emptied
+  before the run starts, so a campaign which was stopped (Ctrl-C, reboot)
+  is made again completely by calling the same command. Use
+  `--campaign-dir` for a different directory, `--seed` for another base
+  seed.
+* Errors block the installation (too few runs, `--minimum-runs`, failed
+  checks, different environments, missing values); warnings (scatter and
+  bootstrap error disagree, outliers, drift) have to be read.
+* The runs are CPU heavy and run in parallel: do not use the machine for
+  other things, and use a long `--timeout` on small machines.
+* Afterwards run `testdrive --endtoend` again a few times, and commit the
+  changed tables with the reason in a dedicated commit.
+
 ### Information for AIs
 
 This document captures the rules and patterns that govern every unit,
@@ -224,7 +266,7 @@ EnableDefaultStreams();
 
 1. Locate committed test data via the `$MEGALIB` environment variable. Never hard-code absolute paths.
 2. If `$MEGALIB` is unset in a unit test, skip the data-dependent sub-test with an `mout` notice and return `Passed` (true) — local builds must not fail because optional data is unavailable.
-3. End-to-end regression tests treat the data as required: if `$MEGALIB` is set but the input file is missing, the test fails.
+3. End-to-end regression tests treat the data as required: if `$MEGALIB` is set but the input file is missing, the test fails. The end-to-end programs (`ET*`, `testdrive`) and the unit tests of the end-to-end tests call `MGlobal::Initialize()` in `main()`, which fails if `$MEGALIB` is not set, so they do not skip.
 4. Test-generated fixture files (small files the test writes itself) live under the private randomized temporary root managed by `MUnitTest`, never in the source tree. Use the guarded `MUnitTest` helpers instead of constructing raw `/tmp/...` paths, adding `getpid()` suffixes, invoking shell cleanup commands, or removing files directly:
 
 ```cpp
@@ -259,6 +301,7 @@ Passed = EvaluateTrue("RemoveTemporaryFile()", "fixture",
 3. A failure must report which observable drifted and by how much.
 4. Keep end-to-end inputs small enough that one test runs in under a minute.
 5. An end-to-end test reads the files of the chain with the MEGAlib readers (`MFileEventsSim`, `MFileEventsTra`, ...): reading them is part of what is tested. Independent expectations come from the physics, the flux, the geometry, and the truth in the sim file, not from private re-implementations of the file formats.
+6. Reference tables of statistical end-to-end tests are never edited by hand: they are made by `testdrive --reference-campaign` (see "Running the end-to-end tests and the reference campaign by hand") and carry the Geant4, ROOT, geometry, and scenario fingerprint of the run which made them. Regenerate them in a dedicated commit when the environment or the physics changes intentionally.
 
 ## Physics Validation Tests
 1. Compare MC output against an analytic result where one exists (e.g., Klein-Nishina, photoelectric cross-sections, attenuation lengths).
@@ -362,5 +405,5 @@ Passed = EvaluateFalse("Initialize()", "missing file", "Initialization fails whe
 4. A silently skipped test is a failure.
 5. Unit-test source files, binaries, and suite names use the `UT<ClassNameWithoutLeadingM>` convention, e.g. `MIsotope` -> `UTIsotope.cxx`, `bin/UTIsotope`, and `MUnitTest("UTIsotope")`.
 6. In directories that use the standard unit-test makefile pattern, adding a `unittests/*.cxx` source file is sufficient to register a new unit test.
-7. End-to-end tests (tier 3) live in `src/endtoend/`. They are classes `ET<Chain><Topic>` with a header `inc/ET<Chain><Topic>.h` (which also holds the description of the test) and a program `src/ET<Chain><Topic>.cxx` that derive from `MEndToEndTest` (`src/endtoend`), which derives from `MUnitTest`. An end-to-end test runs a chain of MEGAlib programs on a scenario in a private directory and checks the result at the end of the chain against independent expectations. The chain can start with a simulation or with real or stored data, and it can contain any programs. Its name is `ET`, then the chain from its first to its last program, then the topic that is checked. For example, `ETCosimaToMimrecSpectrum` simulates with cosima, reconstructs with revan, and analyzes the spectrum with mimrec. A test whose scenarios use random numbers (e.g. simulations) chooses a random seed per scenario, prints it, and must pass for every seed. A test which starts from fixed data has no seed and is deterministic. `make tests` builds them, and `testdrive` (`src/endtoend`, class `MTestDriver`) runs them with `--all` (`-a`) or `--endtoend` (`-e`); tests named on the command line always run, and the unit tests are the default. A scenario should take under 60 seconds. The time limits scale with the speed of the machine. The program `testdrivercalibration` (`src/endtoend`, no test) runs a small fixed chain cosima -> revan -> mimrec twice and stores a hash of the CPU model, the number of cores, and the MEGAlib version (`MachineId`), plus the ratio of the faster time to the time on the reference machine (`MachineSlowdown`, below 1 is faster), in `~/.testdrive.cfg`. `testdrive` starts it before the first test if end-to-end tests run and the stored `MachineId` is not the one of this machine and this version, and always with `--calibrate` (`-c`); the tests then get the time out `Timeout * MachineSlowdown`. An end-to-end test does not split its time out into fractions: every program may use what remains of the time out of the test (`GetRemainingTimeBudget()`). As with all tests, a missing program or data file is a failure, not a skip. Physics validation tests (tier 4) and anything slower than that have their own runner. A change that touches simulation, reconstruction, or imaging must run the relevant end-to-end tier before merge.
+7. End-to-end tests (tier 3) live in `src/endtoend/tests/`, the framework which they use in `src/endtoend/framework/` (with its unit tests in `unittests/`). They are classes `ET<Chain><Topic>` with a header `inc/ET<Chain><Topic>.h` (which also holds the description of the test) and a program `src/ET<Chain><Topic>.cxx` that derive from `MEndToEndTest` (`src/endtoend/framework`), which derives from `MUnitTest`. An end-to-end test runs a chain of MEGAlib programs on a scenario in a private directory and checks the result at the end of the chain against independent expectations. The chain can start with a simulation or with real or stored data, and it can contain any programs. Its name is `ET`, then the chain from its first to its last program, then the topic that is checked. For example, `ETCosimaToMimrecSpectrum` simulates with cosima, reconstructs with revan, and analyzes the spectrum with mimrec. A test whose scenarios use random numbers (e.g. simulations) chooses a random seed per scenario, prints it, and must pass for every seed. A test which starts from fixed data has no seed and is deterministic. `make tests` builds them, and `testdrive` (`src/endtoend/framework`, class `MTestDriver`) runs them with `--all` (`-a`) or `--endtoend` (`-e`); tests named on the command line always run, and the unit tests are the default. A scenario should take under 60 seconds. The time limits scale with the speed of the machine. The program `testdrivercalibration` (`src/endtoend/framework`, no test) runs a small fixed chain cosima -> revan -> mimrec twice and stores a hash of the CPU model, the number of cores, and the MEGAlib version (`MachineId`), plus the ratio of the faster time to the time on the reference machine (`MachineSlowdown`, below 1 is faster), in `~/.testdrive.cfg`. `testdrive` starts it before the first test if end-to-end tests run and the stored `MachineId` is not the one of this machine and this version, and always with `--calibrate` (`-c`); the tests then get the time out `Timeout * MachineSlowdown`. The driver and the reference campaign start the test programs through `MProcessManager` (`src/global/misc`), which runs them in their own process groups, stops a program with its group at its time out, and stops all of them if the driver is interrupted; nothing else in the test code starts, waits for, or kills a process. An end-to-end test does not split its time out into fractions: every program may use what remains of the time out of the test (`GetRemainingTimeBudget()`). As with all tests, a missing program or data file is a failure, not a skip. Physics validation tests (tier 4) and anything slower than that have their own runner. A change that touches simulation, reconstruction, or imaging must run the relevant end-to-end tier before merge.
 8. Each unit test program is expected to run in under 60 seconds. This is not enforced, but a test which needs longer must be made smaller or moved out of the unit-test harness. Time-outs for external programs started by a test are at most 100 seconds (see section "External Programs in Tests").
