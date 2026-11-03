@@ -261,7 +261,9 @@ bool UTSupervisor::Run()
 
 MString UTSupervisor::GetGeometryFixtureName() const
 {
-  return MString(gSystem->pwd()) + "/resource/examples/geomega/special/Max.geo.setup";
+  MString FileName = "$(MEGALIB)/resource/examples/geomega/special/Max.geo.setup";
+  MFile::ExpandFileName(FileName);
+  return FileName;
 }
 
 

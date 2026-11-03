@@ -23,6 +23,7 @@
 #include <csignal>
 
 // MEGAlib:
+#include "MFile.h"
 #include "MExceptions.h"
 #include "MProcessManager.h"
 #include "MSystem.h"
@@ -367,7 +368,8 @@ int main(int argc, char** argv)
     }
   }
 
-  UTExceptions::BinaryPath() = argv[0];
+  UTExceptions::BinaryPath() = "$(MEGALIB)/bin/UTExceptions";
+  MFile::ExpandFileName(UTExceptions::BinaryPath());
   UTExceptions Test;
   return Test.Run() == true ? 0 : 1;
 }

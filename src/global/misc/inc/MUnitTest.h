@@ -48,11 +48,20 @@ using namespace std;
 class MVector;
 class MRotation;
 
+//! Mark one check as a known failure, see MUnitTest
+#define ExpectedToFail(...) (BeginExpectedFailureMode(), __VA_ARGS__, EndExpectedFailureMode())
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! The base class for unit testing
+//!
+//! Known failures: a check of a not yet fixed bug is wrapped with the ExpectedToFail() macro, e.g.
+//!   Passed = ExpectedToFail(Evaluate("Foo()", "input", "description", Output, Truth)) && Passed;
+//! A failing check is reported as KNOWN FAILURE and does not fail the test,
+//! a passing check is reported as UNEXPECTED PASS and fails it.
+//! Wrap exactly one check; the macro only works inside member functions of derived classes.
 class MUnitTest
 {
   // public interface:
@@ -74,7 +83,7 @@ class MUnitTest
       return false;
     }
     
-    RegisterSuccess();
+    RegisterSuccess(Function, Input, Description);
     return true;
   }
 
@@ -102,7 +111,7 @@ class MUnitTest
       return false;
     }
 
-    RegisterSuccess();
+    RegisterSuccess(Function, Input, Description);
     return true;
   }
 
@@ -130,7 +139,7 @@ class MUnitTest
     try {
       Callable();
     } catch (const TException&) {
-      RegisterSuccess();
+      RegisterSuccess(Function, Input, Description);
       return true;
     } catch (const std::exception& Exception) {
       ostringstream ExpectedStream;
@@ -177,8 +186,26 @@ class MUnitTest
 
   // protected methods:
  protected:
-  //! Register a passed test
-  void RegisterSuccess() { ++m_NumberOfPassedTests; }
+  //! Register a passed test; inside ExpectedToFail() it is reported and counted as an unexpected pass
+  template <typename T> void RegisterSuccess(MString Function, T Input, MString Description) {
+    if (m_IsExpectedFailureModeActive == true) {
+      ++m_NumberOfExpectedFailureModeChecks;
+      m_HasUnexpectedPass = true;
+      mout<<endl;
+      mout<<"UNEXPECTED PASS: "<<Function<<"  <-- "<<Input<<endl;
+      mout<<"   Description: "<<Description<<endl;
+      mout<<"   The check passes now: remove ExpectedToFail()"<<endl;
+      mout<<endl;
+      ++m_NumberOfFailedTests;
+    } else {
+      ++m_NumberOfPassedTests;
+    }
+  }
+
+  //! Start the expected-failure mode - use the ExpectedToFail() macro instead of calling this directly
+  void BeginExpectedFailureMode();
+  //! End the expected-failure mode; returns true if the check in it failed - use the ExpectedToFail() macro instead of calling this directly
+  bool EndExpectedFailureMode();
 
   //! Return the unit test name
   const MString& GetName() const { return m_Name; }
@@ -211,7 +238,7 @@ class MUnitTest
   //! Return a process-local temporary directory name for this test; the directory is not created
   MString GetTemporaryDirectoryName(const MString& Name = "") const;
 
-  //! Remove and recreate a process-local temporary directory for this test, the root itself (no name) is only cleared
+  //! Remove and recreate a process-local temporary directory for this test, the root itself (no name) is only cleared (except the temporary HOME)
   bool PrepareTemporaryDirectory(const MString& Name = "") const;
 
   //! Remove a temporary file only if it is inside this test's randomized temporary root
@@ -220,16 +247,25 @@ class MUnitTest
   //! Recursively remove a temporary directory only if it is inside this test's randomized temporary root; an empty name removes the root itself
   bool RemoveTemporaryDirectory(const MString& DirectoryName = "") const;
 
-  //! Register and report a failed test
+  //! Register and report a failed test; inside ExpectedToFail() it is reported and counted as a known failure
   template <typename T> void RegisterFailure(MString Function, T Input, MString Description, MString Expected, MString Output) {
     mout<<endl;
-    mout<<"FAILED: "<<Function<<"  <-- "<<Input<<endl;
+    if (m_IsExpectedFailureModeActive == true) {
+      mout<<"KNOWN FAILURE: "<<Function<<"  <-- "<<Input<<endl;
+    } else {
+      mout<<"FAILED: "<<Function<<"  <-- "<<Input<<endl;
+    }
     mout<<"   Description: "<<Description<<endl;
     mout<<"   Expected:    "<<Expected<<endl;
     mout<<"   Output:      "<<Output<<endl;
     mout<<endl;
 
-    ++m_NumberOfFailedTests;
+    if (m_IsExpectedFailureModeActive == true) {
+      ++m_NumberOfExpectedFailureModeChecks;
+      ++m_NumberOfKnownFailures;
+    } else {
+      ++m_NumberOfFailedTests;
+    }
   }
 
   // private methods:
@@ -245,6 +281,9 @@ class MUnitTest
   MString GetLogDirectory() const { return m_LogDirectory; }
   //! Read the log directory from the testing settings file
   void LoadLogDirectory();
+
+  //! Point HOME and the working directory to a private temporary directory, so that tested code cannot modify the user's files (e.g. ~/.revan.cfg)
+  bool RedirectHomeDirectory();
 
   //! Return true only for a plain child file or directory name without path components; see IsValidTemporaryBaseName() for the root-basename rule
   bool IsValidTemporaryPathName(const MString& Name, bool AllowEmpty = false) const;
@@ -279,10 +318,22 @@ class MUnitTest
    unsigned int m_NumberOfPassedTests;
    //! Failed tests
    unsigned int m_NumberOfFailedTests;
+   //! Failed tests marked with ExpectedToFail()
+   unsigned int m_NumberOfKnownFailures;
+   //! True between BeginExpectedFailureMode() and EndExpectedFailureMode()
+   bool m_IsExpectedFailureModeActive;
+   //! Expected-failure modes nested inside the active one; they are ignored
+   unsigned int m_NumberOfNestedExpectedFailureModes;
+   //! Number of checks evaluated in the active expected-failure mode
+   unsigned int m_NumberOfExpectedFailureModeChecks;
+   //! True if a check in the active expected-failure mode passed
+   bool m_HasUnexpectedPass;
    //! Randomized private temporary root, created lazily
    mutable MString m_TemporaryRootDirectory;
    //! The open temporary root with a lock on it as long as the root exists: the test driver does not remove the root of a running test (-1: none)
    mutable int m_TemporaryRootLock;
+   //! The private temporary HOME below the root, which is also the working directory of the test (empty: not redirected)
+   MString m_TemporaryHomeDirectory;
    //! The log directory
    MString m_LogDirectory;
    //! Serialize lazy temporary-root creation and guarded filesystem operations
@@ -295,6 +346,7 @@ class MUnitTest
 #endif
 
 };
+
 
 #endif
 

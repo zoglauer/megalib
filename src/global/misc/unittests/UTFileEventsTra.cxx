@@ -27,6 +27,7 @@ using namespace std;
 #include "TSystem.h"
 
 // MEGAlib:
+#include "MFile.h"
 #include "MFileEventsTra.h"
 #include "MStreams.h"
 #include "MUnidentifiableEvent.h"
@@ -92,7 +93,9 @@ bool UTFileEventsTra::Run()
 //! Return the data directory
 MString UTFileEventsTra::GetDataDirectory() const
 {
-  return MString(gSystem->pwd()) + "/src/global/misc/unittests/data/UTFileEventsTra";
+  MString Directory = "$(MEGALIB)/src/global/misc/unittests/data/UTFileEventsTra";
+  MFile::ExpandFileName(Directory);
+  return Directory;
 }
 
 

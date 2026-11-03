@@ -338,7 +338,9 @@ void UTResponseMatrixON::CleanupCanvases(int TargetCount)
 
 bool UTResponseMatrixON::RunChildExpectingSuccess(const MString& Argument)
 {
-  int Status = MProcessManager::Run("bin/UTResponseMatrixON", Argument, "/dev/null");
+  MString Executable = "$(MEGALIB)/bin/UTResponseMatrixON";
+  MFile::ExpandFileName(Executable);
+  int Status = MProcessManager::Run(Executable, Argument, "/dev/null");
   if (Status < 0) return false;
   return WIFEXITED(Status) && WEXITSTATUS(Status) == 0;
 }

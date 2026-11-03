@@ -33,6 +33,7 @@
 using namespace std;
 
 // MEGAlib:
+#include "MFile.h"
 #include "MGlobal.h"
 #include "MFileEventsTra.h"
 #include "MTimer.h"
@@ -188,7 +189,9 @@ bool UTTransceiverTcpIpHelpers::WaitForChildProcess(pid_t Child, int& Status, do
 //! Return the path to a representative tra fixture.
 MString UTTransceiverTcpIpHelpers::GetTraFixtureFile()
 {
-  return MString(gSystem->pwd()) + "/src/global/misc/unittests/data/UTFileEventsTra/ObsTime_1sec_complete.inc1.id1.tra.gz";
+  MString FileName = "$(MEGALIB)/src/global/misc/unittests/data/UTFileEventsTra/ObsTime_1sec_complete.inc1.id1.tra.gz";
+  MFile::ExpandFileName(FileName);
+  return FileName;
 }
 
 
@@ -1070,7 +1073,9 @@ int main(int argc, char** argv)
     }
   }
 
-  UTTransceiverTcpIpHelpers::SetExecutablePath(argc > 0 ? argv[0] : "bin/UTTransceiverTcpIp");
+  MString ExecutablePath = "$(MEGALIB)/bin/UTTransceiverTcpIp";
+  MFile::ExpandFileName(ExecutablePath);
+  UTTransceiverTcpIpHelpers::SetExecutablePath(ExecutablePath);
 
   UTTransceiverTcpIp Test;
   return Test.Run() == true ? 0 : 1;

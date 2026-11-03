@@ -290,10 +290,8 @@ bool UTSettings::TestChange()
 
 int main(int argc, char** argv)
 {
-  UTSettings::BinaryPath() = argc > 0 ? argv[0] : "";
-  if (UTSettings::BinaryPath().IsEmpty() == true) {
-    UTSettings::BinaryPath() = "bin/UTSettings";
-  }
+  UTSettings::BinaryPath() = "$(MEGALIB)/bin/UTSettings";
+  MFile::ExpandFileName(UTSettings::BinaryPath());
 
   if (argc >= 2) {
     MString Argument = argv[1];

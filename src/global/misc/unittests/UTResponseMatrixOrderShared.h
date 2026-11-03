@@ -53,6 +53,15 @@ inline bool RunInvalidAxisUnitTest(const MString& Executable, const MString& Arg
 }
 
 
+//! Return the full path of a unit test program: the tests do not run in the MEGAlib directory
+inline MString GetUnitTestExecutable(const MString& Name)
+{
+  MString Executable = MString("$(MEGALIB)/bin/") + Name;
+  MFile::ExpandFileName(Executable);
+  return Executable;
+}
+
+
 inline int GetCanvasCount()
 {
   return gROOT != 0 && gROOT->GetListOfCanvases() != 0 ? gROOT->GetListOfCanvases()->GetSize() : 0;
@@ -466,8 +475,8 @@ public: \
     RM_DECLARE_AXES_##ORDER \
     vector<float> EmptyAxis; \
     vector<float> NonIncreasingAxis{0.0f, 1.0f, 1.0f}; \
-    Passed = EvaluateTrue("SetAxis()", "empty first axis", "An empty first axis triggers the invalid-axis guard", RunInvalidAxisUnitTest(MString("bin/") + #SUITE, "--assert-empty-first-axis")) && Passed; \
-    Passed = EvaluateTrue("SetAxis()", "non-increasing last axis", "A non-increasing highest-order axis triggers the invalid-axis guard", RunInvalidAxisUnitTest(MString("bin/") + #SUITE, "--assert-nonincreasing-last-axis")) && Passed; \
+    Passed = EvaluateTrue("SetAxis()", "empty first axis", "An empty first axis triggers the invalid-axis guard", RunInvalidAxisUnitTest(GetUnitTestExecutable(#SUITE), "--assert-empty-first-axis")) && Passed; \
+    Passed = EvaluateTrue("SetAxis()", "non-increasing last axis", "A non-increasing highest-order axis triggers the invalid-axis guard", RunInvalidAxisUnitTest(GetUnitTestExecutable(#SUITE), "--assert-nonincreasing-last-axis")) && Passed; \
     MATRIX Default; \
     Passed = Evaluate("GetOrder()", "default constructor", "The default constructor sets the matrix order", Default.GetOrder(), static_cast<unsigned int>(ORDER)) && Passed; \
     Passed = Evaluate("GetNBins()", "default constructor", "The default constructor starts with zero bins", Default.GetNBins(), 0UL) && Passed; \

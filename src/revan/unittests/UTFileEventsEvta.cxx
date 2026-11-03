@@ -28,6 +28,7 @@ using namespace std;
 #include "TSystem.h"
 
 // MEGAlib:
+#include "MFile.h"
 #include "MFileEventsEvta.h"
 #include "MREAMStartInformation.h"
 #include "MStreams.h"
@@ -127,7 +128,9 @@ MString UTFileEventsEvta::GetTempDirectory() const
 
 MString UTFileEventsEvta::GetDataDirectory() const
 {
-  return MString(gSystem->pwd()) + "/src/global/misc/unittests/data/UTFileEventsTra";
+  MString Directory = "$(MEGALIB)/src/global/misc/unittests/data/UTFileEventsTra";
+  MFile::ExpandFileName(Directory);
+  return Directory;
 }
 
 
@@ -136,7 +139,9 @@ MString UTFileEventsEvta::GetDataDirectory() const
 
 MString UTFileEventsEvta::GetGeometryFileName() const
 {
-  return MString(gSystem->pwd()) + "/resource/examples/geomega/special/Max.geo.setup";
+  MString FileName = "$(MEGALIB)/resource/examples/geomega/special/Max.geo.setup";
+  MFile::ExpandFileName(FileName);
+  return FileName;
 }
 
 
