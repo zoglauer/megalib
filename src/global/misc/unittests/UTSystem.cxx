@@ -41,6 +41,7 @@
 
 // MEGAlib:
 #include "MFile.h"
+#include "MProcessManager.h"
 #include "MSystem.h"
 #include "MUnitTest.h"
 
@@ -84,110 +85,6 @@ bool UTSystem::Run()
   Passed = EvaluateTrue("FileExist()", "existing file", "FileExist reports the representative file as existing", System.FileExist(FileName)) && Passed;
   Passed = EvaluateFalse("FileExist()", "missing file", "FileExist reports a missing file as absent", System.FileExist(TempDirectory + "/does_not_exist")) && Passed;
 
-  const MString ChildLog = TempDirectory + "/child.log";
-  int ChildStatus = MSystem::RunProcess("/bin/sh", "-c 'echo UTSystem child'", ChildLog);
-  Passed = EvaluateTrue("RunProcess()", "successful child", "RunProcess returns a normal zero exit status for a successful child", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0) && Passed;
-  MString ChildLogContent = ReadTextFile(ChildLog);
-  Passed = Evaluate("RunProcess()", "redirected output", "RunProcess redirects the output of the child to the requested file", ChildLogContent, MString("UTSystem child\n")) && Passed;
-  const MString MissingChildLog = TempDirectory + "/missing-child.log";
-  ChildStatus = MSystem::RunProcess(GetTemporaryFileName("missing_child_executable"), "", MissingChildLog);
-  Passed = EvaluateTrue("RunProcess()", "missing child", "RunProcess returns the shell command-not-found status for a missing child executable", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 127) && Passed;
-
-  // Working directory, time out, background processes
-  {
-    const MString Directory = TempDirectory + "/work here";
-    Passed = EvaluateTrue("CreateDirectory()", "working directory", "The working directory with a space can be created", MFile::CreateDirectory(Directory)) && Passed;
-    const MString WorkLog = TempDirectory + "/work.log";
-    ChildStatus = MSystem::RunProcess("pwd", "", WorkLog, Directory);
-    Passed = EvaluateTrue("RunProcess()", "working directory", "The program runs in the working directory", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0 && ReadTextFile(WorkLog) == Directory + "\n") && Passed;
-    ChildStatus = MSystem::RunProcess("true", "", "", TempDirectory + "/does not exist");
-    Passed = EvaluateTrue("RunProcess()", "missing working directory", "A working directory which does not exist fails the program", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 126) && Passed;
-
-    const chrono::steady_clock::time_point Start = chrono::steady_clock::now();
-    ChildStatus = MSystem::RunProcess("sleep", "20", "", "", 1);
-    const double Seconds = chrono::duration<double>(chrono::steady_clock::now() - Start).count();
-    // Bounds: 1 s time out exact, upper bound of 10 s is well below the 20 s sleep and allows for a loaded machine
-    Passed = EvaluateTrue("RunProcess()", "time out", "A program which exceeds the time out of 1 s is killed by SIGKILL", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGKILL && Seconds >= 1.0 && Seconds < 10.0) && Passed;
-
-    // Without its own process group, the descendants are killed too: every parent waits, so only the time out ends them
-    const MString TreeMarker = TempDirectory + "/tree_marker";
-    const MString Delayed = "(sleep 3; touch " + MSystem::GetShellQuoted(TreeMarker) + ") & wait";
-    ChildStatus = MSystem::RunProcess("sh", MString("-c ") + MSystem::GetShellQuoted(Delayed), "", "", 1);
-    Passed = EvaluateTrue("RunProcess()", "descendant time out", "A shell which waits for a delayed descendant is ended by SIGKILL at the time out", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGKILL) && Passed;
-    const MString GrandMarker = TempDirectory + "/grandchild_marker";
-    const MString Nested = "sh -c " + MSystem::GetShellQuoted("(sleep 3; touch " + MSystem::GetShellQuoted(GrandMarker) + ") & wait") + " & wait";
-    ChildStatus = MSystem::RunProcess("sh", MString("-c ") + MSystem::GetShellQuoted(Nested), "", "", 1);
-    Passed = EvaluateTrue("RunProcess()", "grandchild time out", "A nested shell is ended by SIGKILL at the time out", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGKILL) && Passed;
-    const MString ControlMarker = TempDirectory + "/control_marker";
-    ChildStatus = MSystem::RunProcess("sh", MString("-c ") + MSystem::GetShellQuoted("(sleep 1; touch " + MSystem::GetShellQuoted(ControlMarker) + ") & wait"), "", "", 10);
-    Passed = EvaluateTrue("RunProcess()", "control", "Without a time out the delayed descendant creates its file", MFile::Exists(ControlMarker)) && Passed;
-    this_thread::sleep_for(chrono::milliseconds(3500));
-    Passed = EvaluateFalse("RunProcess()", "descendant", "The time out also stops the descendants of a program without its own process group", MFile::Exists(TreeMarker)) && Passed;
-    Passed = EvaluateFalse("RunProcess()", "grandchild", "The time out also stops the grandchildren", MFile::Exists(GrandMarker)) && Passed;
-
-    // A program in its own process group is killed with its group, also the children of the shell:
-    const MString Marker = TempDirectory + "/group_marker";
-    const pid_t Group = MSystem::StartProcessInBackground("sh", MString("-c ") + MSystem::GetShellQuoted("sleep 3 && touch " + MSystem::GetShellQuoted(Marker) + " & wait"), "", "", true);
-    Passed = EvaluateTrue("StartProcessInBackground()", "own group", "A program with its own process group leads that group", Group > 0 && getpgid(Group) == Group) && Passed;
-    MSystem::WaitForBackgroundProcess(Group, 1);
-    this_thread::sleep_for(chrono::milliseconds(3500));
-    Passed = EvaluateFalse("WaitForBackgroundProcess()", "process group", "The time out also stops the processes which a program with its own group started", MFile::Exists(Marker)) && Passed;
-
-    // Without an own group the program stays in the group of the caller
-    const pid_t Same = MSystem::StartProcessInBackground("sleep", "20");
-    Passed = EvaluateTrue("StartProcessInBackground()", "same group", "A program without OwnProcessGroup stays in the process group of the caller", Same > 0 && getpgid(Same) == getpgrp()) && Passed;
-    kill(Same, SIGKILL);
-    waitpid(Same, nullptr, 0);
-
-    // The programs which a process starts die with the group of that process: a stand-in for a test and the programs it starts
-    {
-      const MString NestedFile = TempDirectory + "/nested_pid.txt";
-      const pid_t Middle = fork();
-      if (Middle == 0) {
-        setpgid(0, 0);
-        const pid_t Nested = MSystem::StartProcessInBackground("sleep", "30");
-        {
-          ofstream Out(NestedFile.Data());
-          Out<<Nested<<endl;
-        }
-        sleep(60);
-        _exit(0);
-      }
-      setpgid(Middle, Middle);
-      MString NestedText;
-      for (unsigned int Attempt = 0; Attempt < 50 && NestedText.IsEmpty() == true; ++Attempt) {
-        this_thread::sleep_for(chrono::milliseconds(100));
-        MFile::ReadTextFile(NestedFile, NestedText);
-      }
-      const pid_t Nested = static_cast<pid_t>(atoi(NestedText.Data()));
-      Passed = EvaluateTrue("StartProcessInBackground()", "nested", "The stand-in test started a program", Nested > 0 && kill(Nested, 0) == 0) && Passed;
-      kill(-Middle, SIGKILL);
-      waitpid(Middle, nullptr, 0);
-      bool Gone = false;
-      for (unsigned int Attempt = 0; Attempt < 50 && Gone == false; ++Attempt) {
-        this_thread::sleep_for(chrono::milliseconds(100));
-        if (kill(Nested, 0) != 0) {
-          Gone = true;
-        }
-      }
-      Passed = EvaluateTrue("StartProcessInBackground()", "nested killed", "Stopping the process group of a test also stops the programs it started", Gone) && Passed;
-      if (Gone == false) {
-        kill(Nested, SIGKILL);
-      }
-    }
-
-    const pid_t Background = MSystem::StartProcessInBackground("sh", "-c 'exit 3'");
-    Passed = EvaluateTrue("StartProcessInBackground()", "started", "A background process can be started", Background > 0) && Passed;
-    ChildStatus = MSystem::WaitForBackgroundProcess(Background);
-    Passed = EvaluateTrue("WaitForBackgroundProcess()", "status", "The wait returns the exit status of the background process", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 3) && Passed;
-
-    volatile sig_atomic_t Stop = 0;
-    const pid_t Long = MSystem::StartProcessInBackground("sleep", "20");
-    Stop = 1;
-    ChildStatus = MSystem::WaitForBackgroundProcess(Long, 0, &Stop);
-    Passed = EvaluateTrue("WaitForBackgroundProcess()", "stop flag", "A set stop flag kills the background process with SIGKILL", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGKILL) && Passed;
-  }
-
   // GetCpuModel
   {
     const MString Cpu = MSystem::GetCpuModel();
@@ -205,7 +102,7 @@ bool UTSystem::Run()
   const vector<MString> Arguments = { "plain", "with space", "it's", "$HOME `date` \"double\" ; & | > < * ? \\ !", "two  spaces", "'", "''", "a\nb" };
   for (const MString& Argument: Arguments) {
     const MString EchoLog = TempDirectory + "/quoted.log";
-    ChildStatus = MSystem::RunProcess("printf", MString("%s ") + MSystem::GetShellQuoted(Argument), EchoLog);
+    const int ChildStatus = MProcessManager::Run("printf", MString("%s ") + MSystem::GetShellQuoted(Argument), EchoLog);
     Passed = EvaluateTrue("GetShellQuoted()", Argument, "The shell passes the quoted argument on unchanged", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0 && ReadTextFile(EchoLog) == Argument) && Passed;
   }
   const MString SpaceDirectory = TempDirectory + "/a directory with spaces";
@@ -213,8 +110,8 @@ bool UTSystem::Run()
   Passed = EvaluateTrue("CreateDirectory()", "spaces", "The directory with spaces can be created", MFile::CreateDirectory(SpaceDirectory)) && Passed;
   Passed = EvaluateTrue("WriteTextFile()", "spaces", "The file with spaces and a single quote in its name can be written", WriteTextFile(SpaceFile, "UTSystem spaces")) && Passed;
   const MString SpaceLog = TempDirectory + "/spaces.log";
-  ChildStatus = MSystem::RunProcess("cat", MSystem::GetShellQuoted(SpaceFile), SpaceLog);
-  Passed = EvaluateTrue("GetShellQuoted()", "path", "A quoted path with spaces and a single quote is one argument", WIFEXITED(ChildStatus) && WEXITSTATUS(ChildStatus) == 0 && ReadTextFile(SpaceLog) == MString("UTSystem spaces")) && Passed;
+  const int SpaceStatus = MProcessManager::Run("cat", MSystem::GetShellQuoted(SpaceFile), SpaceLog);
+  Passed = EvaluateTrue("GetShellQuoted()", "path", "A quoted path with spaces and a single quote is one argument", WIFEXITED(SpaceStatus) && WEXITSTATUS(SpaceStatus) == 0 && ReadTextFile(SpaceLog) == MString("UTSystem spaces")) && Passed;
 
   // Compare the memory statistics with an independent reading of the platform source (MB, rounded down)
   struct MemoryReference {
@@ -256,7 +153,7 @@ bool UTSystem::Run()
   const double SwapSlack = 1.0; // MB, sysctl prints two digits and macOS grows the swap in large steps
   const MString MemoryLog = TempDirectory + "/memory.log";
   auto RunAndRead = [&](const MString& Program, const MString& Arguments) -> string {
-    int Status = MSystem::RunProcess(Program, Arguments, MemoryLog);
+    int Status = MProcessManager::Run(Program, Arguments, MemoryLog);
     if (WIFEXITED(Status) == false || WEXITSTATUS(Status) != 0) return "";
     return string(ReadTextFile(MemoryLog).Data());
   };
@@ -343,8 +240,6 @@ bool UTSystem::Run()
   Passed = EvaluateTrue("BusyWait()", "elapsed", "BusyWait waits at least the requested 5000 microseconds", ElapsedMicroseconds >= 5000LL) && Passed;
 
   Passed = EvaluateTrue("RemoveTemporaryFile()", "cleanup", "The representative MSystem file can be removed", RemoveTemporaryFile(FileName)) && Passed;
-  Passed = EvaluateTrue("RemoveTemporaryFile()", "child log cleanup", "The representative child-process log can be removed", RemoveTemporaryFile(ChildLog)) && Passed;
-  Passed = EvaluateTrue("RemoveTemporaryFile()", "missing child log cleanup", "The representative missing-child log can be removed", RemoveTemporaryFile(MissingChildLog)) && Passed;
   Passed = EvaluateFalse("FileExist()", "cleanup", "The representative MSystem file is gone after cleanup", System.FileExist(FileName)) && Passed;
   Passed = EvaluateTrue("RemoveTemporaryDirectory()", "temp cleanup", "The temporary MSystem directory can be removed", RemoveTemporaryDirectory(TempDirectory)) && Passed;
 
