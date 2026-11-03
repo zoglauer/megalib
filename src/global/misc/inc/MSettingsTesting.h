@@ -55,6 +55,8 @@ class MSettingsTesting : public MSettings
   void SetLogDirectory(const MString& LogDirectory) { m_LogDirectory = LogDirectory; }
   //! Get the log directory (default: /tmp/$USER/megalib_testing_logs)
   MString GetLogDirectory() const { return m_LogDirectory; }
+  //! Return the default log directory /tmp/$USER/megalib_testing_logs
+  MString GetDefaultLogDirectory() const;
 
   //! Set the time out for the tests in seconds
   //! The driver kills a test after it, the end-to-end tests derive their time limits from it 
@@ -82,9 +84,6 @@ class MSettingsTesting : public MSettings
 
   // private methods:
  private:
-  //! Return the default log directory /tmp/$USER/megalib_testing_logs
-  MString GetDefaultLogDirectory() const;
-
   // protected members:
  protected:
 

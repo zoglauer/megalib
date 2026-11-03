@@ -31,6 +31,7 @@ using namespace std;
 // MEGAlib:
 #include "MQualifiedIsotope.h"
 #include "MStreams.h"
+#include "MProcessManager.h"
 #include "MSystem.h"
 #include "MUnitTest.h"
 
@@ -185,7 +186,7 @@ bool UTQualifiedIsotope::TestOutOfBounds()
 
   {
     MString LogFileName = GetTemporaryFileName("setlinefound_fatal.log");
-    int Status = MSystem::RunProcess(g_UTQualifiedIsotopeBinary, "--fatal-set", LogFileName);
+    int Status = MProcessManager::Run(g_UTQualifiedIsotopeBinary, "--fatal-set", LogFileName);
     Passed = EvaluateTrue("SetLineFound()", "out of bounds signaled", "Out-of-bounds SetLineFound access ends the child process by a signal", WIFSIGNALED(Status) != 0) && Passed;
     // The fatal stream aborts with SIGABRT
     Passed = Evaluate("SetLineFound()", "out of bounds signal", "Out-of-bounds SetLineFound access ends the child process with SIGABRT", WTERMSIG(Status), static_cast<int>(SIGABRT)) && Passed;
@@ -198,7 +199,7 @@ bool UTQualifiedIsotope::TestOutOfBounds()
 
   {
     MString LogFileName = GetTemporaryFileName("getlinefound_fatal.log");
-    int Status = MSystem::RunProcess(g_UTQualifiedIsotopeBinary, "--fatal-get", LogFileName);
+    int Status = MProcessManager::Run(g_UTQualifiedIsotopeBinary, "--fatal-get", LogFileName);
     Passed = EvaluateTrue("GetLineFound()", "out of bounds signaled", "Out-of-bounds GetLineFound access ends the child process by a signal", WIFSIGNALED(Status) != 0) && Passed;
     // The fatal stream aborts with SIGABRT
     Passed = Evaluate("GetLineFound()", "out of bounds signal", "Out-of-bounds GetLineFound access ends the child process with SIGABRT", WTERMSIG(Status), static_cast<int>(SIGABRT)) && Passed;

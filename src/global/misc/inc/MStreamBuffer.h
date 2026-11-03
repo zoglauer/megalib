@@ -77,6 +77,7 @@ class MStreamBuffer : public streambuf
   void ShowOnce() { m_ShowOnce = true; }
 
   void Enable(bool EnableFlag) { m_Enabled = EnableFlag; }
+  bool IsEnabled() const { return m_Enabled; }
 
   void endl();
   void fatal();

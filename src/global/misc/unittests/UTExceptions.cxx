@@ -24,6 +24,7 @@
 
 // MEGAlib:
 #include "MExceptions.h"
+#include "MProcessManager.h"
 #include "MSystem.h"
 #include "MUnitTest.h"
 
@@ -368,7 +369,7 @@ bool UTExceptions::TestUsagePatterns()
     MException::UseAbort(false);
 
     MString LogFileName = GetTemporaryFileName("abort_check.log");
-    int Status = MSystem::RunProcess(BinaryPath(), "--abort-check", LogFileName);
+    int Status = MProcessManager::Run(BinaryPath(), "--abort-check", LogFileName);
 
     // Mask the core dump flag (0x80) of the wait status
     Passed = Evaluate("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with SIGABRT", Status & 0x7F, static_cast<int>(SIGABRT)) && Passed;
@@ -383,7 +384,7 @@ bool UTExceptions::TestUsagePatterns()
   {
     // The invalid-pointer exception aborts in abort mode like all the other exceptions
     MString PointerLogFileName = GetTemporaryFileName("abort_check_pointer.log");
-    int PointerStatus = MSystem::RunProcess(BinaryPath(), "--abort-check-pointer", PointerLogFileName);
+    int PointerStatus = MProcessManager::Run(BinaryPath(), "--abort-check-pointer", PointerLogFileName);
     Passed = Evaluate("MExceptionPointerIsInvalid()", "abort status", "The abort mode terminates the child process with SIGABRT also for the invalid-pointer exception", PointerStatus & 0x7F, static_cast<int>(SIGABRT)) && Passed;
     MString PointerContent = ReadTextFile(PointerLogFileName);
     Passed = EvaluateTrue("MExceptionPointerIsInvalid()", "abort message", "Abort mode prints the invalid-pointer message before terminating", PointerContent.EndsWith("The pointer \"Pointer\" is invalid: 0\n\n")) && Passed;
