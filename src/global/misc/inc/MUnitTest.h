@@ -48,30 +48,47 @@ using namespace std;
 class MVector;
 class MRotation;
 
-//! Mark one check as a known failure, see MUnitTest
+//! Mark one check as a known failure inside a derived member function
 #define ExpectedToFail(...) (BeginExpectedFailureMode(), __VA_ARGS__, EndExpectedFailureMode())
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! The base class for unit testing
+//! Class representing a base for unit tests
 //!
-//! Known failures: a check of a not yet fixed bug is wrapped with the ExpectedToFail() macro, e.g.
-//!   Passed = ExpectedToFail(Evaluate("Foo()", "input", "description", Output, Truth)) && Passed;
-//! A failing check is reported as KNOWN FAILURE and does not fail the test,
-//! a passing check is reported as UNEXPECTED PASS and fails it.
-//! Wrap exactly one check; the macro only works inside member functions of derived classes.
+//! A test program normally creates one instance of a class derived from MUnitTest
+//! Its private test directory is created below the configured log directory
+//! This directory becomes HOME and the working directory for the test program
+//! It is also the temporary root: the top directory for the test's temporary files and subdirectories
+//! The filesystem helpers restrict file access and removal to this directory
+//! Remove the directory when the instance is destroyed after a passing test; keep it after a failed test
+//!
+//! Wrap one check with ExpectedToFail in a derived member function to mark a known failure
+//! Report a failing wrapped check as KNOWN FAILURE and a passing one as UNEXPECTED PASS
+//! Count an unexpected pass as a failed test
+//!
+//! UTUnitTest and UTEndToEndTest also create helper test instances in the same process
+//! Each helper has its own private test directory, but HOME and the working directory are shared by the process
+//! They remain pointed at the first instance's directory, even while helper instances are created and destroyed
 class MUnitTest
 {
   // public interface:
  public:
-  //! Construct a named unit test
+  //! Standard constructor
   MUnitTest(const MString& Name);
-  //! Default destuctor 
+  //! Default destructor
   virtual ~MUnitTest();
-  
-  //! Evaluate the success of this test run
+
+  //! Run the unit test
+  virtual bool Run() = 0;
+
+  //! Summarize the test run
+  void Summarize();
+  //! Read the last passed and failed test counts from a summary, return false if missing or invalid
+  static bool ParseSummary(const MString& Output, unsigned int& Passed, unsigned int& Failed);
+
+  //! Evaluate if the output equals the expected value
   template <typename T1, typename T2> bool Evaluate(MString Function, T1 Input, MString Description, T2 Output, T2 Truth)
   {
     if (Output != Truth) {
@@ -82,7 +99,7 @@ class MUnitTest
       RegisterFailure(Function, Input, Description, ExpectedStream.str(), OutputStream.str());
       return false;
     }
-    
+
     RegisterSuccess(Function, Input, Description);
     return true;
   }
@@ -99,10 +116,16 @@ class MUnitTest
     return Evaluate(Function, Input, Description, Output, false);
   }
 
-  //! Evaluate two floating-point values within a given tolerance
+  //! Evaluate the expected size of a container or collection
+  template <typename T> bool EvaluateSize(MString Function, T Input, MString Description, unsigned long Output, unsigned long Truth)
+  {
+    return Evaluate(Function, Input, Description, Output, Truth);
+  }
+
+  //! Evaluate if two finite floating-point values differ by at most Tolerance
   template <typename T> bool EvaluateNear(MString Function, T Input, MString Description, double Output, double Truth, double Tolerance)
   {
-    if (std::isfinite(Output) == false || std::isfinite(Truth) == false || fabs(Output - Truth) > Tolerance) {
+    if (std::isfinite(Output) == false || std::isfinite(Truth) == false || std::isfinite(Tolerance) == false || fabs(Output - Truth) > Tolerance) {
       ostringstream ExpectedStream;
       ExpectedStream<<setprecision(numeric_limits<long double>::max_digits10)<<Truth<<" +/- "<<Tolerance;
       ostringstream OutputStream;
@@ -115,23 +138,11 @@ class MUnitTest
     return true;
   }
 
-  //! Make merr look like mout
-  MString RemoveErrorMessageContext(const MString& Text) const;
-
-  //! Return the larger of two values or NaN if one of them is NaN
-  double GetMaximum(double First, double Second) const;
-
-  //! Evaluate two vectors within a given tolerance: the distance between them must not exceed Tolerance, all components must be finite
+  //! Evaluate if two finite vectors have a distance of at most Tolerance
   bool EvaluateVectorNear(MString Function, MString Input, MString Description, const MVector& Output, const MVector& Truth, double Tolerance);
 
-  //! Evaluate two rotation matrices within a given tolerance: each of the nine elements may differ by at most Tolerance, all elements must be finite
+  //! Evaluate if each pair of finite rotation matrix elements differs by at most Tolerance
   bool EvaluateRotationNear(MString Function, MString Input, MString Description, const MRotation& Output, const MRotation& Truth, double Tolerance);
-
-  //! Evaluate the expected size of a container or collection
-  template <typename T> bool EvaluateSize(MString Function, T Input, MString Description, unsigned int Output, unsigned int Truth)
-  {
-    return Evaluate(Function, Input, Description, Output, Truth);
-  }
 
   //! Evaluate if a callable throws the expected exception type
   template <typename TException, typename TInput, typename TCallable> bool EvaluateException(MString Function, TInput Input, MString Description, TCallable Callable)
@@ -160,33 +171,32 @@ class MUnitTest
     RegisterFailure(Function, Input, Description, ExpectedStream.str(), "no exception");
     return false;
   }
-  
-  //! Evaluate that two text files contain exactly the same lines
-  //! All characters within each line, including whitespace, must match; line-ending characters are consumed while reading
-  //! The files must contain the same number of lines; the first unequal line is reported
+
+  //! Evaluate if two text files have identical lines, ignoring LF/CRLF endings and a missing final newline
   bool EvaluateFilesIdentical(MString Function, MString Input, MString Description, const MString& TestFile, const MString& ReferenceFile);
 
-  //! Evaluate that two text files have the same lines and whitespace-separated tokens
-  //! Floating-point tokens may differ by MaximumLastDigitDifference times the smaller last-printed-digit unit; all other tokens must match exactly
-  //! Tolerance matching requires both differing tokens to represent zero or finite normal doubles; subnormal and out-of-range values do not match numerically
-  //! For example, with MaximumLastDigitDifference = 2, 0.518236 and 0.518237 match because their difference of 0.000001 is less than 2 * 0.000001
-  //! Likewise, 1.234e-4 and 1.235e-4 match because their difference of 0.001e-4 is less than 2 * 0.001e-4
-  //! Differences in whitespace between tokens are ignored; the first unequal line is reported
+  //! Evaluate if text files have matching tokens on each line, ignoring whitespace between tokens
+  //! Allow floating-point differences up to MaximumLastDigitDifference times the smaller last-printed-digit unit
+  //! Accept numerical differences only for zero or finite normal doubles; other tokens must match exactly
+  //! Report the first unequal line or a different line count
   bool EvaluateFilesNumericallyEquivalent(MString Function, MString Input, MString Description,
                                           const MString& TestFile, const MString& ReferenceFile,
                                           unsigned int MaximumLastDigitDifference = 2);
 
-  //! Run the unit test
-  virtual bool Run() = 0;
+  //! Remove source context lines from error messages
+  MString RemoveErrorMessageContext(const MString& Text) const;
 
-  //! Summarize the test run
-  void Summarize();
-  //! Read the numbers of passed and failed tests from the output of Summarize (the last "Passed tests: N" followed by "Failed tests: M"), return false if there are none
-  static bool ParseSummary(const MString& Output, unsigned int& Passed, unsigned int& Failed);
+  //! Return the larger of two values or NaN if one of them is NaN
+  double GetMaximum(double First, double Second) const;
 
+  
+  
   // protected methods:
  protected:
-  //! Register a passed test; inside ExpectedToFail() it is reported and counted as an unexpected pass
+  //! Return the unit test name
+  const MString& GetName() const { return m_Name; }
+
+  //! Count a passed check, or report and count an unexpected pass as a failed test
   template <typename T> void RegisterSuccess(MString Function, T Input, MString Description) {
     if (m_IsExpectedFailureModeActive == true) {
       ++m_NumberOfExpectedFailureModeChecks;
@@ -202,52 +212,7 @@ class MUnitTest
     }
   }
 
-  //! Start the expected-failure mode - use the ExpectedToFail() macro instead of calling this directly
-  void BeginExpectedFailureMode();
-  //! End the expected-failure mode; returns true if the check in it failed - use the ExpectedToFail() macro instead of calling this directly
-  bool EndExpectedFailureMode();
-
-  //! Return the unit test name
-  const MString& GetName() const { return m_Name; }
-
-  //! Disable the default MEGAlib output streams for expected noisy test paths
-  void DisableDefaultStreams() {
-    mout.Enable(false);
-    mlog.Enable(false);
-    mgui.Enable(false);
-    __merr.Enable(false);
-  }
-
-  //! Re-enable the default MEGAlib output streams after a noisy test path
-  void EnableDefaultStreams() {
-    mout.Enable(true);
-    mlog.Enable(true);
-    mgui.Enable(true);
-    __merr.Enable(true);
-  }
-
-  //! Write complete text content to a test fixture file
-  bool WriteTextFile(const MString& FileName, const MString& Content) const;
-
-  //! Read complete text content from a test fixture file; returns an empty string on failure
-  MString ReadTextFile(const MString& FileName) const;
-
-  //! Return a process-local temporary file name for this test; the file is not created
-  MString GetTemporaryFileName(const MString& Name) const;
-
-  //! Return a process-local temporary directory name for this test; the directory is not created
-  MString GetTemporaryDirectoryName(const MString& Name = "") const;
-
-  //! Remove and recreate a process-local temporary directory for this test, the root itself (no name) is only cleared (except the temporary HOME)
-  bool PrepareTemporaryDirectory(const MString& Name = "") const;
-
-  //! Remove a temporary file only if it is inside this test's randomized temporary root
-  bool RemoveTemporaryFile(const MString& FileName) const;
-
-  //! Recursively remove a temporary directory only if it is inside this test's randomized temporary root; an empty name removes the root itself
-  bool RemoveTemporaryDirectory(const MString& DirectoryName = "") const;
-
-  //! Register and report a failed test; inside ExpectedToFail() it is reported and counted as a known failure
+  //! Report a failed check and count it as a failed test or a known failure
   template <typename T> void RegisterFailure(MString Function, T Input, MString Description, MString Expected, MString Output) {
     mout<<endl;
     if (m_IsExpectedFailureModeActive == true) {
@@ -268,42 +233,87 @@ class MUnitTest
     }
   }
 
+  //! Begin tracking the check wrapped by ExpectedToFail
+  void BeginExpectedFailureMode();
+  //! End tracking and return true if exactly one wrapped check failed
+  bool EndExpectedFailureMode();
+
+  //! Disable the default MEGAlib streams around expected noisy calls
+  void DisableDefaultStreams() {
+    mout.Enable(false);
+    mlog.Enable(false);
+    mgui.Enable(false);
+    __merr.Enable(false);
+  }
+
+  //! Enable the default MEGAlib streams before evaluating checks
+  void EnableDefaultStreams() {
+    mout.Enable(true);
+    mlog.Enable(true);
+    mgui.Enable(true);
+    __merr.Enable(true);
+  }
+
+  //! Return a file path below the private temporary root without creating the file
+  MString GetTemporaryFileName(const MString& Name) const;
+
+  //! Return a directory path below the private temporary root (empty name: root itself)
+  MString GetTemporaryDirectoryName(const MString& Name = "") const;
+
+  //! Remove and recreate a temporary directory (empty name: clear the root contents)
+  bool PrepareTemporaryDirectory(const MString& Name = "") const;
+
+  //! Remove a file inside the private temporary root
+  bool RemoveTemporaryFile(const MString& FileName) const;
+
+  //! Remove a directory and its contents inside the private temporary root (empty path: root itself)
+  bool RemoveTemporaryDirectory(const MString& DirectoryName = "") const;
+
+  //! Write complete text content to a test fixture file
+  bool WriteTextFile(const MString& FileName, const MString& Content) const;
+
+  //! Read complete text content from a test fixture file, return an empty string on failure
+  MString ReadTextFile(const MString& FileName) const;
+
+  
+  
   // private methods:
  private:
-  //! Release the lock on the temporary root
-  void ReleaseTemporaryRootLock() const;
-  //! Create this test's randomized private temporary root if necessary
-  bool CreateTemporaryRootDirectory() const;
-
-  //! Return the randomized private temporary root for this test
-  MString GetTemporaryRootDirectory() const;
-  //! The log directory name 
-  MString GetLogDirectory() const { return m_LogDirectory; }
-  //! Read the log directory from the testing settings file
-  void LoadLogDirectory();
-
-  //! Point HOME and the working directory to a private temporary directory, so that tested code cannot modify the user's files (e.g. ~/.revan.cfg)
+  //! Create a private temporary root directory and redirect HOME and the working directory there
   bool RedirectHomeDirectory();
 
-  //! Return true only for a plain child file or directory name without path components; see IsValidTemporaryBaseName() for the root-basename rule
-  bool IsValidTemporaryPathName(const MString& Name, bool AllowEmpty = false) const;
-
-  //! Return the basename of the temporary directory: the characters of the name which are ASCII letters, digits, '_' and '-', or "UnitTest" if there are none
+  //! Create this object's private test directory below the configured log directory, or reuse it if it still exists
+  //! Use the test basename and a random suffix, and check that the directory stays inside the log directory
+  //! Hold a directory lock against test driver cleanup; leave HOME and the working directory unchanged
+  //! Return false if directory creation or path validation fails
+  bool CreateTemporaryRootDirectory() const;
+  //! Return the randomized private temporary root
+  MString GetTemporaryRootDirectory() const;
+  //! Release the lock on the temporary root
+  void ReleaseTemporaryRootLock() const;
+  //! Build a directory basename from ASCII letters, digits, '_' and '-' (fallback: "UnitTest")
   MString CreateTemporaryDirectoryBaseName(const MString& Name) const;
 
-  //! Return true only if Path resolves inside this test's randomized temporary root
+  //! Read the log directory from the testing settings file
+  void LoadLogDirectory();
+  //! Return the log directory name
+  MString GetLogDirectory() const { return m_LogDirectory; }
+
+  //! Return true for a plain file or directory name (empty name: allowed if AllowEmpty is true)
+  bool IsValidTemporaryPathName(const MString& Name, bool AllowEmpty = false) const;
+
+  //! Return true if the path resolves inside the private temporary root (AllowRoot: accept the root itself)
   bool IsSafeTemporaryPath(const MString& Path, bool AllowRoot) const;
 
-  //! Return true if Child is Parent or is contained below Parent
+  //! Return true if Child equals Parent or lies below it
   bool IsPathContained(const std::filesystem::path& Parent, const std::filesystem::path& Child) const;
 
-  //! Return true if two lines contain the same number of whitespace-separated tokens and each token matches
-  //! Floating-point tokens use MString::AreNumbersNumericallyMatching() for comparison
-  //! All other tokens must be identical
-  //! For example, with MaximumLastDigitDifference = 2, "CT 0.518237 0.481763" matches "CT 0.518236 0.481764", but a changed "CT" token does not
+  //! Return true if two lines have matching tokens, allowing differences in the last printed digits
   bool LinesMatchNumerically(const MString& TestLine, const MString& ReferenceLine,
                              unsigned int MaximumLastDigitDifference) const;
 
+                             
+                             
   // protected members:
  protected:
 
@@ -312,31 +322,32 @@ class MUnitTest
  private:
    //! Name of the unit test
    MString m_Name;
-   //! Safe basename used for this test's randomized temporary root
+   //! Basename of the private temporary root
    MString m_TemporaryBaseName;
-   //! Passed tests
+
+   //! Number of passed tests
    unsigned int m_NumberOfPassedTests;
-   //! Failed tests
+   //! Number of failed tests
    unsigned int m_NumberOfFailedTests;
-   //! Failed tests marked with ExpectedToFail()
+   //! Number of known failures marked with ExpectedToFail
    unsigned int m_NumberOfKnownFailures;
-   //! True between BeginExpectedFailureMode() and EndExpectedFailureMode()
+
+   //! Flag indicating if a wrapped check is being tracked
    bool m_IsExpectedFailureModeActive;
-   //! Expected-failure modes nested inside the active one; they are ignored
+   //! Number of nested expected-failure modes to ignore
    unsigned int m_NumberOfNestedExpectedFailureModes;
    //! Number of checks evaluated in the active expected-failure mode
    unsigned int m_NumberOfExpectedFailureModeChecks;
-   //! True if a check in the active expected-failure mode passed
+   //! Flag indicating if a wrapped check passed unexpectedly
    bool m_HasUnexpectedPass;
-   //! Randomized private temporary root, created lazily
+
+   //! Path of the randomized private temporary root
    mutable MString m_TemporaryRootDirectory;
-   //! The open temporary root with a lock on it as long as the root exists: the test driver does not remove the root of a running test (-1: none)
+   //! File descriptor holding the temporary root lock against test driver cleanup (-1: none)
    mutable int m_TemporaryRootLock;
-   //! The private temporary HOME below the root, which is also the working directory of the test (empty: not redirected)
-   MString m_TemporaryHomeDirectory;
    //! The log directory
    MString m_LogDirectory;
-   //! Serialize lazy temporary-root creation and guarded filesystem operations
+   //! Mutex protecting temporary root creation and filesystem operations
    mutable recursive_mutex m_TemporaryPathMutex;
 
 

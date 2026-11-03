@@ -38,6 +38,12 @@
 #include <fcntl.h>
 #include <sys/file.h>
 #include <unistd.h>
+// For umask: a root without permissions cannot be locked
+#include <sys/stat.h>
+// For the file size limit: a write which is cut short
+#include <sys/resource.h>
+// For SIGXFSZ, the signal of the file size limit
+#include <csignal>
 using namespace std;
 
 
@@ -87,6 +93,8 @@ private:
   bool TestNumericalFileComparison();
   //! Test randomized temporary roots and guarded cleanup helpers
   bool TestTemporaryPaths();
+  //! Test that HOME and the working directory are the private temporary root of the test
+  bool TestHomeRedirect();
   //! Test the temporary roots below the log directory of the testing settings file (~/.testdrive.cfg)
   bool TestLogDirectory();
   //! Test the reading of the numbers of the summary
@@ -107,6 +115,7 @@ bool UTUnitTest::Run()
   Passed = TestFileComparison() && Passed;
   Passed = TestNumericalFileComparison() && Passed;
   Passed = TestTemporaryPaths() && Passed;
+  Passed = TestHomeRedirect() && Passed;
   Passed = TestLogDirectory() && Passed;
   Passed = TestParseSummary() && Passed;
 
@@ -159,6 +168,14 @@ bool UTUnitTest::TestEvaluateHelpers()
   Passed = EvaluateFalse("EvaluateNear()", "just outside tolerance", "EvaluateNear returns false for a value 1.1e-3 away with the tolerance 1e-3", JustOutsideFailure) && Passed;
   Passed = EvaluateFalse("EvaluateNear()", "non-finite", "EvaluateNear returns false for a non-finite representative value", NonFiniteFailure) && Passed;
 
+  // The tolerance has to be finite: a NaN or infinite tolerance would accept every difference
+  Probe.Silence();
+  const bool NaNToleranceFailure = Probe.EvaluateNear("inner EvaluateNear()", "NaN tolerance", "A NaN tolerance is rejected", 100.0, 0.0, numeric_limits<double>::quiet_NaN());
+  const bool InfiniteToleranceFailure = Probe.EvaluateNear("inner EvaluateNear()", "infinite tolerance", "An infinite tolerance is rejected", 100.0, 0.0, numeric_limits<double>::infinity());
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateNear()", "NaN tolerance", "EvaluateNear returns false for different values with a NaN tolerance", NaNToleranceFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateNear()", "infinite tolerance", "EvaluateNear returns false for different values with an infinite tolerance", InfiniteToleranceFailure) && Passed;
+
   vector<int> Values;
   Values.push_back(1);
   Values.push_back(2);
@@ -169,6 +186,15 @@ bool UTUnitTest::TestEvaluateHelpers()
   const bool SizeFailure = Probe.EvaluateSize("inner EvaluateSize()", "two values", "The size mismatch is rejected", Values.size(), 3);
   Probe.Unsilence();
   Passed = EvaluateFalse("EvaluateSize()", "wrong size", "EvaluateSize returns false for a representative size mismatch", SizeFailure) && Passed;
+
+  // Counts above 4294967295 are compared as they are, not truncated
+  const unsigned long LargeCount = static_cast<unsigned long>(numeric_limits<unsigned int>::max()) + 1;
+  Passed = EvaluateTrue("EvaluateSize()", "large count", "EvaluateSize accepts a count above 4294967295 which equals the expected one",
+                        Probe.EvaluateSize("inner EvaluateSize()", "large count", "The large sizes match", LargeCount, LargeCount)) && Passed;
+  Probe.Silence();
+  const bool LargeSizeFailure = Probe.EvaluateSize("inner EvaluateSize()", "large count", "The large size mismatch is rejected", LargeCount, 0);
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateSize()", "large count against zero", "EvaluateSize returns false for a count above 4294967295 against zero, it is not truncated", LargeSizeFailure) && Passed;
 
   // Remove the source context of error messages in debug builds:
   const MString Context = "!!!!! Error in file \"/a/File.cxx\" in function \"Function\" at line 12:\n";
@@ -224,6 +250,12 @@ bool UTUnitTest::TestVectorAndRotationHelpers()
   Passed = EvaluateFalse("EvaluateVectorNear()", "inf output", "An infinite component in the output is rejected", InfOutput) && Passed;
   Passed = EvaluateFalse("EvaluateVectorNear()", "nan truth", "A NaN component in the expected vector is rejected", NaNTruth) && Passed;
 
+  // The tolerance has to be finite: a NaN tolerance would accept every distance
+  Probe.Silence();
+  const bool NaNToleranceVector = Probe.EvaluateVectorNear("inner EvaluateVectorNear()", "NaN tolerance", "A NaN tolerance is rejected", MVector(100.0, 0.0, 0.0), MVector(0.0, 0.0, 0.0), numeric_limits<double>::quiet_NaN());
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateVectorNear()", "NaN tolerance", "Different vectors are rejected with a NaN tolerance", NaNToleranceVector) && Passed;
+
   // EvaluateRotationNear: each of the nine elements is compared separately
   const vector<double> Elements = { 0.5, -1.0, 2.0, 3.0, 0.25, -0.75, 1.5, -2.5, 4.0 };
   const vector<MString> Names = { "XX", "YX", "ZX", "XY", "YY", "ZY", "XZ", "YZ", "ZZ" };
@@ -257,6 +289,13 @@ bool UTUnitTest::TestVectorAndRotationHelpers()
   const MRotation TwoElements(Elements[0] + 8e-4, Elements[1], Elements[2], Elements[3], Elements[4], Elements[5], Elements[6], Elements[7], Elements[8] - 8e-4);
   Passed = EvaluateTrue("EvaluateRotationNear()", "two elements", "The tolerance is applied to each element separately",
                         Probe.EvaluateRotationNear("inner EvaluateRotationNear()", "two elements", "Two elements 8e-4 off are accepted", TwoElements, Matrix, Tolerance)) && Passed;
+
+  // The tolerance has to be finite: a NaN tolerance would accept every difference
+  const MRotation Rotated(0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+  Probe.Silence();
+  const bool NaNToleranceRotation = Probe.EvaluateRotationNear("inner EvaluateRotationNear()", "NaN tolerance", "A NaN tolerance is rejected", Rotated, Matrix, numeric_limits<double>::quiet_NaN());
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateRotationNear()", "NaN tolerance", "Different matrices are rejected with a NaN tolerance", NaNToleranceRotation) && Passed;
 
   return Passed;
 }
@@ -378,6 +417,16 @@ bool UTUnitTest::TestFileComparison()
   Passed = EvaluateFalse("EvaluateFilesIdentical()", "long file", "EvaluateFilesIdentical returns false when the representative test file is longer", LongFailure) && Passed;
   Passed = EvaluateFalse("EvaluateFilesIdentical()", "missing generated", "EvaluateFilesIdentical returns false when the representative generated file is missing", MissingGeneratedFailure) && Passed;
   Passed = EvaluateFalse("EvaluateFilesIdentical()", "missing reference", "EvaluateFilesIdentical returns false when the representative reference file is missing", MissingReferenceFailure) && Passed;
+
+  // A directory opens as a stream, but reading it is an error - it is not an empty file
+  Probe.Silence();
+  const bool DirectoryTestFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "directory as test file", "A directory is rejected", TemporaryDirectory, EmptyReferenceFile);
+  const bool DirectoryReferenceFailure = Probe.EvaluateFilesIdentical("inner EvaluateFilesIdentical()", "directory as reference file", "A directory is rejected", EmptyTestFile, TemporaryDirectory);
+  const bool DirectoryNumericalFailure = Probe.EvaluateFilesNumericallyEquivalent("inner EvaluateFilesNumericallyEquivalent()", "directory as test file", "A directory is rejected", TemporaryDirectory, EmptyReferenceFile);
+  Probe.Unsilence();
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "directory as test file", "EvaluateFilesIdentical returns false when the test file is a directory, it does not pass as an empty file", DirectoryTestFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesIdentical()", "directory as reference file", "EvaluateFilesIdentical returns false when the reference file is a directory", DirectoryReferenceFailure) && Passed;
+  Passed = EvaluateFalse("EvaluateFilesNumericallyEquivalent()", "directory as test file", "EvaluateFilesNumericallyEquivalent returns false when the test file is a directory", DirectoryNumericalFailure) && Passed;
 
   Passed = EvaluateTrue("RemoveTemporaryFile()", "reference cleanup", "The representative reference file can be removed", RemoveTemporaryFile(ReferenceFile)) && Passed;
   Passed = EvaluateTrue("RemoveTemporaryFile()", "matching cleanup", "The representative matching file can be removed", RemoveTemporaryFile(MatchingFile)) && Passed;
@@ -594,6 +643,13 @@ bool UTUnitTest::TestParseSummary()
   Passed = EvaluateFalse("ParseSummary()", "no number", "A label without a number is no summary", MUnitTest::ParseSummary("Passed tests: many\nFailed tests: few\n", Passes, Fails)) && Passed;
   Passed = EvaluateFalse("ParseSummary()", "done", "The text of a test without a summary is none either", MUnitTest::ParseSummary("done", Passes, Fails)) && Passed;
 
+  // The counts are unsigned int: no sign, no trailing text, no overflow
+  Passed = EvaluateFalse("ParseSummary()", "negative", "A negative count is no summary", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: -1\n", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "trailing text", "A count followed by text is no summary", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 0garbage\n", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "overflow", "A count above 4294967295 is no summary, it must not wrap around to zero", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 4294967296\n", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "largest", "The largest count 4294967295 is read", MUnitTest::ParseSummary("Passed tests: 4294967295\nFailed tests: 0\n", Passes, Fails)) && Passed;
+  Passed = Evaluate("ParseSummary()", "largest number", "The largest count is right", Passes, 4294967295U) && Passed;
+
   return Passed;
 }
 
@@ -693,6 +749,45 @@ bool UTUnitTest::TestLogDirectory()
   Passed = EvaluateTrue("MUnitTest()", "settings file created", "A missing testing settings file is created", filesystem::exists(NewSettingsFile.Data())) && Passed;
   Passed = EvaluateTrue("MUnitTest()", "settings file defaults", "The created testing settings file has the default log directory", Created.Read(NewSettingsFile) && Created.GetLogDirectory() == Defaults.GetLogDirectory()) && Passed;
   Passed = EvaluateTrue("GetTemporaryDirectoryName()", "default log directory", "Without a settings file the root is below the default log directory", DefaultRoot.BeginsWith(Defaults.GetLogDirectory() + "/MEGAlib_")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTUnitTest::TestHomeRedirect()
+{
+  bool Passed = true;
+
+  // The private temporary root of the test is HOME and the working directory
+  const MString Root = GetTemporaryDirectoryName();
+  const char* Home = getenv("HOME");
+  Passed = Evaluate("RedirectHomeDirectory()", "HOME", "HOME is the private temporary root of the test", MString(Home != nullptr ? Home : ""), Root) && Passed;
+  Passed = EvaluateTrue("RedirectHomeDirectory()", "working directory", "The working directory is the private temporary root of the test", filesystem::equivalent(MFile::GetWorkingDirectory().Data(), Root.Data())) && Passed;
+  MString Expanded = "~/.settings";
+  MFile::ExpandFileName(Expanded);
+  Passed = Evaluate("RedirectHomeDirectory()", "tilde", "~ expands into the private temporary root of the test", Expanded, Root + "/.settings") && Passed;
+
+  // Once per process: a further test object has its own root but keeps HOME and the working directory of the first one
+  {
+    DisableDefaultStreams();
+    UnitTestProbe Nested("NestedProbe");
+    EnableDefaultStreams();
+    const MString NestedRoot = Nested.TemporaryDirectory();
+    Passed = EvaluateFalse("RedirectHomeDirectory()", "nested root", "A further test object in the same process has its own temporary root", NestedRoot == Root) && Passed;
+    Home = getenv("HOME");
+    Passed = Evaluate("RedirectHomeDirectory()", "nested HOME", "A further test object in the same process does not redirect HOME again", MString(Home != nullptr ? Home : ""), Root) && Passed;
+    Passed = EvaluateTrue("RedirectHomeDirectory()", "nested working directory", "A further test object in the same process does not change the working directory", filesystem::equivalent(MFile::GetWorkingDirectory().Data(), Root.Data())) && Passed;
+  }
+
+  // Clearing the root keeps the working directory
+  const MString SettingsFile = Root + "/.settings";
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "settings file", "A settings file can be written into HOME", WriteTextFile(SettingsFile, "settings\n")) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "clear root", "The root can be cleared", PrepareTemporaryDirectory()) && Passed;
+  Passed = EvaluateFalse("PrepareTemporaryDirectory()", "settings file removed", "Clearing the root removes the settings file in HOME", filesystem::exists(SettingsFile.Data())) && Passed;
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "working directory kept", "Clearing the root keeps the working directory", filesystem::is_directory(MFile::GetWorkingDirectory().Data()) && filesystem::equivalent(MFile::GetWorkingDirectory().Data(), Root.Data())) && Passed;
 
   return Passed;
 }
@@ -843,6 +938,65 @@ bool UTUnitTest::TestTemporaryPaths()
   Passed = EvaluateTrue("GetTemporaryFileName()", "empty file name", "An empty temporary file name is rejected", EmptyFileName.IsEmpty()) && Passed;
   Passed = EvaluateTrue("GetTemporaryDirectoryName()", "backslash name", "Temporary directory names containing a backslash are rejected", InvalidBackslash.IsEmpty()) && Passed;
   Passed = EvaluateFalse("RemoveTemporaryFile()", "pre-root path", "Removing a temporary file before creating a randomized root is rejected", RemovedBeforeRootCreation) && Passed;
+
+  // A dangling symlink is an entry which is removed, it is not a missing file
+  UnitTestProbe LinkProbe("LinkProbe");
+  const MString DanglingLink = LinkProbe.TemporaryFile("dangling_link");
+  std::filesystem::create_symlink("missing_target", DanglingLink.Data(), Error);
+  Passed = EvaluateTrue("std::filesystem::create_symlink()", "dangling link", "A representative dangling symlink can be created", Error.value() == 0) && Passed;
+  Passed = EvaluateTrue("RemoveTemporaryFile()", "dangling link", "A dangling symlink inside the randomized private root can be removed", LinkProbe.RemoveFile(DanglingLink)) && Passed;
+  Passed = EvaluateFalse("RemoveTemporaryFile()", "dangling link removed", "The dangling symlink is gone after the removal", std::filesystem::is_symlink(std::filesystem::symlink_status(DanglingLink.Data(), Error))) && Passed;
+
+  // A write which does not reach the file completely is an error: limit the file size to one byte
+  struct rlimit OriginalLimit;
+  const bool GotLimit = (getrlimit(RLIMIT_FSIZE, &OriginalLimit) == 0);
+  Passed = EvaluateTrue("getrlimit()", "file size limit", "The file size limit can be read", GotLimit) && Passed;
+  if (GotLimit == true) {
+    struct rlimit Limited = OriginalLimit;
+    Limited.rlim_cur = 1;
+    // The limit is enforced with SIGXFSZ, ignore it to get the write error instead
+    void (*PreviousHandler)(int) = signal(SIGXFSZ, SIG_IGN);
+    Passed = EvaluateTrue("signal()", "SIGXFSZ", "The signal of the file size limit can be ignored", PreviousHandler != SIG_ERR) && Passed;
+    const MString LimitedFile = LinkProbe.TemporaryFile("limited.txt");
+    Passed = EvaluateTrue("setrlimit()", "file size limit", "The file size limit can be set to one byte", setrlimit(RLIMIT_FSIZE, &Limited) == 0) && Passed;
+    LinkProbe.Silence();
+    const bool Wrote = LinkProbe.WriteFile(LimitedFile, "1234567890");
+    LinkProbe.Unsilence();
+    Passed = EvaluateTrue("setrlimit()", "file size limit restored", "The original file size limit can be restored", setrlimit(RLIMIT_FSIZE, &OriginalLimit) == 0) && Passed;
+    if (PreviousHandler != SIG_ERR) {
+      Passed = EvaluateTrue("signal()", "SIGXFSZ restored", "The previous handling of the signal of the file size limit can be restored", signal(SIGXFSZ, PreviousHandler) != SIG_ERR) && Passed;
+    }
+    Passed = EvaluateFalse("WriteTextFile()", "file size limit", "A write which is cut short by the file size limit is reported as a failure", Wrote) && Passed;
+  }
+
+  // Root (the user) ignores permissions: the next two checks need them
+  if (geteuid() != 0) {
+    // Clearing a root which cannot be read is an error, not a success
+    UnitTestProbe UnreadableProbe("UnreadableProbe");
+    const MString UnreadableRoot = UnreadableProbe.TemporaryDirectory();
+    const MString UnreadableFixture = UnreadableProbe.TemporaryFile("fixture.txt");
+    Passed = EvaluateTrue("WriteTextFile()", "unreadable root fixture", "A fixture can be written before the root is made unreadable", UnreadableProbe.WriteFile(UnreadableFixture, "temporary\n")) && Passed;
+    const std::filesystem::perms OriginalPermissions = std::filesystem::status(UnreadableRoot.Data(), Error).permissions();
+    std::filesystem::permissions(UnreadableRoot.Data(), std::filesystem::perms::owner_write | std::filesystem::perms::owner_exec, Error);
+    Passed = EvaluateTrue("std::filesystem::permissions()", "unreadable root", "The root can be made unreadable", Error.value() == 0) && Passed;
+    UnreadableProbe.Silence();
+    const bool ClearedUnreadable = UnreadableProbe.PrepareDirectory();
+    UnreadableProbe.Unsilence();
+    std::filesystem::permissions(UnreadableRoot.Data(), OriginalPermissions, Error);
+    Passed = EvaluateTrue("std::filesystem::permissions()", "readable root", "The root can be made readable again", Error.value() == 0) && Passed;
+    Passed = EvaluateFalse("PrepareTemporaryDirectory()", "unreadable root", "Clearing a root which cannot be read is reported as a failure", ClearedUnreadable) && Passed;
+    Passed = EvaluateTrue("std::filesystem::exists()", "unreadable root fixture", "The fixture is still there, nothing was cleared", std::filesystem::exists(UnreadableFixture.Data())) && Passed;
+
+    // A root which cannot be locked is not handed out: without the lock the test driver could remove it while the test runs
+    // The root is created without any permissions (umask), so that it cannot be opened for the lock
+    UnitTestProbe LockProbe("LockProbe");
+    const mode_t OriginalMask = umask(0777);
+    LockProbe.Silence();
+    const MString UnlockableRoot = LockProbe.TemporaryDirectory();
+    LockProbe.Unsilence();
+    umask(OriginalMask);
+    Passed = EvaluateTrue("GetTemporaryDirectoryName()", "unlockable root", "No root is handed out if it cannot be locked", UnlockableRoot.IsEmpty()) && Passed;
+  }
 
   UnitTestProbe ThreadProbe("ThreadProbe");
   std::vector<MString> ThreadPaths[2];
