@@ -24,6 +24,7 @@
 
 // MEGAlib:
 #include "MExceptions.h"
+#include "MProcessManager.h"
 #include "MSystem.h"
 #include "MUnitTest.h"
 
@@ -338,7 +339,7 @@ bool UTExceptions::TestUsagePatterns()
     MException::UseAbort(false);
 
     MString LogFileName = GetTemporaryFileName("abort_check.log");
-    int Status = MSystem::RunProcess(BinaryPath(), "--abort-check", LogFileName);
+    int Status = MProcessManager::Run(BinaryPath(), "--abort-check", LogFileName);
 
     // Mask the core dump flag (0x80) of the wait status
     Passed = Evaluate("MException::UseAbort(true)", "child status", "The abort mode terminates the child process with SIGABRT", Status & 0x7F, static_cast<int>(SIGABRT)) && Passed;

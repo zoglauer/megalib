@@ -36,6 +36,7 @@ using namespace std;
 #include "MResponseMatrixAxisSpheric.h"
 #include "MResponseMatrixON.h"
 #include "MStreams.h"
+#include "MProcessManager.h"
 #include "MSystem.h"
 #include "MUnitTest.h"
 
@@ -337,7 +338,7 @@ void UTResponseMatrixON::CleanupCanvases(int TargetCount)
 
 bool UTResponseMatrixON::RunChildExpectingSuccess(const MString& Argument)
 {
-  int Status = MSystem::RunProcess("bin/UTResponseMatrixON", Argument, "/dev/null");
+  int Status = MProcessManager::Run("bin/UTResponseMatrixON", Argument, "/dev/null");
   if (Status < 0) return false;
   return WIFEXITED(Status) && WEXITSTATUS(Status) == 0;
 }

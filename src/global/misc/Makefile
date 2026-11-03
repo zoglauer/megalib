@@ -69,8 +69,10 @@ FILES := MGlobal \
 	MImage2D \
 	MImage3D \
 	MMath \
+	MStatistics \
 	MPairEvent \
 	MSystem \
+	MProcessManager \
 	MJulianDay \
 	MTokenizer \
 	MTransceiverTcpIpBinary \
