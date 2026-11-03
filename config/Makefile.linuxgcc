@@ -62,10 +62,10 @@ endif
 
 # Compiler & linker options:
 CXX           := g++
-CXXFLAGS      := $(OPT) -std=c++17 -Wall -Wno-deprecated -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) $(HEACFLAGS) $(HEALPIXCFLAGS) -D___LINUX___ -D___CLING___
+CXXFLAGS      := $(OPT) -std=c++17 -fopenmp -Wall -Wno-deprecated -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) $(HEACFLAGS) $(HEALPIXCFLAGS) -D___LINUX___ -D___CLING___
 DEFINES       := -UHARDWARE
 LD            := g++
-LDFLAGS       := $(OPT) -D___LINUX___
+LDFLAGS       := $(OPT) -D___LINUX___ -fopenmp
 SOFLAGS       := -shared
 LIBS          := $(ROOTLIBS) $(HEALIBS) $(HEALPIXLIBS) -lpthread -lThread -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA -lASImage
 GLIBS         := $(ROOTGLIBS)

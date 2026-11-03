@@ -59,6 +59,29 @@ using std::vector;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Helper class to evaluate constants
+class MConstantEvaluator
+{
+ public:
+  //! The constant
+  MString m_Constant;
+  //! The constant
+  MString m_Text;
+  //! Length if the value
+  unsigned int m_TextLength;
+  //! Is it a number
+  bool m_IsNumber;
+  //! Is it maths
+  bool m_IsMaths;
+  //! Is it found in other constants
+  bool m_IsPartOfOtherConstants;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! A MEGAlib geometry
 class MDGeometry
 {
   // public interface:
@@ -253,18 +276,34 @@ class MDGeometry
   //! Unit taking care of all triggering aspects
   MDTriggerUnit* m_TriggerUnit;  
   
-  //! A list of all volumes - the structure is kept within the volumes, which are containers
+  //! A list of all volumes
   vector<MDVolume*> m_VolumeList;
+  //! A map of all volumes - for quick lookup by name
+  unordered_map<string, MDVolume*> m_VolumeMap;
   //! A list of all materials
   vector<MDMaterial*> m_MaterialList;
+  //! A map of all materials - for quick lookup by name
+  unordered_map<string, MDMaterial*> m_MaterialMap;
   //! A list of all detectors
   vector<MDDetector*> m_DetectorList;
-  //! A list of all triggers  
+  //! A map of all detectors - for quick lookup by name
+  unordered_map<string, MDDetector*> m_DetectorMap;
+  //! A list of all triggers
   vector<MDTrigger*> m_TriggerList;
+  //! A map of all triggers - for quick lookup by name
+  unordered_map<string, MDTrigger*> m_TriggerMap;
   //! A list of all defined shapes
   vector<MDShape*> m_ShapeList;
+  //! A map of all defined shapes - for quick lookup by name
+  unordered_map<string, MDShape*> m_ShapeMap;
   //! A list of all defined orientations
   vector<MDOrientation*> m_OrientationList;
+  //! A map of all defined orientations - for quick lookup by name
+  unordered_map<string, MDOrientation*> m_OrientationMap;
+  //! A list of all vectors
+  vector<MDVector*> m_VectorList;
+  //! A map of all vectors - for quick lookup by name
+  unordered_map<string, MDVector*> m_VectorMap;
 
   //! The main system
   MDSystem* m_System;
@@ -274,16 +313,15 @@ class MDGeometry
   //! The version of the detector effects engine: 1 = MEGAlib 1-4 engine (default), 2 = MEGAlib 5 onward engine
   unsigned int m_DetectorEffectsEngineVersion;
   
-  //! A list of all vectors
-  vector<MDVector*> m_VectorList;
 
   //! A list of all constants
-  vector<MString> m_ConstantList;
-  //! A map of all constants and their companions
-  map<MString, MString> m_ConstantMap;
+  vector<MConstantEvaluator> m_Constants;
+  //! A map of all constants
+  map<MString, MString> m_ConstantsMap;
   //! A list of all not allowed constants
   vector<MString> m_BlockedConstants;
-  
+
+
   //! The different detector types
   vector<int> m_NDetectorTypes; 
 

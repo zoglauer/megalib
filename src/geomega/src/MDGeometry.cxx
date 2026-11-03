@@ -38,6 +38,10 @@
 #include <cctype>
 #include <cmath>
 #include <iterator>
+#include <algorithm>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 using namespace std;
 
 // ROOT libs:
@@ -47,6 +51,7 @@ using namespace std;
 #include <TView.h>
 #include <TROOT.h>
 #include <TSystem.h>
+#include <TStyle.h>
 #include <TObjString.h>
 #include <TMath.h>
 #include <TGeoOverlap.h>
@@ -193,16 +198,19 @@ void MDGeometry::Reset()
     delete m_VolumeList[i];
   }
   m_VolumeList.clear();
+  m_VolumeMap.clear();
 
   for (unsigned int i = 0; i < m_MaterialList.size(); ++i) {
     delete m_MaterialList[i];
   }
   m_MaterialList.clear();
+  m_MaterialMap.clear();
 
   for (unsigned int i = 0; i < m_DetectorList.size(); ++i) {
     delete m_DetectorList[i];
   }
   m_DetectorList.clear();
+  m_DetectorMap.clear();
 
   m_NDetectorTypes.clear();
   m_NDetectorTypes.resize(MDDetector::c_MaxDetector+1);
@@ -213,24 +221,28 @@ void MDGeometry::Reset()
     delete m_TriggerList[i];
   }
   m_TriggerList.clear();
+  m_TriggerMap.clear();
 
   for (unsigned int i = 0; i < m_ShapeList.size(); ++i) {
     delete m_ShapeList[i];
   }
   m_ShapeList.clear();
+  m_ShapeMap.clear();
 
   for (unsigned int i = 0; i < m_OrientationList.size(); ++i) {
     delete m_OrientationList[i];
   }
   m_OrientationList.clear();
+  m_OrientationMap.clear();
 
   for (unsigned int i = 0; i < m_VectorList.size(); ++i) {
     delete m_VectorList[i];
   }
   m_VectorList.clear();
+  m_VectorMap.clear();
 
-  m_ConstantList.clear();
-  m_ConstantMap.clear();
+  m_Constants.clear();
+  m_ConstantsMap.clear();
 
   m_WorldVolume = 0;
   // m_StartVolume = ""; // This is a start option of geomega, so do not reset!
@@ -497,7 +509,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     
   }
 
-  if (FileContent.size() == 0) {
+  size_t FileContentSize = FileContent.size();
+  if (FileContentSize == 0) {
     mgui<<"File is \""<<m_FileName<<"\" empty or binary!"<<error;
     return false;
   }
@@ -544,11 +557,16 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
+  ++Stage;
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
+    mout<<"Stage "<<Stage<<" (fixing input spanning multiple lines) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+  }
 
 
   // Find constants
   //
 
+  //! A map of all constants and their companions
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
@@ -565,52 +583,83 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         Typo("The constant name and replacement are identical!");
         return false;
       }
+
       vector<MString>::iterator VIter = find(m_BlockedConstants.begin(), m_BlockedConstants.end(), Tokenizer.GetTokenAt(1));
       if (VIter != m_BlockedConstants.end()) {
         Typo("Constant has a reserved name, and thus cannot be used!");
         return false;
       }
-      map<MString, MString>::iterator Iter = m_ConstantMap.find(Tokenizer.GetTokenAt(1));
-      if (Iter != m_ConstantMap.end()) {
-        if (m_ConstantMap[Tokenizer.GetTokenAt(1)] != Tokenizer.GetTokenAt(2)) {
+
+      map<MString, MString>::iterator Iter = m_ConstantsMap.find(Tokenizer.GetTokenAt(1));
+      if (Iter != m_ConstantsMap.end()) {
+        if (m_ConstantsMap[Tokenizer.GetTokenAt(1)] != Tokenizer.GetTokenAt(2)) {
           Typo("Constant has already been defined and both are not identical!");
           return false;
         }
       }
-      m_ConstantMap[Tokenizer.GetTokenAt(1)] = Tokenizer.GetTokenAt(2);
-      m_ConstantList.push_back(Tokenizer.GetTokenAt(1));
+
+      MConstantEvaluator Eval;
+      Eval.m_Constant = Tokenizer.GetTokenAt(1);
+      Eval.m_Text = Tokenizer.GetTokenAt(2);
+      Eval.m_TextLength = Tokenizer.GetTokenAt(2).Length();
+      Eval.m_IsNumber = Tokenizer.GetTokenAt(2).IsNumber();
+      Eval.m_IsPartOfOtherConstants = false;
+      if (Eval.m_IsNumber == false) {
+        Eval.m_IsMaths = MTokenizer::IsMaths(Tokenizer.GetTokenAt(2));
+      }
+      m_Constants.push_back(Eval);
+      m_ConstantsMap[Eval.m_Constant] = Eval.m_Text;
+    }
+  }
+
+  ++Stage;
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
+    mout<<"Stage "<<Stage<<" (finding constants) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+  }
+
+  // Fill the m_IsPartOfOtherConstants to speed things up later
+  for (unsigned int l1 = 0; l1 < m_Constants.size(); ++l1) {
+    for (unsigned int l2 = 0; l2 < m_Constants.size(); ++l2) {
+      if (m_Constants[l2].m_IsNumber == true) continue;
+      if (m_Constants[l2].m_TextLength < m_Constants[l1].m_TextLength) continue;
+      if (ContainsReplacableConstant(m_Constants[l2].m_Text, m_Constants[l1].m_Constant) == true) {
+        m_Constants[l2].m_IsPartOfOtherConstants = true;
+        break;
+      }
     }
   }
 
   // Take care of maths and constants containing constants, containing constants...
   bool ConstantChanged = true;
   while (ConstantChanged == true) {
+
     // Step 1: Solve maths:
-    for (map<MString, MString>::iterator Iter1 = m_ConstantMap.begin();
-         Iter1 != m_ConstantMap.end();
-         ++Iter1) {
-      if (MTokenizer::IsMaths((*Iter1).second) == true) {
+    for (unsigned int l1 = 0; l1 < m_Constants.size(); ++l1) {
+      if (m_Constants[l1].m_IsNumber == true) continue;
+      //if (MTokenizer::IsMaths(m_Constants[l1].m_Text) == true) { // This is not properly tracked yet thus have to check
+      if (m_Constants[l1].m_IsMaths == true) {
         bool ContainsConstant = false;
-        for (map<MString, MString>::iterator Iter2 = m_ConstantMap.begin();
-             Iter2 != m_ConstantMap.end();
-             ++Iter2) {
-          if (ContainsReplacableConstant((*Iter1).second, (*Iter2).first) == true) {
+        for (unsigned int l2 = 0; l2 < m_Constants.size(); ++l2) {
+          if (ContainsReplacableConstant(m_Constants[l1].m_Text, m_Constants[l2].m_Constant) == true) {
             ContainsConstant = true;
-            //cout<<"Replaceable constant: "<<(*Iter1).second<<" (namely:"<<(*Iter2).first<<")"<<endl;
+            //cout<<"Replaceable constant: "<<m_Constants[l1]<<" (namely:"<<m_Constants[l2].m_Constant<<")"<<endl;
             break;
           } else {
-            //cout<<"No replaceable constant: "<<(*Iter1).second<<" (test:"<<(*Iter2).first<<")"<<endl;
+            //cout<<"No replaceable constant: "<<m_Constants[l1]<<" (test:"<<m_Constants[l2].m_Constant<<")"<<endl;
           }
         }
         if (ContainsConstant == false) {
-          MString Constant = (*Iter1).second;
-          if ( MTokenizer::CheckMaths(Constant) == false) {
+          MString Constant = m_Constants[l1].m_Text;
+          if (MTokenizer::CheckMaths(Constant) == false) {
             mout<<"   *** Error ***"<<endl;
-            mout<<"Maths in constant cannot be evaluated: "<<(*Iter1).first<<" "<<Constant<<endl;
+            mout<<"Maths in constant cannot be evaluated: "<<m_Constants[l1].m_Constant<<" "<<Constant<<endl;
             return false;
           }
           MTokenizer::EvaluateMaths(Constant);
-          (*Iter1).second = Constant;
+
+          m_Constants[l1].m_Text = Constant;
+          m_Constants[l1].m_IsNumber = true;
+          m_Constants[l1].m_IsMaths = false;
         }
       }
     }
@@ -618,17 +667,20 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     // Step 2: Replace constants in constants
     bool ConstantChangableWithMath = false;
     ConstantChanged = false;
-    for (map<MString, MString>::iterator Iter1 = m_ConstantMap.begin(); Iter1 != m_ConstantMap.end(); ++Iter1) {
-      //cout<<"Checking for replacement: "<<(*Iter1).first<<" with "<<(*Iter1).second<<endl;
-      for (map<MString, MString>::iterator Iter2 = m_ConstantMap.begin(); Iter2 != m_ConstantMap.end(); ++Iter2) {
+    for (unsigned int l1 = 0; l1 < m_Constants.size(); ++l1) {
+      if (m_Constants[l1].m_IsNumber == true) continue;
+      //if (m_ConstantIsNumber[m_Constants[l1]] == true) continue;
+      //cout<<"Checking for replacement: "<<m_Constants[l1].m_Constant<<" with "<<m_Constants[l1]<<endl;
+      for (unsigned int l2 = 0; l2 < m_Constants.size(); ++l2) {
+        //if (m_ConstantIsUsedInConstants[m_Constants[l2].m_Constant] == false) continue;
         //cout<<"Map size: "<<m_ConstantMap.size()<<endl;
-        if (ContainsReplacableConstant((*Iter1).second, (*Iter2).first) == true) {
-          //cout<<"   ---> "<<(*Iter2).first<<" - "<<(*Iter2).second<<endl;
-          //cout<<(*Iter1).second<<" contains "<<(*Iter2).first<<endl;
-          if (MTokenizer::IsMaths((*Iter2).second) == false) {
-            MString Constant = (*Iter1).second;
-            ReplaceWholeWords(Constant, (*Iter2).first, (*Iter2).second);
-            (*Iter1).second = Constant;
+        if (ContainsReplacableConstant(m_Constants[l1].m_Text, m_Constants[l2].m_Constant) == true) {
+          //cout<<"   ---> "<<m_Constants[l2].m_Constant<<" - "<<m_Constants[l2]<<endl;
+          //cout<<m_Constants[l1]<<" contains "<<m_Constants[l2].m_Constant<<endl;
+          if (MTokenizer::IsMaths(m_Constants[l2].m_Text) == false) {
+            MString Constant = m_Constants[l1].m_Text;
+            ReplaceWholeWords(Constant, m_Constants[l2].m_Constant, m_Constants[l2].m_Text);
+            m_Constants[l1].m_Text = Constant;
             ConstantChanged = true;
           } else {
             ConstantChangableWithMath = true;
@@ -644,12 +696,66 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
+
+  ++Stage;
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
+    mout<<"Stage "<<Stage<<" (analyzing maths) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+  }
+
+
+  if (FileContentSize > 2000) {
+#ifdef _OPENMP
+    std::cout << "OpenMP is ENABLED. Max threads: " << omp_get_max_threads() << std::endl;
+#else
+    std::cout << "OpenMP is DISABLED (The compiler is ignoring your pragmas!)" << std::endl;
+#endif
+
+    #pragma omp parallel
+    {
+      #pragma omp single
+      {
+        for (auto& Content : FileContent) {
+          // We need a pointer here for openMPI to work reliably
+          auto* pContent = &Content;
+
+          #pragma omp task firstprivate(pContent) shared(m_Constants)
+          {
+            for (const auto& Constant : m_Constants) {
+              pContent->Replace(Constant.m_Constant, Constant.m_Text, true);
+            }
+          }
+        }
+        #pragma omp taskwait
+      }
+    }
+  } else {
+    for (auto& Content : FileContent) {
+      auto* pContent = &Content;
+      for (const auto& Constant : m_Constants) {
+        pContent->Replace(Constant.m_Constant, Constant.m_Text, true);
+      }
+    }
+  }
+
   // Do the final replace:
+  /*
+  std::for_each(std::execution::par, FileContent.begin(), FileContent.end(), [&](auto& Content) {
+    MTokenizer& Tokenizer = Content.GetTokenizer(false);
+    if (Tokenizer.GetNTokens() > 0) {
+      for (const auto& Constant : m_Constants) {
+        Content.Replace(Constant.m_Constant, Constant.m_Text, true);
+      }
+    }
+  });
+  */
+
+  /*
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(false);
     
     if (Tokenizer.GetNTokens() == 0) continue;
+
 
     MString Init = Tokenizer.GetTokenAt(0);
     if (Init == "Volume" ||
@@ -679,16 +785,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       continue;
     }
 
-    for (map<MString, MString>::iterator Iter = m_ConstantMap.begin();
-         Iter != m_ConstantMap.end(); ++Iter) {
-      (*ContentIter).Replace((*Iter).first, (*Iter).second, true);
+
+    for (unsigned int l1 = 0; l1 < m_Constants.size(); ++l1) {
+      (*ContentIter).Replace(m_Constants[l1].m_Constant, m_Constants[l1].m_Text, true);
     }
   }
+  */
 
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (evaluating constants and maths) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+    mout<<"Stage "<<Stage<<" (replacing all constants) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
   
   if (DebugParsing == true) {
@@ -1164,6 +1271,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Find the master keyword, volumes, material, detectors
   //
 
+
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
@@ -1171,7 +1279,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       Typo("Parsing of the line failed.");
       return false;
     }
-       
+
     if (Tokenizer.GetNTokens() == 0) continue;
 
     // Let's scan for first order keywords:
@@ -1686,8 +1794,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       AddDetector(new MDVoxel3D(Tokenizer.GetTokenAt(1)));
       continue;
     }
-
   }
+
 
   // Now we can do some basic evaluation of the input:
 
@@ -1779,7 +1887,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (analyzing \"Copies\") finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+    mout<<"Stage "<<Stage<<" (creating copies) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
 
@@ -2651,6 +2759,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   } // end third loop...
 
 
+
+  ++Stage;
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
+    mout<<"Stage "<<Stage<<" (filling the volumes, materials, etc.) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+  }
 
 
 
@@ -3574,7 +3687,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (analyzing all properties) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+    mout<<"Stage "<<Stage<<" (filling detectors) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
   if (m_WorldVolume == 0) {
@@ -3720,11 +3833,6 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     ++AxesIter;
   }
   m_WorldVolume->ResetCloneTemplateFlags();
-
-  ++Stage;
-  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (generating clones) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
-  }
 
   for (unsigned int i = 0; i < GetNVolumes(); i++) {
     if (m_VolumeList[i] != 0) {
@@ -4390,46 +4498,35 @@ bool MDGeometry::NameExists(MString Name)
   // Since all new names pass through this function (because we have to check
   // if it already exists), we can make sure that we are case insensitive!
 
-  for (unsigned int i = 0; i < GetNVolumes(); i++) {
-    if (Name.AreIdentical(m_VolumeList[i]->GetName(), true)) {
-      Typo("A volume of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetVolume(Name) != nullptr) {
+    Typo("A volume of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    if (Name.AreIdentical(m_MaterialList[i]->GetName(), true)) {
-      Typo("A material of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetMaterial(Name) != nullptr) {
+    Typo("A material of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < GetNDetectors(); i++) {
-    if (Name.AreIdentical(m_DetectorList[i]->GetName(), true)) {
-      Typo("A detector of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetDetector(Name) != nullptr) {
+    Typo("A detector of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < GetNTriggers(); i++) {
-    if (Name.AreIdentical(m_TriggerList[i]->GetName(), true)) {
-      Typo("A trigger of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetTrigger(Name) != nullptr) {
+    Typo("A trigger of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < GetNVectors(); i++) {
-    if (Name.AreIdentical(m_VectorList[i]->GetName(), true)) {
-      Typo("A vector of this name (case insensitive) already exists!");
-      return true;
-    }
+  if (GetVector(Name) != nullptr) {
+    Typo("A vector of this name already exists!");
+    return true;
   }
 
-  for (unsigned int i = 0; i < m_ConstantList.size(); i++) {
-    if (Name.AreIdentical(m_ConstantList[i], true)) {
-      Typo("A constant of this name (case insensitive) already exists!");
-      return true;
-    }
+  auto Iter = m_ConstantsMap.find(Name);
+  if (Iter != m_ConstantsMap.end()) {
+    Typo("A constant of this name already exists!");
+    return false;
   }
 
   return false;
@@ -4490,21 +4587,18 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
     }
   }
 
-
   m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
   //m_Geometry->CloseGeometry(); // we do not close the geometry,
-  //m_Geometry->SetMultiThread(true); // This crashes it...
-  m_Geometry->SetVisLevel(1000);
-  m_Geometry->SetNsegments(40);
-  m_Geometry->SetVisDensity(-1.0);
-  //m_Geometry->Voxelize("ALL");
+  m_Geometry->SetVisLevel(1000);  // 1000
+  m_Geometry->SetNsegments(20);  // 40
+  m_Geometry->SetVisDensity(0.1); // -1.0
 
   // Make sure we use the correct geometry for interactions
   gGeoManager = m_Geometry;
   if (Mode.ToLower() == "raytrace") {
     if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Raytrace();
   } else {
-    if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw(Mode);
+    if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw("ogl");
   }
 
   if (m_Geometry->GetListOfNavigators() == nullptr) {
@@ -4515,7 +4609,7 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
   if (RestoreView == true && m_ViewValid == true) {
     TView* View = m_GeoView->GetView();
     View->SetRange(&m_ViewRangeMin[0], &m_ViewRangeMax[0]);
-    
+
     int Reply = 0;
     View->SetView(m_ViewRotationTheta, m_ViewRotationPhi, m_ViewRotationPsi, Reply);
     
@@ -4845,6 +4939,7 @@ void MDGeometry::AddVolume(MDVolume* Volume)
   // Add a volume to the list
 
   m_VolumeList.push_back(Volume);
+  m_VolumeMap[Volume->GetName().Data()] = Volume;
 }
 
 
@@ -4882,6 +4977,13 @@ MDVolume* MDGeometry::GetVolume(const MString& Name)
 {
   // Return the volume with name Name or 0 if it does not exist
 
+  auto I = m_VolumeMap.find(Name.Data());
+  if (I != m_VolumeMap.end()) {
+    return I->second;
+  }
+  return nullptr;
+
+  /* old code
   // This function is not reentrant!!!!
 
   // ---> begin extremely time critical
@@ -4925,6 +5027,7 @@ MDVolume* MDGeometry::GetVolume(const MString& Name)
   // <--- end extremely time critical
 
   return 0;
+  */
 }
 
 
@@ -4965,6 +5068,7 @@ void MDGeometry::AddDetector(MDDetector* Detector)
   // Add a volume to the list
 
   m_DetectorList.push_back(Detector);
+  m_DetectorMap[Detector->GetName().Data()] = Detector;
 }
 
 
@@ -4991,13 +5095,11 @@ MDDetector* MDGeometry::GetDetector(const MString& Name)
 {
   // Return the detector with name Name or 0 if it does not exist
 
-  for (unsigned int i = 0; i < GetNDetectors(); i++) {
-    if (Name == m_DetectorList[i]->GetName()) {
-      return m_DetectorList[i];
-    }
+  auto I = m_DetectorMap.find(Name.Data());
+  if (I != m_DetectorMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5108,6 +5210,7 @@ void MDGeometry::AddShape(MDShape* Shape)
   // Add a shape to the list
 
   m_ShapeList.push_back(Shape);
+  m_ShapeMap[Shape->GetName().Data()] = Shape;
 }
 
 
@@ -5134,13 +5237,11 @@ MDShape* MDGeometry::GetShape(const MString& Name)
 {
   // Return the shape with name Name or 0 if it does not exist
 
-  for (unsigned int i = 0; i < GetNShapes(); i++) {
-    if (Name == m_ShapeList[i]->GetName()) {
-      return m_ShapeList[i];
-    }
+  auto I = m_ShapeMap.find(Name.Data());
+  if (I != m_ShapeMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5180,6 +5281,7 @@ void MDGeometry::AddOrientation(MDOrientation* Orientation)
   // Add an orientation to the list
 
   m_OrientationList.push_back(Orientation);
+  m_OrientationMap[Orientation->GetName().Data()] = Orientation;
 }
 
 
@@ -5206,13 +5308,11 @@ MDOrientation* MDGeometry::GetOrientation(const MString& Name)
 {
   // Return the orientation with name Name or 0 if it does not exist
 
-  for (unsigned int i = 0; i < GetNOrientations(); i++) {
-    if (Name == m_OrientationList[i]->GetName()) {
-      return m_OrientationList[i];
-    }
+  auto I = m_OrientationMap.find(Name.Data());
+  if (I != m_OrientationMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5252,6 +5352,7 @@ void MDGeometry::AddMaterial(MDMaterial* Material)
   // Add a material to the list
 
   m_MaterialList.push_back(Material);
+  m_MaterialMap[Material->GetName().Data()] = Material;
 }
 
 
@@ -5278,13 +5379,11 @@ MDMaterial* MDGeometry::GetMaterial(const MString& Name)
 {
   // Return the material with name Name or 0 if it does not exist
 
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    if (Name == m_MaterialList[i]->GetName()) {
-      return m_MaterialList[i];
-    }
+  auto I = m_MaterialMap.find(Name.Data());
+  if (I != m_MaterialMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5325,6 +5424,7 @@ void MDGeometry::AddTrigger(MDTrigger* Trigger)
   // Add a material to the list
 
   m_TriggerList.push_back(Trigger);
+  m_TriggerMap[Trigger->GetName().Data()] = Trigger;
 }
 
 
@@ -5351,14 +5451,11 @@ MDTrigger* MDGeometry::GetTrigger(const MString& Name)
 {
   // Return the material with name Name or 0 if it does not exist
 
-  unsigned int i;
-  for (i = 0; i < GetNTriggers(); i++) {
-    if (Name == m_TriggerList[i]->GetName()) {
-      return m_TriggerList[i];
-    }
+  auto I = m_TriggerMap.find(Name.Data());
+  if (I != m_TriggerMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 
@@ -5414,6 +5511,7 @@ void MDGeometry::AddVector(MDVector* Vector)
   // Add a vector to the list
 
   m_VectorList.push_back(Vector);
+  m_VectorMap[Vector->GetName().Data()] = Vector;
 }
 
 
@@ -5440,14 +5538,11 @@ MDVector* MDGeometry::GetVector(const MString& Name)
 {
   // Return the vector with name Name or 0 if it does not exist
 
-  unsigned int i;
-  for (i = 0; i < GetNVectors(); i++) {
-    if (Name == m_VectorList[i]->GetName()) {
-      return m_VectorList[i];
-    }
+  auto I = m_VectorMap.find(Name.Data());
+  if (I != m_VectorMap.end()) {
+    return I->second;
   }
-
-  return 0;
+  return nullptr;
 }
 
 

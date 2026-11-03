@@ -32,14 +32,25 @@ ROOTCFLAGS    := $(shell root-config --cflags)
 ROOTGLIBS     := $(shell root-config --glibs)
 
 
+# OpenMP
+OMPPREFIX     := $(shell brew --prefix libomp 2> /dev/null)
+ifneq ("$(wildcard $(OMPPREFIX)/include/omp.h)", "")
+  OMPCFLAGS   := -Xpreprocessor -fopenmp -I$(OMPPREFIX)/include
+  OMPLIBS     := -L$(OMPPREFIX)/lib -lomp
+else
+  OMPCFLAGS   := -Wno-unknown-pragmas
+  OMPLIBS     :=
+endif
+
+
 # Compiler & linker options:
 CXX           := c++
-CXXFLAGS      := $(OPT) -std=c++17 -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-unused-but-set-variable -Wno-overloaded-virtual -Wno-tautological-undefined-compare -Wno-deprecated-declarations
+CXXFLAGS      := $(OPT) -std=c++17 $(OMPCFLAGS) -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___ -D___CLING___ -Wno-unused-but-set-variable -Wno-overloaded-virtual -Wno-tautological-undefined-compare -Wno-deprecated-declarations
 DEFINES       := -UHARDWARE
 LD            := c++
 LDFLAGS       := $(OPT) -Xlinker -flat_namespace -D___MACOSX___
 SOFLAGS       := -dynamiclib -undefined dynamic_lookup
-LIBS          := $(ROOTGLIBS) -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA -lASImage
+LIBS          := $(ROOTGLIBS) -lMinuit -lMinuit2 -lGeom -lSpectrum -lTMVA -lASImage $(OMPLIBS)
 GLIBS         := 
 DEPFLAGS      := -M
 
