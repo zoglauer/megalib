@@ -23,6 +23,7 @@
 #include "MFile.h"
 #include "MSettings.h"
 #include "MStreams.h"
+#include "MProcessManager.h"
 #include "MSystem.h"
 #include "MUnitTest.h"
 
@@ -266,7 +267,7 @@ bool UTSettings::TestChange()
 
   {
     MString LogFileName = TemporaryDirectory + "/change_missing_node.log";
-    int Status = MSystem::RunProcess(BinaryPath(), "--change-missing-node", LogFileName);
+    int Status = MProcessManager::Run(BinaryPath(), "--change-missing-node", LogFileName);
     Passed = EvaluateTrue("Change()", "missing node status", "Change() returns failure for a missing dotted-path node", Status == 0) && Passed;
 
     MString Content = ReadTextFile(LogFileName);
