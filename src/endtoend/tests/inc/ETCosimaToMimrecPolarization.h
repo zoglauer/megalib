@@ -39,8 +39,9 @@
 //! With the on-axis source (the four-fold symmetric detector adds no modulation) the modulation vector (<cos 2 eta>, <sin 2 eta>) of the full energy events is
 //! * zero (within 5 sigma) for unpolarized photons
 //! * (-M, 0), (0, -M), (+M, 0) for polarization angles of 0, 45, and 90 degrees: the modulation is the same size and rotates with the polarization (the phase is right)
-//! * For a source off-axis, with a polarization vector which is NOT perpendicular to the direction (cosima uses its projection onto the plane perpendicular to
-//!   the direction), the modulation relative to the projected vector is clearly negative compared with the unpolarized control.
+//! * For a source off-axis with a polarization vector relative to the direction ("relativez": the direction crossed with the z-axis, rotated by 45 degrees
+//!   around the direction), the modulation relative to this vector is clearly negative compared with the unpolarized control. An absolute vector which is
+//!   not perpendicular to the direction is rejected by cosima (zero polarization), it is not projected.
 //! * Mimrec (--polarization, with an independent unpolarized simulation as background to correct the geometry): the polarization angle of the polarized sources
 //!   is measured at 0, 45, and 90 degrees (within 5 sigma + 2 degrees), the modulation is significant, and an unpolarized source has no significant modulation
 //! The azimuthal angle is computed from the reconstructed Compton events, i.e. the whole chain simulation + reconstruction is tested.

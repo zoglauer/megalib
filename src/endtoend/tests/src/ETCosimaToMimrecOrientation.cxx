@@ -255,7 +255,11 @@ bool ETCosimaToMimrecOrientation::RunTest()
         }
         mout<<Name<<": mimrec ARM plot for theta = "<<TrueTheta<<" deg, phi = "<<TruePhi<<" deg: "<<MimrecInside<<" events in the range (own analysis "<<OwnInside<<"), peak at "<<ARMHistogram->GetXaxis()->GetBinCenter(ARMHistogram->GetMaximumBin())<<" deg"<<endl;
         Passed = EvaluateNear("Mimrec", Name + ", ARM content", "The ARM histogram of mimrec for the true position has the same number of events in the range as the own analysis", MimrecInside, OwnInside, 0.0) && Passed;
-        Passed = EvaluateNear("Mimrec", Name + ", ARM peak", "The ARM histogram of mimrec for the true position peaks at zero (within 2 degrees)", ARMHistogram->GetXaxis()->GetBinCenter(ARMHistogram->GetMaximumBin()), 0.0, 2.0) && Passed;
+        double Differences = 0.0;
+        for (int b = 0; b < Bins; ++b) {
+          Differences += fabs(ARMHistogram->GetBinContent(b + 1) - Own[b]);
+        }
+        Passed = EvaluateNear("Mimrec", Name + ", ARM histogram", "The ARM histogram of mimrec for the true position is bin by bin the own ARM histogram of the extracted events (its peak at zero is checked with the own analysis above)", Differences, 0.0, 0.0) && Passed;
       }
     }
   }

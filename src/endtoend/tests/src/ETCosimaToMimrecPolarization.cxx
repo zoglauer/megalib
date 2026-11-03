@@ -55,9 +55,9 @@ bool ETCosimaToMimrecPolarization::RunTest()
     { "Angle0", 0, "Polarization absolute 1.0 1 0 0" },
     { "Angle45", 0, "Polarization absolute 1.0 3 3 0" },
     { "Angle90", 0, "Polarization absolute 1.0 0 1 0" },
-    // Off axis: the polarization vector is not perpendicular to the direction
+    // Off axis: the polarization vector is given relative to the direction (cosima: direction x z-axis, rotated by 45 degrees around the direction)
     { "OffAxisUnpolarized", 30, "Polarization random" },
-    { "OffAxisProjected", 30, "Polarization absolute 1.0 1 1 1" },
+    { "OffAxisRelative", 30, "Polarization relativez 1.0 45" },
     // Add an independent unpolarized simulation as the background of mimrec
     { "UnpolarizedBackground", 0, "Polarization random" }
   };
@@ -202,22 +202,23 @@ bool ETCosimaToMimrecPolarization::RunTest()
     }
   }
 
-  // Off axis: project the polarization vector onto the plane perpendicular to the flight direction
+  // Off axis: the polarization vector as cosima makes it for "relativez": the direction crossed with the z-axis, rotated by 45 degrees around the direction (right handed)
   MVector ToSource;
   ToSource.SetMagThetaPhi(1.0, 30.0*c_Rad, 0.0);
   const MVector Flight = ToSource*(-1.0);
-  const MVector Given(1.0, 1.0, 1.0);
-  const MVector Projected = (Given - Flight*Given.Dot(Flight)).Unit();
-  const MVector Other = Flight.Cross(Projected);
-  const Modulation Control = Measure(Tras[4], Projected, Other, Flight);
-  const Modulation Polarized = Measure(Tras[5], Projected, Other, Flight);
-  mout<<"Off axis: control modulation ("<<Control.m_Cos<<", "<<Control.m_Sin<<") +- "<<Control.Sigma()<<", polarized relative to the projected vector ("<<Polarized.m_Cos<<", "<<Polarized.m_Sin<<") +- "<<Polarized.Sigma()<<endl;
+  const MVector Start = Flight.Cross(MVector(0.0, 0.0, 1.0)).Unit();
+  const double RelativeAngle = 45.0*c_Rad;
+  const MVector Polarization = Start*cos(RelativeAngle) + Flight.Cross(Start)*sin(RelativeAngle);
+  const MVector Other = Flight.Cross(Polarization);
+  const Modulation Control = Measure(Tras[4], Polarization, Other, Flight);
+  const Modulation Polarized = Measure(Tras[5], Polarization, Other, Flight);
+  mout<<"Off axis: control modulation ("<<Control.m_Cos<<", "<<Control.m_Sin<<") +- "<<Control.Sigma()<<", polarized relative to the polarization vector ("<<Polarized.m_Cos<<", "<<Polarized.m_Sin<<") +- "<<Polarized.Sigma()<<endl;
   // Expect <cos 2 eta> below the unpolarized control:
   const double Difference = Control.m_Cos - Polarized.m_Cos;
   const double DifferenceSigma = sqrt(Control.Sigma()*Control.Sigma() + Polarized.Sigma()*Polarized.Sigma());
-  Passed = EvaluateNear("Polarization", "OffAxis, modulation", "The photons which are polarized along the projected vector scatter perpendicular to it: <cos 2 eta> is lower than for the unpolarized control (> 5 sigma; shown: the shortfall)", max(Limit*DifferenceSigma - Difference, 0.0), 0.0, 0.0) && Passed;
+  Passed = EvaluateNear("Polarization", "OffAxis, modulation", "The photons which are polarized along the relative vector scatter perpendicular to it: <cos 2 eta> is lower than for the unpolarized control (> 5 sigma; shown: the shortfall)", max(Limit*DifferenceSigma - Difference, 0.0), 0.0, 0.0) && Passed;
   // Expect the sin component of the control:
-  Passed = EvaluateNear("Polarization", "OffAxis, phase", "The modulation is along the projected polarization vector: the sin component equals the one of the control (5 sigma)", Polarized.m_Sin, Control.m_Sin, Limit*DifferenceSigma) && Passed;
+  Passed = EvaluateNear("Polarization", "OffAxis, phase", "The modulation is along the relative polarization vector: the sin component equals the one of the control (5 sigma)", Polarized.m_Sin, Control.m_Sin, Limit*DifferenceSigma) && Passed;
 
   // Check the mimrec results: angle, modulation, and no modulation unpolarized
   for (unsigned int a = 0; a < 3; ++a) {

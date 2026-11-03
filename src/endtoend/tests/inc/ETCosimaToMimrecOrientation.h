@@ -40,8 +40,8 @@
 //!   - for static pointings, and for a detector which slews with a constant rate along the Galactic equator past the source
 //! * If the x axis points to the source (z perpendicular to it), the azimuth is zero (independent of the handedness of the coordinate system)
 //! * While slewing, the azimuth of the source flips by 180 degrees when the source crosses the z axis
-//! * Mimrec: for the static pointings the ARM plot for the direction of the source in the detector frame (from the true direction of the sim file) peaks at zero
-//!   and has the same content as the own ARM analysis
+//! * Mimrec: for the static pointings the ARM plot for the direction of the source in the detector frame (from the true direction of the sim file) is bin by bin
+//!   the own ARM histogram of the events which mimrec extracted (the own analysis checks that the ARM peaks at zero)
 //! * The reconstructed Compton events are consistent with the true (time dependent) direction of the source: the ARM peaks at zero; the position of the peak,
 //!   the FWHM, the 68% containment and the core fraction relative to the peak are compared with the reference values of a reference campaign
 class ETCosimaToMimrecOrientation : public MEndToEndTest
