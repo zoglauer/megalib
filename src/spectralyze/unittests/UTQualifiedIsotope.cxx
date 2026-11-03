@@ -29,6 +29,7 @@ using namespace std;
 #include <sys/wait.h>
 
 // MEGAlib:
+#include "MFile.h"
 #include "MQualifiedIsotope.h"
 #include "MStreams.h"
 #include "MProcessManager.h"
@@ -219,11 +220,8 @@ bool UTQualifiedIsotope::TestOutOfBounds()
 
 int main(int argc, char** argv)
 {
-  g_UTQualifiedIsotopeBinary = MString(argv[0]);
-
-  if (g_UTQualifiedIsotopeBinary.IsEmpty() == true) {
-    g_UTQualifiedIsotopeBinary = "bin/UTQualifiedIsotope";
-  }
+  g_UTQualifiedIsotopeBinary = "$(MEGALIB)/bin/UTQualifiedIsotope";
+  MFile::ExpandFileName(g_UTQualifiedIsotopeBinary);
 
   if (argc >= 2) {
     MQualifiedIsotope Isotope;

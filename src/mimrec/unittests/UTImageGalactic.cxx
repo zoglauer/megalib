@@ -109,7 +109,22 @@ public:
   virtual ~UTImageGalactic() {}
 
   virtual bool Run();
+
+private:
+  //! Return the full path of a source catalog of MEGAlib: the tests do not run in the MEGAlib directory
+  MString GetCatalog(const MString& Name) const;
 };
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString UTImageGalactic::GetCatalog(const MString& Name) const
+{
+  MString Catalog = MString("$(MEGALIB)/resource/catalogs/") + Name;
+  MFile::ExpandFileName(Catalog);
+  return Catalog;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,7 +202,7 @@ bool UTImageGalactic::Run()
     TestImageGalactic Image("GalacticNoneCatalogImage", Values,
                             "Lon", 0.0, 360.0, 3,
                             "Lat", -90.0, 90.0, 2,
-                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, "resource/catalogs/BrightMeVSources.scat");
+                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, GetCatalog("BrightMeVSources.scat"));
     Image.SetProjection(MImageProjection::c_None);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative none catalog", "Display can add named sources from a valid catalog in unprojected mode", Image.IsCreated()) && Passed;
@@ -198,7 +213,7 @@ bool UTImageGalactic::Run()
     TestImageGalactic Image("GalacticNoneCatalogWideImage", Values,
                             "Lon", 0.0, 300.0, 3,
                             "Lat", -60.0, 60.0, 2,
-                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, "resource/catalogs/Crab.scat");
+                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, GetCatalog("Crab.scat"));
     Image.SetProjection(MImageProjection::c_None);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative none wide catalog", "Display can add named sources from a valid catalog in the alternate unprojected axis-division path", Image.IsCreated()) && Passed;
@@ -321,7 +336,7 @@ bool UTImageGalactic::Run()
     TestImageGalactic Image("GalacticHammerColCont0Image", Values,
                             "Lon", 0.0, 360.0, 2,
                             "Lat", -90.0, 90.0, 2,
-                            "Counts", MImage::c_Viridis, MImage::c_COLCONT, "resource/catalogs/Crab.scat");
+                            "Counts", MImage::c_Viridis, MImage::c_COLCONT, GetCatalog("Crab.scat"));
     Image.SetProjection(MImageProjection::c_Hammer);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative hammer COLCONT0", "Display creates a representative Hammer galactic image with the COLCONT0 draw option", Image.IsCreated()) && Passed;
@@ -332,7 +347,7 @@ bool UTImageGalactic::Run()
     TestImageGalactic Image("GalacticHammerColCont0ZImage", Values,
                             "Lon", 0.0, 360.0, 2,
                             "Lat", -90.0, 90.0, 2,
-                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, "resource/catalogs/Crab.scat");
+                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, GetCatalog("Crab.scat"));
     Image.SetProjection(MImageProjection::c_Hammer);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative hammer COLCONT0Z", "Display creates a representative Hammer galactic image with the COLCONT0Z draw option", Image.IsCreated()) && Passed;
@@ -343,7 +358,7 @@ bool UTImageGalactic::Run()
     TestImageGalactic Image("GalacticHammerBirdImage", Values,
                             "Lon", 0.0, 300.0, 2,
                             "Lat", -10.0, 70.0, 2,
-                            "Counts", MImage::c_Bird, MImage::c_COLCONTZ, "resource/catalogs/Crab.scat");
+                            "Counts", MImage::c_Bird, MImage::c_COLCONTZ, GetCatalog("Crab.scat"));
     Image.SetProjection(MImageProjection::c_Hammer);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative hammer bird", "Display creates a representative Hammer galactic image with the alternate text-color spectrum branch", Image.IsCreated()) && Passed;
@@ -354,7 +369,7 @@ bool UTImageGalactic::Run()
     TestImageGalactic Image("GalacticHammerNegativeLongitudeImage", Values,
                             "Lon", -180.0, 180.0, 2,
                             "Lat", -90.0, 90.0, 2,
-                            "Counts", MImage::c_Bird, MImage::c_COLCONTZ, "resource/catalogs/BrightMeVSources.scat");
+                            "Counts", MImage::c_Bird, MImage::c_COLCONTZ, GetCatalog("BrightMeVSources.scat"));
     Image.SetProjection(MImageProjection::c_Hammer);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative hammer negative longitude", "Display can render a Hammer image that exercises the negative-longitude label normalization path", Image.IsCreated()) && Passed;
@@ -438,7 +453,7 @@ bool UTImageGalactic::Run()
     TestImageGalactic Image("GalacticHammerUnknownProjection", Values,
                             "Lon", 0.0, 360.0, 2,
                             "Lat", -90.0, 90.0, 2,
-                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, "resource/catalogs/Crab.scat");
+                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, GetCatalog("Crab.scat"));
     Image.SetProjection(static_cast<MImageProjection>(123));
     Image.RunAddNamedSources();
   }
@@ -468,7 +483,7 @@ bool UTImageGalactic::Run()
     TestImageGalactic Image("GalacticMissingCatalog", Values,
                             "Lon", 0.0, 360.0, 2,
                             "Lat", -90.0, 90.0, 2,
-                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, "resource/catalogs/does_not_exist.scat");
+                            "Counts", MImage::c_Viridis, MImage::c_COLCONTZ, GetCatalog("does_not_exist.scat"));
     Image.SetProjection(MImageProjection::c_None);
     Image.Display();
     Passed = EvaluateTrue("Display()", "representative missing catalog", "Display tolerates a missing source catalog without crashing", Image.IsCreated()) && Passed;
