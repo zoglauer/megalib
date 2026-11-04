@@ -45,6 +45,7 @@ public:
 
 private:
   bool TestMoments();
+  bool TestDensityMean();
   bool TestOrderStatistics();
   bool TestPeaks();
   bool TestBootstrap();
@@ -62,6 +63,7 @@ bool UTStatistics::Run()
   bool Passed = true;
 
   Passed = TestMoments() && Passed;
+  Passed = TestDensityMean() && Passed;
   Passed = TestOrderStatistics() && Passed;
   Passed = TestPeaks() && Passed;
   Passed = TestBootstrap() && Passed;
@@ -125,6 +127,73 @@ bool UTStatistics::TestMoments()
   Passed = Evaluate("GetTruncatedMoments()", "center 2 just above limit number", "Four values are closer to 2 than a limit just above 3", Number, 4U) && Passed;
   Passed = EvaluateNear("GetTruncatedMoments()", "center 2 just above limit mean", "The mean of -1, 0, 2, 5", Mean, 1.5, 1e-12) && Passed;
   Passed = EvaluateNear("GetTruncatedMoments()", "center 2 just above limit RMS", "The RMS of -1, 0, 2, 5 about the center 2", RMS, sqrt(5.5), 1e-12) && Passed;
+
+
+  // Rounding: the mean of 1e16, 1, -1e16 is 1/3 (a plain sum gives 0), ten identical values have exactly their value as mean and no spread
+  Passed = EvaluateNear("GetMean()", "cancellation", "The mean of 1e16, 1, -1e16 is 1/3", MStatistics::GetMean(vector<double>{1e16, 1.0, -1e16}), 1.0/3.0, 1e-15) && Passed;
+  // In every order: the quotient of the shifted sum must not round at the magnitude of the shift (1e15 + (-2e15 + 1)/3 gave 0.375)
+  const vector<vector<double>> Orders = { { 1e15, 1.0, -1e15 }, { 1e15, -1e15, 1.0 }, { 1.0, 1e15, -1e15 }, { 1.0, -1e15, 1e15 }, { -1e15, 1e15, 1.0 }, { -1e15, 1.0, 1e15 } };
+  for (unsigned int o = 0; o < Orders.size(); ++o) {
+    Passed = EvaluateNear("GetMean()", MString("cancellation, order ") + o, "The mean of 1e15, 1, -1e15 is 1/3 in every order of the values", MStatistics::GetMean(Orders[o]), 1.0/3.0, 1e-15) && Passed;
+  }
+  const vector<double> Identical(10, 1e15 + 0.1);
+  Passed = EvaluateNear("GetMean()", "identical large values", "The mean of ten identical values is exactly the value", MStatistics::GetMean(Identical), Identical[0], 0.0) && Passed;
+  Passed = EvaluateNear("GetStandardDeviation()", "identical large values", "Ten identical values have exactly no spread", MStatistics::GetStandardDeviation(Identical), 0.0, 0.0) && Passed;
+  MStatistics::GetTruncatedMoments(Identical, Identical[0], 1.0, Number, Mean, RMS);
+  Passed = EvaluateNear("GetTruncatedMoments()", "identical large values mean", "The truncated mean of ten identical values is exactly the value", Mean, Identical[0], 0.0) && Passed;
+  Passed = EvaluateNear("GetTruncatedMoments()", "identical large values RMS", "The RMS about the value itself is zero", RMS, 0.0, 0.0) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTStatistics::TestDensityMean()
+{
+  bool Passed = true;
+
+  // Linear grid (Min = 0): the mean of the uniform density on [0, 2] is 1, of f(x) = x on [0, 1] it is 2/3, of exp(-x/2) on [0, 200] it is 2
+  Passed = EvaluateNear("GetMeanOfDensity()", "uniform", "The mean of a uniform density on [0, 2] is 1", MStatistics::GetMeanOfDensity([](double) { return 1.0; }, 0.0, 2.0), 1.0, 1e-9) && Passed;
+  Passed = EvaluateNear("GetMeanOfDensity()", "linear", "The mean of f(x) = x on [0, 1] is 2/3", MStatistics::GetMeanOfDensity([](double X) { return X; }, 0.0, 1.0), 2.0/3.0, 1e-9) && Passed;
+  Passed = EvaluateNear("GetMeanOfDensity()", "exponential", "The mean of exp(-x/2) on [0, 200] is 2", MStatistics::GetMeanOfDensity([](double X) { return exp(-X/2.0); }, 0.0, 200.0), 2.0, 1e-6) && Passed;
+  // A normalization of the density does not matter
+  Passed = EvaluateNear("GetMeanOfDensity()", "not normalized", "The mean does not depend on the normalization of the density", MStatistics::GetMeanOfDensity([](double X) { return 1000.0*X; }, 0.0, 1.0), 2.0/3.0, 1e-9) && Passed;
+  // Negative values are fine on the linear grid: a uniform density on [-1, 1] has the mean 0
+  Passed = EvaluateNear("GetMeanOfDensity()", "negative range", "The mean of a uniform density on [-1, 1] is 0", MStatistics::GetMeanOfDensity([](double) { return 1.0; }, -1.0, 1.0), 0.0, 1e-9) && Passed;
+
+  // Logarithmic grid (Min > 0): the mean of x^-2 on [1, 100] is ln(100)/(1 - 1/100)
+  Passed = EvaluateNear("GetMeanOfDensity()", "power law", "The mean of x^-2 on [1, 100] is ln(100)/(1 - 1/100)", MStatistics::GetMeanOfDensity([](double X) { return 1.0/(X*X); }, 1.0, 100.0), log(100.0)/0.99, 1e-6) && Passed;
+  // Over four decades the logarithmic grid still resolves the density: x^-1.5 on [1, 10000] has the mean (sqrt(10000) - 1)/(1 - 1/sqrt(10000)) = 100
+  Passed = EvaluateNear("GetMeanOfDensity()", "decades", "The mean of x^-1.5 on [1, 10000] is 100", MStatistics::GetMeanOfDensity([](double X) { return pow(X, -1.5); }, 1.0, 10000.0), 100.0, 1e-6) && Passed;
+
+  // Breakpoints: a jump from 1 to 0 at x = 1 on [0, 2] gives the mean 0.5 when the jump is a breakpoint; a kink (the triangle 1 - |x - 1|) gives 1
+  Passed = EvaluateNear("GetMeanOfDensity()", "jump with breakpoint", "A density with a jump at a breakpoint is integrated exactly on both sides", MStatistics::GetMeanOfDensity([](double X) { return (X < 1.0) ? 1.0 : 0.0; }, 0.0, 2.0, vector<double>{1.0}), 0.5, 1e-6) && Passed;
+  Passed = EvaluateNear("GetMeanOfDensity()", "kink with breakpoint", "A density with a kink at a breakpoint", MStatistics::GetMeanOfDensity([](double X) { return 1.0 - fabs(X - 1.0); }, 0.0, 2.0, vector<double>{1.0}), 1.0, 1e-9) && Passed;
+  // Breakpoints outside the range or out of order are ignored
+  Passed = EvaluateNear("GetMeanOfDensity()", "breakpoints outside", "Breakpoints outside the range and out of order are ignored", MStatistics::GetMeanOfDensity([](double X) { return (X < 1.0) ? 1.0 : 0.0; }, 0.0, 2.0, vector<double>{5.0, -1.0, 1.0, 0.5}), 0.5, 1e-6) && Passed;
+  // Ignored breakpoints must not reduce the accuracy: exp(-x) on [0, 2000] with a breakpoint outside the range is integrated with the full number of intervals,
+  // i.e. gives exactly the result without a breakpoint list (200 intervals would give 0.0018 instead of 1)
+  Passed = Evaluate("GetMeanOfDensity()", "only ignored breakpoints", "A breakpoint list with only ignored entries gives the same result as no list", MStatistics::GetMeanOfDensity([](double X) { return exp(-X); }, 0.0, 2000.0, vector<double>{-1.0}), MStatistics::GetMeanOfDensity([](double X) { return exp(-X); }, 0.0, 2000.0)) && Passed;
+  // The logarithmic grid must not form the ratio Max/Min, which overflows for a tiny minimum: a uniform density on [1e-310, 1] has the mean 0.5
+  Passed = EvaluateNear("GetMeanOfDensity()", "tiny minimum", "A uniform density on [1e-310, 1] has the mean 0.5 (no overflow of the ratio of the bounds)", MStatistics::GetMeanOfDensity([](double) { return 1.0; }, 1e-310, 1.0), 0.5, 1e-5) && Passed;
+  // A narrow range far from zero: log(Max) - log(Min) would round to zero, the mean of a uniform density on [1e8, 1e8 + 1e-7] is 1e8 + 5e-8
+  Passed = EvaluateNear("GetMeanOfDensity()", "narrow range", "A uniform density on [1e8, 1e8 + 1e-7] has the mean 1e8 + 5e-8 (no loss of the width in the logarithms)", MStatistics::GetMeanOfDensity([](double) { return 1.0; }, 1e8, 1e8 + 1e-7), 1e8 + 5e-8, 1e-7) && Passed;
+  // A narrow negative range: the mirror image, the mean of a uniform density on [-1e8 - 1e-7, -1e8] is -1e8 - 5e-8
+  Passed = EvaluateNear("GetMeanOfDensity()", "narrow negative range", "A uniform density on [-1e8 - 1e-7, -1e8] has the mean -1e8 - 5e-8", MStatistics::GetMeanOfDensity([](double) { return 1.0; }, -1e8 - 1e-7, -1e8), -1e8 - 5e-8, 1e-7) && Passed;
+  // A density close to zero in a range with a far bound: the first moment must not be taken relative to that bound (1 on [0, 1] over [-1e16, 1] has the mean 0.5)
+  Passed = EvaluateNear("GetMeanOfDensity()", "far lower bound", "A density which is 1 on [0, 1] and 0 below, over [-1e16, 1], has the mean 0.5", MStatistics::GetMeanOfDensity([](double X) { return (X >= 0.0) ? 1.0 : 0.0; }, -1e16, 1.0, vector<double>{0.0}), 0.5, 1e-6) && Passed;
+  Passed = EvaluateNear("GetMeanOfDensity()", "far upper bound", "A density which is 1 on [-1, 0] and 0 above, over [-1, 1e16], has the mean -0.5", MStatistics::GetMeanOfDensity([](double X) { return (X <= 0.0) ? 1.0 : 0.0; }, -1.0, 1e16, vector<double>{0.0}), -0.5, 1e-6) && Passed;
+
+  // Degenerate input: a zero density and an empty range give zero
+  Passed = EvaluateNear("GetMeanOfDensity()", "zero density", "A density which is zero everywhere has the mean zero", MStatistics::GetMeanOfDensity([](double) { return 0.0; }, 0.0, 2.0), 0.0, 0.0) && Passed;
+  Passed = EvaluateNear("GetMeanOfDensity()", "empty range", "An empty range gives the mean zero", MStatistics::GetMeanOfDensity([](double) { return 1.0; }, 1.0, 1.0), 0.0, 0.0) && Passed;
+
+
+  // A reversed or empty range gives zero, also when a logarithm could not be taken
+  Passed = EvaluateNear("GetMeanOfDensity()", "reversed range", "Max below Min gives zero", MStatistics::GetMeanOfDensity([](double) { return 1.0; }, 1.0, -1.0), 0.0, 0.0) && Passed;
+  Passed = EvaluateNear("GetMeanOfDensity()", "reversed range to zero", "Max zero below a positive Min gives zero", MStatistics::GetMeanOfDensity([](double) { return 1.0; }, 1.0, 0.0), 0.0, 0.0) && Passed;
 
   return Passed;
 }
@@ -343,6 +412,14 @@ bool UTStatistics::TestPeaks()
   Passed = EvaluateNear("GetPeakPosition()", "empty", "An empty histogram has no peak", MStatistics::GetPeakPosition(&Empty), 0.0, 0.0) && Passed;
   Passed = EvaluateNear("GetPeakPosition()", "flat", "A flat histogram has no parabola: the center of the first highest bin", MStatistics::GetPeakPosition(&Flat), 0.5, 1e-9) && Passed;
 
+
+  // A bin content exactly at the half maximum is the crossing at that bin center: 5, 10, 5 in bins of width 1 has the width 2
+  TH1D LevelAtBoundary("LevelAtBoundary", "", 3, 0.0, 3.0);
+  LevelAtBoundary.SetBinContent(1, 5.0);
+  LevelAtBoundary.SetBinContent(2, 10.0);
+  LevelAtBoundary.SetBinContent(3, 5.0);
+  Passed = EvaluateNear("GetFullWidthAtHalfMaximum()", "level at the boundary bins", "Bin contents exactly at the half maximum in the first and last bin are the crossings", MStatistics::GetFullWidthAtHalfMaximum(&LevelAtBoundary), 2.0, 1e-12) && Passed;
+
   return Passed;
 }
 
@@ -376,6 +453,10 @@ bool UTStatistics::TestBootstrap()
   const MStatisticFunction Median = [](const vector<double>& V) { return MStatistics::GetMedian(V); };
   Passed = EvaluateTrue("GetBootstrapError()", "statistic", "The uncertainty depends on the statistic", MStatistics::GetBootstrapError(Five, Median, 200) != MStatistics::GetBootstrapError(Five, Mean, 200)) && Passed;
 
+
+  // A statistic which always gives the same large value has exactly no uncertainty
+  Passed = EvaluateNear("GetBootstrapError()", "constant statistic", "A constant statistic has exactly no bootstrap uncertainty", MStatistics::GetBootstrapError(vector<double>{1.0, 2.0, 3.0}, [](const vector<double>&) { return 1e15 + 0.1; }, 10), 0.0, 0.0) && Passed;
+
   return Passed;
 }
 
@@ -401,6 +482,18 @@ bool UTStatistics::TestSignificances()
   Passed = EvaluateNear("GetProportionSigma()", "equal", "Equal proportions have no significance", MStatistics::GetProportionSigma(15.0, 50.0, 30.0, 100.0), 0.0, 0.0) && Passed;
   // 30 of 100 against 20 of 400: pooled proportion 0.1, |0.3 - 0.05|/sqrt(0.1*0.9*(1/100 + 1/400))
   Passed = EvaluateNear("GetProportionSigma()", "sizes", "The z value with different sample sizes", MStatistics::GetProportionSigma(30.0, 100.0, 20.0, 400.0), 0.25/sqrt(0.09*0.0125), 1e-12) && Passed;
+
+
+  // Successes outside [0, trials] are invalid for each sample on its own, also if the pooled rate looks fine
+  Passed = EvaluateNear("GetProportionSigma()", "more successes than trials, first", "20 of 10 is invalid", MStatistics::GetProportionSigma(20, 10, 0, 100), 1e9, 0.0) && Passed;
+  Passed = EvaluateNear("GetProportionSigma()", "negative successes, first", "-1 of 10 is invalid", MStatistics::GetProportionSigma(-1, 10, 20, 100), 1e9, 0.0) && Passed;
+  Passed = EvaluateNear("GetProportionSigma()", "more successes than trials, both", "20 of 10 and 40 of 20 are invalid, not equal rates", MStatistics::GetProportionSigma(20, 10, 40, 20), 1e9, 0.0) && Passed;
+  Passed = EvaluateNear("GetProportionSigma()", "more successes than trials, second", "20 of 10 is invalid as second sample too", MStatistics::GetProportionSigma(0, 100, 20, 10), 1e9, 0.0) && Passed;
+  // A pooled rate which rounds to one is still defined if there is a failure: 1e16 of 1e16 against 0 of 1 has p(1 - p) = 1e-16, the z score is 1e8
+  Passed = EvaluateNear("GetProportionSigma()", "pooled rate close to one", "A single failure among 1e16 + 1 trials keeps the pooled error defined: 1e8 sigma", MStatistics::GetProportionSigma(1e16, 1e16, 0, 1), 1e8, 1e-3) && Passed;
+  // Two efficiencies close to one: their difference comes from the failure rates (2/1e16 against 2/1.2e16), the successes would cancel to zero
+  Passed = EvaluateNear("GetProportionSigma()", "efficiencies close to one", "Two failures among 1e16 and among 1.2e16 trials differ by 0.1826 sigma, not zero", MStatistics::GetProportionSigma(1e16 - 2, 1e16, 1.2e16 - 2, 1.2e16), 0.182574185835055, 1e-9) && Passed;
+  Passed = EvaluateNear("GetProportionSigma()", "relabeled", "Relabeling successes as failures gives the same score", MStatistics::GetProportionSigma(2, 1e16, 2, 1.2e16), MStatistics::GetProportionSigma(1e16 - 2, 1e16, 1.2e16 - 2, 1.2e16), 1e-12) && Passed;
 
   return Passed;
 }
