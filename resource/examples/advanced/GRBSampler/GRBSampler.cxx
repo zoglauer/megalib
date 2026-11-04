@@ -265,9 +265,12 @@ bool GRBSampler::Analyze()
     do {
       Alpha = Duration > TimeCutOff ? lBandAlpha->GetRandom() : sBandAlpha->GetRandom();
       Beta = Duration > TimeCutOff ? lBandBeta->GetRandom() : sBandBeta->GetRandom();
-    } while (Alpha < Beta);
+    // The Band function needs alpha > beta and beta < 0, and the break energy below is only defined for alpha > -2
+    } while (Alpha <= Beta || Alpha <= -2 || Beta >= 0);
     
+    // The BATSE catalog gives the peak energy of E^2 f(E), Cosima takes the break energy E0 = Epeak/(alpha + 2) of Band et al. 1993
     double Peak = Duration > TimeCutOff ? lBandEPeak->GetRandom() : sBandEPeak->GetRandom();
+    double BreakEnergy = Peak/(Alpha + 2);
     double Flux = Duration > TimeCutOff ? lFlux->GetRandom() : sFlux->GetRandom();
     
     // Sample a random start position - ignoring Earth which starts at 112.5 deg
@@ -288,7 +291,7 @@ bool GRBSampler::Analyze()
     out<<"GRBSim.Source GRB"<<endl;
     out<<"GRB.ParticleType           1"<<endl;
     out<<"GRB.Beam                   FarFieldPointSource "<<Theta<<" "<<Phi<<endl;
-    out<<"GRB.Spectrum               Band 20 2000 "<<Alpha<<" "<<Beta<<" "<<Peak<<endl;
+    out<<"GRB.Spectrum               Band 20 2000 "<<Alpha<<" "<<Beta<<" "<<BreakEnergy<<endl;
     out<<"# Reminder the BATSE flux is in the 20 keV to 2 MeV band"<<endl;
     out<<"GRB.Flux                   "<<Flux<<endl;
     out<<endl;

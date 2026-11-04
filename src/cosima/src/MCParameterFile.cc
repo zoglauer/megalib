@@ -1183,7 +1183,7 @@ bool MCParameterFile::Parse()
               Source->SetSpectralType(MCSource::c_Gaussian);
               if (Source->SetEnergy(T->GetTokenAtAsDouble(3)*keV, 
                                     T->GetTokenAtAsDouble(4)*keV,
-                                    T->GetTokenAtAsDouble(5)*keV) == true) {
+                                    T->GetTokenAtAsDouble(5)) == true) {
                 mdebug<<"Setting avg = "<<T->GetTokenAtAsDouble(3)
                       <<" sigma = "<<T->GetTokenAtAsDouble(4)
                       <<" sigma cut-off = "<<T->GetTokenAtAsDouble(5)
@@ -1863,45 +1863,6 @@ bool MCParameterFile::Parse()
               return false;
             }
           }  
-          else if (Type == "diffractionpointsourcekspace" || Type == "diffractionpointkspace" || Type == "dpsk") {
-            if (T->GetNTokens() == 11) {
-              Source->SetBeamType(MCSource::c_NearField,
-                                  MCSource::c_NearFieldDiffractionPointKSpace);
-              MString FileName = T->GetTokenAfterAsString(10);
-              MFile::ExpandFileName(FileName);
-              MFile::ApplyPath(FileName, m_FileName);
-              if (MFile::Exists(FileName) == false) {
-                Typo(i, "Cannot parse token \"Beam - diffraction point source k space\" correctly:"
-                     " File not found!");
-                return false;
-              }
-              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
-                                      T->GetTokenAtAsDouble(4)*cm,
-                                      T->GetTokenAtAsDouble(5)*cm,
-                                      T->GetTokenAtAsDouble(7),
-                                      T->GetTokenAtAsDouble(8),
-                                      T->GetTokenAtAsDouble(9),
-                                      T->GetTokenAtAsDouble(6)*deg) == true &&
-                  Source->SetPosition(FileName) == true) {
-                mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)
-                      <<"/"<<T->GetTokenAtAsDouble(4)
-                      <<"/"<<T->GetTokenAtAsDouble(5)
-                      <<", with normal vector "<<T->GetTokenAtAsDouble(7)
-                      <<"/"<<T->GetTokenAtAsDouble(8)
-                      <<"/"<<T->GetTokenAtAsDouble(9)
-                      <<" and z-axis rotation  "<<T->GetTokenAtAsDouble(6)
-                      <<" for source "<<Source->GetName()<<endl;
-              } else {
-                Typo(i, "Cannot parse token \"Beam - diffraction point source k space\" correctly:"
-                     " Content not reasonable");
-                return false;
-              }
-            } else {
-              Typo(i, "Cannot parse token \"Beam - diffraction point source k space\" correctly:"
-                   " Number of tokens is not correct (!= 11)!");
-              return false;
-            }
-          }  
           else if (Type == "conebeam" || Type == "cb") {
             if (T->GetNTokens() == 10) {
               Source->SetBeamType(MCSource::c_NearField,
@@ -2287,7 +2248,7 @@ bool MCParameterFile::Parse()
       
       
       else if (T->IsTokenAt(1, "LightCurve", true) == true) {
-        if (T->GetNTokens() > 3) {
+        if (T->GetNTokens() >= 3) {
           MString Type = T->GetTokenAtAsString(2);
           Type.ToLower();
           if (Type == "file") {
@@ -2337,22 +2298,7 @@ bool MCParameterFile::Parse()
         }
       }
       
-      else if (T->IsTokenAt(1, "TotalEnergyFlux", true) == true) {
-        if (T->GetNTokens() == 3) {
-          if (Source->SetTotalEnergyFlux(T->GetTokenAtAsDouble(2)*keV/cm/cm) == true) {
-            mdebug<<"Setting total energy flux "<<T->GetTokenAtAsDouble(2)
-                  <<" MeV/cm2 for source "<<Source->GetName()<<endl;
-          } else {
-            Typo(i, "Cannot parse token TotalEnergyFlux correctly:"
-                 " ?? Perhaps the value is non-positive ??");
-            return false;
-          }
-        } else {
-          Typo(i, "Cannot parse token TotalEnergyFlux correctly:"
-               " Number of tokens is not correct!");
-          return false;
-        }
-      } else if (T->IsTokenAt(1, "Position", true) == true) {
+      else if (T->IsTokenAt(1, "Position", true) == true) {
       } else if (T->IsTokenAt(1, "Energy", true) == true) {
       } else if (T->IsTokenAt(1, "Intensity", true) == true) {
       } else if (T->IsTokenAt(1, "Flux", true) == true) {
@@ -3026,6 +2972,18 @@ bool MCParameterFile::Parse()
           mout<<"The start area was not parsable!"<<endl;
           return false;
         }
+      }
+    }
+  }
+
+  // Check if the polarization of all sources is usable
+  for (unsigned int r = 0; r < m_RunList.size(); ++r) {
+    const bool IsOriented = m_RunList[r].GetSkyOrientationReference().IsOriented() || m_RunList[r].GetDetectorOrientationReference().IsOriented();
+    vector<MCSource*>& Sources = m_RunList[r].GetSourceList();
+    for (unsigned int so = 0; so < Sources.size(); ++so) {
+      if (Sources[so]->CheckPolarization(IsOriented) == false) {
+        mout<<"The polarization of source "<<Sources[so]->GetName()<<" is invalid!"<<endl;
+        return false;
       }
     }
   }

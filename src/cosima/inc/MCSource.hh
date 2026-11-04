@@ -120,6 +120,10 @@ public:
   bool IsBuildUpEventList() const { return m_IsBuildUpEventList; }
   /// Return the current size of the event list -- more events could be added later or via reading from file and 
   unsigned int SizeEventList() const { return m_EventList.size(); }
+  /// Set the maximum number of events kept in an event list built with AddToEventList (at least 100)
+  bool SetMaxEventListSize(unsigned int MaxEventListSize);
+  /// Return the maximum number of events kept in an event list built with AddToEventList
+  unsigned int GetMaxEventListSize() const { return m_MaxEventListSize; }
   /// Add an entry of the event list -- will return false if we read the event list from file
   bool AddToEventList(double Energy, G4ThreeVector Position, G4ThreeVector Direction, 
                       G4ThreeVector Polarization, double Time, 
@@ -171,10 +175,6 @@ public:
   /// Return the intensity
   double GetInputFlux() const { return m_InputFlux; } 
 
-  /// Return true, if the total energy flux (energy/cm^2) could be set correctly
-  bool SetTotalEnergyFlux(const double& TotalEnergyFlux);
-  /// Return the total energy flux
-  double GetTotalEnergyFlux() const { return m_TotalEnergyFlux; } 
 
   /// Return true, if the light curve type could be set correctly
   bool SetLightCurveType(const int& LightCurveType);
@@ -194,6 +194,9 @@ public:
   bool SetPolarization(double PolarizationParam1 = c_Invalid, 
                        double PolarizationParam2 = c_Invalid, 
                        double PolarizationParam3 = c_Invalid);
+  /// Check the polarization before the run: an absolute polarization vector must not be zero, and not be parallel to the
+  /// direction of a fixed-direction beam (checked only if nothing orients the source, IsOriented == false). Prints the reason.
+  bool CheckPolarization(bool IsOriented) const;
   /// Return the polarization vector
   G4ThreeVector GetPolarizationVector() const { return m_Polarization; }
 
@@ -289,7 +292,8 @@ public:
   /// Get the average start area for sources in the far field
   double GetStartAreaAverageArea() const { return m_StartAreaAverageArea; }
 
-  /// Return the mean energy produced by the current spectra (mean, not average)
+  /// Return the mean energy of the photons produced by the current spectrum (the integral of E*f(E) divided by the integral of f(E)).
+  /// For spectra for which this is not defined (energy-beam-flux function) an error is printed and 0 is returned
   double GetMeanEnergy() const;
 
   /// Generate a particle definition (this has to be done AFTER the physics list is initialized
@@ -394,8 +398,6 @@ public:
   static const int c_NearFieldRestrictedPoint;
   /// Id of a beam in Cartesian coordinates - diffraction of a point
   static const int c_NearFieldDiffractionPoint;
-  /// Id of a beam in Cartesian coordinates - diffraction of a point in k-space 
-  static const int c_NearFieldDiffractionPointKSpace;
   /// Id of a line like source in Cartesian coordinates
   static const int c_NearFieldLine;
   /// Id of a line like source in Cartesian coordinates restricted towards the surrounding sphere
@@ -667,6 +669,8 @@ private:
   deque<MEventListEntry*> m_EventList;
   /// Size of the event list (list::size() is slow...)
   unsigned int m_EventListSize; 
+  /// Maximum number of events in an event list built with AddToEventList
+  unsigned int m_MaxEventListSize;
 
   /// Number of next events which should not be started
   int m_NEventsToSkip;
@@ -731,9 +735,6 @@ private:
   double m_InputFlux;
   /// Flux of this source
   double m_Flux;
-
-  /// TotalEnergyFlux of this source
-  double m_TotalEnergyFlux;
 
   /// The light curve
   MFunction m_LightCurveFunction;

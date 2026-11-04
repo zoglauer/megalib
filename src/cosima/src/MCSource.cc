@@ -47,6 +47,7 @@ using namespace std;
 #include "TSystem.h"
 
 // MEGAlib:
+#include "MStatistics.h"
 #include "MStreams.h"
 #include "MAssert.h"
 
@@ -93,24 +94,23 @@ const int MCSource::c_FarFieldEarthOccultation                     = 9;
 const int MCSource::c_NearFieldPoint                               = 10;
 const int MCSource::c_NearFieldRestrictedPoint                     = 11;
 const int MCSource::c_NearFieldDiffractionPoint                    = 12;
-const int MCSource::c_NearFieldDiffractionPointKSpace              = 13;
-const int MCSource::c_NearFieldLine                                = 14;
-const int MCSource::c_NearFieldRestrictedLine                      = 15;
-const int MCSource::c_NearFieldBox                                 = 16;
-const int MCSource::c_NearFieldDisk                                = 17;
-const int MCSource::c_NearFieldSphere                              = 18;
-const int MCSource::c_NearFieldBeam                                = 19;
-const int MCSource::c_NearFieldActivation                          = 20;
-const int MCSource::c_NearFieldBeam1DProfile                       = 21;
-const int MCSource::c_NearFieldBeam2DProfile                       = 22;
-const int MCSource::c_NearFieldConeBeam                            = 23;
-const int MCSource::c_NearFieldConeBeamGauss                       = 24;
-const int MCSource::c_NearFieldFanBeam                             = 25;
-const int MCSource::c_NearFieldIlluminatedDisk                     = 26;
-const int MCSource::c_NearFieldIlluminatedSquare                   = 27;
-const int MCSource::c_NearFieldVolume                              = 28;
-const int MCSource::c_NearFieldFlatMap                             = 29;
-const int MCSource::c_NearFieldReverseDirectionToPredecessor       = 30;
+const int MCSource::c_NearFieldLine                                = 13;
+const int MCSource::c_NearFieldRestrictedLine                      = 14;
+const int MCSource::c_NearFieldBox                                 = 15;
+const int MCSource::c_NearFieldDisk                                = 16;
+const int MCSource::c_NearFieldSphere                              = 17;
+const int MCSource::c_NearFieldBeam                                = 18;
+const int MCSource::c_NearFieldActivation                          = 19;
+const int MCSource::c_NearFieldBeam1DProfile                       = 20;
+const int MCSource::c_NearFieldBeam2DProfile                       = 21;
+const int MCSource::c_NearFieldConeBeam                            = 22;
+const int MCSource::c_NearFieldConeBeamGauss                       = 23;
+const int MCSource::c_NearFieldFanBeam                             = 24;
+const int MCSource::c_NearFieldIlluminatedDisk                     = 25;
+const int MCSource::c_NearFieldIlluminatedSquare                   = 26;
+const int MCSource::c_NearFieldVolume                              = 27;
+const int MCSource::c_NearFieldFlatMap                             = 28;
+const int MCSource::c_NearFieldReverseDirectionToPredecessor       = 29;
 
 
 const int MCSource::c_PolarizationNone                             =  1;
@@ -257,13 +257,13 @@ void MCSource::Initialize()
   m_IsIsotopeCount = false;
 
   m_EventListSize = 0;
+  m_MaxEventListSize = 10000000;
   m_IsotopeCount = 0;
   
   // Intensity of this source
   m_InputFlux = c_Invalid;
   m_Flux = c_Invalid;
 
-  m_TotalEnergyFlux = c_Invalid;
   
   m_IsRepeatingLightCurve = false;
   m_LightCurveCycle = 0;
@@ -301,6 +301,7 @@ void MCSource::Initialize()
   m_EnergyParam4 = c_Invalid;
   m_EnergyParam5 = c_Invalid;
   m_EnergyParam6 = c_Invalid;
+  m_EnergyParam7 = c_Invalid;
 }
 
 
@@ -471,7 +472,8 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
       }
     }
     else{
-    merr<<"the time is not in the ori time range : "<<m_NextEmission<< " ["<< Sky.GetStartTime()<<","<< Sky.GetStopTime() <<"]"<<endl;
+      merr<<"  ***  ERROR  ***   "<<m_Name<<": The Earth position is not known at the time of the emission ("<<m_NextEmission/second<<" s, orientation range ["<<Sky.GetStartTime()/second<<", "<<Sky.GetStopTime()/second<<"] s) - the Earth occultation cannot be applied"<<endl;
+      return false;
     }
     
     
@@ -486,6 +488,17 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
  */
 bool MCSource::SetStartAreaType(const int& StartAreaType)
 {
+  if (StartAreaType == c_StartAreaTube) {
+    if (m_BeamType == c_NearFieldIlluminatedDisk || 
+        m_BeamType == c_NearFieldIlluminatedSquare || 
+        m_BeamType == c_NearFieldRestrictedPoint ||
+        m_BeamType == c_NearFieldRestrictedLine) {
+
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The given beam type requires a spherical start area and not a tube-like!"<<endl;
+      return false;    
+    }
+  }
+
   switch (StartAreaType) {
   case c_StartAreaUnknown:
   case c_StartAreaSphere:
@@ -493,22 +506,9 @@ bool MCSource::SetStartAreaType(const int& StartAreaType)
     m_StartAreaType = StartAreaType;
     return true;
   default:
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": Unknown start area type: "<<StartAreaType<<endl;
     return false;
   }
-
-  if (StartAreaType == c_StartAreaTube) {
-    if (m_BeamType == c_NearFieldIlluminatedDisk || 
-        m_BeamType == c_NearFieldIlluminatedSquare || 
-        m_BeamType == c_NearFieldRestrictedPoint ||
-        m_BeamType == c_NearFieldRestrictedLine) {
-
-      mout<<m_Name<<": The given beam type requires a spherical start area and not a tube-like!"<<endl;
-      return false;    
-    }
-  }
-
-
-  return true;
 }
 
 
@@ -610,13 +610,6 @@ bool MCSource::UpgradeStartArea()
       m_StartAreaAverageArea = 4*m_StartAreaParam1 * (m_StartAreaParam2*sin(m_PositionParam1) + m_StartAreaParam1*fabs(cos(m_PositionParam1)));
     } 
     else if (m_BeamType == c_FarFieldArea) {
-      //       m_StartAreaAverageArea = 
-      //         2*m_StartAreaParam1*m_StartAreaParam2*(cos(m_PositionParam1)*cos(m_PositionParam1) - cos(m_PositionParam2)*cos(m_PositionParam2)) +
-      //         2*m_StartAreaParam1*m_StartAreaParam1*(cos(m_PositionParam2)*sin(m_PositionParam2) - cos(m_PositionParam1)*sin(m_PositionParam1)) +
-      //         2*m_StartAreaParam1*m_StartAreaParam1*(m_PositionParam2 - m_PositionParam1); 
-      //       cout<<"SA: "<<m_StartAreaAverageArea<<endl;
-      
-      //       m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
       m_StartAreaAverageArea = 0.0;
       int i_max = 5000;
       double t1, t2, ta;
@@ -627,7 +620,7 @@ bool MCSource::UpgradeStartArea()
         ta = 0.5*(t1+t2);
         m_StartAreaAverageArea += 2*c_Pi*(cos(t1)-cos(t2)) * 4*m_StartAreaParam1*(m_StartAreaParam2*sin(ta) + m_StartAreaParam1*fabs(cos(ta)));
       }
-      m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
+      m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2));
     } 
     else if (m_BeamType == c_FarFieldIsotropic) {
       //       m_StartAreaAverageArea = 
@@ -665,7 +658,7 @@ bool MCSource::UpgradeStartArea()
       m_StartAreaAverageArea /= AverageArea;
     }
     else if (m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
-      cout<<"Calculating tube start area for FarFieldNormalizedEnergyBeamFluxFunction... "<<flush;
+      mout<<m_Name<<": Calculating tube start area for FarFieldNormalizedEnergyBeamFluxFunction... "<<endl;
       double AreaNormalizer = 0.0;
       m_StartAreaAverageArea = 0.0;
       
@@ -719,18 +712,18 @@ bool MCSource::UpgradeStartArea()
 
       m_StartAreaAverageArea /= AreaNormalizer;
       if (fabs(AreaNormalizer - m_NormalizedEnergyBeamFluxFunction.Integrate())/AreaNormalizer > 0.02) {
-        cout<<m_Name<<": Please use a spherical start area --- uncertainties for *fast* integral calculation are too large: "<<100*fabs(AreaNormalizer - m_NormalizedEnergyBeamFluxFunction.Integrate())/AreaNormalizer<<" % "<<endl;
+        mout<<m_Name<<": Please use a spherical start area --- uncertainties for *fast* integral calculation are too large: "<<100*fabs(AreaNormalizer - m_NormalizedEnergyBeamFluxFunction.Integrate())/AreaNormalizer<<" % "<<endl;
         return false;
       }
-      cout<<"Done!"<<endl;
+      mout<<m_Name<<": Done calculating the tube start area"<<endl;
     } else {
-      cout<<"Error: Forgot to handle a beam type: "<<m_BeamType<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Forgot to handle a beam type: "<<m_BeamType<<endl;
       return false;
     }
   }
 
   if (m_CoordinateSystem == c_FarField) {
-    cout<<m_Name<<": average start area: "<<m_StartAreaAverageArea/cm/cm<<" cm2"<<endl;
+    mout<<m_Name<<": average start area: "<<m_StartAreaAverageArea/cm/cm<<" cm2"<<endl;
   }
 
   return true;
@@ -1022,7 +1015,6 @@ bool MCSource::SetBeamType(const int& CoordinateSystem, const int& BeamType)
   case c_NearFieldRestrictedPoint:
   case c_NearFieldRestrictedLine:
   case c_NearFieldDiffractionPoint:
-  case c_NearFieldDiffractionPointKSpace:
   case c_NearFieldBeam1DProfile:
   case c_NearFieldBeam2DProfile:
   case c_NearFieldConeBeam:
@@ -1090,9 +1082,6 @@ string MCSource::GetBeamTypeAsString() const
     break;
   case c_NearFieldDiffractionPoint:
     Name = "DiffractionPointSource";
-    break;
-  case c_NearFieldDiffractionPointKSpace:
-    Name = "DiffractionPointKSpace";
     break;
   case c_NearFieldBeam1DProfile:
     Name = "RadialProfileBeam";
@@ -1196,9 +1185,6 @@ string MCSource::GetBeamAsString() const
     break;
   case c_NearFieldDiffractionPoint:
     Name<<"DiffractionPointSource";
-    break;
-  case c_NearFieldDiffractionPointKSpace:
-    Name<<"DiffractionPointKSpace";
     break;
   case c_NearFieldBeam1DProfile:
     Name<<"RadialProfileBeam";
@@ -1382,8 +1368,7 @@ bool MCSource::SetPosition(double PositionParam1,
     // nothing
   } else if (m_BeamType == c_NearFieldRestrictedPoint) {
     // nothing
-  } else if (m_BeamType == c_NearFieldDiffractionPoint ||
-             m_BeamType == c_NearFieldDiffractionPointKSpace) {
+  } else if (m_BeamType == c_NearFieldDiffractionPoint) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction of the normal vector must not be (0, 0, 0)"<<endl;
       return false;
@@ -1679,17 +1664,6 @@ bool MCSource::SetPosition(MString FileName)
 //       gSystem->ProcessEvents();
 //       gSystem->Sleep(10);
 //     }
-  } else if (m_BeamType == c_NearFieldDiffractionPointKSpace) {
-    if (m_PositionFunction2D.Set(FileName, "DP") == false) {
-      mout<<m_Name<<": Unable to load 2D distribution!"<<endl;
-      return false;
-    }
-
-//     m_PositionFunction2D.Plot();
-//     while (true) {
-//       gSystem->ProcessEvents();
-//       gSystem->Sleep(10);
-//     }
   } else {
     mout<<m_Name<<": Wrong region type for beam type "<<m_BeamType<<endl;
     return false;
@@ -1825,8 +1799,8 @@ bool MCSource::SetEnergy(double EnergyParam1,
       return false;
     }
   } else if (m_SpectralType == c_Gaussian) {
-    if (m_EnergyParam1 <= 0) {
-      mout<<"  ***  ERROR  ***   "<<m_Name<<": The energy must be larger than 0!"<<endl;
+    if (m_EnergyParam1 < 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The energy must not be negative!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= 0) {
@@ -1872,10 +1846,6 @@ bool MCSource::SetEnergy(double EnergyParam1,
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
-    if (m_EnergyParam3 >= 0) {
-      mout<<"  ***  ERROR  ***   "<<m_Name<<": The low-energy index must be smaller than 0!"<<endl;
-      return false;
-    }
     if (m_EnergyParam4 >= 0) {
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The high-energy index must be smaller than 0!"<<endl;
       return false;
@@ -1884,8 +1854,8 @@ bool MCSource::SetEnergy(double EnergyParam1,
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The low-energy index must be smaller than the high-energy index!"<<endl;
       return false;
     }
-    if (m_EnergyParam5 <= m_EnergyParam1 || m_EnergyParam5 > m_EnergyParam2) {
-      mout<<"  ***  ERROR  ***   "<<m_Name<<": The peak energy must be within the minimum and maximum energy!"<<endl;
+    if (m_EnergyParam5 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The break energy E0 must be larger than 0!"<<endl;
       return false;
     }
     // requires reimplementation
@@ -1976,8 +1946,14 @@ bool MCSource::UpgradeEnergy()
     if (MaximumShift*m_EnergyParam3 > m_EnergyParam2) m_EnergyParam4 = BlackBody(m_EnergyParam2, m_EnergyParam3);
   } else if (m_SpectralType == c_BandFunction) {
     
-    // Calculate Maximum:
-    m_EnergyParam6 = BandFunction(m_EnergyParam1, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
+    // Calculate the maximum in the energy range: below the break the shape E^alpha*exp(-E/E0) rises up to E = alpha*E0 if alpha > 0 and
+    // falls otherwise, above the break it falls (high-energy index < 0), thus the maximum is at one of these three energies
+    m_EnergyParam6 = max(BandFunction(m_EnergyParam1, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5),
+                         BandFunction(m_EnergyParam2, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5));
+    const double PeakEnergy = m_EnergyParam3*m_EnergyParam5;
+    if (m_EnergyParam3 > 0 && PeakEnergy >= m_EnergyParam1 && PeakEnergy <= m_EnergyParam2) {
+      m_EnergyParam6 = max(m_EnergyParam6, BandFunction(PeakEnergy, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5));
+    }
     //cout<<"Band-Max: "<<m_EnergyParam6 <<endl;
     //m_EnergyParam6 = BandFunction(m_EnergyParam3*m_EnergyParam5, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
   }
@@ -2106,35 +2082,18 @@ bool MCSource::UpgradeFlux()
 
   if (m_Flux > 0 && !std::isnan(m_Flux) && !std::isinf(m_Flux)) { // std:: is needed due to a similar definition in G4 
     if (m_CoordinateSystem == c_FarField) {
-      cout<<m_Name<<": Final flux: "<<m_Flux/m_StartAreaAverageArea*second*cm*cm<<" ph/cm^2/sec"<<endl;
+      mout<<m_Name<<": Final flux: "<<m_Flux/m_StartAreaAverageArea*second*cm*cm<<" ph/cm^2/sec"<<endl;
     } else {
-      cout<<m_Name<<": Final flux: "<<m_Flux*second<<" ph/sec"<<endl;      
+      mout<<m_Name<<": Final flux: "<<m_Flux*second<<" ph/sec"<<endl;      
     }
   }
 
   if (m_Flux <= 0 && m_StartAreaType != c_StartAreaUnknown && m_IsSuccessor == false && m_IsEventList == false) {
-    mout<<m_Name<<": We do not have a positive flux ("<<m_Flux<<")... Reason unknown... aborting..."<<endl;
-    abort();
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": We do not have a positive flux ("<<m_Flux<<")... Reason unknown..."<<endl;
     return false;
   }
 
-  UpgradeLightCurve();
-
-  return true;
-}
-
-
-/******************************************************************************
- * Return true, if the intensity could be set correctly
- */
-bool MCSource::SetTotalEnergyFlux(const double& TotalEnergyFlux) 
-{ 
-  if (TotalEnergyFlux > 0) {
-    m_TotalEnergyFlux = TotalEnergyFlux;
-    return true;
-  }
-
-  return false;
+  return UpgradeLightCurve();
 }
 
 
@@ -2194,7 +2153,7 @@ bool MCSource::SetLightCurve(const MString& FileName, const bool& Repeats)
     }
     
     // Scale the time axis with Geant4's times
-    cout<<"Light curve x-axis scaled with: "<<second<<endl;
+    mout<<m_Name<<": Light curve x-axis scaled with: "<<second<<endl;
     m_LightCurveFunction.ScaleX(second);
     
     m_IsFluxVariable = true;
@@ -2203,8 +2162,11 @@ bool MCSource::SetLightCurve(const MString& FileName, const bool& Repeats)
     mout<<"  ***  ERROR  ***   "<<m_Name<<": Unknown light curve type: "<<m_LightCurveType<<endl;
     return false;
   }
-  
-  return true;
+
+  // The light curve is normalized to the flux in UpgradeLightCurve(). SetFlux() does this too,
+  // but if the flux was set before the light curve, nobody would do it - the order of the keywords must not matter.
+  // Normalizing twice is harmless since the normalization is idempotent.
+  return UpgradeLightCurve();
 }
 
 
@@ -2224,13 +2186,13 @@ bool MCSource::UpgradeLightCurve()
       return false;
     }
 
-    cout<<"Lightcurve integration: "<<LightCurveIntegral<<endl;
-    cout<<"Flux: "<<m_Flux*second<<" ph/s"<<endl;
+    mout<<m_Name<<": Light curve integration: "<<LightCurveIntegral<<endl;
+    mout<<m_Name<<": Flux: "<<m_Flux*second<<" ph/s"<<endl;
     if (m_Flux > 0 && LightCurveIntegral > 0) {
       m_LightCurveFunction.ScaleY((m_LightCurveFunction.GetXMax() - m_LightCurveFunction.GetXMin())/LightCurveIntegral);
     }
     LightCurveIntegral = m_LightCurveFunction.Integrate();
-    cout<<"Final light-curve integration: "<<LightCurveIntegral<<endl;
+    mout<<m_Name<<": Final light curve integration: "<<LightCurveIntegral<<endl;
     if (std::isfinite(LightCurveIntegral) == false) {
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The light curve integral is not finite:" <<LightCurveIntegral<<endl;
       return false;
@@ -2277,7 +2239,7 @@ string MCSource::GetPolarizationTypeAsString() const
 {
   string Name = "";
 
-  switch (m_SpectralType) {
+  switch (m_PolarizationType) {
   case c_PolarizationNone:
     Name = "None";
     break;
@@ -2318,6 +2280,38 @@ bool MCSource::SetPolarization(double PolarizationParam1,
   m_PolarizationParam2 = PolarizationParam2;
   m_PolarizationParam3 = PolarizationParam3;
   
+  return true;
+}
+
+
+/******************************************************************************
+ * Check the polarization before the run (see header)
+ */
+bool MCSource::CheckPolarization(bool IsOriented) const
+{
+  if (m_PolarizationType != c_PolarizationAbsolute) return true;
+
+  const G4ThreeVector Given(m_PolarizationParam1, m_PolarizationParam2, m_PolarizationParam3);
+  if (Given.mag() == 0.0) {
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": An absolute polarization vector must not be zero"<<endl;
+    return false;
+  }
+
+  if (IsOriented == true || m_Orientation.IsOriented() == true) return true;
+
+  G4ThreeVector Direction;
+  if (m_BeamType == c_FarFieldPoint) {
+    Direction.set(sin(m_PositionParam1)*cos(m_PositionParam2), sin(m_PositionParam1)*sin(m_PositionParam2), cos(m_PositionParam1));
+  } else if (m_BeamType == c_NearFieldBeam || m_BeamType == c_NearFieldBeam1DProfile || m_BeamType == c_NearFieldBeam2DProfile) {
+    Direction.set(m_PositionParam4, m_PositionParam5, m_PositionParam6);
+  } else {
+    return true; // The direction is not fixed
+  }
+  if (Direction.mag() > 0.0 && Given.cross(Direction).mag() <= 1e-6*Given.mag()*Direction.mag()) {
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": The absolute polarization vector is parallel to the fixed direction of the beam"<<endl;
+    return false;
+  }
+
   return true;
 }
 
@@ -2390,7 +2384,7 @@ bool MCSource::ContinueReadingEventList()
     
     if (Tokens.GetNTokens() != 15) {
       mout<<m_Name<<": We have "<<Tokens.GetNTokens()<<" instead of the expected 15 tokens"<<endl; 
-      cout<<Tokens.GetText()<<endl;
+      mout<<m_Name<<": The offending line: "<<Tokens.GetText()<<endl;
       return false;
     }
     
@@ -2403,7 +2397,7 @@ bool MCSource::ContinueReadingEventList()
     Entry->m_Polarization = G4ThreeVector(Tokens.GetTokenAtAsDouble(11), Tokens.GetTokenAtAsDouble(12), Tokens.GetTokenAtAsDouble(13));
     Entry->m_Time = Tokens.GetTokenAtAsDouble(4)*second;
     Entry->m_ParticleType = Tokens.GetTokenAtAsInt(2);
-    Entry->m_ParticleExcitation = Tokens.GetTokenAtAsInt(3);
+    Entry->m_ParticleExcitation = Tokens.GetTokenAtAsDouble(3)*keV;
     Entry->m_ParticleDefinition = nullptr;
     Entry->m_VolumeName = "";
     
@@ -2421,6 +2415,26 @@ bool MCSource::ContinueReadingEventList()
   
   // cout<<"Read events from file: "<<m_EventListSize<<" events in store"<<endl;
   
+  return true;
+}
+
+
+/******************************************************************************
+ * Set the maximum number of events in an event list built with AddToEventList
+ */
+bool MCSource::SetMaxEventListSize(unsigned int MaxEventListSize)
+{
+  if (MaxEventListSize < 100) {
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum event list size must be at least 100, not "<<MaxEventListSize<<endl;
+    return false;
+  }
+  if (MaxEventListSize < m_EventListSize) {
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum event list size ("<<MaxEventListSize<<") must not be smaller than the current number of events ("<<m_EventListSize<<")"<<endl;
+    return false;
+  }
+
+  m_MaxEventListSize = MaxEventListSize;
+
   return true;
 }
 
@@ -2446,10 +2460,9 @@ bool MCSource::AddToEventList(double Energy,
   }
   
   
-  const unsigned int Max = 10000000;
-  if (m_EventListSize >= Max) {
-    mout<<m_Name<<": Event list too large (exeeds "<<Max<<"). Last event eliminated (t="<<m_EventList.back()->m_Time/s<<" sec)"<<endl;
-    delete m_EventList[0];
+  if (m_EventListSize >= m_MaxEventListSize) {
+    mout<<m_Name<<": Event list too large (exceeds "<<m_MaxEventListSize<<"). Last event eliminated (t="<<m_EventList.back()->m_Time/s<<" sec)"<<endl;
+    delete m_EventList.back();
     m_EventList.pop_back();
     m_EventListSize--;
   }
@@ -2466,7 +2479,8 @@ bool MCSource::AddToEventList(double Energy,
   Entry->m_ParticleType = 0;
   Entry->m_VolumeName = VolumeName;
   
-  deque<MEventListEntry*>::iterator I = lower_bound(m_EventList.begin(), m_EventList.end(), Entry, [](MEventListEntry* Left, MEventListEntry* Right) { return Left->m_Time < Right->m_Time; });
+  // upper_bound: events with identical times keep the order in which they were added
+  deque<MEventListEntry*>::iterator I = upper_bound(m_EventList.begin(), m_EventList.end(), Entry, [](MEventListEntry* Left, MEventListEntry* Right) { return Left->m_Time < Right->m_Time; });
   m_EventList.insert(I, Entry);
   m_EventListSize++;
 
@@ -2565,7 +2579,7 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
   const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
   if (Sky.IsOriented() == true && Sky.IsLooping() == false) {
     if (m_NextEmission > Sky.GetStopTime()) {
-      mout<<m_Name<<": orientation data exceeded (next emission: "<<m_NextEmission/second<<" vs. max time: "<<m_Orientation.GetStopTime()/second<<")."<<endl;      
+      mout<<m_Name<<": sky orientation data exceeded (next emission: "<<m_NextEmission/second<<" vs. max time: "<<Sky.GetStopTime()/second<<")."<<endl;
       m_IsActive = false;
       m_NextEmission = numeric_limits<double>::max();
     }
@@ -2586,6 +2600,14 @@ bool MCSource::GenerateParticle(G4GeneralParticleSource* ParticleGun)
       //cout<<"Setting particle (from list): "<<m_EventList[0]->m_ParticleType->GetParticleName()<<endl;
       if (m_EventList[0]->m_ParticleDefinition == nullptr) {
          m_EventList[0]->m_ParticleDefinition = MCSteppingAction::GetParticleDefinition(m_EventList[0]->m_ParticleType, m_EventList[0]->m_ParticleExcitation);
+      }
+      if (m_EventList[0]->m_ParticleDefinition == nullptr) {
+        mout<<"  ***  ERROR  ***   "<<m_Name<<": Unable to create the particle of the event list entry (type "<<m_EventList[0]->m_ParticleType
+            <<", excitation "<<m_EventList[0]->m_ParticleExcitation/keV<<" keV) - the event is discarded"<<endl;
+        delete m_EventList[0];
+        m_EventList.pop_front();
+        m_EventListSize--;
+        return false;
       }
       if (m_EventList[0]->m_ParticleType == 0) {
         m_EventList[0]->m_ParticleType = MCSteppingAction::GetParticleType(m_EventList[0]->m_ParticleDefinition->GetParticleName());
@@ -2706,28 +2728,41 @@ double MCSource::GetMeanEnergy() const
     
     break;
   case c_CutOffPowerLaw:
-    mimp<<"GetMeanNotYetImplemented!"<<show;
+    Energy = MStatistics::GetMeanOfDensity([this](double E) { return pow(E, -m_EnergyParam3)*exp(-E/m_EnergyParam4); }, m_EnergyParam1, m_EnergyParam2);
     break;
   case c_Comptonized:
-    mimp<<"GetMeanNotYetImplemented!"<<show;
+    // The generator uses the optimized range (the negligible tails are cut)
+    Energy = MStatistics::GetMeanOfDensity([this](double E) { return Comptonized(E, m_EnergyParam3, m_EnergyParam4); }, m_EnergyParam6, m_EnergyParam7);
     break;
   case c_Gaussian:
-    Energy = m_EnergyParam1;
+    // The Gaussian restricted to the cut-off window and to positive energies, as generated
+    Energy = MStatistics::GetMeanOfDensity([this](double E) { return exp(-0.5*(E - m_EnergyParam1)*(E - m_EnergyParam1)/(m_EnergyParam2*m_EnergyParam2)); },
+                                           max(0.0, m_EnergyParam1 - m_EnergyParam3*m_EnergyParam2), m_EnergyParam1 + m_EnergyParam3*m_EnergyParam2);
     break;
   case c_ThermalBremsstrahlung:
-    mimp<<"GetMeanNotYetImplemented!"<<show;
+    Energy = MStatistics::GetMeanOfDensity([this](double E) { return exp(-E/m_EnergyParam3)/E; }, m_EnergyParam1, m_EnergyParam2);
     break;
   case c_BlackBody:
-    mimp<<"GetMeanNotYetImplemented!"<<show;
+    Energy = MStatistics::GetMeanOfDensity([this](double E) { return BlackBody(E, m_EnergyParam3); }, m_EnergyParam1, m_EnergyParam2);
     break;
   case c_BandFunction:
-    mimp<<"GetMeanNotYetImplemented!"<<show;
+    Energy = MStatistics::GetMeanOfDensity([this](double E) { return BandFunction(E, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5); }, m_EnergyParam1, m_EnergyParam2);
     break;
   case c_FileDifferentialFlux:
-    mimp<<"GetMeanNotYetImplemented!"<<show;
+    {
+      vector<double> Points;
+      // The integration is done piece by piece between the table points. The midpoints are breakpoints too: with the interpolation mode "None" the
+      // value changes there. For the other modes the density is smooth between table points and the extra breakpoints do no harm
+      for (unsigned int i = 0; i < m_EnergyFunction.GetNDataPoints(); ++i) {
+        Points.push_back(m_EnergyFunction.GetDataPointX(i));
+        if (i + 1 < m_EnergyFunction.GetNDataPoints()) Points.push_back(0.5*(m_EnergyFunction.GetDataPointX(i) + m_EnergyFunction.GetDataPointX(i + 1)));
+      }
+      Energy = MStatistics::GetMeanOfDensity([this](double E) { return m_EnergyFunction.Evaluate(E); }, m_EnergyFunction.GetXMin(), m_EnergyFunction.GetXMax(), Points);
+    }
     break;
   case c_NormalizedEnergyBeamFluxFunction:
-    mimp<<"GetMeanNotYetImplemented!"<<show;
+    // The spectrum depends on the direction: there is no single mean energy
+    merr<<m_Name<<": The mean energy of a direction-dependent spectrum is not defined"<<show;
     break;    
   default:
     merr<<"Energy type not yet implemented!"<<show;
@@ -2801,7 +2836,7 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
       
       if (CLHEP::RandFlat::shoot(1) < exp(-m_Energy/m_EnergyParam4)/m_EnergyParam7) break;
     }
-    if (MaxLoop == 0) {
+    if (MaxLoop < 0) {
       merr<<m_Name<<": Error: CutOffPowerlaw energy calculation: No result after 10000 loops"<<endl;
       return false;
     }
@@ -2814,13 +2849,21 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
       m_Energy = CLHEP::RandFlat::shoot(1) * (m_EnergyParam7 - m_EnergyParam6) + m_EnergyParam6;
       if (CLHEP::RandFlat::shoot(1) < Comptonized(m_Energy, m_EnergyParam3, m_EnergyParam4)/m_EnergyParam5) break;
     }
-    if (MaxLoop == 0) {
+    if (MaxLoop < 0) {
       merr<<m_Name<<": Error: Comptonized energy calculation: No result after 10000 loops"<<endl;
       return false;
     }
 
   } else if (m_SpectralType == c_Gaussian) {
-    m_Energy = gRandom->Gaus(m_EnergyParam1, m_EnergyParam2);
+    int MaxLoop = 10000;
+    do {
+      m_Energy = gRandom->Gaus(m_EnergyParam1, m_EnergyParam2);
+      // Energies of zero or below are not physical: throw again (cut-off in sigma around the center, as before)
+    } while ((m_Energy <= 0 || fabs(m_Energy - m_EnergyParam1) > m_EnergyParam3*m_EnergyParam2) && --MaxLoop > 0);
+    if (MaxLoop <= 0) {
+      merr<<m_Name<<": Error: Gaussian energy calculation: No result after 10000 loops"<<endl;
+      return false;
+    }
   } else if (m_SpectralType == c_ThermalBremsstrahlung) {
     while (true) {
       m_Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
@@ -2971,7 +3014,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
             Theta = acos(1 - CLHEP::RandFlat::shoot(1)*2);
             Area = 4*m_StartAreaParam1*(m_StartAreaParam2*sin(Theta) + m_StartAreaParam1*fabs(cos(Theta)));
             if (CLHEP::RandFlat::shoot(1) <= Area/MaxArea) {
-              Phi = 2*CLHEP::RandFlat::shoot(1);
+              Phi = CLHEP::RandFlat::shoot(1)*2*c_Pi;
               break;
             }
           }    
@@ -2990,7 +3033,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         Phi = CLHEP::RandFlat::shoot(1)*360*deg;
         do {
           Theta = 5*CLHEP::RandFlat::shoot(1)*m_PositionParam3; // Sample theta with 5 sigma;
-        } while (gRandom->Rndm() > sin(Theta*m_PositionParam3)*exp(-(Theta*Theta)/(2*m_PositionParam3*m_PositionParam3))); // Copy and paste from GMega, no clue where I had it from
+        } while (gRandom->Rndm() > sin(Theta)*exp(-(Theta*Theta)/(2*m_PositionParam3*m_PositionParam3))); // Copy and paste from GMega, no clue where I had it from
         
         // Now rotate into the correct position
         G4ThreeVector V;
@@ -3166,7 +3209,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
 	      	      
            }
           else{
-                merr<<"the time is not in the ori time range : "<<m_NextEmission<< " ["<<Sky.GetStartTime()<<","<< Sky.GetStopTime() <<"]"<<endl;
+                merr<<"  ***  ERROR  ***   "<<m_Name<<": The time is not in the ori time range : "<<m_NextEmission<< " ["<<Sky.GetStartTime()<<","<< Sky.GetStopTime() <<"]"<<endl;
+                return false;
            }
 	   
 	    
@@ -3222,7 +3266,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
     if (m_BeamType == c_NearFieldPoint || 
         m_BeamType == c_NearFieldRestrictedPoint ||
         m_BeamType == c_NearFieldDiffractionPoint ||
-        m_BeamType == c_NearFieldDiffractionPointKSpace ||
         m_BeamType == c_NearFieldConeBeam ||
         m_BeamType == c_NearFieldConeBeamGauss ||
         m_BeamType == c_NearFieldReverseDirectionToPredecessor) {
@@ -3277,7 +3320,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       G4double Radius = 0, Theta = 0, Phi = 0;
 
       Phi = 2*c_Pi*CLHEP::RandFlat::shoot();
-      Radius = m_PositionParam7*sqrt(CLHEP::RandFlat::shoot());
+      Radius = m_PositionParam10*sqrt(CLHEP::RandFlat::shoot());
       Temp[0] = Radius*cos(Phi);
       Temp[1] = Radius*sin(Phi);
       Temp[2] = 0.0;
@@ -3434,14 +3477,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         -Temp[0]*sin(Theta)+Temp[2]*cos(Theta);
     }
 
-    else if (m_BeamType == c_NearFieldDiffractionPointKSpace) {
-
-      // To Be implemented
-
-      m_Direction[0] = 0;
-      m_Direction[1] = 0;
-      m_Direction[2] = 1;
-    }
       
     else if  (m_BeamType == c_NearFieldBeam ||
               m_BeamType == c_NearFieldBeam1DProfile ||
@@ -3636,7 +3671,20 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
  
     if (CLHEP::RandFlat::shoot(1) < m_PolarizationDegree) {
       if (m_PolarizationType == c_PolarizationAbsolute) {
-        m_Polarization.set(m_PolarizationParam1, m_PolarizationParam2, m_PolarizationParam3);
+        // The given vector is in the coordinate system of the simulation. The polarization of the photon is its part perpendicular to the
+        // flight direction (the direction is not fixed for far field sources, thus a fixed vector is in general not orthogonal to it)
+        const G4ThreeVector Given(m_PolarizationParam1, m_PolarizationParam2, m_PolarizationParam3);
+        const G4ThreeVector Direction = m_Direction.unit();
+        const G4ThreeVector Projected = Given - Given.dot(Direction)*Direction;
+        if (Projected.mag() <= 1e-6*Given.mag()) {
+          merr<<"  ***  ERROR  ***   "<<m_Name<<": The absolute polarization vector is parallel to the direction of the photon"<<endl;
+          return false;
+        }
+        // The projection of a vector which is almost parallel to the direction is a small difference of large numbers: its direction is only
+        // accurate to ~1e-13. A second projection removes the remaining component along the direction (the rounding error drops to ~1e-16)
+        G4ThreeVector Perpendicular = Projected.unit();
+        Perpendicular = (Perpendicular - Perpendicular.dot(Direction)*Direction).unit();
+        m_Polarization = Perpendicular;
       } else if (m_PolarizationType == c_PolarizationGalactic) {
       
         //get the Earth aspect information from the orientation file
