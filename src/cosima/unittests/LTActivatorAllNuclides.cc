@@ -1,5 +1,5 @@
 /*
- * UTCActivatorAllNuclides.cc
+ * LTActivatorAllNuclides.cc
  *
  * Copyright (C) by the MEGAlib contributors.
  *
@@ -64,13 +64,13 @@ using namespace std;
 
 
 //! Unit test class running MCActivator for all nuclides and levels with Geant4 radioactive decay data
-class UTCActivatorAllNuclides : public MUnitTest
+class LTActivatorAllNuclides : public MUnitTest
 {
 public:
   //! Default constructor
-  UTCActivatorAllNuclides() : MUnitTest("UTCActivatorAllNuclides"), m_TimeLimit(300), m_MaximumZ(200) {}
+  LTActivatorAllNuclides() : MUnitTest("LTActivatorAllNuclides"), m_TimeLimit(300), m_MaximumZ(200) {}
   //! Default destructor
-  virtual ~UTCActivatorAllNuclides() {}
+  virtual ~LTActivatorAllNuclides() {}
 
   //! Run all tests
   virtual bool Run();
@@ -142,7 +142,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorAllNuclides::Run()
+bool LTActivatorAllNuclides::Run()
 {
   bool Passed = true;
 
@@ -167,7 +167,7 @@ bool UTCActivatorAllNuclides::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCActivatorAllNuclides::InitializeGeant4()
+void LTActivatorAllNuclides::InitializeGeant4()
 {
   // Silence Geant4 during the initialization:
   ostringstream Sink;
@@ -196,7 +196,7 @@ void UTCActivatorAllNuclides::InitializeGeant4()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorAllNuclides::CreateNuclideList()
+bool LTActivatorAllNuclides::CreateNuclideList()
 {
   const char* Directory = G4FindDataDir("G4RADIOACTIVEDATA");
   if (Directory == nullptr) return false;
@@ -239,7 +239,7 @@ bool UTCActivatorAllNuclides::CreateNuclideList()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString UTCActivatorAllNuclides::GetName(const Nuclide& N) const
+MString LTActivatorAllNuclides::GetName(const Nuclide& N) const
 {
   return MString(N.m_ID) + " [" + N.m_Excitation + " keV]";
 }
@@ -248,7 +248,7 @@ MString UTCActivatorAllNuclides::GetName(const Nuclide& N) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-pid_t UTCActivatorAllNuclides::StartWorker(unsigned int Worker, unsigned int Position)
+pid_t LTActivatorAllNuclides::StartWorker(unsigned int Worker, unsigned int Position)
 {
   pid_t PID = fork();
   if (PID == 0) {
@@ -261,7 +261,7 @@ pid_t UTCActivatorAllNuclides::StartWorker(unsigned int Worker, unsigned int Pos
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCActivatorAllNuclides::RunWorker(unsigned int Worker, unsigned int Position)
+void LTActivatorAllNuclides::RunWorker(unsigned int Worker, unsigned int Position)
 {
   // Worker w handles the nuclides w, w + NWorkers, w + 2 NWorkers, ...
   const MString Directory = GetTemporaryDirectoryName("Workers");
@@ -348,7 +348,7 @@ void UTCActivatorAllNuclides::RunWorker(unsigned int Worker, unsigned int Positi
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorAllNuclides::RunAllWorkers()
+bool LTActivatorAllNuclides::RunAllWorkers()
 {
   const MString Directory = GetTemporaryDirectoryName("Workers");
 
@@ -423,7 +423,7 @@ bool UTCActivatorAllNuclides::RunAllWorkers()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCActivatorAllNuclides::ReadResults()
+void LTActivatorAllNuclides::ReadResults()
 {
   const MString Directory = GetTemporaryDirectoryName("Workers");
 
@@ -453,7 +453,7 @@ void UTCActivatorAllNuclides::ReadResults()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorAllNuclides::EvaluateResults()
+bool LTActivatorAllNuclides::EvaluateResults()
 {
   bool Passed = true;
 
@@ -489,6 +489,6 @@ bool UTCActivatorAllNuclides::EvaluateResults()
 
 int main()
 {
-  UTCActivatorAllNuclides Test;
+  LTActivatorAllNuclides Test;
   return Test.Run() == true ? 0 : 1;
 }

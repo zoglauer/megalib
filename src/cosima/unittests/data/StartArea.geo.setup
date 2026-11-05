@@ -1,0 +1,49 @@
+// Mass model for testing start areas 
+
+Name StartArea
+Version 1.0
+
+// Will be overwritten
+SurroundingSphere 75  0.0  0.0  0.0  75.0
+
+
+// Material information:
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+// Volume information:
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 1000. 1000. 1000.
+WorldVolume.Mother 0
+
+Volume TestSphere
+TestSphere.Material Densimet180
+TestSphere.Visibility 1
+TestSphere.Color 2
+TestSphere.Shape SPHE 0.0 56.4189583548
+TestSphere.Position 0.0 0.0 0.0
+TestSphere.Mother WorldVolume
+
+
+// Detector information:
+
+Scintillator TestSphereScintillator
+
+TestSphereScintillator.SensitiveVolume TestSphere
+
+TestSphereScintillator.TriggerThreshold 0.000001
+TestSphereScintillator.NoiseThresholdEqualsTriggerThreshold true
+
+TestSphereScintillator.EnergyResolution ideal
+
+
+// Trigger information:
+
+Trigger TN01
+TN01.Veto false
+TN01.TriggerByChannel true
+TN01.Detector TestSphereScintillator 1

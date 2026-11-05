@@ -1,0 +1,51 @@
+# Unit test example to the the tube start area overwrite
+
+
+
+# Global parameters
+Version         1
+Geometry        StartArea.geo.setup
+
+# Physics list
+PhysicsListEM                                LivermorePol
+
+# Output formats
+StoreSimulationInfo                          all
+
+# The sphere has a radius of 56.41 cm, so that its projected surface area is 10000cm2
+StartArea Tube 0.0 0.0 0.0 0.0 0.0 0.0 60.0 60.0 
+
+
+# Runs and sourec parameters
+Run TestFarFieldPointSource
+TestFarFieldPointSource.FileName             StartAreaTube_FarFieldPointSource
+TestFarFieldPointSource.Triggers             10000
+
+TestFarFieldPointSource.Source FarFieldPointSource
+FarFieldPointSource.ParticleType             1
+FarFieldPointSource.Beam                     FarFieldPointSource 124 98
+FarFieldPointSource.Spectrum                 Mono 511
+FarFieldPointSource.Flux                     1.0
+
+
+Run TestFarFieldAreaSource
+TestFarFieldAreaSource.FileName              StartAreaTube_FarFieldAreaSource
+TestFarFieldAreaSource.Triggers              10000
+
+TestFarFieldAreaSource.Source FarFieldAreaSource
+FarFieldAreaSource.ParticleType              1
+FarFieldAreaSource.Beam                      FarFieldAreaSource 0 180.0 0.0 360.0
+FarFieldAreaSource.Spectrum                  Mono 511
+FarFieldAreaSource.Flux                      1.0
+
+
+Run TestFarFieldFileZenithDependent
+TestFarFieldFileZenithDependent.FileName     StartAreaTube_FarFieldFileZenithDependent
+TestFarFieldFileZenithDependent.Triggers     10000
+
+TestFarFieldFileZenithDependent.Source FarFieldFileZenithDependent
+FarFieldFileZenithDependent.ParticleType     1
+FarFieldFileZenithDependent.Beam             FarFieldFileZenithDependent StartAreaBeam.dat
+FarFieldFileZenithDependent.Spectrum         Mono 511
+FarFieldFileZenithDependent.Flux             1.0
+

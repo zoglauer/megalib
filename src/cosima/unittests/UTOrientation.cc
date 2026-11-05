@@ -1,5 +1,5 @@
 /*
- * UTCOrientation.cc
+ * UTOrientation.cc
  *
  * Copyright (C) by the MEGAlib contributors.
  *
@@ -21,7 +21,7 @@
 
 // Cosima:
 #include "MCOrientation.hh"
-#include "UTCSDHitShared.h"
+#include "UTSDHitShared.h"
 
 // MEGAlib:
 #include "MExceptions.h"
@@ -56,13 +56,13 @@ public:
 
 
 //! Unit test class for MCOrientation
-class UTCOrientation : public MUnitTest
+class UTOrientation : public MUnitTest
 {
 public:
   //! Default constructor
-  UTCOrientation() : MUnitTest("UTCOrientation") {}
+  UTOrientation() : MUnitTest("UTOrientation") {}
   //! Default destructor
-  virtual ~UTCOrientation() {}
+  virtual ~UTOrientation() {}
 
   //! Run all tests
   virtual bool Run();
@@ -118,7 +118,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::Run()
+bool UTOrientation::Run()
 {
   bool Passed = true;
 
@@ -149,7 +149,7 @@ bool UTCOrientation::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::ParseText(MCOrientation& Orientation, const MString& Text)
+bool UTOrientation::ParseText(MCOrientation& Orientation, const MString& Text)
 {
   MTokenizer Tokenizer;
   Tokenizer.Analyse(Text, false);
@@ -168,7 +168,7 @@ bool UTCOrientation::ParseText(MCOrientation& Orientation, const MString& Text)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::EvaluateVectorNear(const MString& Function, const MString& Input, const MString& Description, const G4ThreeVector& Output, const G4ThreeVector& Truth, double Tolerance)
+bool UTOrientation::EvaluateVectorNear(const MString& Function, const MString& Input, const MString& Description, const G4ThreeVector& Output, const G4ThreeVector& Truth, double Tolerance)
 {
   return MUnitTest::EvaluateVectorNear(Function, Input, Description, MVector(Output.x(), Output.y(), Output.z()), MVector(Truth.x(), Truth.y(), Truth.z()), Tolerance);
 }
@@ -177,19 +177,20 @@ bool UTCOrientation::EvaluateVectorNear(const MString& Function, const MString& 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::ParseFile(MCOrientation& Orientation, const MString& Name, const MString& Content, const MString& Mode, const MString& System)
+bool UTOrientation::ParseFile(MCOrientation& Orientation, const MString& Name, const MString& Content, const MString& Mode, const MString& System)
 {
-  const MString FileName = GetTemporaryFileName(Name);
-  if (WriteTextFile(FileName, Content) == false) return false;
+  // The file is written below the private temporary root, which is the working directory of the test, and the parser gets the relative name:
+  // the parameter file format has no quoting, and the absolute path may contain blanks (e.g. the log directory)
+  if (WriteTextFile(GetTemporaryFileName(Name), Content) == false) return false;
 
-  return ParseText(Orientation, MString("Run Orientation ") + System + " File " + Mode + " " + FileName);
+  return ParseText(Orientation, MString("Run Orientation ") + System + " File " + Mode + " " + Name);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestDefaultConstruction()
+bool UTOrientation::TestDefaultConstruction()
 {
   bool Passed = true;
 
@@ -207,7 +208,7 @@ bool UTCOrientation::TestDefaultConstruction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestParseErrors()
+bool UTOrientation::TestParseErrors()
 {
   bool Passed = true;
 
@@ -225,7 +226,7 @@ bool UTCOrientation::TestParseErrors()
   Passed = EvaluateFalse("Parse()", "file 5 tokens", "File without file name is rejected", ParseText(O, "Run Orientation Galactic File Loop")) && Passed;
   Passed = EvaluateFalse("Parse()", "file 7 tokens", "File with an additional token is rejected", ParseText(O, "Run Orientation Galactic File Loop a.ori b.ori")) && Passed;
   Passed = EvaluateFalse("Parse()", "file unknown loop keyword", "The 5th token must be Loop or NoLoop", ParseText(O, "Run Orientation Galactic File Repeat a.ori")) && Passed;
-  Passed = EvaluateFalse("Parse()", "file missing", "A missing file is rejected", ParseText(O, MString("Run Orientation Galactic File Loop ") + GetTemporaryFileName("DoesNotExist.ori"))) && Passed;
+  Passed = EvaluateFalse("Parse()", "file missing", "A missing file is rejected", ParseText(O, "Run Orientation Galactic File Loop DoesNotExist.ori")) && Passed;
 
   // Axes which are not at a right angle:
   Passed = EvaluateFalse("Parse()", "axes at 45 deg", "Galactic Fixed with axes not at a right angle is rejected", ParseText(O, "Run Orientation Galactic Fixed 0 0 0 45")) && Passed;
@@ -237,7 +238,7 @@ bool UTCOrientation::TestParseErrors()
   // A rejected text must not leave a state which makes the orientation functions crash (times without rotations):
   MCOrientationAccess Rejected;
   Passed = EvaluateFalse("Parse()", "rejected text", "The text is rejected", ParseText(Rejected, "Run Orientation Galactic Fixed 0 0 0 45")) && Passed;
-  bool RunsClean = UTCSDHitShared::RunsCleanlyInChild([&]() {
+  bool RunsClean = UTSDHitShared::RunsCleanlyInChild([&]() {
     G4ThreeVector D(1, 0, 0);
     Rejected.OrientDirection(0.0, D);
     return true;
@@ -251,7 +252,7 @@ bool UTCOrientation::TestParseErrors()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestLocalFixed()
+bool UTOrientation::TestLocalFixed()
 {
   bool Passed = true;
 
@@ -293,7 +294,7 @@ bool UTCOrientation::TestLocalFixed()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestGalacticFixed()
+bool UTOrientation::TestGalacticFixed()
 {
   bool Passed = true;
 
@@ -389,7 +390,7 @@ bool UTCOrientation::TestGalacticFixed()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestLatitudeRanges()
+bool UTOrientation::TestLatitudeRanges()
 {
   bool Passed = true;
 
@@ -427,7 +428,7 @@ bool UTCOrientation::TestLatitudeRanges()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestFileNoLoop()
+bool UTOrientation::TestFileNoLoop()
 {
   bool Passed = true;
 
@@ -500,7 +501,7 @@ bool UTCOrientation::TestFileNoLoop()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestFileLoop()
+bool UTOrientation::TestFileLoop()
 {
   bool Passed = true;
 
@@ -588,7 +589,7 @@ bool UTCOrientation::TestFileLoop()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestFindClosestIndex()
+bool UTOrientation::TestFindClosestIndex()
 {
   bool Passed = true;
 
@@ -643,7 +644,7 @@ bool UTCOrientation::TestFindClosestIndex()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestLocalFile()
+bool UTOrientation::TestLocalFile()
 {
   bool Passed = true;
 
@@ -653,7 +654,7 @@ bool UTCOrientation::TestLocalFile()
     MCOrientationAccess O;
     const MString FileName = GetTemporaryFileName("OLIdentity.ori");
     Passed = EvaluateTrue("WriteTextFile()", "OL identity", "The fixture can be written", WriteTextFile(FileName, "OL 0 10 20 30 90 0 0 0\n")) && Passed;
-    Passed = EvaluateTrue("Parse()", "OL identity", "A local orientation file can be parsed", ParseText(O, MString("Run Orientation Local File Loop ") + FileName)) && Passed;
+    Passed = EvaluateTrue("Parse()", "OL identity", "A local orientation file can be parsed", ParseText(O, "Run Orientation Local File Loop OLIdentity.ori")) && Passed;
     Passed = EvaluateTrue("IsOriented()", "OL identity", "A file gives an orientation", O.IsOriented()) && Passed;
 
     G4ThreeVector P(1*cm, 2*cm, 3*cm);
@@ -674,7 +675,7 @@ bool UTCOrientation::TestLocalFile()
     MCOrientationAccess O;
     const MString FileName = GetTemporaryFileName("OLRotated.ori");
     Passed = EvaluateTrue("WriteTextFile()", "OL rotated", "The fixture can be written", WriteTextFile(FileName, "OL 0 0 0 0 90 90 0 0\n")) && Passed;
-    Passed = EvaluateTrue("Parse()", "OL rotated", "A local orientation file can be parsed", ParseText(O, MString("Run Orientation Local File Loop ") + FileName)) && Passed;
+    Passed = EvaluateTrue("Parse()", "OL rotated", "A local orientation file can be parsed", ParseText(O, "Run Orientation Local File Loop OLRotated.ori")) && Passed;
 
     G4ThreeVector X(1, 0, 0);
     G4ThreeVector Y(0, 1, 0);
@@ -695,7 +696,7 @@ bool UTCOrientation::TestLocalFile()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestEarthCoordinates()
+bool UTOrientation::TestEarthCoordinates()
 {
   bool Passed = true;
 
@@ -740,23 +741,23 @@ bool UTCOrientation::TestEarthCoordinates()
       "OG 10 0 90 0 180\n";
     MCOrientationAccess O;
     Passed = EvaluateTrue("Parse()", "no Earth data", "A file without Earth coordinates can be parsed", ParseFile(O, "NoEarth.ori", Content, "NoLoop")) && Passed;
-    UTCSDHitShared::ChildOutcome Outcome = UTCSDHitShared::RunInChild([&]() {
+    UTSDHitShared::ChildOutcome Outcome = UTSDHitShared::RunInChild([&]() {
       double Alt = 0, Lat = 0, Long = 0;
       // Correct: no Earth coordinates available
       return O.GetEarthCoordinate(0.0, Alt, Lat, Long) == false;
     });
-    Passed = EvaluateTrue("GetEarthCoordinate()", "no Earth data", "Without Earth coordinates in the file the function returns false (and does not crash or return garbage)", Outcome == UTCSDHitShared::ChildOutcome::c_ReturnedTrue) && Passed;
+    Passed = EvaluateTrue("GetEarthCoordinate()", "no Earth data", "Without Earth coordinates in the file the function returns false (and does not crash or return garbage)", Outcome == UTSDHitShared::ChildOutcome::c_ReturnedTrue) && Passed;
   }
 
   // Fixed orientations have no Earth coordinates either:
   {
     MCOrientationAccess O;
     Passed = EvaluateTrue("Parse()", "Galactic Fixed", "Galactic Fixed can be parsed", ParseText(O, "Run Orientation Galactic Fixed")) && Passed;
-    UTCSDHitShared::ChildOutcome Outcome = UTCSDHitShared::RunInChild([&]() {
+    UTSDHitShared::ChildOutcome Outcome = UTSDHitShared::RunInChild([&]() {
       double Alt = 0, Lat = 0, Long = 0;
       return O.GetEarthCoordinate(0.0, Alt, Lat, Long) == false;
     });
-    Passed = EvaluateTrue("GetEarthCoordinate()", "Galactic Fixed", "A fixed orientation has no Earth coordinates, the function returns false (and does not crash or return garbage)", Outcome == UTCSDHitShared::ChildOutcome::c_ReturnedTrue) && Passed;
+    Passed = EvaluateTrue("GetEarthCoordinate()", "Galactic Fixed", "A fixed orientation has no Earth coordinates, the function returns false (and does not crash or return garbage)", Outcome == UTSDHitShared::ChildOutcome::c_ReturnedTrue) && Passed;
   }
 
   return Passed;
@@ -766,7 +767,7 @@ bool UTCOrientation::TestEarthCoordinates()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestFileErrors()
+bool UTOrientation::TestFileErrors()
 {
   bool Passed = true;
 
@@ -809,7 +810,7 @@ bool UTCOrientation::TestFileErrors()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestStartStopTime()
+bool UTOrientation::TestStartStopTime()
 {
   bool Passed = true;
 
@@ -837,7 +838,7 @@ bool UTCOrientation::TestStartStopTime()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestReuseAndCopy()
+bool UTOrientation::TestReuseAndCopy()
 {
   bool Passed = true;
 
@@ -892,7 +893,7 @@ bool UTCOrientation::TestReuseAndCopy()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestNonPerpendicularAxes()
+bool UTOrientation::TestNonPerpendicularAxes()
 {
   bool Passed = true;
 
@@ -969,7 +970,7 @@ bool UTCOrientation::TestNonPerpendicularAxes()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestTiltedSkewedFrames()
+bool UTOrientation::TestTiltedSkewedFrames()
 {
   bool Passed = true;
 
@@ -983,7 +984,7 @@ bool UTCOrientation::TestTiltedSkewedFrames()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::CheckTiltedSkewedFrame(bool Galactic)
+bool UTOrientation::CheckTiltedSkewedFrame(bool Galactic)
 {
   bool Passed = true;
 
@@ -1092,7 +1093,7 @@ bool UTCOrientation::CheckTiltedSkewedFrame(bool Galactic)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestCalculateRotation()
+bool UTOrientation::TestCalculateRotation()
 {
   bool Passed = true;
 
@@ -1189,7 +1190,7 @@ bool UTCOrientation::TestCalculateRotation()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCOrientation::TestStream()
+bool UTOrientation::TestStream()
 {
   bool Passed = true;
 
@@ -1206,6 +1207,6 @@ bool UTCOrientation::TestStream()
 
 int main()
 {
-  UTCOrientation Test;
+  UTOrientation Test;
   return Test.Run() == true ? 0 : 1;
 }

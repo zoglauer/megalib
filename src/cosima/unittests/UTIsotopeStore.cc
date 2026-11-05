@@ -1,5 +1,5 @@
 /*
- * UTCIsotopeStore.cc
+ * UTIsotopeStore.cc
  *
  * Copyright (C) by the MEGAlib contributors.
  *
@@ -50,13 +50,13 @@ using namespace std;
 
 
 //! Unit test class for MCIsotopeStore
-class UTCIsotopeStore : public MUnitTest
+class UTIsotopeStore : public MUnitTest
 {
 public:
   //! Default constructor
-  UTCIsotopeStore() : MUnitTest("UTCIsotopeStore"), m_CoutBuffer(nullptr), m_CerrBuffer(nullptr) {}
+  UTIsotopeStore() : MUnitTest("UTIsotopeStore"), m_CoutBuffer(nullptr), m_CerrBuffer(nullptr) {}
   //! Default destructor
-  virtual ~UTCIsotopeStore() {}
+  virtual ~UTIsotopeStore() {}
 
   //! Run all tests
   virtual bool Run();
@@ -118,7 +118,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::Run()
+bool UTIsotopeStore::Run()
 {
   bool Passed = true;
 
@@ -148,7 +148,7 @@ bool UTCIsotopeStore::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCIsotopeStore::InitializeGeant4()
+void UTIsotopeStore::InitializeGeant4()
 {
   SilenceOutput();
 
@@ -173,7 +173,7 @@ void UTCIsotopeStore::InitializeGeant4()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCIsotopeStore::SilenceOutput()
+void UTIsotopeStore::SilenceOutput()
 {
   DisableDefaultStreams();
   mimp.Enable(false);
@@ -186,7 +186,7 @@ void UTCIsotopeStore::SilenceOutput()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCIsotopeStore::RestoreOutput()
+void UTIsotopeStore::RestoreOutput()
 {
   if (m_CoutBuffer != nullptr) cout.rdbuf(m_CoutBuffer);
   if (m_CerrBuffer != nullptr) cerr.rdbuf(m_CerrBuffer);
@@ -200,7 +200,7 @@ void UTCIsotopeStore::RestoreOutput()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::SaveSilently(MCIsotopeStore& Store, const MString& FileName)
+bool UTIsotopeStore::SaveSilently(MCIsotopeStore& Store, const MString& FileName)
 {
   SilenceOutput();
   bool OK = Store.Save(FileName);
@@ -212,7 +212,7 @@ bool UTCIsotopeStore::SaveSilently(MCIsotopeStore& Store, const MString& FileNam
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::LoadSilently(MCIsotopeStore& Store, const MString& FileName)
+bool UTIsotopeStore::LoadSilently(MCIsotopeStore& Store, const MString& FileName)
 {
   SilenceOutput();
   bool OK = Store.Load(FileName);
@@ -224,7 +224,7 @@ bool UTCIsotopeStore::LoadSilently(MCIsotopeStore& Store, const MString& FileNam
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double UTCIsotopeStore::Find(const MCIsotopeStore& Store, const MString& Volume, int ID, double Excitation, double Tolerance)
+double UTIsotopeStore::Find(const MCIsotopeStore& Store, const MString& Volume, int ID, double Excitation, double Tolerance)
 {
   for (unsigned int v = 0; v < Store.GetNVolumes(); ++v) {
     if (Store.GetVolume(v) != Volume) continue;
@@ -242,7 +242,7 @@ double UTCIsotopeStore::Find(const MCIsotopeStore& Store, const MString& Volume,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int UTCIsotopeStore::Count(const MCIsotopeStore& Store)
+unsigned int UTIsotopeStore::Count(const MCIsotopeStore& Store)
 {
   unsigned int N = 0;
   for (unsigned int v = 0; v < Store.GetNVolumes(); ++v) {
@@ -257,7 +257,7 @@ unsigned int UTCIsotopeStore::Count(const MCIsotopeStore& Store)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestDefaultConstruction()
+bool UTIsotopeStore::TestDefaultConstruction()
 {
   bool Passed = true;
 
@@ -275,7 +275,7 @@ bool UTCIsotopeStore::TestDefaultConstruction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestAddAndGetters()
+bool UTIsotopeStore::TestAddAndGetters()
 {
   bool Passed = true;
 
@@ -336,7 +336,7 @@ bool UTCIsotopeStore::TestAddAndGetters()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestReset()
+bool UTIsotopeStore::TestReset()
 {
   bool Passed = true;
 
@@ -359,7 +359,7 @@ bool UTCIsotopeStore::TestReset()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestRemove()
+bool UTIsotopeStore::TestRemove()
 {
   bool Passed = true;
 
@@ -389,7 +389,7 @@ bool UTCIsotopeStore::TestRemove()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestSaveLoadRoundTrip()
+bool UTIsotopeStore::TestSaveLoadRoundTrip()
 {
   bool Passed = true;
 
@@ -429,7 +429,7 @@ bool UTCIsotopeStore::TestSaveLoadRoundTrip()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestSaveLoadFailures()
+bool UTIsotopeStore::TestSaveLoadFailures()
 {
   bool Passed = true;
 
@@ -464,7 +464,7 @@ bool UTCIsotopeStore::TestSaveLoadFailures()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestLoadParsingDetails()
+bool UTIsotopeStore::TestLoadParsingDetails()
 {
   bool Passed = true;
 
@@ -539,7 +539,7 @@ bool UTCIsotopeStore::TestLoadParsingDetails()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestScale()
+bool UTIsotopeStore::TestScale()
 {
   bool Passed = true;
 
@@ -563,7 +563,7 @@ bool UTCIsotopeStore::TestScale()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestAddStore()
+bool UTIsotopeStore::TestAddStore()
 {
   bool Passed = true;
 
@@ -618,7 +618,7 @@ bool UTCIsotopeStore::TestAddStore()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestSort()
+bool UTIsotopeStore::TestSort()
 {
   bool Passed = true;
 
@@ -670,7 +670,7 @@ bool UTCIsotopeStore::TestSort()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestRemoveStableElements()
+bool UTIsotopeStore::TestRemoveStableElements()
 {
   bool Passed = true;
 
@@ -695,7 +695,7 @@ bool UTCIsotopeStore::TestRemoveStableElements()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestParticleDefinitions()
+bool UTIsotopeStore::TestParticleDefinitions()
 {
   bool Passed = true;
 
@@ -725,7 +725,7 @@ bool UTCIsotopeStore::TestParticleDefinitions()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestSourceLists()
+bool UTIsotopeStore::TestSourceLists()
 {
   bool Passed = true;
 
@@ -777,7 +777,7 @@ bool UTCIsotopeStore::TestSourceLists()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCIsotopeStore::TestStream()
+bool UTIsotopeStore::TestStream()
 {
   bool Passed = true;
 
@@ -799,6 +799,6 @@ bool UTCIsotopeStore::TestStream()
 
 int main()
 {
-  UTCIsotopeStore Test;
+  UTIsotopeStore Test;
   return Test.Run() == true ? 0 : 1;
 }

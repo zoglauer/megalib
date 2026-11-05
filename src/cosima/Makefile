@@ -47,7 +47,7 @@ PRG_UT     := $(patsubst unittests/%,$(BN)/%,$(PRG_UT))
 
 all: $(PRG)
 
-tests: $(PRG)
+tests: $(PRG) $(PRG_UT)
 
 lib: $(SOBJ) 
 

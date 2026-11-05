@@ -1,5 +1,5 @@
 /*
- * UTCActivatorParticle.cc
+ * UTActivatorParticle.cc
  *
  * Copyright (C) by the MEGAlib contributors.
  *
@@ -49,13 +49,13 @@ using namespace std;
 
 
 //! Unit test class for MCActivatorParticle
-class UTCActivatorParticle : public MUnitTest
+class UTActivatorParticle : public MUnitTest
 {
 public:
   //! Default constructor
-  UTCActivatorParticle() : MUnitTest("UTCActivatorParticle"), m_CoutBuffer(nullptr) {}
+  UTActivatorParticle() : MUnitTest("UTActivatorParticle"), m_CoutBuffer(nullptr) {}
   //! Default destructor
-  virtual ~UTCActivatorParticle() {}
+  virtual ~UTActivatorParticle() {}
 
   //! Run all tests
   virtual bool Run();
@@ -99,7 +99,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorParticle::Run()
+bool UTActivatorParticle::Run()
 {
   bool Passed = true;
 
@@ -123,7 +123,7 @@ bool UTCActivatorParticle::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCActivatorParticle::InitializeGeant4()
+void UTActivatorParticle::InitializeGeant4()
 {
   SilenceOutput();
 
@@ -148,7 +148,7 @@ void UTCActivatorParticle::InitializeGeant4()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCActivatorParticle::SilenceOutput()
+void UTActivatorParticle::SilenceOutput()
 {
   DisableDefaultStreams();
   m_Sink.str("");
@@ -159,7 +159,7 @@ void UTCActivatorParticle::SilenceOutput()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCActivatorParticle::RestoreOutput()
+void UTActivatorParticle::RestoreOutput()
 {
   if (m_CoutBuffer != nullptr) cout.rdbuf(m_CoutBuffer);
   m_CoutBuffer = nullptr;
@@ -170,7 +170,7 @@ void UTCActivatorParticle::RestoreOutput()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MCActivatorParticle UTCActivatorParticle::Create(unsigned int ID, double Excitation)
+MCActivatorParticle UTActivatorParticle::Create(unsigned int ID, double Excitation)
 {
   SilenceOutput();
   MCActivatorParticle P;
@@ -183,7 +183,7 @@ MCActivatorParticle UTCActivatorParticle::Create(unsigned int ID, double Excitat
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double UTCActivatorParticle::GetDefinitionExcitation(const MCActivatorParticle& P)
+double UTActivatorParticle::GetDefinitionExcitation(const MCActivatorParticle& P)
 {
   const G4Ions* Ion = dynamic_cast<const G4Ions*>(P.GetDefinition());
   if (Ion == nullptr) return -1;
@@ -194,7 +194,7 @@ double UTCActivatorParticle::GetDefinitionExcitation(const MCActivatorParticle& 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorParticle::TestDefaultConstruction()
+bool UTActivatorParticle::TestDefaultConstruction()
 {
   bool Passed = true;
 
@@ -218,7 +218,7 @@ bool UTCActivatorParticle::TestDefaultConstruction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorParticle::TestGettersSetters()
+bool UTActivatorParticle::TestGettersSetters()
 {
   bool Passed = true;
 
@@ -245,7 +245,7 @@ bool UTCActivatorParticle::TestGettersSetters()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorParticle::TestSetIDAndExcitation()
+bool UTActivatorParticle::TestSetIDAndExcitation()
 {
   bool Passed = true;
 
@@ -290,7 +290,7 @@ bool UTCActivatorParticle::TestSetIDAndExcitation()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorParticle::TestCopyAndAssignment()
+bool UTActivatorParticle::TestCopyAndAssignment()
 {
   bool Passed = true;
 
@@ -337,7 +337,7 @@ bool UTCActivatorParticle::TestCopyAndAssignment()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorParticle::TestEqualOperator()
+bool UTActivatorParticle::TestEqualOperator()
 {
   bool Passed = true;
 
@@ -376,7 +376,7 @@ bool UTCActivatorParticle::TestEqualOperator()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorParticle::TestDecayConstant()
+bool UTActivatorParticle::TestDecayConstant()
 {
   bool Passed = true;
 
@@ -395,7 +395,7 @@ bool UTCActivatorParticle::TestDecayConstant()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorParticle::TestIsStable()
+bool UTActivatorParticle::TestIsStable()
 {
   bool Passed = true;
 
@@ -411,7 +411,7 @@ bool UTCActivatorParticle::TestIsStable()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivatorParticle::TestPaths()
+bool UTActivatorParticle::TestPaths()
 {
   bool Passed = true;
 
@@ -474,6 +474,6 @@ bool UTCActivatorParticle::TestPaths()
 
 int main()
 {
-  UTCActivatorParticle Test;
+  UTActivatorParticle Test;
   return Test.Run() == true ? 0 : 1;
 }

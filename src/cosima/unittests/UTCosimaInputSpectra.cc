@@ -22,524 +22,433 @@
 // Cosima:
 #include "MCParameterFile.hh"
 #include "MCSource.hh"
+#include "UTParameterFileShared.h"
 
 // MEGAlib:
-#include "MGlobal.h"
 #include "MDGeometryQuest.h"
 #include "MFileEventsSim.h"
+#include "MGlobal.h"
+#include "MProcessManager.h"
 #include "MSimEvent.h"
 #include "MSimIA.h"
-
-// Geant4:
+#include "MSystem.h"
 
 // ROOT:
-#include "TH1.h"
+#include "TApplication.h"
 #include "TF1.h"
 #include "TFitResult.h"
-#include "TPad.h"
-#include "TApplication.h"
-#include "TCanvas.h"
-
-// Geant4:
-#include "G4SystemOfUnits.hh"
+#include "TH1.h"
+#include "TROOT.h"
 
 // Standard lib:
-#include <sstream>
-#include <fstream>
-#include <future>
 #include <cmath>
-#include <chrono>
-#include <thread>
-#include <filesystem>
 #include <cstdlib>
-#include <string>
-#include <sys/wait.h>
+#include <future>
+#include <utility>
+#include <vector>
 using namespace std;
 
-//! Expose the parsed source for parser-level spectrum checks.
-class UTCosimaParameterFile : public MCParameterFile
+
+//! Unit test class for the spectrum keywords of the cosima source files: every keyword and alias is parsed into
+//! the expected spectral type and parameters, and the spectra which cosima simulates follow the input spectra
+class UTCosimaInputSpectra : public UTParameterFileTest
 {
 public:
-  using MCParameterFile::GetSource;
-};
+  //! Default constructor
+  UTCosimaInputSpectra() : UTParameterFileTest("UTCosimaInputSpectra") {}
+  //! Default destructor
+  virtual ~UTCosimaInputSpectra() {}
 
-/******************************************************************************/
+  //! Run all tests
+  virtual bool Run();
 
-class UTCosimaInputSpectra
-{
-  // public interface:
-public:
-  /// Default constructor
-  UTCosimaInputSpectra();
-  /// Default destructor
-  virtual ~UTCosimaInputSpectra() {};
-
-  /// Run all tests
-  bool Run();
-
-  /// Run a single tests
-  bool RunSingle();
-
-  // protected methods:
-protected:
+private:
   //! One spectrum which is simulated with cosima and fitted
-  struct SpectrumCase {
+  struct SimulationCase {
     //! Name for the output
     MString m_Name;
-    //! File name prefix of the source and sim file
+    //! File name prefix of the source, log, and sim file, and name of the private directory of the run
     MString m_Prefix;
     //! The Spectrum keyword value
     MString m_Spectrum;
+    //! The random seed of cosima
+    unsigned int m_Seed;
     //! The energy range in keV
     double m_EMin;
     double m_EMax;
-    //! The fit function and the start values of its parameters (parameter 0 is the normalization and is set automatically).
-    //! The x-axis of the fit is u = ln(E/keV): the function is dN/du = E*dN/dE, the bins are uniform in u (see CreateSpectrum())
+    //! The fit function and the start values of its parameters (parameter 0 is the normalization and is set automatically)
+    //! The x-axis of the fit is u = ln(E/keV): the function is dN/du = E*dN/dE, the bins are uniform in u (see ReadSpectrum())
     MString m_Formula;
     vector<double> m_Start;
     //! The parameters (index in the fit function, true value) which have to be reproduced
     vector<pair<unsigned int, double>> m_Truth;
   };
 
-  //! Return the spectra which are tested
-  vector<SpectrumCase> GetCases() const;
-  bool CreateSourceFile(MString FileNamePrefix, MString Spectrum);
-  //! Simulate the spectrum with cosima (external program: can run in parallel with others)
-  bool RunCosima(const SpectrumCase& Case);
-  TH1D* CreateSpectrum(MString FileNamePrefix, unsigned int NumberOfBins, double EMin, double EMax);
-  //! Fit the simulated spectrum and return the significance of the deviation from the true spectrum, or a negative value if the analysis failed (ROOT: main thread only!)
-  double Analyze(const SpectrumCase& Case);
-  bool TestSpectrumInputs();
+  //! Return the spectra which are simulated
+  vector<SimulationCase> GetSimulationCases() const;
+  //! Write the source file of a simulation into its directory
+  bool WriteSimulationSource(const MString& Directory, const SimulationCase& Case) const;
+  //! Run cosima on the source file in the directory (external program, can run in parallel with others) and return its wait status (0: exited normally with 0)
+  int RunCosima(const MString& Directory, const SimulationCase& Case) const;
+  //! Fill the energies of the first interactions of the sim file into a histogram with uniform bins in ln(E/keV), return nullptr if the file cannot be read
+  //! Count the events without a finite energy
+  TH1D* ReadSpectrum(const MString& Directory, const SimulationCase& Case, unsigned int& NonFiniteEnergies);
+  //! Read the simulated spectrum, fit it, and evaluate the deviations from the true spectrum (ROOT: main thread only)
+  bool EvaluateSimulatedSpectrum(const MString& Directory, const SimulationCase& Case);
 
-  //! The maximum significance in sigma: see Analyze()
-  static constexpr double c_MaximumSigma = 5.0;
+  //! Test that every spectrum keyword and alias is parsed into the expected spectral type and parameters
+  bool TestSpectrumKeywords();
+  //! Test that the spectra simulated by cosima follow the input spectra
+  bool TestSimulatedSpectra();
 
-
-  // private members:
-private:
-  /// The mass model file name
-  MString m_MassModelFileName;
-  /// The number of triggers
-  unsigned int m_NumberOfTriggers;
-  /// Single mode
-  bool m_SingleMode;
+  //! The number of triggers of each simulation
+  static const unsigned int c_NumberOfTriggers = 100000;
+  //! The number of bins of the fitted spectra
+  static const unsigned int c_NumberOfBins = 50;
+  //! The allowed deviation of the fitted parameters and of the deviance in standard deviations: 5 sigma (3e-7 per normal deviation)
+  //! keeps the chance of a false failure negligible
+  static constexpr double c_NumberOfSigmas = 5.0;
 };
 
 
-/******************************************************************************
- * Default constructor
- */
-UTCosimaInputSpectra::UTCosimaInputSpectra()
-{
-  m_MassModelFileName = "$(MEGALIB)/src/cosima/unittests/GiganticSphere.geo.setup";
-  m_NumberOfTriggers = 100000;
-  m_SingleMode = false;
-
-  gROOT->SetBatch(true);
-}
+////////////////////////////////////////////////////////////////////////////////
 
 
-/******************************************************************************
- * Run a single test
- */
-bool UTCosimaInputSpectra::RunSingle()
-{
-  m_SingleMode = true;
-
-  const SpectrumCase Case = GetCases()[1];
-  if (RunCosima(Case) == false) return false;
-  double Sigma = Analyze(Case);
-  cout<<Case.m_Name<<": "<<Sigma<<endl;
-  return Sigma >= 0.0 && std::isfinite(Sigma) && Sigma < c_MaximumSigma;
-}
-
-
-/******************************************************************************
- * The spectra which are tested
- */
-vector<UTCosimaInputSpectra::SpectrumCase> UTCosimaInputSpectra::GetCases() const
-{
-  vector<SpectrumCase> Cases;
-  // Power law: dN/dE = N*E^-index, i.e. dN/du = N*E^(1-index)
-  Cases.push_back({ "Power law", "TestPowerLaw", "PowerLaw 10 10000 2", 10, 10000, "[0]*exp((1-[1])*x)", { 1.0, 2.5 }, { { 1, 2.0 } } });
-  // Cut-off power law: dN/dE = N*E^-index*exp(-E/cutoff)
-  Cases.push_back({ "Cutoff power law", "TestCutOffPowerLaw", "CutOffPowerLaw 10 10000 0.5 1000", 10, 10000, "[0]*exp((1-[1])*x)*exp(-exp(x)/[2])", { 1.0, 1.0, 500.0 }, { { 1, 0.5 }, { 2, 1000.0 } } });
-  // Comptonized: dN/dE = N*E^alpha*exp(-(alpha + 2)*E/Epeak)
-  Cases.push_back({ "Comptonization", "TestComptonization", "Comptonized 10 10000 -1.5 200", 10, 10000, "[0]*exp(([1]+1)*x)*exp(-([1]+2)*exp(x)/[2])", { 1.0, -1.4, 220.0 }, { { 1, -1.5 }, { 2, 200.0 } } });
-  return Cases;
-}
-
-
-/******************************************************************************
- * Run all tests
- */
 bool UTCosimaInputSpectra::Run()
 {
-  bool AllPassed = TestSpectrumInputs();
-
-  // The simulations are external programs, they run in parallel. All ROOT work (histograms, fits) is done afterwards in the main thread, since ROOT is not thread safe
-  const vector<SpectrumCase> Cases = GetCases();
-  vector<future<bool>> Simulations;
-  for (const SpectrumCase& C: Cases) {
-    Simulations.push_back(async(launch::async, [this, C]() { return RunCosima(C); }));
-    // Cosima seeds its random numbers from the time: keep the starts apart
-    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
-  }
-
-  for (unsigned int c = 0; c < Cases.size(); ++c) {
-    const bool Simulated = Simulations[c].get();
-    const double Sigma = (Simulated == true) ? Analyze(Cases[c]) : -1.0;
-    if (Sigma < 0) {
-      cout<<"Failed: "<<Cases[c].m_Name<<" test did not finish"<<endl;
-      AllPassed = false;
-    } else if (Sigma >= c_MaximumSigma || std::isnan(Sigma) == true) {
-      cout<<"Failed: "<<Cases[c].m_Name<<" significance: "<<Sigma<<" sigma"<<endl;
-      AllPassed = false;
-    } else {
-      cout<<"Passed: "<<Cases[c].m_Name<<" significance: "<<Sigma<<" sigma"<<endl;
-    }
-  }
-
-  if (AllPassed == true) {
-    cout<<"Passed: All passed"<<endl;
-  }
-
-  return AllPassed;
-}
-
-
-/******************************************************************************
- * Check that every spectrum keyword accepted by MCParameterFile is parsed and
- * stored as the expected type and parameters. Distribution shape is tested
- * separately by the simulation/fit tests below.
- */
-bool UTCosimaInputSpectra::TestSpectrumInputs()
-{
-  const char* Root = getenv("MEGALIB");
-  if (Root == nullptr) {
-    cerr<<"Failed: MEGALIB is not set; cannot test spectrum parser inputs"<<endl;
-    return false;
-  }
-
-  const MString Geometry = MString(Root) + "/src/cosima/unittests/GiganticSphere.geo.setup";
-  const MString BeamFile = MString(Root) + "/resource/examples/cosima/source/3DSpherical.dat";
-  const auto Stamp = chrono::high_resolution_clock::now().time_since_epoch().count();
-  const filesystem::path Directory = filesystem::temp_directory_path() / ("UTCosimaInputSpectra_" + to_string(Stamp));
-  error_code Error;
-  if (filesystem::create_directories(Directory, Error) == false || Error) {
-    cerr<<"Failed: unable to create spectrum parser test directory: "<<Directory<<endl;
-    return false;
-  }
-
-  const filesystem::path SpectrumFile = Directory / "Spectrum.dat";
-  {
-    ofstream Out(SpectrumFile);
-    Out<<"IP LIN\nDP 10 1\nDP 100 0.1\n";
-    if (Out.good() == false) {
-      cerr<<"Failed: unable to write differential-flux fixture"<<endl;
-      filesystem::remove_all(Directory, Error);
-      return false;
-    }
-  }
-
-  struct SpectrumCase {
-    const char* Name;
-    MString Input;
-    int ExpectedType;
-    vector<double> ExpectedParameters;
-    bool NormalizedBeam;
-  };
-  const vector<SpectrumCase> Cases = {
-    { "Mono", "Mono 511", MCSource::c_Monoenergetic, { 511*keV }, false },
-    { "Mono alias", "M 511", MCSource::c_Monoenergetic, { 511*keV }, false },
-    { "Linear", "Linear 10 100", MCSource::c_Linear, { 10*keV, 100*keV }, false },
-    { "Linear alias", "L 10 100", MCSource::c_Linear, { 10*keV, 100*keV }, false },
-    { "PowerLaw", "PowerLaw 10 1000 2", MCSource::c_PowerLaw, { 10*keV, 1000*keV, 2 }, false },
-    { "PowerLaw alias", "PL 10 1000 2", MCSource::c_PowerLaw, { 10*keV, 1000*keV, 2 }, false },
-    { "BrokenPowerLaw", "BrokenPowerLaw 10 1000 100 1.5 2.5", MCSource::c_BrokenPowerLaw, { 10*keV, 1000*keV, 100*keV, 1.5, 2.5 }, false },
-    { "BrokenPowerLaw alias", "BPL 10 1000 100 1.5 2.5", MCSource::c_BrokenPowerLaw, { 10*keV, 1000*keV, 100*keV, 1.5, 2.5 }, false },
-    { "CutOffPowerLaw", "CutOffPowerLaw 10 1000 1.5 500", MCSource::c_CutOffPowerLaw, { 10*keV, 1000*keV, 1.5, 500*keV }, false },
-    { "CutOffPowerLaw alias", "CPL 10 1000 1.5 500", MCSource::c_CutOffPowerLaw, { 10*keV, 1000*keV, 1.5, 500*keV }, false },
-    { "Comptonized", "Comptonized 10 1000 -1.2 200", MCSource::c_Comptonized, { 10*keV, 1000*keV, -1.2, 200*keV }, false },
-    { "Comptonization alias", "Comptonization 10 1000 -1.2 200", MCSource::c_Comptonized, { 10*keV, 1000*keV, -1.2, 200*keV }, false },
-    { "Comptonized alias", "Comp 10 1000 -1.2 200", MCSource::c_Comptonized, { 10*keV, 1000*keV, -1.2, 200*keV }, false },
-    { "Gaussian", "Gaussian 100 10 3", MCSource::c_Gaussian, { 100*keV, 10*keV, 3 }, false },
-    { "Gaussian alias", "G 100 10 3", MCSource::c_Gaussian, { 100*keV, 10*keV, 3 }, false },
-    { "ThermalBremsstrahlung", "ThermalBremsstrahlung 10 1000 50", MCSource::c_ThermalBremsstrahlung, { 10*keV, 1000*keV, 50*keV }, false },
-    { "ThermalBremsstrahlung alias", "TB 10 1000 50", MCSource::c_ThermalBremsstrahlung, { 10*keV, 1000*keV, 50*keV }, false },
-    { "BlackBody", "BlackBody 10 1000 50", MCSource::c_BlackBody, { 10*keV, 1000*keV, 50*keV }, false },
-    { "BlackBody alias", "BB 10 1000 50", MCSource::c_BlackBody, { 10*keV, 1000*keV, 50*keV }, false },
-    { "BandFunction", "BandFunction 10 1000 -1 -2.5 200", MCSource::c_BandFunction, { 10*keV, 1000*keV, -1, -2.5, 200*keV }, false },
-    { "Band alias", "Band 10 1000 -1 -2.5 200", MCSource::c_BandFunction, { 10*keV, 1000*keV, -1, -2.5, 200*keV }, false },
-    { "BandFunction alias", "BF 10 1000 -1 -2.5 200", MCSource::c_BandFunction, { 10*keV, 1000*keV, -1, -2.5, 200*keV }, false },
-    { "FileDifferentialFlux", MString("File ") + SpectrumFile.string().c_str(), MCSource::c_FileDifferentialFlux, {}, false },
-    { "File alias", MString("F ") + SpectrumFile.string().c_str(), MCSource::c_FileDifferentialFlux, {}, false },
-    { "NormalizedEnergyBeamFluxFunction", "NormalizedEnergyBeamFluxFunction", MCSource::c_NormalizedEnergyBeamFluxFunction, {}, true }
-  };
-
   bool Passed = true;
-  unsigned int CaseNumber = 0;
-  for (const SpectrumCase& C: Cases) {
-    UTCosimaParameterFile Parameters;
-    MString Beam = C.NormalizedBeam ? MString("FarFieldNormalizedEnergyBeamFluxFunction ") + BeamFile : "PointSource 0 0 0";
-    MString Content = MString("Version 1\nGeometry ") + Geometry + "\nRun R\nR.FileName Test\nR.Time 1\nR.Source S\nS.ParticleType 1\nS.Beam " + Beam + "\nS.Spectrum " + C.Input + "\n";
-    const filesystem::path SourceFile = Directory / ("Case" + to_string(CaseNumber++) + ".source");
-    {
-      ofstream Out(SourceFile);
-      Out<<Content;
-      if (Out.good() == false) {
-        cerr<<"Failed: unable to write parser fixture for "<<C.Name<<endl;
-        Passed = false;
-        continue;
-      }
-    }
 
-    if (Parameters.Open(SourceFile.string().c_str()) == false) {
-      cerr<<"Failed: parser rejected spectrum input "<<C.Name<<": "<<C.Input<<endl;
-      Passed = false;
-      continue;
-    }
-    MCSource* Source = Parameters.GetSource("S");
-    if (Source == nullptr || Source->GetSpectralType() != C.ExpectedType) {
-      cerr<<"Failed: parser stored the wrong spectral type for "<<C.Name<<endl;
-      Passed = false;
-      continue;
-    }
-    for (unsigned int P = 0; P < C.ExpectedParameters.size(); ++P) {
-      const double Actual = Source->GetEnergyParameter(P+1);
-      const double Expected = C.ExpectedParameters[P];
-      if (fabs(Actual - Expected) > max(1e-12*fabs(Expected), 1e-12*keV)) {
-        cerr<<"Failed: parser stored the wrong parameter "<<P+1<<" for "<<C.Name<<endl;
-        Passed = false;
-      }
-    }
+  Passed = EvaluateTrue("PrepareFiles()", "private directory", "The private directory with the geometry fixture can be created", PrepareFiles()) && Passed;
+  if (Passed == false) {
+    Summarize();
+    return Passed;
   }
 
-  // Deprecated numeric input remains accepted for legacy source files.
-  {
-    UTCosimaParameterFile Parameters;
-    const filesystem::path SourceFile = Directory / "Legacy.source";
-    ofstream Out(SourceFile);
-    Out<<"Version 1\nGeometry "<<Geometry<<"\nRun R\nR.FileName Test\nR.Time 1\nR.Source S\nS.ParticleType 1\nS.Beam PointSource 0 0 0\nS.SpectralType "<<MCSource::c_PowerLaw<<"\n";
-    Out.close();
-    if (Parameters.Open(SourceFile.string().c_str()) == false || Parameters.GetSource("S") == nullptr || Parameters.GetSource("S")->GetSpectralType() != MCSource::c_PowerLaw) {
-      cerr<<"Failed: legacy numeric SpectralType input was not accepted"<<endl;
-      Passed = false;
-    }
-  }
+  Passed = TestSpectrumKeywords() && Passed;
+  Passed = TestSimulatedSpectra() && Passed;
 
-  filesystem::remove_all(Directory, Error);
-  if (Passed) cout<<"Passed: all spectrum input forms parse with the expected type and parameters"<<endl;
+  Summarize();
+
   return Passed;
 }
 
 
-/******************************************************************************
- * Create a source file
- */
-bool UTCosimaInputSpectra::CreateSourceFile(MString FileNamePrefix, MString Spectrum)
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTCosimaInputSpectra::TestSpectrumKeywords()
 {
-  MString FileName = FileNamePrefix + ".source";
-  ofstream fout;
-  fout.open(FileName);
-  if (fout.is_open() == false) {
-    cout<<"Unable to open "<<FileNamePrefix<<endl;
-    return false;
+  bool Passed = true;
+
+  const MString SpectrumFile = WriteSource("Spectrum.dat", "IP LIN\nDP 10 1\nDP 100 0.1\n");
+  const MString Data = GetExampleDirectory();
+
+  //! One spectrum: the name for the output, the Spectrum keyword line, the expected spectral type, and the expected parameters (energies in the Geant4 energy unit)
+  struct SpectrumCase {
+    MString m_Name;
+    MString m_Line;
+    int m_Type;
+    vector<double> m_Parameters;
+  };
+  vector<SpectrumCase> Cases = {
+    { "Mono", "Mono 511", MCSource::c_Monoenergetic, { 511*keV } },
+    { "Mono alias", "M 511", MCSource::c_Monoenergetic, { 511*keV } },
+    { "Linear", "Linear 10 100", MCSource::c_Linear, { 10*keV, 100*keV } },
+    { "Linear alias", "L 10 100", MCSource::c_Linear, { 10*keV, 100*keV } },
+    { "PowerLaw", "PowerLaw 10 1000 2", MCSource::c_PowerLaw, { 10*keV, 1000*keV, 2 } },
+    { "PowerLaw alias", "PL 10 1000 2", MCSource::c_PowerLaw, { 10*keV, 1000*keV, 2 } },
+    { "BrokenPowerLaw", "BrokenPowerLaw 10 1000 100 1.5 2.5", MCSource::c_BrokenPowerLaw, { 10*keV, 1000*keV, 100*keV, 1.5, 2.5 } },
+    { "BrokenPowerLaw alias", "BPL 10 1000 100 1.5 2.5", MCSource::c_BrokenPowerLaw, { 10*keV, 1000*keV, 100*keV, 1.5, 2.5 } },
+    { "CutOffPowerLaw", "CutOffPowerLaw 10 1000 1.5 500", MCSource::c_CutOffPowerLaw, { 10*keV, 1000*keV, 1.5, 500*keV } },
+    { "CutOffPowerLaw alias", "CPL 10 1000 1.5 500", MCSource::c_CutOffPowerLaw, { 10*keV, 1000*keV, 1.5, 500*keV } },
+    { "Comptonized", "Comptonized 10 1000 -1.2 200", MCSource::c_Comptonized, { 10*keV, 1000*keV, -1.2, 200*keV } },
+    { "Comptonization alias", "Comptonization 10 1000 -1.2 200", MCSource::c_Comptonized, { 10*keV, 1000*keV, -1.2, 200*keV } },
+    { "Comp alias", "Comp 10 1000 -1.2 200", MCSource::c_Comptonized, { 10*keV, 1000*keV, -1.2, 200*keV } },
+    { "Gaussian", "Gaussian 100 10 3", MCSource::c_Gaussian, { 100*keV, 10*keV, 3 } },
+    { "Gaussian alias", "G 100 10 3", MCSource::c_Gaussian, { 100*keV, 10*keV, 3 } },
+    { "ThermalBremsstrahlung", "ThermalBremsstrahlung 10 1000 50", MCSource::c_ThermalBremsstrahlung, { 10*keV, 1000*keV, 50*keV } },
+    { "ThermalBremsstrahlung alias", "TB 10 1000 50", MCSource::c_ThermalBremsstrahlung, { 10*keV, 1000*keV, 50*keV } },
+    { "BlackBody", "BlackBody 10 1000 50", MCSource::c_BlackBody, { 10*keV, 1000*keV, 50*keV } },
+    { "BlackBody alias", "BB 10 1000 50", MCSource::c_BlackBody, { 10*keV, 1000*keV, 50*keV } },
+    { "BandFunction", "BandFunction 10 1000 -1 -2.5 200", MCSource::c_BandFunction, { 10*keV, 1000*keV, -1, -2.5, 200*keV } },
+    { "Band alias", "Band 10 1000 -1 -2.5 200", MCSource::c_BandFunction, { 10*keV, 1000*keV, -1, -2.5, 200*keV } },
+    { "BF alias", "BF 10 1000 -1 -2.5 200", MCSource::c_BandFunction, { 10*keV, 1000*keV, -1, -2.5, 200*keV } },
+    { "File", "File " + SpectrumFile, MCSource::c_FileDifferentialFlux, {} },
+    { "File alias", "F " + SpectrumFile, MCSource::c_FileDifferentialFlux, {} }
+  };
+  if (Data.IsEmpty() == false) {
+    Cases.push_back({ "NormalizedEnergyBeamFluxFunction", "NormalizedEnergyBeamFluxFunction", MCSource::c_NormalizedEnergyBeamFluxFunction, {} });
+  } else {
+    mout<<"MEGALIB is not set: the normalized energy beam flux function is not tested"<<endl;
   }
-  fout<<"# Unit test source file"<<endl;
-  fout<<endl;
-  fout<<"Version 1"<<endl;
-  fout<<endl;
-  fout<<"# Geometry"<<endl;
-  fout<<"Geometry        "<<m_MassModelFileName<<endl;
-  fout<<""<<endl;
-  fout<<"# Physics list"<<endl;
-  fout<<"PhysicsListEM               LivermorePol"<<endl;
-  fout<<endl;
-  fout<<"# Output formats"<<endl;
-  fout<<"StoreSimulationInfo         init"<<endl;
-  fout<<endl;
-  fout<<"# Run & source parameters"<<endl;
-  fout<<"Run UnitTest"<<endl;
-  fout<<"UnitTest.FileName               "<<FileNamePrefix<<endl;
-  fout<<"UnitTest.Triggers               "<<m_NumberOfTriggers<<endl;
-  fout<<endl;
-  fout<<"UnitTest.Source UnitTestSource"<<endl;
-  fout<<"UnitTestSource.ParticleType           1"<<endl;
-  fout<<"UnitTestSource.Beam                   PointSource 0 0 0"<<endl;
-  fout<<"UnitTestSource.Spectrum               "<<Spectrum<<endl;
-  fout<<"UnitTestSource.Flux                   1"<<endl;
-  fout<<endl;
-  fout.close();
-  
-  return true;
+
+  for (const SpectrumCase& C: Cases) {
+    // The normalized energy beam flux function needs its beam and no flux, all others a point source with a flux
+    MString Lines = "S.ParticleType 1\n";
+    if (C.m_Type == MCSource::c_NormalizedEnergyBeamFluxFunction) {
+      Lines += "S.Beam FarFieldNormalizedEnergyBeamFluxFunction " + Data + "/3DSpherical.dat\n";
+    } else {
+      Lines += "S.Beam PointSource 0 0 0\nS.Flux 1\n";
+    }
+    Lines += "S.Spectrum " + C.m_Line + "\n";
+
+    UTParameterFileAccess P;
+    Passed = EvaluateTrue("Open()", C.m_Name, "The spectrum line is accepted by the parser", Open(P, OneSource(Lines))) && Passed;
+    MCSource* S = GetS(P);
+    Passed = EvaluateTrue("GetSource()", C.m_Name, "The source S exists after parsing", S != nullptr) && Passed;
+    if (S == nullptr) {
+      continue;
+    }
+    Passed = Evaluate("GetSpectralType()", C.m_Name, "The spectral type is the one of the keyword", S->GetSpectralType(), C.m_Type) && Passed;
+    for (unsigned int p = 0; p < C.m_Parameters.size(); ++p) {
+      // The parameters are read from text and multiplied by their unit: exact to the rounding of a double
+      const double Expected = C.m_Parameters[p];
+      Passed = EvaluateNear("GetEnergyParameter()", C.m_Name + " parameter " + (p+1), "The energy parameter is stored in its unit", S->GetEnergyParameter(p+1), Expected, 1e-12*max(1.0, fabs(Expected))) && Passed;
+    }
+  }
+
+  // The deprecated numeric spectral type remains accepted for old source files
+  {
+    UTParameterFileAccess P;
+    Passed = EvaluateTrue("Open()", "SpectralType", "The deprecated numeric spectral type is accepted", Open(P, OneSource(MString("S.ParticleType 1\nS.Beam PointSource 0 0 0\nS.SpectralType ") + MCSource::c_PowerLaw + "\n"))) && Passed;
+    MCSource* S = GetS(P);
+    Passed = EvaluateTrue("GetSource()", "SpectralType", "The source S exists after parsing", S != nullptr) && Passed;
+    if (S != nullptr) {
+      Passed = Evaluate("GetSpectralType()", "SpectralType", "The spectral type is the one of the numeric code", S->GetSpectralType(), MCSource::c_PowerLaw) && Passed;
+    }
+  }
+
+  return Passed;
 }
 
 
-/******************************************************************************
- * Create a spectrum with logarithmically spaced bins: the spectra fall by orders of magnitude, linear bins leave the high-energy bins (almost) empty
- */
-TH1D* UTCosimaInputSpectra::CreateSpectrum(MString FileNamePrefix, unsigned int Bins, double EMin, double EMax)
-{
-  // Load geometry:
-  MDGeometryQuest* Geometry = new MDGeometryQuest();
-  if (Geometry->ScanSetupFile(m_MassModelFileName) == true) {
-    cout<<"Geometry "<<Geometry->GetName()<<" loaded!"<<endl;
-  } else {
-    cout<<"Unable to load geometry "<<m_MassModelFileName<<" - Aborting!"<<endl;
-    return nullptr;
-  }  
+////////////////////////////////////////////////////////////////////////////////
 
-  MFileEventsSim* Reader = new MFileEventsSim(Geometry);
-  if (Reader->Open(FileNamePrefix + ".inc1.id1.sim.gz") == false) {
-    cout<<"Unable to open sim file "<<(FileNamePrefix + ".inc1.id1.sim.gz")<<" - Aborting!"<<endl; 
+
+vector<UTCosimaInputSpectra::SimulationCase> UTCosimaInputSpectra::GetSimulationCases() const
+{
+  vector<SimulationCase> Cases;
+  // Power law: dN/dE = N*E^-index, i.e. dN/du = N*E^(1-index)
+  Cases.push_back({ "Power law", "PowerLaw", "PowerLaw 10 10000 2", 101, 10, 10000, "[0]*exp((1-[1])*x)", { 1.0, 2.5 }, { { 1, 2.0 } } });
+  // Cut-off power law: dN/dE = N*E^-index*exp(-E/cutoff)
+  Cases.push_back({ "Cut-off power law", "CutOffPowerLaw", "CutOffPowerLaw 10 10000 0.5 1000", 202, 10, 10000, "[0]*exp((1-[1])*x)*exp(-exp(x)/[2])", { 1.0, 1.0, 500.0 }, { { 1, 0.5 }, { 2, 1000.0 } } });
+  // Comptonized: dN/dE = N*E^alpha*exp(-(alpha + 2)*E/Epeak)
+  Cases.push_back({ "Comptonized", "Comptonized", "Comptonized 10 10000 -1.5 200", 303, 10, 10000, "[0]*exp(([1]+1)*x)*exp(-([1]+2)*exp(x)/[2])", { 1.0, -1.4, 220.0 }, { { 1, -1.5 }, { 2, 200.0 } } });
+  return Cases;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTCosimaInputSpectra::WriteSimulationSource(const MString& Directory, const SimulationCase& Case) const
+{
+  MString Source;
+  Source += "# Unit test source file\n";
+  Source += "Version 1\n";
+  Source += "Geometry $(MEGALIB)/src/cosima/unittests/GiganticSphere.geo.setup\n";
+  Source += "PhysicsListEM LivermorePol\n";
+  Source += "StoreSimulationInfo init\n";
+  Source += "Run UnitTest\n";
+  Source += "UnitTest.FileName " + Case.m_Prefix + "\n";
+  Source += MString("UnitTest.Triggers ") + c_NumberOfTriggers + "\n";
+  Source += "UnitTest.Source UnitTestSource\n";
+  Source += "UnitTestSource.ParticleType 1\n";
+  Source += "UnitTestSource.Beam PointSource 0 0 0\n";
+  Source += "UnitTestSource.Spectrum " + Case.m_Spectrum + "\n";
+  Source += "UnitTestSource.Flux 1\n";
+  return WriteTextFile(Directory + "/" + Case.m_Prefix + ".source", Source);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int UTCosimaInputSpectra::RunCosima(const MString& Directory, const SimulationCase& Case) const
+{
+  // Each run has its own directory, seed, and log file; the time limit turns a hang into a failure
+  // The run stays in the process group of the test: the test driver stops it with the test if the test times out
+  return MProcessManager::Run("cosima", MString("-v 0 -s ") + Case.m_Seed + " -z " + MSystem::GetShellQuoted(Case.m_Prefix + ".source"), Directory + "/" + Case.m_Prefix + ".log", Directory, 100);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+TH1D* UTCosimaInputSpectra::ReadSpectrum(const MString& Directory, const SimulationCase& Case, unsigned int& NonFiniteEnergies)
+{
+  NonFiniteEnergies = 0;
+
+  // The geometry and the reader print a lot
+  SilenceOutput();
+  MDGeometryQuest* Geometry = new MDGeometryQuest();
+  const bool GeometryLoaded = Geometry->ScanSetupFile("$(MEGALIB)/src/cosima/unittests/GiganticSphere.geo.setup");
+  RestoreOutput();
+  if (GeometryLoaded == false) {
+    merr<<"Unable to load the geometry GiganticSphere.geo.setup"<<endl;
+    delete Geometry;
     return nullptr;
   }
 
-  // Uniform bins in u = ln(E): ROOT compares the bin content with the (average) function value of the bin, which is only right for equal bin widths
-  TH1D* Spectrum = new TH1D(FileNamePrefix + "Spectrum", FileNamePrefix + "Spectrum", Bins, log(EMin), log(EMax));
-  Spectrum->SetXTitle("ln(Energy/keV)");
-  Spectrum->SetYTitle("cts");
-  
-  MSimEvent* Event = 0;
-  while ((Event = Reader->GetNextEvent()) != 0) {
+  const MString SimFile = Directory + "/" + Case.m_Prefix + ".inc1.id1.sim.gz";
+  MFileEventsSim* Reader = new MFileEventsSim(Geometry);
+  SilenceOutput();
+  const bool Opened = Reader->Open(SimFile);
+  RestoreOutput();
+  if (Opened == false) {
+    merr<<"Unable to open the sim file "<<SimFile<<endl;
+    delete Reader;
+    delete Geometry;
+    return nullptr;
+  }
+
+  // Uniform bins in u = ln(E/keV): the spectra fall by orders of magnitude, linear bins would leave the high-energy bins almost empty,
+  // and ROOT compares the bin content with the average function value of the bin, which is only right for equal bin widths
+  TH1D* Spectrum = new TH1D(Case.m_Prefix + "Spectrum", Case.m_Prefix + "Spectrum", c_NumberOfBins, log(Case.m_EMin), log(Case.m_EMax));
+  Spectrum->SetDirectory(nullptr);
+
+  SilenceOutput();
+  MSimEvent* Event = nullptr;
+  while ((Event = Reader->GetNextEvent()) != nullptr) {
     if (Event->GetNIAs() >= 1) {
-      double Energy = Event->GetIAAt(0)->GetSecondaryEnergy();
-      if (std::isfinite(Energy)) {
+      const double Energy = Event->GetIAAt(0)->GetSecondaryEnergy();
+      if (std::isfinite(Energy) == true) {
         Spectrum->Fill(log(Energy));
       } else {
-        cout<<"Found Inf or NaN"<<endl;
+        ++NonFiniteEnergies;
       }
     }
     delete Event;
   }
+  Reader->Close();
+  RestoreOutput();
 
-  //delete Reader;
-  //delete Geometry;
-  
+  delete Reader;
+  delete Geometry;
+
   return Spectrum;
 }
 
 
-/******************************************************************************
- * Simulate a spectrum with cosima
- */
-bool UTCosimaInputSpectra::RunCosima(const SpectrumCase& Case)
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTCosimaInputSpectra::EvaluateSimulatedSpectrum(const MString& Directory, const SimulationCase& Case)
 {
-  if (CreateSourceFile(Case.m_Prefix, Case.m_Spectrum) == false) return false;
+  bool Passed = true;
 
-  if (system(MString("rm -f ") + Case.m_Prefix + ".inc1.id1.sim.gz") == -1) {
-    return false;
+  unsigned int NonFiniteEnergies = 0;
+  TH1D* Spectrum = ReadSpectrum(Directory, Case, NonFiniteEnergies);
+  Passed = EvaluateTrue("ReadSpectrum()", Case.m_Name, "The sim file of the simulation can be read", Spectrum != nullptr) && Passed;
+  if (Spectrum == nullptr) {
+    return Passed;
   }
-  int Status = system(MString("cosima -v 0 -z ") + Case.m_Prefix + ".source > " + Case.m_Prefix + ".log 2>&1");
-  return Status != -1 && WIFEXITED(Status) == true && WEXITSTATUS(Status) == 0;
-}
+  Passed = Evaluate("ReadSpectrum()", Case.m_Name, "No start energy is infinite or NaN", NonFiniteEnergies, 0U) && Passed;
+  // Every triggered event has its start energy in the sim file: the number of entries is the number of triggers
+  Passed = Evaluate("ReadSpectrum()", Case.m_Name, "The spectrum contains one start energy per trigger", static_cast<unsigned int>(Spectrum->GetEntries()), c_NumberOfTriggers) && Passed;
 
-
-/******************************************************************************
- * Fit a simulated spectrum:
- * The counts of the bins are Poisson distributed, thus a Poisson likelihood fit (option L, function integrated over the bins: option I) is used - a chi-square fit
- * with the errors sqrt(N) is biased and has wrong errors in bins with few counts. For a correct model the deviations of the fitted parameters from the
- * true values in units of the fit error are standard normal distributed, and the Poisson deviance of the fit follows a chi-square distribution.
- * The returned significance is the maximum of the deviations of the parameters in sigma and the deviation of the deviance from its expectation
- * in sigma (one sided: (deviance - ndf)/sqrt(2*ndf)). The threshold of 5 sigma (3e-7 per normal deviation) keeps the chance of a false failure of the test
- * negligible without relying on a random seed.
- */
-double UTCosimaInputSpectra::Analyze(const SpectrumCase& Case)
-{
-  const unsigned int Bins = 50;
-  TH1D* Spectrum = CreateSpectrum(Case.m_Prefix, Bins, Case.m_EMin, Case.m_EMax);
-  if (Spectrum == nullptr) return -1;
-  if (Spectrum->GetEntries() < 0.9*m_NumberOfTriggers) {
-    cout<<"Too few entries in the spectrum: "<<Spectrum->GetEntries()<<endl;
-    delete Spectrum;
-    return -1;
-  }
-
+  // The counts of the bins are Poisson distributed, thus a Poisson likelihood fit (option L, function integrated over the bins: option I) is used:
+  // a chi-square fit with the errors sqrt(N) is biased and has wrong errors in bins with few counts. For a correct model the deviations of the
+  // fitted parameters from the true values in units of the fit error are standard normal distributed, and the Poisson deviance of the fit follows
+  // a chi-square distribution with mean ndf and variance 2*ndf
   const double ULow = log(Case.m_EMin);
   const double UHigh = log(Case.m_EMax);
-  const double BinWidth = (UHigh - ULow)/Bins;
+  const double BinWidth = (UHigh - ULow)/c_NumberOfBins;
   TF1* Fit = new TF1(Case.m_Prefix + "Fit", Case.m_Formula, ULow, UHigh);
-  for (unsigned int p = 1; p < Case.m_Start.size(); ++p) Fit->SetParameter(p, Case.m_Start[p]);
+  for (unsigned int p = 1; p < Case.m_Start.size(); ++p) {
+    Fit->SetParameter(p, Case.m_Start[p]);
+  }
   // The normalization (parameter 0): the bin content is compared with the average of the function in the bin, thus the sum of the averages is the number of entries
   Fit->SetParameter(0, 1.0);
   Fit->SetParameter(0, Spectrum->GetEntries()/(Fit->Integral(ULow, UHigh)/BinWidth));
 
-  TFitResultPtr Result = Spectrum->Fit(Fit, "LIMNS");
-  if (Result.Get() == nullptr || Result->IsValid() == false) {
-    cout<<"The fit of "<<Case.m_Name<<" failed"<<endl;
-    delete Fit;
-    delete Spectrum;
-    return -1;
-  }
+  SilenceOutput();
+  TFitResultPtr Result = Spectrum->Fit(Fit, "LIMNSQ");
+  RestoreOutput();
+  const bool FitValid = Result.Get() != nullptr && Result->IsValid() == true;
+  Passed = EvaluateTrue("Fit()", Case.m_Name, "The Poisson likelihood fit of the spectrum converges", FitValid) && Passed;
+  if (FitValid == true) {
+    for (const pair<unsigned int, double>& T: Case.m_Truth) {
+      Passed = EvaluateNear("Fit()", Case.m_Name + " parameter " + T.first, "The fitted parameter agrees with the input spectrum within 5 standard errors",
+                            Fit->GetParameter(T.first), T.second, c_NumberOfSigmas*Fit->GetParError(T.first)) && Passed;
+    }
 
-  double Significance = 0.0;
-  for (const pair<unsigned int, double>& T: Case.m_Truth) {
-    const double Deviation = fabs(T.second - Fit->GetParameter(T.first))/Fit->GetParError(T.first);
-    cout<<"  "<<Case.m_Name<<": parameter "<<T.first<<" = "<<Fit->GetParameter(T.first)<<" +- "<<Fit->GetParError(T.first)<<" (true: "<<T.second<<", "<<Deviation<<" sigma)"<<endl;
-    Significance = max(Significance, Deviation);
-  }
-
-  // The Poisson deviance of the fit (counts n, expectation mu per bin): 2*(mu - n + n*ln(n/mu))
-  double Deviance = 0.0;
-  for (int b = 1; b <= Spectrum->GetNbinsX(); ++b) {
-    const double n = Spectrum->GetBinContent(b);
-    const double mu = Fit->Integral(Spectrum->GetXaxis()->GetBinLowEdge(b), Spectrum->GetXaxis()->GetBinUpEdge(b))/BinWidth;
-    if (mu > 0) Deviance += 2*(mu - n + ((n > 0) ? n*log(n/mu) : 0.0));
-  }
-  const double NDF = Spectrum->GetNbinsX() - Case.m_Start.size();
-  const double GoodnessSigma = (Deviance - NDF)/sqrt(2*NDF);
-  cout<<"  "<<Case.m_Name<<": Poisson deviance "<<Deviance<<" for "<<NDF<<" degrees of freedom ("<<GoodnessSigma<<" sigma)"<<endl;
-  Significance = max(Significance, GoodnessSigma);
-
-  if (m_SingleMode == true) {
-    TCanvas* C = new TCanvas();
-    C->cd();
-    gPad->SetLogy();
-    Spectrum->DrawCopy();
-    Fit->DrawCopy("SAME");
-    C->Update();
+    // The Poisson deviance of the fit (counts n, expectation mu per bin): 2*(mu - n + n*ln(n/mu))
+    double Deviance = 0.0;
+    for (int b = 1; b <= Spectrum->GetNbinsX(); ++b) {
+      const double n = Spectrum->GetBinContent(b);
+      const double mu = Fit->Integral(Spectrum->GetXaxis()->GetBinLowEdge(b), Spectrum->GetXaxis()->GetBinUpEdge(b))/BinWidth;
+      if (mu > 0) {
+        Deviance += 2*(mu - n);
+        if (n > 0) {
+          Deviance += 2*n*log(n/mu);
+        }
+      }
+    }
+    const double NDF = Spectrum->GetNbinsX() - Case.m_Start.size();
+    Passed = EvaluateNear("Fit()", Case.m_Name + " deviance", "The Poisson deviance of the fit agrees with the degrees of freedom within 5 sigma", Deviance, NDF, c_NumberOfSigmas*sqrt(2*NDF)) && Passed;
   }
 
   delete Fit;
   delete Spectrum;
 
-  return Significance;
+  return Passed;
 }
 
 
-/******************************************************************************
- * Main program
- */
-int main(int argc, char** argv)
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTCosimaInputSpectra::TestSimulatedSpectra()
 {
-  // Initialize ROOT:
-  TApplication ROOT("ROOT", 0, 0);
+  bool Passed = true;
 
-  // Initialize global MEGAlib variables, especially mgui, etc.
-  MGlobal::Initialize("TestSpectra", "unit test the cosima input spectra");
-  __merr.SetHeader("COSIMA-ERROR:");
+  const vector<SimulationCase> Cases = GetSimulationCases();
 
-  // The simulations write their files into the current directory: use a private one and remove it afterwards
-  const filesystem::path OriginalDirectory = filesystem::current_path();
-  const filesystem::path Directory = filesystem::temp_directory_path() / ("UTCosimaInputSpectraRun_" + to_string(chrono::high_resolution_clock::now().time_since_epoch().count()));
-  error_code Error;
-  if (filesystem::create_directories(Directory, Error) == false || Error) {
-    cerr<<"Failed: unable to create the working directory "<<Directory<<endl;
-    return 1;
+  // Each simulation gets its own directory below the private temporary root
+  vector<MString> Directories;
+  for (const SimulationCase& C: Cases) {
+    Directories.push_back(GetTemporaryDirectoryName(C.m_Prefix));
+    Passed = EvaluateTrue("PrepareTemporaryDirectory()", C.m_Name, "The directory of the simulation can be created", PrepareTemporaryDirectory(C.m_Prefix)) && Passed;
+    Passed = EvaluateTrue("WriteSimulationSource()", C.m_Name, "The source file of the simulation can be written", WriteSimulationSource(Directories.back(), C)) && Passed;
   }
-  filesystem::current_path(Directory);
+  if (Passed == false) {
+    return Passed;
+  }
+
+  // The simulations are external programs and run in parallel; all ROOT work is done afterwards in the main thread
+  vector<future<int>> Simulations;
+  for (unsigned int c = 0; c < Cases.size(); ++c) {
+    Simulations.push_back(async(launch::async, [this, &Directories, &Cases, c]() { return RunCosima(Directories[c], Cases[c]); }));
+  }
+  vector<int> Status;
+  for (unsigned int c = 0; c < Cases.size(); ++c) {
+    Status.push_back(Simulations[c].get());
+  }
+
+  for (unsigned int c = 0; c < Cases.size(); ++c) {
+    Passed = EvaluateTrue("RunCosima()", Cases[c].m_Name, "Cosima exits normally within the time limit", Status[c] == 0) && Passed;
+    Passed = EvaluateSimulatedSpectrum(Directories[c], Cases[c]) && Passed;
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main()
+{
+  // ROOT is needed for the histograms and fits, without any graphics
+  TApplication ROOT("ROOT", 0, 0);
+  gROOT->SetBatch(true);
+
+  // The geometry and the sim file reader need the MEGAlib globals
+  MGlobal::Initialize("UTCosimaInputSpectra", "unit test of the cosima input spectra");
 
   UTCosimaInputSpectra Test;
-  bool Passed = Test.Run();
-
-  filesystem::current_path(OriginalDirectory);
-  filesystem::remove_all(Directory, Error);
-  
-  //Test.RunSingle();
-  //ROOT.Run();
-
-  return Passed ? 0 : 1;
+  return Test.Run() == true ? 0 : 1;
 }
 
 

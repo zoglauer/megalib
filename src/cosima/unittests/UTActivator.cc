@@ -1,5 +1,5 @@
 /*
- * UTCActivator.cc
+ * UTActivator.cc
  *
  * Copyright (C) by the MEGAlib contributors.
  *
@@ -59,7 +59,7 @@ using namespace std;
 
 
 //! Class exposing the protected functions of MCActivator to the unit test
-class UTCActivatorAccess : public MCActivator
+class UTActivatorAccess : public MCActivator
 {
 public:
   using MCActivator::ActivateByEquations;
@@ -93,13 +93,13 @@ public:
 
 
 //! Unit test class for MCActivator
-class UTCActivator : public MUnitTest
+class UTActivator : public MUnitTest
 {
 public:
   //! Default constructor
-  UTCActivator() : MUnitTest("UTCActivator"), m_Decay(nullptr), m_CoutBuffer(nullptr), m_CerrBuffer(nullptr) {}
+  UTActivator() : MUnitTest("UTActivator"), m_Decay(nullptr), m_CoutBuffer(nullptr), m_CerrBuffer(nullptr) {}
   //! Default destructor
-  virtual ~UTCActivator() {}
+  virtual ~UTActivator() {}
 
   //! Run all tests
   virtual bool Run();
@@ -201,7 +201,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::Run()
+bool UTActivator::Run()
 {
   bool Passed = true;
 
@@ -252,7 +252,7 @@ bool UTCActivator::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::InitializeGeant4()
+bool UTActivator::InitializeGeant4()
 {
   SilenceOutput();
 
@@ -281,7 +281,7 @@ bool UTCActivator::InitializeGeant4()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCActivator::SilenceOutput()
+void UTActivator::SilenceOutput()
 {
   DisableDefaultStreams();
   m_Sink.str("");
@@ -293,7 +293,7 @@ void UTCActivator::SilenceOutput()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void UTCActivator::RestoreOutput()
+void UTActivator::RestoreOutput()
 {
   if (m_CoutBuffer != nullptr) cout.rdbuf(m_CoutBuffer);
   if (m_CerrBuffer != nullptr) cerr.rdbuf(m_CerrBuffer);
@@ -306,7 +306,7 @@ void UTCActivator::RestoreOutput()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MCActivatorParticle UTCActivator::CreateParticle(unsigned int ID, double Excitation, double HalfLifeCutOff)
+MCActivatorParticle UTActivator::CreateParticle(unsigned int ID, double Excitation, double HalfLifeCutOff)
 {
   MCActivator Activator;
   Activator.SetHalfLifeCutOff(HalfLifeCutOff);
@@ -330,7 +330,7 @@ MCActivatorParticle UTCActivator::CreateParticle(unsigned int ID, double Excitat
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::WriteCountsFile(const MString& FileName, int ID, double Excitation, double Counts, double Time, const MString& Volume)
+bool UTActivator::WriteCountsFile(const MString& FileName, int ID, double Excitation, double Counts, double Time, const MString& Volume)
 {
   SilenceOutput();
   MCIsotopeStore Store;
@@ -346,7 +346,7 @@ bool UTCActivator::WriteCountsFile(const MString& FileName, int ID, double Excit
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::RunActivation(MCActivator& Activator, const MString& CountsFile, const MString& OutputFile)
+bool UTActivator::RunActivation(MCActivator& Activator, const MString& CountsFile, const MString& OutputFile)
 {
   SilenceOutput();
   bool OK = Activator.AddCountsFile(CountsFile);
@@ -363,7 +363,7 @@ bool UTCActivator::RunActivation(MCActivator& Activator, const MString& CountsFi
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double UTCActivator::GetStoredValue(const MString& FileName, int ID, double Excitation, const MString& Volume)
+double UTActivator::GetStoredValue(const MString& FileName, int ID, double Excitation, const MString& Volume)
 {
   SilenceOutput();
   MCIsotopeStore Store;
@@ -391,7 +391,7 @@ double UTCActivator::GetStoredValue(const MString& FileName, int ID, double Exci
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int UTCActivator::GetNumberOfStoredEntries(const MString& FileName)
+unsigned int UTActivator::GetNumberOfStoredEntries(const MString& FileName)
 {
   SilenceOutput();
   MCIsotopeStore Store;
@@ -412,7 +412,7 @@ unsigned int UTCActivator::GetNumberOfStoredEntries(const MString& FileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<double> UTCActivator::IntegrateChain(double R, const vector<double>& D, const vector<double>& B, const vector<double>& N0, double Time)
+vector<double> UTActivator::IntegrateChain(double R, const vector<double>& D, const vector<double>& B, const vector<double>& N0, double Time)
 {
   // dN1/dt = R - D1 N1, dNk/dt = Bk D(k-1) N(k-1) - Dk Nk
   // B[k] is the branching from element k-1 to element k, B[0] is unused
@@ -447,7 +447,7 @@ vector<double> UTCActivator::IntegrateChain(double R, const vector<double>& D, c
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestGeant4Version()
+bool UTActivator::TestGeant4Version()
 {
   bool Passed = true;
 
@@ -462,7 +462,7 @@ bool UTCActivator::TestGeant4Version()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestDefaultConstruction()
+bool UTActivator::TestDefaultConstruction()
 {
   bool Passed = true;
 
@@ -484,7 +484,7 @@ bool UTCActivator::TestDefaultConstruction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestGettersSetters()
+bool UTActivator::TestGettersSetters()
 {
   bool Passed = true;
 
@@ -517,7 +517,7 @@ bool UTCActivator::TestGettersSetters()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestCopyAndAssignment()
+bool UTActivator::TestCopyAndAssignment()
 {
   bool Passed = true;
 
@@ -551,7 +551,7 @@ bool UTCActivator::TestCopyAndAssignment()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestActivationModes()
+bool UTActivator::TestActivationModes()
 {
   bool Passed = true;
 
@@ -618,7 +618,7 @@ bool UTCActivator::TestActivationModes()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestDetermineHalfLife()
+bool UTActivator::TestDetermineHalfLife()
 {
   bool Passed = true;
 
@@ -705,7 +705,7 @@ bool UTCActivator::TestDetermineHalfLife()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestCountsFiles()
+bool UTActivator::TestCountsFiles()
 {
   bool Passed = true;
 
@@ -791,7 +791,7 @@ bool UTCActivator::TestCountsFiles()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestSingleIsotope()
+bool UTActivator::TestSingleIsotope()
 {
   bool Passed = true;
 
@@ -843,7 +843,7 @@ bool UTCActivator::TestSingleIsotope()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestDecayChain()
+bool UTActivator::TestDecayChain()
 {
   bool Passed = true;
 
@@ -895,7 +895,7 @@ bool UTCActivator::TestDecayChain()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestMultipleVolumes()
+bool UTActivator::TestMultipleVolumes()
 {
   bool Passed = true;
 
@@ -929,7 +929,7 @@ bool UTCActivator::TestMultipleVolumes()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestRepeatedCalculation()
+bool UTActivator::TestRepeatedCalculation()
 {
   bool Passed = true;
 
@@ -965,7 +965,7 @@ bool UTCActivator::TestRepeatedCalculation()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestIsomerWithoutGammas()
+bool UTActivator::TestIsomerWithoutGammas()
 {
   bool Passed = true;
 
@@ -1003,7 +1003,7 @@ bool UTCActivator::TestIsomerWithoutGammas()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestMixedDecayIsomers()
+bool UTActivator::TestMixedDecayIsomers()
 {
   bool Passed = true;
 
@@ -1056,7 +1056,7 @@ bool UTCActivator::TestMixedDecayIsomers()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestMixedDecayIsomerCooldown()
+bool UTActivator::TestMixedDecayIsomerCooldown()
 {
   bool Passed = true;
 
@@ -1094,7 +1094,7 @@ bool UTCActivator::TestMixedDecayIsomerCooldown()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestParticleEmission()
+bool UTActivator::TestParticleEmission()
 {
   bool Passed = true;
 
@@ -1186,11 +1186,11 @@ bool UTCActivator::TestParticleEmission()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestHasNoGammaTransitions()
+bool UTActivator::TestHasNoGammaTransitions()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
   Passed = EvaluateTrue("HasNoGammaTransitions()", "Al26[228.305]", "Al26m has no gamma transitions", A.HasNoGammaTransitions(CreateParticle(13026, 228.305*keV))) && Passed;
   Passed = EvaluateTrue("HasNoGammaTransitions()", "O17[5387.1]", "The neutron unbound O17[5387.1] level has no gamma transitions", A.HasNoGammaTransitions(CreateParticle(8017, 5387.1*keV))) && Passed;
   Passed = EvaluateFalse("HasNoGammaTransitions()", "Al26[416.852]", "Al26[416.852] has a gamma transition", A.HasNoGammaTransitions(CreateParticle(13026, 416.852*keV))) && Passed;
@@ -1204,11 +1204,11 @@ bool UTCActivator::TestHasNoGammaTransitions()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestHasNonITDecayChannels()
+bool UTActivator::TestHasNonITDecayChannels()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
   Passed = EvaluateTrue("HasNonITDecayChannels()", "Ge77[159.71]", "Ge77m has a beta- channel", A.HasNonITDecayChannels(CreateParticle(32077, 159.71*keV), m_Decay)) && Passed;
   Passed = EvaluateTrue("HasNonITDecayChannels()", "O17[4551.8]", "O17[4551.8] has a neutron channel", A.HasNonITDecayChannels(CreateParticle(8017, 4551.8*keV), m_Decay)) && Passed;
   Passed = EvaluateTrue("HasNonITDecayChannels()", "Al26[228.305]", "Al26m has a beta+ channel", A.HasNonITDecayChannels(CreateParticle(13026, 228.305*keV), m_Decay)) && Passed;
@@ -1223,11 +1223,11 @@ bool UTCActivator::TestHasNonITDecayChannels()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestCreateDeexcitationBranches()
+bool UTActivator::TestCreateDeexcitationBranches()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
 
   // Single transition, prompt level: the last element is replaced
   {
@@ -1349,11 +1349,11 @@ bool UTCActivator::TestCreateDeexcitationBranches()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestCleanDecayChains()
+bool UTActivator::TestCleanDecayChains()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
 
   // Identical branches are merged:
   {
@@ -1472,11 +1472,11 @@ bool UTCActivator::TestCleanDecayChains()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestDumpTree()
+bool UTActivator::TestDumpTree()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
   vector<vector<MCActivatorParticle> > Tree = { { CreateParticle(12028, 0.0), CreateParticle(13028, 0.0) } };
 
   SilenceOutput();
@@ -1509,11 +1509,11 @@ bool UTCActivator::TestDumpTree()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestAnalyticBuildUp()
+bool UTActivator::TestAnalyticBuildUp()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
 
   // Representative, well separated decay constants and branching ratios (arbitrary time unit):
   const double R = 5.0;
@@ -1584,11 +1584,11 @@ bool UTCActivator::TestAnalyticBuildUp()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestAnalyticCooldown()
+bool UTActivator::TestAnalyticCooldown()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
 
   const double R = 5.0;
   const double T = 7.3;
@@ -1629,11 +1629,11 @@ bool UTCActivator::TestAnalyticCooldown()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestActivateByEquations()
+bool UTActivator::TestActivateByEquations()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
 
   // Mg28 -> Al28:
   MCActivatorParticle Mg28 = CreateParticle(12028, 0.0);
@@ -1740,11 +1740,11 @@ bool UTCActivator::TestActivateByEquations()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestActivateBySimulation()
+bool UTActivator::TestActivateBySimulation()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
 
   // Fixed seed - restored afterwards:
   UInt_t OldSeed = gRandom->GetSeed();
@@ -1810,7 +1810,7 @@ bool UTCActivator::TestActivateBySimulation()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestCountsFileFailures()
+bool UTActivator::TestCountsFileFailures()
 {
   bool Passed = true;
 
@@ -1855,7 +1855,7 @@ bool UTCActivator::TestCountsFileFailures()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestSaveOutputFileFailure()
+bool UTActivator::TestSaveOutputFileFailure()
 {
   bool Passed = true;
 
@@ -1873,7 +1873,7 @@ bool UTCActivator::TestSaveOutputFileFailure()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestSeveralExcitations()
+bool UTActivator::TestSeveralExcitations()
 {
   bool Passed = true;
 
@@ -1903,7 +1903,7 @@ bool UTCActivator::TestSeveralExcitations()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestParticleOutputModeChain()
+bool UTActivator::TestParticleOutputModeChain()
 {
   bool Passed = true;
 
@@ -1935,11 +1935,11 @@ bool UTCActivator::TestParticleOutputModeChain()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestCooldownOn()
+bool UTActivator::TestCooldownOn()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
 
   // Single element:
   Passed = EvaluateNear("CooldownOn()", "one element", "One element decays exponentially", A.CooldownOn({ 3.0 }, { 0.2 }, { 1.0 }, 4.0), 3.0*exp(-0.8), 1e-12) && Passed;
@@ -1970,11 +1970,11 @@ bool UTCActivator::TestCooldownOn()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestActivateByEquationsLongChains()
+bool UTActivator::TestActivateByEquationsLongChains()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
 
   // Three radioactive elements with branching and cooldown - uses the analytic cooldown:
   vector<MCActivatorParticle> Chain(3, CreateParticle(12028, 0.0));
@@ -2064,11 +2064,11 @@ bool UTCActivator::TestActivateByEquationsLongChains()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTCActivator::TestPartialSimulationCooldown()
+bool UTActivator::TestPartialSimulationCooldown()
 {
   bool Passed = true;
 
-  UTCActivatorAccess A;
+  UTActivatorAccess A;
 
   UInt_t OldSeed = gRandom->GetSeed();
   gRandom->SetSeed(4711);
@@ -2115,6 +2115,6 @@ bool UTCActivator::TestPartialSimulationCooldown()
 
 int main()
 {
-  UTCActivator Test;
+  UTActivator Test;
   return Test.Run() == true ? 0 : 1;
 }
