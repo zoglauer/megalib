@@ -480,8 +480,8 @@ bool UTTransceiverTcpIpHelpers::RunDefaultNegotiation(MUnitTest& Test, unsigned 
   }
   Passed = Test.EvaluateTrue("Default negotiation", "server connected state", "The default server is connected", Server.IsConnected()) && Passed;
   Passed = Test.EvaluateTrue("Default negotiation", "client connected state", "The default client is connected", Client.IsConnected()) && Passed;
-  Passed = Test.EvaluateTrue("Default negotiation", "server role", "The default server is marked as server", Server.IsServer()) && Passed;
-  Passed = Test.EvaluateFalse("Default negotiation", "client role", "The default client is not marked as server", Client.IsServer()) && Passed;
+  // Without a forced role, each one tries to connect as client first: the one whose thread runs first becomes the server, which is not always the one which was started first
+  Passed = Test.EvaluateTrue("Default negotiation", "roles", "Exactly one of the two is the server", Server.IsServer() != Client.IsServer()) && Passed;
   if (Passed == false) {
     mout<<"Default negotiation: connection state mismatch"<<endl;
     return false;
