@@ -39,6 +39,7 @@ glo:
 
 tests:
 	$(MAKE) tests -C global
+	$(MAKE) tests -C geomega
 	$(MAKE) tests -C spectralyze
 	$(MAKE) tests -C mimrec
 	$(MAKE) tests -C revan
