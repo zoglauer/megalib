@@ -67,7 +67,7 @@ public:
   //! Return true if the run ended without a failed check
   bool Succeeded() const { return GetFailedChecks() == 0; }
 
-  //! The number of the failed checks which the run reported
+  //! The number of the failed checks which the run reported, its known failures included
   unsigned int m_ReportedFailedChecks = 0;
   //! The exit code of the run
   int m_ExitCode = -1;

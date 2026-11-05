@@ -881,22 +881,57 @@ bool UTTestDriver::TestStrictResults()
   Passed = EvaluateTrue("WriteScript()", "no checks", "The fake test without checks can be written", WriteScript(Bin, "UTNoChecks", "echo \"Passed tests: 0\"; echo \"Failed tests: 0\"")) && Passed;
   Passed = EvaluateTrue("WriteScript()", "silent", "The fake test without summary can be written", WriteScript(Bin, "UTSilent", "echo \"nothing to see\"")) && Passed;
   Passed = EvaluateTrue("WriteScript()", "failing checks", "The fake test with failed checks and exit code 0 can be written", WriteScript(Bin, "UTFailedChecks", "echo \"Passed tests: 3\"; echo \"Failed tests: 2\"")) && Passed;
+  Passed = EvaluateTrue("WriteScript()", "known", "The fake test with known failures can be written", WriteScript(Bin, "UTKnown", "echo \"Passed tests: 4\"; echo \"Failed tests: 0\"; echo \"Known failures: 2\"")) && Passed;
+  Passed = EvaluateTrue("WriteScript()", "only known", "The fake test whose checks are all known failures can be written", WriteScript(Bin, "UTOnlyKnown", "echo \"Passed tests: 0\"; echo \"Failed tests: 0\"; echo \"Known failures: 1\"")) && Passed;
+  const MString UnexpectedOutput = "UNEXPECTED PASS: Foo()  <-- bar\n   Description: the check passes now\nPassed tests: 1\nFailed tests: 1\n";
+  Passed = EvaluateTrue("WriteScript()", "unexpected", "The fake test with an unexpected pass can be written", WriteScript(Bin, "UTUnexpected", "echo \"UNEXPECTED PASS: Foo()  <-- bar\"; echo \"   Description: the check passes now\"; echo \"Passed tests: 1\"; echo \"Failed tests: 1\"; exit 1")) && Passed;
+  Passed = EvaluateTrue("WriteScript()", "crash", "The fake test which dies by a signal can be written", WriteScript(Bin, "UTCrash", "echo \"about to crash\"; kill -SEGV $$")) && Passed;
+  const MString AbortedOutput = "ABORTED: HOME and the working directory are not a private temporary directory - no check was run\n";
+  Passed = EvaluateTrue("WriteScript()", "aborted", "The fake test which aborts before any check can be written", WriteScript(Bin, "UTAborted", "echo \"ABORTED: HOME and the working directory are not a private temporary directory - no check was run\"; exit 1")) && Passed;
+  Passed = EvaluateTrue("WriteScript()", "wrong exit code", "The fake test with the exit code 3 and no failed check can be written", WriteScript(Bin, "UTWrongExit", "echo \"Passed tests: 2\"; echo \"Failed tests: 0\"; exit 3")) && Passed;
 
   Passed = Evaluate("Execute()", "good", "A test with checks which all passed passes", Drive(Bin, { "UTGood" }, Logs + "/good").m_ExitCode, 0) && Passed;
   Passed = Evaluate("Execute()", "no checks", "A test which exits normally without any check fails", Drive(Bin, { "UTNoChecks" }, Logs + "/nochecks").m_ExitCode, 1) && Passed;
   Passed = Evaluate("Execute()", "silent", "A test which exits normally without a summary fails", Drive(Bin, { "UTSilent" }, Logs + "/silent").m_ExitCode, 1) && Passed;
   Passed = Evaluate("Execute()", "failed checks", "A test which reports failed checks fails although it exits normally", Drive(Bin, { "UTFailedChecks" }, Logs + "/failedchecks").m_ExitCode, 1) && Passed;
 
+  // Known failures (checks marked with ExpectedToFail) do not fail the run, unless --strict is given
+  Passed = Evaluate("Execute()", "known failures", "A test whose failed checks are all known failures passes the run", Drive(Bin, { "UTKnown" }, Logs + "/known").m_ExitCode, 0) && Passed;
+  Passed = EvaluateFalse("Execute()", "known failures, no report", "A run with known failures only writes no failure report", HasReport(Logs + "/known")) && Passed;
+  Passed = Evaluate("Execute()", "--strict", "With --strict a test with known failures fails the run", Drive(Bin, { "--strict", "UTKnown" }, Logs + "/strict").m_ExitCode, 1) && Passed;
+  Passed = Evaluate("Execute()", "-s", "-s is --strict", Drive(Bin, { "-s", "UTKnown" }, Logs + "/strict_short").m_ExitCode, 1) && Passed;
+  Passed = Evaluate("Execute()", "--strict, passing test", "With --strict a test without known failures passes the run", Drive(Bin, { "--strict", "UTGood" }, Logs + "/strict_good").m_ExitCode, 0) && Passed;
+  // A test whose checks are all known failures ran checks: it is a test with known failures, not one without checks
+  Passed = Evaluate("Execute()", "only known failures", "A test whose checks are all known failures passes the run", Drive(Bin, { "UTOnlyKnown" }, Logs + "/onlyknown").m_ExitCode, 0) && Passed;
+  Passed = EvaluateFalse("Execute()", "only known failures, no report", "A run of it writes no failure report", HasReport(Logs + "/onlyknown")) && Passed;
+  Passed = Evaluate("Execute()", "only known failures, --strict", "With --strict it fails the run", Drive(Bin, { "--strict", "UTOnlyKnown" }, Logs + "/onlyknown_strict").m_ExitCode, 1) && Passed;
+
+  // An unexpected pass is a failed check: the metric tells to remove ExpectedToFail()
+  Passed = Evaluate("Execute()", "unexpected pass", "A test with an unexpected pass fails", Drive(Bin, { "UTUnexpected" }, Logs + "/unexpected").m_ExitCode, 1) && Passed;
+  Passed = CheckReport("unexpected pass", Logs + "/unexpected", ReportSection("UTUnexpected", "Passed tests: 1, Failed tests: 1, Unexpected passes: 1 - remove ExpectedToFail()", UnexpectedOutput)) && Passed;
+
+  // A test which dies by a signal, one which aborted before any check, and one whose exit code contradicts its summary
+  Passed = Evaluate("Execute()", "crash", "A test which dies by a signal fails", Drive(Bin, { "UTCrash" }, Logs + "/crash").m_ExitCode, 1) && Passed;
+  Passed = CheckReport("crash", Logs + "/crash", ReportSection("UTCrash", "signal 11, no test summary", "about to crash\n")) && Passed;
+  Passed = Evaluate("Execute()", "aborted", "A test which aborted before any check fails", Drive(Bin, { "UTAborted" }, Logs + "/aborted").m_ExitCode, 1) && Passed;
+  Passed = CheckReport("aborted", Logs + "/aborted", ReportSection("UTAborted", "aborted: HOME and the working directory could not be isolated, no check was run", AbortedOutput)) && Passed;
+  Passed = Evaluate("Execute()", "wrong exit code", "A test with a non-zero exit code fails although no check failed", Drive(Bin, { "UTWrongExit" }, Logs + "/wrongexit").m_ExitCode, 1) && Passed;
+  Passed = CheckReport("wrong exit code", Logs + "/wrongexit", ReportSection("UTWrongExit", "Passed tests: 2, Failed tests: 0 (exit code 3 although no check failed)", "Passed tests: 2\nFailed tests: 0\n")) && Passed;
+
   // Remove the cache of the run times to sort the tests by name
   error_code CacheError;
   filesystem::remove((Bin + "/config/MEGAlib/driver.timings").Data(), CacheError);
   const Result All = Drive(Bin, { }, Logs + "/all");
   Passed = Evaluate("Execute()", "all", "A run with failing tests fails", All.m_ExitCode, 1) && Passed;
-  // Expected: the failed tests sorted by name, not the passing test
+  // Expected: the failed and crashed tests sorted by name, not the passing test and not the test with known failures only
   Passed = CheckReport("strict", Logs + "/all",
-    ReportSection("UTFailedChecks", "Passed tests: 3, Failed tests: 2", "Passed tests: 3\nFailed tests: 2\n") +
+    ReportSection("UTAborted", "aborted: HOME and the working directory could not be isolated, no check was run", AbortedOutput) +
+    ReportSection("UTCrash", "signal 11, no test summary", "about to crash\n") +
+    ReportSection("UTFailedChecks", "Passed tests: 3, Failed tests: 2 (exit code 0 although checks failed)", "Passed tests: 3\nFailed tests: 2\n") +
     ReportSection("UTNoChecks", "no checks", "Passed tests: 0\nFailed tests: 0\n") +
-    ReportSection("UTSilent", "no test summary", "nothing to see\n")) && Passed;
+    ReportSection("UTSilent", "no test summary", "nothing to see\n") +
+    ReportSection("UTUnexpected", "Passed tests: 1, Failed tests: 1, Unexpected passes: 1 - remove ExpectedToFail()", UnexpectedOutput) +
+    ReportSection("UTWrongExit", "Passed tests: 2, Failed tests: 0 (exit code 3 although no check failed)", "Passed tests: 2\nFailed tests: 0\n")) && Passed;
 
   return Passed;
 }

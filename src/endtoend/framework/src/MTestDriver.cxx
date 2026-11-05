@@ -46,6 +46,7 @@
 #endif
 #include <sys/file.h>
 #include <sys/ioctl.h>
+#include <sys/wait.h>
 #include <unistd.h>
 using namespace std;
 
@@ -79,6 +80,7 @@ MTestDriver::MTestDriver(const MString& DriverName, const MString& DashboardTitl
   m_EndToEndTestPrefix(EndToEndTestPrefix),
   m_TimeoutSeconds(120.0),
   m_Calibrate(false),
+  m_Strict(false),
   m_ReferenceCampaign(false),
   m_CampaignRuns(50),
   m_CampaignMinimumRuns(30),
@@ -158,6 +160,8 @@ int MTestDriver::Execute(int argc, char** argv)
       EndToEndSwitch = true;
     } else if (Option == "--calibrate" || Option == "-c") {
       m_Calibrate = true;
+    } else if (Option == "--strict" || Option == "-s") {
+      m_Strict = true;
     } else if (Option == "--reference-campaign" || Option == "-r") {
       m_ReferenceCampaign = true;
     } else if (Option == "--runs" || Option == "--minimum-runs" || Option == "--seed") {
@@ -314,8 +318,10 @@ int MTestDriver::Execute(int argc, char** argv)
     }
     unsigned int Done = 0;
     unsigned int Running = 0;
+    unsigned int Passed = 0;
     unsigned int Failed = 0;
-    vector<MString> Left = {"", "", "", "", "Failed runs:"};
+    vector<MString> Left = {"", "", "", "", "", "", "Failed runs:"};
+    vector<MString> Known;
     vector<MString> Right = {"Running tests:"};
     for (unsigned int i = 0; i < Tests.size(); ++i) {
       if (Statuses[i] != MTestStatus::c_Pending && Statuses[i] != MTestStatus::c_Running) {
@@ -324,17 +330,29 @@ int MTestDriver::Execute(int argc, char** argv)
       if (Statuses[i] == MTestStatus::c_Running) {
         ++Running;
         Right.push_back(MString(SpinnerChars[Spinner % SpinnerChars.Length()]) + " " + Tests[i]);
-      } else if (Statuses[i] == MTestStatus::c_Failed) {
+      } else if (Statuses[i] == MTestStatus::c_Passed) {
+        ++Passed;
+      } else if (Statuses[i] == MTestStatus::c_Failed || Statuses[i] == MTestStatus::c_Crashed) {
         ++Failed;
-        Left.push_back(Tests[i] + " (" + FormatFailureMetric(Metrics[i]) + ")");
+        Left.push_back(GetStatusLabel(Statuses[i]) + " " + Tests[i] + " (" + FormatFailureMetric(Metrics[i]) + ")");
+      } else if (Statuses[i] == MTestStatus::c_Known) {
+        Known.push_back(Tests[i] + " (" + FormatFailureMetric(Metrics[i]) + ")");
       }
     }
     Left[0] = MString("Done: ") + Done + "/" + Tests.size();
     Left[1] = MString("Running: ") + Running;
-    Left[2] = MString("Failed: ") + Failed;
+    Left[2] = MString("Passed: ") + Passed;
+    Left[3] = MString("Failed: ") + Failed;
+    Left[4] = MString("Only known failures: ") + Known.size();
     if (Failed == 0) {
       Left.push_back("none");
     }
+    Left.push_back("");
+    Left.push_back("Runs with known failures only:");
+    if (Known.empty() == true) {
+      Left.push_back("none");
+    }
+    Left.insert(Left.end(), Known.begin(), Known.end());
     if (Running == 0) {
       Right.push_back("none");
     }
@@ -458,29 +476,8 @@ int MTestDriver::Execute(int argc, char** argv)
     for (const MManagedProcess& Process: Ended) {
       const unsigned int Index = IndexOfId[Process.m_Id];
       MFile::ReadTextFile(OutputFiles[Index], Outputs[Index]);
-      Metrics[Index] = ExtractMetric(Outputs[Index]);
-      if (Process.m_TimedOut == true) {
-        Metrics[Index] = MString("timed out after ") + FormatRuntime(Timeout);
-      }
-      if (Process.m_Lost == true) {
-        Metrics[Index] = "lost: the test could not be waited for";
-      }
       Timings[Tests[Index]] = Process.m_Seconds;
-      // A test passes if it exits normally, reports its checks, and none of them failed
-      Statuses[Index] = MTestStatus::c_Failed;
-      if (Process.m_ExitCode == 0) {
-        unsigned int PassedChecks = 0;
-        unsigned int FailedChecks = 0;
-        if (MUnitTest::ParseSummary(Outputs[Index], PassedChecks, FailedChecks) == false) {
-          Metrics[Index] = "no test summary";
-        } else if (FailedChecks > 0) {
-          Metrics[Index] = ExtractMetric(Outputs[Index]);
-        } else if (PassedChecks == 0) {
-          Metrics[Index] = "no checks";
-        } else {
-          Statuses[Index] = MTestStatus::c_Passed;
-        }
-      }
+      Statuses[Index] = ClassifyResult(Process, Outputs[Index], Timeout, Metrics[Index]);
     }
     if (Waited == false) {
       // A test which cannot be waited for (reaped by someone else): the others are stopped, the run ends with what it has
@@ -495,10 +492,33 @@ int MTestDriver::Execute(int argc, char** argv)
   }
   MProcessManager::RestoreInterruptHandlers();
 
+  // The tests and the checks of the run
+  unsigned int Passed = 0;
+  unsigned int Known = 0;
   unsigned int Failed = 0;
-  for (MTestStatus Status : Statuses) {
-    if (Status != MTestStatus::c_Passed) {
+  unsigned int Crashed = 0;
+  unsigned long PassedChecks = 0;
+  unsigned long KnownChecks = 0;
+  unsigned long FailedChecks = 0;
+  unsigned long UnexpectedPasses = 0;
+  for (unsigned int i = 0; i < Tests.size(); ++i) {
+    if (Statuses[i] == MTestStatus::c_Passed) {
+      ++Passed;
+    } else if (Statuses[i] == MTestStatus::c_Known) {
+      ++Known;
+    } else if (Statuses[i] == MTestStatus::c_Crashed) {
+      ++Crashed;
+    } else {
       ++Failed;
+    }
+    unsigned int PassedOfTest = 0;
+    unsigned int FailedOfTest = 0;
+    unsigned int KnownOfTest = 0;
+    if (MUnitTest::ParseSummary(Outputs[i], PassedOfTest, FailedOfTest, KnownOfTest) == true) {
+      PassedChecks += PassedOfTest;
+      FailedChecks += FailedOfTest;
+      KnownChecks += KnownOfTest;
+      UnexpectedPasses += CountLines(Outputs[i], "UNEXPECTED PASS:");
     }
   }
   Render();
@@ -507,12 +527,37 @@ int MTestDriver::Execute(int argc, char** argv)
   }
   if (UseTTY == false) {
     for (unsigned int i = 0; i < Tests.size(); ++i) {
-      if (Statuses[i] == MTestStatus::c_Passed) {
-        mout<<"PASS ";
-      }
-      mout<<Tests[i]<<" ("<<Metrics[i]<<")"<<endl;
+      mout<<GetStatusLabel(Statuses[i])<<" "<<Tests[i]<<" ("<<Metrics[i]<<")"<<endl;
     }
+    mout<<endl;
   }
+
+  // Why the tests failed, e.g. in the log of a CI run: the reports of the failed checks, or the last lines of the output if there are none
+  for (unsigned int i = 0; i < Tests.size(); ++i) {
+    if (Statuses[i] != MTestStatus::c_Failed && Statuses[i] != MTestStatus::c_Crashed) {
+      continue;
+    }
+    mout<<"===== "<<GetStatusLabel(Statuses[i])<<" "<<Tests[i]<<" ("<<Metrics[i]<<")"<<endl;
+    vector<MString> Details = ExtractFailureReports(Outputs[i]);
+    if (Details.empty() == true) {
+      Details = ExtractLastLines(Outputs[i]);
+    }
+    for (const MString& Detail : Details) {
+      mout<<Detail<<endl;
+    }
+    mout<<endl;
+  }
+
+  mout<<"Tests: "<<Passed<<" passed, "<<Known<<" with known failures only, "<<Failed<<" failed, "<<Crashed<<" crashed"<<endl;
+  mout<<"Checks: "<<PassedChecks<<" passed, "<<KnownChecks<<" known failures, "<<FailedChecks<<" failed";
+  if (UnexpectedPasses > 0) {
+    mout<<" ("<<UnexpectedPasses<<" unexpected "<<(UnexpectedPasses == 1 ? "pass" : "passes")<<" - remove ExpectedToFail())";
+  }
+  mout<<endl;
+  if (m_Strict == true && Known > 0) {
+    mout<<"Strict mode: the tests with known failures fail the run"<<endl;
+  }
+  Failed += Crashed;
   if (Failed > 0) {
     MString Report = WriteFailureReport(Tests, Statuses, Metrics, Outputs);
     if (Report.IsEmpty() == false) {
@@ -527,6 +572,9 @@ int MTestDriver::Execute(int argc, char** argv)
   }
   mout<<"Logs of all tests and the working files of failed tests: "<<m_LogDirectory<<endl;
   SaveTimings(Timings);
+  if (m_Strict == true && Known > 0) {
+    return 1;
+  }
   if (Failed == 0 && CalibrationFailed == false) {
     return 0;
   }
@@ -540,13 +588,14 @@ int MTestDriver::Execute(int argc, char** argv)
 //! Print the command line options
 void MTestDriver::PrintUsage() const
 {
-  mout<<"Usage: "<<m_DriverName<<" [-a | -e] [-c] [-l <directory>] [-t <seconds>] [test ...]"<<endl
+  mout<<"Usage: "<<m_DriverName<<" [-a | -e] [-c] [-s] [-l <directory>] [-t <seconds>] [test ...]"<<endl
       <<"       "<<m_DriverName<<" -r [--runs N] [--minimum-runs N] [--seed S] [--campaign-dir <directory>] [--install --reason <text> [--references-dir <directory>]] [test ...]"<<endl
       <<"  Runs the test programs "<<m_UnitTestPrefix<<"* (unit tests) and "<<m_EndToEndTestPrefix<<"* (end-to-end tests) of the bin directory in parallel."<<endl
       <<"  (no option)         Run the unit tests"<<endl
       <<"  -a, --all           Run the unit tests and the end-to-end tests"<<endl
       <<"  -e, --endtoend      Run only the end-to-end tests"<<endl
       <<"  -c, --calibrate     Measure the speed of this machine again (the program testdrivercalibration): it runs before the first test, the time out is scaled with the result"<<endl
+      <<"  -s, --strict        A test with known failures (checks marked with ExpectedToFail) fails the run; without it only its unexpected passes and other failed checks do"<<endl
       <<"  -l, --logdir <directory> All logs and the working files of failed tests go here, for this run only (default: /tmp/$USER/megalib_testing_logs)"<<endl
       <<"  -t, --timeout <T>       Kill a test after T = [0...3600] seconds, T = 0: no timeout (default: 120)"<<endl
       <<"  -r, --reference-campaign Make the references of end-to-end tests: every test runs N times in its own directory, the runs are analyzed (campaign report and candidate references in the campaign directory)"<<endl
@@ -1001,30 +1050,209 @@ void MTestDriver::RemoveStaleTestFiles(const vector<MString>& Tests) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return the passed and failed counters of the output of a test ("done" if it has none)
-MString MTestDriver::ExtractMetric(const MString& Output) const
+//! Return the status of an ended test and its metric, from its exit status and its output
+MTestStatus MTestDriver::ClassifyResult(const MManagedProcess& Process, const MString& Output, double Timeout, MString& Metric) const
 {
+  Metric = ExtractMetric(Output);
+  if (Process.m_TimedOut == true) {
+    Metric = MString("timed out after ") + FormatRuntime(Timeout);
+    return MTestStatus::c_Failed;
+  }
+  if (Process.m_Lost == true) {
+    Metric = "lost: the test could not be waited for";
+    return MTestStatus::c_Failed;
+  }
+
   unsigned int Passed = 0;
   unsigned int Failed = 0;
-  if (MUnitTest::ParseSummary(Output, Passed, Failed) == false) {
-    return "done";
+  unsigned int Known = 0;
+  const bool HasSummary = MUnitTest::ParseSummary(Output, Passed, Failed, Known);
+
+  // A test which did not end normally crashed: by a signal, or in another way
+  if (Process.m_ExitCode < 0) {
+    if (Process.m_Status >= 0 && WIFSIGNALED(Process.m_Status) != 0) {
+      Metric = MString("signal ") + WTERMSIG(Process.m_Status);
+    } else {
+      Metric = "abnormal termination";
+    }
+    if (HasSummary == false) {
+      Metric += ", no test summary";
+    }
+    return MTestStatus::c_Crashed;
   }
-  return MString("Passed tests: ") + Passed + ", Failed tests: " + Failed;
+
+  // MUnitTest aborts before any check if HOME and the working directory could not be isolated from the user environment
+  if (HasSummary == false && CountLines(Output, "ABORTED: HOME and the working directory") > 0) {
+    Metric = "aborted: HOME and the working directory could not be isolated, no check was run";
+    return MTestStatus::c_Failed;
+  }
+  if (HasSummary == false) {
+    Metric = "no test summary";
+    if (Process.m_ExitCode != 0) {
+      Metric += MString(" (exit code ") + Process.m_ExitCode + ")";
+    }
+    return MTestStatus::c_Failed;
+  }
+
+  // A test passes if it exits normally, reports its checks, and none of them failed; failed checks which are all known failures do not fail it
+  // Known failures are checks which ran: a test whose checks are all known failures is not a test without checks
+  if (Process.m_ExitCode == 0) {
+    if (Failed > 0) {
+      // Usually a missing "&& Passed" in the test
+      Metric += " (exit code 0 although checks failed)";
+      return MTestStatus::c_Failed;
+    }
+    if (Passed == 0 && Known == 0) {
+      Metric = "no checks";
+      return MTestStatus::c_Failed;
+    }
+    if (Known > 0) {
+      return MTestStatus::c_Known;
+    }
+    return MTestStatus::c_Passed;
+  }
+  if (Failed == 0) {
+    Metric += MString(" (exit code ") + Process.m_ExitCode + " although no check failed)";
+  }
+  return MTestStatus::c_Failed;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return the metric in the form which is shown for a failed test
+//! Return the counters of the output of a test ("done" if it has none): passed, failed, known failures, and unexpected passes if there are any
+MString MTestDriver::ExtractMetric(const MString& Output) const
+{
+  unsigned int Passed = 0;
+  unsigned int Failed = 0;
+  unsigned int Known = 0;
+  if (MUnitTest::ParseSummary(Output, Passed, Failed, Known) == false) {
+    return "done";
+  }
+  MString Metric = MString("Passed tests: ") + Passed + ", Failed tests: " + Failed;
+  if (Known > 0) {
+    Metric += MString(", Known failures: ") + Known;
+  }
+  const unsigned int Unexpected = CountLines(Output, "UNEXPECTED PASS:");
+  if (Unexpected > 0) {
+    Metric += MString(", Unexpected passes: ") + Unexpected + " - remove ExpectedToFail()";
+  }
+  return Metric;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the metric in the short form of the dashboard: "F/P failed", the known failures, and the detail of the metric
 MString MTestDriver::FormatFailureMetric(const MString& Metric) const
 {
   unsigned int Passed = 0;
   unsigned int Failed = 0;
-  if (MUnitTest::ParseSummary(Metric, Passed, Failed) == false) {
+  unsigned int Known = 0;
+  if (MUnitTest::ParseSummary(Metric, Passed, Failed, Known) == false) {
     return Metric;
   }
-  return MString(Failed) + "/" + Passed + " failed";
+  MString Text = MString(Failed) + "/" + Passed + " failed";
+  if (Known > 0) {
+    Text += MString(", ") + Known + " known";
+  }
+  if (Metric.Contains("Unexpected passes:") == true) {
+    Text += " - remove ExpectedToFail()";
+  }
+  // The detail of the metric is in parentheses after the counters
+  const string Full = Metric.Data();
+  const string::size_type Detail = Full.find(" (");
+  if (Detail != string::npos) {
+    Text += Full.substr(Detail).c_str();
+  }
+  return Text;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the label of a status of five characters: "PASS ", "KNOWN", "FAIL ", "CRASH", or blanks if the test is not done
+MString MTestDriver::GetStatusLabel(MTestStatus Status) const
+{
+  if (Status == MTestStatus::c_Passed) {
+    return "PASS ";
+  }
+  if (Status == MTestStatus::c_Known) {
+    return "KNOWN";
+  }
+  if (Status == MTestStatus::c_Failed) {
+    return "FAIL ";
+  }
+  if (Status == MTestStatus::c_Crashed) {
+    return "CRASH";
+  }
+  return "     ";
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Count the lines of the output which begin with the prefix
+unsigned int MTestDriver::CountLines(const MString& Output, const MString& Prefix) const
+{
+  unsigned int Count = 0;
+  istringstream Lines(Output.Data());
+  string Line;
+  while (getline(Lines, Line).fail() == false) {
+    if (Line.compare(0, Prefix.Length(), Prefix.Data()) == 0) {
+      ++Count;
+    }
+  }
+  return Count;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the FAILED, UNEXPECTED PASS, and ABORTED reports of the output of a test, each with its indented detail lines
+vector<MString> MTestDriver::ExtractFailureReports(const MString& Output) const
+{
+  // A report is its first line and the following lines which MUnitTest indents by three blanks
+  vector<MString> Reports;
+  istringstream Lines(Output.Data());
+  string Line;
+  bool InReport = false;
+  while (getline(Lines, Line).fail() == false) {
+    if (Line.compare(0, 7, "FAILED:") == 0 || Line.compare(0, 16, "UNEXPECTED PASS:") == 0 || Line.compare(0, 8, "ABORTED:") == 0) {
+      Reports.push_back(Line.c_str());
+      InReport = true;
+    } else if (InReport == true && Line.compare(0, 3, "   ") == 0) {
+      Reports.back() += MString("\n") + Line.c_str();
+    } else {
+      InReport = false;
+    }
+  }
+  return Reports;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the last lines of the output of a test, e.g. to show the cause of a crash
+vector<MString> MTestDriver::ExtractLastLines(const MString& Output) const
+{
+  const unsigned int NumberOfLastLines = 20;
+  vector<MString> Lines;
+  istringstream Stream(Output.Data());
+  string Line;
+  while (getline(Stream, Line).fail() == false) {
+    Lines.push_back(Line.c_str());
+  }
+  if (Lines.size() > NumberOfLastLines) {
+    Lines.erase(Lines.begin(), Lines.end() - NumberOfLastLines);
+  }
+  return Lines;
 }
 
 
@@ -1106,6 +1334,9 @@ MString MTestDriver::WriteSummaryReport(const vector<MString>& RequestedTests, c
       if (Statuses[t] == MTestStatus::c_Passed) {
         Text.SetTextColor(kGreen + 2);
         Text.DrawLatex(0.50, Y, "passed");
+      } else if (Statuses[t] == MTestStatus::c_Known) {
+        Text.SetTextColor(kOrange + 7);
+        Text.DrawLatex(0.50, Y, "known failures");
       } else {
         Text.SetTextColor(kRed);
         Text.DrawLatex(0.50, Y, "FAILED");
@@ -1302,7 +1533,7 @@ MString MTestDriver::WriteFailureReport(const vector<MString>& Tests, const vect
 
   Report<<m_DriverName<<" failed test output report"<<endl<<"Created: "<<TimeTag.data()<<endl;
   for (unsigned int i = 0; i < Tests.size(); ++i) {
-    if (Statuses[i] == MTestStatus::c_Passed) {
+    if (Statuses[i] == MTestStatus::c_Passed || Statuses[i] == MTestStatus::c_Known) {
       continue;
     }
     Report<<endl<<"================================================================================"<<endl;
