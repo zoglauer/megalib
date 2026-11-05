@@ -70,6 +70,8 @@ private:
     virtual bool Run() { return true; }
 
     const MString& GetProbeName() const { return GetName(); }
+    MString GetProbeLogDirectory() const { return GetLogDirectory(); }
+    double GetProbeSettingsTimeout() const { return GetSettingsTimeout(); }
     void Silence() { DisableDefaultStreams(); }
     void Unsilence() { EnableDefaultStreams(); }
     MString TemporaryFile(const MString& Name) const { return GetTemporaryFileName(Name); }
@@ -703,10 +705,12 @@ bool UTUnitTest::TestLogDirectory()
   setenv("HOME", Home.Data(), 1);
   const MString SettingsFile = Home + "/.testdrive.cfg";
 
-  // Write the settings file like the test driver:
+  // Write the settings file like the test driver, with a time out which is not the default:
+  const double Timeout = 7654.0;
   {
     MSettingsTesting Settings;
     Settings.SetLogDirectory(Missing);
+    Settings.SetTimeout(Timeout);
     Passed = EvaluateTrue("MSettingsTesting::Write()", "settings file", "The testing settings file can be written", Settings.Write(SettingsFile)) && Passed;
     MSettingsTesting Read;
     Passed = EvaluateTrue("MSettingsTesting::Read()", "settings file", "The testing settings file can be read", Read.Read(SettingsFile)) && Passed;
@@ -715,14 +719,20 @@ bool UTUnitTest::TestLogDirectory()
 
   // A passing test: the root is below the log directory and removed in the end
   MString PassingRoot;
+  MString SeenLogDirectory;
+  double SeenTimeout = 0.0;
   bool PassingRootExisted = false, FileExisted = false;
   {
     UnitTestProbe Passing("LogDirectoryPassing");
+    SeenLogDirectory = Passing.GetProbeLogDirectory();
+    SeenTimeout = Passing.GetProbeSettingsTimeout();
     PassingRoot = Passing.TemporaryDirectory();
     const MString File = Passing.TemporaryFile("passing.txt");
     PassingRootExisted = filesystem::is_directory(PassingRoot.Data());
     FileExisted = Passing.WriteFile(File, "content") && filesystem::exists(File.Data());
   }
+  Passed = Evaluate("GetLogDirectory()", "settings file", "A test has the log directory of the settings file", SeenLogDirectory, Missing) && Passed;
+  Passed = Evaluate("GetSettingsTimeout()", "settings file", "A test has the time out of the settings file", SeenTimeout, Timeout) && Passed;
   Passed = EvaluateTrue("GetTemporaryDirectoryName()", "below the log directory", "The root is created below the log directory of the settings file (also if it does not exist yet)", PassingRoot.BeginsWith(Missing + "/MEGAlib_")) && Passed;
   Passed = EvaluateTrue("GetTemporaryDirectoryName()", "root exists", "The root below the log directory exists while the test runs", PassingRootExisted) && Passed;
   Passed = EvaluateTrue("GetTemporaryFileName()", "file in the root", "Files can be written below the root in the log directory", FileExisted) && Passed;
@@ -753,12 +763,15 @@ bool UTUnitTest::TestLogDirectory()
   const MString NewSettingsFile = NewHome + "/.testdrive.cfg";
   setenv("HOME", NewHome.Data(), 1);
   MString DefaultRoot;
+  double DefaultTimeout = 0.0;
   {
     UnitTestProbe Default("LogDirectoryDefault");
     DefaultRoot = Default.TemporaryDirectory();
+    DefaultTimeout = Default.GetProbeSettingsTimeout();
   }
   MSettingsTesting Defaults;
   MSettingsTesting Created;
+  Passed = Evaluate("GetSettingsTimeout()", "default", "Without a settings file a test has the default time out", DefaultTimeout, Defaults.GetTimeout()) && Passed;
   Passed = EvaluateTrue("MUnitTest()", "settings file created", "A missing testing settings file is created", filesystem::exists(NewSettingsFile.Data())) && Passed;
   Passed = EvaluateTrue("MUnitTest()", "settings file defaults", "The created testing settings file has the default log directory", Created.Read(NewSettingsFile) && Created.GetLogDirectory() == Defaults.GetLogDirectory()) && Passed;
   Passed = EvaluateTrue("GetTemporaryDirectoryName()", "default log directory", "Without a settings file the root is below the default log directory", DefaultRoot.BeginsWith(Defaults.GetLogDirectory() + "/MEGAlib_")) && Passed;

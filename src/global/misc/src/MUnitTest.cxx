@@ -832,7 +832,7 @@ MString MUnitTest::CreateTemporaryDirectoryBaseName(const MString& Name) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Read the log directory from the testing settings file
+//! Read the log directory and the time out from the testing settings file
 void MUnitTest::LoadLogDirectory()
 {
   // Create the settings file with the defaults if it does not exist
@@ -847,6 +847,7 @@ void MUnitTest::LoadLogDirectory()
   }
 
   m_LogDirectory = Settings.GetLogDirectory();
+  m_SettingsTimeout = Settings.GetTimeout();
 }
 
 

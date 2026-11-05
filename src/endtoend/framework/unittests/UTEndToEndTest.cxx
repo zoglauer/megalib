@@ -50,6 +50,11 @@ public:
 
   virtual bool Run();
 
+  //! Set the name of this program, which TestSettingsOfTheDriver starts again
+  void SetProgram(const MString& Program) { m_Program = Program; }
+  //! Write what an end-to-end test which is the first test of its process sees from the settings of the driver - return false if the file cannot be written
+  static bool WriteSeenSettings(const MString& FileName);
+
 private:
   //! Expose the protected functionality of MEndToEndTest
   class Probe : public MEndToEndTest
@@ -69,6 +74,7 @@ private:
     bool Peak(const TH2* Image, double Range, double& CentroidX, double& CentroidY) { return ImagePeak(Image, Range, CentroidX, CentroidY); }
     unsigned int Budget() { return GetRemainingTimeBudget(); }
     MString Home() { return GetTemporaryDirectoryName("home"); }
+    MString ReportDirectory() { return GetReport().GetDirectory(); }
     bool RunIn(const MString& Directory, const MString& Executable, const MString& Arguments, unsigned int Timeout) { return Execute(Directory, Executable, Arguments, Timeout); }
     bool PrepareAll(vector<ETSimScenario>& Scenarios) { return PrepareSimulations(Scenarios); }
     double Arm(const MComptonEvent& Event, const MVector& ToSource) { return ARM(Event, ToSource); }
@@ -113,6 +119,10 @@ private:
   bool TestGeometry();
   bool TestExecution();
   bool TestRootHelpers();
+  bool TestSettingsOfTheDriver();
+
+  //! The name of this program
+  MString m_Program;
 };
 
 
@@ -155,6 +165,7 @@ bool UTEndToEndTest::Run()
   Passed = TestGeometry() && Passed;
   Passed = TestExecution() && Passed;
   Passed = TestRootHelpers() && Passed;
+  Passed = TestSettingsOfTheDriver() && Passed;
   Summarize();
   return Passed;
 }
@@ -841,14 +852,86 @@ bool UTEndToEndTest::TestRootHelpers()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int main()
+//! Write what an end-to-end test which is the first test of its process sees from the settings of the driver - return false if the file cannot be written
+bool UTEndToEndTest::WriteSeenSettings(const MString& FileName)
 {
+  Probe Tester;
+
+  ofstream Out(FileName.Data());
+  Out<<Tester.ReportDirectory()<<"\n"<<Tester.Budget()<<"\n";
+  Out.close();
+  return Out.good();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Regression test: the test driver and the reference campaign give a test its log directory and time out with the settings file in its home directory
+//! MUnitTest redirects HOME when the first test object of a process is created, so only a new process with an end-to-end test as its first test sees this
+bool UTEndToEndTest::TestSettingsOfTheDriver()
+{
+  bool Passed = true;
+  Probe Tester;
+
+  PrepareTemporaryDirectory("driver settings");
+  const MString Directory = GetTemporaryDirectoryName("driver settings");
+  const MString Home = Directory + "/home";
+  const MString LogDirectory = Directory + "/logs";
+  const MString SeenFileName = Directory + "/seen.txt";
+  Passed = EvaluateTrue("MFile::CreateDirectory()", "home", "The home directory of the new process can be created", MFile::CreateDirectory(Home)) && Passed;
+  Passed = EvaluateTrue("MFile::CreateDirectory()", "logs", "The log directory of the new process can be created", MFile::CreateDirectory(LogDirectory)) && Passed;
+
+  // A time out which is neither the default of the settings (120 s) nor the one of the driver
+  const double Timeout = 7654.0;
+  MSettingsTesting Settings;
+  Settings.SetLogDirectory(LogDirectory);
+  Settings.SetTimeout(Timeout);
+  Passed = EvaluateTrue("MSettingsTesting::Write()", "settings", "The settings file of the new process can be written", Settings.Write(Home + "/.testdrive.cfg")) && Passed;
+
+  const MString Arguments = MString("HOME=") + MSystem::GetShellQuoted(Home) + " " + MSystem::GetShellQuoted(m_Program) + " --write-seen-settings " + MSystem::GetShellQuoted(SeenFileName);
+  Passed = EvaluateTrue("Execute()", "new process", "The test can be started as a new process with the home directory of the driver settings", Tester.RunIn(Directory, "env", Arguments, 60)) && Passed;
+
+  const vector<MString> Lines = Tester.Lines(SeenFileName);
+  if (EvaluateSize("WriteSeenSettings()", "lines", "The new process reports its report directory and its time budget", Lines.size(), 2) == false) {
+    return false;
+  }
+
+  Passed = Evaluate("MEndToEndTest()", "log directory", "The key results and the report go to the log directory of the driver settings", Lines[0], LogDirectory) && Passed;
+  // Expected: the time out rounded up, at most 5 s less: the budget starts in the constructor and is read right after it (wall clock on a loaded machine)
+  const unsigned int Budget = Lines[1].ToUnsignedInt();
+  Passed = EvaluateTrue("MEndToEndTest()", "time out", "The time budget is the time out of the driver settings", Budget <= 7654 && Budget >= 7649) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+int main(int argc, char** argv)
+{
+  // The part of TestSettingsOfTheDriver which needs its own process
+  if (argc == 3 && MString(argv[1]) == "--write-seen-settings") {
+    if (MGlobal::Initialize("UTEndToEndTest", "unit test of the end-to-end test base class") == false) {
+      return 1;
+    }
+    return UTEndToEndTest::WriteSeenSettings(argv[2]) == true ? 0 : 1;
+  }
+
+  // Keep the name of this program: its path can be relative, and the test changes the working directory
+  MString Program = argv[0];
+  if (Program.Contains("/") == true) {
+    Program = filesystem::absolute(argv[0]).string();
+  }
+
   // Initialize global MEGAlib variables, especially mgui, etc.
   if (MGlobal::Initialize("UTEndToEndTest", "unit test of the end-to-end test base class") == false) {
     return 1;
   }
 
   UTEndToEndTest Test;
+  Test.SetProgram(Program);
   if (Test.Run() == true) {
     return 0;
   }

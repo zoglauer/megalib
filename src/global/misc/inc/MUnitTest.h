@@ -196,6 +196,10 @@ class MUnitTest
  protected:
   //! Return the unit test name
   const MString& GetName() const { return m_Name; }
+  //! Return the log directory name
+  MString GetLogDirectory() const { return m_LogDirectory; }
+  //! Return the time out in seconds from the testing settings
+  double GetSettingsTimeout() const { return m_SettingsTimeout; }
 
   //! Count a passed check, or report and count an unexpected pass as a failed test
   template <typename T> void RegisterSuccess(MString Function, T Input, MString Description) {
@@ -295,10 +299,8 @@ class MUnitTest
   //! Build a directory basename from ASCII letters, digits, '_' and '-' (fallback: "UnitTest")
   MString CreateTemporaryDirectoryBaseName(const MString& Name) const;
 
-  //! Read the log directory from the testing settings file
+  //! Read the log directory and the time out from the testing settings file
   void LoadLogDirectory();
-  //! Return the log directory name
-  MString GetLogDirectory() const { return m_LogDirectory; }
 
   //! Return true for a plain file or directory name (empty name: allowed if AllowEmpty is true)
   bool IsValidTemporaryPathName(const MString& Name, bool AllowEmpty = false) const;
@@ -352,6 +354,8 @@ class MUnitTest
    mutable int m_TemporaryRootLock;
    //! The log directory
    MString m_LogDirectory;
+   //! The time out in seconds from the testing settings
+   double m_SettingsTimeout;
    //! Mutex protecting temporary root creation and filesystem operations
    mutable recursive_mutex m_TemporaryPathMutex;
 

@@ -48,7 +48,6 @@ using namespace std;
 // MEGAlib libs:
 #include "MEndToEndFingerprint.h"
 #include "MFile.h"
-#include "MSettingsTesting.h"
 #include "MProcessManager.h"
 #include "MSystem.h"
 
@@ -59,11 +58,10 @@ using namespace std;
 //! Standard constructor giving the name of the test
 MEndToEndTest::MEndToEndTest(const MString& Name) : MUnitTest(Name), m_Report(Name)
 {
-  // Read the time out of the test driver (it is adapted to the speed of this machine), it counts from now
-  MSettingsTesting Settings;
-  Settings.Read();
-  m_Timeout = Settings.GetTimeout();
-  m_Report.SetDirectory(Settings.GetLogDirectory());
+  // Use the time out of the test driver (it is adapted to the speed of this machine), it counts from now
+  // Attention: HOME is already redirected here - MUnitTest has read the settings before it
+  m_Timeout = GetSettingsTimeout();
+  m_Report.SetDirectory(GetLogDirectory());
   m_StartTime = chrono::steady_clock::now();
 
   // The seeds are random, unless a campaign gives the base seed
