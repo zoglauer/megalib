@@ -138,6 +138,7 @@ class MProcessManager
   //! Launch a program in the background and return its process ID, or -1 on failure
   //! Start a new process group if OwnProcessGroup is true; otherwise use the caller's process group
   //! Pass Arguments to the shell, allowing redirection, quoted arguments, and operators such as &&
+  //! Without Arguments the program runs without a shell: it is the started process itself, so a signal which ends it is seen as that signal
   //! Redirect stdout and stderr to OutputFile when provided
   //! Use WorkingDirectory when provided
   static pid_t StartInBackground(const MString& Executable, const MString& Arguments, const MString& OutputFile = "", const MString& WorkingDirectory = "", bool OwnProcessGroup = false);

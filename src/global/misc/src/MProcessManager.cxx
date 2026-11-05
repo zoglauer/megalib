@@ -302,6 +302,7 @@ void MProcessManager::HandleInterrupt(int)
 //! Launch a program in the background and return its process ID, or -1 on failure
 //! Start a new process group if OwnProcessGroup is true; otherwise use the caller's process group
 //! Pass Arguments to the shell, allowing redirection, quoted arguments, and operators such as &&
+//! Without Arguments the program runs without a shell: it is the started process itself, so a signal which ends it is seen as that signal
 //! Redirect stdout and stderr to OutputFile when provided
 //! Use WorkingDirectory when provided
 pid_t MProcessManager::StartInBackground(const MString& Executable, const MString& Arguments, const MString& OutputFile, const MString& WorkingDirectory, bool OwnProcessGroup)
@@ -328,7 +329,12 @@ pid_t MProcessManager::StartInBackground(const MString& Executable, const MStrin
         close(Log);
       }
     }
-    execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(0));
+    if (Arguments.IsEmpty() == true) {
+      // No shell: a shell which keeps a wrapper process would report a signal which ends the program as its own exit code
+      execlp(Executable.Data(), Executable.Data(), static_cast<char*>(0));
+    } else {
+      execl("/bin/sh", "sh", "-c", Command.Data(), static_cast<char*>(0));
+    }
     // Exit after a failed exec without running inherited cleanup or flushing buffers
     // Use exit code 127 for a command that could not be run
     _exit(127);
