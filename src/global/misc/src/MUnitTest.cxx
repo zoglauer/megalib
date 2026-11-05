@@ -247,49 +247,77 @@ bool MUnitTest::EndExpectedFailureMode()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Read the last passed and failed test counts from a summary, return false if missing or invalid
-bool MUnitTest::ParseSummary(const MString& Output, unsigned int& Passed, unsigned int& Failed)
+//! Read the last passed, failed, and known failure counts from a summary, return false if missing or invalid
+//! The known failures are zero if the summary has no such line (it is printed only if there are any)
+bool MUnitTest::ParseSummary(const MString& Output, unsigned int& Passed, unsigned int& Failed, unsigned int& KnownFailures)
 {
   Passed = 0;
   Failed = 0;
+  KnownFailures = 0;
 
   const string Text = Output.Data();
   const string PassedLabel = "Passed tests:";
   const string FailedLabel = "Failed tests:";
+  const string KnownLabel = "Known failures:";
   const string::size_type PassedPosition = Text.rfind(PassedLabel);
   const string::size_type FailedPosition = Text.rfind(FailedLabel);
   if (PassedPosition == string::npos || FailedPosition == string::npos || FailedPosition < PassedPosition) {
     return false;
   }
 
-  // Read each count after optional spaces and tabs:
   unsigned int Numbers[2] = { 0, 0 };
-  const string::size_type Positions[2] = { PassedPosition + PassedLabel.size(), FailedPosition + FailedLabel.size() };
-  for (unsigned int n = 0; n < 2; ++n) {
-    string::size_type Position = Positions[n];
-    while (Position < Text.size() && (Text[Position] == ' ' || Text[Position] == '\t')) {
-      ++Position;
-    }
-    // The count: digits only, up to the end, a blank, or the comma of the one-line form, and not larger than an unsigned int
-    if (Position >= Text.size() || isdigit(static_cast<unsigned char>(Text[Position])) == 0) {
+  if (ParseSummaryCount(Text, PassedPosition + PassedLabel.size(), Numbers[0]) == false) {
+    return false;
+  }
+  if (ParseSummaryCount(Text, FailedPosition + FailedLabel.size(), Numbers[1]) == false) {
+    return false;
+  }
+
+  // The known failures belong to the summary only after its failed tests
+  unsigned int Known = 0;
+  const string::size_type KnownPosition = Text.rfind(KnownLabel);
+  if (KnownPosition != string::npos && KnownPosition > FailedPosition) {
+    if (ParseSummaryCount(Text, KnownPosition + KnownLabel.size(), Known) == false) {
       return false;
     }
-    unsigned long Value = 0;
-    while (Position < Text.size() && isdigit(static_cast<unsigned char>(Text[Position])) != 0) {
-      Value = 10*Value + static_cast<unsigned long>(Text[Position] - '0');
-      if (Value > numeric_limits<unsigned int>::max()) {
-        return false;
-      }
-      ++Position;
-    }
-    if (Position < Text.size() && Text[Position] != ',' && isspace(static_cast<unsigned char>(Text[Position])) == 0) {
-      return false;
-    }
-    Numbers[n] = static_cast<unsigned int>(Value);
   }
 
   Passed = Numbers[0];
   Failed = Numbers[1];
+  KnownFailures = Known;
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Read the count of a summary line after its label: digits only, up to the end, a blank, or the comma of the one-line form
+//! Return false if there is no count or it is larger than an unsigned int
+bool MUnitTest::ParseSummaryCount(const string& Text, string::size_type Position, unsigned int& Count)
+{
+  Count = 0;
+
+  // Skip the spaces and tabs after the label:
+  while (Position < Text.size() && (Text[Position] == ' ' || Text[Position] == '\t')) {
+    ++Position;
+  }
+  if (Position >= Text.size() || isdigit(static_cast<unsigned char>(Text[Position])) == 0) {
+    return false;
+  }
+  unsigned long Value = 0;
+  while (Position < Text.size() && isdigit(static_cast<unsigned char>(Text[Position])) != 0) {
+    Value = 10*Value + static_cast<unsigned long>(Text[Position] - '0');
+    if (Value > numeric_limits<unsigned int>::max()) {
+      return false;
+    }
+    ++Position;
+  }
+  if (Position < Text.size() && Text[Position] != ',' && isspace(static_cast<unsigned char>(Text[Position])) == 0) {
+    return false;
+  }
+
+  Count = static_cast<unsigned int>(Value);
   return true;
 }
 

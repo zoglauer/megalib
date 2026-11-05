@@ -85,8 +85,9 @@ class MUnitTest
 
   //! Summarize the test run
   void Summarize();
-  //! Read the last passed and failed test counts from a summary, return false if missing or invalid
-  static bool ParseSummary(const MString& Output, unsigned int& Passed, unsigned int& Failed);
+  //! Read the last passed, failed, and known failure counts from a summary, return false if missing or invalid
+  //! The known failures are zero if the summary has no such line (it is printed only if there are any)
+  static bool ParseSummary(const MString& Output, unsigned int& Passed, unsigned int& Failed, unsigned int& KnownFailures);
 
   //! Evaluate if the output equals the expected value
   template <typename T1, typename T2> bool Evaluate(MString Function, T1 Input, MString Description, T2 Output, T2 Truth)
@@ -311,6 +312,10 @@ class MUnitTest
   //! Return true if two lines have matching tokens, allowing differences in the last printed digits
   bool LinesMatchNumerically(const MString& TestLine, const MString& ReferenceLine,
                              unsigned int MaximumLastDigitDifference) const;
+
+  //! Read the count of a summary line after its label: digits only, up to the end, a blank, or the comma of the one-line form
+  //! Return false if there is no count or it is larger than an unsigned int
+  static bool ParseSummaryCount(const string& Text, string::size_type Position, unsigned int& Count);
 
                              
                              

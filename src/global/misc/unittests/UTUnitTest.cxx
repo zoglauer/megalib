@@ -622,33 +622,46 @@ bool UTUnitTest::TestParseSummary()
   bool Passed = true;
   unsigned int Passes = 99;
   unsigned int Fails = 99;
+  unsigned int Known = 99;
 
-  Passed = EvaluateTrue("ParseSummary()", "plain", "The numbers of a summary are read", MUnitTest::ParseSummary("Unit test: X\nPassed tests: 12\nFailed tests: 3\n", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "plain", "The numbers of a summary are read", MUnitTest::ParseSummary("Unit test: X\nPassed tests: 12\nFailed tests: 3\n", Passes, Fails, Known)) && Passed;
   Passed = Evaluate("ParseSummary()", "passed", "The number of passed tests is read", Passes, 12U) && Passed;
   Passed = Evaluate("ParseSummary()", "failed", "The number of failed tests is read", Fails, 3U) && Passed;
 
-  Passed = EvaluateTrue("ParseSummary()", "one line", "The numbers on one line (the form of the test driver) are read", MUnitTest::ParseSummary("Passed tests: 5, Failed tests: 1", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "one line", "The numbers on one line (the form of the test driver) are read", MUnitTest::ParseSummary("Passed tests: 5, Failed tests: 1", Passes, Fails, Known)) && Passed;
   Passed = EvaluateTrue("ParseSummary()", "one line numbers", "The numbers of the one-line form are right", Passes == 5U && Fails == 1U) && Passed;
 
-  Passed = EvaluateTrue("ParseSummary()", "last summary", "The last summary of the output counts", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 1\nmore output\nPassed tests: 7\nFailed tests: 0\n", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "last summary", "The last summary of the output counts", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 1\nmore output\nPassed tests: 7\nFailed tests: 0\n", Passes, Fails, Known)) && Passed;
   Passed = EvaluateTrue("ParseSummary()", "last summary numbers", "The numbers of the last summary are used", Passes == 7U && Fails == 0U) && Passed;
 
-  Passed = EvaluateTrue("ParseSummary()", "no blank", "A summary without a blank after the colon is read", MUnitTest::ParseSummary("Passed tests:4\nFailed tests:\t2\n", Passes, Fails)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "no blank", "A summary without a blank after the colon is read", MUnitTest::ParseSummary("Passed tests:4\nFailed tests:\t2\n", Passes, Fails, Known)) && Passed;
   Passed = EvaluateTrue("ParseSummary()", "no blank numbers", "The numbers of the summary without blanks are right", Passes == 4U && Fails == 2U) && Passed;
 
-  Passed = EvaluateFalse("ParseSummary()", "empty", "Empty output has no summary", MUnitTest::ParseSummary("", Passes, Fails)) && Passed;
-  Passed = Evaluate("ParseSummary()", "empty numbers", "Without a summary both numbers are zero", Passes + Fails, 0U) && Passed;
-  Passed = EvaluateFalse("ParseSummary()", "only passed", "Output with only the passed tests has no summary", MUnitTest::ParseSummary("Passed tests: 3\n", Passes, Fails)) && Passed;
-  Passed = EvaluateFalse("ParseSummary()", "wrong order", "Failed tests before passed tests are no summary", MUnitTest::ParseSummary("Failed tests: 1\nPassed tests: 3\n", Passes, Fails)) && Passed;
-  Passed = EvaluateFalse("ParseSummary()", "no number", "A label without a number is no summary", MUnitTest::ParseSummary("Passed tests: many\nFailed tests: few\n", Passes, Fails)) && Passed;
-  Passed = EvaluateFalse("ParseSummary()", "done", "The text of a test without a summary is none either", MUnitTest::ParseSummary("done", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "empty", "Empty output has no summary", MUnitTest::ParseSummary("", Passes, Fails, Known)) && Passed;
+  Passed = Evaluate("ParseSummary()", "empty numbers", "Without a summary all counts are zero", Passes + Fails + Known, 0U) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "only passed", "Output with only the passed tests has no summary", MUnitTest::ParseSummary("Passed tests: 3\n", Passes, Fails, Known)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "wrong order", "Failed tests before passed tests are no summary", MUnitTest::ParseSummary("Failed tests: 1\nPassed tests: 3\n", Passes, Fails, Known)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "no number", "A label without a number is no summary", MUnitTest::ParseSummary("Passed tests: many\nFailed tests: few\n", Passes, Fails, Known)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "done", "The text of a test without a summary is none either", MUnitTest::ParseSummary("done", Passes, Fails, Known)) && Passed;
 
   // The counts are unsigned int: no sign, no trailing text, no overflow
-  Passed = EvaluateFalse("ParseSummary()", "negative", "A negative count is no summary", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: -1\n", Passes, Fails)) && Passed;
-  Passed = EvaluateFalse("ParseSummary()", "trailing text", "A count followed by text is no summary", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 0garbage\n", Passes, Fails)) && Passed;
-  Passed = EvaluateFalse("ParseSummary()", "overflow", "A count above 4294967295 is no summary, it must not wrap around to zero", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 4294967296\n", Passes, Fails)) && Passed;
-  Passed = EvaluateTrue("ParseSummary()", "largest", "The largest count 4294967295 is read", MUnitTest::ParseSummary("Passed tests: 4294967295\nFailed tests: 0\n", Passes, Fails)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "negative", "A negative count is no summary", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: -1\n", Passes, Fails, Known)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "trailing text", "A count followed by text is no summary", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 0garbage\n", Passes, Fails, Known)) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "overflow", "A count above 4294967295 is no summary, it must not wrap around to zero", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 4294967296\n", Passes, Fails, Known)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "largest", "The largest count 4294967295 is read", MUnitTest::ParseSummary("Passed tests: 4294967295\nFailed tests: 0\n", Passes, Fails, Known)) && Passed;
   Passed = Evaluate("ParseSummary()", "largest number", "The largest count is right", Passes, 4294967295U) && Passed;
+
+  // The known failures: the third count, zero if the summary has no such line
+  Passed = EvaluateTrue("ParseSummary()", "known failures", "A summary with known failures is read", MUnitTest::ParseSummary("Unit test: X\nPassed tests: 12\nFailed tests: 0\nKnown failures: 4\n", Passes, Fails, Known)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "known failures numbers", "The three counts of the summary with known failures are right", Passes == 12U && Fails == 0U && Known == 4U) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "no known failures", "A summary without the line of the known failures is read", MUnitTest::ParseSummary("Passed tests: 3\nFailed tests: 1\n", Passes, Fails, Known)) && Passed;
+  Passed = Evaluate("ParseSummary()", "no known failures number", "Without the line the known failures are zero", Known, 0U) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "known failures one line", "The one-line form with known failures is read", MUnitTest::ParseSummary("Passed tests: 5, Failed tests: 1, Known failures: 2", Passes, Fails, Known)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "known failures one line numbers", "The three counts of the one-line form are right", Passes == 5U && Fails == 1U && Known == 2U) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "known failures of an earlier summary", "Known failures before the last summary belong to an earlier one", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 0\nKnown failures: 3\nPassed tests: 7\nFailed tests: 0\n", Passes, Fails, Known)) && Passed;
+  Passed = EvaluateTrue("ParseSummary()", "known failures of an earlier summary numbers", "The last summary has no known failures", Passes == 7U && Fails == 0U && Known == 0U) && Passed;
+  Passed = EvaluateFalse("ParseSummary()", "known failures no number", "A line of known failures without a number is no summary", MUnitTest::ParseSummary("Passed tests: 1\nFailed tests: 0\nKnown failures: some\n", Passes, Fails, Known)) && Passed;
+  Passed = Evaluate("ParseSummary()", "known failures no number counts", "Without a summary all counts are zero", Passes + Fails + Known, 0U) && Passed;
 
   return Passed;
 }
