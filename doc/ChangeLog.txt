@@ -19,19 +19,71 @@ Global library:
 + MStatistics: Added a class for statistics on lists of values, including mean, standard deviation, median and its uncertainty, quantiles, robust sigma, containment, binned and unbinned peak positions, full width at a fraction of the maximum, bootstrap uncertainties, and significances for ratios and proportions.
 + MStreams: Added IsEnabled() to query whether a stream is enabled.
 + MGlobal: Initialize() now fails with a clear message if the MEGALIB environment variable is not set.
++ MRotation bug fixes which can change results:
+  - The inverse (GetInvers, Invert) of a matrix whose determinant is not +1 or -1 was wrong (the cofactors were multiplied by the determinant instead of divided by it)
+  - IsRotation accepted reflections, scalings, and shears; it now requires the determinant +1 and orthonormal axes
++ New function MRotation::Orthonormalize() to make the axes of a rotation matrix orthonormal (z kept, x made perpendicular, handedness preserved)
 
 Geomega:
 + Rewrite of the detector effects engine
 + MDGeometry: GetHash() now hashes the contents of the geometry file and all included files.
 
 Cosima / Sivan:
-+ Enable Geant4 11.2
++ Enable and updates to run Geant4 11.4
 + Added the sim file header keyword "AT true" to accumulate event times and IDs across included files, so each file continues where the previous one ended.
 + Added the mcosima option "-c" to insert the AT keyword into the concatenation file.
 + Orientation files now use the entry closest to the event time. Previously, they used the first entry at or after that time, which could select a pointing up to one sampling interval too late. This fix was backported from develop-cosi-dc6.
++ Full AI review of the code fixing these issues:
+  - Activation (MCActivator, MCActivatorParticle, MCIsotopeStore):
+    + Mean life and half life were mixed up in the activation calculation (factor ln 2 in the decay times)
+    + The gamma de-excitation cascade used the gamma/internal-conversion probability instead of the transition branching
+    + Transitions of the highest tabulated nuclear level always went to the ground state
+    + Decay routing: levels with decay channels other than isomeric transition (e.g. Ge77m, O17[4551.8]) and decays with light ejectiles or complete disintegration (e.g. Be8, He5) were routed wrongly
+    + Relative branching ratios in long activation chains were wrong
+    + Partially overlapping decay paths were undercounted when merging activation branches
+    + The fifth and later members of an activation chain could get zero activity
+    + The cooldown calculation was wrong
+    + The activation is now calculated with the Bateman solution for chains of any length; numerically unreliable cases fall back to the partial simulation instead of giving wrong numbers
+    + Negative excitation energies are now treated as ground state in the Geant4 lookups
+    + Excitation levels within 0.005 keV are treated as the same level in the isotope store
+    + The activation store is reset at the start of an activation run
+    + The time profile is not implemented for activations and is no longer applied silently
+    + Neutron capture (nCaptureHP) is now a known process and is not missed in activations
+    + A missing counts file is reported as an error instead of a successful activation
+  - Sources and beams (MCSource, MCParameterFile):
+    + Absolute polarization was always zero (regression since the Galactic polarization update)
+    + Absolute polarization: the vector is now projected perpendicular to the photon direction (it was set to zero unless it was orthogonal to ~1e-14, which was practically never the case outside of axis-aligned beams); a zero vector, or a vector parallel to the fixed direction of a point or beam source without orientation, is rejected when the source file is read; a photon which is parallel at emission time fails the event instead of getting a random polarization
+    + The keyword FarFieldDisk was parsed as FarFieldGaussian
+    + Tube start area, FarFieldIsotropic beam: the azimuth only covered 0 to 2 rad instead of 0 to 2 pi
+    + Tube start area, FarFieldArea beam with a restricted phi range: the average start area and thus the flux was too large by 2 pi / phi range
+    + FarFieldGaussian beam: wrong radial intensity profile for larger sigma
+    + NearFieldFanBeam: the beam width was ignored (the x component of the second direction was used)
+    + Gaussian spectrum: the cut-off is now applied; the third parameter is the cut-off in sigma and is no longer scaled by keV
+    + CutOffPowerLaw and Comptonized spectra: an exhausted rejection loop now fails instead of returning the last rejected energy
+    + FarFieldEarthOccultation: a time outside the orientation file now fails instead of emitting from the zenith
+    + Light curve: the normalization to the flux depended on the order of the keywords Flux and LightCurve (factor of up to 2 in the rate)
+    + A flux which cannot be applied to the light curve is now rejected
+    + Earth occultation: events without known Earth position (e.g. outside the orientation file) are now rejected in all beams instead of passing through; the sky end message printed the wrong time
+    + Event lists: the maximum size can be set (SetMaxEventListSize), at the limit the wrong entry was deleted (crash/leak); events with identical times keep their order; unknown particles in an event list file are discarded with an error instead of crashing
+    + Event list files: the excitation energy (column 4) is now read in keV as floating point number; it was truncated to an integer and used in MeV, so isomers could not be created
+    + Gaussian spectrum: energies of zero and below are thrown again; a center of 0 keV is allowed (half Gaussian)
+    + The keyword TotalEnergyFlux was removed: it was parsed but never used
+    + Cosima sources write their messages to mout instead of cout
+    + The keywords LightCurve Flat and LightCurve None (documented in the manual) were rejected by the parser
+    + The beam DiffractionPointSourceKSpace (DPSK) was removed: it was never implemented and sent all particles along +z
+    + GetMeanEnergy is now implemented for all spectra with a defined mean (cut-off power law, Comptonized, Gaussian, thermal bremsstrahlung, black body, Band function, file spectra)
+    + Band function: the low-energy index may now be zero or positive (as in about 9% of the BATSE catalog) and the break energy E0 may be outside of the energy range; the maximum of the spectrum used in the energy generation was wrong for a positive low-energy index; the error messages call E0 the break energy
+    + A tube start area with the beams IlluminatedDisk, IlluminatedSquare, RestrictedPoint and RestrictedLine is now rejected
+  - Orientations (MCOrientation):
+    + Looping orientations wrap the time correctly if the first entry is not at t = 0
+    + Latitude and theta values outside of [-90, 90] / [0, 180] degrees are now rejected
+    + Orientation axes which are slightly off a right angle (up to 0.001 rad are accepted) gave a transformation which was not a rigid rotation (lengths changed by up to about 4e-4) and a reported pointing which differed from the transformation. The axes are now orthonormalized (the z-axis is kept, the x-axis is made perpendicular to it) and the corrected x-axis angles are stored and written to the events
 
 Response:
 + HEALPix for spherical coordinates
+
+Examples:
++ GRBSampler: the BATSE peak energy was written as the break energy E0 of the Band function (E0 = Epeak/(alpha + 2)); sampled indices are now valid for Cosima
 
 
 
