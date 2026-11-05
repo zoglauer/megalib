@@ -172,7 +172,9 @@ void MMelinator::Clear()
   m_CalibrationFileNames.clear();
   m_Isotopes.clear();
   
-  m_SelectedDetectorID = -1;
+  //m_SelectedDetectorID = -1;
+  // ADDED
+  m_SelectedDetectorIDs.clear();
   m_SelectedDetectorSide = -1;
 
   m_SelectedTemperatureMin = -numeric_limits<double>::max();
@@ -468,7 +470,13 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
       MReadOutSequence Sequence;
       long Counter = 0;
       long NewCounter = 0;
-      while (Reader.ReadNext(Sequence, m_SelectedDetectorID, m_SelectedDetectorSide) == true) {
+
+      //while (Reader.ReadNext(Sequence, m_SelectedDetectorID, m_SelectedDetectorSide) == true) {
+      // ADDED
+      // With exactly one detector, let the reader do the filtering (as before);
+      // with several, read all detectors and remove the unwanted read-outs below
+      int ReaderDetectorID = (m_SelectedDetectorIDs.size() == 1) ? m_SelectedDetectorIDs[0] : -1;
+      while (Reader.ReadNext(Sequence, ReaderDetectorID, m_SelectedDetectorSide) == true) {
         // Since we do energy calibration, exclude everything with more than the number of good hits
         //if (Sequence.HasIdenticalReadOutElementTypes() == true) {
         //  if (Sequence.GetNumberOfReadOuts() > 0 && 
@@ -478,6 +486,14 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
         //}
         vector<unsigned int> ToRemove;
         for (unsigned int d = 0; d < Sequence.GetNumberOfReadOuts(); ++d) { 
+          // ADDED
+          if (m_SelectedDetectorIDs.size() > 1) {
+            int DetID = (int) Sequence.GetReadOut(d).GetReadOutElement().GetDetectorID();
+            if (find(m_SelectedDetectorIDs.begin(), m_SelectedDetectorIDs.end(), DetID) == m_SelectedDetectorIDs.end()) {
+              ToRemove.push_back(d);
+              continue;
+            }
+          }
           MReadOutDataTemperature* T = dynamic_cast<MReadOutDataTemperature*>(Sequence.GetReadOut(d).GetReadOutData().Get(MReadOutDataTemperature::m_TypeID));
           if (T != nullptr) {
             if (T->GetTemperature() < m_SelectedTemperatureMin || T->GetTemperature() > m_SelectedTemperatureMax) {

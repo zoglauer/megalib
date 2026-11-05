@@ -106,7 +106,8 @@ void MGUILoadCalibration::Create()
   vector<vector<MString>> CalibrationIsotopes = m_Settings->GetCalibrationIsotopes();
   
   // Add an empty one
-  while (CalibrationFiles.size() < 15) {
+  // ADDED 15 --> 30
+  while (CalibrationFiles.size() < 30) {
     CalibrationFiles.push_back("");
     CalibrationGroupIDs.push_back(0);
     CalibrationIsotopes.push_back(vector<MString>());

@@ -106,8 +106,11 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   Usage<<"             Load the last used calibration files, parametrize all peaks, save the result, and exit"<<endl;
   Usage<<"      -e <filename>.ecal:"<<endl;
   Usage<<"             ecal file name"<<endl;
-  Usage<<"      -d --detector <int>:"<<endl;
-  Usage<<"             Only look at this detector"<<endl;
+  //Usage<<"      -d --detector <int>:"<<endl;
+  //Usage<<"             Only look at this detector"<<endl;
+  // ADDED
+  Usage<<"      -d --detector <int> [<int> ...]:"<<endl;
+  Usage<<"             Only look at this detector, or this list of detectors (e.g. -d 0 4 6 9)"<<endl;
   Usage<<"      -s --side <int>:"<<endl;
   Usage<<"             Only look at this detector side (0: HV/negative, 1: LV/positive, else: all)"<<endl;
   Usage<<"      -t --temperature <double> <double>:"<<endl;
@@ -174,8 +177,17 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
       m_Data->SetSaveAsFileName(argv[++i]);
       cout<<"Command-line parser: Use save as file name "<<m_Data->GetSaveAsFileName()<<endl;
     } else if (Option == "--detector" || Option == "-d") {
-      m_Data->SetSelectedDetectorID(atoi(argv[++i]));
-      cout<<"Command-line parser: Use only this detector: "<<m_Data->GetSelectedDetectorID()<<endl;
+      //m_Data->SetSelectedDetectorID(atoi(argv[++i]));
+      //cout<<"Command-line parser: Use only this detector: "<<m_Data->GetSelectedDetectorID()<<endl;
+      // ADDED
+      vector<int> IDs;
+      while (i+1 < argc && argv[i+1][0] != '-') {
+        IDs.push_back(atoi(argv[++i]));
+      }
+      m_Data->SetSelectedDetectorIDs(IDs);
+      cout<<"Command-line parser: Use only these detectors:";
+      for (int ID: IDs) cout<<" "<<ID;
+      cout<<endl;
     } else if (Option == "--side" || Option == "-s") {
       m_Data->SetSelectedDetectorSide(atoi(argv[++i]));
       cout<<"Command-line parser: Use only this detector side (0: HV/neg, 1: LV/pos, else: all): "<<m_Data->GetSelectedDetectorSide()<<endl;
