@@ -549,18 +549,25 @@ bool UTTestDriver::TestLogDirectory()
         ofstream Ready((Locked + "/ready").Data());
         Ready<<"locked"<<endl;
       }
-      sleep(2);
+      // Hold the lock until the driver has been refused, with a limit of 2 minutes for a test which ends before that
+      for (unsigned int Attempt = 0; Attempt < 1200 && Has(Locked, "release") == false; ++Attempt) {
+        usleep(100000);
+      }
       _exit(0);
     }
     for (unsigned int Attempt = 0; Attempt < 50 && Has(Locked, "ready") == false; ++Attempt) {
       usleep(100000);
     }
     Passed = EvaluateTrue("flock()", "driver lock", "Another process can hold the lock of the driver", Has(Locked, "ready")) && Passed;
-    const chrono::steady_clock::time_point Start = chrono::steady_clock::now();
     const Result Refused = Drive(Bin, { "UTAlpha" }, Locked + "/logs");
-    const double Seconds = chrono::duration<double>(chrono::steady_clock::now() - Start).count();
+    // A driver which waited for the lock can only return after the holder is gone
+    const bool StillLocked = (waitpid(Holder, nullptr, WNOHANG) == 0);
+    {
+      ofstream Release((Locked + "/release").Data());
+      Release<<"release"<<endl;
+    }
     Passed = Evaluate("Execute()", "refused, exit code", "A driver which finds another driver running exits with the code 1", Refused.m_ExitCode, 1) && Passed;
-    Passed = EvaluateTrue("Execute()", "refused, at once", "A driver which finds another driver running does not wait for it", Seconds < 1.5) && Passed;
+    Passed = EvaluateTrue("Execute()", "refused, at once", "A driver which finds another driver running does not wait for it", StillLocked) && Passed;
     Passed = EvaluateFalse("Execute()", "refused, no test", "A driver which finds another driver running runs no test", filesystem::exists((Locked + "/logs/UTAlpha.log").Data())) && Passed;
     waitpid(Holder, nullptr, 0);
 
