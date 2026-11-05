@@ -241,6 +241,23 @@ bool UTProcessManager::TestBackground()
   ChildStatus = MProcessManager::WaitForBackground(Long, 0, &Stop);
   Passed = EvaluateTrue("WaitForBackground()", "stop flag", "A set stop flag kills the background process with SIGKILL", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGKILL) && Passed;
 
+  // A program without arguments runs without a shell: it is the started process itself, and the signal which ends it is its status
+  // (a shell which keeps a wrapper process would report the signal as its exit code 128 plus the signal)
+  const MString TempDirectory = GetTemporaryDirectoryName();
+  const MString Crashing = TempDirectory + "/crashing.sh";
+  {
+    ofstream Out(Crashing.Data());
+    Out<<"#!/bin/sh"<<endl<<"echo $$"<<endl<<"kill -SEGV $$"<<endl;
+  }
+  error_code PermissionError;
+  filesystem::permissions(Crashing.Data(), filesystem::perms::owner_all, filesystem::perm_options::add, PermissionError);
+  Passed = EvaluateTrue("StartInBackground()", "crashing script", "The script which dies by a signal can be written", MFile::Exists(Crashing) == true && PermissionError.value() == 0) && Passed;
+  const pid_t Crashed = MProcessManager::StartInBackground(Crashing, "", TempDirectory + "/crashing.log");
+  Passed = EvaluateTrue("StartInBackground()", "crashing started", "The program without arguments can be started", Crashed > 0) && Passed;
+  ChildStatus = MProcessManager::WaitForBackground(Crashed);
+  Passed = EvaluateTrue("WaitForBackground()", "signal", "A program without arguments which dies by a signal has that signal as its status", WIFSIGNALED(ChildStatus) && WTERMSIG(ChildStatus) == SIGSEGV) && Passed;
+  Passed = Evaluate("StartInBackground()", "own process", "The program without arguments is the started process: it sees the process ID which was returned", ReadTextFile(TempDirectory + "/crashing.log"), MString(static_cast<long>(Crashed)) + "\n") && Passed;
+
   return Passed;
 }
 
