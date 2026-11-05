@@ -211,13 +211,16 @@ bool MEndToEndCampaign::RunJobs(const vector<ETCampaignJob>& Jobs)
 bool MEndToEndCampaign::FinishJob(const ETCampaignJob& Job, int ProcessStatus, double Seconds, bool TimedOut, unsigned int Finished, unsigned int Total) const
 {
   // A run which does not report its checks, or has none, has failed (as for the normal execution of tests)
+  // Its known failures (marked with ExpectedToFail) are failed checks too: a test with a broken check makes no references
   MString Output;
   MFile::ReadTextFile(Job.m_Directory + "/" + Job.m_Test + ".log", Output);
   unsigned int PassedChecks = 0;
   unsigned int FailedChecks = 0;
-  if (MUnitTest::ParseSummary(Output, PassedChecks, FailedChecks) == false || PassedChecks == 0) {
+  unsigned int KnownFailures = 0;
+  if (MUnitTest::ParseSummary(Output, PassedChecks, FailedChecks, KnownFailures) == false || PassedChecks == 0) {
     FailedChecks = max(FailedChecks, 1U);
   }
+  FailedChecks += KnownFailures;
   int ExitCode = -1;
   if (WIFEXITED(ProcessStatus) != 0) {
     ExitCode = WEXITSTATUS(ProcessStatus);
@@ -227,7 +230,11 @@ bool MEndToEndCampaign::FinishJob(const ETCampaignJob& Job, int ProcessStatus, d
     merr<<"Unable to write the record of run "<<Job.m_Run<<" of "<<Job.m_Test<<show;
   }
 
-  mout<<"["<<Finished<<"/"<<Total<<"] "<<Job.m_Test<<" run "<<Job.m_Run<<": "<<FailedChecks<<" failed checks, exit code "<<ExitCode<<", "<<fixed<<setprecision(1)<<Seconds<<" s";
+  mout<<"["<<Finished<<"/"<<Total<<"] "<<Job.m_Test<<" run "<<Job.m_Run<<": "<<FailedChecks<<" failed checks";
+  if (KnownFailures > 0) {
+    mout<<" ("<<KnownFailures<<" known failures)";
+  }
+  mout<<", exit code "<<ExitCode<<", "<<fixed<<setprecision(1)<<Seconds<<" s";
   if (TimedOut == true) {
     mout<<", timed out";
   }

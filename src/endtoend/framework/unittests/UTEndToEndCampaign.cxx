@@ -51,7 +51,7 @@ public:
 private:
   //! Write an executable shell script into the directory
   bool WriteScript(const MString& Directory, const MString& Name, const MString& Body);
-  //! Write the test programs into the directory: ETFake (writes its key results, its environment, its home, and its seed), ETFailing, ETSlow, and ETSilent
+  //! Write the test programs into the directory: ETFake (writes its key results, its environment, its home, and its seed), ETFailing, ETKnown, ETSlow, and ETSilent
   bool CreateTests(const MString& Directory, const MString& CounterFile);
   //! Return the number of lines of a text file, zero if it does not exist
   unsigned int CountLines(const MString& FileName);
@@ -107,6 +107,10 @@ bool UTEndToEndCampaign::CreateTests(const MString& Directory, const MString& Co
     "echo \"Passed tests: 3\"; echo \"Failed tests: 0\"";
   OK = WriteScript(Directory, "ETFake", Fake) && OK;
   OK = WriteScript(Directory, "ETFailing", "echo x >> \"" + CounterFile + "\"; echo \"Passed tests: 1\"; echo \"Failed tests: 2\"; exit 1") && OK;
+  // The same test under another name whose only failed check is a known failure: it exits with 0, as the test driver lets it pass
+  MString Known = Fake;
+  Known.ReplaceAllInPlace("ETFake", "ETKnown");
+  OK = WriteScript(Directory, "ETKnown", Known + "; echo \"Known failures: 1\"") && OK;
   OK = WriteScript(Directory, "ETSlow", "sleep 20; echo \"Passed tests: 1\"; echo \"Failed tests: 0\"") && OK;
   OK = WriteScript(Directory, "ETSilent", "echo \"no summary\"") && OK;
   // The same test under another name, which makes the directory of its second run read-only at the end
@@ -298,6 +302,17 @@ bool UTEndToEndCampaign::TestFailures()
   EnableDefaultStreams();
   Passed = EvaluateTrue("MEndToEndCampaign::RunJobs()", "silent marker", "The marker of a test without summary can be read", Marker.Read(Campaign.GetRunDirectory("ETSilent", 0) + "/run.done")) && Passed;
   Passed = Evaluate("MEndToEndCampaign::RunJobs()", "silent", "A test without summary has a failed check", Marker.Get("failed_checks"), MString("1")) && Passed;
+
+  // A test with a known failure has failed in a campaign, although it exits with 0: no references are made from a broken check
+  DisableDefaultStreams();
+  Campaign.RunJobs(Campaign.GetJobs({ "ETKnown" }));
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("MEndToEndCampaign::RunJobs()", "known marker", "The marker of a test with a known failure can be read", Marker.Read(Campaign.GetRunDirectory("ETKnown", 0) + "/run.done")) && Passed;
+  Passed = Evaluate("MEndToEndCampaign::RunJobs()", "known failure", "The known failure is a failed check", Marker.Get("failed_checks"), MString("1")) && Passed;
+  Passed = Evaluate("MEndToEndCampaign::RunJobs()", "known exit", "The marker has the exit code 0 of the test", Marker.Get("exit_code"), MString("0")) && Passed;
+  ETCampaignRecord Known;
+  Known.Read(Campaign.GetRunDirectory("ETKnown", 0));
+  Passed = EvaluateFalse("ETCampaignRecord::Succeeded()", "known", "A run with a known failure does not succeed", Known.Succeeded()) && Passed;
 
   // A test which takes longer than the time out is stopped
   const chrono::steady_clock::time_point Start = chrono::steady_clock::now();
@@ -498,6 +513,19 @@ bool UTEndToEndCampaign::TestAnalysis()
   Campaign.Analyze("ETFailing", "Failing", Failing);
   EnableDefaultStreams();
   Passed = EvaluateTrue("MEndToEndCampaign::Analyze()", "failing", "Runs with failed checks are an error", Failing.HasErrors()) && Passed;
+
+  // A test which is the fake test with a known failure: enough good runs, but the known failures are errors too, and its references are not installed
+  Campaign.SetNumberOfRuns(6);
+  DisableDefaultStreams();
+  Campaign.RunJobs(Campaign.GetJobs({ "ETKnown" }));
+  MEndToEndCampaignAnalysis Known;
+  Campaign.Analyze("ETKnown", "Known", Known);
+  const bool KnownInstalled = Campaign.Install("ETKnown", "Known", Known);
+  EnableDefaultStreams();
+  Passed = Evaluate("MEndToEndCampaign::Analyze()", "known runs", "All six runs of the test with a known failure are analyzed", Known.GetNumberOfRuns(), 6U) && Passed;
+  Passed = EvaluateTrue("MEndToEndCampaign::Analyze()", "known", "Runs with known failures are an error", Known.HasErrors()) && Passed;
+  Passed = EvaluateFalse("MEndToEndCampaign::Install()", "known", "The references of a test with known failures are not installed", KnownInstalled) && Passed;
+  Passed = EvaluateFalse("MEndToEndCampaign::Install()", "known no file", "No references of the test with a known failure are written", MFile::Exists(References + "/ETKnown.references.tsv")) && Passed;
 
   // A key result which is malformed in every run of a test is an error, not an observable which is silently missing
   Campaign.SetNumberOfRuns(6);

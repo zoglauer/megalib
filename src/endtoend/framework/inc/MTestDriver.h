@@ -42,6 +42,7 @@ using namespace std;
 // Forward declarations:
 class MEndToEndCampaign;
 class MEndToEndCampaignAnalysis;
+class MManagedProcess;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -49,10 +50,12 @@ class MEndToEndCampaignAnalysis;
 
 //! The status of a test
 enum class MTestStatus {
-  c_Pending = 0,
-  c_Running,
-  c_Failed,
-  c_Passed
+  c_Pending = 0,  //!< not yet started
+  c_Running,      //!< the test process is running
+  c_Failed,       //!< failed checks or unexpected passes, an exit code which contradicts the summary, timed out, or aborted before any check
+  c_Crashed,      //!< ended by a signal, or did not end normally
+  c_Known,        //!< exited normally and all failed checks are known failures (marked with ExpectedToFail)
+  c_Passed        //!< exited normally without any failed check
 };
 
 
@@ -66,6 +69,7 @@ enum class MTestingScope {
 
 //! Class representing the driver which finds the test programs (UT*, ET*) in the bin directory and runs them in parallel with a dashboard
 //! * By default the unit tests run, --all (-a) adds the end-to-end tests, --endtoend (-e) runs only them, tests named on the command line always run
+//! * A test whose failed checks are all known failures (marked with ExpectedToFail) does not fail the run, unless --strict (-s) is given
 //! * Before the end-to-end tests it runs testdrivercalibration if the machine is not calibrated yet (or with --calibrate (-c)): the time out scales with it
 //! * Every end-to-end test writes summary pages (PDF and the canvases in a ROOT file) into the log directory, the driver puts them with an overview into <driver>_report.pdf
 //! * All logs and the working files of failed tests go to /tmp/$USER/megalib_testing_logs, or to the directory of --logdir (-l) for this run only
@@ -134,10 +138,20 @@ class MTestDriver
 
   // The results:
 
-  //! Return the passed and failed counters of the output of a test ("done" if it has none)
+  //! Return the status of an ended test and its metric, from its exit status and its output
+  MTestStatus ClassifyResult(const MManagedProcess& Process, const MString& Output, double Timeout, MString& Metric) const;
+  //! Return the counters of the output of a test ("done" if it has none): passed, failed, known failures, and unexpected passes if there are any
   MString ExtractMetric(const MString& Output) const;
-  //! Return the metric in the form which is shown for a failed test
+  //! Return the metric in the short form of the dashboard: "F/P failed", the known failures, and the detail of the metric
   MString FormatFailureMetric(const MString& Metric) const;
+  //! Return the label of a status of five characters: "PASS ", "KNOWN", "FAIL ", "CRASH", or blanks if the test is not done
+  MString GetStatusLabel(MTestStatus Status) const;
+  //! Count the lines of the output which begin with the prefix
+  unsigned int CountLines(const MString& Output, const MString& Prefix) const;
+  //! Return the FAILED, UNEXPECTED PASS, and ABORTED reports of the output of a test, each with its indented detail lines
+  vector<MString> ExtractFailureReports(const MString& Output) const;
+  //! Return the last lines of the output of a test, e.g. to show the cause of a crash
+  vector<MString> ExtractLastLines(const MString& Output) const;
   //! Return the time in seconds with one decimal and the unit
   MString FormatRuntime(double Seconds) const;
   //! Write the summary report: the overview of the tests and the summary pages of the end-to-end tests as one PDF in the log directory, return its file name (empty if no test has summary pages)
@@ -178,6 +192,8 @@ class MTestDriver
   double m_TimeoutSeconds;
   //! True if the calibration of this machine is made again
   bool m_Calibrate;
+  //! True if tests with known failures fail the run (--strict)
+  bool m_Strict;
   //! True if the reference campaign runs instead of the tests
   bool m_ReferenceCampaign;
   //! The number of runs of every test of the reference campaign
