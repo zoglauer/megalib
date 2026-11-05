@@ -12,6 +12,7 @@ bin/sivan
 bin/spectralyze
 bin/UT*
 bin/ET*
+bin/LT*
 bin/testdrive
 bin/testdrivercalibration
 
