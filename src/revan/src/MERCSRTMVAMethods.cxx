@@ -69,6 +69,8 @@ MERCSRTMVAMethod MERCSRTMVAMethods::GetMethod(MString String) const
     return MERCSRTMVAMethod::c_MLP;
   } else if (String == "BDTD") {
     return MERCSRTMVAMethod::c_BDTD;
+  } else if (String == "RNN") {
+    return MERCSRTMVAMethod::c_RNN;
   } else if (String == "PDEFOAM") {
     return MERCSRTMVAMethod::c_PDEFoam;
   } else if (String == "PDEFOAMBOOST") {
@@ -93,6 +95,8 @@ MString MERCSRTMVAMethods::GetString(MERCSRTMVAMethod Method) const
     return "MLP";
   } else if (Method == MERCSRTMVAMethod::c_BDTD) {
     return "BDTD";
+  } else if (Method == MERCSRTMVAMethod::c_RNN) {
+    return "RNN";
   } else if (Method == MERCSRTMVAMethod::c_PDEFoam) {
     return "PDEFoam";
   } else if (Method == MERCSRTMVAMethod::c_PDEFoamBoost) {
@@ -117,6 +121,8 @@ MString MERCSRTMVAMethods::GetFullString(MERCSRTMVAMethod Method) const
     return "Multi-layer perceptron";
   } else if (Method == MERCSRTMVAMethod::c_BDTD) {
     return "Boosted decision trees";
+  } else if (Method == MERCSRTMVAMethod::c_RNN) {
+    return "Recurrent neural network";
   } else if (Method == MERCSRTMVAMethod::c_PDEFoam) {
     return "Likelihood estimator using self-adapting phase-space binning (PDE-Foam)";
   } else if (Method == MERCSRTMVAMethod::c_PDEFoamBoost) {

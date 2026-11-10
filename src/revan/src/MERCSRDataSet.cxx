@@ -134,7 +134,7 @@ void MERCSRDataSet::Initialize(unsigned int SequenceLength, bool UsePathToFirstI
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERCSRDataSet::CreateReaders(vector<TMVA::Reader*>& Readers)
+void MERCSRDataSet::CreateReaders(vector<TMVA::Reader*>& Readers,MString used_reader)
 {
   TString Name;
   
@@ -165,6 +165,7 @@ void MERCSRDataSet::CreateReaders(vector<TMVA::Reader*>& Readers)
       Reader->AddVariable(Name, &m_PositionsZ[c][i]);
     }
     
+    if (used_reader!="RNN") {
     for (unsigned int i = 0; i < m_InteractionDistances[c].size(); ++i) {
       Name = "InteractionDistances";
       Name += i+1;
@@ -213,7 +214,7 @@ void MERCSRDataSet::CreateReaders(vector<TMVA::Reader*>& Readers)
       Name = "NadirAngle";
       Reader->AddVariable(Name, &m_NadirAngle[c]);
     }
-    
+    }
     Readers.push_back(Reader);
   }
 }
