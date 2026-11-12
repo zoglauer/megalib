@@ -230,7 +230,7 @@ class MDVolume
   //! Returns the position in the world volume - pos is inside this volume
   MVector GetPositionInWorldVolume(MVector Pos);
 
-  //! Returns a random position in any of the volumes defined by Volume
+  //! Returns a random position in any of the volumes defined by Volume - excluding the daughter volumes of Volume
   MVector GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
   //! Returns a random position in this volume excluding daugther volumes - or g_VectorNotDefined if it cannot find any.
   MVector GetRandomPositionExclusivelyInside();
