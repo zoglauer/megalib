@@ -418,6 +418,10 @@ MString UTDetectorConstruction::WriteShapesGeometry(const MString& Name, const M
   Content += "ShBox.Copy ShBoxCopy\nShBoxCopy.Position 10 30 0\nShBoxCopy.Rotation 20 30 40\nShBoxCopy.Mother WorldVolume\n\n";
   Content += "Volume Rotated\nRotated.Material Aluminium\nRotated.Shape BRIK 1 2 3\nRotated.Position -10 30 5\nRotated.Rotation 15 25 35\nRotated.Mother WorldVolume\n\n";
 
+  // A volume with a daughter - random positions in the mother must avoid the daughter:
+  Content += "Volume ShHollow\nShHollow.Material Aluminium\nShHollow.Shape BRIK 5 5 5\nShHollow.Position 0 60 0\nShHollow.Mother WorldVolume\n\n";
+  Content += "Volume ShHollowCore\nShHollowCore.Material Vacuum\nShHollowCore.Shape BRIK 4 4 4\nShHollowCore.Position 1 0 0\nShHollowCore.Mother ShHollow\n\n";
+
   // The detector:
   Content += "Volume Scint\nScint.Material Silicon\nScint.Shape BRIK 1 1 1\nScint.Position 0 -30 0\nScint.Mother WorldVolume\n\n";
   Content += "Scintillator DScint\nDScint.DetectorVolume Scint\nDScint.SensitiveVolume Scint\nDScint.NoiseThreshold 0.000001\nDScint.TriggerThreshold 0.000001\nDScint.EnergyResolution ideal\nDScint.FailureRate 0.0\n";
@@ -601,6 +605,25 @@ bool UTDetectorConstruction::TestQueries(MCDetectorConstruction* Detector)
     if (fabs(P.x() - 60*cm) > 2*cm + 1e-9 || fabs(P.y()) > 3*cm + 1e-9 || fabs(P.z()) > 4*cm + 1e-9) AllInside = false;
   }
   Passed = EvaluateTrue("GetRandomPosition()", "ShTrd1", "Random positions are inside the volume, in Geant4 units", AllInside) && Passed;
+
+  // Random positions in a mother volume are not inside its daughter volumes
+  bool AllInMother = true;
+  bool NoneInDaughter = true;
+  for (unsigned int i = 0; i < 1000; ++i) {
+    G4ThreeVector P = Detector->GetRandomPosition("ShHollow");
+    if (fabs(P.x()) > 5*cm + 1e-9 || fabs(P.y() - 60*cm) > 5*cm + 1e-9 || fabs(P.z()) > 5*cm + 1e-9) AllInMother = false;
+    if (fabs(P.x() - 1*cm) < 4*cm - 1e-9 && fabs(P.y() - 60*cm) < 4*cm - 1e-9 && fabs(P.z()) < 4*cm - 1e-9) NoneInDaughter = false;
+  }
+  Passed = EvaluateTrue("GetRandomPosition()", "ShHollow", "Random positions are inside the mother volume", AllInMother) && Passed;
+  Passed = EvaluateTrue("GetRandomPosition()", "ShHollow", "Random positions are not inside the daughter volume", NoneInDaughter) && Passed;
+
+  // Random positions in the daughter volume are inside the daughter
+  bool AllInCore = true;
+  for (unsigned int i = 0; i < 100; ++i) {
+    G4ThreeVector P = Detector->GetRandomPosition("ShHollowCore");
+    if (fabs(P.x() - 1*cm) > 4*cm + 1e-9 || fabs(P.y() - 60*cm) > 4*cm + 1e-9 || fabs(P.z()) > 4*cm + 1e-9) AllInCore = false;
+  }
+  Passed = EvaluateTrue("GetRandomPosition()", "ShHollowCore", "Random positions in a daughter are inside the daughter", AllInCore) && Passed;
 
   // Material hash
   G4Material* Aluminium = G4Material::GetMaterial("Aluminium", false);

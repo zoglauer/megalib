@@ -2283,17 +2283,25 @@ bool MDVolume::GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& Tr
 MVector MDVolume::GetRandomPositionExclusivelyInside()
 {
   //! Returns a random position in this volume excluding daugther volumes
+  //! Rejection sampling: positions are drawn uniformly in the shape and discarded 
+  //! if they fall into any daughter volume. Thus the result is uniform in the 
+  //! space of this volume which is not occupied by daughters.
 
-  int Counter = 100;
-  MVector Position;
-  do {
-    Position = m_Shape->GetRandomPositionInside();
-    if (--Counter == 0) {
-      return g_VectorNotDefined; 
-    }
-  } while (IsInternalPositionExclusivelyInside(Position) == false);
+  // Volumes which are mostly filled with daughters (e.g. a cryostat interior
+  // with many detectors) need many trials, thus the generous limit
+  const unsigned int MaxTrials = 1000000;
   
-  return Position;
+  for (unsigned int t = 0; t < MaxTrials; ++t) {
+    MVector Position = m_Shape->GetRandomPositionInside();
+    if (IsInternalPositionExclusivelyInside(Position) == true) {
+      return Position;
+    }
+  }
+  
+  merr<<"Unable to find a random position in volume "<<m_Name<<" which is not inside one of its daughter volumes after "<<MaxTrials<<" trials."<<endl;
+  merr<<"The daughter volumes might occupy (almost) all of the volume."<<endl;
+  
+  return g_VectorNotDefined;
 }
   
   
@@ -2303,6 +2311,7 @@ MVector MDVolume::GetRandomPositionExclusivelyInside()
 MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Placements, int& TreeDepth)
 {
   //! Returns a random position in any of the volumes defined by Volume
+  //! The position is in the space of Volume NOT occupied by its daughter volumes
 
   //mout<<m_Name<<endl;
 
@@ -2312,7 +2321,8 @@ MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Place
 
   //cout<<m_Name<<": TreeDepth :"<<TreeDepth<<":"<<int(Placements.size())<<endl;
   if (TreeDepth == int(Placements.size()) - 1) {
-    Position = m_Shape->GetRandomPositionInside();
+    // We reached the target volume: the position must not be in any of its daughters
+    Position = GetRandomPositionExclusivelyInside();
   } else {
     unsigned int i_max = GetNDaughters();
     int Counter = -1;
