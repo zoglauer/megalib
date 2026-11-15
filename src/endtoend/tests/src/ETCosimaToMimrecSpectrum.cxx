@@ -198,29 +198,12 @@ bool ETCosimaToMimrecSpectrum::RunTest()
         mout<<Name<<": mimrec spectrum with "<<Spectrum->Integral("width")<<" events (own analysis: "<<OwnCount<<"), peak at "<<PeakPosition<<" keV, FWHM "<<FWHM<<" keV ("<<100.0*FWHM/Line<<"%)"<<endl;
         // The spectrum is in counts per keV - use the integral over the bin widths
         Passed = EvaluateNear("Mimrec", Name + ", events", "The spectrum of mimrec contains the Compton events with a physical scatter angle of the window of the own analysis", Spectrum->Integral("width"), OwnCount, 1e-6*OwnCount) && Passed;
-        // Get the mean of the spectrum within 2 FWHM of the highest bin (counts = content * bin width) - the highest bin alone has a noise of about 0.1 keV at 150 keV:
-        double Counts = 0.0;
-        double Sum = 0.0;
-        for (int Bin = 1; Bin <= Spectrum->GetNbinsX(); ++Bin) {
-          if (fabs(Spectrum->GetBinCenter(Bin) - PeakPosition) <= 2.0*FWHM) {
-            Counts += Spectrum->GetBinContent(Bin)*Spectrum->GetBinWidth(Bin);
-            Sum += Spectrum->GetBinContent(Bin)*Spectrum->GetBinWidth(Bin)*Spectrum->GetBinCenter(Bin);
-          }
-        }
-        double PeakMean = 0.0;
-        double PeakRMS = 0.0;
-        if (Counts > 0.0) {
-          PeakMean = Sum/Counts;
-          double SumOfSquares = 0.0;
-          for (int Bin = 1; Bin <= Spectrum->GetNbinsX(); ++Bin) {
-            if (fabs(Spectrum->GetBinCenter(Bin) - PeakPosition) <= 2.0*FWHM) {
-              SumOfSquares += Spectrum->GetBinContent(Bin)*Spectrum->GetBinWidth(Bin)*pow(Spectrum->GetBinCenter(Bin) - PeakMean, 2);
-            }
-          }
-          PeakRMS = sqrt(SumOfSquares/Counts);
-        }
-        mout<<Name<<": mimrec spectrum mean within 2 FWHM of the peak "<<PeakMean<<" +- "<<PeakRMS/sqrt(Counts)<<" keV ("<<Counts<<" events)"<<endl;
-        Passed = EvaluateNear("Mimrec", Name + ", peak", "The mean of the spectrum of mimrec within 2 FWHM of its highest bin is the line energy (0.1%)", PeakMean, Line, 0.001*Line) && Passed;
+        // Locate the line with the median - noise can shift a window based on the highest bin
+        const double Half = 0.5;
+        double SpectrumMedian = 0.0;
+        Spectrum->GetQuantiles(1, &SpectrumMedian, &Half);
+        mout<<Name<<": median of the mimrec spectrum "<<SpectrumMedian<<" keV"<<endl;
+        Passed = EvaluateNear("Mimrec", Name + ", peak", "The median of the spectrum of mimrec is the line energy (0.1%)", SpectrumMedian, Line, 0.001*Line) && Passed;
         // FWHM = 2.355 sigma - below 1.5% for a resolution below 0.6%
         Passed = EvaluateNear("Mimrec", Name + ", width", "The width of the peak in the spectrum of mimrec is the energy resolution: the FWHM is below 1.5% (shown: the excess in percent)", max(100.0*FWHM/Line - 1.5, 0.0), 0.0, 0.0) && Passed;
         Passed = EvaluateTrue("Mimrec", Name + ", width resolved", "The peak is resolved: the FWHM is larger than zero", FWHM > 0.0) && Passed;
