@@ -282,6 +282,9 @@ class MUnitTest
   //! Use volatile writes to keep the compiler from removing the fill
   void FillMemory(void* Block, size_t Size, unsigned char Byte) const;
 
+  //! Return true if the first Size bytes of Block all equal Byte
+  bool IsFillPattern(const void* Block, size_t Size, unsigned char Byte) const;
+
   //! Return a file path below the private temporary root without creating the file
   MString GetTemporaryFileName(const MString& Name) const;
 

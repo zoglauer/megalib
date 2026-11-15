@@ -109,7 +109,7 @@ private:
   bool TestParseSummary();
   //! Test output capture, repeated calls, and automatic stream restoration
   bool TestCaptureOutput();
-  //! Test memory filling, write boundaries, and a zero-length block
+  //! Test memory filling, fill pattern checks, write boundaries, and zero-length blocks
   bool TestFillMemory();
   //! Check that ExpectedToCrash counts a known failure without executing the check
   bool TestExpectedToCrash();
@@ -1135,7 +1135,7 @@ bool UTUnitTest::TestCaptureOutput()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Test memory filling, write boundaries, and a zero-length block
+//! Test memory filling, fill pattern checks, write boundaries, and zero-length blocks
 bool UTUnitTest::TestFillMemory()
 {
   bool Passed = true;
@@ -1151,6 +1151,15 @@ bool UTUnitTest::TestFillMemory()
 
   FillMemory(Block, 0, 0x11);
   Passed = Evaluate("FillMemory()", "empty", "An empty block changes nothing", static_cast<int>(Block[0]), 0x5A) && Passed;
+
+  // Check the fill pattern in the first four bytes:
+  Passed = EvaluateTrue("IsFillPattern()", "filled block", "The four filled bytes have the pattern", IsFillPattern(Block, 4, 0x5A)) && Passed;
+  Passed = EvaluateFalse("IsFillPattern()", "one byte more", "The byte behind the filled block does not have the pattern", IsFillPattern(Block, 5, 0x5A)) && Passed;
+  Passed = EvaluateFalse("IsFillPattern()", "other byte", "The block does not have another pattern", IsFillPattern(Block, 4, 0x5B)) && Passed;
+  Passed = EvaluateTrue("IsFillPattern()", "empty", "An empty block has every pattern", IsFillPattern(Block, 0, 0x11)) && Passed;
+  Block[2] = 0x00;
+  Passed = EvaluateFalse("IsFillPattern()", "one byte changed", "A block with one changed byte in the middle does not have the pattern", IsFillPattern(Block, 4, 0x5A)) && Passed;
+  Passed = EvaluateTrue("IsFillPattern()", "bytes before the change", "The bytes before the changed byte have the pattern", IsFillPattern(Block, 2, 0x5A)) && Passed;
 
   return Passed;
 }

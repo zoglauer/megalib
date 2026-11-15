@@ -909,6 +909,23 @@ void MUnitTest::FillMemory(void* Block, size_t Size, unsigned char Byte) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return true if the first Size bytes of Block all equal Byte
+bool MUnitTest::IsFillPattern(const void* Block, size_t Size, unsigned char Byte) const
+{
+  const unsigned char* Bytes = static_cast<const unsigned char*>(Block);
+  for (size_t b = 0; b < Size; ++b) {
+    if (Bytes[b] != Byte) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Read the log directory and the time out from the testing settings file
 void MUnitTest::LoadLogDirectory()
 {
