@@ -372,6 +372,8 @@ bool UTDVolume::TestDefaultsAndAccessors()
   Shape->Validate();
   V.SetShape(Shape);
   Passed = EvaluateTrue("SetShape()", "box", "The shape is stored", V.GetShape() == Shape) && Passed;
+  const MDVolume& ConstV = V;
+  Passed = EvaluateTrue("GetShape() const", "box", "The const version returns the shape", ConstV.GetShape() == Shape) && Passed;
   Passed = EvaluateVectorNear("GetSize()", "box", "The size is the half length of the box", V.GetSize(), MVector(1.0, 2.0, 3.0), 1e-15) && Passed;
   V.SetMaterial(MDMaterial::GetDummyMaterial());
   Passed = EvaluateTrue("SetMaterial()", "dummy", "The material is stored", V.GetMaterial() == MDMaterial::GetDummyMaterial()) && Passed;
@@ -1595,6 +1597,57 @@ bool UTDVolume::TestNoise()
   // Outside of the world
   Position = MVector(1000, 0, 0);
   Passed = EvaluateFalse("Noise()", "outside", "A hit outside is not noised", World->Noise(Position, Energy, Time, Flags)) && Passed;
+  Passed = EvaluateTrue("Noise()", "no failure and no overflow", "No flags are set", Flags.IsEmpty()) && Passed;
+
+  // The flags of the detector arrive at the caller: an overflow of 50 keV
+  MDGeometry Overflow;
+  Passed = EvaluateTrue("ScanSetupFile()", "nested geometry with overflow", "The geometry can be read", ScanGeometry(Overflow, GetNestedGeometry() + "Det.Overflow 50\n")) && Passed;
+  if (Overflow.IsScanned() == false) {
+    return Passed;
+  }
+  World = Overflow.GetWorldVolume();
+
+  Position = PlugInWorld;
+  Energy = 40.0;
+  Passed = EvaluateTrue("Noise()", "40 keV with an overflow of 50 keV", "The hit is noised", World->Noise(Position, Energy, Time, Flags)) && Passed;
+  Passed = EvaluateTrue("Noise()", "40 keV with an overflow of 50 keV", "No flags are set", Flags.IsEmpty()) && Passed;
+
+  Position = PlugInWorld;
+  Energy = 100.0;
+  Passed = EvaluateTrue("Noise()", "100 keV with an overflow of 50 keV", "The hit is noised", World->Noise(Position, Energy, Time, Flags)) && Passed;
+  Passed = EvaluateNear("Noise()", "100 keV with an overflow of 50 keV", "The energy is the overflow", Energy, 50.0, 1e-12) && Passed;
+  Passed = Evaluate("Noise()", "100 keV with an overflow of 50 keV", "The overflow flag arrives at the caller", Flags, MString(" OVERFLOW")) && Passed;
+
+  // A second hit adds its flag to the existing ones
+  Position = PlugInWorld;
+  Energy = 100.0;
+  World->Noise(Position, Energy, Time, Flags);
+  Passed = Evaluate("Noise()", "second hit with overflow", "The flag is added to the existing flags", Flags, MString(" OVERFLOW OVERFLOW")) && Passed;
+
+  // A hit outside of a detector does not touch the flags
+  Position = InWorld;
+  Energy = 100.0;
+  World->Noise(Position, Energy, Time, Flags);
+  Passed = Evaluate("Noise()", "passive", "The flags are not changed", Flags, MString(" OVERFLOW OVERFLOW")) && Passed;
+
+  // A named detector with its own overflow of 30 keV at the position in the wafer
+  MString Assign = MString("NamedDet.Assign ") + WaferInWorld.X() + " " + WaferInWorld.Y() + " " + WaferInWorld.Z() + "\n";
+  MDGeometry Named;
+  Passed = EvaluateTrue("ScanSetupFile()", "nested geometry with named detector", "The geometry can be read", ScanGeometry(Named, GetNestedGeometry() + "Det.Overflow 50\nDet.Named NamedDet\n" + Assign + "NamedDet.Overflow 30\n")) && Passed;
+  if (Named.IsScanned() == false) {
+    return Passed;
+  }
+  Passed = EvaluateTrue("GetVolumeSequence()", "named detector", "The geometry finds the named detector at the position", Named.GetVolumeSequence(WaferInWorld, false, true).GetDetector() == Named.GetDetector("NamedDet")) && Passed;
+  Flags = "";
+  Position = WaferInWorld;
+  Energy = 100.0;
+  DisableDefaultStreams();
+  bool IsNoised = Named.GetWorldVolume()->Noise(Position, Energy, Time, Flags);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("Noise()", "named detector", "The hit is noised", IsNoised) && Passed;
+  // Defect GEO-B-45: MDVolume::Noise() does not find the named detector, which the volume sequence of the geometry finds at the same position, and noises with the detector it is named after
+  Passed = ExpectedToFail(EvaluateNear("Noise()", "named detector", "The overflow of the named detector is used", Energy, 30.0, 1e-12)) && Passed;
+  Passed = Evaluate("Noise()", "named detector", "The overflow flag of the named detector arrives at the caller", Flags, MString(" OVERFLOW")) && Passed;
 
   return Passed;
 }

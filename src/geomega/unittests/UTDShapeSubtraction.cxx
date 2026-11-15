@@ -376,6 +376,21 @@ bool UTDShapeSubtraction::TestUniquePosition()
   Shape.Validate();
   Passed = EvaluateTrue("GetUniquePosition()", "two boxes", "The position is inside", Shape.IsInside(Shape.GetUniquePosition())) && Passed;
 
+  // The origin is used if it is inside: the origin is not in the subtracted box
+  Passed = EvaluateVectorNear("GetUniquePosition()", "origin inside", "The position is the origin", Shape.GetUniquePosition(), MVector(0.0, 0.0, 0.0), 1e-15) && Passed;
+
+  // The origin is not inside: the box B at the origin is subtracted
+  MDOrientation Center("Center");
+  Center.SetPosition(MVector(0, 0, 0));
+  Center.Validate();
+  MDShapeSubtraction Off("Off");
+  Off.Set(&A, &B, &Center);
+  Off.Validate();
+  Passed = EvaluateFalse("IsInside()", "origin outside", "The origin is not inside", Off.IsInside(MVector(0.0, 0.0, 0.0))) && Passed;
+  Passed = EvaluateTrue("GetUniquePosition()", "origin outside", "The position is inside", Off.IsInside(Off.GetUniquePosition())) && Passed;
+  Passed = EvaluateTrue("GetUniquePosition()", "origin outside", "The position is not the origin", Off.GetUniquePosition().Mag() > 0.1) && Passed;
+  Passed = EvaluateVectorNear("GetUniquePosition()", "origin outside, second call", "The position does not change", Off.GetUniquePosition(), Off.GetUniquePosition(), 1e-15) && Passed;
+
   // The position does not depend on the random numbers:
   gRandom->SetSeed(777);
   gRandom->Rndm();

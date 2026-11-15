@@ -325,6 +325,17 @@ bool UTDVolumeSequence::TestDetectorData()
   Passed = EvaluateTrue("SetDetectorVolume()", "A", "The detector volume is stored", VS.GetDetectorVolume() == A) && Passed;
   VS.SetSensitiveVolume(A);
   Passed = EvaluateTrue("SetSensitiveVolume()", "A", "The sensitive volume is stored", VS.GetSensitiveVolume() == A) && Passed;
+
+  // The const versions return the same objects
+  VS.SetDetector(&Detector);
+  const MDVolumeSequence& Const = VS;
+  Passed = EvaluateTrue("GetDetector() const", "detector", "The const version returns the detector", Const.GetDetector() == &Detector) && Passed;
+  Passed = EvaluateTrue("GetDetectorVolume() const", "A", "The const version returns the detector volume", Const.GetDetectorVolume() == A) && Passed;
+  Passed = EvaluateTrue("GetSensitiveVolume() const", "A", "The const version returns the sensitive volume", Const.GetSensitiveVolume() == A) && Passed;
+  const MDVolumeSequence Empty;
+  Passed = EvaluateTrue("GetDetector() const", "new", "The const version returns no detector for a new sequence", Empty.GetDetector() == nullptr) && Passed;
+  Passed = EvaluateTrue("GetDetectorVolume() const", "new", "The const version returns no detector volume for a new sequence", Empty.GetDetectorVolume() == nullptr) && Passed;
+  Passed = EvaluateTrue("GetSensitiveVolume() const", "new", "The const version returns no sensitive volume for a new sequence", Empty.GetSensitiveVolume() == nullptr) && Passed;
   VS.SetPositionInDetector(MVector(1.5, 2.5, 3.5));
   Passed = EvaluateVectorNear("SetPositionInDetector()", "value", "The position is stored", VS.GetPositionInDetector(), MVector(1.5, 2.5, 3.5), 1e-15) && Passed;
   VS.SetPositionInSensitiveVolume(MVector(-1.5, -2.5, -3.5));
@@ -629,6 +640,8 @@ bool UTDVolumeSequence::TestNamedDetectors()
   Passed = EvaluateTrue("GetDetector()", "in the first placement", "The named detector of the first placement is returned", InA.GetDetector() != nullptr && InA.GetDetector()->GetName() == "NamedA") && Passed;
   Passed = EvaluateTrue("GetDetector()", "in the second placement", "The named detector of the second placement is returned", InB.GetDetector() != nullptr && InB.GetDetector()->GetName() == "NamedB") && Passed;
   Passed = EvaluateFalse("HasSameDetector(&)", "two named detectors", "Two named detectors are different", InA.HasSameDetector(InB)) && Passed;
+  const MDVolumeSequence& ConstInA = InA;
+  Passed = EvaluateTrue("GetDetector() const", "in the first placement", "The const version returns the named detector too", ConstInA.GetDetector() == InA.GetDetector()) && Passed;
 
   // Setting a named detector directly:
   MDVolumeSequence Direct;

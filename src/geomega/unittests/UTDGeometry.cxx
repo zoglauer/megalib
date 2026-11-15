@@ -223,6 +223,12 @@ private:
   bool TestCrossSections();
   //! Test the error messages
   bool TestErrorMessages();
+  //! Test that constants are evaluated independently of the order of their definition
+  bool TestConstantsOrder();
+  //! Test a file with more than 2000 lines, where the constants are replaced in parallel
+  bool TestLargeFile();
+  //! Test that each object is found by its name
+  bool TestNameLookups();
 };
 
 
@@ -277,6 +283,9 @@ bool UTDGeometry::Run()
   Passed = TestImport() && Passed;
   Passed = TestCrossSections() && Passed;
   Passed = TestErrorMessages() && Passed;
+  Passed = TestConstantsOrder() && Passed;
+  Passed = TestLargeFile() && Passed;
+  Passed = TestNameLookups() && Passed;
 
   Summarize();
   return Passed;
@@ -1971,6 +1980,11 @@ bool UTDGeometry::TestTriggers()
     Passed = ExpectedToCrash(EvaluateTrue("ScanSetupFile()", Line, "The guard ring trigger is accepted", Accepts(Guard + "Trigger T\nT.Veto true\nT.TriggerByChannel true\n" + Line + "\n"))) && Passed;
   }
 
+  // A guard ring trigger needs a detector with a guard ring: the same veto is accepted as normal trigger line, but not as guard ring line
+  MString Scinti = Wafer("WaferS", 5.0) + FullDetector("Scintillator", "Sc", "WaferS") + "Sc.NoiseThresholdEqualsTriggerThreshold true\n";
+  Passed = EvaluateTrue("ScanSetupFile()", "T.Detector Sc 1", "A veto of a scintillator is accepted", Accepts(Scinti + "Trigger T\nT.Veto true\nT.TriggerByChannel true\nT.Detector Sc 1\n")) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "T.GuardRingDetector Sc 1", "A guard ring veto of a detector without guard ring is rejected", Accepts(Scinti + "Trigger T\nT.Veto true\nT.TriggerByChannel true\nT.GuardRingDetector Sc 1\n")) && Passed;
+
   // Rejections:
   for (const MString Line: {"T.TriggerByChannel", "T.TriggerByChannel a b", "T.TriggerByDetector", "T.TriggerByDetector a b", "T.Veto", "T.Veto a b", "T.DetectorType Strip2D", "T.DetectorType Strip2D 1 1", "T.DetectorType Foo 1", "T.DetectorType Calorimeter 1", "T.Detector D", "T.Detector D 1 1", "T.Detector Unknown 1", "T.GuardRingDetectorType Strip2D", "T.GuardRingDetectorType Foo 1", "T.GuardRingDetector D", "T.GuardRingDetector Unknown 1", "T.Map a", "T.Map", "T.NegativeDetectorType 1 1", "T.PositiveDetectorType 1", "T.PositiveDetectorType 9 1", "T.Unknown 1"}) {
     Passed = EvaluateFalse("ScanSetupFile()", Line, "The bad trigger line is rejected", Accepts(Det + "Trigger T\nT.Veto false\nT.TriggerByChannel true\nT.Detector D 1\n" + Line + "\n")) && Passed;
@@ -3215,6 +3229,229 @@ bool UTDGeometry::TestErrorMessages()
   Passed = EvaluateTrue("Typo()", "error in line 3", "The name of the file is shown", Output.Contains("Messages.geo.setup")) && Passed;
   Passed = EvaluateTrue("Typo()", "error in line 3", "The text of the line is shown", Output.Contains("\"Name\"")) && Passed;
   Passed = ExpectedToFail(EvaluateTrue("Typo()", "error in line 3", "The third line is called line 3", Output.Contains("at line 3:"))) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test that constants are evaluated independently of the order of their definition
+bool UTDGeometry::TestConstantsOrder()
+{
+  bool Passed = true;
+
+  // Outer = 2 * Middle = 2 * (Inner + 1) = 2 * (1.5 + 1) = 5 in all orders of the definitions, and with the use before and after them
+  const vector<MString> Definitions = { "Constant Outer { 2 * Middle }\n", "Constant Middle { Inner + 1 }\n", "Constant Inner 1.5\n" };
+  const vector<vector<unsigned int>> Orders = { { 0, 1, 2 }, { 0, 2, 1 }, { 1, 0, 2 }, { 1, 2, 0 }, { 2, 0, 1 }, { 2, 1, 0 } };
+  for (const vector<unsigned int>& Order: Orders) {
+    MString Constants = Definitions[Order[0]] + Definitions[Order[1]] + Definitions[Order[2]];
+    MString Input = MString("order ") + Order[0] + " " + Order[1] + " " + Order[2];
+
+    MDGeometry Before;
+    Passed = EvaluateTrue("ScanSetupFile()", Input + ", use after the definitions", "The geometry is accepted", ScanGeometry(Before, GetGeometryHead() + Constants + Marker("A") + "A.Position Outer Middle Inner\n")) && Passed;
+    Passed = CheckPosition(Before, "A", MVector(5.0, 2.5, 1.5), Input + ", use after the definitions") && Passed;
+
+    MDGeometry After;
+    Passed = EvaluateTrue("ScanSetupFile()", Input + ", use before the definitions", "The geometry is accepted", ScanGeometry(After, GetGeometryHead() + Marker("A") + "A.Position Outer Middle Inner\n" + Constants)) && Passed;
+    Passed = CheckPosition(After, "A", MVector(5.0, 2.5, 1.5), Input + ", use before the definitions") && Passed;
+  }
+
+  // A chain of constants without maths
+  MDGeometry Alias;
+  Passed = EvaluateTrue("ScanSetupFile()", "chain without maths", "The geometry is accepted", ScanGeometry(Alias, GetGeometryHead() + "Constant First Second\nConstant Second Third\nConstant Third 2.5\n" + Marker("A") + "A.Position First Second Third\n")) && Passed;
+  Passed = CheckPosition(Alias, "A", MVector(2.5, 2.5, 2.5), "chain without maths") && Passed;
+
+  // A deep chain with maths: Level5 = Level0 + 5 = 6
+  MString Deep = "Constant Level0 1.0\n";
+  for (unsigned int l = 1; l <= 5; ++l) {
+    Deep = MString("Constant Level") + l + " { Level" + (l - 1) + " + 1 }\n" + Deep;
+  }
+  MDGeometry DeepGeometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "five levels of maths", "The geometry is accepted", ScanGeometry(DeepGeometry, GetGeometryHead() + Deep + Marker("A") + "A.Position Level5 Level3 Level0\n")) && Passed;
+  Passed = CheckPosition(DeepGeometry, "A", MVector(6.0, 4.0, 1.0), "five levels of maths") && Passed;
+
+  // Names which contain each other: only whole words are replaced, in the constants and in the lines
+  MDGeometry Nested;
+  Passed = EvaluateTrue("ScanSetupFile()", "names containing each other", "The geometry is accepted", ScanGeometry(Nested, GetGeometryHead() + "Constant Len 1.5\nConstant LenX { Len + 1 }\nConstant LenXY { LenX + Len }\n" + Marker("LenBox") + "LenBox.Position Len LenX LenXY\n")) && Passed;
+  Passed = CheckPosition(Nested, "LenBox", MVector(1.5, 2.5, 4.0), "names containing each other") && Passed;
+
+  // One constant used several times in one expression and on one line
+  MDGeometry Repeated;
+  Passed = EvaluateTrue("ScanSetupFile()", "repeated constant", "The geometry is accepted", ScanGeometry(Repeated, GetGeometryHead() + "Constant Base 1.5\nConstant Square { Base * Base + Base }\n" + Marker("A") + "A.Position Square Base Base\n")) && Passed;
+  Passed = CheckPosition(Repeated, "A", MVector(3.75, 1.5, 1.5), "repeated constant") && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test a file with more than 2000 lines, where the constants are replaced in parallel
+bool UTDGeometry::TestLargeFile()
+{
+  bool Passed = true;
+
+  // 2500 constants with the values 0.00, 0.01, ..., some of them with maths, and volumes which use them
+  MString Constants;
+  for (unsigned int c = 0; c < 2500; ++c) {
+    if (c % 100 == 99) {
+      Constants += MString("Constant Value") + c + " { Value" + (c - 1) + " + 0.01 }\n";
+    } else {
+      Constants += MString("Constant Value") + c + " " + 0.01*c + "\n";
+    }
+  }
+  MString Volumes;
+  const vector<unsigned int> Used = { 0, 1, 99, 100, 1234, 1999, 2000, 2499 };
+  for (unsigned int u = 0; u < Used.size(); ++u) {
+    MString Name = MString("Box") + Used[u];
+    Volumes += Marker(Name) + Name + ".Position Value" + Used[u] + " " + (3.0*u) + " { 2 * Value" + Used[u] + " }\n";
+  }
+
+  // The same content as a small file is the reference
+  MString SmallConstants;
+  for (unsigned int u = 0; u < Used.size(); ++u) {
+    SmallConstants += MString("Constant Value") + Used[u] + " " + 0.01*Used[u] + "\n";
+  }
+
+  MDGeometry Small;
+  Passed = EvaluateTrue("ScanSetupFile()", "small file", "The geometry is accepted", ScanGeometry(Small, GetGeometryHead() + SmallConstants + Volumes)) && Passed;
+
+  MDGeometry Large;
+  BeginCaptureOutput();
+  bool IsScanned = ScanGeometry(Large, GetGeometryHead() + Constants + Volumes);
+  MString Output = EndCaptureOutput();
+  Passed = EvaluateTrue("ScanSetupFile()", "file with more than 2000 lines", "The geometry is accepted", IsScanned) && Passed;
+  if (IsScanned == false) {
+    return false;
+  }
+
+  for (unsigned int u = 0; u < Used.size(); ++u) {
+    MString Name = MString("Box") + Used[u];
+    MVector Expected(0.01*Used[u], 3.0*u, 0.02*Used[u]);
+    Passed = CheckPosition(Small, Name, Expected, MString("small file, constant ") + Used[u]) && Passed;
+    Passed = CheckPosition(Large, Name, Expected, MString("file with more than 2000 lines, constant ") + Used[u]) && Passed;
+  }
+  Passed = Evaluate("GetNVolumes()", "file with more than 2000 lines", "The large file has the same number of volumes as the small one", Large.GetNVolumes(), Small.GetNVolumes()) && Passed;
+
+  // Defect GEO-A-70: A scan of more than 2000 lines prints the state of OpenMP to the standard output
+  Passed = ExpectedToFail(EvaluateTrue("ScanSetupFile()", "file with more than 2000 lines", "Nothing is written to the standard output", Output.IsEmpty())) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test that each object is found by its name
+bool UTDGeometry::TestNameLookups()
+{
+  bool Passed = true;
+  MDGeometry Geometry;
+
+  // Copies of a volume with a daughter, a detector with guard ring and a named detector, and one object of each other kind
+  MString Text = GetGeometryHead();
+  Text += "Orientation O\nO.Position 0 0 0\nShape BRIK S\nS.Parameters 1 1 1\nVector V\n";
+  Text += "Volume Holder\nHolder.Material Vacuum\nHolder.Shape BRIK 6.0 6.0 1.0\n";
+  Text += "Volume Wafer\nWafer.Material Silicon\nWafer.Shape BRIK 5.0 5.0 0.5\nWafer.Position 0.0 0.0 0.0\nWafer.Mother Holder\n";
+  Text += "Holder.Copy HolderA\nHolderA.Position 0.0 0.0 -20.0\nHolderA.Mother World\n";
+  Text += "Holder.Copy HolderB\nHolderB.Position 0.0 0.0 20.0\nHolderB.Mother World\n";
+  Text += FullDetector("Strip2D");
+  Text += "D.GuardRingTriggerThreshold 40\nD.GuardRingEnergyResolution 100 1\nD.GuardRingEnergyResolution 1000 1\n";
+  Text += "D.Named DNamed\nDNamed.Assign World.HolderA.Wafer\n";
+  Text += "Trigger T\nT.Veto false\nT.TriggerByChannel true\nT.Detector D 1\n";
+  Passed = EvaluateTrue("ScanSetupFile()", "name lookups", "The file is accepted", ScanGeometry(Geometry, Text)) && Passed;
+  if (Geometry.IsScanned() == false) {
+    return false;
+  }
+
+  unsigned int NWrong = 0;
+  MString Wrong;
+  for (unsigned int i = 0; i < Geometry.GetNVolumes(); ++i) {
+    if (Geometry.GetVolume(Geometry.GetVolumeAt(i)->GetName()) != Geometry.GetVolumeAt(i)) {
+      ++NWrong;
+      Wrong += Geometry.GetVolumeAt(i)->GetName() + " ";
+    }
+  }
+  Passed = EvaluateTrue("GetNVolumes()", "name lookups", "There are the world, the holder, the wafer, and the copies", Geometry.GetNVolumes() >= 5) && Passed;
+  Passed = Evaluate("GetVolume()", "name of each volume in the list", "Each volume is found by its name (not found: " + Wrong + ")", NWrong, 0U) && Passed;
+
+  NWrong = 0;
+  Wrong = "";
+  for (unsigned int i = 0; i < Geometry.GetNMaterials(); ++i) {
+    if (Geometry.GetMaterial(Geometry.GetMaterialAt(i)->GetName()) != Geometry.GetMaterialAt(i)) {
+      ++NWrong;
+      Wrong += Geometry.GetMaterialAt(i)->GetName() + " ";
+    }
+  }
+  Passed = Evaluate("GetMaterial()", "name of each material in the list", "Each material is found by its name (not found: " + Wrong + ")", NWrong, 0U) && Passed;
+
+  NWrong = 0;
+  Wrong = "";
+  bool HasGuardRing = false;
+  for (unsigned int i = 0; i < Geometry.GetNDetectors(); ++i) {
+    if (Geometry.GetDetectorAt(i)->GetType() == MDDetector::c_GuardRing) {
+      HasGuardRing = true;
+    }
+    if (Geometry.GetDetector(Geometry.GetDetectorAt(i)->GetName()) != Geometry.GetDetectorAt(i)) {
+      ++NWrong;
+      Wrong += Geometry.GetDetectorAt(i)->GetName() + " ";
+    }
+  }
+  Passed = EvaluateTrue("GetDetectorAt()", "detector with guard ring", "The guard ring is in the list of the detectors", HasGuardRing) && Passed;
+  Passed = Evaluate("GetDetector()", "name of each detector in the list", "Each detector is found by its name (not found: " + Wrong + ")", NWrong, 0U) && Passed;
+
+  NWrong = 0;
+  for (unsigned int i = 0; i < Geometry.GetNShapes(); ++i) {
+    if (Geometry.GetShape(Geometry.GetShapeAt(i)->GetName()) != Geometry.GetShapeAt(i)) {
+      ++NWrong;
+    }
+  }
+  Passed = EvaluateTrue("GetNShapes()", "name lookups", "There is at least the shape of the file", Geometry.GetNShapes() >= 1) && Passed;
+  Passed = Evaluate("GetShape()", "name of each shape in the list", "Each shape is found by its name", NWrong, 0U) && Passed;
+
+  NWrong = 0;
+  for (unsigned int i = 0; i < Geometry.GetNOrientations(); ++i) {
+    if (Geometry.GetOrientation(Geometry.GetOrientationAt(i)->GetName()) != Geometry.GetOrientationAt(i)) {
+      ++NWrong;
+    }
+  }
+  Passed = EvaluateTrue("GetNOrientations()", "name lookups", "There is at least the orientation of the file", Geometry.GetNOrientations() >= 1) && Passed;
+  Passed = Evaluate("GetOrientation()", "name of each orientation in the list", "Each orientation is found by its name", NWrong, 0U) && Passed;
+
+  NWrong = 0;
+  for (unsigned int i = 0; i < Geometry.GetNTriggers(); ++i) {
+    if (Geometry.GetTrigger(Geometry.GetTriggerAt(i)->GetName()) != Geometry.GetTriggerAt(i)) {
+      ++NWrong;
+    }
+  }
+  Passed = Evaluate("GetNTriggers()", "name lookups", "There is one trigger", Geometry.GetNTriggers(), 1U) && Passed;
+  Passed = Evaluate("GetTrigger()", "name of each trigger in the list", "Each trigger is found by its name", NWrong, 0U) && Passed;
+
+  NWrong = 0;
+  for (unsigned int i = 0; i < Geometry.GetNVectors(); ++i) {
+    if (Geometry.GetVector(Geometry.GetVectorAt(i)->GetName()) != Geometry.GetVectorAt(i)) {
+      ++NWrong;
+    }
+  }
+  Passed = Evaluate("GetNVectors()", "name lookups", "There is one vector", Geometry.GetNVectors(), 1U) && Passed;
+  Passed = Evaluate("GetVector()", "name of each vector in the list", "Each vector is found by its name", NWrong, 0U) && Passed;
+
+  // A second scan of another file: the names of the first file are gone
+  Passed = EvaluateTrue("ScanSetupFile()", "second file", "The file is accepted", ScanGeometry(Geometry, GetGeometryHead() + Marker("Other"))) && Passed;
+  Passed = EvaluateTrue("GetVolume()", "second file", "The volume of the second file is found", Geometry.GetVolume("Other") != nullptr) && Passed;
+  Passed = EvaluateTrue("GetVolume()", "second file, volume of the first file", "The volume is no longer found", Geometry.GetVolume("Wafer") == nullptr) && Passed;
+  Passed = EvaluateTrue("GetVolume()", "second file, copy of the first file", "The volume is no longer found", Geometry.GetVolume("HolderA") == nullptr) && Passed;
+  Passed = EvaluateTrue("GetDetector()", "second file, detector of the first file", "The detector is no longer found", Geometry.GetDetector(MString("D")) == nullptr) && Passed;
+  Passed = EvaluateTrue("GetDetector()", "second file, guard ring of the first file", "The guard ring is no longer found", Geometry.GetDetector(MString("D_GuardRing")) == nullptr) && Passed;
+  Passed = EvaluateTrue("GetTrigger()", "second file, trigger of the first file", "The trigger is no longer found", Geometry.GetTrigger("T") == nullptr) && Passed;
+  Passed = EvaluateTrue("GetShape()", "second file, shape of the first file", "The shape is no longer found", Geometry.GetShape("S") == nullptr) && Passed;
+  Passed = EvaluateTrue("GetOrientation()", "second file, orientation of the first file", "The orientation is no longer found", Geometry.GetOrientation("O") == nullptr) && Passed;
+  Passed = EvaluateTrue("GetVector()", "second file, vector of the first file", "The vector is no longer found", Geometry.GetVector("V") == nullptr) && Passed;
+  Passed = EvaluateTrue("GetMaterial()", "second file, material of the include", "The material is found again", Geometry.GetMaterial("Aluminium") != nullptr) && Passed;
 
   return Passed;
 }

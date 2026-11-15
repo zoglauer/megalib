@@ -316,6 +316,19 @@ protected:
     return E;
   }
 
+  //! Return the flags after one noising, which started with the given flags
+  MString NoiseFlagsOnce(MDDetector* Detector, MDVolume* Volume, const MVector& Position, double Energy, const MString& StartFlags = "")
+  {
+    MString Flags = StartFlags;
+    MVector P = Position;
+    double E = Energy;
+    double T = 0.0;
+    DisableDefaultStreams();
+    Detector->Noise(P, E, T, Flags, Volume);
+    EnableDefaultStreams();
+    return Flags;
+  }
+
   //! Determine mean and standard deviation of the truncated Gauss-Landau distribution by numeric integration
   void GetGaussLandauMoments(double Peak1, double Width1, double Peak2, double Width2, double Ratio, double& Mean, double& RMS) const
   {
@@ -364,7 +377,8 @@ protected:
   }
 
   //! Test the noise chain common to all detectors: the body must define the detector D with the sensitive volume Box containing the position
-  bool TestCommonNoiseChain(const MString& Body, const MVector& Position)
+  //! SetsFlags is false for the detectors which are known not to flag failures and overflows (GEO-D-075)
+  bool TestCommonNoiseChain(const MString& Body, const MVector& Position, bool SetsFlags = true)
   {
     bool Passed = true;
     Passed = TestNoiseGauss(Body, Position) && Passed;
@@ -378,6 +392,8 @@ protected:
     Passed = TestNoiseTimeResolution(Body, Position) && Passed;
     Passed = TestNoiseCalibration(Body, Position) && Passed;
     Passed = TestNoiseDeactivated(Body, Position) && Passed;
+    Passed = TestNoiseFlags(Body, Position, SetsFlags) && Passed;
+    Passed = TestNoiseEngineVersion(Body, Position) && Passed;
     return Passed;
   }
 
@@ -746,6 +762,150 @@ private:
     Passed = EvaluateNear("ActivateNoising()", "false, energy", "The energy stays unchanged", E, 10.0, 1e-12) && Passed;
     Passed = EvaluateNear("ActivateNoising()", "false, time", "The time stays unchanged", T, 77.0, 1e-12) && Passed;
     Passed = EvaluateVectorNear("ActivateNoising()", "false, position", "The position stays unchanged", P, Position, 1e-12) && Passed;
+
+    return Passed;
+  }
+
+  //! Test the flags which the noising sets for the detector effects engine
+  bool TestNoiseFlags(const MString& Body, const MVector& Position, bool SetsFlags)
+  {
+    bool Passed = true;
+    gRandom->SetSeed(1012);
+
+    MDGeometry Overflow;
+    Passed = EvaluateTrue("ScanSetupFile()", "flags, overflow", "The fixture with an overflow is accepted", Scan(Overflow, Body, "D.Overflow 200\nD.FailureRate 0.0\n")) && Passed;
+    MDGeometry Failure;
+    Passed = EvaluateTrue("ScanSetupFile()", "flags, failure rate 1", "The fixture with a failure rate of one is accepted", Scan(Failure, Body, "D.FailureRate 1.0\n")) && Passed;
+    if (Passed == false) {
+      return false;
+    }
+
+    MDDetector* D = Overflow.GetDetector("D");
+    MDVolume* V = Overflow.GetVolume("Box");
+    MString Normal = NoiseFlagsOnce(D, V, Position, 100.0);
+    Passed = EvaluateFalse("Noise()", "flags, 100 keV with an overflow of 200 keV", "There is no overflow flag", Normal.Contains("OVERFLOW")) && Passed;
+    Passed = EvaluateFalse("Noise()", "flags, failure rate 0", "There is no failure flag", Normal.Contains("FAILURE")) && Passed;
+
+    MString AboveOverflow = NoiseFlagsOnce(D, V, Position, 1000.0);
+    MString Kept = NoiseFlagsOnce(D, V, Position, 1000.0, " EARLIER");
+    MString Failed = NoiseFlagsOnce(Failure.GetDetector("D"), Failure.GetVolume("Box"), Position, 100.0);
+    if (SetsFlags == true) {
+      Passed = EvaluateTrue("Noise()", "flags, 1000 keV with an overflow of 200 keV", "The overflow is flagged", AboveOverflow.Contains(" OVERFLOW")) && Passed;
+      Passed = EvaluateFalse("Noise()", "flags, 1000 keV with an overflow of 200 keV", "There is no failure flag", AboveOverflow.Contains("FAILURE")) && Passed;
+      Passed = EvaluateTrue("Noise()", "flags, earlier flag", "The new flag is added to the flags which are already there", Kept.BeginsWith(" EARLIER") && Kept.Contains(" OVERFLOW")) && Passed;
+      Passed = EvaluateTrue("Noise()", "flags, failure rate 1", "The failure is flagged", Failed == " FAILURE") && Passed;
+    } else {
+      // GEO-D-075: This detector does not flag failures and overflows as the other detectors do
+      Passed = ExpectedToFail(EvaluateTrue("Noise()", "flags, 1000 keV with an overflow of 200 keV", "The overflow is flagged", AboveOverflow.Contains(" OVERFLOW"))) && Passed;
+      Passed = ExpectedToFail(EvaluateTrue("Noise()", "flags, failure rate 1", "The failure is flagged", Failed == " FAILURE")) && Passed;
+    }
+
+    // Nothing is flagged if the noising is deactivated:
+    Failure.GetDetector("D")->ActivateNoising(false);
+    Passed = EvaluateTrue("Noise()", "flags, noising deactivated", "The flags stay empty", NoiseFlagsOnce(Failure.GetDetector("D"), Failure.GetVolume("Box"), Position, 100.0).IsEmpty()) && Passed;
+
+    return Passed;
+  }
+
+  //! Test the differences of the noising between the detector effects engines 1 and 2: the new engine applies the noise threshold itself
+  bool TestNoiseEngineVersion(const MString& Body, const MVector& Position)
+  {
+    bool Passed = true;
+    gRandom->SetSeed(1013);
+
+    const MString Engine = "DetectorEffectsEngine 2\n";
+    MDGeometry Old;
+    Passed = EvaluateTrue("ScanSetupFile()", "engine 1, thresholds", "The fixture is accepted", Scan(Old, Body, "D.NoiseThreshold 50\nD.TriggerThreshold 80\n")) && Passed;
+    MDGeometry New;
+    Passed = EvaluateTrue("ScanSetupFile()", "engine 2, thresholds", "The fixture is accepted", Scan(New, Body, Engine + "D.NoiseThreshold 50\nD.TriggerThreshold 80\n")) && Passed;
+    MDGeometry Soft;
+    Passed = EvaluateTrue("ScanSetupFile()", "engine 2, noise threshold with sigma", "The fixture is accepted", Scan(Soft, Body, Engine + "D.NoiseThreshold 50 4\nD.TriggerThreshold 80\n")) && Passed;
+    MDGeometry OldEqual;
+    Passed = EvaluateTrue("ScanSetupFile()", "engine 1, noise threshold equals trigger threshold", "The fixture is accepted", Scan(OldEqual, Body, "D.NoiseThresholdEqualsTriggerThreshold true\nD.TriggerThreshold 30\n")) && Passed;
+    MDGeometry NewEqual;
+    Passed = EvaluateTrue("ScanSetupFile()", "engine 2, noise threshold equals trigger threshold", "The fixture is accepted", Scan(NewEqual, Body, Engine + "D.NoiseThresholdEqualsTriggerThreshold true\nD.TriggerThreshold 30\n")) && Passed;
+    MDGeometry Gauss;
+    Passed = EvaluateTrue("ScanSetupFile()", "engine 2, Gauss table", "The fixture is accepted", Scan(Gauss, Body, Engine + "D.EnergyResolution Gauss 100 100 2\nD.EnergyResolution Gauss 500 500 6\n")) && Passed;
+    if (Passed == false) {
+      return false;
+    }
+
+    // The version of the geometry arrives at the detector:
+    MDDetector* D = Old.GetDetector("D");
+    MDVolume* V = Old.GetVolume("Box");
+    MDGridPoint Point = D->GetGridPoint(Position);
+    Passed = Evaluate("GetDetectorEffectsEngineVersion()", "no keyword", "The detector uses the engine 1", D->GetDetectorEffectsEngineVersion(), 1U) && Passed;
+    Passed = EvaluateNear("Noise()", "engine 1, just below the noise threshold", "The hit is removed", NoiseOnce(D, V, Position, 49.999), 0.0, 1e-12) && Passed;
+    Passed = EvaluateFalse("IsAboveNoiseThreshold()", "engine 1, just below", "A hit just below the noise threshold is not above it", D->IsAboveNoiseThreshold(49.999, Point)) && Passed;
+    Passed = EvaluateTrue("IsAboveNoiseThreshold()", "engine 1, just above", "A hit just above the noise threshold is above it", D->IsAboveNoiseThreshold(50.001, Point)) && Passed;
+
+    D = New.GetDetector("D");
+    V = New.GetVolume("Box");
+    Point = D->GetGridPoint(Position);
+    Passed = Evaluate("GetDetectorEffectsEngineVersion()", "DetectorEffectsEngine 2", "The detector uses the engine 2", D->GetDetectorEffectsEngineVersion(), 2U) && Passed;
+    Passed = EvaluateNear("Noise()", "engine 2, just below the noise threshold", "The hit stays: the engine applies the noise threshold", NoiseOnce(D, V, Position, 49.999), 49.999, 1e-9) && Passed;
+    Passed = EvaluateNear("Noise()", "engine 2, just above the noise threshold", "The hit stays", NoiseOnce(D, V, Position, 50.001), 50.001, 1e-9) && Passed;
+    Passed = EvaluateFalse("IsAboveNoiseThreshold()", "engine 2, just below", "A hit just below the noise threshold is not above it", D->IsAboveNoiseThreshold(49.999, Point)) && Passed;
+    Passed = EvaluateTrue("IsAboveNoiseThreshold()", "engine 2, just above", "A hit just above the noise threshold is above it", D->IsAboveNoiseThreshold(50.001, Point)) && Passed;
+    Passed = EvaluateFalse("IsAboveTriggerThreshold()", "engine 2, between the thresholds", "A hit between noise and trigger threshold does not trigger", D->IsAboveTriggerThreshold(79.999, Point)) && Passed;
+    Passed = EvaluateTrue("IsAboveTriggerThreshold()", "engine 2, just above", "A hit just above the trigger threshold triggers", D->IsAboveTriggerThreshold(80.001, Point)) && Passed;
+
+    // One sigma above the soft threshold is above it with Phi(1), one sigma below with Phi(-1)
+    D = Soft.GetDetector("D");
+    Point = D->GetGridPoint(Position);
+    double Above = 0.0;
+    double Below = 0.0;
+    for (unsigned int i = 0; i < c_Samples; ++i) {
+      if (D->IsAboveNoiseThreshold(54.0, Point) == true) {
+        Above += 1.0;
+      }
+      if (D->IsAboveNoiseThreshold(46.0, Point) == true) {
+        Below += 1.0;
+      }
+    }
+    Passed = EvaluateNear("IsAboveNoiseThreshold()", "one sigma above", "The fraction above is Phi(1)", Above/c_Samples, GetPhi(1.0), GetFractionTolerance(GetPhi(1.0))) && Passed;
+    Passed = EvaluateNear("IsAboveNoiseThreshold()", "one sigma below", "The fraction above is Phi(-1)", Below/c_Samples, GetPhi(-1.0), GetFractionTolerance(GetPhi(1.0))) && Passed;
+
+    // One common threshold: the old engine applies it in the noising and each remaining hit triggers, the new engine keeps the hit and applies it as trigger threshold
+    D = OldEqual.GetDetector("D");
+    V = OldEqual.GetVolume("Box");
+    Point = D->GetGridPoint(Position);
+    Passed = EvaluateNear("Noise()", "engine 1, just below the common threshold", "The hit is removed", NoiseOnce(D, V, Position, 29.999), 0.0, 1e-12) && Passed;
+    Passed = EvaluateTrue("IsAboveTriggerThreshold()", "engine 1, common threshold", "Every remaining hit triggers", D->IsAboveTriggerThreshold(1.0, Point)) && Passed;
+
+    D = NewEqual.GetDetector("D");
+    V = NewEqual.GetVolume("Box");
+    Point = D->GetGridPoint(Position);
+    Passed = EvaluateNear("Noise()", "engine 2, just below the common threshold", "The hit stays", NoiseOnce(D, V, Position, 29.999), 29.999, 1e-9) && Passed;
+    Passed = EvaluateFalse("IsAboveTriggerThreshold()", "engine 2, just below the common threshold", "The hit does not trigger", D->IsAboveTriggerThreshold(29.999, Point)) && Passed;
+    Passed = EvaluateTrue("IsAboveTriggerThreshold()", "engine 2, just above the common threshold", "The hit triggers", D->IsAboveTriggerThreshold(30.001, Point)) && Passed;
+
+    // The sigmas above the noise level are the energy in units of the interpolated width: 4 keV at 300 keV
+    D = Gauss.GetDetector("D");
+    Point = D->GetGridPoint(Position);
+    Passed = EvaluateNear("SigmasAboveNoiseLevel()", "300 keV with a width of 4 keV", "The energy is 75 sigma above the noise level", D->SigmasAboveNoiseLevel(300.0, Point), 75.0, 1e-9) && Passed;
+    Passed = EvaluateNear("SigmasAboveNoiseLevel()", "0 keV", "No energy is zero sigma above the noise level", D->SigmasAboveNoiseLevel(0.0, Point), 0.0, 1e-12) && Passed;
+
+    // Without a Gauss table there is no noise level:
+    D = New.GetDetector("D");
+    Point = D->GetGridPoint(Position);
+    DisableDefaultStreams();
+    double Sigmas = D->SigmasAboveNoiseLevel(300.0, Point);
+    EnableDefaultStreams();
+    Passed = EvaluateNear("SigmasAboveNoiseLevel()", "no Gauss table", "The result is zero", Sigmas, 0.0, 1e-12) && Passed;
+
+    // A channel which is blocked from triggering never triggers, but its hits are still above the noise threshold
+    // Attention: Only channels with the z index 0 can be blocked
+    D = New.GetDetector("D");
+    Point = D->GetGridPoint(Position);
+    Point = MDGridPoint(Point.GetXGrid(), Point.GetYGrid(), 0, Point.GetType(), Point.GetPosition());
+    DisableDefaultStreams();
+    bool IsBlocked = D->BlockTriggerChannel(Point.GetXGrid(), Point.GetYGrid());
+    EnableDefaultStreams();
+    Passed = EvaluateTrue("BlockTriggerChannel()", "channel of the hit", "The channel can be blocked", IsBlocked) && Passed;
+    Passed = EvaluateFalse("IsAboveTriggerThreshold()", "engine 2, blocked channel", "A hit in a blocked channel does not trigger", D->IsAboveTriggerThreshold(1000.0, Point)) && Passed;
+    // Defect GEO-D-077: IsAboveNoiseThreshold() has the check for blocked trigger channels of IsAboveTriggerThreshold(), so the new engine never reads out a blocked channel
+    Passed = ExpectedToFail(EvaluateTrue("IsAboveNoiseThreshold()", "engine 2, blocked channel", "A hit in a channel which is blocked from triggering is still above the noise threshold", D->IsAboveNoiseThreshold(1000.0, Point))) && Passed;
 
     return Passed;
   }

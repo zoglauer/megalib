@@ -372,6 +372,28 @@ bool UTDShapeIntersection::TestUniquePosition()
   Shape.Validate();
   Passed = EvaluateTrue("GetUniquePosition()", "two boxes", "The position is inside", Shape.IsInside(Shape.GetUniquePosition())) && Passed;
 
+  // The origin is used if it is inside: with the box B moved by 0.5 in x and y the origin is in both boxes
+  MDOrientation Near("Near");
+  Near.SetPosition(MVector(0.5, 0.5, 0));
+  Near.Validate();
+  MDShapeIntersection Centered("Centered");
+  Centered.Set(&A, &B, &Near);
+  Centered.Validate();
+  Passed = EvaluateTrue("IsInside()", "origin inside", "The origin is inside", Centered.IsInside(MVector(0.0, 0.0, 0.0))) && Passed;
+  Passed = EvaluateVectorNear("GetUniquePosition()", "origin inside", "The position is the origin", Centered.GetUniquePosition(), MVector(0.0, 0.0, 0.0), 1e-15) && Passed;
+
+  // The origin is not inside: with the box B moved by 3 in x the intersection is 1.5 < x < 2
+  MDOrientation Far("Far");
+  Far.SetPosition(MVector(3, 0.5, 0));
+  Far.Validate();
+  MDShapeIntersection Off("Off");
+  Off.Set(&A, &B, &Far);
+  Off.Validate();
+  Passed = EvaluateFalse("IsInside()", "origin outside", "The origin is not inside", Off.IsInside(MVector(0.0, 0.0, 0.0))) && Passed;
+  Passed = EvaluateTrue("GetUniquePosition()", "origin outside", "The position is inside", Off.IsInside(Off.GetUniquePosition())) && Passed;
+  Passed = EvaluateTrue("GetUniquePosition()", "origin outside", "The position is not the origin", Off.GetUniquePosition().Mag() > 0.1) && Passed;
+  Passed = EvaluateVectorNear("GetUniquePosition()", "origin outside, second call", "The position does not change", Off.GetUniquePosition(), Off.GetUniquePosition(), 1e-15) && Passed;
+
   // The position does not depend on the random numbers:
   gRandom->SetSeed(777);
   gRandom->Rndm();

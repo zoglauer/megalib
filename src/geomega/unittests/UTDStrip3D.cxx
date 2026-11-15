@@ -65,6 +65,12 @@ private:
   bool TestGeometryNoise();
   //! Test the copy, named detectors, and the text output
   bool TestCopyNamedText();
+  //! Test the keywords, the copy, the named detectors, and the text output of the drift parameters
+  bool TestDriftParameters();
+  //! Test the grid with drift: the charge is shared between the strips
+  bool TestChargeSharing();
+  //! Test the flag of a hit without depth
+  bool TestDepthFlag();
 };
 
 
@@ -86,6 +92,9 @@ bool UTDStrip3D::Run()
   Passed = TestPositionResolution() && Passed;
   Passed = TestGeometryNoise() && Passed;
   Passed = TestCopyNamedText() && Passed;
+  Passed = TestDriftParameters() && Passed;
+  Passed = TestChargeSharing() && Passed;
+  Passed = TestDepthFlag() && Passed;
 
   Summarize();
   return Passed;
@@ -743,6 +752,254 @@ bool UTDStrip3D::TestCopyNamedText()
     // Defect GEO-D-043: The copy to named detectors checks the trigger correction flag twice, so the noise threshold depth correction is never inherited
     Passed = ExpectedToFail(EvaluateTrue("HasNoiseThresholdDepthCorrection()", "inherited", "The correction is inherited", M->HasNoiseThresholdDepthCorrection())) && Passed;
   }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the keywords, the copy, the named detectors, and the text output of the drift parameters
+bool UTDStrip3D::TestDriftParameters()
+{
+  bool Passed = true;
+
+  MDStrip3D Strip("Strip");
+  Passed = EvaluateNear("MDStrip3D()", "drift constant", "The value is not defined", Strip.GetDriftConstant(), g_DoubleNotDefined, 1e-9*g_DoubleNotDefined) && Passed;
+  Passed = EvaluateNear("MDStrip3D()", "energy per electron", "The value is not defined", Strip.GetEnergyPerElectron(), g_DoubleNotDefined, 1e-9*g_DoubleNotDefined) && Passed;
+  Strip.SetDriftConstant(2.5);
+  Strip.SetEnergyPerElectron(3.5);
+  Passed = EvaluateNear("SetDriftConstant()", "2.5", "The value is stored", Strip.GetDriftConstant(), 2.5, 1e-12) && Passed;
+  Passed = EvaluateNear("SetEnergyPerElectron()", "3.5", "The value is stored", Strip.GetEnergyPerElectron(), 3.5, 1e-12) && Passed;
+
+  MDStrip3D Copy(Strip);
+  Passed = EvaluateNear("MDStrip3D(const MDStrip3D&)", "drift constant", "The value is copied", Copy.GetDriftConstant(), 2.5, 1e-12) && Passed;
+  Passed = EvaluateNear("MDStrip3D(const MDStrip3D&)", "energy per electron", "The value is copied", Copy.GetEnergyPerElectron(), 3.5, 1e-12) && Passed;
+
+  // Defaults after the validation
+  MDGeometry Default;
+  Passed = EvaluateTrue("ScanSetupFile()", "no drift keywords", "The fixture is accepted", Scan(Default, GetBody())) && Passed;
+  if (CheckDetector(Passed, "Default", Default, "D", MDDetector::c_Strip3D)) {
+    MDStrip3D* D = dynamic_cast<MDStrip3D*>(Default.GetDetector("D"));
+    Passed = EvaluateNear("Validate()", "default drift constant", "The default is no drift", D->GetDriftConstant(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateNear("Validate()", "default energy per electron", "The default is 22 eV", D->GetEnergyPerElectron(), 0.022, 1e-12) && Passed;
+  }
+
+  // Keywords
+  MDGeometry Values;
+  Passed = EvaluateTrue("ScanSetupFile()", "drift keywords", "The fixture is accepted", Scan(Values, GetBody(), "D.DriftConstant 0.25\nD.EnergyPerElectron 0.5\n")) && Passed;
+  if (CheckDetector(Passed, "Values", Values, "D", MDDetector::c_Strip3D)) {
+    MDStrip3D* D = dynamic_cast<MDStrip3D*>(Values.GetDetector("D"));
+    Passed = EvaluateNear("ScanSetupFile()", "DriftConstant", "The value is read", D->GetDriftConstant(), 0.25, 1e-12) && Passed;
+    Passed = EvaluateNear("ScanSetupFile()", "EnergyPerElectron", "The value is read", D->GetEnergyPerElectron(), 0.5, 1e-12) && Passed;
+
+    // Defect GEO-D-076: The text output of MDStrip3D does not contain the drift parameters, the one of the drift chamber does
+    MString Text = D->GetGeomega();
+    Passed = ExpectedToFail(EvaluateTrue("GetGeomega()", "drift constant", "The value is written", Text.Contains("D.DriftConstant 0.25"))) && Passed;
+    Passed = ExpectedToFail(EvaluateTrue("GetGeomega()", "energy per electron", "The value is written", Text.Contains("D.EnergyPerElectron 0.5"))) && Passed;
+  }
+
+  const vector<MString> Wrong = { "D.DriftConstant\n", "D.DriftConstant 1 2\n", "D.EnergyPerElectron\n", "D.EnergyPerElectron 1 2\n" };
+  for (const MString& Keyword: Wrong) {
+    Passed = EvaluateFalse("ScanSetupFile()", Keyword, "A wrong number of values is rejected", IsScanOK(GetBody(), Keyword)) && Passed;
+  }
+
+  // The keywords are only for strip detectors with depth
+  MString Strip2D = GetBoxVolume("Box", 3.0, 2.0, 1.0) + "Strip2D D\nD.SensitiveVolume Box\nD.DetectorVolume Box\nD.Offset 0.5 0.25\nD.StripNumber 10 7\n";
+  Passed = EvaluateTrue("ScanSetupFile()", "Strip2D", "The fixture with a Strip2D detector is accepted", IsScanOK(Strip2D)) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "Strip2D with DriftConstant", "The keyword is rejected for a Strip2D detector", IsScanOK(Strip2D, "D.DriftConstant 0.25\n")) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "Strip2D with EnergyPerElectron", "The keyword is rejected for a Strip2D detector", IsScanOK(Strip2D, "D.EnergyPerElectron 0.5\n")) && Passed;
+
+  // Named detectors inherit the values, but keep their own
+  MDStrip3D Base("Base");
+  MDStrip3D* Named = new MDStrip3D("Named");
+  MDStrip3D* Own = new MDStrip3D("Own");
+  Base.AddNamedDetector(Named);
+  Base.AddNamedDetector(Own);
+  Base.SetNStrips(3, 4);
+  Base.SetDriftConstant(2.5);
+  Base.SetEnergyPerElectron(3.5);
+  Own->SetDriftConstant(7.5);
+  Own->SetEnergyPerElectron(8.5);
+  Passed = EvaluateTrue("CopyDataToNamedDetectors()", "drift parameters", "The call is successful", Base.CopyDataToNamedDetectors()) && Passed;
+  Passed = EvaluateNear("CopyDataToNamedDetectors()", "drift constant", "The value is inherited", Named->GetDriftConstant(), 2.5, 1e-12) && Passed;
+  Passed = EvaluateNear("CopyDataToNamedDetectors()", "energy per electron", "The value is inherited", Named->GetEnergyPerElectron(), 3.5, 1e-12) && Passed;
+  Passed = EvaluateNear("CopyDataToNamedDetectors()", "own drift constant", "The own value stays", Own->GetDriftConstant(), 7.5, 1e-12) && Passed;
+  Passed = EvaluateNear("CopyDataToNamedDetectors()", "own energy per electron", "The own value stays", Own->GetEnergyPerElectron(), 8.5, 1e-12) && Passed;
+  delete Named;
+  delete Own;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the grid with drift: the charge is shared between the strips
+bool UTDStrip3D::TestChargeSharing()
+{
+  bool Passed = true;
+  gRandom->SetSeed(5006);
+
+  // The active area is 5 x 3.5 cm with strips of 0.5 cm, the wafer is 2 cm thick: the drift starts at z = -1 cm
+  // Drift constant 0.1: sigma = 0.1 sqrt(drift length) cm, 1 keV per electron
+  MDGeometry Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "drift", "The fixture is accepted", Scan(Geometry, GetBody(), "D.DriftConstant 0.1\nD.EnergyPerElectron 1.0\n")) && Passed;
+  if (CheckDetector(Passed, "Drift", Geometry, "D", MDDetector::c_Strip3D) == false) {
+    return false;
+  }
+  MDDetector* D = Geometry.GetDetector("D");
+  MDVolume* V = Geometry.GetVolume("Box");
+
+  // No drift length: all electrons stay in the strips of the hit, x strip 5 and y strip 4
+  vector<MDGridPoint> Points = D->Grid(MVector(0.25, 0.5, -1.0), 100.0, 45.0, V);
+  Passed = EvaluateSize("Grid()", "100 keV without drift length", "Each of the 100 electrons has an x-strip and a y-strip grid point", Points.size(), 200) && Passed;
+  unsigned int NX = 0;
+  unsigned int NY = 0;
+  unsigned int NWrong = 0;
+  double EnergyX = 0.0;
+  double EnergyY = 0.0;
+  for (const MDGridPoint& Point: Points) {
+    if (Point.GetType() == MDGridPoint::c_XStrip && Point.GetXGrid() == 5 && Point.GetYGrid() == 0) {
+      ++NX;
+      EnergyX += Point.GetEnergy();
+    } else if (Point.GetType() == MDGridPoint::c_YStrip && Point.GetYGrid() == 4 && Point.GetXGrid() == 0) {
+      ++NY;
+      EnergyY += Point.GetEnergy();
+    } else {
+      ++NWrong;
+    }
+    if (fabs(Point.GetEnergy() - 1.0) > 1e-12 || fabs(Point.GetTime() - 45.0) > 1e-12 || fabs(Point.GetPosition().Z() + 1.0) > 1e-12) {
+      ++NWrong;
+    }
+  }
+  Passed = Evaluate("Grid()", "100 keV without drift length", "All x-strip grid points are in strip 5", NX, 100U) && Passed;
+  Passed = Evaluate("Grid()", "100 keV without drift length", "All y-strip grid points are in strip 4", NY, 100U) && Passed;
+  Passed = Evaluate("Grid()", "100 keV without drift length", "Each grid point has the energy of one electron, the time, and the depth of the hit", NWrong, 0U) && Passed;
+  Passed = EvaluateNear("Grid()", "100 keV without drift length", "The x strips have the energy of the hit", EnergyX, 100.0, 1e-9) && Passed;
+  Passed = EvaluateNear("Grid()", "100 keV without drift length", "The y strips have the energy of the hit", EnergyY, 100.0, 1e-9) && Passed;
+
+  // The energy is shared equally between the electrons
+  Points = D->Grid(MVector(0.25, 0.5, -1.0), 100.5, 45.0, V);
+  Passed = EvaluateSize("Grid()", "100.5 keV", "There are 100 electrons", Points.size(), 200) && Passed;
+  if (Points.size() == 200) {
+    Passed = EvaluateNear("Grid()", "100.5 keV", "Each electron has 1.005 keV", Points[0].GetEnergy(), 1.005, 1e-12) && Passed;
+  }
+
+  // Less energy than one electron: one electron with all the energy
+  Points = D->Grid(MVector(0.25, 0.5, -1.0), 0.4, 45.0, V);
+  Passed = EvaluateSize("Grid()", "0.4 keV", "There is one electron", Points.size(), 2) && Passed;
+  if (Points.size() == 2) {
+    Passed = EvaluateNear("Grid()", "0.4 keV", "The x strip has all the energy", Points[0].GetEnergy(), 0.4, 1e-12) && Passed;
+    Passed = EvaluateNear("Grid()", "0.4 keV", "The y strip has all the energy", Points[1].GetEnergy(), 0.4, 1e-12) && Passed;
+  }
+
+  // Drift length 1.9 cm from the center of x strip 5 (x = 0.25 cm) and y strip 4 (y = 0.5 cm): sigma = 0.1 sqrt(1.9)
+  // An electron stays in its strip with 2 Phi(0.25/sigma) - 1, and reaches each neighbor with Phi(0.75/sigma) - Phi(0.25/sigma)
+  const double Sigma = 0.1*sqrt(1.9);
+  const double Stays = 2.0*GetPhi(0.25/Sigma) - 1.0;
+  const double Neighbor = GetPhi(0.75/Sigma) - GetPhi(0.25/Sigma);
+  const unsigned int N = 100000;
+  Points = D->Grid(MVector(0.25, 0.5, 0.9), 1.0*N, 45.0, V);
+  Passed = EvaluateSize("Grid()", "drift length 1.9 cm, far from the edge", "No electron is lost", Points.size(), 2*N) && Passed;
+  vector<double> CountsX(10, 0.0);
+  vector<double> CountsY(7, 0.0);
+  double Total = 0.0;
+  for (const MDGridPoint& Point: Points) {
+    if (Point.GetType() == MDGridPoint::c_XStrip && Point.GetXGrid() < 10) {
+      CountsX[Point.GetXGrid()] += 1.0;
+    } else if (Point.GetType() == MDGridPoint::c_YStrip && Point.GetYGrid() < 7) {
+      CountsY[Point.GetYGrid()] += 1.0;
+    }
+    Total += Point.GetEnergy();
+  }
+  Passed = EvaluateNear("Grid()", "drift length 1.9 cm", "The x strips and the y strips have each the energy of the hit", Total, 2.0*N, 1e-6) && Passed;
+  Passed = EvaluateNear("Grid()", "drift length 1.9 cm, x strip of the hit", "The fraction is 2 Phi(0.25/sigma) - 1", CountsX[5]/N, Stays, GetFractionTolerance(Stays, N)) && Passed;
+  Passed = EvaluateNear("Grid()", "drift length 1.9 cm, lower x neighbor", "The fraction is Phi(0.75/sigma) - Phi(0.25/sigma)", CountsX[4]/N, Neighbor, GetFractionTolerance(Neighbor, N)) && Passed;
+  Passed = EvaluateNear("Grid()", "drift length 1.9 cm, upper x neighbor", "The fraction is Phi(0.75/sigma) - Phi(0.25/sigma)", CountsX[6]/N, Neighbor, GetFractionTolerance(Neighbor, N)) && Passed;
+  Passed = EvaluateNear("Grid()", "drift length 1.9 cm, y strip of the hit", "The fraction is 2 Phi(0.25/sigma) - 1", CountsY[4]/N, Stays, GetFractionTolerance(Stays, N)) && Passed;
+  Passed = EvaluateNear("Grid()", "drift length 1.9 cm, lower y neighbor", "The fraction is Phi(0.75/sigma) - Phi(0.25/sigma)", CountsY[3]/N, Neighbor, GetFractionTolerance(Neighbor, N)) && Passed;
+  Passed = EvaluateNear("Grid()", "drift length 1.9 cm, upper y neighbor", "The fraction is Phi(0.75/sigma) - Phi(0.25/sigma)", CountsY[5]/N, Neighbor, GetFractionTolerance(Neighbor, N)) && Passed;
+
+  // 0.05 cm from the edge of the active area in x: the electrons drifting out of it are lost, here Phi(-0.05/sigma), y is not cut
+  Points = D->Grid(MVector(2.45, 0.5, 0.9), 1.0*N, 45.0, V);
+  const double Remaining = GetPhi(0.05/Sigma);
+  Passed = EvaluateNear("Grid()", "0.05 cm from the edge of the active area", "The electrons drifting out of the active area are lost", Points.size()/(2.0*N), Remaining, GetFractionTolerance(Remaining, N)) && Passed;
+  bool OnlyValidStrips = true;
+  for (const MDGridPoint& Point: Points) {
+    if (Point.GetXGrid() >= 10 || Point.GetYGrid() >= 7) {
+      OnlyValidStrips = false;
+    }
+  }
+  Passed = EvaluateTrue("Grid()", "0.05 cm from the edge of the active area", "All strips exist", OnlyValidStrips) && Passed;
+
+  // Hits in the guard ring and outside of the detector are ignored
+  DisableDefaultStreams();
+  Points = D->Grid(MVector(2.75, 0.0, 0.5), 100.0, 45.0, V);
+  unsigned long InGuardRing = Points.size();
+  Points = D->Grid(MVector(-3.5, 0.0, 0.5), 100.0, 45.0, V);
+  unsigned long Outside = Points.size();
+  EnableDefaultStreams();
+  Passed = EvaluateSize("Grid()", "drift, hit in the guard ring", "There is no grid point", InGuardRing, 0) && Passed;
+  Passed = EvaluateSize("Grid()", "drift, hit outside", "There is no grid point", Outside, 0) && Passed;
+
+  // No energy
+  Points = D->Grid(MVector(0.25, 0.5, 0.0), 0.0, 45.0, V);
+  Passed = EvaluateSize("Grid()", "drift, 0 keV", "There is one electron without energy", Points.size(), 2) && Passed;
+
+  // A drift constant of zero is the grid without drift: one x-strip and one y-strip grid point with the full energy
+  MDGeometry NoDrift;
+  Passed = EvaluateTrue("ScanSetupFile()", "drift constant 0", "The fixture is accepted", Scan(NoDrift, GetBody(), "D.DriftConstant 0.0\nD.EnergyPerElectron 1.0\n")) && Passed;
+  if (CheckDetector(Passed, "NoDrift", NoDrift, "D", MDDetector::c_Strip3D)) {
+    Points = NoDrift.GetDetector("D")->Grid(MVector(0.25, 0.5, 0.9), 100.0, 45.0, NoDrift.GetVolume("Box"));
+    Passed = EvaluateSize("Grid()", "drift constant 0", "There is one x-strip and one y-strip grid point", Points.size(), 2) && Passed;
+    if (Points.size() == 2) {
+      Passed = EvaluateNear("Grid()", "drift constant 0", "The x strip has the full energy", Points[0].GetEnergy(), 100.0, 1e-12) && Passed;
+      Passed = EvaluateNear("Grid()", "drift constant 0", "The y strip has the full energy", Points[1].GetEnergy(), 100.0, 1e-12) && Passed;
+    }
+  }
+
+  // Energy per electron of zero
+  MDGeometry Zero;
+  Passed = EvaluateTrue("ScanSetupFile()", "energy per electron 0", "The fixture is accepted", Scan(Zero, GetBody(), "D.DriftConstant 0.1\nD.EnergyPerElectron 0.0\n")) && Passed;
+  if (CheckDetector(Passed, "Zero", Zero, "D", MDDetector::c_Strip3D)) {
+    MDDetector* ZeroD = Zero.GetDetector("D");
+    MDVolume* ZeroV = Zero.GetVolume("Box");
+    // Defect GEO-D-051: As an energy per electron of zero is accepted, the number of electrons is undefined and the grid fails
+    Passed = ExpectedToCrash(EvaluateTrue("Grid()", "energy per electron 0", "The grid works", (ZeroD->Grid(MVector(0.25, 0.5, 0.9), 100.0, 45.0, ZeroV), true))) && Passed;
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the flag of a hit without depth
+bool UTDStrip3D::TestDepthFlag()
+{
+  bool Passed = true;
+  gRandom->SetSeed(5007);
+
+  MDGeometry NoDepth;
+  Passed = EvaluateTrue("ScanSetupFile()", "no depth resolution", "The fixture is accepted", Scan(NoDepth, GetBody())) && Passed;
+  MDGeometry Depth;
+  Passed = EvaluateTrue("ScanSetupFile()", "depth resolution", "The fixture is accepted", Scan(Depth, GetBody(), "D.DepthResolution 100 0.01\nD.DepthResolution 500 0.01\nD.DepthResolutionThreshold 50\nD.Overflow 400\n")) && Passed;
+  if (Passed == false) {
+    return false;
+  }
+
+  const MVector Position(0.25, 0.25, 0.5);
+  Passed = Evaluate("Noise()", "no depth resolution", "The hit is flagged as without depth", NoiseFlagsOnce(NoDepth.GetDetector("D"), NoDepth.GetVolume("Box"), Position, 100.0), MString(" NODEPTH")) && Passed;
+
+  MDDetector* D = Depth.GetDetector("D");
+  MDVolume* V = Depth.GetVolume("Box");
+  Passed = EvaluateTrue("Noise()", "depth resolution, 100 keV", "There is no flag", NoiseFlagsOnce(D, V, Position, 100.0).IsEmpty()) && Passed;
+  Passed = Evaluate("Noise()", "below the depth resolution threshold of 50 keV", "The hit is flagged as without depth", NoiseFlagsOnce(D, V, Position, 49.0), MString(" NODEPTH")) && Passed;
+  Passed = Evaluate("Noise()", "overflow", "The hit is flagged as overflow and as without depth", NoiseFlagsOnce(D, V, Position, 1000.0), MString(" OVERFLOW NODEPTH")) && Passed;
 
   return Passed;
 }

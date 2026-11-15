@@ -117,6 +117,8 @@ private:
   bool TestCheckOverlaps();
   //! Test the virtualization of volumes without a detector
   bool TestVirtualization();
+  //! Test the gridding of a hit
+  bool TestGrid();
 };
 
 
@@ -148,6 +150,7 @@ bool UTDGeometryQuest::Run()
   Passed = TestGetComptonIntersection() && Passed;
   Passed = TestCheckOverlaps() && Passed;
   Passed = TestVirtualization() && Passed;
+  Passed = TestGrid() && Passed;
 
   Summarize();
   return Passed;
@@ -1362,6 +1365,90 @@ bool UTDGeometryQuest::TestVirtualization()
   MDVolumeSequence VS = Geometry.GetVolumeSequence(MVector(18, 1, 2.5), false, false);
   Passed = EvaluateTrue("GetVolumeSequence()", "virtualization", "The sensitive volume is found", VS.GetSensitiveVolume() != nullptr) && Passed;
   Passed = EvaluateVectorNear("GetVolumeSequence()", "virtualization", "The position in the sensitive volume stays the one derived by hand", VS.GetPositionInSensitiveVolume(), MVector(1, 2, 0.5), 1e-13) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the gridding of a hit
+bool UTDGeometryQuest::TestGrid()
+{
+  bool Passed = true;
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "detector geometry", "The geometry can be read", ScanGeometry(Geometry, GetDetectorGeometry())) && Passed;
+  if (Geometry.IsScanned() == false) {
+    return Passed;
+  }
+
+  // The wafer in holder A is rotated by 90 deg around z: The point (1, 2, 2.5) in the holder is at (-2, 1, 2.5) + (20, 0, 0)
+  // In the wafer this is (1, 2, 0.5): strip 6 of pitch 1 cm in x with its center at 1.5 cm, and strip 3 of pitch 2 cm in y with its center at 2 cm
+  const MVector InWafer(18, 1, 2.5);
+  MVector Position = InWafer;
+  double Energy = 100.0;
+  double Time = 1.0;
+  MDVolumeSequence VS = Geometry.GetVolumeSequence(InWafer, false, false);
+
+  BeginCaptureOutput();
+  DisableDefaultStreams();
+  MDGridPointCollection Collection = Geometry.Grid(Position, Energy, Time, VS);
+  EnableDefaultStreams();
+  MString Output = EndCaptureOutput();
+
+  Passed = EvaluateVectorNear("Grid()", "in the wafer", "The position is restored", Position, InWafer, 1e-13) && Passed;
+  Passed = EvaluateNear("Grid()", "in the wafer", "The energy is not changed", Energy, 100.0, 1e-15) && Passed;
+  Passed = EvaluateNear("Grid()", "in the wafer", "The time is not changed", Time, 1.0, 1e-15) && Passed;
+  Passed = EvaluateTrue("Grid()", "in the wafer", "The collection has the detector of the hit", Collection.GetVolumeSequence().GetDetector() == Geometry.GetDetector("Det")) && Passed;
+  if (Evaluate("Grid()", "in the wafer", "The collection has one grid point", Collection.GetNGridPoints(), 1U) == true) {
+    MDGridPoint Point = Collection.GetGridPointAt(0);
+    Passed = Evaluate("Grid()", "in the wafer", "The hit is in x strip 6", Point.GetXGrid(), 6U) && Passed;
+    Passed = Evaluate("Grid()", "in the wafer", "The hit is in y strip 3", Point.GetYGrid(), 3U) && Passed;
+    Passed = EvaluateNear("Grid()", "in the wafer", "The grid point has the energy", Point.GetEnergy(), 100.0, 1e-12) && Passed;
+    Passed = EvaluateNear("Grid()", "in the wafer", "The grid point has the time", Point.GetTime(), 1.0, 1e-12) && Passed;
+    // The center of the strip crossing (1.5, 2, 0) in the wafer is (1.5, 2, 2) in the holder and (18, 1.5, 2) in the world
+    Passed = EvaluateVectorNear("Grid()", "in the wafer", "The world position of the grid point is the center of the strip crossing", Collection.GetWorldPositionGridPointAt(0), MVector(18.0, 1.5, 2.0), 1e-12) && Passed;
+  } else {
+    Passed = false;
+  }
+  // Defect GEO-B-43: Grid() prints the number of grid points to the standard output
+  Passed = ExpectedToFail(EvaluateTrue("Grid()", "in the wafer", "Nothing is written to the standard output", Output.IsEmpty())) && Passed;
+
+  // The other placement of the wafer is not rotated: (-19, 2, 2.5) is (1, 2, 0.5) in the wafer too
+  const MVector InWaferB(-19, 2, 2.5);
+  Position = InWaferB;
+  MDVolumeSequence VSB = Geometry.GetVolumeSequence(InWaferB, false, false);
+  BeginCaptureOutput();
+  DisableDefaultStreams();
+  MDGridPointCollection CollectionB = Geometry.Grid(Position, Energy, Time, VSB);
+  EnableDefaultStreams();
+  EndCaptureOutput();
+  Passed = EvaluateVectorNear("Grid()", "in the second wafer", "The position is restored", Position, InWaferB, 1e-13) && Passed;
+  if (Evaluate("Grid()", "in the second wafer", "The collection has one grid point", CollectionB.GetNGridPoints(), 1U) == true) {
+    Passed = Evaluate("Grid()", "in the second wafer", "The hit is in x strip 6", CollectionB.GetGridPointAt(0).GetXGrid(), 6U) && Passed;
+    Passed = Evaluate("Grid()", "in the second wafer", "The hit is in y strip 3", CollectionB.GetGridPointAt(0).GetYGrid(), 3U) && Passed;
+    Passed = EvaluateVectorNear("Grid()", "in the second wafer", "The world position of the grid point is the center of the strip crossing", CollectionB.GetWorldPositionGridPointAt(0), MVector(-18.5, 2.0, 2.0), 1e-12) && Passed;
+  } else {
+    Passed = false;
+  }
+  Passed = EvaluateFalse("HasSameDetector()", "two wafers", "The collections of the two wafers are in different detectors", Collection.HasSameDetector(CollectionB)) && Passed;
+
+  // No detector:
+  MVector PassivePosition(0, 50, 0);
+  double PassiveEnergy = 100.0;
+  double PassiveTime = 1.0;
+  MDVolumeSequence PassiveVS = Geometry.GetVolumeSequence(PassivePosition, false, false);
+  Passed = EvaluateTrue("GetVolumeSequence()", "passive material", "The position has no detector", PassiveVS.GetDetector() == nullptr) && Passed;
+  // Defect GEO-B-44: Without a detector Grid() returns a collection made from the volume sequence, whose constructor asserts that there is a detector
+  Passed = ExpectedToCrash(EvaluateTrue("Grid()", "passive material", "A hit without detector gives an empty collection", Geometry.Grid(PassivePosition, PassiveEnergy, PassiveTime, PassiveVS).GetNGridPoints() == 0)) && Passed;
+
+  // Not scanned:
+  MDGeometryQuest NotScanned;
+  MDVolumeSequence EmptyVS;
+  // Defect GEO-B-44: The same for a geometry which is not scanned
+  Passed = ExpectedToCrash(EvaluateTrue("Grid()", "not scanned", "A geometry which is not scanned gives an empty collection", NotScanned.Grid(PassivePosition, PassiveEnergy, PassiveTime, EmptyVS).GetNGridPoints() == 0)) && Passed;
 
   return Passed;
 }

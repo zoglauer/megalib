@@ -74,7 +74,8 @@ bool UTDCalorimeter::Run()
 
   Passed = TestConstruction() && Passed;
   Passed = TestKeywords() && Passed;
-  Passed = TestCommonNoiseChain(GetBody(), MVector(0.25, 0.25, 0.5)) && Passed;
+  // GEO-D-075: The detector does not flag failures and overflows
+  Passed = TestCommonNoiseChain(GetBody(), MVector(0.25, 0.25, 0.5), false) && Passed;
   Passed = TestDepthNoise() && Passed;
   Passed = TestGrid() && Passed;
   Passed = TestBlockedChannels() && Passed;

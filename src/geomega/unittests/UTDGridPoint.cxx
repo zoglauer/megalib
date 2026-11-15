@@ -89,6 +89,10 @@ private:
   bool TestOrigins();
   //! Test the stream output
   bool TestStream();
+  //! Test the data of the detector effects engine: flags, trigger and read-out state
+  bool TestEngineState();
+  //! Test how the addition merges the data of the detector effects engine
+  bool TestAddEngineState();
 };
 
 
@@ -116,6 +120,8 @@ bool UTDGridPoint::Run()
   Passed = TestAddOtherTypes() && Passed;
   Passed = TestOrigins() && Passed;
   Passed = TestStream() && Passed;
+  Passed = TestEngineState() && Passed;
+  Passed = TestAddEngineState() && Passed;
 
   Summarize();
   return Passed;
@@ -700,6 +706,196 @@ bool UTDGridPoint::TestStream()
   ostringstream Out;
   Out<<Unknown;
   Passed = EvaluateTrue("operator<<", "unknown type", "The output says that the type is not implemented", MString(Out.str()).Contains("not (completely) implemented type")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the data of the detector effects engine: flags, trigger and read-out state
+bool UTDGridPoint::TestEngineState()
+{
+  bool Passed = true;
+
+  // Defaults of both constructors
+  MDGridPoint Default;
+  Passed = EvaluateTrue("GetFlags()", "default constructor", "There are no flags", Default.GetFlags().IsEmpty()) && Passed;
+  Passed = EvaluateFalse("IsAboveTriggerThreshold()", "default constructor", "The point is not above the trigger threshold", Default.IsAboveTriggerThreshold()) && Passed;
+  Passed = EvaluateFalse("IsReadOut()", "default constructor", "The point is not read out", Default.IsReadOut()) && Passed;
+  Passed = EvaluateSize("GetOriginIDs()", "default constructor", "There are no origins", Default.GetOriginIDs().size(), 0) && Passed;
+
+  MDGridPoint Standard(1, 2, 3, MDGridPoint::c_Voxel, MVector(0.0, 0.0, 0.5), 100.0, 2.0);
+  Passed = EvaluateTrue("GetFlags()", "standard constructor", "There are no flags", Standard.GetFlags().IsEmpty()) && Passed;
+  Passed = EvaluateFalse("IsAboveTriggerThreshold()", "standard constructor", "The point is not above the trigger threshold", Standard.IsAboveTriggerThreshold()) && Passed;
+  Passed = EvaluateFalse("IsReadOut()", "standard constructor", "The point is not read out", Standard.IsReadOut()) && Passed;
+
+  // Setters
+  Standard.SetFlags(" OVERFLOW");
+  Passed = Evaluate("SetFlags()", "OVERFLOW", "The flags are stored", Standard.GetFlags(), MString(" OVERFLOW")) && Passed;
+  Standard.IsAboveTriggerThreshold(true);
+  Passed = EvaluateTrue("IsAboveTriggerThreshold()", "true", "The state is stored", Standard.IsAboveTriggerThreshold()) && Passed;
+  Passed = EvaluateFalse("IsReadOut()", "trigger state set", "The read-out state is independent of the trigger state", Standard.IsReadOut()) && Passed;
+  Standard.IsReadOut(true);
+  Passed = EvaluateTrue("IsReadOut()", "true", "The state is stored", Standard.IsReadOut()) && Passed;
+  Standard.IsAboveTriggerThreshold(false);
+  Passed = EvaluateFalse("IsAboveTriggerThreshold()", "false", "The state is stored", Standard.IsAboveTriggerThreshold()) && Passed;
+  Passed = EvaluateTrue("IsReadOut()", "trigger state reset", "The read-out state is independent of the trigger state", Standard.IsReadOut()) && Passed;
+  Standard.IsAboveTriggerThreshold(true);
+
+  Standard.SetType(MDGridPoint::c_XStrip);
+  Passed = Evaluate("SetType()", "x strip", "The type is stored", Standard.GetType(), MDGridPoint::c_XStrip) && Passed;
+  Passed = Evaluate("SetType()", "x strip", "The x grid is not changed", Standard.GetXGrid(), 1U) && Passed;
+  Passed = EvaluateNear("SetType()", "x strip", "The energy is not changed", Standard.GetEnergy(), 100.0, 1e-15) && Passed;
+  Standard.SetType(MDGridPoint::c_Voxel);
+
+  Standard.SetOriginIDs(set<unsigned int>({ 4, 2 }));
+  Standard.AddOriginIDs(set<unsigned int>({ 2, 9 }));
+  Passed = EvaluateTrue("AddOriginIDs()", "2, 9 to 2, 4", "The origins are merged without duplicates", Standard.GetOriginIDs() == set<unsigned int>({ 2, 4, 9 })) && Passed;
+  Standard.AddOriginIDs(set<unsigned int>());
+  Passed = EvaluateTrue("AddOriginIDs()", "nothing", "The origins stay", Standard.GetOriginIDs() == set<unsigned int>({ 2, 4, 9 })) && Passed;
+  Standard.SetOriginIDs(set<unsigned int>({ 7 }));
+  Passed = EvaluateTrue("SetOriginIDs()", "7", "The origins are replaced", Standard.GetOriginIDs() == set<unsigned int>({ 7 })) && Passed;
+
+  // Copy constructor and assignment
+  MDGridPoint Copy(Standard);
+  Passed = Evaluate("MDGridPoint(const MDGridPoint&)", "flags", "The flags are copied", Copy.GetFlags(), MString(" OVERFLOW")) && Passed;
+  Passed = EvaluateTrue("MDGridPoint(const MDGridPoint&)", "trigger state", "The trigger state is copied", Copy.IsAboveTriggerThreshold()) && Passed;
+  Passed = EvaluateTrue("MDGridPoint(const MDGridPoint&)", "read-out state", "The read-out state is copied", Copy.IsReadOut()) && Passed;
+  Passed = EvaluateTrue("MDGridPoint(const MDGridPoint&)", "origins", "The origins are copied", Copy.GetOriginIDs() == set<unsigned int>({ 7 })) && Passed;
+
+  MDGridPoint Assigned;
+  Assigned = Standard;
+  Passed = Evaluate("operator=", "flags", "The flags are assigned", Assigned.GetFlags(), MString(" OVERFLOW")) && Passed;
+  Passed = EvaluateTrue("operator=", "trigger state", "The trigger state is assigned", Assigned.IsAboveTriggerThreshold()) && Passed;
+  Passed = EvaluateTrue("operator=", "read-out state", "The read-out state is assigned", Assigned.IsReadOut()) && Passed;
+  Passed = EvaluateTrue("operator=", "origins", "The origins are assigned", Assigned.GetOriginIDs() == set<unsigned int>({ 7 })) && Passed;
+
+  // The assignment of a point without this data removes it
+  Assigned = Default;
+  Passed = EvaluateTrue("operator=", "point without flags", "The flags are removed", Assigned.GetFlags().IsEmpty()) && Passed;
+  Passed = EvaluateFalse("operator=", "point without trigger state", "The trigger state is removed", Assigned.IsAboveTriggerThreshold()) && Passed;
+  Passed = EvaluateFalse("operator=", "point without read-out state", "The read-out state is removed", Assigned.IsReadOut()) && Passed;
+  Passed = EvaluateSize("operator=", "point without origins", "The origins are removed", Assigned.GetOriginIDs().size(), 0) && Passed;
+
+  // The source is untouched
+  Passed = Evaluate("operator=", "source", "The flags of the source stay", Standard.GetFlags(), MString(" OVERFLOW")) && Passed;
+
+  // Stream
+  ostringstream Out;
+  Out<<Standard;
+  MString Text(Out.str());
+  Passed = EvaluateTrue("operator<<", "flags", "The output has the flags", Text.Contains("with Flags ( OVERFLOW)")) && Passed;
+  Passed = EvaluateTrue("operator<<", "above the trigger threshold", "The output has the trigger state", Text.Contains("above trigger threshold")) && Passed;
+  Passed = EvaluateTrue("operator<<", "read out", "The output has the read-out state", Text.Contains("IS read out")) && Passed;
+
+  ostringstream OutDefault;
+  OutDefault<<MDGridPoint(1, 2, 3, MDGridPoint::c_Voxel);
+  Text = OutDefault.str();
+  Passed = EvaluateTrue("operator<<", "no flags", "The output has empty flags", Text.Contains("with Flags ()")) && Passed;
+  Passed = EvaluateTrue("operator<<", "below the trigger threshold", "The output has the trigger state", Text.Contains("below trigger threshold")) && Passed;
+  Passed = EvaluateTrue("operator<<", "not read out", "The output has the read-out state", Text.Contains("IS NOT read out")) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test how the addition merges the data of the detector effects engine
+bool UTDGridPoint::TestAddEngineState()
+{
+  bool Passed = true;
+
+  const vector<unsigned int> Types = { MDGridPoint::c_Voxel, MDGridPoint::c_VoxelDrift, MDGridPoint::c_XStrip, MDGridPoint::c_YStrip, MDGridPoint::c_XYAnger, MDGridPoint::c_XYZAnger, MDGridPoint::c_GuardRing };
+  for (unsigned int Type: Types) {
+    MString Input = MString("Type ") + Type;
+
+    // The same channel
+    MDGridPoint A(1, 2, 0, Type, MVector(0.0, 0.0, 0.0), 10.0);
+    A.SetFlags(" OVERFLOW");
+    MDGridPoint B(1, 2, 0, Type, MVector(0.0, 0.0, 0.0), 20.0);
+    B.SetFlags(" NODEPTH");
+    B.IsAboveTriggerThreshold(true);
+    B.IsReadOut(true);
+    A += B;
+    Passed = EvaluateNear("operator+=", Input + ", same channel", "The energies are added", A.GetEnergy(), 30.0, 1e-12) && Passed;
+    Passed = Evaluate("operator+=", Input + ", same channel", "The flags are appended", A.GetFlags(), MString(" OVERFLOW NODEPTH")) && Passed;
+    Passed = EvaluateTrue("operator+=", Input + ", same channel", "The sum is above the trigger threshold if the added point is", A.IsAboveTriggerThreshold()) && Passed;
+    Passed = EvaluateTrue("operator+=", Input + ", same channel", "The sum is read out if the added point is", A.IsReadOut()) && Passed;
+
+    // The states are kept if the added point does not have them
+    MDGridPoint C(1, 2, 0, Type, MVector(0.0, 0.0, 0.0), 10.0);
+    A += C;
+    Passed = EvaluateTrue("operator+=", Input + ", added point below the trigger threshold", "The trigger state is kept", A.IsAboveTriggerThreshold()) && Passed;
+    Passed = EvaluateTrue("operator+=", Input + ", added point not read out", "The read-out state is kept", A.IsReadOut()) && Passed;
+    Passed = Evaluate("operator+=", Input + ", added point without flags", "The flags are kept", A.GetFlags(), MString(" OVERFLOW NODEPTH")) && Passed;
+
+    MDGridPoint D(1, 2, 0, Type, MVector(0.0, 0.0, 0.0), 10.0);
+    D += C;
+    Passed = EvaluateFalse("operator+=", Input + ", both below the trigger threshold", "The sum is not above the trigger threshold", D.IsAboveTriggerThreshold()) && Passed;
+    Passed = EvaluateFalse("operator+=", Input + ", both not read out", "The sum is not read out", D.IsReadOut()) && Passed;
+    Passed = EvaluateTrue("operator+=", Input + ", both without flags", "The sum has no flags", D.GetFlags().IsEmpty()) && Passed;
+
+    // Another channel of the same type: nothing is added (the guard ring and the Anger cameras have only one channel)
+    if (Type == MDGridPoint::c_Voxel || Type == MDGridPoint::c_VoxelDrift || Type == MDGridPoint::c_XStrip || Type == MDGridPoint::c_YStrip) {
+      MDGridPoint E(1, 2, 0, Type, MVector(0.0, 0.0, 0.0), 10.0);
+      MDGridPoint F(5, 6, 0, Type, MVector(0.0, 0.0, 0.0), 20.0);
+      F.SetFlags(" OVERFLOW");
+      F.IsAboveTriggerThreshold(true);
+      F.IsReadOut(true);
+      E += F;
+      Passed = EvaluateNear("operator+=", Input + ", other channel", "The energy is not added", E.GetEnergy(), 10.0, 1e-12) && Passed;
+      // GEO-E-39: The flags and the states are merged whenever the types are identical, also if the point is in another channel and nothing else is added
+      Passed = ExpectedToFail(EvaluateTrue("operator+=", Input + ", other channel", "The flags are not added", E.GetFlags().IsEmpty())) && Passed;
+      Passed = ExpectedToFail(EvaluateFalse("operator+=", Input + ", other channel", "The trigger state is not changed", E.IsAboveTriggerThreshold())) && Passed;
+      Passed = ExpectedToFail(EvaluateFalse("operator+=", Input + ", other channel", "The read-out state is not changed", E.IsReadOut())) && Passed;
+    }
+
+    // Another type: nothing is added
+    MDGridPoint G(1, 2, 0, Type, MVector(0.0, 0.0, 0.0), 10.0);
+    MDGridPoint H(1, 2, 0, (Type == MDGridPoint::c_Voxel) ? MDGridPoint::c_XStrip : MDGridPoint::c_Voxel, MVector(0.0, 0.0, 0.0), 20.0);
+    H.SetFlags(" OVERFLOW");
+    H.IsAboveTriggerThreshold(true);
+    H.IsReadOut(true);
+    G += H;
+    Passed = EvaluateNear("operator+=", Input + ", other type", "The energy is not added", G.GetEnergy(), 10.0, 1e-12) && Passed;
+    Passed = EvaluateTrue("operator+=", Input + ", other type", "The flags are not added", G.GetFlags().IsEmpty()) && Passed;
+    Passed = EvaluateFalse("operator+=", Input + ", other type", "The trigger state is not changed", G.IsAboveTriggerThreshold()) && Passed;
+    Passed = EvaluateFalse("operator+=", Input + ", other type", "The read-out state is not changed", G.IsReadOut()) && Passed;
+  }
+
+  // The strips merge their origins as the voxels do
+  const vector<unsigned int> Strips = { MDGridPoint::c_XStrip, MDGridPoint::c_YStrip };
+  for (unsigned int Type: Strips) {
+    MString Input = MString("Type ") + Type;
+    MDGridPoint A(3, 3, 0, Type, MVector(0.0, 0.0, 0.2), 10.0, 5.0);
+    A.SetOriginIDs(set<unsigned int>({ 1, 2 }));
+    MDGridPoint B(3, 3, 0, Type, MVector(0.0, 0.0, 0.8), 30.0, 4.0);
+    B.SetOriginIDs(set<unsigned int>({ 2, 3 }));
+    A += B;
+    Passed = EvaluateTrue("operator+=", Input, "The origins are merged without duplicates", A.GetOriginIDs() == set<unsigned int>({ 1, 2, 3 })) && Passed;
+    Passed = EvaluateNear("operator+=", Input, "The depth is the energy weighted mean", A.GetPosition().Z(), (10.0*0.2 + 30.0*0.8)/40.0, 1e-12) && Passed;
+    Passed = EvaluateNear("operator+=", Input, "The earlier time is kept", A.GetTime(), 4.0, 1e-12) && Passed;
+    Passed = Evaluate("operator+=", Input, "The hits are added", A.GetHits(), 2U) && Passed;
+  }
+
+  // An x strip and a y strip with the same indices are different channels
+  MDGridPoint X(3, 3, 0, MDGridPoint::c_XStrip, MVector(0.0, 0.0, 0.0), 10.0);
+  MDGridPoint Y(3, 3, 0, MDGridPoint::c_YStrip, MVector(0.0, 0.0, 0.0), 10.0);
+  Passed = EvaluateFalse("operator==", "x strip and y strip", "An x strip is not equal to a y strip", X == Y) && Passed;
+
+  // The x strip ignores the y index and the y strip the x index
+  MDGridPoint X2(3, 5, 0, MDGridPoint::c_XStrip, MVector(0.0, 0.0, 0.0), 10.0);
+  MDGridPoint Y2(5, 3, 0, MDGridPoint::c_YStrip, MVector(0.0, 0.0, 0.0), 10.0);
+  Passed = EvaluateTrue("operator==", "x strips 3 with different y index", "The x strips are equal", X == X2) && Passed;
+  Passed = EvaluateTrue("operator==", "y strips 3 with different x index", "The y strips are equal", Y == Y2) && Passed;
+  X += X2;
+  Passed = EvaluateNear("operator+=", "x strips 3 with different y index", "The energies are added", X.GetEnergy(), 20.0, 1e-12) && Passed;
+  Y += Y2;
+  Passed = EvaluateNear("operator+=", "y strips 3 with different x index", "The energies are added", Y.GetEnergy(), 20.0, 1e-12) && Passed;
 
   return Passed;
 }

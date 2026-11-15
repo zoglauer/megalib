@@ -97,6 +97,13 @@ private:
   //! Test the function which is called after all hits have been added
   bool TestFinalizeGridding();
 
+  //! Test adding single grid points
+  bool TestAddGridPoint();
+  //! Test the removal of the grid points which are not read out
+  bool TestRemoveNonReadOuts();
+  //! Test the default constructor and setting the volume sequence
+  bool TestSetVolumeSequence();
+
   //! The geometry
   MDGeometry m_Geometry;
   //! Flag indicating if the geometry has been read
@@ -141,6 +148,9 @@ bool UTDGridPointCollection::Run()
     Passed = TestMerge() && Passed;
     Passed = TestCopy() && Passed;
     Passed = TestFinalizeGridding() && Passed;
+    Passed = TestAddGridPoint() && Passed;
+    Passed = TestRemoveNonReadOuts() && Passed;
+    Passed = TestSetVolumeSequence() && Passed;
   }
 
   Summarize();
@@ -804,6 +814,166 @@ bool UTDGridPointCollection::TestFinalizeGridding()
   // A new hit is still possible:
   AddHit(Collection, MVector(0.2, 0.2, -20.0), 1.0, 5.0, {});
   Passed = EvaluateNear("FinalizeGridding()", "new hit", "Hits can be added after it", Collection.GetEnergy(), 101.0, 1e-12) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test adding single grid points
+bool UTDGridPointCollection::TestAddGridPoint()
+{
+  bool Passed = true;
+
+  MDVolumeSequence Sequence = GetSequence(MVector(0.1, 0.1, -20.0));
+
+  // Voxels
+  MDGridPointCollection Voxels(Sequence);
+  MDGridPoint A(4, 4, 0, MDGridPoint::c_Voxel, MVector(0.0, 0.0, 0.0), 100.0, 5.0);
+  A.SetOriginIDs(set<unsigned int>({ 1 }));
+  Voxels.Add(A);
+  Passed = Evaluate("Add(MDGridPoint&)", "first point", "The collection has one grid point", Voxels.GetNGridPoints(), 1U) && Passed;
+  Passed = EvaluateNear("Add(MDGridPoint&)", "first point", "The energy is stored", Voxels.GetGridPointAt(0).GetEnergy(), 100.0, 1e-12) && Passed;
+
+  MDGridPoint B(4, 4, 0, MDGridPoint::c_Voxel, MVector(0.0, 0.0, 0.0), 50.0, 3.0);
+  B.SetOriginIDs(set<unsigned int>({ 2 }));
+  B.IsReadOut(true);
+  Voxels.Add(B);
+  Passed = Evaluate("Add(MDGridPoint&)", "same channel", "The point is merged into the existing one", Voxels.GetNGridPoints(), 1U) && Passed;
+  Passed = EvaluateNear("Add(MDGridPoint&)", "same channel", "The energies are added", Voxels.GetGridPointAt(0).GetEnergy(), 150.0, 1e-12) && Passed;
+  Passed = EvaluateNear("Add(MDGridPoint&)", "same channel", "The earlier time is taken", Voxels.GetGridPointAt(0).GetTime(), 3.0, 1e-12) && Passed;
+  Passed = EvaluateTrue("Add(MDGridPoint&)", "same channel", "The origins are merged", Voxels.GetGridPointAt(0).GetOriginIDs() == set<unsigned int>({ 1, 2 })) && Passed;
+  Passed = EvaluateTrue("Add(MDGridPoint&)", "same channel", "The read-out state of the added point is taken", Voxels.GetGridPointAt(0).IsReadOut()) && Passed;
+  Passed = EvaluateNear("Add(MDGridPoint&)", "same channel", "The added point is not changed", B.GetEnergy(), 50.0, 1e-12) && Passed;
+
+  MDGridPoint C(5, 4, 0, MDGridPoint::c_Voxel, MVector(0.0, 0.0, 0.0), 20.0, 1.0);
+  Voxels.Add(C);
+  Passed = Evaluate("Add(MDGridPoint&)", "other channel", "The point is appended", Voxels.GetNGridPoints(), 2U) && Passed;
+  Passed = Evaluate("Add(MDGridPoint&)", "other channel", "The new point is at the end", Voxels.GetGridPointAt(1).GetXGrid(), 5U) && Passed;
+  Passed = EvaluateNear("Add(MDGridPoint&)", "other channel", "The total energy is the sum", Voxels.GetEnergy(), 170.0, 1e-12) && Passed;
+
+  // Another type is rejected
+  MDGridPoint Strip(4, 0, 0, MDGridPoint::c_XStrip, MVector(0.0, 0.0, 0.0), 1000.0);
+  DisableDefaultStreams();
+  Voxels.Add(Strip);
+  EnableDefaultStreams();
+  Passed = Evaluate("Add(MDGridPoint&)", "x strip to voxels", "A point of another type is not added", Voxels.GetNGridPoints(), 2U) && Passed;
+  Passed = EvaluateNear("Add(MDGridPoint&)", "x strip to voxels", "The energy is not changed", Voxels.GetEnergy(), 170.0, 1e-12) && Passed;
+
+  // x strips and y strips live in one collection
+  MDGridPointCollection Strips(GetSequence(MVector(0.1, 0.1, 0.0)));
+  MDGridPoint X(4, 0, 0, MDGridPoint::c_XStrip, MVector(0.0, 0.0, 0.1), 100.0);
+  MDGridPoint Y(0, 4, 0, MDGridPoint::c_YStrip, MVector(0.0, 0.0, 0.1), 100.0);
+  Strips.Add(X);
+  Strips.Add(Y);
+  Passed = Evaluate("Add(MDGridPoint&)", "x strip and y strip", "Both strips are added", Strips.GetNGridPoints(), 2U) && Passed;
+  Strips.Add(X);
+  Strips.Add(Y);
+  Passed = Evaluate("Add(MDGridPoint&)", "x strip and y strip twice", "The strips are merged", Strips.GetNGridPoints(), 2U) && Passed;
+  Passed = EvaluateNear("Add(MDGridPoint&)", "x strip twice", "The energies of the x strip are added", Strips.GetGridPointAt(0).GetEnergy(), 200.0, 1e-12) && Passed;
+  Passed = EvaluateNear("Add(MDGridPoint&)", "y strip twice", "The energies of the y strip are added", Strips.GetGridPointAt(1).GetEnergy(), 200.0, 1e-12) && Passed;
+  MDGridPoint X2(5, 0, 0, MDGridPoint::c_XStrip, MVector(0.0, 0.0, 0.1), 10.0);
+  Strips.Add(X2);
+  Passed = Evaluate("Add(MDGridPoint&)", "second x strip", "The strip is appended", Strips.GetNGridPoints(), 3U) && Passed;
+
+  // The same with the y strip first
+  MDGridPointCollection StripsY(GetSequence(MVector(0.1, 0.1, 0.0)));
+  StripsY.Add(Y);
+  StripsY.Add(X);
+  Passed = Evaluate("Add(MDGridPoint&)", "y strip and x strip", "Both strips are added", StripsY.GetNGridPoints(), 2U) && Passed;
+
+  MDGridPoint Voxel(4, 4, 0, MDGridPoint::c_Voxel, MVector(0.0, 0.0, 0.0), 1000.0);
+  DisableDefaultStreams();
+  Strips.Add(Voxel);
+  EnableDefaultStreams();
+  Passed = Evaluate("Add(MDGridPoint&)", "voxel to strips", "A point of another type is not added", Strips.GetNGridPoints(), 3U) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the removal of the grid points which are not read out
+bool UTDGridPointCollection::TestRemoveNonReadOuts()
+{
+  bool Passed = true;
+
+  MDVolumeSequence Sequence = GetSequence(MVector(0.1, 0.1, -20.0));
+
+  MDGridPointCollection Collection(Sequence);
+  for (unsigned int x = 0; x < 5; ++x) {
+    MDGridPoint Point(x, 4, 0, MDGridPoint::c_Voxel, MVector(0.0, 0.0, 0.0), 10.0*(x + 1));
+    Collection.Add(Point);
+  }
+  Passed = Evaluate("GetNGridPoints()", "5 points", "The collection has 5 grid points", Collection.GetNGridPoints(), 5U) && Passed;
+
+  // The non-const access changes the stored point
+  Collection.GetGridPointAt(1).IsReadOut(true);
+  Collection.GetGridPointAt(3).IsReadOut(true);
+  const MDGridPointCollection& Const = Collection;
+  Passed = EvaluateTrue("GetGridPointAt()", "non-const access", "The read-out state is stored in the collection", Const.GetGridPointAt(1).IsReadOut() == true && Const.GetGridPointAt(0).IsReadOut() == false) && Passed;
+
+  Collection.RemoveNonReadOuts();
+  if (Evaluate("RemoveNonReadOuts()", "2 of 5 read out", "Two grid points remain", Collection.GetNGridPoints(), 2U) == true) {
+    Passed = Evaluate("RemoveNonReadOuts()", "2 of 5 read out", "The first remaining point is the first read-out point", Collection.GetGridPointAt(0).GetXGrid(), 1U) && Passed;
+    Passed = Evaluate("RemoveNonReadOuts()", "2 of 5 read out", "The second remaining point is the second read-out point", Collection.GetGridPointAt(1).GetXGrid(), 3U) && Passed;
+    Passed = EvaluateNear("RemoveNonReadOuts()", "2 of 5 read out", "The energy is the one of the remaining points", Collection.GetEnergy(), 60.0, 1e-12) && Passed;
+  } else {
+    Passed = false;
+  }
+
+  Collection.RemoveNonReadOuts();
+  Passed = Evaluate("RemoveNonReadOuts()", "all read out", "Nothing is removed", Collection.GetNGridPoints(), 2U) && Passed;
+
+  Collection.GetGridPointAt(0).IsReadOut(false);
+  Collection.GetGridPointAt(1).IsReadOut(false);
+  Collection.RemoveNonReadOuts();
+  Passed = Evaluate("RemoveNonReadOuts()", "none read out", "The collection is empty", Collection.GetNGridPoints(), 0U) && Passed;
+
+  Collection.RemoveNonReadOuts();
+  Passed = Evaluate("RemoveNonReadOuts()", "empty collection", "The collection stays empty", Collection.GetNGridPoints(), 0U) && Passed;
+
+  // A point above the trigger threshold which is not read out is removed too
+  MDGridPoint Triggered(4, 4, 0, MDGridPoint::c_Voxel, MVector(0.0, 0.0, 0.0), 100.0);
+  Triggered.IsAboveTriggerThreshold(true);
+  Collection.Add(Triggered);
+  Collection.RemoveNonReadOuts();
+  Passed = Evaluate("RemoveNonReadOuts()", "above the trigger threshold, not read out", "Only the read-out state counts", Collection.GetNGridPoints(), 0U) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the default constructor and setting the volume sequence
+bool UTDGridPointCollection::TestSetVolumeSequence()
+{
+  bool Passed = true;
+
+  MDVolumeSequence SequenceA = GetSequence(MVector(0.1, 0.1, -20.0));
+  MDVolumeSequence SequenceB = GetSequence(MVector(0.1, 0.1, -10.0));
+
+  MDGridPointCollection Collection;
+  Passed = Evaluate("MDGridPointCollection()", "default constructor", "The collection is empty", Collection.GetNGridPoints(), 0U) && Passed;
+  Passed = EvaluateTrue("MDGridPointCollection()", "default constructor", "The volume sequence has no detector", Collection.GetVolumeSequence().GetDetector() == nullptr) && Passed;
+
+  Collection.SetVolumeSequence(SequenceA);
+  Passed = EvaluateTrue("SetVolumeSequence()", "first wafer", "The volume sequence is stored", Collection.GetVolumeSequence().HasSameDetector(SequenceA)) && Passed;
+  Passed = EvaluateTrue("HasSameDetector()", "first wafer", "The collection is in the detector of the sequence", Collection.HasSameDetector(&SequenceA)) && Passed;
+  Passed = EvaluateFalse("HasSameDetector()", "second wafer", "The collection is not in the other wafer", Collection.HasSameDetector(&SequenceB)) && Passed;
+
+  // The world position of a grid point follows the volume sequence
+  MDGridPoint Point(4, 4, 0, MDGridPoint::c_Voxel, MVector(0.0, 0.0, 0.0), 100.0);
+  Collection.Add(Point);
+  Passed = EvaluateVectorNear("GetWorldPositionGridPointAt()", "first wafer", "The grid point is in the first wafer", Collection.GetWorldPositionGridPointAt(0), MVector(0.0, 0.0, -20.0), 1e-12) && Passed;
+  Collection.SetVolumeSequence(SequenceB);
+  Passed = EvaluateVectorNear("GetWorldPositionGridPointAt()", "second wafer", "The grid point is in the second wafer", Collection.GetWorldPositionGridPointAt(0), MVector(0.0, 0.0, -10.0), 1e-12) && Passed;
 
   return Passed;
 }

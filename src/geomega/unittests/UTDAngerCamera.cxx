@@ -74,7 +74,8 @@ bool UTDAngerCamera::Run()
 
   Passed = TestConstruction() && Passed;
   Passed = TestKeywords() && Passed;
-  Passed = TestCommonNoiseChain(GetBody() + "D.Positioning XYZ\nD.PositionResolution 100 0.01\nD.PositionResolution 500 0.01\n", MVector(0.25, 0.25, 0.5)) && Passed;
+  // GEO-D-075: The detector does not flag failures and overflows
+  Passed = TestCommonNoiseChain(GetBody() + "D.Positioning XYZ\nD.PositionResolution 100 0.01\nD.PositionResolution 500 0.01\n", MVector(0.25, 0.25, 0.5), false) && Passed;
   Passed = TestPositionNoise() && Passed;
   Passed = TestBoundaries() && Passed;
   Passed = TestDiscretize() && Passed;

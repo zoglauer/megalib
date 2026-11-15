@@ -502,6 +502,8 @@ bool UTDStrip2D::TestGuardRing()
 
   Passed = EvaluateTrue("HasGuardRing()", "with offset", "An offset creates a guard ring", D->HasGuardRing()) && Passed;
   Passed = EvaluateTrue("GetGuardRing()", "with offset", "The guard ring exists", D->GetGuardRing() != nullptr) && Passed;
+  const MDDetector* ConstD = D;
+  Passed = EvaluateTrue("GetGuardRing() const", "with offset", "The const version returns the same guard ring", ConstD->GetGuardRing() == D->GetGuardRing()) && Passed;
   if (D->GetGuardRing() == nullptr) {
     return false;
   }

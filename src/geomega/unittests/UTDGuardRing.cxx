@@ -59,6 +59,8 @@ private:
   bool TestGrid();
   //! Test the copy
   bool TestCopy();
+  //! Test the flags of the noising
+  bool TestNoiseFlags();
 };
 
 
@@ -76,6 +78,7 @@ bool UTDGuardRing::Run()
   Passed = TestActiveNoise() && Passed;
   Passed = TestGrid() && Passed;
   Passed = TestCopy() && Passed;
+  Passed = TestNoiseFlags() && Passed;
 
   Summarize();
   return Passed;
@@ -448,6 +451,41 @@ bool UTDGuardRing::TestCopy()
   Passed = EvaluateTrue("SetMotherDetector()", "clone with a new mother", "The clone with a new mother is valid", Result) && Passed;
 
   // The mother detector has its own guard ring in its copy: covered by UTDStrip2D and UTDVoxel3D
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the flags of the noising
+bool UTDGuardRing::TestNoiseFlags()
+{
+  bool Passed = true;
+  gRandom->SetSeed(6006);
+
+  MDGeometry Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "flags", "The fixture is accepted", Scan(Geometry, GetStrip(), "D.GuardRingEnergyResolution 100 0\nD.GuardRingEnergyResolution 500 0\nD.GuardRingTriggerThreshold 30\n")) && Passed;
+  if (CheckDetector(Passed, "Flags", Geometry, "D", MDDetector::c_Strip2D) == false) {
+    return false;
+  }
+  MDDetector* Ring = Geometry.GetDetector("D")->GetGuardRing();
+  if (EvaluateTrue("GetGuardRing()", "flags", "The detector has a guard ring", Ring != nullptr) == false) {
+    return false;
+  }
+  MVector Null(0.0, 0.0, 0.0);
+
+  Ring->SetOverflow(200.0);
+  MString Normal = NoiseFlagsOnce(Ring, nullptr, Null, 100.0);
+  Passed = EvaluateTrue("Noise()", "flags, 100 keV with an overflow of 200 keV", "There are no flags", Normal.IsEmpty()) && Passed;
+  // Defect GEO-D-075: The guard ring does not flag failures and overflows as the other detectors do
+  Passed = ExpectedToFail(EvaluateTrue("Noise()", "flags, 1000 keV with an overflow of 200 keV", "The overflow is flagged", NoiseFlagsOnce(Ring, nullptr, Null, 1000.0).Contains(" OVERFLOW"))) && Passed;
+
+  Ring->SetFailureRate(1.0);
+  Passed = EvaluateNear("Noise()", "failure rate 1", "The hit is removed", NoiseOnce(Ring, nullptr, Null, 100.0), 0.0, 1e-12) && Passed;
+  // Defect GEO-D-075: The guard ring does not flag failures and overflows as the other detectors do
+  Passed = ExpectedToFail(EvaluateTrue("Noise()", "flags, failure rate 1", "The failure is flagged", NoiseFlagsOnce(Ring, nullptr, Null, 100.0) == " FAILURE")) && Passed;
+
   return Passed;
 }
 
