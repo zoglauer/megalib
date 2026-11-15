@@ -114,6 +114,7 @@ clean:
 	@rm -f inc/\#*
 	@rm -f *~
 	@rm -f \#*
+	@rm -f *_dictUmbrella.h *_dictContent.h
 	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
 	@rm -f $(OBJECTS_MAIN1) $(EXECUTABLE1)
 	@rm -f $(OBJECTS_MAIN2) $(EXECUTABLE2)

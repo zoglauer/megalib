@@ -51,6 +51,13 @@ class MRotation;
 //! Mark one check as a known failure inside a derived member function
 #define ExpectedToFail(...) (BeginExpectedFailureMode(), __VA_ARGS__, EndExpectedFailureMode())
 
+//! Mark a check that would crash or hang as a known failure
+//! Use inside a derived member function: Passed = ExpectedToCrash(Evaluate(...)) && Passed;
+//! Compile the check without running it or any of its side effects
+//! Report its source location and text, count one known failure, and return true
+//! Attention: Remove the wrapper when fixing the defect - fixes are not detected automatically
+#define ExpectedToCrash(...) (true ? RegisterExpectedCrash(__FILE__, __LINE__, #__VA_ARGS__) : (__VA_ARGS__))
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -67,6 +74,10 @@ class MRotation;
 //! Wrap one check with ExpectedToFail in a derived member function to mark a known failure
 //! Report a failing wrapped check as KNOWN FAILURE and a passing one as UNEXPECTED PASS
 //! Count an unexpected pass as a failed test
+//!
+//! Wrap a check with ExpectedToCrash if a known defect would crash or hang the program
+//! Compile the check without running it and count it as KNOWN FAILURE
+//! Attention: Remove the wrapper when fixing the defect
 //!
 //! UTUnitTest and UTEndToEndTest also create helper test instances in the same process
 //! Each helper has its own private test directory, but HOME and the working directory are shared by the process
@@ -196,6 +207,10 @@ class MUnitTest
  protected:
   //! Return the unit test name
   const MString& GetName() const { return m_Name; }
+  //! Return the log directory name
+  MString GetLogDirectory() const { return m_LogDirectory; }
+  //! Return the time out in seconds from the testing settings
+  double GetSettingsTimeout() const { return m_SettingsTimeout; }
 
   //! Count a passed check, or report and count an unexpected pass as a failed test
   template <typename T> void RegisterSuccess(MString Function, T Input, MString Description) {
@@ -238,6 +253,8 @@ class MUnitTest
   void BeginExpectedFailureMode();
   //! End tracking and return true if exactly one wrapped check failed
   bool EndExpectedFailureMode();
+  //! Report and count a known crash or hang, then return true
+  bool RegisterExpectedCrash(const MString& File, int Line, const MString& Check);
 
   //! Disable the default MEGAlib streams around expected noisy calls
   void DisableDefaultStreams() {
@@ -254,6 +271,16 @@ class MUnitTest
     mgui.Enable(true);
     __merr.Enable(true);
   }
+
+  //! Capture text written to cout until the capture ends
+  //! Attention: End the capture before evaluating checks to keep failure reports visible
+  void BeginCaptureOutput();
+  //! Restore cout and return the captured text (empty if no capture is active)
+  MString EndCaptureOutput();
+
+  //! Fill Size bytes with Byte before constructing an object with placement new
+  //! Use volatile writes to keep the compiler from removing the fill
+  void FillMemory(void* Block, size_t Size, unsigned char Byte) const;
 
   //! Return a file path below the private temporary root without creating the file
   MString GetTemporaryFileName(const MString& Name) const;
@@ -295,10 +322,8 @@ class MUnitTest
   //! Build a directory basename from ASCII letters, digits, '_' and '-' (fallback: "UnitTest")
   MString CreateTemporaryDirectoryBaseName(const MString& Name) const;
 
-  //! Read the log directory from the testing settings file
+  //! Read the log directory and the time out from the testing settings file
   void LoadLogDirectory();
-  //! Return the log directory name
-  MString GetLogDirectory() const { return m_LogDirectory; }
 
   //! Return true for a plain file or directory name (empty name: allowed if AllowEmpty is true)
   bool IsValidTemporaryPathName(const MString& Name, bool AllowEmpty = false) const;
@@ -334,7 +359,7 @@ class MUnitTest
    unsigned int m_NumberOfPassedTests;
    //! Number of failed tests
    unsigned int m_NumberOfFailedTests;
-   //! Number of known failures marked with ExpectedToFail
+   //! Number of known failures marked with ExpectedToFail or ExpectedToCrash
    unsigned int m_NumberOfKnownFailures;
 
    //! Flag indicating if a wrapped check is being tracked
@@ -346,12 +371,19 @@ class MUnitTest
    //! Flag indicating if a wrapped check passed unexpectedly
    bool m_HasUnexpectedPass;
 
+   //! Text collected during the most recent output capture
+   ostringstream m_CapturedOutput;
+   //! Original cout buffer to restore (nullptr: capture inactive)
+   streambuf* m_CoutBuffer;
+
    //! Path of the randomized private temporary root
    mutable MString m_TemporaryRootDirectory;
    //! File descriptor holding the temporary root lock against test driver cleanup (-1: none)
    mutable int m_TemporaryRootLock;
    //! The log directory
    MString m_LogDirectory;
+   //! The time out in seconds from the testing settings
+   double m_SettingsTimeout;
    //! Mutex protecting temporary root creation and filesystem operations
    mutable recursive_mutex m_TemporaryPathMutex;
 

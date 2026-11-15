@@ -118,3 +118,5 @@ callgrind.*
 *.rsp
 *.erm
 
+*_dictUmbrella.h
+*_dictContent.h

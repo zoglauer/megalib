@@ -25,6 +25,7 @@
 // Standard libs:
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -74,6 +75,7 @@ MUnitTest::MUnitTest(const MString& Name)
   m_NumberOfNestedExpectedFailureModes = 0;
   m_NumberOfExpectedFailureModeChecks = 0;
   m_HasUnexpectedPass = false;
+  m_CoutBuffer = nullptr;
 
   // On the first call, create a private temporary root directory and redirect HOME and the working directory there:
   if (RedirectHomeDirectory() == false) {
@@ -92,6 +94,11 @@ MUnitTest::MUnitTest(const MString& Name)
 MUnitTest::~MUnitTest()
 {
   // Keep HOME and the working directory isolated until the process ends
+
+  // Restore cout before destroying the capture buffer
+  if (m_CoutBuffer != nullptr) {
+    EndCaptureOutput();
+  }
 
   if (m_TemporaryRootDirectory.IsEmpty() == true) {
     ReleaseTemporaryRootLock();
@@ -118,6 +125,11 @@ MUnitTest::~MUnitTest()
 //! Summarize the test run
 void MUnitTest::Summarize()
 {
+  // End any active capture before printing the summary
+  if (m_CoutBuffer != nullptr) {
+    EndCaptureOutput();
+  }
+
   // Report an unfinished expected-failure check:
   if (m_IsExpectedFailureModeActive == true) {
     mout<<endl;
@@ -241,6 +253,23 @@ bool MUnitTest::EndExpectedFailureMode()
   }
 
   return m_HasUnexpectedPass == false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Report and count a known crash or hang, then return true
+bool MUnitTest::RegisterExpectedCrash(const MString& File, int Line, const MString& Check)
+{
+  mout<<endl;
+  mout<<"KNOWN FAILURE: The check is expected to crash or hang and was not run"<<endl;
+  mout<<"   Location:    "<<File<<":"<<Line<<endl;
+  mout<<"   Check:       "<<Check<<endl;
+  mout<<endl;
+  ++m_NumberOfKnownFailures;
+
+  return true;
 }
 
 
@@ -832,7 +861,55 @@ MString MUnitTest::CreateTemporaryDirectoryBaseName(const MString& Name) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Read the log directory from the testing settings file
+//! Capture text written to cout until the capture ends
+void MUnitTest::BeginCaptureOutput()
+{
+  // Preserve the original cout buffer when capture is already active
+  if (m_CoutBuffer != nullptr) {
+    return;
+  }
+
+  cout.flush();
+  m_CapturedOutput.str("");
+  m_CoutBuffer = cout.rdbuf(m_CapturedOutput.rdbuf());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Restore cout and return the captured text (empty if no capture is active)
+MString MUnitTest::EndCaptureOutput()
+{
+  if (m_CoutBuffer == nullptr) {
+    return "";
+  }
+
+  cout.flush();
+  cout.rdbuf(m_CoutBuffer);
+  m_CoutBuffer = nullptr;
+
+  return m_CapturedOutput.str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Fill Size bytes with Byte before constructing an object with placement new
+void MUnitTest::FillMemory(void* Block, size_t Size, unsigned char Byte) const
+{
+  volatile unsigned char* Bytes = static_cast<unsigned char*>(Block);
+  for (size_t b = 0; b < Size; ++b) {
+    Bytes[b] = Byte;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Read the log directory and the time out from the testing settings file
 void MUnitTest::LoadLogDirectory()
 {
   // Create the settings file with the defaults if it does not exist
@@ -847,6 +924,7 @@ void MUnitTest::LoadLogDirectory()
   }
 
   m_LogDirectory = Settings.GetLogDirectory();
+  m_SettingsTimeout = Settings.GetTimeout();
 }
 
 

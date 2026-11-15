@@ -82,6 +82,7 @@ clean:
 	@rm -f inc/\#*
 	@rm -f *~
 	@rm -f \#*
+	@rm -f *_dictUmbrella.h *_dictContent.h
 	@rm -f $(addprefix $(IN)/,$(notdir $(H_FILES)))
 	@rm -f $(IN)/MAssembly.h $(IN)/MReadOutAssembly.h
 	@rm -f $(PRG)

@@ -39,6 +39,7 @@ glo:
 
 tests:
 	$(MAKE) tests -C global
+	$(MAKE) tests -C geomega
 	$(MAKE) tests -C spectralyze
 	$(MAKE) tests -C mimrec
 	$(MAKE) tests -C revan
@@ -324,6 +325,7 @@ clean:
 	@$(MAKE) clean -C spectralyze
 	@$(MAKE) clean -C fretalon
 	@$(MAKE) clean -C response
+	@$(MAKE) clean -C endtoend
 	@$(MAKE) clean -C addon
 	@$(MAKE) clean -C cosima -f Makefile
 	@rm -f *~
