@@ -332,7 +332,7 @@ Passed = EvaluateTrue("RemoveTemporaryFile()", "fixture",
 
 ## ROOT in Tests
 1. ROOT is not thread-safe. Use ROOT objects only in the main thread. If a test starts threads or asynchronous tasks, they must not open ROOT files, create ROOT objects, or call ROOT functions. Return plain data and do the ROOT work afterwards in the main thread.
-2. A test which reads or writes ROOT objects creates `TApplication ROOT("ROOT", 0, 0);` at the start of `main()` and calls `gROOT->SetBatch(true);`, so that canvases can be read without a display. Do not rely on a display being available.
+2. A test which reads or writes ROOT objects calls `gROOT->SetBatch(true);` and then creates `TApplication ROOT("ROOT", 0, 0);` at the start of `main()` - in this order, otherwise ROOT connects to the display, and the result of a test can depend on a display being available -, so that canvases can be read without a display. Do not rely on a display being available.
 3. Check the result of every ROOT file operation (`IsZombie()`, null pointers from `Get()` or `ReadObj()`) and report the reason with `merr` when it fails. A silent `false` is hard to diagnose.
 
 ## External Programs in Tests
@@ -351,8 +351,9 @@ Passed = EvaluateTrue("RemoveTemporaryFile()", "fixture",
 ## Known Defects and Intended Surprises
 1. A test of a believed defect asserts the correct behavior and fails until the defect is fixed. Never assert the buggy behavior just to get a green run: the fix would then break the test.
 2. A failing test of a known defect is committed only together with a note naming the defect (issue or commit message), and the check is wrapped in `ExpectedToFail()`, so that it is counted as a known failure. The suite stays green, the driver shows the known failures of every run and their total, and `testdrive --strict` fails the run on them, which is what a release or merge check should use. A reference campaign treats known failures as failed checks. When the defect is fixed, the check passes unexpectedly and fails the run until the wrapper is removed: a known failure never hides a fix.
-3. If a behavior is intentional but surprising (for example a deliberately mirrored coordinate frame), assert it and state the reason in a comment next to the check, so that it is not reported as a bug later.
-4. If it is unclear whether a behavior is a defect, do not guess: ask, and leave the check out until the question is answered.
+3. If a known defect would crash or hang the test program during a check, wrap the check in `ExpectedToCrash()` instead. The check is compiled but never run, and it is reported and counted as a known failure like an `ExpectedToFail()` check. A fix is therefore not noticed: remove the wrapper together with the fix. A scenario which needs several statements goes into a private member function of the test class, which returns a `bool` for the wrapped check.
+4. If a behavior is intentional but surprising (for example a deliberately mirrored coordinate frame), assert it and state the reason in a comment next to the check, so that it is not reported as a bug later.
+5. If it is unclear whether a behavior is a defect, do not guess: ask, and leave the check out until the question is answered.
 
 ## Mocking
 1. Use real implementations for value types and pure functions.
@@ -362,8 +363,8 @@ Passed = EvaluateTrue("RemoveTemporaryFile()", "fixture",
 
 ## Special Techniques
 1. Protected members of the class under test are reached with a small test subclass which exposes them with `using` declarations (for example `class AccessFoo : public MFoo { public: using MFoo::ProtectedFunction; };`). Do not change the visibility of production code for tests.
-2. Test that a constructor initializes every member: construct the object with placement `new` into a memory block filled with a recognizable byte pattern, and verify that no member (or the object as a whole) still contains the pattern afterwards. Run it on a throw-away block, never on memory that is in use. Choose a pattern byte whose value cannot be a valid default of any member (for example not 0x00 or 0xFF), otherwise members which are legitimately set to that value are reported as uninitialized.
-3. If an input might crash the code under test (for example a missing data file or an invalid state), run the call in a forked child process and check the exit status with `waitpid`. A crash is then a failed check, and the remaining checks still run. Do not use this to hide crashes: a crash on valid input is a defect to report.
+2. Test that a constructor initializes every member: construct the object with placement `new` into a memory block filled with a recognizable byte pattern, and verify that no member (or the object as a whole) still contains the pattern afterwards. Run it on a throw-away block, never on memory that is in use. Choose a pattern byte whose value cannot be a valid default of any member (for example not 0x00 or 0xFF), otherwise members which are legitimately set to that value are reported as uninitialized. Use `MUnitTest::FillMemory()` to fill the block before construction. Its volatile writes prevent the compiler from removing the fill as a dead store.
+3. Do not run the code under test in a forked child process to survive a crash or a hang: the child hides the defect, and a check which passes in a child can crash in the test program itself. A crash or a hang is a defect to report, and its check is wrapped in `ExpectedToCrash()` (see "Known Defects and Intended Surprises"). A child process is only right if ending the program is the tested behavior itself, as in `UTAssert`.
 
 ## What Not to Test
 1. Do not test ROOT, Geant4, or other third-party library behavior.
@@ -392,7 +393,7 @@ Passed = EvaluateFalse("Initialize()", "missing file", "Initialization fails whe
 4. Match the suppression mechanism to how the code under test actually prints:
    - `mout` / `mlog` / `mgui` / `merr` -> `DisableDefaultStreams()` / `EnableDefaultStreams()`.
    - `cout` guarded by `if (g_Verbosity >= c_Error)` -> save `g_Verbosity`, set `c_Quiet`, restore. Note that `g_Verbosity` defaults to `0` (`c_Quiet`), so such output is usually already silent.
-   - Ungated raw `cout` in production code -> only a `cout.rdbuf()` capture works. Prefer fixing the production code to use `mout`/`merr`; capture only when that code is out of scope.
+   - Ungated raw `cout` in production code -> only a `cout.rdbuf()` capture works: call `BeginCaptureOutput()` before and `EndCaptureOutput()` after the call, which returns the captured text. Prefer fixing the production code to use `mout`/`merr`; capture only when that code is out of scope.
    - ROOT `Info in <...>` messages go to **stderr**, not stdout, and no MEGAlib mechanism silences them. Guard with `gErrorIgnoreLevel = kWarning` and restore the previous value.
 5. A test must leave stdout and stderr clean when it passes. Unexpected output hides real diagnostics and makes failures hard to spot in a suite run.
 6. Range, finiteness, and non-empty checks are fallback assertions only when no exact expected result is reasonably derivable.
