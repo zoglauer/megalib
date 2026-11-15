@@ -325,6 +325,7 @@ clean:
 	@$(MAKE) clean -C spectralyze
 	@$(MAKE) clean -C fretalon
 	@$(MAKE) clean -C response
+	@$(MAKE) clean -C endtoend
 	@$(MAKE) clean -C addon
 	@$(MAKE) clean -C cosima -f Makefile
 	@rm -f *~
