@@ -541,7 +541,7 @@ MVector MDStrip2D::GetPositionResolution(const MVector& Pos, const double Energy
   // Var(X) = (b-a)^2 / 12
   // S(X) = (b-a) / sqrt(12)
 
-  return MVector(m_PitchX/sqrt(12.0), m_PitchY/sqrt(12.0), m_StructuralSize[2]/sqrt(12.0));
+  return MVector(m_PitchX/sqrt(12.0), m_PitchY/sqrt(12.0), 2*m_StructuralSize[2]/sqrt(12.0));
 }
 
 

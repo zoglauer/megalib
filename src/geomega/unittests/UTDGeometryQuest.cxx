@@ -656,8 +656,7 @@ bool UTDGeometryQuest::TestGetResolutions()
   Passed = EvaluateNear("GetResolutions()", "not rotated", "The y resolution is the y pitch of 2 cm / sqrt(12)", PRes.Y(), 2.0/Root12, 1e-13) && Passed;
   Passed = EvaluateNear("GetResolutions()", "not rotated", "The energy resolution is the one of the file", ERes, 2.0, 1e-13) && Passed;
   Passed = EvaluateNear("GetResolutions()", "not rotated", "The time resolution is the one of the file", TRes, 0.001, 1e-13) && Passed;
-  // Defect GEO-B-31: MDStrip2D::GetPositionResolution divides the half thickness and not the full thickness by sqrt(12)
-  Passed = ExpectedToFail(EvaluateNear("GetResolutions()", "not rotated", "The z resolution is the full thickness of 2 cm / sqrt(12)", PRes.Z(), 2.0/Root12, 1e-13)) && Passed;
+  Passed = EvaluateNear("GetResolutions()", "not rotated", "The z resolution is the full thickness of 2 cm / sqrt(12)", PRes.Z(), 2.0/Root12, 1e-13) && Passed;
 
   // Holder A is rotated by 90 deg around z: x and y are exchanged
   MVector RotatedPRes;

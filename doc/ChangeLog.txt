@@ -27,6 +27,7 @@ Global library:
 Geomega:
 + Rewrite of the detector effects engine
 + MDGeometry: GetHash() now hashes the contents of the geometry file and all included files.
++ MDStrip2D: The depth (z) position resolution of a Strip2D detector was calculated from the half thickness of the wafer instead of its full thickness, and was thus a factor of two too small.
 
 Cosima / Sivan:
 + Enable and updates to run Geant4 11.4

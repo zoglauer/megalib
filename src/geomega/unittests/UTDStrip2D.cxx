@@ -663,8 +663,7 @@ bool UTDStrip2D::TestPositionResolution()
   // Standard deviation of a uniform distribution: (b - a)/sqrt(12)
   Passed = EvaluateNear("GetPositionResolution()", "x", "The resolution is the pitch/sqrt(12)", Resolution.X(), 0.5/sqrt(12.0), 1e-12) && Passed;
   Passed = EvaluateNear("GetPositionResolution()", "y", "The resolution is the pitch/sqrt(12)", Resolution.Y(), 0.5/sqrt(12.0), 1e-12) && Passed;
-  // Defect GEO-D-028: The depth resolution of a strip detector uses the half thickness as the full width of the uniform distribution and is thus a factor of two too small
-  Passed = ExpectedToFail(EvaluateNear("GetPositionResolution()", "z", "The resolution is the thickness/sqrt(12)", Resolution.Z(), 2.0*1.0/sqrt(12.0), 1e-12)) && Passed;
+  Passed = EvaluateNear("GetPositionResolution()", "z", "The resolution is the thickness/sqrt(12)", Resolution.Z(), 2.0*1.0/sqrt(12.0), 1e-12) && Passed;
 
   return Passed;
 }
