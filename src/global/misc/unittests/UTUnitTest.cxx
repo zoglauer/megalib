@@ -81,6 +81,12 @@ private:
     bool RemoveDirectory(const MString& DirectoryName = "") const { return RemoveTemporaryDirectory(DirectoryName); }
     bool WriteFile(const MString& FileName, const MString& Content) const { return WriteTextFile(FileName, Content); }
     MString ReadFile(const MString& FileName) const { return ReadTextFile(FileName); }
+    void BeginCapture() { BeginCaptureOutput(); }
+    MString EndCapture() { return EndCaptureOutput(); }
+    //! Wrap a check that increments Evaluations if executed
+    bool CrashCheck(unsigned int& Evaluations) { return ExpectedToCrash(EvaluateTrue("inner check", "crash", "The value is true", CountEvaluation(Evaluations))); }
+    //! Count an evaluation and return true
+    bool CountEvaluation(unsigned int& Evaluations) { ++Evaluations; return true; }
   };
 
   //! Test exact, boolean, size, and floating-point evaluation helpers
@@ -101,6 +107,12 @@ private:
   bool TestLogDirectory();
   //! Test the reading of the numbers of the summary
   bool TestParseSummary();
+  //! Test output capture, repeated calls, and automatic stream restoration
+  bool TestCaptureOutput();
+  //! Test memory filling, write boundaries, and a zero-length block
+  bool TestFillMemory();
+  //! Check that ExpectedToCrash counts a known failure without executing the check
+  bool TestExpectedToCrash();
 };
 
 
@@ -120,6 +132,9 @@ bool UTUnitTest::Run()
   Passed = TestHomeRedirect() && Passed;
   Passed = TestLogDirectory() && Passed;
   Passed = TestParseSummary() && Passed;
+  Passed = TestCaptureOutput() && Passed;
+  Passed = TestFillMemory() && Passed;
+  Passed = TestExpectedToCrash() && Passed;
 
   Summarize();
   return Passed;
@@ -1055,6 +1070,123 @@ bool UTUnitTest::TestTemporaryPaths()
     }
     Passed = EvaluateTrue("GetTemporaryFileName()", MString("concurrent thread ") + t, "Every concurrently generated temporary path remains below the shared randomized root", PathsUseSharedRoot) && Passed;
   }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test output capture, repeated calls, and automatic stream restoration
+bool UTUnitTest::TestCaptureOutput()
+{
+  bool Passed = true;
+
+  streambuf* Original = cout.rdbuf();
+
+  BeginCaptureOutput();
+  cout<<"Line"<<endl;
+  mout<<"Second"<<endl;
+  MString Text = EndCaptureOutput();
+  Passed = Evaluate("EndCaptureOutput()", "cout and mout", "The text written to cout and mout is returned", Text, MString("Line\nSecond\n")) && Passed;
+  Passed = EvaluateTrue("EndCaptureOutput()", "restored", "cout is restored afterwards", cout.rdbuf() == Original) && Passed;
+
+  BeginCaptureOutput();
+  Text = EndCaptureOutput();
+  Passed = Evaluate("EndCaptureOutput()", "nothing", "A capture without output returns an empty text, not the text of the capture before", Text, MString("")) && Passed;
+
+  Text = EndCaptureOutput();
+  Passed = Evaluate("EndCaptureOutput()", "no begin", "An end without a begin returns an empty text", Text, MString("")) && Passed;
+  Passed = EvaluateTrue("EndCaptureOutput()", "no begin", "cout stays", cout.rdbuf() == Original) && Passed;
+
+  BeginCaptureOutput();
+  cout<<"First";
+  BeginCaptureOutput();
+  cout<<"Second";
+  Text = EndCaptureOutput();
+  Passed = Evaluate("BeginCaptureOutput()", "twice", "A second begin keeps the running capture", Text, MString("FirstSecond")) && Passed;
+  Passed = EvaluateTrue("BeginCaptureOutput()", "twice", "cout is restored after one end", cout.rdbuf() == Original) && Passed;
+
+  // Capture the probe summary after it restores the outer capture
+  unsigned int Passes = 0;
+  unsigned int Fails = 0;
+  unsigned int Known = 0;
+  UnitTestProbe Unfinished("Unfinished");
+  BeginCaptureOutput();
+  Unfinished.BeginCapture();
+  cout<<"Hidden";
+  Unfinished.Summarize();
+  Text = EndCaptureOutput();
+  Passed = EvaluateTrue("Summarize()", "unfinished capture", "The summary can be read", MUnitTest::ParseSummary(Text, Passes, Fails, Known)) && Passed;
+  Passed = EvaluateTrue("Summarize()", "unfinished capture", "cout is restored", cout.rdbuf() == Original) && Passed;
+
+  // Check that destruction restores cout during an active capture
+  {
+    UnitTestProbe Destroyed("Destroyed");
+    Destroyed.BeginCapture();
+  }
+  Passed = EvaluateTrue("~MUnitTest()", "running capture", "cout is restored when the test object is destroyed", cout.rdbuf() == Original) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test memory filling, write boundaries, and a zero-length block
+bool UTUnitTest::TestFillMemory()
+{
+  bool Passed = true;
+
+  unsigned char Block[5] = { 1, 2, 3, 4, 5 };
+  FillMemory(Block, 4, 0x5A);
+  bool Filled = true;
+  for (unsigned int b = 0; b < 4; ++b) {
+    Filled = Filled && Block[b] == 0x5A;
+  }
+  Passed = EvaluateTrue("FillMemory()", "block", "All bytes of the block are filled", Filled) && Passed;
+  Passed = Evaluate("FillMemory()", "behind the block", "The byte behind the block stays", static_cast<int>(Block[4]), 5) && Passed;
+
+  FillMemory(Block, 0, 0x11);
+  Passed = Evaluate("FillMemory()", "empty", "An empty block changes nothing", static_cast<int>(Block[0]), 0x5A) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Check that ExpectedToCrash counts a known failure without executing the check
+bool UTUnitTest::TestExpectedToCrash()
+{
+  bool Passed = true;
+
+  unsigned int Evaluations = 0;
+  UnitTestProbe Probe("Probe");
+  BeginCaptureOutput();
+  Probe.CrashCheck(Evaluations);
+  Probe.CrashCheck(Evaluations);
+  Probe.Summarize();
+  MString Text = EndCaptureOutput();
+  Probe.Silence();
+  const bool Result = Probe.CrashCheck(Evaluations);
+  Probe.Unsilence();
+
+  unsigned int Passes = 0;
+  unsigned int Fails = 0;
+  unsigned int Known = 0;
+  Passed = EvaluateTrue("ExpectedToCrash()", "wrapped check", "The wrapper returns true like a known failure", Result) && Passed;
+  Passed = Evaluate("ExpectedToCrash()", "wrapped check", "The check is never evaluated", Evaluations, 0U) && Passed;
+  Passed = EvaluateTrue("ExpectedToCrash()", "two wrapped checks", "The summary can be read", MUnitTest::ParseSummary(Text, Passes, Fails, Known)) && Passed;
+  Passed = Evaluate("ExpectedToCrash()", "two wrapped checks", "No check passed", Passes, 0U) && Passed;
+  Passed = Evaluate("ExpectedToCrash()", "two wrapped checks", "No check failed", Fails, 0U) && Passed;
+  Passed = Evaluate("ExpectedToCrash()", "two wrapped checks", "Each wrapped check is a known failure", Known, 2U) && Passed;
+  Passed = EvaluateTrue("ExpectedToCrash()", "report", "The report is a known failure", Text.Contains("KNOWN FAILURE:")) && Passed;
+  Passed = EvaluateTrue("ExpectedToCrash()", "report", "The report names the source file of the check", Text.Contains("UTUnitTest.cxx:")) && Passed;
+  Passed = EvaluateTrue("ExpectedToCrash()", "report", "The report shows the check", Text.Contains("CountEvaluation(Evaluations)")) && Passed;
 
   return Passed;
 }
