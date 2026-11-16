@@ -73,9 +73,11 @@ class MDGeometryQuest : public MDGeometry
   bool Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolumeSequence& VS);
   void ApplyPulseShape(double Time, MVector& Pos, double& Energy);
 
-  void GetResolutions(MVector Pos, double Energy, double Time, 
+  //! Get the resolutions at a world position, or zero them and return false outside sensitive detectors
+  bool GetResolutions(MVector Pos, double Energy, double Time,
                       MVector& PRes, double& ERes, double& TRes);
-  void GetResolutions(MVector Pos, double Energy, double Time, MDVolumeSequence& VS,
+  //! Get the resolutions using the volume sequence, or zero them and return false if its detector or sensitive volume is missing
+  bool GetResolutions(MVector Pos, double Energy, double Time, MDVolumeSequence& VS,
                       MVector& PRes, double& ERes, double& TRes);
 
   MDVolume* GetEmbeddingVolume(MVector Position);

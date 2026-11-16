@@ -304,9 +304,7 @@ bool MREStripHit::RetrieveResolutions(MDGeometryQuest* Geometry)
   
   if (UpdateVolumeSequence(Geometry) == false) return false;
   
-  Geometry->GetResolutions(m_Position, m_Energy, m_Time, *m_VolumeSequence, m_PositionResolution, m_EnergyResolution, m_TimeResolution);
-  
-  return true;
+  return Geometry->GetResolutions(m_Position, m_Energy, m_Time, *m_VolumeSequence, m_PositionResolution, m_EnergyResolution, m_TimeResolution);
 }
 
 

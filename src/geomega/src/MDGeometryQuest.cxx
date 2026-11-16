@@ -498,37 +498,42 @@ void MDGeometryQuest::SetGlobalFailureRate(double FailureRate)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDGeometryQuest::GetResolutions(MVector Position, double Energy, double Time, 
-                                     MVector& PositionResolution, 
+//! Get the resolutions at a world position, or zero them and return false outside sensitive detectors
+bool MDGeometryQuest::GetResolutions(MVector Position, double Energy, double Time,
+                                     MVector& PositionResolution,
                                      double& EnergyResolution,
                                      double& TimeResolution)
 {
   MDVolumeSequence S = GetVolumeSequence(Position);
-  GetResolutions(Position, Energy, Time, S, 
-                 PositionResolution, EnergyResolution, TimeResolution);
+  return GetResolutions(Position, Energy, Time, S,
+                        PositionResolution, EnergyResolution, TimeResolution);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDGeometryQuest::GetResolutions(MVector Position, double Energy, double Time, 
+//! Get the resolutions using the volume sequence, or zero them and return false if its detector or sensitive volume is missing
+bool MDGeometryQuest::GetResolutions(MVector Position, double Energy, double Time,
                                      MDVolumeSequence& S,
-                                     MVector& PositionResolution, 
-                                     double& EnergyResolution, 
+                                     MVector& PositionResolution,
+                                     double& EnergyResolution,
                                      double& TimeResolution)
 {
-  if (S.GetDetector() == 0) {
+  if (S.GetDetector() == 0 || S.GetSensitiveVolume() == 0) {
     merr<<"Hit ("<<Position[0]<<", "<<Position[1]<<", "<<Position[2]
         <<") was not in a sensitive detector!!!"<<endl;
     EnergyResolution = 0;
     TimeResolution = 0;
     PositionResolution = MVector(0.0, 0.0, 0.0);
+    return false;
   } else {
-    EnergyResolution = S.GetDetector()->GetEnergyResolution(Energy, Position);
+    // Evaluate the resolutions in sensitive-volume coordinates:
+    MVector PositionInSensitiveVolume = S.GetPositionInVolume(Position, S.GetSensitiveVolume());
+    EnergyResolution = S.GetDetector()->GetEnergyResolution(Energy, PositionInSensitiveVolume);
     TimeResolution = S.GetDetector()->GetTimeResolution(Energy);
-    PositionResolution = S.GetDetector()->GetPositionResolution(Position, Energy);
-    // Now correctly rotate the position resolution into world coordinated:
+    PositionResolution = S.GetDetector()->GetPositionResolution(PositionInSensitiveVolume, Energy);
+    // Rotate the position resolution into world coordinates:
     for (unsigned int i = S.GetNVolumes() - 1; i < S.GetNVolumes(); i--) {
       if (S.GetVolumeAt(i)->IsRotated() == true) {
         PositionResolution = S.GetVolumeAt(i)->GetInvRotationMatrix() * PositionResolution;    // rotate
@@ -536,6 +541,8 @@ void MDGeometryQuest::GetResolutions(MVector Position, double Energy, double Tim
     }
     PositionResolution = PositionResolution.Abs();
   }
+
+  return true;
 }
 
 

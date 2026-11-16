@@ -629,13 +629,12 @@ bool UTDStrip3D::TestGeometryNoise()
   // Energy resolution factor at the local z = 0 is 2: the width is 4 keV
   Passed = CheckGauss("MDGeometryQuest::Noise()", "translated detector energy", Energies, 100.0, 4.0) && Passed;
 
-  // The resolutions for the user use the world position as depth for the correction
+  // The resolutions for the user use the depth in the detector for the correction
   MVector PositionResolution;
   double EnergyResolution = 0.0;
   double TimeResolution = 0.0;
   Geometry.GetResolutions(MVector(0.25, 0.25, 12.0), 100.0, 0.0, Sequence, PositionResolution, EnergyResolution, TimeResolution);
-  // Defect GEO-D-041: MDGeometryQuest::GetResolutions evaluates the depth corrections at the world position and not at the position in the detector
-  Passed = ExpectedToFail(EvaluateNear("MDGeometryQuest::GetResolutions()", "translated detector with a depth correction", "The energy resolution is the one at the local depth 0", EnergyResolution, 4.0, 1e-9)) && Passed;
+  Passed = EvaluateNear("MDGeometryQuest::GetResolutions()", "translated detector with a depth correction", "The energy resolution is the one at the local depth 0", EnergyResolution, 4.0, 1e-9) && Passed;
 
   // Rotated by 90 deg around the x-axis: the depth axis z of the detector is along the y-axis of the world
   MString Rotated;

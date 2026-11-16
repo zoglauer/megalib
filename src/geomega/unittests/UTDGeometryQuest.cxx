@@ -93,6 +93,8 @@ private:
   bool TestGetResolutions();
   //! Test the energy resolution with a depth dependence
   bool TestGetResolutionsDepthCorrection();
+  //! Test the resolutions in a detector volume with a smaller sensitive volume
+  bool TestGetResolutionsOutsideSensitiveVolume();
   //! Test the name of the detector at a position
   bool TestGetDetectorName();
   //! Test the voxel comparison
@@ -138,6 +140,7 @@ bool UTDGeometryQuest::Run()
   Passed = TestApplyPulseShape() && Passed;
   Passed = TestGetResolutions() && Passed;
   Passed = TestGetResolutionsDepthCorrection() && Passed;
+  Passed = TestGetResolutionsOutsideSensitiveVolume() && Passed;
   Passed = TestGetDetectorName() && Passed;
   Passed = TestAreInSameVoxel() && Passed;
   Passed = TestGetNVolumesInHierarchy() && Passed;
@@ -651,7 +654,8 @@ bool UTDGeometryQuest::TestGetResolutions()
   MVector PRes;
   double ERes = 0.0;
   double TRes = 0.0;
-  Geometry.GetResolutions(MVector(-20, 0, 2), 100.0, 1.0, PRes, ERes, TRes);
+  bool Found = Geometry.GetResolutions(MVector(-20, 0, 2), 100.0, 1.0, PRes, ERes, TRes);
+  Passed = EvaluateTrue("GetResolutions()", "not rotated", "A position in the sensitive volume returns true", Found) && Passed;
   Passed = EvaluateNear("GetResolutions()", "not rotated", "The x resolution is the x pitch of 1 cm / sqrt(12)", PRes.X(), 1.0/Root12, 1e-13) && Passed;
   Passed = EvaluateNear("GetResolutions()", "not rotated", "The y resolution is the y pitch of 2 cm / sqrt(12)", PRes.Y(), 2.0/Root12, 1e-13) && Passed;
   Passed = EvaluateNear("GetResolutions()", "not rotated", "The energy resolution is the one of the file", ERes, 2.0, 1e-13) && Passed;
@@ -675,8 +679,9 @@ bool UTDGeometryQuest::TestGetResolutions()
   ERes = 1.0;
   TRes = 1.0;
   DisableDefaultStreams();
-  Geometry.GetResolutions(MVector(0, 50, 0), 100.0, 1.0, PassivePRes, ERes, TRes);
+  Found = Geometry.GetResolutions(MVector(0, 50, 0), 100.0, 1.0, PassivePRes, ERes, TRes);
   EnableDefaultStreams();
+  Passed = EvaluateFalse("GetResolutions()", "passive", "A position without a detector returns false", Found) && Passed;
   Passed = EvaluateVectorNear("GetResolutions()", "passive", "The position resolution is zero", PassivePRes, MVector(0, 0, 0), 1e-15) && Passed;
   Passed = EvaluateNear("GetResolutions()", "passive", "The energy resolution is zero", ERes, 0.0, 1e-15) && Passed;
   Passed = EvaluateNear("GetResolutions()", "passive", "The time resolution is zero", TRes, 0.0, 1e-15) && Passed;
@@ -727,8 +732,93 @@ bool UTDGeometryQuest::TestGetResolutionsDepthCorrection()
   double ERes = 0.0;
   double TRes = 0.0;
   Geometry.GetResolutions(MVector(0, 0, 30), 100.0, 1.0, PRes, ERes, TRes);
-  // Defect GEO-B-32: GetResolutions hands the position in the world and not the position in the detector to the energy resolution
-  Passed = ExpectedToFail(EvaluateNear("GetResolutions()", "center of a detector at z = 30 cm", "The energy resolution is the one at the depth in the detector", ERes, 4.0, 1e-10)) && Passed;
+  Passed = EvaluateNear("GetResolutions()", "center of a detector at z = 30 cm", "The energy resolution is the one at the depth in the detector", ERes, 4.0, 1e-10) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the resolutions in a detector volume with a smaller sensitive volume
+bool UTDGeometryQuest::TestGetResolutionsOutsideSensitiveVolume()
+{
+  bool Passed = true;
+
+  // The detector volume is an aluminium frame of 10 x 10 x 2 cm at z = 30 cm, the sensitive germanium wafer of 6 x 6 x 2 cm is in its center
+  MString Text = GetGeometryHead();
+  Text += "Volume Frame\n";
+  Text += "Frame.Material Aluminium\n";
+  Text += "Frame.Shape BRIK 5.0 5.0 1.0\n";
+  Text += "Frame.Position 0.0 0.0 30.0\n";
+  Text += "Frame.Mother World\n";
+  Text += "Volume Wafer\n";
+  Text += "Wafer.Material Germanium\n";
+  Text += "Wafer.Shape BRIK 3.0 3.0 1.0\n";
+  Text += "Wafer.Position 0.0 0.0 0.0\n";
+  Text += "Wafer.Mother Frame\n";
+  Text += "MDStrip3D Det\n";
+  Text += "Det.DetectorVolume Frame\n";
+  Text += "Det.SensitiveVolume Wafer\n";
+  Text += "Det.StructuralPitch 0.0 0.0 0.0\n";
+  Text += "Det.StructuralOffset 0.0 0.0 0.0\n";
+  Text += "Det.Offset 0.0 0.0\n";
+  Text += "Det.StripNumber 6 6\n";
+  Text += "Det.NoiseThreshold 1.0\n";
+  Text += "Det.TriggerThreshold 1.0\n";
+  Text += "Det.DepthResolution 100.0 0.1\n";
+  Text += "Det.DepthResolution 1000.0 0.1\n";
+  Text += "Det.EnergyResolution Gauss 100.0 100.0 2.0\n";
+  Text += "Det.EnergyResolution Gauss 1000.0 1000.0 2.0\n";
+  Text += "Det.TimeResolutionAt 100.0 0.001\n";
+  Text += "Det.TimeResolutionAt 1000.0 0.001\n";
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "frame with a smaller wafer", "The geometry can be read", ScanGeometry(Geometry, Text)) && Passed;
+  if (Geometry.IsScanned() == false) {
+    return Passed;
+  }
+
+  // In the wafer: the energy resolution of the file, 2 keV
+  MVector PRes;
+  double ERes = 0.0;
+  double TRes = 0.0;
+  bool Found = Geometry.GetResolutions(MVector(0, 0, 30), 100.0, 1.0, PRes, ERes, TRes);
+  Passed = EvaluateTrue("GetResolutions()", "in the wafer", "A position in the sensitive volume returns true", Found) && Passed;
+  Passed = EvaluateNear("GetResolutions()", "in the wafer", "The energy resolution is the one of the file", ERes, 2.0, 1e-13) && Passed;
+  Passed = EvaluateNear("GetResolutions()", "in the wafer", "The time resolution is the one of the file", TRes, 0.001, 1e-13) && Passed;
+
+  // In the frame, but outside of the wafer: the detector is known, the sensitive volume is not, thus there are no resolutions
+  MDVolumeSequence FrameSequence = Geometry.GetVolumeSequence(MVector(4, 0, 30), false, false);
+  Passed = EvaluateTrue("GetVolumeSequence()", "in the frame", "The sequence has the detector", FrameSequence.GetDetector() != nullptr) && Passed;
+  Passed = EvaluateTrue("GetVolumeSequence()", "in the frame", "The sequence has no sensitive volume", FrameSequence.GetSensitiveVolume() == nullptr) && Passed;
+
+  MVector FramePRes(1, 1, 1);
+  ERes = 1.0;
+  TRes = 1.0;
+  DisableDefaultStreams();
+  Found = Geometry.GetResolutions(MVector(4, 0, 30), 100.0, 1.0, FrameSequence, FramePRes, ERes, TRes);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("GetResolutions()", "in the frame, with sequence", "A position outside of the sensitive volume returns false", Found) && Passed;
+  Passed = EvaluateVectorNear("GetResolutions()", "in the frame, with sequence", "The position resolution is zero", FramePRes, MVector(0, 0, 0), 1e-15) && Passed;
+  Passed = EvaluateNear("GetResolutions()", "in the frame, with sequence", "The energy resolution is zero", ERes, 0.0, 1e-15) && Passed;
+  Passed = EvaluateNear("GetResolutions()", "in the frame, with sequence", "The time resolution is zero", TRes, 0.0, 1e-15) && Passed;
+
+  FramePRes = MVector(1, 1, 1);
+  ERes = 1.0;
+  TRes = 1.0;
+  DisableDefaultStreams();
+  Found = Geometry.GetResolutions(MVector(4, 0, 30), 100.0, 1.0, FramePRes, ERes, TRes);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("GetResolutions()", "in the frame", "A position outside of the sensitive volume returns false", Found) && Passed;
+  Passed = EvaluateNear("GetResolutions()", "in the frame", "The energy resolution is zero", ERes, 0.0, 1e-15) && Passed;
+
+  // In the world:
+  DisableDefaultStreams();
+  Found = Geometry.GetResolutions(MVector(0, 0, 0), 100.0, 1.0, FramePRes, ERes, TRes);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("GetResolutions()", "in the world", "A position in the world returns false", Found) && Passed;
 
   return Passed;
 }

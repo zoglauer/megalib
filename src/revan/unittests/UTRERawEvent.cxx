@@ -1107,6 +1107,21 @@ bool UTRERawEvent::TestParseLineHitsWithGeometry()
     Passed = EvaluateFalse("ParseLine()", "HT in no detector", "The event is not valid", Event.IsValid()) && Passed;
   }
 
+  // A hit in a detector volume, but 1 cm away from its sensitive volume, has no resolutions: it is not used, and the event is not valid
+  MGeometryRevan FramedGeometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "framed detector", "The geometry can be read", ScanGeometry(FramedGeometry, GetFramedDetectorGeometry())) && Passed;
+  if (FramedGeometry.IsScanned() == true) {
+    MRERawEvent Event(&FramedGeometry);
+    // First a hit in the wafer (Strip3D is detector type 3), which has the 2 keV of the detector:
+    Passed = Evaluate("ParseLine()", "HTsim in the wafer", "The hit is parsed", ParseSilently(Event, "HTsim 3;2.5;0.0;0.0;100.0;0.5", c_SimVersion), 0) && Passed;
+    Passed = Evaluate("ParseLine()", "HTsim in the wafer", "The event has one hit", Event.GetNRESEs(), 1) && Passed;
+    Passed = EvaluateTrue("ParseLine()", "HTsim in the wafer", "The event is valid", Event.IsValid()) && Passed;
+    // Then a hit in the frame:
+    Passed = Evaluate("ParseLine()", "HTsim in the frame", "A hit outside of the sensitive volume is not parsed: 2", ParseSilently(Event, "HTsim 3;4.0;0.0;0.0;100.0;0.5", c_SimVersion), 2) && Passed;
+    Passed = Evaluate("ParseLine()", "HTsim in the frame", "The hit is not added", Event.GetNRESEs(), 1) && Passed;
+    Passed = EvaluateFalse("ParseLine()", "HTsim in the frame", "The event is not valid", Event.IsValid()) && Passed;
+  }
+
   return Passed;
 }
 

@@ -220,6 +220,42 @@ protected:
     return Lines;
   }
 
+  //! Return a Strip3D detector whose detector volume is larger than its sensitive volume:
+  //! an aluminium frame of 10 x 10 x 2 cm centered at the origin is the detector volume, a germanium wafer of 6 x 6 x 2 cm in its center the sensitive volume,
+  //! 6 x 6 strips of pitch 1 cm, depth resolution 0.1 cm, energy resolution 2 keV (1 sigma); positions with |x| or |y| between 3 and 5 cm are in the detector but not in the sensitive volume
+  MString GetFramedDetectorGeometry() const
+  {
+    MString Setup = GetGeometryHead();
+    Setup += "Volume Frame\n";
+    Setup += "Frame.Material Aluminium\n";
+    Setup += "Frame.Shape BRIK 5.0 5.0 1.0\n";
+    Setup += "Frame.Position 0.0 0.0 0.0\n";
+    Setup += "Frame.Mother World\n";
+    Setup += "Volume Wafer\n";
+    Setup += "Wafer.Material Germanium\n";
+    Setup += "Wafer.Shape BRIK 3.0 3.0 1.0\n";
+    Setup += "Wafer.Position 0.0 0.0 0.0\n";
+    Setup += "Wafer.Mother Frame\n";
+    Setup += "MDStrip3D Framed\n";
+    Setup += "Framed.DetectorVolume Frame\n";
+    Setup += "Framed.SensitiveVolume Wafer\n";
+    Setup += "Framed.StructuralPitch 0.0 0.0 0.0\n";
+    Setup += "Framed.StructuralOffset 0.0 0.0 0.0\n";
+    Setup += "Framed.Offset 0.0 0.0\n";
+    Setup += "Framed.StripNumber 6 6\n";
+    Setup += "Framed.NoiseThreshold 10.0\n";
+    Setup += "Framed.TriggerThreshold 30.0\n";
+    Setup += "Framed.DepthResolution 100.0 0.1\n";
+    Setup += "Framed.DepthResolution 1000.0 0.1\n";
+    Setup += "Framed.EnergyResolution Gauss 100.0 100.0 2.0\n";
+    Setup += "Framed.EnergyResolution Gauss 1000.0 1000.0 2.0\n";
+    Setup += "Trigger FramedTrigger\n";
+    Setup += "FramedTrigger.Veto false\n";
+    Setup += "FramedTrigger.TriggerByChannel true\n";
+    Setup += "FramedTrigger.Detector Framed 1\n";
+    return Setup;
+  }
+
   //! Scan the test telescope into the geometry
   bool ScanTelescopeGeometry(MGeometryRevan& Geometry, const MString& AdditionalLines = "", bool IdealEnergyResolutions = false)
   {

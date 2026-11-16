@@ -501,6 +501,34 @@ bool UTREStripHit::TestVolumeSequenceAndResolutions()
   EnableDefaultStreams();
   Passed = EvaluateFalse("UpdateVolumeSequence()", "new strip hit", "No volume sequence is found for the undefined position", Updated) && Passed;
 
+  // In a detector volume, but 1 cm away from its sensitive volume (more than the search tolerance):
+  // The volume sequence has a detector but no sensitive volume, thus there are no resolutions, and the geometry sets them to zero
+  MGeometryRevan FramedGeometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "framed detector", "The geometry can be read", ScanGeometry(FramedGeometry, GetFramedDetectorGeometry())) && Passed;
+  if (FramedGeometry.IsScanned() == true) {
+    MREStripHit Framed;
+    Framed.SetPosition(MVector(4.0, 0.0, 0.0));
+    Framed.SetEnergy(250.0);
+    Framed.SetDetector(MDDetector::c_Strip3D);
+    Framed.SetEnergyResolution(7.0);
+    DisableDefaultStreams();
+    BeginCaptureOutput();
+    Updated = Framed.UpdateVolumeSequence(&FramedGeometry);
+    Retrieved = Framed.RetrieveResolutions(&FramedGeometry);
+    EndCaptureOutput();
+    EnableDefaultStreams();
+    Passed = EvaluateTrue("UpdateVolumeSequence()", "in the frame, outside of the sensitive volume", "A volume sequence with the detector is found", Updated) && Passed;
+    Passed = EvaluateTrue("UpdateVolumeSequence()", "in the frame, outside of the sensitive volume", "The volume sequence has no sensitive volume", Framed.GetVolumeSequence()->GetSensitiveVolume() == nullptr) && Passed;
+    Passed = EvaluateFalse("RetrieveResolutions()", "in the frame, outside of the sensitive volume", "The resolutions are not retrieved", Retrieved) && Passed;
+    Passed = EvaluateNear("RetrieveResolutions()", "in the frame, outside of the sensitive volume", "The energy resolution is set to zero", Framed.GetEnergyResolution(), 0.0, 0.0) && Passed;
+
+    // The same hit in the wafer:
+    Framed.SetPosition(MVector(2.5, 0.0, 0.0));
+    Retrieved = Framed.RetrieveResolutions(&FramedGeometry);
+    Passed = EvaluateTrue("RetrieveResolutions()", "in the wafer of the framed detector", "The resolutions are retrieved", Retrieved) && Passed;
+    Passed = EvaluateNear("RetrieveResolutions()", "in the wafer of the framed detector", "The energy resolution is 2 keV", Framed.GetEnergyResolution(), 2.0, 1e-12) && Passed;
+  }
+
   return Passed;
 }
 

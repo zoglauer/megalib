@@ -928,6 +928,32 @@ bool UTREHit::TestRetrieveResolutions()
     Passed = EvaluateNear("RetrieveResolutions()", "position in the world volume", "The energy resolution is unchanged", Hit.GetEnergyResolution(), 7.0, 0.0) && Passed;
   }
 
+  // In a detector volume, but 1 cm away from its sensitive volume (more than the search tolerance):
+  // The volume sequence has a detector but no sensitive volume, thus there are no resolutions, and the geometry sets them to zero
+  MGeometryRevan FramedGeometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "framed detector", "The geometry can be read", ScanGeometry(FramedGeometry, GetFramedDetectorGeometry())) && Passed;
+  if (FramedGeometry.IsScanned() == true) {
+    MREHit Hit;
+    Hit.SetPosition(MVector(4.0, 0.0, 0.0));
+    Hit.SetEnergy(100.0);
+    Hit.SetDetector(MDDetector::c_Strip3D);
+    Hit.SetEnergyResolution(7.0);
+    DisableDefaultStreams();
+    BeginCaptureOutput();
+    bool Retrieved = Hit.RetrieveResolutions(&FramedGeometry);
+    EndCaptureOutput();
+    EnableDefaultStreams();
+    Passed = EvaluateFalse("RetrieveResolutions()", "in the frame, outside of the sensitive volume", "The call fails", Retrieved) && Passed;
+    Passed = EvaluateTrue("RetrieveResolutions()", "in the frame, outside of the sensitive volume", "The volume sequence has the detector but no sensitive volume", Hit.GetVolumeSequence()->GetDetector() != nullptr && Hit.GetVolumeSequence()->GetSensitiveVolume() == nullptr) && Passed;
+    Passed = EvaluateNear("RetrieveResolutions()", "in the frame, outside of the sensitive volume", "The energy resolution is set to zero", Hit.GetEnergyResolution(), 0.0, 0.0) && Passed;
+
+    // The same hit in the wafer:
+    Hit.SetPosition(MVector(2.5, 0.0, 0.0));
+    Retrieved = Hit.RetrieveResolutions(&FramedGeometry);
+    Passed = EvaluateTrue("RetrieveResolutions()", "in the wafer of the framed detector", "The resolutions are retrieved", Retrieved) && Passed;
+    Passed = EvaluateNear("RetrieveResolutions()", "in the wafer of the framed detector", "The energy resolution is 2 keV", Hit.GetEnergyResolution(), 2.0, 1e-12) && Passed;
+  }
+
   return Passed;
 }
 
