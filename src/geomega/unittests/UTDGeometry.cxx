@@ -3152,7 +3152,7 @@ bool UTDGeometry::TestCrossSections()
   Passed = Evaluate("ScanSetupFile()", "cross section creation allowed", "The working directory is back after the creation", MString(gSystem->WorkingDirectory()), Working) && Passed;
   Passed = EvaluateSize("ScanSetupFile()", "cross section creation allowed", "Cosima has been started once", ReadTextFile(CountLog).Tokenize("\n").size(), NamesBefore + 1) && Passed;
 
-  // Defect GEO-A-50: The clean up of the creation removes the temporary simulation files of all other programs running at the same time
+  // The clean up of the creation removes only its own source file, not the temporary files of other programs running at the same time
   Passed = EvaluateTrue("WriteTextFile()", "fixture", "The file of the test can be written", WriteTextFile(Root + "/tmp/DelMe.Other.sim", "Belongs to another program\n")) && Passed;
   MDGeometry Cleaner;
   DisableDefaultStreams();
@@ -3160,7 +3160,14 @@ bool UTDGeometry::TestCrossSections()
   Cleaner.CreateCrossSectionFiles();
   EnableDefaultStreams();
   Passed = EvaluateTrue("ScanSetupFile()", "file of another program", "The file is accepted", IsAccepted) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("CreateCrossSectionFiles()", "file of another program", "The temporary file of another program stays", MFile::Exists(Root + "/tmp/DelMe.Other.sim"))) && Passed;
+  Passed = EvaluateTrue("CreateCrossSectionFiles()", "file of another program", "The temporary file of another program stays", MFile::Exists(Root + "/tmp/DelMe.Other.sim")) && Passed;
+  // The fake cosima wrote the name of the source file into the log, the last line is the one of this call
+  vector<MString> CleanerNames = ReadTextFile(Log).Tokenize("\n");
+  if (EvaluateTrue("CreateCrossSectionFiles()", "own source file", "Cosima has been started with a source file", CleanerNames.empty() == false) == true) {
+    Passed = EvaluateFalse("CreateCrossSectionFiles()", "own source file", "The own source file is removed after the creation", MFile::Exists(CleanerNames.back())) && Passed;
+  } else {
+    Passed = false;
+  }
 
   // Defect GEO-A-51: The path is not quoted in the command, which breaks with a space in the temporary directory
   MFile::CreateDirectory(Root + "/tmp with space");
