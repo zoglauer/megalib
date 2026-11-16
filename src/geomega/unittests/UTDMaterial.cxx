@@ -23,6 +23,7 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <locale>
 #include <vector>
 using namespace std;
 
@@ -47,8 +48,20 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a numeric locale with a decimal comma
+class UTDMaterialDecimalComma : public numpunct<char>
+{
+protected:
+  //! Return a comma as decimal point
+  char do_decimal_point() const override { return ','; }
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Unit test of the material MDMaterial
-//! Attention: The declared functions IsClone and GetCloneTemplate have no definition and cannot be linked, thus they are not tested
+//! Attention: IsClone and GetCloneTemplate have no definitions and cannot be tested
 class UTDMaterial : public UTGeomegaBase
 {
 public:
@@ -713,14 +726,15 @@ bool UTDMaterial::TestHash()
   Validated(Same, 1.0, 10.0, 1.0);
   Passed = Evaluate("GetHash()", "same content, other name", "The name does not change the hash", Same.GetHash(), Base.GetHash()) && Passed;
 
-  // Every other value is part of it
+  // A density change gives a different hash
   MDMaterial OtherDensity("Base");
   Validated(OtherDensity, 1.001, 10.0, 1.0);
   Passed = EvaluateTrue("GetHash()", "other density", "The density changes the hash", OtherDensity.GetHash() != Base.GetHash()) && Passed;
 
+  // The radiation length does not affect the cross sections
   MDMaterial OtherLength("Base");
   Validated(OtherLength, 1.0, 10.001, 1.0);
-  Passed = EvaluateTrue("GetHash()", "other radiation length", "The radiation length changes the hash", OtherLength.GetHash() != Base.GetHash()) && Passed;
+  Passed = Evaluate("GetHash()", "other radiation length", "The radiation length does not change the hash", OtherLength.GetHash(), Base.GetHash()) && Passed;
 
   MDMaterial OtherWeight("Base");
   Validated(OtherWeight, 1.0, 10.0, 1.001);
@@ -741,6 +755,35 @@ bool UTDMaterial::TestHash()
   ByMass.Validate();
   EnableDefaultStreams();
   Passed = EvaluateTrue("GetHash()", "other number of components", "The components change the hash", ByAtoms.GetHash() != ByMass.GetHash()) && Passed;
+
+  // FNV-1a of "MDMaterial-Hash-V2;D=2.5;C=13,27.5,ByAtoms,2", calculated independently with Python
+  MDMaterial Fixed("Fixed");
+  Fixed.SetDensity(2.5);
+  Fixed.SetComponentByAtomicWeighting(27.5, 13, 2);
+  DisableDefaultStreams();
+  Fixed.Validate();
+  EnableDefaultStreams();
+  Passed = Evaluate("GetHash()", "density 2.5, one isotope A = 27.5, Z = 13, 2 atoms", "The hash is the one of the text of the material", Fixed.GetHash(), 3732408026813857288UL) && Passed;
+
+  // An atom-count change gives a different hash
+  MDMaterial OtherAtoms("Fixed");
+  OtherAtoms.SetDensity(2.5);
+  OtherAtoms.SetComponentByAtomicWeighting(27.5, 13, 3);
+  DisableDefaultStreams();
+  OtherAtoms.Validate();
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("GetHash()", "3 instead of 2 atoms", "The number of atoms changes the hash", OtherAtoms.GetHash() != Fixed.GetHash()) && Passed;
+
+  // Use a decimal-comma locale without relying on installed locales
+  locale Previous = locale::global(locale(locale::classic(), new UTDMaterialDecimalComma()));
+  MDMaterial Comma("Fixed");
+  Comma.SetDensity(2.5);
+  Comma.SetComponentByAtomicWeighting(27.5, 13, 2);
+  DisableDefaultStreams();
+  Comma.Validate();
+  EnableDefaultStreams();
+  locale::global(Previous);
+  Passed = Evaluate("GetHash()", "global locale with a decimal comma", "The hash is the same as with the classic locale", Comma.GetHash(), 3732408026813857288UL) && Passed;
 
   // A second validation of an unchanged material keeps the hash - the cross section files depend on it
   MDMaterial Twice("Twice");
@@ -1189,10 +1232,9 @@ bool UTDMaterial::TestStoredCrossSections()
       ++NumberOfPresent;
     }
   }
-  // Defect GEO-F-17: The hash of no stored cross section file matches the hash of its material, thus none of them is used
-  Passed = ExpectedToFail(Evaluate("AreCrossSectionsPresent()", "materials of MEGAlib", "The cross sections stored with MEGAlib match all their materials", NumberOfPresent, Geometry.GetNMaterials())) && Passed;
+  Passed = Evaluate("AreCrossSectionsPresent()", "materials of MEGAlib", "The cross sections stored with MEGAlib match all their materials", NumberOfPresent, Geometry.GetNMaterials()) && Passed;
 
-  // The stored values are read directly since the material refuses them
+  // Check the stored attenuation against XCOM:
   // NIST XCOM, total attenuation with coherent scattering at 1 MeV in cm2/g
   struct Reference { const char* Name; double MassAttenuation; };
   const vector<Reference> References = {
