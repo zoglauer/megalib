@@ -626,20 +626,19 @@ bool MDMaterial::Validate()
     m_RadiationLength = GetRootMedium()->GetMaterial()->GetRadLen();
   }
 
-  // Now create a hopefully unique hash of this object
-  vector<double> Array;
-  Array.push_back(m_Density);
-  Array.push_back(m_RadiationLength);
+  ostringstream HashText;
+  // Fix the locale for reproducible hashes on various locales
+  HashText.imbue(locale::classic());
+  HashText<<setprecision(17)<<"MDMaterial-Hash-V2;D="<<m_Density;
   for (unsigned int m = 0; m < m_Components.size(); ++m) {
-    Array.push_back(m_Components[m]->GetAtomicWeight());
-    Array.push_back(m_Components[m]->GetAtomicNumber());
-    Array.push_back(m_Components[m]->GetWeightingByMass());
-    Array.push_back(int(m_Components[m]->GetWeightingType()));
+    HashText<<";C="<<m_Components[m]->GetAtomicNumber()<<","<<m_Components[m]->GetAtomicWeight();
+    if (m_Components[m]->GetWeightingType() == MDMaterialComponentWeightingType::c_ByAtoms) {
+      HashText<<",ByAtoms,"<<m_Components[m]->GetWeightingByAtoms();
+    } else {
+      HashText<<",ByMass,"<<m_Components[m]->GetWeightingByMass();
+    }
   }
-  double* a = new double[Array.size()];
-  copy(Array.begin(), Array.end(), a);
-  m_Hash = TString::Hash(a, Array.size()*sizeof(double));
-  delete [] a;
+  m_Hash = static_cast<unsigned long>(MString(HashText.str()).GetHash());
 
 
   // Load the absorptions
