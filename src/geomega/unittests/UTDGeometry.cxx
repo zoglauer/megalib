@@ -3169,7 +3169,7 @@ bool UTDGeometry::TestCrossSections()
     Passed = false;
   }
 
-  // Defect GEO-A-51: The path is not quoted in the command, which breaks with a space in the temporary directory
+  // The path is quoted in the command, thus a space in the temporary directory does not split it
   MFile::CreateDirectory(Root + "/tmp with space");
   Passed = EvaluateTrue("WriteTextFile()", "fixture", "The file of the test can be written", WriteTextFile(Root + "/bin/cosima", "#!/bin/bash\necho \"$#\" > " + Root + "/Count.log\n")) && Passed;
   chmod((Root + "/bin/cosima").Data(), 0755);
@@ -3177,7 +3177,18 @@ bool UTDGeometry::TestCrossSections()
   const MString SpaceArguments = MString("MEGALIB=") + MSystem::GetShellQuoted(Root) + " TMPDIR=" + MSystem::GetShellQuoted(Root + "/tmp with space") + " " + MSystem::GetShellQuoted(Program) + " --cross-section-child " + MSystem::GetShellQuoted(Setup);
   const int SpaceStatus = MProcessManager::Run("env", SpaceArguments, Root + "/Space.log", "", 120);
   Passed = EvaluateTrue("CreateCrossSectionFiles()", "space in the temporary directory", "The program ends with the exit code 0 within its time limit", SpaceStatus >= 0 && WIFEXITED(SpaceStatus) != 0 && WEXITSTATUS(SpaceStatus) == 0) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("CreateCrossSectionFiles()", "space in the temporary directory", "Cosima gets the source file name as one argument", ReadTextFile(Root + "/Count.log").BeginsWith("1"))) && Passed;
+  Passed = EvaluateTrue("CreateCrossSectionFiles()", "space in the temporary directory", "Cosima gets the source file name as one argument", ReadTextFile(Root + "/Count.log").BeginsWith("1")) && Passed;
+
+  // A quote and a $ in the temporary directory: the shells neither break nor expand the path
+  const MString Special = Root + "/tmp with 'quote' and $HOME";
+  MFile::CreateDirectory(Special);
+  Passed = EvaluateTrue("WriteTextFile()", "fixture", "The file of the test can be written", WriteTextFile(Root + "/bin/cosima", "#!/bin/bash\necho \"$#\" > " + MSystem::GetShellQuoted(Root + "/Count.log") + "\necho \"$1\" > " + MSystem::GetShellQuoted(Root + "/Argument.log") + "\n")) && Passed;
+  chmod((Root + "/bin/cosima").Data(), 0755);
+  const MString SpecialArguments = MString("MEGALIB=") + MSystem::GetShellQuoted(Root) + " TMPDIR=" + MSystem::GetShellQuoted(Special) + " " + MSystem::GetShellQuoted(Program) + " --cross-section-child " + MSystem::GetShellQuoted(Setup);
+  const int SpecialStatus = MProcessManager::Run("env", SpecialArguments, Root + "/Special.log", "", 120);
+  Passed = EvaluateTrue("CreateCrossSectionFiles()", "quote and $ in the temporary directory", "The program ends with the exit code 0 within its time limit", SpecialStatus >= 0 && WIFEXITED(SpecialStatus) != 0 && WEXITSTATUS(SpecialStatus) == 0) && Passed;
+  Passed = EvaluateTrue("CreateCrossSectionFiles()", "quote and $ in the temporary directory", "Cosima gets the source file name as one argument", ReadTextFile(Root + "/Count.log").BeginsWith("1")) && Passed;
+  Passed = EvaluateTrue("CreateCrossSectionFiles()", "quote and $ in the temporary directory", "Cosima gets the unchanged source file name in that directory", ReadTextFile(Root + "/Argument.log").BeginsWith(Special + "/MEGAlib_")) && Passed;
 
   // Without cosima no creation is possible:
   RemoveTemporaryFile(Fake);

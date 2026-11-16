@@ -63,6 +63,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MFile.h"
+#include "MSystem.h"
 #include "MTokenizer.h"
 #include "MDShape.h"
 #include "MDShapeBRIK.h"
@@ -6156,7 +6157,8 @@ bool MDGeometry::CreateCrossSectionFiles()
   mout<<"-------- Cosima output start --------"<<endl;
   MString WorkingDirectory = gSystem->WorkingDirectory();
   gSystem->ChangeDirectory(gSystem->TempDirectory());
-  gSystem->Exec(MString("bash -c \"source ${MEGALIB}/bin/source-megalib.sh; cosima ") + FileName + MString("\""));
+  MString Command = MString("source \"${MEGALIB}/bin/source-megalib.sh\"; cosima ") + MSystem::GetShellQuoted(FileName);
+  gSystem->Exec(MString("bash -c ") + MSystem::GetShellQuoted(Command));
   MFile::Remove(FileName);
   gSystem->ChangeDirectory(WorkingDirectory);
   mout<<"-------- Cosima output stop ---------"<<endl;
