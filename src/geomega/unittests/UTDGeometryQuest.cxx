@@ -840,8 +840,10 @@ bool UTDGeometryQuest::TestGetDetectorName()
   Text += "Volume Wafer\n";
   Text += "Wafer.Material Germanium\n";
   Text += "Wafer.Shape BRIK 5.0 5.0 1.0\n";
-  Text += "Wafer.Position 0.0 0.0 0.0\n";
-  Text += "Wafer.Mother Holder\n";
+  // The wafer is the template of its two copies in the holder, and is not placed itself
+  Text += "Wafer.Copy WaferA\n";
+  Text += "WaferA.Position 0.0 0.0 0.0\n";
+  Text += "WaferA.Mother Holder\n";
   Text += "Wafer.Copy WaferCopy\n";
   Text += "WaferCopy.Position 0.0 0.0 4.0\n";
   Text += "WaferCopy.Mother Holder\n";
@@ -880,7 +882,7 @@ bool UTDGeometryQuest::TestGetDetectorName()
     return Passed;
   }
 
-  Passed = EvaluateTrue("GetDetectorName()", "in the template", "The name of the template is returned", Geometry.GetDetectorName(MVector(20, 0, 0)) == "Wafer") && Passed;
+  Passed = EvaluateTrue("GetDetectorName()", "in the first copy", "The name of the copy is returned", Geometry.GetDetectorName(MVector(20, 0, 0)) == "WaferA") && Passed;
   Passed = EvaluateTrue("GetDetectorName()", "in the clone", "The name of the clone is returned", Geometry.GetDetectorName(MVector(20, 0, 4)) == "WaferCopy") && Passed;
   Passed = EvaluateTrue("GetDetectorName()", "without clones", "The name of the volume is returned", Geometry.GetDetectorName(MVector(-20, 0, 0)) == "Single") && Passed;
   Passed = EvaluateTrue("GetDetectorName()", "in the holder", "A position without detector has no name", Geometry.GetDetectorName(MVector(20, 7, 0)) == "") && Passed;

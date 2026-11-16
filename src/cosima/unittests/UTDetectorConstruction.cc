@@ -422,7 +422,9 @@ MString UTDetectorConstruction::WriteShapesGeometry(const MString& Name, const M
   }
 
   // A copy and a rotated volume:
-  Content += "ShBox.Copy ShBoxCopy\nShBoxCopy.Position 10 30 0\nShBoxCopy.Rotation 20 30 40\nShBoxCopy.Mother WorldVolume\n\n";
+  // The copy has its own template, which is not placed itself (a placed template is rejected)
+  Content += "Volume ShBoxTemplate\nShBoxTemplate.Material Aluminium\nShBoxTemplate.Shape BRIK 1 2 3\n";
+  Content += "ShBoxTemplate.Copy ShBoxCopy\nShBoxCopy.Position 10 30 0\nShBoxCopy.Rotation 20 30 40\nShBoxCopy.Mother WorldVolume\n\n";
   Content += "Volume Rotated\nRotated.Material Aluminium\nRotated.Shape BRIK 1 2 3\nRotated.Position -10 30 5\nRotated.Rotation 15 25 35\nRotated.Mother WorldVolume\n\n";
 
   // Test a fully occupied volume and a volume with a central daughter:
@@ -829,7 +831,7 @@ bool UTDetectorConstruction::TestPlacements(MCDetectorConstruction* Detector)
   G4VPhysicalVolume* Copy = Physical("ShBoxCopy");
   Passed = EvaluateTrue("PositionVolumes()", "ShBoxCopy", "The copy is placed", Copy != nullptr) && Passed;
   if (Copy != nullptr) {
-    Passed = EvaluateTrue("PositionVolumes()", "ShBoxCopy", "The copy uses the logical volume of the template", Copy->GetLogicalVolume() == Logical("ShBox")) && Passed;
+    Passed = EvaluateTrue("PositionVolumes()", "ShBoxCopy", "The copy uses the logical volume of the template", Copy->GetLogicalVolume() == Logical("ShBoxTemplate")) && Passed;
     Passed = EvaluateTrue("PositionVolumes()", "ShBoxCopy", "The copy is placed at (10, 30, 0) cm", Near(Copy->GetObjectTranslation().x(), 10*cm) && Near(Copy->GetObjectTranslation().y(), 30*cm) && Near(Copy->GetObjectTranslation().z(), 0)) && Passed;
   }
 
@@ -855,10 +857,16 @@ bool UTDetectorConstruction::TestPlacements(MCDetectorConstruction* Detector)
     Passed = EvaluateNear("PositionVolumes()", MString(Name) + " x", "The x axis of the volume is at the same place as in Geomega", (Result2 - G4ThreeVector(Expected2[0]*cm, Expected2[1]*cm, Expected2[2]*cm)).mag()/cm, 0.0, 1e-5) && Passed;
   }
 
-  // Volume counts: every Geomega volume has a physical volume
+  // Volume counts: every Geomega volume has a physical volume, except the templates of copies, which are never placed
   unsigned int NPhysical = 0;
   for (G4VPhysicalVolume* P: *G4PhysicalVolumeStore::GetInstance()) if (P != nullptr) ++NPhysical;
-  Passed = EvaluateTrue("PositionVolumes()", "count", "Every Geomega volume is placed", NPhysical >= Detector->GetGeometry()->GetNVolumes()) && Passed;
+  unsigned int NPlaceable = 0;
+  for (unsigned int v = 0; v < Detector->GetGeometry()->GetNVolumes(); ++v) {
+    MDVolume* V = Detector->GetGeometry()->GetVolumeAt(v);
+    if (V->IsClone() == false && V->GetNClones() > 0) continue;
+    ++NPlaceable;
+  }
+  Passed = EvaluateTrue("PositionVolumes()", "count", "Every Geomega volume except the templates of copies is placed", NPhysical >= NPlaceable) && Passed;
 
   // The detector of the geometry: a scintillator on the volume Scint
   G4VSensitiveDetector* SD = G4SDManager::GetSDMpointer()->FindSensitiveDetector("DScintSD", false);
@@ -902,7 +910,7 @@ bool UTDetectorConstruction::TestVolumeSources()
   bool Passed = true;
 
   // Use an unplaced template with two copies to exercise placement selection
-  // Keep the template unplaced - GEO-A-46 otherwise collapses the placement count
+  // (a template must not be placed itself)
   const MString Shapes = WriteShapesGeometry("VolumeSourcesShapes");
   MString Content;
   Passed = EvaluateTrue("ReadTextFile()", "shapes", "The shapes geometry can be read", MFile::ReadTextFile(Shapes, Content)) && Passed;

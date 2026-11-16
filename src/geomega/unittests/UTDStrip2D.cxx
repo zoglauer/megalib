@@ -130,7 +130,9 @@ MString UTDStrip2D::GetManyWafers(bool WithOffset) const
 {
   MString Body;
   Body += GetBoxVolume("Container", 3.1, 3.1, 0.5);
-  Body += "Volume Wafer\nWafer.Material Silicon\nWafer.Shape BRIK 1.5 1.0 0.5\nWafer.Position -1.6 -2.1 0.0\nWafer.Mother Container\n";
+  // The wafer is the template of the six copies, and is not placed itself
+  Body += "Volume Wafer\nWafer.Material Silicon\nWafer.Shape BRIK 1.5 1.0 0.5\n";
+  Body += "Wafer.Copy W1\nW1.Position -1.6 -2.1 0.0\nW1.Mother Container\n";
   Body += "Wafer.Copy W2\nW2.Position 1.6 -2.1 0.0\nW2.Mother Container\n";
   Body += "Wafer.Copy W3\nW3.Position -1.6 0.0 0.0\nW3.Mother Container\n";
   Body += "Wafer.Copy W4\nW4.Position 1.6 0.0 0.0\nW4.Mother Container\n";
@@ -541,7 +543,8 @@ bool UTDStrip2D::TestGuardRing()
   // Two wafers far apart: the search for the position of the guard ring looks at the wafer frame position in the detector volume frame
   MString FarApart;
   FarApart += GetBoxVolume("Container", 4.5, 1.0, 0.5);
-  FarApart += "Volume Wafer\nWafer.Material Silicon\nWafer.Shape BRIK 1.0 1.0 0.5\nWafer.Position -3.5 0.0 0.0\nWafer.Mother Container\n";
+  FarApart += "Volume Wafer\nWafer.Material Silicon\nWafer.Shape BRIK 1.0 1.0 0.5\n";
+  FarApart += "Wafer.Copy WaferA\nWaferA.Position -3.5 0.0 0.0\nWaferA.Mother Container\n";
   FarApart += "Wafer.Copy WaferB\nWaferB.Position 3.5 0.0 0.0\nWaferB.Mother Container\n";
   FarApart += "Strip2D D\nD.SensitiveVolume Wafer\nD.DetectorVolume Container\nD.StructuralPitch 5.0 0.0 0.0\nD.StructuralOffset 0.0 0.0 0.0\nD.StripNumber 3 3\nD.Offset 0.2 0.2\n";
   // Defect GEO-D-034: The search of the unique guard ring position uses the frame of the sensitive volume in the detector volume and rejects valid detectors whose wafers are away from the center of the detector volume
@@ -872,9 +875,11 @@ bool UTDStrip2D::TestNamedDetectors()
 
   // Two copies of a detector volume, each with its own name:
   MString Body;
-  Body += "Volume Stack\nStack.Material Vacuum\nStack.Shape BRIK 4.0 4.0 2.0\nStack.Position -5.0 0.0 0.0\nStack.Mother World\n";
-  Body += "Stack.Copy StackB\nStackB.Position 5.0 0.0 0.0\nStackB.Mother World\n";
-  Body += GetBoxVolume("Wafer", 1.5, 1.0, 0.5, 0.0, "Stack");
+  // The template of the two stacks is not placed itself, the placed stacks are its copies Stack and StackB
+  Body += "Volume StackTemplate\nStackTemplate.Material Vacuum\nStackTemplate.Shape BRIK 4.0 4.0 2.0\n";
+  Body += "StackTemplate.Copy Stack\nStack.Position -5.0 0.0 0.0\nStack.Mother World\n";
+  Body += "StackTemplate.Copy StackB\nStackB.Position 5.0 0.0 0.0\nStackB.Mother World\n";
+  Body += GetBoxVolume("Wafer", 1.5, 1.0, 0.5, 0.0, "StackTemplate");
   Body += "Strip2D D\nD.SensitiveVolume Wafer\nD.DetectorVolume Wafer\nD.StripNumber 3 2\nD.Offset 0.3 0.2\n";
   Body += "D.EnergyResolution Gauss 100 100 1\nD.EnergyResolution Gauss 200 200 1\nD.NoiseThreshold 10\nD.TriggerThreshold 20\n";
   Body += "D.Named NA\nNA.Assign World.Stack.Wafer\nD.Named NB\nNB.Assign World.StackB.Wafer\n";

@@ -1355,12 +1355,12 @@ bool MDVolume::Validate()
     }
   }
 
-  // Give a warning if a clone template is positioned
+  // Clone templates are not allowed to be placed, only their copies
   if (IsClone() == false && GetNClones() > 0 && m_Mother != 0) {
-    mout<<"   ***  Soft warning  ***  in volume "<<m_Name<<endl;
-    mout<<"You have a clone template (volume to which you apply the .Copy operator)"<<endl;
-    mout<<"Which is positioned in another volume: "<<m_Mother->GetName()<<endl;
-    mout<<"This is fine, but deprecated... because error prone!"<<endl;
+    mout<<"   ***  Error  ***  in volume "<<m_Name<<endl;
+    mout<<"The volume has copies (.Copy) and is placed (.Mother "<<m_Mother->GetName()<<"): clone templates are not allowed to be placed."<<endl;
+    mout<<"Remove the placement of the template (.Mother, .Position, .Rotation) and place another copy instead."<<endl;
+    return false;
   }
 
   // Give a warning if a clone does not have a mother

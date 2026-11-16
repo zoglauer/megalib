@@ -110,7 +110,9 @@ MString UTDVoxel3D::GetBody() const
 MString UTDVoxel3D::GetBlocks(const MString& Offset) const
 {
   MString Body = GetBoxVolume("Container", 2.1, 1.0, 2.1);
-  Body += "Volume Block\nBlock.Material Germanium\nBlock.Shape BRIK 1.0 1.0 1.0\nBlock.Position -1.1 0.0 -1.1\nBlock.Mother Container\n";
+  // The block is the template of the four copies, and is not placed itself
+  Body += "Volume Block\nBlock.Material Germanium\nBlock.Shape BRIK 1.0 1.0 1.0\n";
+  Body += "Block.Copy B1\nB1.Position -1.1 0.0 -1.1\nB1.Mother Container\n";
   Body += "Block.Copy B2\nB2.Position 1.1 0.0 -1.1\nB2.Mother Container\n";
   Body += "Block.Copy B3\nB3.Position -1.1 0.0 1.1\nB3.Mother Container\n";
   Body += "Block.Copy B4\nB4.Position 1.1 0.0 1.1\nB4.Mother Container\n";

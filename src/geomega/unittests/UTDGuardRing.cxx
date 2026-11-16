@@ -391,7 +391,9 @@ bool UTDGuardRing::TestGrid()
 
   // Detector volume with several wafers: wafer half size 1.5 x 1 x 0.5, gap 0.2, center of the first wafer at -1.6, offset 0.5 x 0.25
   MString Many = GetBoxVolume("Container", 3.1, 1.0, 0.5);
-  Many += "Volume Wafer\nWafer.Material Silicon\nWafer.Shape BRIK 1.5 1.0 0.5\nWafer.Position -1.6 0.0 0.0\nWafer.Mother Container\n";
+  // The wafer is the template of the two copies, and is not placed itself
+  Many += "Volume Wafer\nWafer.Material Silicon\nWafer.Shape BRIK 1.5 1.0 0.5\n";
+  Many += "Wafer.Copy WaferA\nWaferA.Position -1.6 0.0 0.0\nWaferA.Mother Container\n";
   Many += "Wafer.Copy WaferB\nWaferB.Position 1.6 0.0 0.0\nWaferB.Mother Container\n";
   Many += "Strip2D D\nD.SensitiveVolume Wafer\nD.DetectorVolume Container\nD.StructuralPitch 0.2 0.0 0.0\nD.StructuralOffset 0.0 0.0 0.0\nD.StripNumber 3 2\nD.Offset 0.5 0.25\n";
   MDGeometry Wafers;

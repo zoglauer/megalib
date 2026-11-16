@@ -32,6 +32,7 @@ Geomega:
 + MDMaterial: Improved cross-section hash
 + Cross-sections: All default cross sections were recreated with Geant4 11.4 (see cosima).
 + MDGeometry: Make sure GetRandomPositionInVolume() only returns positions outside daughter volumes.
++ MDVolume: A volume with copies (a template) cannot not be placed itself anymore.
 
 Cosima / Sivan:
 + Enable and updates to run Geant4 11.4

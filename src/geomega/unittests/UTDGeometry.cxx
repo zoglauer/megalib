@@ -126,8 +126,12 @@ private:
   bool HasGDMLImportLines(const MString& FileName);
   //! Return a placed box volume of half length 1
   MString Marker(const MString& Name, double X = 0.0) const;
+  //! Return a box volume of half length 1 which is not placed, as template for copies
+  MString MarkerTemplate(const MString& Name) const;
   //! Return a placed silicon wafer of half lengths 5, 5, 0.5
   MString Wafer(const MString& Name = "Wafer", double Z = 0.0) const;
+  //! Return a silicon wafer of half lengths 5, 5, 0.5 which is not placed, as template for copies
+  MString WaferTemplate(const MString& Name = "Wafer") const;
   //! Return the lines common to all detectors
   MString DetectorCommon(const MString& Name, const MString& VolumeName = "Wafer") const;
   //! Return a complete detector of the given keyword with a wafer volume
@@ -376,6 +380,20 @@ MString UTDGeometry::Marker(const MString& Name, double X) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return a box volume of half length 1 which is not placed, as template for copies
+MString UTDGeometry::MarkerTemplate(const MString& Name) const
+{
+  MString Text;
+  Text += "Volume " + Name + "\n";
+  Text += Name + ".Material Aluminium\n";
+  Text += Name + ".Shape BRIK 1.0 1.0 1.0\n";
+  return Text;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return a placed silicon wafer of half lengths 5, 5, 0.5
 MString UTDGeometry::Wafer(const MString& Name, double Z) const
 {
@@ -385,6 +403,20 @@ MString UTDGeometry::Wafer(const MString& Name, double Z) const
   Text += Name + ".Shape BRIK 5.0 5.0 0.5\n";
   Text += Name + ".Position 0.0 0.0 " + MString(Z) + "\n";
   Text += Name + ".Mother World\n";
+  return Text;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return a silicon wafer of half lengths 5, 5, 0.5 which is not placed, as template for copies
+MString UTDGeometry::WaferTemplate(const MString& Name) const
+{
+  MString Text;
+  Text += "Volume " + Name + "\n";
+  Text += Name + ".Material Silicon\n";
+  Text += Name + ".Shape BRIK 5.0 5.0 0.5\n";
   return Text;
 }
 
@@ -1292,9 +1324,9 @@ bool UTDGeometry::TestNames()
   Passed = EvaluateFalse("ScanSetupFile()", "shape named like a volume", "A shape with the name of a volume is rejected", Accepts(Marker("Same") + "Shape BRIK Same\nSame.Parameters 1 1 1\n")) && Passed;
 
   // Defect GEO-A-19: The name of a volume made by Copy is not checked for valid characters
-  Passed = ExpectedToFail(EvaluateFalse("ScanSetupFile()", "Copy with a bad name", "A copy with a minus sign in the name is rejected", Accepts(Marker("A") + "A.Copy Bad-Name\nBad-Name.Position 3 0 0\nBad-Name.Mother World\n"))) && Passed;
+  Passed = ExpectedToFail(EvaluateFalse("ScanSetupFile()", "Copy with a bad name", "A copy with a minus sign in the name is rejected", Accepts(MarkerTemplate("A") + "A.Copy Bad-Name\nBad-Name.Position 3 0 0\nBad-Name.Mother World\n"))) && Passed;
   // The lines of a copy with the name of a material go to the material, which rejects them:
-  Passed = EvaluateFalse("ScanSetupFile()", "volume Copy named like a material", "A copy with the name of a material is rejected", Accepts(Marker("A") + "A.Copy Aluminium\nAluminium.Position 3 0 0\nAluminium.Mother World\n")) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "volume Copy named like a material", "A copy with the name of a material is rejected", Accepts(MarkerTemplate("A") + "A.Copy Aluminium\nAluminium.Position 3 0 0\nAluminium.Mother World\n")) && Passed;
 
   return Passed;
 }
@@ -1553,13 +1585,14 @@ bool UTDGeometry::TestVolumes()
   // Tree errors:
   Passed = EvaluateFalse("ScanSetupFile()", "no material", "A volume without a material is rejected", Accepts("Volume A\nA.Shape BRIK 1 1 1\nA.Mother World\n")) && Passed;
   Passed = EvaluateFalse("ScanSetupFile()", "cyclic mothers", "Cyclic mothers are rejected", Accepts(Marker("A") + Marker("B") + "A.Mother B\nB.Mother A\n")) && Passed;
-  Passed = EvaluateFalse("ScanSetupFile()", "copy as mother", "A copy cannot be a mother", Accepts(Marker("A") + "A.Copy C\nC.Mother World\n" + Marker("B") + "B.Mother C\n")) && Passed;
-  Passed = EvaluateFalse("ScanSetupFile()", "copy of a copy", "A copy of a copy is rejected", Accepts(Marker("A") + "A.Copy C\nC.Mother World\nC.Copy D\nD.Mother World\n")) && Passed;
-  Passed = EvaluateFalse("ScanSetupFile()", "copy name exists", "A copy with an existing volume name is rejected", Accepts(Marker("A") + Marker("B", 3) + "A.Copy B\n")) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "copy as mother", "A copy cannot be a mother", Accepts(MarkerTemplate("A") + "A.Copy C\nC.Mother World\n" + Marker("B") + "B.Mother C\n")) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "copy of a copy", "A copy of a copy is rejected", Accepts(MarkerTemplate("A") + "A.Copy C\nC.Mother World\nC.Copy D\nD.Mother World\n")) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "copy name exists", "A copy with an existing volume name is rejected", Accepts(MarkerTemplate("A") + Marker("B", 3) + "A.Copy B\n")) && Passed;
   Passed = EvaluateFalse("ScanSetupFile()", "copy of the world", "A copy of the world volume is rejected", Accepts("World.Copy W2\nW2.Mother World\n")) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "placed template", "A template which is placed together with its copies is rejected", Accepts(Marker("A") + "A.Copy C\nC.Position 3 0 0\nC.Mother World\n")) && Passed;
 
-  // Copies:
-  Text = Marker("A") + "A.Copy B\nB.Position 3 0 0\nB.Mother World\nA.Copy C\nC.Position 6 0 0\nC.Mother World\nC.Color 5\n";
+  // Copies of a template which is not placed itself (a placed template is rejected):
+  Text = MarkerTemplate("A") + "A.Copy B\nB.Position 3 0 0\nB.Mother World\nA.Copy C\nC.Position 6 0 0\nC.Mother World\nC.Color 5\n";
   Passed = EvaluateTrue("ScanSetupFile()", "copies", "Copies are accepted", ScanGeometry(Geometry, GetGeometryHead() + Text)) && Passed;
   Passed = Evaluate("GetNVolumes()", "copies", "The copies are volumes", Geometry.GetNVolumes(), 4U) && Passed;
   Passed = Evaluate("MDVolume::GetNClones()", "copies", "The template has two clones", Geometry.GetVolume("A")->GetNClones(), 2U) && Passed;
@@ -1620,10 +1653,9 @@ bool UTDGeometry::TestScale()
   Passed = EvaluateVectorNear("Scale", "copies", "The shape shared by the copies is scaled once", Geometry.GetVolume("C1")->GetSize(), MVector(1, 1, 1), 1e-12) && Passed;
   Passed = EvaluateVectorNear("Scale", "copies, position", "The position of the copy is scaled", Geometry.GetVolume("C2")->GetPosition(), MVector(-2, 0, 0), 1e-12) && Passed;
 
-  // The shape of a template placed together with its copy is scaled once:
+  // A template placed together with its copy is rejected, thus also when its mother is scaled:
   MString Both = "Volume M\nM.Material Vacuum\nM.Shape BRIK 4 4 4\nM.Mother World\nVolume T\nT.Material Vacuum\nT.Shape BRIK 0.5 0.5 0.5\nT.Position 1 0 0\nT.Mother M\nT.Copy C1\nC1.Position -1 0 0\nC1.Mother M\n";
-  Passed = EvaluateTrue("ScanSetupFile()", "Scale with template and copy", "Scaling is accepted", ScanGeometry(Geometry, GetGeometryHead() + Both + "M.Scale 2\n")) && Passed;
-  Passed = EvaluateVectorNear("Scale", "template and copy placed", "The half length of 0.5 of the shared shape doubles to 1", Geometry.GetVolume("T")->GetSize(), MVector(1, 1, 1), 1e-12) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "Scale with template and copy", "A placed template is rejected", Accepts(Both + "M.Scale 2\n")) && Passed;
 
   return Passed;
 }
@@ -1667,15 +1699,12 @@ bool UTDGeometry::TestVirtual()
   // Two new volumes for the two copies, in addition to World, V, D, C1, C2:
   Passed = Evaluate("GetNVolumes()", "virtual template, two copies", "The copies of the daughter are in the list", Geometry.GetNVolumes(), 7U) && Passed;
 
-  // Defect GEO-A-25: The daughters of a virtual copy get a wrong position when its virtual template is placed too, since the position of the template is included twice
+  // A virtual template placed together with its copy is rejected, as every placed template
+  // (Before, the daughters of the virtual copy got a wrong position, since the position of the template was included twice, GEO-A-25)
   MString Placed = "Volume V\nV.Material Vacuum\nV.Shape BRIK 2 2 2\nV.Position 0 0 10\nV.Virtual true\nV.Mother World\n";
   Placed += "Volume D\nD.Material Aluminium\nD.Shape BRIK 0.5 0.5 0.5\nD.Position 1 0 0\nD.Mother V\n";
   Placed += "V.Copy C\nC.Position 0 0 -10\nC.Mother World\n";
-  Passed = EvaluateTrue("ScanSetupFile()", "placed virtual template", "The geometry is accepted", ScanGeometry(Geometry, GetGeometryHead() + Placed)) && Passed;
-  Sequence = Geometry.GetVolumeSequence(MVector(1, 0, 10));
-  Passed = EvaluateTrue("GetVolumeSequence()", "placed virtual template", "The daughter of the template is at the position of the template", Sequence.GetDeepestVolume() != nullptr && Sequence.GetDeepestVolume()->GetMaterial() == Geometry.GetMaterial("Aluminium")) && Passed;
-  Sequence = Geometry.GetVolumeSequence(MVector(1, 0, -10));
-  Passed = ExpectedToFail(EvaluateTrue("GetVolumeSequence()", "placed virtual template", "The daughter of the copy is at the position of the copy", Sequence.GetDeepestVolume() != nullptr && Sequence.GetDeepestVolume()->GetMaterial() == Geometry.GetMaterial("Aluminium"))) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "placed virtual template", "A placed template is rejected", Accepts(Placed)) && Passed;
 
   // The virtual volume can be switched on in the scan for all non detector volumes:
   MString Tree = Marker("A") + "Volume D\nD.Material Silicon\nD.Shape BRIK 0.5 0.5 0.5\nD.Mother A\n" + FullDetector("Scintillator", "Det", "D") + Marker("Passive", 20.0);
@@ -1891,7 +1920,7 @@ bool UTDGeometry::TestNamedDetectors()
   MDGeometry Geometry;
 
   // Two wafers, and a detector with the two named versions: positions by construction
-  MString Base = Wafer("WaferA", 5.0) + "WaferA.Copy WaferB\nWaferB.Position 0 0 -5\nWaferB.Mother World\n" + FullDetector("Strip2D", "D", "WaferA");
+  MString Base = WaferTemplate("Wafer") + "Wafer.Copy WaferA\nWaferA.Position 0 0 5\nWaferA.Mother World\nWafer.Copy WaferB\nWaferB.Position 0 0 -5\nWaferB.Mother World\n" + FullDetector("Strip2D", "D", "Wafer");
   MString Named = Base + "D.Named N1\nN1.Assign 0 0 5\nD.NamedDetector N2\nN2.Assign World.WaferB\n";
   Passed = EvaluateTrue("ScanSetupFile()", "named detectors", "Named detectors are accepted", ScanGeometry(Geometry, GetGeometryHead() + Named)) && Passed;
   Passed = Evaluate("GetNDetectors()", "named detectors", "The named detectors are in the list", Geometry.GetNDetectors(), 3U) && Passed;
@@ -2830,7 +2859,7 @@ bool UTDGeometry::TestGlobalPosition()
   MDGeometry Geometry;
 
   // Two copies of a wafer, at z = 5 and z = -5:
-  MString Text = GetGeometryHead() + Wafer("WaferA", 5.0) + "WaferA.Copy WaferB\nWaferB.Position 0 0 -5\nWaferB.Mother World\n" + FullDetector("Strip2D", "D", "WaferA") + "D.Named N1\nN1.Assign 0 0 5\nD.Named N2\nN2.Assign 0 0 -5\n";
+  MString Text = GetGeometryHead() + WaferTemplate("Wafer") + "Wafer.Copy WaferA\nWaferA.Position 0 0 5\nWaferA.Mother World\nWafer.Copy WaferB\nWaferB.Position 0 0 -5\nWaferB.Mother World\n" + FullDetector("Strip2D", "D", "Wafer") + "D.Named N1\nN1.Assign 0 0 5\nD.Named N2\nN2.Assign 0 0 -5\n";
   Passed = EvaluateTrue("ScanSetupFile()", "global position", "The file is accepted", ScanGeometry(Geometry, Text)) && Passed;
   Passed = EvaluateVectorNear("GetGlobalPosition()", "N1", "A position in the first named detector moves by +5 in z", Geometry.GetGlobalPosition(MVector(1, 2, 0.25), "N1"), MVector(1, 2, 5.25), 1e-12) && Passed;
   Passed = EvaluateVectorNear("GetGlobalPosition()", "N2", "A position in the second named detector moves by -5 in z", Geometry.GetGlobalPosition(MVector(1, 2, 0.25), "N2"), MVector(1, 2, -4.75), 1e-12) && Passed;
@@ -2937,16 +2966,9 @@ bool UTDGeometry::TestRandomPositions()
     Passed = EvaluateNear("GetRandomPositionInVolume()", Input, "Each placement has a quarter of the positions", static_cast<double>(Counts[b])/N, 0.25, 5.0*sqrt(0.25*0.75/N)) && Passed;
   }
 
-  // Defect GEO-A-46: A template which is placed together with its copies only counts as one placement, thus its copies are never sampled
+  // A template placed together with its copies is rejected, thus its copies can no longer be skipped by the sampling (GEO-A-46)
   Text = GetGeometryHead() + "Volume T\nT.Material Aluminium\nT.Shape BRIK 1 1 1\nT.Position 10 0 0\nT.Mother World\nT.Copy C\nC.Position -10 0 0\nC.Mother World\n";
-  Passed = EvaluateTrue("ScanSetupFile()", "placed template and copy", "The file is accepted", ScanGeometry(Geometry, Text)) && Passed;
-  unsigned int InCopy = 0;
-  for (unsigned int n = 0; n < N; ++n) {
-    if (Geometry.GetRandomPositionInVolume("T").X() < 0) {
-      ++InCopy;
-    }
-  }
-  Passed = ExpectedToFail(EvaluateNear("GetRandomPositionInVolume()", "placed template and copy", "Half of the positions are in the copy", static_cast<double>(InCopy)/N, 0.5, 5.0*0.5/sqrt(N))) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "placed template and copy", "A placed template is rejected", ScanGeometry(Geometry, Text)) && Passed;
 
   // The second call uses the cached placements and gives valid data, also after another volume:
   Passed = EvaluateTrue("ScanSetupFile()", "cache", "The file is accepted", ScanGeometry(Geometry, GetGeometryHead() + Marker("A", 10) + Marker("B", -10))) && Passed;
@@ -3095,7 +3117,7 @@ bool UTDGeometry::TestPreferredVisibleVolumes()
 
   MDGeometry Geometry;
   Geometry.AddPreferredVisibleVolume("A");
-  MString Text = GetGeometryHead() + Marker("A") + "A.Visibility 0\n" + Marker("B", 3) + "B.Visibility 1\nA.Copy C\nC.Position 6 0 0\nC.Mother World\n";
+  MString Text = GetGeometryHead() + Marker("A") + "A.Visibility 0\n" + Marker("B", 3) + "B.Visibility 1\n" + MarkerTemplate("T") + "T.Copy C\nC.Position 6 0 0\nC.Mother World\n";
   Passed = EvaluateTrue("ScanSetupFile()", "preferred", "The file is accepted", ScanGeometry(Geometry, Text)) && Passed;
   Passed = Evaluate("AddPreferredVisibleVolume()", "A", "The preferred volume is visible", Geometry.GetVolume("A")->GetVisibility(), 1) && Passed;
   Passed = Evaluate("AddPreferredVisibleVolume()", "B", "The other volume is not visible", Geometry.GetVolume("B")->GetVisibility(), 0) && Passed;

@@ -1176,16 +1176,18 @@ bool UTDVolume::TestValidate()
   EnableDefaultStreams();
   Passed = EvaluateFalse("Validate()", "sensitive without detector", "A sensitive volume without detector is refused", Result) && Passed;
 
-  // A positioned template is allowed but deprecated:
+  // A positioned template is rejected: only its copies may be placed
   MDVolume* PlacedMother = MakeBox("PlacedMother", 1, 1, 1, nullptr, MVector(0, 0, 0));
   PlacedMother->SetWorldVolume();
   MDVolume* PlacedTemplate = MakeBox("PlacedTemplate", 1, 1, 1, PlacedMother, MVector(0, 0, 0));
   MDVolume* PlacedClone = new MDVolume("PlacedClone");
   PlacedTemplate->AddClone(PlacedClone);
   DisableDefaultStreams();
+  BeginCaptureOutput();
   Result = PlacedMother->Validate();
+  EndCaptureOutput();
   EnableDefaultStreams();
-  Passed = EvaluateTrue("Validate()", "positioned template", "A positioned template only gets a warning", Result) && Passed;
+  Passed = EvaluateFalse("Validate()", "positioned template", "A positioned template is rejected", Result) && Passed;
 
   return Passed;
 }
