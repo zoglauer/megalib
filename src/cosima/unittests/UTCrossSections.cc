@@ -34,10 +34,17 @@
 #include "MGlobal.h"
 #include "MString.h"
 #include "MUnitTest.h"
+#include "MResponseMatrixO1.h"
 #include "UTFixtureShared.h"
 
 // Geant4:
 #include "G4IonConstructor.hh"
+#include "G4NistManager.hh"
+#include "G4LivermorePhotoElectricModel.hh"
+#include "G4LivermoreRayleighModel.hh"
+#include "G4LivermoreGammaConversionModel.hh"
+#include "G4CrossSectionHandler.hh"
+#include "G4DataVector.hh"
 #include "G4Material.hh"
 #include "G4MaterialTable.hh"
 #include "G4ParticleTable.hh"
@@ -94,6 +101,12 @@ private:
   bool TestEnergyGrid();
   //! Test the values against physics
   bool TestValues();
+  //! Test the absorption edge of the photo effect
+  bool TestEdge();
+  //! Test that the edges of all elements are in the files, also weak ones and those just above 1 keV
+  bool TestEdgePositions();
+  //! Test that the linear interpolation of the files agrees with the Geant4 models within the tolerance
+  bool TestTolerance();
   //! Test that a second call gives the same files
   bool TestRepeatedCall();
   //! Test a path which cannot be created
@@ -101,6 +114,12 @@ private:
 
   //! Read one file
   XSFile ReadFile(const MString& FileName);
+  //! Return the index of the energy closest to the given one (keV) on a logarithmic scale
+  unsigned int FindClosestIndex(const vector<double>& Energies, double Energy) const;
+  //! Return the lower indices of adjacent energies less than 4e-5 apart relative to each other
+  vector<unsigned int> FindEdgePairs(const vector<double>& Energies) const;
+  //! Create the test materials of the edge and tolerance tests
+  void CreateTestMaterials();
   //! Redirect cout, cerr, and the MEGAlib streams
   void SilenceOutput();
   //! Restore cout, cerr, and the MEGAlib streams
@@ -177,6 +196,8 @@ bool UTCrossSections::Run()
   // Silicon is also a material of the Geomega geometry, which provides the hash:
   G4Material* Silicon = new G4Material("Silicon", 14.0, 28.0855*g/mole, 2.33*g/cm3);
   m_Hash = m_Detector->GetMaterialHash(Silicon);
+  // Test materials for the edges: they are not in the Geomega geometry, thus their files have no hash
+  CreateTestMaterials();
   RestoreOutput();
   Passed = EvaluateTrue("MCDetectorConstruction::Initialize()", "geometry", "The test geometry can be loaded", GeometryLoaded) && Passed;
   Passed = EvaluateTrue("GetMaterialHash()", "Silicon", "The Geomega hash of Silicon is available", m_Hash != 0) && Passed;
@@ -199,6 +220,9 @@ bool UTCrossSections::Run()
   Passed = TestHeaders() && Passed;
   Passed = TestEnergyGrid() && Passed;
   Passed = TestValues() && Passed;
+  Passed = TestEdge() && Passed;
+  Passed = TestEdgePositions() && Passed;
+  Passed = TestTolerance() && Passed;
   Passed = TestRepeatedCall() && Passed;
   Passed = TestFailure() && Passed;
 
@@ -238,6 +262,97 @@ void UTCrossSections::RestoreOutput()
   m_CoutBuffer = nullptr;
   m_CerrBuffer = nullptr;
   EnableDefaultStreams();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the lower indices of adjacent energies less than 4e-5 apart relative to each other
+vector<unsigned int> UTCrossSections::FindEdgePairs(const vector<double>& Energies) const
+{
+  vector<unsigned int> Pairs;
+  for (unsigned int e = 0; e + 1 < Energies.size(); ++e) {
+    if (Energies[e+1]/Energies[e] - 1.0 < 4e-5) Pairs.push_back(e);
+  }
+  return Pairs;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Create the test materials of the edge and tolerance tests
+void UTCrossSections::CreateTestMaterials()
+{
+  G4NistManager* Nist = G4NistManager::Instance();
+
+  // Xenon: the M2 edge at 1.0021 keV is just above the start of the table
+  G4Material* Xenon = new G4Material("UTXenon", 3.52*g/cm3, 1);
+  Xenon->AddElement(Nist->FindOrBuildElement("Xe"), 1);
+
+  // CdTe: the M1 edge of tellurium at 1.012 keV is just above the start of the table
+  G4Material* CdTe = new G4Material("UTCdTe", 5.85*g/cm3, 2);
+  CdTe->AddElement(Nist->FindOrBuildElement("Cd"), 1);
+  CdTe->AddElement(Nist->FindOrBuildElement("Te"), 1);
+
+  // CZT: the L3 and L2 edges of zinc (1.024 and 1.047 keV) are small in the mixture and close to the M1 edge of tellurium
+  G4Material* CZT = new G4Material("UTCZT", 5.78*g/cm3, 3);
+  CZT->AddElement(Nist->FindOrBuildElement("Cd"), 9);
+  CZT->AddElement(Nist->FindOrBuildElement("Zn"), 1);
+  CZT->AddElement(Nist->FindOrBuildElement("Te"), 10);
+
+  // CsI: the M2 edge of cesium (1.068 keV) and the M1 edge of iodine (1.078 keV) are 1% apart, the cesium M3 edge is at exactly 1 keV
+  G4Material* CsI = new G4Material("UTCsI", 4.51*g/cm3, 2);
+  CsI->AddElement(Nist->FindOrBuildElement("Cs"), 1);
+  CsI->AddElement(Nist->FindOrBuildElement("I"), 1);
+
+  // A tungsten alloy with nickel: the L1 edge of nickel at 1.015 keV is just above the start of the table
+  G4Material* Densimet = new G4Material("UTDensimet", 18.0*g/cm3, 3);
+  Densimet->AddElement(Nist->FindOrBuildElement("W"), 0.90);
+  Densimet->AddElement(Nist->FindOrBuildElement("Ni"), 0.07);
+  Densimet->AddElement(Nist->FindOrBuildElement("Fe"), 0.03);
+
+  // Aluminium with traces of zinc and magnesium: their edges are jumps of 0.1% or less of the material
+  G4Material* Trace = new G4Material("UTTrace", 2.70*g/cm3, 3);
+  Trace->AddElement(Nist->FindOrBuildElement("Al"), 0.9973);
+  Trace->AddElement(Nist->FindOrBuildElement("Zn"), 0.0025);
+  Trace->AddElement(Nist->FindOrBuildElement("Mg"), 0.0002);
+
+  // NaI: pair creation reaches 0.1% of the total just above 1.15 MeV, where it rises like E^21
+  G4Material* NaI = new G4Material("UTNaI", 3.67*g/cm3, 2);
+  NaI->AddElement(Nist->FindOrBuildElement("Na"), 1);
+  NaI->AddElement(Nist->FindOrBuildElement("I"), 1);
+
+  // Germanium: below the L3 edge Rayleigh scattering is about 0.1% of the total, and its data have kinks
+  G4Material* Germanium = new G4Material("UTGermanium", 5.323*g/cm3, 1);
+  Germanium->AddElement(Nist->FindOrBuildElement("Ge"), 1);
+
+  // Alu6061 as in Materials.geo: the photo effect of aluminium has a small step at 5.994 keV, which is not a shell edge
+  G4Material* Alu6061 = new G4Material("UTAlu6061", 2.6989*g/cm3, 9);
+  Alu6061->AddElement(Nist->FindOrBuildElement("Si"), 0.0060);
+  Alu6061->AddElement(Nist->FindOrBuildElement("Fe"), 0.0070);
+  Alu6061->AddElement(Nist->FindOrBuildElement("Cu"), 0.0030);
+  Alu6061->AddElement(Nist->FindOrBuildElement("Mn"), 0.0015);
+  Alu6061->AddElement(Nist->FindOrBuildElement("Mg"), 0.0100);
+  Alu6061->AddElement(Nist->FindOrBuildElement("Cr"), 0.0020);
+  Alu6061->AddElement(Nist->FindOrBuildElement("Zn"), 0.0025);
+  Alu6061->AddElement(Nist->FindOrBuildElement("Ti"), 0.0015);
+  Alu6061->AddElement(Nist->FindOrBuildElement("Al"), 0.9665);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the index of the energy closest to the given one (keV) on a logarithmic scale
+unsigned int UTCrossSections::FindClosestIndex(const vector<double>& Energies, double Energy) const
+{
+  unsigned int Index = 0;
+  for (unsigned int e = 0; e < Energies.size(); ++e) {
+    if (fabs(log(Energies[e]/Energy)) < fabs(log(Energies[Index]/Energy))) Index = e;
+  }
+  return Index;
 }
 
 
@@ -315,7 +430,9 @@ bool UTCrossSections::TestFiles()
   Passed = EvaluateTrue("CreateCrossSectionFiles()", "nested path", "The nested directory has been created", filesystem::is_directory(m_Directory.Data())) && Passed;
   for (unsigned int t = 0; t < m_Types.size(); ++t) {
     Passed = EvaluateTrue("CreateCrossSectionFiles()", m_Types[t], MString("The ") + m_Types[t] + " file of the material has been created", m_Files[t].m_Read) && Passed;
-    Passed = EvaluateSize("CreateCrossSectionFiles()", m_Types[t], MString("The ") + m_Types[t] + " file has one value per energy bin: 401 energies from 1 keV to 100 GeV", m_Files[t].m_Energies.size(), 401) && Passed;
+    // The number of points depends on the models (refinement), thus only: all files have the same energies, more than the 401 grid points
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", m_Types[t], MString("The ") + m_Types[t] + " file has more than the 401 energies of the logarithmic grid", m_Files[t].m_Energies.size() > 401) && Passed;
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", m_Types[t], MString("The ") + m_Types[t] + " file has the same energies as the photo file", m_Files[t].m_Energies == m_Files[0].m_Energies) && Passed;
   }
 
   // The material Silicon gives exactly five files:
@@ -371,16 +488,29 @@ bool UTCrossSections::TestEnergyGrid()
 
   for (unsigned int t = 0; t < m_Types.size(); ++t) {
     const XSFile& F = m_Files[t];
-    if (F.m_Energies.size() != 401) continue;
+    if (F.m_Energies.empty() == true) continue;
     Passed = EvaluateNear("CreateCrossSectionFiles()", m_Types[t], "The first energy is 1 keV", F.m_Energies.front(), 1.0, 1e-5) && Passed;
     Passed = EvaluateNear("CreateCrossSectionFiles()", m_Types[t], "The last energy is 100 GeV = 1e8 keV", F.m_Energies.back()/1e8, 1.0, 1e-6) && Passed;
-    // The grid is logarithmic - the ratio of neighboring bins is constant:
-    const double Ratio = pow(1e8, 1.0/400.0);
-    bool Logarithmic = true;
+
+    // The energies are increasing
+    bool Increasing = true;
     for (unsigned int e = 1; e < F.m_Energies.size(); ++e) {
-      if (fabs(F.m_Energies[e]/F.m_Energies[e-1]/Ratio - 1.0) > 1e-4) Logarithmic = false;
+      if (F.m_Energies[e] <= F.m_Energies[e-1]) Increasing = false;
     }
-    Passed = EvaluateTrue("CreateCrossSectionFiles()", m_Types[t], "The energy grid is logarithmic with 400 bins", Logarithmic) && Passed;
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", m_Types[t], "The energies are increasing", Increasing) && Passed;
+
+    // All 401 energies of the logarithmic grid with 400 bins are there (written with 6 decimals in keV, thus 1e-5 relative at 1 keV)
+    unsigned int NGrid = 0;
+    for (int g = 0; g <= 400; ++g) {
+      const double Grid = pow(1e8, g/400.0);
+      for (double E : F.m_Energies) {
+        if (fabs(E/Grid - 1.0) < 1e-5) {
+          ++NGrid;
+          break;
+        }
+      }
+    }
+    Passed = Evaluate("CreateCrossSectionFiles()", m_Types[t], "All 401 energies of the logarithmic grid are present", NGrid, 401U) && Passed;
   }
 
   // All files use the same grid:
@@ -402,7 +532,7 @@ bool UTCrossSections::TestValues()
   bool Passed = true;
 
   for (unsigned int t = 0; t < m_Types.size(); ++t) {
-    if (m_Files[t].m_Values.size() != 401) return false;
+    if (m_Files[t].m_Values.size() != m_Files[0].m_Energies.size() || m_Files[t].m_Values.empty() == true) return false;
   }
   const vector<double>& Energies = m_Files[0].m_Energies;
   const vector<double>& Photo = m_Files[0].m_Values;
@@ -441,20 +571,205 @@ bool UTCrossSections::TestValues()
 
   // Reference: Klein-Nishina at 1 MeV: sigma = 2.112e-25 cm2 per electron, Silicon: 2.33 g/cm3, Z/A = 14/28.0855 mol/g
   //            -> 0.1477 / cm; binding effects at 1 MeV are below 1%, thus 3% is a generous tolerance
-  unsigned int Index1MeV = 0;
-  for (unsigned int e = 0; e < Energies.size(); ++e) {
-    if (fabs(log(Energies[e]/1000.0)) < fabs(log(Energies[Index1MeV]/1000.0))) Index1MeV = e;
-  }
+  const unsigned int Index1MeV = FindClosestIndex(Energies, 1000.0);
+  const unsigned int Index10keV = FindClosestIndex(Energies, 10.0);
+  const unsigned int Index100keV = FindClosestIndex(Energies, 100.0);
   const double ElectronDensity = 2.33 * 14.0/28.0855 * 6.02214076e23;
   const double Expected = 2.112e-25 * ElectronDensity * (Energies[Index1MeV] > 0 ? 1.0 : 0.0);
   Passed = EvaluateNear("CreateCrossSectionFiles()", "1 MeV", "The Compton cross section at 1 MeV agrees with Klein-Nishina within 3% (bin energy 1.0471 keV grid: bin within 2.4% of 1 MeV)", Compton[Index1MeV]/Expected, 1.0, 0.06) && Passed;
 
   // At low energies the photo effect dominates, at 1 MeV Compton:
-  Passed = EvaluateTrue("CreateCrossSectionFiles()", "10 keV", "The photo effect dominates at 10 keV", Photo[50] > Compton[50] && Photo[50] > Rayleigh[50]) && Passed;
+  Passed = EvaluateTrue("CreateCrossSectionFiles()", "10 keV", "The photo effect dominates at 10 keV", Photo[Index10keV] > Compton[Index10keV] && Photo[Index10keV] > Rayleigh[Index10keV]) && Passed;
   Passed = EvaluateTrue("CreateCrossSectionFiles()", "1 MeV", "The Compton effect dominates at 1 MeV", Compton[Index1MeV] > Photo[Index1MeV] && Compton[Index1MeV] > Rayleigh[Index1MeV]) && Passed;
 
   // The photo effect falls between 10 keV and 100 keV:
-  Passed = EvaluateTrue("CreateCrossSectionFiles()", "photo", "The photo absorption falls from 10 keV to 100 keV", Photo[50] > Photo[100]) && Passed;
+  Passed = EvaluateTrue("CreateCrossSectionFiles()", "photo", "The photo absorption falls from 10 keV to 100 keV", Photo[Index10keV] > Photo[Index100keV]) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the absorption edge of the photo effect
+bool UTCrossSections::TestEdge()
+{
+  bool Passed = true;
+
+  const vector<double>& Energies = m_Files[0].m_Energies;
+  const vector<double>& Photo = m_Files[0].m_Values;
+  const vector<double>& Total = m_Files[4].m_Values;
+  if (Energies.size() != Photo.size() || Energies.size() != Total.size()) return false;
+
+  // Select close pairs with a photoelectric jump above 1%:
+  vector<unsigned int> EdgePairs;
+  for (unsigned int b : FindEdgePairs(Energies)) {
+    if (Photo[b+1] > 1.01*Photo[b]) EdgePairs.push_back(b);
+  }
+  Passed = EvaluateSize("CreateCrossSectionFiles()", "Silicon", "Silicon has one edge above 1 keV, the K edge, thus one pair of points", EdgePairs.size(), 1) && Passed;
+  if (EdgePairs.size() != 1) return Passed;
+
+  const unsigned int Below = EdgePairs[0];
+  const unsigned int Above = EdgePairs[0] + 1;
+
+  // The K edge of silicon is at 1.839 keV; the Livermore data may differ slightly, thus 1%
+  Passed = EvaluateNear("CreateCrossSectionFiles()", "Silicon K edge", "The point below is at the K edge of 1.839 keV", Energies[Below], 1.839, 0.01*1.839) && Passed;
+  // The two points are 2e-5 apart relative to each other, as written with 6 decimals in keV
+  Passed = EvaluateNear("CreateCrossSectionFiles()", "Silicon K edge", "The points are just below and just above the edge", Energies[Above]/Energies[Below] - 1.0, 2e-5, 2e-6) && Passed;
+
+  // NIST XCOM: the photo absorption jumps by a factor of about 10 at the K edge of silicon; 5 is a safe lower limit
+  Passed = EvaluateTrue("CreateCrossSectionFiles()", "Silicon K edge", "The photo absorption jumps up by more than a factor of 5", Photo[Above] > 5.0*Photo[Below]) && Passed;
+  Passed = EvaluateTrue("CreateCrossSectionFiles()", "Silicon K edge", "The total cross section jumps up by more than a factor of 5", Total[Above] > 5.0*Total[Below]) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test that the edges of all elements are in the files, also weak ones and those just above 1 keV
+bool UTCrossSections::TestEdgePositions()
+{
+  bool Passed = true;
+
+  // EPICS2017 shell energies from pe-high-Z.dat, independent of the grid generator
+  // Use a 0.2% matching window; the nearest listed edges are 10 eV apart
+  struct Edge { MString m_Material; MString m_Name; double m_Energy; };
+  const vector<Edge> Edges = {
+    { "UTXenon", "Xe M2", 1.0021 },
+    { "UTXenon", "Xe L3", 4.7873 },
+    { "UTCdTe", "Te M1", 1.0120 },
+    { "UTCZT", "Te M1", 1.0120 },
+    { "UTCZT", "Zn L3", 1.024 },
+    { "UTCZT", "Zn L2", 1.047 },
+    { "UTCsI", "Cs M2", 1.068 },
+    { "UTCsI", "I M1", 1.078 },
+    { "UTDensimet", "Ni L1", 1.0150 },
+    { "UTTrace", "Zn L2", 1.047 },
+    { "UTTrace", "Mg K", 1.308 }
+  };
+
+  for (const Edge& E : Edges) {
+    const XSFile Photo = ReadFile(m_Directory + "/Xsection.Photo." + E.m_Material + ".rsp");
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", E.m_Material, "The photo file of the test material can be read", Photo.m_Read && Photo.m_Energies.size() == Photo.m_Values.size()) && Passed;
+    if (Photo.m_Read == false) continue;
+
+    bool Found = false;
+    bool JumpsUp = false;
+    for (unsigned int b : FindEdgePairs(Photo.m_Energies)) {
+      if (fabs(sqrt(Photo.m_Energies[b]*Photo.m_Energies[b+1])/E.m_Energy - 1.0) < 2e-3) {
+        Found = true;
+        JumpsUp = Photo.m_Values[b+1] > Photo.m_Values[b];
+      }
+    }
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", E.m_Material + " " + E.m_Name, MString("The edge at ") + E.m_Energy + " keV has a point just below and just above it", Found) && Passed;
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", E.m_Material + " " + E.m_Name, "The photo absorption jumps up at the edge", JumpsUp) && Passed;
+  }
+
+  // Check the cesium M3 edge at the 1 keV table boundary:
+  const XSFile CsI = ReadFile(m_Directory + "/Xsection.Photo.UTCsI.rsp");
+  if (CsI.m_Read == true && CsI.m_Values.empty() == false) {
+    G4LivermorePhotoElectricModel* Photo = new G4LivermorePhotoElectricModel();
+    G4DataVector Data;
+    Photo->Initialise(G4ParticleTable::GetParticleTable()->FindParticle("gamma"), Data);
+    const double Model = Photo->CrossSectionPerVolume(G4Material::GetMaterial("UTCsI"), G4ParticleTable::GetParticleTable()->FindParticle("gamma"), 1.0*keV)*cm;
+    Passed = Evaluate("CreateCrossSectionFiles()", "UTCsI", "The first energy is exactly 1 keV", CsI.m_Energies.front(), 1.0) && Passed;
+    // The values are written with 7 significant digits
+    Passed = EvaluateNear("CreateCrossSectionFiles()", "UTCsI", "The first value is the one of the model at exactly 1 keV", CsI.m_Values.front(), Model, 1e-6*Model) && Passed;
+
+    // Check the inside sample and the native reader above the edge:
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", "UTCsI", "The second energy is just above the cesium M3 edge at exactly 1 keV", CsI.m_Energies.size() > 1 && CsI.m_Energies[1] < 1.0001) && Passed;
+    MResponseMatrixO1 Reader;
+    if (Reader.Read(m_Directory + "/Xsection.Photo.UTCsI.rsp") == true) {
+      const double Above = Photo->CrossSectionPerVolume(G4Material::GetMaterial("UTCsI"), G4ParticleTable::GetParticleTable()->FindParticle("gamma"), 1.00002*keV)*cm;
+      Passed = EvaluateNear("MResponseMatrixO1::GetInterpolated()", "UTCsI at 1.00002 keV", "The reader returns the model value just above the edge at 1 keV within 0.1%", Reader.GetInterpolated(1.00002), Above, 1e-3*Above) && Passed;
+    } else {
+      Passed = EvaluateTrue("MResponseMatrixO1::Read()", "UTCsI", "The photo file can be read by MEGAlib", false) && Passed;
+    }
+    delete Photo;
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test that the linear interpolation of the files agrees with the Geant4 models within the tolerance
+bool UTCrossSections::TestTolerance()
+{
+  bool Passed = true;
+
+  // Initialize reference models:
+  const G4ParticleDefinition* Gamma = G4ParticleTable::GetParticleTable()->FindParticle("gamma");
+  G4DataVector Data;
+  G4LivermorePhotoElectricModel* Photo = new G4LivermorePhotoElectricModel();
+  Photo->Initialise(Gamma, Data);
+  G4LivermoreRayleighModel* Rayleigh = new G4LivermoreRayleighModel();
+  G4LivermoreGammaConversionModel* Pair = new G4LivermoreGammaConversionModel();
+  G4CrossSectionHandler* Compton = new G4CrossSectionHandler();
+  Compton->Clear();
+  Compton->LoadData("comp/ce-cs-");
+
+  // Check 63 interior samples per interval against the models
+  // Use the process contribution floors documented by the generator
+  // Add 1e-5 relative tolerance for serialized energy and value precision
+  // Skip edge brackets and model-step intervals below 3e-5 relative width
+  const double Tolerance = 1e-3 + 1e-5;
+  const vector<MString> Materials = { "Silicon", "UTXenon", "UTCZT", "UTCsI", "UTDensimet", "UTTrace", "UTNaI", "UTGermanium", "UTAlu6061" };
+  for (const MString& Name : Materials) {
+    vector<XSFile> Files;
+    bool Read = true;
+    for (const MString& Type: m_Types) {
+      Files.push_back(ReadFile(m_Directory + "/Xsection." + Type + "." + Name + ".rsp"));
+      if (Files.back().m_Read == false || Files.back().m_Energies != Files[0].m_Energies || Files.back().m_Values.size() != Files[0].m_Energies.size()) Read = false;
+    }
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", Name, "All five files can be read and have the same energies", Read) && Passed;
+    const G4Material* Material = G4Material::GetMaterial(Name.Data());
+    if (Read == false || Material == nullptr) continue;
+
+    const vector<double>& Energies = Files[0].m_Energies;
+    unsigned int NChecked = 0;
+    unsigned int NDeviations = 0;
+    double Largest = 0.0;
+    MString Where;
+    for (unsigned int e = 0; e + 1 < Energies.size(); ++e) {
+      if (Energies[e+1]/Energies[e] - 1.0 < 3e-5) continue;
+      for (int k = 1; k < 64; ++k) {
+        const double Fraction = k/64.0;
+        const double Energy = Energies[e] + Fraction*(Energies[e+1] - Energies[e]);
+        double Model[5];
+        Model[0] = Photo->CrossSectionPerVolume(Material, Gamma, Energy*keV)*cm;
+        Model[1] = Rayleigh->CrossSectionPerVolume(Material, Gamma, Energy*keV)*cm;
+        Model[2] = Compton->ValueForMaterial(Material, Energy*keV)*cm;
+        Model[3] = Pair->CrossSectionPerVolume(Material, Gamma, Energy*keV)*cm;
+        Model[4] = Model[0] + Model[1] + Model[2] + Model[3];
+        for (unsigned int p = 0; p < 5; ++p) {
+          const double Floor = (p == 0 || p == 2) ? 1e-6 : 1e-3;
+          if (Model[p] <= 0.0) continue;
+          if (p != 4 && Model[p] < Floor*Model[4]) continue;
+          const double Interpolated = Files[p].m_Values[e] + Fraction*(Files[p].m_Values[e+1] - Files[p].m_Values[e]);
+          const double Deviation = fabs(Interpolated/Model[p] - 1.0);
+          ++NChecked;
+          if (Deviation > Tolerance) ++NDeviations;
+          if (Deviation > Largest) {
+            Largest = Deviation;
+            Where = m_Types[p] + MString(" at ") + Energy + " keV";
+          }
+        }
+      }
+    }
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", Name, MString("Values are checked: ") + NChecked, NChecked > 1000) && Passed;
+    Passed = Evaluate("CreateCrossSectionFiles()", Name, MString("The linear interpolation agrees with the models within 0.1% (largest deviation: ") + Largest + ", " + Where + ")", NDeviations, 0U) && Passed;
+  }
+
+  delete Photo;
+  delete Rayleigh;
+  delete Pair;
+  delete Compton;
 
   return Passed;
 }

@@ -102,6 +102,7 @@ X, DataPoint, IsNonZero
 - Use C++ casts (`static_cast`, `dynamic_cast`, `const_cast`, `reinterpret_cast`) everywhere, never C-style casts.
 - Do not use `auto` for simple types (`int`, `double`, `bool`, `MString`, ...) or ordinary classes. Use it for complex types where the type name carries no information: iterators, lambdas, template-heavy return types.
 - Prefer smart pointers (`unique_ptr`, `shared_ptr`) in new code. Use `new` only where it is necessary, e.g. when ROOT or another API takes the ownership of the object.
+- Do not use C-style arrays (`double Values[5]`, `double Values[31][5]`), and do not pass or return them as raw pointers (`double* Values`). Use `std::array` for a size known at compile time and `std::vector` otherwise; pass them by (const) reference and return them by value.
 - A function which hands an object over to the caller returns a smart pointer (`unique_ptr` for one owner, `shared_ptr` if the object is shared, e.g. the events of a file which several lists hold), never a raw pointer which the caller has to delete.
 - Prefer the C++ threads, mutexes, and futures (`std::thread`, `std::mutex`, `std::async`) over the ROOT ones (`TThread`).
 - Use `MString`, not `std::string`; `std::string` only where an API requires it.

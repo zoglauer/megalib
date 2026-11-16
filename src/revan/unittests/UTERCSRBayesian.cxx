@@ -304,9 +304,16 @@ bool UTERCSRBayesian::TestSetParametersAndToString()
   EnableDefaultStreams();
   Passed = EvaluateFalse("SetParameters()", "file with wrong suffix", "The parameters are rejected", Accepted) && Passed;
 
-  // Only permutations: no files are needed, but the cross sections of the geometry, which the test telescope does not have
+  // Permutation-only mode needs cross sections but no response file
   DisableDefaultStreams();
   Accepted = CSR.SetParameters(Missing, &m_Geometry, 0.0, 0.5, 5, true, true);
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("SetParameters()", "only permutations, telescope with cross sections", "The parameters are accepted", Accepted) && Passed;
+
+  MGeometryRevan NoCrossSections;
+  Passed = EvaluateTrue("ScanTelescopeGeometry()", "material without cross sections", "The telescope is scanned", ScanTelescopeGeometry(NoCrossSections, GetMaterialWithoutCrossSectionsLines())) && Passed;
+  DisableDefaultStreams();
+  Accepted = CSR.SetParameters(Missing, &NoCrossSections, 0.0, 0.5, 5, true, true);
   EnableDefaultStreams();
   Passed = EvaluateFalse("SetParameters()", "only permutations, geometry without cross sections", "The parameters are rejected", Accepted) && Passed;
 

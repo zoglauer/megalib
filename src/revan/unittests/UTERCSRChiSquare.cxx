@@ -297,13 +297,19 @@ bool UTERCSRChiSquare::TestSetParametersAndToString()
   Passed = EvaluateTrue("ToString()", "defaults", "The maximum quality factor is 1000", Text.Contains("# QualityFactorMax:                1000\n")) && Passed;
   Passed = EvaluateTrue("ToString()", "defaults", "The maximum number of interactions is 5", Text.Contains("# MaxNInteractions:                5\n")) && Passed;
 
-  // The telescope has no cross sections: the photo absorption cannot be used for undecided events
-  Passed = EvaluateFalse("AreCrossSectionsPresent()", "telescope", "The test telescope has no cross sections", m_Geometry.AreCrossSectionsPresent()) && Passed;
+  // Use photo absorption to order undecided events with stored cross sections:
+  Passed = EvaluateTrue("AreCrossSectionsPresent()", "telescope", "The test telescope has cross sections", m_Geometry.AreCrossSectionsPresent()) && Passed;
+  Passed = EvaluateTrue("SetParameters()", "Klein-Nishina times photo absorption with cross sections", "The parameters are accepted", CSR.SetParameters(&m_Geometry, 0.0, 1000.0, 5, true, false, true, MERCSRChiSquare::c_UndecidedLargerKleinNishinaTimesPhoto)) && Passed;
+
+  // Reject photo absorption if any material lacks cross sections:
+  MGeometryRevan NoCrossSections;
+  Passed = EvaluateTrue("ScanTelescopeGeometry()", "material without cross sections", "The telescope is scanned", ScanTelescopeGeometry(NoCrossSections, GetMaterialWithoutCrossSectionsLines())) && Passed;
+  Passed = EvaluateFalse("AreCrossSectionsPresent()", "material without cross sections", "The geometry has no cross sections", NoCrossSections.AreCrossSectionsPresent()) && Passed;
   DisableDefaultStreams();
-  bool Accepted = CSR.SetParameters(&m_Geometry, 0.0, 1000.0, 5, true, false, true, MERCSRChiSquare::c_UndecidedLargerKleinNishinaTimesPhoto);
+  bool Accepted = CSR.SetParameters(&NoCrossSections, 0.0, 1000.0, 5, true, false, true, MERCSRChiSquare::c_UndecidedLargerKleinNishinaTimesPhoto);
   EnableDefaultStreams();
   Passed = EvaluateFalse("SetParameters()", "Klein-Nishina times photo absorption without cross sections", "The parameters are rejected", Accepted) && Passed;
-  Passed = EvaluateTrue("SetParameters()", "Klein-Nishina without cross sections", "The parameters are accepted", CSR.SetParameters(&m_Geometry, 0.0, 1000.0, 5, true, false, true, MERCSRChiSquare::c_UndecidedLargerKleinNishina)) && Passed;
+  Passed = EvaluateTrue("SetParameters()", "Klein-Nishina without cross sections", "The parameters are accepted", CSR.SetParameters(&NoCrossSections, 0.0, 1000.0, 5, true, false, true, MERCSRChiSquare::c_UndecidedLargerKleinNishina)) && Passed;
 
   return Passed;
 }

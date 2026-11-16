@@ -256,6 +256,16 @@ protected:
     return Setup;
   }
 
+  //! Return a material definition that leaves the test telescope without a complete set of cross sections
+  MString GetMaterialWithoutCrossSectionsLines() const
+  {
+    MString Setup;
+    Setup += "Material UTNoCrossSections\n";
+    Setup += "UTNoCrossSections.Density 1.0\n";
+    Setup += "UTNoCrossSections.ComponentByAtoms H 1\n";
+    return Setup;
+  }
+
   //! Scan the test telescope into the geometry
   bool ScanTelescopeGeometry(MGeometryRevan& Geometry, const MString& AdditionalLines = "", bool IdealEnergyResolutions = false)
   {

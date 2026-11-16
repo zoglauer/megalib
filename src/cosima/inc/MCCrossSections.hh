@@ -38,8 +38,17 @@
 #include "MString.h"
 
 // Standard lib:
+#include <array>
+#include <vector>
+using namespace std;
 
 // Forward declarations:
+class G4Material;
+class G4ParticleDefinition;
+class G4LivermorePhotoElectricModel;
+class G4LivermoreRayleighModel;
+class G4LivermoreGammaConversionModel;
+class G4CrossSectionHandler;
 
 
 /******************************************************************************/
@@ -53,12 +62,26 @@ public:
   /// Default destructor
   virtual ~MCCrossSections();
 
-  /// Create all absorption files in the correct directory
+  /// Create the five macroscopic cross-section tables for each material in Path
   bool CreateCrossSectionFiles(MString Path);
 
   // protected methods:
 protected:
-  
+  /// Return a logarithmic energy grid with shell-edge samples and adaptive refinement
+  vector<double> GetEnergies(const G4Material* Material, const G4ParticleDefinition* Gamma,
+                             G4LivermorePhotoElectricModel* Photo, G4LivermoreRayleighModel* Rayleigh,
+                             G4CrossSectionHandler* Compton, G4LivermoreGammaConversionModel* Pair,
+                             double MinimumEnergy, double MaximumEnergy, int Bins);
+  /// Return photoelectric, Rayleigh, Compton, pair, and total cross sections (Geant4 units)
+  array<double, 5> GetCrossSections(const G4Material* Material, const G4ParticleDefinition* Gamma,
+                        G4LivermorePhotoElectricModel* Photo, G4LivermoreRayleighModel* Rayleigh,
+                        G4CrossSectionHandler* Compton, G4LivermoreGammaConversionModel* Pair,
+                        double Energy);
+  /// Insert ordered interior points until the sampled linear interpolation meets the tolerance
+  void Refine(const G4Material* Material, const G4ParticleDefinition* Gamma,
+              G4LivermorePhotoElectricModel* Photo, G4LivermoreRayleighModel* Rayleigh,
+              G4CrossSectionHandler* Compton, G4LivermoreGammaConversionModel* Pair,
+              double Low, double High, const array<double, 5>& LowValues, const array<double, 5>& HighValues, vector<double>& Energies);
 
   // protected members:
 protected:

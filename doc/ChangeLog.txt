@@ -29,9 +29,12 @@ Geomega:
 + MDGeometry: GetHash() now hashes the contents of the geometry file and all included files.
 + MDStrip2D: The depth (z) position resolution of a Strip2D detector was calculated from the half thickness of the wafer instead of its full thickness, and was thus a factor of two too small.
 + MDGeometryQuest: Fix wrong depth-corrected energy resolutions in revan for translated or rotated Strip3D and derived detectors. Resolution lookup now fails outside sensitive volumes, allowing revan to reject these hits.
++ MDMaterial: Improved cross-section hash
++ Cross-sections: All default cross sections were recreated with Geant4 11.4 (see cosima).
 
 Cosima / Sivan:
 + Enable and updates to run Geant4 11.4
++ MCCrossSections: The cross section tables now contain all absorption edges and agree with Geant4 within 0.1% using an adaptive energy grid.
 + Added the sim file header keyword "AT true" to accumulate event times and IDs across included files, so each file continues where the previous one ended.
 + Added the mcosima option "-c" to insert the AT keyword into the concatenation file.
 + Orientation files now use the entry closest to the event time. Previously, they used the first entry at or after that time, which could select a pointing up to one sampling interval too late. This fix was backported from develop-cosi-dc6.
