@@ -72,6 +72,20 @@ private:
   //! Test the start and end observation times of a file without TE
   bool TestObservationTimesWithoutTE();
 
+  //! Test reading an evta file with hits which have their resolutions: no noising, empty events, footer
+  bool TestEvtaFile();
+  //! Test the event IDs of old files, where the ID follows the SE keyword
+  bool TestEventIDsAtSE();
+  //! Test the number of simulated events of the footer
+  bool TestSimulatedEvents();
+  //! Test opening a second file and the first one again with one reader
+  bool TestReopen();
+  //! Test files which are refused
+  bool TestOpenFailures();
+
+  //! Return the content of an evta file with three events for the Max geometry: IDs 5, 6 (without hits), and 7
+  MString GetEvtaContent() const;
+
   //! Write an include master for the three observation-time fixtures with an extra header line
   bool WriteIncludeMaster(const MString& FileName, const MString& ExtraHeaderLine);
   //! Read the times and IDs of all events of a sim file through the evta reader
@@ -107,6 +121,11 @@ bool UTFileEventsEvta::Run()
   Passed = TestAccumulatedIncludeTimes() && Passed;
   Passed = TestAccumulatedIncludeIDsWithEmptyLastEvent() && Passed;
   Passed = TestObservationTimesWithoutTE() && Passed;
+  Passed = TestEvtaFile() && Passed;
+  Passed = TestEventIDsAtSE() && Passed;
+  Passed = TestSimulatedEvents() && Passed;
+  Passed = TestReopen() && Passed;
+  Passed = TestOpenFailures() && Passed;
 
   Summarize();
 
@@ -823,7 +842,316 @@ bool UTFileEventsEvta::TestObservationTimesWithoutTE()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the content of an evta file with three events for the Max geometry: IDs 5, 6 (without hits), and 7
+MString UTFileEventsEvta::GetEvtaContent() const
+{
+  // The position is the one of a hit of the 1-second sim fixture in a detector of type 3
+  // Version 21 with "HT" lines: detector type; x; y; z; energy; position resolutions x, y, z; energy resolution
+  ostringstream Content;
+  Content<<"# An evta file"<<endl;
+  Content<<endl;
+  Content<<"Type EVTA"<<endl;
+  Content<<"Version 21"<<endl;
+  Content<<"Geometry "<<GetGeometryFileName()<<endl;
+  Content<<endl;
+  Content<<"SE"<<endl;
+  Content<<"ID 5"<<endl;
+  Content<<"TI 1.5"<<endl;
+  Content<<"HT 3;-1.9425;1.9425;4.25204;100;0.125;0.25;0.5;2"<<endl;
+  Content<<"SE"<<endl;
+  Content<<"ID 6"<<endl;
+  Content<<"TI 2.5"<<endl;
+  Content<<"SE"<<endl;
+  Content<<"ID 7"<<endl;
+  Content<<"TI 3.5"<<endl;
+  Content<<"HT 3;-1.9425;1.9425;4.25204;200;0.125;0.25;0.5;3"<<endl;
+  Content<<"HT 3;-0.9425;1.9425;4.25204;300;0.125;0.25;0.5;4"<<endl;
+  Content<<"EN"<<endl;
+  Content<<endl;
+  Content<<"TE 10"<<endl;
+  Content<<"TS 123"<<endl;
+
+  return Content.str().c_str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test reading an evta file with hits which have their resolutions: no noising, empty events, footer
+bool UTFileEventsEvta::TestEvtaFile()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta file temp dir", "The temporary directory can be recreated for the evta file test", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta file geometry", "The revan geometry can be scanned for the evta file test", LoadGeometry(Geometry)) && Passed;
+
+  MString FileName = GetTempDirectory() + "/ThreeEvents.evta";
+  Passed = EvaluateTrue("WriteTextFile()", "evta file fixture", "The evta fixture can be written", WriteTextFile(FileName, GetEvtaContent())) && Passed;
+
+  MFileEventsEvta Reader(&Geometry);
+  Passed = EvaluateTrue("GetERNoising()", "evta file noising", "The reader has a noising task", Reader.GetERNoising() != nullptr) && Passed;
+  Passed = EvaluateTrue("Open()", "evta file open", "The evta fixture opens", Reader.Open(FileName)) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta file observation time", "The observation time is the TE of the footer", Reader.GetObservationTime().GetAsDouble(), 10.0, 1e-12) && Passed;
+
+  // The first event: the hits of an evta file are measured ones, they are not noised and keep their resolutions
+  MRERawEvent* Event = Reader.GetNextEvent();
+  Passed = EvaluateTrue("GetNextEvent()", "evta file first event", "The first event is read", Event != nullptr) && Passed;
+  if (Event != nullptr) {
+    Passed = Evaluate("GetEventID()", "evta file first event id", "The ID is the one of the ID keyword", Event->GetEventID(), 5UL) && Passed;
+    Passed = EvaluateNear("GetEventTime()", "evta file first event time", "The time is the one of the TI keyword", Event->GetEventTime().GetAsDouble(), 1.5, 1e-12) && Passed;
+    Passed = Evaluate("GetNRESEs()", "evta file first event rese count", "The event has one hit", Event->GetNRESEs(), 1) && Passed;
+    if (Event->GetNRESEs() == 1) {
+      MRESE* Hit = Event->GetRESEAt(0);
+      Passed = Evaluate("GetDetector()", "evta file first hit detector", "The detector type is 3", Hit->GetDetector(), 3) && Passed;
+      Passed = EvaluateNear("GetEnergy()", "evta file first hit energy", "The energy is not noised", Hit->GetEnergy(), 100.0, 0.0) && Passed;
+      Passed = EvaluateNear("GetEnergyResolution()", "evta file first hit energy resolution", "The energy resolution is the one of the file", Hit->GetEnergyResolution(), 2.0, 0.0) && Passed;
+      Passed = EvaluateVectorNear("GetPosition()", "evta file first hit position", "The position is not noised", Hit->GetPosition(), MVector(-1.9425, 1.9425, 4.25204), 0.0) && Passed;
+      Passed = EvaluateVectorNear("GetPositionResolution()", "evta file first hit position resolution", "The position resolution is the one of the file", Hit->GetPositionResolution(), MVector(0.125, 0.25, 0.5), 0.0) && Passed;
+      Passed = EvaluateTrue("GetVolumeSequence()", "evta file first hit volume sequence", "The hit has a detector from the geometry", Hit->GetVolumeSequence()->GetDetector() != nullptr) && Passed;
+    }
+    delete Event;
+  }
+
+  // The event with ID 6 has no hits and is skipped
+  Event = Reader.GetNextEvent();
+  Passed = EvaluateTrue("GetNextEvent()", "evta file second event", "The second event with hits is read", Event != nullptr) && Passed;
+  if (Event != nullptr) {
+    Passed = Evaluate("GetEventID()", "evta file second event id", "The event without hits is skipped: the ID is 7", Event->GetEventID(), 7UL) && Passed;
+    Passed = EvaluateNear("GetEventTime()", "evta file second event time", "The time is the one of the event with ID 7", Event->GetEventTime().GetAsDouble(), 3.5, 1e-12) && Passed;
+    Passed = Evaluate("GetNRESEs()", "evta file second event rese count", "The event has two hits", Event->GetNRESEs(), 2) && Passed;
+    if (Event->GetNRESEs() == 2) {
+      Passed = EvaluateNear("GetEnergy()", "evta file second event energies", "The energies of the two hits are not noised", Event->GetRESEAt(0)->GetEnergy() + Event->GetRESEAt(1)->GetEnergy(), 500.0, 0.0) && Passed;
+    }
+    delete Event;
+  }
+
+  // The end of the file, also when asked again
+  Event = Reader.GetNextEvent();
+  Passed = EvaluateTrue("GetNextEvent()", "evta file end", "There is no third event", Event == nullptr) && Passed;
+  delete Event;
+  Event = Reader.GetNextEvent();
+  Passed = EvaluateTrue("GetNextEvent()", "evta file after the end", "A call after the end gives no event", Event == nullptr) && Passed;
+  delete Event;
+
+  Passed = Evaluate("GetSimulatedEvents()", "evta file simulated events", "The number of simulated events is the TS of the footer", Reader.GetSimulatedEvents(), 123L) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta file observation time after reading", "The observation time is still the TE of the footer", Reader.GetObservationTime().GetAsDouble(), 10.0, 1e-12) && Passed;
+  Passed = EvaluateTrue("Close()", "evta file close", "The reader closes", Reader.Close()) && Passed;
+
+  // A second reader reads the events first and asks for the observation time afterwards
+  MFileEventsEvta EventsFirst(&Geometry);
+  Passed = EvaluateTrue("Open()", "evta file events first open", "The evta fixture opens", EventsFirst.Open(FileName)) && Passed;
+  while ((Event = EventsFirst.GetNextEvent()) != nullptr) {
+    delete Event;
+  }
+  // Defect REV-D-15: For a file with TE, but without TB, the observation time depends on the order of the calls: asked before the first event it is TE (10 s),
+  // asked after the events were read it is TE minus the time of the first event (8.5 s)
+  Passed = ExpectedToFail(EvaluateNear("GetObservationTime()", "evta file events first observation time", "The observation time does not depend on when it is asked for", EventsFirst.GetObservationTime().GetAsDouble(), 10.0, 1e-12)) && Passed;
+  EventsFirst.Close();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the event IDs of old files, where the ID follows the SE keyword
+bool UTFileEventsEvta::TestEventIDsAtSE()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta SE id temp dir", "The temporary directory can be recreated for the SE id test", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta SE id geometry", "The revan geometry can be scanned for the SE id test", LoadGeometry(Geometry)) && Passed;
+
+  ostringstream Content;
+  Content<<"Type EVTA"<<endl;
+  Content<<"Version 21"<<endl;
+  Content<<"SE 12"<<endl;
+  Content<<"TI 1.5"<<endl;
+  Content<<"HT 3;-1.9425;1.9425;4.25204;100;0.125;0.25;0.5;2"<<endl;
+  Content<<"SE 14"<<endl;
+  Content<<"TI 2.5"<<endl;
+  Content<<"HT 3;-1.9425;1.9425;4.25204;200;0.125;0.25;0.5;3"<<endl;
+  Content<<"EN"<<endl;
+  MString FileName = GetTempDirectory() + "/IDsAtSE.evta";
+  Passed = EvaluateTrue("WriteTextFile()", "evta SE id fixture", "The evta fixture can be written", WriteTextFile(FileName, Content.str().c_str())) && Passed;
+
+  MFileEventsEvta Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "evta SE id open", "The evta fixture opens", Reader.Open(FileName)) && Passed;
+  vector<long> IDs;
+  MRERawEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    IDs.push_back(static_cast<long>(Event->GetEventID()));
+    delete Event;
+  }
+  Reader.Close();
+
+  Passed = EvaluateSize("GetNextEvent()", "evta SE id count", "Both events are read", IDs.size(), 2) && Passed;
+  if (IDs.size() == 2) {
+    Passed = Evaluate("GetEventID()", "evta SE id first", "The ID of the first event is the one behind its SE keyword", IDs[0], 12L) && Passed;
+    Passed = Evaluate("GetEventID()", "evta SE id second", "The ID of the second event is the one behind its SE keyword", IDs[1], 14L) && Passed;
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the number of simulated events of the footer
+bool UTFileEventsEvta::TestSimulatedEvents()
+{
+  bool Passed = true;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta simulated events geometry", "The revan geometry can be scanned for the simulated events test", LoadGeometry(Geometry)) && Passed;
+
+  // The footer of the 1-second fixture has "TS 310"
+  MString SimFixture = GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz";
+  MFileEventsEvta Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "evta simulated events open", "The 1-second sim fixture opens", Reader.Open(SimFixture)) && Passed;
+
+  // Before any event is read the footer is read for it, and the reading of the events is not disturbed
+  Passed = Evaluate("GetSimulatedEvents()", "evta simulated events before reading", "The number of simulated events is the TS of the footer", Reader.GetSimulatedEvents(), 310L) && Passed;
+  long EventCount = 0;
+  MRERawEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    ++EventCount;
+    delete Event;
+  }
+  Passed = Evaluate("GetNextEvent()", "evta simulated events count", "All 21 events are read after the footer was read", EventCount, 21L) && Passed;
+  Passed = Evaluate("GetSimulatedEvents()", "evta simulated events after reading", "The number of simulated events is still the TS of the footer", Reader.GetSimulatedEvents(), 310L) && Passed;
+  Reader.Close();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test opening a second file and the first one again with one reader
+bool UTFileEventsEvta::TestReopen()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta reopen temp dir", "The temporary directory can be recreated for the reopen test", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta reopen geometry", "The revan geometry can be scanned for the reopen test", LoadGeometry(Geometry)) && Passed;
+
+  MString EvtaFile = GetTempDirectory() + "/Reopen.evta";
+  Passed = EvaluateTrue("WriteTextFile()", "evta reopen fixture", "The evta fixture can be written", WriteTextFile(EvtaFile, GetEvtaContent())) && Passed;
+  MString SimFixture = GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz";
+
+  MFileEventsEvta Reader(&Geometry);
+
+  // The evta file, read only up to its first event
+  Passed = EvaluateTrue("Open()", "evta reopen first file", "The evta fixture opens", Reader.Open(EvtaFile)) && Passed;
+  MRERawEvent* Event = Reader.GetNextEvent();
+  Passed = EvaluateTrue("GetNextEvent()", "evta reopen first file", "The first event of the evta fixture is read", Event != nullptr) && Passed;
+  delete Event;
+  Reader.Close();
+
+  // The sim file starts with its own first event, and nothing of the evta file is left
+  Passed = EvaluateTrue("Open()", "evta reopen second file", "The sim fixture opens in the same reader", Reader.Open(SimFixture)) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta reopen second file", "The observation time is the one of the sim fixture", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+  long EventCount = 0;
+  unsigned long FirstID = 0;
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    if (EventCount == 0) FirstID = Event->GetEventID();
+    ++EventCount;
+    delete Event;
+  }
+  Passed = Evaluate("GetEventID()", "evta reopen second file", "The first event is the first one of the sim fixture", FirstID, 1UL) && Passed;
+  Passed = Evaluate("GetNextEvent()", "evta reopen second file", "All 21 events of the sim fixture are read", EventCount, 21L) && Passed;
+  Reader.Close();
+
+  // The evta file again, after the sim file was read to its end
+  Passed = EvaluateTrue("Open()", "evta reopen first file again", "The evta fixture opens again", Reader.Open(EvtaFile)) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta reopen first file again", "The observation time is the one of the evta fixture", Reader.GetObservationTime().GetAsDouble(), 10.0, 1e-12) && Passed;
+  vector<long> IDs;
+  vector<double> Energies;
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    IDs.push_back(static_cast<long>(Event->GetEventID()));
+    Energies.push_back(Event->GetEnergy());
+    delete Event;
+  }
+  Passed = EvaluateSize("GetNextEvent()", "evta reopen first file again", "Both events with hits are read", IDs.size(), 2) && Passed;
+  if (IDs.size() == 2) {
+    Passed = Evaluate("GetEventID()", "evta reopen first file again", "The first ID is 5", IDs[0], 5L) && Passed;
+    Passed = Evaluate("GetEventID()", "evta reopen first file again", "The second ID is 7", IDs[1], 7L) && Passed;
+    // The hits of an evta file are not noised, also after a sim file was read with this reader
+    Passed = EvaluateNear("GetEnergy()", "evta reopen first file again", "The energy of the first event is not noised", Energies[0], 100.0, 0.0) && Passed;
+    Passed = EvaluateNear("GetEnergy()", "evta reopen first file again", "The energy of the second event is not noised", Energies[1], 500.0, 0.0) && Passed;
+  }
+  Passed = Evaluate("GetSimulatedEvents()", "evta reopen first file again", "The number of simulated events is the one of the evta fixture", Reader.GetSimulatedEvents(), 123L) && Passed;
+  Reader.Close();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test files which are refused
+bool UTFileEventsEvta::TestOpenFailures()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta failures temp dir", "The temporary directory can be recreated for the failure test", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta failures geometry", "The revan geometry can be scanned for the failure test", LoadGeometry(Geometry)) && Passed;
+
+  MFileEventsEvta Reader(&Geometry);
+
+  // Files which do not exist, for each of the four accepted suffixes
+  for (MString Suffix : { MString("sim"), MString("sim.gz"), MString("evta"), MString("evta.gz") }) {
+    mout.Enable(false);
+    mlog.Enable(false);
+    bool Opened = Reader.Open(GetTempDirectory() + "/DoesNotExist." + Suffix);
+    mout.Enable(true);
+    mlog.Enable(true);
+    Passed = EvaluateFalse("Open()", MString("evta failures missing file with suffix ") + Suffix, "A missing file does not open", Opened) && Passed;
+  }
+
+  // A good evta file with a suffix which is neither sim nor evta
+  MString WrongSuffix = GetTempDirectory() + "/Good.tra";
+  Passed = EvaluateTrue("WriteTextFile()", "evta failures wrong suffix fixture", "The fixture can be written", WriteTextFile(WrongSuffix, GetEvtaContent())) && Passed;
+  DisableDefaultStreams();
+  bool OpenedWrongSuffix = Reader.Open(WrongSuffix);
+  EnableDefaultStreams();
+  Passed = EvaluateFalse("Open()", "evta failures wrong suffix", "A file with the suffix tra is refused", OpenedWrongSuffix) && Passed;
+
+  // After the failures a good file opens and is read
+  MString Good = GetTempDirectory() + "/Good.evta";
+  Passed = EvaluateTrue("WriteTextFile()", "evta failures good fixture", "The fixture can be written", WriteTextFile(Good, GetEvtaContent())) && Passed;
+  Passed = EvaluateTrue("Open()", "evta failures good file", "A good file opens after the failures", Reader.Open(Good)) && Passed;
+  MRERawEvent* Event = Reader.GetNextEvent();
+  Passed = EvaluateTrue("GetNextEvent()", "evta failures good file", "The first event is read", Event != nullptr) && Passed;
+  if (Event != nullptr) {
+    Passed = Evaluate("GetEventID()", "evta failures good file", "The ID is 5", Event->GetEventID(), 5UL) && Passed;
+    delete Event;
+  }
+  Reader.Close();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 int main()
+
 {
   UTFileEventsEvta Test;
   return Test.Run() ? 0 : 1;
