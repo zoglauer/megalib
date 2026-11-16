@@ -6024,7 +6024,7 @@ MVector MDGeometry::GetGlobalPosition(const MVector& PositionInDetector, const M
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
+MVector MDGeometry::GetRandomPositionInVolume(const MString& Name, const unsigned int NumberOfTries)
 {
   //! Return a random position in the given volume --- excluding daughter volumes!
   //! Any of the clone templates!!! (needed by Cosima)
@@ -6095,7 +6095,7 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
   //}
 
   TreeDepth = -1;
-  MVector Pos = m_WorldVolume->GetRandomPositionInVolume(Volume, NewPlacements, TreeDepth);
+  MVector Pos = m_WorldVolume->GetRandomPositionInVolume(Volume, NewPlacements, TreeDepth, NumberOfTries);
 
   //cout<<Pos<<endl;
 
@@ -6108,6 +6108,26 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
   }
 
   return Pos;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true if a bounded Halton search finds a point in the named volume outside its daughters
+bool MDGeometry::HasSpaceOutsideDaughters(const MString& Name, const unsigned int NumberOfPoints)
+{
+  MDVolume* Volume = GetVolume(Name);
+  if (Volume == nullptr) {
+    return false;
+  }
+
+  // Check the template shared by all placements:
+  if (Volume->IsClone() == true) {
+    Volume = Volume->GetCloneTemplate();
+  }
+
+  return Volume->HasSpaceOutsideDaughters(NumberOfPoints);
 }
 
 

@@ -42,6 +42,7 @@
 
 
 // Standard:
+#include <set>
 #include <sstream>
 // [SPEEDUP] NEW: needed for the hash maps
 #include <unordered_map>
@@ -213,8 +214,31 @@ bool MCDetectorConstruction::Initialize()
   }
 
 
-  // Initialize start area for all sources, but only if it has not been set (parameter file preceeds geometry file):
   vector<MCRun>& Runs = MCRunManager::GetMCRunManager()->GetRuns();
+
+  // Check source volumes without advancing either RNG
+  bool VolumesOK = true;
+  set<MString> Checked;
+  for (unsigned int r = 0; r < Runs.size() && VolumesOK == true; ++r) {
+    vector<MCSource*>& Sources = Runs[r].GetSourceList();
+    for (unsigned t = 0; t < Sources.size(); ++t) {
+      if (Sources[t]->GetBeamType() != MCSource::c_NearFieldVolume && Sources[t]->GetBeamType() != MCSource::c_NearFieldActivation) continue;
+      if (Checked.insert(Sources[t]->GetVolume()).second == false) continue; // Check each volume once
+      if (HasVolume(Sources[t]->GetVolume()) == false) {
+        merr<<"Source "<<Sources[t]->GetName()<<": The volume "<<Sources[t]->GetVolume()<<" does not exist"<<endl;
+        VolumesOK = false;
+        break;
+      }
+      if (m_Geometry->HasSpaceOutsideDaughters(Sources[t]->GetVolume()) == false) {
+        merr<<"Source "<<Sources[t]->GetName()<<": No position outside the daughter volumes found in the volume "<<Sources[t]->GetVolume()<<" - it is completely or almost completely filled by its daughters"<<endl;
+        VolumesOK = false;
+        break;
+      }
+    }
+  }
+  if (VolumesOK == false) return false;
+
+  // Set missing source start areas from the geometry:
   for (unsigned int r = 0; r < Runs.size(); ++r) {
     vector<MCSource*>& Sources = Runs[r].GetSourceList();
     for (unsigned t = 0; t < Sources.size(); ++t) {
@@ -518,7 +542,7 @@ bool MCDetectorConstruction::ConstructDetectors()
           // First check if the unique position is in this first detector:
           MDVolume* V = Detector->GetSensitiveVolume(sv);
           if (V->IsInternalPositionExclusivelyInside(Pos) == false) {
-            Pos = V->GetRandomPositionExclusivelyInside();
+            Pos = V->GetRandomPositionExclusivelyInside(100000);
             if (Pos == g_VectorNotDefined) {
               merr<<"Unable to find unique position in detector"<<endl;
               return false;
@@ -1320,14 +1344,21 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
 }
 
 
-/******************************************************************************
- * Return a random position in the given volume
- */
-G4ThreeVector MCDetectorConstruction::GetRandomPosition(MString VolumeName)
-{
-  MVector V = m_Geometry->GetRandomPositionInVolume(VolumeName);
+////////////////////////////////////////////////////////////////////////////////
 
-  return G4ThreeVector(V[0]*cm, V[1]*cm, V[2]*cm);
+
+//! Sample a world position outside daughters (Geant4 units)
+//! Return false with Position unchanged if none is found within NumberOfTries tries
+bool MCDetectorConstruction::GetRandomPosition(MString VolumeName, G4ThreeVector& Position, const unsigned int NumberOfTries)
+{
+  MVector V = m_Geometry->GetRandomPositionInVolume(VolumeName, NumberOfTries);
+  if (V == g_VectorNotDefined) {
+    return false;
+  }
+
+  Position = G4ThreeVector(V[0]*cm, V[1]*cm, V[2]*cm);
+
+  return true;
 }
 
 

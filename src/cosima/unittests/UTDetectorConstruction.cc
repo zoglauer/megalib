@@ -105,6 +105,7 @@ using namespace std;
 
 // ROOT:
 #include "TError.h"
+#include "TRandom.h"
 
 
 
@@ -165,6 +166,10 @@ private:
   bool TestPlacements(MCDetectorConstruction* Detector);
   //! Test the regions
   bool TestRegions(MCDetectorConstruction* Detector);
+  //! Test source-volume checks during geometry initialization
+  bool TestVolumeSources();
+  //! Reset gRandom and return 100 random positions in the volume PairA, whose template has two placements
+  vector<G4ThreeVector> GetPositionsAfterReset(MCDetectorConstruction* Detector);
   //! Test failing initializations
   bool TestFailures();
 
@@ -280,6 +285,8 @@ bool UTDetectorConstruction::Run()
   SilenceOutput();
   delete Detector;
   RestoreOutput();
+
+  Passed = TestVolumeSources() && Passed;
 
   Passed = TestFailures() && Passed;
 
@@ -417,6 +424,12 @@ MString UTDetectorConstruction::WriteShapesGeometry(const MString& Name, const M
   // A copy and a rotated volume:
   Content += "ShBox.Copy ShBoxCopy\nShBoxCopy.Position 10 30 0\nShBoxCopy.Rotation 20 30 40\nShBoxCopy.Mother WorldVolume\n\n";
   Content += "Volume Rotated\nRotated.Material Aluminium\nRotated.Shape BRIK 1 2 3\nRotated.Position -10 30 5\nRotated.Rotation 15 25 35\nRotated.Mother WorldVolume\n\n";
+
+  // Test a fully occupied volume and a volume with a central daughter:
+  Content += "Volume Filled\nFilled.Material Aluminium\nFilled.Shape BRIK 1 1 1\nFilled.Position -70 0 0\nFilled.Mother WorldVolume\n";
+  Content += "Volume FilledCore\nFilledCore.Material Aluminium\nFilledCore.Shape BRIK 1 1 1\nFilledCore.Mother Filled\n\n";
+  Content += "Volume Hollow\nHollow.Material Aluminium\nHollow.Shape BRIK 2 2 2\nHollow.Position -70 30 0\nHollow.Mother WorldVolume\n";
+  Content += "Volume HollowCore\nHollowCore.Material Aluminium\nHollowCore.Shape BRIK 1 1 1\nHollowCore.Mother Hollow\n\n";
 
   // The detector:
   Content += "Volume Scint\nScint.Material Silicon\nScint.Shape BRIK 1 1 1\nScint.Position 0 -30 0\nScint.Mother WorldVolume\n\n";
@@ -595,12 +608,36 @@ bool UTDetectorConstruction::TestQueries(MCDetectorConstruction* Detector)
   Passed = EvaluateTrue("IsInsideWorldVolume()", "1 m in meters", "The unit is handled: 0.9 m is inside", Detector->IsInsideWorldVolume(G4ThreeVector(0.9*m, 0.9*m, 0.9*m))) && Passed;
 
   // Random positions in a volume are in the volume (world coordinates, Geant4 units)
+  bool AllFound = true;
   bool AllInside = true;
   for (unsigned int i = 0; i < 100; ++i) {
-    G4ThreeVector P = Detector->GetRandomPosition("ShTrd1");
+    G4ThreeVector P;
+    if (Detector->GetRandomPosition("ShTrd1", P) == false) AllFound = false;
     if (fabs(P.x() - 60*cm) > 2*cm + 1e-9 || fabs(P.y()) > 3*cm + 1e-9 || fabs(P.z()) > 4*cm + 1e-9) AllInside = false;
   }
+  Passed = EvaluateTrue("GetRandomPosition()", "ShTrd1", "A position is found in every call", AllFound) && Passed;
   Passed = EvaluateTrue("GetRandomPosition()", "ShTrd1", "Random positions are inside the volume, in Geant4 units", AllInside) && Passed;
+
+  // Sample the mother outside its central daughter:
+  bool HollowFound = true;
+  bool HollowOutsideCore = true;
+  for (unsigned int i = 0; i < 100; ++i) {
+    G4ThreeVector P;
+    if (Detector->GetRandomPosition("Hollow", P) == false) HollowFound = false;
+    const G4ThreeVector Local = P - G4ThreeVector(-70*cm, 30*cm, 0);
+    if (fabs(Local.x()) > 2*cm + 1e-9 || fabs(Local.y()) > 2*cm + 1e-9 || fabs(Local.z()) > 2*cm + 1e-9) HollowOutsideCore = false;
+    if (fabs(Local.x()) < 1*cm && fabs(Local.y()) < 1*cm && fabs(Local.z()) < 1*cm) HollowOutsideCore = false;
+  }
+  Passed = EvaluateTrue("GetRandomPosition()", "Hollow", "A position is found in every call", HollowFound) && Passed;
+  Passed = EvaluateTrue("GetRandomPosition()", "Hollow", "The positions are in the volume, but not in its daughter", HollowOutsideCore) && Passed;
+
+  // Failed sampling leaves the output position unchanged
+  G4ThreeVector Unchanged(1*cm, 2*cm, 3*cm);
+  SilenceOutput();
+  const bool FilledFound = Detector->GetRandomPosition("Filled", Unchanged);
+  RestoreOutput();
+  Passed = EvaluateFalse("GetRandomPosition()", "Filled", "No position is found in a volume completely covered by its daughter", FilledFound) && Passed;
+  Passed = EvaluateTrue("GetRandomPosition()", "Filled", "The position is unchanged", Unchanged == G4ThreeVector(1*cm, 2*cm, 3*cm)) && Passed;
 
   // Material hash
   G4Material* Aluminium = G4Material::GetMaterial("Aluminium", false);
@@ -853,6 +890,122 @@ bool UTDetectorConstruction::TestRegions(MCDetectorConstruction*)
   }
 
   return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test source-volume checks during geometry initialization
+bool UTDetectorConstruction::TestVolumeSources()
+{
+  bool Passed = true;
+
+  // Use an unplaced template with two copies to exercise placement selection
+  // Keep the template unplaced - GEO-A-46 otherwise collapses the placement count
+  const MString Shapes = WriteShapesGeometry("VolumeSourcesShapes");
+  MString Content;
+  Passed = EvaluateTrue("ReadTextFile()", "shapes", "The shapes geometry can be read", MFile::ReadTextFile(Shapes, Content)) && Passed;
+  Content += "Volume Pair\nPair.Material Aluminium\nPair.Shape BRIK 1 1 1\n";
+  Content += "Pair.Copy PairA\nPairA.Position -60 60 0\nPairA.Mother WorldVolume\nPair.Copy PairB\nPairB.Position -80 60 0\nPairB.Mother WorldVolume\n";
+  const MString Geometry = m_Directory + "/VolumeSources.geo.setup";
+  Passed = EvaluateTrue("WriteTextFile()", "volume sources", "The geometry can be written", WriteTextFile(Geometry, Content)) && Passed;
+  MCParameterFile* Parameters = CreateParameters("VolumeSources", Geometry, "");
+  Passed = EvaluateTrue("CreateParameters()", "volume sources", "The parameter file can be opened", Parameters != nullptr) && Passed;
+  if (Parameters == nullptr) {
+    return false;
+  }
+
+  // Add one volume source per validation case:
+  vector<MCSource*>& Sources = m_Manager->GetCurrentRun().GetSourceList();
+
+  // Record a position sequence that uses both RNG streams:
+  MCDetectorConstruction* Reference = new MCDetectorConstruction(*Parameters);
+  const bool ReferenceInitialized = InitializeSilently(Reference);
+  const vector<G4ThreeVector> ReferencePositions = GetPositionsAfterReset(Reference);
+  SilenceOutput();
+  delete Reference;
+  RestoreOutput();
+  Passed = EvaluateTrue("Initialize()", "no volume source", "The geometry can be initialized", ReferenceInitialized) && Passed;
+
+  // Check distinct diagnostics for missing and occupied volumes:
+  struct Case { MString m_Volume; bool m_Accepted; MString m_Description; MString m_Message; MString m_NotMessage; };
+  const vector<Case> Cases = {
+    { "Hollow", true, "A volume source in a volume with a daughter in its center is accepted", "", "" },
+    { "PairA", true, "A volume source in a copy of a template with two placements is accepted", "", "" },
+    { "Filled", false, "A volume source in a volume completely covered by its daughter is rejected, otherwise the run would never end", "No position outside the daughter volumes found in the volume Filled", "does not exist" },
+    { "DoesNotExist", false, "A volume source in a volume which does not exist is rejected", "The volume DoesNotExist does not exist", "No volume of this name exists" }
+  };
+  for (const Case& C : Cases) {
+    // Configure a 511 keV volume source:
+    SilenceOutput();
+    MCSource* Source = new MCSource("UTVolumeSource");
+    Source->SetParticleType(1);
+    Source->SetSpectralType(MCSource::c_Monoenergetic);
+    Source->SetEnergy(511*keV);
+    Source->SetFlux(100.0);
+    Source->SetBeamType(MCSource::c_NearField, MCSource::c_NearFieldVolume);
+    Source->SetVolume(C.m_Volume);
+    RestoreOutput();
+    Sources.push_back(Source);
+
+    MCDetectorConstruction* Detector = new MCDetectorConstruction(*Parameters);
+    // Capture diagnostics while leaving merr enabled:
+    m_Sink.str("");
+    m_CoutBuffer = cout.rdbuf(m_Sink.rdbuf());
+    m_CerrBuffer = cerr.rdbuf(m_Sink.rdbuf());
+    const bool Initialized = Detector->Initialize();
+    cout.rdbuf(m_CoutBuffer);
+    cerr.rdbuf(m_CerrBuffer);
+    const MString Output = m_Sink.str();
+    vector<G4ThreeVector> Positions;
+    if (Initialized == true) {
+      Positions = GetPositionsAfterReset(Detector);
+    }
+
+    Sources.pop_back();
+    delete Source;
+    SilenceOutput();
+    delete Detector;
+    RestoreOutput();
+
+    Passed = Evaluate("Initialize()", C.m_Volume, C.m_Description, Initialized, C.m_Accepted) && Passed;
+    if (C.m_Message.IsEmpty() == false) {
+      Passed = EvaluateTrue("Initialize()", C.m_Volume, MString("The reason is reported: ") + C.m_Message, Output.Contains(C.m_Message)) && Passed;
+      Passed = EvaluateFalse("Initialize()", C.m_Volume, MString("No other reason is reported: ") + C.m_NotMessage, Output.Contains(C.m_NotMessage)) && Passed;
+    }
+    if (C.m_Accepted == true) {
+      // Compare full position sequences to cover both RNG streams:
+      unsigned int NIdentical = 0;
+      for (unsigned int n = 0; n < Positions.size() && n < ReferencePositions.size(); ++n) {
+        if (Positions[n] == ReferencePositions[n]) ++NIdentical;
+      }
+      Passed = Evaluate("Initialize()", C.m_Volume, "The check changes no random number generator: all positions in PairA are those without the check", NIdentical, static_cast<unsigned int>(ReferencePositions.size())) && Passed;
+    }
+  }
+
+  SilenceOutput();
+  delete Parameters;
+  RestoreOutput();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Reset gRandom and return 100 random positions in the volume PairA, whose template has two placements
+vector<G4ThreeVector> UTDetectorConstruction::GetPositionsAfterReset(MCDetectorConstruction* Detector)
+{
+  vector<G4ThreeVector> Positions;
+  gRandom->SetSeed(4711);
+  for (unsigned int n = 0; n < 100; ++n) {
+    G4ThreeVector Position;
+    Detector->GetRandomPosition("PairA", Position);
+    Positions.push_back(Position);
+  }
+  return Positions;
 }
 
 

@@ -213,6 +213,8 @@ private:
   bool TestGlobalPosition();
   //! Test GetRandomPositionInVolume
   bool TestRandomPositions();
+  //! Test the deterministic check for space outside the daughter volumes
+  bool TestSpaceOutsideDaughters();
   //! Test the start volume
   bool TestStartVolume();
   //! Test the preferred visible volumes
@@ -278,6 +280,7 @@ bool UTDGeometry::Run()
   Passed = TestVolumeSequences() && Passed;
   Passed = TestGlobalPosition() && Passed;
   Passed = TestRandomPositions() && Passed;
+  Passed = TestSpaceOutsideDaughters() && Passed;
   Passed = TestStartVolume() && Passed;
   Passed = TestPreferredVisibleVolumes() && Passed;
   Passed = TestImport() && Passed;
@@ -2865,10 +2868,35 @@ bool UTDGeometry::TestRandomPositions()
     MeanX += P.X();
   }
   MeanX /= N;
-  // Defect GEO-A-47: The positions are also in the daughter volumes, against the description of the function, which moves volume sources of cosima
-  Passed = ExpectedToFail(Evaluate("GetRandomPositionInVolume()", "mother with daughter", "All positions are in the mother and not in the daughter", InOuterOnly, N)) && Passed;
+  Passed = Evaluate("GetRandomPositionInVolume()", "mother with daughter", "All positions are in the mother and not in the daughter", InOuterOnly, N) && Passed;
   // Uniform in a box of half length 2 without the center: sigma(x) < 2, mean is the center of the box at 10 with a tolerance of 5 sigma / sqrt(N)
   Passed = EvaluateNear("GetRandomPositionInVolume()", "mean x", "The mean x is the center of the box", MeanX, 10.0, 5.0*1.4/sqrt(N)) && Passed;
+
+  // Leave a free volume fraction of 1 - 0.99^3 (about 3%)
+  Text = GetGeometryHead() + "Volume Full\nFull.Material Aluminium\nFull.Shape BRIK 1 1 1\nFull.Position 10 0 0\nFull.Mother World\nVolume Core\nCore.Material Aluminium\nCore.Shape BRIK 0.99 0.99 0.99\nCore.Mother Full\n";
+  Passed = EvaluateTrue("ScanSetupFile()", "almost filled mother", "The file is accepted", ScanGeometry(Geometry, Text)) && Passed;
+  const unsigned int NFull = 1000;
+  unsigned int Found = 0;
+  unsigned int InFullOnly = 0;
+  double MeanFullX = 0;
+  DisableDefaultStreams();
+  for (unsigned int n = 0; n < NFull; ++n) {
+    MVector P = Geometry.GetRandomPositionInVolume("Full");
+    if (P == g_VectorNotDefined) continue;
+    ++Found;
+    if (Geometry.GetVolumeSequence(P).GetDeepestVolume() == Geometry.GetVolume("Full")) {
+      ++InFullOnly;
+    }
+    MeanFullX += P.X();
+  }
+  EnableDefaultStreams();
+  Passed = Evaluate("GetRandomPositionInVolume()", "almost filled mother", "A position is found in every call", Found, NFull) && Passed;
+  Passed = Evaluate("GetRandomPositionInVolume()", "almost filled mother", "All positions are in the thin shell of the mother", InFullOnly, Found) && Passed;
+  // Symmetry gives mean x = 10
+  // Allow five standard errors with sigma(x) < 1
+  if (Found > 0) {
+    Passed = EvaluateNear("GetRandomPositionInVolume()", "almost filled mother", "The mean x is the center of the mother", MeanFullX/Found, 10.0, 5.0*1.0/sqrt(NFull)) && Passed;
+  }
 
   // Two copies of a volume: half of the samples in each of the two copies, tolerance 5 sigma of the binomial distribution
   Text = GetGeometryHead() + "Volume T\nT.Material Aluminium\nT.Shape BRIK 1 1 1\nT.Copy A\nA.Position 10 0 0\nA.Mother World\nT.Copy B\nB.Position -10 0 0\nB.Mother World\n";
@@ -2935,6 +2963,72 @@ bool UTDGeometry::TestRandomPositions()
   MVector Unknown = Geometry.GetRandomPositionInVolume("Unknown");
   EnableDefaultStreams();
   Passed = EvaluateTrue("GetRandomPositionInVolume()", "unknown", "An unknown volume returns g_VectorNotDefined", Unknown == g_VectorNotDefined) && Passed;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the deterministic check for space outside the daughter volumes
+bool UTDGeometry::TestSpaceOutsideDaughters()
+{
+  bool Passed = true;
+
+  // Cover free, thin-shell, fully occupied, and copied volumes:
+  MString Text = GetGeometryHead();
+  Text += "Volume Hollow\nHollow.Material Aluminium\nHollow.Shape BRIK 2 2 2\nHollow.Position 10 0 0\nHollow.Mother World\nVolume HollowCore\nHollowCore.Material Aluminium\nHollowCore.Shape BRIK 1 1 1\nHollowCore.Mother Hollow\n";
+  Text += "Volume Shell\nShell.Material Aluminium\nShell.Shape BRIK 1 1 1\nShell.Position 20 0 0\nShell.Mother World\nVolume ShellCore\nShellCore.Material Aluminium\nShellCore.Shape BRIK 0.99 0.99 0.99\nShellCore.Mother Shell\n";
+  Text += "Volume Covered\nCovered.Material Aluminium\nCovered.Shape BRIK 1 1 1\nCovered.Position 30 0 0\nCovered.Mother World\nVolume CoveredCore\nCoveredCore.Material Aluminium\nCoveredCore.Shape BRIK 1 1 1\nCoveredCore.Mother Covered\n";
+  Text += "Volume Pair\nPair.Material Aluminium\nPair.Shape BRIK 2 2 2\nVolume PairCore\nPairCore.Material Aluminium\nPairCore.Shape BRIK 1 1 1\nPairCore.Mother Pair\n";
+  Text += "Pair.Copy PairA\nPairA.Position -10 0 0\nPairA.Mother World\nPair.Copy PairB\nPairB.Position -20 0 0\nPairB.Mother World\n";
+
+  MDGeometry Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "space outside daughters", "The file is accepted", ScanGeometry(Geometry, Text)) && Passed;
+  if (Geometry.IsScanned() == false) {
+    return Passed;
+  }
+
+  // Check that gRandom is unchanged:
+  gRandom->SetSeed(4711);
+  const double Expected = gRandom->Rndm();
+  gRandom->SetSeed(4711);
+  Passed = EvaluateTrue("HasSpaceOutsideDaughters()", "hollow", "A volume with a daughter in its center has space", Geometry.HasSpaceOutsideDaughters("Hollow")) && Passed;
+  Passed = EvaluateTrue("HasSpaceOutsideDaughters()", "thin shell", "A volume with only a thin shell of 0.01 around its daughter has space", Geometry.HasSpaceOutsideDaughters("Shell")) && Passed;
+  Passed = EvaluateFalse("HasSpaceOutsideDaughters()", "covered", "A volume completely filled by its daughter has no space", Geometry.HasSpaceOutsideDaughters("Covered")) && Passed;
+  Passed = EvaluateTrue("HasSpaceOutsideDaughters()", "copy", "A copy is checked with its template", Geometry.HasSpaceOutsideDaughters("PairB")) && Passed;
+  Passed = EvaluateFalse("HasSpaceOutsideDaughters()", "missing", "A volume which does not exist has no space", Geometry.HasSpaceOutsideDaughters("Missing")) && Passed;
+  // The number of points limits the search: the first Halton point (bases 2, 3, 5) is (0, -1/3, -0.6) in the box of the shell, which is inside its core
+  Passed = EvaluateFalse("HasSpaceOutsideDaughters()", "thin shell, one point", "With only the first point the thin shell is not found", Geometry.HasSpaceOutsideDaughters("Shell", 1)) && Passed;
+  Passed = EvaluateFalse("HasSpaceOutsideDaughters()", "hollow, no points", "Without points no space is found", Geometry.HasSpaceOutsideDaughters("Hollow", 0)) && Passed;
+  Passed = EvaluateTrue("HasSpaceOutsideDaughters()", "hollow, 100 points", "With 100 points the space of 7/8 of the volume is found", Geometry.HasSpaceOutsideDaughters("Hollow", 100)) && Passed;
+  Passed = EvaluateNear("HasSpaceOutsideDaughters()", "gRandom", "The global random number generator is not changed", gRandom->Rndm(), Expected, 0.0) && Passed;
+
+  // Compare copied-volume positions to check both RNG streams:
+  MDGeometry Unchecked;
+  MDGeometry Checked;
+  Passed = EvaluateTrue("ScanSetupFile()", "unchecked", "The file is accepted", ScanGeometry(Unchecked, Text)) && Passed;
+  Passed = EvaluateTrue("ScanSetupFile()", "checked", "The file is accepted", ScanGeometry(Checked, Text)) && Passed;
+  Checked.HasSpaceOutsideDaughters("PairA");
+  const unsigned int N = 100;
+  vector<MVector> UncheckedPositions;
+  vector<MVector> CheckedPositions;
+  gRandom->SetSeed(4711);
+  for (unsigned int n = 0; n < N; ++n) {
+    UncheckedPositions.push_back(Unchecked.GetRandomPositionInVolume("PairA"));
+  }
+  gRandom->SetSeed(4711);
+  for (unsigned int n = 0; n < N; ++n) {
+    CheckedPositions.push_back(Checked.GetRandomPositionInVolume("PairA"));
+  }
+  unsigned int NIdentical = 0;
+  for (unsigned int n = 0; n < N; ++n) {
+    if (UncheckedPositions[n] == CheckedPositions[n]) {
+      ++NIdentical;
+    }
+  }
+  Passed = Evaluate("HasSpaceOutsideDaughters()", "random positions afterwards", "All positions are identical to those without the check", NIdentical, N) && Passed;
 
   return Passed;
 }

@@ -66,8 +66,9 @@ public:
   /// Return true if the volume is valid volume in the geometry
   bool IsValidVolume(MString VolumeName);
   
-  /// Return a random position in the given volume
-  G4ThreeVector GetRandomPosition(MString VolumeName);
+  //! Sample a world position outside daughters (Geant4 units)
+  //! Return false with Position unchanged if none is found within NumberOfTries tries
+  bool GetRandomPosition(MString VolumeName, G4ThreeVector& Position, const unsigned int NumberOfTries = 100000);
   
   /// Return true if the volume exists:
   bool HasVolume(const MString& VolumeName) const;

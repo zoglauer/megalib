@@ -230,10 +230,12 @@ class MDVolume
   //! Returns the position in the world volume - pos is inside this volume
   MVector GetPositionInWorldVolume(MVector Pos);
 
-  //! Returns a random position in any of the volumes defined by Volume
-  MVector GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
-  //! Returns a random position in this volume excluding daugther volumes - or g_VectorNotDefined if it cannot find any.
-  MVector GetRandomPositionExclusivelyInside();
+  //! Returns a random position in any of the volumes defined by Volume, with up to NumberOfTries positions outside its daughters
+  MVector GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Placements, int& TreeDepth, const unsigned int NumberOfTries = 100000);
+  //! Sample a local position outside daughter volumes, or return g_VectorNotDefined on exhaustion
+  MVector GetRandomPositionExclusivelyInside(const unsigned int NumberOfTries = 100000);
+  //! Return true if a bounded Halton search finds a local point outside daughter volumes
+  bool HasSpaceOutsideDaughters(const unsigned int NumberOfPoints = 100000);
   //! Find the number of placements of a volume
   bool GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
 
@@ -249,6 +251,9 @@ class MDVolume
   // protected methods:
  protected:
   MDVolume* Clone(MString Name); // use only in remove virtual volume!!!!
+  //! Return the radical inverse of Index in Base, in [0, 1)
+  //! Throws MExceptionParameterOutOfRange for a Base below 2
+  double GetRadicalInverse(unsigned int Index, unsigned int Base) const;
 
 
 

@@ -53,19 +53,21 @@ using namespace std;
 #include "MDVolume.h"
 #include "MDVolumeSequence.h"
 #include "MRotation.h"
+#include "MExceptions.h"
 #include "UTGeomegaShared.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Access to the protected clone function of the volume
+//! Access to the protected functions of the volume
 class UTDVolumeAccess : public MDVolume
 {
 public:
   //! Standard constructor with the name of the volume
   UTDVolumeAccess(const MString& Name) : MDVolume(Name) {}
   using MDVolume::Clone;
+  using MDVolume::GetRadicalInverse;
 };
 
 
@@ -156,6 +158,8 @@ private:
   bool TestStrings();
   //! Test that the text output can be read back
   bool TestGetGeomegaRoundTrip();
+  //! Test the radical inverse of the Halton sequence
+  bool TestRadicalInverse();
 };
 
 
@@ -198,6 +202,7 @@ bool UTDVolume::Run()
   Passed = TestCreateRootGeometry() && Passed;
   Passed = TestStrings() && Passed;
   Passed = TestGetGeomegaRoundTrip() && Passed;
+  Passed = TestRadicalInverse() && Passed;
 
   Summarize();
   return Passed;
@@ -1966,6 +1971,22 @@ bool UTDVolume::TestPlacementsAndRandomPositions()
   }
   Passed = EvaluateTrue("GetRandomPositionExclusivelyInside()", "half filled box", "All positions are in the free half", AllOutsideOfDaughter) && Passed;
 
+  // The number of tries: none gives no position, and with one try exactly the first drawn position is checked
+  Passed = EvaluateTrue("GetRandomPositionExclusivelyInside()", "no tries", "Without tries no position is found", Box->GetRandomPositionExclusivelyInside(0) == g_VectorNotDefined) && Passed;
+  // A box draws its coordinates as (2 r - 1) * 2 from three numbers, in an order which C++ leaves open:
+  // find a seed whose first three numbers are all below 0.5, then x < 0, i.e. the first position is in the free half
+  unsigned int Seed = 1;
+  for (; Seed < 1000; ++Seed) {
+    gRandom->SetSeed(Seed);
+    const double R1 = gRandom->Rndm();
+    const double R2 = gRandom->Rndm();
+    const double R3 = gRandom->Rndm();
+    if (R1 < 0.5 && R2 < 0.5 && R3 < 0.5) break;
+  }
+  gRandom->SetSeed(Seed);
+  MVector First = Box->GetRandomPositionExclusivelyInside(1);
+  Passed = EvaluateTrue("GetRandomPositionExclusivelyInside()", "one try, first position free", "The first position is checked and returned", First != g_VectorNotDefined && First.X() < 0.0) && Passed;
+
   // A completely filled volume has no position
   MDVolume* Full = MakeBox("Full", 2, 2, 2, nullptr, MVector(0, 0, 0));
   MakeBox("FullDaughter", 2, 2, 2, Full, MVector(0, 0, 0));
@@ -2183,6 +2204,43 @@ bool UTDVolume::TestGetGeomegaRoundTrip()
     EnableDefaultStreams();
     // Defect GEO-B-15: Six significant digits of the written angles can violate the orthogonality check of 1e-6
     Passed = ExpectedToFail(EvaluateTrue("GetGeomega()", "30, 40, 50 deg", "The written angles are accepted as a rotation", Accepted)) && Passed;
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the radical inverse of the Halton sequence
+bool UTDVolume::TestRadicalInverse()
+{
+  bool Passed = true;
+
+  UTDVolumeAccess Volume("RadicalInverse");
+
+  // The digits of the index in the base, mirrored behind the decimal point:
+  // 1 = 1 (base 2) -> 0.1 = 1/2, 6 = 110 (base 2) -> 0.011 = 3/8, 5 = 12 (base 3) -> 0.21 = 7/9, 7 = 12 (base 5) -> 0.21 = 11/25
+  Passed = EvaluateNear("GetRadicalInverse()", "index 0", "The index 0 gives 0", Volume.GetRadicalInverse(0, 2), 0.0, 0.0) && Passed;
+  Passed = EvaluateNear("GetRadicalInverse()", "1 in base 2", "1 = 1 (base 2) gives 0.1 = 1/2", Volume.GetRadicalInverse(1, 2), 0.5, 1e-15) && Passed;
+  Passed = EvaluateNear("GetRadicalInverse()", "6 in base 2", "6 = 110 (base 2) gives 0.011 = 3/8", Volume.GetRadicalInverse(6, 2), 0.375, 1e-15) && Passed;
+  Passed = EvaluateNear("GetRadicalInverse()", "5 in base 3", "5 = 12 (base 3) gives 0.21 = 7/9", Volume.GetRadicalInverse(5, 3), 7.0/9.0, 1e-15) && Passed;
+  Passed = EvaluateNear("GetRadicalInverse()", "7 in base 5", "7 = 12 (base 5) gives 0.21 = 11/25", Volume.GetRadicalInverse(7, 5), 11.0/25.0, 1e-15) && Passed;
+
+  // A base below 2 is rejected: base 0 divides by zero, and with base 1 the index never reaches zero
+  for (unsigned int Base : { 0U, 1U }) {
+    bool Thrown = false;
+    DisableDefaultStreams();
+    BeginCaptureOutput();
+    try {
+      Volume.GetRadicalInverse(5, Base);
+    } catch (MExceptionParameterOutOfRange&) {
+      Thrown = true;
+    }
+    EndCaptureOutput();
+    EnableDefaultStreams();
+    Passed = EvaluateTrue("GetRadicalInverse()", MString("base ") + Base, "A base below 2 throws MExceptionParameterOutOfRange", Thrown) && Passed;
   }
 
   return Passed;

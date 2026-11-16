@@ -3427,7 +3427,10 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
 
     else if (m_BeamType == c_NearFieldActivation ||
              m_BeamType == c_NearFieldVolume) {
-      m_Position = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetRandomPosition(m_Volume);   
+      if (MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetRandomPosition(m_Volume, m_Position, 100000) == false) {
+        merr<<m_Name<<": No start position found in volume "<<m_Volume<<endl;
+        return false;
+      }
     }
 
 

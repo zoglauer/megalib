@@ -43,11 +43,13 @@ using namespace std;
 #include "TGeoMedium.h"
 #include "TGeoVolume.h"
 #include "TGeoShape.h"
+#include "TGeoBBox.h"
 
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MDDetector.h"
 #include "MStreams.h"
+#include "MExceptions.h"
 #include "MDVolumeSequence.h"
 
 
@@ -2280,29 +2282,55 @@ bool MDVolume::GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& Tr
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDVolume::GetRandomPositionExclusivelyInside()
+//! Sample a local position outside daughter volumes, or return g_VectorNotDefined on exhaustion
+MVector MDVolume::GetRandomPositionExclusivelyInside(const unsigned int NumberOfTries)
 {
-  //! Returns a random position in this volume excluding daugther volumes
-
-  int Counter = 100;
-  MVector Position;
-  do {
-    Position = m_Shape->GetRandomPositionInside();
-    if (--Counter == 0) {
-      return g_VectorNotDefined; 
+  // Limit the search when daughters leave little or no free space: exactly NumberOfTries positions are checked
+  for (unsigned int t = 0; t < NumberOfTries; ++t) {
+    MVector Position = m_Shape->GetRandomPositionInside();
+    if (IsInternalPositionExclusivelyInside(Position) == true) {
+      return Position;
     }
-  } while (IsInternalPositionExclusivelyInside(Position) == false);
-  
-  return Position;
+  }
+
+  return g_VectorNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true if a bounded Halton search finds a local point outside daughter volumes
+bool MDVolume::HasSpaceOutsideDaughters(const unsigned int NumberOfPoints)
+{
+  TGeoBBox* Box = dynamic_cast<TGeoBBox*>(m_Shape->GetRootShape()); // All ROOT shapes are derived from TGeoBBox
+  if (Box == nullptr) {
+    return false;
+  }
+
+  // Halton search: the points of the Halton sequence (x, y, z from the radical inverses in bases 2, 3, and 5)
+  // fill the bounding box evenly
+  // Stop at the first point inside this volume but outside its daughters
+  // Very small free regions may be missed within this budget
+  for (unsigned int i = 1; i <= NumberOfPoints; ++i) {
+    MVector Position((2.0*GetRadicalInverse(i, 2) - 1.0)*Box->GetDX() + Box->GetOrigin()[0],
+                     (2.0*GetRadicalInverse(i, 3) - 1.0)*Box->GetDY() + Box->GetOrigin()[1],
+                     (2.0*GetRadicalInverse(i, 5) - 1.0)*Box->GetDZ() + Box->GetOrigin()[2]);
+    if (IsInternalPositionExclusivelyInside(Position) == true) {
+      return true;
+    }
+  }
+
+  return false;
 }
   
   
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Placements, int& TreeDepth)
+//! Sample a position in a placement of Volume, excluding its daughters
+MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Placements, int& TreeDepth, const unsigned int NumberOfTries)
 {
-  //! Returns a random position in any of the volumes defined by Volume
 
   //mout<<m_Name<<endl;
 
@@ -2312,7 +2340,7 @@ MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Place
 
   //cout<<m_Name<<": TreeDepth :"<<TreeDepth<<":"<<int(Placements.size())<<endl;
   if (TreeDepth == int(Placements.size()) - 1) {
-    Position = m_Shape->GetRandomPositionInside();
+    Position = GetRandomPositionExclusivelyInside(NumberOfTries);
   } else {
     unsigned int i_max = GetNDaughters();
     int Counter = -1;
@@ -2321,7 +2349,7 @@ MVector MDVolume::GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Place
         Counter++;
         //cout<<Counter<<":"<<Placements[TreeDepth]<<endl;
         if (Counter == Placements[TreeDepth]) {
-          Position = GetDaughterAt(i)->GetRandomPositionInVolume(Volume, Placements, TreeDepth);
+          Position = GetDaughterAt(i)->GetRandomPositionInVolume(Volume, Placements, TreeDepth, NumberOfTries);
           break;
         }
       }
@@ -2783,6 +2811,29 @@ void MDVolume::ResetIDs()
   MDVolume::m_IDCounter = 1;
   MDVolume::m_RotIDCounter = 1;
 }
+
+
+//! Return the radical inverse of Index in Base, in [0, 1)
+double MDVolume::GetRadicalInverse(unsigned int Index, unsigned int Base) const
+{
+  // Base 0 divides by zero, and with base 1 the index never reaches zero
+  if (Base < 2) {
+    throw MExceptionParameterOutOfRange(Base, 2, numeric_limits<unsigned int>::max(), "Base");
+  }
+
+  double Result = 0.0;
+  double Digit = 1.0/Base;
+  while (Index > 0) {
+    Result += (Index % Base)*Digit;
+    Index /= Base;
+    Digit /= Base;
+  }
+
+  return Result;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 // MDVolume.cxx: the end...

@@ -234,7 +234,10 @@ class MDGeometry
   MVector GetGlobalPosition(const MVector& PositionInDetector, const MString& NamedDetector);
 
   //! Return a random position in the given volume --- excluding daughter volumes!
-  MVector GetRandomPositionInVolume(const MString& Name);
+  //! Up to NumberOfTries positions are tried before g_VectorNotDefined is returned
+  MVector GetRandomPositionInVolume(const MString& Name, const unsigned int NumberOfTries = 100000);
+  //! Return true if a bounded Halton search finds a point in the named volume outside its daughters
+  bool HasSpaceOutsideDaughters(const MString& Name, const unsigned int NumberOfPoints = 100000);
 
   void Reset();
 
