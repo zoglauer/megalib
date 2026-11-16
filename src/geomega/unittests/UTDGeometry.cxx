@@ -1128,22 +1128,35 @@ bool UTDGeometry::TestIf()
       MString Label = "If/Else in If/Else, outer "; Label += Outer; Label += ", inner "; Label += Inner;
       bool Result = ScanGeometry(Geometry, GetGeometryHead() + Text);
       Passed = EvaluateTrue("ScanSetupFile()", Label, "The file is accepted", Result) && Passed;
-      // Defect GEO-A-13: An Else of a nested If is taken as the Else of the outer If, which silently selects the wrong volumes
-      Passed = ExpectedToFail(Evaluate("If", Label, "Exactly the volumes of the taken branches exist", ExistingVolumes(Geometry, Names), Expected)) && Passed;
+      // The Else of the nested If does not switch the outer If (GEO-A-13)
+      Passed = Evaluate("If", Label, "Exactly the volumes of the taken branches exist", ExistingVolumes(Geometry, Names), Expected) && Passed;
     }
   }
+
+  // A property of a volume named like a directive (if.Material, Else.Shape, ...) is not a directive:
+  MString NamedIf = "Volume if\nif.Material Aluminium\nif.Shape BRIK 1 1 1\nif.Position 0 0 0\nif.Mother World\n";
+  Passed = EvaluateTrue("ScanSetupFile()", "volume named if", "The file is accepted", ScanGeometry(Geometry, GetGeometryHead() + NamedIf)) && Passed;
+  Passed = EvaluateTrue("If", "volume named if", "The volume if exists", Geometry.GetVolume("if") != nullptr) && Passed;
+  MString NamedElse = "If { 1 == 1 }\nVolume Else\nElse.Material Aluminium\nElse.Shape BRIK 1 1 1\nElse.Position 0 0 0\nElse.Mother World\n";
+  NamedElse += "Volume EndIf\nEndIf.Material Aluminium\nEndIf.Shape BRIK 1 1 1\nEndIf.Position 3 0 0\nEndIf.Mother World\nEndIf\n" + Marker("Z", 6);
+  Passed = EvaluateTrue("ScanSetupFile()", "volumes named Else and EndIf", "The file is accepted", ScanGeometry(Geometry, GetGeometryHead() + NamedElse)) && Passed;
+  Passed = EvaluateTrue("If", "volumes named Else and EndIf", "All volumes of the true branch and after the If exist", ExistingVolumes(Geometry, {"Else", "EndIf", "Z"}) == "Else EndIf Z ") && Passed;
 
   // Rejections:
   Passed = EvaluateFalse("ScanSetupFile()", "no condition", "An If without a condition is rejected", Accepts("If\nEndIf\n")) && Passed;
   Passed = EvaluateFalse("ScanSetupFile()", "two conditions", "An If with two conditions is rejected", Accepts("If 1 1\nEndIf\n")) && Passed;
   Passed = EvaluateFalse("ScanSetupFile()", "bad maths", "An If with bad maths is rejected", Accepts("If { foo == 1 }\nEndIf\n")) && Passed;
 
-  // Defect GEO-A-14: An If without EndIf is not detected and hides the rest of the file silently
-  Passed = ExpectedToFail(EvaluateFalse("ScanSetupFile()", "no EndIf", "An If without EndIf is rejected", Accepts("If { 1 == 2 }\n" + Marker("A")))) && Passed;
+  // An If without EndIf would hide the rest of the file (GEO-A-14):
+  Passed = EvaluateFalse("ScanSetupFile()", "no EndIf", "An If without EndIf is rejected", Accepts("If { 1 == 2 }\n" + Marker("A"))) && Passed;
+  Passed = EvaluateFalse("ScanSetupFile()", "nested If without EndIf", "A nested If without EndIf is rejected", Accepts("If { 1 == 1 }\nIf { 1 == 1 }\n" + Marker("A") + "EndIf\n")) && Passed;
+  // A second Else would silently assign the rest to the else branch:
+  Passed = EvaluateFalse("ScanSetupFile()", "second Else", "A second Else for the same If is rejected", Accepts("If { 1 == 1 }\n" + Marker("A") + "Else\n" + Marker("B") + "Else\n" + Marker("C", 3) + "EndIf\n")) && Passed;
+  Passed = EvaluateTrue("ScanSetupFile()", "Else of a nested If", "One Else on each level is accepted", Accepts("If { 1 == 1 }\nIf { 1 == 2 }\n" + Marker("A") + "Else\n" + Marker("B") + "EndIf\nElse\n" + Marker("C", 3) + "EndIf\n")) && Passed;
 
-  // Defect GEO-A-15: The lower case if is ignored on the top level, while else, endif, for, and done work in lower case
+  // The lower case if works on the top level as well, as else, endif, for, and done (GEO-A-15)
   Passed = EvaluateTrue("ScanSetupFile()", "lower case if", "The file is accepted", ScanGeometry(Geometry, GetGeometryHead() + "if { 1 == 2 }\n" + Marker("A") + "endif\n")) && Passed;
-  Passed = ExpectedToFail(EvaluateTrue("If", "lower case if", "The false branch of a lower case if is not read", Geometry.GetVolume("A") == nullptr)) && Passed;
+  Passed = EvaluateTrue("If", "lower case if", "The false branch of a lower case if is not read", Geometry.GetVolume("A") == nullptr) && Passed;
 
   return Passed;
 }

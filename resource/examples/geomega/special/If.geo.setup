@@ -1,4 +1,8 @@
 # Test geometry for if and for conditions
+#
+# A correct parser prints exactly 62 lines with "Passed", no line with "not passed" (in any case),
+# and at the end the line "End of the if and for tests reached".
+# A defect can show up as a missing line instead of a line with "not passed"
 
 Name IfForTest
 Version 2.0
@@ -234,6 +238,178 @@ If { TestH_A != 5 && TestH_B != 5 }
 Else
   Echo "Test (4 != 5 || 5 != 5): Passed (false if-path)"
 EndIf
+
+
+
+Echo "Nested If/Else: outer true, inner true"
+Constant NestedTT_Outer 1
+Constant NestedTT_Inner 1
+If { NestedTT_Outer == 1 }
+  Echo "Test (nested TT, outer true-path, before the inner If): Passed"
+  If { NestedTT_Inner == 1 }
+    Echo "Test (nested TT, inner true-path): Passed"
+  Else
+    Echo "Test (nested TT, inner false-path): NOT passed"
+  EndIf
+  Echo "Test (nested TT, outer true-path, after the inner If): Passed"
+Else
+  Echo "Test (nested TT, outer false-path): NOT passed"
+  If { NestedTT_Inner == 1 }
+    Echo "Test (nested TT, inner true-path in the outer false-path): NOT passed"
+  Else
+    Echo "Test (nested TT, inner false-path in the outer false-path): NOT passed"
+  EndIf
+EndIf
+Echo "Test (nested TT, after the outer If): Passed"
+
+Echo "Nested If/Else: outer true, inner false"
+Constant NestedTF_Outer 1
+Constant NestedTF_Inner 0
+If { NestedTF_Outer == 1 }
+  If { NestedTF_Inner == 1 }
+    Echo "Test (nested TF, inner true-path): NOT passed"
+  Else
+    Echo "Test (nested TF, inner false-path): Passed"
+  EndIf
+  Echo "Test (nested TF, outer true-path, after the inner If): Passed"
+Else
+  Echo "Test (nested TF, outer false-path): NOT passed"
+EndIf
+Echo "Test (nested TF, after the outer If): Passed"
+
+Echo "Nested If/Else: outer false, inner true"
+Constant NestedFT_Outer 0
+Constant NestedFT_Inner 1
+If { NestedFT_Outer == 1 }
+  Echo "Test (nested FT, outer true-path): NOT passed"
+  If { NestedFT_Inner == 1 }
+    Echo "Test (nested FT, inner true-path in the outer true-path): NOT passed"
+  Else
+    Echo "Test (nested FT, inner false-path in the outer true-path): NOT passed"
+  EndIf
+Else
+  If { NestedFT_Inner == 1 }
+    Echo "Test (nested FT, inner true-path): Passed"
+  Else
+    Echo "Test (nested FT, inner false-path): NOT passed"
+  EndIf
+  Echo "Test (nested FT, outer false-path, after the inner If): Passed"
+EndIf
+Echo "Test (nested FT, after the outer If): Passed"
+
+Echo "Nested If/Else: outer false, inner false"
+Constant NestedFF_Outer 0
+Constant NestedFF_Inner 0
+If { NestedFF_Outer == 1 }
+  Echo "Test (nested FF, outer true-path): NOT passed"
+Else
+  If { NestedFF_Inner == 1 }
+    Echo "Test (nested FF, inner true-path): NOT passed"
+  Else
+    Echo "Test (nested FF, inner false-path): Passed"
+  EndIf
+  Echo "Test (nested FF, outer false-path, after the inner If): Passed"
+EndIf
+Echo "Test (nested FF, after the outer If): Passed"
+
+
+Echo "Three levels of If/Else"
+Constant Level_A 1
+Constant Level_B 0
+Constant Level_C 1
+If { Level_A == 1 }
+  If { Level_B == 1 }
+    Echo "Test (three levels, second level true-path): NOT passed"
+  Else
+    If { Level_C == 1 }
+      Echo "Test (three levels, third level true-path): Passed"
+    Else
+      Echo "Test (three levels, third level false-path): NOT passed"
+    EndIf
+    Echo "Test (three levels, second level false-path, after the third level): Passed"
+  EndIf
+  Echo "Test (three levels, first level true-path, after the second level): Passed"
+Else
+  Echo "Test (three levels, first level false-path): NOT passed"
+EndIf
+
+
+Echo "If/Else in a branch which is not taken: it is skipped completely"
+If { false }
+  If { true }
+    Echo "Test (skipped branch, inner true-path): NOT passed"
+  Else
+    Echo "Test (skipped branch, inner false-path): NOT passed"
+  EndIf
+Else
+  Echo "Test (skipped branch, the taken path): Passed"
+EndIf
+
+
+Echo "Empty branches"
+If { true }
+Else
+  Echo "Test (empty true-path, false-path): NOT passed"
+EndIf
+If { false }
+Else
+  Echo "Test (empty true-path, false-path): Passed"
+EndIf
+
+
+Echo "Several If in a row inside a branch"
+If { true }
+  If { 1 == 2 }
+    Echo "Test (first If in the branch): NOT passed"
+  Else
+    Echo "Test (first If in the branch): Passed"
+  EndIf
+  If { 2 == 2 }
+    Echo "Test (second If in the branch): Passed"
+  Else
+    Echo "Test (second If in the branch): NOT passed"
+  EndIf
+EndIf
+
+
+Echo "Lower case and other spellings"
+if { false }
+  Echo "Test (lower case if, true-path): NOT passed"
+else
+  Echo "Test (lower case if, false-path): Passed"
+endif
+If { true }
+  if { true }
+    Echo "Test (lower case if inside If): Passed"
+  endif
+Endif
+
+
+Echo "Comments inside If"
+If { true }
+  # A comment in the true-path
+  Echo "Test (comments, true-path): Passed"
+Else
+  // A comment in the false-path
+  Echo "Test (comments, false-path): NOT passed"
+EndIf
+
+
+Echo "Nested If/Else in a for-loop:"
+For K 3 0 1
+  If { $K < 2 }
+    If { $K == 0 }
+      Echo "Test: Passed if $K == 0"
+    Else
+      Echo "Test: Passed if $K == 1"
+    EndIf
+  Else
+    Echo "Test: Passed if $K == 2"
+  EndIf
+Done
+
+
+Echo "End of the if and for tests reached"
 
 
 #------------------------------------------------------------

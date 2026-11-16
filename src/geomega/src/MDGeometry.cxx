@@ -1135,12 +1135,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       return false;
     }
   }
-  
+ 
+
   // Check for "If"-clauses
-  int IfDepth = 0;
-  int ElseDepth = 0;
-  int CurrentIfDepth = 0;
-  bool InsideElse = false;
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ++ContentIter) {
     m_DebugInfo = (*ContentIter);
     MTokenizer& Tokenizer = (*ContentIter).GetTokenizer(true);
@@ -1148,69 +1145,68 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       Typo("Parsing of the line failed.");
       return false;
     }
-   
-    if (Tokenizer.GetNTokens() == 0) {
+
+    // A composited first token is the property of an object, e.g. "if.Material", not a directive
+    if (Tokenizer.GetNTokens() == 0 || Tokenizer.IsComposited() == true) {
       continue;
     }
 
-    if (Tokenizer.IsTokenAt(0, "If") == true) {
-
-      // Take care of nesting
-      CurrentIfDepth = IfDepth;
-      IfDepth++;
-
-      // Take care of else
-      InsideElse = false;
-      
+    // Upper and lower case, as for Else and EndIf (before, a lower case if was ignored)
+    if (Tokenizer.IsTokenAt(0, "If") == true || Tokenizer.IsTokenAt(0, "if") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("The If-line must contain two entries, the last one must be math, e.g. \"If { 1 == 2 } or If { $Value > 0 } \"");
         return false;
       }
-
-      // Retrieve data:
       bool IfStatement = Tokenizer.GetTokenAtAsBoolean(1);
-
-      // Clear the if line
-      //cout<<"Erasing (if): "<<(*ContentIter).GetText()<<endl;
       (*ContentIter).SetText("");
 
-      // Forward its endif:
+      // Go through the lines up to the EndIf of this If
+      // Level counts the nested Ifs: only an Else and EndIf on level 0 belong to this If
+      // The lines of the branch which is not taken are removed, including the nested Ifs in it
+      // The nested Ifs of the taken branch stay and are handled when this loop reaches them
+      int Level = 0;
+      bool InsideElse = false;
+      bool HasEndIf = false;
       for (auto NewContentIter = next(ContentIter, 1); NewContentIter != FileContent.end(); ++NewContentIter) {
         MTokenizer& TokenizerIf = (*NewContentIter).GetTokenizer(false);
         if (TokenizerIf.GetNTokens() == 0) {
           continue;
         }
-        if (TokenizerIf.IsTokenAt(0, "If") == true || TokenizerIf.IsTokenAt(0, "if") == true) {
-          IfDepth++;
-        }
-        if (TokenizerIf.IsTokenAt(0, "Else") == true || TokenizerIf.IsTokenAt(0, "else") == true) {
+        // As above: the properties of objects named If, Else, or EndIf are not directives
+        bool IsIf = TokenizerIf.IsComposited() == false && (TokenizerIf.IsTokenAt(0, "If") == true || TokenizerIf.IsTokenAt(0, "if") == true);
+        bool IsElse = TokenizerIf.IsComposited() == false && (TokenizerIf.IsTokenAt(0, "Else") == true || TokenizerIf.IsTokenAt(0, "else") == true);
+        bool IsEndIf = TokenizerIf.IsComposited() == false && (TokenizerIf.IsTokenAt(0, "EndIf") == true || TokenizerIf.IsTokenAt(0, "Endif") == true || TokenizerIf.IsTokenAt(0, "endif") == true);
+
+        if (Level == 0 && IsElse == true) {
+          if (InsideElse == true) {
+            m_DebugInfo = (*NewContentIter);
+            Typo("A second Else for the same If");
+            return false;
+          }
           InsideElse = true;
-          ElseDepth++;
-          if (IfDepth == CurrentIfDepth && IfDepth == ElseDepth) {
-            //cout<<"Erasing (else): "<<(*NewContentIter).GetText()<<endl;
-            (*NewContentIter).SetText("");
-          }
-        }
-        if (TokenizerIf.IsTokenAt(0, "EndIf") == true || TokenizerIf.IsTokenAt(0, "Endif") == true || TokenizerIf.IsTokenAt(0, "endif") == true) {
-          IfDepth--;
-          if (IfDepth == CurrentIfDepth) {
-            //cout<<"Erasing (endif): "<<(*NewContentIter).GetText()<<endl;
-            (*NewContentIter).SetText("");
-            break;
-          }
-        }
-        if (IfStatement == false && InsideElse == false) {
-          //cout<<"Erasing (if is false): "<<(*NewContentIter).GetText()<<endl;
           (*NewContentIter).SetText("");
+          continue;
         }
-        if (IfStatement == true && InsideElse == true) {
-          //cout<<"Erasing (else is false): "<<(*NewContentIter).GetText()<<endl;
+        if (Level == 0 && IsEndIf == true) {
+          (*NewContentIter).SetText("");
+          HasEndIf = true;
+          break;
+        }
+
+        if (IsIf == true) Level++;
+        if (IsEndIf == true) Level--;
+
+        if ((IfStatement == false && InsideElse == false) || (IfStatement == true && InsideElse == true)) {
           (*NewContentIter).SetText("");
         }
       }
-      // ContentIter is not changed since we stay at the same level to all subsequent if's
+      if (HasEndIf == false) {
+        Typo("The If has no EndIf");
+        return false;
+      }
     } // Is if
   } // global loop
+
 
   // Clean empty lines:
   for (auto ContentIter = FileContent.begin(); ContentIter != FileContent.end(); ) {
