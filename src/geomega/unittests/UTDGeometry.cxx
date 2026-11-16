@@ -3114,12 +3114,11 @@ bool UTDGeometry::TestCrossSections()
   vector<MString> Names = ReadTextFile(Log).Tokenize("\n");
   Passed = EvaluateSize("CreateCrossSectionFiles()", "two programs", "Each program calls cosima once", Names.size(), 2) && Passed;
   if (Names.size() == 2) {
-    Passed = EvaluateTrue("CreateCrossSectionFiles()", "file name", "The file is in the temporary directory", Names[0].BeginsWith(Root + "/tmp/MEGAlib_CrossSections_")) && Passed;
-    // Defect GEO-A-40: The temporary file name comes from gRandom with its fixed default seed, thus all parallel programs use the same file
-    Passed = ExpectedToFail(EvaluateFalse("CreateCrossSectionFiles()", "two programs", "The two programs use different temporary files", Names[0] == Names[1])) && Passed;
+    Passed = EvaluateTrue("CreateCrossSectionFiles()", "file name", "The file is in the temporary directory", Names[0].BeginsWith(Root + "/tmp/MEGAlib_") && Names[0].EndsWith("_CrossSections.source")) && Passed;
+    Passed = EvaluateFalse("CreateCrossSectionFiles()", "two programs", "The two programs use different temporary files", Names[0] == Names[1]) && Passed;
   }
 
-  // Defect GEO-A-41: The creation of the cross section files changes the state of the global random number generator
+  // The creation of the cross section files does not change the state of the global random number generator
   const MString Fake = Root + "/bin/cosima";
 
   // The creation uses MEGALIB and TMPDIR: they point to the fixture until the end of this test
@@ -3140,7 +3139,7 @@ bool UTDGeometry::TestCrossSections()
   RandomUser.CreateCrossSectionFiles();
   EnableDefaultStreams();
   Passed = EvaluateTrue("ScanSetupFile()", "gRandom", "The file is accepted", IsAccepted) && Passed;
-  Passed = ExpectedToFail(EvaluateNear("CreateCrossSectionFiles()", "gRandom", "The global random number generator is not changed", gRandom->Rndm(), Expected, 1e-15)) && Passed;
+  Passed = EvaluateNear("CreateCrossSectionFiles()", "gRandom", "The global random number generator is not changed", gRandom->Rndm(), Expected, 1e-15) && Passed;
 
   // The scan starts the creation when it is allowed, and the working directory stays:
   const MString CountLog = Log;

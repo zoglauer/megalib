@@ -6129,11 +6129,12 @@ bool MDGeometry::CreateCrossSectionFiles()
 
 
   // (1) Create a mimium cosima file:
-  MString FileName = gSystem->TempDirectory();
-  FileName += "/MEGAlib_CrossSections_";
-  FileName += gRandom->Integer(900000000)+100000000;
-  FileName += gRandom->Integer(900000000)+100000000;
-  FileName += ".source";
+  MString FileName = MFile::CreateTemporaryFile("CrossSections.source");
+  if (FileName.IsEmpty() == true) {
+    mout<<"   ***  Error  ***"<<endl;
+    mout<<"Unable to create a temporary cosima source file for the cross section creation"<<endl;
+    return false;
+  }
   
   ofstream out;
   out.open(FileName);
