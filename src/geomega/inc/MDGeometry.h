@@ -96,7 +96,7 @@ class MDGeometry
   
   //! Draws the geometry
   //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
-  virtual bool DrawGeometry(TCanvas* Canvas = nullptr, bool RestoreView = false, MString Mode = "ogle");
+  virtual bool DrawGeometry(TCanvas* Canvas = nullptr, bool RestoreView = false, MString Mode = "");
   
   //! Dump the geometry in readable format to the screen 
   void DumpInformation();

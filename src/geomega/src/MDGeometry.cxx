@@ -4594,8 +4594,10 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, bool RestoreView, MString Mode)
   gGeoManager = m_Geometry;
   if (Mode.ToLower() == "raytrace") {
     if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Raytrace();
-  } else {
+  } else if (Mode.ToLower() == "ogl") {
     if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw("ogl");
+  } else {
+    if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw("");
   }
 
   if (m_Geometry->GetListOfNavigators() == nullptr) {
