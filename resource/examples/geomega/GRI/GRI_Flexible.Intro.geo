@@ -2,7 +2,8 @@
 Name GRI_Flexible
 Version 1.0
 
-SurroundingSphere 110  0.0  0.0  0.0  110.0
+SurroundingSphere 175  0.0  0.0  70  175
+ShowSurroundingSphere False
 
 DetectorSearchTolerance 0.00001
 
