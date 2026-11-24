@@ -54,6 +54,8 @@ private:
   bool TestRoundTrips();
   //! Test wrapper methods and edge cases
   bool TestHelpers();
+  //! Test that delayed reading parses the ID and the time of the multi event immediately
+  bool TestDelayedIDAndTime();
 };
 
 
@@ -68,6 +70,7 @@ bool UTMultiEvent::Run()
   Passed = TestBasics() && Passed;
   Passed = TestRoundTrips() && Passed;
   Passed = TestHelpers() && Passed;
+  Passed = TestDelayedIDAndTime() && Passed;
 
   Summarize();
 
@@ -210,6 +213,43 @@ bool UTMultiEvent::TestHelpers()
   Passed = Evaluate("ToString()", "helpers", "The string representation concatenates the child events deterministically", Event.ToString(), MString("The data of the Unidentifiable-event:\nEnergy: 4.000The data of the Unidentifiable-event:\nEnergy: 3.000")) && Passed;
 
   EvaluateException<MExceptionIndexOutOfBounds>("GetEvent()", "helpers", "Out-of-bounds sub-event access throws", [&](){ Event.GetEvent(2); });
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test that delayed reading parses the ID and the time of the multi event immediately
+bool UTMultiEvent::TestDelayedIDAndTime()
+{
+  bool Passed = true;
+
+  MString FileName = GetTemporaryFileName("UTMultiEventDelayed.tra");
+  MString Tra = "ET MT\nID 7\nTI 2.5\nSI\nET UN\nID 3\nTI 1.5\nPE 4\nSF\nSE\n";
+  Passed = EvaluateTrue("WriteTextFile()", "multi delayed ID and time setup", "The delayed test file can be written", WriteTextFile(FileName, Tra)) && Passed;
+
+  MFile File;
+  MMultiEvent Delayed;
+  Passed = EvaluateTrue("Open()", "multi delayed ID and time", "The delayed test file opens", File.Open(FileName, MFile::c_Read)) && Passed;
+  Passed = EvaluateTrue("Stream()", "multi delayed ID and time", "The delayed read returns true at the end marker", Delayed.Stream(File, 0, true, false, true)) && Passed;
+  Passed = Evaluate("GetId()", "multi delayed ID and time before ParseDelayed()", "The ID of the multi event is parsed during the delayed read, not the one of the sub-event", Delayed.GetId(), 7L) && Passed;
+  Passed = EvaluateNear("GetTime()", "multi delayed ID and time before ParseDelayed()", "The time of the multi event is parsed during the delayed read, not the one of the sub-event", Delayed.GetTime().GetAsDouble(), 2.5, 1e-12) && Passed;
+  Passed = EvaluateSize("GetNumberOfEvents()", "multi delayed ID and time before ParseDelayed()", "The sub-events are not parsed yet", Delayed.GetNumberOfEvents(), 0) && Passed;
+
+  // A changed ID and time (e.g. include offsets) are not overwritten by ParseDelayed():
+  Delayed.SetId(40);
+  Delayed.SetTime(MTime(10.5));
+  Passed = EvaluateTrue("ParseDelayed()", "multi delayed ID and time", "The delayed multi event can be parsed", Delayed.ParseDelayed()) && Passed;
+  Passed = Evaluate("GetId()", "multi delayed ID and time after ParseDelayed()", "ParseDelayed() keeps the changed ID", Delayed.GetId(), 40L) && Passed;
+  Passed = EvaluateNear("GetTime()", "multi delayed ID and time after ParseDelayed()", "ParseDelayed() keeps the changed time", Delayed.GetTime().GetAsDouble(), 10.5, 1e-12) && Passed;
+  Passed = EvaluateSize("GetNumberOfEvents()", "multi delayed ID and time after ParseDelayed()", "ParseDelayed() parses the sub-event", Delayed.GetNumberOfEvents(), 1) && Passed;
+  if (Delayed.GetNumberOfEvents() == 1) {
+    Passed = Evaluate("GetEvent(0)->GetId()", "multi delayed ID and time after ParseDelayed()", "The sub-event keeps its own ID", Delayed.GetEvent(0)->GetId(), 3L) && Passed;
+    Passed = EvaluateNear("GetEvent(0)->GetTime()", "multi delayed ID and time after ParseDelayed()", "The sub-event keeps its own time", Delayed.GetEvent(0)->GetTime().GetAsDouble(), 1.5, 1e-12) && Passed;
+  }
+  File.Close();
 
   return Passed;
 }

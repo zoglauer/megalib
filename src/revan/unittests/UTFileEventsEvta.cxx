@@ -30,6 +30,7 @@ using namespace std;
 // MEGAlib:
 #include "MFile.h"
 #include "MFileEventsEvta.h"
+#include "MFileEventsSim.h"
 #include "MREAMStartInformation.h"
 #include "MStreams.h"
 #include "MUnitTest.h"
@@ -63,7 +64,7 @@ private:
   //! Test parsing of OI lines with and without particle ID
   bool TestOILineParsing();
   //! Test the AT keyword (accumulated include times)
-  bool TestAccumulatedIncludeTimes();
+  bool TestAccumulateTimesAndIDsAcrossFiles();
   //! Test the AT keyword with an included file whose last event has no hits
   bool TestAccumulatedIncludeIDsWithEmptyLastEvent();
 
@@ -82,6 +83,19 @@ private:
   bool TestReopen();
   //! Test files which are refused
   bool TestOpenFailures();
+  //! Test the observation time up to the last read event
+  bool TestLastReadObservationTime();
+  //! Test the last read values for a binary sim file
+  bool TestLastReadBinary();
+  //! Test the last read values for an include master which includes another include master
+  bool TestLastReadNestedIncludes();
+  //! Test the observation time up to the last read event for a file without TB and with the footer read first
+  bool TestLastReadWithoutTBAndFooterFirst();
+
+  //! Write a variant of the 1-second fixture, optionally without the TB line
+  bool WriteFixtureVariant(const MString& FileName, bool WithTB);
+  //! Write the 1-second fixture as binary sim file with TB 0, TE 1, and TS 310
+  bool WriteBinaryFixture(MGeometryRevan& Geometry, const MString& FileName);
 
   //! Return the content of an evta file with three events for the Max geometry: IDs 5, 6 (without hits), and 7
   MString GetEvtaContent() const;
@@ -118,7 +132,7 @@ bool UTFileEventsEvta::Run()
   Passed = TestRewindBehavior() && Passed;
   Passed = TestSaveOI() && Passed;
   Passed = TestOILineParsing() && Passed;
-  Passed = TestAccumulatedIncludeTimes() && Passed;
+  Passed = TestAccumulateTimesAndIDsAcrossFiles() && Passed;
   Passed = TestAccumulatedIncludeIDsWithEmptyLastEvent() && Passed;
   Passed = TestObservationTimesWithoutTE() && Passed;
   Passed = TestEvtaFile() && Passed;
@@ -126,6 +140,10 @@ bool UTFileEventsEvta::Run()
   Passed = TestSimulatedEvents() && Passed;
   Passed = TestReopen() && Passed;
   Passed = TestOpenFailures() && Passed;
+  Passed = TestLastReadObservationTime() && Passed;
+  Passed = TestLastReadBinary() && Passed;
+  Passed = TestLastReadNestedIncludes() && Passed;
+  Passed = TestLastReadWithoutTBAndFooterFirst() && Passed;
 
   Summarize();
 
@@ -553,7 +571,7 @@ void UTFileEventsEvta::ReadEvents(MGeometryRevan& Geometry, const MString& FileN
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTFileEventsEvta::TestAccumulatedIncludeTimes()
+bool UTFileEventsEvta::TestAccumulateTimesAndIDsAcrossFiles()
 {
   bool Passed = true;
 
@@ -605,8 +623,8 @@ bool UTFileEventsEvta::TestAccumulatedIncludeTimes()
   {
     MFileEventsEvta Reader(&Geometry);
     Passed = EvaluateTrue("Open()", "evta AT true open", "The include master with AT true opens in the evta reader", Reader.Open(MasterTrue)) && Passed;
-    Passed = EvaluateTrue("HasAccumulatedIncludeTimes()", "evta AT true flag", "The AT true header line sets the accumulated include times flag", Reader.HasAccumulatedIncludeTimes()) && Passed;
-    Passed = EvaluateNear("GetIncludeTimeOffset()", "evta AT true initial offset", "The include time offset starts at zero", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateTrue("GetAccumulateTimesAndIDsAcrossFiles()", "evta AT true flag", "The AT true header line sets the accumulated include times flag", Reader.GetAccumulateTimesAndIDsAcrossFiles()) && Passed;
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "evta AT true initial offset", "The include time offset starts at zero", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
 
     vector<double> Times;
     vector<long> IDs;
@@ -630,14 +648,14 @@ bool UTFileEventsEvta::TestAccumulatedIncludeTimes()
       if (Times[i] < Times[i-1]) Monotonic = false;
     }
     Passed = EvaluateTrue("GetEventTime()", "evta AT true monotonic", "With AT true the event times never decrease across the included files", Monotonic) && Passed;
-    Passed = EvaluateNear("GetIncludeTimeOffset()", "evta AT true final offset", "After all children are closed the offset is the sum of their observation times", Reader.GetIncludeTimeOffset().GetAsDouble(), 7.0, 1e-12) && Passed;
-    Passed = Evaluate("GetIncludeIDOffset()", "evta AT true final ID offset", "After all children are closed the ID offset is the last event ID", Reader.GetIncludeIDOffset(), 125L) && Passed;
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "evta AT true final offset", "After all children are closed the offset is the sum of their observation times", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeOffsetEventID()", "evta AT true final ID offset", "After all children are closed the ID offset is the last event ID", Reader.GetIncludeOffsetEventID(), 125L) && Passed;
     Passed = EvaluateFalse("HasEndObservationTime()", "evta AT true end time", "An include master without TE has no end observation time of its own", Reader.HasEndObservationTime()) && Passed;
     Passed = EvaluateNear("GetObservationTime()", "evta AT true observation time", "The observation time still sums across the included files", Reader.GetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
 
     Passed = EvaluateTrue("Rewind()", "evta AT true rewind", "The include master with AT true can be rewound", Reader.Rewind()) && Passed;
-    Passed = EvaluateNear("GetIncludeTimeOffset()", "evta AT true rewind offset", "Rewinding resets the include time offset", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
-    Passed = Evaluate("GetIncludeIDOffset()", "evta AT true rewind ID offset", "Rewinding resets the include ID offset", Reader.GetIncludeIDOffset(), 0L) && Passed;
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "evta AT true rewind offset", "Rewinding resets the include time offset", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeOffsetEventID()", "evta AT true rewind ID offset", "Rewinding resets the include ID offset", Reader.GetIncludeOffsetEventID(), 0L) && Passed;
     Event = Reader.GetNextEvent();
     Passed = EvaluateTrue("GetNextEvent()", "evta AT true rewind first event", "After rewinding the first event can be read again", Event != nullptr) && Passed;
     if (Event != nullptr && Shifted.empty() == false) {
@@ -654,7 +672,7 @@ bool UTFileEventsEvta::TestAccumulatedIncludeTimes()
   {
     MFileEventsEvta Reader(&Geometry);
     Passed = EvaluateTrue("Open()", "evta AT false open", "The include master with AT false opens in the evta reader", Reader.Open(MasterFalse)) && Passed;
-    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "evta AT false flag", "The AT false header line leaves the accumulated include times flag unset", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Passed = EvaluateFalse("GetAccumulateTimesAndIDsAcrossFiles()", "evta AT false flag", "The AT false header line leaves the accumulated include times flag unset", Reader.GetAccumulateTimesAndIDsAcrossFiles()) && Passed;
 
     vector<double> Times;
     vector<long> IDs;
@@ -673,8 +691,9 @@ bool UTFileEventsEvta::TestAccumulatedIncludeTimes()
         Passed = Evaluate("GetEventID()", Input.str().c_str(), "The event ID is not offset with AT false", IDs[i], UnshiftedIDs[i]) && Passed;
       }
     }
-    Passed = EvaluateNear("GetIncludeTimeOffset()", "evta AT false final offset", "The include time offset stays zero with AT false", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
-    Passed = Evaluate("GetIncludeIDOffset()", "evta AT false final ID offset", "The include ID offset stays zero with AT false", Reader.GetIncludeIDOffset(), 0L) && Passed;
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "evta AT false final offset", "The include time offset is accumulated with AT false too (1 + 2 + 4 s), it is only not applied to the events", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeOffsetEventID()", "evta AT false final ID offset", "The include ID offset is accumulated with AT false too (21 + 31 + 73), it is only not applied to the events", Reader.GetIncludeOffsetEventID(), 125L) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", "evta AT false final last ID", "The last event ID counts across the included files with AT false too", Reader.GetLastReadEventID(), 125L) && Passed;
     Passed = EvaluateFalse("HasEndObservationTime()", "evta AT false end time", "An include master without TE has no end observation time of its own", Reader.HasEndObservationTime()) && Passed;
     Passed = EvaluateNear("GetObservationTime()", "evta AT false observation time", "The observation time sums across the included files with AT false", Reader.GetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
     Reader.Close();
@@ -687,7 +706,7 @@ bool UTFileEventsEvta::TestAccumulatedIncludeTimes()
   {
     MFileEventsEvta Reader(&Geometry);
     Passed = EvaluateTrue("Open()", "evta AT none open", "The include master without AT opens in the evta reader", Reader.Open(MasterNone)) && Passed;
-    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "evta AT none flag", "Without an AT header line the accumulated include times flag is unset", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Passed = EvaluateFalse("GetAccumulateTimesAndIDsAcrossFiles()", "evta AT none flag", "Without an AT header line the accumulated include times flag is unset", Reader.GetAccumulateTimesAndIDsAcrossFiles()) && Passed;
     Reader.Close();
   }
 
@@ -746,7 +765,7 @@ bool UTFileEventsEvta::TestAccumulatedIncludeIDsWithEmptyLastEvent()
       IDs1.push_back((long) Event->GetEventID());
       delete Event;
     }
-    Passed = Evaluate("GetLastEventID()", "evta AT empty last event child last ID", "The last read event ID is the ID of the dropped empty last event", Reader.GetLastEventID(), 22L) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", "evta AT empty last event child last ID", "The last read event ID is the ID of the dropped empty last event", Reader.GetLastReadEventID(), 22L) && Passed;
     Passed = EvaluateTrue("GetNextEvent()", "evta AT empty last event child dropped", "The empty last event is not returned", IDs1.empty() == false && IDs1.back() < 22) && Passed;
     Reader.Close();
   }
@@ -784,7 +803,7 @@ bool UTFileEventsEvta::TestAccumulatedIncludeIDsWithEmptyLastEvent()
       Passed = Evaluate("GetEventID()", Input.str().c_str(), "The event IDs of the second child continue after the dropped empty last event of the first child", IDs[IDs1.size() + i], IDs2[i] + 22) && Passed;
     }
   }
-  Passed = Evaluate("GetIncludeIDOffset()", "evta AT empty last event final ID offset", "The final ID offset is the sum of the last event IDs of both children", Reader.GetIncludeIDOffset(), 53L) && Passed;
+  Passed = Evaluate("GetIncludeOffsetEventID()", "evta AT empty last event final ID offset", "The final ID offset is the sum of the last event IDs of both children", Reader.GetIncludeOffsetEventID(), 53L) && Passed;
   Reader.Close();
 
   return Passed;
@@ -829,9 +848,10 @@ bool UTFileEventsEvta::TestObservationTimesWithoutTE()
     delete Event;
   }
   Passed = EvaluateTrue("GetNextEvent()", "evta no TE events", "Events are read from the fixture without TE", Times.empty() == false) && Passed;
-  Passed = EvaluateTrue("HasEndObservationTime()", "evta no TE end flag", "Without TE the end observation time is taken from the events", Reader.HasEndObservationTime()) && Passed;
+  // No TE is invented from the events, thus revan does not write one either
+  Passed = EvaluateFalse("HasEndObservationTime()", "evta no TE end flag", "Without TE the file has no end observation time", Reader.HasEndObservationTime()) && Passed;
   if (Times.empty() == false) {
-    Passed = EvaluateNear("GetEndObservationTime()", "evta no TE end time", "Without TE the end observation time is the time of the last event", Reader.GetEndObservationTime().GetAsDouble(), Times.back(), 1e-9) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "evta no TE observation time", "Without TE the observation ends at the last event", Reader.GetObservationTime().GetAsDouble(), Times.back() - Reader.GetStartObservationTime().GetAsDouble(), 1e-9) && Passed;
   }
   Reader.Close();
 
@@ -894,7 +914,7 @@ bool UTFileEventsEvta::TestEvtaFile()
   MFileEventsEvta Reader(&Geometry);
   Passed = EvaluateTrue("GetERNoising()", "evta file noising", "The reader has a noising task", Reader.GetERNoising() != nullptr) && Passed;
   Passed = EvaluateTrue("Open()", "evta file open", "The evta fixture opens", Reader.Open(FileName)) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "evta file observation time", "The observation time is the TE of the footer", Reader.GetObservationTime().GetAsDouble(), 10.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta file observation time", "Without TB the observation time is the TE of the footer minus the time of the first event", Reader.GetObservationTime().GetAsDouble(), 8.5, 1e-12) && Passed;
 
   // The first event: the hits of an evta file are measured ones, they are not noised and keep their resolutions
   MRERawEvent* Event = Reader.GetNextEvent();
@@ -937,7 +957,7 @@ bool UTFileEventsEvta::TestEvtaFile()
   delete Event;
 
   Passed = Evaluate("GetSimulatedEvents()", "evta file simulated events", "The number of simulated events is the TS of the footer", Reader.GetSimulatedEvents(), 123L) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "evta file observation time after reading", "The observation time is still the TE of the footer", Reader.GetObservationTime().GetAsDouble(), 10.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta file observation time after reading", "The observation time is still TE minus the time of the first event", Reader.GetObservationTime().GetAsDouble(), 8.5, 1e-12) && Passed;
   Passed = EvaluateTrue("Close()", "evta file close", "The reader closes", Reader.Close()) && Passed;
 
   // A second reader reads the events first and asks for the observation time afterwards
@@ -946,9 +966,7 @@ bool UTFileEventsEvta::TestEvtaFile()
   while ((Event = EventsFirst.GetNextEvent()) != nullptr) {
     delete Event;
   }
-  // Defect REV-D-15: For a file with TE, but without TB, the observation time depends on the order of the calls: asked before the first event it is TE (10 s),
-  // asked after the events were read it is TE minus the time of the first event (8.5 s)
-  Passed = ExpectedToFail(EvaluateNear("GetObservationTime()", "evta file events first observation time", "The observation time does not depend on when it is asked for", EventsFirst.GetObservationTime().GetAsDouble(), 10.0, 1e-12)) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta file events first observation time", "The observation time does not depend on when it is asked for: TE minus the time of the first event", EventsFirst.GetObservationTime().GetAsDouble(), 8.5, 1e-12) && Passed;
   EventsFirst.Close();
 
   return Passed;
@@ -1075,7 +1093,7 @@ bool UTFileEventsEvta::TestReopen()
 
   // The evta file again, after the sim file was read to its end
   Passed = EvaluateTrue("Open()", "evta reopen first file again", "The evta fixture opens again", Reader.Open(EvtaFile)) && Passed;
-  Passed = EvaluateNear("GetObservationTime()", "evta reopen first file again", "The observation time is the one of the evta fixture", Reader.GetObservationTime().GetAsDouble(), 10.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetObservationTime()", "evta reopen first file again", "The observation time is the one of the evta fixture: TE minus the time of the first event", Reader.GetObservationTime().GetAsDouble(), 8.5, 1e-12) && Passed;
   vector<long> IDs;
   vector<double> Energies;
   while ((Event = Reader.GetNextEvent()) != nullptr) {
@@ -1146,6 +1164,334 @@ bool UTFileEventsEvta::TestOpenFailures()
   return Passed;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::TestLastReadObservationTime()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta last read time temp dir", "The temporary directory can be recreated for the last read time tests", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta last read time scan geometry", "The geometry can be scanned for the last read time tests", LoadGeometry(Geometry)) && Passed;
+
+  // Event times of the first two children read on their own (TB 0, TE 1 and 2 s):
+  vector<double> Times1;
+  vector<double> Times2;
+  vector<long> IDs1;
+  vector<long> IDs2;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz", Times1, IDs1);
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz", Times2, IDs2);
+  Passed = EvaluateSize("GetNextEvent()", "evta last read time child 1 event count", "The first child holds 21 events", Times1.size(), (size_t) 21) && Passed;
+  Passed = EvaluateSize("GetNextEvent()", "evta last read time child 2 event count", "The second child holds 31 events", Times2.size(), (size_t) 31) && Passed;
+
+  // Single file:
+  {
+    MFileEventsEvta Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "evta last read time single open", "The 1-second sim fixture opens", Reader.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz")) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read time single before first event", "Before the first event the observation time is zero", Reader.GetLastReadObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+
+    unsigned int NRead = 0;
+    MRERawEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent()) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", "evta last read time single 5 events", "Five events can be read", NRead, 5U) && Passed;
+    if (NRead == 5 && Times1.size() >= 5) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read time single after 5 events", "After 5 events the observation time is the time of the 5th event (TB 0)", Reader.GetLastReadObservationTime().GetAsDouble(), Times1[4], 1e-9) && Passed;
+    }
+
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      delete Event;
+    }
+    Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read time single all events", "After all events the observation time is the total TE - TB = 1 s", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+
+    Passed = EvaluateTrue("Rewind()", "evta last read time single rewind", "The sim fixture can be rewound", Reader.Rewind()) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read time single after rewind", "Rewinding resets the observation time to zero", Reader.GetLastReadObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  // Include masters stopped in the second child, with AT false and AT true:
+  vector<MString> HeaderLines = { "AT         false", "AT         true" };
+  for (const MString& HeaderLine: HeaderLines) {
+    MString Master = GetTempDirectory() + "/LastReadTime_" + (HeaderLine.Contains("true") == true ? "AT_true" : "AT_false") + ".sim";
+    MString Input = MString("evta last read time master ") + HeaderLine;
+    Passed = EvaluateTrue("WriteTextFile()", Input, "The include master can be written", WriteIncludeMaster(Master, HeaderLine)) && Passed;
+
+    MFileEventsEvta Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", Input, "The include master opens", Reader.Open(Master)) && Passed;
+
+    // All 21 events of the first child and 3 of the second:
+    unsigned int NRead = 0;
+    MRERawEvent* Event = nullptr;
+    while (NRead < 24 && (Event = Reader.GetNextEvent()) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", Input + " 24 events", "24 events can be read", NRead, 24U) && Passed;
+    if (NRead == 24 && Times2.size() >= 3) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", Input + " stopped in second child", "The observation time is the 1 s of the first child plus the time of the 3rd event of the second child", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0 + Times2[2], 1e-9) && Passed;
+    }
+    if (NRead == 24 && IDs2.size() >= 3) {
+      Passed = Evaluate("GetLastReadEventID()", Input + " stopped in second child", "The last event ID is the last ID 21 of the first child plus the ID of the 3rd event of the second child", Reader.GetLastReadEventID(), 21L + IDs2[2]) && Passed;
+    }
+
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      delete Event;
+    }
+    Passed = EvaluateNear("GetLastReadObservationTime()", Input + " all events", "After all events the observation time is the total 1 + 2 + 4 = 7 s", Reader.GetLastReadObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", Input + " all events", "After all events the last event ID is the sum of the last IDs 21 + 31 + 73", Reader.GetLastReadEventID(), 125L) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::WriteFixtureVariant(const MString& FileName, bool WithTB)
+{
+  MFile In;
+  if (In.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz") == false) return false;
+
+  ostringstream Content;
+  MString Line;
+  while (In.ReadLine(Line) == true) {
+    if (WithTB == false && Line.BeginsWith("TB") == true) continue;
+    Content<<Line<<endl;
+  }
+  In.Close();
+
+  return WriteTextFile(FileName, Content.str().c_str());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::WriteBinaryFixture(MGeometryRevan& Geometry, const MString& FileName)
+{
+  MFileEventsSim Reader(&Geometry);
+  if (Reader.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz") == false) return false;
+
+  MFileEventsSim Writer(&Geometry);
+  if (Writer.Open(FileName, MFile::c_Write, true) == false) return false;
+  Writer.SetGeometryFileName(GetGeometryFileName());
+  Writer.SetVersion(101);
+  Writer.SetStartObservationTime(0.0);
+  if (Writer.WriteHeader() == false) return false;
+
+  MSimEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+    Writer.AddEvent(Event);
+    delete Event;
+  }
+  Reader.Close();
+
+  Writer.SetEndObservationTime(1.0);
+  Writer.SetSimulatedEvents(310);
+  if (Writer.CloseEventList() == false) return false;
+  return Writer.Close();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::TestLastReadBinary()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta last read binary temp dir", "The temporary directory can be recreated for the binary last read tests", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta last read binary geometry", "The geometry can be scanned for the binary last read tests", LoadGeometry(Geometry)) && Passed;
+
+  // Event times and IDs of the ASCII fixture:
+  vector<double> Times;
+  vector<long> IDs;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz", Times, IDs);
+
+  MString BinaryFile = GetTempDirectory() + "/LastRead_binary.sim";
+  Passed = EvaluateTrue("WriteBinaryFixture()", "evta last read binary fixture", "The binary fixture can be written", WriteBinaryFixture(Geometry, BinaryFile)) && Passed;
+
+  MFileEventsEvta Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "evta last read binary open", "The binary fixture opens", Reader.Open(BinaryFile)) && Passed;
+
+  unsigned int NRead = 0;
+  MRERawEvent* Event = nullptr;
+  while (NRead < 5 && (Event = Reader.GetNextEvent()) != nullptr) {
+    ++NRead;
+    delete Event;
+  }
+  Passed = Evaluate("GetNextEvent()", "evta last read binary 5 events", "Five events can be read from the binary fixture", NRead, 5U) && Passed;
+  if (NRead == 5 && Times.size() >= 5) {
+    Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read binary after 5 events", "After 5 events the observation time is the time of the 5th event (TB 0)", Reader.GetLastReadObservationTime().GetAsDouble(), Times[4], 1e-9) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", "evta last read binary after 5 events", "After 5 events the last event ID is the ID of the 5th event", Reader.GetLastReadEventID(), IDs[4]) && Passed;
+  }
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    delete Event;
+  }
+  Passed = EvaluateNear("GetObservationTime()", "evta last read binary all events", "After all events of a binary file the observation time is TE - TB = 1 s", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read binary all events", "After all events the observation time is the total TE - TB = 1 s", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+  Reader.Close();
+
+  return Passed;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::TestLastReadWithoutTBAndFooterFirst()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta last read without TB temp dir", "The temporary directory can be recreated for the tests without TB", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta last read without TB geometry", "The geometry can be scanned for the tests without TB", LoadGeometry(Geometry)) && Passed;
+
+  vector<double> Times;
+  vector<long> IDs;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz", Times, IDs);
+
+  MString NoTBFile = GetTempDirectory() + "/LastRead_without_TB.sim";
+  Passed = EvaluateTrue("WriteFixtureVariant()", "evta last read without TB fixture", "The fixture without TB can be written", WriteFixtureVariant(NoTBFile, false)) && Passed;
+
+  // Without TB, read event by event: the observation starts at the first event
+  {
+    MFileEventsEvta Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "evta last read without TB open", "The fixture without TB opens", Reader.Open(NoTBFile)) && Passed;
+    unsigned int NRead = 0;
+    MRERawEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent()) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    if (NRead == 5 && Times.size() >= 5) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read without TB after 5 events", "Without TB the observation time after 5 events is the time of the 5th event minus the one of the first event", Reader.GetLastReadObservationTime().GetAsDouble(), Times[4] - Times[0], 1e-9) && Passed;
+    }
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      delete Event;
+    }
+    if (Times.size() >= 1) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read without TB all events", "Without TB the observation time after all events is TE minus the time of the first event", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0 - Times[0], 1e-9) && Passed;
+      Passed = EvaluateNear("GetObservationTime()", "evta last read without TB all events", "Without TB the observation time after all events is TE minus the time of the first event", Reader.GetObservationTime().GetAsDouble(), 1.0 - Times[0], 1e-9) && Passed;
+    }
+    Reader.Close();
+  }
+
+  // Without TB, the footer read first:
+  {
+    MFileEventsEvta Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "evta last read without TB footer first open", "The fixture without TB opens", Reader.Open(NoTBFile)) && Passed;
+    if (Times.size() >= 1) {
+      Passed = EvaluateNear("GetObservationTime()", "evta last read without TB footer first", "Without TB the observation time read first is TE minus the time of the first event, as when the events are read first", Reader.GetObservationTime().GetAsDouble(), 1.0 - Times[0], 1e-9) && Passed;
+    }
+    unsigned int NRead = 0;
+    MRERawEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent()) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    if (NRead == 5 && Times.size() >= 5) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read without TB footer first after 5 events", "Without TB and with the footer read first, the observation time after 5 events is the time of the 5th event minus the one of the first event", Reader.GetLastReadObservationTime().GetAsDouble(), Times[4] - Times[0], 1e-9) && Passed;
+    }
+    Reader.Close();
+  }
+
+  // With TB, the footer read first:
+  {
+    MFileEventsEvta Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "evta last read footer first open", "The 1-second fixture opens", Reader.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz")) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "evta last read footer first", "The observation time read first is TE - TB = 1 s", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+    unsigned int NRead = 0;
+    MRERawEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent()) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    if (NRead == 5 && Times.size() >= 5) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read footer first after 5 events", "With the footer read first, the observation time after 5 events is the time of the 5th event (TB 0)", Reader.GetLastReadObservationTime().GetAsDouble(), Times[4], 1e-9) && Passed;
+    }
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      delete Event;
+    }
+    Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read footer first all events", "With the footer read first, the observation time after all events is 1 s", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsEvta::TestLastReadNestedIncludes()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "evta last read nested temp dir", "The temporary directory can be recreated for the nested include tests", PrepareTempDirectory()) && Passed;
+
+  MGeometryRevan Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "evta last read nested geometry", "The geometry can be scanned for the nested include tests", LoadGeometry(Geometry)) && Passed;
+
+  // Times and IDs of the second fixture read on its own:
+  vector<double> Times2;
+  vector<long> IDs2;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz", Times2, IDs2);
+
+  // Inner master (1 + 2 s) and outer master (inner master + 4 s), both without AT:
+  ostringstream Inner;
+  Inner<<"Type       sim"<<endl;
+  Inner<<"Version    101"<<endl;
+  Inner<<"Geometry   "<<GetGeometryFileName()<<endl;
+  Inner<<endl;
+  Inner<<"IN "<<GetDataDirectory()<<"/ObsTime_1sec_complete.inc1.id1.sim.gz"<<endl;
+  Inner<<"IN "<<GetDataDirectory()<<"/ObsTime_2sec_complete.inc1.id1.sim.gz"<<endl;
+  Inner<<"EN"<<endl;
+  MString InnerFile = GetTempDirectory() + "/LastRead_nested_inner.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "evta last read nested inner", "The inner include master can be written", WriteTextFile(InnerFile, Inner.str().c_str())) && Passed;
+
+  ostringstream Outer;
+  Outer<<"Type       sim"<<endl;
+  Outer<<"Version    101"<<endl;
+  Outer<<"Geometry   "<<GetGeometryFileName()<<endl;
+  Outer<<endl;
+  Outer<<"IN "<<InnerFile<<endl;
+  Outer<<"IN "<<GetDataDirectory()<<"/ObsTime_4sec_complete.inc1.id1.sim.gz"<<endl;
+  Outer<<"EN"<<endl;
+  MString OuterFile = GetTempDirectory() + "/LastRead_nested_outer.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "evta last read nested outer", "The outer include master can be written", WriteTextFile(OuterFile, Outer.str().c_str())) && Passed;
+
+  MFileEventsEvta Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "evta last read nested open", "The outer include master opens", Reader.Open(OuterFile)) && Passed;
+
+  // All 21 events of the first grandchild and 3 of the second:
+  unsigned int NRead = 0;
+  MRERawEvent* Event = nullptr;
+  while (NRead < 24 && (Event = Reader.GetNextEvent()) != nullptr) {
+    ++NRead;
+    delete Event;
+  }
+  Passed = Evaluate("GetNextEvent()", "evta last read nested 24 events", "24 events can be read", NRead, 24U) && Passed;
+  if (NRead == 24 && IDs2.size() >= 3) {
+    Passed = Evaluate("GetLastReadEventID()", "evta last read nested stopped in second grandchild", "The last event ID includes the offset of the first grandchild: 21 plus the ID of the 3rd event of the second grandchild", Reader.GetLastReadEventID(), 21L + IDs2[2]) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read nested stopped in second grandchild", "The observation time is the 1 s of the first grandchild plus the time of the 3rd event of the second grandchild", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0 + Times2[2], 1e-9) && Passed;
+  }
+
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    delete Event;
+  }
+  Passed = Evaluate("GetLastReadEventID()", "evta last read nested all events", "After all events the last event ID is the sum of the last IDs 21 + 31 + 73", Reader.GetLastReadEventID(), 125L) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "evta last read nested all events", "After all events the observation time is the total 1 + 2 + 4 = 7 s", Reader.GetLastReadObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+  Reader.Close();
+
+  return Passed;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

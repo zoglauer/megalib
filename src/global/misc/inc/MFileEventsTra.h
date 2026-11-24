@@ -73,6 +73,10 @@ class MFileEventsTra : public MFileEvents
   bool StartThread();
 
   MTime GetObservationTime();
+  //! Return the ID of the last event read -- in threaded mode the last event returned by GetNextEvent()
+  virtual long GetLastReadEventID() const;
+  //! Return the observation time up to and including the last read event -- in threaded mode the last event returned by GetNextEvent()
+  virtual MTime GetLastReadObservationTime();
 
   MPhysicalEvent* GetNextEvent();
 
@@ -90,6 +94,8 @@ class MFileEventsTra : public MFileEvents
   // protected methods:
  protected:
   MPhysicalEvent* ReadNextEvent();
+  //! Update the last read event ID and observation time, and add the include offsets (if m_AccumulateTimesAndIDsAcrossFiles == true) using the given event
+  void UpdateTimesAndIDs(MPhysicalEvent* Event);
 
   // private methods:
  private:
@@ -117,8 +123,28 @@ class MFileEventsTra : public MFileEvents
   //! True as long as EOF is not reached, or cancel was not pressed.
   bool m_MoreEvents;
 
+  //! An event in the data set store with the values of the last read getters at the time it was read
+  //! They cannot be derived from the event when it is returned: they include the include offsets,
+  //! which are not in the event when m_AccumulateTimesAndIDsAcrossFiles == false, and in threaded mode the reader may already be in a later included file
+  class MStoredPhysicalEvent
+  {
+   public:
+    //! The event
+    MPhysicalEvent* m_Event;
+    //! Filled with GetLastReadEventID() after reading this event
+    long m_LastReadEventID;
+    //! Filled with GetLastReadObservationTime() after reading this event
+    MTime m_LastReadObservationTime;
+  };
+
   //! The data set store
-  list<MPhysicalEvent*> m_DataSets;
+  list<MStoredPhysicalEvent> m_DataSets;
+  //! Only used in threaded mode: filled with GetLastReadEventID() of the last event returned by GetNextEvent()
+  long m_LastReturnedEventID;
+  //! Only used in threaded mode: filled with GetLastReadObservationTime() of the last event returned by GetNextEvent()
+  MTime m_LastReturnedObservationTime;
+  //! Only used in threaded mode: true if GetNextEvent() has returned all events
+  bool m_AllEventsReturned;
   //! the current number of data sets (stored to avoid frequent calls to m_DataSets.size())
   unsigned int m_NDataSets;
   //! The aspired minimum number of events in the data set - if below we start reading events again

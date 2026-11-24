@@ -92,6 +92,8 @@ void MFileEventsSim::Init()
 
   m_FileType = "sim";
   m_SimulationStartAreaFarField = 0.0;
+  m_IncludeOffsetSimulationEventID = 0;
+  m_LastReadSimulationEventID = 0;
 }
 
 
@@ -122,7 +124,8 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way, bool IsBinary)
   
   m_SimulatedEvents = 0;
   m_HasSimulatedEvents = false;
-  m_IncludeSimulationIDOffset = 0;
+  m_IncludeOffsetSimulationEventID = 0;
+  m_LastReadSimulationEventID = 0;
 
   if (Way == c_Read) {
     if (m_Geometry->IsScanned() == false) {
@@ -177,56 +180,72 @@ long MFileEventsSim::GetSimulatedEvents()
 {
   //! Return the number of simulated events
 
+  // Include masters: the closed include files plus the currently open one (which may be an include master itself)
+  if (m_NIncludeFiles > 0) {
+    long SimulatedEvents = m_IncludeOffsetSimulationEventID;
+    if (m_IncludeFileUsed == true) {
+      SimulatedEvents += dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetSimulatedEvents();
+    }
+    return SimulatedEvents;
+  }
+
   if (m_HasSimulatedEvents == false) {
     ReadFooter(); 
   }
 
   return m_SimulatedEvents;
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MFileEventsSim::UpdateObservationTimes(MSimEvent* Event)
+long MFileEventsSim::GetLastReadSimulationEventID()
 {
-  //! Update the observation times and the last event ID using the given event
+  //! Return the simulation event ID of the last read event, or GetSimulatedEvents() once all events have been read
 
-  m_LastEventID = Event->GetID();
-
-  // Include masters accumulate observation time from the included files.
-  // Tracking child event times here would add a second partial interval on top.
-  if (m_IncludeFileUsed == true || m_NOpenedIncludeFiles > 0) return;
-  
-  // If the overall observation time has alreday been set, don't change anything
-  if (m_HasObservationTime == true) return;
-  
-  // Otherwise set everything
-  if (m_HasStartObservationTime == false) {
-    m_StartObservationTime = Event->GetTime();
-    m_HasStartObservationTime = true;
+  if (m_AllEventsRead == true) {
+    return GetSimulatedEvents();
   }
-  m_EndObservationTime = Event->GetTime();
-  m_HasEndObservationTime = true;
-  
-  // Do not set m_HasObservationTime
-}
 
+  return m_IncludeOffsetSimulationEventID + m_LastReadSimulationEventID;
+}
+  
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Add the include offsets to the event time and IDs
-void MFileEventsSim::ApplyIncludeOffsets(MSimEvent* Event)
+void MFileEventsSim::UpdateTimesAndIDs(MSimEvent* Event)
 {
-  if (m_AccumulatedIncludeTimes == false) return;
+  //! Update the last read event IDs, add the include offsets (if m_AccumulateTimesAndIDsAcrossFiles == true), and update the observation times
 
-  MTime Time = Event->GetTime();
-  Time += m_IncludeTimeOffset;
-  Event->SetTime(Time);
+  // The values of the current file -- the getters add the include offsets
+  if (m_IncludeFileUsed == true) {
+    // The included file has already determined its values up to this event (it may be an include master itself)
+    MFileEventsSim* Include = dynamic_cast<MFileEventsSim*>(m_IncludeFile);
+    m_LastReadEventID = Include->GetLastReadEventID();
+    m_LastReadSimulationEventID = Include->GetLastReadSimulationEventID();
+    m_LastReadObservationTime = Include->GetLastReadObservationTime();
+  } else if (m_NOpenedIncludeFiles == 0) {
+    m_LastReadEventID = Event->GetID();
+    m_LastReadSimulationEventID = Event->GetSimulationEventID();
 
-  Event->SetID(Event->GetID() + m_IncludeIDOffset);
-  Event->SetSimulationEventID(Event->GetSimulationEventID() + m_IncludeSimulationIDOffset);
+    // Without TB the observation starts at the first event
+    if (m_HasFirstEventTime == false) {
+      m_FirstEventTime = Event->GetTime();
+      m_HasFirstEventTime = true;
+    }
+    m_LastReadObservationTime = Event->GetTime() - GetEffectiveStartObservationTime();
+  }
+
+  // Shift the event by the include offsets
+  if (m_AccumulateTimesAndIDsAcrossFiles == true) {
+    MTime Time = Event->GetTime();
+    Time += m_IncludeOffsetObservationTime;
+    Event->SetTime(Time);
+    Event->SetID(Event->GetID() + m_IncludeOffsetEventID);
+    Event->SetSimulationEventID(Event->GetSimulationEventID() + m_IncludeOffsetSimulationEventID);
+  }
 }
 
 
@@ -236,8 +255,9 @@ void MFileEventsSim::ApplyIncludeOffsets(MSimEvent* Event)
 //! Close the current include file and accumulate its simulated events
 bool MFileEventsSim::CloseIncludeFile()
 {
-  if (m_AccumulatedIncludeTimes == true && m_IncludeFile != nullptr && m_IncludeFile->IsOpen()) {
-    m_IncludeSimulationIDOffset += dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetSimulatedEvents();
+  if (m_IncludeFile != nullptr && m_IncludeFile->IsOpen()) {
+    m_IncludeOffsetSimulationEventID += dynamic_cast<MFileEventsSim*>(m_IncludeFile)->GetSimulatedEvents();
+    m_LastReadSimulationEventID = 0;
   }
 
   return MFileEvents::CloseIncludeFile();
@@ -279,8 +299,7 @@ MSimEvent* MFileEventsSim::GetNextEventBinary(bool Analyze)
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
-      ApplyIncludeOffsets(SimEvent);
-      UpdateObservationTimes(SimEvent);
+      UpdateTimesAndIDs(SimEvent);
       return SimEvent;
     }
   }
@@ -309,8 +328,7 @@ MSimEvent* MFileEventsSim::GetNextEventBinary(bool Analyze)
             CloseIncludeFile();
             m_IncludeFileUsed = false;;
           } else {
-            ApplyIncludeOffsets(SimEvent);
-            UpdateObservationTimes(SimEvent);
+            UpdateTimesAndIDs(SimEvent);
             return SimEvent;
           }
         } else {
@@ -374,10 +392,10 @@ MSimEvent* MFileEventsSim::GetNextEventBinary(bool Analyze)
       // That's a dirty little trick in case we forgot the EN in the file
       // Works since there is currently no case where a sim file has neither no IAs or no HTs...
       if (SimEvent != nullptr) {
-        m_LastEventID = SimEvent->GetID();
+        m_LastReadEventID = SimEvent->GetID();
       }
       if (SimEvent != nullptr && (SimEvent->GetNIAs() != 0 || SimEvent->GetNHTs() != 0)) {
-        UpdateObservationTimes(SimEvent);
+        UpdateTimesAndIDs(SimEvent);
         return SimEvent;
       }
     } else if (Flag == "EN") {
@@ -388,6 +406,7 @@ MSimEvent* MFileEventsSim::GetNextEventBinary(bool Analyze)
   
 
   // The end of the (master) file has been reached...
+  m_AllEventsRead = true;
   ShowProgress(false);
 
   // Final clean up
@@ -421,8 +440,7 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
       m_IncludeFileUsed = false;
       if (m_Canceled == true) return nullptr;
     } else {
-      ApplyIncludeOffsets(SimEvent);
-      UpdateObservationTimes(SimEvent);
+      UpdateTimesAndIDs(SimEvent);
       return SimEvent;
     }
   }
@@ -441,7 +459,7 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
           if (Analyze == true) {
             SimEvent->Analyze();
           }
-          UpdateObservationTimes(SimEvent);
+          UpdateTimesAndIDs(SimEvent);
         }
         return SimEvent;
       } else {
@@ -459,7 +477,7 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
         if (Analyze == true) {
           SimEvent->Analyze();
         }
-        UpdateObservationTimes(SimEvent);
+        UpdateTimesAndIDs(SimEvent);
         return SimEvent;
       }
     } 
@@ -479,8 +497,7 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
           CloseIncludeFile();
           m_IncludeFileUsed = false;;
         } else {
-          ApplyIncludeOffsets(SimEvent);
-          UpdateObservationTimes(SimEvent);
+          UpdateTimesAndIDs(SimEvent);
           return SimEvent;
         }
       } else {
@@ -497,7 +514,7 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
         if (Analyze == true) {
           SimEvent->Analyze();
         }
-        UpdateObservationTimes(SimEvent);
+        UpdateTimesAndIDs(SimEvent);
         return SimEvent;
       }
     } 
@@ -517,14 +534,15 @@ MSimEvent* MFileEventsSim::GetNextEventASCII(bool Analyze)
   // That's a dirty little trick in case we forgot the EN in the file
   // Works since there is currently no case where a sim file has neither no IAs or no HTs...
   if (SimEvent != nullptr) {
-    m_LastEventID = SimEvent->GetID();
+    m_LastReadEventID = SimEvent->GetID();
   }
   if (SimEvent != nullptr && (SimEvent->GetNIAs() != 0 || SimEvent->GetNHTs() != 0)) {
-    UpdateObservationTimes(SimEvent);
+    UpdateTimesAndIDs(SimEvent);
     return SimEvent;
   }
   
   // The end of the (master) file has been reached...
+  m_AllEventsRead = true;
   ShowProgress(false);
   
   // Final clean up

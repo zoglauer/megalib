@@ -253,6 +253,8 @@ bool Revoxelizer::Analyze()
    
   SiWriter.SetGeometryFileName(m_GeoFileName);
   SiWriter.SetVersion(25);
+  // A simulation has TB: the one of the input, or 0 for include masters
+  SiWriter.SetStartObservationTime(SiReader.HasStartObservationTime() == true ? SiReader.GetStartObservationTime() : MTime(0.0));
   SiWriter.WriteHeader();
 
   MSimEvent* SiEvent = 0;
@@ -271,6 +273,7 @@ bool Revoxelizer::Analyze()
 
   cout<<"Observation time: "<<SiReader.GetObservationTime()<<" sec  --  simulated events: "<<SiReader.GetSimulatedEvents()<<endl;
 
+  // TE is TB plus the observation time, which also covers the accumulated time of include masters
   SiWriter.SetObservationTime(SiReader.GetObservationTime());
   SiWriter.SetSimulatedEvents(SiReader.GetSimulatedEvents());
   

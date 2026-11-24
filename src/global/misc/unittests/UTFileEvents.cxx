@@ -122,6 +122,12 @@ private:
     MTime GetEndObservationTime() const { return m_EndObservationTime; }
     //! Expose the original file name
     MString GetOriginalFileName() const { return m_OriginalFileName; }
+    //! Set the last read event ID and observation time as a derived reader does for each event
+    void SetLastRead(long EventID, MTime ObservationTime) { m_LastReadEventID = EventID; m_LastReadObservationTime = ObservationTime; }
+    //! Mark all events as read as a derived reader does at the end of the file
+    void SetAllEventsRead() { m_AllEventsRead = true; }
+    //! Public wrapper for GetEffectiveStartObservationTime
+    MTime TestGetEffectiveStartObservationTime() const { return GetEffectiveStartObservationTime(); }
   };
 
   //! Test read-side metadata parsing and observation-time handling
@@ -132,8 +138,12 @@ private:
   bool TestWriting();
   //! Test file-tree helper methods
   bool TestFileTreeHelpers();
+  //! Test the include offsets and the last read event ID and observation time
+  bool TestIncludeOffsetsAndLastRead();
   //! Test event counting and rewind behavior
   bool TestCountingAndRewind();
+  //! Test the start of the observation: TB, or the first event without TB
+  bool TestEffectiveStartObservationTime();
 
 };
 
@@ -150,7 +160,9 @@ bool UTFileEvents::Run()
   Passed = TestFooterParsing() && Passed;
   Passed = TestWriting() && Passed;
   Passed = TestFileTreeHelpers() && Passed;
+  Passed = TestIncludeOffsetsAndLastRead() && Passed;
   Passed = TestCountingAndRewind() && Passed;
+  Passed = TestEffectiveStartObservationTime() && Passed;
 
   Summarize();
 
@@ -433,6 +445,76 @@ bool UTFileEvents::TestWriting()
 
 
 //! Test file-tree helper methods
+bool UTFileEvents::TestIncludeOffsetsAndLastRead()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "last read temp dir", "The temporary directory can be recreated for the last read tests", PrepareTemporaryDirectory("lastread")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("lastread");
+
+  // Include master without AT and an include file with an observation time of 41 - 30 = 11 s:
+  MString MasterFile = TemporaryDirectory + "/master.tra";
+  MString IncludeFile = TemporaryDirectory + "/include.tra";
+  Passed = EvaluateTrue("WriteTextFile(master)", "last read master file", "The include master can be written", WriteTextFile(MasterFile, "Type tra\nVersion 1\nGeometry geo.setup\nIN include.tra\nIN include.tra\nEN\n")) && Passed;
+  Passed = EvaluateTrue("WriteTextFile(include)", "last read include file", "The include file can be written", WriteTextFile(IncludeFile, "Type tra\nVersion 3\nGeometry geo.setup\nTB 30\nSE 3\nTE 41\n")) && Passed;
+
+  FileEventsTest File;
+  Passed = EvaluateTrue("Open(read)", "last read open", "The include master opens", File.Open(MasterFile)) && Passed;
+  Passed = EvaluateFalse("GetAccumulateTimesAndIDsAcrossFiles()", "last read no AT", "Without AT line the times and IDs are not accumulated across files", File.GetAccumulateTimesAndIDsAcrossFiles()) && Passed;
+  Passed = Evaluate("GetLastReadEventID()", "last read open ID", "After opening the last event ID is zero", File.GetLastReadEventID(), 0L) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "last read open time", "After opening the observation time up to the last read event is zero", File.GetLastReadObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+
+  // First include file: read up to event 17 at 4 s
+  DisableDefaultStreams();
+  bool OpenFirst = File.TestOpenIncludeFile("IN include.tra");
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("OpenIncludeFile()", "last read first include", "The first include file opens", OpenFirst) && Passed;
+  FileEventsTest* Include = dynamic_cast<FileEventsTest*>(File.GetIncludeFile());
+  Passed = EvaluateTrue("GetIncludeFile()", "last read first include helper", "The include file is a test helper", Include != nullptr) && Passed;
+  if (Include != nullptr) {
+    Include->SetLastRead(17, 4.0);
+  }
+  File.SetLastRead(17, 4.0);
+  Passed = Evaluate("GetLastReadEventID()", "last read in first include ID", "Without closed include files the last event ID is the one read", File.GetLastReadEventID(), 17L) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "last read in first include time", "Without closed include files the observation time is the one read", File.GetLastReadObservationTime().GetAsDouble(), 4.0, 1e-12) && Passed;
+
+  // Closing accumulates the offsets also without AT, and the last read values start again in the next file
+  Passed = EvaluateTrue("CloseIncludeFile()", "last read close first include", "The first include file closes", File.TestCloseIncludeFile()) && Passed;
+  Passed = Evaluate("GetIncludeOffsetEventID()", "last read first close ID offset", "The ID offset is the last event ID of the closed include file", File.GetIncludeOffsetEventID(), 17L) && Passed;
+  Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "last read first close time offset", "The observation time offset is the observation time of the closed include file", File.GetIncludeOffsetObservationTime().GetAsDouble(), 11.0, 1e-12) && Passed;
+  Passed = Evaluate("GetLastReadEventID()", "last read first close ID", "After closing the last event ID is the offset", File.GetLastReadEventID(), 17L) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "last read first close time", "After closing the observation time is the full observation time of the closed include file", File.GetLastReadObservationTime().GetAsDouble(), 11.0, 1e-12) && Passed;
+
+  // Second include file: read up to event 3 at 0.5 s
+  DisableDefaultStreams();
+  bool OpenSecond = File.TestOpenIncludeFile("IN include.tra");
+  EnableDefaultStreams();
+  Passed = EvaluateTrue("OpenIncludeFile()", "last read second include", "The second include file opens", OpenSecond) && Passed;
+  File.SetLastRead(3, 0.5);
+  Passed = Evaluate("GetLastReadEventID()", "last read in second include ID", "The last event ID is the offset plus the ID read", File.GetLastReadEventID(), 20L) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "last read in second include time", "The observation time is the offset plus the time read", File.GetLastReadObservationTime().GetAsDouble(), 11.5, 1e-12) && Passed;
+
+  // All events read: the total observation time
+  Passed = EvaluateTrue("CloseIncludeFile()", "last read close second include", "The second include file closes", File.TestCloseIncludeFile()) && Passed;
+  File.SetAllEventsRead();
+  Passed = EvaluateNear("GetLastReadObservationTime()", "last read all events time", "After all events the observation time is the total of both include files", File.GetLastReadObservationTime().GetAsDouble(), 22.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "last read all events time total", "After all events the observation time equals GetObservationTime()", File.GetLastReadObservationTime().GetAsDouble(), File.GetObservationTime().GetAsDouble(), 1e-12) && Passed;
+
+  // Rewinding resets everything
+  Passed = EvaluateTrue("Rewind()", "last read rewind", "The include master can be rewound", File.Rewind()) && Passed;
+  Passed = Evaluate("GetIncludeOffsetEventID()", "last read rewind ID offset", "Rewinding resets the ID offset", File.GetIncludeOffsetEventID(), 0L) && Passed;
+  Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "last read rewind time offset", "Rewinding resets the observation time offset", File.GetIncludeOffsetObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+  Passed = Evaluate("GetLastReadEventID()", "last read rewind ID", "Rewinding resets the last event ID", File.GetLastReadEventID(), 0L) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "last read rewind time", "Rewinding resets the observation time up to the last read event", File.GetLastReadObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+  File.Close();
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool UTFileEvents::TestFileTreeHelpers()
 {
   bool Passed = true;
@@ -585,6 +667,55 @@ bool UTFileEvents::TestCountingAndRewind()
     Passed = EvaluateTrue("Open(read)", "simple count open", "The direct-count file opens successfully", File.Open(SimpleFile)) && Passed;
     Passed = Evaluate("GetNEvents(false)", "simple count exact", "GetNEvents(false) returns the highest direct SE event id when no recursion is needed", File.GetNEvents(false), 13) && Passed;
     Passed = Evaluate("GetNEvents(true)", "simple count total", "GetNEvents(true) counts the number of SE records directly", File.GetNEvents(true), 3) && Passed;
+    File.Close();
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the start of the observation: TB, or the first event without TB
+bool UTFileEvents::TestEffectiveStartObservationTime()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "effective start temp dir", "The temporary directory can be recreated for the effective start tests", PrepareTemporaryDirectory("effectivestart")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("effectivestart");
+
+  // With TB (simulations): the start is TB, not the first event
+  {
+    MString FileName = TemporaryDirectory + "/withtb.tra";
+    Passed = EvaluateTrue("WriteTextFile()", "effective start with TB", "The file with TB can be written", WriteTextFile(FileName, "Type tra\nVersion 1\nGeometry geo.setup\nTB 30\n\nSE\nET UN\nID 1\nTI 31\nPE 4\nEN\n\nTE 41\n")) && Passed;
+    FileEventsTest File;
+    Passed = EvaluateTrue("Open()", "effective start with TB", "The file with TB opens", File.Open(FileName)) && Passed;
+    Passed = EvaluateNear("GetEffectiveStartObservationTime()", "effective start with TB", "With TB the start of the observation is TB", File.TestGetEffectiveStartObservationTime().GetAsDouble(), 30.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "effective start with TB", "With TB the observation time is TE - TB", File.GetObservationTime().GetAsDouble(), 11.0, 1e-12) && Passed;
+    File.Close();
+  }
+
+  // Without TB and TE (measurements with absolute times): the observation is from the first to the last event
+  {
+    MString FileName = TemporaryDirectory + "/withouttb.tra";
+    Passed = EvaluateTrue("WriteTextFile()", "effective start without TB", "The file without TB can be written", WriteTextFile(FileName, "Type tra\nVersion 1\nGeometry geo.setup\n\nSE\nET UN\nID 1\nTI 1700000002.5\nPE 4\nSE\nET UN\nID 2\nTI 1700000012.75\nPE 5\nEN\n")) && Passed;
+    FileEventsTest File;
+    Passed = EvaluateTrue("Open()", "effective start without TB", "The file without TB opens", File.Open(FileName)) && Passed;
+    Passed = EvaluateFalse("HasStartObservationTime()", "effective start without TB", "Without TB the file has no start observation time", File.HasStartObservationTime()) && Passed;
+    Passed = EvaluateNear("GetEffectiveStartObservationTime()", "effective start without TB", "Without TB the start of the observation is the time of the first event, known after opening", File.TestGetEffectiveStartObservationTime().GetAsDouble(), 1700000002.5, 1e-6) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "effective start without TB", "Without TB and TE the observation time is the time of the last minus the one of the first event", File.GetObservationTime().GetAsDouble(), 10.25, 1e-6) && Passed;
+    File.Close();
+  }
+
+  // Neither TB nor events: the start is 0
+  {
+    MString FileName = TemporaryDirectory + "/noevents.tra";
+    Passed = EvaluateTrue("WriteTextFile()", "effective start without events", "The file without events can be written", WriteTextFile(FileName, "Type tra\nVersion 1\nGeometry geo.setup\n\nEN\n\nTE 5\n")) && Passed;
+    FileEventsTest File;
+    Passed = EvaluateTrue("Open()", "effective start without events", "The file without events opens", File.Open(FileName)) && Passed;
+    Passed = EvaluateNear("GetEffectiveStartObservationTime()", "effective start without events", "Without TB and without events the start of the observation is 0", File.TestGetEffectiveStartObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "effective start without events", "Without TB and without events the observation time is TE", File.GetObservationTime().GetAsDouble(), 5.0, 1e-12) && Passed;
     File.Close();
   }
 

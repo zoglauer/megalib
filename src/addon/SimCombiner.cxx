@@ -259,6 +259,8 @@ bool SimCombiner::Analyze()
    
   SiWriter->SetGeometryFileName(m_GeoFileName);
   SiWriter->SetVersion(25);
+  // The combined event times start at 0
+  SiWriter->SetStartObservationTime(0.0);
   SiWriter->WriteHeader();
 
   MSimEvent* SiEvent = 0;

@@ -207,13 +207,20 @@ bool MMultiEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Re
     int Ret = 0;
     if (ReadDelayed == true) {
       MString Line;
+      bool InSubEvent = false;
       while (File.IsGood() == true) {
         File.ReadLine(Line);
         if (Line.Length() < 2) continue;
         if ((Line[0] == 'S' && Line[1] == 'E') || (Line[0] == 'E' && Line[1] == 'N') || (Line[0] == 'N' && Line[1] == 'F')) {
           return true;
         }
-        m_Lines.push_back(Line);
+        if (Line[0] == 'S' && Line[1] == 'I') InSubEvent = true;
+        // ID and time of the multi event are needed by the reader right away (last read values, include offsets)
+        if (InSubEvent == false && ((Line[0] == 'I' && Line[1] == 'D') || (Line[0] == 'T' && Line[1] == 'I'))) {
+          ParseLine(Line, Fast);
+        } else {
+          m_Lines.push_back(Line);
+        }
       }
       return false;
     } else {

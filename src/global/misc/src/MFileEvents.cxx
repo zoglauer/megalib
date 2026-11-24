@@ -90,10 +90,12 @@ MFileEvents::MFileEvents() : MFile()
   m_ObservationTime = 0.0;
   m_HasObservationTime = false;
 
-  m_AccumulatedIncludeTimes = false;
-  m_IncludeTimeOffset = 0.0;
-  m_IncludeIDOffset = 0;
-  m_LastEventID = 0;
+  m_AccumulateTimesAndIDsAcrossFiles = false;
+  m_IncludeOffsetObservationTime = 0.0;
+  m_IncludeOffsetEventID = 0;
+  m_LastReadEventID = 0;
+  m_LastReadObservationTime = 0.0;
+  m_AllEventsRead = false;
 
   m_NIncludeFiles = 0;
   m_NOpenedIncludeFiles = 0;
@@ -105,6 +107,8 @@ MFileEvents::MFileEvents() : MFile()
 
   m_HasStartObservationTime = false;
   m_StartObservationTime = 0.0;
+  m_HasFirstEventTime = false;
+  m_FirstEventTime = 0.0;
 
   m_HasEndObservationTime = false;
   m_EndObservationTime = 0.0;
@@ -177,6 +181,8 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
 
     m_HasStartObservationTime = false;
     m_StartObservationTime = 0.0;
+    m_HasFirstEventTime = false;
+    m_FirstEventTime = 0.0;
 
     m_HasEndObservationTime = false;
     m_EndObservationTime = 0.0;
@@ -185,10 +191,12 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
     m_ObservationTime = 0.0;
     m_HasObservationTime = false;
 
-    m_AccumulatedIncludeTimes = false;
-    m_IncludeTimeOffset = 0.0;
-    m_IncludeIDOffset = 0;
-    m_LastEventID = 0;
+    m_AccumulateTimesAndIDsAcrossFiles = false;
+    m_IncludeOffsetObservationTime = 0.0;
+    m_IncludeOffsetEventID = 0;
+    m_LastReadEventID = 0;
+    m_LastReadObservationTime = 0.0;
+    m_AllEventsRead = false;
 
     m_NIncludeFiles = 0;
     m_NOpenedIncludeFiles = 0;
@@ -292,7 +300,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
             mout<<"Error while opening file "<<m_FileName<<": "<<endl;
             mout<<"Unable to read TB keyword"<<endl;
           } else {
-            m_StartObservationTime = Tokens.GetTokenAtAsDouble(1);
+            m_StartObservationTime.Set(Tokens.GetTokenAtAsString(1));
             m_HasStartObservationTime = true;
             FoundTB = true;
           }
@@ -363,7 +371,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
               mout<<"Error while opening file "<<m_FileName<<": "<<endl;
               mout<<"Unable to read AT keyword"<<endl;
             } else {
-              m_AccumulatedIncludeTimes = Tokens.GetTokenAtAsBoolean(1);
+              m_AccumulateTimesAndIDsAcrossFiles = Tokens.GetTokenAtAsBoolean(1);
               FoundAT = true;
             }
           }
@@ -379,6 +387,16 @@ bool MFileEvents::Open(MString FileName, unsigned int Way, bool IsBinary)
         if (Line.BeginsWith("STARTBINARYSTREAM") == true) {
           m_IsBinary = true;
           FoundBinaryStream = true;
+        }
+      }
+      // The time of the first event -- the start of the observation if there is no TB
+      if (m_HasFirstEventTime == false && FoundBinaryStream == false) {
+        if (Line.BeginsWith("TI") == true) {
+          MTokenizer Tokens;
+          Tokens.Analyze(Line);
+          if (Tokens.GetNTokens() >= 2) {
+            m_HasFirstEventTime = m_FirstEventTime.Set(Tokens.GetTokenAtAsString(1));
+          }
         }
       }
     }
@@ -437,13 +455,9 @@ bool MFileEvents::ReadFooter(bool Continue)
         mout<<"Unable to read TE keyword"<<endl;
         return false;
       } else {
-        m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
+        m_EndObservationTime.Set(Tokens.GetTokenAtAsString(1));
         m_HasEndObservationTime = true;
-        if (m_HasStartObservationTime == true) {
-          m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
-        } else {
-          m_ObservationTime = m_EndObservationTime;
-        }
+        m_ObservationTime = m_EndObservationTime - GetEffectiveStartObservationTime();
         m_HasObservationTime = true;
         FoundFooterEndTime = true;
       }
@@ -457,7 +471,7 @@ bool MFileEvents::ReadFooter(bool Continue)
         mout<<"Unable to read TI keyword"<<endl;
         return false;
       } else {
-        LastEventTime = Tokens.GetTokenAtAsDouble(1);
+        LastEventTime.Set(Tokens.GetTokenAtAsString(1));
         HasLastEventTime = true;
       }
     }
@@ -471,11 +485,7 @@ bool MFileEvents::ReadFooter(bool Continue)
 
   if (FoundFooterEndTime == false && HasLastEventTime == true) {
     m_EndObservationTime = LastEventTime;
-    if (m_HasStartObservationTime == true) {
-      m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
-    } else {
-      m_ObservationTime = m_EndObservationTime;
-    }
+    m_ObservationTime = m_EndObservationTime - GetEffectiveStartObservationTime();
     m_HasObservationTime = true;
   }
 
@@ -506,12 +516,8 @@ bool MFileEvents::ParseFooter(const MString& Line)
       mout<<"Unable to read TI keyword"<<endl;
       return false;
     } else {
-      m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
-      if (m_HasStartObservationTime == true) {
-        m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
-      } else {
-        m_ObservationTime = m_EndObservationTime;
-      }
+      m_EndObservationTime.Set(Tokens.GetTokenAtAsString(1));
+      m_ObservationTime = m_EndObservationTime - GetEffectiveStartObservationTime();
       m_HasObservationTime = true;
     }
   }
@@ -523,13 +529,9 @@ bool MFileEvents::ParseFooter(const MString& Line)
       mout<<"Unable to read TE keyword"<<endl;
       return false;
     } else {
-      m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
+      m_EndObservationTime.Set(Tokens.GetTokenAtAsString(1));
       m_HasEndObservationTime = true;
-      if (m_HasStartObservationTime == true) {
-        m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
-      } else {
-        m_ObservationTime = m_EndObservationTime;
-      }
+      m_ObservationTime = m_EndObservationTime - GetEffectiveStartObservationTime();
       m_HasObservationTime = true;
     }
   }
@@ -563,6 +565,24 @@ bool MFileEvents::ParseFooter(const MString& Line)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MTime MFileEvents::GetEffectiveStartObservationTime() const
+{
+  //! Return the start of the observation: TB, or the time of the first event if the file has no TB (0 if neither is known)
+
+  if (m_HasStartObservationTime == true) {
+    return m_StartObservationTime;
+  }
+  if (m_HasFirstEventTime == true) {
+    return m_FirstEventTime;
+  }
+
+  return 0.0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MFileEvents::Rewind(bool)
 {
   // Rewind to the beginning of the file
@@ -579,6 +599,21 @@ bool MFileEvents::Rewind(bool)
 
   return true;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MFileEvents::GetLastReadObservationTime()
+{
+  //! Return the observation time up to and including the last read event
+
+  if (m_AllEventsRead == true) {
+    return GetObservationTime();
+  }
+
+  return m_IncludeOffsetObservationTime + m_LastReadObservationTime;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -761,7 +796,7 @@ bool MFileEvents::WriteHeader()
   }
 
 
-  if (m_AccumulatedIncludeTimes == true) {
+  if (m_AccumulateTimesAndIDsAcrossFiles == true) {
     Header<<"AT        true"<<endl;
   }
   Header<<endl;
@@ -1091,11 +1126,10 @@ bool MFileEvents::CloseIncludeFile()
     MTime IncludeObservationTime = m_IncludeFile->GetObservationTime();
     m_ObservationTime += IncludeObservationTime;
     m_HasObservationTime = true;
-    if (m_AccumulatedIncludeTimes == true) {
-      m_IncludeTimeOffset += IncludeObservationTime;
-      m_IncludeIDOffset += m_IncludeFile->GetLastEventID();
-      m_LastEventID = m_IncludeIDOffset;
-    }
+    m_IncludeOffsetObservationTime += IncludeObservationTime;
+    m_IncludeOffsetEventID += m_IncludeFile->GetLastReadEventID();
+    m_LastReadEventID = 0;
+    m_LastReadObservationTime = 0.0;
     m_IncludeFile->Close();
     if (m_NOpenedIncludeFiles > 0) {
       --m_NOpenedIncludeFiles;

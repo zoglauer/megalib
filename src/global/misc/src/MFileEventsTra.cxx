@@ -88,6 +88,9 @@ MFileEventsTra::MFileEventsTra() : MFileEvents()
 
   m_NDataSets = 0;
   m_DataSets.clear();
+  m_LastReturnedEventID = 0;
+  m_LastReturnedObservationTime = 0.0;
+  m_AllEventsReturned = false;
 
   // This seems to be a good number for the avaerage analysis as of 2009 on a E5420 quad core
   m_MinimumNDataSets = 100;
@@ -123,7 +126,7 @@ bool MFileEventsTra::Close()
 
   // In case there are still data sets available
   while (m_DataSets.size() > 0) {
-    MPhysicalEvent* P = m_DataSets.front();
+    MPhysicalEvent* P = m_DataSets.front().m_Event;
     m_DataSets.pop_front();
     delete P;
   }
@@ -232,6 +235,9 @@ bool MFileEventsTra::Open(MString FileName, unsigned int Way, bool IsBinary)
   m_IncludeFile = dynamic_cast<MFileEvents*>(I);
 
   m_MoreEvents = true;
+  m_LastReturnedEventID = 0;
+  m_LastReturnedObservationTime = 0.0;
+  m_AllEventsReturned = false;
 
   return MFileEvents::Open(FileName, Way, IsBinary);
 }
@@ -277,7 +283,7 @@ void* MFileEventsTra::ThreadedReading()
   unsigned int MaxSize = 3*m_MinimumNDataSets/2;
 
   MPhysicalEvent* P = 0;
-  vector<MPhysicalEvent*> Ps;
+  vector<MStoredPhysicalEvent> Ps;
   Ps.reserve(StepSize);
 
   while (true) {
@@ -307,7 +313,12 @@ void* MFileEventsTra::ThreadedReading()
             mout<<"Time reader thread slept: "<<TimeReaderThreadSlept<<" sec (the thread will most likely sleep during worker thread initialization)"<<endl;
             return 0;
           }
-          Ps.push_back(P);
+          // The last read values of the reader thread belong to this event
+          MStoredPhysicalEvent Stored;
+          Stored.m_Event = P;
+          Stored.m_LastReadEventID = MFileEvents::GetLastReadEventID();
+          Stored.m_LastReadObservationTime = MFileEvents::GetLastReadObservationTime();
+          Ps.push_back(Stored);
         }
         TThread::Lock();
         //cout<<"Adding..."<<Ps.size()<<endl;
@@ -383,26 +394,18 @@ MPhysicalEvent* MFileEventsTra::GetNextEvent()
       TThread::Lock();
       if (m_MoreEvents == true || m_NDataSets > 0) {
         if (m_NDataSets > 0) {
-          MPhysicalEvent* P = m_DataSets.front();
+          MPhysicalEvent* P = m_DataSets.front().m_Event;
+          m_LastReturnedEventID = m_DataSets.front().m_LastReadEventID;
+          m_LastReturnedObservationTime = m_DataSets.front().m_LastReadObservationTime;
           m_DataSets.pop_front();
           m_NDataSets--;
           TThread::UnLock();
-
-          // update the end of the observation time
-          if (m_HasObservationTime == false) {
-            if (m_HasStartObservationTime == false) {
-              m_StartObservationTime = P->GetTime();
-              m_HasStartObservationTime = true;
-            }
-            m_EndObservationTime = P->GetTime();
-            m_HasEndObservationTime = true;
-          }
-
           return P;
         }
       }
       // We exit when there are no more events left
       if (m_MoreEvents == false && m_NDataSets == 0) {
+        m_AllEventsReturned = true;
         TThread::UnLock();
         break;
       }
@@ -429,6 +432,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
   if (m_IncludeFileUsed == true) {
     Phys = ((MFileEventsTra*) m_IncludeFile)->GetNextEvent();
     if (Phys != nullptr) {
+      UpdateTimesAndIDs(Phys);
       return Phys;
     } else {
       if (m_IncludeFile->IsCanceled() == true) {
@@ -513,9 +517,10 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
       if (OpenIncludeFile(Line) == true) {
         Phys = ((MFileEventsTra*) m_IncludeFile)->GetNextEvent();
         if (Phys == 0) {
-          m_IncludeFile->Close();
+          CloseIncludeFile();
           m_IncludeFileUsed = false;
         } else {
+          UpdateTimesAndIDs(Phys);
           return Phys;
         }
       } else {
@@ -528,9 +533,75 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
   // If this is the case, we have reached the end of the file
   if (Phys == nullptr) {
     ReadFooter(true);
+    m_AllEventsRead = true;
+  } else {
+    UpdateTimesAndIDs(Phys);
   }
 
   return Phys;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MFileEventsTra::UpdateTimesAndIDs(MPhysicalEvent* Event)
+{
+  //! Update the last read event ID and observation time, and add the include offsets (if m_AccumulateTimesAndIDsAcrossFiles == true)
+
+  // The values of the current file -- the getters add the include offsets
+  if (m_IncludeFileUsed == true) {
+    // The included file has already determined its values up to this event (it may be an include master itself)
+    m_LastReadEventID = m_IncludeFile->GetLastReadEventID();
+    m_LastReadObservationTime = m_IncludeFile->GetLastReadObservationTime();
+  } else if (m_NOpenedIncludeFiles == 0) {
+    m_LastReadEventID = Event->GetId();
+    // Without TB the observation starts at the first event
+    if (m_HasFirstEventTime == false) {
+      m_FirstEventTime = Event->GetTime();
+      m_HasFirstEventTime = true;
+    }
+    m_LastReadObservationTime = Event->GetTime() - GetEffectiveStartObservationTime();
+  }
+
+  // Shift the event by the include offsets
+  if (m_AccumulateTimesAndIDsAcrossFiles == true) {
+    Event->SetTime(Event->GetTime() + m_IncludeOffsetObservationTime);
+    Event->SetId(Event->GetId() + m_IncludeOffsetEventID);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+long MFileEventsTra::GetLastReadEventID() const
+{
+  //! Return the ID of the last event read -- in threaded mode the last event returned by GetNextEvent()
+
+  if (m_Threaded == true) {
+    return m_LastReturnedEventID;
+  }
+
+  return MFileEvents::GetLastReadEventID();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MFileEventsTra::GetLastReadObservationTime()
+{
+  //! Return the observation time up to and including the last read event -- in threaded mode the last event returned by GetNextEvent()
+
+  if (m_Threaded == true) {
+    if (m_AllEventsReturned == true) {
+      return GetObservationTime();
+    }
+    return m_LastReturnedObservationTime;
+  }
+
+  return MFileEvents::GetLastReadObservationTime();
 }
 
 

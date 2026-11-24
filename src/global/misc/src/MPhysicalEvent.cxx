@@ -397,7 +397,12 @@ bool MPhysicalEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool
         if ((Line[0] == 'S' && Line[1] == 'E') || (Line[0] == 'E' && Line[1] == 'N') || (Line[0] == 'N' && Line[1] == 'F')) {
           return true;
         }
-        m_Lines.push_back(Line);
+        // ID and time are needed by the reader right away (last read values, include offsets)
+        if ((Line[0] == 'I' && Line[1] == 'D') || (Line[0] == 'T' && Line[1] == 'I')) {
+          ParseLine(Line, Fast);
+        } else {
+          m_Lines.push_back(Line);
+        }
       }
     } else {
       // Doing it purely in C is faster than using string

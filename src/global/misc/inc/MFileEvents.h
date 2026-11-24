@@ -124,6 +124,9 @@ class MFileEvents : public MFile
   //! Return the observation time in this event
   //! If it has not yet been read, read it (can be very slow if the file is gzip'ed)
   MTime GetObservationTime();
+  //! Return the observation time up to and including the last read event (0 before the first event),
+  //! or GetObservationTime() once all events have been read
+  virtual MTime GetLastReadObservationTime();
   //! Set the observation time 
   void SetObservationTime(MTime ObservationTime) { m_ObservationTime = ObservationTime; m_HasObservationTime = true; }
 
@@ -156,16 +159,16 @@ class MFileEvents : public MFile
   void SetSpectralType(MString SpectralType) { m_SpectralType = SpectralType; m_HasSpectralType = true; }
 
 
-  //! Return true if the event times and IDs of included files are accumulated (keyword AT)
-  bool HasAccumulatedIncludeTimes() const { return m_AccumulatedIncludeTimes; }
-  //! Set if the event times and IDs of included files are accumulated (keyword AT)
-  void SetAccumulatedIncludeTimes(bool AccumulatedIncludeTimes) { m_AccumulatedIncludeTimes = AccumulatedIncludeTimes; }
-  //! Return the time offset of the current included file
-  MTime GetIncludeTimeOffset() const { return m_IncludeTimeOffset; }
+  //! Return true if the event times and IDs are accumulated across the included files
+  bool GetAccumulateTimesAndIDsAcrossFiles() const { return m_AccumulateTimesAndIDsAcrossFiles; }
+  //! Set if the event times and IDs are accumulated across the included files
+  void SetAccumulateTimesAndIDsAcrossFiles(bool AccumulateTimesAndIDsAcrossFiles) { m_AccumulateTimesAndIDsAcrossFiles = AccumulateTimesAndIDsAcrossFiles; }
+  //! Return the observation time offset of the current included file
+  MTime GetIncludeOffsetObservationTime() const { return m_IncludeOffsetObservationTime; }
   //! Return the event ID offset of the current included file
-  long GetIncludeIDOffset() const { return m_IncludeIDOffset; }
-  //! Return the ID of the last event read, including events not returned
-  long GetLastEventID() const { return m_LastEventID; }
+  long GetIncludeOffsetEventID() const { return m_IncludeOffsetEventID; }
+  //! Return the ID of the last read event plus the offset of the previous included files
+  virtual long GetLastReadEventID() const { return m_IncludeOffsetEventID + m_LastReadEventID; }
 
   // protected methods:
  protected:
@@ -192,6 +195,8 @@ class MFileEvents : public MFile
   bool ReadFooter(bool Continue = false);
   //! Parse the special information at the end of file -- add your special parsing in there
   virtual bool ParseFooter(const MString& Line);
+  //! Return the start of the observation: TB, or the time of the first event if the file has no TB (0 if neither is known)
+  MTime GetEffectiveStartObservationTime() const;
   
   //! ID indicating there is no ID
   static const int c_NoId;
@@ -253,6 +258,11 @@ class MFileEvents : public MFile
   bool m_HasStartObservationTime;
   //! The start of the observation time
   MTime m_StartObservationTime;
+
+  //! Has the time of the first event in the current file
+  bool m_HasFirstEventTime;
+  //! The time of the first event in the current file (the start of the observation if there is no TB)
+  MTime m_FirstEventTime;
   
   //! Has end observation time
   bool m_HasEndObservationTime;
@@ -285,14 +295,18 @@ class MFileEvents : public MFile
   MString m_SpectralType;
 
   
-  //! True if the event times and IDs of included files are accumulated (keyword AT)
-  bool m_AccumulatedIncludeTimes;
-  //! Time offset of the current included file: sum of the observation times of the previous included files
-  MTime m_IncludeTimeOffset;
+  //! True if the event times and IDs are accumulated across the included files
+  bool m_AccumulateTimesAndIDsAcrossFiles;
+  //! Observation time offset of the current included file: sum of the observation times of the previous included files
+  MTime m_IncludeOffsetObservationTime;
   //! Event ID offset of the current included file: sum of the last event IDs of the previous included files
-  long m_IncludeIDOffset;
-  //! ID of the last event read, including events not returned
-  long m_LastEventID;
+  long m_IncludeOffsetEventID;
+  //! ID of the last read event in the current file, without the include offset
+  long m_LastReadEventID;
+  //! Observation time up to the last read event in the current file, without the include offset
+  MTime m_LastReadObservationTime;
+  //! True if the end of the file has been reached, i.e. all events have been read
+  bool m_AllEventsRead;
 
   // private members:
  private:

@@ -250,6 +250,8 @@ bool SimBinaryConverter::Analyze()
    
   Writer->SetGeometryFileName(m_GeometryFileName);
   Writer->SetVersion(101);
+  // A simulation has TB: the one of the input, or 0 for include masters
+  Writer->SetStartObservationTime(Reader->HasStartObservationTime() == true ? Reader->GetStartObservationTime() : MTime(0.0));
   Writer->WriteHeader();
 
   MSimEvent* Event = 0;
@@ -289,14 +291,15 @@ bool SimBinaryConverter::Analyze()
 
   cout<<"Observation time: "<<Reader->GetObservationTime()<<" sec  --  simulated events: "<<Reader->GetSimulatedEvents()<<endl;
 
-  Reader->Close();
-  delete Reader;
-  
+  // TE is TB plus the observation time, which also covers the accumulated time of include masters
   Writer->SetObservationTime(Reader->GetObservationTime());
   Writer->SetSimulatedEvents(Reader->GetSimulatedEvents());
   Writer->CloseEventList();
   Writer->Close();
   delete Writer;
+
+  Reader->Close();
+  delete Reader;
   
   delete Geometry;
 

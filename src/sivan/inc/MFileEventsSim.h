@@ -70,11 +70,12 @@ class MFileEventsSim : public MFileEvents
   //! Close the event list after last event (per default add "END")
   virtual bool CloseEventList();
 
-  //! Return the number of simulated events
-  //! Attention: This information is only complete after all files have been scanned,
-  //! i.e. after GetEvents has been called for all events!
-  //! In addition, this is the number for the total file(s), NOT up to the just read event!!
+  //! Return the number of total simulated events
+  //! This is the number for the all file(s), not just up to the last read event
   virtual long GetSimulatedEvents();
+  //! Return the simulation event ID of the last read event (0 before the first event),
+  //! or GetSimulatedEvents() once all events have been read
+  long GetLastReadSimulationEventID();
 
   // protected methods:
  protected:
@@ -93,12 +94,10 @@ class MFileEventsSim : public MFileEvents
   //! Open a file given by the "IN" keyword
   virtual bool OpenIncludeFile(const MString& Line);
 
-  //! Update the observation times and the last event ID using the given event
-  void UpdateObservationTimes(MSimEvent* Event);
+  //! Update the last read event IDs, add the include offsets to the event time and IDs (if m_AccumulateTimesAndIDsAcrossFiles == true), and update the observation times using the given event
+  void UpdateTimesAndIDs(MSimEvent* Event);
   //! Close the current include file and accumulate its simulated events
   virtual bool CloseIncludeFile();
-  //! Add the include offsets to the event time and IDs
-  void ApplyIncludeOffsets(MSimEvent* Event);
   
   // private methods:
  private:
@@ -114,8 +113,10 @@ class MFileEventsSim : public MFileEvents
   //! The geometry representation
   MDGeometryQuest* m_Geometry;
 
-  //! Simulation event ID offset of the current included file: sum of the simulated events of the previous included files
-  long m_IncludeSimulationIDOffset;
+  //! Sum of the simulated events of the previous included files
+  long m_IncludeOffsetSimulationEventID;
+  //! Simulation event ID of the last read event in the current file, without the include offset
+  long m_LastReadSimulationEventID;
 
   //! The binary stire
   MBinaryStore m_BinaryStore;

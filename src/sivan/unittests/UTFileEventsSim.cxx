@@ -30,6 +30,7 @@ using namespace std;
 // MEGAlib:
 #include "MFile.h"
 #include "MFileEventsSim.h"
+#include "MTokenizer.h"
 #include "MStreams.h"
 #include "MUnitTest.h"
 
@@ -58,9 +59,26 @@ private:
   //! Test binary round-trip and rewind behavior
   bool TestBinaryRoundTripAndRewind();
   //! Test the AT keyword (accumulated include times)
-  bool TestAccumulatedIncludeTimes();
+  bool TestAccumulateTimesAndIDsAcrossFiles();
   //! Test the AT keyword with an included file whose last event has no hits
   bool TestAccumulatedIncludeIDsWithEmptyLastEvent();
+  //! Test the number of simulated events up to the last read event
+  bool TestLastReadSimulationEventID();
+  //! Test the observation time up to the last read event
+  bool TestLastReadObservationTime();
+  //! Test the last read values for a binary sim file
+  bool TestLastReadBinary();
+  //! Test the last read values for an include master which includes another include master
+  bool TestLastReadNestedIncludes();
+  //! Test the observation time up to the last read event for a file without TB and with the footer read first
+  bool TestLastReadWithoutTBAndFooterFirst();
+  //! Test the number of simulated events up to the last read event for a file without simulation IDs
+  bool TestLastReadWithoutSimulationIDs();
+
+  //! Write a variant of the 1-second fixture, optionally without the TB line and without the simulation IDs on the ID lines
+  bool WriteFixtureVariant(const MString& FileName, bool WithTB, bool WithSimulationIDs);
+  //! Write the 1-second fixture as binary sim file with TB 0, TE 1, and TS 310
+  bool WriteBinaryFixture(MDGeometryQuest& Geometry, const MString& FileName);
 
   //! Write the 1-second fixture with an additional last event without hits (ID 22)
   bool WriteChildWithEmptyLastEvent(const MString& FileName);
@@ -95,8 +113,14 @@ bool UTFileEventsSim::Run()
   Passed = TestIncludeObservationTime() && Passed;
   Passed = TestWriteHeaderAndFooter() && Passed;
   Passed = TestBinaryRoundTripAndRewind() && Passed;
-  Passed = TestAccumulatedIncludeTimes() && Passed;
+  Passed = TestAccumulateTimesAndIDsAcrossFiles() && Passed;
   Passed = TestAccumulatedIncludeIDsWithEmptyLastEvent() && Passed;
+  Passed = TestLastReadSimulationEventID() && Passed;
+  Passed = TestLastReadObservationTime() && Passed;
+  Passed = TestLastReadBinary() && Passed;
+  Passed = TestLastReadNestedIncludes() && Passed;
+  Passed = TestLastReadWithoutTBAndFooterFirst() && Passed;
+  Passed = TestLastReadWithoutSimulationIDs() && Passed;
 
   Summarize();
 
@@ -501,7 +525,7 @@ void UTFileEventsSim::ReadEvents(MDGeometryQuest& Geometry, const MString& FileN
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool UTFileEventsSim::TestAccumulatedIncludeTimes()
+bool UTFileEventsSim::TestAccumulateTimesAndIDsAcrossFiles()
 {
   bool Passed = true;
 
@@ -564,8 +588,8 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
   {
     MFileEventsSim Reader(&Geometry);
     Passed = EvaluateTrue("Open()", "sim AT true open", "The include master with AT true opens in the sim reader", Reader.Open(MasterTrue)) && Passed;
-    Passed = EvaluateTrue("HasAccumulatedIncludeTimes()", "sim AT true flag", "The AT true header line sets the accumulated include times flag", Reader.HasAccumulatedIncludeTimes()) && Passed;
-    Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT true initial offset", "The include time offset starts at zero", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = EvaluateTrue("GetAccumulateTimesAndIDsAcrossFiles()", "sim AT true flag", "The AT true header line sets the accumulated include times flag", Reader.GetAccumulateTimesAndIDsAcrossFiles()) && Passed;
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "sim AT true initial offset", "The include time offset starts at zero", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
 
     vector<double> Times;
     vector<long> IDs;
@@ -592,13 +616,13 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
       if (Times[i] < Times[i-1]) Monotonic = false;
     }
     Passed = EvaluateTrue("GetTime()", "sim AT true monotonic", "With AT true the event times never decrease across the included files", Monotonic) && Passed;
-    Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT true final offset", "After all children are closed the offset is the sum of their observation times", Reader.GetIncludeTimeOffset().GetAsDouble(), 7.0, 1e-12) && Passed;
-    Passed = Evaluate("GetIncludeIDOffset()", "sim AT true final ID offset", "After all children are closed the ID offset is the last event ID", Reader.GetIncludeIDOffset(), 125L) && Passed;
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "sim AT true final offset", "After all children are closed the offset is the sum of their observation times", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeOffsetEventID()", "sim AT true final ID offset", "After all children are closed the ID offset is the last event ID", Reader.GetIncludeOffsetEventID(), 125L) && Passed;
     Passed = EvaluateNear("GetObservationTime()", "sim AT true observation time", "The observation time still sums across the included files", Reader.GetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
 
     Passed = EvaluateTrue("Rewind()", "sim AT true rewind", "The include master with AT true can be rewound", Reader.Rewind()) && Passed;
-    Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT true rewind offset", "Rewinding resets the include time offset", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
-    Passed = Evaluate("GetIncludeIDOffset()", "sim AT true rewind ID offset", "Rewinding resets the include ID offset", Reader.GetIncludeIDOffset(), 0L) && Passed;
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "sim AT true rewind offset", "Rewinding resets the include time offset", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeOffsetEventID()", "sim AT true rewind ID offset", "Rewinding resets the include ID offset", Reader.GetIncludeOffsetEventID(), 0L) && Passed;
     Event = Reader.GetNextEvent(false);
     Passed = EvaluateTrue("GetNextEvent()", "sim AT true rewind first event", "After rewinding the first event can be read again", Event != nullptr) && Passed;
     if (Event != nullptr && Shifted.empty() == false) {
@@ -615,7 +639,7 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
   {
     MFileEventsSim Reader(&Geometry);
     Passed = EvaluateTrue("Open()", "sim AT false open", "The include master with AT false opens in the sim reader", Reader.Open(MasterFalse)) && Passed;
-    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "sim AT false flag", "The AT false header line leaves the accumulated include times flag unset", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Passed = EvaluateFalse("GetAccumulateTimesAndIDsAcrossFiles()", "sim AT false flag", "The AT false header line leaves the accumulated include times flag unset", Reader.GetAccumulateTimesAndIDsAcrossFiles()) && Passed;
 
     vector<double> Times;
     vector<long> IDs;
@@ -637,8 +661,9 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
         Passed = Evaluate("GetSimulationEventID()", Input.str().c_str(), "The simulation event ID is not offset with AT false", SimulationIDs[i], UnshiftedSimulationIDs[i]) && Passed;
       }
     }
-    Passed = EvaluateNear("GetIncludeTimeOffset()", "sim AT false final offset", "The include time offset stays zero with AT false", Reader.GetIncludeTimeOffset().GetAsDouble(), 0.0, 1e-12) && Passed;
-    Passed = Evaluate("GetIncludeIDOffset()", "sim AT false final ID offset", "The include ID offset stays zero with AT false", Reader.GetIncludeIDOffset(), 0L) && Passed;
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", "sim AT false final offset", "The include time offset is accumulated with AT false too (1 + 2 + 4 s), it is only not applied to the events", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeOffsetEventID()", "sim AT false final ID offset", "The include ID offset is accumulated with AT false too (21 + 31 + 73), it is only not applied to the events", Reader.GetIncludeOffsetEventID(), 125L) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", "sim AT false final last ID", "The last event ID counts across the included files with AT false too", Reader.GetLastReadEventID(), 125L) && Passed;
     Reader.Close();
   }
 
@@ -649,7 +674,7 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
   {
     MFileEventsSim Reader(&Geometry);
     Passed = EvaluateTrue("Open()", "sim AT none open", "The include master without AT opens in the sim reader", Reader.Open(MasterNone)) && Passed;
-    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "sim AT none flag", "Without an AT header line the accumulated include times flag is unset", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Passed = EvaluateFalse("GetAccumulateTimesAndIDsAcrossFiles()", "sim AT none flag", "Without an AT header line the accumulated include times flag is unset", Reader.GetAccumulateTimesAndIDsAcrossFiles()) && Passed;
     Reader.Close();
   }
 
@@ -662,9 +687,9 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
     DisableDefaultStreams();
     bool Opened = Reader.Open(MasterBad);
     EnableDefaultStreams();
-    bool Flag = Reader.HasAccumulatedIncludeTimes();
+    bool Flag = Reader.GetAccumulateTimesAndIDsAcrossFiles();
     Passed = EvaluateTrue("Open()", "sim AT malformed open", "The include master with a malformed AT line still opens", Opened) && Passed;
-    Passed = EvaluateFalse("HasAccumulatedIncludeTimes()", "sim AT malformed flag", "A malformed AT line leaves the accumulated include times flag unset", Flag) && Passed;
+    Passed = EvaluateFalse("GetAccumulateTimesAndIDsAcrossFiles()", "sim AT malformed flag", "A malformed AT line leaves the accumulated include times flag unset", Flag) && Passed;
     Reader.Close();
   }
 
@@ -674,8 +699,8 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
     MFileEventsSim Writer(&Geometry);
     Passed = EvaluateTrue("Open()", "sim AT write open", "A sim file for the AT header opens in write mode", Writer.Open(Written, MFile::c_Write)) && Passed;
     Writer.SetGeometryFileName(GetGeometryFileName());
-    Writer.SetAccumulatedIncludeTimes(true);
-    Passed = EvaluateTrue("HasAccumulatedIncludeTimes()", "sim AT write flag", "SetAccumulatedIncludeTimes(true) sets the flag", Writer.HasAccumulatedIncludeTimes()) && Passed;
+    Writer.SetAccumulateTimesAndIDsAcrossFiles(true);
+    Passed = EvaluateTrue("GetAccumulateTimesAndIDsAcrossFiles()", "sim AT write flag", "SetAccumulateTimesAndIDsAcrossFiles(true) sets the flag", Writer.GetAccumulateTimesAndIDsAcrossFiles()) && Passed;
     Passed = EvaluateTrue("WriteHeader()", "sim AT write header", "The header with the AT keyword can be written", Writer.WriteHeader()) && Passed;
     Passed = EvaluateTrue("CloseEventList()", "sim AT write footer", "The footer can be written after the AT header", Writer.CloseEventList()) && Passed;
     Passed = EvaluateTrue("Close()", "sim AT write close", "The sim file with the AT header closes cleanly", Writer.Close()) && Passed;
@@ -687,7 +712,7 @@ bool UTFileEventsSim::TestAccumulatedIncludeTimes()
   {
     MFileEventsSim Reader(&Geometry);
     Passed = EvaluateTrue("Open()", "sim AT write reopen", "The sim file with the AT header reopens in read mode", Reader.Open(Written)) && Passed;
-    Passed = EvaluateTrue("HasAccumulatedIncludeTimes()", "sim AT write reopen flag", "The AT keyword round-trips through WriteHeader()", Reader.HasAccumulatedIncludeTimes()) && Passed;
+    Passed = EvaluateTrue("GetAccumulateTimesAndIDsAcrossFiles()", "sim AT write reopen flag", "The AT keyword round-trips through WriteHeader()", Reader.GetAccumulateTimesAndIDsAcrossFiles()) && Passed;
     Reader.Close();
   }
 
@@ -743,7 +768,7 @@ bool UTFileEventsSim::TestAccumulatedIncludeIDsWithEmptyLastEvent()
     while ((Event = Reader.GetNextEvent(false)) != nullptr) {
       delete Event;
     }
-    Passed = Evaluate("GetLastEventID()", "sim AT empty last event child last ID", "The last read event ID is the ID of the empty last event", Reader.GetLastEventID(), 22L) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", "sim AT empty last event child last ID", "The last read event ID is the ID of the empty last event", Reader.GetLastReadEventID(), 22L) && Passed;
     Reader.Close();
   }
 
@@ -781,12 +806,480 @@ bool UTFileEventsSim::TestAccumulatedIncludeIDsWithEmptyLastEvent()
       Passed = Evaluate("GetID()", Input.str().c_str(), "The event IDs of the second child continue after the empty last event of the first child", IDs[22 + i], IDs2[i] + 22) && Passed;
     }
   }
-  Passed = Evaluate("GetIncludeIDOffset()", "sim AT empty last event final ID offset", "The final ID offset is the sum of the last event IDs of both children", Reader.GetIncludeIDOffset(), 53L) && Passed;
+  Passed = Evaluate("GetIncludeOffsetEventID()", "sim AT empty last event final ID offset", "The final ID offset is the sum of the last event IDs of both children", Reader.GetIncludeOffsetEventID(), 53L) && Passed;
   Reader.Close();
 
   return Passed;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::TestLastReadSimulationEventID()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "sim last read temp dir", "The temporary directory can be recreated for the last read tests", PrepareTempDirectory()) && Passed;
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "sim last read scan geometry", "The quest geometry can be scanned for the last read tests", LoadGeometry(Geometry)) && Passed;
+
+  // Simulation IDs of the first two children read on their own (TS 310 and 631):
+  vector<double> Times1;
+  vector<double> Times2;
+  vector<long> IDs1;
+  vector<long> IDs2;
+  vector<long> SimulationIDs1;
+  vector<long> SimulationIDs2;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz", Times1, IDs1, SimulationIDs1);
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz", Times2, IDs2, SimulationIDs2);
+  Passed = EvaluateSize("GetNextEvent()", "sim last read child 1 event count", "The first child holds 21 events", SimulationIDs1.size(), (size_t) 21) && Passed;
+  Passed = EvaluateSize("GetNextEvent()", "sim last read child 2 event count", "The second child holds 31 events", SimulationIDs2.size(), (size_t) 31) && Passed;
+
+  // Single file:
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim last read single open", "The 1-second sim fixture opens", Reader.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz")) && Passed;
+    Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read single before first event", "Before the first event no simulated events are counted", Reader.GetLastReadSimulationEventID(), 0L) && Passed;
+
+    unsigned int NRead = 0;
+    MSimEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", "sim last read single 5 events", "Five events can be read", NRead, 5U) && Passed;
+    if (NRead == 5 && SimulationIDs1.size() >= 5) {
+      Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read single after 5 events", "After 5 events the count is the simulation ID of the 5th event", Reader.GetLastReadSimulationEventID(), SimulationIDs1[4]) && Passed;
+    }
+
+    while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+      delete Event;
+    }
+    Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read single all events", "After all events the count is the total TS 310", Reader.GetLastReadSimulationEventID(), 310L) && Passed;
+
+    Passed = EvaluateTrue("Rewind()", "sim last read single rewind", "The sim fixture can be rewound", Reader.Rewind()) && Passed;
+    Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read single after rewind", "Rewinding resets the count to zero", Reader.GetLastReadSimulationEventID(), 0L) && Passed;
+    Reader.Close();
+  }
+
+  // Include masters stopped in the second child, with AT false and AT true:
+  vector<MString> HeaderLines = { "AT         false", "AT         true" };
+  for (const MString& HeaderLine: HeaderLines) {
+    MString Master = GetTempDirectory() + "/LastRead_" + (HeaderLine.Contains("true") == true ? "AT_true" : "AT_false") + ".sim";
+    MString Input = MString("sim last read master ") + HeaderLine;
+    Passed = EvaluateTrue("WriteTextFile()", Input, "The include master can be written", WriteIncludeMaster(Master, HeaderLine)) && Passed;
+
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", Input, "The include master opens", Reader.Open(Master)) && Passed;
+
+    // All 21 events of the first child and 3 of the second:
+    unsigned int NRead = 0;
+    MSimEvent* Event = nullptr;
+    while (NRead < 24 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", Input + " 24 events", "24 events can be read", NRead, 24U) && Passed;
+    if (NRead == 24 && SimulationIDs2.size() >= 3) {
+      Passed = Evaluate("GetLastReadSimulationEventID()", Input + " stopped in second child", "The count is TS 310 of the first child plus the simulation ID of the 3rd event of the second child", Reader.GetLastReadSimulationEventID(), 310L + SimulationIDs2[2]) && Passed;
+    }
+    if (NRead == 24 && IDs2.size() >= 3) {
+      Passed = Evaluate("GetLastReadEventID()", Input + " stopped in second child", "The last event ID is the last ID 21 of the first child plus the ID of the 3rd event of the second child", Reader.GetLastReadEventID(), 21L + IDs2[2]) && Passed;
+    }
+
+    while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+      delete Event;
+    }
+    Passed = Evaluate("GetLastReadSimulationEventID()", Input + " all events", "After all events the count is the total 310 + 631 + 1284 = 2225", Reader.GetLastReadSimulationEventID(), 2225L) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", Input + " all events", "After all events the last event ID is the sum of the last IDs 21 + 31 + 73", Reader.GetLastReadEventID(), 125L) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::TestLastReadObservationTime()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "sim last read time temp dir", "The temporary directory can be recreated for the last read time tests", PrepareTempDirectory()) && Passed;
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "sim last read time scan geometry", "The geometry can be scanned for the last read time tests", LoadGeometry(Geometry)) && Passed;
+
+  // Event times of the first two children read on their own (TB 0, TE 1 and 2 s):
+  vector<double> Times1;
+  vector<double> Times2;
+  vector<long> IDs1;
+  vector<long> IDs2;
+  vector<long> SimulationIDs1;
+  vector<long> SimulationIDs2;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz", Times1, IDs1, SimulationIDs1);
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz", Times2, IDs2, SimulationIDs2);
+  Passed = EvaluateSize("GetNextEvent()", "sim last read time child 1 event count", "The first child holds 21 events", Times1.size(), (size_t) 21) && Passed;
+  Passed = EvaluateSize("GetNextEvent()", "sim last read time child 2 event count", "The second child holds 31 events", Times2.size(), (size_t) 31) && Passed;
+
+  // Single file:
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim last read time single open", "The 1-second sim fixture opens", Reader.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz")) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read time single before first event", "Before the first event the observation time is zero", Reader.GetLastReadObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+
+    unsigned int NRead = 0;
+    MSimEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", "sim last read time single 5 events", "Five events can be read", NRead, 5U) && Passed;
+    if (NRead == 5 && Times1.size() >= 5) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read time single after 5 events", "After 5 events the observation time is the time of the 5th event (TB 0)", Reader.GetLastReadObservationTime().GetAsDouble(), Times1[4], 1e-9) && Passed;
+    }
+
+    while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+      delete Event;
+    }
+    Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read time single all events", "After all events the observation time is the total TE - TB = 1 s", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+
+    Passed = EvaluateTrue("Rewind()", "sim last read time single rewind", "The sim fixture can be rewound", Reader.Rewind()) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read time single after rewind", "Rewinding resets the observation time to zero", Reader.GetLastReadObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  // Include masters stopped in the second child, with AT false and AT true:
+  vector<MString> HeaderLines = { "AT         false", "AT         true" };
+  for (const MString& HeaderLine: HeaderLines) {
+    MString Master = GetTempDirectory() + "/LastReadTime_" + (HeaderLine.Contains("true") == true ? "AT_true" : "AT_false") + ".sim";
+    MString Input = MString("sim last read time master ") + HeaderLine;
+    Passed = EvaluateTrue("WriteTextFile()", Input, "The include master can be written", WriteIncludeMaster(Master, HeaderLine)) && Passed;
+
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", Input, "The include master opens", Reader.Open(Master)) && Passed;
+
+    // All 21 events of the first child and 3 of the second:
+    unsigned int NRead = 0;
+    MSimEvent* Event = nullptr;
+    while (NRead < 24 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", Input + " 24 events", "24 events can be read", NRead, 24U) && Passed;
+    if (NRead == 24 && Times2.size() >= 3) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", Input + " stopped in second child", "The observation time is the 1 s of the first child plus the time of the 3rd event of the second child", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0 + Times2[2], 1e-9) && Passed;
+    }
+
+    while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+      delete Event;
+    }
+    Passed = EvaluateNear("GetLastReadObservationTime()", Input + " all events", "After all events the observation time is the total 1 + 2 + 4 = 7 s", Reader.GetLastReadObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::WriteFixtureVariant(const MString& FileName, bool WithTB, bool WithSimulationIDs)
+{
+  MFile In;
+  if (In.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz") == false) return false;
+
+  ostringstream Content;
+  MString Line;
+  while (In.ReadLine(Line) == true) {
+    if (WithTB == false && Line.BeginsWith("TB") == true) continue;
+    if (WithSimulationIDs == false && Line.BeginsWith("ID") == true) {
+      MTokenizer Tokens(Line);
+      if (Tokens.GetNTokens() == 3) Line = MString("ID ") + Tokens.GetTokenAtAsString(1);
+    }
+    Content<<Line<<endl;
+  }
+  In.Close();
+
+  return WriteTextFile(FileName, Content.str().c_str());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::WriteBinaryFixture(MDGeometryQuest& Geometry, const MString& FileName)
+{
+  MFileEventsSim Reader(&Geometry);
+  if (Reader.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz") == false) return false;
+
+  MFileEventsSim Writer(&Geometry);
+  if (Writer.Open(FileName, MFile::c_Write, true) == false) return false;
+  Writer.SetGeometryFileName(GetGeometryFileName());
+  Writer.SetVersion(101);
+  Writer.SetStartObservationTime(0.0);
+  if (Writer.WriteHeader() == false) return false;
+
+  MSimEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+    Writer.AddEvent(Event);
+    delete Event;
+  }
+  Reader.Close();
+
+  Writer.SetEndObservationTime(1.0);
+  Writer.SetSimulatedEvents(310);
+  if (Writer.CloseEventList() == false) return false;
+  return Writer.Close();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::TestLastReadBinary()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "sim last read binary temp dir", "The temporary directory can be recreated for the binary last read tests", PrepareTempDirectory()) && Passed;
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "sim last read binary geometry", "The geometry can be scanned for the binary last read tests", LoadGeometry(Geometry)) && Passed;
+
+  // Event times and IDs of the ASCII fixture:
+  vector<double> Times;
+  vector<long> IDs;
+  vector<long> SimulationIDs;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz", Times, IDs, SimulationIDs);
+
+  MString BinaryFile = GetTempDirectory() + "/LastRead_binary.sim";
+  Passed = EvaluateTrue("WriteBinaryFixture()", "sim last read binary fixture", "The binary fixture can be written", WriteBinaryFixture(Geometry, BinaryFile)) && Passed;
+
+  MFileEventsSim Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "sim last read binary open", "The binary fixture opens", Reader.Open(BinaryFile)) && Passed;
+
+  unsigned int NRead = 0;
+  MSimEvent* Event = nullptr;
+  while (NRead < 5 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+    ++NRead;
+    delete Event;
+  }
+  Passed = Evaluate("GetNextEvent()", "sim last read binary 5 events", "Five events can be read from the binary fixture", NRead, 5U) && Passed;
+  if (NRead == 5 && Times.size() >= 5) {
+    Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read binary after 5 events", "After 5 events the observation time is the time of the 5th event (TB 0)", Reader.GetLastReadObservationTime().GetAsDouble(), Times[4], 1e-9) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", "sim last read binary after 5 events", "After 5 events the last event ID is the ID of the 5th event", Reader.GetLastReadEventID(), IDs[4]) && Passed;
+  }
+  if (NRead == 5 && SimulationIDs.size() >= 5) {
+    Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read binary after 5 events", "After 5 events the count is the simulation ID of the 5th event", Reader.GetLastReadSimulationEventID(), SimulationIDs[4]) && Passed;
+  }
+
+  while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+    delete Event;
+  }
+  Passed = EvaluateNear("GetObservationTime()", "sim last read binary all events", "After all events of a binary file the observation time is TE - TB = 1 s", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read binary all events", "After all events the observation time is the total TE - TB = 1 s", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+  Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read binary all events", "After all events the count is the total TS 310", Reader.GetLastReadSimulationEventID(), 310L) && Passed;
+
+  Reader.Close();
+
+  return Passed;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::TestLastReadWithoutTBAndFooterFirst()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "sim last read without TB temp dir", "The temporary directory can be recreated for the tests without TB", PrepareTempDirectory()) && Passed;
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "sim last read without TB geometry", "The geometry can be scanned for the tests without TB", LoadGeometry(Geometry)) && Passed;
+
+  vector<double> Times;
+  vector<long> IDs;
+  vector<long> SimulationIDs;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz", Times, IDs, SimulationIDs);
+
+  MString NoTBFile = GetTempDirectory() + "/LastRead_without_TB.sim";
+  Passed = EvaluateTrue("WriteFixtureVariant()", "sim last read without TB fixture", "The fixture without TB can be written", WriteFixtureVariant(NoTBFile, false, true)) && Passed;
+
+  // Without TB, read event by event: the observation starts at the first event
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim last read without TB open", "The fixture without TB opens", Reader.Open(NoTBFile)) && Passed;
+    unsigned int NRead = 0;
+    MSimEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    if (NRead == 5 && Times.size() >= 5) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read without TB after 5 events", "Without TB the observation time after 5 events is the time of the 5th event minus the one of the first event", Reader.GetLastReadObservationTime().GetAsDouble(), Times[4] - Times[0], 1e-9) && Passed;
+    }
+    while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+      delete Event;
+    }
+    if (Times.size() >= 1) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read without TB all events", "Without TB the observation time after all events is TE minus the time of the first event", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0 - Times[0], 1e-9) && Passed;
+      Passed = EvaluateNear("GetObservationTime()", "sim last read without TB all events", "Without TB the observation time after all events is TE minus the time of the first event", Reader.GetObservationTime().GetAsDouble(), 1.0 - Times[0], 1e-9) && Passed;
+    }
+    Reader.Close();
+  }
+
+  // Without TB, the footer read first:
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim last read without TB footer first open", "The fixture without TB opens", Reader.Open(NoTBFile)) && Passed;
+    if (Times.size() >= 1) {
+      Passed = EvaluateNear("GetObservationTime()", "sim last read without TB footer first", "Without TB the observation time read first is TE minus the time of the first event, as when the events are read first", Reader.GetObservationTime().GetAsDouble(), 1.0 - Times[0], 1e-9) && Passed;
+    }
+    unsigned int NRead = 0;
+    MSimEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    if (NRead == 5 && Times.size() >= 5) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read without TB footer first after 5 events", "Without TB and with the footer read first, the observation time after 5 events is the time of the 5th event minus the one of the first event", Reader.GetLastReadObservationTime().GetAsDouble(), Times[4] - Times[0], 1e-9) && Passed;
+    }
+    Reader.Close();
+  }
+
+  // With TB, the footer read first:
+  {
+    MFileEventsSim Reader(&Geometry);
+    Passed = EvaluateTrue("Open()", "sim last read footer first open", "The 1-second fixture opens", Reader.Open(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.sim.gz")) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "sim last read footer first", "The observation time read first is TE - TB = 1 s", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+    unsigned int NRead = 0;
+    MSimEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    if (NRead == 5 && Times.size() >= 5) {
+      Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read footer first after 5 events", "With the footer read first, the observation time after 5 events is the time of the 5th event (TB 0)", Reader.GetLastReadObservationTime().GetAsDouble(), Times[4], 1e-9) && Passed;
+    }
+    while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+      delete Event;
+    }
+    Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read footer first all events", "With the footer read first, the observation time after all events is 1 s", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::TestLastReadWithoutSimulationIDs()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "sim last read without simulation IDs temp dir", "The temporary directory can be recreated for the test without simulation IDs", PrepareTempDirectory()) && Passed;
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "sim last read without simulation IDs geometry", "The geometry can be scanned for the test without simulation IDs", LoadGeometry(Geometry)) && Passed;
+
+  MString FileName = GetTempDirectory() + "/LastRead_without_simulation_IDs.sim";
+  Passed = EvaluateTrue("WriteFixtureVariant()", "sim last read without simulation IDs fixture", "The fixture with ID lines without simulation IDs can be written", WriteFixtureVariant(FileName, true, false)) && Passed;
+
+  MFileEventsSim Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "sim last read without simulation IDs open", "The fixture without simulation IDs opens", Reader.Open(FileName)) && Passed;
+
+  unsigned int NRead = 0;
+  MSimEvent* Event = nullptr;
+  while (NRead < 5 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+    ++NRead;
+    delete Event;
+  }
+  Passed = Evaluate("GetNextEvent()", "sim last read without simulation IDs 5 events", "Five events can be read", NRead, 5U) && Passed;
+  // Without simulation IDs MSimEvent uses the event ID as simulation ID, i.e. the count is a lower bound
+  Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read without simulation IDs after 5 events", "Without simulation IDs the count is the ID of the 5th event", Reader.GetLastReadSimulationEventID(), 5L) && Passed;
+
+  while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+    delete Event;
+  }
+  Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read without simulation IDs all events", "After all events the count is the total TS 310", Reader.GetLastReadSimulationEventID(), 310L) && Passed;
+  Reader.Close();
+
+  return Passed;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool UTFileEventsSim::TestLastReadNestedIncludes()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTempDirectory()", "sim last read nested temp dir", "The temporary directory can be recreated for the nested include tests", PrepareTempDirectory()) && Passed;
+
+  MDGeometryQuest Geometry;
+  Passed = EvaluateTrue("ScanSetupFile()", "sim last read nested geometry", "The geometry can be scanned for the nested include tests", LoadGeometry(Geometry)) && Passed;
+
+  // Times and IDs of the second fixture read on its own:
+  vector<double> Times2;
+  vector<long> IDs2;
+  vector<long> SimulationIDs2;
+  ReadEvents(Geometry, GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.sim.gz", Times2, IDs2, SimulationIDs2);
+
+  // Inner master (1 + 2 s) and outer master (inner master + 4 s), both without AT:
+  ostringstream Inner;
+  Inner<<"Type       sim"<<endl;
+  Inner<<"Version    101"<<endl;
+  Inner<<"Geometry   "<<GetGeometryFileName()<<endl;
+  Inner<<endl;
+  Inner<<"IN "<<GetDataDirectory()<<"/ObsTime_1sec_complete.inc1.id1.sim.gz"<<endl;
+  Inner<<"IN "<<GetDataDirectory()<<"/ObsTime_2sec_complete.inc1.id1.sim.gz"<<endl;
+  Inner<<"EN"<<endl;
+  MString InnerFile = GetTempDirectory() + "/LastRead_nested_inner.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "sim last read nested inner", "The inner include master can be written", WriteTextFile(InnerFile, Inner.str().c_str())) && Passed;
+
+  ostringstream Outer;
+  Outer<<"Type       sim"<<endl;
+  Outer<<"Version    101"<<endl;
+  Outer<<"Geometry   "<<GetGeometryFileName()<<endl;
+  Outer<<endl;
+  Outer<<"IN "<<InnerFile<<endl;
+  Outer<<"IN "<<GetDataDirectory()<<"/ObsTime_4sec_complete.inc1.id1.sim.gz"<<endl;
+  Outer<<"EN"<<endl;
+  MString OuterFile = GetTempDirectory() + "/LastRead_nested_outer.sim";
+  Passed = EvaluateTrue("WriteTextFile()", "sim last read nested outer", "The outer include master can be written", WriteTextFile(OuterFile, Outer.str().c_str())) && Passed;
+
+  MFileEventsSim Reader(&Geometry);
+  Passed = EvaluateTrue("Open()", "sim last read nested open", "The outer include master opens", Reader.Open(OuterFile)) && Passed;
+
+  // All 21 events of the first grandchild and 3 of the second:
+  unsigned int NRead = 0;
+  MSimEvent* Event = nullptr;
+  while (NRead < 24 && (Event = Reader.GetNextEvent(false)) != nullptr) {
+    ++NRead;
+    delete Event;
+  }
+  Passed = Evaluate("GetNextEvent()", "sim last read nested 24 events", "24 events can be read", NRead, 24U) && Passed;
+  if (NRead == 24 && IDs2.size() >= 3) {
+    Passed = Evaluate("GetLastReadEventID()", "sim last read nested stopped in second grandchild", "The last event ID includes the offset of the first grandchild: 21 plus the ID of the 3rd event of the second grandchild", Reader.GetLastReadEventID(), 21L + IDs2[2]) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read nested stopped in second grandchild", "The observation time is the 1 s of the first grandchild plus the time of the 3rd event of the second grandchild", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0 + Times2[2], 1e-9) && Passed;
+  }
+  if (NRead == 24 && SimulationIDs2.size() >= 3) {
+    Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read nested stopped in second grandchild", "The count is TS 310 of the first grandchild plus the simulation ID of the 3rd event of the second grandchild", Reader.GetLastReadSimulationEventID(), 310L + SimulationIDs2[2]) && Passed;
+  }
+
+  while ((Event = Reader.GetNextEvent(false)) != nullptr) {
+    delete Event;
+  }
+  Passed = Evaluate("GetLastReadEventID()", "sim last read nested all events", "After all events the last event ID is the sum of the last IDs 21 + 31 + 73", Reader.GetLastReadEventID(), 125L) && Passed;
+  Passed = EvaluateNear("GetLastReadObservationTime()", "sim last read nested all events", "After all events the observation time is the total 1 + 2 + 4 = 7 s", Reader.GetLastReadObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+  Passed = Evaluate("GetLastReadSimulationEventID()", "sim last read nested all events", "After all events the count is the total 310 + 631 + 1284 = 2225", Reader.GetLastReadSimulationEventID(), 2225L) && Passed;
+  Reader.Close();
+
+  return Passed;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

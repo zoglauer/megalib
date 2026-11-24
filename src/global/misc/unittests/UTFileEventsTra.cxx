@@ -20,8 +20,11 @@
 
 
 // Standard libs:
+#include <cmath>
 #include <cstring>
 #include <limits>
+#include <sstream>
+#include <vector>
 using namespace std;
 
 // ROOT libs:
@@ -62,6 +65,21 @@ private:
   bool TestParserModesAndThreading();
   //! Test the header and footer information (Geant4 version, seed, beam, spectrum, times, simulated events)
   bool TestHeaderAndFooterInformation();
+  //! Test the last read event ID and observation time, non-threaded and threaded
+  bool TestLastRead();
+  //! Test the AT keyword (times and IDs accumulated across the included files)
+  bool TestAccumulateTimesAndIDsAcrossFiles();
+  //! Test an include master with an included file without events
+  bool TestIncludeFileWithoutEvents();
+  //! Test the last read values and the AT offsets with delayed parsing, non-threaded and threaded
+  bool TestDelayedParsing();
+  //! Test a measured file with absolute times and without TB and TE: footer first, events first, threaded
+  bool TestMeasuredWithoutTBAndTE();
+
+  //! Write an include master for the three observation-time fixtures with an extra header line
+  bool WriteIncludeMaster(const MString& FileName, const MString& ExtraHeaderLine);
+  //! Read the times and IDs of all events of a tra file
+  void ReadEvents(const MString& FileName, vector<double>& Times, vector<long>& IDs);
 
   //! Return the data directory
   MString GetDataDirectory() const;
@@ -87,6 +105,11 @@ bool UTFileEventsTra::Run()
   Passed = TestEOFBehavior() && Passed;
   Passed = TestParserModesAndThreading() && Passed;
   Passed = TestHeaderAndFooterInformation() && Passed;
+  Passed = TestLastRead() && Passed;
+  Passed = TestAccumulateTimesAndIDsAcrossFiles() && Passed;
+  Passed = TestIncludeFileWithoutEvents() && Passed;
+  Passed = TestDelayedParsing() && Passed;
+  Passed = TestMeasuredWithoutTBAndTE() && Passed;
 
   Summarize();
 
@@ -448,6 +471,7 @@ bool UTFileEventsTra::TestRoundTrip()
     MFileEventsTra Writer;
     Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "round-trip open write", "The round-trip tra file opens in write mode", Writer.Open(FileName, MFile::c_Write)) && Passed;
+    Writer.SetStartObservationTime(MTime(0.0));
     Passed = EvaluateTrue("WriteHeader()", "round-trip header", "The round-trip file header is written", Writer.WriteHeader()) && Passed;
 
     MUnidentifiableEvent Event = CreateUnidentifiableEvent(42, 11.25, 77.5);
@@ -503,6 +527,7 @@ bool UTFileEventsTra::TestIncludeFiles()
     MFileEventsTra Writer;
     Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "include main open", "The main tra file opens in write mode", Writer.Open(MainFile, MFile::c_Write)) && Passed;
+    Writer.SetStartObservationTime(MTime(0.0));
     Passed = EvaluateTrue("WriteHeader()", "include main header", "The main tra header is written", Writer.WriteHeader()) && Passed;
     Passed = EvaluateTrue("AddText(IN)", "include main include line", "The main tra file can reference an include file", Writer.AddText("IN include.tra\n")) && Passed;
     Writer.SetObservationTime(MTime(5.0));
@@ -514,6 +539,7 @@ bool UTFileEventsTra::TestIncludeFiles()
     MFileEventsTra Writer;
     Writer.SetGeometryFileName(TemporaryDirectory + "/geometry.setup");
     Passed = EvaluateTrue("Open(write)", "include child open", "The include tra file opens in write mode", Writer.Open(IncludeFile, MFile::c_Write)) && Passed;
+    Writer.SetStartObservationTime(MTime(0.0));
     Passed = EvaluateTrue("WriteHeader()", "include child header", "The include tra header is written", Writer.WriteHeader()) && Passed;
     MUnidentifiableEvent Event = CreateUnidentifiableEvent(3, 7.0, 22.0);
     Passed = EvaluateTrue("AddEvent()", "include child add event", "The include tra file stores one event", Writer.AddEvent(&Event)) && Passed;
@@ -652,6 +678,494 @@ bool UTFileEventsTra::TestParserModesAndThreading()
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write an include master for the three observation-time fixtures with an extra header line
+bool UTFileEventsTra::WriteIncludeMaster(const MString& FileName, const MString& ExtraHeaderLine)
+{
+  ostringstream Content;
+  Content<<"Type       tra"<<endl;
+  Content<<"Version    1"<<endl;
+  Content<<"Geometry   geometry.setup"<<endl;
+  if (ExtraHeaderLine.IsEmpty() == false) {
+    Content<<ExtraHeaderLine<<endl;
+  }
+  Content<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_1sec_complete.inc1.id1.tra.gz"<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_2sec_complete.inc1.id1.tra.gz"<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_4sec_complete.inc1.id1.tra.gz"<<endl;
+  Content<<"EN"<<endl;
+  Content<<endl;
+
+  return WriteTextFile(FileName, Content.str().c_str());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Read the times and IDs of all events of a tra file
+void UTFileEventsTra::ReadEvents(const MString& FileName, vector<double>& Times, vector<long>& IDs)
+{
+  Times.clear();
+  IDs.clear();
+
+  MFileEventsTra Reader;
+  if (Reader.Open(FileName) == false) return;
+
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    Times.push_back(Event->GetTime().GetAsDouble());
+    IDs.push_back(Event->GetId());
+    delete Event;
+  }
+  Reader.Close();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the last read event ID and observation time, non-threaded and threaded
+bool UTFileEventsTra::TestLastRead()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "last read temp dir", "The temporary directory can be recreated for the last read tests", PrepareTemporaryDirectory("lastread")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("lastread");
+
+  MString File1 = GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.tra.gz";
+  vector<double> Times1;
+  vector<double> Times2;
+  vector<long> IDs1;
+  vector<long> IDs2;
+  ReadEvents(File1, Times1, IDs1);
+  ReadEvents(GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.tra.gz", Times2, IDs2);
+  Passed = EvaluateSize("GetNextEvent()", "last read child 1 event count", "The first fixture holds 21 events", Times1.size(), (size_t) 21) && Passed;
+  Passed = EvaluateSize("GetNextEvent()", "last read child 2 event count", "The second fixture holds 31 events", Times2.size(), (size_t) 31) && Passed;
+
+  // Single file, non-threaded:
+  {
+    MFileEventsTra Reader;
+    Passed = EvaluateTrue("Open()", "last read single open", "The 1-second fixture opens", Reader.Open(File1)) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", "last read single before first event", "Before the first event the last event ID is zero", Reader.GetLastReadEventID(), 0L) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "last read single before first event", "Before the first event the observation time is zero", Reader.GetLastReadObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+
+    unsigned int NRead = 0;
+    MPhysicalEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent()) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", "last read single 5 events", "Five events can be read", NRead, 5U) && Passed;
+    if (NRead == 5 && Times1.size() >= 5) {
+      Passed = Evaluate("GetLastReadEventID()", "last read single after 5 events", "After 5 events the last event ID is the ID of the 5th event", Reader.GetLastReadEventID(), IDs1[4]) && Passed;
+      Passed = EvaluateNear("GetLastReadObservationTime()", "last read single after 5 events", "After 5 events the observation time is the time of the 5th event (TB 0)", Reader.GetLastReadObservationTime().GetAsDouble(), Times1[4], 1e-9) && Passed;
+    }
+
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      delete Event;
+    }
+    Passed = Evaluate("GetLastReadEventID()", "last read single all events", "After all events the last event ID is 21", Reader.GetLastReadEventID(), 21L) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "last read single all events", "After all events the observation time is the total TE - TB = 1 s", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+
+    Passed = EvaluateTrue("Rewind()", "last read single rewind", "The fixture can be rewound", Reader.Rewind()) && Passed;
+    Passed = Evaluate("GetLastReadEventID()", "last read single after rewind", "Rewinding resets the last event ID", Reader.GetLastReadEventID(), 0L) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "last read single after rewind", "Rewinding resets the observation time", Reader.GetLastReadObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  // Single file, threaded: the reader thread reads ahead, the values belong to the returned events
+  {
+    MFileEventsTra Reader;
+    Passed = EvaluateTrue("Open()", "last read threaded open", "The 1-second fixture opens for threaded reading", Reader.Open(File1)) && Passed;
+    DisableDefaultStreams();
+    bool Started = Reader.StartThread();
+    EnableDefaultStreams();
+    Passed = EvaluateTrue("StartThread()", "last read threaded start", "The reader thread starts", Started) && Passed;
+
+    unsigned int NRead = 0;
+    MPhysicalEvent* Event = nullptr;
+    while (NRead < 5 && (Event = Reader.GetNextEvent()) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", "last read threaded 5 events", "Five events can be read threaded", NRead, 5U) && Passed;
+    if (NRead == 5 && Times1.size() >= 5) {
+      Passed = Evaluate("GetLastReadEventID()", "last read threaded after 5 events", "After 5 returned events the last event ID is the ID of the 5th event, not the one of the reader thread", Reader.GetLastReadEventID(), IDs1[4]) && Passed;
+      Passed = EvaluateNear("GetLastReadObservationTime()", "last read threaded after 5 events", "After 5 returned events the observation time is the time of the 5th event, not the one of the reader thread", Reader.GetLastReadObservationTime().GetAsDouble(), Times1[4], 1e-9) && Passed;
+    }
+
+    DisableDefaultStreams();
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      delete Event;
+    }
+    EnableDefaultStreams();
+    Passed = Evaluate("GetLastReadEventID()", "last read threaded all events", "After all returned events the last event ID is 21", Reader.GetLastReadEventID(), 21L) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "last read threaded all events", "After all returned events the observation time is TE - TB = 1 s", Reader.GetObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", "last read threaded all events", "After all returned events the observation time is the total 1 s", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  // Include masters stopped in the second child, with AT false and AT true:
+  vector<MString> HeaderLines = { "AT         false", "AT         true" };
+  for (const MString& HeaderLine: HeaderLines) {
+    MString Master = TemporaryDirectory + "/LastRead_" + (HeaderLine.Contains("true") == true ? "AT_true" : "AT_false") + ".tra";
+    MString Input = MString("last read master ") + HeaderLine;
+    Passed = EvaluateTrue("WriteTextFile()", Input, "The include master can be written", WriteIncludeMaster(Master, HeaderLine)) && Passed;
+
+    MFileEventsTra Reader;
+    Passed = EvaluateTrue("Open()", Input, "The include master opens", Reader.Open(Master)) && Passed;
+
+    // All 21 events of the first child and 3 of the second:
+    unsigned int NRead = 0;
+    MPhysicalEvent* Event = nullptr;
+    while (NRead < 24 && (Event = Reader.GetNextEvent()) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", Input + " 24 events", "24 events can be read", NRead, 24U) && Passed;
+    if (NRead == 24 && Times2.size() >= 3) {
+      Passed = Evaluate("GetLastReadEventID()", Input + " stopped in second child", "The last event ID is the last ID 21 of the first child plus the ID of the 3rd event of the second child", Reader.GetLastReadEventID(), 21L + IDs2[2]) && Passed;
+      Passed = EvaluateNear("GetLastReadObservationTime()", Input + " stopped in second child", "The observation time is the 1 s of the first child plus the time of the 3rd event of the second child", Reader.GetLastReadObservationTime().GetAsDouble(), 1.0 + Times2[2], 1e-9) && Passed;
+    }
+
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      delete Event;
+    }
+    Passed = Evaluate("GetLastReadEventID()", Input + " all events", "After all events the last event ID is the sum of the last IDs 21 + 31 + 73", Reader.GetLastReadEventID(), 125L) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", Input + " all events", "After all events the observation time is the total 1 + 2 + 4 = 7 s", Reader.GetLastReadObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the AT keyword (times and IDs accumulated across the included files)
+bool UTFileEventsTra::TestAccumulateTimesAndIDsAcrossFiles()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "tra AT temp dir", "The temporary directory can be recreated for the AT tests", PrepareTemporaryDirectory("at")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("at");
+
+  // Times and IDs of the children read on their own:
+  vector<double> Times1;
+  vector<double> Times2;
+  vector<double> Times4;
+  vector<long> IDs1;
+  vector<long> IDs2;
+  vector<long> IDs4;
+  ReadEvents(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.tra.gz", Times1, IDs1);
+  ReadEvents(GetDataDirectory() + "/ObsTime_2sec_complete.inc1.id1.tra.gz", Times2, IDs2);
+  ReadEvents(GetDataDirectory() + "/ObsTime_4sec_complete.inc1.id1.tra.gz", Times4, IDs4);
+  Passed = EvaluateSize("GetNextEvent()", "tra AT child event count", "The three children hold 21 + 31 + 73 = 125 events", Times1.size() + Times2.size() + Times4.size(), (size_t) 125) && Passed;
+
+  // Expected values without and with the offsets of the preceding children: times 0, 1, 1 + 2 s, IDs 0, 21, 21 + 31:
+  vector<double> Unshifted;
+  vector<double> Shifted;
+  vector<long> UnshiftedIDs;
+  vector<long> ShiftedIDs;
+  for (size_t i = 0; i < Times1.size(); ++i) {
+    Unshifted.push_back(Times1[i]);
+    Shifted.push_back(Times1[i]);
+    UnshiftedIDs.push_back(IDs1[i]);
+    ShiftedIDs.push_back(IDs1[i]);
+  }
+  for (size_t i = 0; i < Times2.size(); ++i) {
+    Unshifted.push_back(Times2[i]);
+    Shifted.push_back(Times2[i] + 1.0);
+    UnshiftedIDs.push_back(IDs2[i]);
+    ShiftedIDs.push_back(IDs2[i] + 21);
+  }
+  for (size_t i = 0; i < Times4.size(); ++i) {
+    Unshifted.push_back(Times4[i]);
+    Shifted.push_back(Times4[i] + 3.0);
+    UnshiftedIDs.push_back(IDs4[i]);
+    ShiftedIDs.push_back(IDs4[i] + 52);
+  }
+
+  vector<MString> HeaderLines = { "AT         true", "AT         false" };
+  for (const MString& HeaderLine: HeaderLines) {
+    bool Accumulate = HeaderLine.Contains("true");
+    MString Master = TemporaryDirectory + "/ObsTime_" + (Accumulate == true ? "AT_true" : "AT_false") + ".tra";
+    MString Input = MString("tra ") + HeaderLine;
+    Passed = EvaluateTrue("WriteTextFile()", Input, "The include master can be written", WriteIncludeMaster(Master, HeaderLine)) && Passed;
+
+    MFileEventsTra Reader;
+    Passed = EvaluateTrue("Open()", Input, "The include master opens", Reader.Open(Master)) && Passed;
+    Passed = Evaluate("GetAccumulateTimesAndIDsAcrossFiles()", Input, "The AT line sets the flag", Reader.GetAccumulateTimesAndIDsAcrossFiles(), Accumulate) && Passed;
+
+    vector<double> Times;
+    vector<long> IDs;
+    MPhysicalEvent* Event = nullptr;
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      Times.push_back(Event->GetTime().GetAsDouble());
+      IDs.push_back(Event->GetId());
+      delete Event;
+    }
+    Passed = EvaluateSize("GetNextEvent()", Input + " event count", "All 125 events of the children are read", Times.size(), Shifted.size()) && Passed;
+    if (Times.size() == Shifted.size()) {
+      for (size_t i = 0; i < Times.size(); ++i) {
+        ostringstream EventInput;
+        EventInput<<Input<<" event "<<i;
+        if (Accumulate == true) {
+          Passed = EvaluateNear("GetTime()", EventInput.str().c_str(), "With AT true the event time is offset by the observation times of the preceding children", Times[i], Shifted[i], 1e-9) && Passed;
+          Passed = Evaluate("GetId()", EventInput.str().c_str(), "With AT true the event ID is offset by the last IDs of the preceding children", IDs[i], ShiftedIDs[i]) && Passed;
+        } else {
+          Passed = EvaluateNear("GetTime()", EventInput.str().c_str(), "With AT false the event time is not offset", Times[i], Unshifted[i], 1e-9) && Passed;
+          Passed = Evaluate("GetId()", EventInput.str().c_str(), "With AT false the event ID is not offset", IDs[i], UnshiftedIDs[i]) && Passed;
+        }
+      }
+    }
+    if (Accumulate == true) {
+      bool Monotonic = true;
+      for (size_t i = 1; i < Times.size(); ++i) {
+        if (Times[i] < Times[i-1]) Monotonic = false;
+      }
+      Passed = EvaluateTrue("GetTime()", Input + " monotonic", "With AT true the event times never decrease across the included files", Monotonic) && Passed;
+    }
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", Input + " final offset", "After all children are closed the time offset is the sum of their observation times", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 7.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeOffsetEventID()", Input + " final ID offset", "After all children are closed the ID offset is the sum of their last event IDs", Reader.GetIncludeOffsetEventID(), 125L) && Passed;
+
+    Passed = EvaluateTrue("Rewind()", Input + " rewind", "The include master can be rewound", Reader.Rewind()) && Passed;
+    Passed = EvaluateNear("GetIncludeOffsetObservationTime()", Input + " rewind offset", "Rewinding resets the time offset", Reader.GetIncludeOffsetObservationTime().GetAsDouble(), 0.0, 1e-12) && Passed;
+    Passed = Evaluate("GetIncludeOffsetEventID()", Input + " rewind ID offset", "Rewinding resets the ID offset", Reader.GetIncludeOffsetEventID(), 0L) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test an include master with an included file without events
+bool UTFileEventsTra::TestIncludeFileWithoutEvents()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "empty include temp dir", "The temporary directory can be recreated for the empty include test", PrepareTemporaryDirectory("emptyinclude")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("emptyinclude");
+
+  vector<double> Times1;
+  vector<long> IDs1;
+  ReadEvents(GetDataDirectory() + "/ObsTime_1sec_complete.inc1.id1.tra.gz", Times1, IDs1);
+
+  // An included file with 2 s of observation time but without events, followed by the 1-second fixture:
+  MString EmptyFile = TemporaryDirectory + "/empty.tra";
+  Passed = EvaluateTrue("WriteTextFile()", "empty include file", "The included file without events can be written", WriteTextFile(EmptyFile, "Type tra\nVersion 1\nGeometry geometry.setup\nTB 0\nEN\n\nTE 2\n")) && Passed;
+
+  ostringstream Content;
+  Content<<"Type       tra"<<endl;
+  Content<<"Version    1"<<endl;
+  Content<<"Geometry   geometry.setup"<<endl;
+  Content<<endl;
+  Content<<"IN "<<EmptyFile<<endl;
+  Content<<"IN "<<GetDataDirectory()<<"/ObsTime_1sec_complete.inc1.id1.tra.gz"<<endl;
+  Content<<"EN"<<endl;
+  MString Master = TemporaryDirectory + "/master.tra";
+  Passed = EvaluateTrue("WriteTextFile()", "empty include master", "The include master can be written", WriteTextFile(Master, Content.str().c_str())) && Passed;
+
+  MFileEventsTra Reader;
+  Passed = EvaluateTrue("Open()", "empty include open", "The include master opens", Reader.Open(Master)) && Passed;
+  MPhysicalEvent* Event = Reader.GetNextEvent();
+  Passed = EvaluateTrue("GetNextEvent()", "empty include first event", "The first event comes from the second included file", Event != nullptr) && Passed;
+  if (Event != nullptr) {
+    delete Event;
+  }
+  if (Times1.size() > 0) {
+    Passed = EvaluateNear("GetLastReadObservationTime()", "empty include first event", "The 2 s of the included file without events are counted", Reader.GetLastReadObservationTime().GetAsDouble(), 2.0 + Times1[0], 1e-9) && Passed;
+  }
+  while ((Event = Reader.GetNextEvent()) != nullptr) {
+    delete Event;
+  }
+  Passed = EvaluateNear("GetObservationTime()", "empty include all events", "The total observation time includes the included file without events: 2 + 1 s", Reader.GetObservationTime().GetAsDouble(), 3.0, 1e-12) && Passed;
+  Reader.Close();
+
+  return Passed;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test the last read values and the AT offsets with delayed parsing, non-threaded and threaded
+bool UTFileEventsTra::TestDelayedParsing()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "delayed temp dir", "The temporary directory can be recreated for the delayed parsing tests", PrepareTemporaryDirectory("delayed")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("delayed");
+
+  MString Master = TemporaryDirectory + "/Delayed_AT_true.tra";
+  Passed = EvaluateTrue("WriteTextFile()", "delayed master", "The include master can be written", WriteIncludeMaster(Master, "AT         true")) && Passed;
+
+  // Reference: the same master read without delayed parsing
+  vector<double> Times;
+  vector<long> IDs;
+  vector<double> Energies;
+  {
+    MFileEventsTra Reader;
+    if (Reader.Open(Master) == true) {
+      MPhysicalEvent* Event = nullptr;
+      while ((Event = Reader.GetNextEvent()) != nullptr) {
+        Times.push_back(Event->GetTime().GetAsDouble());
+        IDs.push_back(Event->GetId());
+        Energies.push_back(Event->GetEnergy());
+        delete Event;
+      }
+      Reader.Close();
+    }
+  }
+  Passed = EvaluateSize("GetNextEvent()", "delayed reference event count", "The reference read returns all 125 events", Times.size(), (size_t) 125) && Passed;
+
+  vector<bool> Threaded = { false, true };
+  for (bool IsThreaded: Threaded) {
+    MString Input = MString("delayed ") + (IsThreaded == true ? "threaded" : "non-threaded");
+
+    MFileEventsTra Reader;
+    Reader.SetDelayedFileParsing(true);
+    Passed = EvaluateTrue("Open()", Input, "The include master opens with delayed parsing", Reader.Open(Master)) && Passed;
+    if (IsThreaded == true) {
+      DisableDefaultStreams();
+      bool Started = Reader.StartThread();
+      EnableDefaultStreams();
+      Passed = EvaluateTrue("StartThread()", Input, "The reader thread starts", Started) && Passed;
+    }
+
+    // All 21 events of the first child and 3 of the second, each parsed by the caller:
+    vector<double> ReadTimes;
+    vector<long> ReadIDs;
+    vector<double> ReadEnergies;
+    MPhysicalEvent* Event = nullptr;
+    while (ReadTimes.size() < 24 && (Event = Reader.GetNextEvent()) != nullptr) {
+      Event->ParseDelayed();
+      ReadTimes.push_back(Event->GetTime().GetAsDouble());
+      ReadIDs.push_back(Event->GetId());
+      ReadEnergies.push_back(Event->GetEnergy());
+      delete Event;
+    }
+    Passed = EvaluateSize("GetNextEvent()", Input + " 24 events", "24 events can be read", ReadTimes.size(), (size_t) 24) && Passed;
+    if (ReadTimes.size() == 24 && Times.size() == 125) {
+      Passed = Evaluate("GetLastReadEventID()", Input + " stopped in second child", "The last event ID is the shifted ID of the 24th event", Reader.GetLastReadEventID(), IDs[23]) && Passed;
+      Passed = EvaluateNear("GetLastReadObservationTime()", Input + " stopped in second child", "The observation time is the shifted time of the 24th event (TB 0)", Reader.GetLastReadObservationTime().GetAsDouble(), Times[23], 1e-9) && Passed;
+    }
+
+    DisableDefaultStreams();
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      Event->ParseDelayed();
+      ReadTimes.push_back(Event->GetTime().GetAsDouble());
+      ReadIDs.push_back(Event->GetId());
+      ReadEnergies.push_back(Event->GetEnergy());
+      delete Event;
+    }
+    EnableDefaultStreams();
+    Passed = EvaluateSize("GetNextEvent()", Input + " event count", "All 125 events are read", ReadTimes.size(), Times.size()) && Passed;
+    if (ReadTimes.size() == Times.size()) {
+      bool SameIDs = true;
+      bool SameTimes = true;
+      bool SameEnergies = true;
+      for (size_t i = 0; i < Times.size(); ++i) {
+        if (ReadIDs[i] != IDs[i]) SameIDs = false;
+        if (fabs(ReadTimes[i] - Times[i]) > 1e-9) SameTimes = false;
+        if (fabs(ReadEnergies[i] - Energies[i]) > 1e-9) SameEnergies = false;
+      }
+      Passed = EvaluateTrue("GetId()", Input + " all events", "After ParseDelayed() all events have the AT-shifted IDs of the reference read", SameIDs) && Passed;
+      Passed = EvaluateTrue("GetTime()", Input + " all events", "After ParseDelayed() all events have the AT-shifted times of the reference read", SameTimes) && Passed;
+      Passed = EvaluateTrue("GetEnergy()", Input + " all events", "After ParseDelayed() all events have the energies of the reference read", SameEnergies) && Passed;
+    }
+    Passed = Evaluate("GetLastReadEventID()", Input + " all events", "After all events the last event ID is the sum of the last IDs 21 + 31 + 73", Reader.GetLastReadEventID(), 125L) && Passed;
+    Passed = Evaluate("GetIncludeOffsetEventID()", Input + " all events", "After all events the ID offset is the sum of the last IDs of the children", Reader.GetIncludeOffsetEventID(), 125L) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test a measured file with absolute times and without TB and TE: footer first, events first, threaded
+bool UTFileEventsTra::TestMeasuredWithoutTBAndTE()
+{
+  bool Passed = true;
+
+  Passed = EvaluateTrue("PrepareTemporaryDirectory()", "measured temp dir", "The temporary directory can be recreated for the measured file tests", PrepareTemporaryDirectory("measured")) && Passed;
+  const MString TemporaryDirectory = GetTemporaryDirectoryName("measured");
+
+  // Five events from 1700000002.123456789 s to 1700000007.373456789 s (with nanoseconds), no TB and no TE
+  vector<MString> Times = { "1700000002.123456789", "1700000003.623456789", "1700000004.123456789", "1700000006.123456789", "1700000007.373456789" };
+  ostringstream Content;
+  Content<<"Type       tra"<<endl;
+  Content<<"Version    1"<<endl;
+  Content<<"Geometry   geometry.setup"<<endl;
+  Content<<endl;
+  for (unsigned int i = 0; i < Times.size(); ++i) {
+    Content<<"SE"<<endl;
+    Content<<"ET UN"<<endl;
+    Content<<"ID "<<i+1<<endl;
+    Content<<"TI "<<Times[i]<<endl;
+    Content<<"PE 4"<<endl;
+  }
+  Content<<"EN"<<endl;
+  Content<<endl;
+  MString FileName = TemporaryDirectory + "/Measured.tra";
+  Passed = EvaluateTrue("WriteTextFile()", "measured fixture", "The measured file can be written", WriteTextFile(FileName, Content.str().c_str())) && Passed;
+
+  // Footer first:
+  {
+    MFileEventsTra Reader;
+    Passed = EvaluateTrue("Open()", "measured footer first", "The measured file opens", Reader.Open(FileName)) && Passed;
+    Passed = EvaluateFalse("HasStartObservationTime()", "measured footer first", "The measured file has no TB, and none is invented", Reader.HasStartObservationTime()) && Passed;
+    Passed = EvaluateNear("GetObservationTime()", "measured footer first", "Asked first, the observation time is the last minus the first event time", Reader.GetObservationTime().GetAsDouble(), 5.25, 1e-9) && Passed;
+    Reader.Close();
+  }
+
+  // Events first, non-threaded and threaded:
+  vector<bool> Threaded = { false, true };
+  for (bool IsThreaded: Threaded) {
+    MString Input = MString("measured events first ") + (IsThreaded == true ? "threaded" : "non-threaded");
+    MFileEventsTra Reader;
+    Passed = EvaluateTrue("Open()", Input, "The measured file opens", Reader.Open(FileName)) && Passed;
+    if (IsThreaded == true) {
+      DisableDefaultStreams();
+      bool Started = Reader.StartThread();
+      EnableDefaultStreams();
+      Passed = EvaluateTrue("StartThread()", Input, "The reader thread starts", Started) && Passed;
+    }
+
+    unsigned int NRead = 0;
+    MPhysicalEvent* Event = Reader.GetNextEvent();
+    if (Event != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = EvaluateNear("GetLastReadObservationTime()", Input + " 1 event", "After the first event the observation time is exactly zero (nanosecond time stamps)", Reader.GetLastReadObservationTime().GetAsDouble(), 0.0, 1e-9) && Passed;
+    while (NRead < 2 && (Event = Reader.GetNextEvent()) != nullptr) {
+      ++NRead;
+      delete Event;
+    }
+    Passed = Evaluate("GetNextEvent()", Input + " 2 events", "Two events can be read", NRead, 2U) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", Input + " 2 events", "After 2 events the observation time is the second minus the first event time", Reader.GetLastReadObservationTime().GetAsDouble(), 1.5, 1e-9) && Passed;
+
+    DisableDefaultStreams();
+    while ((Event = Reader.GetNextEvent()) != nullptr) {
+      delete Event;
+    }
+    EnableDefaultStreams();
+    Passed = EvaluateNear("GetObservationTime()", Input + " all events", "After all events the observation time is the last minus the first event time", Reader.GetObservationTime().GetAsDouble(), 5.25, 1e-9) && Passed;
+    Passed = EvaluateNear("GetLastReadObservationTime()", Input + " all events", "After all events the observation time up to the last read event is the total", Reader.GetLastReadObservationTime().GetAsDouble(), 5.25, 1e-9) && Passed;
+    Passed = EvaluateFalse("HasStartObservationTime()", Input + " all events", "Reading the events does not invent a TB", Reader.HasStartObservationTime()) && Passed;
+    Reader.Close();
+  }
+
+  return Passed;
+}
 
 
 int main()

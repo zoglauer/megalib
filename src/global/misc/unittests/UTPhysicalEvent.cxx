@@ -56,6 +56,8 @@ private:
   bool TestOIParticleID();
   //! Test that Assimilate and Duplicate take over all data and make an independent copy
   bool TestAssimilate();
+  //! Test that delayed reading parses the ID and the time immediately
+  bool TestDelayedIDAndTime();
 };
 
 
@@ -70,6 +72,7 @@ bool UTPhysicalEvent::Run()
   Passed = TestBaseEvent() && Passed;
   Passed = TestOIParticleID() && Passed;
   Passed = TestAssimilate() && Passed;
+  Passed = TestDelayedIDAndTime() && Passed;
 
   Summarize();
 
@@ -437,6 +440,38 @@ bool UTPhysicalEvent::TestAssimilate()
   Passed = Evaluate("Duplicate()", "detector x axis", "Duplicate keeps the detector rotation", Duplicate->GetDetectorRotationXAxis(), DetectorX) && Passed;
   Passed = Evaluate("Duplicate()", "galactic z axis", "Duplicate keeps the galactic pointing", Duplicate->GetGalacticPointingZAxis(), GalacticZ) && Passed;
   delete Duplicate;
+
+  return Passed;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Test that delayed reading parses the ID and the time immediately
+bool UTPhysicalEvent::TestDelayedIDAndTime()
+{
+  bool Passed = true;
+
+  MString FileName = GetTemporaryFileName("UTPhysicalEventDelayed.tra");
+  Passed = EvaluateTrue("WriteTextFile()", "delayed ID and time setup", "The delayed test file can be written", WriteTextFile(FileName, "ID 19\nTI 3.5\nCC delayed\nSE\n")) && Passed;
+
+  MFile File;
+  MPhysicalEvent Delayed;
+  Passed = EvaluateTrue("Open()", "delayed ID and time", "The delayed test file opens", File.Open(FileName, MFile::c_Read)) && Passed;
+  Passed = EvaluateTrue("Stream()", "delayed ID and time", "The delayed read returns true at the end marker", Delayed.Stream(File, 0, true, false, true)) && Passed;
+  Passed = Evaluate("GetId()", "delayed ID and time before ParseDelayed()", "The ID is parsed during the delayed read", Delayed.GetId(), 19L) && Passed;
+  Passed = EvaluateNear("GetTime()", "delayed ID and time before ParseDelayed()", "The time is parsed during the delayed read", Delayed.GetTime().GetAsDouble(), 3.5, 1e-12) && Passed;
+  Passed = Evaluate("GetNComments()", "delayed ID and time before ParseDelayed()", "The other lines are not parsed yet", Delayed.GetNComments(), 0U) && Passed;
+
+  // A changed ID and time (e.g. include offsets) are not overwritten by ParseDelayed():
+  Delayed.SetId(40);
+  Delayed.SetTime(MTime(10.5));
+  Passed = EvaluateTrue("ParseDelayed()", "delayed ID and time", "The delayed event can be parsed", Delayed.ParseDelayed()) && Passed;
+  Passed = Evaluate("GetId()", "delayed ID and time after ParseDelayed()", "ParseDelayed() keeps the changed ID", Delayed.GetId(), 40L) && Passed;
+  Passed = EvaluateNear("GetTime()", "delayed ID and time after ParseDelayed()", "ParseDelayed() keeps the changed time", Delayed.GetTime().GetAsDouble(), 10.5, 1e-12) && Passed;
+  Passed = Evaluate("GetComment()", "delayed ID and time after ParseDelayed()", "ParseDelayed() parses the other lines", Delayed.GetComment(0), MString("delayed")) && Passed;
+  File.Close();
 
   return Passed;
 }

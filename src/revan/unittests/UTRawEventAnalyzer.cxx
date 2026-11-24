@@ -886,6 +886,13 @@ bool UTRawEventAnalyzer::TestTraFile()
   Passed = Evaluate("PostAnalysis()", "footer of the tra file", "The footer holds the number of Compton events", GetStatistic(Tra, "Compton  ."), 1) && Passed;
   Passed = Evaluate("PostAnalysis()", "footer of the tra file", "The footer holds the rejection", GetStatistic(Tra, MRERawEvent::GetRejectionReasonAsString(MRERawEvent::c_RejectionExternalBadEventFlag) + " ."), 1) && Passed;
 
+  // A measured evta file has neither TB nor TE, and revan does not add them (Compton events have their own TE line, thus only header and footer are checked)
+  MString TraHeader = Tra.GetSubString(0, Tra.FindFirst("\nSE"));
+  MString TraFooter = Tra.GetSubString(Tra.FindLast("\nEN\n"));
+  Passed = EvaluateFalse("PreAnalysis()", "tra file of an evta file without TB", "The tra file has no TB, since the evta file has none", TraHeader.Contains("\nTB ")) && Passed;
+  Passed = EvaluateFalse("PostAnalysis()", "tra file of an evta file without TE", "The tra file has no TE, since the evta file has none", TraFooter.Contains("\nTE ")) && Passed;
+  Passed = EvaluateNear("SetOutputModeFile()", "tra file of an evta file without TB and TE", "The observation time of the tra file is the last minus the first event time", ObservationTime, 2.0, 1e-9) && Passed;
+
   return Passed;
 }
 
