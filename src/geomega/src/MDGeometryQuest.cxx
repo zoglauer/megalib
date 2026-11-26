@@ -58,7 +58,7 @@ ClassImp(MDGeometryQuest)
 
 
 MDGeometryQuest::MDGeometryQuest() : 
-  m_AllwaysAssumeTrigger(false), m_ActivateNoising(true)
+  m_AllwaysAssumeTrigger(false), m_ActivateNoising(true), m_IgnoreVetoes(false), m_IgnoreThresholds(false)
 {
   // default constructor  
 
@@ -463,6 +463,61 @@ void MDGeometryQuest::ActivateNoising(bool ActivateNoising)
 bool MDGeometryQuest::GetActivateNoising()
 {
   return m_ActivateNoising;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDGeometryQuest::IgnoreVetoes(bool Ignore)
+{
+  // Ignore or apply the veto triggers
+  // The trigger unit propagates the flag to all triggers, thus this function
+  // must be called after ScanSetupFile() (same as for ActivateNoising)
+
+  if (GetTriggerUnit() != nullptr) {
+    GetTriggerUnit()->IgnoreVetoes(Ignore);
+  }
+
+  m_IgnoreVetoes = Ignore;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDGeometryQuest::GetIgnoreVetoes() const
+{
+  return m_IgnoreVetoes;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDGeometryQuest::IgnoreThresholds(bool Ignore)
+{
+  // Ignore or apply the noise thresholds (in noising) and trigger thresholds (in the trigger unit)
+  // Must be called after ScanSetupFile() (same as for ActivateNoising)
+
+  for (unsigned int d = 0; d < GetNDetectors(); ++d) {
+    GetDetectorAt(d)->IgnoreNoiseThreshold(Ignore);
+  }
+
+  if (GetTriggerUnit() != nullptr) {
+    GetTriggerUnit()->IgnoreThresholds(Ignore);
+  }
+
+  m_IgnoreThresholds = Ignore;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDGeometryQuest::GetIgnoreThresholds() const
+{
+  return m_IgnoreThresholds;
 }
 
 

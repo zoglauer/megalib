@@ -170,6 +170,7 @@ MDDetector::MDDetector(MString Name)
 
   m_NoiseActive = true;
   m_DetectorEffectsEngineVersion = 1;
+  m_IgnoreNoiseThreshold = false;
 
   m_UseDivisions = false;
   m_ShortNameDivisionX = g_StringNotDefined;
@@ -262,6 +263,7 @@ MDDetector::MDDetector(const MDDetector& D)
 
   m_NoiseActive = D.m_NoiseActive;
   m_DetectorEffectsEngineVersion = D.m_DetectorEffectsEngineVersion;
+  m_IgnoreNoiseThreshold = D.m_IgnoreNoiseThreshold;
 
   m_AreBlockedTriggerChannelsUsed = D.m_AreBlockedTriggerChannelsUsed;
   m_BlockedTriggerChannels = D.m_BlockedTriggerChannels;
@@ -367,6 +369,7 @@ bool MDDetector::CopyDataToNamedDetectors()
 
     m_NamedDetectors[d]->m_NoiseActive = m_NoiseActive;
     m_NamedDetectors[d]->m_DetectorEffectsEngineVersion = m_DetectorEffectsEngineVersion;
+    m_NamedDetectors[d]->m_IgnoreNoiseThreshold = m_IgnoreNoiseThreshold;
 
     m_NamedDetectors[d]->m_AreBlockedTriggerChannelsUsed = m_AreBlockedTriggerChannelsUsed;
     m_NamedDetectors[d]->m_BlockedTriggerChannels = m_BlockedTriggerChannels;
@@ -788,6 +791,11 @@ bool MDDetector::ApplyTimeResolution(double& Time, const double Energy) const
 bool MDDetector::ApplyNoiseThreshold(double& Energy, const MVector& Position) const 
 {
   // Test if the energy is in the noise threshold regime and apply it     
+
+  // The user requested to keep all hits independent of the threshold
+  if (m_IgnoreNoiseThreshold == true) {
+    return false;
+  }
 
   double NoiseThreshold = 0.0;
   
@@ -1638,6 +1646,21 @@ void MDDetector::ActivateNoising(const bool ActivateNoising)
   // True if data is noised
 
   m_NoiseActive = ActivateNoising;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDDetector::IgnoreNoiseThreshold(const bool Ignore)
+{
+  // If true, the noise threshold is not applied, i.e. hits below it are kept
+
+  m_IgnoreNoiseThreshold = Ignore;
+
+  if (m_GuardRing != nullptr) {
+    m_GuardRing->IgnoreNoiseThreshold(Ignore);
+  }
 }
 
 
