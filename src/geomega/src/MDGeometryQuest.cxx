@@ -58,7 +58,7 @@ ClassImp(MDGeometryQuest)
 
 
 MDGeometryQuest::MDGeometryQuest() : 
-  m_AllwaysAssumeTrigger(false), m_ActivateNoising(true)
+  m_AllwaysAssumeTrigger(false), m_ActivateNoising(true), m_IgnoreVetoes(false)
 {
   // default constructor  
 
@@ -463,6 +463,32 @@ void MDGeometryQuest::ActivateNoising(bool ActivateNoising)
 bool MDGeometryQuest::GetActivateNoising()
 {
   return m_ActivateNoising;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDGeometryQuest::IgnoreVetoes(bool Ignore)
+{
+  // Ignore or apply the veto triggers
+  // The trigger unit propagates the flag to all triggers, thus this function
+  // must be called after ScanSetupFile() (same as for ActivateNoising)
+
+  if (GetTriggerUnit() != nullptr) {
+    GetTriggerUnit()->IgnoreVetoes(Ignore);
+  }
+
+  m_IgnoreVetoes = Ignore;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDGeometryQuest::GetIgnoreVetoes() const
+{
+  return m_IgnoreVetoes;
 }
 
 
