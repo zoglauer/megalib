@@ -103,6 +103,13 @@ class MDGeometryQuest : public MDGeometry
   void IgnoreVetoes(bool Ignore = true);
   //! Return true if veto triggers are ignored
   bool GetIgnoreVetoes() const;
+  //! Ignore (true) or apply (false, default) the thresholds: the noise thresholds of all
+  //! detectors (incl. guard rings) during noising, and the trigger thresholds in the trigger unit.
+  //! Thus hits below threshold are kept and can trigger an event.
+  //! Must be called after ScanSetupFile(), since the detectors have to exist.
+  void IgnoreThresholds(bool Ignore = true);
+  //! Return true if thresholds are ignored
+  bool GetIgnoreThresholds() const;
   void SetGlobalFailureRate(double FailureRate = 0.0);
 
 
@@ -140,6 +147,7 @@ class MDGeometryQuest : public MDGeometry
   bool m_AllwaysAssumeTrigger;
   bool m_ActivateNoising;
   bool m_IgnoreVetoes;
+  bool m_IgnoreThresholds;
 
 
 

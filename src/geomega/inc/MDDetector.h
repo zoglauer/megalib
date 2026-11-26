@@ -234,6 +234,11 @@ class MDDetector
                                    const unsigned int yGrid);
 
   virtual void ActivateNoising(const bool Activate = true);
+  //! If true, the noise threshold is not applied during noising, i.e. hits below
+  //! the noise threshold (or the trigger threshold, if NoiseThresholdEqualsTriggerThreshold is set) are kept
+  virtual void IgnoreNoiseThreshold(const bool Ignore = true);
+  //! Return true if the noise threshold is ignored during noising
+  virtual bool GetIgnoreNoiseThreshold() const { return m_IgnoreNoiseThreshold; }
 
   //! Set the version of the detector effects engine: 1 = MEGAlib 1-4 engine, 2 = MEGAlib 5 onward engine
   void SetDetectorEffectsEngineVersion(unsigned int Version) { m_DetectorEffectsEngineVersion = Version; }
@@ -467,6 +472,8 @@ class MDDetector
   bool m_NoiseActive;
   //! The version of the detector effects engine: 1 = MEGAlib 1-4 engine, 2 = MEGAlib 5 onward engine
   unsigned int m_DetectorEffectsEngineVersion;
+  //! If true, the noise threshold is not applied
+  bool m_IgnoreNoiseThreshold;
 
   // private members:
  private:
